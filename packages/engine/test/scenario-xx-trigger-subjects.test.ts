@@ -575,13 +575,13 @@ describe('what a card may say', () => {
       .map((i) => i.message)
       .join(' | ');
 
-  test('"that player" needs a trigger with a player: an upkeep trigger has none', () => {
+  test('"that player" needs a trigger with a player: a death trigger has none (a step has one, the active player)', () => {
     const card = asCard(CRAWLER, (face) => ({
       ...face,
       abilities: [
         {
           kind: 'triggered',
-          trigger: { kind: 'upkeep', whose: 'you' },
+          trigger: { kind: 'dies', what: { kind: 'this' } },
           effect: { kind: 'loseLife', player: { kind: 'triggerPlayer' }, amount: 1 },
         },
       ],

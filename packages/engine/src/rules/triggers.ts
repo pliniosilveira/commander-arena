@@ -52,6 +52,7 @@ import { matchesFilter } from './select';
 import { objectOrLki } from './source-info';
 import { findStateTriggers } from './state-triggers';
 import { withDoubledTriggers } from './trigger-doubling';
+import { readsTriggerPlayer } from './trigger-subject';
 
 /** Trigger kinds that look back in time (CR 603.10a). */
 const LOOK_BACK: ReadonlySet<Trigger['kind']> = new Set(LOOK_BACK_TRIGGER_KINDS);
@@ -105,6 +106,18 @@ function controllerOfSource(state: GameState, source: ObjectId): SeatId | null {
   const live = state.objects[source];
   if (live !== undefined) return controllerOf(state, live);
   return state.lki[source]?.object.controller ?? null; // stored controller: frozen as it left (`recordLki`)
+}
+
+/**
+ * The player the event is about, for the pending trigger. The player of the beginning of a step is the active player (the Bruna deck, "that player" of
+ * "at the beginning of each opponent's end step"): it is kept only for an ability that reads it, so the other step triggers stay as they were.
+ */
+function eventPlayer(ability: Ability, occ: Occurrence): { readonly player?: SeatId } {
+  const kind = ability.kind === 'triggered' ? ability.trigger.kind : null;
+  const ofStep = kind === 'step' || kind === 'upkeep' || kind === 'endStep';
+  return occ.player === undefined || (ofStep && !readsTriggerPlayer(ability))
+    ? {}
+    : { player: occ.player };
 }
 
 /** The trigger occurrences an event contains for a trigger kind. */
@@ -179,7 +192,7 @@ function occurrences(
     case 'step':
       // CR 500.2, 603.2: as the step begins; the active player is the one whose turn it is.
       return event.kind === 'stepBegan' && event.step === STEP_OF[trigger.step]
-        ? [{ subject: null, seat: event.seat }]
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
     case 'drawn':
       // CR 121.1: a card drawn; a draw that was replaced (CR 903.9b) has no `cardDrawn` event.
@@ -224,11 +237,11 @@ function occurrences(
         : [];
     case 'upkeep':
       return event.kind === 'stepBegan' && event.step === 'upkeep'
-        ? [{ subject: null, seat: event.seat }]
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
     case 'endStep':
       return event.kind === 'stepBegan' && event.step === 'end'
-        ? [{ subject: null, seat: event.seat }]
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
     case 'permanentSacrificed':
       return event.kind === 'sacrificed'
@@ -773,6 +786,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
               controller: candidate.controller,
               source: id,
               ...(occ.subject === null ? {} : { triggerSubject: occ.subject }),
+              ...(occ.player === undefined ? {} : { triggerPlayer: occ.player }),
             })
           ) {
             continue;
@@ -784,6 +798,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
               controller: candidate.controller,
               source: id,
               ...(occ.subject === null ? {} : { triggerSubject: occ.subject }),
+              ...(occ.player === undefined ? {} : { triggerPlayer: occ.player }),
             })
           ) {
             continue;
@@ -794,7 +809,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             abilityIndex: index,
             ability,
             subject: occ.subject,
-            ...(occ.player === undefined ? {} : { player: occ.player }),
+            ...eventPlayer(ability, occ),
             ...(occ.damage === undefined ? {} : { damage: occ.damage }),
             ...(occ.chapter === undefined ? {} : { chapter: occ.chapter }),
             ...(occ.attacked === undefined ? {} : { attacked: occ.attacked }),
@@ -857,6 +872,7 @@ function batchTriggers(
           !evaluateCondition(state, ability.interveningIf, {
             controller: candidate.controller,
             source: id,
+            triggerPlayer: seat, // the player damaged: "if that player controls more creatures than you"
           })
         ) {
           continue;
@@ -866,6 +882,7 @@ function batchTriggers(
           !evaluateCondition(state, ability.triggerCondition, {
             controller: candidate.controller,
             source: id,
+            triggerPlayer: seat,
           })
         ) {
           continue;
@@ -925,9 +942,7 @@ function findDelayedTriggers(
       // D-217: the player a delayed effect is about, fixed as it was created, or the one the event is about.
       ...(delayed.player !== undefined
         ? { player: delayed.player }
-        : occurrence.player === undefined
-          ? {}
-          : { player: occurrence.player }),
+        : eventPlayer(delayed.ability, occurrence)),
       ...(occurrence.damage === undefined ? {} : { damage: occurrence.damage }),
     });
   }

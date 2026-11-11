@@ -58,6 +58,8 @@ export interface ConditionContext {
    * D-120): the creature that entered. Absent where there is none, which fails that condition closed.
    */
   readonly triggerSubject?: ObjectId;
+  /** The player the event of the trigger is about (`triggerPlayerHasMore`): the active player of a step trigger, the player who drew, who cast, ... */
+  readonly triggerPlayer?: SeatId;
   /**
    * What the resolving effect knows (D-135), for `objectMatches` and `didPrevious`: the targets still legal, what the earlier
    * move effect produced (`moved`) and how much the instructions since the last `may` effect did (`performed`). Absent
@@ -400,6 +402,13 @@ export function evaluateCondition(
         playerStatOf(state, ctx.controller, condition.stat)
       );
     }
+    case 'triggerPlayerHasMore':
+      // CR 603.4, 110.2: "that player", the player the event is about, has more of the stat than the controller of the ability.
+      return (
+        ctx.triggerPlayer !== undefined &&
+        playerStatOf(state, ctx.triggerPlayer, condition.stat) >
+          playerStatOf(state, ctx.controller, condition.stat)
+      );
     case 'and':
       return condition.terms.every((t) => evaluateCondition(state, t, ctx));
     case 'or':

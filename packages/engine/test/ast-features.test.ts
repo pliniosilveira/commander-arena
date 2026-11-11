@@ -90,6 +90,7 @@ describe('the dimensions', () => {
       'sourceHasCounter',
       'subjectGreaterPt',
       'subjectControllerHasMore',
+      'triggerPlayerHasMore',
       'cardsInGraveyard',
       'escaped',
       'cameUnderControlSinceLastUpkeep',

@@ -31,9 +31,11 @@ export function readsTriggerSubject(ability: Ability): boolean {
 export function readsTriggerPlayer(ability: Ability): boolean {
   return (
     ability.kind === 'triggered' &&
-    JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
+    // The intervening "if" `triggerPlayerHasMore` reads the player as the ability triggers and again as it resolves, so the player stays on the stack.
+    (JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
       '"triggerPlayer"',
-    )
+    ) ||
+      JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerHasMore"'))
   );
 }
 

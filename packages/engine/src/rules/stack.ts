@@ -70,6 +70,7 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.triggerSubject === undefined
         ? {}
         : { triggerSubject: obj.stack.triggerSubject }),
+      ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
     })
   ) {
     events.push({ kind: 'fizzled', object: id, reason: 'interveningIf' });

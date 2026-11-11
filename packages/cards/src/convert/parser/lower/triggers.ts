@@ -497,7 +497,12 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       only.actor !== undefined) ||
     ((only.event === 'dealsCombatDamage' || only.event === 'combatDamageBatch') &&
       only.recipient !== undefined);
-  if (aboutPlayer) {
+  // The beginning of a step of another player's turn (CR 102.1: the active player is the player whose turn it is; CR 603.2b): "that player" is the active player, the engine's occurrence player of
+  // `step`, `upkeep` and `endStep` (the beginning of your own step was answered above: "you").
+  const aboutActivePlayer =
+    (only.event === 'upkeep' || only.event === 'endStep' || only.event === 'step') &&
+    (only.actor?.det === 'eachOpponent' || only.actor?.det === 'eachPlayer');
+  if (aboutPlayer || aboutActivePlayer) {
     return { selector: { kind: 'triggerPlayer' }, needs: ['selector:triggerPlayer'] };
   }
   return null;

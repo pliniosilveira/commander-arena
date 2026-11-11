@@ -448,8 +448,9 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
     | { readonly kind: 'cardsInGraveyard'; readonly compare: IrComparison }
-    // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat
-    | { readonly kind: 'subjectControllerHasMore'; readonly stat: 'lands' }
+    // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat; with a
+    // trigger about a player (a step of an opponent's turn) the lowering reads it of that player instead (`triggerPlayerHasMore`)
+    | { readonly kind: 'subjectControllerHasMore'; readonly stat: 'lands' | 'creatures' }
     // "~ is attached to a creature" (stage P37, D-180, CR 301.5, 303.4): the permanent this one is attached to, against a filter (`creature`)
     | { readonly kind: 'attachedTo'; readonly filter: IrFilter }
     // "it's untapped", "~ is untapped": this permanent against a filter (stage P29, D-133)

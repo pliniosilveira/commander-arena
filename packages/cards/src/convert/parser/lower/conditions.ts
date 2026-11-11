@@ -110,9 +110,15 @@ export function lowerCondition(
     }
     case 'subjectControllerHasMore': {
       // CR 603.4, 109.4 (stage P68, D-229): "that player", the controller of the permanent the trigger is about, has more lands than the controller.
-      const blocked = missingFeatures(['condition:subjectControllerHasMore']);
+      // "That player" of a trigger about a player (the active player of an opponent's end step, CR 102.1, 603.2b) is that player, not the controller of a
+      // permanent: the engine's `triggerPlayerHasMore`. When "that player" is the controller of the ability itself it compares a player with
+      // themselves, which is no condition of the text.
+      const about = ctx?.thatPlayer?.selector.kind;
+      if (about === 'you') return failure(c, []);
+      const kind = about === 'triggerPlayer' ? 'triggerPlayerHasMore' : 'subjectControllerHasMore';
+      const blocked = missingFeatures([`condition:${kind}`]);
       if (blocked.length > 0) return failure(c, blocked);
-      return ok({ kind: 'subjectControllerHasMore', stat: test.stat });
+      return ok({ kind, stat: test.stat });
     }
     case 'cardsInGraveyard': {
       // CR 404.1 (stage P68, D-229): the number of cards in the graveyard of the controller.
@@ -388,6 +394,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:lifeTotal',
   'condition:cardsInGraveyard',
   'condition:subjectControllerHasMore',
+  'condition:triggerPlayerHasMore',
   'condition:thisMatches',
   'condition:escaped',
   'condition:and',

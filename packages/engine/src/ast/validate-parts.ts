@@ -1785,6 +1785,11 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isOneOf(c.stat, PLAYER_STATS))
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
       break;
+    case 'triggerPlayerHasMore':
+      // Where it may stand (an intervening "if" of a trigger whose event is about a player) is checked with the trigger (validate.ts).
+      if (!isOneOf(c.stat, PLAYER_STATS))
+        issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
+      break;
     case 'attackingMostLife':
       // D-151 (Dethrone): read from the combat of the source, which must be an attacking creature.
       break;

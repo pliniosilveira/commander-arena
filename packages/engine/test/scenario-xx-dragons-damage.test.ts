@@ -67,7 +67,8 @@ describe('the cards are valid', () => {
             abilities: [
               {
                 kind: 'triggered',
-                trigger: { kind: 'upkeep', whose: 'you' },
+                // The beginning of a step has a player since the Bruna deck (the active player); a death has none.
+                trigger: { kind: 'dies', what: { kind: 'this' } },
                 effect,
                 ...(targets === undefined ? {} : { targets }),
               },
