@@ -116,3 +116,36 @@ describe('"enters with a counter on it for each time it was kicked" (D-254)', ()
     ).toBeDefined();
   });
 });
+
+describe('"Creature spells of the chosen type cost {2} less to cast" (D-255)', () => {
+  test("Urza's Incubator: no controller, so every player's spells", () => {
+    const parsed = readAll(
+      'As ~ enters, choose a creature type.\nCreature spells of the chosen type cost {2} less to cast.',
+      'artifact',
+    );
+    expect(parsed.abilities).toContainEqual({
+      kind: 'static',
+      static: {
+        kind: 'costReduction',
+        spells: expect.objectContaining({ types: ['creature'], chosenType: true }),
+        amount: 2,
+      },
+    });
+    const reduction = parsed.abilities.find(
+      (a) => a.kind === 'static' && a.static.kind === 'costReduction',
+    );
+    expect(JSON.stringify(reduction)).not.toContain('"controller"');
+  });
+
+  test('"you cast" keeps the controller (the older rule)', () => {
+    const parsed = readAll(
+      'As ~ enters, choose a creature type.\nCreature spells of the chosen type you cast cost {2} less to cast.',
+      'artifact',
+    );
+    expect(JSON.stringify(parsed.abilities)).toContain('"controller":"you"');
+  });
+
+  test('without "of the chosen type" the line is not read (SYNTHETIC)', () => {
+    expect(dropped('Creature spells cost {2} less to cast.', 'artifact').reason).toBeDefined();
+  });
+});

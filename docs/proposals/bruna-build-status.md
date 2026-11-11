@@ -29,7 +29,7 @@ The running checklist of the deck program for `decks/bruna.txt`. One branch, one
 | Nykthos Paragon | | | open | |
 | Nykthos, Shrine to Nyx | | | open | |
 | Search for Glory | | | open | |
-| Urza's Incubator | | | open | |
+| Urza's Incubator | 4 (D-255) | T | done | "Creature spells of the chosen type cost {2} less to cast." (every player's spells) |
 | Well of Lost Dreams | | | open | |
 
-Golden after group 1: Valkyrie Harbinger, Angelic Accord and Griffin Aerie are supported; after group 2: Cosmos Elixir too; after group 3: Everflowing Chalice. Versions: `PARSER_VERSION` 80, `ENGINE_VERSION` 75.
+Golden after group 1: Valkyrie Harbinger, Angelic Accord and Griffin Aerie are supported; after group 2: Cosmos Elixir too; after group 3: Everflowing Chalice; after group 4: Urza's Incubator. Versions: `PARSER_VERSION` 81, `ENGINE_VERSION` 75.

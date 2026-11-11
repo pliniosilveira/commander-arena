@@ -1600,3 +1600,9 @@ Numbers are references; entries are never deleted. D-118 and D-119 are cited as 
 - Decision: `entersWithCounters.count` may be `{ kind: 'timesKicked' }`, the kicks of the spell the permanent resolved from (`timesKickedOf`, CR 702.33c); 0 for a permanent put onto the battlefield by an effect. The counters tail of the parser takes `amount.times-kicked` as well as `amount.for-each`; the old "rejects" line of the rule became an example. `ENGINE_VERSION` 75, `PARSER_VERSION` 80; the derive digests were recorded again (`UPDATE_DERIVE_DIGESTS=1`).
 - Alternatives: A trigger "when this enters, put counters" (a different timing, CR 614.1c says enters-with is a replacement).
 - Consequences: Every Multikicker permanent of this shape reads. The kicks come from the stack object only, so a copy of a permanent does not carry them.
+
+## D-255: A cost reduction with "of the chosen type" and no "you cast" is for every player's spells (2026-11-11)
+- Context: Urza's Incubator (the Bruna deck, issue 5): "Creature spells of the chosen type cost {2} less to cast." The grammar read only "... you cast cost ...", and listed this wording among its rejects.
+- Decision: `static.spells-cost-reduction` also reads "<spells> of the chosen type cost {N} less to cast" and then leaves the `controller` of the filter out, so the engine's `costReduction` matches the spell of any caster (CR 601.2f, 604.2); with "you cast" the controller stays `you`. Only the chosen-type wording, not any "spells cost less" line. No engine change; a SYNTHETIC `SYNTHETIC Shared Discount` and a scenario test pin the effect on both players' hands. `PARSER_VERSION` 81.
+- Alternatives: Reading every "Creature spells cost {1} less" (more lines, but none of them is in the deck); reading it as "you cast" (wrong: the opponents' spells are cheaper too).
+- Consequences: Other symmetric reductions of the chosen type read. A symmetric reduction without the chosen type is still unread.

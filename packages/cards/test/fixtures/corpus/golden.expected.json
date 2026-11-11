@@ -1,5 +1,5 @@
 {
-  "parserVersion": 80,
+  "parserVersion": 81,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -3259,18 +3259,10 @@
     "b380c04b-0bce-4328-8f0a-1425e48bee72": {
       "name": "Urza's Incubator",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Creature spells of the chosen type cost {2} less to cast.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "b9b97f74"
+      "ast": "2885e63d"
     },
     "b473e293-59e3-4e04-acf2-622604aeb25f": {
       "name": "Path of Ancestry",
@@ -4708,7 +4700,7 @@
       "total": 60
     },
     "acceptance": {
-      "supported": 184,
+      "supported": 185,
       "total": 224
     }
   }
