@@ -1293,7 +1293,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                   : test;
     return failure(
       clause,
-      kind === 'raw' || kind === 'hadCounters' || kind === 'declined'
+      kind === 'raw' || kind === 'hadCounters' || kind === 'declined' || kind === 'unlessReturn'
         ? []
         : missingFeatures([`condition:${kind}`]),
     );

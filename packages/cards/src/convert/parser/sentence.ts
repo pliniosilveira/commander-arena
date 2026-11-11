@@ -256,7 +256,7 @@ const UNLESS_PAYS: Parser<IrCondition> = map(
   sequence(
     literal(' '),
     family<IrCondition>('condition', {
-      only: ['condition.unless-pays', 'condition.unless-escaped'],
+      only: ['condition.unless-pays', 'condition.unless-escaped', 'condition.unless-return'],
     }),
   ),
   ([, condition]) => condition,
