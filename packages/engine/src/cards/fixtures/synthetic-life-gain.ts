@@ -190,6 +190,44 @@ export const SYNTHETIC_LIFE_GAIN_LIST: readonly CardDefinition[] = [
     ],
     'Whenever one or more +1/+1 counters are put on a creature, each opponent loses 1 life.',
   ),
+  // "At the beginning of your end step, if you gained 3 or more life this turn, create a 2/2 white Griffin creature token with flying." (D-252)
+  singleFace({
+    name: 'SYNTHETIC Dawn Aerie',
+    manaCost: ['1', 'W'],
+    types: ['enchantment'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    oracleText:
+      'At the beginning of your end step, if you gained 3 or more life this turn, create a 2/2 white Griffin creature token with flying.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'endStep', whose: 'you' },
+        interveningIf: { kind: 'lifeGainedThisTurn', atLeast: 3 },
+        effect: {
+          kind: 'createToken',
+          count: 1,
+          token: {
+            kind: 'custom',
+            definition: {
+              name: 'Griffin',
+              manaCost: null,
+              supertypes: [],
+              types: ['creature'],
+              subtypes: ['Griffin'],
+              colors: ['W'],
+              power: 2,
+              toughness: 2,
+              loyalty: null,
+              defense: null,
+              oracleText: '',
+              abilities: [kw('flying')],
+            },
+          },
+        },
+      },
+    ],
+  }),
   // ---- spells
   singleFace({
     name: 'SYNTHETIC Mend',

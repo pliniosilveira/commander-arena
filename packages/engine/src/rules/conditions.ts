@@ -13,6 +13,7 @@ import {
   controlsCommander,
   enteredThisTurnHolds,
   lifeTotalHolds,
+  lifeGainedThisTurnHolds,
   playerDealtDamageHolds,
 } from './condition-reads';
 import { controlledSince, controllerOf } from './control';
@@ -382,6 +383,9 @@ export function evaluateCondition(
     case 'playerDealtDamage':
       // D-151, CR 120.3: the damage dealt to the controller, or to an opponent, this turn.
       return playerDealtDamageHolds(state, ctx.controller, condition);
+    case 'lifeGainedThisTurn':
+      // D-252, CR 119.3: the life the controller has gained this turn, from the turn log.
+      return lifeGainedThisTurnHolds(state, ctx.controller, condition);
     case 'controlsRingBearer':
       // CR 701.54e (D-196): a creature on the battlefield under the controller's control with their Ring-bearer designation.
       return ringBearerOf(state, ctx.controller) !== null;

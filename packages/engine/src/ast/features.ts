@@ -648,6 +648,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-151: "two or more nonland permanents entered the battlefield under your control this turn", "an opponent was dealt 7 or more damage".
     'enteredThisTurn',
     'playerDealtDamage',
+    // D-252: "if you gained 3 or more life this turn".
+    'lifeGainedThisTurn',
     // D-151: "Khans — ..." (the option the permanent chose as it entered).
     'chosenOption',
     // D-151: Dethrone ("attacking the player with the most life or tied for most life") and Pack tactics ("total power 6 or greater").
@@ -1105,6 +1107,8 @@ export const CONDITION_KINDS = [
   'enteredThisTurn',
   /** "An opponent was dealt 7 or more damage this turn" (D-151): the engine's `playerDealtDamage`. */
   'playerDealtDamage',
+  /** "If you gained 3 or more life this turn" (D-252): the engine's `lifeGainedThisTurn`. */
+  'lifeGainedThisTurn',
   /** "Khans — ..." (D-151): the engine's `chosenOption`, a linked ability of "choose Khans or Dragons". */
   'chosenOption',
   /** "Attacks the player with the most life or tied for most life" (D-151): the engine's `attackingMostLife`. */

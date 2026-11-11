@@ -44,10 +44,18 @@ export function gainLife(
   const s = getSeat(state, seat);
   const next = patchSeat(state, seat, { life: s.life + gained });
   const nth = state.turnLog.lifeGained.filter((who) => who === seat).length + 1;
+  // D-252: the total gained this turn, by seat ("if you gained 3 or more life this turn", CR 119.3).
+  const totals = [...next.turnLog.lifeGainedTotal];
+  for (let i = totals.length; i < state.seats.length; i += 1) totals[i] = 0;
+  totals[seat] = (totals[seat] ?? 0) + gained;
   return {
     state: {
       ...next,
-      turnLog: { ...next.turnLog, lifeGained: [...next.turnLog.lifeGained, seat] },
+      turnLog: {
+        ...next.turnLog,
+        lifeGained: [...next.turnLog.lifeGained, seat],
+        lifeGainedTotal: totals,
+      },
     },
     events: [
       { kind: 'lifeChanged', seat, from: s.life, to: s.life + gained },

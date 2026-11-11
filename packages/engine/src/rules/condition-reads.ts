@@ -95,6 +95,15 @@ export function playerDealtDamageHolds(
     : opponentsOf(state, seat).some((o) => taken(o) >= condition.atLeast);
 }
 
+/** D-252, CR 119.3: `seat` gained at least `atLeast` life in all this turn, read from the turn log. */
+export function lifeGainedThisTurnHolds(
+  state: GameState,
+  seat: SeatId,
+  condition: Extract<Condition, { kind: 'lifeGainedThisTurn' }>,
+): boolean {
+  return (state.turnLog.lifeGainedTotal[seat] ?? 0) >= condition.atLeast;
+}
+
 /**
  * The conditions of a static ability that changes types or colors (D-151): the ones that read nothing `derive` works out, so that layers 4 and
  * 5 can read them without the layers they are part of (CR 613.8): a life total, a commander, what entered or what damage was dealt this turn,
@@ -114,6 +123,8 @@ export function plainConditionHolds(
       return enteredThisTurnHolds(state, controller, condition);
     case 'playerDealtDamage':
       return playerDealtDamageHolds(state, controller, condition);
+    case 'lifeGainedThisTurn':
+      return lifeGainedThisTurnHolds(state, controller, condition);
     case 'cardsInGraveyard':
       return cardsInGraveyardHolds(state, controller, condition.compare);
     case 'ownTurnNumber': {

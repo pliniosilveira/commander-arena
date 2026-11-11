@@ -1609,6 +1609,8 @@ export interface TurnLog {
   readonly combatDamaged: readonly { readonly source: ObjectId; readonly player: SeatId }[];
   /** Each time a player gained life this turn (D-149), in order, one entry for each life gain event: "for the first time each turn". */
   readonly lifeGained: readonly SeatId[];
+  /** The life each player has gained this turn, by seat (D-252, CR 119.3): the sum of every life gain after replacement, for "if you gained 3 or more life this turn". */
+  readonly lifeGainedTotal: readonly number[];
   /** Each triggered ability that has triggered this turn (D-149): "this ability triggers only once each turn" (CR 603.2). */
   readonly triggered: readonly { readonly object: ObjectId; readonly abilityIndex: number }[];
   /**
@@ -1648,6 +1650,7 @@ export const EMPTY_TURN_LOG: TurnLog = {
   activated: [],
   combatDamaged: [],
   lifeGained: [],
+  lifeGainedTotal: [],
   triggered: [],
   entered: [],
   damageTaken: [],

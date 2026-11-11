@@ -3282,6 +3282,11 @@ export type Condition =
    */
   | { readonly kind: 'attackersTotalPower'; readonly atLeast: number }
   /**
+   * "If you gained 3 or more life this turn" (CR 119.3, 603.4, D-252): the controller of the condition gained at least `atLeast` life in all this turn (every gain
+   * after replacement, summed; a gain of 0 is no event, CR 119.9). Reads the turn log only, so it is read as the event happens and again as the ability resolves.
+   */
+  | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
+  /**
    * "If you control your Ring-bearer" (CR 701.54e, D-196): the controller of the condition has a creature that is on the battlefield under their
    * control and is their Ring-bearer. Not for a static ability.
    */

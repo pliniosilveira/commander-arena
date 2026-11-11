@@ -17,6 +17,7 @@ import {
   controlsCommander,
   enteredThisTurnHolds,
   lifeTotalHolds,
+  lifeGainedThisTurnHolds,
   playerDealtDamageHolds,
 } from './condition-reads';
 import { controllerOf } from './control';
@@ -80,6 +81,8 @@ export function staticConditionHolds(
       return enteredThisTurnHolds(state, controllerOf(state, source), condition);
     case 'playerDealtDamage':
       return playerDealtDamageHolds(state, controllerOf(state, source), condition);
+    case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
+      return lifeGainedThisTurnHolds(state, controllerOf(state, source), condition);
     case 'cardsInGraveyard': // D-229: the number of cards in a zone, which no layer changes
       return cardsInGraveyardHolds(state, controllerOf(state, source), condition.compare);
     case 'thisMatches':
