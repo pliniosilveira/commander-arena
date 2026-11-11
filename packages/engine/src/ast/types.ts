@@ -1872,13 +1872,16 @@ export type Effect =
   /**
    * "It also gains the non-backup abilities of this creature printed below this one until end of turn" (Backup, CR 702.165a, 613.1f, D-230): layer 6, each permanent the selector
    * names (a `target`, fixed now, CR 611.2c) has the abilities in `abilities` (any ability but a static one or a keyword that cannot be granted: keywords without parameters,
-   * activated, triggered and mana abilities) until `duration`. Only the engine's own Backup writes it (`validateCard` refuses it in a card).
+   * activated, triggered and mana abilities) until `duration`. The engine's own Backup writes that form (`validateCard` refuses `untilEndOfTurn` in a card).
+   * D-981 (CR 611.2a, 613.1f): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration: `duration: 'permanent'`, for
+   * the rest of the game (the object a zone change makes is a new one, CR 400.7). A card may write only this form, and only with static abilities
+   * `cantLoseGame` and `opponentsCantWin`, the ones read from the abilities the object has after the layers (`rules/player-protection.ts`).
    */
   | {
       readonly kind: 'grantAbility';
       readonly objects: ObjectSelector;
       readonly abilities: readonly Ability[];
-      readonly duration: 'untilEndOfTurn';
+      readonly duration: 'untilEndOfTurn' | 'permanent';
     }
   /** "Target creature gains flying until end of turn": layer 6 (CR 613.1f), a keyword without parameters. */
   | {

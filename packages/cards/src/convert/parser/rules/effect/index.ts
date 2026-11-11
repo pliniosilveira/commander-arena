@@ -38,6 +38,7 @@ import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
+import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
@@ -819,6 +820,8 @@ export const EFFECT_RULES = [
   ...VRASKA_EFFECT_RULES,
   // Stage P69 (D-256, D-257): the Bruna deck, "Do this only once each turn" and "pay {X}, where X is less than or equal to the amount of life you gained".
   ...BRUNA_EFFECT_RULES,
+  // Stage P69 (D-982): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration.
+  ...GRANTED_STATIC_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.

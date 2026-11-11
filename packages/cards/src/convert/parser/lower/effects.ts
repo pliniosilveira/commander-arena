@@ -42,6 +42,7 @@ import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { missingFeatures } from './features';
+import { GAIN_STATIC_ABILITY } from './granted-static';
 import { HOFRI_LOWERINGS } from './hofri';
 import { KORVOLD_LOWERINGS } from './korvold';
 import {
@@ -1264,6 +1265,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DRAGON_LOWERINGS,
   ...KORVOLD_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
+  GAIN_STATIC_ABILITY,
   GAIN_CONTROL,
 ];
 

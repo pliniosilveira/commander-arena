@@ -511,6 +511,7 @@ describe('unmatched abilities', () => {
       'effect.copy-each',
       'effect.do-once-each-turn',
       'effect.pay-x-at-most',
+      'effect.gain-static-ability',
       'effect.gain-class-level',
       'effect.exile-random-and-play',
       'effect.phase-out',
