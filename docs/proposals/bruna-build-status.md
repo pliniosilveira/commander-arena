@@ -27,9 +27,9 @@ The running checklist of the deck program for `decks/bruna.txt`. One branch, one
 | Keeper of the Accord | 5 (D-263) | P | done | "that player" of an opponent's step |
 | Myriad Landscape | 5 (D-262) | P | done | up to two basic lands that share a land type |
 | Nykthos Paragon | 5 (D-256) | P | done | "that many", "Do this only once each turn" (CR 603.2h) |
-| Nykthos, Shrine to Nyx | | | open | |
+| Nykthos, Shrine to Nyx | 5 (D-265) | P | done | choose a color, mana equal to devotion; auto-pay refuses a plan that sacrifices devotion |
 | Search for Glory | 5 (D-260) | P | done | snow mana spent; search for one of several kinds of card |
 | Urza's Incubator | 4 (D-255) | T | done | "Creature spells of the chosen type cost {2} less to cast." (every player's spells) |
 | Well of Lost Dreams | 5 (D-257) | P | done | "you may pay {X}, where X is at most the life gained. If you do, draw X cards" |
 
-Golden after group 1: Valkyrie Harbinger, Angelic Accord and Griffin Aerie are supported; after group 2: Cosmos Elixir too; after group 3: Everflowing Chalice; after group 4: Urza's Incubator. After group 5 (seven independent groups built in parallel worktrees and reviewed twice, D-256 to D-264): nine more cards supported (golden acceptance 185 to 194); Nykthos, Shrine to Nyx (D-265) is the last of the group and is merged separately. Versions: `PARSER_VERSION` 82, `ENGINE_VERSION` 76.
+Golden after group 1: Valkyrie Harbinger, Angelic Accord and Griffin Aerie are supported; after group 2: Cosmos Elixir too; after group 3: Everflowing Chalice; after group 4: Urza's Incubator. After group 5 (seven independent groups built in parallel worktrees and reviewed twice, D-256 to D-264): ten more cards supported (golden acceptance 185 to 195, D-256 to D-265). Versions: `PARSER_VERSION` 82, `ENGINE_VERSION` 76.

@@ -68,6 +68,28 @@ describe('the cards are valid', () => {
   });
 });
 
+describe('a choice inside the effect is not the ability being optional (CR 603.2h)', () => {
+  test('doOnlyOnceEachTurn with a `may` effect on a non-optional ability is refused, not guessed', () => {
+    const card = syntheticCard(STEADY);
+    const bad = {
+      ...card,
+      faces: card.faces.map((face) => ({
+        ...face,
+        abilities: face.abilities.map((a) =>
+          a.kind === 'triggered' && a.optional !== true
+            ? { ...a, effect: { kind: 'may' as const, effect: a.effect } }
+            : a,
+        ),
+      })),
+    };
+    expect(
+      validateCard(bad)
+        .map((i) => i.message)
+        .join('|'),
+    ).toMatch(/needs the ability to be optional/);
+  });
+});
+
 describe('"that many" is the life gained', () => {
   test('a gain of 3 puts three +1/+1 counters on each creature you control', () => {
     const g = base().hand(MEND).seat(1).battlefield(HAWK).build();

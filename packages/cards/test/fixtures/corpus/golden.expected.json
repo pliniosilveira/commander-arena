@@ -2462,19 +2462,10 @@
     "84dc18f0-8225-4b40-a165-b10321e41769": {
       "name": "Nykthos, Shrine to Nyx",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{2}, {T}: Choose a color. Add an amount of mana of that color equal to your devotion to that color.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "a367bdc6"
+      "ast": "6f5208ff"
     },
     "84ee74e9-b3e3-4f47-8b3c-5c1a70f5cad6": {
       "name": "Seraph of the Sword",
@@ -3303,7 +3294,9 @@
           "closestRule": "effect.return"
         }
       ],
-      "reasons": ["layout \"meld\" is not supported"],
+      "reasons": [
+        "layout \"meld\" is not supported"
+      ],
       "ast": "0f907202"
     },
     "bd39e333-b0b8-4a85-8645-d77f4a3941db": {
@@ -4227,7 +4220,9 @@
           "closestRule": "ability.triggered"
         }
       ],
-      "reasons": ["layout \"meld\" is not supported"],
+      "reasons": [
+        "layout \"meld\" is not supported"
+      ],
       "ast": "82803556"
     },
     "f4ce6078-8c7b-4f68-b324-13130c63a983": {
@@ -4602,7 +4597,7 @@
       "total": 60
     },
     "acceptance": {
-      "supported": 194,
+      "supported": 195,
       "total": 224
     }
   }

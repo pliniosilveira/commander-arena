@@ -1064,6 +1064,16 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'a state trigger and a triggered mana ability have their own rules: no doOnlyOnceEachTurn',
           );
         }
+        // CR 603.2h: the action is "taken" when the player does what is asked. A choice inside the effect
+        // (a `may`, a payment of any amount) is not the ability's own `optional`, so the engine would count
+        // a declined or zero payment as taken: refused, never guessed (D-256).
+        if (a.optional !== true && hasPlayerChoiceStep(a.effect)) {
+          issue(
+            out,
+            `${path}.doOnlyOnceEachTurn`,
+            'doOnlyOnceEachTurn with a choice inside the effect (may, payAnyAmount) needs the ability to be optional',
+          );
+        }
       }
       // D-149: "This ability triggers only once each turn."
       if (a.oncePerTurn !== undefined) {
@@ -1300,6 +1310,13 @@ const HOOKS = {
   checkContinuous: checkContinuousEffect,
   checkEffectExt: checkDragonsEffect,
 };
+
+/** True if the effect, or a step of a top-level sequence, is a `may` or a `payAnyAmount` (a choice of the player inside the effect). */
+function hasPlayerChoiceStep(effect: Effect): boolean {
+  if (effect.kind === 'may' || effect.kind === 'payAnyAmount') return true;
+  if (effect.kind === 'sequence') return effect.effects.some(hasPlayerChoiceStep);
+  return false;
+}
 
 export function validateAbility(a: Ability): AstIssue[] {
   const out: AstIssue[] = [];
