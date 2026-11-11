@@ -1358,14 +1358,21 @@ export type Effect =
    * a reflexive triggered ability `reflexive` is created (as `reflexive` after a `may` effect is) in which `triggerDamage` ("that much") is the number
    * of times they paid. Nothing happens for 0. `paid` is the engine's own (the number paid, on the effect that runs once the payment is made) and is never
    * written in a card.
+   * D-257, "you may pay {X}, where X is less than or equal to the amount of life you gained. If you do, draw X cards": `symbol` may be `'1'`, a generic
+   * {1} paid X times, and `atMost` caps X (an amount read as the effect starts: `triggerDamage`, the life gained, or a number; the cap and the mana the controller
+   * could pay both limit the answer). With `ifPaid` instead of `reflexive` it is "If you do" (CR 608.2c): the effect runs as the next instruction of the same
+   * resolution when at least one was paid, and its `{ kind: 'x' }` amounts are the number paid (CR 107.3f); no reflexive ability is created. Exactly one of
+   * `reflexive` and `ifPaid`.
    */
   | {
       readonly kind: 'payAnyAmount';
-      readonly symbol: 'W' | 'U' | 'B' | 'R' | 'G' | 'C';
-      readonly reflexive: {
+      readonly symbol: 'W' | 'U' | 'B' | 'R' | 'G' | 'C' | '1';
+      readonly atMost?: Amount;
+      readonly reflexive?: {
         readonly targets?: readonly TargetSpec[];
         readonly effect: Effect;
       };
+      readonly ifPaid?: Effect;
       readonly paid?: number;
     }
   /**
@@ -4005,6 +4012,13 @@ export type Ability =
        * permanent that left and came back is a new object (CR 400.7).
        */
       readonly oncePerTurn?: true;
+      /**
+       * "Whenever you gain life, you may put that many +1/+1 counters on each creature you control. Do this only once each turn." (CR 603.2h, D-256):
+       * the ability triggers only if its controller has not yet taken the action it represents this turn. The action is taken as the ability resolves
+       * and its effect is begun: for an ability with "you may" only when the controller accepts, so a declined ability can trigger again the same
+       * turn, and an ability that triggers twice before the first resolves resolves twice. Not with `oncePerTurn`, which counts the triggering.
+       */
+      readonly doOnlyOnceEachTurn?: true;
       /**
        * "Whenever a Dragon you control enters, you may pay {R}. If you do, return this card from your graveyard to your hand." (CR 113.6b, 603.2, D-151):
        * the ability triggers while its card is in its owner's graveyard, and not on the battlefield. The card is "this" (`this` names it while it

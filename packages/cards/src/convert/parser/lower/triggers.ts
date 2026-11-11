@@ -15,10 +15,13 @@ import type {
 } from '@commander-arena/engine';
 import {
   type IrAbility,
+  type IrAmount,
+  type IrClause,
   type IrCondition,
   type IrModes,
   type IrNoun,
   type IrTrigger,
+  isIrAmount,
   nounsOfClause,
 } from '../ir/types';
 import { lowerCondition } from './conditions';
@@ -588,11 +591,14 @@ function liftNotEscaped(
  * engine's `oncePerTurn` of the ability before it. Only as the last sentence of an ability that has others, with nothing else in it; the
  * ability is then lowered without it. Null when the text puts it anywhere else (it is read and not run).
  */
-function takeOncePerTurn(ability: Triggered): { ability: Triggered; once: boolean } | null {
+function takeOncePerTurn(
+  ability: Triggered,
+): { ability: Triggered; once: boolean; doOnce: boolean } | null {
+  // "Do this only once each turn." (D-256, CR 603.2h) is read the same way as the sentence about the ability, and the engine's flag for it is another one.
   const isOnce = (s: Triggered['body']['sentences'][number]) =>
-    s.clauses.some((c) => c.verb === 'oncePerTurn');
+    s.clauses.some((c) => c.verb === 'oncePerTurn' || c.verb === 'doOnceEachTurn');
   const sentences = ability.body.sentences;
-  if (!sentences.some(isOnce)) return { ability, once: false };
+  if (!sentences.some(isOnce)) return { ability, once: false, doOnce: false };
   const last = sentences[sentences.length - 1];
   const [clause, ...more] = last?.clauses ?? [];
   if (
@@ -613,8 +619,56 @@ function takeOncePerTurn(ability: Triggered): { ability: Triggered; once: boolea
   }
   return {
     ability: { ...ability, body: { ...ability.body, sentences: sentences.slice(0, -1) } },
-    once: true,
+    once: clause.verb === 'oncePerTurn',
+    doOnce: clause.verb === 'doOnceEachTurn',
   };
+}
+
+/**
+ * "Whenever you gain life, you may put that many +1/+1 counters on each creature you control." (D-256, CR 119.9): in the ability of a life gain
+ * trigger, "that many" in the first instruction of the body is the life that was gained, which the engine reads as `triggerDamage` (the amount of the
+ * event that caused the trigger). One that follows any other instruction (mill two cards, then draw that many; discard a card, then draw that many) may count what
+ * that instruction did and is not changed, so the lowering refuses it. The engine's `validateCard` allows `triggerDamage` for this trigger.
+ */
+function lifeGainThatMany(ability: Triggered): Triggered {
+  const events = [ability.trigger, ...(ability.trigger.alternatives ?? [])];
+  if (ability.modal !== undefined || !events.every((e) => e.event === 'lifeGained')) return ability;
+  let counted = false;
+  const retarget = (amount: IrAmount): IrAmount => {
+    switch (amount.kind) {
+      case 'thisWay':
+        return amount.thatMany === true && !counted
+          ? { kind: 'triggerDamage', span: amount.span }
+          : amount;
+      case 'half':
+      case 'multiple':
+        return { ...amount, of: retarget(amount.of) };
+      case 'sum':
+        return { ...amount, of: amount.of.map(retarget) };
+      default:
+        return amount;
+    }
+  };
+  const sentences = ability.body.sentences.map((sentence) => ({
+    ...sentence,
+    clauses: sentence.clauses.map((clause): IrClause => {
+      const args = Object.fromEntries(
+        Object.entries(clause.args).map(([key, arg]) => [
+          key,
+          isIrAmount(arg)
+            ? retarget(arg)
+            : arg.kind === 'token'
+              ? { ...arg, count: retarget(arg.count) }
+              : arg,
+        ]),
+      );
+      // Only the first instruction of the body can name the life gained: after any clause a later "that many" may count what that clause did
+      // (cards milled, a card discarded, life gained by a second instruction), which this does not know, so it is left for the lowering to refuse.
+      counted = true;
+      return { ...clause, args };
+    }),
+  }));
+  return { ...ability, body: { ...ability.body, sentences } };
 }
 
 /**
@@ -645,7 +699,12 @@ export function lowerTriggered(
   // "This ability triggers only once each turn." (stage P33, D-150): the engine's `oncePerTurn`.
   const taken = takeOncePerTurn(lift.ability);
   if (taken === null) return failure(written);
-  const { ability, once } = taken;
+  const { once, doOnce } = taken;
+  // "put that many +1/+1 counters" of a life gain trigger (D-256): the life gained.
+  const ability = lifeGainThatMany(taken.ability);
+  // "Do this only once each turn." (D-256, CR 603.2h) is for an ability with one body: not a modal one, not a triggered mana ability, which the
+  // lowering of those does not carry the flag into.
+  if (doOnce && ability.modal !== undefined) return failure(written);
   const events = [ability.trigger, ...(ability.trigger.alternatives ?? [])];
   const triggers: Trigger[] = [];
   for (const event of events) {
@@ -654,6 +713,7 @@ export function lowerTriggered(
     triggers.push(lowered.value);
   }
   ctx.thatPlayer = thatPlayerOf(events);
+  ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.
   ctx.selfCast = triggers.every((t) => t.kind === 'castSpell' && t.self === true);
   // CR 603.4: the intervening "if" is checked as the event happens and again on resolution, so
@@ -710,6 +770,9 @@ export function lowerTriggered(
   }
   // "Whenever you tap a permanent for {C}, add an additional {C}." (stage P31, D-140, CR 605.1b): a triggered mana ability, whose
   // effect is the fixed mana and nothing else.
+  if (doOnce && triggers.some((t) => t.kind === 'tappedForMana' || t.kind === 'state')) {
+    return failure(ability);
+  }
   if (triggers.some((t) => t.kind === 'tappedForMana')) {
     return lowerTappedForMana(ability, triggers, interveningIf);
   }
@@ -721,6 +784,7 @@ export function lowerTriggered(
     ...(interveningIf === undefined ? [] : (['trigger:interveningIf'] as const)),
     ...(triggerCondition === undefined ? [] : (['trigger:triggerCondition'] as const)),
     ...(once ? (['ability:oncePerTurn'] as const) : []),
+    ...(doOnce ? (['ability:doOnlyOnceEachTurn'] as const) : []),
     ...(foldedCounters ? (['selector:hasCounter'] as const) : []),
     // D-135: "enters untapped" and the zones a permanent left the battlefield for.
     ...(triggers.some((t) => t.kind === 'entersBattlefield' && t.tapped !== undefined)
@@ -795,6 +859,7 @@ export function lowerTriggered(
         ...(interveningIf === undefined ? {} : { interveningIf }),
         ...(triggerCondition === undefined ? {} : { triggerCondition }),
         ...(once ? { oncePerTurn: true as const } : {}),
+        ...(doOnce ? { doOnlyOnceEachTurn: true as const } : {}),
       })),
       rule: ability.trigger.rule,
     };
@@ -803,7 +868,8 @@ export function lowerTriggered(
     s.clauses.some((c) => c.condition?.test.kind === 'unlessPays');
   // "You may pay {4}. If you do, untap ~." (stage P21): the offer and what it buys are the engine's
   // `mayPay`, which asks its own question, so neither sentence is the ability's "you may".
-  const offerSentence = (s: Sentence) => s.clauses.some((c) => c.verb === 'pay');
+  const offerSentence = (s: Sentence) =>
+    s.clauses.some((c) => c.verb === 'pay' || c.verb === 'payXAtMost');
   const boughtSentence = (s: Sentence) => s.condition?.test.kind === 'didPrevious';
   // "You may discard a card. If you do, draw a card." and "You may exile it. When you do, ..." (stage P30, D-135): the offer is the
   // engine's `may` effect and what follows it is a `conditional` or a `reflexive`; neither sentence is the ability's "you may".
@@ -879,6 +945,7 @@ export function lowerTriggered(
       ...(interveningIf === undefined ? {} : { interveningIf }),
       ...(triggerCondition === undefined ? {} : { triggerCondition }),
       ...(once ? { oncePerTurn: true as const } : {}),
+      ...(doOnce ? { doOnlyOnceEachTurn: true as const } : {}),
       ...(ctx.usedGraveyardSource ? { functionsIn: 'graveyard' as const } : {}),
     })),
     rule: ability.trigger.rule,
@@ -973,6 +1040,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:exiledFromLibraryOrGraveyard',
   'trigger:castNth',
   'ability:oncePerTurn',
+  'ability:doOnlyOnceEachTurn',
   'condition:duringStep',
   'condition:chosenOption',
   'selector:attached',

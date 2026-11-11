@@ -507,6 +507,64 @@ function lowerPayAnyAmount(
   return { ok: true, value: [effect], rule: clause.rule };
 }
 
+/**
+ * "You may pay {X}, where X is less than or equal to the amount of life you gained. If you do, draw X cards." (D-257, CR 107.3f, 118.1, 608.2c): the
+ * offer and the sentence after it are one engine `payAnyAmount` of a generic {1} with a most (`atMost`, the life gained) and an "If you do" (`ifPaid`): the
+ * controller chooses X as the ability resolves, pays it, and when they paid at least one the instruction after runs at once with X the number paid, not as
+ * an ability of its own. Only in a life gain trigger, where the amount is known. The offer is one clause that "you may" made optional; the sentence after it
+ * is "If you do," and the last of the body. Null when the sentence is not such an offer; one that does not fit is refused, never guessed.
+ */
+function lowerPayXAtMost(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const [clause, ...more] = sentence.clauses;
+  if (clause?.verb !== 'payXAtMost') return null;
+  const next = sentences[i + 1];
+  const limit = clause.args.atMost;
+  if (
+    more.length > 0 ||
+    !clause.optional ||
+    clause.condition !== undefined ||
+    clause.duration !== undefined ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    !ctx.lifeGainTrigger ||
+    limit === undefined ||
+    !isIrAmount(limit) ||
+    next?.condition?.test.kind !== 'didPrevious' ||
+    next.instead === true ||
+    next.where !== undefined ||
+    next.reflexive === true ||
+    next.clauses.some((c) => c.optional) ||
+    i + 2 < sentences.length
+  ) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures(['effect:payAnyAmount', 'amount:triggerDamage', 'amount:x']);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const most = lowerAmount(limit, ctx, clause.rule);
+  if (!most.ok) return most;
+  // The X of the follow-up is the number paid, which this effect defines: the text of the ability has no X of its own to announce (CR 107.3f).
+  const usedX = ctx.usesX;
+  ctx.usesX = false;
+  const after = lowerClauses(next.clauses, ctx);
+  const readX = ctx.usesX;
+  ctx.usesX = usedX;
+  if (!after.ok) return after;
+  if (!readX) return refuse(next);
+  const effect: Effect = {
+    kind: 'payAnyAmount',
+    symbol: '1',
+    atMost: most.value,
+    ifPaid: oneEffect(after.value),
+  };
+  return { ok: true, value: [effect], rule: clause.rule };
+}
+
 /** The effects the engine's `may` wraps: the ones whose doing it can tell (`validateCard` refuses the others, D-135). */
 const MAY_KINDS: ReadonlySet<string> = new Set([
   // D-206 (CR 701.3): "you may attach it to target creature you control. If you do, ...".
@@ -1082,6 +1140,12 @@ function lowerStep(
     return { last: i };
   }
   // "You may pay any amount of {R}. When you do, it deals that much damage to any target." (stage P34, D-152, CR 603.12, 118.1).
+  const payX = lowerPayXAtMost(sentence, sentences, i, ctx);
+  if (payX !== null) {
+    if (!payX.ok) return stop(payX);
+    steps.push({ effects: payX.value, replaceable: false });
+    return { last: i + 1 };
+  }
   const payAny = lowerPayAnyAmount(sentence, sentences, i, ctx);
   if (payAny !== null) {
     if (!payAny.ok) return stop(payAny);

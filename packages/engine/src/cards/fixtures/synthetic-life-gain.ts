@@ -151,6 +151,93 @@ export const SYNTHETIC_LIFE_GAIN_LIST: readonly CardDefinition[] = [
     ],
     'Flying. Whenever you gain life, put a +1/+1 counter on this creature. Whenever you put one or more +1/+1 counters on this creature, draw a card. This ability triggers only once each turn.',
   ),
+  // "Whenever you gain life, you may put that many +1/+1 counters on each creature you control. Do this only once each turn." (D-256)
+  angel(
+    'SYNTHETIC Surge Paragon',
+    ['4', 'W', 'W'],
+    4,
+    6,
+    [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'lifeGained', who: 'you' },
+        optional: true,
+        effect: {
+          kind: 'addCounters',
+          objects: { kind: 'each', filter: { types: ['creature'], controller: 'you' } },
+          counter: '+1/+1',
+          count: { kind: 'triggerDamage' },
+        },
+        doOnlyOnceEachTurn: true,
+      },
+    ],
+    'Whenever you gain life, you may put that many +1/+1 counters on each creature you control. Do this only once each turn.',
+  ),
+  // The same without the question: "Whenever you gain life, put that many +1/+1 counters on this creature. Do this only once each turn."
+  angel(
+    'SYNTHETIC Steady Paragon',
+    ['3', 'W'],
+    2,
+    2,
+    [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'lifeGained', who: 'you' },
+        effect: {
+          kind: 'addCounters',
+          objects: THIS,
+          counter: '+1/+1',
+          count: { kind: 'triggerDamage' },
+        },
+        doOnlyOnceEachTurn: true,
+      },
+    ],
+    'Whenever you gain life, put that many +1/+1 counters on this creature. Do this only once each turn.',
+  ),
+  // "Whenever you gain life, put that many +1/+1 counters on each creature an opponent controls. Do this only once each turn." (D-256): with no such
+  // creature the effect does nothing, and the action still counts as taken.
+  angel(
+    'SYNTHETIC Idle Paragon',
+    ['3', 'W'],
+    2,
+    2,
+    [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'lifeGained', who: 'you' },
+        effect: {
+          kind: 'addCounters',
+          objects: { kind: 'each', filter: { types: ['creature'], controller: 'opponent' } },
+          counter: '+1/+1',
+          count: { kind: 'triggerDamage' },
+        },
+        doOnlyOnceEachTurn: true,
+      },
+    ],
+    'Whenever you gain life, put that many +1/+1 counters on each creature an opponent controls. Do this only once each turn.',
+  ),
+  // "Whenever you gain life, you may pay {X}, where X is less than or equal to the amount of life you gained. If you do, draw X cards." (D-257)
+  singleFace({
+    name: 'SYNTHETIC Deep Well',
+    manaCost: ['4'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText:
+      'Whenever you gain life, you may pay {X}, where X is less than or equal to the amount of life you gained. If you do, draw X cards.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'lifeGained', who: 'you' },
+        effect: {
+          kind: 'payAnyAmount',
+          symbol: '1',
+          atMost: { kind: 'triggerDamage' },
+          ifPaid: { kind: 'draw', player: YOU, count: { kind: 'x' } },
+        },
+      },
+    ],
+  }),
   // "Whenever you put one or more counters on a creature you control, you gain 1 life." (any kind, any creature of yours)
   angel(
     'SYNTHETIC Counter Admirer',

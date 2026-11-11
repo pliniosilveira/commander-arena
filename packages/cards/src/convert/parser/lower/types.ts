@@ -108,6 +108,8 @@ export interface LowerContext {
    * "discard any number of cards" discarded. The engine's `thisWay` names which.
    */
   thisWay: 'sacrificed' | 'discarded';
+  /** True in the body of a triggered ability whose every event is life being gained (D-256, CR 119.9): `triggerDamage` is the life gained. */
+  lifeGainTrigger: boolean;
   /**
    * What "it" and "that land" mean after a search (stage P36, D-178, CR 400.7j, 701.23): the reference of the noun the last search looked for, which
    * the engine's `moved` names (the cards that search put somewhere). Null before a search and after any other move, destroy or exile.
@@ -162,6 +164,7 @@ export function newContext(
     exiled: null,
     exiledFaceDown: false,
     thisWay: 'sacrificed',
+    lifeGainTrigger: false,
     searched: null,
     sacrificedRef: null,
     madeToken: null,

@@ -930,6 +930,14 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // D-151 (CR 701.4a): "Behold a Dragon".
       return beholdText(effect) ?? UNSAID;
     case 'payAnyAmount': {
+      // D-257 (CR 608.2c): "You may pay {X}, up to that much. If you do, draw X cards": no reflexive ability, the follow-up runs at once.
+      if (effect.ifPaid !== undefined) {
+        const follow = effectText(effect.ifPaid, ability, self, defs);
+        const pay =
+          effect.atMost === undefined ? 'You may pay {X}' : 'You may pay {X}, up to that much';
+        return follow === '' ? pay : `${pay}. If you do, ${lower(follow)}`;
+      }
+      if (effect.reflexive === undefined) return UNSAID;
       // D-151 (CR 118.1, 603.12): "You may pay any amount of {R}. When you do, it deals that much damage to any target".
       const inner = effectText(
         effect.reflexive.effect,

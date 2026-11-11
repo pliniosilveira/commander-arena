@@ -232,6 +232,12 @@ function walkEffect(
       // CR 702.21a: mana, life and discarding cards, no X (rules/pay-unless.ts, D-095).
       activationCostIssues(effect.cost, `${path}.cost`, out, ['mana', 'payLife', 'discard']);
       return;
+    case 'payAnyAmount':
+      // D-257: "If you do, draw X cards": held to the same rules as any effect (a reflexive ability's was not walked before and still is not).
+      if (effect.ifPaid !== undefined) {
+        walkEffect(effect.ifPaid, `${path}.then`, out, targets, moved, subject);
+      }
+      return;
     case 'mayPay':
       // CR 702.101a (D-120): paid as Ward's cost is (rules/pay-unless.ts): mana and life, no X.
       activationCostIssues(effect.cost, `${path}.cost`, out, ['mana', 'payLife']);
