@@ -436,6 +436,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chosenColor',
     // D-151: "Add two mana in any combination of colors."
     'anyCombination',
+    // "Choose a color. Add an amount of mana of that color equal to your devotion to that color."
+    'anyColorDevotion',
   ],
   manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife'],
   // D-139: `each`, "each player sacrifices all permanents they control that ..." (every permanent by its own controller).
@@ -1603,6 +1605,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   couldProduce: true,
   combination: true,
   anyCombination: true,
+  anyColorDevotion: true,
 };
 const COST_TABLE: KindTable<Cost['kind']> = {
   mana: true,

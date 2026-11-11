@@ -71,7 +71,7 @@ export function devotionSymbols(cost: readonly string[] | null, colors: readonly
 }
 
 /** CR 700.5: a player's devotion to the colors: their permanents' mana costs, as `derive` gives them now (CR 700.5a). */
-function devotionOf(state: GameState, seat: SeatId, colors: readonly Color[]): number {
+export function devotionOf(state: GameState, seat: SeatId, colors: readonly Color[]): number {
   let total = 0;
   for (const id of objectsInZone(state, 'battlefield')) {
     const obj = state.objects[id];

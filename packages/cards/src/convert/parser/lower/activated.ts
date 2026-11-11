@@ -170,9 +170,14 @@ function lowerManaAbility(
   ability: Activated,
   clauses: readonly IrClause[],
   faceTypes: readonly string[],
+  /** The sentence "Choose a color." came before (`lowerChosenColorDevotion`): the only place "that color" has a color to name. */
+  colorChosen = false,
 ): LowerResult<readonly Ability[]> | null {
   const [add, ...afterAdd] = clauses;
   const spec = add?.args.mana;
+  if (spec?.kind === 'manaSpec' && spec.what.kind === 'devotionToChosenColor' && !colorChosen) {
+    return failure(ability);
+  }
   // "Spend this mana only to cast an Angel spell." (stage P33, D-150): a sentence about the mana, not an instruction.
   const spendClauses = afterAdd.filter((c) => c.verb === 'spendOnly');
   const riderClauses = afterAdd.filter((c) => c.verb === 'spentRider');
@@ -259,6 +264,45 @@ function lowerManaAbility(
 }
 
 /**
+ * "{2}, {T}: Choose a color. Add an amount of mana of that color equal to your devotion to that color." (Nykthos, Shrine to Nyx; CR 605.3b, 700.5): the mana ability of the
+ * second sentence with the engine's `anyColorDevotion`, whose color the player chooses as it resolves (the first sentence says so, and makes no instruction of its own).
+ * Exactly these two sentences, each of one instruction. Null when the ability is not of this shape (the ordinary reading follows, which refuses "that color" with no color
+ * chosen before it).
+ */
+function lowerChosenColorDevotion(
+  ability: Activated,
+  faceTypes: readonly string[],
+): LowerResult<readonly Ability[]> | null {
+  const [first, second, ...more] = ability.body.sentences;
+  if (first === undefined || second === undefined || more.length > 0) return null;
+  const [choose, ...firstMore] = first.clauses;
+  const [add, ...secondMore] = second.clauses;
+  if (
+    choose === undefined ||
+    add === undefined ||
+    firstMore.length > 0 ||
+    secondMore.length > 0 ||
+    choose.verb !== 'chooseColor' ||
+    add.verb !== 'addMana' ||
+    add.args.mana?.kind !== 'manaSpec' ||
+    add.args.mana.what.kind !== 'devotionToChosenColor' ||
+    !plainClause(choose) ||
+    !plainClause(add) ||
+    first.condition !== undefined ||
+    first.where !== undefined ||
+    first.instead === true
+  ) {
+    return null;
+  }
+  return lowerManaAbility(
+    { ...ability, body: { ...ability.body, sentences: [second] } },
+    [add],
+    faceTypes,
+    true,
+  );
+}
+
+/**
  * "{T}: Add one mana of any color. If you control a creature with power 4 or greater, add two mana of any one color instead." (stage P32,
  * D-147, CR 605.3b, 608.2c, 614.1a): the mana ability of the first sentence with the engine's `instead`, the production the second
  * sentence says while its condition holds. Exactly these two sentences, each one instruction that adds mana and nothing else; the
@@ -283,6 +327,7 @@ function lowerManaInstead(
     one.verb !== 'addMana' ||
     other.verb !== 'addMana' ||
     spec?.kind !== 'manaSpec' ||
+    spec.what.kind === 'devotionToChosenColor' ||
     !plainClause(other) ||
     first.condition !== undefined ||
     first.where !== undefined ||
@@ -606,6 +651,8 @@ export function lowerActivated(
     clauses.some((c) => c.verb === 'addMana') &&
     !ability.costs.some((c) => c.kind === 'loyalty')
   ) {
+    const chosen = lowerChosenColorDevotion(ability, ctx.faceTypes);
+    if (chosen !== null) return chosen;
     const instead = lowerManaInstead(ability, ctx.faceTypes);
     if (instead !== null) return instead;
     const mana = lowerManaAbility(ability, clauses, ctx.faceTypes);
@@ -633,6 +680,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:manaSpendOnly',
   'ability:manaSpentRider',
   'manaProduction:anyCombination',
+  'manaProduction:anyColorDevotion',
   'ability:activateOnlyIf',
   'ability:costReducedIf',
   'ability:costReducedBy',

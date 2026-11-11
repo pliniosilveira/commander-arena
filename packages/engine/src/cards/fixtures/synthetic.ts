@@ -32,6 +32,7 @@ import { SYNTHETIC_COPY_LIST } from './synthetic-copies';
 import { SYNTHETIC_COST_LIST } from './synthetic-costs';
 import { SYNTHETIC_DAMAGE_ORDER_LIST } from './synthetic-damage-order';
 import { SYNTHETIC_DELAYED_RETURN_LIST } from './synthetic-delayed-return';
+import { SYNTHETIC_DEVOTION_MANA_LIST } from './synthetic-devotion-mana';
 import { SYNTHETIC_DIVIDE_LIST } from './synthetic-divide';
 import { SYNTHETIC_DOUBLING_LIST } from './synthetic-doubling';
 import { SYNTHETIC_DRAGONS_LIST } from './synthetic-dragons';
@@ -323,6 +324,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_ANGELS_SHAPES_LIST,
     ...SYNTHETIC_ANGELS_STATICS_LIST,
     ...SYNTHETIC_LIFE_GAIN_LIST,
+    ...SYNTHETIC_DEVOTION_MANA_LIST,
     ...SYNTHETIC_ATTACK_BATCH_LIST,
     ...SYNTHETIC_ENTERS_GROUP_LIST,
     ...SYNTHETIC_COMMANDER_TRIGGER_LIST,

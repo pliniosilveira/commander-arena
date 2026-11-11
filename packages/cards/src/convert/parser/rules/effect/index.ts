@@ -40,7 +40,7 @@ import { GAIN_RULES } from './gain';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
-import { EFFECT_ADD_ADDITIONAL_MANA, EFFECT_ADD_MANA } from './mana';
+import { EFFECT_ADD_ADDITIONAL_MANA, EFFECT_ADD_MANA, EFFECT_CHOOSE_COLOR } from './mana';
 import {
   type Clauses,
   DAMAGE_RECIPIENTS,
@@ -824,6 +824,8 @@ export const EFFECT_RULES = [
   EFFECT_UNTAP,
   EFFECT_ADD_ADDITIONAL_MANA,
   EFFECT_ADD_MANA,
+  // The sentence before "Add an amount of mana of that color equal to your devotion to that color" (Nykthos, Shrine to Nyx).
+  EFFECT_CHOOSE_COLOR,
   // Before `effect.player` and `effect.draw`: "you draw a card" is a prefix of the delayed draw (stage P26).
   ...DELAYED_RULES,
   EFFECT_PLAYER,

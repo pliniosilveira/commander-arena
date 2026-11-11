@@ -4153,3 +4153,12 @@ One section for the whole program, a block for each group. The real texts are in
 - Parser (stage P76): `condition.opponents-control-at-least` (`rules/condition/hofri.ts`), a plural phrase with no controller and no "other". Not `condition.opponent-controls-at-least` ("an opponent controls", one opponent, D-135).
 - Tests: `packages/engine/test/scenario-xx-enters-tapped-unless.test.ts` (the engine with a hand-written card), `packages/cards/test/convert-grammar-engine-p73.test.ts` (Turbulent Steppe from the text the owner supplied, not a Scryfall extraction).
 - Limits: the card is not in the golden corpus until the owner's `pnpm corpus:extract`; with more than two players the lands of all the opponents are counted together.
+
+## The Bruna deck (issue 5): Nykthos, Shrine to Nyx, "Choose a color. Add an amount of mana of that color equal to your devotion to that color" (branch `bruna-nykthos-shrine`)
+
+- CR: 605.1a, 605.3b (a mana ability does not use the stack: the color is chosen as it is activated and the mana is added at once), 700.5 (devotion), 105.1.
+- AST: the mana production `anyColorDevotion` (`ManaProduction`): one outcome per color of the five, with as many mana of it as the controller's devotion to it now. A color with no devotion is an empty outcome, so it is not offered; with no devotion at all the ability is not offered and a hand activation is refused. Only in a mana ability: an `addMana` effect with it is refused by the support check.
+- Rules: `rules/mana-outcomes.ts` (`plainOutcomes`), `rules/amounts.ts` (`devotionOf`, now exported); the planner, the legal actions and `activateManaAbility` read the outcomes as for `anyColor`. A hybrid symbol counts for each of its colors (CR 700.5 via `devotionSymbols`).
+- Parser: `effect.choose-color` ("choose a color", read only together with the sentence after it, `lowerChosenColorDevotion` in `lower/activated.ts`; anywhere else it is reported as `selector:colorChoice`), and the devotion wording inside `effect.add-mana` (IR `devotionToChosenColor`, refused in every lowering but that one).
+- Tests: `packages/engine/test/scenario-xx-devotion-mana.test.ts` (SYNTHETIC `synthetic-devotion-mana.ts`), `packages/cards/test/parser-p69-nykthos.test.ts`, `packages/cards/test/convert-grammar-engine-p69-nykthos.test.ts` (the real card of the golden corpus).
+- Limits: devotion is read before the costs of the ability are paid (no cost of such an ability changes devotion today); effects that raise devotion (Altar of the Pantheon) are still not built.

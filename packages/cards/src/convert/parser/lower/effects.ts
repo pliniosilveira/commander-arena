@@ -590,6 +590,9 @@ export function lowerMana(spec: IrManaSpec): ManaProduction {
       return { kind: 'commanderIdentity' };
     case 'chosenColor':
       return { kind: 'chosenColor' };
+    case 'devotionToChosenColor':
+      // CR 605.3b, 700.5: only after "Choose a color." in a mana ability (`lowerChosenColorDevotion`); the ordinary lowering of an instruction refuses it.
+      return { kind: 'anyColorDevotion' };
     case 'anyCombination':
       return { kind: 'anyCombination', count: spec.what.count };
     case 'combination':
@@ -648,6 +651,22 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
       rule: clause.rule,
     };
   },
+};
+
+/**
+ * "Choose a color." (CR 105.1, 605.3b): a color is chosen as the mana ability that says so resolves, which `lowerChosenColorDevotion` reads together with the sentence
+ * after it. Anywhere else the engine has no way to ask for a color while an instruction resolves, so it is reported, never guessed.
+ */
+const CHOOSE_COLOR: Lowering<IrClause, Effects> = {
+  head: 'chooseColor',
+  id: 'lower.choose-color',
+  needs: [],
+  lower: (clause) => ({
+    ok: false,
+    needs: ['selector:colorChoice'],
+    at: clause.span,
+    rule: clause.rule,
+  }),
 };
 
 function playerVerb(
@@ -1208,6 +1227,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   simple('transform'),
   REGENERATE,
   ADD_MANA,
+  CHOOSE_COLOR,
   playerVerb('draw'),
   playerVerb('discard'),
   playerVerb('gainLife'),
