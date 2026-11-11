@@ -621,8 +621,9 @@ function takeOncePerTurn(
 
 /**
  * "Whenever you gain life, you may put that many +1/+1 counters on each creature you control." (D-256, CR 119.9): in the ability of a life gain
- * trigger, "that many" that follows no instruction that sacrificed or discarded is the life that was gained, which the engine reads as `triggerDamage`
- * (the amount of the event that caused the trigger). Written the same way as "that much" is read; the engine's `validateCard` allows it for this trigger.
+ * trigger, "that many" in the first instruction of the body is the life that was gained, which the engine reads as `triggerDamage` (the amount of the
+ * event that caused the trigger). One that follows any other instruction (mill two cards, then draw that many; discard a card, then draw that many) may count what
+ * that instruction did and is not changed, so the lowering refuses it. The engine's `validateCard` allows `triggerDamage` for this trigger.
  */
 function lifeGainThatMany(ability: Triggered): Triggered {
   const events = [ability.trigger, ...(ability.trigger.alternatives ?? [])];
@@ -656,13 +657,9 @@ function lifeGainThatMany(ability: Triggered): Triggered {
               : arg,
         ]),
       );
-      // What a later "that many" can count: an instruction before it that sacrificed, or discarded any number of cards.
-      if (
-        clause.verb === 'sacrifice' ||
-        (clause.verb === 'discard' && 'anyNumber' in clause.args)
-      ) {
-        counted = true;
-      }
+      // Only the first instruction of the body can name the life gained: after any clause a later "that many" may count what that clause did
+      // (cards milled, a card discarded, life gained by a second instruction), which this does not know, so it is left for the lowering to refuse.
+      counted = true;
       return { ...clause, args };
     }),
   }));

@@ -958,7 +958,8 @@ function limitOncePerTurn(
       t.ability.doOnlyOnceEachTurn !== true ||
       t.source === null ||
       !state.turnLog.actionTaken.some(
-        (a) => a.object === t.source && a.abilityIndex === t.abilityIndex,
+        (a) =>
+          a.object === t.source && a.abilityIndex === t.abilityIndex && a.seat === t.controller,
       ),
   );
   if (!afterAction.some((t) => t.ability.oncePerTurn === true)) {

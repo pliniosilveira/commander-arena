@@ -194,6 +194,28 @@ export const SYNTHETIC_LIFE_GAIN_LIST: readonly CardDefinition[] = [
     ],
     'Whenever you gain life, put that many +1/+1 counters on this creature. Do this only once each turn.',
   ),
+  // "Whenever you gain life, put that many +1/+1 counters on each creature an opponent controls. Do this only once each turn." (D-256): with no such
+  // creature the effect does nothing, and the action still counts as taken.
+  angel(
+    'SYNTHETIC Idle Paragon',
+    ['3', 'W'],
+    2,
+    2,
+    [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'lifeGained', who: 'you' },
+        effect: {
+          kind: 'addCounters',
+          objects: { kind: 'each', filter: { types: ['creature'], controller: 'opponent' } },
+          counter: '+1/+1',
+          count: { kind: 'triggerDamage' },
+        },
+        doOnlyOnceEachTurn: true,
+      },
+    ],
+    'Whenever you gain life, put that many +1/+1 counters on each creature an opponent controls. Do this only once each turn.',
+  ),
   // "Whenever you gain life, you may pay {X}, where X is less than or equal to the amount of life you gained. If you do, draw X cards." (D-257)
   singleFace({
     name: 'SYNTHETIC Deep Well',

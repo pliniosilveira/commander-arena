@@ -1,7 +1,7 @@
 // Stage P69 (D-256, D-257): the Bruna deck program (issue 5), the cards that read the life they gained. The lines are the real Oracle text of the acceptance cards of
 // the golden corpus, with the nodes the grammar produces; the other lines are SYNTHETIC siblings and the near misses the grammar must not read.
 import { describe, expect, test } from 'vitest';
-import { dropped, readAll } from './parser-p5-helpers';
+import { dropped, read, readAll } from './parser-p5-helpers';
 
 const YOU = { kind: 'you' } as const;
 
@@ -93,6 +93,20 @@ describe('"that many" of a life gain trigger and "Do this only once each turn" (
     );
     expect(JSON.stringify(parsed.abilities)).toContain('"thisWay"');
     expect(JSON.stringify(parsed.abilities)).not.toContain('triggerDamage');
+  });
+
+  test('"that many" after any earlier quantity of the body is not the life gained (SYNTHETIC)', () => {
+    // Each of these gave "that many" a different meaning (the life gained) than the text has (the cards milled, the card discarded).
+    for (const text of [
+      'Whenever you gain life, mill two cards, then draw that many cards.',
+      'Whenever you gain life, you may discard a card. If you do, draw that many cards.',
+      'Whenever you gain life, draw a card, then put that many +1/+1 counters on ~.',
+      'Whenever you gain life, you gain 2 life. Put that many +1/+1 counters on ~.',
+      'Whenever you gain life, put a +1/+1 counter on ~ and draw that many cards.',
+    ]) {
+      const parsed = read(text, 'creature');
+      expect(JSON.stringify(parsed.abilities), text).not.toContain('triggerDamage');
+    }
   });
 });
 

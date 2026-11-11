@@ -95,7 +95,7 @@ describe('"you may pay {X}, where X is less than or equal to the amount of life 
     expect(d.max).toBe(3);
   });
 
-  test('X is the life gained after replacement (CR 119.3): a gain of 3 and 1 more is 4', () => {
+  test('X is the life gained after replacement (CR 119.9, 614.1): a gain of 3 and 1 more is 4', () => {
     const g = game(5, VITAL).build();
     cast(g, MEND);
     const d = g.state.pending;
