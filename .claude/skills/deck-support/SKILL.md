@@ -22,12 +22,12 @@ Do these in order and stop at the first that says no. Nothing here needs a clone
 
    | Day | Work only if the weekly use is below |
    | --- | --- |
-   | Monday | 15% |
-   | Tuesday | 25% |
-   | Wednesday | 55% |
-   | Thursday | 75% |
-   | Friday | 95% |
-   | Saturday, Sunday | always |
+   | Monday | 10% |
+   | Tuesday | 20% |
+   | Wednesday | 40% |
+   | Thursday | 60% |
+   | Friday | 80% |
+   | Saturday, Sunday | 100% (the whole week's budget) |
 
    If the use is at or above the limit, do nothing: stop silently (do not comment on the issue every time you poll; the label stays and a later run tries again). If there is no rate-limit event to read yet (they are written now and then, not on every turn: do one small unrelated call such as `get_session`, wait a moment and read again once), you cannot know the budget: do nothing, and leave **one** comment on the oldest ready issue (marker `<!-- deck-support-budget-unreadable -->`, not repeated if it is already there) saying the budget could not be read, so a silent failure does not stay hidden. Never guess a number. Read it again between the groups of a build (below) and stop cleanly when the day's limit is reached.
 3. Only now get the repository: the routine session has it attached as its source (the GitHub API of step 1 answers; it did not for a fresh scheduled session, which has no repository attached and cannot attach one), so clone it (`git clone https://github.com/pliniosilveira/commander-arena`, a push needs the credentials of the attached repository; use `add_repo` with `access: "push"` only if the tool exists and the push is refused), and read `AGENTS.md`, `docs/STATUS.md` and `docs/CARD_SUPPORT_PLAYBOOK.md`.
