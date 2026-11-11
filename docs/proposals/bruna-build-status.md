@@ -21,7 +21,7 @@ The running checklist of the deck program for `decks/bruna.txt`. One branch, one
 | Dawnbreak Reclaimer | | | open | |
 | Dismantling Wave | | | open | |
 | Entreat the Angels | | | open | Miracle (D-117 design, not built) |
-| Everflowing Chalice | | | open | |
+| Everflowing Chalice | 3 (D-254) | P | done | "enters with a charge counter on it for each time it was kicked" |
 | Heirloom Blade | | | open | |
 | Karoo | | | open | |
 | Keeper of the Accord | | | open | |
@@ -32,4 +32,4 @@ The running checklist of the deck program for `decks/bruna.txt`. One branch, one
 | Urza's Incubator | | | open | |
 | Well of Lost Dreams | | | open | |
 
-Golden after group 1: Valkyrie Harbinger, Angelic Accord and Griffin Aerie are supported; after group 2: Cosmos Elixir too. Versions: `PARSER_VERSION` 79, `ENGINE_VERSION` 74.
+Golden after group 1: Valkyrie Harbinger, Angelic Accord and Griffin Aerie are supported; after group 2: Cosmos Elixir too; after group 3: Everflowing Chalice. Versions: `PARSER_VERSION` 80, `ENGINE_VERSION` 75.

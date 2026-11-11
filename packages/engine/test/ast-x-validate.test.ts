@@ -163,7 +163,7 @@ describe('"enters with X counters"', () => {
       ],
     });
     expect(issues(bad)).toEqual([
-      'faces[0].abilities[0].replacement.count: counter count must be a positive integer, { kind: "x" } or a countOf',
+      'faces[0].abilities[0].replacement.count: counter count must be a positive integer, { kind: "x" }, { kind: "timesKicked" } or a countOf',
     ]);
   });
 });

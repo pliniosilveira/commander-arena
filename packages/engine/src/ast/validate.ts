@@ -251,11 +251,15 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       // D-131: a `countOf` is "a +1/+1 counter on it for each Zombie card in your graveyard".
       if (kindOf(r.count) === 'countOf') {
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
-      } else if (kindOf(r.count) !== 'x' && (!isCount(r.count) || r.count < 1)) {
+      } else if (
+        kindOf(r.count) !== 'x' &&
+        kindOf(r.count) !== 'timesKicked' &&
+        (!isCount(r.count) || r.count < 1)
+      ) {
         issue(
           out,
           `${path}.count`,
-          'counter count must be a positive integer, { kind: "x" } or a countOf',
+          'counter count must be a positive integer, { kind: "x" }, { kind: "timesKicked" } or a countOf',
         );
       }
       // CR 702.138c (D-124): "escapes with" is the only conditional form; it needs an escape cost (`checkCastFace`).

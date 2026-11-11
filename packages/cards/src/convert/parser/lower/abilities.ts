@@ -679,6 +679,20 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       }
       return built({ kind: 'entersWithCounters', counter: counter.name, count: counted.value });
     }
+    // "enters with a charge counter on it for each time it was kicked" (D-254, CR 702.33c, 614.1c): the kicks of the spell it came from.
+    if (count?.kind === 'timesKicked') {
+      const blocked = gate(ability, [
+        'ability:replacement',
+        'replacement:entersWithCounters',
+        'amount:timesKicked',
+      ]);
+      if (blocked !== null) return blocked;
+      return built({
+        kind: 'entersWithCounters',
+        counter: counter.name,
+        count: { kind: 'timesKicked' },
+      });
+    }
     if (count?.kind !== 'number') return failure(ability);
     const blocked = gate(ability, ['ability:replacement', 'replacement:entersWithCounters']);
     if (blocked !== null) return blocked;

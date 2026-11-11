@@ -15,7 +15,7 @@ import {
   keywordKind,
   SIMPLE_KEYWORDS,
 } from '../src/convert/parser/rules/keyword/vocabulary';
-import { dropped, type FaceType, readAll, spellEffect } from './parser-p5-helpers';
+import { dropped, type FaceType, read, readAll, spellEffect } from './parser-p5-helpers';
 
 const keyword = (k: object): Ability => ({ kind: 'keyword', keyword: k }) as Ability;
 const abilities = (text: string, type: FaceType = 'creature') => readAll(text, type).abilities;
@@ -268,12 +268,21 @@ describe('"for each time it was kicked" (CR 702.33c, the engine\'s timesKicked)'
     expect(dropped(text, 'sorcery').reason).toBe('unrecognised');
   });
 
-  test('"enters with a counter for each time it was kicked" is a replacement the engine has no count for', () => {
-    // The replacement's count is a number or X (D-103); a trigger would put the counter on later.
-    expect(
-      dropped('~ enters with a charge counter on it for each time it was kicked.', 'artifact')
-        .reason,
-    ).toBe('unrecognised');
+  test('"enters with a counter for each time it was kicked" is a replacement with the count `timesKicked` (D-254)', () => {
+    // The replacement's count is a number, X or the kicks (D-103, D-254); a trigger would put the counter on later.
+    const parsed = read(
+      'Multikicker {1}\n~ enters with a charge counter on it for each time it was kicked.',
+      'artifact',
+    );
+    expect(parsed.unparsed).toEqual([]);
+    expect(parsed.abilities).toContainEqual({
+      kind: 'replacement',
+      replacement: {
+        kind: 'entersWithCounters',
+        counter: 'charge',
+        count: { kind: 'timesKicked' },
+      },
+    });
   });
 });
 

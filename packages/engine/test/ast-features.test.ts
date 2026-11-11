@@ -122,6 +122,8 @@ describe('the dimensions', () => {
       // D-151: what entered this turn, damage dealt this turn.
       'enteredThisTurn',
       'playerDealtDamage',
+      // D-252: "if you gained 3 or more life this turn".
+      'lifeGainedThisTurn',
       'chosenOption',
       // D-151: Dethrone's "attacking the player with the most life", Pack tactics' total power.
       'attackingMostLife',

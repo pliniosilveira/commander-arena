@@ -6,6 +6,12 @@ Written by the deck-support routine for issue 5 (the Bruna deck). Nothing of it 
 
 Cards: Bruna, the Fading Light and Gisela, the Broken Blade (the deck's commander and a card of it); their melded back face, Brisela, Voice of Nightmares, is not in the deck's list.
 
+The text of the melded face was supplied by the owner in chat (not checked against Scryfall, not in the golden corpus):
+
+- Brisela, Voice of Nightmares: Legendary Creature, Eldrazi Angel, 9/10. Flying, first strike, vigilance, lifelink. "Your opponents can't cast spells with mana value 3 or less."
+
+The last line needs a casting restriction on opponents by mana value, which may exist already (to be checked when the proposal is worked); the four keywords exist. By CR 202.3c its mana value is the combined mana cost of the two front faces ({5}{W}{W} and {2}{W}{W}, so 11).
+
 - CR 701.42a (Meld): meld puts two cards of a meld pair onto the battlefield with their back faces up and combined; the result is one object represented by two cards.
 - CR 701.42b, 701.42c: only the two cards of one pair can be melded; a token or a non-meld card can't; what can't be melded stays where it is.
 - CR 712.4, 712.4a, 712.4b, 712.8b, 712.14c: a meld card has a front face and half of an oversized back face; the back faces count only for the melded permanent; on the stack only the front face counts; the two cards enter as a single permanent.

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 79,
+  "parserVersion": 80,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -307,19 +307,10 @@
     "0a79237e-0811-4a8a-bd4d-db3ca91bff22": {
       "name": "Everflowing Chalice",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "~ enters with a charge counter on it for each time it was kicked.",
-          "reason": "unrecognised",
-          "slot": "replacement",
-          "closestRule": "replacement.enters-with-counters"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d5d50a27"
+      "ast": "05b3bde9"
     },
     "0acc9372-58b4-43bf-ab82-1f95831c81d4": {
       "name": "Nesting Dragon",
@@ -3383,9 +3374,7 @@
           "closestRule": "effect.return"
         }
       ],
-      "reasons": [
-        "layout \"meld\" is not supported"
-      ],
+      "reasons": ["layout \"meld\" is not supported"],
       "ast": "0f907202"
     },
     "bd39e333-b0b8-4a85-8645-d77f4a3941db": {
@@ -4335,9 +4324,7 @@
           "closestRule": "ability.triggered"
         }
       ],
-      "reasons": [
-        "layout \"meld\" is not supported"
-      ],
+      "reasons": ["layout \"meld\" is not supported"],
       "ast": "82803556"
     },
     "f4ce6078-8c7b-4f68-b324-13130c63a983": {
@@ -4721,7 +4708,7 @@
       "total": 60
     },
     "acceptance": {
-      "supported": 183,
+      "supported": 184,
       "total": 224
     }
   }

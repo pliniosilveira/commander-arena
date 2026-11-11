@@ -144,8 +144,8 @@ const KICKER: readonly Line[] = [
   {
     kind: 'creature',
     text: 'Kicker {1}\n~ enters with a charge counter on it for each time it was kicked.',
-    expect: no('for each time it was kicked.', 'replacement.enters-with-counters'),
-    note: 'backlog: 1 card',
+    expect: OK,
+    note: 'backlog: 1 card (read since D-254)',
   },
 ];
 

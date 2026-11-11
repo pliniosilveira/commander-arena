@@ -74,6 +74,7 @@ import {
 } from './enters-keywords';
 import { canReveal, revealChoices, revealEvents } from './enters-reveal';
 import { applyGraveyardRider } from './graveyard-play';
+import { timesKickedOf } from './kicks';
 import { becomePrepared, dropPrepareCopy } from './prepare';
 import { countMatching } from './select';
 import { sourceInfo } from './source-info';
@@ -542,8 +543,15 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     const escaped = old.zone === 'stack' && old.stack?.alt === 'escape';
     // D-131: "a +1/+1 counter on it for each Zombie card in your graveyard" counts as it enters, for the player who
     // controls it, looking at the game without it (the card has already left its old zone).
-    counters = entersWithCounters(abilities, counters, castX, escaped, (a) =>
-      countMatching(next, a.filter, { controller: enterController, source: newId }),
+    // D-254, CR 702.33c: "for each time it was kicked" reads the kicks of the spell it resolved from (0 for a card put onto the battlefield by an effect).
+    const kicks = old.zone === 'stack' && old.stack?.kind === 'spell' ? timesKickedOf(old) : 0;
+    counters = entersWithCounters(
+      abilities,
+      counters,
+      castX,
+      escaped,
+      (a) => countMatching(next, a.filter, { controller: enterController, source: newId }),
+      kicks,
     );
     // CR 714.3a: a Saga enters with a lore counter.
     counters = entersAsSaga(

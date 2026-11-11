@@ -90,3 +90,29 @@ describe('"Otherwise," after a conditional instruction (D-253)', () => {
     ).toBeDefined();
   });
 });
+
+describe('"enters with a counter on it for each time it was kicked" (D-254)', () => {
+  test('Everflowing Chalice', () => {
+    const parsed = readAll(
+      'Multikicker {2}\n~ enters with a charge counter on it for each time it was kicked.\n{T}: Add {C} for each charge counter on ~.',
+      'artifact',
+    );
+    expect(parsed.abilities).toContainEqual({
+      kind: 'replacement',
+      replacement: {
+        kind: 'entersWithCounters',
+        counter: 'charge',
+        count: { kind: 'timesKicked' },
+      },
+    });
+  });
+
+  test('two counters for each time is not read (SYNTHETIC)', () => {
+    expect(
+      dropped(
+        'Multikicker {2}\n~ enters with two charge counters on it for each time it was kicked.',
+        'artifact',
+      ).reason,
+    ).toBeDefined();
+  });
+});

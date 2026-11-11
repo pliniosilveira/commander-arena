@@ -110,13 +110,21 @@ export function entersWithCounters(
   escaped = false,
   /** Reads a `countOf` as the permanent enters (D-131): "for each Zombie card in your graveyard". */
   counted: (count: CountAmount) => number = () => 0,
+  /** The times the spell the permanent came from was kicked (D-254, CR 702.33c): "for each time it was kicked". 0 for a permanent that was not cast. */
+  kicks = 0,
 ): Record<string, number> {
   let counters: Record<string, number> = { ...base };
   for (const r of replacementsOf(abilities)) {
     if (r.kind === 'entersWithCounters') {
       if (r.ifEscaped === true && !escaped) continue;
       const count =
-        typeof r.count === 'number' ? r.count : r.count.kind === 'countOf' ? counted(r.count) : x;
+        typeof r.count === 'number'
+          ? r.count
+          : r.count.kind === 'countOf'
+            ? counted(r.count)
+            : r.count.kind === 'timesKicked'
+              ? kicks
+              : x;
       if (count > 0) counters = { ...counters, [r.counter]: (counters[r.counter] ?? 0) + count };
     }
   }

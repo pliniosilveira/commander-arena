@@ -346,6 +346,27 @@ export const SYNTHETIC_KEYWORD_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Multikicker {1}. ~ enters with a charge counter on it for each time it was kicked." (D-254, the shape of Everflowing Chalice)
+  singleFace({
+    name: 'SYNTHETIC Kicked Chalice',
+    manaCost: ['0'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText:
+      'Multikicker {1}. This artifact enters with a charge counter on it for each time it was kicked.',
+    abilities: [
+      { kind: 'keyword', keyword: { kind: 'multikicker', cost: [mana('1')] } },
+      {
+        kind: 'replacement',
+        replacement: {
+          kind: 'entersWithCounters',
+          counter: 'charge',
+          count: { kind: 'timesKicked' },
+        },
+      },
+    ],
+  }),
   singleFace({
     name: 'SYNTHETIC Volley Barrage',
     manaCost: ['R'],

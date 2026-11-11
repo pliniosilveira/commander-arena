@@ -174,10 +174,13 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters the battlefield with X +1/+1 counters on it.',
     '~ enters with a +1/+1 counter on it for each Zombie card in your graveyard.',
     '~ enters with a +1/+1 counter on it for each creature you control.',
+    // Stage P69 (D-254): Everflowing Chalice.
+    '~ enters with a +1/+1 counter on it for each time it was kicked.',
+    '~ enters with a charge counter on it for each time it was kicked.',
   ],
   rejects: [
     '~ enters with two +1/+1 counters on it for each creature you control.',
-    '~ enters with a +1/+1 counter on it for each time it was kicked.',
+    '~ enters with two +1/+1 counters on it for each time it was kicked.',
     '~ enters with X +1/+1 counters on it for each creature you control.',
     '~ enters with a +1/+1 counter on it for each creature.',
     '~ enters with Y +1/+1 counters on it.',

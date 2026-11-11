@@ -3356,7 +3356,14 @@ export type Replacement =
   | {
       readonly kind: 'entersWithCounters';
       readonly counter: string;
-      readonly count: number | { readonly kind: 'x' } | CountAmount;
+      /**
+       * `timesKicked` (D-254, CR 702.33c, 614.1c): "enters with a charge counter on it for each time it was kicked", the kicks of the spell the permanent came from.
+       */
+      readonly count:
+        | number
+        | { readonly kind: 'x' }
+        | { readonly kind: 'timesKicked' }
+        | CountAmount;
       /**
        * "This permanent escapes with a +1/+1 counter" (CR 702.138c, D-124): the counters are put on it only if it
        * escaped, i.e. its spell was cast from a graveyard for its escape cost. Only on a face with an escape cost.
