@@ -1,4 +1,4 @@
-// Arch of Orazca (the Bruna deck, issue 5, D-ASCEND): the REAL card of the owner's golden corpus, read through the grammar only and played through applyAction. Ascend
+// Arch of Orazca (the Bruna deck, issue 5, D-264): the REAL card of the owner's golden corpus, read through the grammar only and played through applyAction. Ascend
 // gives the city's blessing at ten permanents; "{5}, {T}: Draw a card. Activate only if you have the city's blessing." asks for it. Stand-ins are SYNTHETIC (named so).
 import { readFileSync } from 'node:fs';
 import type { CardDefinition } from '@commander-arena/engine';

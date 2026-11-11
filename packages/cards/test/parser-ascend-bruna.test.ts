@@ -1,6 +1,8 @@
-// Ascend and the city's blessing (D-ASCEND), the Bruna deck program (issue 5). The lines are the real Oracle text of Arch of Orazca (names replaced by ~) with the nodes the
+// Ascend and the city's blessing (D-264), the Bruna deck program (issue 5). The lines are the real Oracle text of Arch of Orazca (names replaced by ~) with the nodes the
 // grammar produces; the other lines are SYNTHETIC siblings and the near misses the grammar must not read.
 import { describe, expect, test } from 'vitest';
+import { parseOnly, spellCard } from './convert-grammar-helpers';
+import { syntheticCard } from './convert-helpers';
 import { dropped, readAll } from './parser-p5-helpers';
 
 const BLESSING_YOU = {
@@ -87,6 +89,33 @@ describe('"you have the city’s blessing" as a condition (CR 702.131c)', () => 
       "{T}: You gain 1 life. Activate only if you have the city's blessing for the rest of the game.",
     ]) {
       expect(dropped(text, 'artifact').reason, text).toBeDefined();
+    }
+  });
+});
+
+describe('Ascend on an instant or a sorcery (CR 702.131a) is refused, not accepted and ignored', () => {
+  for (const type of ['Instant', 'Sorcery'] as const) {
+    test(`${type}: the card is unsupported (SYNTHETIC)`, () => {
+      const imported = parseOnly(
+        spellCard('SYNTHETIC Ascend Spell', 'Ascend\nDraw two cards.', { type }),
+      );
+      expect(imported.support.status).toBe('unsupported');
+      expect(imported.support.reasons.join(' ')).toContain('Ascend');
+    });
+  }
+
+  test('on a permanent of any type it is still read (SYNTHETIC)', () => {
+    for (const typeLine of ['Artifact', 'Enchantment', 'Land', 'Creature — Human']) {
+      const imported = parseOnly(
+        syntheticCard({
+          name: 'SYNTHETIC Ascend Permanent',
+          typeLine,
+          oracleText: 'Ascend',
+          manaCost: typeLine === 'Land' ? '' : '{2}',
+          ...(typeLine.startsWith('Creature') ? { power: '1', toughness: '1' } : {}),
+        }),
+      );
+      expect(imported.support.status, typeLine).toBe('supported');
     }
   });
 });

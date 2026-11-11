@@ -28,7 +28,7 @@ export const ENERGY_TITLE =
 export const MONARCH_TITLE =
   'The monarch. Draws a card at the beginning of their own end step. A creature that deals combat damage to the monarch makes its controller the monarch (CR 725.2).';
 
-/** The city's blessing (CR 702.131c, D-ASCEND): a designation with no effect of its own; what reads it, for the chip's tooltip. */
+/** The city's blessing (CR 702.131c, D-264): a designation with no effect of its own; what reads it, for the chip's tooltip. */
 export const BLESSING_TITLE =
   'The city’s blessing. Ascend gave it for the rest of the game; it does nothing by itself, other abilities ask whether a player has it (CR 702.131).';
 

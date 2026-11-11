@@ -1,19 +1,23 @@
-// Ascend on a permanent and the city's blessing (CR 702.131, D-ASCEND): the blessing is a designation a player has for the rest of the game, any
+// Ascend on a permanent and the city's blessing (CR 702.131, D-264): the blessing is a designation a player has for the rest of the game, any
 // number of players at once; Ascend on a permanent is a static ability that gives it to the controller as soon as they control ten or more
 // permanents. "Activate only if you have the city's blessing" reads it.
 // Pins: CR 702.131b (Ascend on a permanent: any time you control ten or more permanents and you don't have the blessing, you get it for the
 // rest of the game), 702.131c (a designation with no meaning of its own; any number of players may have it), 702.131d (continuous effects are
-// reapplied before triggers are checked), 704.3 (it is checked with the state-based actions: after every action), 602.5b (a restriction on an
-// ability's use), 110.2 (permanents you control).
+// reapplied before triggers are checked), 704.3 (it is checked with the state-based actions: after every action), 602.5 (activating an
+// ability that has a restriction on its use), 613.1f (layer 6: an object that lost its abilities has no Ascend), 702.26b (a phased-out permanent is
+// treated as though it does not exist), 111.1 (a token is a permanent), 110.2 (permanents you control).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-ascend.ts) or real fixtures.
 import { describe, expect, test } from 'vitest';
 import { getView, isFeatureSupported, syntheticCard, validateCard } from '../src/index';
+import { gainCitysBlessings } from '../src/rules/city-blessing';
+import { phaseOut } from '../src/rules/phasing';
 import { scenario } from '../src/testing/index';
 
 const BANNER = 'SYNTHETIC Ascend Banner'; // artifact with Ascend
 const SPRING = 'SYNTHETIC Blessed Spring'; // land: Ascend, {T}: {C}, {5},{T}: draw, only with the blessing
 const GATE = 'SYNTHETIC Blessing Gate'; // artifact: {T}: gain 1 life, only with the blessing (no Ascend)
 const ENVY = 'SYNTHETIC Envious Gate'; // artifact: {T}: gain 1 life, only if an opponent has the blessing
+const BEAR = 'SYNTHETIC Ascend Bear'; // creature with Ascend
 const FILLER = ['Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains'] as const;
 
 type Builder = ReturnType<typeof scenario>;
@@ -81,7 +85,7 @@ describe('Ascend on a permanent (CR 702.131b)', () => {
     g.expect.citysBlessing(1, false); // ten permanents, but none with Ascend
   });
 
-  test('tokens and every type of permanent count', () => {
+  test('every type of permanent counts: a creature, an artifact and lands', () => {
     const g = base((b) =>
       b.hand('Forest').battlefield(BANNER, 'Grizzly Bears').battlefield('Forest', { count: 7 }),
     )
@@ -89,6 +93,79 @@ describe('Ascend on a permanent (CR 702.131b)', () => {
       .build();
     g.act(0).playLand('Forest');
     g.expect.citysBlessing(0, true);
+  });
+
+  test('tokens count (CR 111.1): thirteen Zombie tokens bring seven permanents to the blessing', () => {
+    const g = base((b) =>
+      b.hand('SYNTHETIC Army Muster').battlefield(BANNER).battlefield('Swamp', { count: 7 }),
+    )
+      .at('precombatMain')
+      .build();
+    g.expect.citysBlessing(0, false);
+    g.act(0).cast('SYNTHETIC Army Muster', { pay: true });
+    g.passAll();
+    g.expect.citysBlessing(0, true);
+  });
+
+  test('an Ascend permanent the opponent controls gives nothing to the player who controls only other permanents', () => {
+    const g = base((b) => b.battlefield('Forest', { count: 12 }))
+      .seat(1)
+      .battlefield(BANNER)
+      .at('precombatMain')
+      .build();
+    expect(gainCitysBlessings(g.state)).toBeNull();
+    g.expect.citysBlessing(0, false);
+  });
+
+  test('"you control" is read through controllerOf: Ascend under the opponent counts for the opponent', () => {
+    const g = base((b) =>
+      b.battlefield(BANNER, { controller: 1 }).battlefield('Forest', { count: 10 }),
+    )
+      .seat(1)
+      .battlefield('Island', { count: 9 })
+      .at('precombatMain')
+      .build();
+    const r = gainCitysBlessings(g.state);
+    expect(r?.events).toEqual([{ kind: 'citysBlessingGained', seat: 1 }]);
+    expect(r?.state.seats[0]?.citysBlessing).toBeUndefined();
+    expect(r?.state.seats[1]?.citysBlessing).toBe(true);
+  });
+
+  test('a permanent that lost its abilities (layer 6) is not an Ascend source (CR 613.1f)', () => {
+    const g = base((b) =>
+      b
+        .hand('Forest', 'SYNTHETIC Dress Down')
+        .battlefield(BEAR, 'Island', 'Island')
+        .battlefield('Forest', { count: 6 }),
+    )
+      .at('precombatMain')
+      .build();
+    g.expect.citysBlessing(0, false);
+    g.act(0).cast('SYNTHETIC Dress Down', { pay: true, targets: [BEAR] });
+    g.passAll();
+    g.act(0).playLand('Forest'); // ten permanents, the only Ascend is gone
+    g.expect.citysBlessing(0, false);
+    g.expect.noEvent({ kind: 'citysBlessingGained' });
+  });
+
+  test('the same board with the ability intact gets the blessing (control of the layer 6 test)', () => {
+    const g = base((b) =>
+      b.hand('Forest').battlefield(BEAR, 'Island', 'Island').battlefield('Forest', { count: 6 }),
+    )
+      .at('precombatMain')
+      .build();
+    g.act(0).playLand('Forest');
+    g.expect.citysBlessing(0, true);
+  });
+
+  test('a phased-out Ascend permanent does not count and is not a source (CR 702.26b)', () => {
+    const g = base((b) => b.battlefield(BEAR).battlefield('Forest', { count: 10 }))
+      .at('precombatMain')
+      .build();
+    expect(gainCitysBlessings(g.state)?.events).toEqual([{ kind: 'citysBlessingGained', seat: 0 }]);
+    const phased = phaseOut(g.state, [g.id(BEAR)]);
+    expect(phased.objects[g.id(BEAR)]?.zone).toBe('phased');
+    expect(gainCitysBlessings(phased)).toBeNull();
   });
 
   test('both players can have it at the same time (CR 702.131c)', () => {
@@ -146,7 +223,7 @@ describe('Ascend on a permanent (CR 702.131b)', () => {
   });
 });
 
-describe('"Activate only if you have the city’s blessing" (CR 702.131c, 602.5b)', () => {
+describe('"Activate only if you have the city’s blessing" (CR 702.131c, 602.5)', () => {
   test('without the blessing the ability is illegal, with it it draws a card', () => {
     const no = base((b) => b.battlefield(GATE))
       .at('precombatMain')
@@ -209,8 +286,24 @@ describe('the engine knows the keyword and the condition', () => {
   test('the features are supported and the cards validate', () => {
     expect(isFeatureSupported('keyword:ascend')).toBe(true);
     expect(isFeatureSupported('condition:playerHasDesignation')).toBe(true);
-    for (const name of [BANNER, SPRING, GATE, ENVY]) {
+    for (const name of [BANNER, BEAR, SPRING, GATE, ENVY]) {
       expect(validateCard(syntheticCard(name)), name).toEqual([]);
+    }
+  });
+});
+
+describe('Ascend on an instant or a sorcery (CR 702.131a) is refused', () => {
+  test('the validator refuses the keyword on a spell face, even marked supported', () => {
+    const banner = syntheticCard(BANNER);
+    const face = banner.faces[0];
+    if (face === undefined) throw new Error('no face');
+    for (const type of ['instant', 'sorcery'] as const) {
+      const spell = {
+        ...banner,
+        faces: [{ ...face, types: [type] }],
+      };
+      const issues = validateCard(spell);
+      expect(issues.map((i) => i.message).join(' '), type).toContain('Ascend');
     }
   });
 });

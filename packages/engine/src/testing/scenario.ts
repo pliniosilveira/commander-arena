@@ -46,7 +46,7 @@ export interface ScenarioBuilder {
   handSizeMax(max: number): ScenarioBuilder;
   /** The Ring has tempted the seat this many times (CR 701.54c, D-196): it has the emblem and its abilities of that level. */
   ring(tempted: number): ScenarioBuilder;
-  /** The seat has the city's blessing (CR 702.131c, D-ASCEND). */
+  /** The seat has the city's blessing (CR 702.131c, D-264). */
   citysBlessing(): ScenarioBuilder;
   hand(name: string, options?: PlaceOptions): ScenarioBuilder;
   hand(...names: string[]): ScenarioBuilder;

@@ -110,7 +110,7 @@ export function checkStateBasedActions(input: GameState): SbaResult {
     };
   }
 
-  // CR 702.131b (D-ASCEND): Ascend, "any time you control ten or more permanents", is checked here; the next pass goes on with the new state.
+  // CR 702.131b (D-264): Ascend, "any time you control ten or more permanents", is checked here; the next pass goes on with the new state.
   const blessed = gainCitysBlessings(state);
   if (blessed !== null) {
     return { state: blessed.state, events: blessed.events, performed: true, decision: null };

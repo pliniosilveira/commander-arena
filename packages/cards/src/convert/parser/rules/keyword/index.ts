@@ -136,7 +136,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Devour 2',
     'Flying, devour 2',
     'Trample, riot',
-    // D-ASCEND (CR 702.131b): Ascend on a permanent.
+    // D-264 (CR 702.131b): Ascend on a permanent.
     'Ascend',
     'ascend',
     'Affinity for artifacts',

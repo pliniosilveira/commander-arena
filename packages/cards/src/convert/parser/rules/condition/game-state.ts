@@ -52,7 +52,7 @@ const DESIGNATION =
  * `condition.designation`: "you're the monarch", "you are the monarch", "an opponent is the monarch", "a player is
  * the monarch", and the negatives "you're not the monarch", "you aren't the monarch" (CR 725.1: the monarch is a
  * designation a player has, not an object; only one player has it, CR 725.3). Also the city's blessing (CR 702.131c,
- * D-ASCEND: a designation any number of players may have): "you have the city's blessing", "you don't have the city's
+ * D-264: a designation any number of players may have): "you have the city's blessing", "you don't have the city's
  * blessing", "an opponent has the city's blessing", "a player has the city's blessing". "You" is the controller of the
  * ability, "an opponent" any opponent, "a player" any player: the engine's `playerHasDesignation` holds when the holder
  * is one of the players the selector names. Nobody has it until an effect gives it (CR 725.1).
@@ -76,7 +76,7 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     "you're not the monarch",
     "you aren't the monarch",
     'you are not the monarch',
-    // D-ASCEND (CR 702.131c): the city's blessing.
+    // D-264 (CR 702.131c): the city's blessing.
     "you have the city's blessing",
     'you have the city’s blessing',
     "you don't have the city's blessing",

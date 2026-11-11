@@ -344,7 +344,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseBackground',
     // D-200: "~ can be your commander".
     'canBeCommander',
-    // D-ASCEND: Ascend on a permanent (CR 702.131b).
+    // D-264: Ascend on a permanent (CR 702.131b).
     'ascend',
     'exalted',
     'annihilator',

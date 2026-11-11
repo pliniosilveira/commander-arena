@@ -30,7 +30,7 @@ export interface SeatSpec {
   handSizeMax: number | null;
   /** How many times the Ring has tempted this seat (D-196); null: never, and no emblem. */
   ring: number | null;
-  /** The seat has the city's blessing at the start (CR 702.131c, D-ASCEND). */
+  /** The seat has the city's blessing at the start (CR 702.131c, D-264). */
   citysBlessing: boolean;
   /** Combat damage this seat has taken from a commander, by card name (CR 903.10a). */
   commanderDamage: { name: string; amount: number }[];

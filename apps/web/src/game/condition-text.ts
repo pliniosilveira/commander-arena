@@ -44,7 +44,7 @@ function designationWords(
 ): string | null {
   // Several selectors at once ("you or an opponent") have no sentence of their own here: left out, not guessed.
   if (player.kind === 'all') return null;
-  // The city's blessing (CR 702.131c, D-ASCEND) is had, not "been": "you have the city's blessing".
+  // The city's blessing (CR 702.131c, D-264) is had, not "been": "you have the city's blessing".
   const blessing = designation === 'citysBlessing';
   if (player.kind === 'you') {
     return blessing

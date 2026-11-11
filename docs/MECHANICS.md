@@ -4153,3 +4153,13 @@ One section for the whole program, a block for each group. The real texts are in
 - Parser (stage P76): `condition.opponents-control-at-least` (`rules/condition/hofri.ts`), a plural phrase with no controller and no "other". Not `condition.opponent-controls-at-least` ("an opponent controls", one opponent, D-135).
 - Tests: `packages/engine/test/scenario-xx-enters-tapped-unless.test.ts` (the engine with a hand-written card), `packages/cards/test/convert-grammar-engine-p73.test.ts` (Turbulent Steppe from the text the owner supplied, not a Scryfall extraction).
 - Limits: the card is not in the golden corpus until the owner's `pnpm corpus:extract`; with more than two players the lands of all the opponents are counted together.
+
+## Ascend on a permanent and the city's blessing (branch `bruna-ascend`; D-264)
+
+- CR: 702.131b, 702.131c, 702.131d, 704.3, 613.1f, 702.26b, 111.1, 110.2.
+- AST: the keyword `ascend` (printed, not grantable, no parameter); the `Designation` of `playerHasDesignation` is `'monarch' | 'citysBlessing'`; `SeatState.citysBlessing`, the event `citysBlessingGained`, `SeatView.citysBlessing`.
+- Rules: `rules/city-blessing.ts` (`gainCitysBlessings`, the first pass of `checkStateBasedActions` in `rules/sba.ts`: a player who controls ten or more permanents, one with Ascend after layer 6, gets it for the rest of the game); `rules/designations.ts` (`designationHolders`, read by `rules/conditions.ts` and `rules/static-conditions.ts`); `ast/validate-artifacts.ts` (`checkAscendFace`: Ascend on an instant or sorcery is refused).
+- Parser: the keyword Ascend (`rules/keyword`); `condition.designation` reads "you have / you don't have / an opponent has / a player has the city's blessing".
+- Web: the chip "City's blessing" on the player strip, the log line, the condition words, the keyword chip. Scenario DSL: the seat option `citysBlessing()` and `expect.citysBlessing(seat, has)`.
+- Cards: Arch of Orazca (grammar only). Tests: `packages/engine/test/scenario-xx-ascend.test.ts` (SYNTHETIC cards in `synthetic-ascend.ts`), `packages/cards/test/parser-ascend-bruna.test.ts`, `packages/cards/test/convert-grammar-engine-ascend.test.ts`.
+- Limits: Ascend on an instant or sorcery is unsupported; inside one resolution the blessing is not gained until the state-based actions run (`docs/ROADMAP.md`).

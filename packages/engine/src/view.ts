@@ -373,7 +373,7 @@ export interface SeatView {
    * Ring-bearer that evades greater power; 2: the loot; 3: the sacrifice of a blocker; 4: the life loss). Public. Absent until the first time.
    */
   readonly ringTempted?: number;
-  /** This player has the city's blessing (CR 702.131c, D-ASCEND): public, kept for the rest of the game. Absent until they get it. */
+  /** This player has the city's blessing (CR 702.131c, D-264): public, kept for the rest of the game. Absent until they get it. */
   readonly citysBlessing?: true;
   /** The energy counters this player has (CR 107.14, D-209). Public. Absent until the first time. */
   readonly energy?: number;

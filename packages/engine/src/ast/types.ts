@@ -221,7 +221,7 @@ export type ThisWayKind =
   | 'discardedNoncreature';
 
 /**
- * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-ASCEND:
+ * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
  * any number of players, `SeatState.citysBlessing`); the initiative can join.
  */
 export type Designation = 'monarch' | 'citysBlessing';
@@ -2757,7 +2757,7 @@ export type Keyword =
    */
   | { readonly kind: 'canBeCommander' }
   /**
-   * CR 702.131b (Ascend on a permanent, D-ASCEND): a static ability, "Any time you control ten or more permanents and you don't have the city's blessing, you get
+   * CR 702.131b (Ascend on a permanent, D-264): a static ability, "Any time you control ten or more permanents and you don't have the city's blessing, you get
    * the city's blessing for the rest of the game." The engine checks it with the state-based actions (`rules/city-blessing.ts`) for the controller of
    * a permanent that has it. The instant and sorcery form (CR 702.131a) is a spell ability and is not built. It cannot be granted.
    */

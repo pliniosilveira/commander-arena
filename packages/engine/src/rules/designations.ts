@@ -1,5 +1,5 @@
 /**
- * Who has a designation (CR 725.1, 702.131c, D-ASCEND): the monarch is one player or nobody (`GameState.monarch`), the city's blessing any number
+ * Who has a designation (CR 725.1, 702.131c, D-264): the monarch is one player or nobody (`GameState.monarch`), the city's blessing any number
  * of players (`SeatState.citysBlessing`). Kept apart from `city-blessing.ts` because the conditions that read it are read by `derive`, which that
  * file reads.
  */

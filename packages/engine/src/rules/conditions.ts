@@ -287,7 +287,7 @@ export function evaluateCondition(
     case 'playerHasDesignation': {
       // D-131, CR 725: whether the holder of the designation is one of the players the selector names. Nobody has
       // it until an effect gives it (CR 725.1).
-      // The city's blessing (CR 702.131c, D-ASCEND) can be had by several players, so it is any of them.
+      // The city's blessing (CR 702.131c, D-264) can be had by several players, so it is any of them.
       const holders = designationHolders(state, condition.designation);
       if (holders.length === 0) return false;
       // (The validator lets a condition name only players that need neither a target nor the trigger subject.)

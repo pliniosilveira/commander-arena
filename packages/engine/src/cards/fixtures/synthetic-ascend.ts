@@ -26,6 +26,19 @@ export const SYNTHETIC_ASCEND_LIST: readonly CardDefinition[] = [
     oracleText: 'Ascend',
     abilities: [kw('ascend')],
   }),
+  // A creature with Ascend: layer 6 can take the ability away, and a creature can phase out (CR 702.131b).
+  singleFace({
+    name: 'SYNTHETIC Ascend Bear',
+    manaCost: ['1', 'G'],
+    types: ['creature'],
+    subtypes: ['Bear'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    power: 2,
+    toughness: 2,
+    oracleText: 'Ascend',
+    abilities: [kw('ascend')],
+  }),
   // A land with Ascend whose ability asks for the blessing (the shape of a real city land).
   singleFace({
     name: 'SYNTHETIC Blessed Spring',

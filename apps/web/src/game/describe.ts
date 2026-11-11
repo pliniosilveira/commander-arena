@@ -1324,7 +1324,7 @@ export function describeEvent(
         'CR 114.1',
       );
     case 'citysBlessingGained':
-      // CR 702.131b (D-ASCEND): Ascend gave the player the designation, for the rest of the game.
+      // CR 702.131b (D-264): Ascend gave the player the designation, for the rest of the game.
       return line(
         'major',
         `${who(event.seat)} ${verb(event.seat, 'get', 'gets')} the city's blessing.`,
