@@ -127,6 +127,8 @@ export interface Scope {
   readonly mainPhaseTrigger?: boolean;
   /** True after a `may` effect in the same sequence: `didPrevious` and `reflexive` have something to read (D-135). */
   readonly mayAvailable?: boolean;
+  /** The number of sides of the latest `rollDie` earlier in the same sequence: the condition `dieResult` reads its result (CR 706.2, D-941). */
+  readonly dieSides?: number;
   /** True in the effect of a delayed trigger whose creating sequence exiled cards before it: `exiledStillThere` has cards to count (D-151). */
   readonly exiledStillThere?: boolean;
 }
@@ -1866,6 +1868,17 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
       break;
+    case 'dieResult':
+      // D-941, CR 706.2: the result of a die is read in the `conditional` effect after the roll (`checkEffectCondition`), nowhere else.
+      issue(
+        out,
+        path,
+        'dieResult reads the die rolled earlier in the same resolution: it is only valid in a conditional effect after a rollDie of the same sequence',
+      );
+      break;
+    case 'thisInYourGraveyard':
+      // D-941, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
+      break;
     case 'kicked':
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
@@ -2528,6 +2541,31 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         issue(out, `${path}.count`, 'a count of one or more');
       }
       break;
+    case 'dieResult': {
+      // D-941, CR 706.2, 706.3a: "If the result is 1", "if the result is 4 or more": a number a die of the roll can show.
+      const sides = scope.dieSides;
+      if (sides === undefined) {
+        issue(
+          out,
+          path,
+          'dieResult needs a rollDie before it in the same sequence (the result of the roll is what it reads)',
+        );
+      }
+      if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
+        issue(out, `${path}.compare.cmp`, `unknown comparison ${JSON.stringify(c.compare?.cmp)}`);
+      }
+      const value = c.compare?.value;
+      if (!isCount(value) || value < 1 || (sides !== undefined && value > sides)) {
+        issue(
+          out,
+          `${path}.compare.value`,
+          sides === undefined
+            ? 'a die result is a whole number from 1'
+            : `a die result is a whole number from 1 to ${sides} (the sides of the roll)`,
+        );
+      }
+      break;
+    }
     case 'didPrevious':
       if (scope.mayAvailable !== true) {
         issue(
@@ -2598,6 +2636,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             after.sacrificedEarlier !== true
           ) {
             after = { ...after, sacrificedEarlier: true };
+          }
+          // D-941: after a die is rolled, the condition `dieResult` can read its result (a later roll replaces it).
+          if (child?.kind === 'rollDie' && isCount(child.sides)) {
+            after = { ...after, dieSides: child.sides };
           }
           // D-194: after a vote, the amount `votesFor` can read the tally of its options.
           if (child?.kind === 'vote' && Array.isArray(child.options)) {
@@ -3598,6 +3640,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'shuffle':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      break;
+    case 'rollDie':
+      // CR 706.1a (D-941): a die has N equally likely outcomes numbered 1 to N; the engine draws from the generator with `nextInt`, which takes up to 2^32.
+      if (!isCount(e.sides) || e.sides < 2 || e.sides > 4294967296) {
+        issue(out, `${path}.sides`, 'a die has a whole number of sides from 2 to 4294967296');
+      }
       break;
     case 'proliferate':
       // CR 701.34a (D-149): no parameters; the controller chooses what to give counters to as it resolves.

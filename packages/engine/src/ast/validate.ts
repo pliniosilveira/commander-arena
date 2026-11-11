@@ -1144,6 +1144,18 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           );
         }
       }
+      // D-941: "if this card is in your graveyard" is true only for an ability that works there, which the ability must say (CR 113.6b).
+      if (
+        (conditionHas(a.interveningIf, 'thisInYourGraveyard') ||
+          conditionHas(a.triggerCondition, 'thisInYourGraveyard')) &&
+        a.functionsIn !== 'graveyard'
+      ) {
+        issue(
+          out,
+          `${path}.interveningIf`,
+          "thisInYourGraveyard needs functionsIn: 'graveyard': an ability that works on the battlefield has its card there",
+        );
+      }
       // D-145: "attacks while you don't control another Dinosaur": the condition of the event itself, read once.
       if (a.triggerCondition !== undefined) {
         checkCondition(a.triggerCondition, `${path}.triggerCondition`, out);

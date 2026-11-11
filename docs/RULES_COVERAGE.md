@@ -489,3 +489,11 @@ Every place where the engine knowingly differs from the CR, in one table (cleanu
 | 205.4g, 110.1, 701.23a | A search for a snow permanent card, a nonland permanent card, a union of kinds | Implemented (D-260) | The search filter may be an `anyOf` of filters; the prompt names it. |
 | 205.3m, 603.10a, 113.7a, 702.73a | A creature card that shares a creature type with the creature that died | Implemented (D-261) | `ObjectFilter.sharesCreatureTypeWith: 'triggerSubject'`, in a `revealUntil` of a `dies` trigger only; the types come from last-known information, a changeling shares with any creature. |
 | 205.3i, 701.23b | A search for cards that share a land type | Implemented (D-262) | `search.sharedLandType`; `ChooseCardsDecision.shareLandType` lists the land types of each legal card, and an answer is legal when its cards have one in common. |
+
+## Added by the Bruna deck, Arden Angel (D-941, D-942, D-943)
+
+| CR | Title | Status | Notes |
+| --- | --- | --- | --- |
+| 706.1, 706.1a, 706.2 | Rolling a die | Partial (D-941) | `Effect` `rollDie { sides }`: one die of N sides rolled by the controller; the natural result is one `nextInt` draw of the state's seeded generator plus 1 (`rules/roll-die.ts`) and the event `dieRolled`. No modifiers, rerolls, several dice or rolls by other players (`docs/ROADMAP.md`). `test/scenario-xx-roll-die.test.ts`. |
+| 706.3a, 706.3b | A result and what it does | Partial (D-941) | `Condition` `dieResult { compare }` in a `conditional` after the roll of the same sequence ("If the result is 1", "4 or more", "2 or less", "Otherwise"); `ResolutionContext.dieResult` lasts for one resolution. A results table of several lines is the same sentences one after the other; a result used as a number is not built. |
+| 113.6b, 113.6m, 603.4, 400.7 | A trigger of a card in the graveyard with an intervening "if" | Implemented (D-941) | `Condition` `thisInYourGraveyard`, only with `functionsIn: 'graveyard'`: read from the card itself as the event happens and again as the ability resolves; a card that left is a new object and the ability does nothing. |

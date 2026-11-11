@@ -969,6 +969,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return PROLIFERATE_TEXT;
     case 'shuffle':
       return 'Shuffle your library';
+    case 'rollDie':
+      // CR 706.1 (D-941): "Roll a four-sided die".
+      return `Roll a ${effect.sides}-sided die`;
     case 'search':
       return 'Search your library';
     case 'createToken':

@@ -241,6 +241,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 ],
               },
             }),
+        // D-941: the die the instruction rolled, which "if the result is 1" of a later instruction reads (a later roll replaces it).
+        ...(out.dieResult === undefined ? {} : { dieResult: out.dieResult }),
         // D-135: what the instruction did, for "if you do" and "when you do"; a `may` effect starts it again.
         ...(out.resetPerformed === true
           ? { performed: 0 }

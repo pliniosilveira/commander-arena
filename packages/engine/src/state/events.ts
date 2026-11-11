@@ -37,6 +37,16 @@ export type GameEvent =
   | { readonly kind: 'drewFromEmptyLibrary'; readonly seat: SeatId }
   | { readonly kind: 'libraryShuffled'; readonly seat: SeatId }
   /**
+   * CR 706.1, 706.2 (D-941): `seat` rolled a die of `sides` sides; `result` is the natural result (the engine has no modifiers of a roll), drawn from the
+   * seeded generator of the game. A random event: the host does not let the player undo past it, as for a draw or a shuffle.
+   */
+  | {
+      readonly kind: 'dieRolled';
+      readonly seat: SeatId;
+      readonly sides: number;
+      readonly result: number;
+    }
+  /**
    * CR 701.17a (Mill, D-131): `seat` put the top cards of their library into their graveyard, as the new objects they
    * became there (CR 400.7), in the order they were milled (the top card first). One event for each player and each
    * instruction; a player with an empty library mills nothing and no event is emitted for them.

@@ -108,6 +108,28 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'lifeGainedThisTurn', atLeast: test.atLeast });
     }
+    case 'dieResult': {
+      // CR 706.2, 706.3a (D-941): the result of the die the text rolled before this condition, read by a `conditional`. A condition with no roll before it
+      // in the text, or a number the die cannot show (the condition would never, or always, hold), is not a condition of the text.
+      const blocked = missingFeatures(['condition:dieResult']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const sides = ctx?.dieSides ?? null;
+      if (sides === null || test.compare.value < 1 || test.compare.value > sides) {
+        return failure(c, []);
+      }
+      return ok({
+        kind: 'dieResult',
+        compare: { cmp: test.compare.cmp, value: test.compare.value },
+      });
+    }
+    case 'thisInYourGraveyard': {
+      // CR 113.6b, 603.4 (D-941): "if ~ is in your graveyard" is read only as the intervening "if" of a triggered ability (the lowering of the trigger then
+      // requires that the ability works from the graveyard); anywhere else it is a test the engine does not run for that shape.
+      const blocked = missingFeatures(['condition:thisInYourGraveyard']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'thisInYourGraveyard' });
+    }
     case 'subjectControllerHasMore': {
       // CR 603.4, 109.4 (stage P68, D-229): "that player", the controller of the permanent the trigger is about, has more lands than the controller.
       // "That player" of a trigger about a player (the active player of an opponent's end step, CR 102.1, 603.2b) is that player, not the controller of a
@@ -415,6 +437,8 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:attackersTotalPower',
   'condition:playerDealtDamage',
   'condition:lifeGainedThisTurn',
+  'condition:dieResult',
+  'condition:thisInYourGraveyard',
   'condition:enteredThisTurn',
   'condition:yourMainPhase',
   'condition:yourTurn',

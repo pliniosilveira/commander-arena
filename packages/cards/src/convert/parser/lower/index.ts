@@ -16,6 +16,7 @@ import { ACTIVATED_NEEDS, lowerActivated } from './activated';
 import { ADAMANTOISE_NEEDS, lowerRedirectDamage } from './adamantoise';
 import { AMOUNT_NEEDS } from './amounts';
 import { ANGEL_NEEDS } from './angels';
+import { ARDEN_NEEDS } from './arden';
 import { ATTACHMENT_NEEDS } from './attachments';
 import { CONDITION_NEEDS } from './conditions';
 import { COST_NEEDS } from './costs';
@@ -139,6 +140,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...STATIC_NEEDS,
     ...ATTACHMENT_NEEDS,
     ...ANGEL_NEEDS,
+    ...ARDEN_NEEDS,
     ...DRAGON_NEEDS,
     ...KORVOLD_NEEDS,
     ...PLANESWALKER_NEEDS,

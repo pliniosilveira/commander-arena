@@ -21,6 +21,7 @@ import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
 import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
+import { ARDEN_LOWERINGS } from './arden';
 import { CHANGE_TARGET } from './change-target';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
 import { lowerCondition } from './conditions';
@@ -1258,6 +1259,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ATTACH,
   ...DINOSAUR_LOWERINGS,
   ...ANGEL_LOWERINGS,
+  ...ARDEN_LOWERINGS,
   ...VRASKA_LOWERINGS,
   ...HOFRI_LOWERINGS,
   ...EDHREC_LOWERINGS,
