@@ -150,7 +150,7 @@ describe('"Creature spells of the chosen type cost {2} less to cast" (D-255)', (
   });
 });
 
-describe('"sacrifice it unless you return an untapped Plains you control to its owner\'s hand" (D-256)', () => {
+describe('"sacrifice it unless you return an untapped Plains you control to its owner\'s hand" (D-258)', () => {
   const OFFER = {
     kind: 'may',
     effect: {

@@ -392,7 +392,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.life-above-starting': permanent(
     (e) => `At the beginning of your end step, draw a card if ${e}.`,
   ),
-  // Stage P69 (D-256): "sacrifice it unless you return ..." ends the one instruction of an enters trigger.
+  // Stage P69 (D-258): "sacrifice it unless you return ..." ends the one instruction of an enters trigger.
   'condition.unless-return': permanent((e) => `When ~ enters, sacrifice it ${e}.`),
   'condition.life-gained-this-turn': permanent(
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,

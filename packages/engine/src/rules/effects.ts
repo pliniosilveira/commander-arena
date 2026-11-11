@@ -216,7 +216,7 @@ export function runInstruction(
     ) {
       return done(state);
     }
-    // D-256, CR 118.12a, 608.2d: "you may return an untapped Plains you control to its owner's hand" with no such permanent: the cost cannot be paid, so nothing is
+    // D-258, CR 118.12a, 608.2d: "you may return an untapped Plains you control to its owner's hand" with no such permanent: the cost cannot be paid, so nothing is
     // asked and it was not paid (the "if you don't" that follows runs).
     if (
       offered.kind === 'moveToZone' &&

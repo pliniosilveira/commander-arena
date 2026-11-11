@@ -96,7 +96,7 @@ export const CONDITION_LIFE_ABOVE_STARTING = defineRule<IrCondition>({
 });
 
 /**
- * `condition.unless-return`: "unless you return an untapped Plains you control to its owner's hand" (Karoo, D-256, CR 118.12a: "[Do something] unless [a player
+ * `condition.unless-return`: "unless you return an untapped Plains you control to its owner's hand" (Karoo, D-258, CR 118.12a: "[Do something] unless [a player
  * does something else]" means "[A player may do something else]. If [that player doesn't], [do something]"). The "something else" is the return of one
  * permanent the player controls and chooses (the `effect.return` of a noun with "you control"); the sentence rules attach the condition to the one clause it
  * follows and the lowering makes the offer and the "if you don't".

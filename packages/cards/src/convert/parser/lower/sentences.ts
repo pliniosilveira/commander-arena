@@ -229,7 +229,7 @@ function lowerUnless(sentence: IrSentence, ctx: LowerContext): LowerResult<Effec
 }
 
 /**
- * "Sacrifice it unless you return an untapped Plains you control to its owner's hand" (Karoo, D-256, CR 118.12a): "[Do something] unless [a player does
+ * "Sacrifice it unless you return an untapped Plains you control to its owner's hand" (Karoo, D-258, CR 118.12a): "[Do something] unless [a player does
  * something else]" means "[A player may do something else]. If [that player doesn't], [do something]", so the engine's `may` of the return (a choice among the
  * matching permanents the controller controls, asked only when there is one: nothing that cannot be done is offered, CR 608.2d) and a `conditional` on "not
  * `didPrevious`" for the instruction. It follows exactly one clause that is not itself optional; the offered clause must lower to the choosing return of one

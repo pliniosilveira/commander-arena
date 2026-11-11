@@ -1,9 +1,11 @@
-// "Sacrifice it unless you return an untapped Plains you control to its owner's hand" (Karoo; D-256).
+// "Sacrifice it unless you return an untapped Plains you control to its owner's hand" (Karoo; D-258).
 // Pins: CR 118.12a ("[Do something] unless [a player does something else]" means "[A player may do something else].
-// If [that player doesn't], [do something]"), CR 118.12 (the doing of the cost is checked as it is chosen, so a cost
-// the player cannot pay is a cost not paid), CR 608.2d (the controller chooses as the effect resolves, but not an
+// If [that player doesn't], [do something]"), CR 118.12 (the "if [a player] doesn't" clause covers a player who
+// chose not to pay and one who cannot), CR 608.2d (the controller chooses as the effect resolves, but not an
 // option that is impossible), CR 400.3 (a card goes to its owner's hand), CR 614.1c (the land enters tapped),
 // CR 701.21a (the land is sacrificed by its controller), CR 603.3 (the enters trigger waits on the stack).
+// The guard is general, not Plains-specific: SYNTHETIC Bounce Offer Land ("you may return a creature you control to its
+// owner's hand", no "unless") is not asked either when the player controls no creature.
 // Cards: SYNTHETIC Plains Karoo (src/cards/fixtures/synthetic-references.ts: no land type of its own), the real
 // Plains, Forest and Island.
 import { describe, expect, test } from 'vitest';
@@ -11,6 +13,7 @@ import { syntheticCard, validateCard } from '../src/index';
 import { type ScenarioGame, scenario } from '../src/testing/index';
 
 const KAROO = 'SYNTHETIC Plains Karoo';
+const OFFER = 'SYNTHETIC Bounce Offer Land';
 const ability = `${KAROO} (ability)`;
 
 function play(g: ScenarioGame) {
@@ -131,6 +134,37 @@ describe('the land taps for {C}{W} when it stays', () => {
   });
 });
 
-test('the card is valid', () => {
+describe('a "you may return a creature you control" offer with nothing to return (CR 608.2d)', () => {
+  const offerAbility = `${OFFER} (ability)`;
+
+  test('no creature: nothing is asked and the trigger is done', () => {
+    const g = scenario().seat(0).hand(OFFER).seat(1).build();
+    g.act(0).playLand(OFFER);
+    g.expect.stack([offerAbility]);
+    g.passAll();
+    g.expect.noEvent({ kind: 'optionalAnswered' });
+    g.expect.pending('priority', 0);
+    g.expect.zone(OFFER, 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('a creature: the offer is asked, and a yes returns it', () => {
+    const g = scenario()
+      .seat(0)
+      .hand(OFFER)
+      .battlefield('Grizzly Bears', { label: 'bears' })
+      .seat(1)
+      .build();
+    g.act(0).playLand(OFFER);
+    g.passAll();
+    g.expect.pending('confirmOptional', 0);
+    g.act(0).accept();
+    expect(g.object('bears').zone).toBe('hand');
+    g.expect.invariants();
+  });
+});
+
+test('the cards are valid', () => {
   expect(validateCard(syntheticCard(KAROO))).toEqual([]);
+  expect(validateCard(syntheticCard(OFFER))).toEqual([]);
 });

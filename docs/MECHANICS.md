@@ -751,9 +751,9 @@ Six primitives for the most popular unsupported cards of the corpus (the first c
 - Gap class: P (existing nodes; one rule of the `may` question)
 - Code: `rules/effects.ts` (the `mayEffect` instruction is not asked when the offered `moveToZone` with a `choose` selector has no candidate permanent), parser `rules/condition/bruna.ts` (`condition.unless-return`), `lower/sentences.ts` (`lowerUnlessReturn`)
 - AST node: `sequence [ may(moveToZone { objects: choose { subtypes: ['Plains'], tapped: false, controller: 'you' }, to: 'hand' }), conditional(not didPrevious, sacrifice this) ]`. A permanent that cannot be chosen (a tapped Plains, no Plains, the land itself, which has no land type) is no candidate, so with none the question is not asked and the land is sacrificed.
-- Tests: `scenario-xx-return-or-sacrifice.test.ts` (returns an untapped Plains; declining; only tapped Plains; no Plains; nothing else), `packages/cards/test/parser-p69-bruna.test.ts`
+- Tests: `scenario-xx-return-or-sacrifice.test.ts` (returns an untapped Plains; declining; only tapped Plains; no Plains; nothing else; a different card, "you may return a creature you control" with no creature, `SYNTHETIC Bounce Offer Land`), `packages/cards/test/parser-p69-bruna.test.ts`
 - Example cards: Karoo. SYNTHETIC fixture: `SYNTHETIC Plains Karoo`.
-- Added in: D-256 (the Bruna deck, issue 5)
+- Added in: D-258 (the Bruna deck, issue 5)
 
 ## Drawing a commander from a library (engine fix; CR 903.9b, 121.1, 121.2, 504.1)
 
