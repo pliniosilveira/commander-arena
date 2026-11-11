@@ -22,6 +22,21 @@ export function useApp<T>(selector: (state: AppState & AppActions) => T): T {
   return useStore(useAppStore(), selector);
 }
 
+/**
+ * Like `useApp`, but outside a `StoreProvider` (a card face drawn anywhere, as `useDefinedPt` allows) it gives `fallback`
+ * instead of failing.
+ */
+export function useAppIfPresent<T>(selector: (state: AppState & AppActions) => T, fallback: T): T {
+  const store = useContext(StoreContext);
+  const read = (state: (AppState & AppActions) | undefined): T =>
+    state === undefined ? fallback : selector(state);
+  return useSyncExternalStore(
+    (notify) => store?.subscribe(notify) ?? (() => undefined),
+    () => read(store?.getState()),
+    () => read(store?.getInitialState()),
+  );
+}
+
 /** The store itself, for an event handler that must read the latest state after an action. */
 export function useStoreApi(): AppStore {
   return useAppStore();
