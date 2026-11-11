@@ -6,7 +6,7 @@ Written by the deck-support routine for issue 5 (the Bruna deck). Nothing of it 
 
 Cards: Bruna, the Fading Light and Gisela, the Broken Blade (the deck's commander and a card of it); their melded back face, Brisela, Voice of Nightmares, is not in the deck's list.
 
-The text of the melded face was supplied by the owner in chat (not checked against Scryfall, not in the golden corpus):
+The Oracle text of the melded face was copied from Scryfall by the owner and sent in chat (not in the golden corpus; the game itself fetches it from Scryfall, see below):
 
 - Brisela, Voice of Nightmares: Legendary Creature, Eldrazi Angel, 9/10. Flying, first strike, vigilance, lifelink. "Your opponents can't cast spells with mana value 3 or less."
 
