@@ -3,7 +3,7 @@
  * cast a card from the graveyard this turn.
  */
 import type { Effect, Trigger } from '../ast/types';
-import { allocateTimestamp } from '../state/ops';
+import { allocateTimestamp, setObject } from '../state/ops';
 import type {
   ChosenTarget,
   ContinuousEffect,
@@ -82,6 +82,16 @@ export function runPaidReflexive(
 ): StepOutcome {
   const paid = effect.paid ?? 0;
   if (paid <= 0) return done(state);
+  if (effect.ifPaid !== undefined) {
+    // CR 608.2c, 107.3f (D-257): "If you do, draw X cards": the next instruction of this resolution, with X the number paid, which the resolving ability
+    // now has (the same place the X announced for a spell or an activated ability is read from).
+    const resolving = state.objects[res.object];
+    const withX = resolving?.stack
+      ? setObject(state, { ...resolving, stack: { ...resolving.stack, x: paid } })
+      : state;
+    return done(withX, [], [{ kind: 'effect', effect: effect.ifPaid }]);
+  }
+  if (effect.reflexive === undefined) return done(state);
   const ability: TriggeredAbility = {
     kind: 'triggered',
     trigger: REFLEXIVE_TRIGGER,

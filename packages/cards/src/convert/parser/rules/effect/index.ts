@@ -27,6 +27,7 @@ import { ARTIFACT_EFFECT_RULES } from './artifacts';
 import { ATTACH_RULES } from './attach';
 import { BECOMES_RULES } from './becomes';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
+import { BRUNA_EFFECT_RULES } from './bruna';
 import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CONTROL_EFFECT_RULES } from './control';
 import { EFFECT_COPY_SPELL } from './copy-spell';
@@ -816,6 +817,8 @@ export const EFFECT_RULES = [
   ...ANGEL_EFFECT_RULES,
   // Stage P50 (D-207): "remove all counters from it".
   ...VRASKA_EFFECT_RULES,
+  // Stage P69 (D-256, D-257): the Bruna deck, "Do this only once each turn" and "pay {X}, where X is less than or equal to the amount of life you gained".
+  ...BRUNA_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.

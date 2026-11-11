@@ -101,6 +101,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnly',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
     'functionsInGraveyard',
+    // D-256: "Do this only once each turn." (`TriggeredAbility.doOnlyOnceEachTurn`, CR 603.2h)
+    'doOnlyOnceEachTurn',
     // D-151: "If that mana is spent on a Dragon creature spell, it gains haste" (`ManaAbility.spentRider`).
     'manaSpentRider',
   ],
@@ -895,6 +897,8 @@ export const ABILITY_FEATURES = [
   'manaSpendOnly',
   /** An ability that works while its card is in the graveyard (CR 113.6b, D-151): `functionsIn: 'graveyard'` on a static or triggered ability. */
   'functionsInGraveyard',
+  /** "Do this only once each turn" (D-256): the engine's `doOnlyOnceEachTurn` of a triggered ability (CR 603.2h). */
+  'doOnlyOnceEachTurn',
   /** "If that mana is spent on a Dragon creature spell, it gains haste until end of turn" (D-151): the engine's `ManaAbility.spentRider`. */
   'manaSpentRider',
 ] as const;
@@ -1357,6 +1361,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaInstead: true,
   manaSpendOnly: true,
   functionsInGraveyard: true,
+  doOnlyOnceEachTurn: true,
   manaSpentRider: true,
   activateOnlyIf: true,
   xCost: true,

@@ -1613,6 +1613,8 @@ export interface TurnLog {
   readonly lifeGainedTotal: readonly number[];
   /** Each triggered ability that has triggered this turn (D-149): "this ability triggers only once each turn" (CR 603.2). */
   readonly triggered: readonly { readonly object: ObjectId; readonly abilityIndex: number }[];
+  /** Each triggered ability whose controller has taken the action it represents this turn (D-256): "Do this only once each turn" (CR 603.2h). */
+  readonly actionTaken: readonly { readonly object: ObjectId; readonly abilityIndex: number }[];
   /**
    * Each permanent that entered the battlefield this turn (D-151, Celebration: "two or more nonland permanents entered the battlefield under your
    * control this turn"), in order: who controlled it as it entered, its card types as it entered and whether it is a token. It stays when the
@@ -1652,6 +1654,7 @@ export const EMPTY_TURN_LOG: TurnLog = {
   lifeGained: [],
   lifeGainedTotal: [],
   triggered: [],
+  actionTaken: [],
   entered: [],
   damageTaken: [],
   attacked: [],

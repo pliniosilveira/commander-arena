@@ -15,6 +15,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getObject, getSeat } from '../state/ops';
 import type { ChosenValues, GameState, Instruction, ResolutionContext } from '../state/types';
+import { recordActionTaken } from './action-taken';
 import { attachEntered, auraTargetSpec, ENCHANT_TARGET_ID } from './attach';
 import { runCascade } from './cascade';
 import { runCastExiled } from './cast-exiled';
@@ -128,8 +129,11 @@ export function resolveTop(input: GameState): ResolveOutcome {
   // CR 603.5: "you may": the controller answers when the ability resolves, before anything else.
   if (ability?.kind === 'triggered' && ability.optional)
     queue.unshift({ kind: 'confirmOptional', answer: null });
+  // CR 603.2h (D-256): "Do this only once each turn": the action is taken as the ability begins, or, with "you may", when it is accepted.
+  const begun: GameState =
+    ability?.kind === 'triggered' && ability.optional ? input : recordActionTaken(input, id);
   const state: GameState = {
-    ...input,
+    ...begun,
     resolution: {
       object: id,
       source: obj.stack?.source ?? id,
@@ -499,7 +503,10 @@ export function answerResolutionOptional(state: GameState, accept: boolean): Res
     : head.kind === 'mayEffect'
       ? res.queue.slice(1)
       : [];
-  return continueResolution({ ...state, pending: null, resolution: { ...res, queue } }, events);
+  // CR 603.2h (D-256): accepting the ability's own "you may" takes the action of "Do this only once each turn".
+  const answered =
+    accept && head.kind === 'confirmOptional' ? recordActionTaken(state, res.object) : state;
+  return continueResolution({ ...answered, pending: null, resolution: { ...res, queue } }, events);
 }
 
 /**

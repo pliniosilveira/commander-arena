@@ -109,7 +109,8 @@ export function checkDragonsEffect(
       return true;
     case 'payAnyAmount': {
       // CR 603.12 (D-151): one kind of mana, and a reflexive ability of its own whose "that much" is what was paid.
-      if (!isOneOf(e.symbol, ['W', 'U', 'B', 'R', 'G', 'C'])) {
+      // D-257: or a generic {1} paid X times, a most (`atMost`), and an "If you do" instruction (`ifPaid`) in place of the reflexive ability, whose X is the number paid.
+      if (!isOneOf(e.symbol, ['W', 'U', 'B', 'R', 'G', 'C', '1'])) {
         issue(
           out,
           `${path}.symbol`,
@@ -118,6 +119,29 @@ export function checkDragonsEffect(
       }
       if (e.paid !== undefined) {
         issue(out, `${path}.paid`, "paid is the engine's own and is never written in a card");
+      }
+      if (e.atMost !== undefined) {
+        // The most is read before X is known: no X of its own.
+        checkAmount(e.atMost, `${path}.atMost`, { ...scope, xAllowed: false }, out);
+      }
+      if (e.ifPaid !== undefined) {
+        if (e.reflexive !== undefined) {
+          issue(
+            out,
+            `${path}.ifPaid`,
+            'what is done once the payment is made is a reflexive ability (CR 603.12) or an "If you do" (`ifPaid`), not both',
+          );
+        }
+        // CR 107.3f: X is the number paid; "that much" is still the event's own, and the targets are the ability's.
+        checkEffect(e.ifPaid, `${path}.ifPaid`, { ...scope, xAllowed: true }, out);
+        if (JSON.stringify(e.ifPaid).includes('"manaValueX"')) {
+          issue(
+            out,
+            `${path}.ifPaid`,
+            'the follow-up reads X as an amount, not as a mana value filter',
+          );
+        }
+        return true;
       }
       const own = declareTargets(e.reflexive?.targets, `${path}.reflexive.targets`, out);
       const inner: Scope = {

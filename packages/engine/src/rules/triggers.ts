@@ -286,7 +286,16 @@ function occurrences(
     case 'lifeGained':
       // CR 119.9 (D-149): one occurrence for each gain of life.
       return event.kind === 'lifeGained'
-        ? [{ subject: null, seat: event.seat, player: event.seat, gainNth: event.nth }]
+        ? [
+            {
+              subject: null,
+              seat: event.seat,
+              player: event.seat,
+              gainNth: event.nth,
+              // D-256: "that many" is the life gained, after replacement (CR 119.9).
+              damage: event.amount,
+            },
+          ]
         : [];
     case 'countersAdded':
       // CR 122.6, 122.6a (D-149): counters put on a permanent, by the player who put them.
@@ -942,10 +951,22 @@ function limitOncePerTurn(
   state: GameState,
   found: readonly PendingTrigger[],
 ): { readonly found: PendingTrigger[]; readonly state: GameState } {
-  if (!found.some((t) => t.ability.oncePerTurn === true)) return { found: [...found], state };
+  // CR 603.2h (D-256): "Do this only once each turn": the ability triggers only if its controller has not yet taken the action this turn.
+  // The action is recorded as the ability resolves (`recordActionTaken`), not as it triggers.
+  const afterAction = found.filter(
+    (t) =>
+      t.ability.doOnlyOnceEachTurn !== true ||
+      t.source === null ||
+      !state.turnLog.actionTaken.some(
+        (a) => a.object === t.source && a.abilityIndex === t.abilityIndex,
+      ),
+  );
+  if (!afterAction.some((t) => t.ability.oncePerTurn === true)) {
+    return { found: afterAction, state };
+  }
   const seen = [...state.turnLog.triggered];
   const kept: PendingTrigger[] = [];
-  for (const t of found) {
+  for (const t of afterAction) {
     if (t.ability.oncePerTurn === true && t.source !== null) {
       const source = t.source;
       if (seen.some((s) => s.object === source && s.abilityIndex === t.abilityIndex)) continue;

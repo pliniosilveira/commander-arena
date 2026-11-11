@@ -1152,7 +1152,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(
           out,
           path,
-          "'triggerDamage' needs a triggered ability whose trigger is damage being dealt (dealtDamage or dealsCombatDamage)",
+          "'triggerDamage' needs a triggered ability whose trigger is damage being dealt (dealtDamage or dealsCombatDamage) or life being gained (lifeGained)",
         );
       }
       break;

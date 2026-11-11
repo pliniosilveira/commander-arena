@@ -14,7 +14,8 @@ import { EQUAL_AMOUNTS, FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, operands, single } from './operands';
 
-const COUNT_ONLY = ['amount.number', 'amount.article', 'amount.x'] as const;
+// Stage P69 (D-256): "that many", the life a life gain trigger names (the lowering refuses it where no such trigger or instruction gives it a meaning).
+const COUNT_ONLY = ['amount.number', 'amount.article', 'amount.x', 'amount.that-many'] as const;
 
 /** The objects counters can be put on: this permanent, "it", a target, or each of a kind. */
 const COUNTER_OPERANDS = [
@@ -55,6 +56,8 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'put a +1/+1 counter on it for each creature you control',
     'put a +1/+1 counter on ~ for each creature destroyed this way',
     'put two +1/+1 counters on ~ for each opponent who has more life than you',
+    'put that many +1/+1 counters on each creature you control',
+    'put that many +1/+1 counters on ~',
   ],
   rejects: [
     'put X +1/+1 counters on it for each time it was kicked',
@@ -70,6 +73,9 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'put a +1/+1 counter on target creature or Dragon',
     'put a +1/+1 counter on ~ and draw a card',
     'put a +1/+1 counter on',
+    'put that many counters on ~',
+    'put that much +1/+1 counters on ~',
+    'put that many +1/+1 counters on ~ for each creature you control',
   ],
   parse: single(
     'effect.add-counters',

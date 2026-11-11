@@ -4,10 +4,12 @@
  * to as many as they could pay now, mana in the pool and from sources they may tap, CR 605.3a; nothing is asked when none could be paid). A positive number
  * is then paid as any "you may pay" cost is (`rules/pay-unless.ts`, a `payMana` decision, `cancel` means not paying), and once it is paid the reflexive
  * triggered ability is created (CR 603.12) with the number paid as "that much" (`rules/may-effects.ts`).
+ * D-257: `atMost` caps the answer ("pay {X}, where X is less than or equal to the amount of life you gained"), and the symbol may be a generic {1}.
  */
 import type { Effect } from '../ast/types';
 import type { SeatId } from '../ids';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { amountOf } from './amounts';
 import { planFor } from './mana-engine';
 import { sourceInfo } from './source-info';
 import { done, type StepOutcome } from './step-outcome';
@@ -30,7 +32,22 @@ export function runPayAmount(
   ins: PayAmount,
 ): StepOutcome {
   if (ins.amount === null) {
-    const max = maxPayable(state, ins.seat, ins.effect.symbol);
+    const payable = maxPayable(state, ins.seat, ins.effect.symbol);
+    // D-257: "where X is less than or equal to the amount of life you gained": a most the effect itself gives, read as it starts.
+    const cap =
+      ins.effect.atMost === undefined
+        ? payable
+        : amountOf(
+            state,
+            ins.effect.atMost,
+            {
+              controller: res.controller,
+              source: res.source,
+              ...(res.triggerDamage === undefined ? {} : { triggerDamage: res.triggerDamage }),
+            },
+            [],
+          );
+    const max = Math.min(payable, cap);
     // CR 118.3: what cannot be paid is not paid, so nobody is asked.
     if (max === 0) return done(state);
     const info = sourceInfo(state, res.source);

@@ -811,9 +811,12 @@ function checkTriggerSubject(
   checkFilter(what as never, path, out);
 }
 
-/** Whether the trigger's event is damage being dealt, so that "that much" means its amount (D-133). */
+/**
+ * Whether the trigger's event has an amount that "that much" or "that many" can mean (`triggerDamage`): the damage dealt (D-133) or the life
+ * gained (D-256, CR 119.9).
+ */
 function hasDamage(t: Trigger): boolean {
-  return t?.kind === 'dealtDamage' || t?.kind === 'dealsCombatDamage';
+  return t?.kind === 'dealtDamage' || t?.kind === 'dealsCombatDamage' || t?.kind === 'lifeGained';
 }
 
 /** Whether the effect, or one of a sequence or a "may" inside it, adds mana (D-189). */
@@ -1031,6 +1034,26 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       if (a.optional !== undefined && typeof a.optional !== 'boolean') {
         issue(out, `${path}.optional`, 'optional must be a boolean');
+      }
+      // D-256 (CR 603.2h): "Do this only once each turn."
+      if (a.doOnlyOnceEachTurn !== undefined) {
+        if (a.doOnlyOnceEachTurn !== true) {
+          issue(out, `${path}.doOnlyOnceEachTurn`, 'doOnlyOnceEachTurn must be true');
+        }
+        if (a.oncePerTurn !== undefined) {
+          issue(
+            out,
+            `${path}.doOnlyOnceEachTurn`,
+            'oncePerTurn and doOnlyOnceEachTurn are two different limits (CR 603.2, 603.2h): one of them',
+          );
+        }
+        if (a.trigger?.kind === 'state' || a.trigger?.kind === 'tappedForMana') {
+          issue(
+            out,
+            `${path}.doOnlyOnceEachTurn`,
+            'a state trigger and a triggered mana ability have their own rules: no doOnlyOnceEachTurn',
+          );
+        }
       }
       // D-149: "This ability triggers only once each turn."
       if (a.oncePerTurn !== undefined) {
