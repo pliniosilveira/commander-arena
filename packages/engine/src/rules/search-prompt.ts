@@ -106,7 +106,8 @@ function clause(
 /** The prompt of a search decision. */
 export function describeSearch(search: SearchEffect): string {
   const what = describeFilter(search.filter);
-  const noun = `${what === '' ? '' : `${what} `}${search.max === 1 ? 'card' : 'cards'}`;
+  const sharing = search.sharedLandType === true ? ' that share a land type' : '';
+  const noun = `${what === '' ? '' : `${what} `}${search.max === 1 ? 'card' : 'cards'}${sharing}`;
   const clauses: string[] = [];
   let start = 0;
   for (let i = 0; i < search.destinations.length; i += 1) {

@@ -46,6 +46,7 @@ export { defaultDivision } from './rules/combat-flow';
 export type { ControlEnd } from './rules/control';
 export type { DeckConfig, GameConfig } from './rules/setup';
 export { createGame } from './rules/setup';
+export { sharesLandType } from './rules/share-type';
 export type * from './state/actions';
 export type * from './state/combat-types';
 export type * from './state/decisions';

@@ -2,7 +2,7 @@
 // text of the acceptance cards of the golden corpus (names replaced by ~) with the nodes the grammar produces, played through applyAction where the engine reads them; the other
 // lines are SYNTHETIC siblings and the near misses the grammar must not read.
 import { readFileSync } from 'node:fs';
-import type { CardDefinition } from '@commander-arena/engine';
+import { applyAction, type CardDefinition } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, type GoldenCard, importCard, parseGolden } from '../src/index';
@@ -306,5 +306,88 @@ describe('Heirloom Blade played from the real card', () => {
     g.act(0).decline();
     g.expect.zone(SQUIRE.name, 'library', { seat: 0 });
     g.expect.librarySize(0, 2 + FILLER.length);
+  });
+});
+
+describe('Myriad Landscape: up to two basic land cards that share a land type (D-258)', () => {
+  const TEXT =
+    'This land enters tapped.\n{T}: Add {C}.\n{2}, {T}, Sacrifice ~: Search your library for up to two basic land cards that share a land type, put them onto the battlefield tapped, then shuffle.';
+
+  test('reads as a search with the option sharedLandType, paid by {2}, {T} and the sacrifice of the land', () => {
+    const face = readAll(TEXT, 'land');
+    expect(face.abilities).toEqual([
+      { kind: 'replacement', replacement: { kind: 'entersTapped' } },
+      { kind: 'mana', cost: [{ kind: 'tap' }], production: { kind: 'fixed', mana: ['C'] } },
+      {
+        kind: 'activated',
+        cost: [
+          { kind: 'mana', symbols: ['2'] },
+          { kind: 'tap' },
+          { kind: 'sacrifice', what: { kind: 'this' } },
+        ],
+        effect: {
+          kind: 'search',
+          player: { kind: 'you' },
+          filter: { types: ['land'], supertypes: ['basic'] },
+          max: 2,
+          sharedLandType: true,
+          destinations: [{ zone: 'battlefield', tapped: true, count: 2 }],
+          reveal: false,
+          shuffle: true,
+        },
+      },
+    ]);
+  });
+
+  test('without the words there is no option: "up to two basic land cards" is as it was (SYNTHETIC)', () => {
+    const face = readAll(
+      'Search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.',
+      'sorcery',
+    );
+    expect(JSON.stringify(face.spell)).not.toContain('sharedLandType');
+  });
+
+  test('another count, another kind of card, a creature type or a pronoun is not read (SYNTHETIC)', () => {
+    for (const text of [
+      'Search your library for a basic land card that share a land type, put it onto the battlefield tapped, then shuffle.',
+      'Search your library for up to two creature cards that share a land type, put them into your hand, then shuffle.',
+      'Search your library for up to two basic land cards that share a creature type, put them onto the battlefield tapped, then shuffle.',
+      'Search your library for up to two basic land cards that share a land type with it, put them onto the battlefield tapped, then shuffle.',
+    ]) {
+      expect(dropped(text, 'sorcery').reason, text).toBeDefined();
+    }
+  });
+
+  describe('played with the real card', () => {
+    const LANDSCAPE = real('Myriad Landscape');
+    const game = (library: readonly string[]) =>
+      scenario()
+        .define(LANDSCAPE)
+        .seat(0)
+        .battlefield(LANDSCAPE.name, 'Plains', 'Plains')
+        .library(...library)
+        .seat(1)
+        .library('Island')
+        .build();
+
+    test('{2}, {T}, sacrifice: two Forests come onto the battlefield tapped, a Forest and a Plains are refused', () => {
+      const g = game(['Forest', 'Plains', 'Forest', 'Island']);
+      g.act(0).activate(LANDSCAPE.name, { pay: true });
+      g.expect.zone(LANDSCAPE.name, 'graveyard', { seat: 0 });
+      g.passAll();
+      g.expect.pending('chooseCards', 0);
+      const forest = g.find({ name: 'Forest', zone: 'library', seat: 0 });
+      const plains = g.find({ name: 'Plains', zone: 'library', seat: 0 });
+      const wrong = applyAction(g.state, 0, {
+        kind: 'chooseCards',
+        objects: [forest[0]?.id, plains[0]?.id].flatMap((id) => (id === undefined ? [] : [id])),
+      });
+      expect(wrong.ok).toBe(false);
+      g.act(0).chooseCards('Forest[0]', 'Forest[1]');
+      g.expect.zone('Forest', 'battlefield', { seat: 0, count: 2 });
+      g.expect.tapped('Forest[0]', true);
+      g.expect.tapped('Forest[1]', true);
+      g.expect.invariants();
+    });
   });
 });

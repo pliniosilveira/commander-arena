@@ -83,8 +83,13 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     ) {
       return failure(clause);
     }
-    // The IR says where the cards are (the library); the engine's filter must not (CR 401.1).
-    const filter = lowerFilter({ ...cards, filter: withoutZone(cards.filter) });
+    // The IR says where the cards are (the library); the engine's filter must not (CR 401.1). "That share a land type" (D-258, CR 205.3i) is about the cards found
+    // together, so it is an option of the search and not of the filter: the engine's `search.sharedLandType`.
+    const { sharedLandType, ...single } = cards.filter;
+    const shared = sharedLandType === true;
+    const sharing = shared ? missingFeatures(['selector:sharedLandType']) : [];
+    if (sharing.length > 0) return { ok: false, needs: sharing, at: cards.span, rule: cards.rule };
+    const filter = lowerFilter({ ...cards, filter: withoutZone(single) });
     if (!filter.ok) return filter;
     const max = cards.count?.kind === 'number' ? cards.count.value : 1;
     const destinations: SearchDestination[] = [];
@@ -126,6 +131,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
           ...(who === undefined ? {} : { optional: true as const }),
           filter: filter.value,
           max,
+          ...(shared ? { sharedLandType: true as const } : {}),
           destinations,
           reveal: reveal.value,
           shuffle: shuffle.value,

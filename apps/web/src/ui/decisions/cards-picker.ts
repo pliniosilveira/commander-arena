@@ -12,6 +12,7 @@ import type {
   ObjectId,
   ObjectView,
 } from '@commander-arena/engine';
+import { sharesLandType } from '@commander-arena/engine';
 import { cardNoun, chosenCardMoveText, findEffect, lookAtTopText } from '../../game/artifacts-text';
 import { castFreeText } from '../../game/dinosaurs-text';
 import { beholdQuality, beholdReminder } from '../../game/dragons-text';
@@ -21,7 +22,7 @@ import { unlessPaysPrompt, wardPrompt } from './optional';
 import { togglePermanent } from './permanents';
 
 type Range = Pick<ChooseCardsDecision, 'min' | 'max'> &
-  Partial<Pick<ChooseCardsDecision, 'orSingle'>>;
+  Partial<Pick<ChooseCardsDecision, 'orSingle' | 'shareLandType'>>;
 
 /**
  * Toggles a card, keeping the order of the picks. Clicking a chosen card takes it back (the later
@@ -41,6 +42,10 @@ export function toggleFound(
  * discard an artifact card" (D-139, `orSingle`) takes exactly `max` cards, or one card of its list alone.
  */
 export function foundReady(chosen: readonly ObjectId[], decision: Range): boolean {
+  // D-258: "up to two basic land cards that share a land type": the cards picked need a land type in common, which the engine would refuse otherwise.
+  if (decision.shareLandType !== undefined && !sharesLandType(chosen, decision.shareLandType)) {
+    return false;
+  }
   const { orSingle } = decision;
   if (orSingle !== undefined && chosen.length !== decision.max) {
     const [only] = chosen;
@@ -52,6 +57,13 @@ export function foundReady(chosen: readonly ObjectId[], decision: Range): boolea
 /** Why Confirm is disabled (its tooltip), or null when the picks may be sent. */
 export function foundHint(chosen: readonly ObjectId[], decision: Range): string | null {
   if (foundReady(chosen, decision)) return null;
+  if (
+    decision.shareLandType !== undefined &&
+    chosen.length >= decision.min &&
+    chosen.length <= decision.max
+  ) {
+    return 'Choose lands that share a land type';
+  }
   if (decision.orSingle !== undefined) {
     return `Choose ${plural(decision.max, 'card')}, or one card marked “${ALONE}”`;
   }

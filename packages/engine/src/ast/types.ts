@@ -2157,6 +2157,11 @@ export type Effect =
       readonly optional?: true;
       readonly filter: ObjectFilter;
       readonly max: number;
+      /**
+       * "Search your library for up to two basic land cards that share a land type" (D-258, CR 205.3i, 701.23): the cards found must share a land type, which is a
+       * condition on the choice as a whole: any one card may be found, two only when some land type is on both. The land cards are of `filter`; `max` is at least 2.
+       */
+      readonly sharedLandType?: true;
       readonly destinations: readonly SearchDestination[];
       readonly reveal: boolean;
       readonly shuffle: boolean;

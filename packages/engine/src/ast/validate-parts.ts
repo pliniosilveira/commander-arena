@@ -2364,6 +2364,24 @@ function checkSearch(
   if (!isCount(e.max) || e.max < 1) {
     issue(out, `${path}.max`, 'max must be a positive integer');
   }
+  // D-258: "that share a land type" is about two or more land cards found together.
+  if (e.sharedLandType !== undefined) {
+    if (e.sharedLandType !== true) {
+      issue(out, `${path}.sharedLandType`, 'sharedLandType must be true when present');
+    } else if (!isCount(e.max) || e.max < 2) {
+      issue(
+        out,
+        `${path}.sharedLandType`,
+        'cards share a land type only when two or more are found',
+      );
+    } else if (!(filter?.types ?? []).includes('land')) {
+      issue(
+        out,
+        `${path}.sharedLandType`,
+        "the cards found are land cards: the filter's types include 'land'",
+      );
+    }
+  }
   for (const key of ['reveal', 'shuffle'] as const) {
     if (typeof e[key] !== 'boolean') issue(out, `${path}.${key}`, `${key} must be a boolean`);
   }

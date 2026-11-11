@@ -15,6 +15,7 @@ import {
   map,
   type Parser,
   pattern,
+  quiet,
   satisfy,
   sequence,
 } from '../../combinators';
@@ -74,14 +75,15 @@ function sharedSuffix(
   plural: boolean,
 ): Parser<Pick<IrFilter, 'sharesCreatureTypeWithIt' | 'sharedLandType'>> {
   return (ctx, pos) => {
-    // "that share a land type" (plural) is not read here yet: no card of a supported text says it.
-    if (plural) return { ok: true, value: {}, pos };
-    const r = pattern(
-      new RegExp(
-        plural
-          ? ` that share a land type${BOUNDARY}`
-          : ` that shares a creature type with it${BOUNDARY}`,
-        'u',
+    // Quiet: the words are optional, so their absence is no failure of the line (the diagnostics keep the position they had).
+    const r = quiet(
+      pattern(
+        new RegExp(
+          plural
+            ? ` that share a land type${BOUNDARY}`
+            : ` that shares a creature type with it${BOUNDARY}`,
+          'u',
+        ),
       ),
     )(ctx, pos);
     if (!r.ok) return { ok: true, value: {}, pos };
@@ -224,6 +226,7 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'CR 205.4g (Supertypes)',
     'CR 110.1 (Permanents)',
     'CR 205.3m (Subtypes)',
+    'CR 205.3i (Subtypes)',
     'CR 603.10a (Triggered Abilities)',
   ],
   examples: [
@@ -249,6 +252,8 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'a legendary card, an Aura card, or an instant card',
     'a creature card that shares a creature type with it',
     'an artifact creature card that shares a creature type with it',
+    'up to two basic land cards that share a land type',
+    'up to three basic land cards that share a land type',
   ],
   rejects: [
     'a basic land',
@@ -283,6 +288,16 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'a snow permanent card that shares a creature type with it',
     'a Goblin card that shares a creature type with it',
     'a creature card that shares a creature type with them',
+    'a basic land card that share a land type',
+    'up to two basic land cards that shares a land type',
+    'up to two creature cards that share a land type',
+    'up to two basic land cards that share a creature type',
+    'up to two basic land cards that share a land type with it',
+    'up to two basic land cards that share a type',
+    'up to two basic land cards that share a land type, put them onto the battlefield',
+    'up to two basic land cards that share a creature type with it',
+    'up to two permanent cards that share a land type',
+    'up to two Forest cards that share a land type',
   ],
   parse: node<Bare, IrNoun>(
     'noun.library-card',

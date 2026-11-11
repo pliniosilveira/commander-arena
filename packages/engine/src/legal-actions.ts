@@ -9,6 +9,7 @@
 import { arrangementActions, orderedChoices } from './rules/arrange-choices';
 import { defaultDivision } from './rules/combat-flow';
 import { crewChoices } from './rules/crew-choices';
+import { sharesLandType } from './rules/share-type';
 import { targetAnswerError } from './rules/target-choice';
 import type { Action } from './state/actions';
 import type { ChosenTarget } from './state/chosen';
@@ -211,6 +212,10 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
           ? range(d.min, d.max).flatMap((n) => orderedChoices(d.legal, n, MAX_LISTED_CHOICES))
           : range(d.min, d.max).flatMap((n) => firstCombinations(d.legal, n, MAX_LISTED_CHOICES))
         )
+          // CR 205.3i (D-258): a choice whose cards have no land type in common is no answer.
+          .filter(
+            (objects) => d.shareLandType === undefined || sharesLandType(objects, d.shareLandType),
+          )
           // CR 202.3 (D-230): a choice whose mana values add up to more than the limit is no answer.
           .filter(
             (objects) =>

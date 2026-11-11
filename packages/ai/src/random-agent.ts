@@ -199,7 +199,10 @@ export function createRandomHandlers(draw: (n: number) => number): DecisionHandl
     // A search may find nothing (min 0); a discard asks for exactly its count.
     chooseCards: (d) => {
       // D-139: "discard a card unless you discard an artifact card": the engine lists the answers (the single cards that do, and the full count).
-      if (d.orSingle !== undefined) return pick(preferredActions(d), draw);
+      // D-258: a search for lands that share a land type: the answers the engine lists are the ones that do.
+      if (d.orSingle !== undefined || d.shareLandType !== undefined) {
+        return pick(preferredActions(d), draw);
+      }
       const count = d.min + draw(d.max - d.min + 1);
       return { kind: 'chooseCards', objects: pickInOrder(d.legal, count, draw) };
     },

@@ -699,3 +699,30 @@ describe('reselecting what a creature attacks', () => {
     expect(line('player:0')).toBe('You choose that Grizzly Bears attacks you (Crooked Signpost).');
   });
 });
+
+// D-258: "Search your library for up to two basic land cards that share a land type": Confirm is not offered for two lands that share no land type.
+describe('a search for lands that share a land type', () => {
+  const search: ChooseCardsDecision = {
+    id: 'd9',
+    seat: 0,
+    kind: 'chooseCards',
+    source: 'o99',
+    purpose: 'search',
+    zone: 'library',
+    legal: ['o30', 'o31', 'o32'],
+    shareLandType: { o30: ['Forest'], o31: ['Plains'], o32: ['Forest'] },
+    min: 0,
+    max: 2,
+    reveal: false,
+    prompt: 'Choose up to two basic land cards that share a land type',
+  };
+
+  test('none, one card, and two that share a type are ready; two that do not are not', () => {
+    expect(foundReady([], search)).toBe(true);
+    expect(foundReady(['o31'], search)).toBe(true);
+    expect(foundReady(['o30', 'o32'], search)).toBe(true);
+    expect(foundReady(['o30', 'o31'], search)).toBe(false);
+    expect(foundHint(['o30', 'o31'], search)).toBe('Choose lands that share a land type');
+    expect(foundHint(['o30', 'o32'], search)).toBeNull();
+  });
+});
