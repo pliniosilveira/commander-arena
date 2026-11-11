@@ -471,7 +471,11 @@ export interface IrCondition extends IrNode {
     // game compared with a number
     | { readonly kind: 'amountIs'; readonly amount: IrAmount; readonly compare: IrComparison }
     // "if you're the monarch", "if an opponent is the monarch" (CR 725.1: a designation); `not` for the negative
-    | { readonly kind: 'designation'; readonly who: IrNoun; readonly designation: 'monarch' }
+    | {
+        readonly kind: 'designation';
+        readonly who: IrNoun;
+        readonly designation: 'monarch' | 'citysBlessing';
+      }
     // Stage P31 (D-140): "you control the artifact with the greatest mana value or tied for the greatest mana value" (CR 603.4): one of
     // the permanents of the kind, whoever controls them, with the greatest value of the stat, a tie counting for each tied one
     | {

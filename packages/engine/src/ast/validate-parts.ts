@@ -1569,7 +1569,7 @@ export function loyaltyOffPlaneswalkerIssues(
   });
 }
 
-export const DESIGNATIONS = ['monarch'];
+export const DESIGNATIONS = ['monarch', 'citysBlessing'];
 
 /** The players a condition names: no target and no trigger subject to read there (D-131). */
 function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): void {

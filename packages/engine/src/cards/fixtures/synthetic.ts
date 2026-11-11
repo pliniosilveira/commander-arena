@@ -15,6 +15,7 @@ import { SYNTHETIC_ALT_COST_LIST } from './synthetic-alt-costs';
 import { SYNTHETIC_AMOUNT_LIST } from './synthetic-amounts';
 import { SYNTHETIC_ANGELS_SHAPES_LIST } from './synthetic-angels-shapes';
 import { SYNTHETIC_ANGELS_STATICS_LIST } from './synthetic-angels-statics';
+import { SYNTHETIC_ASCEND_LIST } from './synthetic-ascend';
 import { SYNTHETIC_ATTACHMENT_LIST } from './synthetic-attachments';
 import { SYNTHETIC_ATTACK_BATCH_LIST } from './synthetic-attack-batch';
 import { SYNTHETIC_ATTACK_LIMIT_LIST } from './synthetic-attack-limits';
@@ -333,6 +334,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_PLAYER_EFFECT_LIST,
     ...SYNTHETIC_PLAY_RULE_LIST,
     ...SYNTHETIC_UPKEEP_LIST,
+    ...SYNTHETIC_ASCEND_LIST,
     ...SYNTHETIC_LATER_LIST,
     ...SYNTHETIC_DELAYED_RETURN_LIST,
     ...SYNTHETIC_COPY_LIST,

@@ -58,6 +58,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   improvise: ['Imp', 'Improvise'],
   delve: ['Dlv', 'Delve'],
   cascade: ['Csc', 'Cascade'],
+  // Ascend on a permanent (D-ASCEND, CR 702.131b).
+  ascend: ['Asc', 'Ascend'],
   // The upkeep slice (D-127).
   echo: ['Ech', 'Echo'],
   cumulativeUpkeep: ['CU', 'Cumulative upkeep'],

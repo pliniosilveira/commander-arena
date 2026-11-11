@@ -220,8 +220,11 @@ export type ThisWayKind =
   | 'discardedCreature'
   | 'discardedNoncreature';
 
-/** A designation a player can have (CR 725.1, D-131): only the monarch today; the initiative and the city's blessing can join. */
-export type Designation = 'monarch';
+/**
+ * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-ASCEND:
+ * any number of players, `SeatState.citysBlessing`); the initiative can join.
+ */
+export type Designation = 'monarch' | 'citysBlessing';
 
 /** What two players are compared by in "has more [life | cards in hand | creatures] than you" (D-131). */
 export type PlayerStat = 'life' | 'cardsInHand' | 'creatures' | 'lands';
@@ -2753,6 +2756,12 @@ export type Keyword =
    * `packages/cards` reads the line when it checks a commander (D-053). It cannot be granted.
    */
   | { readonly kind: 'canBeCommander' }
+  /**
+   * CR 702.131b (Ascend on a permanent, D-ASCEND): a static ability, "Any time you control ten or more permanents and you don't have the city's blessing, you get
+   * the city's blessing for the rest of the game." The engine checks it with the state-based actions (`rules/city-blessing.ts`) for the controller of
+   * a permanent that has it. The instant and sorcery form (CR 702.131a) is a spell ability and is not built. It cannot be granted.
+   */
+  | { readonly kind: 'ascend' }
   /**
    * CR 702.83a (Exalted): "Whenever a creature you control attacks alone, that creature gets +1/+1 until
    * end of turn." A triggered ability; `derive` expands it (`rules/derive-keywords.ts`), one trigger per

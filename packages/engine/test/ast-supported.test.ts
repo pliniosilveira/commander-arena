@@ -43,6 +43,7 @@ const EXECUTABLE_KEYWORDS = [
   'partner', // scenario-xx-changeling-devoid
   'chooseBackground', // scenario-xx-choose-background
   'canBeCommander', // scenario-xx-planeswalker-commander
+  'ascend', // scenario-xx-ascend
   'exalted', // scenario-xx-exalted-annihilator
   'annihilator', // scenario-xx-exalted-annihilator
   'backup', // convert-grammar-engine-p69 (Guardian Scalelord, on the real card)
@@ -129,6 +130,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   partner: { kind: 'partner' },
   chooseBackground: { kind: 'chooseBackground' },
   canBeCommander: { kind: 'canBeCommander' },
+  ascend: { kind: 'ascend' },
   exalted: { kind: 'exalted' },
   annihilator: { kind: 'annihilator', count: 2 },
   backup: { kind: 'backup', count: 1 },

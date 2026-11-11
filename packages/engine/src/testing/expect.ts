@@ -357,6 +357,16 @@ export function createExpectations(
         );
       }
     },
+    citysBlessing(seat, has = true) {
+      const state = getState();
+      const actual = state.seats[seat]?.citysBlessing === true;
+      if (actual !== has) {
+        fail(
+          `Expected seat ${seat} ${has ? 'to have' : 'not to have'} the city's blessing but ${actual ? 'it has it' : 'it does not'}`,
+          state,
+        );
+      }
+    },
     ringLevel(seat, tempted) {
       const state = getState();
       const actual = state.seats[seat]?.ring?.tempted ?? 0;

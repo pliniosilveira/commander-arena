@@ -83,6 +83,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'CR 702.85a (Cascade)',
     'CR 702.82a (Devour)',
     'CR 702.136a (Riot)',
+    'CR 702.131b (Ascend)',
   ],
   examples: [
     'Flying',
@@ -135,6 +136,9 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Devour 2',
     'Flying, devour 2',
     'Trample, riot',
+    // D-ASCEND (CR 702.131b): Ascend on a permanent.
+    'Ascend',
+    'ascend',
     'Affinity for artifacts',
     'Affinity for artifact creatures',
     'Affinity for Plains',
@@ -169,6 +173,8 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Flying.',
     'Flying,',
     'Prowessx',
+    'Ascendx',
+    'Ascend 1',
     'Flying, ward {2}, haste',
     'Flying, ward {X}',
     'Flying, ward',

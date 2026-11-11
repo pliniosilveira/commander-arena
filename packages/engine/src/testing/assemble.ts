@@ -239,6 +239,7 @@ export function assemble(
       commanders: commanders[id] ?? [],
       handSizeMax: s.handSizeMax,
       ...(s.ring === null || s.ring === 0 ? {} : { ring: { tempted: s.ring } }),
+      ...(s.citysBlessing ? { citysBlessing: true as const } : {}),
     };
   });
 

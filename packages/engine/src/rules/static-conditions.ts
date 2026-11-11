@@ -23,6 +23,7 @@ import {
 import { controllerOf } from './control';
 import { countForSource } from './derive-count';
 import { typeViewOf } from './derive-view';
+import { designationHolders } from './designations';
 import { matchesFilterWith } from './filter-match';
 
 /** The players a static ability's condition names (`validateCard`: you, each player, each opponent, this permanent's controller or owner). */
@@ -110,8 +111,8 @@ export function staticConditionHolds(
       );
     }
     case 'playerHasDesignation': {
-      const holder = state.monarch;
-      return holder !== null && playersOf(state, condition.player, source).includes(holder);
+      const holders = designationHolders(state, condition.designation);
+      return playersOf(state, condition.player, source).some((seat) => holders.includes(seat));
     }
     case 'and':
       return condition.terms.every((t) => staticConditionHolds(state, t, source));

@@ -49,6 +49,7 @@ export type SimpleKeyword = Extract<
   | 'dethrone'
   | 'myriad'
   | 'riot'
+  | 'ascend'
 >;
 
 /** The engine's keyword node of each `SimpleKeyword`. */
@@ -119,6 +120,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['myriad', 'myriad'],
   // Stage P40 (D-186, CR 702.136a): Riot is a printed ability and, as a static ability's grant to a group, "Nontoken creatures you control have riot" (the engine lists it in its GRANTABLE_KEYWORDS; its validators refuse every other way of giving it).
   ['riot', 'riot'],
+  // D-ASCEND (CR 702.131b): Ascend on a permanent is a printed static ability that gives the city's blessing; the engine does not let it be granted.
+  ['ascend', 'ascend'],
 ];
 
 /** The AST kind of a keyword written as `name` (lowercased words), or undefined. */
