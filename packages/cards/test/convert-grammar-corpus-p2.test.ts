@@ -288,11 +288,8 @@ const SEARCH: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Search your library for up to two basic land cards that share a land type, put them onto the battlefield tapped, then shuffle.',
-    expect: no(
-      'that share a land type, put them onto the battlefield tapped, then shuffle.',
-      'effect.search',
-    ),
-    note: 'backlog: 1 card',
+    expect: OK,
+    note: "backlog: 1 card (Myriad Landscape); read since D-262, the engine's search option sharedLandType",
   },
   {
     kind: 'sorcery',
@@ -445,11 +442,11 @@ runCorpus('the template corpus (stage P2)', CORPUS);
 
 test('the P2 corpus has unique lines, and supported, unparsed and not-runnable expectations', () => {
   expect(new Set(CORPUS.map((l) => `${l.kind}|${l.text}`)).size).toBe(CORPUS.length);
-  // Stages P51 and P52 (D-209, D-210) read two lines of this corpus that were unread ("at random", "your hand"): the floor of the unread lines moved from 15 to 13; stage P63 (D-216) read two sacrifice mana abilities, so the not-runnable floor moved from 5 to 3.
+  // Stages P51 and P52 (D-209, D-210) read two lines of this corpus that were unread ("at random", "your hand"): the floor of the unread lines moved from 15 to 13; stage P63 (D-216) read two sacrifice mana abilities, so the not-runnable floor moved from 5 to 3; D-262 read "up to two basic land cards that share a land type" (Myriad Landscape), so the unread floor moved from 13 to 12.
   expect(CORPUS.filter((l) => 'supported' in l.expect).length).toBeGreaterThanOrEqual(40);
   expect(
     CORPUS.filter((l) => 'unparsed' in l.expect && l.expect.unparsed.reason === undefined).length,
-  ).toBeGreaterThanOrEqual(13);
+  ).toBeGreaterThanOrEqual(12);
   expect(
     CORPUS.filter((l) => 'unparsed' in l.expect && l.expect.unparsed.reason === 'notRunnable')
       .length,

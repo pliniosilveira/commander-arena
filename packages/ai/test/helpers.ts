@@ -3420,6 +3420,10 @@ export function combatAnswerErrors(decision: PendingDecision, action: Action): s
       if (seen.has(attacker)) errors.push(`${attacker} attacks twice`);
       seen.add(attacker);
     }
+    // CR 508.1d: "attacks each combat if able": the decision lists the creatures that must be declared (`mustAttack`); a declaration that leaves one out is not legal.
+    for (const required of decision.mustAttack) {
+      if (!seen.has(required)) errors.push(`${required} must attack`);
+    }
   } else if (decision.kind === 'declareBlockers') {
     if (action.kind !== 'declareBlockers') return [`answered with ${action.kind}`];
     const seen = new Set<string>();

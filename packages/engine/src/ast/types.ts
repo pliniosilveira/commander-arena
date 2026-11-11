@@ -90,6 +90,11 @@ export type Amount =
       readonly kind: 'manaSpent';
       readonly fromType?: string;
       /**
+       * "for each {S} spent to cast this spell" (D-260, CR 107.4h, 106.3, 601.2h): only the mana that a snow source made. Not with `fromType`. In the
+       * effect of the spell itself as well as in "When you cast this spell": the spell is the source of its own effect (a copy has 0, CR 707.10).
+       */
+      readonly snow?: true;
+      /**
        * "the amount of mana spent to cast that spell" (D-217, CR 601.2h, 113.7a): the spell a target slot of the ability named, as it is or as it last was
        * (a countered spell is gone). Only the target of the same spell or ability.
        */
@@ -467,6 +472,12 @@ export interface ObjectFilter {
    * `asEntersChoose` of `creatureType` (linked abilities, CR 607.2d).
    */
   readonly chosenType?: true;
+  /**
+   * "that shares a creature type with it" (D-261, CR 205.3m, 603.10a, 113.7a): the object has at least one creature type that the creature the trigger is
+   * about has (`triggerSubject`: the one that died), as that creature last was on the battlefield; a changeling has every creature type (CR 702.73a).
+   * Only in the filter of a `revealUntil` in the effect of a "dies" trigger.
+   */
+  readonly sharesCreatureTypeWith?: 'triggerSubject';
   /** "Of the chosen color" (D-100): as `chosenType`, for `chosen.color` and an `asEntersChoose` of `color`. */
   readonly chosenColor?: true;
   /**
@@ -2156,6 +2167,11 @@ export type Effect =
       readonly optional?: true;
       readonly filter: ObjectFilter;
       readonly max: number;
+      /**
+       * "Search your library for up to two basic land cards that share a land type" (D-262, CR 205.3i, 701.23): the cards found must share a land type, which is a
+       * condition on the choice as a whole: any one card may be found, two only when some land type is on both. The land cards are of `filter`; `max` is at least 2.
+       */
+      readonly sharedLandType?: true;
       readonly destinations: readonly SearchDestination[];
       readonly reveal: boolean;
       readonly shuffle: boolean;

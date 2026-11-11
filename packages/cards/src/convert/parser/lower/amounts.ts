@@ -168,7 +168,10 @@ export function lowerAmount(
       // this spell" only (the spell is the source there); "it" is that spell only when the ability is about the source itself.
       const blocked = needs('manaSpent');
       if (blocked !== null) return blocked;
-      if (!ctx.selfCast || (amount.who === 'it' && !ctx.itIsSelf)) {
+      // D-260: the effect of a spell reads it too, of the spell itself ("... for each {S} spent to cast ~", the card's own name): the engine reads the stack data of
+      // the spell that is resolving.
+      const ofSpell = ctx.owner === 'spell' && amount.who === 'self';
+      if (!(ctx.selfCast || ofSpell) || (amount.who === 'it' && !ctx.itIsSelf)) {
         return { ok: false, needs: [], at: amount.span, rule };
       }
       return {
@@ -176,6 +179,7 @@ export function lowerAmount(
         value: {
           kind: 'manaSpent',
           ...(amount.fromType === undefined ? {} : { fromType: amount.fromType }),
+          ...(amount.snow === true ? { snow: true as const } : {}),
         },
         rule,
       };

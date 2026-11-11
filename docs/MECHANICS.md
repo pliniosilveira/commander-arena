@@ -4201,3 +4201,34 @@ One section for the whole program, a block for each group. The real texts are in
 - Parser: `effect.do-once-each-turn`, `effect.pay-x-at-most`, `amount.that-many` for `effect.add-counters`. In a life gain trigger "that many" in the first instruction of the body is the life gained; after any other instruction it is refused, since it may count what that instruction did.
 - Web: the ability label of `payAnyAmount`. Tests: `packages/engine/test/scenario-xx-life-gain-amount.test.ts`, `packages/engine/test/scenario-xx-pay-x-life-gained.test.ts`, `packages/cards/test/parser-p69-bruna-life.test.ts`, `packages/cards/test/convert-grammar-engine-p69-life.test.ts`.
 - Limits: the AI pays the most for a `payAnyAmount` decision, so with Well of Lost Dreams it spends up to X mana per life gain. The limit of `pay-x-at-most` is read only for the life gained.
+
+## The Bruna deck, search templates (branch `bruna-search-templates`; D-260, D-261, D-262)
+
+Three cards of the Bruna deck whose search or reveal reads a new template. All three are P-class (a primitive and templates, no subsystem); the cards used in the tests are SYNTHETIC.
+
+### Search for Glory: "Search your library for a snow permanent card, a legendary card, or a Saga card ... You gain 1 life for each {S} spent to cast this spell." (D-260)
+
+- CR: 107.4h, 106.3, 601.2h, 707.10, 701.23a-b, 205.4g, 110.1.
+- AST: `Amount` `manaSpent { snow: true }` ("for each {S} spent"; not with `fromType`), now also readable in the effect of a spell itself (`scope.owner === 'spell'`); `ManaSpent.snow` on the stack data (left out when 0); the search `filter` may be an `anyOf` of filters, one of them with its own `anyOf` (a union of kinds of card, "a nonland permanent card" being the permanent types less the 'non' words).
+- Code: `mana/payment.ts` (`PaymentPlan.spentSnow`), `rules/mana-engine.ts`, `rules/cast.ts` (`withManaSpent`), `rules/mana-spent.ts`, `rules/search-prompt.ts` (the prompt names the union), `ast/validate-parts.ts` (where the amount may be read).
+- Parser: `amount.for-each-mana-spent` reads "for each {S} spent to cast ~"; `noun.library-card` reads "a snow permanent card", "a nonland permanent card" and "a X card, a Y card, or a Z card".
+- Tests: `packages/engine/test/scenario-xx-snow-mana.test.ts`, `mana-payment.test.ts`, `ast-mana-spent-validate.test.ts`, `packages/cards/test/parser-bruna-search-templates.test.ts`.
+- Limits: a copy of a spell has spent none (CR 707.10); the amount in a spell's own effect is for "~" only, not "where X is the amount of mana spent to cast that spell"; "mana of a color spent" is still not built.
+
+### Heirloom Blade: "... reveal cards from the top of your library until you reveal a creature card that shares a creature type with it." (D-261)
+
+- CR: 205.3m, 603.10a, 113.7a, 702.73a, 701.20, 401.4, 608.2d.
+- AST: `ObjectFilter.sharesCreatureTypeWith: 'triggerSubject'`; validated only in the filter of a `revealUntil` in the effect of a `dies` trigger (refused in targets, `each`, statics, other triggers and spells), so it cannot silently match nothing.
+- Code: `rules/filter-match.ts` (`FilterContext.subjectSubtypes`, the creature types the subject last had), `rules/reveal-until.ts` (passes the resolution's `triggerSubject`), `ast/validate-parts.ts`, `ast/features.ts` (`selector:sharesCreatureTypeWith`).
+- Parser: ' that shares a creature type with it' after a creature card; `segment.ts` joins "you may reveal cards ... until ..." with the "Put that card" sentence.
+- Tests: `packages/engine/test/scenario-xx-shared-creature-type.test.ts` (including a changeling that dies, a changeling card in the library, last-known types from an Aura, the rest on the bottom, validation), `parser-bruna-search-templates.test.ts`.
+- Limits: 'enters', 'attacks' and a batch subject are refused until a card needs them.
+
+### Myriad Landscape: "Search your library for up to two basic land cards that share a land type, put them onto the battlefield tapped, then shuffle." (D-262)
+
+- CR: 205.3i, 205.4c, 701.23a-b, 701.24, 608.2d, 602.2.
+- AST: `search.sharedLandType: true` (max at least 2, a land filter). Decision: `chooseCards` carries `shareLandType`, the land types of each card of `legal`; an answer is legal when its cards have one land type in common (one card or none always is). No new decision kind, like `totalManaValue` (D-230).
+- Code: `rules/search.ts`, `rules/share-type.ts` (`sharesLandType`, shared by `applyAction`'s check, the listed actions and the web app), `legal-actions.ts` (the cap of the listed answers counts the sharing ones, so a large library cannot leave the list without a pair), `characteristics.ts` (`LAND_TYPES`), `ai/src/casual-search.ts`, `ai/src/random-agent.ts`, `apps/web/src/ui/decisions/cards-picker.ts`.
+- Parser: ' that share a land type' after 'up to N basic land cards'; `lowerFilter` refuses the flag elsewhere. Feature `selector:sharedLandType`.
+- Tests: `packages/engine/test/scenario-xx-shared-land-type.test.ts`, `packages/ai/test/search-shared-land-type.test.ts`, `parser-bruna-search-templates.test.ts`.
+- Limits: the listed answers are the first 500 that share a type; the engine accepts every legal one.

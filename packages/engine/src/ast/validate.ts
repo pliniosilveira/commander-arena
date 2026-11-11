@@ -1032,6 +1032,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
         ...(selfCast ? { selfCast: true } : {}),
+        ...(a.trigger?.kind === 'dies' ? { diesTrigger: true } : {}),
         ...HOOKS,
       });
       if (a.modes !== undefined || a.chooseModes !== undefined) {

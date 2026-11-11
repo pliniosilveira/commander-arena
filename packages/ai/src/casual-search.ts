@@ -43,6 +43,32 @@ function coloursOwned(view: GameView): Set<Color> {
 }
 
 /**
+ * "Up to two basic land cards that share a land type" (`shareLandType`, D-262): all the cards found must have one land type in common, so the agent picks a land type
+ * first: the one with the most cards to find (up to what is allowed), and among those a colour it has no land of, else the first the engine lists.
+ */
+function chooseSharedLandType(
+  d: ChooseCardsDecision,
+  types: Readonly<Record<ObjectId, readonly string[]>>,
+  owned: ReadonlySet<Color>,
+): Action {
+  const kinds = [...new Set(d.legal.flatMap((id) => types[id] ?? []))];
+  let best: { cards: ObjectId[]; lacking: boolean } | null = null;
+  for (const kind of kinds) {
+    const cards = d.legal.filter((id) => (types[id] ?? []).includes(kind)).slice(0, d.max);
+    const color = BASIC_LAND_TYPES[kind];
+    const lacking = color !== undefined && !owned.has(color);
+    if (
+      best === null ||
+      cards.length > best.cards.length ||
+      (cards.length === best.cards.length && lacking && !best.lacking)
+    ) {
+      best = { cards, lacking };
+    }
+  }
+  return { kind: 'chooseCards', objects: best === null ? [] : best.cards };
+}
+
+/**
  * A search: find as many cards as allowed. A basic land of a colour the agent has no land of comes
  * first (and each colour counts once, so two Forests are not taken while Islands are missing);
  * otherwise the first card the engine lists. The answer is in the order found, which is the order
@@ -57,6 +83,7 @@ function chooseToFind(view: GameView, d: ChooseCardsDecision): Action {
     const o = cards.get(id);
     return o === undefined ? null : basicLandColor(o);
   };
+  if (d.shareLandType !== undefined) return chooseSharedLandType(d, d.shareLandType, owned);
   const remaining = [...d.legal];
   const found: ObjectId[] = [];
   const want = Math.min(d.max, remaining.length);

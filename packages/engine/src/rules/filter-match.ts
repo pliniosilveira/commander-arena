@@ -8,6 +8,7 @@
  */
 import type { Keyword, NumberComparison, ObjectFilter } from '../ast/types';
 import type { CardType, Color, Subtype, Supertype } from '../characteristics';
+import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import type { ChosenValues, GameObject, GameState } from '../state/types';
 import { sameCreatureType } from './chosen';
@@ -104,6 +105,10 @@ export interface FilterContext {
   readonly graveyarded?: readonly ObjectId[];
   /** The permanents that entered the battlefield this turn (`enteredThisTurn`, group 4 of the Vraska deck): the turn log, read by the caller; absent fails the flag closed. */
   readonly entered?: readonly ObjectId[];
+  /**
+   * The subtypes of the object the trigger is about, as it last was (`sharesCreatureTypeWith`, D-261, CR 603.10a, 113.7a): read by the caller; absent fails the flag closed.
+   */
+  readonly subjectSubtypes?: readonly Subtype[];
 }
 
 /**
@@ -233,6 +238,18 @@ export function matchesFilterWith(
   if (filter.chosenColor === true) {
     const color = ctx.sourceChosen?.color;
     if (color === undefined || !d.colors.includes(color)) return false;
+  }
+  // D-261, CR 205.3m: "shares a creature type with it": a creature type (CR 205.3m: the subtypes of creatures and kindreds) that both have.
+  if (filter.sharesCreatureTypeWith !== undefined) {
+    const theirs = ctx.subjectSubtypes;
+    const shared =
+      theirs !== undefined &&
+      d.subtypes.some(
+        (s) =>
+          CREATURE_TYPES.some((c) => sameCreatureType(c, s)) &&
+          theirs.some((t) => sameCreatureType(t, s)),
+      );
+    if (!shared) return false;
   }
   if (filter.anyOf !== undefined) {
     // A disjunction (CR 115.1: "artifact or enchantment" names one set of legal targets). The

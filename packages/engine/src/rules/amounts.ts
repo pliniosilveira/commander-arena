@@ -181,9 +181,11 @@ export function amountOf(
       const slot = amount.of.id;
       const chosen = targets.find((t) => t.specId === slot);
       const spell = chosen?.kind === 'object' ? objectOrLki(state, chosen.id) : null;
-      return manaSpentOf(spell, amount.fromType);
+      return manaSpentOf(spell, amount.fromType, amount.snow === true);
     }
-    return ctx.source === null ? 0 : manaSpentOf(objectOrLki(state, ctx.source), amount.fromType);
+    return ctx.source === null
+      ? 0
+      : manaSpentOf(objectOrLki(state, ctx.source), amount.fromType, amount.snow === true);
   }
   // D-131: arithmetic on other amounts. Each is read as the instruction runs, like the amounts it is made of.
   if (amount.kind === 'half') {

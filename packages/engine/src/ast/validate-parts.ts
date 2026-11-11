@@ -93,6 +93,8 @@ export interface Scope {
   readonly voteOptions?: readonly string[];
   /** True in the ability "When you cast this spell" (`castSpell` with `self`), the only place `cascade` may stand. */
   readonly selfCast?: boolean;
+  /** True in the effect of a `dies` trigger: the creature that died is what the trigger is about, and `sharesCreatureTypeWith` reads its creature types (D-261). */
+  readonly diesTrigger?: boolean;
   /** True in an activated ability that functions from the graveyard, the only place `unearth` may stand (D-124). */
   readonly fromGraveyard?: boolean;
   /**
@@ -152,7 +154,13 @@ export function checkEnumList(
  * `ownerScope` is given only where the filter is an effect's `each` selector, the one place that
  * reads `owner` (it knows the effect's targets); anywhere else `owner` is refused.
  */
-export function checkFilter(f: ObjectFilter, path: string, out: Out, ownerScope?: Scope): void {
+export function checkFilter(
+  f: ObjectFilter,
+  path: string,
+  out: Out,
+  ownerScope?: Scope,
+  sharesWith?: boolean,
+): void {
   if (f.controlledBy !== undefined) {
     if (ownerScope === undefined) {
       issue(
@@ -358,6 +366,18 @@ export function checkFilter(f: ObjectFilter, path: string, out: Out, ownerScope?
       );
     }
   }
+  // D-261: "that shares a creature type with it" names the creature a "dies" trigger is about, which only the filter of a `revealUntil` in its effect reads.
+  if (f.sharesCreatureTypeWith !== undefined) {
+    if (f.sharesCreatureTypeWith !== 'triggerSubject') {
+      issue(out, `${path}.sharesCreatureTypeWith`, "sharesCreatureTypeWith is 'triggerSubject'");
+    } else if (sharesWith !== true) {
+      issue(
+        out,
+        `${path}.sharesCreatureTypeWith`,
+        'sharesCreatureTypeWith is read in the filter of a revealUntil in the effect of a "dies" trigger, where the creature that died is what the trigger is about',
+      );
+    }
+  }
   // D-100: "of the chosen type" / "of the chosen color" are flags; the card must ask for the choice.
   for (const key of ['chosenType', 'chosenColor'] as const) {
     if (f[key] !== undefined && f[key] !== true)
@@ -371,7 +391,7 @@ export function checkFilter(f: ObjectFilter, path: string, out: Out, ownerScope?
     }
     f.anyOf.forEach((member, i) => {
       const p = `${path}.anyOf[${i}]`;
-      checkFilter(member, p, out);
+      checkFilter(member, p, out, undefined, sharesWith);
       // Where to look (CR 115.1, 601.2c) is the outer filter's business.
       // D-207: a member may say what kind of stack object it is when the outer filter, on the stack, does not ("triggered ability or colorless spell").
       if (member.zone !== undefined) {
@@ -987,9 +1007,18 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
 }
 
 /** D-183: the card type of the source of the mana an amount counts, when it names one: a card type of CR 205.2a, in lower case. */
-export function checkManaSpentType(type: string | undefined, path: string, out: Out): void {
+export function checkManaSpentType(
+  type: string | undefined,
+  path: string,
+  out: Out,
+  snow?: unknown,
+): void {
   if (type !== undefined && !isOneOf(type, CARD_TYPES)) {
     issue(out, path, `fromType is a card type, not ${JSON.stringify(type)}`);
+  }
+  // D-260: "for each {S} spent" is the mana of snow sources, a different cut of the mana spent than a card type of the source.
+  if (snow !== undefined && (snow !== true || type !== undefined)) {
+    issue(out, path, 'snow is true and is not given with fromType');
   }
 }
 
@@ -1084,14 +1113,15 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         if (a.of.kind !== 'target')
           issue(out, `${path}.of`, 'the spell is a target of the ability');
         else checkRef(a.of, 'object', `${path}.of`, scope, out);
-      } else if (scope.selfCast !== true) {
+      } else if (scope.selfCast !== true && scope.owner !== 'spell') {
+        // D-260: the effect of the spell itself reads what was spent to cast it ("You gain 1 life for each {S} spent to cast this spell").
         issue(
           out,
           path,
-          'manaSpent is read in the effect of a "when you cast this spell" ability, where the spell is the source',
+          'manaSpent is read in the effect of a spell, or of a "when you cast this spell" ability, where the spell is the source',
         );
       }
-      checkManaSpentType(a.fromType, `${path}.fromType`, out);
+      checkManaSpentType(a.fromType, `${path}.fromType`, out, a.snow);
       break;
     case 'exiledStillThere':
       // D-151: only the effect of a delayed trigger created after an effect that exiled cards (`checkDelayedTrigger`).
@@ -2342,6 +2372,24 @@ function checkSearch(
   if (!isCount(e.max) || e.max < 1) {
     issue(out, `${path}.max`, 'max must be a positive integer');
   }
+  // D-262: "that share a land type" is about two or more land cards found together.
+  if (e.sharedLandType !== undefined) {
+    if (e.sharedLandType !== true) {
+      issue(out, `${path}.sharedLandType`, 'sharedLandType must be true when present');
+    } else if (!isCount(e.max) || e.max < 2) {
+      issue(
+        out,
+        `${path}.sharedLandType`,
+        'cards share a land type only when two or more are found',
+      );
+    } else if (!(filter?.types ?? []).includes('land')) {
+      issue(
+        out,
+        `${path}.sharedLandType`,
+        "the cards found are land cards: the filter's types include 'land'",
+      );
+    }
+  }
   for (const key of ['reveal', 'shuffle'] as const) {
     if (typeof e[key] !== 'boolean') issue(out, `${path}.${key}`, `${key} must be a boolean`);
   }
@@ -3206,7 +3254,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'revealUntil':
       // D-145: "reveal cards until you reveal a land card": a filter of cards in the library, and where the card found goes.
-      checkFilter(e.filter, `${path}.filter`, out);
+      checkFilter(e.filter, `${path}.filter`, out, undefined, scope.diesTrigger === true);
       if (
         filterSome(
           e.filter,

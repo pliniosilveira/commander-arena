@@ -22,6 +22,7 @@ import { SYNTHETIC_ATTACK_LIMIT_LIST } from './synthetic-attack-limits';
 import { SYNTHETIC_BATCH_LIST } from './synthetic-batch';
 import { SYNTHETIC_BIG_DISCOUNT_LIST } from './synthetic-big-discount';
 import { SYNTHETIC_BITE_EXCESS_LIST } from './synthetic-bite-excess';
+import { SYNTHETIC_BRUNA_SEARCH_LIST } from './synthetic-bruna-search';
 import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
 import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
 import { SYNTHETIC_CHOSEN_LIST } from './synthetic-chosen';
@@ -86,6 +87,7 @@ import { SYNTHETIC_REVEAL_LIST } from './synthetic-reveal';
 import { SYNTHETIC_RING_LIST } from './synthetic-ring';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
 import { SYNTHETIC_SEARCH_LIST } from './synthetic-search';
+import { SYNTHETIC_SNOW_LIST } from './synthetic-snow';
 import { SYNTHETIC_STATICS_ARTIFACTS_LIST } from './synthetic-statics-artifacts';
 import { SYNTHETIC_STUN_LIST } from './synthetic-stun';
 import { SYNTHETIC_SUBJECT_LIST } from './synthetic-subjects';
@@ -364,6 +366,8 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_ADAMANTOISE_LIST,
     ...SYNTHETIC_VOTE_LIST,
     ...SYNTHETIC_RING_LIST,
+    ...SYNTHETIC_SNOW_LIST,
+    ...SYNTHETIC_BRUNA_SEARCH_LIST,
     ...SYNTHETIC_PLANESWALKER_LIST,
     ...SYNTHETIC_MANA_TRIGGERS_LIST,
     ...SYNTHETIC_LIBRARY_ARTIFACTS_LIST,

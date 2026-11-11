@@ -45,12 +45,28 @@ function words(f: ObjectFilter): string[] {
   ];
 }
 
-/** "basic land", "artifact or enchantment", "" for any card. */
+const PERMANENT_TYPES = ['artifact', 'battle', 'creature', 'enchantment', 'land', 'planeswalker'];
+
+/** "A, B or C" for a list: "or" before the last, commas between the others. */
+function orList(items: readonly string[]): string {
+  if (items.length <= 2) return items.join(' or ');
+  return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
+}
+
+/**
+ * "basic land", "artifact or enchantment", "snow permanent, legendary, or Saga", "" for any card. A member that has a choice of its own
+ * ("snow" and any of the six permanent types, D-260) is described by its own words; the six permanent types together are "permanent".
+ */
 export function describeFilter(f: ObjectFilter): string {
-  const own = words(f).join(' ');
-  if (f.anyOf === undefined) return own;
-  const alternatives = f.anyOf.map((m) => words(m).join(' ')).filter((w) => w !== '');
-  return [own, alternatives.join(' or ')].filter((w) => w !== '').join(' ');
+  const members = f.anyOf;
+  const permanent =
+    members !== undefined &&
+    members.length === PERMANENT_TYPES.length &&
+    PERMANENT_TYPES.every((t) => members.some((m) => m.types?.length === 1 && m.types[0] === t));
+  const own = [...words(f), ...(permanent ? ['permanent'] : [])].join(' ');
+  if (members === undefined || permanent) return own;
+  const alternatives = members.map(describeFilter).filter((w) => w !== '');
+  return [own, orList(alternatives)].filter((w) => w !== '').join(' ');
 }
 
 function whereWords(d: SearchEffect['destinations'][number]): string {
@@ -90,7 +106,8 @@ function clause(
 /** The prompt of a search decision. */
 export function describeSearch(search: SearchEffect): string {
   const what = describeFilter(search.filter);
-  const noun = `${what === '' ? '' : `${what} `}${search.max === 1 ? 'card' : 'cards'}`;
+  const sharing = search.sharedLandType === true ? ' that share a land type' : '';
+  const noun = `${what === '' ? '' : `${what} `}${search.max === 1 ? 'card' : 'cards'}${sharing}`;
   const clauses: string[] = [];
   let start = 0;
   for (let i = 0; i < search.destinations.length; i += 1) {

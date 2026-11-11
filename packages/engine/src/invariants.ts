@@ -116,12 +116,13 @@ export function checkInvariants(state: GameState): string[] {
     }
     // CR 601.2h (D-183): the mana spent to cast a spell belongs to a spell, is at least 1 when present, and no card type has more of it than there is.
     if (obj.stack?.manaSpent !== undefined) {
-      const { total, fromTypes } = obj.stack.manaSpent;
+      const { total, fromTypes, snow } = obj.stack.manaSpent;
       if (
         obj.stack.kind !== 'spell' ||
         !Number.isSafeInteger(total) ||
         total < 1 ||
-        Object.values(fromTypes).some((n) => !Number.isSafeInteger(n) || n < 1 || n > total)
+        Object.values(fromTypes).some((n) => !Number.isSafeInteger(n) || n < 1 || n > total) ||
+        (snow !== undefined && (!Number.isSafeInteger(snow) || snow < 1 || snow > total))
       ) {
         problems.push(`${id} has mana spent that it cannot have`);
       }
