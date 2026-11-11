@@ -1,5 +1,5 @@
 // "{2}, {T}: Choose a color. Add an amount of mana of that color equal to your devotion to that color." (the mana production `anyColorDevotion`).
-// Pins: CR 605.1a and 605.3b (a mana ability does not use the stack: the color is chosen as it is activated and the mana is added at once), CR 700.5 (devotion:
+// Pins: CR 605.1a and 605.3b (a mana ability does not use the stack and resolves immediately after it is activated: the color is taken with the activation and the mana is added at once), CR 700.5 (devotion:
 // the mana symbols of a color among the mana costs of the permanents a player controls, hybrid symbols counted for each of their colors), CR 118.3 and 605.3a
 // (the {2} comes out of the pool), CR 601.2g (the payment planner knows what the ability can make).
 // All cards are SYNTHETIC (src/cards/fixtures/synthetic-devotion-mana.ts).

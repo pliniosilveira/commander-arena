@@ -248,6 +248,9 @@ function lowerManaAbility(
     effects.every(isAlso) &&
     rest.every(plainClause);
   if (!shaped) return failure(ability);
+  // CR 700.5 (Devotion), 605.3b: devotion is read as the ability is activated, before its costs are paid, so a cost that can take a permanent off the battlefield
+  // (a sacrifice) would leave the permanent's own symbols counted, where the ability resolves after the cost. Refused, never guessed.
+  if (colorChosen && sacrifices.length > 0) return failure(ability);
   const also = effects.filter(isAlso);
   const value: ManaAbility = {
     kind: 'mana',
