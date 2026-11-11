@@ -6,7 +6,8 @@ import type { CardDefinition } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, type GoldenCard, importCard, parseGolden } from '../src/index';
-import { NO_OVERRIDES, parsed } from './convert-grammar-helpers';
+import { NO_OVERRIDES, parsed, parseOnly } from './convert-grammar-helpers';
+import { syntheticCard } from './convert-helpers';
 import { dropped, readAll } from './parser-p5-helpers';
 
 const cards: readonly GoldenCard[] = parseGolden(
@@ -183,5 +184,127 @@ describe('Search for Glory: a search for one of several kinds of card, and {S} s
       g.expect.zone(FLURRY.name, 'library', { seat: 0 });
       g.expect.life(0, 40);
     });
+  });
+});
+
+describe('Heirloom Blade: a creature card that shares a creature type with the creature that died (D-257)', () => {
+  const TRIGGER =
+    'Whenever equipped creature dies, you may reveal cards from the top of your library until you reveal a creature card that shares a creature type with it. Put that card into your hand and the rest on the bottom of your library in a random order.';
+
+  test('reads as an optional dies trigger of the equipped creature that reveals until a card that shares a type', () => {
+    const face = readAll(`${TRIGGER}\nEquip {1}`, 'artifact', ['Equipment']);
+    expect(face.abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'dies', what: { kind: 'attached' } },
+        optional: true,
+        effect: {
+          kind: 'revealUntil',
+          filter: { types: ['creature'], sharesCreatureTypeWith: 'triggerSubject' },
+          put: 'hand',
+        },
+      },
+      { kind: 'keyword', keyword: { kind: 'equip', cost: [{ kind: 'mana', symbols: ['1'] }] } },
+    ]);
+  });
+
+  test('"this creature dies" is the same creature the trigger is about (SYNTHETIC)', () => {
+    const face = readAll(TRIGGER.replace('equipped creature', '~'), 'creature');
+    expect(JSON.stringify(face.abilities)).toContain('"sharesCreatureTypeWith":"triggerSubject"');
+  });
+
+  test('the plain "you may reveal ... until you reveal a creature card" is read as well (SYNTHETIC)', () => {
+    const face = readAll(
+      'Whenever equipped creature dies, you may reveal cards from the top of your library until you reveal a creature card. Put that card into your hand and the rest on the bottom of your library in a random order.',
+      'artifact',
+      ['Equipment'],
+    );
+    expect(face.abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'dies', what: { kind: 'attached' } },
+        optional: true,
+        effect: { kind: 'revealUntil', filter: { types: ['creature'] }, put: 'hand' },
+      },
+    ]);
+  });
+
+  test('where the engine does not read it, the card is not supported: no dies trigger, a spell, another card (SYNTHETIC)', () => {
+    for (const [text, type] of [
+      [
+        'Whenever equipped creature attacks, you may reveal cards from the top of your library until you reveal a creature card that shares a creature type with it. Put that card into your hand and the rest on the bottom of your library in a random order.',
+        'artifact',
+      ],
+      [
+        'Reveal cards from the top of your library until you reveal a creature card that shares a creature type with it. Put that card into your hand and the rest on the bottom of your library in a random order.',
+        'sorcery',
+      ],
+      [
+        'Whenever equipped creature dies, you may reveal cards from the top of your library until you reveal a land card that shares a creature type with it. Put that card into your hand and the rest on the bottom of your library in a random order.',
+        'artifact',
+      ],
+      [
+        'Whenever equipped creature dies, you may reveal cards from the top of your library until you reveal a creature card that shares a land type with it. Put that card into your hand and the rest on the bottom of your library in a random order.',
+        'artifact',
+      ],
+    ] as const) {
+      // The grammar reads the words; the engine's validation (`validateCard`) refuses the filter where it has no creature to read, so the card is not supported.
+      const imported = parseOnly(
+        syntheticCard({
+          name: 'SYNTHETIC Odd Card',
+          typeLine: type === 'artifact' ? 'Artifact — Equipment' : 'Sorcery',
+          oracleText: text,
+          manaCost: '{3}',
+        }),
+      );
+      expect(imported.support.status, text).toBe('unsupported');
+    }
+  });
+});
+
+describe('Heirloom Blade played from the real card', () => {
+  const BLADE = real('Heirloom Blade');
+  const small = (name: string, types: string) =>
+    parsed(name, `Creature — ${types}`, '', { manaCost: '{1}', power: '2', toughness: '2' });
+  const KNIGHT = small('SYNTHETIC Goblin Knight', 'Goblin Knight');
+  const SQUIRE = small('SYNTHETIC Human Knight', 'Human Knight');
+  const WIZARD = small('SYNTHETIC Lone Wizard', 'Wizard');
+  const FILLER = Array.from({ length: 6 }, () => 'Island');
+
+  const game = () =>
+    scenario()
+      .define(BLADE)
+      .define(KNIGHT)
+      .define(SQUIRE)
+      .define(WIZARD)
+      .seat(0)
+      .battlefield(KNIGHT.name)
+      .battlefield(BLADE.name, { attachedTo: KNIGHT.name })
+      .library(WIZARD.name, SQUIRE.name, ...FILLER)
+      .seat(1)
+      .hand('Murder')
+      .battlefield('Swamp', 'Swamp', 'Swamp')
+      .library(...FILLER)
+      .at('precombatMain', { active: 1, turn: 2 })
+      .build();
+
+  test('the equipped creature is destroyed: the Knight is found, the Wizard goes to the bottom', () => {
+    const g = game();
+    g.act(1).cast('Murder', { targets: [{ name: KNIGHT.name, zone: 'battlefield' }], pay: true });
+    g.passAll();
+    g.expect.pending('confirmOptional', 0);
+    g.act(0).accept();
+    g.expect.zone(SQUIRE.name, 'hand', { seat: 0 });
+    g.expect.zone(WIZARD.name, 'library', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('declined: the library is as it was', () => {
+    const g = game();
+    g.act(1).cast('Murder', { targets: [{ name: KNIGHT.name, zone: 'battlefield' }], pay: true });
+    g.passAll();
+    g.act(0).decline();
+    g.expect.zone(SQUIRE.name, 'library', { seat: 0 });
+    g.expect.librarySize(0, 2 + FILLER.length);
   });
 });

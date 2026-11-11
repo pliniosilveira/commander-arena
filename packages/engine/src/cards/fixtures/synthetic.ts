@@ -21,6 +21,7 @@ import { SYNTHETIC_ATTACK_LIMIT_LIST } from './synthetic-attack-limits';
 import { SYNTHETIC_BATCH_LIST } from './synthetic-batch';
 import { SYNTHETIC_BIG_DISCOUNT_LIST } from './synthetic-big-discount';
 import { SYNTHETIC_BITE_EXCESS_LIST } from './synthetic-bite-excess';
+import { SYNTHETIC_BRUNA_SEARCH_LIST } from './synthetic-bruna-search';
 import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
 import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
 import { SYNTHETIC_CHOSEN_LIST } from './synthetic-chosen';
@@ -360,6 +361,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_VOTE_LIST,
     ...SYNTHETIC_RING_LIST,
     ...SYNTHETIC_SNOW_LIST,
+    ...SYNTHETIC_BRUNA_SEARCH_LIST,
     ...SYNTHETIC_PLANESWALKER_LIST,
     ...SYNTHETIC_MANA_TRIGGERS_LIST,
     ...SYNTHETIC_LIBRARY_ARTIFACTS_LIST,

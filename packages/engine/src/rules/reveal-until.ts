@@ -36,7 +36,12 @@ export function runRevealUntil(
         state,
         card,
         { ...effect.filter, zone: 'library' },
-        { controller: seat, source: res.source },
+        {
+          controller: seat,
+          source: res.source,
+          // D-257: "that shares a creature type with it": the creature a "dies" trigger is about.
+          ...(res.triggerSubject === undefined ? {} : { triggerSubject: res.triggerSubject }),
+        },
       )
     ) {
       found = id;

@@ -134,7 +134,8 @@ const SPLIT_THE_TOP =
  * bottom of your library in a random order." (stage P32, D-147): two sentences that are one instruction (what is revealed until, and where
  * the card found and the rest go), kept together so `effect.reveal-until` reads them as one. Only both in a row.
  */
-const REVEAL_UNTIL = /^reveal cards from the top of your library until you reveal [^.]*\.$/i;
+const REVEAL_UNTIL =
+  /^(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
 const PUT_THAT_CARD = /^put that card [^.]*\.$/i;
 
 /**

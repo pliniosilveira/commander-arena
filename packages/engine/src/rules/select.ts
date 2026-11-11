@@ -12,6 +12,7 @@ import type {
   PlayerSelector,
   TargetSpec,
 } from '../ast/types';
+import type { Subtype } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf, seatsInOrder } from '../state/ops';
 import type { ChosenTarget, GameObject, GameState, ThisWayCounts } from '../state/types';
@@ -184,6 +185,8 @@ export function matchesFilter(
     ...(filter.enteredThisTurn === true
       ? { entered: state.turnLog.entered.map((e) => e.object) }
       : {}),
+    // D-257: the creature the trigger is about, as it last was (a dies trigger reads the permanent that left, CR 603.10a, 113.7a).
+    ...(readsSharedType(filter) ? subjectSubtypesOf(state, ctx.triggerSubject) : {}),
   };
   return matchesFilterWith(state, obj, () => describeObject(state, obj), filter, reading);
 }
@@ -201,9 +204,24 @@ function readsGame(f: ObjectFilter): boolean {
     f.controllerDealtDamageBySource === true ||
     f.putFromBattlefieldThisTurn === true ||
     f.enteredThisTurn === true ||
+    f.sharesCreatureTypeWith !== undefined ||
     f.controller === 'defendingPlayer' ||
     (f.anyOf?.some(readsGame) ?? false)
   );
+}
+
+/** Whether the filter, or one of its `anyOf` members, asks for a creature type shared with the trigger's creature (D-257). */
+function readsSharedType(f: ObjectFilter): boolean {
+  return f.sharesCreatureTypeWith !== undefined || (f.anyOf?.some(readsSharedType) ?? false);
+}
+
+/** The subtypes of the object a trigger is about, as it is or as it last was; none known when there is no such object. */
+function subjectSubtypesOf(
+  state: GameState,
+  subject: ObjectId | undefined,
+): { subjectSubtypes?: readonly Subtype[] } {
+  const obj = subject === undefined ? null : objectOrLki(state, subject);
+  return obj === null ? {} : { subjectSubtypes: describeObject(state, obj).subtypes };
 }
 
 /** The X of the resolving spell or ability: `ctx.x`, else the source's own stack data (CR 107.3a); none if neither has one. */

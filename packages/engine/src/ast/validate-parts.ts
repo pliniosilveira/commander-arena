@@ -93,6 +93,8 @@ export interface Scope {
   readonly voteOptions?: readonly string[];
   /** True in the ability "When you cast this spell" (`castSpell` with `self`), the only place `cascade` may stand. */
   readonly selfCast?: boolean;
+  /** True in the effect of a `dies` trigger: the creature that died is what the trigger is about, and `sharesCreatureTypeWith` reads its creature types (D-257). */
+  readonly diesTrigger?: boolean;
   /** True in an activated ability that functions from the graveyard, the only place `unearth` may stand (D-124). */
   readonly fromGraveyard?: boolean;
   /**
@@ -152,7 +154,13 @@ export function checkEnumList(
  * `ownerScope` is given only where the filter is an effect's `each` selector, the one place that
  * reads `owner` (it knows the effect's targets); anywhere else `owner` is refused.
  */
-export function checkFilter(f: ObjectFilter, path: string, out: Out, ownerScope?: Scope): void {
+export function checkFilter(
+  f: ObjectFilter,
+  path: string,
+  out: Out,
+  ownerScope?: Scope,
+  sharesWith?: boolean,
+): void {
   if (f.controlledBy !== undefined) {
     if (ownerScope === undefined) {
       issue(
@@ -358,6 +366,18 @@ export function checkFilter(f: ObjectFilter, path: string, out: Out, ownerScope?
       );
     }
   }
+  // D-257: "that shares a creature type with it" names the creature a "dies" trigger is about, which only the filter of a `revealUntil` in its effect reads.
+  if (f.sharesCreatureTypeWith !== undefined) {
+    if (f.sharesCreatureTypeWith !== 'triggerSubject') {
+      issue(out, `${path}.sharesCreatureTypeWith`, "sharesCreatureTypeWith is 'triggerSubject'");
+    } else if (sharesWith !== true) {
+      issue(
+        out,
+        `${path}.sharesCreatureTypeWith`,
+        'sharesCreatureTypeWith is read in the filter of a revealUntil in the effect of a "dies" trigger, where the creature that died is what the trigger is about',
+      );
+    }
+  }
   // D-100: "of the chosen type" / "of the chosen color" are flags; the card must ask for the choice.
   for (const key of ['chosenType', 'chosenColor'] as const) {
     if (f[key] !== undefined && f[key] !== true)
@@ -371,7 +391,7 @@ export function checkFilter(f: ObjectFilter, path: string, out: Out, ownerScope?
     }
     f.anyOf.forEach((member, i) => {
       const p = `${path}.anyOf[${i}]`;
-      checkFilter(member, p, out);
+      checkFilter(member, p, out, undefined, sharesWith);
       // Where to look (CR 115.1, 601.2c) is the outer filter's business.
       // D-207: a member may say what kind of stack object it is when the outer filter, on the stack, does not ("triggered ability or colorless spell").
       if (member.zone !== undefined) {
@@ -3208,7 +3228,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'revealUntil':
       // D-145: "reveal cards until you reveal a land card": a filter of cards in the library, and where the card found goes.
-      checkFilter(e.filter, `${path}.filter`, out);
+      checkFilter(e.filter, `${path}.filter`, out, undefined, scope.diesTrigger === true);
       if (
         filterSome(
           e.filter,

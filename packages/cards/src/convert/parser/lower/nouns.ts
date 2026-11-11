@@ -100,6 +100,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:hasCounter',
   'selector:commander',
   'selector:enteredThisTurn',
+  'selector:sharesCreatureTypeWith',
   'selector:eachOtherOpponent',
   'selector:discardedThisWay',
 ];
@@ -219,6 +220,11 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
     if (inner) return bad([]);
     parts.push('selector:enteredThisTurn');
   }
+  // D-258: "that share a land type" is a condition on the cards found together, which a filter of one card cannot say: the search lowering takes it off first.
+  if (filter.sharedLandType === true) return bad([]);
+  // D-257: "that shares a creature type with it" (CR 205.3m, 603.10a): the creature a "dies" trigger is about; the engine refuses it anywhere but the filter of a `revealUntil`
+  // of such a trigger (`validateCard`).
+  if (filter.sharesCreatureTypeWithIt === true) parts.push('selector:sharesCreatureTypeWith');
   // D-181 (stage P38): "with a single target" (CR 115.9a), a spell or ability on the stack (a target slot, never a member of a choice).
   if (filter.singleTarget === true) {
     if (inner || filter.zone !== 'stack') return bad([]);
@@ -301,6 +307,9 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),
+    ...(filter.sharesCreatureTypeWithIt === true
+      ? { sharesCreatureTypeWith: 'triggerSubject' as const }
+      : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
     ...compared,
     ...chosen,

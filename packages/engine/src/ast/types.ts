@@ -469,6 +469,12 @@ export interface ObjectFilter {
    * `asEntersChoose` of `creatureType` (linked abilities, CR 607.2d).
    */
   readonly chosenType?: true;
+  /**
+   * "that shares a creature type with it" (D-257, CR 205.3m, 603.10a, 113.7a): the object has at least one creature type that the creature the trigger is
+   * about has (`triggerSubject`: the one that died), as that creature last was on the battlefield; a changeling has every creature type (CR 702.73a).
+   * Only in the filter of a `revealUntil` in the effect of a "dies" trigger.
+   */
+  readonly sharesCreatureTypeWith?: 'triggerSubject';
   /** "Of the chosen color" (D-100): as `chosenType`, for `chosen.color` and an `asEntersChoose` of `color`. */
   readonly chosenColor?: true;
   /**

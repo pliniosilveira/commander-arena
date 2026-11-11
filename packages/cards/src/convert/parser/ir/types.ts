@@ -265,6 +265,16 @@ export interface IrFilter {
   /** "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga. */
   readonly historic?: true;
   /**
+   * "that shares a creature type with it" (D-257, CR 205.3m, 603.10a): the card has a creature type the creature of the trigger had (the one that died), as it last was
+   * (CR 113.7a). Read in the filter of a library search `revealUntil` only; the engine's `sharesCreatureTypeWith`.
+   */
+  readonly sharesCreatureTypeWithIt?: true;
+  /**
+   * "up to two basic land cards that share a land type" (D-258, CR 205.3i, 701.23): the cards found share a land type among them, which is a condition on the whole
+   * choice and not on a card. A filter that still has it is not lowered; the search lowering takes it off (the engine's `search.sharedLandType`).
+   */
+  readonly sharedLandType?: true;
+  /**
    * "with a counter on it", "with a +1/+1 counter on it" (stage P32, D-147, CR 122.1): the object has a counter, of any kind (`true`) or
    * of the kind named ("+1/+1", "stun").
    */
