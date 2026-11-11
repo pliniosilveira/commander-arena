@@ -168,6 +168,8 @@ describe('"if that player controls more creatures than you" at the beginning of 
             kind: 'custom',
             definition: expect.objectContaining({
               name: 'Soldier',
+              types: ['creature'],
+              subtypes: ['Soldier'],
               power: 1,
               toughness: 1,
               colors: ['W'],

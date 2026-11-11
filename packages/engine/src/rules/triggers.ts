@@ -872,6 +872,7 @@ function batchTriggers(
           !evaluateCondition(state, ability.interveningIf, {
             controller: candidate.controller,
             source: id,
+            triggerPlayer: seat, // the player damaged: "if that player controls more creatures than you"
           })
         ) {
           continue;
@@ -881,6 +882,7 @@ function batchTriggers(
           !evaluateCondition(state, ability.triggerCondition, {
             controller: candidate.controller,
             source: id,
+            triggerPlayer: seat,
           })
         ) {
           continue;

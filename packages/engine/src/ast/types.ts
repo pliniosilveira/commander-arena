@@ -3088,7 +3088,7 @@ export type Condition =
    */
   | { readonly kind: 'subjectControllerHasMore'; readonly stat: PlayerStat }
   /**
-   * "If that player controls more creatures than you" (CR 603.4, 109.4; the Bruna deck, Keeper of the Accord): the player the event of the trigger is
+   * "If that player controls more creatures than you" (CR 603.4, 110.2; the Bruna deck, Keeper of the Accord): the player the event of the trigger is
    * about (`triggerPlayer`: the active player of a `step`, `upkeep` or `endStep` trigger, the player who drew, who cast, ...) has a greater `stat` than
    * the controller of this ability. Read as the ability triggers and again as it resolves (an intervening "if"), so the player stays on the stack
    * with the ability. Only the intervening "if" of a trigger whose event is about a player; fails when there is none.

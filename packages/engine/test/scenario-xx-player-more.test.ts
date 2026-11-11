@@ -1,18 +1,20 @@
 // "At the beginning of each opponent's end step, if that player controls more creatures than you, create a 1/1 white Soldier creature token" and the
 // same with lands and a search (the Bruna deck, Keeper of the Accord): the intervening "if" `triggerPlayerHasMore` compares the player the event is
 // about (the active player of the step, `triggerPlayer`) with the controller of the ability, as the step begins and again as the ability resolves.
-// Pins: CR 603.2b (a step trigger: whose turn it is), CR 603.4 (intervening if: true as the event happens and as the ability resolves),
-// CR 109.4 and 110.2 (what a player controls), CR 701.23 (Search). Cards are SYNTHETIC (src/cards/fixtures/synthetic-player-more.ts).
+// Pins: CR 603.2b (a step trigger) and CR 102.1 (the active player is the player whose turn it is), CR 603.4 (intervening if: true as the
+// event happens and as the ability resolves), CR 110.2 (a permanent's controller), CR 603.2c and 510.2 (a batch of combat damage: the player damaged
+// is "that player"), CR 701.23 (Search). Cards are SYNTHETIC (src/cards/fixtures/synthetic-player-more.ts).
 import { describe, expect, test } from 'vitest';
 import { syntheticCard, validateCard } from '../src/index';
 import { scenario } from '../src/testing/index';
 
 const WARDEN = 'SYNTHETIC Accord Warden';
 const TAX = 'SYNTHETIC Land Tax';
+const SCOUT = 'SYNTHETIC Accord Scout';
 const BEARS = 'Grizzly Bears';
 
 describe('the cards are valid', () => {
-  test.each([WARDEN, TAX])('%s', (name) => {
+  test.each([WARDEN, TAX, SCOUT])('%s', (name) => {
     expect(validateCard(syntheticCard(name))).toEqual([]);
   });
 });
@@ -143,5 +145,72 @@ describe('a trigger of each player\'s upkeep: "that player" is the player whose 
     g.passAll();
     g.expect.life(1, 19);
     g.expect.life(0, 20);
+  });
+
+  test("the controller's own upkeep, with more lands than the controller has (itself): nothing", () => {
+    const g = scenario()
+      .seat(0)
+      .battlefield(TAX, 'Forest', 'Forest')
+      .life(20)
+      .library('Plains', 'Island')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Island')
+      .seat(0)
+      .at('end', { active: 1 })
+      .build();
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.passAll();
+    g.expect.life(0, 20);
+    g.expect.life(1, 20);
+  });
+
+  test('the active player with fewer lands than the controller: nothing', () => {
+    const g = scenario()
+      .seat(0)
+      .battlefield(TAX, 'Forest', 'Forest')
+      .life(20)
+      .library('Plains', 'Island')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Island')
+      .battlefield('Forest')
+      .seat(0)
+      .at('end', { active: 0 })
+      .build();
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.passAll();
+    g.expect.life(1, 20);
+  });
+});
+
+describe('a batch combat damage trigger: "that player" is the player damaged', () => {
+  const attack = (theirs: string[]) => {
+    const g = scenario()
+      .seat(0)
+      .battlefield(SCOUT, BEARS)
+      .library('Plains', 'Island')
+      .seat(1)
+      .library('Plains')
+      .battlefield(...theirs)
+      .seat(0)
+      .at('beginningOfCombat', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).declareAttackers([{ attacker: BEARS }]);
+    g.advanceTo('combatDamage');
+    return g;
+  };
+
+  test('the player damaged controls more creatures than the controller: the ability triggers and a card is drawn', () => {
+    const g = attack(['Island', BEARS, BEARS]);
+    g.expect.stack([`${SCOUT} (ability)`]);
+    g.passAll();
+    g.expect.handSize(0, 1);
+  });
+
+  test('the player damaged controls as many creatures as the controller: no trigger', () => {
+    const g = attack(['Island', BEARS]);
+    g.expect.stack([]);
   });
 });

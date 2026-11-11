@@ -47,7 +47,7 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'tapsForMana':
     case 'discarded':
       return true;
-    // The active player of the step (CR 503 to 514, 603.2b): "that player" in "at the beginning of each opponent's end step".
+    // The active player of the step (CR 102.1, 603.2b): "that player" in "at the beginning of each opponent's end step".
     case 'step':
     case 'upkeep':
     case 'endStep':

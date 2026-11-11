@@ -403,7 +403,7 @@ export function evaluateCondition(
       );
     }
     case 'triggerPlayerHasMore':
-      // CR 603.4, 109.4: "that player", the player the event is about, has more of the stat than the controller of the ability.
+      // CR 603.4, 110.2: "that player", the player the event is about, has more of the stat than the controller of the ability.
       return (
         ctx.triggerPlayer !== undefined &&
         playerStatOf(state, ctx.triggerPlayer, condition.stat) >

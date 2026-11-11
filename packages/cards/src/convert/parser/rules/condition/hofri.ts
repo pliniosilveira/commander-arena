@@ -73,7 +73,7 @@ export const CONDITION_CARDS_IN_GRAVEYARD = defineRule<IrCondition>({
 /**
  * `condition.that-player-more-lands`: "that player controls more lands than you" (CR 603.4, 109.4: the intervening "if" of a trigger about a land that entered; "that
  * player" is the one who controls it) and, the Bruna deck, "that player controls more creatures than you". The engine's `subjectControllerHasMore` of `lands` or
- * `creatures`; in a trigger about a player ("at the beginning of each opponent's end step", CR 603.2b) "that player" is the player of the event and the lowering
+ * `creatures`; in a trigger about a player ("at the beginning of each opponent's end step", CR 603.2b, 102.1) "that player" is the player of the event and the lowering
  * writes `triggerPlayerHasMore` (see `lowerCondition`). Not read: another count ("more cards in hand"), "at least as many", another
  * player than "that player", "you control fewer lands than that player".
  */

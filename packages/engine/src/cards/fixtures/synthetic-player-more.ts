@@ -83,4 +83,27 @@ export const SYNTHETIC_PLAYER_MORE_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Whenever one or more creatures you control deal combat damage to a player, if that player controls more creatures than you, draw a card."
+  // (a batch trigger: the player of the event is the player damaged)
+  singleFace({
+    name: 'SYNTHETIC Accord Scout',
+    manaCost: ['2', 'W'],
+    types: ['enchantment'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    oracleText:
+      'Whenever one or more creatures you control deal combat damage to a player, if that player controls more creatures than you, draw a card.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: {
+          kind: 'combatDamageBatch',
+          what: { types: ['creature'], controller: 'you' },
+          to: 'player',
+        },
+        interveningIf: { kind: 'triggerPlayerHasMore', stat: 'creatures' },
+        effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+      },
+    ],
+  }),
 ];

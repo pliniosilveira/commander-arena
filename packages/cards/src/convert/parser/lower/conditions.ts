@@ -110,7 +110,7 @@ export function lowerCondition(
     }
     case 'subjectControllerHasMore': {
       // CR 603.4, 109.4 (stage P68, D-229): "that player", the controller of the permanent the trigger is about, has more lands than the controller.
-      // "That player" of a trigger about a player (the active player of an opponent's end step, CR 603.2b) is that player, not the controller of a
+      // "That player" of a trigger about a player (the active player of an opponent's end step, CR 102.1, 603.2b) is that player, not the controller of a
       // permanent: the engine's `triggerPlayerHasMore`. When "that player" is the controller of the ability itself it compares a player with
       // themselves, which is no condition of the text.
       const about = ctx?.thatPlayer?.selector.kind;
