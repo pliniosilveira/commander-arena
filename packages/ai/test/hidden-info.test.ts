@@ -70,6 +70,9 @@ function secretsFor(state: GameState, viewer: SeatId): Secrets {
     ...state.battlefield,
     ...state.exile.filter((id) => !faceDown.includes(id)),
     ...state.stack,
+    // D-234 (CR 702.26): a phased-out permanent is on the battlefield, face up, and the view shows it to both players, so
+    // its name is no secret even when another card of that name is in a library.
+    ...(state.phased ?? []),
   ];
   for (const seat of state.seats) {
     hidden.push(...seat.library);
