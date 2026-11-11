@@ -31,7 +31,7 @@ import {
 import { isBackFaceUp } from '../decisions/layouts';
 import { kickedWords, replicatedWords, typeLine } from '../format';
 import { ManaCost } from '../mana';
-import { useApp, useDefinedPt } from '../store-context';
+import { useAppIfPresent, useDefinedPt } from '../store-context';
 import { Art, artOf } from './art';
 import './later.css';
 import { bandBackground, cornerStat, isCrewedVehicle, PRINTED_TITLE } from './resolve';
@@ -267,10 +267,12 @@ export function CardFace({
   const art = artOf(object);
   // D-243: the monarch and the Ring (small cards of the emblem strip) have a type line of their own.
   const designation = designationKind(object.id);
-  const ringTempted = useApp((s) =>
-    designation === 'ring' && s.snapshot !== null
-      ? ringTemptedOf(s.snapshot.view, object.owner)
-      : 0,
+  const ringTempted = useAppIfPresent(
+    (s) =>
+      designation === 'ring' && s.snapshot !== null
+        ? ringTemptedOf(s.snapshot.view, object.owner)
+        : 0,
+    0,
   );
   // The other player's foretold card (CR 702.143a): a card back with no name, no cost, no art lookup.
   if (isHiddenFaceDown(object)) {

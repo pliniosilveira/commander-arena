@@ -11,7 +11,7 @@ Every limit under "Deferred engine features" and "Deferred grammar" is refused o
 - **Before the repository goes public**, follow `docs/GO_PUBLIC.md` (D-248): the public repository is a new one with a single commit, so the history that holds the Comprehensive Rules file, the bulletin and the owner's work e-mail is left behind; run `node tools/public/preflight.ts` first. The Wizards texts are already out of the tree (D-246) and the Scryfall card data stays (small risk accepted). `.github/workflows/pages.yml` is manual until then (D-049).
 - **CR update.** When Wizards publishes the CR that contains the October 19 bulletin: `pnpm rules:fetch --force`, `pnpm rule --check`, update `tools/rules/cr-real.test.ts` and `docs/rules/RULES_VERSION.md`, confirm the 7xx renumbering (D-035).
 - **TypeScript stays at 6.0.3** until dependency-cruiser supports 7 (D-030); bump dependency-cruiser once a release has aged past pnpm's cutoff and check its TypeScript range in the same change (D-032).
-- **Pin GitHub Actions to commit SHAs** (D-034, still on major tags).
+- **GitHub Actions are pinned to commit SHAs** (D-034; done in the public repository, major tag kept as a comment). Dependabot may propose newer hashes if version updates are enabled.
 - **Bundle size.** The worker bundle is far below 500 kB gzipped (D-130); a build check that warns above that is not built. Precon snapshots are loaded eagerly; load them on demand if many are added.
 
 ## Milestones ahead

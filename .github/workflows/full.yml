@@ -1,11 +1,15 @@
 name: Full
 
 # The complete suite as parallel jobs (the former CI, D-113): typecheck, lint, build, all unit tests
-# in four shards and the browser tests. Manual only (D-132): GitHub's included minutes for a private
-# repository are limited, so a pull request runs the quick CI and the owner runs the full suite
-# locally every night. Start this from the Actions tab when minutes allow.
+# in four shards (the AI soak tests of 20 games each included) and the browser tests. It runs every
+# night on `main` and by hand (D-250). The scheduled run is skipped when no commit entered `main`
+# since the last scheduled run (the `gate` job); a run started by hand always runs. When a
+# scheduled run fails, the `check` job opens an issue.
 
 on:
+  schedule:
+    # 03:17 UTC every day, off the hour because GitHub delays jobs that start on it.
+    - cron: '17 3 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -16,14 +20,43 @@ permissions:
   contents: read
 
 jobs:
+  gate:
+    name: new commits since the last scheduled run?
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # The head of the last scheduled run that finished and was not cancelled. A scheduled run
+          # starts from the tip of the default branch, so the same sha means no new commit.
+          last=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/full.yml/runs?event=schedule&status=completed&per_page=20" \
+            --jq '[.workflow_runs[] | select(.id != ${{ github.run_id }}) | select(.conclusion == "success" or .conclusion == "failure")][0].head_sha // ""')
+          echo "this run: ${GITHUB_SHA}, last scheduled run: ${last:-none}"
+          if [ "${last}" = "${GITHUB_SHA}" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
   static:
+    needs: gate
+    if: ${{ needs.gate.outputs.run == 'true' }}
     name: typecheck, lint, build
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -33,6 +66,8 @@ jobs:
       - run: pnpm build
 
   test:
+    needs: gate
+    if: ${{ needs.gate.outputs.run == 'true' }}
     name: test (${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -41,9 +76,9 @@ jobs:
       matrix:
         shard: [1, 2, 3, 4]
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -51,13 +86,15 @@ jobs:
       - run: pnpm exec vitest run --shard=${{ matrix.shard }}/4
 
   e2e:
+    needs: gate
+    if: ${{ needs.gate.outputs.run == 'true' }}
     name: browser tests
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -68,13 +105,29 @@ jobs:
   check:
     name: check
     if: ${{ always() }}
-    needs: [static, test, e2e]
+    needs: [gate, static, test, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
     steps:
-      - name: every job passed
+      - name: every job passed (or nothing new to test)
         run: |
-          echo "static=${{ needs.static.result }} test=${{ needs.test.result }} e2e=${{ needs.e2e.result }}"
+          echo "gate=${{ needs.gate.result }} run=${{ needs.gate.outputs.run }} static=${{ needs.static.result }} test=${{ needs.test.result }} e2e=${{ needs.e2e.result }}"
+          test "${{ needs.gate.result }}" = success
+          if [ "${{ needs.gate.outputs.run }}" = "false" ]; then
+            echo "no new commit since the last scheduled run: nothing to test"
+            exit 0
+          fi
           test "${{ needs.static.result }}" = success
           test "${{ needs.test.result }}" = success
           test "${{ needs.e2e.result }}" = success
+      - name: Open an issue when the nightly run failed
+        if: ${{ failure() && github.event_name == 'schedule' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Nightly full suite failed on ${GITHUB_SHA::7}" \
+            --body "The scheduled Full run ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} failed on ${{ github.sha }} (typecheck, lint and build: ${{ needs.static.result }}; unit tests: ${{ needs.test.result }}; browser tests: ${{ needs.e2e.result }})."
