@@ -135,3 +135,6 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Miracle, Pl
 - Cards on the battlefield cannot be much bigger at 1366x768: the field has six rows (three for each player) in about 420px. Giving the lands and the other permanents one row together would leave four rows and cards about a third bigger, but it changes the board markup and the e2e tests that name the rows (D-240). Not done.
 - A card with a long rules text still shows a vertical bar in the preview box beside the log's (D-239). Shortening what the preview prints (the keyword reminders under the card) would remove it.
 
+## Bruna deck leftovers (D-264)
+
+- Ascend (D-264): the city's blessing is checked with the state-based actions (CR 704.3), so a player who reaches ten permanents in the middle of one resolution does not have it until that resolution ends. A card that says "create two tokens, then if you have the city's blessing ..." would read the answer from before the tokens (CR 702.131b says "any time"). Fixing it needs the check between the steps of an effect. Ascend on an instant or sorcery (CR 702.131a, a spell ability) is not built; a card with it is unsupported.

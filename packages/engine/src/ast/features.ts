@@ -344,6 +344,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseBackground',
     // D-200: "~ can be your commander".
     'canBeCommander',
+    // D-264: Ascend on a permanent (CR 702.131b).
+    'ascend',
     'exalted',
     'annihilator',
     // D-230: Backup N (CR 702.165).
@@ -1543,6 +1545,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   partner: true,
   chooseBackground: true,
   canBeCommander: true,
+  ascend: true,
   exalted: true,
   annihilator: true,
   backup: true,

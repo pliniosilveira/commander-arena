@@ -465,6 +465,11 @@ export interface SeatState {
    */
   readonly ring?: { readonly tempted: number };
   /**
+   * The city's blessing (CR 702.131c, D-264): a designation this player has for the rest of the game, set by Ascend (`rules/city-blessing.ts`).
+   * Any number of players may have it. Absent until the first time. Public.
+   */
+  readonly citysBlessing?: true;
+  /**
    * The energy counters the player has (CR 107.14, 122.1, D-209), kept for the rest of the game; paid by removing them. Absent until the first time
    * (a player has none). Public.
    */

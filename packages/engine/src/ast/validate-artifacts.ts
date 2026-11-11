@@ -31,6 +31,24 @@ function checkLivingWeapon(face: CardFace, path: string, out: AstIssue[]): void 
   });
 }
 
+/**
+ * CR 702.131a, 702.131b (D-264): Ascend on a permanent is the static ability the engine builds. On an instant or a sorcery it is a spell
+ * ability, which is not built: the face is refused, or the keyword would be accepted and do nothing.
+ */
+function checkAscendFace(face: CardFace, path: string, out: AstIssue[]): void {
+  const isSpell = face.types.includes('instant') || face.types.includes('sorcery');
+  if (!isSpell) return;
+  face.abilities.forEach((a, i) => {
+    if (a?.kind === 'keyword' && a.keyword?.kind === 'ascend') {
+      issue(
+        out,
+        `${path}.abilities[${i}]`,
+        'Ascend on an instant or sorcery is a spell ability (CR 702.131a) that the engine does not build; only Ascend on a permanent (CR 702.131b) is supported',
+      );
+    }
+  });
+}
+
 /** Whether the effect, at any depth, moves a card chosen from the cards the permanent exiled (D-207). */
 function readsLinkedExile(e: unknown): boolean {
   const text = JSON.stringify(e ?? null);
@@ -88,6 +106,7 @@ function checkLinkedExile(face: CardFace, path: string, out: AstIssue[]): void {
 export function checkArtifactsFace(face: CardFace, path: string, out: AstIssue[]): void {
   checkLivingWeapon(face, path, out);
   checkLinkedExile(face, path, out);
+  checkAscendFace(face, path, out);
 }
 
 /** The filter of a static ability that names what it applies to by a card's own words: no zone, owner or stack kind. */

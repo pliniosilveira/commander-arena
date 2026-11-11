@@ -563,6 +563,8 @@ export interface Expectations {
   monarch(seat: SeatId | null): void;
   /** The Ring has tempted `seat` this many times (CR 701.54c, D-196); 0 means it has not, and the seat has no emblem. */
   ringLevel(seat: SeatId, tempted: number): void;
+  /** `seat` has the city's blessing (CR 702.131c, D-264), or does not when `has` is false. */
+  citysBlessing(seat: SeatId, has?: boolean): void;
   /** The Ring-bearer of `seat` is that permanent, or `seat` has none when `card` is null (CR 701.54e, D-196). */
   ringBearer(seat: SeatId, card: CardRef | null): void;
   /**

@@ -46,12 +46,14 @@ function numberCompare(): Parser<IrComparison> {
 }
 
 const DESIGNATION =
-  /(you(?:['’]re| are)(?: not)?|you aren['’]t|an opponent is|a player is) the monarch(?![\p{L}\p{N}])/iu;
+  /(?:(you(?:['’]re| are)(?: not)?|you aren['’]t|an opponent is|a player is) the monarch|(you have|you don['’]t have|an opponent has|a player has) the city['’]s blessing)(?![\p{L}\p{N}])/iu;
 
 /**
  * `condition.designation`: "you're the monarch", "you are the monarch", "an opponent is the monarch", "a player is
  * the monarch", and the negatives "you're not the monarch", "you aren't the monarch" (CR 725.1: the monarch is a
- * designation a player has, not an object; only one player has it, CR 725.3). "You" is the controller of the
+ * designation a player has, not an object; only one player has it, CR 725.3). Also the city's blessing (CR 702.131c,
+ * D-264: a designation any number of players may have): "you have the city's blessing", "you don't have the city's
+ * blessing", "an opponent has the city's blessing", "a player has the city's blessing". "You" is the controller of the
  * ability, "an opponent" any opponent, "a player" any player: the engine's `playerHasDesignation` holds when the holder
  * is one of the players the selector names. Nobody has it until an effect gives it (CR 725.1).
  */
@@ -62,6 +64,7 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
   cites: [
     'CR 725.1 (The Monarch)',
     'CR 725.3 (The Monarch)',
+    'CR 702.131c (Ascend)',
     'CR 603.4 (Handling Triggered Abilities)',
   ],
   examples: [
@@ -73,6 +76,13 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     "you're not the monarch",
     "you aren't the monarch",
     'you are not the monarch',
+    // D-264 (CR 702.131c): the city's blessing.
+    "you have the city's blessing",
+    'you have the city’s blessing',
+    "you don't have the city's blessing",
+    'you don’t have the city’s blessing',
+    "an opponent has the city's blessing",
+    "a player has the city's blessing",
   ],
   rejects: [
     'you become the monarch',
@@ -84,11 +94,19 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     'target player is the monarch',
     "you're the monarch of the realm",
     'the monarch',
+    "you have the city's blessing for the rest of the game",
+    "you has the city's blessing",
+    "you have city's blessing",
+    "you have the city's blessings",
+    "an opponent doesn't have the city's blessing",
+    "each opponent has the city's blessing",
+    'you have the blessing',
   ],
   parse: (ctx, pos) => {
     const r = spanned(pattern(DESIGNATION))(ctx, pos);
     if (!r.ok) return r;
-    const words = (r.value.value[1] ?? '').toLowerCase();
+    const blessing = r.value.value[2] !== undefined;
+    const words = (r.value.value[1] ?? r.value.value[2] ?? '').toLowerCase();
     const det = words.startsWith('you')
       ? 'you'
       : words.startsWith('an opponent')
@@ -108,9 +126,9 @@ export const CONDITION_DESIGNATION = defineRule<IrCondition>({
     const has = condition('condition.designation', pos, r.pos, {
       kind: 'designation',
       who,
-      designation: 'monarch',
+      designation: blessing ? 'citysBlessing' : 'monarch',
     });
-    const negative = /(?: not|aren['’]t)$/.test(words);
+    const negative = /(?: not|aren['’]t|don['’]t have)$/.test(words);
     return {
       ok: true,
       value: negative

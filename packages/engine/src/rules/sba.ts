@@ -20,6 +20,7 @@ import type { GameEvent, LossReason } from '../state/events';
 import { getObject, getSeat, patchObject, patchSeat, removeFromZone } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { illegalAttachments, illegalAuras, unattach } from './attach';
+import { gainCitysBlessings } from './city-blessing';
 import { controllerOf } from './control';
 import { endLostControlEffects } from './control-effects';
 import { derive } from './derive';
@@ -107,6 +108,12 @@ export function checkStateBasedActions(input: GameState): SbaResult {
       performed: true,
       decision: null,
     };
+  }
+
+  // CR 702.131b (D-264): Ascend, "any time you control ten or more permanents", is checked here; the next pass goes on with the new state.
+  const blessed = gainCitysBlessings(state);
+  if (blessed !== null) {
+    return { state: blessed.state, events: blessed.events, performed: true, decision: null };
   }
 
   // 1. Find everything against the unchanged state (CR 704.3).

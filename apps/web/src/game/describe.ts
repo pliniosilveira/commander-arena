@@ -1323,6 +1323,15 @@ export function describeEvent(
         [event.object],
         'CR 114.1',
       );
+    case 'citysBlessingGained':
+      // CR 702.131b (D-264): Ascend gave the player the designation, for the rest of the game.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'get', 'gets')} the city's blessing.`,
+        event.seat,
+        [],
+        'CR 702.131b',
+      );
     case 'enteredAsCopy':
       // CR 707.9 (D-151): "As this enters, you may have it become a copy of ...".
       return line(

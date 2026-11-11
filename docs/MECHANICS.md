@@ -4172,3 +4172,13 @@ One section for the whole program, a block for each group. The real texts are in
 - Parser: `condition.that-player-more-lands` reads "creatures" as well as "lands"; `lowerCondition` writes `triggerPlayerHasMore` when "that player" is the engine's `triggerPlayer` and refuses it for "your" step (it would compare you with yourself); `thatPlayerOf` names `triggerPlayer` for the step, upkeep and end step of each opponent or each player. Every "that player" of such a step now reads for effects too ("that player sacrifices a creature of their choice", "that player loses 1 life", "draw a card unless that player pays {1}").
 - Web: the wording of the condition (`apps/web/src/game/condition-text.ts`).
 - Tests: `packages/engine/test/scenario-xx-player-more.test.ts` (SYNTHETIC cards: a step, an upkeep of each player, a batch combat damage trigger), `packages/cards/test/convert-grammar-engine-p69-keeper.test.ts` (the parser's AST for Keeper of the Accord's text and the step texts run through the engine: the Soldier token, the search of a basic Plains only, the sacrifice, the `unlessPays` and the life loss), `packages/cards/test/parser-p69-bruna.test.ts`.
+
+## Ascend on a permanent and the city's blessing (branch `bruna-ascend`; D-264)
+
+- CR: 702.131b, 702.131c, 702.131d, 704.3, 613.1f, 702.26b, 111.1, 110.2.
+- AST: the keyword `ascend` (printed, not grantable, no parameter); the `Designation` of `playerHasDesignation` is `'monarch' | 'citysBlessing'`; `SeatState.citysBlessing`, the event `citysBlessingGained`, `SeatView.citysBlessing`.
+- Rules: `rules/city-blessing.ts` (`gainCitysBlessings`, the first pass of `checkStateBasedActions` in `rules/sba.ts`: a player who controls ten or more permanents, one with Ascend after layer 6, gets it for the rest of the game); `rules/designations.ts` (`designationHolders`, read by `rules/conditions.ts` and `rules/static-conditions.ts`); `ast/validate-artifacts.ts` (`checkAscendFace`: Ascend on an instant or sorcery is refused).
+- Parser: the keyword Ascend (`rules/keyword`); `condition.designation` reads "you have / you don't have / an opponent has / a player has the city's blessing".
+- Web: the chip "City's blessing" on the player strip, the log line, the condition words, the keyword chip. Scenario DSL: the seat option `citysBlessing()` and `expect.citysBlessing(seat, has)`.
+- Cards: Arch of Orazca (grammar only). Tests: `packages/engine/test/scenario-xx-ascend.test.ts` (SYNTHETIC cards in `synthetic-ascend.ts`), `packages/cards/test/parser-ascend-bruna.test.ts`, `packages/cards/test/convert-grammar-engine-ascend.test.ts`.
+- Limits: Ascend on an instant or sorcery is unsupported; inside one resolution the blessing is not gained until the state-based actions run (`docs/ROADMAP.md`).

@@ -18,6 +18,7 @@ import {
 } from './condition-reads';
 import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
+import { designationHolders } from './designations';
 import { manaSpentOf } from './mana-spent';
 import { ringBearerOf } from './ring-bearer';
 import { matchesFilter, resolveObjects, resolvePlayers } from './select';
@@ -288,8 +289,9 @@ export function evaluateCondition(
     case 'playerHasDesignation': {
       // D-131, CR 725: whether the holder of the designation is one of the players the selector names. Nobody has
       // it until an effect gives it (CR 725.1).
-      const holder = state.monarch;
-      if (holder === null) return false;
+      // The city's blessing (CR 702.131c, D-264) can be had by several players, so it is any of them.
+      const holders = designationHolders(state, condition.designation);
+      if (holders.length === 0) return false;
       // (The validator lets a condition name only players that need neither a target nor the trigger subject.)
       const named = resolvePlayers(
         state,
@@ -297,7 +299,7 @@ export function evaluateCondition(
         { controller: ctx.controller, source: ctx.source },
         [],
       );
-      return named.includes(holder);
+      return named.some((seat) => holders.includes(seat));
     }
     case 'ownTurnNumber': {
       // CR 500.1 (D-149): the controller's own turn, and how many turns they have had (this one included).

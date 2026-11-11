@@ -44,7 +44,13 @@ function designationWords(
 ): string | null {
   // Several selectors at once ("you or an opponent") have no sentence of their own here: left out, not guessed.
   if (player.kind === 'all') return null;
-  if (player.kind === 'you') return `you're ${negate ? 'not ' : ''}the ${designation}`;
+  // The city's blessing (CR 702.131c, D-264) is had, not "been": "you have the city's blessing".
+  const blessing = designation === 'citysBlessing';
+  if (player.kind === 'you') {
+    return blessing
+      ? `you ${negate ? "don't have" : 'have'} the city's blessing`
+      : `you're ${negate ? 'not ' : ''}the ${designation}`;
+  }
   // "if an opponent is the monarch": a condition about the opponents asks whether any of them is.
   const who =
     player.kind === 'eachOpponent'
@@ -52,7 +58,9 @@ function designationWords(
       : player.kind === 'eachPlayer'
         ? 'a player'
         : playerSubject(player).text;
-  return `${who} ${negate ? 'is not' : 'is'} the ${designation}`;
+  return blessing
+    ? `${who} ${negate ? "doesn't have" : 'has'} the city's blessing`
+    : `${who} ${negate ? 'is not' : 'is'} the ${designation}`;
 }
 
 const OPPONENT_AHEAD: Readonly<Record<PlayerStat, string>> = {
