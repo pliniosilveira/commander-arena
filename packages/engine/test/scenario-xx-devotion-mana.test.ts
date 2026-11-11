@@ -14,12 +14,18 @@ const GREEN = 'SYNTHETIC Green Single'; // {2}{G}
 const WHITE = 'SYNTHETIC White Single'; // {1}{W}
 const HYBRID = 'SYNTHETIC Hybrid Pair'; // {G/W}{G/W}
 const PHYREXIAN = 'SYNTHETIC Phyrexian Dabbler'; // {1}{B/P}
+const BLACK = 'SYNTHETIC Black Triple'; // {B}{B}{B}
+const FODDER = 'SYNTHETIC Black Fodder'; // {B}{B}{B}, "Sacrifice this creature: Add {C}{C}."
+const ROCK = 'SYNTHETIC Colorless Fodder'; // no mana cost, "Sacrifice this artifact: Add {C}{C}."
 const LIBRARY = Array.from({ length: 8 }, () => 'Plains');
 
 describe('the cards are valid', () => {
-  test.each([SHRINE, FREE, TRIPLE, GREEN, WHITE, HYBRID, PHYREXIAN])('%s', (name) => {
-    expect(validateCard(syntheticCard(name))).toEqual([]);
-  });
+  test.each([SHRINE, FREE, TRIPLE, GREEN, WHITE, HYBRID, PHYREXIAN, BLACK, FODDER, ROCK])(
+    '%s',
+    (name) => {
+      expect(validateCard(syntheticCard(name))).toEqual([]);
+    },
+  );
 
   test('a spell or a triggered ability cannot add it: only a mana ability can ask the color', () => {
     const card = syntheticCard(TRIPLE);
@@ -168,5 +174,39 @@ describe('paying for a spell with it (CR 601.2g)', () => {
   test('with no devotion the ability is no source of colored mana', () => {
     const g = game((b) => b.hand(TRIPLE).battlefield(SHRINE, 'Plains', 'Plains'));
     g.expect.illegal(0, { cast: TRIPLE });
+  });
+});
+
+describe('what the plan itself sacrifices does not count (CR 605.3a, 605.3b, 700.5, 601.2g)', () => {
+  test('the {2} paid by sacrificing the only permanent with {B}{B}{B}: devotion is 0, so {B}{B}{B} is not on offer', () => {
+    const g = game((b) => b.hand(BLACK).battlefield(SHRINE, FODDER));
+    g.expect.illegal(0, { cast: BLACK });
+    expect(g.act(0).try.cast(BLACK).ok).toBe(false);
+    g.expect.zone(FODDER, 'battlefield', { seat: 0 });
+    g.expect.tapped(SHRINE, false);
+  });
+
+  test('a plan that sacrifices a permanent with devotion is refused even when other devotion remains (honest: no guess at the order)', () => {
+    const g = game((b) => b.hand(BLACK).battlefield(SHRINE, FODDER, BLACK));
+    g.expect.illegal(0, { cast: BLACK });
+  });
+
+  test('a sacrificed permanent without mana cost counts for nothing: the {2} is paid with it and the devotion of the rest pays', () => {
+    const g = game((b) => b.hand(BLACK).battlefield(SHRINE, ROCK, BLACK));
+    g.expect.legal(0, { cast: BLACK });
+    g.act(0).cast(BLACK, { pay: true });
+    g.passAll();
+    g.expect.zone(ROCK, 'graveyard', { seat: 0 });
+    g.expect.tapped(SHRINE);
+    g.expect.pool(0, '');
+  });
+
+  test('with Plains for the {2} the sacrificer stays and its symbols count, as before', () => {
+    const g = game((b) => b.hand(BLACK).battlefield(SHRINE, FODDER, 'Plains', 'Plains'));
+    g.expect.legal(0, { cast: BLACK });
+    g.act(0).cast(BLACK, { pay: true });
+    g.passAll();
+    g.expect.zone(FODDER, 'battlefield', { seat: 0 });
+    g.expect.tapped(SHRINE);
   });
 });

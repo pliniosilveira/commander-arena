@@ -64,4 +64,41 @@ export const SYNTHETIC_DEVOTION_MANA_LIST: readonly CardDefinition[] = [
   vanilla('SYNTHETIC Hybrid Pair', ['G/W', 'G/W'], ['W', 'G']),
   // A Phyrexian symbol counts for its color; a generic one for none.
   vanilla('SYNTHETIC Phyrexian Dabbler', ['1', 'B/P'], ['B']),
+  // Permanents that give themselves up for mana, to pay the {2} of the shrine (CR 605.3a: the cost is paid before the ability is activated, so what is
+  // sacrificed for it no longer counts when the devotion is read, CR 700.5, 605.3b).
+  // "Sacrifice this creature: Add {C}{C}." on a creature with {B}{B}{B}.
+  singleFace({
+    name: 'SYNTHETIC Black Fodder',
+    manaCost: ['B', 'B', 'B'],
+    types: ['creature'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    power: 1,
+    toughness: 1,
+    oracleText: 'Sacrifice this creature: Add {C}{C}.',
+    abilities: [
+      {
+        kind: 'mana',
+        cost: [{ kind: 'sacrifice', what: { kind: 'this' } }],
+        production: { kind: 'fixed', mana: ['C', 'C'] },
+      },
+    ],
+  }),
+  // "Sacrifice this artifact: Add {C}{C}." with no mana cost: it adds nothing to a devotion.
+  singleFace({
+    name: 'SYNTHETIC Colorless Fodder',
+    manaCost: null,
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText: 'Sacrifice this artifact: Add {C}{C}.',
+    abilities: [
+      {
+        kind: 'mana',
+        cost: [{ kind: 'sacrifice', what: { kind: 'this' } }],
+        production: { kind: 'fixed', mana: ['C', 'C'] },
+      },
+    ],
+  }),
+  vanilla('SYNTHETIC Black Triple', ['B', 'B', 'B'], ['B']),
 ];
