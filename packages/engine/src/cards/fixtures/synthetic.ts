@@ -1,8 +1,8 @@
 /**
  * SYNTHETIC CARDS. NOT REAL MAGIC CARDS.
  *
- * Every card here is invented for engine tests that need a behavior no simple real card has
- * (D-036). Names start with "SYNTHETIC " so they can never be mistaken for, or collide with,
+ * Every card here is invented for engine tests that need a behavior no simple real card has.
+ * Names start with "SYNTHETIC " so they can never be mistaken for, or collide with,
  * real data, and they are kept out of FIXTURE_CARDS. oracleId is null. Their text describes
  * what the AST does; it is not Oracle text. Never show these to a player as real cards.
  */

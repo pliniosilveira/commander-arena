@@ -3,7 +3,7 @@
  * against Scryfall until the M4 import or the A20 spike matches them (oracleId is null).
  *
  * Healing Salve (A27) is replaced by Angel's Mercy because Healing Salve's prevention mode
- * needs the M5 prevention library (D-036). Colors come from the mana cost (CR 105.2).
+ * needs the M5 prevention library. Colors come from the mana cost (CR 105.2).
  */
 import type { CardDefinition } from '../definition';
 import { singleFace } from './helpers';
