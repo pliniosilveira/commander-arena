@@ -74,6 +74,8 @@ function cardsByOwner(state: GameState): number[] {
   const zoneLists = [
     ...state.seats.flatMap((s) => [s.library, s.hand, s.graveyard, s.command]),
     state.battlefield,
+    // CR 702.26 (Phasing): a phased-out permanent leaves the battlefield list but is still the owner's card.
+    state.phased ?? [],
     state.exile,
     state.stack,
   ];

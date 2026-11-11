@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 import { handCard } from './harness/locators';
+import { leaveHand } from './harness/pointer';
 import { settled } from './harness/settle';
 
 /**
@@ -112,6 +113,7 @@ test('the graveyard list badges the card "Flashback {cost}" and a click casts it
   await page.goto(game(10));
   await playUntil(page, async () => (await chip(page, 'SYNTHETIC Flash Gain').count()) > 0);
 
+  await leaveHand(page);
   await page.getByRole('button', { name: /^Open You graveyard/ }).click();
   const list = page.getByRole('dialog', { name: /graveyard/ });
   const card = list.getByLabel('SYNTHETIC Flash Gain').first();

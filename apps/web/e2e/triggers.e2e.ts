@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { leaveHand } from './harness/pointer';
 import { settled } from './harness/settle';
 
 /**
@@ -179,6 +180,7 @@ test('manual mana: a Treasure asks for a color, is sacrificed, and pays', async 
   await hand.filter({ hasText: 'SYNTHETIC Enters Draw Creature' }).first().click();
   const pay = page.getByRole('region', { name: 'Payment' });
   await expect(pay).toBeVisible();
+  await leaveHand(page);
   await page
     .locator('.board-field [data-object-id]', { hasText: 'SYNTHETIC Treasure Land' })
     .click();
