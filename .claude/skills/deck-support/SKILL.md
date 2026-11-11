@@ -52,6 +52,16 @@ Take one issue at a time, the oldest ready one.
 
 Open one pull request (title: the deck and what is now supported; body: what changed, what is still unsupported and why, how it was checked; "Refs #<issue>", not "Closes"). Subscribe to it. Comment on the issue with the PR link and the result in two lines, set the label `deck-support:done`, remove `deck-support:in-progress`. The owner merges.
 
+## The loop: one issue after another
+
+The routine session does not stop after one deck. When an issue is finished (pull request opened and `deck-support:done`, or `deck-support:blocked` with its proposal), take the next one at once, in this order, until the budget or the work runs out:
+
+1. **The next issue.** An open issue the workflow labelled `deck-support:ready`, or an open "deck support" issue of the owner that has no `deck-support:` label yet (the workflow only sees issues opened or edited after it existed) and that `pnpm corpus:check-issue` says is complete. The owner's issues first, then the oldest. Skip every issue that is `done`, `blocked` or `in-progress` under another branch.
+2. **An open "deck support" issue that is not complete** (any author): if it has no comment with the marker `<!-- deck-support-triage -->` yet, leave the one comment the workflow would leave (the problems `pnpm corpus:check-issue` lists, and the ask to resubmit from the current version of the app, which carries the card data). Nothing else.
+3. **The budget** (Step 0.2) is read before every group and before every new issue. At or above the day's limit, stop cleanly as Step 2 says.
+4. **The branch.** A new deck's branch starts from `main`. When its cards need parser or engine changes that exist only in the previous deck's unmerged pull request, branch from that pull request's branch instead and write "stacked on #N" at the top of the new pull request. The owner merges in order; a conflict in a generated file (the golden snapshot, the version constants, the derive digests) is resolved by merging `main` in and regenerating it with the repository's command, never by hand.
+5. **The end.** When no issue is left, or the budget says stop, write the owner a short summary in the session (done, blocked, waiting, and why) and end. The scheduled wake starts the loop again at its next slot.
+
 ## Resuming
 
 An issue labelled `deck-support:in-progress` with a branch is resumed only when its branch and pull request have had no commit or comment for 6 hours (a session is working on it otherwise: leave it alone). Resume from the checklist in its `docs/proposals/<slug>-build-status.md` and the last issue comment.
