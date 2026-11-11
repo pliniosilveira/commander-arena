@@ -1,5 +1,5 @@
 {
-  "parserVersion": 81,
+  "parserVersion": 82,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -755,19 +755,10 @@
     "2549bc57-9ffb-4053-9f10-f2a5f792b845": {
       "name": "Myriad Landscape",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{2}, {T}, Sacrifice ~: Search your library for up to two basic land cards that share a land type, put them onto the battlefield tapped, then shuffle.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.search"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "7a6ad6a0"
+      "ast": "bc8eed8a"
     },
     "2579e9e0-b00f-4a1b-8fce-15d06bb7fe5a": {
       "name": "Angelic Sleuth",
@@ -1112,19 +1103,10 @@
     "367ac7e2-5056-48f3-a296-87d6cb1f7b54": {
       "name": "Nykthos Paragon",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever you gain life, you may put that many +1/+1 counters on each creature you control. Do this only once each turn.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.add-counters"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "1cf78215"
+      "ast": "2b55ad53"
     },
     "36cd2364-d113-47d1-b2c4-b088d9eb88dd": {
       "name": "Brainstorm",
@@ -1195,26 +1177,10 @@
     "3bb518ff-399b-4ce7-b9ad-a1d563dd7792": {
       "name": "Arch of Orazca",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Ascend",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{5}, {T}: Draw a card. Activate only if you have the city's blessing.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "condition.opponents-at-least"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "b77d4cd2"
+      "ast": "319a65a5"
     },
     "3bbad38b-7d88-4ff2-9fd3-5081536e7c56": {
       "name": "Page, Loose Leaf",
@@ -1355,21 +1321,10 @@
     "49b9a3ac-d245-431a-bf40-64d1b8dc2b91": {
       "name": "Keeper of the Accord",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of each opponent's end step, if that player controls more creatures than you, create a 1/1 white Soldier creature token.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "ability.triggered"
-        }
-      ],
-      "reasons": [
-        "faces[0].abilities[0].interveningIf: subjectControllerHasMore reads the controller of a permanent the event is about"
-      ],
-      "ast": "18e9ffd8"
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "133584cf"
     },
     "49be65fd-3755-410d-b0dc-2e5861ea2552": {
       "name": "Thopter Spy Network",
@@ -2284,19 +2239,10 @@
     "7c3a8766-e440-48c5-a561-197490efdba5": {
       "name": "Heirloom Blade",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever equipped creature dies, you may reveal cards from the top of your library until you reveal a creature card that shares a creature type with it. Put that card into your hand and the rest on the bottom of your library in a random order.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.reveal-until"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "28012732"
+      "ast": "86c724d3"
     },
     "7c779721-cd1b-4696-9ae9-68ccc284ed2a": {
       "name": "Aetherize",
@@ -3217,19 +3163,10 @@
     "b0394cf2-12a0-4d4f-87e0-fe8937e6faff": {
       "name": "Well of Lost Dreams",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever you gain life, you may pay {X}, where X is less than or equal to the amount of life you gained. If you do, draw X cards.",
-          "reason": "unrecognised",
-          "slot": "cost",
-          "closestRule": "effect.pay"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "5e1e7f82"
+      "ast": "d67c7c09"
     },
     "b1544f21-7e98-461b-aed5-e748b0168c52": {
       "name": "Swords to Plowshares",
@@ -3608,27 +3545,10 @@
     "cae166de-e681-40a0-83a8-3c17cf40e2fc": {
       "name": "Commander's Plate",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Equipped creature gets +3/+3 and has protection from each color that's not in your commander's color identity.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.attached"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Equip commander {3}",
-          "reason": "unrecognised",
-          "slot": "cost",
-          "closestRule": "keyword.equip"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "de89fe7d"
+      "ast": "92120909"
     },
     "cb027150-848c-4a66-88ad-e20222304dd8": {
       "name": "Scalding Tarn",
@@ -3762,19 +3682,10 @@
     "d4e875d9-2245-470d-aa2f-1dfe66ce2d15": {
       "name": "Karoo",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "When ~ enters, sacrifice it unless you return an untapped Plains you control to its owner's hand.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "condition.unless-pays"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "5bf9549f"
+      "ast": "21136338"
     },
     "d4f28a4b-d821-4132-bdec-4c528318f8e2": {
       "name": "Hellkite Charger",
@@ -4435,19 +4346,10 @@
     "fab29bc7-1f0a-4df4-b8f1-c008ce5583d2": {
       "name": "Search for Glory",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Search your library for a snow permanent card, a legendary card, or a Saga card, reveal it, put it into your hand, then shuffle. You gain 1 life for each {S} spent to cast ~.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.library-card"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f8603a02"
+      "ast": "13849468"
     },
     "fae37e28-e137-4177-b973-fa8b4dd8f409": {
       "name": "Generous Gift",
@@ -4700,7 +4602,7 @@
       "total": 60
     },
     "acceptance": {
-      "supported": 185,
+      "supported": 194,
       "total": 224
     }
   }
