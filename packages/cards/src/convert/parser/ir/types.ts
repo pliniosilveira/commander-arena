@@ -396,6 +396,8 @@ export type IrAmount =
   | {
       readonly kind: 'manaSpent';
       readonly fromType?: string;
+      /** "for each {S} spent to cast ~" (D-256, CR 107.4h): only the mana of snow sources. */
+      readonly snow?: true;
       readonly who: 'self' | 'it';
       readonly span: Span;
     }

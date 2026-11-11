@@ -90,6 +90,11 @@ export type Amount =
       readonly kind: 'manaSpent';
       readonly fromType?: string;
       /**
+       * "for each {S} spent to cast this spell" (D-256, CR 107.4h, 106.3, 601.2h): only the mana that a snow source made. Not with `fromType`. In the
+       * effect of the spell itself as well as in "When you cast this spell": the spell is the source of its own effect (a copy has 0, CR 707.10).
+       */
+      readonly snow?: true;
+      /**
        * "the amount of mana spent to cast that spell" (D-217, CR 601.2h, 113.7a): the spell a target slot of the ability named, as it is or as it last was
        * (a countered spell is gone). Only the target of the same spell or ability.
        */

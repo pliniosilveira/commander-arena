@@ -274,6 +274,8 @@ export function applyPaymentPlan(
   riders: ManaRider[];
   /** The card types of the source of each mana the plan spent on the cost itself (`PaymentPlan.spentTypes`, D-183). */
   spent: readonly (readonly string[])[];
+  /** How many of that mana was from a snow source (`PaymentPlan.spentSnow`, D-256). */
+  spentSnow: number;
 } {
   const events: GameEvent[] = [];
   const riders: ManaRider[] = [];
@@ -308,7 +310,7 @@ export function applyPaymentPlan(
     next = loseLifeBy(next, seat, lifeToPay);
     events.push({ kind: 'lifeChanged', seat, from: s.life, to: s.life - lifeToPay });
   }
-  return { state: next, events, riders, spent: plan.spentTypes };
+  return { state: next, events, riders, spent: plan.spentTypes, spentSnow: plan.spentSnow };
 }
 
 /** The colors of mana that stay in the pool of `seat` as a step or phase ends (D-151: "You don't lose unspent red mana as steps and phases end"). */

@@ -991,6 +991,7 @@ export function answerPayment(
         withSpentRiders(applied.state, casting, derivedSpell, applied.riders),
         casting,
         applied.spent,
+        applied.spentSnow,
       ),
       applied.events,
     );
@@ -1004,6 +1005,7 @@ export function answerPayment(
       withSpentRiders(paid.state, casting, derivedSpell, paid.riders),
       casting,
       paid.spent,
+      paid.spentSnow,
     ),
     paid.events,
   );
@@ -1099,13 +1101,15 @@ function withSpentRiders(
 
 /**
  * CR 601.2h (D-183): the spell remembers the mana spent to cast it, in all and by the card types of the sources that made it ("the amount of mana
- * spent to cast it", "for each mana from an artifact source spent to cast it"). `spent` has one entry for each mana, the source's card types.
+ * spent to cast it", "for each mana from an artifact source spent to cast it", D-256: "for each {S} spent to cast this spell"). `spent` has one entry for each
+ * mana, the source's card types; `spentSnow` is how many of them a snow source made.
  * Nothing for an ability, and nothing when no mana was spent.
  */
 function withManaSpent(
   state: GameState,
   casting: NonNullable<GameState['casting']>,
   spent: readonly (readonly string[])[],
+  spentSnow: number,
 ): GameState {
   const stack = state.objects[casting.object]?.stack;
   if (casting.activation !== null || spent.length === 0 || stack === null || stack === undefined) {
@@ -1116,7 +1120,15 @@ function withManaSpent(
     for (const type of new Set(types)) fromTypes[type] = (fromTypes[type] ?? 0) + 1;
   }
   return patchObject(state, casting.object, {
-    stack: { ...stack, manaSpent: { total: spent.length, fromTypes } },
+    stack: {
+      ...stack,
+      manaSpent: {
+        total: spent.length,
+        fromTypes,
+        // D-256: the mana from a snow source (CR 107.4h); left out when there was none, so a spell that was paid without snow keeps its shape.
+        ...(spentSnow > 0 ? { snow: spentSnow } : {}),
+      },
+    },
   });
 }
 

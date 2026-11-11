@@ -27,6 +27,7 @@ import {
   type FilterParts,
   MODIFIER,
   NO_PARTS,
+  PERMANENT_CARD_TYPES,
   toFilter,
   typeWords,
 } from './phrases';
@@ -96,7 +97,9 @@ function libraryPhrase(plural: boolean): Parser<IrFilter> {
     const parts = modifiers.value.reduce<FilterParts>((acc, m) => m(acc), NO_PARTS);
     // "tapped" and "untapped" mean nothing for a card in a library.
     if (parts.tapped !== undefined) return fail(ctx, pos);
-    const kind = choice<{ types: string[] } | { subtype: string }>(
+    const kind = choice<{ types: string[] } | { subtype: string } | { permanent: true }>(
+      // "a snow permanent card", "a nonland permanent card" (D-256, CR 110.1, 205.4g): a card of any of the permanent types, less those the "non" words leave out.
+      map(pattern(new RegExp(`permanent${BOUNDARY}`, 'iu')), () => ({ permanent: true as const })),
       map(typeWords(CARD_TYPES, false), (t) => ({ types: t })),
       map(SUBTYPE, (subtype) => ({ subtype })),
     )(ctx, modifiers.pos);
@@ -104,6 +107,17 @@ function libraryPhrase(plural: boolean): Parser<IrFilter> {
     const word = (kind.ok ? cardWord : CARD_WORD(plural, false))(ctx, kindEnd);
     if (!word.ok) return word;
     const kinds = kind.ok ? kind.value : { types: [] };
+    if ('permanent' in kinds) {
+      const left = PERMANENT_CARD_TYPES.filter((t) => !parts.notTypes.includes(t));
+      if (left.length === 0) return fail(ctx, pos);
+      const filter = toFilter(
+        'library',
+        { ...parts, notTypes: [], types: [] },
+        ctx.text.slice(pos, word.pos),
+      );
+      const anyOf = left.map((t): IrFilter => ({ types: [t], raw: t }));
+      return { ok: true, value: { ...filter, card: true, anyOf }, pos: word.pos };
+    }
     const filter = toFilter(
       'library',
       { ...parts, types: 'types' in kinds ? kinds.types : [] },
@@ -119,6 +133,34 @@ function libraryPhrase(plural: boolean): Parser<IrFilter> {
       pos: word.pos,
     };
   };
+}
+
+/**
+ * "a snow permanent card, a legendary card, or a Saga card" (D-256, CR 701.23a): one card that is any of the kinds, each said as a card of its own ("a creature
+ * card or a land card"). Two or more; "A or B" has one " or a", "A, B, or C" commas with ", or " before the last (anything else is not English). The filter is
+ * the choice of the kinds, each a filter with its own words; the library is where to look (CR 401.1).
+ */
+function libraryUnion(ctx: Parameters<Parser<IrFilter>>[0], pos: number) {
+  const item = map(sequence(pattern(/an? /i), libraryPhrase(false)), ([, filter]) => filter);
+  const first = item(ctx, pos);
+  if (!first.ok) return first;
+  const more = many(
+    map(sequence(pattern(/(, or | or |, )an? /i), libraryPhrase(false)), ([sep, filter]) => ({
+      sep: sep[1] ?? '',
+      filter,
+    })),
+  )(ctx, first.pos);
+  if (!more.ok) return more;
+  const items = more.value;
+  const last = items[items.length - 1];
+  if (last === undefined) return fail(ctx, pos);
+  const shaped =
+    items.slice(0, -1).every((i) => i.sep === ', ') &&
+    (items.length > 1 ? last.sep === ', or ' : last.sep === ' or ');
+  if (!shaped) return fail(ctx, pos);
+  const base = toFilter('library', NO_PARTS, ctx.text.slice(pos, more.pos));
+  const anyOf = [first.value, ...items.map((i) => i.filter)];
+  return { ok: true as const, value: { ...base, card: true, anyOf }, pos: more.pos };
 }
 
 type Bare = Omit<IrNoun, 'span' | 'rule'>;
@@ -137,6 +179,8 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'CR 701.23b (Search)',
     'CR 205.3 (Subtypes)',
     'CR 401.1 (Library)',
+    'CR 205.4g (Supertypes)',
+    'CR 110.1 (Permanents)',
   ],
   examples: [
     'a basic land card',
@@ -152,6 +196,13 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'an Aura or Equipment card',
     'up to two basic land cards',
     'up to three Forest cards',
+    'a snow permanent card',
+    'a nonland permanent card',
+    'up to two permanent cards',
+    'a snow permanent card, a legendary card, or a Saga card',
+    'a creature card or a land card',
+    'an artifact card or a Saga card',
+    'a legendary card, an Aura card, or an instant card',
   ],
   rejects: [
     'a basic land',
@@ -168,6 +219,16 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'a card from your hand',
     'a creature card with mana value 3 or less',
     'a basic land cards',
+    'a nonpermanent card',
+    'a snow permanent card, a legendary card, a Saga card',
+    'a snow permanent card, or a Saga card, or a legendary card',
+    'a snow permanent card or a legendary card, or a Saga card',
+    'a snow permanent card, legendary card, or a Saga card',
+    'a snow permanent card, a legendary card or a Saga card',
+    'a snow permanent card and a Saga card',
+    'a snow permanent card, or a legendary card',
+    'a snow permanent card or legendary card',
+    'a snow permanent card or a legendary card from your graveyard',
   ],
   parse: node<Bare, IrNoun>(
     'noun.library-card',
@@ -187,6 +248,18 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
           plural: true,
           other: false,
           count: { kind: 'number', value: count.value, span: count.span },
+        }),
+      ),
+      // D-256: "a snow permanent card, a legendary card, or a Saga card": one card of any of several kinds, before the single kind it starts like.
+      map(
+        libraryUnion,
+        (filter): Bare => ({
+          kind: 'noun',
+          det: 'a',
+          filter,
+          upTo: false,
+          plural: false,
+          other: false,
         }),
       ),
       map(sequence(pattern(/an? /i), libraryPhrase(false)), ([, filter]) => ({

@@ -984,9 +984,18 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
 }
 
 /** D-183: the card type of the source of the mana an amount counts, when it names one: a card type of CR 205.2a, in lower case. */
-export function checkManaSpentType(type: string | undefined, path: string, out: Out): void {
+export function checkManaSpentType(
+  type: string | undefined,
+  path: string,
+  out: Out,
+  snow?: unknown,
+): void {
   if (type !== undefined && !isOneOf(type, CARD_TYPES)) {
     issue(out, path, `fromType is a card type, not ${JSON.stringify(type)}`);
+  }
+  // D-256: "for each {S} spent" is the mana of snow sources, a different cut of the mana spent than a card type of the source.
+  if (snow !== undefined && (snow !== true || type !== undefined)) {
+    issue(out, path, 'snow is true and is not given with fromType');
   }
 }
 
@@ -1081,14 +1090,15 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         if (a.of.kind !== 'target')
           issue(out, `${path}.of`, 'the spell is a target of the ability');
         else checkRef(a.of, 'object', `${path}.of`, scope, out);
-      } else if (scope.selfCast !== true) {
+      } else if (scope.selfCast !== true && scope.owner !== 'spell') {
+        // D-256: the effect of the spell itself reads what was spent to cast it ("You gain 1 life for each {S} spent to cast this spell").
         issue(
           out,
           path,
-          'manaSpent is read in the effect of a "when you cast this spell" ability, where the spell is the source',
+          'manaSpent is read in the effect of a spell, or of a "when you cast this spell" ability, where the spell is the source',
         );
       }
-      checkManaSpentType(a.fromType, `${path}.fromType`, out);
+      checkManaSpentType(a.fromType, `${path}.fromType`, out, a.snow);
       break;
     case 'exiledStillThere':
       // D-151: only the effect of a delayed trigger created after an effect that exiled cards (`checkDelayedTrigger`).

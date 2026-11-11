@@ -127,7 +127,7 @@ export const MODIFIER: Parser<Modifier> = choice(
 
 export const PERMANENT_TYPES = 'artifact|battle|creature|enchantment|land|planeswalker';
 /** The permanent types in the order of "permanent card" (stage P33): a card of any of them is a permanent card (CR 110.1). */
-const PERMANENT_CARD_TYPES: readonly string[] = [
+export const PERMANENT_CARD_TYPES: readonly string[] = [
   'artifact',
   'creature',
   'enchantment',

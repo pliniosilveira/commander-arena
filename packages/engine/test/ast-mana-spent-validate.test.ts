@@ -67,14 +67,14 @@ describe('where "the amount of mana spent to cast it" is read', () => {
     ).toEqual([]);
   });
 
-  test('nowhere else: not in an ordinary triggered ability, an activated one or a spell', () => {
+  test('nowhere else: not in an ordinary triggered ability or an activated one', () => {
     const upkeep: Ability = {
       kind: 'triggered',
       trigger: { kind: 'upkeep', whose: 'you' },
       effect: draw({ kind: 'manaSpent' }),
     };
     expect(messages(withAbility(upkeep)).join('\n')).toMatch(
-      /manaSpent is read in the effect of a "when you cast this spell"/,
+      /manaSpent is read in the effect of a spell, or of a "when you cast this spell"/,
     );
     const activated: Ability = {
       kind: 'activated',
@@ -82,16 +82,37 @@ describe('where "the amount of mana spent to cast it" is read', () => {
       effect: draw({ kind: 'manaSpent' }),
     };
     expect(messages(withAbility(activated)).join('\n')).toMatch(/manaSpent is read/);
-    const spell = singleFace({
-      name: 'SYNTHETIC Test Spell',
-      manaCost: ['1'],
-      types: ['sorcery'],
-      colors: [],
-      colorIdentity: [],
-      oracleText: 'text',
-      spell: { effect: draw({ kind: 'manaSpent' }) },
-    });
-    expect(messages(spell).join('\n')).toMatch(/manaSpent is read/);
+  });
+
+  // D-256 (Search for Glory): "You gain 1 life for each {S} spent to cast this spell" is the effect of the spell itself, where the spell is the source. Until then the
+  // validator refused any read of the mana spent outside "When you cast this spell"; a spell's own effect is the same source, read from the same stack data.
+  test('in the effect of the spell itself, all of it, from a card type of the source, or the snow mana', () => {
+    const spell = (amount: unknown) =>
+      singleFace({
+        name: 'SYNTHETIC Test Spell',
+        manaCost: ['1'],
+        types: ['sorcery'],
+        colors: [],
+        colorIdentity: [],
+        oracleText: 'text',
+        spell: { effect: draw(amount) },
+      });
+    expect(messages(spell({ kind: 'manaSpent' }))).toEqual([]);
+    expect(messages(spell({ kind: 'manaSpent', fromType: 'artifact' }))).toEqual([]);
+    expect(messages(spell({ kind: 'manaSpent', snow: true }))).toEqual([]);
+  });
+
+  test('"snow" is true and is not given with a card type of the source', () => {
+    expect(messages(withAbility(castTrigger(draw({ kind: 'manaSpent', snow: true }))))).toEqual([]);
+    expect(
+      messages(withAbility(castTrigger(draw({ kind: 'manaSpent', snow: false })))).join('\n'),
+    ).toMatch(/snow is true/);
+    expect(
+      messages(
+        withAbility(castTrigger(draw({ kind: 'manaSpent', snow: true, fromType: 'artifact' }))),
+      ).join('\n'),
+    ).toMatch(/snow is true and is not given with fromType/);
+    expect(messages(withAbility(enters({ kind: 'manaSpent', snow: true })))).toEqual([]);
   });
 
   test('the card type of the source must be a card type', () => {
