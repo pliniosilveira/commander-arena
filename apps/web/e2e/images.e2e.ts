@@ -42,3 +42,31 @@ test('a failed image leaves the drawn card', async ({ page }) => {
   await page.locator('.board-hand [data-object-id]').first().hover();
   await expect(page.locator('.preview-panel .board-card-name')).toBeVisible();
 });
+
+test('the full card image is never cropped, even when the drawn rules text would need a taller frame', async ({
+  page,
+}) => {
+  await page.route('https://api.scryfall.com/cards/named**', (route) =>
+    route.fulfill({ contentType: 'image/svg+xml', body: SVG('normal') }),
+  );
+  await page.goto('/?autostart=white-knights,swamp-forest&seed=7');
+  await page.getByRole('button', { name: 'Keep', exact: true }).click();
+  await expect(page.locator('[data-dec-primary]')).toBeVisible({ timeout: 15_000 });
+  await page.locator('.board-hand [data-object-id]').first().hover();
+  await expect(page.locator('.preview-panel .board-card-image.is-loaded')).toBeVisible();
+
+  // A long rules text under the picture (the drawn frame grows to hold it): make the text of the box big,
+  // as a card with four paragraphs would be at its width.
+  await page
+    .locator('.board-preview')
+    .evaluate((box) => box.style.setProperty('--text-scale', '2.6'));
+  const frame = page.locator('.preview-panel .board-card-full');
+  await expect(async () => {
+    const box = await frame.boundingBox();
+    expect(box).not.toBeNull();
+    // A card is 488 x 680 (art.tsx asks Scryfall for the "normal" image): the frame that shows it is that shape,
+    // or `object-fit: cover` cuts the sides off a borderless card ("he Balrog of Moria", "rample, haste").
+    const ratio = (box?.width ?? 0) / (box?.height ?? 1);
+    expect(Math.abs(ratio - 488 / 680)).toBeLessThan(0.006);
+  }).toPass({ timeout: 5000 });
+});

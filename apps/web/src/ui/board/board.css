@@ -1323,6 +1323,17 @@
   min-height: calc(var(--preview-card-w, 240px) * 1.3935);
 }
 
+/* Once the real card image (488 x 680) has loaded it is the whole card, and the drawn frame under it
+   is hidden: the box is exactly a card's shape and no taller, or the image, which fills the box with
+   `object-fit: cover`, is scaled up and loses its sides (a borderless card lost "he Balrog of Moria",
+   "rample, haste" and the "8/" of its power and toughness). The drawn text that would need the room
+   is under the picture, so it may be clipped. Without the image (offline, a SYNTHETIC card, a token)
+   the box grows with the text as above. */
+.board-card-full:has(> .board-card-image.is-loaded) {
+  height: calc(var(--preview-card-w, 240px) * 1.3935);
+  min-height: 0;
+}
+
 .board-card-full .board-card-head {
   padding: 8px 9px 5px;
 }
