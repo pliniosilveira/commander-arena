@@ -2,11 +2,11 @@
  * Conditions of the Bruna deck program (D-252): what the engine's turn log tells about life. "You gained 3 or more life this turn" (CR 119.3: a
  * player gains life by any event; the amounts of one turn add up).
  */
-import { pattern, satisfy, sequence } from '../../combinators';
-import type { IrCondition } from '../../ir/types';
+import { fail, literal, pattern, satisfy, sequence } from '../../combinators';
+import type { IrClause, IrCondition } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { BOUNDARY } from '../noun/phrases';
-import { defineRule, spanned } from '../registry';
+import { defineRule, family, spanned } from '../registry';
 
 /**
  * `condition.life-gained-this-turn`: "you gained 3 or more life this turn", "you gained 4 or more life this turn" (CR 119.3, 603.4: read as the
@@ -95,7 +95,76 @@ export const CONDITION_LIFE_ABOVE_STARTING = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.unless-return`: "unless you return an untapped Plains you control to its owner's hand" (Karoo, D-258, CR 118.12a: "[Do something] unless [a player
+ * does something else]" means "[A player may do something else]. If [that player doesn't], [do something]"). The "something else" is the return of one
+ * permanent the player controls and chooses (the `effect.return` of a noun with "you control"); the sentence rules attach the condition to the one clause it
+ * follows and the lowering makes the offer and the "if you don't".
+ */
+export const CONDITION_UNLESS_RETURN = defineRule<IrCondition>({
+  id: 'condition.unless-return',
+  family: 'condition',
+  leading: ['unless'],
+  cites: [
+    'CR 118.12a (Costs)',
+    'CR 118.12 (Costs)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 400.3 (General)',
+  ],
+  examples: [
+    "unless you return an untapped Plains you control to its owner's hand",
+    'unless you return an untapped Plains you control to its owner’s hand',
+    "unless you return a land you control to its owner's hand",
+    "unless you return a Forest you control to its owner's hand",
+  ],
+  rejects: [
+    "unless you return a land to its owner's hand",
+    "unless you return target land to its owner's hand",
+    "unless you return ~ to its owner's hand",
+    "unless you return another land you control to its owner's hand",
+    "unless you return two lands you control to their owners' hands",
+    "unless an opponent returns a land you control to its owner's hand",
+    "unless that player returns a land they control to its owner's hand",
+    'unless you return an untapped Plains you control to your hand',
+    'unless you return an untapped Plains you control',
+    "unless you return a land you control to its owner's hand and",
+    "if you return a land you control to its owner's hand",
+    "unless you returns a land you control to its owner's hand",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('unless you '),
+      satisfy(family<readonly IrClause[]>('effect', { only: ['effect.return'] }), (clauses) => {
+        const [clause] = clauses;
+        const objects = clause?.args.objects;
+        return (
+          clauses.length === 1 &&
+          clause?.verb === 'return' &&
+          objects !== undefined &&
+          'filter' in objects &&
+          objects.filter.controller === 'you'
+        );
+      }),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, clauses] = r.value;
+    const [clause] = clauses;
+    if (clause === undefined) return fail(ctx, pos);
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'unlessReturn', clause },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.unless-return',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const BRUNA_CONDITION_RULES = [
   CONDITION_LIFE_GAINED_THIS_TURN,
   CONDITION_LIFE_ABOVE_STARTING,
+  CONDITION_UNLESS_RETURN,
 ];

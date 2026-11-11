@@ -368,6 +368,9 @@ export function lowerCondition(
         count: 1,
       });
     }
+    case 'unlessReturn':
+      // "... unless you return a land you control to its owner's hand" belongs to the sentence of one instruction, which the lowering of the sentences reads (D-258).
+      return failure(c, []);
     case 'declined':
       // "If the player doesn't" belongs to a "may have you" sentence, which the lowering of the sentences reads; anywhere else it is not run.
       return failure(c, []);

@@ -228,6 +228,56 @@ function lowerUnless(sentence: IrSentence, ctx: LowerContext): LowerResult<Effec
   return { ok: true, value: [effect], rule: clause.rule };
 }
 
+/**
+ * "Sacrifice it unless you return an untapped Plains you control to its owner's hand" (Karoo, D-258, CR 118.12a): "[Do something] unless [a player does
+ * something else]" means "[A player may do something else]. If [that player doesn't], [do something]", so the engine's `may` of the return (a choice among the
+ * matching permanents the controller controls, asked only when there is one: nothing that cannot be done is offered, CR 608.2d) and a `conditional` on "not
+ * `didPrevious`" for the instruction. It follows exactly one clause that is not itself optional; the offered clause must lower to the choosing return of one
+ * permanent to its owner's hand, anything else is refused (never lowered as if the clause were unconditional).
+ */
+function lowerUnlessReturn(sentence: IrSentence, ctx: LowerContext): LowerResult<Effects> | null {
+  const [clause, ...more] = sentence.clauses;
+  const test = clause?.condition?.test;
+  if (clause === undefined || test?.kind !== 'unlessReturn') return null;
+  if (more.length > 0 || sentence.condition !== undefined || clause.optional) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures([
+    'effect:may',
+    'effect:conditional',
+    'condition:didPrevious',
+    'condition:not',
+  ]);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const { condition: _unless, ...instruction } = clause;
+  void _unless;
+  const offered = lowerClauses([{ ...test.clause, optional: false }], ctx);
+  if (!offered.ok) return offered;
+  const [offer, ...rest] = offered.value;
+  if (
+    rest.length > 0 ||
+    offer?.kind !== 'moveToZone' ||
+    offer.to !== 'hand' ||
+    offer.objects.kind !== 'choose'
+  ) {
+    return refuse(sentence);
+  }
+  const body = lowerClauses([instruction], ctx);
+  if (!body.ok) return body;
+  return {
+    ok: true,
+    value: [
+      { kind: 'may', effect: offer },
+      {
+        kind: 'conditional',
+        condition: { kind: 'not', term: { kind: 'didPrevious' } },
+        effect: oneEffect(body.value),
+      },
+    ],
+    rule: clause.rule,
+  };
+}
+
 /** "it deals 4 damage": a damage clause that names no recipient (`effect.damage-it`). */
 function isRecipientless(clause: IrClause): boolean {
   return clause.verb === 'dealDamage' && clause.args.to === undefined;
@@ -1102,6 +1152,12 @@ function lowerStep(
   if (unless !== null) {
     if (!unless.ok) return stop(unless);
     steps.push({ effects: unless.value, replaceable: false });
+    return { last: i };
+  }
+  const unlessReturn = lowerUnlessReturn(sentence, ctx);
+  if (unlessReturn !== null) {
+    if (!unlessReturn.ok) return stop(unlessReturn);
+    steps.push({ effects: unlessReturn.value, replaceable: false });
     return { last: i };
   }
   if (sentence.condition === undefined) {

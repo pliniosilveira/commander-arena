@@ -149,3 +149,59 @@ describe('"Creature spells of the chosen type cost {2} less to cast" (D-255)', (
     expect(dropped('Creature spells cost {2} less to cast.', 'artifact').reason).toBeDefined();
   });
 });
+
+describe('"sacrifice it unless you return an untapped Plains you control to its owner\'s hand" (D-258)', () => {
+  const OFFER = {
+    kind: 'may',
+    effect: {
+      kind: 'moveToZone',
+      objects: {
+        kind: 'choose',
+        filter: { subtypes: ['Plains'], controller: 'you', tapped: false },
+      },
+      to: 'hand',
+    },
+  };
+  const IF_NOT = {
+    kind: 'conditional',
+    condition: { kind: 'not', term: { kind: 'didPrevious' } },
+    effect: { kind: 'sacrifice', objects: { kind: 'this' } },
+  };
+
+  test('Karoo: the offer, then the sacrifice when it was not made', () => {
+    const parsed = readAll(
+      "~ enters tapped.\nWhen ~ enters, sacrifice it unless you return an untapped Plains you control to its owner's hand.\n{T}: Add {C}{W}.",
+      'land',
+    );
+    expect(parsed.abilities).toEqual([
+      { kind: 'replacement', replacement: { kind: 'entersTapped' } },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        effect: { kind: 'sequence', effects: [OFFER, IF_NOT] },
+      },
+      { kind: 'mana', cost: [{ kind: 'tap' }], production: { kind: 'fixed', mana: ['C', 'W'] } },
+    ]);
+  });
+
+  test('the land type and "untapped" are the text\'s (SYNTHETIC: a Forest, no "untapped")', () => {
+    const parsed = readAll(
+      "When ~ enters, sacrifice it unless you return a Forest you control to its owner's hand.",
+      'land',
+    );
+    const text = JSON.stringify(parsed.abilities);
+    expect(text).toContain('"subtypes":["Forest"]');
+    expect(text).not.toContain('"tapped"');
+  });
+
+  test('other wordings are not read (SYNTHETIC)', () => {
+    for (const line of [
+      "When ~ enters, sacrifice it unless you return a land to its owner's hand.",
+      "When ~ enters, sacrifice it unless you return ~ to its owner's hand.",
+      "When ~ enters, sacrifice it unless an opponent returns a land you control to its owner's hand.",
+      'When ~ enters, sacrifice it unless you return an untapped Plains you control to your hand.',
+    ]) {
+      expect(dropped(line, 'land').reason, line).toBeDefined();
+    }
+  });
+});

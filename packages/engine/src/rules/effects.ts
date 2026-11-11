@@ -72,7 +72,7 @@ import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
 import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
-import { sacrificeCandidates, sacrificePermanent } from './sacrifice';
+import { controlledCandidates, sacrificeCandidates, sacrificePermanent } from './sacrifice';
 import { runChooseSacrifice, sacrificeInstructions } from './sacrifice-choice';
 import { runDiscard, runSearch } from './search';
 import { apnapOrder, resolveObjects, resolvePlayers, type SelectContext } from './select';
@@ -213,6 +213,17 @@ export function runInstruction(
       offered.objects.atLeastOne === true &&
       offered.player === undefined &&
       sacrificeCandidates(state, res.controller, res.source, offered.objects.filter).length === 0
+    ) {
+      return done(state);
+    }
+    // D-258, CR 118.12a, 608.2d: "you may return an untapped Plains you control to its owner's hand" with no such permanent: the cost cannot be paid, so nothing is
+    // asked and it was not paid (the "if you don't" that follows runs).
+    if (
+      offered.kind === 'moveToZone' &&
+      offered.objects.kind === 'choose' &&
+      offered.to !== 'battlefield' &&
+      !isCardZoneChoice(offered.objects.filter) &&
+      controlledCandidates(state, res.controller, res.source, offered.objects.filter).length === 0
     ) {
       return done(state);
     }

@@ -317,4 +317,70 @@ export const SYNTHETIC_REFERENCE_LIST: readonly CardDefinition[] = [
       { kind: 'mana', cost: [{ kind: 'tap' }], production: { kind: 'fixed', mana: ['G', 'U'] } },
     ],
   }),
+  // "When this land enters, sacrifice it unless you return an untapped Plains you control to its owner's hand." (CR 118.12a: "you may return ... If you don't,
+  // sacrifice it"; D-258): the shape of Karoo. The land is no Plains itself, and a tapped Plains cannot be the one returned.
+  singleFace({
+    name: 'SYNTHETIC Plains Karoo',
+    manaCost: null,
+    types: ['land'],
+    colors: [],
+    colorIdentity: ['W'],
+    oracleText:
+      'This land enters tapped. When this land enters, sacrifice it unless you return an untapped Plains you control to its owner’s hand. {T}: Add {C}{W}.',
+    abilities: [
+      { kind: 'replacement', replacement: { kind: 'entersTapped' } },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        effect: {
+          kind: 'sequence',
+          effects: [
+            {
+              kind: 'may',
+              effect: {
+                kind: 'moveToZone',
+                objects: {
+                  kind: 'choose',
+                  filter: { subtypes: ['Plains'], tapped: false, controller: 'you' },
+                },
+                to: 'hand',
+              },
+            },
+            {
+              kind: 'conditional',
+              condition: { kind: 'not', term: { kind: 'didPrevious' } },
+              effect: { kind: 'sacrifice', objects: { kind: 'this' } },
+            },
+          ],
+        },
+      },
+      { kind: 'mana', cost: [{ kind: 'tap' }], production: { kind: 'fixed', mana: ['C', 'W'] } },
+    ],
+  }),
+  // "When this land enters, you may return a creature you control to its owner's hand." (D-258, CR 608.2d): the may of a choosing return with no "unless";
+  // with no creature to return nothing is asked, whatever the card.
+  singleFace({
+    name: 'SYNTHETIC Bounce Offer Land',
+    manaCost: null,
+    types: ['land'],
+    colors: [],
+    colorIdentity: [],
+    oracleText:
+      'When this land enters, you may return a creature you control to its owner’s hand. {T}: Add {C}.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        effect: {
+          kind: 'may',
+          effect: {
+            kind: 'moveToZone',
+            objects: { kind: 'choose', filter: { types: ['creature'], controller: 'you' } },
+            to: 'hand',
+          },
+        },
+      },
+      { kind: 'mana', cost: [{ kind: 'tap' }], production: { kind: 'fixed', mana: ['C'] } },
+    ],
+  }),
 ];

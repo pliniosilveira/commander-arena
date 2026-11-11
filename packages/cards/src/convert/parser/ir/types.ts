@@ -433,6 +433,8 @@ export interface IrCondition extends IrNode {
     // "If a creature card was discarded this way", "if a noncreature card was discarded this way" (stage P52, D-210, CR 608.2c)
     | { readonly kind: 'discardedThisWay'; readonly creature: boolean }
     | { readonly kind: 'unlessPays'; readonly who: IrNoun; readonly cost: readonly IrCost[] }
+    // D-258 (the Bruna deck, CR 118.12a): "unless you return an untapped Plains you control to its owner's hand": the `return` clause of one permanent the controller chooses
+    | { readonly kind: 'unlessReturn'; readonly clause: IrClause }
     // "you have two or more opponents" (CR 102.1: the players you play against)
     | { readonly kind: 'opponentsAtLeast'; readonly atLeast: IrAmount }
     // "~ was kicked", "it was kicked" (CR 702.33d); `who` is the word the text used for the object

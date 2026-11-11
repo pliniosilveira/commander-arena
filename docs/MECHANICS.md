@@ -745,6 +745,16 @@ Six primitives for the most popular unsupported cards of the corpus (the first c
 - Notes: (1) The bounce land is itself a candidate (it is on the battlefield when its trigger resolves); with no other land the engine returns it. (2) A land that left in response leaves no candidate: nothing happens. (3) `CasualAgent` returns a tapped permanent first, then the one it values least.
 
 
+## "[Do something] unless you return a permanent you control to its owner's hand" (Karoo; CR 118.12a, 608.2d, 400.3)
+
+- CR: 118.12a ("[Do something] unless [a player does something else]" means "[A player may do something else]. If [that player doesn't], [do something]"), 608.2d (not an option that is impossible), 400.3 (a card goes to its owner's hand), 701.21a (the sacrifice)
+- Gap class: P (existing nodes; one rule of the `may` question)
+- Code: `rules/effects.ts` (the `mayEffect` instruction is not asked when the offered `moveToZone` with a `choose` selector has no candidate permanent), parser `rules/condition/bruna.ts` (`condition.unless-return`), `lower/sentences.ts` (`lowerUnlessReturn`)
+- AST node: `sequence [ may(moveToZone { objects: choose { subtypes: ['Plains'], tapped: false, controller: 'you' }, to: 'hand' }), conditional(not didPrevious, sacrifice this) ]`. A permanent that cannot be chosen (a tapped Plains, no Plains, the land itself, which has no land type) is no candidate, so with none the question is not asked and the land is sacrificed.
+- Tests: `scenario-xx-return-or-sacrifice.test.ts` (returns an untapped Plains; declining; only tapped Plains; no Plains; nothing else; a different card, "you may return a creature you control" with no creature, `SYNTHETIC Bounce Offer Land`), `packages/cards/test/parser-p69-bruna.test.ts`
+- Example cards: Karoo. SYNTHETIC fixture: `SYNTHETIC Plains Karoo`.
+- Added in: D-258 (the Bruna deck, issue 5)
+
 ## Drawing a commander from a library (engine fix; CR 903.9b, 121.1, 121.2, 504.1)
 
 - CR: 903.9b (a commander that would be put into its owner's hand from anywhere may go to the command zone instead), 121.1 (drawing is putting the top card of the library into the hand), 121.2 (cards are drawn one at a time), 121.6b (a sequence of draws resumes after a replacement is completed), 504.1 (the draw of the draw step is a turn-based action).
