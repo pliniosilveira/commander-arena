@@ -140,6 +140,12 @@ export interface LowerContext {
    * the player with `~` replaced by it (stage P19).
    */
   readonly cardName: string;
+  /**
+   * The name the card gives itself in its text (stage P70, D-911): the shortest of the names that normalization writes as `~` ("Ajani" for "Ajani, Strength of the Pride"),
+   * or '' when it is not known (a context made for a quoted ability or a mode, where `~` is not the card). The name of a token that begins with the card's own
+   * ("named Ajani's Pridemate") is written back from it.
+   */
+  selfName: string;
 }
 
 export function newContext(
@@ -177,6 +183,7 @@ export function newContext(
     usedGraveyardSource: false,
     itIsCard: false,
     cardName,
+    selfName: '',
   };
 }
 

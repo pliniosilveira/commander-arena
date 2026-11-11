@@ -1095,6 +1095,12 @@ function lowerEitherToken(
   return { ok: true, value: [{ kind: 'chooseOne', options }], rule: clause.rule };
 }
 
+/** The name of a created token, with the card's own short name where the text said the tilde (stage P70, D-911); null when that name is not known here. */
+function ownTokenName(named: string, ctx: LowerContext): string | null {
+  if (!named.includes('~')) return named;
+  return ctx.selfName === '' ? null : named.split('~').join(ctx.selfName);
+}
+
 function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effects> {
   const token = arg(clause, 'token');
   if (token?.kind !== 'token') return failure(clause);
@@ -1174,9 +1180,13 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     if (!own.ok) return own;
     abilities.push(own.value);
   }
+  // CR 111.4: the name the effect gives the token. "named ~'s Pridemate" (stage P70, D-911): the card's own short name, which normalization wrote as the tilde;
+  // a context that does not know it (a quoted ability, where the tilde is the token) refuses the name instead of guessing.
+  const named = token.named === undefined ? undefined : ownTokenName(token.named, ctx);
+  if (named === null) return { ok: false, needs: [], ...at };
   const definition: TokenDefinition = {
     // CR 111.4: the name the effect gives the token, or else its creature types.
-    name: token.named ?? subtypes.join(' '),
+    name: named ?? subtypes.join(' '),
     manaCost: null,
     supertypes: token.legendary === true ? ['legendary'] : [],
     types,
@@ -1188,7 +1198,7 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     defense: null,
     // The words of the token's abilities, which the card face prints (CR 111.4): its keywords on one line, then each ability in
     // quotes as the card writes it. A token with no abilities has no text.
-    oracleText: tokenRulesText(token.keywords ?? [], token.abilities ?? [], token.named),
+    oracleText: tokenRulesText(token.keywords ?? [], token.abilities ?? [], named),
     abilities,
   };
   return {

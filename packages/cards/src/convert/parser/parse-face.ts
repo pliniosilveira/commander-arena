@@ -7,6 +7,7 @@ import {
   type NormalizeOptions,
   namesItselfInQuotes,
   normalizeOracleText,
+  selfNames,
   splitAbilities,
   stripFlavorWord,
 } from './normalize';
@@ -77,6 +78,7 @@ export function parseFaceText(
       scope,
       name: options.name,
       namedInQuotes,
+      selfName: selfNames(options).at(-1) ?? '',
     };
     const asWritten = compileLine(text, lineOptions);
     // CR 207.2d (D-204): a flavor word has no rules meaning, but no list names them, so the label is taken off only when the line did not

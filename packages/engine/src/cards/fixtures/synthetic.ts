@@ -79,6 +79,7 @@ import { SYNTHETIC_PLAYER_MORE_LIST } from './synthetic-player-more';
 import { SYNTHETIC_POLYMORPH_LIST } from './synthetic-polymorph';
 import { SYNTHETIC_PREVENTION_LIST } from './synthetic-prevention';
 import { SYNTHETIC_PREVENTION_BY_LIST } from './synthetic-prevention-by';
+import { SYNTHETIC_PRIDE_WALKER_LIST } from './synthetic-pride-walker';
 import { SYNTHETIC_PT_LIST } from './synthetic-pt';
 import { SYNTHETIC_RECURSION_LIST } from './synthetic-recursion';
 import { SYNTHETIC_REFERENCE_LIST } from './synthetic-references';
@@ -371,6 +372,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_SNOW_LIST,
     ...SYNTHETIC_BRUNA_SEARCH_LIST,
     ...SYNTHETIC_PLANESWALKER_LIST,
+    ...SYNTHETIC_PRIDE_WALKER_LIST,
     ...SYNTHETIC_MANA_TRIGGERS_LIST,
     ...SYNTHETIC_LIBRARY_ARTIFACTS_LIST,
     ...SYNTHETIC_STATICS_ARTIFACTS_LIST,

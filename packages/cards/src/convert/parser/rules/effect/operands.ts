@@ -55,6 +55,8 @@ export const PERMANENT_OPERANDS = [
   'noun.target-permanent',
   'noun.all-permanents',
   'noun.each-permanent',
+  // Stage P70 (D-913): "each artifact and creature your opponents control".
+  'noun.each-type-union',
 ] as const;
 
 /** What a verb that acts on a permanent can also say of the permanent it is on: "untap ~". */
