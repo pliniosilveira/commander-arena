@@ -1,0 +1,101 @@
+name: Deck support triage
+
+# D-251: a "deck support" issue opened or edited by anyone is checked for completeness by `pnpm corpus:check-issue`, with
+# no model involved. A complete request (the one the import screen's "Ask for support on GitHub" button writes, with every
+# card's data) gets the label `deck-support:ready`; an incomplete one gets one comment that lists what is missing, and loses
+# the label. Only people with write access can add a label, so the label cannot be forged by an issue's author. The coding
+# agent's `deck-support` skill takes the ready issues from there (`.claude/skills/deck-support/SKILL.md`).
+# The description is untrusted input in a public repository: it goes through the environment into a file and is only ever
+# read as data. The comment this workflow writes carries the sha256 of the description it checked, so the agent can tell
+# whether the issue was edited after the check. A person other than the owner may have one request waiting at a time.
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deck-support-triage-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  triage:
+    name: is the request complete?
+    if: ${{ startsWith(github.event.issue.title, 'deck support') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: A description that changed is not ready until it is checked again
+        if: ${{ github.event.action == 'edited' && github.event.issue.user.login != github.repository_owner }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: gh issue edit "$NUMBER" --remove-label deck-support:ready || true
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check the description
+        env:
+          # The description is data: it goes through the environment into a file, never into a script.
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          printf '%s' "$BODY" > "$RUNNER_TEMP/issue.md"
+          code=0
+          node tools/corpus/check-issue-cli.ts --body "$RUNNER_TEMP/issue.md" > "$RUNNER_TEMP/result.json" || code=$?
+          cat "$RUNNER_TEMP/result.json"
+          # 0 complete, 1 incomplete; anything else is a failure of the check itself.
+          test "$code" -le 1
+      - name: Label and comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+          LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+        run: |
+          marker='<!-- deck-support-triage -->'
+          case ",$LABELS," in
+            *,deck-support:in-progress,*|*,deck-support:done,*|*,deck-support:blocked,*)
+              echo "work on this issue already started or finished: nothing to do"
+              exit 0 ;;
+          esac
+          digest=$(sha256sum "$RUNNER_TEMP/issue.md" | cut -d' ' -f1)
+          marker="$marker<!-- sha256:$digest -->"
+          # Someone other than the owner has one request waiting at a time.
+          other=""
+          if [ "$AUTHOR" != "$GITHUB_REPOSITORY_OWNER" ]; then
+            other=$(gh api "repos/${GITHUB_REPOSITORY}/issues?state=open&labels=deck-support:ready,deck-support:in-progress&per_page=100" \
+              --jq "[.[] | select(.user.login == \"${AUTHOR}\" and .number != ${NUMBER})][0].number // empty" || true)
+          fi
+          if [ "$(jq -r .complete "$RUNNER_TEMP/result.json")" = "true" ] && [ -n "$other" ]; then
+            gh issue edit "$NUMBER" --remove-label deck-support:ready || true
+            body="$marker
+          The request is complete, but #$other of yours is still waiting or being worked on. Only one request per person is queued at a time: edit this issue (any edit) when #$other is done, and it is checked again."
+          elif [ "$(jq -r .complete "$RUNNER_TEMP/result.json")" = "true" ]; then
+            gh label create deck-support:ready --color 0E8A16 --description "A complete deck support request, waiting for the agent" --force
+            gh issue edit "$NUMBER" --add-label deck-support:ready
+            body="$marker
+          The request is complete (decklist, template report, the card data of all $(jq '.unsupported | length' "$RUNNER_TEMP/result.json") unsupported cards, build line). It is queued for the deck-support agent, which works when its budget allows."
+          else
+            gh issue edit "$NUMBER" --remove-label deck-support:ready || true
+            body="$marker
+          This deck support request is not complete yet, so it is not queued. What is missing:
+
+          $(jq -r '.problems[] | "- " + .' "$RUNNER_TEMP/result.json")
+
+          Press **Ask for support on GitHub** on the import screen again, paste the whole report into the description, and edit this issue: it is checked again on every edit."
+          fi
+          existing=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${NUMBER}/comments" --jq '[.[] | select(.body | contains("<!-- deck-support-triage -->"))][0].id // empty')
+          if [ -n "$existing" ]; then
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${existing}" -f body="$body"
+          else
+            gh issue comment "$NUMBER" --body "$body"
+          fi

@@ -3,6 +3,7 @@
 // player's browser received them from Scryfall, gzip-compressed in base64url. This command reads that block from the description (saved
 // to a file), decompresses it, checks every record and merges the cards into golden.jsonl like `corpus:extract`, as acceptance cards
 // whose source names the issue. No network and no bulk file: the owner does not run `corpus:extract` for these cards.
+// `--no-replace` is for an issue of someone else (D-251): cards already in the file are kept, and different data for one stops the command.
 
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -66,6 +67,27 @@ export async function fromIssue(
     if ((error as { code?: string }).code !== 'ENOENT') {
       io.err(`error: cannot read ${goldenFile}: ${error instanceof Error ? error.message : error}`);
       return 2;
+    }
+  }
+  if (options.noReplace) {
+    // An issue of someone else (D-251): the corpus holds real data, so a card that is already there is never replaced.
+    const conflicts: string[] = [];
+    const known = new Map(existing.map((c) => [c.oracleId, c]));
+    fresh = fresh.filter((card) => {
+      const there = known.get(card.oracleId);
+      if (there === undefined) return true;
+      if (JSON.stringify(there.faces) !== JSON.stringify(card.faces)) conflicts.push(card.name);
+      return false;
+    });
+    if (conflicts.length > 0) {
+      io.err(
+        `error: the issue has different data for card(s) the corpus already holds, so nothing was written: ${conflicts.join('; ')}`,
+      );
+      return 2;
+    }
+    if (fresh.length === 0) {
+      io.out('every card of the issue is already in the corpus: nothing to add.');
+      return 0;
     }
   }
   const { merged, replaced } = mergeGolden(existing, fresh);

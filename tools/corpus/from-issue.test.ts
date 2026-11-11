@@ -151,3 +151,58 @@ describe('corpus:from-issue', () => {
     expect(noId.err).toContain('no oracle id');
   });
 });
+
+describe('corpus:from-issue --no-replace (an issue of someone else, D-251)', () => {
+  async function noReplace(body: string, golden: string) {
+    const dir = await tempDir();
+    const bodyFile = path.join(dir, 'issue.md');
+    await writeFile(bodyFile, body);
+    const goldenFile = path.join(dir, 'golden.jsonl');
+    await writeFile(goldenFile, golden);
+    const { io, out, err } = capture();
+    const code = await run(
+      ['from-issue', '--body', bodyFile, '--issue', '9', '--golden', goldenFile, '--no-replace'],
+      io,
+      { repoRoot: dir },
+    );
+    const lines = (await readFile(goldenFile, 'utf8'))
+      .split('\n')
+      .filter((l) => l !== '')
+      .map((l) => JSON.parse(l) as GoldenCard);
+    return { code, out: out.join('\n'), err: err.join('\n'), lines };
+  }
+
+  test('adds the new cards, skips one that is already there with the same data', async () => {
+    const same = { ...ONE, source: 'engine-fixture' };
+    const r = await noReplace(description([ONE, TWO]), `${goldenLine(same)}\n`);
+    expect(r.code).toBe(0);
+    expect(r.lines.map((c) => c.name)).toEqual([
+      'SYNTHETIC Issue Thopter',
+      'SYNTHETIC Issue Engine',
+    ]);
+    expect(r.lines[0]?.source).toBe('engine-fixture');
+  });
+
+  test('different data for a card the corpus holds stops the command and writes nothing', async () => {
+    const real = {
+      ...ONE,
+      source: 'engine-fixture',
+      faces: [{ ...(ONE.faces[0] as GoldenCard['faces'][number]), oracleText: 'Trample' }],
+    };
+    const before = `${goldenLine(real)}\n`;
+    const r = await noReplace(description([ONE, TWO]), before);
+    expect(r.code).toBe(2);
+    expect(r.err).toContain('SYNTHETIC Issue Thopter');
+    expect(r.err).toContain('nothing was written');
+    expect(r.lines).toEqual([real]);
+  });
+
+  test('--no-replace belongs to from-issue only', () => {
+    expect(parseOptions(['extract', '--file', 'f', '--names', 'n', '--no-replace'])).toContain(
+      'belong to corpus:from-issue',
+    );
+    expect(
+      parseOptions(['from-issue', '--body', 'b.md', '--issue', '3', '--no-replace']),
+    ).toMatchObject({ command: 'from-issue', noReplace: true });
+  });
+});

@@ -27,6 +27,8 @@ export interface Options {
   readonly body: string | undefined;
   /** from-issue: the number of that issue, written into each card's source. */
   readonly issue: number | undefined;
+  /** from-issue: never replace a card already in the golden file (an issue of someone else, D-251). */
+  readonly noReplace: boolean;
 }
 
 export const USAGE = `Usage:
@@ -38,7 +40,7 @@ export const USAGE = `Usage:
   pnpm corpus:decks --file <path> --deck <decklist> [--deck <decklist> ...] [--out <file>]
                                                                 how much of each deck the engine
                                                                 supports, and what blocks it
-  pnpm corpus:from-issue --body <file> --issue <number> [--golden <path>]
+  pnpm corpus:from-issue --body <file> --issue <number> [--golden <path>] [--no-replace]
                                                                 add the cards of a support issue's
                                                                 card data block to the golden corpus
 
@@ -69,6 +71,9 @@ Options:
   --issue <number>    that issue's number, written into each card's source
   --golden <path>     golden file to add to (default as for corpus:extract); a card already there
                       (same oracle id) is replaced
+  --no-replace        keep the cards already there: a card of the issue that is already in the file
+                      with the same data is skipped, with different data stops the command (for
+                      issues of someone else, D-251)
   coverage:cards only:
   --check             compare with reports/coverage-baseline.json, write nothing, exit 1 on a drop
   --update-baseline   also write reports/coverage-baseline.json
@@ -91,6 +96,7 @@ const SPEC = {
   deck: { type: 'string', multiple: true },
   body: { type: 'string' },
   issue: { type: 'string' },
+  'no-replace': { type: 'boolean' },
 } as const;
 
 /** Flags that mean nothing to `replay` and `decks`. */
@@ -133,8 +139,8 @@ export function parseOptions(argv: readonly string[]): Options | string {
   }
   if (extra.length > 0) return `unexpected argument "${extra[0]}"`;
   if (command === 'from-issue') return fromIssueOptions(values);
-  if (values.body !== undefined || values.issue !== undefined) {
-    return '--body and --issue belong to corpus:from-issue';
+  if (values.body !== undefined || values.issue !== undefined || values['no-replace'] === true) {
+    return '--body, --issue and --no-replace belong to corpus:from-issue';
   }
   if (command === 'replay') {
     for (const flag of REPLAY_REJECTS) {
@@ -203,17 +209,20 @@ export function parseOptions(argv: readonly string[]): Options | string {
     decks: values.deck ?? [],
     body: undefined,
     issue: undefined,
+    noReplace: false,
   };
 }
 
-/** `from-issue` takes --body, --issue and --golden only. */
+/** `from-issue` takes --body, --issue, --golden and --no-replace only. */
 function fromIssueOptions(values: ReturnType<typeof scan>['values']): Options | string {
   const others = Object.entries(values).filter(
     ([key, value]) =>
-      !['body', 'issue', 'golden'].includes(key) && value !== undefined && value !== false,
+      !['body', 'issue', 'golden', 'no-replace'].includes(key) &&
+      value !== undefined &&
+      value !== false,
   );
   if (others.length > 0) {
-    return `--${others[0]?.[0]} does not apply to corpus:from-issue (it takes --body, --issue and --golden)`;
+    return `--${others[0]?.[0]} does not apply to corpus:from-issue (it takes --body, --issue, --golden and --no-replace)`;
   }
   if (values.body === undefined) return 'from-issue needs --body <file with the issue description>';
   const issue = Number(values.issue);
@@ -237,5 +246,6 @@ function fromIssueOptions(values: ReturnType<typeof scan>['values']): Options | 
     decks: [],
     body: values.body,
     issue,
+    noReplace: values['no-replace'] === true,
   };
 }
