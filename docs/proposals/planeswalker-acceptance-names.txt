@@ -1,0 +1,38 @@
+# Names of well-known real planeswalkers for the first real test set of the planeswalker program.
+# Source: docs/design/planeswalkers.md, section 6 (moved there when the proposal was implemented). EVERY name and every shape note below is from memory and UNVERIFIED: none was
+# checked against Scryfall (the sandbox cannot reach it) when this list was written. The owner ran the extraction on 2026-11-04: the real planeswalkers named
+# here are in the golden corpus now (acceptance group), and the work of D-200 to D-203 was driven from their real text; this file stays as the record of the list.
+# The extraction lists the names it cannot find and exits 1; a name that is not found is a mistake of this list, not a card to invent.
+# Run, where Scryfall's bulk file is available (see docs/CORPUS.md):
+#   pnpm corpus:extract --file <oracle_cards file> --names docs/proposals/planeswalker-acceptance-names.txt --acceptance
+# Double-faced cards are written by their full "A // B" name, as in a decklist.
+# Shapes (UNVERIFIED): plus, minus and zero abilities with plain effects (the two Jaces, the two Gideons, Garruk Wildspeaker, Liliana of the
+# Veil); a target or a mass effect in a minus ability (Elspeth, Chandra, the Vraskas); an ultimate that is an emblem (Teferi, Chandra, Elspeth);
+# an -X cost (Ugin); static abilities on the planeswalker (Nissa, Narset, Jace, Wielder of Mysteries); "can be your commander" (Teferi,
+# Temporal Archmage, Nahiri, Lord Windgrace); a transform or flip with a planeswalker face (the three double-faced names); Compleated (Tamiyo,
+# Vraska, Betrayal's Sorrow); the Jace and Vraska planeswalker types of the Vraska deck.
+Jace Beleren
+Jace, the Mind Sculptor
+Jace, Vryn's Prodigy // Jace, Telepath Unbound
+Jace, Wielder of Mysteries
+Gideon Jura
+Gideon, Ally of Zendikar
+Garruk Wildspeaker
+Liliana of the Veil
+Elspeth, Sun's Champion
+Chandra, Torch of Defiance
+Teferi, Hero of Dominaria
+Ugin, the Spirit Dragon
+Nissa, Who Shakes the World
+Narset, Parter of Veils
+Teferi, Temporal Archmage
+Nahiri, the Lithomancer
+Lord Windgrace
+Garruk Relentless // Garruk, the Veil-Cursed
+Nissa, Vastwood Seer // Nissa, Sage Animist
+Tamiyo, Compleated Sage
+Vraska, Golgari Queen
+Vraska, Relic Seeker
+Vraska, Scheming Gorgon
+Vraska, Betrayal's Sorrow
+Vraska, Soul of Stone

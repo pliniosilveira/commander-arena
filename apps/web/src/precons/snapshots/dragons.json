@@ -1,0 +1,2780 @@
+{
+  "id": "dragons",
+  "name": "Lathliss Dragons",
+  "blurb": "A Dragon deck led by Lathliss, Dragon Queen.",
+  "source": "oracle_cards-2026-10-22T21-01-55-797-00-00.jsonl.gz",
+  "decklist": "Commander\n1x Lathliss, Dragon Queen\n\nMainboard\n1x Arcane Signet\n1x Basilisk Collar\n1x Carnelian Orb of Dragonkind\n1x Commander's Sphere\n1x Cursed Mirror\n1x Dragon's Hoard\n1x Dragonstorm Globe\n1x Fire Diamond\n1x Hazoret's Monument\n1x Herald's Horn\n1x Orb of Dragonkind\n1x Sol Ring\n1x Swiftfoot Boots\n1x Anger\n1x Atsushi, the Blazing Sky\n1x Dragonhawk, Fate's Tempest\n1x Dragonlord's Servant\n1x Dragonmaster Outcast\n1x Dragonspeaker Shaman\n1x Drakuseth, Maw of Flames\n1x Firespitter Whelp\n1x Goddric, Cloaked Reveler\n1x Goldlust Triad\n1x Hellkite Charger\n1x Leyline Tyrant\n1x Minion of the Mighty\n1x Nogi, Draco-Zealot\n1x Parapet Thrasher\n1x Rapacious Dragon\n1x Sarkhan, Dragon Ascendant\n1x Scourge of the Throne\n1x Scourge of Valkas\n1x Shivan Devastator\n1x Skyline Despot\n1x Taurean Mauler\n1x Terror of Mount Velus\n1x Thunderbreak Regent\n1x Thundermane Dragon\n1x Tyrant's Familiar\n1x Utvara Hellkite\n1x Bitter Reunion\n1x Breaching Dragonstorm\n1x Count on Luck\n1x Crucible of Fire\n1x Dragon Tempest\n1x Outpost Siege\n1x The Elder Dragon War\n1x Warstorm Surge\n1x Abrade\n1x Breath Weapon\n1x Chaos Warp\n1x Lightning Bolt\n1x Magmaquake\n1x Spit Flame\n1x Thrill of Possibility\n1x Unexpected Windfall\n1x Bonders' Enclave\n1x Forgotten Cave\n1x Haven of the Spirit Dragon\n32x Mountain\n1x Spinerock Knoll\n1x Temple of the False God\n1x War Room\n1x Blasphemous Act\n1x Chain Reaction\n1x Chandra's Ignition\n1x Hit the Mother Lode\n1x Mana Geyser\n",
+  "cards": [
+    {
+      "oracleId": "f9db72dc-9a5b-48a4-a86e-7464d9a2166a",
+      "scryfallId": "1add1757-c1f8-448a-b279-c6940fb7ad5f",
+      "name": "Abrade",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Abrade",
+          "manaCost": "{1}{R}",
+          "typeLine": "Instant",
+          "oracleText": "Choose one —\n• Abrade deals 3 damage to target creature.\n• Destroy target artifact.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/a/1add1757-c1f8-448a-b279-c6940fb7ad5f.jpg?1783903778",
+            "large": "https://cards.scryfall.io/large/front/1/a/1add1757-c1f8-448a-b279-c6940fb7ad5f.jpg?1783903778",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/a/1add1757-c1f8-448a-b279-c6940fb7ad5f.jpg?1783903778"
+          },
+          "artist": "Jonas De Ro"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 145,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "eaabd151-2160-4bff-82c0-3fa88659be98",
+      "scryfallId": "e886a604-e3ce-4c6a-b63e-2c7f910a177a",
+      "name": "Anger",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Anger",
+          "manaCost": "{3}{R}",
+          "typeLine": "Creature — Incarnation",
+          "oracleText": "Haste\nAs long as this card is in your graveyard and you control a Mountain, creatures you control have haste.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/8/e886a604-e3ce-4c6a-b63e-2c7f910a177a.jpg?1783903778",
+            "large": "https://cards.scryfall.io/large/front/e/8/e886a604-e3ce-4c6a-b63e-2c7f910a177a.jpg?1783903778",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/8/e886a604-e3ce-4c6a-b63e-2c7f910a177a.jpg?1783903778"
+          },
+          "artist": "Svetlin Velinov"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Haste"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 346,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0bc7f093-bef0-4f1a-852c-4b75ebf54838",
+      "scryfallId": "c6b6117c-faab-4bbb-b851-07bd8061ef03",
+      "name": "Arcane Signet",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Arcane Signet",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add one mana of any color in your commander's color identity.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/6/c6b6117c-faab-4bbb-b851-07bd8061ef03.jpg?1789644435",
+            "large": "https://cards.scryfall.io/large/front/c/6/c6b6117c-faab-4bbb-b851-07bd8061ef03.jpg?1789644435",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/6/c6b6117c-faab-4bbb-b851-07bd8061ef03.jpg?1789644435"
+          },
+          "artist": "Josu Solano"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 3,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "535f405d-94df-4f45-aedc-b331103720b7",
+      "scryfallId": "06658540-0104-428f-91b1-40552826e781",
+      "name": "Atsushi, the Blazing Sky",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Atsushi, the Blazing Sky",
+          "manaCost": "{2}{R}{R}",
+          "typeLine": "Legendary Creature — Dragon Spirit",
+          "oracleText": "Flying, trample\nWhen Atsushi dies, choose one —\n• Exile the top two cards of your library. Until the end of your next turn, you may play those cards.\n• Create three Treasure tokens.",
+          "power": "4",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/6/06658540-0104-428f-91b1-40552826e781.jpg?1783903777",
+            "large": "https://cards.scryfall.io/large/front/0/6/06658540-0104-428f-91b1-40552826e781.jpg?1783903777",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/6/06658540-0104-428f-91b1-40552826e781.jpg?1783903777"
+          },
+          "artist": "Victor Adame Minguez"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying",
+        "Treasure",
+        "Trample"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1361,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Treasure",
+          "component": "token"
+        },
+        {
+          "name": "Atsushi, the Blazing Sky",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "f5f4dd28-f4ae-4d39-b9b8-6ebfd63c93fe",
+      "scryfallId": "7b36fba7-71f7-4b7f-bde5-b3a9752ad21c",
+      "name": "Basilisk Collar",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Basilisk Collar",
+          "manaCost": "{1}",
+          "typeLine": "Artifact — Equipment",
+          "oracleText": "Equipped creature has deathtouch and lifelink. (Any amount of damage it deals to a creature is enough to destroy it. Damage dealt by this creature also causes you to gain that much life.)\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/b/7b36fba7-71f7-4b7f-bde5-b3a9752ad21c.jpg?1783908907",
+            "large": "https://cards.scryfall.io/large/front/7/b/7b36fba7-71f7-4b7f-bde5-b3a9752ad21c.jpg?1783908907",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/b/7b36fba7-71f7-4b7f-bde5-b3a9752ad21c.jpg?1783908907"
+          },
+          "artist": "Craig J Spearing"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [],
+      "keywords": [
+        "Equip"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 254,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "173e86f4-17f3-44f5-8073-78e7e2e12c4a",
+      "scryfallId": "4ef0b4dc-5a15-4de6-9c27-0e21148c0797",
+      "name": "Bitter Reunion",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Bitter Reunion",
+          "manaCost": "{1}{R}",
+          "typeLine": "Enchantment",
+          "oracleText": "When this enchantment enters, you may discard a card. If you do, draw two cards.\n{1}, Sacrifice this enchantment: Creatures you control gain haste until end of turn.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/e/4ef0b4dc-5a15-4de6-9c27-0e21148c0797.jpg?1783911922",
+            "large": "https://cards.scryfall.io/large/front/4/e/4ef0b4dc-5a15-4de6-9c27-0e21148c0797.jpg?1783911922",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/e/4ef0b4dc-5a15-4de6-9c27-0e21148c0797.jpg?1783911922"
+          },
+          "artist": "Jake Murray"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2923,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "7a2484a9-04fd-41a0-8224-610c1c07ed10",
+      "scryfallId": "7d4b1d44-126e-4987-9a9f-f0f9627a09cb",
+      "name": "Blasphemous Act",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Blasphemous Act",
+          "manaCost": "{8}{R}",
+          "typeLine": "Sorcery",
+          "oracleText": "This spell costs {1} less to cast for each creature on the battlefield.\nBlasphemous Act deals 13 damage to each creature.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/d/7d4b1d44-126e-4987-9a9f-f0f9627a09cb.jpg?1783903234",
+            "large": "https://cards.scryfall.io/large/front/7/d/7d4b1d44-126e-4987-9a9f-f0f9627a09cb.jpg?1783903234",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/d/7d4b1d44-126e-4987-9a9f-f0f9627a09cb.jpg?1783903234"
+          },
+          "artist": "Immanuela Crovius"
+        }
+      ],
+      "cmc": 9,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 22,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f33ce38a-34ec-4b65-a0fc-160484a02007",
+      "scryfallId": "d174f42c-dcf2-4da9-812b-7e1d0991d466",
+      "name": "Bonders' Enclave",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Bonders' Enclave",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}.\n{3}, {T}: Draw a card. Activate only if you control a creature with power 4 or greater.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/1/d174f42c-dcf2-4da9-812b-7e1d0991d466.jpg?1783911885",
+            "large": "https://cards.scryfall.io/large/front/d/1/d174f42c-dcf2-4da9-812b-7e1d0991d466.jpg?1783911885",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/1/d174f42c-dcf2-4da9-812b-7e1d0991d466.jpg?1783911885"
+          },
+          "artist": "Cliff Childs"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 537,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "5370ee80-0354-454f-a16e-ec133e432ecb",
+      "scryfallId": "e2c2a069-7553-4879-abfb-b2aa3349e4b8",
+      "name": "Breaching Dragonstorm",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Breaching Dragonstorm",
+          "manaCost": "{4}{R}",
+          "typeLine": "Enchantment",
+          "oracleText": "When this enchantment enters, exile cards from the top of your library until you exile a nonland card. You may cast it without paying its mana cost if that spell's mana value is 8 or less. If you don't, put that card into your hand.\nWhen a Dragon you control enters, return this enchantment to its owner's hand.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/2/e2c2a069-7553-4879-abfb-b2aa3349e4b8.jpg?1783907366",
+            "large": "https://cards.scryfall.io/large/front/e/2/e2c2a069-7553-4879-abfb-b2aa3349e4b8.jpg?1783907366",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/2/e2c2a069-7553-4879-abfb-b2aa3349e4b8.jpg?1783907366"
+          },
+          "artist": "Danny Schwartz"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3800,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f3dd1f6d-f7d7-4358-8139-7495404f29c7",
+      "scryfallId": "0174e40a-0ef5-4439-91e6-3fc39f482520",
+      "name": "Breath Weapon",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Breath Weapon",
+          "manaCost": "{2}{R}",
+          "typeLine": "Instant",
+          "oracleText": "Breath Weapon deals 2 damage to each non-Dragon creature.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/1/0174e40a-0ef5-4439-91e6-3fc39f482520.jpg?1783922743",
+            "large": "https://cards.scryfall.io/large/front/0/1/0174e40a-0ef5-4439-91e6-3fc39f482520.jpg?1783922743",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/1/0174e40a-0ef5-4439-91e6-3fc39f482520.jpg?1783922743"
+          },
+          "artist": "Adam Vehige"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 12768,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "651c967c-8f71-4eb5-b22f-545e55ea050e",
+      "scryfallId": "6db2741d-2722-4eb7-b09d-0d81649c7ca2",
+      "name": "Carnelian Orb of Dragonkind",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Carnelian Orb of Dragonkind",
+          "manaCost": "{2}{R}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/d/6db2741d-2722-4eb7-b09d-0d81649c7ca2.jpg?1787562802",
+            "large": "https://cards.scryfall.io/large/front/6/d/6db2741d-2722-4eb7-b09d-0d81649c7ca2.jpg?1787562802",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/d/6db2741d-2722-4eb7-b09d-0d81649c7ca2.jpg?1787562802"
+          },
+          "artist": "Lars Grant-West"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "R"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 2194,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "086b2564-9114-4ba2-94fd-b490f98f38a7",
+      "scryfallId": "6f34d11e-8452-448f-be4f-838e0ace9904",
+      "name": "Chain Reaction",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Chain Reaction",
+          "manaCost": "{2}{R}{R}",
+          "typeLine": "Sorcery",
+          "oracleText": "Chain Reaction deals X damage to each creature, where X is the number of creatures on the battlefield.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/f/6f34d11e-8452-448f-be4f-838e0ace9904.jpg?1783903818",
+            "large": "https://cards.scryfall.io/large/front/6/f/6f34d11e-8452-448f-be4f-838e0ace9904.jpg?1783903818",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/f/6f34d11e-8452-448f-be4f-838e0ace9904.jpg?1783903818"
+          },
+          "artist": "Gustavo Pelissari"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 706,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f61680da-606e-4d16-b0a0-361aa5210901",
+      "scryfallId": "960f45a3-f9cf-41e6-b813-f3dee620a944",
+      "name": "Chandra's Ignition",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Chandra's Ignition",
+          "manaCost": "{3}{R}{R}",
+          "typeLine": "Sorcery",
+          "oracleText": "Target creature you control deals damage equal to its power to each other creature and each opponent.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/6/960f45a3-f9cf-41e6-b813-f3dee620a944.jpg?1783913867",
+            "large": "https://cards.scryfall.io/large/front/9/6/960f45a3-f9cf-41e6-b813-f3dee620a944.jpg?1783913867",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/6/960f45a3-f9cf-41e6-b813-f3dee620a944.jpg?1783913867"
+          },
+          "artist": "Eric Deschamps"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 472,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "07a0cba9-8768-4fd9-a3d5-b0f83b4bf8e8",
+      "scryfallId": "fb8d8106-b9bd-405c-886e-72fc301c65e1",
+      "name": "Chaos Warp",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Chaos Warp",
+          "manaCost": "{2}{R}",
+          "typeLine": "Instant",
+          "oracleText": "The owner of target permanent shuffles it into their library, then reveals the top card of their library. If it's a permanent card, they put it onto the battlefield.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/b/fb8d8106-b9bd-405c-886e-72fc301c65e1.jpg?1787743253",
+            "large": "https://cards.scryfall.io/large/front/f/b/fb8d8106-b9bd-405c-886e-72fc301c65e1.jpg?1787743253",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/b/fb8d8106-b9bd-405c-886e-72fc301c65e1.jpg?1787743253"
+          },
+          "artist": "Trevor Claxton"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 29,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0b67c4e2-f88b-4e01-85a1-9d5f5b8db13b",
+      "scryfallId": "a0d50603-e31f-4cd7-b4b6-49847d99eb2e",
+      "name": "Commander's Sphere",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Commander's Sphere",
+          "manaCost": "{3}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add one mana of any color in your commander's color identity.\nSacrifice this artifact: Draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/0/a0d50603-e31f-4cd7-b4b6-49847d99eb2e.jpg?1783904531",
+            "large": "https://cards.scryfall.io/large/front/a/0/a0d50603-e31f-4cd7-b4b6-49847d99eb2e.jpg?1783904531",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/0/a0d50603-e31f-4cd7-b4b6-49847d99eb2e.jpg?1783904531"
+          },
+          "artist": "Ryan Alexander Lee"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 54,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "73ad7bcd-4ffc-442c-b6b5-d935b9ccaaaf",
+      "scryfallId": "8f31beae-9b8f-4c32-af84-9f3ee767ba1d",
+      "name": "Count on Luck",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Count on Luck",
+          "manaCost": "{R}{R}{R}",
+          "typeLine": "Enchantment",
+          "oracleText": "At the beginning of your upkeep, exile the top card of your library. You may play that card this turn.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/8/f/8f31beae-9b8f-4c32-af84-9f3ee767ba1d.jpg?1783907886",
+            "large": "https://cards.scryfall.io/large/front/8/f/8f31beae-9b8f-4c32-af84-9f3ee767ba1d.jpg?1783907886",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/8/f/8f31beae-9b8f-4c32-af84-9f3ee767ba1d.jpg?1783907886"
+          },
+          "artist": "Michal Ivan"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4095,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0c572396-4e53-4c86-9b04-f41341dcea05",
+      "scryfallId": "d7a6f4dd-29c9-4084-a622-098b197a6eb7",
+      "name": "Crucible of Fire",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Crucible of Fire",
+          "manaCost": "{3}{R}",
+          "typeLine": "Enchantment",
+          "oracleText": "Dragon creatures you control get +3/+3.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/7/d7a6f4dd-29c9-4084-a622-098b197a6eb7.jpg?1783935530",
+            "large": "https://cards.scryfall.io/large/front/d/7/d7a6f4dd-29c9-4084-a622-098b197a6eb7.jpg?1783935530",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/7/d7a6f4dd-29c9-4084-a622-098b197a6eb7.jpg?1783935530"
+          },
+          "artist": "Dominick Domingo"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3767,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "4d67e2a7-4aa7-44cc-853b-500d7aac046d",
+      "scryfallId": "1e82aa17-1eac-49e8-8a63-50357e564997",
+      "name": "Cursed Mirror",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Cursed Mirror",
+          "manaCost": "{2}{R}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add {R}.\nAs this artifact enters, you may have it become a copy of any creature on the battlefield until end of turn, except it has haste.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/e/1e82aa17-1eac-49e8-8a63-50357e564997.jpg?1789599820",
+            "large": "https://cards.scryfall.io/large/front/1/e/1e82aa17-1eac-49e8-8a63-50357e564997.jpg?1789599820",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/e/1e82aa17-1eac-49e8-8a63-50357e564997.jpg?1789599820"
+          },
+          "artist": "David Gaillet"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "R"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 426,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "b9bacb46-fd1d-459b-81c2-d7d08fe73848",
+      "scryfallId": "39ac7ad0-e570-4209-988c-7c0f9b9d2004",
+      "name": "Dragon Tempest",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Dragon Tempest",
+          "manaCost": "{1}{R}",
+          "typeLine": "Enchantment",
+          "oracleText": "Whenever a creature you control with flying enters, it gains haste until end of turn.\nWhenever a Dragon you control enters, it deals X damage to any target, where X is the number of Dragons you control.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/3/9/39ac7ad0-e570-4209-988c-7c0f9b9d2004.jpg?1783907139",
+            "large": "https://cards.scryfall.io/large/front/3/9/39ac7ad0-e570-4209-988c-7c0f9b9d2004.jpg?1783907139",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/3/9/39ac7ad0-e570-4209-988c-7c0f9b9d2004.jpg?1783907139"
+          },
+          "artist": "Camille Alquier"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 842,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "8cf77dc4-763b-41b7-a5da-0ef2734f08e6",
+      "scryfallId": "3ee80876-6e87-46c4-a6fd-ff6752db3032",
+      "name": "Dragon's Hoard",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Dragon's Hoard",
+          "manaCost": "{3}",
+          "typeLine": "Artifact",
+          "oracleText": "Whenever a Dragon you control enters, put a gold counter on this artifact.\n{T}, Remove a gold counter from this artifact: Draw a card.\n{T}: Add one mana of any color.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/3/e/3ee80876-6e87-46c4-a6fd-ff6752db3032.jpg?1783907014",
+            "large": "https://cards.scryfall.io/large/front/3/e/3ee80876-6e87-46c4-a6fd-ff6752db3032.jpg?1783907014",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/3/e/3ee80876-6e87-46c4-a6fd-ff6752db3032.jpg?1783907014"
+          },
+          "artist": "Adam Paquette"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 1192,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f7f435bc-1716-4412-9505-a1f2f2d83d08",
+      "scryfallId": "8659789c-6a2c-439f-a348-b9b1b06c55b8",
+      "name": "Dragonhawk, Fate's Tempest",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Dragonhawk, Fate's Tempest",
+          "manaCost": "{3}{R}{R}",
+          "typeLine": "Legendary Creature — Bird Dragon",
+          "oracleText": "Flying\nWhenever Dragonhawk enters or attacks, exile the top X cards of your library, where X is the number of creatures you control with power 4 or greater. You may play those cards until your next end step. At the beginning of your next end step, Dragonhawk deals 2 damage to each opponent for each of those cards that are still exiled.",
+          "power": "5",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/8/6/8659789c-6a2c-439f-a348-b9b1b06c55b8.jpg?1783910824",
+            "large": "https://cards.scryfall.io/large/front/8/6/8659789c-6a2c-439f-a348-b9b1b06c55b8.jpg?1783910824",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/8/6/8659789c-6a2c-439f-a348-b9b1b06c55b8.jpg?1783910824"
+          },
+          "artist": "Victor Adame Minguez"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2209,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "faf81ae0-0b35-45ef-a50d-6cecf0c0eeeb",
+      "scryfallId": "be6fa0dc-74e7-4fad-9bdd-8e986612577a",
+      "name": "Dragonlord's Servant",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Dragonlord's Servant",
+          "manaCost": "{1}{R}",
+          "typeLine": "Creature — Goblin Shaman",
+          "oracleText": "Dragon spells you cast cost {1} less to cast.",
+          "power": "1",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/e/be6fa0dc-74e7-4fad-9bdd-8e986612577a.jpg?1783907072",
+            "large": "https://cards.scryfall.io/large/front/b/e/be6fa0dc-74e7-4fad-9bdd-8e986612577a.jpg?1783907072",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/e/be6fa0dc-74e7-4fad-9bdd-8e986612577a.jpg?1783907072"
+          },
+          "artist": "Steve Prescott"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1346,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "b6fb79c3-cd32-4045-8177-e52841eea65b",
+      "scryfallId": "a485edea-07cd-48dd-97e7-daeba85553d6",
+      "name": "Dragonmaster Outcast",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Dragonmaster Outcast",
+          "manaCost": "{R}",
+          "typeLine": "Creature — Human Shaman",
+          "oracleText": "At the beginning of your upkeep, if you control six or more lands, create a 5/5 red Dragon creature token with flying.",
+          "power": "1",
+          "toughness": "1",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/4/a485edea-07cd-48dd-97e7-daeba85553d6.jpg?1783907071",
+            "large": "https://cards.scryfall.io/large/front/a/4/a485edea-07cd-48dd-97e7-daeba85553d6.jpg?1783907071",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/4/a485edea-07cd-48dd-97e7-daeba85553d6.jpg?1783907071"
+          },
+          "artist": "Raymond Swanland"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1541,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Dragon",
+          "component": "token"
+        },
+        {
+          "name": "Dragonmaster Outcast",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "6a29f36b-7911-4d84-a3ae-546b131d5159",
+      "scryfallId": "7b0a2799-197e-4d61-ab23-67d974458a05",
+      "name": "Dragonspeaker Shaman",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Dragonspeaker Shaman",
+          "manaCost": "{1}{R}{R}",
+          "typeLine": "Creature — Human Barbarian Shaman",
+          "oracleText": "Dragon spells you cast cost {2} less to cast.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/b/7b0a2799-197e-4d61-ab23-67d974458a05.jpg?1783926111",
+            "large": "https://cards.scryfall.io/large/front/7/b/7b0a2799-197e-4d61-ab23-67d974458a05.jpg?1783926111",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/b/7b0a2799-197e-4d61-ab23-67d974458a05.jpg?1783926111"
+          },
+          "artist": "Kev Walker"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1314,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f6de5bd7-7704-4a0c-a27a-9e565e49f5e9",
+      "scryfallId": "7f50aa6e-ce6a-4479-9725-202926245f2c",
+      "name": "Dragonstorm Globe",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Dragonstorm Globe",
+          "manaCost": "{3}",
+          "typeLine": "Artifact",
+          "oracleText": "Each Dragon you control enters with an additional +1/+1 counter on it.\n{T}: Add one mana of any color.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/f/7f50aa6e-ce6a-4479-9725-202926245f2c.jpg?1783907289",
+            "large": "https://cards.scryfall.io/large/front/7/f/7f50aa6e-ce6a-4479-9725-202926245f2c.jpg?1783907289",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/f/7f50aa6e-ce6a-4479-9725-202926245f2c.jpg?1783907289"
+          },
+          "artist": "Adrián Rodríguez Pérez"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 2829,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Dragonstorm Forecaster",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Dragonstorm Globe",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "060deaff-44d6-4f03-9568-bcb7add80255",
+      "scryfallId": "9e9b40f5-3dd0-4607-a78d-b004d57fa4ea",
+      "name": "Drakuseth, Maw of Flames",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Drakuseth, Maw of Flames",
+          "manaCost": "{4}{R}{R}{R}",
+          "typeLine": "Legendary Creature — Dragon",
+          "oracleText": "Flying\nWhenever Drakuseth attacks, Drakuseth deals 4 damage to any target and 3 damage to each of up to two other targets.",
+          "power": "7",
+          "toughness": "7",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/e/9e9b40f5-3dd0-4607-a78d-b004d57fa4ea.jpg?1787562797",
+            "large": "https://cards.scryfall.io/large/front/9/e/9e9b40f5-3dd0-4607-a78d-b004d57fa4ea.jpg?1787562797",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/e/9e9b40f5-3dd0-4607-a78d-b004d57fa4ea.jpg?1787562797"
+          },
+          "artist": "Grzegorz Rutkowski"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1115,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "97b477d8-2e05-475e-8ed6-7d680cb21cd9",
+      "scryfallId": "5a561484-438b-4ce9-911e-97078ac5b0fa",
+      "name": "Fire Diamond",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Fire Diamond",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "This artifact enters tapped.\n{T}: Add {R}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/a/5a561484-438b-4ce9-911e-97078ac5b0fa.jpg?1783922676",
+            "large": "https://cards.scryfall.io/large/front/5/a/5a561484-438b-4ce9-911e-97078ac5b0fa.jpg?1783922676",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/a/5a561484-438b-4ce9-911e-97078ac5b0fa.jpg?1783922676"
+          },
+          "artist": "Gaboleps"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "R"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 731,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "1cad92ce-55c8-4b78-8d8c-56645ef8e6ee",
+      "scryfallId": "ddcc3c1b-b564-4444-9a1a-0f62f8e6b8bb",
+      "name": "Firespitter Whelp",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Firespitter Whelp",
+          "manaCost": "{2}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying\nWhenever you cast a noncreature or Dragon spell, this creature deals 1 damage to each opponent.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/d/ddcc3c1b-b564-4444-9a1a-0f62f8e6b8bb.jpg?1787562792",
+            "large": "https://cards.scryfall.io/large/front/d/d/ddcc3c1b-b564-4444-9a1a-0f62f8e6b8bb.jpg?1787562792",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/d/ddcc3c1b-b564-4444-9a1a-0f62f8e6b8bb.jpg?1787562792"
+          },
+          "artist": "David Álvarez"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3900,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "394c6de5-7957-4a0b-a6b9-ee0c707cd022",
+      "scryfallId": "62b0b5f8-6b51-4fa5-85ae-290475525a9d",
+      "name": "Forgotten Cave",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Forgotten Cave",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\n{T}: Add {R}.\nCycling {R} ({R}, Discard this card: Draw a card.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/2/62b0b5f8-6b51-4fa5-85ae-290475525a9d.jpg?1783927493",
+            "large": "https://cards.scryfall.io/large/front/6/2/62b0b5f8-6b51-4fa5-85ae-290475525a9d.jpg?1783927493",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/2/62b0b5f8-6b51-4fa5-85ae-290475525a9d.jpg?1783927493"
+          },
+          "artist": "Tony Szczudlo"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Cycling"
+      ],
+      "producedMana": [
+        "R"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 873,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "35b2b172-5fbc-4e4d-a011-390ee1b6c848",
+      "scryfallId": "fe93ef82-51de-40ad-9b52-8f3fd11c144f",
+      "name": "Goddric, Cloaked Reveler",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Goddric, Cloaked Reveler",
+          "manaCost": "{1}{R}{R}",
+          "typeLine": "Legendary Creature — Human Noble",
+          "oracleText": "Haste\nCelebration — As long as two or more nonland permanents entered the battlefield under your control this turn, Goddric is a Dragon with base power and toughness 4/4, flying, and \"{R}: Dragons you control get +1/+0 until end of turn.\" (He loses all other creature types.)",
+          "power": "3",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/e/fe93ef82-51de-40ad-9b52-8f3fd11c144f.jpg?1783915094",
+            "large": "https://cards.scryfall.io/large/front/f/e/fe93ef82-51de-40ad-9b52-8f3fd11c144f.jpg?1783915094",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/e/fe93ef82-51de-40ad-9b52-8f3fd11c144f.jpg?1783915094"
+          },
+          "artist": "Jason A. Engle"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying",
+        "Celebration",
+        "Haste"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 18476,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "86d76078-9af3-45a7-90d6-72946afdc78b",
+      "scryfallId": "2876d57a-a17e-4892-9992-321a32562e13",
+      "name": "Goldlust Triad",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Goldlust Triad",
+          "manaCost": "{4}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying\nMyriad (Whenever this creature attacks, for each opponent other than defending player, you may create a token copy that's tapped and attacking that player or a planeswalker they control. Exile the tokens at end of combat.)\nWhenever this creature deals combat damage to a player, create a Treasure token.",
+          "power": "4",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/2/8/2876d57a-a17e-4892-9992-321a32562e13.jpg?1783907174",
+            "large": "https://cards.scryfall.io/large/front/2/8/2876d57a-a17e-4892-9992-321a32562e13.jpg?1783907174",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/8/2876d57a-a17e-4892-9992-321a32562e13.jpg?1783907174"
+          },
+          "artist": "Arif Wijaya"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Myriad",
+        "Flying",
+        "Treasure"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1853,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Treasure",
+          "component": "token"
+        },
+        {
+          "name": "Goldlust Triad",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "acc9c16a-5e72-43bd-87e1-56a16aa892f5",
+      "scryfallId": "d0c552da-874e-49eb-b221-47220b8b7786",
+      "name": "Haven of the Spirit Dragon",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Haven of the Spirit Dragon",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a Dragon creature spell.\n{2}, {T}, Sacrifice this land: Return target Dragon creature card or Ugin planeswalker card from your graveyard to your hand.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/0/d0c552da-874e-49eb-b221-47220b8b7786.jpg?1783906982",
+            "large": "https://cards.scryfall.io/large/front/d/0/d0c552da-874e-49eb-b221-47220b8b7786.jpg?1783906982",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/0/d0c552da-874e-49eb-b221-47220b8b7786.jpg?1783906982"
+          },
+          "artist": "Raymond Swanland"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "C",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 1140,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f02a4cbf-f0bb-4bc7-99c2-6afa1b41ebb8",
+      "scryfallId": "3c862fc4-e2fe-4fad-8bc1-a53f1fecc4de",
+      "name": "Hazoret's Monument",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Hazoret's Monument",
+          "manaCost": "{3}",
+          "typeLine": "Legendary Artifact",
+          "oracleText": "Red creature spells you cast cost {1} less to cast.\nWhenever you cast a creature spell, you may discard a card. If you do, draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/3/c/3c862fc4-e2fe-4fad-8bc1-a53f1fecc4de.jpg?1783921398",
+            "large": "https://cards.scryfall.io/large/front/3/c/3c862fc4-e2fe-4fad-8bc1-a53f1fecc4de.jpg?1783921398",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/3/c/3c862fc4-e2fe-4fad-8bc1-a53f1fecc4de.jpg?1783921398"
+          },
+          "artist": "Richard Wright"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1914,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "d4f28a4b-d821-4132-bdec-4c528318f8e2",
+      "scryfallId": "6836c646-83ff-4bf8-96dd-4cbdd6c7e861",
+      "name": "Hellkite Charger",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Hellkite Charger",
+          "manaCost": "{4}{R}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying, haste\nWhenever this creature attacks, you may pay {5}{R}{R}. If you do, untap all attacking creatures and after this phase, there is an additional combat phase.",
+          "power": "5",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/8/6836c646-83ff-4bf8-96dd-4cbdd6c7e861.jpg?1783915650",
+            "large": "https://cards.scryfall.io/large/front/6/8/6836c646-83ff-4bf8-96dd-4cbdd6c7e861.jpg?1783915650",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/8/6836c646-83ff-4bf8-96dd-4cbdd6c7e861.jpg?1783915650"
+          },
+          "artist": "Jaime Jones"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying",
+        "Haste"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2125,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "c02c5547-b9c9-4b2d-9d12-e87bfba8f2d2",
+      "scryfallId": "4bfa71d4-4125-4404-9c24-979401bae592",
+      "name": "Herald's Horn",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Herald's Horn",
+          "manaCost": "{3}",
+          "typeLine": "Artifact",
+          "oracleText": "As this artifact enters, choose a creature type.\nCreature spells you cast of the chosen type cost {1} less to cast.\nAt the beginning of your upkeep, look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/b/4bfa71d4-4125-4404-9c24-979401bae592.jpg?1783913840",
+            "large": "https://cards.scryfall.io/large/front/4/b/4bfa71d4-4125-4404-9c24-979401bae592.jpg?1783913840",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/b/4bfa71d4-4125-4404-9c24-979401bae592.jpg?1783913840"
+          },
+          "artist": "Jason Felix"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 151,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "a49900b3-cc34-428f-806d-71861dc8059d",
+      "scryfallId": "e75f460c-43e2-4353-8b73-71ff8651a79d",
+      "name": "Hit the Mother Lode",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Hit the Mother Lode",
+          "manaCost": "{4}{R}{R}{R}",
+          "typeLine": "Sorcery",
+          "oracleText": "Discover 10. If the discovered card's mana value is less than 10, create a number of tapped Treasure tokens equal to the difference. (To discover 10, exile cards from the top of your library until you exile a nonland card with mana value 10 or less. Cast it without paying its mana cost or put it into your hand. Put the rest on the bottom in a random order.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/7/e75f460c-43e2-4353-8b73-71ff8651a79d.jpg?1783913759",
+            "large": "https://cards.scryfall.io/large/front/e/7/e75f460c-43e2-4353-8b73-71ff8651a79d.jpg?1783913759",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/7/e75f460c-43e2-4353-8b73-71ff8651a79d.jpg?1783913759"
+          },
+          "artist": "Diego Gisbert"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Treasure",
+        "Discover"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1805,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Treasure",
+          "component": "token"
+        },
+        {
+          "name": "Hit the Mother Lode",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "15fef45d-f1a9-49b2-abaa-fe77bb9d1afd",
+      "scryfallId": "0cb48015-627b-49cd-8dc3-d446e82b8172",
+      "name": "Lathliss, Dragon Queen",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Lathliss, Dragon Queen",
+          "manaCost": "{4}{R}{R}",
+          "typeLine": "Legendary Creature — Dragon",
+          "oracleText": "Flying\nWhenever another nontoken Dragon you control enters, create a 5/5 red Dragon creature token with flying.\n{1}{R}: Dragons you control get +1/+0 until end of turn.",
+          "power": "6",
+          "toughness": "6",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/c/0cb48015-627b-49cd-8dc3-d446e82b8172.jpg?1783907068",
+            "large": "https://cards.scryfall.io/large/front/0/c/0cb48015-627b-49cd-8dc3-d446e82b8172.jpg?1783907068",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/c/0cb48015-627b-49cd-8dc3-d446e82b8172.jpg?1783907068"
+          },
+          "artist": "Alex Konstad"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1071,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Lathliss, Dragon Queen",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Dragon",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "f92aaa00-6ece-4033-b3df-b2fc2c4718d9",
+      "scryfallId": "0542d0d7-5b0f-4093-b74d-6a60f174aeb5",
+      "name": "Leyline Tyrant",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Leyline Tyrant",
+          "manaCost": "{2}{R}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying\nYou don't lose unspent red mana as steps and phases end.\nWhen this creature dies, you may pay any amount of {R}. When you do, it deals that much damage to any target.",
+          "power": "4",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/5/0542d0d7-5b0f-4093-b74d-6a60f174aeb5.jpg?1783907068",
+            "large": "https://cards.scryfall.io/large/front/0/5/0542d0d7-5b0f-4093-b74d-6a60f174aeb5.jpg?1783907068",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/5/0542d0d7-5b0f-4093-b74d-6a60f174aeb5.jpg?1783907068"
+          },
+          "artist": "Chase Stone"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2302,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "4457ed35-7c10-48c8-9776-456485fdf070",
+      "scryfallId": "7673784e-db4b-43a1-8d55-1bb9fc1e284f",
+      "name": "Lightning Bolt",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Lightning Bolt",
+          "manaCost": "{R}",
+          "typeLine": "Instant",
+          "oracleText": "Lightning Bolt deals 3 damage to any target.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/6/7673784e-db4b-43a1-8d55-1bb9fc1e284f.jpg?1783903008",
+            "large": "https://cards.scryfall.io/large/front/7/6/7673784e-db4b-43a1-8d55-1bb9fc1e284f.jpg?1783903008",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/6/7673784e-db4b-43a1-8d55-1bb9fc1e284f.jpg?1783903008"
+          },
+          "artist": "Milivoj Ćeran"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 157,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Lightning Bolt",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Toralf's Disciple",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Thayan Evokers",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Indris, the Hydrostatic Surge",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "a52037df-0be1-4c99-b9eb-b033157af203",
+      "scryfallId": "8a8945b4-d2e1-4779-9c33-a8b062637fa6",
+      "name": "Magmaquake",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Magmaquake",
+          "manaCost": "{X}{R}{R}",
+          "typeLine": "Instant",
+          "oracleText": "Magmaquake deals X damage to each creature without flying and each planeswalker.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/8/a/8a8945b4-d2e1-4779-9c33-a8b062637fa6.jpg?1783926204",
+            "large": "https://cards.scryfall.io/large/front/8/a/8a8945b4-d2e1-4779-9c33-a8b062637fa6.jpg?1783926204",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/8/a/8a8945b4-d2e1-4779-9c33-a8b062637fa6.jpg?1783926204"
+          },
+          "artist": "Gabor Szikszai"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 5403,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "a8dba58b-2956-492e-ae30-49db2ae68e53",
+      "scryfallId": "dfbda387-3c7d-4c80-97c3-60c9d4757244",
+      "name": "Mana Geyser",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Mana Geyser",
+          "manaCost": "{3}{R}{R}",
+          "typeLine": "Sorcery",
+          "oracleText": "Add {R} for each tapped land your opponents control.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/f/dfbda387-3c7d-4c80-97c3-60c9d4757244.jpg?1783903773",
+            "large": "https://cards.scryfall.io/large/front/d/f/dfbda387-3c7d-4c80-97c3-60c9d4757244.jpg?1783903773",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/f/dfbda387-3c7d-4c80-97c3-60c9d4757244.jpg?1783903773"
+          },
+          "artist": "Martina Pilcerova"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "R"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 290,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "058062c7-071b-4b14-903d-ae8d2876b37f",
+      "scryfallId": "ffd0a827-778b-48c3-bb85-4b4acef351d6",
+      "name": "Minion of the Mighty",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Minion of the Mighty",
+          "manaCost": "{R}",
+          "typeLine": "Creature — Kobold",
+          "oracleText": "Menace\nPack tactics — Whenever this creature attacks, if you attacked with creatures with total power 6 or greater this combat, you may put a Dragon creature card from your hand onto the battlefield tapped and attacking.",
+          "power": "0",
+          "toughness": "1",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/f/ffd0a827-778b-48c3-bb85-4b4acef351d6.jpg?1783926474",
+            "large": "https://cards.scryfall.io/large/front/f/f/ffd0a827-778b-48c3-bb85-4b4acef351d6.jpg?1783926474",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/f/ffd0a827-778b-48c3-bb85-4b4acef351d6.jpg?1783926474"
+          },
+          "artist": "Oriana Menendez"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Pack tactics",
+        "Menace"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 6158,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "a3fb7228-e76b-4e96-a40e-20b5fed75685",
+      "scryfallId": "85177bd7-6c50-48da-b692-ae5fe7bd357c",
+      "name": "Mountain",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Mountain",
+          "manaCost": "",
+          "typeLine": "Basic Land — Mountain",
+          "oracleText": "({T}: Add {R}.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/8/5/85177bd7-6c50-48da-b692-ae5fe7bd357c.jpg?1791578439",
+            "large": "https://cards.scryfall.io/large/front/8/5/85177bd7-6c50-48da-b692-ae5fe7bd357c.jpg?1791578439",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/8/5/85177bd7-6c50-48da-b692-ae5fe7bd357c.jpg?1791578439"
+          },
+          "artist": "VEN"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "R"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": null,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "3d04aa8c-7bff-42c6-bed3-0b18d2cb1529",
+      "scryfallId": "86e576f2-8f9f-4bbf-85c4-b99ecb665412",
+      "name": "Nogi, Draco-Zealot",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Nogi, Draco-Zealot",
+          "manaCost": "{1}{R}{R}",
+          "typeLine": "Legendary Creature — Kobold Shaman",
+          "oracleText": "Dragon spells you cast cost {1} less to cast.\nWhenever Nogi attacks, if you control three or more Dragons, until end of turn, Nogi becomes a Dragon with base power and toughness 5/5 and gains flying.",
+          "power": "3",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/8/6/86e576f2-8f9f-4bbf-85c4-b99ecb665412.jpg?1783907063",
+            "large": "https://cards.scryfall.io/large/front/8/6/86e576f2-8f9f-4bbf-85c4-b99ecb665412.jpg?1783907063",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/8/6/86e576f2-8f9f-4bbf-85c4-b99ecb665412.jpg?1783907063"
+          },
+          "artist": "Dmitry Burmak"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4549,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "d9c36ed5-629c-4709-bff5-2f10fcde608a",
+      "scryfallId": "9a1c2cdd-353c-4747-bf0e-b995dd37ffca",
+      "name": "Orb of Dragonkind",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Orb of Dragonkind",
+          "manaCost": "{1}{R}",
+          "typeLine": "Artifact",
+          "oracleText": "{1}, {T}: Add two mana in any combination of colors. Spend this mana only to cast Dragon spells or activate abilities of Dragons.\n{R}, {T}, Sacrifice this artifact: Look at the top seven cards of your library. You may reveal a Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/a/9a1c2cdd-353c-4747-bf0e-b995dd37ffca.jpg?1783926473",
+            "large": "https://cards.scryfall.io/large/front/9/a/9a1c2cdd-353c-4747-bf0e-b995dd37ffca.jpg?1783926473",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/a/9a1c2cdd-353c-4747-bf0e-b995dd37ffca.jpg?1783926473"
+          },
+          "artist": "Brian Valeza"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 3770,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "ebb24fc7-dc71-4712-8c2a-b5920f78e55d",
+      "scryfallId": "a9f75fce-f0a1-4dec-982d-a86925c6e9d4",
+      "name": "Outpost Siege",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Outpost Siege",
+          "manaCost": "{3}{R}",
+          "typeLine": "Enchantment",
+          "oracleText": "As this enchantment enters, choose Khans or Dragons.\n• Khans — At the beginning of your upkeep, exile the top card of your library. Until end of turn, you may play that card.\n• Dragons — Whenever a creature you control leaves the battlefield, this enchantment deals 1 damage to any target.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/9/a9f75fce-f0a1-4dec-982d-a86925c6e9d4.jpg?1783922418",
+            "large": "https://cards.scryfall.io/large/front/a/9/a9f75fce-f0a1-4dec-982d-a86925c6e9d4.jpg?1783922418",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/9/a9f75fce-f0a1-4dec-982d-a86925c6e9d4.jpg?1783922418"
+          },
+          "artist": "Daarken"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2430,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "722e23d5-4f2a-43cd-bbd5-baf56b76e68d",
+      "scryfallId": "6d3ba135-e8d6-443a-952b-5c93edb4523c",
+      "name": "Parapet Thrasher",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Parapet Thrasher",
+          "manaCost": "{2}{R}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying\nWhenever one or more Dragons you control deal combat damage to an opponent, choose one that hasn't been chosen this turn —\n• Destroy target artifact that opponent controls.\n• This creature deals 4 damage to each other opponent.\n• Exile the top card of your library. You may play it this turn.",
+          "power": "4",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/d/6d3ba135-e8d6-443a-952b-5c93edb4523c.jpg?1783907173",
+            "large": "https://cards.scryfall.io/large/front/6/d/6d3ba135-e8d6-443a-952b-5c93edb4523c.jpg?1783907173",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/d/6d3ba135-e8d6-443a-952b-5c93edb4523c.jpg?1783907173"
+          },
+          "artist": "Cristi Balanescu"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3436,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0944ec2e-1dd9-459f-8f1d-667242cf52fe",
+      "scryfallId": "1098504a-977a-4733-a1ee-086461113a84",
+      "name": "Rapacious Dragon",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Rapacious Dragon",
+          "manaCost": "{4}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying\nWhen this creature enters, create two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+          "power": "3",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/0/1098504a-977a-4733-a1ee-086461113a84.jpg?1783907061",
+            "large": "https://cards.scryfall.io/large/front/1/0/1098504a-977a-4733-a1ee-086461113a84.jpg?1783907061",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/0/1098504a-977a-4733-a1ee-086461113a84.jpg?1783907061"
+          },
+          "artist": "Johan Grenier"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying",
+        "Treasure"
+      ],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 3529,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Rapacious Dragon",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Treasure",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "71cb48e2-2328-471c-a04a-7b6461f378f4",
+      "scryfallId": "c2200646-7b7c-489d-bbae-16b03e1d7fb2",
+      "name": "Sarkhan, Dragon Ascendant",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sarkhan, Dragon Ascendant",
+          "manaCost": "{1}{R}",
+          "typeLine": "Legendary Creature — Human Druid",
+          "oracleText": "When Sarkhan enters, you may behold a Dragon. If you do, create a Treasure token. (To behold a Dragon, choose a Dragon you control or reveal a Dragon card from your hand.)\nWhenever a Dragon you control enters, put a +1/+1 counter on Sarkhan. Until end of turn, Sarkhan becomes a Dragon in addition to his other types and gains flying.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/2/c2200646-7b7c-489d-bbae-16b03e1d7fb2.jpg?1783907353",
+            "large": "https://cards.scryfall.io/large/front/c/2/c2200646-7b7c-489d-bbae-16b03e1d7fb2.jpg?1783907353",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/2/c2200646-7b7c-489d-bbae-16b03e1d7fb2.jpg?1783907353"
+          },
+          "artist": "Billy Christian"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Behold",
+        "Treasure"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 6998,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Treasure",
+          "component": "token"
+        },
+        {
+          "name": "Sarkhan, Dragon Ascendant",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "0a147009-a57c-4ac1-ab81-d8bd8b737631",
+      "scryfallId": "e6bd7225-b39f-4b3b-8c36-dbc2c09f6e50",
+      "name": "Scourge of Valkas",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Scourge of Valkas",
+          "manaCost": "{2}{R}{R}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying\nWhenever this creature or another Dragon you control enters, it deals X damage to any target, where X is the number of Dragons you control.\n{R}: This creature gets +1/+0 until end of turn.",
+          "power": "4",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/6/e6bd7225-b39f-4b3b-8c36-dbc2c09f6e50.jpg?1783926202",
+            "large": "https://cards.scryfall.io/large/front/e/6/e6bd7225-b39f-4b3b-8c36-dbc2c09f6e50.jpg?1783926202",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/6/e6bd7225-b39f-4b3b-8c36-dbc2c09f6e50.jpg?1783926202"
+          },
+          "artist": "Lucas Graciano"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1505,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "06496a05-7f1a-402c-9594-304cd82bfefd",
+      "scryfallId": "cd44f295-c4c8-4f47-9d51-d5ba578f7f8d",
+      "name": "Scourge of the Throne",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Scourge of the Throne",
+          "manaCost": "{4}{R}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying\nDethrone (Whenever this creature attacks the player with the most life or tied for most life, put a +1/+1 counter on it.)\nWhenever this creature attacks for the first time each turn, if it's attacking the player with the most life or tied for most life, untap all attacking creatures. After this phase, there is an additional combat phase.",
+          "power": "5",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/d/cd44f295-c4c8-4f47-9d51-d5ba578f7f8d.jpg?1783907061",
+            "large": "https://cards.scryfall.io/large/front/c/d/cd44f295-c4c8-4f47-9d51-d5ba578f7f8d.jpg?1783907061",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/d/cd44f295-c4c8-4f47-9d51-d5ba578f7f8d.jpg?1783907061"
+          },
+          "artist": "Michael Komarck"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying",
+        "Dethrone"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1275,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "b7daa74c-6142-4107-9355-be98af6ccf13",
+      "scryfallId": "1f5d274c-3a03-4f0d-97e8-7eef6508105d",
+      "name": "Shivan Devastator",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Shivan Devastator",
+          "manaCost": "{X}{R}",
+          "typeLine": "Creature — Dragon Hydra",
+          "oracleText": "Flying, haste\nThis creature enters with X +1/+1 counters on it.",
+          "power": "0",
+          "toughness": "0",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/f/1f5d274c-3a03-4f0d-97e8-7eef6508105d.jpg?1783921310",
+            "large": "https://cards.scryfall.io/large/front/1/f/1f5d274c-3a03-4f0d-97e8-7eef6508105d.jpg?1783921310",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/f/1f5d274c-3a03-4f0d-97e8-7eef6508105d.jpg?1783921310"
+          },
+          "artist": "Brent Hollowell"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying",
+        "Haste"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4126,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "c0ce54a1-14a1-45f3-91d0-c57b581afc63",
+      "scryfallId": "4e080dc5-361e-4e0b-b0d6-9ca060edceed",
+      "name": "Skyline Despot",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Skyline Despot",
+          "manaCost": "{5}{R}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying\nWhen this creature enters, you become the monarch.\nAt the beginning of your upkeep, if you're the monarch, create a 5/5 red Dragon creature token with flying.",
+          "power": "5",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/e/4e080dc5-361e-4e0b-b0d6-9ca060edceed.jpg?1783915643",
+            "large": "https://cards.scryfall.io/large/front/4/e/4e080dc5-361e-4e0b-b0d6-9ca060edceed.jpg?1783915643",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/e/4e080dc5-361e-4e0b-b0d6-9ca060edceed.jpg?1783915643"
+          },
+          "artist": "Lucas Graciano"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3672,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Dragon",
+          "component": "token"
+        },
+        {
+          "name": "The Monarch",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Skyline Despot",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "6ad8011d-3471-4369-9d68-b264cc027487",
+      "scryfallId": "8ee443cc-e17a-493b-9c93-1f9e141a30e4",
+      "name": "Sol Ring",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sol Ring",
+          "manaCost": "{1}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add {C}{C}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/8/e/8ee443cc-e17a-493b-9c93-1f9e141a30e4.jpg?1789644446",
+            "large": "https://cards.scryfall.io/large/front/8/e/8ee443cc-e17a-493b-9c93-1f9e141a30e4.jpg?1789644446",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/8/e/8ee443cc-e17a-493b-9c93-1f9e141a30e4.jpg?1789644446"
+          },
+          "artist": "Titus Lunter"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 1,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "690c7f8e-fea2-4920-afa7-02ff120701a1",
+      "scryfallId": "11e4ba4b-62d1-43ed-82e8-cd45d7a62c65",
+      "name": "Spinerock Knoll",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Spinerock Knoll",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "Hideaway 4 (When this land enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom in a random order.)\nThis land enters tapped.\n{T}: Add {R}.\n{R}, {T}: You may play the exiled card without paying its mana cost if an opponent was dealt 7 or more damage this turn.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/1/11e4ba4b-62d1-43ed-82e8-cd45d7a62c65.jpg?1783909567",
+            "large": "https://cards.scryfall.io/large/front/1/1/11e4ba4b-62d1-43ed-82e8-cd45d7a62c65.jpg?1783909567",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/1/11e4ba4b-62d1-43ed-82e8-cd45d7a62c65.jpg?1783909567"
+          },
+          "artist": "Steve Prescott"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Hideaway"
+      ],
+      "producedMana": [
+        "R"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 786,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f63278e0-3c67-421d-87ce-67725e5e74df",
+      "scryfallId": "5fb4fa09-2864-4973-aa49-088043f6a6d1",
+      "name": "Spit Flame",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Spit Flame",
+          "manaCost": "{2}{R}",
+          "typeLine": "Instant",
+          "oracleText": "Spit Flame deals 4 damage to target creature.\nWhenever a Dragon you control enters, you may pay {R}. If you do, return this card from your graveyard to your hand.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/f/5fb4fa09-2864-4973-aa49-088043f6a6d1.jpg?1783907059",
+            "large": "https://cards.scryfall.io/large/front/5/f/5fb4fa09-2864-4973-aa49-088043f6a6d1.jpg?1783907059",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/f/5fb4fa09-2864-4973-aa49-088043f6a6d1.jpg?1783907059"
+          },
+          "artist": "Chris Rahn"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4575,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "c8b143ad-43ec-4e0d-a440-e348daa31391",
+      "scryfallId": "03f7e9fc-8e59-45c1-90fc-1d04d929b292",
+      "name": "Swiftfoot Boots",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Swiftfoot Boots",
+          "manaCost": "{2}",
+          "typeLine": "Artifact — Equipment",
+          "oracleText": "Equipped creature has hexproof and haste. (It can't be the target of spells or abilities your opponents control. It can attack and {T} no matter when it came under your control.)\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/3/03f7e9fc-8e59-45c1-90fc-1d04d929b292.jpg?1785759388",
+            "large": "https://cards.scryfall.io/large/front/0/3/03f7e9fc-8e59-45c1-90fc-1d04d929b292.jpg?1785759388",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/3/03f7e9fc-8e59-45c1-90fc-1d04d929b292.jpg?1785759388"
+          },
+          "artist": "Svetlin Velinov"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [
+        "Equip"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 12,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "fd5ee26c-cc54-4dc0-b611-5cda14354a5e",
+      "scryfallId": "39938a5a-385b-47ba-a07b-8917cba14fd3",
+      "name": "Taurean Mauler",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Taurean Mauler",
+          "manaCost": "{2}{R}",
+          "typeLine": "Creature — Shapeshifter",
+          "oracleText": "Changeling (This card is every creature type.)\nWhenever an opponent casts a spell, you may put a +1/+1 counter on this creature.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/3/9/39938a5a-385b-47ba-a07b-8917cba14fd3.jpg?1783907058",
+            "large": "https://cards.scryfall.io/large/front/3/9/39938a5a-385b-47ba-a07b-8917cba14fd3.jpg?1783907058",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/3/9/39938a5a-385b-47ba-a07b-8917cba14fd3.jpg?1783907058"
+          },
+          "artist": "Dominick Domingo"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Changeling"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 957,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "cfdd5dc6-593e-495a-8cfe-3a56b3c4c7df",
+      "scryfallId": "1024f555-e0d7-48ac-b86e-c87290eac832",
+      "name": "Temple of the False God",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Temple of the False God",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}{C}. Activate only if you control five or more lands.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/0/1024f555-e0d7-48ac-b86e-c87290eac832.jpg?1783903715",
+            "large": "https://cards.scryfall.io/large/front/1/0/1024f555-e0d7-48ac-b86e-c87290eac832.jpg?1783903715",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/0/1024f555-e0d7-48ac-b86e-c87290eac832.jpg?1783903715"
+          },
+          "artist": "Brian Snõddy"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 84,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "8161248c-16a3-47db-a3ae-cdfd878d49e0",
+      "scryfallId": "4047b1c3-06eb-400d-993d-69b5210977ee",
+      "name": "Terror of Mount Velus",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Terror of Mount Velus",
+          "manaCost": "{5}{R}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying\nDouble strike (This creature deals both first-strike and regular combat damage.)\nWhen this creature enters, creatures you control gain double strike until end of turn.",
+          "power": "5",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/0/4047b1c3-06eb-400d-993d-69b5210977ee.jpg?1787562514",
+            "large": "https://cards.scryfall.io/large/front/4/0/4047b1c3-06eb-400d-993d-69b5210977ee.jpg?1787562514",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/0/4047b1c3-06eb-400d-993d-69b5210977ee.jpg?1787562514"
+          },
+          "artist": "Billy Christian"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying",
+        "Double strike"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 5598,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "4945f03b-ff99-4923-b62d-3cdb60275ef1",
+      "scryfallId": "0c52c7d4-a350-4518-8c9a-72cf7b14603d",
+      "name": "The Elder Dragon War",
+      "layout": "saga",
+      "faces": [
+        {
+          "name": "The Elder Dragon War",
+          "manaCost": "{2}{R}{R}",
+          "typeLine": "Enchantment — Saga",
+          "oracleText": "Read ahead (Choose a chapter and start with that many lore counters. Add one after your draw step. Skipped chapters don't trigger. Sacrifice after III.)\nI — This Saga deals 2 damage to each creature and each opponent.\nII — Discard any number of cards, then draw that many cards.\nIII — Create a 4/4 red Dragon creature token with flying.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/c/0c52c7d4-a350-4518-8c9a-72cf7b14603d.jpg?1783921321",
+            "large": "https://cards.scryfall.io/large/front/0/c/0c52c7d4-a350-4518-8c9a-72cf7b14603d.jpg?1783921321",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/c/0c52c7d4-a350-4518-8c9a-72cf7b14603d.jpg?1783921321"
+          },
+          "artist": "Filip Burburan"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Read Ahead"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 9405,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "The Elder Dragon War",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Dragon",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "1cb0610b-a731-42c2-b93f-0a29f63cebf4",
+      "scryfallId": "882b348c-076b-41d8-b505-063480636669",
+      "name": "Thrill of Possibility",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thrill of Possibility",
+          "manaCost": "{1}{R}",
+          "typeLine": "Instant",
+          "oracleText": "As an additional cost to cast this spell, discard a card.\nDraw two cards.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/8/8/882b348c-076b-41d8-b505-063480636669.jpg?1783909062",
+            "large": "https://cards.scryfall.io/large/front/8/8/882b348c-076b-41d8-b505-063480636669.jpg?1783909062",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/8/8/882b348c-076b-41d8-b505-063480636669.jpg?1783909062"
+          },
+          "artist": "Steve Argyle"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 214,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "bb04f927-0348-4a14-9e74-381f18083f6a",
+      "scryfallId": "06624919-bb3e-458c-9301-0bb22d8b556c",
+      "name": "Thunderbreak Regent",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thunderbreak Regent",
+          "manaCost": "{2}{R}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying\nWhenever a Dragon you control becomes the target of a spell or ability an opponent controls, this creature deals 3 damage to that player.",
+          "power": "4",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/6/06624919-bb3e-458c-9301-0bb22d8b556c.jpg?1783907054",
+            "large": "https://cards.scryfall.io/large/front/0/6/06624919-bb3e-458c-9301-0bb22d8b556c.jpg?1783907054",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/6/06624919-bb3e-458c-9301-0bb22d8b556c.jpg?1783907054"
+          },
+          "artist": "Ryan Pancoast"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3014,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "a1602bd0-f346-43cf-86ec-1dd300a7f2ed",
+      "scryfallId": "7ca93b31-d6ec-4265-b2ff-d46090086f07",
+      "name": "Thundermane Dragon",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thundermane Dragon",
+          "manaCost": "{3}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying\nYou may look at the top card of your library any time.\nYou may cast creature spells with power 4 or greater from the top of your library. If you cast a creature spell this way, it gains haste until end of turn.",
+          "power": "4",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/c/7ca93b31-d6ec-4265-b2ff-d46090086f07.jpg?1783907172",
+            "large": "https://cards.scryfall.io/large/front/7/c/7ca93b31-d6ec-4265-b2ff-d46090086f07.jpg?1783907172",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/c/7ca93b31-d6ec-4265-b2ff-d46090086f07.jpg?1783907172"
+          },
+          "artist": "Slawomir Maniak"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3414,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "63394e24-a456-4cc6-9885-8c62447b050a",
+      "scryfallId": "08076c82-edb6-4c3c-abda-3d3ad7bdd78f",
+      "name": "Tyrant's Familiar",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Tyrant's Familiar",
+          "manaCost": "{5}{R}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying, haste\nLieutenant — As long as you control your commander, this creature gets +2/+2 and has \"Whenever this creature attacks, it deals 7 damage to target creature defending player controls.\"",
+          "power": "5",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/8/08076c82-edb6-4c3c-abda-3d3ad7bdd78f.jpg?1783934734",
+            "large": "https://cards.scryfall.io/large/front/0/8/08076c82-edb6-4c3c-abda-3d3ad7bdd78f.jpg?1783934734",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/8/08076c82-edb6-4c3c-abda-3d3ad7bdd78f.jpg?1783934734"
+          },
+          "artist": "Todd Lockwood"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying",
+        "Haste",
+        "Lieutenant"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4559,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "498c10c9-253d-4b15-b48c-1509381b17e8",
+      "scryfallId": "bae6a5fb-39f5-4cf8-85f7-661cb4570507",
+      "name": "Unexpected Windfall",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Unexpected Windfall",
+          "manaCost": "{2}{R}{R}",
+          "typeLine": "Instant",
+          "oracleText": "As an additional cost to cast this spell, discard a card.\nDraw two cards and create two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/a/bae6a5fb-39f5-4cf8-85f7-661cb4570507.jpg?1783926470",
+            "large": "https://cards.scryfall.io/large/front/b/a/bae6a5fb-39f5-4cf8-85f7-661cb4570507.jpg?1783926470",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/a/bae6a5fb-39f5-4cf8-85f7-661cb4570507.jpg?1783926470"
+          },
+          "artist": "Alayna Danner"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Treasure"
+      ],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 270,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Treasure",
+          "component": "token"
+        },
+        {
+          "name": "Unexpected Windfall",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "05a6a571-643e-429e-8e5c-1c3f8b0dc746",
+      "scryfallId": "df459109-d6ab-4b1d-9570-c7677ff4a014",
+      "name": "Utvara Hellkite",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Utvara Hellkite",
+          "manaCost": "{6}{R}{R}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying\nWhenever a Dragon you control attacks, create a 6/6 red Dragon creature token with flying.",
+          "power": "6",
+          "toughness": "6",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/f/df459109-d6ab-4b1d-9570-c7677ff4a014.jpg?1783913307",
+            "large": "https://cards.scryfall.io/large/front/d/f/df459109-d6ab-4b1d-9570-c7677ff4a014.jpg?1783913307",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/f/df459109-d6ab-4b1d-9570-c7677ff4a014.jpg?1783913307"
+          },
+          "artist": "Mark Zug"
+        }
+      ],
+      "cmc": 8,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1523,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Utvara Hellkite",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Dragon",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "71c52bf5-2a5d-488e-8b15-7ef290e4b77d",
+      "scryfallId": "0775b4be-881c-4832-8954-d961064315b6",
+      "name": "War Room",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "War Room",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}.\n{3}, {T}, Pay life equal to the number of colors in your commanders' color identity: Draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/7/0775b4be-881c-4832-8954-d961064315b6.jpg?1783903712",
+            "large": "https://cards.scryfall.io/large/front/0/7/0775b4be-881c-4832-8954-d961064315b6.jpg?1783903712",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/7/0775b4be-881c-4832-8954-d961064315b6.jpg?1783903712"
+          },
+          "artist": "Milivoj Ćeran"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 139,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "42fb1a1c-ab3d-4cdc-a6ff-a591f7481583",
+      "scryfallId": "dbe1bfe0-0be7-496d-94db-e8028d4d9493",
+      "name": "Warstorm Surge",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Warstorm Surge",
+          "manaCost": "{5}{R}",
+          "typeLine": "Enchantment",
+          "oracleText": "Whenever a creature you control enters, it deals damage equal to its power to any target.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "R"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/b/dbe1bfe0-0be7-496d-94db-e8028d4d9493.jpg?1783922416",
+            "large": "https://cards.scryfall.io/large/front/d/b/dbe1bfe0-0be7-496d-94db-e8028d4d9493.jpg?1783922416",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/b/dbe1bfe0-0be7-496d-94db-e8028d4d9493.jpg?1783922416"
+          },
+          "artist": "Raymond Swanland"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "R"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 732,
+      "gameChanger": false,
+      "relatedParts": []
+    }
+  ]
+}

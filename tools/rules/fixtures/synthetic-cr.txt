@@ -1,0 +1,140 @@
+﻿*** SYNTHETIC TEST DATA - NOT WIZARDS OF THE COAST TEXT - NOT THE MAGIC COMPREHENSIVE RULES ***
+SYNTHETIC: written by the Commander Arena project only to mimic the LAYOUT of the Comprehensive Rules (headings, numbering, examples, glossary, credits) for parser tests.
+SYNTHETIC: every rule, example and glossary entry below is made-up filler about widgets, sprockets and cogwheels. None of it is Magic rules text. Never use this file as a rules source.
+SYNTHETIC: the file deliberately starts with a UTF-8 BOM, uses CRLF line endings and contains curly quotes, like the real download is believed to. Keep those bytes intact.
+
+Synthetic Widget Rules
+
+These rules are effective as of March 3, 2099.
+
+Introduction
+
+This synthetic introduction exists so the parser has some text to skip before the Contents list. It mentions widgets and sprockets and nothing else.
+
+Contents
+
+1. Widget Concepts
+100. General
+101. The Golden Widget Rules
+2. Parts of a Widget
+200. General
+201. Name
+7. Additional Rules
+701. Keyword Actions
+702. Keyword Abilities
+703. Turn-Based Widgets
+9. Casual Variants
+901. Synthetic Variant
+Glossary
+Credits
+
+1. Widget Concepts
+
+100. General
+
+100.1. Synthetic rule about widgets: every widget game uses at least one widget.
+
+100.1a A synthetic sub-rule about “curly quotes” and a widget’s apostrophe.
+
+100.1b Another synthetic sub-rule. See rule 702.2, “Sprocket.”
+Example: Synthetic example attached to 100.1b: a widget meets a gadget.
+
+100.2. Synthetic rule about gadgets. It has two examples and no sub-rules.
+Example: First synthetic example of 100.2.
+Example: Second synthetic example of 100.2.
+
+101. The Golden Widget Rules
+
+101.1. Synthetic golden rule: a widget never sprockets twice.
+
+Example: Synthetic example that follows a blank line but still belongs to 101.1.
+
+101.2. Synthetic golden rule: when two widget rules disagree, the synthetic “can’t” rule wins.
+
+2. Parts of a Widget
+
+200. General
+
+200.1. A synthetic widget has the parts listed in this section.
+
+200.1a A synthetic widget has a name, a size and a number of cogs.
+
+200.1b The synthetic size of a widget is a whole number of units.
+
+201. Name
+
+201.1. The synthetic name of a widget is the word printed at the top of the widget.
+
+201.2. Two synthetic widgets with the same name are the same kind of widget.
+
+7. Additional Rules
+
+701. Keyword Actions
+
+701.1. Synthetic keyword actions are verbs that widgets perform.
+
+701.2. Spin
+
+701.2a To spin a synthetic widget means to turn it around once.
+
+701.2b A synthetic widget that is told to spin twice turns around two times.
+
+702. Keyword Abilities
+
+702.1. Synthetic keyword abilities are static properties of widgets.
+
+702.2. Sprocket
+
+702.2a Sprocket is a synthetic static ability. A widget with sprocket turns clockwise.
+
+702.2b If a synthetic widget has sprocket and cogwheel, the sprocket rule applies first.
+Example: Synthetic example: a sprocket widget meets a cogwheel widget and turns clockwise.
+
+702.2c Multiple instances of sprocket on one synthetic widget are redundant.
+
+702.3. Cogwheel
+
+702.3a Cogwheel is a synthetic static ability. A widget with cogwheel turns counterclockwise.
+
+702.3b A synthetic widget can’t have cogwheel and sprocket turn it at the same moment.
+
+702.4. Synthetic rule about gears that has no title and no sub-rules.
+
+703. Turn-Based Widgets
+
+703.1. Synthetic turn-based widgets happen before anyone may spin a widget.
+
+~~ SYNTHETIC ODD LINE: this deliberately matches no known CR line shape ~~
+
+703.2. Synthetic rule that follows the odd line above.
+
+9. Casual Variants
+
+901. Synthetic Variant
+
+901.1. The synthetic variant is played with three widgets instead of one.
+
+901.1a In the synthetic variant, each widget has a sprocket.
+
+Glossary
+
+Cogwheel
+A synthetic keyword ability. See rule 702.3, “Cogwheel.”
+
+Sprocket
+A synthetic keyword ability that makes a widget turn clockwise. See rule 702.2, “Sprocket.”
+
+Widget
+1. A synthetic object used in tests.
+2. The synthetic thing that sprockets turn. See rule 100.1.
+
+Active Widget, Inactive Widget
+Synthetic terms for the widget whose turn it is and the widgets whose turn it is not.
+
+Gadget
+A synthetic word for something that is not a widget.
+
+Credits
+
+SYNTHETIC credits. Nothing in this section is Wizards text.
+Second synthetic credits line.

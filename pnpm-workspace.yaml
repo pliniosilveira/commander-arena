@@ -1,0 +1,9 @@
+packages:
+  - packages/*
+  - apps/*
+  - tools
+
+# Only these dependencies may run install scripts.
+onlyBuiltDependencies:
+  - esbuild
+  - "@biomejs/biome"

@@ -1,0 +1,9 @@
+{
+  // Cloudflare static-asset deploy (D-049). The Cloudflare project must be named "commander-arena".
+  // Build command:   pnpm install --frozen-lockfile && pnpm --filter @commander-arena/web build
+  // Deploy command:  npx wrangler deploy
+  // Preview command: npx wrangler versions upload
+  "name": "commander-arena",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./apps/web/dist" }
+}

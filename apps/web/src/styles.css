@@ -1,0 +1,366 @@
+/*
+ * Global tokens and layout (SPEC 10, 17.5 A19). Minimum supported layout is 1366x768; narrower than 1100px the side columns are one drawer.
+ * Component styles live next to their component folders (board.css, decisions.css, panels.css)
+ * and use only these tokens, so light and dark stay consistent.
+ */
+:root {
+  color-scheme: dark;
+  --bg: #12151c;
+  --bg-raised: #1a1f2a;
+  --bg-sunken: #0d1016;
+  --line: #2b3342;
+  --text: #e6e9ef;
+  --text-dim: #9aa4b5;
+  --accent: #d9a441;
+  --accent-text: #1a1305;
+  --good: #4fbf7a;
+  --bad: #e5645f;
+  --focus: #6cb6ff;
+  --target: #ff8a3d;
+  --selected: #6cb6ff;
+  --me: #4f8ff0;
+  --opponent: #d35f5f;
+  /* The edge of the active player's area (D-153): the accent, strong enough against the dark ground. */
+  --active-edge: var(--accent);
+
+  /* Block pairing (Okabe-Ito, distinct for the common colour blindness): a blocked attacker and its
+     blockers share a number and one of these colours; the number is the reliable cue. */
+  --pair-1: #e69f00;
+  --pair-2: #56b4e9;
+  --pair-3: #009e73;
+  --pair-4: #f0e442;
+  --pair-5: #0072b2;
+  --pair-6: #d55e00;
+  --pair-7: #cc79a7;
+  --pair-8: #1a1a1a;
+  --pair-ink: #000000;
+  --pair-ink-light: #ffffff;
+
+  --mana-w: #f3ecc7;
+  --mana-u: #7db7e8;
+  --mana-b: #8d8294;
+  --mana-r: #e6805f;
+  --mana-g: #6fbf80;
+  --mana-c: #bfc3c9;
+  --mana-generic: #c9ccd2;
+
+  --card-w: #e9e2bd;
+  --card-u: #6aa8dd;
+  --card-b: #5b5262;
+  --card-r: #d96e4e;
+  --card-g: #58a86c;
+  --card-multi: #cfa94a;
+  --card-colorless: #a9aeb6;
+
+  --radius: 8px;
+  --gap: 8px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --shadow: 0 6px 20px rgb(0 0 0 / 0.45);
+  /* Text size setting (Settings, issue 43): the in-game text and cards scale by this. Large is the
+     default; the preview panel keeps its own size (`.preview-panel`). */
+  --text-scale: 1.2;
+  /* The two side columns (issue 47). The one with the highlighted card and the log is a little
+     wider, so a card reads well; the one with the stack and the controls is as narrow as the
+     buttons allow. Both grow with the window and stop growing, so the battlefield keeps the rest
+     of the width: 878px at 1366x768. */
+  --info-width: clamp(252px, 16vw, 380px);
+  --controls-width: clamp(236px, 14vw, 340px);
+}
+
+:root[data-text-size="normal"] {
+  --text-scale: 1;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #eef0f4;
+  --bg-raised: #ffffff;
+  --bg-sunken: #e1e5ec;
+  --line: #c4ccd9;
+  --text: #1a1f2a;
+  --text-dim: #566074;
+  /* A darker gold: the accent itself is too pale for a 3:1 edge on the light ground. */
+  --active-edge: #a56f00;
+}
+
+.pair-c1 {
+  --pair: var(--pair-1);
+  --pair-text: var(--pair-ink);
+}
+.pair-c2 {
+  --pair: var(--pair-2);
+  --pair-text: var(--pair-ink);
+}
+.pair-c3 {
+  --pair: var(--pair-3);
+  --pair-text: var(--pair-ink);
+}
+.pair-c4 {
+  --pair: var(--pair-4);
+  --pair-text: var(--pair-ink);
+}
+.pair-c5 {
+  --pair: var(--pair-5);
+  --pair-text: var(--pair-ink-light);
+}
+.pair-c6 {
+  --pair: var(--pair-6);
+  --pair-text: var(--pair-ink);
+}
+.pair-c7 {
+  --pair: var(--pair-7);
+  --pair-text: var(--pair-ink);
+}
+.pair-c8 {
+  --pair: var(--pair-8);
+  --pair-text: var(--pair-ink-light);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: calc(14px * var(--text-scale));
+  line-height: 1.35;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 720px;
+  min-height: 680px;
+}
+
+.fan-notice {
+  flex: none;
+  padding: 2px 12px;
+  color: var(--text-dim);
+  background: var(--bg-sunken);
+  border-top: 1px solid var(--line);
+  font-size: calc(10px * var(--text-scale));
+  line-height: 1.2;
+}
+
+/* The versions of the build, on the start screen only: a quiet second line (D-215). */
+.fan-version {
+  display: block;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.loading {
+  margin: auto;
+  color: var(--text-dim);
+}
+
+/* The game screen (issue 47): the battlefield with a column on each side. One column holds the
+   highlighted card and the log (`.game-side-info`), the other the stack, the action dock and the
+   settings (`.game-side-controls`). The controls are on the right unless Settings says Left
+   (`data-side-panel` on the root); the other column takes the other side. */
+.game {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.game-main {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-main > .decision-layer {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Wide windows: the two columns are plain flex items of `.game`; the drawer wraps them below. */
+.game-sides {
+  display: contents;
+}
+
+.game-side {
+  flex: none;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  padding: var(--gap);
+  background: var(--bg-raised);
+}
+
+.game-side-info {
+  order: -1;
+  width: var(--info-width);
+  border-right: 1px solid var(--line);
+}
+
+.game-side-controls {
+  /* Room the stack keeps for itself: its heading and about three items. */
+  --stack-min: 230px;
+  order: 1;
+  width: var(--controls-width);
+  border-left: 1px solid var(--line);
+}
+
+:root[data-side-panel="left"] .game-side-info {
+  order: 1;
+  border-right: 0;
+  border-left: 1px solid var(--line);
+}
+
+:root[data-side-panel="left"] .game-side-controls {
+  order: -1;
+  border-left: 0;
+  border-right: 1px solid var(--line);
+}
+
+/* The slot the decision layer draws the action dock into (D-146): at the foot of the controls
+   column, just above Settings, so the buttons keep their place while the stack above them grows
+   and shrinks, and the dock itself grows upward. It is empty (no box) when the dock is not shown.
+   It shrinks (its panels scroll) before the stack loses its minimum height. */
+.game-dock-slot {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.game-dock-slot:empty {
+  display: none;
+}
+
+/* The button that opens the drawer is only there when the columns are one. */
+.game-drawer-toggle {
+  display: none;
+}
+
+/* Narrow windows: both columns slide over the board from the edge instead of taking its width. */
+@media (max-width: 1099px) {
+  .game {
+    /* The closed drawer waits outside the window: it must not widen the page. */
+    overflow: hidden;
+  }
+  .game-sides {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    z-index: 40;
+    display: flex;
+    box-shadow: var(--shadow);
+    transform: translateX(100%);
+    visibility: hidden;
+  }
+  :root[data-side-panel="left"] .game-sides {
+    right: auto;
+    left: 0;
+    transform: translateX(-100%);
+  }
+  .game[data-drawer="open"] .game-sides {
+    transform: none;
+    visibility: visible;
+  }
+  .game-drawer-toggle {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 41;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  :root[data-side-panel="left"] .game-drawer-toggle {
+    right: auto;
+    left: 8px;
+  }
+  /* Open, the button sits just outside the drawer, not over the stack's heading. */
+  .game[data-drawer="open"] .game-drawer-toggle {
+    right: calc(var(--info-width) + var(--controls-width) + 8px);
+  }
+  :root[data-side-panel="left"] .game[data-drawer="open"] .game-drawer-toggle {
+    right: auto;
+    left: calc(var(--info-width) + var(--controls-width) + 8px);
+  }
+}
+
+/* Mana symbols (original drawing, see ui/mana.tsx). */
+.mana-cost {
+  display: inline-flex;
+  gap: 2px;
+  vertical-align: middle;
+}
+
+.mana {
+  display: inline-grid;
+  place-items: center;
+  width: 1.25em;
+  height: 1.25em;
+  border-radius: 50%;
+  font-size: 0.8em;
+  font-weight: 700;
+  color: #14171d;
+  background: var(--mana-generic);
+  border: 1px solid rgb(0 0 0 / 0.45);
+}
+
+.mana-w {
+  background: var(--mana-w);
+}
+.mana-u {
+  background: var(--mana-u);
+}
+.mana-b {
+  background: var(--mana-b);
+  color: #fff;
+}
+.mana-r {
+  background: var(--mana-r);
+}
+.mana-g {
+  background: var(--mana-g);
+}
+.mana-c {
+  background: var(--mana-c);
+}
+.mana-hybrid {
+  background: linear-gradient(135deg, var(--mana-w) 50%, var(--mana-b) 50%);
+}

@@ -1,0 +1,89 @@
+Commander
+1x Vraska, Soul of Stone
+
+Mainboard
+1x Arcane Signet
+1x Azorius Signet
+1x Boros Signet
+1x Fellwar Stone
+1x Hammer of Purphoros
+1x Idol of Oblivion
+1x Izzet Signet
+1x Lightning Greaves
+1x Skullclamp
+1x Sol Ring
+1x Swiftfoot Boots
+1x Talisman of Conviction
+1x Talisman of Creativity
+1x Talisman of Progress
+1x Wizard's Staff
+1x Adarkar Wastes
+1x Ancient Den
+1x Battlefield Forge
+1x Cascade Bluffs
+1x Clifftop Retreat
+1x Command Tower
+1x Deserted Beach
+1x Evolving Wilds
+1x Exotic Orchard
+1x Fabled Passage
+1x Glacial Fortress
+7x Island
+5x Mountain
+1x Mystic Monastery
+1x Path of Ancestry
+1x Perilous Landscape
+5x Plains
+1x Prairie Stream
+1x Seat of the Synod
+1x Shivan Reef
+1x Stormcarved Coast
+1x Sulfur Falls
+1x Alibou, Ancient Witness
+1x Craterclaw Colossus
+1x Cyberdrive Awakener
+1x Draconic Visitor
+1x Enthusiastic Mechanaut
+1x Etherium Sculptor
+1x Foundry Inspector
+1x Geist of Saint Thalia
+1x Harmonic Prodigy
+1x Kappa Cannoneer
+1x Kykar, Wind's Fury
+1x Mister Fantastic, Reed Richards
+1x Reckless Fireweaver
+1x Saheeli, Jewel of Avishkar
+1x Sai, Master Thopterist
+1x Samut, Hazoret's Champion
+1x Storm-Kiln Artist
+1x Stridehangar Automaton
+1x Third Path Iconoclast
+1x Fateful Discovery
+1x Impact Tremors
+1x Jeskai Ascendancy
+1x Roar of Resistance
+1x Thopter Spy Network
+1x Whirlwind of Thought
+1x Abrade
+1x An Offer You Can't Refuse
+1x Arcane Denial
+1x Brainstorm
+1x Chaos Warp
+1x Consider
+1x Counterspell
+1x Dispatch
+1x Dovin's Veto
+1x Frantic Search
+1x Mana Sculpt
+1x Negate
+1x Opt
+1x Path to Exile
+1x Swords to Plowshares
+1x Saheeli, Sublime Artificer
+1x Blasphemous Act
+1x Expressive Iteration
+1x Organic Extinction
+1x Ponder
+1x Preordain
+1x Thoughtcast
+1x Voyage Home

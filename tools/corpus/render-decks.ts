@@ -1,0 +1,174 @@
+// reports/decks.md: the per-deck coverage report. Deterministic: the only run-specific text is
+// the name of the bulk file and the parser version.
+
+import {
+  type BlockedCard,
+  type BlockerRow,
+  type DeckReport,
+  otherDecks,
+  rankBlockers,
+} from './decks.ts';
+import { cell, code, groupDigits, table } from './markdown.ts';
+import { percent } from './types.ts';
+
+export interface DecksResult {
+  /** Base name of the bulk file. */
+  readonly source: string;
+  readonly parserVersion: number;
+  /** Decks sorted by name. */
+  readonly decks: readonly DeckReport[];
+}
+
+const plural = (n: number, word: string) => `${groupDigits(n)} ${word}${n === 1 ? '' : 's'}`;
+const share = (supported: number, total: number) => percent({ supported, total });
+
+/** One line per deck for the terminal. */
+export function summaryLines(result: DecksResult): string[] {
+  return result.decks.map(
+    (deck) =>
+      `${deck.name}: ${deck.supportedCards}/${deck.cards} cards supported (` +
+      `${share(deck.supportedCards, deck.cards)}), ${deck.supportedUnique}/${deck.unique} unique; ` +
+      (deck.fullySupported ? 'FULLY SUPPORTED' : 'not fully supported') +
+      (deck.unresolved.length > 0 ? `; ${deck.unresolved.length} UNRESOLVED` : ''),
+  );
+}
+
+function cardLine(card: BlockedCard, deck: string, rows: readonly BlockerRow[]): string[] {
+  const quantity = card.count > 1 ? ` x${card.count}` : '';
+  const role = card.commander ? ' (commander)' : '';
+  const lines = [
+    `- ${cell(card.name)}${quantity}${role}${card.solo ? ' [solo: one blocker]' : ''}`,
+  ];
+  for (const blocker of card.blockers) {
+    const others = otherDecks(rows, blocker, deck);
+    const kind = blocker.kind === 'shape' ? 'shape' : 'reason';
+    lines.push(
+      `  - ${kind} ${code(blocker.text)}; ${blocker.needs.map(cell).join('; ')}; also blocks a card in ${plural(others, 'other deck')}`,
+    );
+  }
+  return lines;
+}
+
+function renderDeck(deck: DeckReport, rows: readonly BlockerRow[]): string[] {
+  const out: string[] = [`## Deck: ${cell(deck.name)}`, ''];
+  out.push(
+    `- Status: ${deck.fullySupported ? '**FULLY SUPPORTED**' : 'not fully supported'}`,
+    `- Cards: ${groupDigits(deck.cards)} (${groupDigits(deck.unique)} unique), commander and main deck`,
+    `- Supported by quantity: ${groupDigits(deck.supportedCards)} of ${groupDigits(deck.cards)} (${share(deck.supportedCards, deck.cards)})`,
+    `- Supported unique: ${groupDigits(deck.supportedUnique)} of ${groupDigits(deck.unique)} (${share(deck.supportedUnique, deck.unique)})`,
+    `- Commander: ${deck.commanders.length > 0 ? deck.commanders.map(cell).join(' / ') : 'none marked in the decklist'}`,
+  );
+  if (deck.ignored > 0) {
+    out.push(
+      `- Not counted: ${plural(deck.ignored, 'card')} in the sideboard, maybeboard or companion sections`,
+    );
+  }
+  const blockers = new Set(deck.blocked.flatMap((card) => card.blockers.map((b) => b.id)));
+  const soloIds = new Set(
+    deck.blocked.filter((card) => card.solo).flatMap((card) => card.blockers.map((b) => b.id)),
+  );
+  if (deck.blocked.length > 0) {
+    out.push(
+      `- To support this deck: clear ${plural(blockers.size, 'blocker')} (solo blockers: ${groupDigits(soloIds.size)})` +
+        (deck.unresolved.length + deck.errors.length > 0
+          ? ', and fix the names and lines listed below'
+          : ''),
+    );
+  }
+  if (deck.errors.length > 0) {
+    out.push('', '### Lines that could not be read', '');
+    for (const error of deck.errors) out.push(`- ${cell(error)}`);
+  }
+  if (deck.unresolved.length > 0) {
+    out.push(
+      '',
+      '### UNRESOLVED',
+      '',
+      'No card of the bulk file has these names (never guessed).',
+      '',
+    );
+    for (const entry of deck.unresolved) {
+      out.push(`- ${cell(entry.name)}${entry.count > 1 ? ` x${entry.count}` : ''}`);
+    }
+  }
+  if (deck.blocked.length > 0) {
+    out.push('', '### Unsupported cards', '');
+    for (const card of deck.blocked) out.push(...cardLine(card, deck.name, rows));
+  }
+  out.push('');
+  return out;
+}
+
+function renderBlockers(rows: readonly BlockerRow[]): string[] {
+  const solo = (row: BlockerRow) =>
+    row.solo.length === 0
+      ? ''
+      : row.solo
+          .map((entry) => `${cell(entry.deck)}: ${entry.cards.map(cell).join(', ')}`)
+          .join('; ');
+  return table(
+    ['#', 'Blocker', 'Cards', 'Decks', 'Solo', 'Unlocked alone (per deck)', 'What it takes'],
+    rows.map((row, i) => [
+      String(i + 1),
+      `${row.kind === 'shape' ? 'shape' : 'reason'} ${code(cell(row.text))}`,
+      String(row.cards.length),
+      row.decks.map(cell).join(', '),
+      String(row.soloCards),
+      solo(row),
+      row.needs.map(cell).join('; '),
+    ]),
+  );
+}
+
+export function renderDecks(result: DecksResult): string {
+  const rows = rankBlockers(result.decks);
+  const out: string[] = [
+    '# Deck coverage',
+    '',
+    `Generated from ${result.source}, parser version ${result.parserVersion}.`,
+    '',
+    'Generated by `pnpm corpus:decks`; see docs/CORPUS.md ("Per-deck coverage"). A deck is FULLY SUPPORTED when every card of the commander and main deck (basic lands and the commander included) is supported and every name resolved. A card is supported only when every ability is read and the engine runs it: the status and reasons come from the same import as `pnpm coverage:cards`.',
+    '',
+    '## Decks',
+    '',
+    ...table(
+      [
+        'Deck',
+        'Cards',
+        'Unique',
+        'Supported',
+        'Share',
+        'Supported unique',
+        'Share',
+        'Fully supported',
+        'Commander',
+      ],
+      result.decks.map((deck) => [
+        cell(deck.name),
+        String(deck.cards),
+        String(deck.unique),
+        String(deck.supportedCards),
+        share(deck.supportedCards, deck.cards),
+        String(deck.supportedUnique),
+        share(deck.supportedUnique, deck.unique),
+        deck.fullySupported ? '**FULLY SUPPORTED**' : 'no',
+        deck.commanders.length > 0 ? deck.commanders.map(cell).join(' / ') : 'none marked',
+      ]),
+    ),
+    '',
+    '## Blockers across the decks',
+    '',
+  ];
+  if (rows.length === 0) {
+    out.push('No deck has a blocked card.', '');
+  } else {
+    out.push(
+      'Each row is one blocking shape (an unparsed ability with numbers as N and mana costs as {M}, as in reports/backlog.md) or one reason that is not an ability (layout, type, validation). Ranked by the distinct cards of these decks it blocks, then by the cards it unlocks alone, then by the decks it touches. "Solo" counts the cards whose only blocker is this row: learning it makes them supported. "What it takes" is the pipeline\'s own diagnosis: the closest grammar rule when no rule reads the text, the engine features that are missing when it is read but not runnable.',
+      '',
+      ...renderBlockers(rows),
+      '',
+    );
+  }
+  for (const deck of result.decks) out.push(...renderDeck(deck, rows));
+  return out.join('\n');
+}

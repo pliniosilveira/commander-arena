@@ -1,0 +1,40 @@
+/**
+ * Protection from a color (CR 702.16, D-229): the DEBT of a permanent that has it. Damage that would be dealt to it by a source of that color is
+ * prevented (CR 702.16e), it can't be enchanted or equipped by an Aura or Equipment of that color (CR 702.16d), it can't be blocked by creatures of
+ * that color (CR 702.16f), and it can't be the target of spells or of abilities from sources of that color (CR 702.16b). The color of a source is read
+ * as it is now, or as it last was when the source has left (CR 113.7a). A colorless source has no color, so protection from a color never stops it.
+ * Protection from something that is not a color (a card type, a player, everything) is not read: the keyword names colors only.
+ */
+import type { Color } from '../characteristics';
+import type { ObjectId } from '../ids';
+import type { GameObject, GameState } from '../state/types';
+import { derive } from './derive';
+
+/** The colors a source has: the object as it is, or as it last existed. Empty for a source the engine knows nothing about. */
+export function sourceColors(state: GameState, source: ObjectId | null): readonly Color[] {
+  if (source === null) return [];
+  const live = state.objects[source];
+  if (live !== undefined) return derive(state, live).colors;
+  return state.lki[source]?.characteristics.colors ?? [];
+}
+
+/** The colors `obj` has protection from, as it has them now. Empty for a permanent with none, or an object that is not on the battlefield. */
+export function protectedColors(state: GameState, obj: GameObject): readonly Color[] {
+  if (obj.zone !== 'battlefield') return [];
+  const colors: Color[] = [];
+  for (const a of derive(state, obj).abilities) {
+    if (a.kind === 'keyword' && a.keyword.kind === 'protection') colors.push(...a.keyword.colors);
+  }
+  return colors;
+}
+
+/** Whether `obj` has protection from a color the source has (CR 702.16). */
+export function hasProtectionFrom(
+  state: GameState,
+  obj: GameObject,
+  source: ObjectId | null,
+): boolean {
+  const mine = protectedColors(state, obj);
+  if (mine.length === 0) return false;
+  return sourceColors(state, source).some((c) => mine.includes(c));
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@commander-arena/ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "build": "echo \"@commander-arena/ai is consumed from source; nothing to build\""
+  },
+  "dependencies": {
+    "@commander-arena/engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "fast-check": "4.10.2"
+  }
+}

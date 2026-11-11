@@ -1,0 +1,62 @@
+/* The cast-later family (D-128): a face-down foretold card, time counters, the exile strip. */
+
+/* The other player's foretold card: a card back, nothing of the card (CR 702.143a). */
+.board-card-facedown {
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  text-align: center;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--card-b) 0 6px,
+    color-mix(in srgb, var(--card-b) 55%, var(--bg-sunken)) 6px 12px
+  );
+}
+
+.board-card-facedown .board-card-name {
+  padding: 2px 6px;
+  background: var(--bg-raised);
+  border-radius: 4px;
+}
+
+/* The strip of cards in exile with something to say: suspended, foretold, face down. */
+.board-exile-strip {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin: 0;
+  padding: 4px 12px;
+  list-style: none;
+  background: var(--bg-sunken);
+  border-top: 1px solid var(--line);
+}
+
+.board-exile-chip {
+  padding: 2px 10px;
+  color: var(--text);
+  font-size: calc(12px * var(--text-scale));
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.board-exile-chip b {
+  font-weight: 700;
+}
+
+.board-exile-chip.is-opponent {
+  border-style: dashed;
+}
+
+/* Marks under a card of the exile viewer. */
+.board-zone-marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 2px;
+  font-size: calc(11px * var(--text-scale));
+}

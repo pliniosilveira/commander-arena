@@ -1,0 +1,63 @@
+name: CI
+
+# The quick CI (D-132): typecheck, lint, build, and the unit tests of the engine, cards, web app and
+# tools. It leaves out the AI soak tests and the browser tests, which take most of the time: the
+# owner runs the complete suite locally every night, and the manual `Full` workflow runs it on
+# GitHub's runners when included minutes allow (D-113 explains the job split). The final job keeps the
+# name `check`, so a branch protection rule that requires it keeps working.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: typecheck, lint, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm build
+
+  quick-tests:
+    name: unit tests (no soak, no browser)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec vitest run packages/engine packages/cards apps/web tools
+
+  check:
+    name: check
+    if: ${{ always() }}
+    needs: [static, quick-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: every job passed
+        run: |
+          echo "static=${{ needs.static.result }} quick-tests=${{ needs.quick-tests.result }}"
+          test "${{ needs.static.result }}" = success
+          test "${{ needs.quick-tests.result }}" = success

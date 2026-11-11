@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "scope": "commander-legal",
+  "source": "oracle_cards-2026-10-22T21-01-55-797-00-00.jsonl.gz",
+  "parserVersion": 62,
+  "all": {
+    "supported": 11696,
+    "total": 32116
+  },
+  "top500": {
+    "supported": 360,
+    "total": 500
+  },
+  "top1000": {
+    "supported": 615,
+    "total": 1000
+  }
+}

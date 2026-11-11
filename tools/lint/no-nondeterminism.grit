@@ -1,0 +1,26 @@
+language js
+
+// Engine and AI code must be deterministic (docs/SPEC.md 4.2 "Determinism"):
+// all randomness comes from the seeded PRNG stored in state, and the clock is injected.
+// Locale-dependent APIs differ between machines and would break replays.
+
+or {
+  `Math.random()` as $node where {
+    register_diagnostic(span=$node, message="Math.random() is forbidden here. Use the seeded PRNG from game state.", severity="error")
+  },
+  `Date.now()` as $node where {
+    register_diagnostic(span=$node, message="Date.now() is forbidden here. Inject a clock instead.", severity="error")
+  },
+  `new Date($args)` as $node where {
+    register_diagnostic(span=$node, message="new Date() is forbidden here. Inject a clock instead.", severity="error")
+  },
+  `performance.now()` as $node where {
+    register_diagnostic(span=$node, message="performance.now() is forbidden here. Inject a clock instead.", severity="error")
+  },
+  `$x.localeCompare($args)` as $node where {
+    register_diagnostic(span=$node, message="localeCompare depends on the host locale and breaks replays. Compare code points explicitly.", severity="error")
+  },
+  `$x.toLocaleString($args)` as $node where {
+    register_diagnostic(span=$node, message="toLocaleString depends on the host locale and breaks replays.", severity="error")
+  }
+}

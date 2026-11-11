@@ -1,0 +1,1974 @@
+/*
+ * Board, hand, preview panel and zone viewers. Colours come from the tokens in styles.css only,
+ * so the dark default and [data-theme="light"] both work. Class names start with `board-`.
+ */
+
+.board {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* clip, not hidden: nothing may scroll the board when a hand card takes focus */
+  overflow: clip;
+  background: var(--bg);
+}
+
+.board-empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+}
+
+.board-dim {
+  color: var(--text-dim);
+}
+
+.board-warn {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+/* ---- Player strips ---------------------------------------------------------------------- */
+
+.board-strip {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  min-height: 52px;
+  padding: 4px 10px;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--line);
+  border-left: 4px solid var(--line);
+  font-size: calc(12px * var(--text-scale));
+}
+
+.board-strip-me {
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+  border-left-color: var(--me);
+}
+
+.board-strip-opp {
+  border-left-color: var(--opponent);
+}
+
+/*
+ * The active player's area (D-153, D-241): the strip, the battlefield and, for the viewer, the hand
+ * are framed by a line of the accent colour on all four sides of the area as a whole: the left and
+ * the right edge of each part, the top of the first part (the opponent's strip, the viewer's
+ * battlefield) and the bottom of the last (the opponent's battlefield, the viewer's hand). Only the
+ * edge marks it: no tint on the ground (issue 58: "just the borders is enough"). The lines are inset
+ * shadows (and the strip's own left border, which takes the accent), so nothing moves when the turn
+ * passes. The idle area stays on the plain ground.
+ */
+.board-strip.is-active-area {
+  border-left-color: var(--active-edge);
+  box-shadow: inset -4px 0 0 var(--active-edge);
+}
+
+.board-field.is-active-area {
+  box-shadow:
+    inset 4px 0 0 var(--active-edge),
+    inset -4px 0 0 var(--active-edge);
+}
+
+.board-hand.is-active-area {
+  box-shadow:
+    inset 4px 0 0 var(--active-edge),
+    inset -4px 0 0 var(--active-edge),
+    inset 0 -3px 0 var(--active-edge);
+}
+
+.board-strip-opp.is-active-area {
+  box-shadow:
+    inset -4px 0 0 var(--active-edge),
+    inset 0 3px 0 var(--active-edge);
+}
+
+.board-field-opp.is-active-area {
+  box-shadow:
+    inset 4px 0 0 var(--active-edge),
+    inset -4px 0 0 var(--active-edge),
+    inset 0 -3px 0 var(--active-edge);
+}
+
+.board-field-me.is-active-area {
+  box-shadow:
+    inset 4px 0 0 var(--active-edge),
+    inset -4px 0 0 var(--active-edge),
+    inset 0 3px 0 var(--active-edge);
+}
+
+.board-strip.has-lost {
+  opacity: 0.6;
+}
+
+.board-life {
+  flex: none;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-areas:
+    "name name"
+    "life flags";
+  align-items: center;
+  column-gap: 8px;
+  min-width: 118px;
+  padding: 2px 8px;
+  text-align: left;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: default;
+}
+
+.board-strip.has-priority .board-life {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.board-seat-name {
+  grid-area: name;
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.board-strip-me .board-seat-name {
+  color: var(--me);
+}
+
+.board-strip-opp .board-seat-name {
+  color: var(--opponent);
+}
+
+.board-life-total {
+  grid-area: life;
+  font-size: calc(26px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.board-seat-flags {
+  grid-area: flags;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+}
+
+.board-counts {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.board-count-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+.board-count-item b {
+  font-size: calc(15px * var(--text-scale));
+  font-variant-numeric: tabular-nums;
+}
+
+.board-stat-label {
+  color: var(--text-dim);
+  font-size: calc(11px * var(--text-scale));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.board-zone-btn {
+  cursor: pointer;
+  padding: 2px 6px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+}
+
+.board-zone-btn:hover {
+  border-color: var(--line);
+  background: var(--bg-sunken);
+}
+
+.board-backs {
+  display: inline-flex;
+  align-self: center;
+  margin-left: 2px;
+}
+
+.board-back {
+  width: 14px;
+  height: 20px;
+  margin-left: -8px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--card-b) 0 3px,
+    color-mix(in srgb, var(--card-b) 55%, var(--bg-sunken)) 3px 6px
+  );
+  border: 1px solid var(--line);
+}
+
+.board-back:first-child {
+  margin-left: 0;
+}
+
+/* Command zone: commander chips, tax and damage taken. */
+.board-command {
+  /* In a narrow board (two side columns, issue 47) a strip with many counts moves the command zone
+     to a second line rather than squeeze the commander tile to nothing: 280px is the label, a tile
+     of about 110px and the tax and damage. */
+  flex: 1 1 280px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.board-cmdr-list {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.board-cmdr {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 190px;
+  min-height: 34px;
+  padding: 2px 6px 2px 0;
+  overflow: hidden;
+  text-align: left;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: default;
+}
+
+.board-cmdr-band {
+  align-self: stretch;
+  flex: none;
+  width: 7px;
+}
+
+.board-cmdr-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 600;
+  line-height: 1.15;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.board-cmdr-facts {
+  display: flex;
+  flex-direction: column;
+  font-size: calc(11px * var(--text-scale));
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+/* ---- Fields and rows ------------------------------------------------------------------- */
+
+.board-field {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+/* The three rows of a battlefield; beside them, at the left, the emblem strip when there is one (D-243). */
+.board-field-rows {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * The emblem strip (issue 84, D-243): the monarch, the Ring and the emblems of one player as small
+ * cards in a column of their own at the left of that player's battlefield, apart from the permanents.
+ * The cards wrap into a second column when the battlefield is too short for them. Colours: the
+ * player's own (the left band), as the strips are.
+ */
+.board-emblems {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 60%;
+  padding: 6px 8px 6px 12px;
+  overflow: hidden;
+  border-right: 1px dashed color-mix(in srgb, var(--line) 55%, transparent);
+}
+
+.board-emblems-caption {
+  flex: none;
+  color: var(--text-dim);
+  font-size: calc(10px * var(--text-scale));
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.board-emblems-list {
+  flex: none;
+  /* Two cards a column; the third starts a second column, to the right. */
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, 72px);
+  justify-content: start;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-height: 0;
+  /* No bar: a window too short for the cards cuts them off (the preview shows each whole). */
+  overflow: hidden;
+}
+
+.board-emblems-list > li {
+  display: block;
+  flex: none;
+}
+
+.board-emblem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 112px;
+  height: 72px;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+  cursor: default;
+  color: var(--text);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--me);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--bg-sunken) 80%, transparent);
+}
+
+.board-emblem.is-theirs {
+  border-left-color: var(--opponent);
+}
+
+.board-emblem-monarch {
+  border-top-color: var(--accent);
+}
+
+/* The picture of the monarch card, when there is one, behind the words; they sit on backings of their own. */
+.board-emblem-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.board-emblem-art.is-loaded {
+  opacity: 1;
+}
+
+.board-emblem > :not(.board-emblem-art) {
+  position: relative;
+}
+
+.board-emblem-name,
+.board-emblem-text {
+  background: color-mix(in srgb, var(--bg-sunken) 80%, transparent);
+}
+
+.board-emblem-name {
+  padding: 2px 5px 0;
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.board-emblem-text {
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 1px 5px 3px;
+  font-size: calc(9px * var(--text-scale));
+  line-height: 1.2;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.board-row {
+  position: relative;
+  min-height: 0;
+  padding: 0 8px;
+  border-bottom: 1px dashed color-mix(in srgb, var(--line) 55%, transparent);
+}
+
+.board-row:last-child {
+  border-bottom: 0;
+}
+
+.board-row-creature {
+  /* The creatures are what the player reads on the board: they get the most of the height (issue
+     137), more of it where the window has the room (the other rows are at their smallest in a window
+     768 high). */
+  flex: 1.6 1 0;
+}
+
+/* No creatures: the row is a label, and its room goes to the land stacks and the other permanents. */
+.board-row-creature.is-empty {
+  flex: 0 0 34px;
+}
+
+@media (min-height: 900px) {
+  .board-row-creature {
+    flex-grow: 1.85;
+  }
+}
+
+@media (min-height: 1000px) {
+  .board-row-creature {
+    flex-grow: 2;
+  }
+}
+
+.board-row-other {
+  flex: 1 1 0;
+}
+
+.board-row-land {
+  /* The land row asks for more height while its columns are deep (LandRow.tsx `landGrow`). */
+  flex: var(--land-grow, 1) 1 0;
+}
+
+/* Artifacts, enchantments and planeswalkers are rare: an empty row gives its room to the others. */
+.board-row-other.is-empty {
+  flex: 0 0 26px;
+}
+
+.board-row {
+  transition: flex-basis 0.2s ease;
+}
+
+.board-row-scroll {
+  position: absolute;
+  inset: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: safe center;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+/* Room under the tiles for the name strips of attached Auras and Equipment (Row.tsx). */
+.board-row-scroll {
+  padding-bottom: var(--attach-reserve, 0px);
+}
+
+.board-row-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.board-row-empty {
+  color: var(--text-dim);
+  font-size: calc(11px * var(--text-scale));
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  user-select: none;
+}
+
+.board-scroll {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 26px;
+  padding: 0;
+  font-size: calc(22px * var(--text-scale));
+  font-weight: 700;
+  color: var(--accent);
+  border: 0;
+  cursor: pointer;
+}
+
+.board-scroll-left {
+  left: 0;
+  background: linear-gradient(90deg, var(--bg) 40%, transparent);
+}
+
+.board-scroll-right {
+  right: 0;
+  background: linear-gradient(270deg, var(--bg) 40%, transparent);
+}
+
+.board-mid {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 24px;
+  background: var(--bg-sunken);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: calc(12px * var(--text-scale));
+}
+
+.board-exile b {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Tiles ------------------------------------------------------------------------------ */
+
+.board-tile {
+  position: relative;
+  flex: none;
+  width: var(--w);
+  height: var(--h);
+  padding: 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: default;
+}
+
+.board-tile.is-clickable,
+.board-hand-card.is-clickable,
+.board-zone-card.is-clickable,
+.board-cmdr.is-clickable,
+.board-life.is-clickable {
+  cursor: pointer;
+}
+
+.board-tile-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--bg-sunken) 80%, transparent);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.board-tile.is-tapped .board-tile-inner {
+  transform: rotate(90deg);
+}
+
+/* The generic token frame (SPEC 6.2): no card image exists for a token, so the frame is tinted by
+   the token's colours, double-bordered, and its second line says it is a token. */
+.board-tile.is-token .board-tile-inner {
+  border-style: double;
+  border-width: 3px;
+}
+
+.board-tile.is-token .board-tile-inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--token-tint, var(--card-colorless));
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.board-tile-token {
+  /* On a title bar of its own, so no text depends on the picture behind the tile (issue 137, D-240). */
+  background: color-mix(in srgb, var(--bg-sunken) 78%, transparent);
+  padding: 0 3px;
+  font-size: calc(9px * var(--text-scale));
+  line-height: 1.2;
+  opacity: 0.85;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.board-card-token {
+  border-style: double;
+  border-width: 3px;
+}
+
+.board-tile-band {
+  flex: none;
+  height: 8px;
+}
+
+.board-tile-name {
+  /* The picture is shown as it is (issue 137: it was darkened to 62 percent so the text could be
+     read on it). The name sits on a title bar of its own, as on a printed card, and the other marks
+     (the chips, the counters, the power and toughness) have their own backing. */
+  background: color-mix(in srgb, var(--bg-sunken) 78%, transparent);
+  padding: 2px 3px 0;
+  font-size: clamp(
+    calc(10px * var(--text-scale)),
+    calc(var(--w) * 0.15),
+    calc(12px * var(--text-scale))
+  );
+  font-weight: 600;
+  line-height: 1.15;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: break-word;
+}
+
+.board-tile-kw {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px 3px 0;
+}
+
+.board-kw {
+  padding: 0 3px;
+  font-size: calc(9px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--text);
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.board-kw-restrict {
+  border-style: dashed;
+  color: var(--text-dim, var(--text));
+}
+
+.board-tile-foot {
+  flex: none;
+  margin-top: auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2px;
+  padding: 2px 3px 3px;
+}
+
+.board-tile-chips {
+  display: flex;
+  flex: 1 1 0;
+  flex-wrap: wrap;
+  align-content: flex-end;
+  gap: 2px;
+  min-width: 0;
+}
+
+.board-tile-chips:empty {
+  display: none;
+}
+
+.board-counter {
+  padding: 0 3px;
+  font-size: calc(9px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--accent-text);
+  background: var(--accent);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.board-damage {
+  padding: 0 3px;
+  font-size: calc(10px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--bad);
+  border: 1px solid var(--bad);
+  border-radius: 3px;
+}
+
+.board-stat {
+  flex: none;
+  margin-left: auto;
+  padding: 0 5px;
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.board-stat-loyalty,
+.board-stat-defense {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* An uncrewed Vehicle's printed power and toughness (CR 301.7a): dim and dashed, not a live P/T. */
+.board-stat-printed {
+  color: var(--text-dim);
+  background: transparent;
+  border-style: dashed;
+  font-weight: 400;
+}
+
+.board-tile.is-damaged .board-stat-pt {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
+.board-flag {
+  padding: 0 4px;
+  font-size: calc(9px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1.35;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.board-flag-cmdr {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.board-flag-cmdrdmg {
+  color: var(--text);
+  border-color: var(--bad);
+}
+
+.board-flag-cmdrdmg.is-near {
+  color: var(--accent-text);
+  background: var(--bad);
+}
+
+.board-flag-crewed {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.board-flag-warn {
+  color: var(--accent-text);
+  background: var(--bad);
+  border-color: var(--bad);
+}
+
+.board-flag-poison {
+  color: var(--good);
+  border-color: var(--good);
+}
+
+.board-flag-energy {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.board-flag-monarch {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.board-flag-ring {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.board-flag-turn {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.board-flag-priority {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.board-flag-pin {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+  font-size: calc(11px * var(--text-scale));
+  padding: 1px 6px;
+}
+
+.board-ribbon {
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  z-index: 2;
+  width: max-content;
+  max-width: calc(100% + 10px);
+  padding: 0 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: calc(9px * var(--text-scale));
+  line-height: 1.25;
+  white-space: nowrap;
+  color: var(--accent-text);
+  border-radius: 3px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.board-ribbon b,
+.board-ribbon i {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.board-ribbon i {
+  font-style: normal;
+  font-size: calc(8.5px * var(--text-scale));
+}
+
+.board-tile.has-marker .board-ribbon {
+  /* Room for the pair badge in the corner: the ribbon moves right, never under it. */
+  left: calc(50% + 9px);
+  max-width: calc(100% - 4px);
+}
+
+.board-ribbon-attacker {
+  background: var(--bad);
+}
+
+.board-ribbon-blocker {
+  background: var(--me);
+}
+
+/* Block pairing: the same number and colour on a blocked attacker and on each creature blocking it. */
+.board-pairs {
+  position: absolute;
+  top: -10px;
+  left: -8px;
+  z-index: 5;
+  display: flex;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.board-pair {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  font-size: calc(13px * var(--text-scale));
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--pair-text, var(--text));
+  background: var(--pair, var(--bg-raised));
+  border: 2px solid #fff;
+  border-radius: 11px;
+  box-shadow: 0 0 0 1px #000;
+}
+
+/* An attacker nobody blocks: its number in outline, so the gaps in the numbering are explained. */
+.board-pair-open {
+  --pair-text: var(--text-dim);
+  background: var(--bg-raised);
+  border: 2px dashed var(--text-dim);
+  box-shadow: none;
+}
+
+.board-ibadge {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  z-index: 4;
+  max-width: calc(100% + 8px);
+  padding: 0 5px;
+  overflow: hidden;
+  font-size: calc(10px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent-text);
+  background: var(--target);
+  border-radius: 8px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* Short tiles (lands, other permanents): the corner stats float over the frame instead. */
+.board-tile.is-compact .board-tile-band {
+  height: 5px;
+}
+
+.board-tile.is-compact .board-tile-name {
+  padding-top: 1px;
+}
+
+.board-tile.is-compact .board-tile-foot {
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  left: 1px;
+  margin: 0;
+  padding: 0;
+  justify-content: flex-end;
+}
+
+.board-tile.is-attacking:not(.is-tapped) .board-tile-name,
+.board-tile.is-blocking:not(.is-tapped) .board-tile-name {
+  margin-top: 18px;
+}
+
+/* Auras and Equipment attached to a permanent: the host's tile with a name strip per attachment
+   tucked behind it, so the stack reads like cards laid over each other. */
+.board-stack {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  height: var(--h);
+}
+
+.board-stack > .board-tile {
+  z-index: 1;
+}
+
+.board-attach-list {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.board-attach-slot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.board-attach {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 100%;
+  padding: 0 4px 0 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: calc(10px * var(--text-scale));
+  font-weight: 600;
+  line-height: 1;
+  text-align: left;
+  cursor: default;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  pointer-events: auto;
+}
+
+.board-attach.is-clickable {
+  cursor: pointer;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.board-attach.is-selected {
+  border-color: var(--selected);
+  box-shadow: 0 0 0 3px var(--selected);
+}
+
+.board-attach.is-dimmed {
+  opacity: 0.42;
+}
+
+.board-attach.is-unsupported {
+  border-style: dashed;
+  border-color: var(--bad);
+}
+
+.board-attach-band {
+  flex: none;
+  align-self: stretch;
+  width: 5px;
+}
+
+.board-attach-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-attach-aura .board-attach-name::before {
+  content: "\2726 ";
+  opacity: 0.7;
+}
+
+.board-attach-badge {
+  flex: none;
+  padding: 0 4px;
+  margin-bottom: 1px;
+  font-size: calc(9px * var(--text-scale));
+  color: var(--accent-text);
+  background: var(--accent);
+  border-radius: 6px;
+}
+
+.board-attach:focus-visible {
+  outline-offset: 2px;
+}
+
+/* Groups of identical tokens (A19). */
+.board-group {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+}
+
+.board-tile-stack {
+  position: absolute;
+  inset: 0;
+  transform: translate(4px, -3px);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+/* A stack of identical tokens is tapped or untapped as a whole (grouping never mixes the two), so
+   the card behind the front one turns with it. The offset is the upright one in the rotated frame. */
+.board-tile.is-tapped .board-tile-stack {
+  transform: rotate(90deg) translate(-3px, -4px);
+}
+
+.board-count {
+  position: absolute;
+  left: -7px;
+  top: -7px;
+  z-index: 3;
+  padding: 0 6px;
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--accent-text);
+  background: var(--accent);
+  border: 1px solid var(--bg-sunken);
+  border-radius: 9px;
+  pointer-events: none;
+}
+
+.board-group-pop {
+  position: fixed;
+  margin: 0;
+  min-width: 0;
+  z-index: 200;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 384px;
+  max-height: 60vh;
+  padding: 12px;
+  overflow-y: auto;
+  background: var(--bg-raised);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* ---- Hand ------------------------------------------------------------------------------- */
+
+/* Cards castable from another zone (flashback in the graveyard, an Adventure in exile): chips above the hand. */
+.board-flashback {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  padding: 4px 12px;
+  background: var(--bg-sunken);
+  border-top: 1px solid var(--line);
+}
+
+.board-flashback-chip {
+  padding: 2px 10px;
+  color: var(--text);
+  font-size: calc(12px * var(--text-scale));
+  background: var(--bg-raised);
+  border: 1px solid var(--target);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.board-flashback-chip b {
+  font-weight: 700;
+}
+
+.board-hand {
+  position: relative;
+  /* Above everything the field draws, the land stack's count badge (z-index 8) included: a lifted card
+     reaches up over the field, and the "x2" of a stack must not show through it. */
+  z-index: 9;
+  flex: none;
+  /* 108px in a short window; a taller window gives the hand more, and a card shows that much of
+     itself (Hand.tsx `shown`): 120px at 1003, the most (128px) from 1067 (issue 137). */
+  height: clamp(108px, 12vh, 128px);
+  padding: 0 12px;
+  background: linear-gradient(0deg, var(--bg-sunken), var(--bg));
+}
+
+.board-hand-fan {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: 100%;
+}
+
+.board-hand-empty {
+  align-self: center;
+  color: var(--text-dim);
+  font-size: calc(12px * var(--text-scale));
+}
+
+.board-hand-card {
+  position: relative;
+  flex: none;
+  width: var(--hand-w);
+  height: var(--hand-h);
+  padding: 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: default;
+  z-index: var(--z);
+  transform-origin: 50% 100%;
+  transform: rotate(var(--fan-rot)) translateY(var(--fan-drop));
+  transition: transform 0.16s ease;
+}
+
+.board-hand-card:hover,
+.board-hand-card:focus-visible {
+  z-index: 60;
+  transform: rotate(0deg) translateY(-14px) scale(1.2);
+}
+
+/* ---- Card frame (hand, zone viewer, preview) ------------------------------------------- */
+
+.board-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  color: var(--text);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--bg-sunken) 85%, transparent);
+}
+
+.board-card-head {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 4px 5px 3px;
+}
+
+.board-card-name {
+  min-width: 0;
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1.15;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.board-card-head .mana-cost {
+  flex: none;
+  font-size: calc(11px * var(--text-scale));
+}
+
+/* The cost a card has now (tax or a reduction, D-095): outlined, so it reads as changed. */
+.board-cost-now {
+  flex: none;
+  display: inline-flex;
+  padding: 0 2px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--bg-sunken);
+}
+
+.board-card-art {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 34px;
+  margin: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+/* A soft highlight so the empty art band reads as a picture slot until real art arrives. */
+.board-card-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 30% 25%,
+    color-mix(in srgb, var(--mana-w) 38%, transparent),
+    transparent 65%
+  );
+}
+
+.board-card-type {
+  flex: none;
+  padding: 2px 5px;
+  font-size: calc(9px * var(--text-scale));
+  line-height: 1.2;
+  color: var(--text-dim);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.board-card-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-height: 20px;
+  padding: 0 5px 4px;
+}
+
+.board-card-marks {
+  display: flex;
+  gap: 3px;
+}
+
+.board-badge {
+  padding: 0 4px;
+  font-size: calc(9px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1.4;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.board-badge-warn {
+  color: var(--accent-text);
+  background: var(--bad);
+}
+
+.board-badge-cmdr {
+  color: var(--accent-text);
+  background: var(--accent);
+}
+
+/* How a spell was cast (kicked, flashback): outlined like a note, not a warning. */
+.board-badge-cast {
+  color: var(--text);
+  background: var(--bg-sunken);
+  border: 1px solid var(--accent);
+}
+
+/* Full variant: the preview panel. The frame is at least as tall as a card is (488:680) at the
+   width of the preview, and grows past that when the rules text needs the room: the preview never
+   clips a rules text. (`aspect-ratio` would not grow with its content.) */
+.board-card-full {
+  position: relative;
+  height: auto;
+  min-height: calc(var(--preview-card-w, 240px) * 1.3935);
+}
+
+.board-card-full .board-card-head {
+  padding: 8px 9px 5px;
+}
+
+.board-card-full .board-card-name {
+  font-size: calc(15px * var(--text-scale));
+  -webkit-line-clamp: 3;
+}
+
+.board-card-full .board-card-head .mana-cost {
+  font-size: calc(15px * var(--text-scale));
+}
+
+.board-card-full .board-card-art {
+  flex: none;
+  /* A band of the picture that follows the width of the card, so a narrow card leaves its text room. */
+  height: clamp(56px, calc(var(--preview-card-w, 240px) * 0.36), 140px);
+  margin: 0 8px;
+}
+
+.board-card-full .board-card-type {
+  padding: 6px 9px 3px;
+  font-size: calc(12px * var(--text-scale));
+  color: var(--text);
+  white-space: normal;
+}
+
+.board-card-text {
+  flex: 1;
+  padding: 3px 9px 6px;
+  font-size: calc(13px * var(--text-scale));
+  line-height: 1.35;
+}
+
+.board-card-text p {
+  margin: 0 0 6px;
+}
+
+.board-card-vanilla {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.board-card-full .board-card-foot {
+  padding: 0 9px 8px;
+}
+
+.board-card-full .board-stat {
+  font-size: calc(16px * var(--text-scale));
+}
+
+/* ---- Preview panel ---------------------------------------------------------------------- */
+
+.board-preview {
+  /* The highlight box is the reference size: the text-size setting does not grow it. It is the top
+     of the info column (issue 47) and takes all of the column's height the log leaves, so a whole card shows with
+     its abilities and state and no scroll bar (the scroll stays as a safety net for a card that is
+     longer still). Its height is the same whatever it shows (or the log below would move under the
+     pointer as the preview changes): what the column leaves, not the height of its content. */
+  --text-scale: 1;
+  /* The column's width less its padding (16) and its right border (1), and the box's own padding and
+     border (18). The border of the column was missed here once, and the card was a pixel wider than
+     the box: a horizontal scroll bar beside the log's (issue 138). */
+  --preview-card-w: calc(var(--info-width) - 35px);
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 8px;
+  overflow-y: auto;
+  /* Never a horizontal bar: the card is as wide as the box (`.board-preview-card`), also when a
+     vertical bar takes some of the width (issue 138). */
+  overflow-x: hidden;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.board-preview-card {
+  width: min(var(--preview-card-w), 100%);
+  margin: 0 auto;
+}
+
+.board-preview-bar {
+  min-height: 22px;
+  margin-bottom: 6px;
+  font-size: calc(11px * var(--text-scale));
+}
+
+.board-preview-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: min(var(--preview-card-w), 100%);
+  margin: 0 auto;
+  aspect-ratio: 488 / 680;
+  padding: 16px;
+  text-align: center;
+  color: var(--text-dim);
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+}
+
+.board-preview-empty p {
+  margin: 0 0 4px;
+}
+
+.board-preview-title {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.board-preview-details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  margin: 10px 0 0;
+  font-size: calc(12px * var(--text-scale));
+}
+
+.board-preview-details dt {
+  color: var(--text-dim);
+}
+
+.board-preview-details dd {
+  margin: 0;
+}
+
+/* Every face of a split, Adventure or double-faced card; the one that is up is marked. */
+.board-preview-faces {
+  margin-top: 10px;
+  font-size: calc(12px * var(--text-scale));
+}
+
+.board-preview-faces ol {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.board-preview-faces li {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.board-preview-faces li.is-current {
+  border-color: var(--target);
+}
+
+.board-preview-faces p {
+  margin: 0;
+}
+
+.board-preview-face-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.board-preview-face-role {
+  color: var(--text-dim);
+  font-size: calc(11px * var(--text-scale));
+  text-transform: uppercase;
+}
+
+.board-preview-face-text {
+  margin-top: 2px;
+  white-space: pre-line;
+}
+
+/* ---- Zone viewer ------------------------------------------------------------------------ */
+
+.board-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--bg-sunken) 78%, transparent);
+}
+
+.board-modal-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 720px);
+  max-height: 100%;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.board-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.board-modal-head h2 {
+  margin: 0;
+  font-size: calc(16px * var(--text-scale));
+}
+
+.board-modal-count {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.board-modal-close {
+  padding: 4px 10px;
+  cursor: pointer;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.board-modal-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.board-modal-empty {
+  margin: 0;
+  color: var(--text-dim);
+}
+
+.board-zone-card {
+  position: relative;
+  flex: none;
+  /* The button is as tall as the card and the marks under it ("Opponent's", "Graveyard ability"):
+     with a fixed height the marks hung out of the button, over the edge of the viewer's scroll
+     area (issue 59). */
+  display: flex;
+  flex-direction: column;
+  width: 135px;
+  height: auto;
+  padding: 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: default;
+}
+
+.board-zone-card > .board-card {
+  flex: none;
+  /* A quarter bigger, as the hand (issue 137). */
+  height: 188px;
+}
+
+/*
+ * Cards overlap from the left, so the name and cost sit inside the part that stays visible: the
+ * cost comes first and the name wraps in what is left.
+ */
+.board-hand-card .board-card-head {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  width: calc(var(--hand-visible) - 4px);
+}
+
+.board-hand-card .board-card-name {
+  flex: 1 1 0;
+  font-size: calc(10.5px * var(--text-scale));
+}
+
+/* Interaction states. Clickable glows, selected rings, everything else dims in a decision. */
+.board-tile.is-clickable .board-tile-inner,
+.board-hand-card.is-clickable .board-card,
+.board-zone-card.is-clickable .board-card,
+.board-cmdr.is-clickable,
+.board-life.is-clickable {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 12px 1px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.board-tile.is-selected .board-tile-inner,
+.board-hand-card.is-selected .board-card,
+.board-zone-card.is-selected .board-card,
+.board-cmdr.is-selected,
+.board-life.is-selected {
+  border-color: var(--selected);
+  box-shadow:
+    0 0 0 3px var(--selected),
+    0 0 14px 2px color-mix(in srgb, var(--selected) 70%, transparent);
+}
+
+.board-tile.is-dimmed .board-tile-inner,
+.board-hand-card.is-dimmed .board-card,
+.board-life.is-dimmed {
+  opacity: 0.42;
+}
+
+.board-tile.is-unsupported .board-tile-inner {
+  border-style: dashed;
+  border-color: var(--bad);
+}
+
+.board-tile.is-attacking .board-tile-inner {
+  border-color: var(--bad);
+}
+
+.board-tile.is-blocking .board-tile-inner {
+  border-color: var(--me);
+}
+
+.board-tile.has-pair .board-tile-inner {
+  box-shadow: 0 0 0 3px var(--pair);
+}
+
+.board-tile.is-pair-hot {
+  z-index: 3;
+}
+
+.board-tile.is-pair-hot .board-tile-inner,
+.board-tile.has-pair.is-pair-hot .board-tile-inner {
+  box-shadow:
+    0 0 0 4px var(--pair, var(--focus)),
+    0 0 14px 5px var(--pair, var(--focus));
+}
+
+.board-tile:focus-visible,
+.board-hand-card:focus-visible,
+.board-zone-card:focus-visible {
+  outline-offset: 3px;
+}
+
+/* ---- Motion ----------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .board-tile-inner,
+  .board-hand-card,
+  .board-row {
+    transition: none;
+  }
+}
+
+/* Scryfall images (art.tsx). Each stays invisible until it has loaded; a failed load removes it
+   and the drawn frame underneath is what the player sees. */
+.board-tile-art,
+.board-card-art-img,
+.board-card-image {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.board-tile-art.is-loaded,
+.board-card-art-img.is-loaded,
+.board-card-image.is-loaded {
+  opacity: 1;
+}
+
+.board-tile-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.board-tile-inner > :not(.board-tile-art) {
+  position: relative;
+  z-index: 1;
+}
+
+.board-tile-name,
+.board-tile-foot {
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.85);
+}
+
+.board-card-art-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.board-card-image {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  pointer-events: none;
+}
+
+.board-pool-symbols {
+  display: inline-flex;
+  gap: 2px;
+}
+
+/* Mana that may be spent only on some spells (CR 106.6, D-149): outlined, after the free mana. */
+.board-pool-restricted {
+  display: inline-flex;
+  padding: 0 1px;
+  border: 1px dashed var(--selected);
+  border-radius: 999px;
+  cursor: help;
+}
+
+/* The creature type or color chosen as the permanent entered (CR 614.12a, D-100). */
+.board-flag-chosen {
+  color: var(--text);
+  border-color: var(--selected);
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The top card of the library the viewer may look at (CR 401.5): a small chip beside the count. */
+.board-top-card {
+  cursor: help;
+  max-width: 170px;
+}
+
+/* ---- The land row: equal lands stacked in columns (D-215, LandRow.tsx, lands.ts) ---------- */
+
+/* The columns hang from the top of one band; the band is centred by the padding the row computes. */
+.board-row-land .board-row-scroll {
+  align-items: flex-start;
+  padding-top: var(--land-pad, 0px);
+  padding-bottom: 0;
+}
+
+.board-land-col {
+  position: relative;
+  flex: none;
+}
+
+/* Each card lies over the one behind it (the card in front has the highest z-index), so every card shows
+   its top edge: the colour band and the name. The slot is the size of a tile; the tile fills it. */
+.board-land-slot {
+  position: absolute;
+  left: 0;
+  display: block;
+}
+
+.board-land-slot > .board-tile,
+.board-land-slot > .board-stack {
+  display: block;
+}
+
+/* A tapped land is turned 90 degrees in its square, so the part of it that shows in a stack is its
+   side: a mark on the strip says which cards are tapped. */
+.board-land-slot:not([data-front]) .board-tile.is-tapped::after {
+  content: "⟳";
+  position: absolute;
+  top: 0;
+  right: 3px;
+  z-index: 2;
+  color: var(--accent);
+  font-size: calc(11px * var(--text-scale));
+  line-height: 1.1;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.85);
+  pointer-events: none;
+}
+
+/* How many cards the column holds, off the top-right corner. */
+.board-land-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 8;
+  padding: 0 5px;
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--accent-text);
+  background: var(--accent);
+  border: 1px solid var(--bg-sunken);
+  border-radius: 9px;
+  pointer-events: none;
+}
+
+/* Arrows from each blocker to the attacker it blocks (issue 19), in the colour of the pair. */
+.block-arrows {
+  /* Under the dialogs and the preview, over the tiles. */
+  z-index: 20;
+}
+.block-arrow .pnl-arrow-shaft {
+  stroke: var(--pair);
+  stroke-dasharray: none;
+  stroke-width: 3.5;
+}
+.block-arrow .pnl-arrow-head {
+  fill: var(--pair);
+  stroke: var(--pair);
+}
+.block-arrow {
+  filter: drop-shadow(0 0 2px rgb(0 0 0 / 0.8)) drop-shadow(0 0 1px rgb(255 255 255 / 0.5));
+}
+
+/*
+ * The combat animation layer (issue 9, D-228): lunges, bursts, numbers, cracks and shards, never in
+ * the way of the pointer. Each kind has a tone, and the tones differ by more than colour: the text
+ * of a number carries a sign and a word (a minus for damage, a plus for life gained and poison).
+ */
+:root {
+  --fx-damage: var(--bad);
+  --fx-heal: var(--good);
+  --fx-loss: #b58cf0;
+  --fx-poison: #a3d13f;
+  --fx-ink: rgb(0 0 0 / 0.9);
+}
+:root[data-theme="light"] {
+  --fx-loss: #7a45c4;
+  --fx-poison: #5c8a0f;
+  --fx-ink: rgb(255 255 255 / 0.95);
+}
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 55;
+  overflow: hidden;
+}
+.fx-tone-damage {
+  --tone: var(--fx-damage);
+}
+.fx-tone-heal {
+  --tone: var(--fx-heal);
+}
+.fx-tone-loss {
+  --tone: var(--fx-loss);
+}
+.fx-tone-poison {
+  --tone: var(--fx-poison);
+}
+.fx-layer > * {
+  position: absolute;
+  box-sizing: border-box;
+}
+.fx-num {
+  color: var(--tone);
+  font-size: calc(40px * var(--text-scale));
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+  -webkit-text-stroke: 5px var(--fx-ink);
+  paint-order: stroke fill;
+  text-shadow: 0 0 14px color-mix(in srgb, var(--tone) 70%, transparent);
+}
+:root[data-theme="light"] .fx-num {
+  -webkit-text-stroke-color: rgb(255 255 255 / 0.95);
+}
+.fx-flash {
+  border-radius: var(--radius);
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, white 80%, var(--tone)) 0%,
+    color-mix(in srgb, var(--tone) 80%, transparent) 45%,
+    transparent 100%
+  );
+}
+.fx-ring {
+  border-style: solid;
+  border-color: var(--tone);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--tone);
+}
+.fx-spark {
+  width: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, white 55%, var(--tone));
+  box-shadow: 0 0 6px var(--tone);
+}
+.fx-glow {
+  border-radius: calc(var(--radius) + 3px);
+  border: 3px solid var(--tone);
+  box-shadow:
+    0 0 18px var(--tone),
+    inset 0 0 14px color-mix(in srgb, var(--tone) 60%, transparent);
+}
+/* A copy of a tile in the layer: the sprite that lunges and the ghost that stays after its tile is gone. */
+.fx-layer > .fx-sprite {
+  margin: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.fx-layer > .fx-ghost {
+  filter: none;
+}
+.fx-crack {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+}
+.fx-crack path {
+  fill: none;
+  stroke-linejoin: bevel;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.fx-crack-dark {
+  stroke: var(--fx-ink);
+  stroke-width: 6px;
+}
+.fx-crack-line {
+  stroke: color-mix(in srgb, white 70%, var(--fx-damage));
+  stroke-width: 2.5px;
+}
+.fx-shard {
+  background: color-mix(in srgb, var(--text) 55%, var(--fx-damage));
+  box-shadow: 0 0 4px var(--fx-damage);
+  opacity: 0;
+}
+.fx-ash {
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--text-dim), transparent);
+  filter: blur(3px);
+  opacity: 0;
+}
+.fx-ghost-label {
+  color: var(--fx-damage);
+  font-size: calc(14px * var(--text-scale));
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  -webkit-text-stroke: 3px var(--fx-ink);
+  paint-order: stroke fill;
+  white-space: nowrap;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fx-layer {
+    display: none;
+  }
+}

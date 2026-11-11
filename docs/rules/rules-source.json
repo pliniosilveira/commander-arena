@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "sourceUrl": "https://media.wizards.com/2026/downloads/MagicCompRules%2020260925.txt",
+  "requestedUrl": "https://media.wizards.com/2026/downloads/MagicCompRules%2020260925.txt",
+  "discovery": "rules-page",
+  "originalFileName": "MagicCompRules 20260925.txt",
+  "sha256": "8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca",
+  "byteSize": 977752,
+  "fetchedAt": "2026-10-20T16:24:14.748Z",
+  "encoding": "utf-8",
+  "effectiveDate": "2026-09-25",
+  "effectiveDateText": "September 25, 2026",
+  "parse": {
+    "sections": 9,
+    "subsections": 147,
+    "rules": 1174,
+    "subrules": 1989,
+    "glossaryEntries": 741,
+    "unparsedLines": 3,
+    "diagnostics": 3
+  }
+}

@@ -1,0 +1,50 @@
+name: Soak
+
+# The long AI soaks (D-126, applying D-013 and SPEC A13). Every run plays 20 games per soak test; this
+# workflow plays 500 on demand (run it before a milestone report) and opens an issue when a game
+# fails, deadlocks or does not replay. Manual only since D-132: the nightly run happens on the
+# owner's side (a scheduled local run of the full suite), not on GitHub's runners.
+
+on:
+  workflow_dispatch:
+    inputs:
+      games:
+        description: Games per soak test
+        default: '500'
+
+concurrency:
+  group: soak
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  soak:
+    name: soak (${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    env:
+      SOAK_GAMES: ${{ github.event.inputs.games || '500' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec vitest run packages/ai --shard=${{ matrix.shard }}/4
+      - name: Open an issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Nightly soak failed (shard ${{ matrix.shard }}/4, ${SOAK_GAMES} games)" \
+            --body "The soak run ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} failed on ${{ github.sha }}. Reproduce with SOAK_GAMES=${SOAK_GAMES} pnpm exec vitest run packages/ai --shard=${{ matrix.shard }}/4."

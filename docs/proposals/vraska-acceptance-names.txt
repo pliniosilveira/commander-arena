@@ -1,0 +1,84 @@
+# Names of the Vraska deck cards (GitHub issue 111) whose real Oracle text the golden corpus does not have yet.
+# Source: docs/proposals/vraska-deck-analysis.md (the template report of issue 111, parser version 51).
+# Run, where Scryfall's bulk file is available (see docs/CORPUS.md):
+#   pnpm corpus:extract --file <oracle_cards file> --names docs/proposals/vraska-acceptance-names.txt --acceptance
+# Block 1: the commander and the 38 unsupported cards identified in the analysis (37 named by the issue, plus Millikin).
+# Double-faced cards are written by their full "A // B" name, as in the decklist.
+# Path of Ancestry is left out on purpose: it is unsupported too, but it is in the corpus already (hold-out group), and so are
+# Anger, Faithless Looting, Command Tower, Exotic Orchard, Rugged Prairie, Cursed Mirror, Mind Stone, Sol Ring and Wayfarer's Bauble.
+Vraska, Soul of Stone
+Dragoon's Lance
+White Mage's Staff
+Fatehold Chronologist // Peer Review
+Pompous Battlemage // Improvised Act
+Magitek Scythe
+Theorist's Sanctum
+Furycalm Snarl
+Loyal Apprentice
+Gogo, Mysterious Mime
+Gau, Feral Youth
+Consign to Memory
+Retrieve the Esper
+Mog, Moogle Warrior
+Page, Loose Leaf
+Rush of Inspiration // Crackling Falls
+Tune the Narrative
+Protege's Awakening
+Enchanted River's Grasp
+Refute Destiny
+Face Yourself
+Old Fat Spider Can't See Me
+Roll-Roll-Roll-Roll
+Homesickness
+Unstable Experiment
+G'raha Tia
+Mind Transfer Protocol
+Ruin Grinder
+Flaring Cinder
+Dwarven Shortsword
+Keeper of the Quiet Hour
+Combustible Gearhulk
+Mirkwood Meditator
+Sahagin
+Inkshape Demonstrator
+Currency Converter
+Key to the City
+Relm's Sketching
+Millikin
+# Block 2: the other non-basic cards of the deck. Four of them are unsupported cards the issue does not name (its list stops at
+# "... and 9 more templates"); the analysis cannot say which. Their real text tells, and `pnpm corpus:decks` on decks/vraska.txt.
+# The last three are in fully supported committed decks. Delete block 2 if only the unsupported cards are wanted.
+Chandra's Emberling
+Stone Golem
+Donatello, Turtle Techie
+Dreams of Laguna
+Marwyn, the Clearcutter
+Eagle's Rescue
+Elvenking's Harper
+Battlefield Forge
+Dedicated Commons
+Deserted Beach
+Forge of Heroes
+High Market
+Innovative Commons
+Lake-town
+Perilous Landscape
+Rabanastre, Royal City
+Sacred Peaks
+Shire Terrace
+Sunscorched Divide
+Adelbert Steiner
+Il Mheg Pixie
+Bitterthorn, Nissa's Animus
+Murmuring Volume
+Coeurl
+Magnificent End
+Memory Trap
+Slash of Light
+Solitary Cell
+Thorin's Last Stand
+White Auracite
+Goblin Bombardment
+Arcane Signet
+Terramorphic Expanse
+Meteor Golem

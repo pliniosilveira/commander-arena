@@ -1,0 +1,1220 @@
+/* The decision layer: action bar, dock panels and overlays (class prefix dec-). Tokens only. */
+
+.dec-panel {
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* Buttons */
+.dec-btn {
+  min-width: 80px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+.dec-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.dec-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.dec-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.dec-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.dec-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  justify-content: center;
+}
+
+/* The dock: the prompt, the buttons and the panels of the current decision, at the foot of the
+   controls column just above Settings (issue 47, D-146; `dock-slot.ts`). It keeps its bottom edge
+   and grows upward: the panels of the decision come first, the action bar last, so the prompt grows
+   upward and the buttons and the chips stay put. When the column is too short, the panels scroll
+   and the bar stays whole. */
+.dec-dock {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+.dec-dock > :not(.dec-bar) {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+/* The column is the dock's own space: no floating shadow. */
+.dec-dock .dec-panel {
+  box-shadow: none;
+}
+
+.dec-bar {
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.dec-dock > .dec-bar {
+  flex: none;
+}
+.dec-prompt {
+  margin: 0;
+  font-size: calc(13px * var(--text-scale));
+  font-weight: 600;
+  line-height: 1.3;
+}
+.dec-detail {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: calc(12px * var(--text-scale));
+  line-height: 1.3;
+}
+.dec-bar-actions {
+  display: flex;
+  gap: var(--gap);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.dec-bar-actions .dec-buttons {
+  justify-content: flex-start;
+}
+/* Two buttons stay side by side in the narrow controls column, the label wrapping inside its button
+   (issue 19: "Attack with all" on the left, "Declare attackers (3)" on the right). */
+.dec-bar-actions .dec-buttons[data-count="2"] {
+  flex-wrap: nowrap;
+  width: 100%;
+}
+.dec-bar-actions .dec-buttons[data-count="2"] .dec-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 8px;
+  line-height: 1.2;
+}
+.dec-bar-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 4px;
+  padding-top: 5px;
+  border-top: 1px solid var(--line);
+  /* Two rows of chips, whether or not they fit on one ("Undo" alone is shorter than "Undo (13)"):
+     the buttons above them keep their place as the count changes (D-146). */
+  min-height: calc(2 * (11px * var(--text-scale) * 1.3 + 6px) + 4px + 6px);
+}
+.dec-bar-footer:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.dec-toggle {
+  line-height: 1.3;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: calc(11px * var(--text-scale));
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dec-toggle:hover {
+  color: var(--text);
+  border-color: var(--text-dim);
+}
+.dec-toggle[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.dec-passing {
+  padding: 8px 12px;
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+.dec-passing small {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.dec-thinking {
+  margin: 0;
+  /* One line whether or not the status shows, so it never moves the dock (D-174). */
+  min-height: calc(12px * var(--text-scale) * 1.3);
+  color: var(--text-dim);
+  font-size: calc(12px * var(--text-scale));
+  line-height: 1.3;
+}
+.dec-dots i {
+  font-style: normal;
+  animation: dec-dot 1.2s infinite both;
+}
+.dec-dots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.dec-dots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes dec-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.2;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dec-dots i {
+    animation: none;
+  }
+}
+
+/* A running "Pass turn" (issue 46): the status line and its cancel button. */
+.dec-passturn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius);
+}
+.dec-passturn small {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+/* Dock panels */
+.dec-targets,
+.dec-pay,
+.dec-permanents,
+.dec-order,
+.dec-attack-targets {
+  padding: 8px 10px;
+}
+.dec-left {
+  text-align: left;
+}
+/* The rules text of a source: a few lines, the whole text in the tooltip and the preview panel. */
+.dec-source-text {
+  margin: 0 0 6px;
+  color: var(--text-dim);
+  font-size: calc(12px * var(--text-scale));
+  font-style: italic;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.dec-source-quote {
+  margin: 0;
+  max-height: 160px;
+  overflow-y: auto;
+  color: var(--text);
+  font-size: calc(13px * var(--text-scale));
+  font-style: italic;
+  text-align: center;
+  white-space: pre-line;
+}
+.dec-order-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.dec-order-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-sunken);
+}
+.dec-order-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.dec-order-when {
+  color: var(--accent);
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.dec-order-name {
+  font-size: calc(13px * var(--text-scale));
+  font-weight: 600;
+}
+.dec-order-info .dec-source-text {
+  margin: 2px 0 0;
+}
+.dec-order-moves {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dec-panel-title {
+  margin: 0 0 6px;
+  font-size: calc(12px * var(--text-scale));
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.dec-target-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.dec-chip {
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  color: var(--text);
+  font-size: calc(13px * var(--text-scale));
+  cursor: pointer;
+}
+.dec-chip:hover {
+  border-color: var(--target);
+}
+.dec-chip[aria-pressed="true"] {
+  background: var(--target);
+  border-color: var(--target);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.dec-chip-mana {
+  min-width: 36px;
+  font-size: calc(16px * var(--text-scale));
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.dec-symbols {
+  display: inline-flex;
+  gap: 2px;
+}
+.dec-chip-note {
+  font-size: calc(11px * var(--text-scale));
+  color: var(--text-dim, inherit);
+}
+.dec-popover-title {
+  padding: 0 2px 4px;
+  font-size: calc(12px * var(--text-scale));
+  color: var(--text-dim, inherit);
+}
+.dec-attack-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: calc(13px * var(--text-scale));
+}
+.dec-attack-row select {
+  max-width: 150px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font: inherit;
+}
+
+.dec-popover {
+  position: absolute;
+  /* Above the zone viewer (z-index 100): a card clicked in the graveyard list can open this menu. */
+  z-index: 110;
+  margin: 0;
+  padding: 6px;
+}
+.dec-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.dec-popover-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Overlays */
+.dec-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: grid;
+  place-items: center;
+  padding: var(--gap);
+  background: color-mix(in srgb, var(--bg-sunken) 90%, transparent);
+}
+.dec-dialog {
+  max-width: 100%;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.dec-title {
+  margin: 0;
+  font-size: calc(18px * var(--text-scale));
+  text-align: center;
+}
+.dec-sub {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: calc(13px * var(--text-scale));
+  text-align: center;
+}
+.dec-warn {
+  color: var(--accent);
+}
+/* The running total of a crew choice: dim until it reaches N, then the valid colour. */
+.dec-crew-total {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.dec-crew-total[data-valid="true"] {
+  color: var(--good);
+}
+.dec-error {
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--bad);
+  border-radius: 6px;
+  color: var(--bad);
+  font-size: calc(13px * var(--text-scale));
+}
+.dec-small {
+  max-width: 380px;
+}
+.dec-untap-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.dec-untap-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: calc(14px * var(--text-scale));
+  cursor: pointer;
+}
+.dec-untap-row:hover {
+  background: var(--bg-sunken);
+}
+.dec-untap-row small {
+  margin-left: auto;
+  color: var(--text-dim, inherit);
+}
+.dec-block-cost {
+  padding: 8px 10px;
+}
+.dec-block-total {
+  display: block;
+  margin-top: 2px;
+  font-weight: 600;
+}
+.dec-proliferate {
+  max-width: 560px;
+  max-height: 100%;
+  overflow-y: auto;
+}
+.dec-group-title {
+  margin: 10px 0 4px;
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 600;
+  text-align: left;
+}
+.dec-proliferate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0;
+}
+.dec-attack-cost-row {
+  margin: 4px 0 0;
+  font-size: calc(13px * var(--text-scale));
+}
+.dec-pay-options {
+  max-width: 760px;
+  max-height: 100%;
+  overflow-y: auto;
+}
+.dec-pay-cards {
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 4px;
+}
+.dec-damage {
+  width: 440px;
+  align-items: stretch;
+  max-height: 100%;
+  overflow-y: auto;
+}
+.dec-damage .dec-title,
+.dec-damage .dec-sub {
+  text-align: left;
+}
+.dec-damage .dec-buttons {
+  justify-content: flex-end;
+}
+.dec-damage-choice {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.dec-damage-choice legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+.dec-damage-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dec-damage-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dec-damage-name {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.dec-damage-name small {
+  color: var(--text-dim);
+}
+.dec-step {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-sunken);
+  color: var(--text);
+  font-size: calc(18px * var(--text-scale));
+  line-height: 1;
+  cursor: pointer;
+}
+.dec-step:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.dec-amount {
+  min-width: 28px;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The division of damage among the targets of a spell (D-145): rows with a stepper, in the dock under the chips. */
+.dec-divide {
+  /* A fieldset will not shrink below its content: the names are cut with an ellipsis instead of widening the dock. */
+  min-width: 0;
+  margin: 8px 0 0;
+  padding: 4px 6px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.dec-divide legend {
+  padding: 0 6px;
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 600;
+}
+.dec-divide .dec-sub {
+  font-size: calc(12px * var(--text-scale));
+}
+.dec-divide .dec-damage-rows {
+  min-width: 0;
+  gap: 4px;
+}
+.dec-divide .dec-damage-row {
+  min-width: 0;
+  gap: 4px;
+}
+.dec-divide .dec-damage-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dec-divide .dec-step {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  font-size: calc(16px * var(--text-scale));
+}
+.dec-divide .dec-amount {
+  min-width: 16px;
+}
+.dec-divide .dec-chip {
+  flex: none;
+  padding: 2px 8px;
+  font-size: calc(12px * var(--text-scale));
+}
+.dec-divide-foot {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Cards in the overlays: the frame itself is the board's CardFace. */
+.dec-hand {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.dec-card {
+  position: relative;
+  width: var(--hand-w);
+  height: var(--hand-h);
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: calc(var(--radius) + 2px);
+  background: none;
+  text-align: left;
+}
+.dec-card-button {
+  cursor: pointer;
+}
+.dec-card-button:hover {
+  border-color: var(--text-dim);
+}
+.dec-card-selected,
+.dec-card-selected:hover {
+  border-color: var(--selected);
+  box-shadow: 0 0 0 2px var(--selected);
+}
+.dec-card-badge {
+  position: absolute;
+  top: 6px;
+  right: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--selected);
+  color: var(--accent-text);
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 700;
+}
+
+/* The refused-action toast */
+.dec-toast {
+  position: absolute;
+  top: var(--gap);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  max-width: 70%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--bad);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.dec-toast-close {
+  border: 0;
+  background: transparent;
+  font-size: calc(18px * var(--text-scale));
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-dim);
+}
+
+/* The card picker of a chooseCards decision (search, discard) */
+.dec-cards-panel {
+  padding: 8px 10px;
+}
+.dec-pick-list {
+  list-style: none;
+  margin: 4px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.dec-pick {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-sunken);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.dec-pick:hover {
+  border-color: var(--selected);
+}
+.dec-pick[aria-pressed="true"] {
+  border-color: var(--selected);
+  box-shadow: 0 0 0 2px var(--selected);
+}
+.dec-pick-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dec-pick-name {
+  flex: 1;
+  min-width: 0;
+  font-size: calc(13px * var(--text-scale));
+  font-weight: 600;
+}
+.dec-pick-order {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--selected);
+  color: var(--accent-text);
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 700;
+}
+.dec-pick-type {
+  color: var(--text-dim);
+  font-size: calc(11px * var(--text-scale));
+}
+.dec-pick-text {
+  font-size: calc(11px * var(--text-scale));
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* D-139: a card that may be discarded alone, and the cards looked at that cannot be taken */
+.dec-pick-alone {
+  padding: 0 6px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: calc(11px * var(--text-scale));
+}
+.dec-pick-other {
+  cursor: default;
+  opacity: 0.6;
+  border-style: dashed;
+}
+.dec-pick-other:hover {
+  border-color: var(--line);
+}
+.dec-pick-order-list {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* The ability chooser: one chip per thing the player can do with a card */
+.dec-ability-list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dec-ability-list .dec-chip {
+  width: 100%;
+  text-align: left;
+  white-space: normal;
+  border-radius: 10px;
+}
+.dec-ability-chooser {
+  max-width: 340px;
+}
+/* The cost and type line of a face under its name in the chooser */
+.dec-chip-detail {
+  display: block;
+  color: var(--text-dim);
+  font-size: calc(11px * var(--text-scale));
+}
+
+/* The arrangement of a scry, a surveil or a reorder: a row of card faces per pile */
+.dec-arrange {
+  width: 780px;
+  max-height: 100%;
+  overflow-y: auto;
+}
+.dec-arrange-pile {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+}
+.dec-arrange-title {
+  margin: 0 0 6px;
+  font-size: calc(13px * var(--text-scale));
+}
+.dec-arrange-title small {
+  margin-left: 6px;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+.dec-arrange-row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  min-height: calc(var(--hand-h) + 40px);
+}
+.dec-arrange-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border-radius: calc(var(--radius) + 2px);
+  cursor: grab;
+}
+.dec-arrange-card:focus-visible {
+  outline: 2px solid var(--selected);
+  outline-offset: 1px;
+}
+.dec-arrange-card.is-dragging {
+  opacity: 0.4;
+}
+.dec-arrange-face {
+  cursor: pointer;
+}
+.dec-arrange-face:hover {
+  border-color: var(--text-dim);
+}
+.dec-arrange-moves {
+  display: flex;
+  gap: 4px;
+}
+.dec-arrange-moves .dec-step {
+  width: 26px;
+  height: 26px;
+  font-size: calc(14px * var(--text-scale));
+}
+.dec-arrange-empty {
+  display: grid;
+  place-items: center;
+  width: var(--hand-w);
+  height: var(--hand-h);
+  border: 2px dashed var(--line);
+  border-radius: calc(var(--radius) + 2px);
+  color: var(--text-dim);
+  font-size: calc(12px * var(--text-scale));
+}
+
+/* "As this enters, choose a creature type / a color" (OptionDialog.tsx, D-100). */
+.dec-option {
+  width: 380px;
+  max-height: 100%;
+}
+/* The two places a Behold chooses from (CardPickerPanel.tsx, D-151, CR 701.4a). */
+.dec-pick-zone {
+  margin-top: 6px;
+  font-weight: 600;
+}
+/* "Choose Khans or Dragons", "Choose a chapter" (NamedOptionDialog.tsx, D-151). */
+.dec-named {
+  width: 440px;
+}
+.dec-named-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: stretch;
+  max-height: 44vh;
+  overflow-y: auto;
+}
+.dec-named-btn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+.dec-named-label {
+  font-weight: 700;
+}
+.dec-named-detail {
+  color: var(--text-dim);
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 400;
+  white-space: normal;
+}
+/* "Choose what X attacks" (AttackTargetDialog.tsx, D-139, CR 508.7). */
+.dec-attack-target-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: stretch;
+}
+.dec-attack-target-list .dec-btn {
+  width: 100%;
+}
+.dec-attack-now {
+  color: var(--text-dim);
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 400;
+}
+.dec-color-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.dec-color-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dec-type-picker {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+.dec-search {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-sunken);
+  color: var(--text);
+  font: inherit;
+  font-size: calc(14px * var(--text-scale));
+}
+.dec-search:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.dec-type-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  height: 260px;
+  max-height: 40vh;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-sunken);
+}
+.dec-type-heading {
+  margin: 0;
+  padding: 4px 10px;
+  position: sticky;
+  top: 0;
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-size: calc(11px * var(--text-scale));
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.dec-type-row {
+  display: block;
+  width: 100%;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: calc(13px * var(--text-scale));
+  text-align: left;
+  cursor: pointer;
+}
+.dec-type-row:hover,
+.dec-type-row.is-active {
+  background: var(--target);
+  color: var(--accent-text);
+}
+.dec-type-none {
+  padding: 8px 10px;
+}
+
+/* "Choose X" (XDialog.tsx, D-103). */
+.dec-x-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dec-x-input {
+  width: 72px;
+  text-align: center;
+}
+
+/* "Choose one —": the mode chooser (ModesDialog.tsx, D-114). */
+.dec-modes {
+  width: 440px;
+  max-width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+}
+.dec-mode-list {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.dec-modes-heading {
+  padding: 0;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text);
+}
+.dec-mode {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.dec-mode:hover:not(.is-illegal) {
+  border-color: var(--accent);
+}
+.dec-mode:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.dec-mode.is-picked {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.dec-mode.is-illegal {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.dec-mode-key {
+  flex: none;
+  min-width: 20px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-dim);
+}
+.dec-mode.is-picked .dec-mode-key {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.dec-mode-text {
+  flex: 1;
+  font-size: calc(14px * var(--text-scale));
+}
+.dec-mode-why {
+  flex: none;
+  font-size: calc(11px * var(--text-scale));
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* The legal targets of a modal spell, grouped under the mode they belong to. */
+.dec-target-group + .dec-target-group {
+  margin-top: 6px;
+}
+.dec-target-group-title {
+  margin: 0 0 4px;
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Damage getting through (issue 106): what each defender takes while the player picks blockers. */
+.dec-passing-damage {
+  padding: 8px 10px;
+}
+.dec-pass-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.dec-pass-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: var(--bg-sunken);
+  font-size: calc(13px * var(--text-scale));
+}
+.dec-pass-row[data-passing-lethal="true"] {
+  border: 1px solid var(--bad);
+}
+.dec-pass-head {
+  font-variant-numeric: tabular-nums;
+}
+.dec-pass-left {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.dec-pass-lethal {
+  color: var(--bad);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: calc(11px * var(--text-scale));
+}
+.dec-pass-from {
+  flex-basis: 100%;
+  color: var(--text-dim);
+  font-size: calc(11px * var(--text-scale));
+}
+.dec-pass-note {
+  margin-top: 4px;
+  font-size: calc(11px * var(--text-scale));
+}
+
+/* Dividing combat damage, docked (issue 92): the card of every creature beside its row, the board visible. */
+.dec-damage-dock {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dec-damage-dock .dec-damage-choice {
+  min-width: 0;
+  padding: 4px 6px 6px;
+}
+.dec-damage-dock .dec-damage-choice legend {
+  font-size: calc(12px * var(--text-scale));
+}
+.dec-damage-source,
+.dec-damage-dock .dec-damage-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 3px;
+  border-radius: 6px;
+}
+.dec-damage-source {
+  margin-bottom: 4px;
+}
+.dec-damage-dock .dec-damage-row {
+  flex-wrap: wrap;
+}
+.dec-damage-source:hover,
+.dec-damage-dock .dec-damage-row:hover,
+.dec-damage-source:focus-visible,
+.dec-damage-dock .dec-damage-row:focus-visible {
+  background: var(--bg-sunken);
+  outline: 1px solid var(--accent);
+}
+.dec-damage-dock .dec-damage-name {
+  min-width: 0;
+  flex: 1 1 80px;
+  font-size: calc(13px * var(--text-scale));
+  overflow-wrap: anywhere;
+}
+.dec-damage-dock .dec-damage-name small {
+  font-size: calc(11px * var(--text-scale));
+}
+.dec-damage-thumb {
+  flex: none;
+  pointer-events: none;
+}
+.dec-damage-stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+.dec-damage-dock .dec-step {
+  width: 26px;
+  height: 26px;
+}
+/* The tile the row in the damage panel is about. */
+[data-assign-hot="true"] {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 14px var(--accent);
+  position: relative;
+  z-index: 4;
+}

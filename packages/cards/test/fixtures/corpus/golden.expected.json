@@ -1,0 +1,4270 @@
+{
+  "parserVersion": 77,
+  "cards": {
+    "00c0543c-2a1f-4425-8283-4062d74a1637": {
+      "name": "Solemn Simulacrum",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6a997890"
+    },
+    "00d1596a-c3e2-4109-86da-388934a0c652": {
+      "name": "Coeurl",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d1a9df3b"
+    },
+    "00d8efa6-a2d9-4249-8da7-b45173675329": {
+      "name": "Utopia Sprawl",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Whenever enchanted Forest is tapped for mana, its controller adds an additional one mana of the chosen color.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "01e7a19c"
+    },
+    "01546b7d-a233-4176-8843-d732074dc5b6": {
+      "name": "Doubling Season",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "If an effect would create one or more tokens under your control, it creates twice that many of those tokens instead.",
+          "reason": "unrecognised",
+          "slot": "replacement",
+          "closestRule": "replacement.would-die"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "If an effect would put one or more counters on a permanent you control, it puts twice that many of those counters on that permanent instead.",
+          "reason": "unrecognised",
+          "slot": "replacement",
+          "closestRule": "replacement.would-die"
+        }
+      ],
+      "reasons": [],
+      "ast": "5e5124e5"
+    },
+    "02090581-61aa-4348-ad57-451be8ee91c2": {
+      "name": "Ponder",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6252e33d"
+    },
+    "021b4745-4a15-462c-a6b0-2dee1dc9d196": {
+      "name": "Tamiyo, Compleated Sage",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Compleated",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "+1: Tap up to one target artifact or creature. It doesn't untap during its controller's next untap step.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.fight"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "−X: Exile target nonland permanent card with mana value X from your graveyard. Create a token that's a copy of that card.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "noun.target-graveyard-card"
+        },
+        {
+          "face": 0,
+          "ability": 3,
+          "text": "−7: Create ~'s Notebook, a legendary colorless Book artifact token with \"Spells you cast cost {2} less to cast\" and \"{T}: Draw a card.\"",
+          "reason": "unrecognised",
+          "slot": "token",
+          "closestRule": "effect.create-token"
+        }
+      ],
+      "reasons": [
+        "Unknown mana symbol \"G/U/P\" (hybrid Phyrexian symbols (CR 107.4f) are not representable in ManaCost yet)"
+      ],
+      "ast": "c808457c"
+    },
+    "03dee43b-6377-4f7b-956b-a384160322e4": {
+      "name": "Drumbellower",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "085b9c43"
+    },
+    "046f5783-cc7b-416a-8cf6-2bcef9c2cc1a": {
+      "name": "Simic Growth Chamber",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6b872738"
+    },
+    "04b7362d-0490-4cb0-b5d7-2a7732f659ce": {
+      "name": "Bojuka Bog",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f7a4fdbf"
+    },
+    "04c7f4fe-2098-4311-866d-6733c08d5178": {
+      "name": "Nettlecyst",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "08cc836d"
+    },
+    "053a69d8-2b5e-4f14-8b02-ca405891dc4a": {
+      "name": "Fell the Profane // Fell Mire",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "46bd63a5"
+    },
+    "058062c7-071b-4b14-903d-ae8d2876b37f": {
+      "name": "Minion of the Mighty",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ca9e6b63"
+    },
+    "05899372-9784-4bdb-9c28-504c71fed906": {
+      "name": "Witch's Clinic",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1ec32949"
+    },
+    "05e6b243-48a6-4a42-bc5f-413441de9c33": {
+      "name": "Elspeth, Sun's Champion",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a22638b6"
+    },
+    "060deaff-44d6-4f03-9568-bcb7add80255": {
+      "name": "Drakuseth, Maw of Flames",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "47febf41"
+    },
+    "06496a05-7f1a-402c-9594-304cd82bfefd": {
+      "name": "Scourge of the Throne",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d8a653a4"
+    },
+    "07617648-6490-4719-acec-7705671f7e01": {
+      "name": "Protege's Awakening",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2d9a0053"
+    },
+    "07792d72-d5db-41b9-871c-e720e12ce659": {
+      "name": "Cemetery Recruitment",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5d9fd28c"
+    },
+    "07a0cba9-8768-4fd9-a3d5-b0f83b4bf8e8": {
+      "name": "Chaos Warp",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ee206b77"
+    },
+    "07d0b06b-80cb-4518-92c9-84ea87a7e08a": {
+      "name": "Teferi, Temporal Archmage",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "+1: Look at the top two cards of your library. Put one of them into your hand and the other on the bottom of your library.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.look-reorder"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "−10: You get an emblem with \"You may activate loyalty abilities of planeswalkers you control on any player's turn any time you could cast an instant.\"",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.get-emblem"
+        }
+      ],
+      "reasons": [],
+      "ast": "94786650"
+    },
+    "0895c9b7-ae7d-4bb3-af17-3b75deb50a25": {
+      "name": "Command Tower",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "04b35336"
+    },
+    "08d80efc-9542-4ba2-824c-c8615d8d07f2": {
+      "name": "Undercity Sewers",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3942760a"
+    },
+    "09dd85aa-47bc-4713-a9b9-8b52ff2285ed": {
+      "name": "Misty Rainforest",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cf048891"
+    },
+    "0acc9372-58b4-43bf-ab82-1f95831c81d4": {
+      "name": "Nesting Dragon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "28bfdb6c"
+    },
+    "0b67c4e2-f88b-4e01-85a1-9d5f5b8db13b": {
+      "name": "Commander's Sphere",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2c0452f2"
+    },
+    "0ba134d8-ee7d-48ec-8dc6-57942b8e9261": {
+      "name": "Liliana of the Veil",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "−6: Separate all permanents target player controls into two piles. That player sacrifices all permanents in the pile of their choice.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "dc1d7a26"
+    },
+    "0bc7f093-bef0-4f1a-852c-4b75ebf54838": {
+      "name": "Arcane Signet",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "681059ce"
+    },
+    "0c2841bb-038c-4fbf-8360-bc0a1522b58d": {
+      "name": "Exploration",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "06a753d4"
+    },
+    "0c4603be-d71a-4d33-b62c-04ead1987dbe": {
+      "name": "G'raha Tia",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d1cfb520"
+    },
+    "0c4e2c90-c17b-42cc-b4d7-cf75970fbe90": {
+      "name": "Staff of the Storyteller",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "043d3bea"
+    },
+    "0c7ba712-6a99-4d2f-9242-a2163a11f69c": {
+      "name": "Padeem, Consul of Innovation",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "424b56f9"
+    },
+    "0c85b8f7-0bd0-4680-9ec5-d4b110460a54": {
+      "name": "Fabled Passage",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "21f03046"
+    },
+    "0d4ecdb1-ec90-497f-a7a4-1c68092b8757": {
+      "name": "Teferi's Protection",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Until your next turn, your life total can't change and you gain protection from everything. All permanents you control phase out.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.require-attack"
+        }
+      ],
+      "reasons": [],
+      "ast": "babb870b"
+    },
+    "0d5bbde7-6f33-4708-b3ab-34d4528af649": {
+      "name": "Magitek Scythe",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "784ce47b"
+    },
+    "0d80d0f7-a436-431c-a54e-e7dd7dbba8de": {
+      "name": "Mind Transfer Protocol",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a535fe90"
+    },
+    "0fd114c4-092b-4e28-b0dc-ef529f3bc73e": {
+      "name": "Jeska's Will",
+      "group": "holdout",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose one. If you control a commander as you cast ~, you may choose both instead.\n• Add {R} for each card in target opponent's hand.\n• Exile the top three cards of your library. You may play them this turn.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.add-mana"
+        }
+      ],
+      "reasons": [],
+      "ast": "9f7467d2"
+    },
+    "0fe16212-66c3-4e45-a641-7391e9b2e304": {
+      "name": "Shivan Reef",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3fe6da9a"
+    },
+    "1063822f-47d3-42e9-8a21-f62b12609fe1": {
+      "name": "Fatehold Chronologist // Peer Review",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d1880795"
+    },
+    "126a5d0b-e7d6-458e-87af-47d845678014": {
+      "name": "Cyberdrive Awakener",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1694b9a4"
+    },
+    "12cc800c-c7be-4811-8207-fd01a99cc892": {
+      "name": "Chandra, Torch of Defiance",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "+1: Exile the top card of your library. You may cast that card. If you don't, ~ deals 2 damage to each opponent.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "bb2f6358"
+    },
+    "131096a3-2d53-4ec2-96d3-fcb58e698a13": {
+      "name": "Vraska, Golgari Queen",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "−9: You get an emblem with \"Whenever a creature you control deals combat damage to a player, that player loses the game.\"",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.get-emblem"
+        }
+      ],
+      "reasons": [],
+      "ast": "670db651"
+    },
+    "133c99c0-3652-410f-8100-68015a47af9f": {
+      "name": "Dispatch",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "128df1de"
+    },
+    "14693689-d087-43b6-9c3f-63ab0648fc20": {
+      "name": "All Is Dust",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "13bb89f4"
+    },
+    "14878a5f-7983-4133-a1a7-9d539531e092": {
+      "name": "Angel of the Ruins",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6bc6222f"
+    },
+    "153376c9-dffd-458c-8ce3-a4c8269bc4e9": {
+      "name": "Smothering Tithe",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever an opponent draws a card, that player may pay {2}. If the player doesn't, you create a Treasure token.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "5dd824a2"
+    },
+    "16c39265-72d9-4c86-a961-8dd38ff9adcd": {
+      "name": "Consign to Memory",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0ab895ee"
+    },
+    "16e015b2-f8a3-4b1a-80be-58a8f5fb5e8c": {
+      "name": "Frantic Search",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e3af3d22"
+    },
+    "180eda7c-fca2-403b-85cd-8ffebaf9f408": {
+      "name": "Palace Jailer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "13a8a530"
+    },
+    "183891b0-b5ec-47f4-8d09-b9d3cfc4e7f1": {
+      "name": "God-Eternal Bontu",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f8995fba"
+    },
+    "186b4def-4fff-4a2b-bcbf-5318b0ac5fa9": {
+      "name": "Garruk Wildspeaker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0fd3f93a"
+    },
+    "19f5a25a-97fc-41e6-bb26-7c35f4b4e37c": {
+      "name": "Lobelia Sackville-Baggins",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "de917214"
+    },
+    "1b26a54f-6c27-4940-b77e-2a66175c5eff": {
+      "name": "Grasp of Fate",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b89d6ba1"
+    },
+    "1b388371-f9ef-45b4-82a3-ca20a8cd7807": {
+      "name": "Dovin's Veto",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a191ecb5"
+    },
+    "1b5e6560-ff2e-4475-96cb-63f64c8a86db": {
+      "name": "Soul-Guide Lantern",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c85559dd"
+    },
+    "1b882a0e-0ede-4d1a-bd1a-9b7cffbcde8e": {
+      "name": "Three Visits",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "450e80d6"
+    },
+    "1b9f9f5b-8712-4f00-90cb-1b7b9970eccc": {
+      "name": "Sevinne's Reclamation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f5077df0"
+    },
+    "1bd3e453-aa21-4ee6-95c2-d6d920ee8e7a": {
+      "name": "Terramorphic Expanse",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "74084e43"
+    },
+    "1f91297a-ec2b-4ea8-9198-aa1daac20ff8": {
+      "name": "Metallic Mimic",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2d4f4daf"
+    },
+    "1ff25f67-36a7-4cfa-a2b1-2135b5b6fb67": {
+      "name": "Scavenging Ooze",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "364c242c"
+    },
+    "20a6d576-a5b2-43b4-8be9-75be001e567d": {
+      "name": "Treasure Nabber",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "57e20b87"
+    },
+    "212d058b-69c6-4dc2-8c93-bdfe26dc2ffe": {
+      "name": "Hammer of Purphoros",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "62480e03"
+    },
+    "223fa044-d387-4884-bf4e-75f1b61c6a46": {
+      "name": "Curiosity",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever enchanted creature deals damage to an opponent, you may draw a card.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "trigger.becomes-target"
+        }
+      ],
+      "reasons": [],
+      "ast": "3661c4f4"
+    },
+    "23467047-6dba-4498-b783-1ebc4f74b8c2": {
+      "name": "Ancient Tomb",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1cba1dbc"
+    },
+    "234a734b-ba28-4f1b-9d01-3c3e7d516590": {
+      "name": "An Offer You Can't Refuse",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "da1d00bd"
+    },
+    "235e3231-c5e5-4696-a867-705b2c4158fe": {
+      "name": "Scrapshooter",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "07cdeecd"
+    },
+    "24310f49-2156-4c0d-b3b1-40ca3182474f": {
+      "name": "Sahagin",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e32d51eb"
+    },
+    "24882fa2-3fe9-4c1b-aa3d-0e6488b9db27": {
+      "name": "Heroic Intervention",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "83eaa363"
+    },
+    "2549bc57-9ffb-4053-9f10-f2a5f792b845": {
+      "name": "Myriad Landscape",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{2}, {T}, Sacrifice ~: Search your library for up to two basic land cards that share a land type, put them onto the battlefield tapped, then shuffle.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.search"
+        }
+      ],
+      "reasons": [],
+      "ast": "7a6ad6a0"
+    },
+    "2579e9e0-b00f-4a1b-8fce-15d06bb7fe5a": {
+      "name": "Angelic Sleuth",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5734b310"
+    },
+    "25c983e0-a8c9-4784-91a4-8fe04c6df882": {
+      "name": "Tocasia's Welcome",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cd2f17e3"
+    },
+    "27400927-9aba-4fb3-90c4-490d01969e60": {
+      "name": "Valkyrie's Call",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "882d8732"
+    },
+    "27b047e3-0d41-45e2-98e9-9391d7923a1e": {
+      "name": "Exotic Orchard",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "271002d0"
+    },
+    "28b46183-c62f-47b1-9fee-3ba148202cab": {
+      "name": "Crop Rotation",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cb14e05b"
+    },
+    "28b64167-b7ea-4b4f-8434-061298050366": {
+      "name": "Quintorius, Field Historian",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f272f45d"
+    },
+    "2962fe4c-bf48-454b-8a6b-0f8253352ae8": {
+      "name": "Spelunking",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "67e6711f"
+    },
+    "29737a60-3ebd-40d9-b935-c4f54b90d45d": {
+      "name": "Windswept Heath",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c4373f51"
+    },
+    "2a18b3f0-8a78-46d8-b60f-3cd634062f1b": {
+      "name": "Refute Destiny",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9564f29c"
+    },
+    "2b62543f-a475-457a-a96b-b5d070383d3c": {
+      "name": "Goldvein Hydra",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8924b54e"
+    },
+    "2bd111bb-ce02-414c-b5b7-e0e037d8d96b": {
+      "name": "Bolas's Citadel",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "You may play lands and cast spells from the top of your library. If you cast a spell this way, pay life equal to its mana value rather than pay its mana cost.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "0cddcf4b"
+    },
+    "2e2ace5b-4018-43af-8e72-ebafec1a7739": {
+      "name": "Harmonic Prodigy",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "75f9eadf"
+    },
+    "2e69537c-c898-4e13-a72d-ce3957a90304": {
+      "name": "Jungle Shrine",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "882cffc7"
+    },
+    "2e728381-6db0-4c66-883d-82d718fef833": {
+      "name": "My Precious // Allure of Power",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "37ea74ef"
+    },
+    "2ef797ef-c05f-4309-85c7-1bd151dac3fa": {
+      "name": "Far Wanderings",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "05f1e389"
+    },
+    "2f109125-b743-4ecf-84da-690d8e8ddf9c": {
+      "name": "Ceaseless Conflict",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5f4d22c9"
+    },
+    "2fdc0d17-b683-4263-949e-4f74ec76badf": {
+      "name": "Temur Battle Rage",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "812829a8"
+    },
+    "30377bd5-99ab-4888-9ea7-e5a069b527e8": {
+      "name": "Return the Favor",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Spree",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "+ {1} — Copy target instant spell, sorcery spell, activated ability, or triggered ability. You may choose new targets for the copy.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "+ {1} — Change the target of target spell or ability with a single target.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "6cbfd10d"
+    },
+    "30c3c700-46f4-4a77-8c45-5c7e3a21bd62": {
+      "name": "Wizard's Staff",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ec3ac047"
+    },
+    "3127ae9b-a7a7-43ec-89d7-688f8445b33d": {
+      "name": "Garruk's Uprising",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "da05cd21"
+    },
+    "31f15274-301b-47c5-ba19-0ced04520878": {
+      "name": "Wayfarer's Bauble",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ef4d7b6b"
+    },
+    "3250466f-82a4-45e1-9722-ff247ddf8c15": {
+      "name": "Vanguard Seraph",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5ecccdb8"
+    },
+    "32e5339e-9e4f-46f8-b305-f9d6d3ba8bb5": {
+      "name": "Lotus Petal",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "35404e21"
+    },
+    "33e3793c-098f-4897-88f3-9f9ce9081e0f": {
+      "name": "Pompous Battlemage // Improvised Act",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2e6a31ca"
+    },
+    "3407fe41-fdd3-4119-8f70-4bc4590a379f": {
+      "name": "Negate",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7e2b33f9"
+    },
+    "3494a575-f68e-4e78-9f6b-142cd8a0edea": {
+      "name": "Combustible Gearhulk",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "57706398"
+    },
+    "34c572b2-dccf-43d9-a9c4-846653ad22da": {
+      "name": "Spirit Mascot",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "37c2ddf9"
+    },
+    "3525e263-e29a-49bf-a29f-fb3ce43bbd33": {
+      "name": "Heraldic Banner",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2a5c6a70"
+    },
+    "35754a21-9fba-4370-a254-292918a777ba": {
+      "name": "Nissa, Vastwood Seer // Nissa, Sage Animist",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever a land you control enters, if you control seven or more lands, exile ~, then return her to the battlefield transformed under her owner's control.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.return"
+        },
+        {
+          "face": 1,
+          "ability": 0,
+          "text": "+1: Reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put it into your hand.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        },
+        {
+          "face": 1,
+          "ability": 1,
+          "text": "−2: Create Ashaya, the Awoken World, a legendary 4/4 green Elemental creature token.",
+          "reason": "unrecognised",
+          "slot": "token",
+          "closestRule": "token.named-legendary"
+        },
+        {
+          "face": 1,
+          "ability": 2,
+          "text": "−7: Untap up to six target lands. They become 6/6 Elemental creatures. They're still lands.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [
+        "faces[1].types: layout transform with a planeswalker or battle back face is not implemented by the engine yet"
+      ],
+      "ast": "6f040bf3"
+    },
+    "35b2b172-5fbc-4e4d-a011-390ee1b6c848": {
+      "name": "Goddric, Cloaked Reveler",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6476a562"
+    },
+    "35e2f82e-7ca3-4a92-9134-b7999eef5337": {
+      "name": "Mana Sculpt",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b45efded"
+    },
+    "3640c29b-1534-4952-b297-619ade948431": {
+      "name": "Roaming Throne",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 3,
+          "text": "If a triggered ability of another creature you control of the chosen type triggers, it triggers an additional time.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "8c57b0f8"
+    },
+    "365548fb-5acc-4a8a-b20b-26d28b7d029f": {
+      "name": "Village Rites",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b28124cd"
+    },
+    "36cd2364-d113-47d1-b2c4-b088d9eb88dd": {
+      "name": "Brainstorm",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7ac9e7c7"
+    },
+    "37513bd8-7303-4ac6-a7a7-224184faf758": {
+      "name": "Theorist's Sanctum",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "69007e1d"
+    },
+    "38a55562-1e2d-4240-9454-219a4a25d38d": {
+      "name": "Lord Windgrace",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "+2: Discard a card, then draw a card. If a land card is discarded this way, draw an additional card.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "−11: Destroy up to six target nonland permanents, then create six 2/2 green Cat Warrior creature tokens with forestwalk.",
+          "reason": "unrecognised",
+          "slot": "token",
+          "closestRule": "token.custom"
+        }
+      ],
+      "reasons": [],
+      "ast": "6b248b78"
+    },
+    "399cd159-7376-421c-b001-c26f1cbadced": {
+      "name": "Mirkwood Meditator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4d098038"
+    },
+    "3aa83ed2-f48b-4ce6-a614-2c54ddf50538": {
+      "name": "The One Ring",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "When ~ enters, if you cast it, you gain protection from everything until your next turn.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "fd3f3928"
+    },
+    "3bbad38b-7d88-4ff2-9fd3-5081536e7c56": {
+      "name": "Page, Loose Leaf",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1d82c4ea"
+    },
+    "3c037103-5af0-40a8-bbbe-7f3f5958b6e9": {
+      "name": "Vraska, Relic Seeker",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c6d8334e"
+    },
+    "3c0fe71c-bee1-41d3-aeb5-1723028eedde": {
+      "name": "Face Yourself",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3c4bdf75"
+    },
+    "3c4da169-1e50-4790-abdc-214e7b8a2ad5": {
+      "name": "Thorin's Last Stand",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b4a40457"
+    },
+    "3cc4d6f4-79b2-4210-84de-a0febf81eb67": {
+      "name": "Slash of Light",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f313f0f2"
+    },
+    "3d6fa57a-aa53-4b5c-b8af-a7612c823117": {
+      "name": "Faithless Looting",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b916a4d2"
+    },
+    "4080f7e3-06d3-4d3d-9929-4e826cb66713": {
+      "name": "Herald of Eternal Dawn",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0a62fcba"
+    },
+    "4262a726-d1da-4bdc-ab14-73212aa83f9c": {
+      "name": "Tune the Narrative",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "72e919b7"
+    },
+    "426fa8e8-b0f9-4b6c-b22b-04ec2073187a": {
+      "name": "Undead Butler",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c61941b0"
+    },
+    "446db5a4-21b0-44c1-b12b-d365313dd67a": {
+      "name": "Clifftop Lookout",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a1126d3f"
+    },
+    "4475e9a7-4e94-4965-8e7e-211d40a98217": {
+      "name": "Lavalanche",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0a2822df"
+    },
+    "457af74a-02b3-4659-846d-63e482667f34": {
+      "name": "Deadly Dispute",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "181f9f5e"
+    },
+    "473da1b6-232b-4428-a66d-30262246b47a": {
+      "name": "Emeria Shepherd",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "79e7b8e9"
+    },
+    "48e6d3d8-2f27-4017-acdd-40bce8cdbc02": {
+      "name": "Giada, Font of Hope",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2ac2b45b"
+    },
+    "4945f03b-ff99-4923-b62d-3cdb60275ef1": {
+      "name": "The Elder Dragon War",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cec09982"
+    },
+    "495e52e6-4c2b-4574-9474-eadbdcc8b4ac": {
+      "name": "Farseek",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7c4d8970"
+    },
+    "4993651f-f161-4007-b485-a0c66a02f91b": {
+      "name": "Inkshape Demonstrator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7f6775ef"
+    },
+    "49be65fd-3755-410d-b0dc-2e5861ea2552": {
+      "name": "Thopter Spy Network",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a98d6e8c"
+    },
+    "4b1befff-48fa-47a3-832e-bdaf43495c02": {
+      "name": "Ram Through",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "225802f4"
+    },
+    "4b515bb0-f275-4400-8032-3173b799ab40": {
+      "name": "Walking Ballista",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0dfcc154"
+    },
+    "4baa7847-dfcc-4aa3-aa64-2deeaa3f013b": {
+      "name": "Murmuring Volume",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4c0d0fa0"
+    },
+    "4c6a0c30-b547-4eff-8ff4-0ca25803c076": {
+      "name": "Urza's Saga",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "I — ~ gains \"{T}: Add {C}.\"",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.gain-keyword"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "II — ~ gains \"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with '~ gets +1/+1 for each artifact you control.'\"",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.gain-keyword"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "III — Search your library for an artifact card with mana cost {0} or {1}, put it onto the battlefield, then shuffle.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.search"
+        }
+      ],
+      "reasons": [],
+      "ast": "45eadb9f"
+    },
+    "4d60dae0-7be4-4859-99ac-781a27bcfd93": {
+      "name": "Thickest in the Thicket",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e8d24ee9"
+    },
+    "4d67e2a7-4aa7-44cc-853b-500d7aac046d": {
+      "name": "Cursed Mirror",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "957736af"
+    },
+    "4f819ba4-52ef-4fdd-8e4c-5ae3b2f44db5": {
+      "name": "Ramunap Excavator",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "You may play lands from your graveyard.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "dbd4a8a0"
+    },
+    "4fb00dbe-1f82-4ba6-b18c-97e816d10d3a": {
+      "name": "Patchwork Banner",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "511a0fc4"
+    },
+    "51eae7ff-fed9-4afe-8053-7690379449dd": {
+      "name": "Gideon, Ally of Zendikar",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "44646418"
+    },
+    "5277a68e-1ceb-4b40-8e10-3d0564f5d7be": {
+      "name": "Jace, Wielder of Mysteries",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "If you would draw a card while your library has no cards in it, you win the game instead.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "replacement.enters-with-counters-kicked"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "−8: Draw seven cards. Then if your library has no cards in it, you win the game.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "bc857b26"
+    },
+    "52be3da7-1e55-44c4-88bc-fb578a635ec0": {
+      "name": "Monstrous Onslaught",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "12119a06"
+    },
+    "53236dd7-845a-444c-96d5-f41ed7325d8f": {
+      "name": "Rhystic Study",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f5ee9ab1"
+    },
+    "535f405d-94df-4f45-aedc-b331103720b7": {
+      "name": "Atsushi, the Blazing Sky",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1b87f5e0"
+    },
+    "5370ee80-0354-454f-a16e-ec133e432ecb": {
+      "name": "Breaching Dragonstorm",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d0d26e10"
+    },
+    "539f5396-d99a-417d-a84c-dff7930b5900": {
+      "name": "Chromatic Lantern",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b9306fd3"
+    },
+    "5548ff43-e5f6-4a63-8562-a2b1de06d6f5": {
+      "name": "Riveteers Overlook",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2a73f18f"
+    },
+    "5564c782-be40-49fc-abc0-6cdcbaaa575a": {
+      "name": "Vanguard of the Restless",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "01c5c12c"
+    },
+    "580996d4-db9a-4b57-a0e1-a2dbb524121a": {
+      "name": "Razorlash Transmogrant",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "63b9944e"
+    },
+    "5825997b-10d7-4a36-972c-a80ddd90b8ed": {
+      "name": "Feed the Swarm",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "78ac417b"
+    },
+    "58916455-844c-4d97-908f-8205bdc117c0": {
+      "name": "Exorcise",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b3bf1ab3"
+    },
+    "58b0c737-0a84-4f9a-b3b7-300c5de43874": {
+      "name": "Studious First-Year // Rampant Growth",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bc348080"
+    },
+    "594f6881-c059-46f8-aa4e-7151d502de73": {
+      "name": "Jace, Vryn's Prodigy // Jace, Telepath Unbound",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "{T}: Draw a card, then discard a card. If there are five or more cards in your graveyard, exile ~, then return him to the battlefield transformed under his owner's control.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.return"
+        },
+        {
+          "face": 1,
+          "ability": 0,
+          "text": "+1: Up to one target creature gets -2/-0 until your next turn.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.gain-keyword-targets"
+        },
+        {
+          "face": 1,
+          "ability": 1,
+          "text": "−3: You may cast target instant or sorcery card from your graveyard this turn. If that spell would be put into your graveyard, exile it instead.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [
+        "faces[1].types: layout transform with a planeswalker or battle back face is not implemented by the engine yet"
+      ],
+      "ast": "63848c2b"
+    },
+    "5a57fba3-01e3-4852-8c45-7c910502bd03": {
+      "name": "Bitterthorn, Nissa's Animus",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c375aa82"
+    },
+    "5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f": {
+      "name": "Nissa, Who Shakes the World",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "+1: Put three +1/+1 counters on up to one target noncreature land you control. Untap it. It becomes a 0/0 Elemental creature with vigilance and haste that's still a land.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.becomes"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "−8: You get an emblem with \"Lands you control have indestructible.\" Search your library for any number of Forest cards, put them onto the battlefield tapped, then shuffle.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.get-emblem"
+        }
+      ],
+      "reasons": [],
+      "ast": "da20a2cf"
+    },
+    "5b7bbc76-22cc-482e-8d65-34cff34c93c8": {
+      "name": "Unstable Experiment",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "90a97946"
+    },
+    "5c40a8d4-6969-4d71-aba5-5c7e4109b7d5": {
+      "name": "Quintorius, History Chaser",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "39bd92c6"
+    },
+    "5d2acd3e-4782-42e3-bcd5-80f8b439cc28": {
+      "name": "Rhonas the Indomitable",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2771cf2a"
+    },
+    "5def9f38-0a0b-4e8d-9f9d-29dcb46520b4": {
+      "name": "Esper Sentinel",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever an opponent casts their first noncreature spell each turn, draw a card unless that player pays {X}, where X is ~'s power.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.cast"
+        }
+      ],
+      "reasons": [],
+      "ast": "d0f0085b"
+    },
+    "5df44b8d-b337-49d8-8427-34253f52cb47": {
+      "name": "Decadent Dragon // Expensive Taste",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ac73db81"
+    },
+    "5eb8bb1d-7567-4c24-913b-463b5fe463c4": {
+      "name": "Gilt-Leaf's Embrace",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "940a518a"
+    },
+    "5f2be3c2-060a-43e1-b63b-9cd3c78ffcb0": {
+      "name": "Ilysian Caryatid",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a48d8b82"
+    },
+    "5f601f48-d24b-4883-9fde-b3f620e7c9ea": {
+      "name": "Wall of Omens",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bc9399d0"
+    },
+    "6022608a-6cf2-45bd-adec-63211710a5ed": {
+      "name": "White Auracite",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d4fa6622"
+    },
+    "610af0f7-b5e3-43fb-9d02-7c59bd99034c": {
+      "name": "Tear Asunder",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0b2fab39"
+    },
+    "619173f4-0403-49cd-9659-2fedd5028a90": {
+      "name": "Shire Terrace",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f8cf15ac"
+    },
+    "6288c0cb-cf32-4ae9-abf0-104ec71654fa": {
+      "name": "Moraug, Fury of Akoum",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c879a6c8"
+    },
+    "632e2979-d88a-482e-9bb8-57b683c5310f": {
+      "name": "Secret Tunnel",
+      "group": "holdout",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{4}, {T}: Two target creatures you control that share a creature type can't be blocked this turn.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "2400916c"
+    },
+    "63394e24-a456-4cc6-9885-8c62447b050a": {
+      "name": "Tyrant's Familiar",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c5abedcb"
+    },
+    "635fe908-6f58-4c9e-ac55-0775a7c6f278": {
+      "name": "Angel of Vitality",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "dbf4b3fb"
+    },
+    "63a19c7c-49d7-4b75-aac8-d0ff36c45fb8": {
+      "name": "Sowing Mycospawn",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "92c24290"
+    },
+    "651c967c-8f71-4eb5-b22f-545e55ea050e": {
+      "name": "Carnelian Orb of Dragonkind",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e82a78f4"
+    },
+    "651dea9c-2375-4e44-8e65-ba8e40f0c0ef": {
+      "name": "Furycalm Snarl",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9ba24d1f"
+    },
+    "65424bea-fd53-4f85-9757-0b91a6d40ba4": {
+      "name": "Cabaretti Courtyard",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9b4c079b"
+    },
+    "657a4500-4b47-4c78-945b-a7791af7d10e": {
+      "name": "Adelbert Steiner",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fb65fea6"
+    },
+    "6587a463-a108-4854-b6d1-944e89b8c8a4": {
+      "name": "Wooded Foothills",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "51525786"
+    },
+    "65986c1b-8e51-4604-b685-d82fa7d1263a": {
+      "name": "Skullclamp",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "dadc1005"
+    },
+    "663d451b-f848-41cc-b541-0c6fe37d3d54": {
+      "name": "Hofri Ghostforge",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "19ca0261"
+    },
+    "66a22b35-3dc0-4a74-8474-e73293403de6": {
+      "name": "Solitary Cell",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fe7ade28"
+    },
+    "66f0f43c-829d-44d6-adda-d8885bfbfbaf": {
+      "name": "Swashbuckler Extraordinaire",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e75848cd"
+    },
+    "66fa2326-1b5d-41fb-b919-83bf9f383577": {
+      "name": "Blooming Marsh",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ccebab1a"
+    },
+    "6745e850-68f6-480b-a1e0-e06180dde169": {
+      "name": "Draconic Visitor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c8713ced"
+    },
+    "6789a170-f2c5-4fc0-8a45-2b2361e67410": {
+      "name": "Chord of Calling",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Search your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.search"
+        }
+      ],
+      "reasons": [],
+      "ast": "3e496a9e"
+    },
+    "67d60b24-d429-4ded-90d9-06e49f28c396": {
+      "name": "Verdant Catacombs",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7dc278bb"
+    },
+    "6812e4d3-0034-4fc8-9ee9-520f76a0ea94": {
+      "name": "Innovative Commons",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7e31830e"
+    },
+    "690c7f8e-fea2-4920-afa7-02ff120701a1": {
+      "name": "Spinerock Knoll",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0775952a"
+    },
+    "697ac261-263b-4879-bf45-6d10d23312ae": {
+      "name": "Ao, the Dawn Sky",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "54c4e96a"
+    },
+    "69a72414-d02f-4a5c-b5c9-8941bb181f61": {
+      "name": "Aven Fisher",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e867fc3e"
+    },
+    "6a6c5e17-6465-4a1f-9d63-8a3ce2edc522": {
+      "name": "Sulfur Falls",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "dadd293f"
+    },
+    "6b75b94e-83b7-457e-ac41-7ca90b5a59aa": {
+      "name": "Battlefield Forge",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8729dee6"
+    },
+    "6bae00e8-06cf-4ac4-a1cc-757e454109fe": {
+      "name": "Ketria Triome",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "218dd7bf"
+    },
+    "6c8f276e-4e7b-4974-ab02-9356cc0ffb2b": {
+      "name": "Witch's Cottage",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e07801b0"
+    },
+    "6cb8b8c4-0674-4f14-9d89-010969fbb80e": {
+      "name": "Grave Researcher // Reanimate",
+      "group": "holdout",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "At the beginning of your upkeep, surveil 1. Then if there are three or more creature cards in your graveyard, ~ becomes prepared.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.becomes"
+        }
+      ],
+      "reasons": [],
+      "ast": "0dbd4f38"
+    },
+    "6e64f1e0-ddd6-4ee7-8797-086e234b02e8": {
+      "name": "Steel Hellkite",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "021d1482"
+    },
+    "6fdcb563-9279-4365-8a78-26e75fbfd917": {
+      "name": "Gogo, Mysterious Mime",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b1aacec9"
+    },
+    "7022ae9a-2589-493b-a050-a230fd02f80b": {
+      "name": "Storm of Souls",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1d504381"
+    },
+    "70616a8c-9b6c-408e-8f3e-2c348ec136d8": {
+      "name": "Memory Trap",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c92ebd8f"
+    },
+    "706ae742-1807-44b7-a4fa-f2e26f61519a": {
+      "name": "Wild Growth",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever enchanted land is tapped for mana, its controller adds an additional {G}.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "trigger.becomes-target"
+        }
+      ],
+      "reasons": [],
+      "ast": "ab936c3f"
+    },
+    "71355b51-e70e-47b0-8460-933af3567141": {
+      "name": "Craterclaw Colossus",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8ae2ef43"
+    },
+    "716b3ea2-45b7-4a8f-af72-de7f4e510eff": {
+      "name": "Goldspan Dragon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cd6440cd"
+    },
+    "717c6beb-81c6-43ed-aab0-aedfc1cbac33": {
+      "name": "Lake-town",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f69cef91"
+    },
+    "71a80491-eea2-4661-9446-26a87efbf4a8": {
+      "name": "Kykar, Wind's Fury",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "83ecd384"
+    },
+    "71c52bf5-2a5d-488e-8b15-7ef290e4b77d": {
+      "name": "War Room",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "698098a4"
+    },
+    "71cb48e2-2328-471c-a04a-7b6461f378f4": {
+      "name": "Sarkhan, Dragon Ascendant",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "aba6b7d3"
+    },
+    "722e23d5-4f2a-43cd-bbd5-baf56b76e68d": {
+      "name": "Parapet Thrasher",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cea57716"
+    },
+    "72aef1d8-11df-4bc2-af83-907b05df73a8": {
+      "name": "Grim Haruspex",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Morph {B}",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "39ccedf9"
+    },
+    "7324abaa-48da-439d-9339-b0ea5eea612e": {
+      "name": "Unnatural Growth",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d6f9b3f5"
+    },
+    "7340dbcb-4b26-4038-be8c-a89e76294221": {
+      "name": "Gideon Jura",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "+2: During target opponent's next turn, creatures that player controls attack ~ if able.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "c171878d"
+    },
+    "736892cb-a34b-4bb9-b56c-e26e3db207a2": {
+      "name": "Mana Vault",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "At the beginning of your draw step, if ~ is tapped, it deals 1 damage to you.",
+          "reason": "unboundReference",
+          "closestRule": "noun.it"
+        }
+      ],
+      "reasons": [],
+      "ast": "f78a8188"
+    },
+    "73ad7bcd-4ffc-442c-b6b5-d935b9ccaaaf": {
+      "name": "Count on Luck",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e04d8110"
+    },
+    "74d3277a-38e5-4732-afed-084a56148f20": {
+      "name": "Mana Drain",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Counter target spell. At the beginning of your next main phase, add an amount of {C} equal to that spell's mana value.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "spell.effect"
+        }
+      ],
+      "reasons": [],
+      "ast": "eb0220d1"
+    },
+    "75348d55-99cd-4dab-97be-1f818c43a69d": {
+      "name": "Edgar, Master Machinist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6359e759"
+    },
+    "761021ce-4559-464e-aa03-85c2fe78e267": {
+      "name": "Rishkar, Peema Renegade",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "56215ff3"
+    },
+    "77216636-f76d-4c5e-b1ac-ab1844753f05": {
+      "name": "Excava, the Risen Past",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "24457a21"
+    },
+    "7735eeba-693b-47e2-bd51-414379cf1016": {
+      "name": "Beast Within",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e192cddc"
+    },
+    "7777fab1-df3f-467f-b9e2-46dd2bd2166e": {
+      "name": "Forsaken Monument",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2f3a41bf"
+    },
+    "77807103-bcd5-479f-bedd-f5d97aa6d3d2": {
+      "name": "Forge of Heroes",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "11c50930"
+    },
+    "78826359-fe63-44ad-adc4-a17ffcd710e4": {
+      "name": "Nature's Lore",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4a6635c5"
+    },
+    "79f94050-d850-41ca-b1db-5ae0cf743f0a": {
+      "name": "Temple of Epiphany",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "99c241ce"
+    },
+    "7a2484a9-04fd-41a0-8224-610c1c07ed10": {
+      "name": "Blasphemous Act",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "40033eda"
+    },
+    "7c779721-cd1b-4696-9ae9-68ccc284ed2a": {
+      "name": "Aetherize",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c26d86e5"
+    },
+    "7cb9e29f-835f-4155-a2a5-4b778866c773": {
+      "name": "Mosswort Bridge",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "22db2399"
+    },
+    "7cec9021-6f25-4fd8-b40e-adf4ffd3a7b8": {
+      "name": "Garruk Relentless // Garruk, the Veil-Cursed",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When ~ has two or fewer loyalty counters on him, transform him.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.or"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "0: ~ deals 3 damage to target creature. That creature deals damage equal to its power to him.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.gain-each-of-two"
+        }
+      ],
+      "reasons": [
+        "faces[1].loyalty: a planeswalker needs a non-negative loyalty",
+        "faces[1].types: layout transform with a planeswalker or battle back face is not implemented by the engine yet"
+      ],
+      "ast": "c9f61ff2"
+    },
+    "7cfb32af-ac59-4459-ac9e-2762488e9180": {
+      "name": "Stone Golem",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8705c81c"
+    },
+    "7d070a95-49ea-4aea-b512-dbb0006a00ee": {
+      "name": "Elvenking's Harper",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "822ff66e"
+    },
+    "7d881c57-0bd9-4c57-aa4a-b10808b86143": {
+      "name": "Dimir Signet",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f2d0035e"
+    },
+    "7d9fc9e7-d80b-49c3-871c-ed25b3059ae8": {
+      "name": "Impulsive Pilferer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "158c68f0"
+    },
+    "7f268b15-ac92-4e98-821b-78d15d9285d9": {
+      "name": "Loyal Apprentice",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "05930850"
+    },
+    "7f77a84e-5a4b-4834-aefa-3cecc175ae8e": {
+      "name": "Jace, the Mind Sculptor",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "+2: Look at the top card of target player's library. You may put that card on the bottom of that player's library.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.look-reorder"
+        },
+        {
+          "face": 0,
+          "ability": 3,
+          "text": "−12: Exile all cards from target player's library, then that player shuffles their hand into their library.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.all-graveyard-cards"
+        }
+      ],
+      "reasons": [],
+      "ast": "2a57fc43"
+    },
+    "7fa5237e-dd79-4646-b935-cb8c6ee803ab": {
+      "name": "Mister Fantastic, Reed Richards",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e090b618"
+    },
+    "800fb917-8898-4eba-9f94-aec6e9d75236": {
+      "name": "Mazemind Tome",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8752681e"
+    },
+    "82004860-e589-4e38-8d61-8c0210e4ea39": {
+      "name": "Demonic Tutor",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "684c66a0"
+    },
+    "82bdf9cb-61fe-4eaf-8762-c32002403d96": {
+      "name": "Magnificent End",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "eb9c02d4"
+    },
+    "83045a9c-57da-411f-80aa-56178d14856b": {
+      "name": "Vraska, Scheming Gorgon",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "−10: Until end of turn, creatures you control gain deathtouch and \"Whenever ~ deals damage to an opponent, that player loses the game.\"",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "eabfd383"
+    },
+    "83161d59-2520-4741-9328-e2a4a8b5d5bc": {
+      "name": "Evendo, Waking Haven",
+      "group": "holdout",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Station",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        },
+        {
+          "face": 0,
+          "ability": 3,
+          "text": "12+ | {G}, {T}: Add {G} for each creature you control.",
+          "reason": "unrecognised",
+          "slot": "cost",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "9a35e9cd"
+    },
+    "84275aab-f718-4896-b61c-63bf49fb483b": {
+      "name": "Merchant of Truth",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9eaa310a"
+    },
+    "84ee74e9-b3e3-4f47-8b3c-5c1a70f5cad6": {
+      "name": "Seraph of the Sword",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2522c329"
+    },
+    "868882d2-ed4e-4171-a17c-478a341080fb": {
+      "name": "Prossh, Skyraider of Kher",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a1f90a39"
+    },
+    "86bf58f2-7f25-4e10-b797-25e0e8e67769": {
+      "name": "Flusterstorm",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f4df9a2d"
+    },
+    "86d76078-9af3-45a7-90d6-72946afdc78b": {
+      "name": "Goldlust Triad",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "118702ae"
+    },
+    "86fb3749-37d6-48a6-8524-71e996850307": {
+      "name": "High Market",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b50a16ee"
+    },
+    "89ca686a-7c72-4d8f-9290-e89635624a83": {
+      "name": "Cavern of Souls",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "f38d586d"
+    },
+    "8a29bd35-33ef-4317-9fe5-8aaff5d7d64d": {
+      "name": "Tragic Arrogance",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "870471e3"
+    },
+    "8a3ad2ef-8bcb-40c0-85de-f03328c2b644": {
+      "name": "Springheart Nantuko",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Bestow {1}{G}",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Enchanted creature gets +1/+1.",
+          "reason": "notRunnable",
+          "closestRule": "noun.attached-permanent"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Whenever a land you control enters, you may pay {1}{G} if ~ is attached to a creature you control. If you do, create a token that's a copy of that creature. If you didn't create a token this way, create a 1/1 green Insect creature token.",
+          "reason": "unrecognised",
+          "slot": "cost",
+          "closestRule": "cost.mana"
+        }
+      ],
+      "reasons": [],
+      "ast": "1ba91cb5"
+    },
+    "8a52f3c0-2552-4425-b2e3-5496eb2232a7": {
+      "name": "Mystic Remora",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fc58e95b"
+    },
+    "8b755881-a72d-4e21-a369-d2924eb4585a": {
+      "name": "Cultivate",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2099b32d"
+    },
+    "8ba36878-0816-44c7-b543-8ebfc28c2ecd": {
+      "name": "Angelic Destiny",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "da1f8822"
+    },
+    "8c31fec9-e4b3-4761-990e-7be38eb05604": {
+      "name": "Karmic Guide",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "08c3f7ef"
+    },
+    "8cc7e418-cc5e-4aef-9757-874223fccd74": {
+      "name": "Phoenix Down",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f235a2bd"
+    },
+    "8d0445ef-370b-4f4f-8975-a40cb02c031e": {
+      "name": "Ruin Grinder",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9de82797"
+    },
+    "8d2b2675-19df-4f40-9e8e-196ec097b91c": {
+      "name": "Sunscorched Divide",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7206efa3"
+    },
+    "8dd5f5af-d2d8-4356-8617-8381081b930c": {
+      "name": "Yavimaya, Cradle of Growth",
+      "group": "holdout",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Each land is a Forest in addition to its other land types.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "static.each"
+        }
+      ],
+      "reasons": [],
+      "ast": "2b7c1676"
+    },
+    "8ddfc283-c9b4-41a5-af88-cf0068e986cc": {
+      "name": "Swan Song",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8196a270"
+    },
+    "8e04a5e0-e22c-430b-a39a-c9f38e16ea86": {
+      "name": "Guardian of Faith",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "33efe5d6"
+    },
+    "8e7641e1-e814-4d5a-9cb3-71ad2f4ceee8": {
+      "name": "Rugged Prairie",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fa12f890"
+    },
+    "90194ff1-db61-463f-b5a3-15cd85311d0e": {
+      "name": "Beledros Witherbloom",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "60bdb358"
+    },
+    "9070c98b-fd01-4eeb-a4ec-fc464946c7c0": {
+      "name": "Stridehangar Automaton",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "728d3964"
+    },
+    "92d95e12-fa51-4360-88e4-9078ccc5d8d3": {
+      "name": "Cindervines",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "325dd6e9"
+    },
+    "939e6f71-185e-41f2-9d54-72cce06f1dce": {
+      "name": "Thirst for Knowledge",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "907586e9"
+    },
+    "9464ddf2-4bcb-44f6-b945-89a132544de6": {
+      "name": "Maestros Theater",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c9be3892"
+    },
+    "95e1c368-b58a-4e69-9583-587560ad558d": {
+      "name": "Eagle's Rescue",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3b3fdbdf"
+    },
+    "96230edf-568a-47dd-b877-9d92aa58fac8": {
+      "name": "Nevinyrral's Disk",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1b84d472"
+    },
+    "97407cd0-2bd2-4074-94d3-4ec3d243fa78": {
+      "name": "Rishkar's Expertise",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ffff24f4"
+    },
+    "981298e6-ddee-49c0-9377-f47f019b4138": {
+      "name": "Currency Converter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f41e2416"
+    },
+    "9965d9c5-2ebf-4a6c-930e-55c5890979be": {
+      "name": "Thought Vessel",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3d47f3bf"
+    },
+    "9aace0d3-89e6-4254-b96f-ee3a878f2f91": {
+      "name": "Conqueror's Flail",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b994a887"
+    },
+    "9ad730b5-8950-4215-9319-387e2970dd22": {
+      "name": "Exemplar of Light",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a797cee6"
+    },
+    "9ae669dd-7e60-4649-b96e-35da28be641a": {
+      "name": "Korvold, Fae-Cursed King",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "aa63ce9e"
+    },
+    "9b0b8f00-6367-4dc9-b33e-680470b3a36c": {
+      "name": "The Mending of Dominaria",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8b9bfe78"
+    },
+    "9cc52afb-9788-46f6-9f9b-347513f8a64f": {
+      "name": "Dwarven Shortsword",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ffd5f3d6"
+    },
+    "9d2d6479-531c-4ce1-b52b-00e36fa63b64": {
+      "name": "Rancor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "658cbe5a"
+    },
+    "9d6fdbd4-ba51-4df1-b383-9b709b36a8d7": {
+      "name": "Retrieve the Esper",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c0001f52"
+    },
+    "9e96d12b-8381-4706-8089-3521aa2b5422": {
+      "name": "Gau, Feral Youth",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7d6f9e36"
+    },
+    "a0753b28-e693-4f5b-a4e4-846e933058d3": {
+      "name": "Roar of Resistance",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d1d09495"
+    },
+    "a0be9bb2-3234-4c6c-b8ce-0879b1f43003": {
+      "name": "Laelia, the Blade Reforged",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "92f170b8"
+    },
+    "a145ff8c-5812-4bcb-bd16-9839dc25121d": {
+      "name": "Storm-Kiln Artist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2118878e"
+    },
+    "a1602bd0-f346-43cf-86ec-1dd300a7f2ed": {
+      "name": "Thundermane Dragon",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f8d50d36"
+    },
+    "a1cc5e37-b09a-4b7f-afd5-77c1c35aa425": {
+      "name": "Carrion Feeder",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5a58e6f8"
+    },
+    "a242c9bf-dab6-4996-bb3a-b4356f9ed0c9": {
+      "name": "Key to the City",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "011feb27"
+    },
+    "a3112971-3af4-46e8-b2d6-a8759b39d0d1": {
+      "name": "Ganax, Astral Hunter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "987374ea"
+    },
+    "a492a323-df8a-40fd-bff0-50091baa7700": {
+      "name": "Kenrith's Transformation",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "63876336"
+    },
+    "a49900b3-cc34-428f-806d-71861dc8059d": {
+      "name": "Hit the Mother Lode",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5c259800"
+    },
+    "a554aa2c-d947-4fc6-929d-d5891f467615": {
+      "name": "Nahiri, the Lithomancer",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "+2: Create a 1/1 white Kor Soldier creature token. You may attach an Equipment you control to it.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.attach"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "−2: You may put an Equipment card from your hand or graveyard onto the battlefield.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.add-counters"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "−10: Create a colorless Equipment artifact token named Stoneforged Blade. It has indestructible, \"Equipped creature gets +5/+5 and has double strike,\" and equip {0}.",
+          "reason": "unrecognised",
+          "slot": "token",
+          "closestRule": "token.predefined"
+        }
+      ],
+      "reasons": [],
+      "ast": "fc17eb59"
+    },
+    "a5cbd257-c836-493e-bb1a-76242619dea2": {
+      "name": "Big Score",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "aee4fe3b"
+    },
+    "a66c35fc-d5db-4cfd-9b85-d70b001d83d3": {
+      "name": "Dragoon's Lance",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a92e282b"
+    },
+    "a75445d3-1303-4bb5-89ad-26ea93fecd48": {
+      "name": "Evolving Wilds",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3d2e0fca"
+    },
+    "a7c6c9b3-91f2-4ecf-b2b0-b0edd96974d9": {
+      "name": "Zul Ashur, Lich Lord",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cafe2ebe"
+    },
+    "a80a1f84-ea49-4c8d-912d-c7036b814a6c": {
+      "name": "Augusta, Order Returned",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "362294f7"
+    },
+    "a8dba58b-2956-492e-ae30-49db2ae68e53": {
+      "name": "Mana Geyser",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2b85aec8"
+    },
+    "a9a6c2ba-30ba-4e45-9ea0-ea9833342069": {
+      "name": "Dragon Broodmother",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4113ccd2"
+    },
+    "aa913409-7a7a-4e74-82ff-7ff8195585ad": {
+      "name": "Roll-Roll-Roll-Roll",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d2d4459c"
+    },
+    "ab1cc360-b9de-48d9-9983-4dfe4a7d2a37": {
+      "name": "Arcane Denial",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "68097e93"
+    },
+    "ab26fbe2-e808-48b9-8d0d-3fbb6c3d554f": {
+      "name": "Narset, Parter of Veils",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Each opponent can't draw more than one card each turn.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "−2: Look at the top four cards of your library. You may reveal a noncreature, nonland card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.look-take"
+        }
+      ],
+      "reasons": [],
+      "ast": "c49226a0"
+    },
+    "ab655810-f67e-4576-9174-35b16f5e3235": {
+      "name": "Saheeli, Sublime Artificer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "999e730a"
+    },
+    "ab8d5f5c-1976-4f77-8ed2-8d28ee666741": {
+      "name": "Tireless Provisioner",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "feb99224"
+    },
+    "ac10d218-f9a6-4058-9cda-a15ca1b0b7b5": {
+      "name": "Assassin's Trophy",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9a395a55"
+    },
+    "ac675899-25bb-4f06-9c8c-bf188024495f": {
+      "name": "Firemane Commando",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "01e000d6"
+    },
+    "ac8952c9-bd30-48cd-b964-7e6271f9cbc8": {
+      "name": "Sephara, Sky's Blade",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2c84a002"
+    },
+    "acc9c16a-5e72-43bd-87e1-56a16aa892f5": {
+      "name": "Haven of the Spirit Dragon",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a760db47"
+    },
+    "ace8e88e-ca6a-4bdf-8c6d-1b914fc00259": {
+      "name": "Monologue Tax",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "645a3fb0"
+    },
+    "acfa77fd-3610-4f12-9c3c-bd860ce91700": {
+      "name": "Rhythm of the Wild",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4d49c504"
+    },
+    "ae120613-97d6-4393-b39d-c3e6c076f5d6": {
+      "name": "Deflecting Swat",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "You may choose new targets for target spell or ability.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "f2ffbec6"
+    },
+    "aebfdcc0-c5b9-4737-8498-764a5021b087": {
+      "name": "Graaz, Unstoppable Juggernaut",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "50f4d1dc"
+    },
+    "af1acf07-39e2-441e-a1e0-1db535535e2e": {
+      "name": "White Mage's Staff",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "adbf9c44"
+    },
+    "afaef788-34d1-460b-b884-9d7ae6ddeb18": {
+      "name": "Toxic Deluge",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9edb6965"
+    },
+    "aff4e43d-cafa-47de-8e39-011f9254a26a": {
+      "name": "Marwyn, the Clearcutter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4a9ee0e8"
+    },
+    "b1544f21-7e98-461b-aed5-e748b0168c52": {
+      "name": "Swords to Plowshares",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "82c84849"
+    },
+    "b473e293-59e3-4e04-acf2-622604aeb25f": {
+      "name": "Path of Ancestry",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e798f6e7"
+    },
+    "b548578c-4910-402c-8e78-498924e0a9be": {
+      "name": "Consumed by Greed",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7037decd"
+    },
+    "b655bee5-52d3-467e-b16c-cfc2edf2b1a1": {
+      "name": "Arachnogenesis",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bf33267c"
+    },
+    "b81eaa2f-0554-41c6-bdf6-d1cb73b8f56f": {
+      "name": "Realmwalker",
+      "group": "holdout",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 3,
+          "text": "You may cast creature spells of the chosen type from the top of your library.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "6a419354"
+    },
+    "b91b65b3-b35c-460e-a49b-333000a9a519": {
+      "name": "Serra Avenger",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5cb0396e"
+    },
+    "b9cec31a-9891-414f-b528-954612168832": {
+      "name": "Tangleweave Armor",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bbb61b0b"
+    },
+    "bad6a5a9-7010-418d-b042-182926aa999d": {
+      "name": "Norn's Choirmaster",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c780b649"
+    },
+    "baec04a1-3bc9-4618-afab-e42013e36648": {
+      "name": "Metropolis Reformer",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a3d03d1d"
+    },
+    "bbd569cc-bc21-46df-b8eb-5b5bcd8fe762": {
+      "name": "Rush of Inspiration // Crackling Falls",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e57dcdb4"
+    },
+    "bc14356c-3a1a-47af-9a6e-2b449de0331f": {
+      "name": "Kardur, Doomscourge",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cb8867d9"
+    },
+    "bd39e333-b0b8-4a85-8645-d77f4a3941db": {
+      "name": "Rabanastre, Royal City",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8f8b16fe"
+    },
+    "befb211f-37ca-4083-98d4-9ff1f28be3f2": {
+      "name": "Goreclaw, Terror of Qal Sisma",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e08406c9"
+    },
+    "bf1341dd-41a3-49f6-87ec-63170dde4324": {
+      "name": "Boseiju, Who Endures",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "112bcd91"
+    },
+    "bffdfe7b-f17a-41b6-a460-80280fe497d4": {
+      "name": "Collective Resistance",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "086d2306"
+    },
+    "c02c5547-b9c9-4b2d-9d12-e87bfba8f2d2": {
+      "name": "Herald's Horn",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3f14f6aa"
+    },
+    "c20a96f7-aa5a-4c15-b8b1-806685c99b27": {
+      "name": "Bolt Bend",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e0c16af1"
+    },
+    "c232d974-9c65-4bce-b045-e5a7cc0c62e0": {
+      "name": "Idol of Oblivion",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d9b16b00"
+    },
+    "c23e5b80-08d2-4e24-9908-fe2aa4f30f6f": {
+      "name": "Reliquary Tower",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1970937d"
+    },
+    "c2c47e13-b581-41a8-a4af-542557a6249a": {
+      "name": "Il Mheg Pixie",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5bab268b"
+    },
+    "c3c802ba-dfbb-4f63-ae9a-e29c2e30013d": {
+      "name": "Jeskai Ascendancy",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "57262890"
+    },
+    "c43e7fa5-ff93-42d9-af79-ee417a8e41a7": {
+      "name": "Emissary Green",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9394df3a"
+    },
+    "c5229c17-b7be-4b05-b683-f2277edc4849": {
+      "name": "Enlightened Tutor",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Search your library for an artifact or enchantment card, reveal it, then shuffle and put that card on top.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.search"
+        }
+      ],
+      "reasons": [],
+      "ast": "b159d360"
+    },
+    "c53ba31a-ba27-4e17-9a92-311acb1cab29": {
+      "name": "Myr Battlesphere",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "dee0864e"
+    },
+    "c5acf2a5-40f4-433d-a74d-1cb56c521464": {
+      "name": "Arid Mesa",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e53d1d54"
+    },
+    "c7aecca5-2f67-4245-ab2d-e723d8b23a67": {
+      "name": "Expressive Iteration",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "140f0528"
+    },
+    "c7b72d38-0aa0-4e17-9dd5-9276d7cb21ec": {
+      "name": "Kaervek the Merciless",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b132c698"
+    },
+    "c8b143ad-43ec-4e0d-a440-e348daa31391": {
+      "name": "Swiftfoot Boots",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6541824f"
+    },
+    "c8f08704-7330-4fa9-b456-2e96aa252a2c": {
+      "name": "Gideon's Memorial",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "eb9e48cf"
+    },
+    "c97361b5-af16-4a7b-af85-a429dbaf4ad2": {
+      "name": "Mind Stone",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e502337d"
+    },
+    "c97957a2-8310-4cff-8aad-871b7901d124": {
+      "name": "Caretaker's Talent",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "When ~ becomes level 2, create a token that's a copy of target token you control.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.or"
+        }
+      ],
+      "reasons": [],
+      "ast": "7ac10afa"
+    },
+    "ca204b66-8d0c-431a-8d34-282f7c2d17da": {
+      "name": "Lightning Greaves",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "075b3463"
+    },
+    "cad63b31-667b-4518-bc49-be4ffb82bc63": {
+      "name": "Vraska, Soul of Stone",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8e55ded8"
+    },
+    "cada2a1c-5db2-4702-9a57-cbe7da1bf208": {
+      "name": "Tome of Legends",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "23301983"
+    },
+    "cb027150-848c-4a66-88ad-e20222304dd8": {
+      "name": "Scalding Tarn",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9d576d62"
+    },
+    "cb1afab6-b9c8-4b9c-840b-24106523a783": {
+      "name": "Kodama of the East Tree",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever another permanent you control enters, if it wasn't put onto the battlefield with this ability, you may put a permanent card with equal or lesser mana value from your hand onto the battlefield.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "dbeec17a"
+    },
+    "cb923c4d-1d2e-4039-90bb-72d1981b9738": {
+      "name": "Endless Atlas",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c893890a"
+    },
+    "cb9d557a-fc06-428c-8be6-7d28add33028": {
+      "name": "Fiend Hunter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7fa9ccfa"
+    },
+    "cc2b6e58-2d6f-495e-95f3-9496105c4cba": {
+      "name": "Jace Beleren",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e8228ba9"
+    },
+    "cd2c90ac-2b04-461c-92f3-939871b6b6a3": {
+      "name": "Sunken Hollow",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "67880500"
+    },
+    "cfdd5dc6-593e-495a-8cfe-3a56b3c4c7df": {
+      "name": "Temple of the False God",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8c6a61ad"
+    },
+    "d0dd425b-fdba-41b4-b9e6-f5161610bd7e": {
+      "name": "Ezuri's Predation",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8cb10b83"
+    },
+    "d0ee5bdc-2b69-4b73-9a20-ffcc18783b29": {
+      "name": "Mana Confluence",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "651e9261"
+    },
+    "d1deba03-b26a-4a0d-b242-24bb3a3f9ea6": {
+      "name": "Bootleggers' Stash",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6d0089b6"
+    },
+    "d3576617-7867-4c3d-aa31-d6742483465b": {
+      "name": "Chandra's Emberling",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b330bd1e"
+    },
+    "d37f858e-03c8-4594-9b92-cd03699a1591": {
+      "name": "Scoured Barrens",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d1def719"
+    },
+    "d4193f50-33b5-4201-ba03-eb135eced7ff": {
+      "name": "Teshar, Ancestor's Apostle",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f55ac635"
+    },
+    "d46c3fb6-f1c7-4a96-ae42-5bce17fc7c1d": {
+      "name": "Ziatora, the Incinerator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4aea75f9"
+    },
+    "d4e0749a-e179-4c19-8536-bf8f1a198549": {
+      "name": "Dedicated Commons",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ba63d56e"
+    },
+    "d4f28a4b-d821-4132-bdec-4c528318f8e2": {
+      "name": "Hellkite Charger",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "127c070a"
+    },
+    "d683d985-9888-4d21-8b5f-69e69ce4a03b": {
+      "name": "Path to Exile",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6060cad1"
+    },
+    "d6c7d7a6-2d38-4c06-ab83-bee9cc18de52": {
+      "name": "Guardian Scalelord",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "416ba3c5"
+    },
+    "d73191d8-6f94-4fba-acd2-2d0490e3ac00": {
+      "name": "The Balrog of Moria",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1d05c81c"
+    },
+    "d75b9c82-1b49-4c3e-a1b5-aeef57d6644b": {
+      "name": "Cyclonic Rift",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "33e4b542"
+    },
+    "d78518ee-df79-48d1-b9d5-4f968b441899": {
+      "name": "Coin of Mastery",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b1fdff63"
+    },
+    "d79cbc61-6c15-48ea-bbba-3cffb819ccba": {
+      "name": "Sword of the Animist",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4d69ece5"
+    },
+    "d90af00a-d322-4265-9954-7b1e80702e18": {
+      "name": "Skyclave Apparition",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8c4c54a4"
+    },
+    "d9356199-4ce3-44fa-9463-90fc134088f9": {
+      "name": "Tamiyo's Logbook",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4e7b1cbf"
+    },
+    "d9c36ed5-629c-4709-bff5-2f10fcde608a": {
+      "name": "Orb of Dragonkind",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "47bd067a"
+    },
+    "d9f11aa1-9219-42a8-85a9-a8f204160706": {
+      "name": "Meteor Golem",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "541e8b6f"
+    },
+    "da46786e-28df-4638-ab3d-121011d2f150": {
+      "name": "Master Transmuter",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "578719af"
+    },
+    "da989677-3647-46b8-aa56-b2cfb60f7a2a": {
+      "name": "Pugnacious Hammerskull",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3afe6cac"
+    },
+    "dab520d0-20b4-4273-ba6b-eb07f85ea433": {
+      "name": "Marsh Flats",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fd9f8577"
+    },
+    "db444f9d-4dde-4308-b0f2-7acfe6de871a": {
+      "name": "Turbulent Steppe",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1a10b27d"
+    },
+    "db6174d7-211d-4817-b8e4-8384594c83f9": {
+      "name": "Urborg, Tomb of Yawgmoth",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Each land is a Swamp in addition to its other land types.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "static.each"
+        }
+      ],
+      "reasons": [],
+      "ast": "8820c0a1"
+    },
+    "dc36f81e-d1b0-44a4-bf82-4cd276bc0812": {
+      "name": "Thancred Waters",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "29f9bec0"
+    },
+    "dd6601c6-810d-4883-89d2-5d31419fb1cc": {
+      "name": "Relm's Sketching",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b8d8a4b6"
+    },
+    "dd8538e6-cd5f-4a88-aff5-eb5e76ce8ddb": {
+      "name": "Dreamroot Cascade",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2600e6b5"
+    },
+    "dda607bd-f419-4b7f-b052-a5ce6ce22bfe": {
+      "name": "Stir Up Trouble",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d79d39a0"
+    },
+    "ddc85b23-113a-46e9-ab09-fae9312c72fa": {
+      "name": "Spirit of Resilience",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9f2ff0a2"
+    },
+    "de4e5120-b958-4dcb-ad78-d0f726b7a881": {
+      "name": "There and Back Again",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4bca248c"
+    },
+    "df0b5995-117b-4ba8-964d-ea3c592621ef": {
+      "name": "The Warring Triad",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "abf2e6df"
+    },
+    "e060bf7a-f266-40b4-9772-e243dcbf965b": {
+      "name": "Dreams of Laguna",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "674ad279"
+    },
+    "e110ee80-37af-4989-a5fb-95d51dc7f102": {
+      "name": "Shimmer Myr",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6d2a78bd"
+    },
+    "e286d1aa-bb74-4568-98b5-a693ac7a369d": {
+      "name": "Venerable Warsinger",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e5351d85"
+    },
+    "e2b472dd-047d-47eb-9ebb-df6aa4b52dd4": {
+      "name": "Perilous Landscape",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "65970ffc"
+    },
+    "e3afc704-220f-498f-9eaa-0821b17dc24c": {
+      "name": "Sakura-Tribe Elder",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cf8cd556"
+    },
+    "e43b478b-4cb8-42b1-a5b0-0b1421b84852": {
+      "name": "Coin of Fate",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2c2c1a15"
+    },
+    "e4402d21-bb7f-4777-bc8d-b24bf2faccb0": {
+      "name": "Old Fat Spider Can't See Me",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c9b9a65c"
+    },
+    "e5e8e116-10fe-48b0-b3d8-6edb39bd5f90": {
+      "name": "Alibou, Ancient Witness",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9fdbd63c"
+    },
+    "e6873252-653a-47a8-99b7-b2ef70aa1f7f": {
+      "name": "Ancient Adamantoise",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9bdd91f6"
+    },
+    "e89e1fae-bac3-4cc0-a233-24b9e08a5290": {
+      "name": "Fall from Favor",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0385291f"
+    },
+    "e91240bc-4a13-4131-9379-5ddac6555f4a": {
+      "name": "Adaptive Omnitool",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f3becf11"
+    },
+    "e9b6a394-691c-425a-9307-76d8edc7375e": {
+      "name": "Otawara, Soaring City",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ce16803c"
+    },
+    "ea86abfa-6cab-4ef0-8463-34136fc25b59": {
+      "name": "Duplicant",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "985f5578"
+    },
+    "ea9709b6-4c37-4d5a-b04d-cd4c42e4f9dd": {
+      "name": "Propaganda",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a587d734"
+    },
+    "eaabd151-2160-4bff-82c0-3fa88659be98": {
+      "name": "Anger",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f9c9a0d3"
+    },
+    "eaffdf95-8e20-408d-99fa-3adc9e19523d": {
+      "name": "Misleading Signpost",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e9da4a94"
+    },
+    "eb735501-19e7-4910-aa6a-6667fff6f4e5": {
+      "name": "Study Hall",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ae5532ef"
+    },
+    "ebb24fc7-dc71-4712-8c2a-b5920f78e55d": {
+      "name": "Outpost Siege",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2d451c01"
+    },
+    "ecd8d7f4-7b11-4097-afc0-ef3c81edd90c": {
+      "name": "Serra Paragon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "365c264b"
+    },
+    "ecdfee75-15fd-41ea-89d4-4bfc1fa4d032": {
+      "name": "Keeper of the Quiet Hour",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5ef9c253"
+    },
+    "edad60c6-80de-4033-af1b-a703ac332983": {
+      "name": "Goblin Bombardment",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "391f728f"
+    },
+    "ededbdae-d9dc-4206-9335-d7158f2d7700": {
+      "name": "Vampiric Tutor",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Search your library for a card, then shuffle and put that card on top. You lose 2 life.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.search"
+        }
+      ],
+      "reasons": [],
+      "ast": "be207db8"
+    },
+    "ee57fba8-e68b-4c52-8de7-9b9873d84506": {
+      "name": "Homesickness",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b615893e"
+    },
+    "eecb3047-a563-441a-9175-200421981ac3": {
+      "name": "Ugin, the Spirit Dragon",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "−X: Exile each permanent with mana value X or less that's one or more colors.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.each-permanent"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "−10: You gain 7 life, draw seven cards, then put up to seven permanent cards from your hand onto the battlefield.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.player.life"
+        }
+      ],
+      "reasons": [],
+      "ast": "ea59a6f1"
+    },
+    "ef833546-f755-4ac5-867a-3926984e68a0": {
+      "name": "Archaeomancer's Map",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "77abf448"
+    },
+    "ef86989d-ce80-4e55-aece-7d11710eeffa": {
+      "name": "Polluted Delta",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f8c33c33"
+    },
+    "f00bc101-8082-4459-b987-f0c4b7a12344": {
+      "name": "Advanced Reconstruction",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f0443af4"
+    },
+    "f0ec8681-da50-466b-8cdd-1dc710deccd9": {
+      "name": "Deserted Beach",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "593e6493"
+    },
+    "f18cce8c-8fb6-49a7-8f79-2529c0ee3ecc": {
+      "name": "Mog, Moogle Warrior",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8f21f172"
+    },
+    "f22665cd-4710-48df-83c1-3c9081097cb5": {
+      "name": "Hedge Shredder",
+      "group": "training",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever one or more land cards are put into your graveyard from your library, put them onto the battlefield tapped.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "f85a8b6b"
+    },
+    "f25351e3-539b-4bbc-b92d-6480acf4d722": {
+      "name": "City of Brass",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5a4823ce"
+    },
+    "f29dc596-2121-4421-8463-15f6c2e8b9b3": {
+      "name": "Rogue's Passage",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f2b32796"
+    },
+    "f2f165b6-ef0a-42ad-9352-ba68be8248b0": {
+      "name": "Teferi, Hero of Dominaria",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [],
+      "reasons": [
+        "faces[0].abilities[0].effect.effects[1].effect: a delayed trigger may draw, gain life, lose life or deal damage only (or return what the effect before it exiled), not untap"
+      ],
+      "ast": "b1faf333"
+    },
+    "f39f33ac-074d-442d-ae4c-1d694ee315f3": {
+      "name": "Jund Panorama",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3852773f"
+    },
+    "f3c7af78-a77d-4134-82a2-a5ce84285a84": {
+      "name": "Flooded Strand",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "24cf07f5"
+    },
+    "f3d48efa-910a-4872-a5b1-a353c5dbce99": {
+      "name": "Pinnacle Monk // Mystic Peak",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f52df1d0"
+    },
+    "f61680da-606e-4d16-b0a0-361aa5210901": {
+      "name": "Chandra's Ignition",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ae7f3981"
+    },
+    "f63278e0-3c67-421d-87ce-67725e5e74df": {
+      "name": "Spit Flame",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "10a15d02"
+    },
+    "f6476884-f73f-465f-8e7f-ea312a5b306d": {
+      "name": "Loot, Exuberant Explorer",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b61e0a93"
+    },
+    "f6de5bd7-7704-4a0c-a27a-9e565e49f5e9": {
+      "name": "Dragonstorm Globe",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "88916de4"
+    },
+    "f70d65bf-5f1c-4aee-9bd1-f5ee6974b058": {
+      "name": "Flaring Cinder",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0c5085da"
+    },
+    "f7f435bc-1716-4412-9505-a1f2f2d83d08": {
+      "name": "Dragonhawk, Fate's Tempest",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "afd5c3f8"
+    },
+    "f84850bc-6348-449e-bd82-bb39e2119bec": {
+      "name": "Donatello, Turtle Techie",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1f6c4af4"
+    },
+    "f92aaa00-6ece-4033-b3df-b2fc2c4718d9": {
+      "name": "Leyline Tyrant",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ae60a746"
+    },
+    "f955bc96-d602-4142-a9a2-87009cc7028c": {
+      "name": "Awakening Zone",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7bace397"
+    },
+    "fa4dffda-6f04-4d0b-829d-28a1a5794dee": {
+      "name": "Millikin",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c5371ace"
+    },
+    "fa6d05a1-3df4-4751-b1a0-8d9693faec73": {
+      "name": "Tainted Wood",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7c0d491e"
+    },
+    "fae37e28-e137-4177-b973-fa8b4dd8f409": {
+      "name": "Generous Gift",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ef18b0f8"
+    },
+    "fb69bc57-f05a-41c2-9b7b-9a9761ef0cd3": {
+      "name": "Sacred Peaks",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6a63a653"
+    },
+    "fc0707c7-d504-4ccf-a0d2-3eb6e26e7a57": {
+      "name": "Bloodstained Mire",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "72f5780f"
+    },
+    "fc9ec820-4245-4a96-b009-5308a818ca58": {
+      "name": "Watery Grave",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "24559ea5"
+    },
+    "fcc9f3bc-0bc3-4189-a4d0-9698594b99a8": {
+      "name": "Enchanted River's Grasp",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "052f1ee9"
+    },
+    "ff5caed4-0276-476d-8fae-edae2536df7f": {
+      "name": "Archangel of Tithes",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c7093b70"
+    },
+    "name:Angel's Mercy": {
+      "name": "Angel's Mercy",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "51b14ad1"
+    },
+    "name:Counterspell": {
+      "name": "Counterspell",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "aecc2d34"
+    },
+    "name:Divination": {
+      "name": "Divination",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c8faa5cd"
+    },
+    "name:Fencing Ace": {
+      "name": "Fencing Ace",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c36ec457"
+    },
+    "name:Forest": {
+      "name": "Forest",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0d0c05d8"
+    },
+    "name:Giant Spider": {
+      "name": "Giant Spider",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9fa2fa90"
+    },
+    "name:Grizzly Bears": {
+      "name": "Grizzly Bears",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e77faf33"
+    },
+    "name:Healer's Hawk": {
+      "name": "Healer's Hawk",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "28858ca7"
+    },
+    "name:Isamaru, Hound of Konda": {
+      "name": "Isamaru, Hound of Konda",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "54556fd1"
+    },
+    "name:Island": {
+      "name": "Island",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "75e49a90"
+    },
+    "name:Lightning Bolt": {
+      "name": "Lightning Bolt",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fe5d21d2"
+    },
+    "name:Llanowar Elves": {
+      "name": "Llanowar Elves",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f30d4c4e"
+    },
+    "name:Mountain": {
+      "name": "Mountain",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "011d2374"
+    },
+    "name:Murder": {
+      "name": "Murder",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e6854d08"
+    },
+    "name:Plains": {
+      "name": "Plains",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e0c3d2b0"
+    },
+    "name:Raging Goblin": {
+      "name": "Raging Goblin",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a3093fa5"
+    },
+    "name:Serra Angel": {
+      "name": "Serra Angel",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "de6a9301"
+    },
+    "name:Sol Ring": {
+      "name": "Sol Ring",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6b54549e"
+    },
+    "name:Swamp": {
+      "name": "Swamp",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "62bf04b8"
+    },
+    "name:Typhoid Rats": {
+      "name": "Typhoid Rats",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3e9d79a8"
+    },
+    "name:Unsummon": {
+      "name": "Unsummon",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "49f242ad"
+    },
+    "name:Wall of Stone": {
+      "name": "Wall of Stone",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a3ae7d4d"
+    },
+    "name:Yargle, Glutton of Urborg": {
+      "name": "Yargle, Glutton of Urborg",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "31f5c77c"
+    },
+    "name:Youthful Knight": {
+      "name": "Youthful Knight",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "485de879"
+    }
+  },
+  "summary": {
+    "training": {
+      "supported": 163,
+      "total": 191
+    },
+    "holdout": {
+      "supported": 54,
+      "total": 60
+    },
+    "acceptance": {
+      "supported": 179,
+      "total": 197
+    }
+  }
+}

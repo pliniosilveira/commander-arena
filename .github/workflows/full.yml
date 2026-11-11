@@ -1,0 +1,80 @@
+name: Full
+
+# The complete suite as parallel jobs (the former CI, D-113): typecheck, lint, build, all unit tests
+# in four shards and the browser tests. Manual only (D-132): GitHub's included minutes for a private
+# repository are limited, so a pull request runs the quick CI and the owner runs the full suite
+# locally every night. Start this from the Actions tab when minutes allow.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: full-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: typecheck, lint, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm build
+
+  test:
+    name: test (${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec vitest run --shard=${{ matrix.shard }}/4
+
+  e2e:
+    name: browser tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @commander-arena/web exec playwright install --with-deps chromium
+      - run: pnpm e2e
+
+  check:
+    name: check
+    if: ${{ always() }}
+    needs: [static, test, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: every job passed
+        run: |
+          echo "static=${{ needs.static.result }} test=${{ needs.test.result }} e2e=${{ needs.e2e.result }}"
+          test "${{ needs.static.result }}" = success
+          test "${{ needs.test.result }}" = success
+          test "${{ needs.e2e.result }}" = success

@@ -1,0 +1,2524 @@
+{
+  "id": "artifacts",
+  "name": "Sai Artifacts",
+  "blurb": "An artifact deck led by Sai, Master Thopterist.",
+  "source": "oracle_cards-2026-10-22T21-01-55-797-00-00.jsonl.gz",
+  "decklist": "Commander\n1x Sai, Master Thopterist\n\nMainboard\n1x Adaptive Omnitool\n1x Aether Spellbomb\n1x Arcane Signet\n1x Cultivator's Caravan\n1x Forsaken Monument\n1x Hedron Archive\n1x Ichor Wellspring\n1x Mazemind Tome\n1x Mind Stone\n1x Mind's Eye\n1x Misleading Signpost\n1x Nettlecyst\n1x Nevinyrral's Disk\n1x Skysovereign, Consul Flagship\n1x Sol Ring\n1x Soul-Guide Lantern\n1x Tamiyo's Logbook\n1x Thopter Fabricator\n1x Thought Vessel\n1x Broodstar\n1x Chief of the Foundry\n1x Darksteel Juggernaut\n1x Duplicant\n1x Etherium Sculptor\n1x Foundry Inspector\n1x Graaz, Unstoppable Juggernaut\n1x Kappa Cannoneer\n1x Master of Etherium\n1x Master Transmuter\n1x Memory Guardian\n1x Meteor Golem\n1x Myr Battlesphere\n1x Myr Retriever\n1x Ornithopter of Paradise\n1x Padeem, Consul of Innovation\n1x Palladium Myr\n1x Psychosis Crawler\n1x Research Thief\n1x Scrawling Crawler\n1x Shimmer Dragon\n1x Shimmer Myr\n1x Silver Myr\n1x Spire Golem\n1x Steel Hellkite\n1x Steel Overseer\n1x Thought Monitor\n1x Vedalken Archmage\n1x Whirler Rogue\n1x Fall from Favor\n1x Propaganda\n1x Thopter Spy Network\n1x Aetherize\n1x Counterspell\n1x Launch Mishap\n1x Negate\n1x Pull from Tomorrow\n1x Thirst for Knowledge\n1x Buried Ruin\n1x Darksteel Citadel\n1x Foundry of the Consuls\n34x Island\n1x Lonely Sandbar\n1x Remote Isle\n1x War Room\n1x All Is Dust\n1x Thoughtcast\n",
+  "cards": [
+    {
+      "oracleId": "e91240bc-4a13-4131-9379-5ddac6555f4a",
+      "scryfallId": "9e84f840-d7c6-4a82-8891-3d12281020ee",
+      "name": "Adaptive Omnitool",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Adaptive Omnitool",
+          "manaCost": "{2}",
+          "typeLine": "Artifact — Equipment",
+          "oracleText": "Equipped creature gets +1/+1 for each artifact you control.\nWhenever equipped creature attacks, look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.\nEquip {3}",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/e/9e84f840-d7c6-4a82-8891-3d12281020ee.jpg?1789753307",
+            "large": "https://cards.scryfall.io/large/front/9/e/9e84f840-d7c6-4a82-8891-3d12281020ee.jpg?1789753307",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/e/9e84f840-d7c6-4a82-8891-3d12281020ee.jpg?1789753307"
+          },
+          "artist": "Adrián Rodríguez Pérez"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [
+        "Equip"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1844,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "4b033a0a-c1ae-44d7-9662-72cbbfda024b",
+      "scryfallId": "a54e8ce9-edd7-4ae7-9521-6fb6727cf63b",
+      "name": "Aether Spellbomb",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Aether Spellbomb",
+          "manaCost": "{1}",
+          "typeLine": "Artifact",
+          "oracleText": "{U}, Sacrifice this artifact: Return target creature to its owner's hand.\n{1}, Sacrifice this artifact: Draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/5/a54e8ce9-edd7-4ae7-9521-6fb6727cf63b.jpg?1783930343",
+            "large": "https://cards.scryfall.io/large/front/a/5/a54e8ce9-edd7-4ae7-9521-6fb6727cf63b.jpg?1783930343",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/5/a54e8ce9-edd7-4ae7-9521-6fb6727cf63b.jpg?1783930343"
+          },
+          "artist": "Jim Nelson"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2692,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "7c779721-cd1b-4696-9ae9-68ccc284ed2a",
+      "scryfallId": "1e5530fc-0291-4a17-b048-c5d24e6f51d8",
+      "name": "Aetherize",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Aetherize",
+          "manaCost": "{3}{U}",
+          "typeLine": "Instant",
+          "oracleText": "Return all attacking creatures to their owner's hand.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/e/1e5530fc-0291-4a17-b048-c5d24e6f51d8.jpg?1783909087",
+            "large": "https://cards.scryfall.io/large/front/1/e/1e5530fc-0291-4a17-b048-c5d24e6f51d8.jpg?1783909087",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/e/1e5530fc-0291-4a17-b048-c5d24e6f51d8.jpg?1783909087"
+          },
+          "artist": "Alexandre Honoré"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 287,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "14693689-d087-43b6-9c3f-63ab0648fc20",
+      "scryfallId": "4210c54e-89fd-4971-ab6a-ca8f4e7fe97a",
+      "name": "All Is Dust",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "All Is Dust",
+          "manaCost": "{7}",
+          "typeLine": "Kindred Sorcery — Eldrazi",
+          "oracleText": "Each player sacrifices all permanents they control that are one or more colors.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/2/4210c54e-89fd-4971-ab6a-ca8f4e7fe97a.jpg?1783915459",
+            "large": "https://cards.scryfall.io/large/front/4/2/4210c54e-89fd-4971-ab6a-ca8f4e7fe97a.jpg?1783915459",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/2/4210c54e-89fd-4971-ab6a-ca8f4e7fe97a.jpg?1783915459"
+          },
+          "artist": "Jason Felix"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 975,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0bc7f093-bef0-4f1a-852c-4b75ebf54838",
+      "scryfallId": "c6b6117c-faab-4bbb-b851-07bd8061ef03",
+      "name": "Arcane Signet",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Arcane Signet",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add one mana of any color in your commander's color identity.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/6/c6b6117c-faab-4bbb-b851-07bd8061ef03.jpg?1789644435",
+            "large": "https://cards.scryfall.io/large/front/c/6/c6b6117c-faab-4bbb-b851-07bd8061ef03.jpg?1789644435",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/6/c6b6117c-faab-4bbb-b851-07bd8061ef03.jpg?1789644435"
+          },
+          "artist": "Josu Solano"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 3,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "428cc1cb-a491-4cc4-9436-28ee8acc37d6",
+      "scryfallId": "28309edb-f255-4b29-b7b6-e36e23ba0690",
+      "name": "Broodstar",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Broodstar",
+          "manaCost": "{8}{U}{U}",
+          "typeLine": "Creature — Beast",
+          "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nFlying\nBroodstar's power and toughness are each equal to the number of artifacts you control.",
+          "power": "*",
+          "toughness": "*",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/2/8/28309edb-f255-4b29-b7b6-e36e23ba0690.jpg?1783942335",
+            "large": "https://cards.scryfall.io/large/front/2/8/28309edb-f255-4b29-b7b6-e36e23ba0690.jpg?1783942335",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/8/28309edb-f255-4b29-b7b6-e36e23ba0690.jpg?1783942335"
+          },
+          "artist": "Glen Angus"
+        }
+      ],
+      "cmc": 10,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying",
+        "Affinity"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 9457,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "3644f316-f9a3-46c9-9b1e-747f86cf4ead",
+      "scryfallId": "7ab1a074-9d92-4125-9200-84cd035f8f53",
+      "name": "Buried Ruin",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Buried Ruin",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}.\n{2}, {T}, Sacrifice this land: Return target artifact card from your graveyard to your hand.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/a/7ab1a074-9d92-4125-9200-84cd035f8f53.jpg?1783906016",
+            "large": "https://cards.scryfall.io/large/front/7/a/7ab1a074-9d92-4125-9200-84cd035f8f53.jpg?1783906016",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/a/7ab1a074-9d92-4125-9200-84cd035f8f53.jpg?1783906016"
+          },
+          "artist": "Franz Vohwinkel"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 193,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "4fdfa41a-75a5-4b36-8c9e-083e26d137e2",
+      "scryfallId": "bf306f7f-b231-4343-807c-083df8b90c87",
+      "name": "Chief of the Foundry",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Chief of the Foundry",
+          "manaCost": "{3}",
+          "typeLine": "Artifact Creature — Construct",
+          "oracleText": "Other artifact creatures you control get +1/+1.",
+          "power": "2",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/f/bf306f7f-b231-4343-807c-083df8b90c87.jpg?1783930118",
+            "large": "https://cards.scryfall.io/large/front/b/f/bf306f7f-b231-4343-807c-083df8b90c87.jpg?1783930118",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/f/bf306f7f-b231-4343-807c-083df8b90c87.jpg?1783930118"
+          },
+          "artist": "Daniel Ljunggren"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2827,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "cc187110-1148-4090-bbb8-e205694a39f5",
+      "scryfallId": "4f616706-ec97-4923-bb1e-11a69fbaa1f8",
+      "name": "Counterspell",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Counterspell",
+          "manaCost": "{U}{U}",
+          "typeLine": "Instant",
+          "oracleText": "Counter target spell.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/f/4f616706-ec97-4923-bb1e-11a69fbaa1f8.jpg?1783909630",
+            "large": "https://cards.scryfall.io/large/front/4/f/4f616706-ec97-4923-bb1e-11a69fbaa1f8.jpg?1783909630",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/f/4f616706-ec97-4923-bb1e-11a69fbaa1f8.jpg?1783909630"
+          },
+          "artist": "Zack Stella"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 16,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "c1eb530c-dd36-40ae-8617-6bb6969565e1",
+      "scryfallId": "249aa94c-85ab-4606-aa2c-c902bd83ac21",
+      "name": "Cultivator's Caravan",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Cultivator's Caravan",
+          "manaCost": "{3}",
+          "typeLine": "Artifact — Vehicle",
+          "oracleText": "{T}: Add one mana of any color.\nCrew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)",
+          "power": "5",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/2/4/249aa94c-85ab-4606-aa2c-c902bd83ac21.jpg?1783908909",
+            "large": "https://cards.scryfall.io/large/front/2/4/249aa94c-85ab-4606-aa2c-c902bd83ac21.jpg?1783908909",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/4/249aa94c-85ab-4606-aa2c-c902bd83ac21.jpg?1783908909"
+          },
+          "artist": "Mark Zug"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [
+        "Crew"
+      ],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 2972,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "8dc067bf-f78f-4ac4-b6e7-b305c42cf0bc",
+      "scryfallId": "2ba7597d-6d76-45b8-b172-342999e401bd",
+      "name": "Darksteel Citadel",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Darksteel Citadel",
+          "manaCost": "",
+          "typeLine": "Artifact Land",
+          "oracleText": "Indestructible\n{T}: Add {C}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/2/b/2ba7597d-6d76-45b8-b172-342999e401bd.jpg?1783927495",
+            "large": "https://cards.scryfall.io/large/front/2/b/2ba7597d-6d76-45b8-b172-342999e401bd.jpg?1783927495",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/b/2ba7597d-6d76-45b8-b172-342999e401bd.jpg?1783927495"
+          },
+          "artist": "John Avon"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [
+        "Indestructible"
+      ],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 284,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "4893a301-29a8-4a0e-845c-8ddb5cb8db25",
+      "scryfallId": "22c4148a-477d-419e-8d6b-5d558048e0db",
+      "name": "Darksteel Juggernaut",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Darksteel Juggernaut",
+          "manaCost": "{5}",
+          "typeLine": "Artifact Creature — Juggernaut",
+          "oracleText": "Indestructible\nDarksteel Juggernaut's power and toughness are each equal to the number of artifacts you control.\nThis creature attacks each combat if able.",
+          "power": "*",
+          "toughness": "*",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/2/2/22c4148a-477d-419e-8d6b-5d558048e0db.jpg?1783934266",
+            "large": "https://cards.scryfall.io/large/front/2/2/22c4148a-477d-419e-8d6b-5d558048e0db.jpg?1783934266",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/2/22c4148a-477d-419e-8d6b-5d558048e0db.jpg?1783934266"
+          },
+          "artist": "Randis Albion"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [],
+      "keywords": [
+        "Indestructible"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4578,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "ea86abfa-6cab-4ef0-8463-34136fc25b59",
+      "scryfallId": "9ecb184f-c282-42f3-9576-09781a116352",
+      "name": "Duplicant",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Duplicant",
+          "manaCost": "{6}",
+          "typeLine": "Artifact Creature — Shapeshifter",
+          "oracleText": "Imprint — When this creature enters, you may exile target nontoken creature.\nAs long as a card exiled with this creature is a creature card, this creature has the power, toughness, and creature types of the last creature card exiled with it. It's still a Shapeshifter.",
+          "power": "2",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/e/9ecb184f-c282-42f3-9576-09781a116352.jpg?1783915408",
+            "large": "https://cards.scryfall.io/large/front/9/e/9ecb184f-c282-42f3-9576-09781a116352.jpg?1783915408",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/e/9ecb184f-c282-42f3-9576-09781a116352.jpg?1783915408"
+          },
+          "artist": "Thomas M. Baxa"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [],
+      "keywords": [
+        "Imprint"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2910,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "96b87445-6362-4a17-91b2-cbf203fd03fd",
+      "scryfallId": "b0556f20-1ea8-4ab5-9a09-dec9959f017b",
+      "name": "Etherium Sculptor",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Etherium Sculptor",
+          "manaCost": "{1}{U}",
+          "typeLine": "Artifact Creature — Vedalken Artificer",
+          "oracleText": "Artifact spells you cast cost {1} less to cast.",
+          "power": "1",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/0/b0556f20-1ea8-4ab5-9a09-dec9959f017b.jpg?1783906043",
+            "large": "https://cards.scryfall.io/large/front/b/0/b0556f20-1ea8-4ab5-9a09-dec9959f017b.jpg?1783906043",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/0/b0556f20-1ea8-4ab5-9a09-dec9959f017b.jpg?1783906043"
+          },
+          "artist": "Steven Belledin"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 414,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "e89e1fae-bac3-4cc0-a233-24b9e08a5290",
+      "scryfallId": "29679998-2fb4-4fb4-9048-27b6bf6b79e8",
+      "name": "Fall from Favor",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Fall from Favor",
+          "manaCost": "{2}{U}",
+          "typeLine": "Enchantment — Aura",
+          "oracleText": "Enchant creature\nWhen this Aura enters, tap enchanted creature and you become the monarch.\nEnchanted creature doesn't untap during its controller's untap step unless that player is the monarch.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/2/9/29679998-2fb4-4fb4-9048-27b6bf6b79e8.jpg?1783915698",
+            "large": "https://cards.scryfall.io/large/front/2/9/29679998-2fb4-4fb4-9048-27b6bf6b79e8.jpg?1783915698",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/9/29679998-2fb4-4fb4-9048-27b6bf6b79e8.jpg?1783915698"
+          },
+          "artist": "Caio Monteiro"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Enchant"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 14813,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "The Monarch",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Fall from Favor",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "7777fab1-df3f-467f-b9e2-46dd2bd2166e",
+      "scryfallId": "82dfdb91-aa69-45a1-adcc-9fcd85f84ccf",
+      "name": "Forsaken Monument",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Forsaken Monument",
+          "manaCost": "{5}",
+          "typeLine": "Legendary Artifact",
+          "oracleText": "Colorless creatures you control get +2/+2.\nWhenever you tap a permanent for {C}, add an additional {C}.\nWhenever you cast a colorless spell, you gain 2 life.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/8/2/82dfdb91-aa69-45a1-adcc-9fcd85f84ccf.jpg?1783915407",
+            "large": "https://cards.scryfall.io/large/front/8/2/82dfdb91-aa69-45a1-adcc-9fcd85f84ccf.jpg?1783915407",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/8/2/82dfdb91-aa69-45a1-adcc-9fcd85f84ccf.jpg?1783915407"
+          },
+          "artist": "Piotr Dura"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 877,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "18f22960-87ec-43cd-82ea-ec5cabf49ad3",
+      "scryfallId": "16debeb1-fb2b-4172-b6da-726416d4fb38",
+      "name": "Foundry Inspector",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Foundry Inspector",
+          "manaCost": "{3}",
+          "typeLine": "Artifact Creature — Construct",
+          "oracleText": "Artifact spells you cast cost {1} less to cast.",
+          "power": "3",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/6/16debeb1-fb2b-4172-b6da-726416d4fb38.jpg?1783915599",
+            "large": "https://cards.scryfall.io/large/front/1/6/16debeb1-fb2b-4172-b6da-726416d4fb38.jpg?1783915599",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/6/16debeb1-fb2b-4172-b6da-726416d4fb38.jpg?1783915599"
+          },
+          "artist": "Jason A. Engle"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 249,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0498ea14-53d9-4655-a616-0ff3cf73de4e",
+      "scryfallId": "09d83c1d-6916-48e7-8a0d-b5abadc34b2a",
+      "name": "Foundry of the Consuls",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Foundry of the Consuls",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}.\n{5}, {T}, Sacrifice this land: Create two 1/1 colorless Thopter artifact creature tokens with flying.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/9/09d83c1d-6916-48e7-8a0d-b5abadc34b2a.jpg?1783934248",
+            "large": "https://cards.scryfall.io/large/front/0/9/09d83c1d-6916-48e7-8a0d-b5abadc34b2a.jpg?1783934248",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/9/09d83c1d-6916-48e7-8a0d-b5abadc34b2a.jpg?1783934248"
+          },
+          "artist": "Sam Burley"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 9780,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Foundry of the Consuls",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Thopter",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "aebfdcc0-c5b9-4737-8498-764a5021b087",
+      "scryfallId": "e0e73b63-17cc-4dca-abd6-728b74bc37a8",
+      "name": "Graaz, Unstoppable Juggernaut",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Graaz, Unstoppable Juggernaut",
+          "manaCost": "{8}",
+          "typeLine": "Legendary Artifact Creature — Juggernaut",
+          "oracleText": "Juggernauts you control attack each combat if able.\nJuggernauts you control can't be blocked by Walls.\nOther creatures you control have base power and toughness 5/3 and are Juggernauts in addition to their other creature types.",
+          "power": "7",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/0/e0e73b63-17cc-4dca-abd6-728b74bc37a8.jpg?1783917991",
+            "large": "https://cards.scryfall.io/large/front/e/0/e0e73b63-17cc-4dca-abd6-728b74bc37a8.jpg?1783917991",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/0/e0e73b63-17cc-4dca-abd6-728b74bc37a8.jpg?1783917991"
+          },
+          "artist": "Néstor Ossandón Leal"
+        }
+      ],
+      "cmc": 8,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 6970,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "32263baa-d3f0-463f-92b3-4e9938476add",
+      "scryfallId": "535b9ac6-dba2-4162-86ed-df3e9fad0306",
+      "name": "Hedron Archive",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Hedron Archive",
+          "manaCost": "{4}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add {C}{C}.\n{2}, {T}, Sacrifice this artifact: Draw two cards.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/3/535b9ac6-dba2-4162-86ed-df3e9fad0306.jpg?1783908888",
+            "large": "https://cards.scryfall.io/large/front/5/3/535b9ac6-dba2-4162-86ed-df3e9fad0306.jpg?1783908888",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/3/535b9ac6-dba2-4162-86ed-df3e9fad0306.jpg?1783908888"
+          },
+          "artist": "Craig J Spearing"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 544,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "5b5ef43b-13fd-4461-8d2d-18be65e9a790",
+      "scryfallId": "1ccdb407-ac8f-4736-89d3-ab0d086096ea",
+      "name": "Ichor Wellspring",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Ichor Wellspring",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "When this artifact enters or is put into a graveyard from the battlefield, draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/c/1ccdb407-ac8f-4736-89d3-ab0d086096ea.jpg?1783927513",
+            "large": "https://cards.scryfall.io/large/front/1/c/1ccdb407-ac8f-4736-89d3-ab0d086096ea.jpg?1783927513",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/c/1ccdb407-ac8f-4736-89d3-ab0d086096ea.jpg?1783927513"
+          },
+          "artist": "Steven Belledin"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 969,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "b2c6aa39-2d2a-459c-a555-fb48ba993373",
+      "scryfallId": "1335d293-3dd2-4f13-bd2c-22181f4528ee",
+      "name": "Island",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Island",
+          "manaCost": "",
+          "typeLine": "Basic Land — Island",
+          "oracleText": "({T}: Add {U}.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/3/1335d293-3dd2-4f13-bd2c-22181f4528ee.jpg?1791578424",
+            "large": "https://cards.scryfall.io/large/front/1/3/1335d293-3dd2-4f13-bd2c-22181f4528ee.jpg?1791578424",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/3/1335d293-3dd2-4f13-bd2c-22181f4528ee.jpg?1791578424"
+          },
+          "artist": "Eren Arik"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": null,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "7fffbe7f-ad78-4bb6-a611-c37e495c6ee0",
+      "scryfallId": "99cd996f-be74-4dbb-9460-6d650cedfca6",
+      "name": "Kappa Cannoneer",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Kappa Cannoneer",
+          "manaCost": "{5}{U}",
+          "typeLine": "Artifact Creature — Turtle Warrior",
+          "oracleText": "Improvise (Your artifacts can help cast this spell. Each artifact you tap after you're done activating mana abilities pays for {1}.)\nWard {4}\nWhenever this creature or another artifact you control enters, put a +1/+1 counter on this creature. It can't be blocked this turn.",
+          "power": "4",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/9/99cd996f-be74-4dbb-9460-6d650cedfca6.jpg?1783906043",
+            "large": "https://cards.scryfall.io/large/front/9/9/99cd996f-be74-4dbb-9460-6d650cedfca6.jpg?1783906043",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/9/99cd996f-be74-4dbb-9460-6d650cedfca6.jpg?1783906043"
+          },
+          "artist": "Jesper Ejsing"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Improvise",
+        "Ward"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 912,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "5d4ed768-0a37-4604-8121-43920ed9fb4a",
+      "scryfallId": "803c058c-4ccc-40cd-a74d-1bda5a4c453b",
+      "name": "Launch Mishap",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Launch Mishap",
+          "manaCost": "{2}{U}",
+          "typeLine": "Instant",
+          "oracleText": "Counter target creature or planeswalker spell. Create a 1/1 colorless Thopter artifact creature token with flying.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/8/0/803c058c-4ccc-40cd-a74d-1bda5a4c453b.jpg?1789752908",
+            "large": "https://cards.scryfall.io/large/front/8/0/803c058c-4ccc-40cd-a74d-1bda5a4c453b.jpg?1789752908",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/8/0/803c058c-4ccc-40cd-a74d-1bda5a4c453b.jpg?1789752908"
+          },
+          "artist": "Kim Sokol"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 13677,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Launch Mishap",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Thopter",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "765863c8-1be0-4bb1-9e9c-db7701cffde3",
+      "scryfallId": "42f8591e-df30-49ec-962c-a75d32e6d9f5",
+      "name": "Lonely Sandbar",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Lonely Sandbar",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\n{T}: Add {U}.\nCycling {U} ({U}, Discard this card: Draw a card.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/2/42f8591e-df30-49ec-962c-a75d32e6d9f5.jpg?1783906010",
+            "large": "https://cards.scryfall.io/large/front/4/2/42f8591e-df30-49ec-962c-a75d32e6d9f5.jpg?1783906010",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/2/42f8591e-df30-49ec-962c-a75d32e6d9f5.jpg?1783906010"
+          },
+          "artist": "Heather Hudson"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Cycling"
+      ],
+      "producedMana": [
+        "U"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 1146,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "da46786e-28df-4638-ab3d-121011d2f150",
+      "scryfallId": "480eb74f-9e62-41f7-b48a-b4249aab5752",
+      "name": "Master Transmuter",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Master Transmuter",
+          "manaCost": "{3}{U}",
+          "typeLine": "Artifact Creature — Human Artificer",
+          "oracleText": "{U}, {T}, Return an artifact you control to its owner's hand: You may put an artifact card from your hand onto the battlefield.",
+          "power": "1",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/8/480eb74f-9e62-41f7-b48a-b4249aab5752.jpg?1783930196",
+            "large": "https://cards.scryfall.io/large/front/4/8/480eb74f-9e62-41f7-b48a-b4249aab5752.jpg?1783930196",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/8/480eb74f-9e62-41f7-b48a-b4249aab5752.jpg?1783930196"
+          },
+          "artist": "Chippy"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2382,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "181e6b3e-c33e-49e7-acb8-67473289a856",
+      "scryfallId": "3efa70d4-d58c-4a43-bc4e-ffa9a91b0e5e",
+      "name": "Master of Etherium",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Master of Etherium",
+          "manaCost": "{2}{U}",
+          "typeLine": "Artifact Creature — Vedalken Wizard",
+          "oracleText": "Master of Etherium's power and toughness are each equal to the number of artifacts you control.\nOther artifact creatures you control get +1/+1.",
+          "power": "*",
+          "toughness": "*",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/3/e/3efa70d4-d58c-4a43-bc4e-ffa9a91b0e5e.jpg?1783917169",
+            "large": "https://cards.scryfall.io/large/front/3/e/3efa70d4-d58c-4a43-bc4e-ffa9a91b0e5e.jpg?1783917169",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/3/e/3efa70d4-d58c-4a43-bc4e-ffa9a91b0e5e.jpg?1783917169"
+          },
+          "artist": "Matt Cavotta"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2138,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "800fb917-8898-4eba-9f94-aec6e9d75236",
+      "scryfallId": "f45072cd-e3f2-4090-b984-50ec8d360bf2",
+      "name": "Mazemind Tome",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Mazemind Tome",
+          "manaCost": "{2}",
+          "typeLine": "Artifact — Book",
+          "oracleText": "{T}, Put a page counter on this artifact: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{2}, {T}, Put a page counter on this artifact: Draw a card.\nWhen there are four or more page counters on this artifact, exile it. If you do, you gain 4 life.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/4/f45072cd-e3f2-4090-b984-50ec8d360bf2.jpg?1783908904",
+            "large": "https://cards.scryfall.io/large/front/f/4/f45072cd-e3f2-4090-b984-50ec8d360bf2.jpg?1783908904",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/4/f45072cd-e3f2-4090-b984-50ec8d360bf2.jpg?1783908904"
+          },
+          "artist": "Randy Gallegos"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [
+        "Scry"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 6298,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "dac33359-0317-4b11-9078-fccfd2321e53",
+      "scryfallId": "6b199ce2-0ea0-47e5-a36c-36373be53fec",
+      "name": "Memory Guardian",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Memory Guardian",
+          "manaCost": "{4}{U}",
+          "typeLine": "Artifact Creature — Robot Artificer",
+          "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nFlying",
+          "power": "3",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/b/6b199ce2-0ea0-47e5-a36c-36373be53fec.jpg?1783907909",
+            "large": "https://cards.scryfall.io/large/front/6/b/6b199ce2-0ea0-47e5-a36c-36373be53fec.jpg?1783907909",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/b/6b199ce2-0ea0-47e5-a36c-36373be53fec.jpg?1783907909"
+          },
+          "artist": "Hardy Fowler"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying",
+        "Affinity"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 13356,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "d9f11aa1-9219-42a8-85a9-a8f204160706",
+      "scryfallId": "a1a1cfec-72ca-499b-b621-fa2d8502ea20",
+      "name": "Meteor Golem",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Meteor Golem",
+          "manaCost": "{7}",
+          "typeLine": "Artifact Creature — Golem",
+          "oracleText": "When this creature enters, destroy target nonland permanent an opponent controls.",
+          "power": "3",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/1/a1a1cfec-72ca-499b-b621-fa2d8502ea20.jpg?1783903217",
+            "large": "https://cards.scryfall.io/large/front/a/1/a1a1cfec-72ca-499b-b621-fa2d8502ea20.jpg?1783903217",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/1/a1a1cfec-72ca-499b-b621-fa2d8502ea20.jpg?1783903217"
+          },
+          "artist": "Domenico Cava"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 799,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "c97361b5-af16-4a7b-af85-a429dbaf4ad2",
+      "scryfallId": "b30a8f92-ce42-4b27-a893-bcf97fde228d",
+      "name": "Mind Stone",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Mind Stone",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add {C}.\n{1}, {T}, Sacrifice this artifact: Draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/3/b30a8f92-ce42-4b27-a893-bcf97fde228d.jpg?1785759375",
+            "large": "https://cards.scryfall.io/large/front/b/3/b30a8f92-ce42-4b27-a893-bcf97fde228d.jpg?1785759375",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/3/b30a8f92-ce42-4b27-a893-bcf97fde228d.jpg?1785759375"
+          },
+          "artist": "Adam Rex"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 32,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "63fd2a57-7a47-4e07-947c-f4e9da7ee538",
+      "scryfallId": "5a0e1ef4-fdb1-42bd-8e46-ba84cf850939",
+      "name": "Mind's Eye",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Mind's Eye",
+          "manaCost": "{5}",
+          "typeLine": "Artifact",
+          "oracleText": "Whenever an opponent draws a card, you may pay {1}. If you do, draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/a/5a0e1ef4-fdb1-42bd-8e46-ba84cf850939.jpg?1783934789",
+            "large": "https://cards.scryfall.io/large/front/5/a/5a0e1ef4-fdb1-42bd-8e46-ba84cf850939.jpg?1783934789",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/a/5a0e1ef4-fdb1-42bd-8e46-ba84cf850939.jpg?1783934789"
+          },
+          "artist": "Karl Kopinski"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2210,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "eaffdf95-8e20-408d-99fa-3adc9e19523d",
+      "scryfallId": "a85e2eb8-ccae-4761-92a0-6bb24ee4a40c",
+      "name": "Misleading Signpost",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Misleading Signpost",
+          "manaCost": "{2}{U}",
+          "typeLine": "Artifact",
+          "oracleText": "Flash\nWhen this artifact enters during the declare attackers step, you may reselect which player or permanent target attacking creature is attacking. (It can't attack its controller or their permanents.)\n{T}: Add {U}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/8/a85e2eb8-ccae-4761-92a0-6bb24ee4a40c.jpg?1787701571",
+            "large": "https://cards.scryfall.io/large/front/a/8/a85e2eb8-ccae-4761-92a0-6bb24ee4a40c.jpg?1787701571",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/8/a85e2eb8-ccae-4761-92a0-6bb24ee4a40c.jpg?1787701571"
+          },
+          "artist": "Julian Kok Joon Wen"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flash"
+      ],
+      "producedMana": [
+        "U"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 3112,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "c53ba31a-ba27-4e17-9a92-311acb1cab29",
+      "scryfallId": "71e7ef4a-2032-4571-afc6-5207d4b40c3d",
+      "name": "Myr Battlesphere",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Myr Battlesphere",
+          "manaCost": "{7}",
+          "typeLine": "Artifact Creature — Myr Construct",
+          "oracleText": "When this creature enters, create four 1/1 colorless Myr artifact creature tokens.\nWhenever this creature attacks, you may tap X untapped Myr you control. If you do, this creature gets +X/+0 until end of turn and deals X damage to the player or planeswalker it's attacking.",
+          "power": "4",
+          "toughness": "7",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/1/71e7ef4a-2032-4571-afc6-5207d4b40c3d.jpg?1783907008",
+            "large": "https://cards.scryfall.io/large/front/7/1/71e7ef4a-2032-4571-afc6-5207d4b40c3d.jpg?1783907008",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/1/71e7ef4a-2032-4571-afc6-5207d4b40c3d.jpg?1783907008"
+          },
+          "artist": "Franz Vohwinkel"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 931,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Myr",
+          "component": "token"
+        },
+        {
+          "name": "Myr Battlesphere",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "d07d3be3-f69d-4484-8467-cffd43871788",
+      "scryfallId": "7f0149d4-0731-474a-a1c3-28c25e486c14",
+      "name": "Myr Retriever",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Myr Retriever",
+          "manaCost": "{2}",
+          "typeLine": "Artifact Creature — Myr",
+          "oracleText": "When this creature dies, return another target artifact card from your graveyard to your hand.",
+          "power": "1",
+          "toughness": "1",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/f/7f0149d4-0731-474a-a1c3-28c25e486c14.jpg?1783930101",
+            "large": "https://cards.scryfall.io/large/front/7/f/7f0149d4-0731-474a-a1c3-28c25e486c14.jpg?1783930101",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/f/7f0149d4-0731-474a-a1c3-28c25e486c14.jpg?1783930101"
+          },
+          "artist": "Trevor Hairsine"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 892,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "3407fe41-fdd3-4119-8f70-4bc4590a379f",
+      "scryfallId": "52d58fe4-6070-4022-9cd7-c35a11b44525",
+      "name": "Negate",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Negate",
+          "manaCost": "{1}{U}",
+          "typeLine": "Instant",
+          "oracleText": "Counter target noncreature spell.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/2/52d58fe4-6070-4022-9cd7-c35a11b44525.jpg?1783904112",
+            "large": "https://cards.scryfall.io/large/front/5/2/52d58fe4-6070-4022-9cd7-c35a11b44525.jpg?1783904112",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/2/52d58fe4-6070-4022-9cd7-c35a11b44525.jpg?1783904112"
+          },
+          "artist": "Ryan Valle"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 57,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "04c7f4fe-2098-4311-866d-6733c08d5178",
+      "scryfallId": "0a7cb0f8-2946-4b00-a192-0b31c8e1ec5c",
+      "name": "Nettlecyst",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Nettlecyst",
+          "manaCost": "{3}",
+          "typeLine": "Artifact — Equipment",
+          "oracleText": "Living weapon (When this Equipment enters, create a 0/0 black Phyrexian Germ creature token, then attach this to it.)\nEquipped creature gets +1/+1 for each artifact and/or enchantment you control.\nEquip {2}",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/a/0a7cb0f8-2946-4b00-a192-0b31c8e1ec5c.jpg?1783912971",
+            "large": "https://cards.scryfall.io/large/front/0/a/0a7cb0f8-2946-4b00-a192-0b31c8e1ec5c.jpg?1783912971",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/a/0a7cb0f8-2946-4b00-a192-0b31c8e1ec5c.jpg?1783912971"
+          },
+          "artist": "Vincent Proce"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [
+        "Equip",
+        "Living weapon"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1030,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Nettlecyst",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Nettling Host",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Phyrexian Germ",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "96230edf-568a-47dd-b877-9d92aa58fac8",
+      "scryfallId": "36fb6ee3-bd54-4e5b-b055-c2c42515c162",
+      "name": "Nevinyrral's Disk",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Nevinyrral's Disk",
+          "manaCost": "{4}",
+          "typeLine": "Artifact",
+          "oracleText": "This artifact enters tapped.\n{1}, {T}: Destroy all artifacts, creatures, and enchantments.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/3/6/36fb6ee3-bd54-4e5b-b055-c2c42515c162.jpg?1783915401",
+            "large": "https://cards.scryfall.io/large/front/3/6/36fb6ee3-bd54-4e5b-b055-c2c42515c162.jpg?1783915401",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/3/6/36fb6ee3-bd54-4e5b-b055-c2c42515c162.jpg?1783915401"
+          },
+          "artist": "Steve Argyle"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2029,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "3a940dfa-a026-4969-8981-ef90cdfbe9ef",
+      "scryfallId": "18bbdc6c-b6c9-4f89-8f0a-6266e53c1fb9",
+      "name": "Ornithopter of Paradise",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Ornithopter of Paradise",
+          "manaCost": "{2}",
+          "typeLine": "Artifact Creature — Thopter",
+          "oracleText": "Flying\n{T}: Add one mana of any color.",
+          "power": "0",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/8/18bbdc6c-b6c9-4f89-8f0a-6266e53c1fb9.jpg?1783915400",
+            "large": "https://cards.scryfall.io/large/front/1/8/18bbdc6c-b6c9-4f89-8f0a-6266e53c1fb9.jpg?1783915400",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/8/18bbdc6c-b6c9-4f89-8f0a-6266e53c1fb9.jpg?1783915400"
+          },
+          "artist": "Raoul Vitale"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 220,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0c7ba712-6a99-4d2f-9242-a2163a11f69c",
+      "scryfallId": "00a4aef8-64fc-4e9d-adac-ef4c85d40b4a",
+      "name": "Padeem, Consul of Innovation",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Padeem, Consul of Innovation",
+          "manaCost": "{3}{U}",
+          "typeLine": "Legendary Creature — Vedalken Artificer",
+          "oracleText": "Artifacts you control have hexproof. (They can't be the targets of spells or abilities your opponents control.)\nAt the beginning of your upkeep, if you control the artifact with the greatest mana value or tied for the greatest mana value, draw a card.",
+          "power": "1",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/0/00a4aef8-64fc-4e9d-adac-ef4c85d40b4a.jpg?1783915692",
+            "large": "https://cards.scryfall.io/large/front/0/0/00a4aef8-64fc-4e9d-adac-ef4c85d40b4a.jpg?1783915692",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/0/00a4aef8-64fc-4e9d-adac-ef4c85d40b4a.jpg?1783915692"
+          },
+          "artist": "Matt Stewart"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 900,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "7b0767b8-b504-456e-93bd-218502f73b3d",
+      "scryfallId": "f7c6aba3-38c3-45d1-83e1-40829eb07862",
+      "name": "Palladium Myr",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Palladium Myr",
+          "manaCost": "{3}",
+          "typeLine": "Artifact Creature — Myr",
+          "oracleText": "{T}: Add {C}{C}.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/7/f7c6aba3-38c3-45d1-83e1-40829eb07862.jpg?1783915400",
+            "large": "https://cards.scryfall.io/large/front/f/7/f7c6aba3-38c3-45d1-83e1-40829eb07862.jpg?1783915400",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/7/f7c6aba3-38c3-45d1-83e1-40829eb07862.jpg?1783915400"
+          },
+          "artist": "Alan Pollack"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 727,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "ea9709b6-4c37-4d5a-b04d-cd4c42e4f9dd",
+      "scryfallId": "ac943e31-26bc-4b54-b73f-460e6e402d86",
+      "name": "Propaganda",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Propaganda",
+          "manaCost": "{2}{U}",
+          "typeLine": "Enchantment",
+          "oracleText": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/c/ac943e31-26bc-4b54-b73f-460e6e402d86.jpg?1783903239",
+            "large": "https://cards.scryfall.io/large/front/a/c/ac943e31-26bc-4b54-b73f-460e6e402d86.jpg?1783903239",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/c/ac943e31-26bc-4b54-b73f-460e6e402d86.jpg?1783903239"
+          },
+          "artist": "Borja Pindado"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 110,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "2876e74f-a242-4995-9702-0b737a1ab67a",
+      "scryfallId": "d0f42a19-c180-45b1-9f4c-787cf3a4a649",
+      "name": "Psychosis Crawler",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Psychosis Crawler",
+          "manaCost": "{5}",
+          "typeLine": "Artifact Creature — Phyrexian Horror",
+          "oracleText": "Psychosis Crawler's power and toughness are each equal to the number of cards in your hand.\nWhenever you draw a card, each opponent loses 1 life.",
+          "power": "*",
+          "toughness": "*",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/0/d0f42a19-c180-45b1-9f4c-787cf3a4a649.jpg?1783912973",
+            "large": "https://cards.scryfall.io/large/front/d/0/d0f42a19-c180-45b1-9f4c-787cf3a4a649.jpg?1783912973",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/0/d0f42a19-c180-45b1-9f4c-787cf3a4a649.jpg?1783912973"
+          },
+          "artist": "Stephan Martiniere"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 431,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "b1a23235-3076-475c-a68a-db29cf2a9dba",
+      "scryfallId": "74d8d661-a43f-4cee-87d5-1f74433a283e",
+      "name": "Pull from Tomorrow",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Pull from Tomorrow",
+          "manaCost": "{X}{U}{U}",
+          "typeLine": "Instant",
+          "oracleText": "Draw X cards, then discard a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/4/74d8d661-a43f-4cee-87d5-1f74433a283e.jpg?1783903821",
+            "large": "https://cards.scryfall.io/large/front/7/4/74d8d661-a43f-4cee-87d5-1f74433a283e.jpg?1783903821",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/4/74d8d661-a43f-4cee-87d5-1f74433a283e.jpg?1783903821"
+          },
+          "artist": "Ioannis Fiore"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 939,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "24aebda0-315f-4d2f-8bd9-00bbaf5bd76a",
+      "scryfallId": "a340af37-c0a7-4f26-974b-95397b5c32f7",
+      "name": "Remote Isle",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Remote Isle",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\n{T}: Add {U}.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/3/a340af37-c0a7-4f26-974b-95397b5c32f7.jpg?1783918401",
+            "large": "https://cards.scryfall.io/large/front/a/3/a340af37-c0a7-4f26-974b-95397b5c32f7.jpg?1783918401",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/3/a340af37-c0a7-4f26-974b-95397b5c32f7.jpg?1783918401"
+          },
+          "artist": "Ciruelo"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Cycling"
+      ],
+      "producedMana": [
+        "U"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 4246,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "ba5055ce-6809-47a4-bee6-fb97a5b60f8a",
+      "scryfallId": "d0ef159d-657a-4566-b9e0-f545df230025",
+      "name": "Research Thief",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Research Thief",
+          "manaCost": "{4}{U}",
+          "typeLine": "Artifact Creature — Moonfolk Wizard",
+          "oracleText": "Flash\nFlying\nWhenever an artifact creature you control deals combat damage to a player, draw a card.",
+          "power": "3",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/0/d0ef159d-657a-4566-b9e0-f545df230025.jpg?1783923994",
+            "large": "https://cards.scryfall.io/large/front/d/0/d0ef159d-657a-4566-b9e0-f545df230025.jpg?1783923994",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/0/d0ef159d-657a-4566-b9e0-f545df230025.jpg?1783923994"
+          },
+          "artist": "Cristi Balanescu"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying",
+        "Flash"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4645,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "52241b9c-7a69-4176-9234-8bdab09d8e64",
+      "scryfallId": "ad0b5c09-5075-408e-84c5-1095354ac53e",
+      "name": "Sai, Master Thopterist",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sai, Master Thopterist",
+          "manaCost": "{2}{U}",
+          "typeLine": "Legendary Creature — Human Artificer",
+          "oracleText": "Whenever you cast an artifact spell, create a 1/1 colorless Thopter artifact creature token with flying.\n{1}{U}, Sacrifice two artifacts: Draw a card.",
+          "power": "1",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/d/ad0b5c09-5075-408e-84c5-1095354ac53e.jpg?1783915691",
+            "large": "https://cards.scryfall.io/large/front/a/d/ad0b5c09-5075-408e-84c5-1095354ac53e.jpg?1783915691",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/d/ad0b5c09-5075-408e-84c5-1095354ac53e.jpg?1783915691"
+          },
+          "artist": "Adam Paquette"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 810,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Sai, Master Thopterist",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Thopter",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "1d60c80d-9a95-4051-bbf7-02ca51ee1be2",
+      "scryfallId": "a1176dcf-40ee-4342-aa74-791b8352e99a",
+      "name": "Scrawling Crawler",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Scrawling Crawler",
+          "manaCost": "{3}",
+          "typeLine": "Artifact Creature — Phyrexian Construct",
+          "oracleText": "At the beginning of your upkeep, each player draws a card.\nWhenever an opponent draws a card, that player loses 1 life.",
+          "power": "3",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/1/a1176dcf-40ee-4342-aa74-791b8352e99a.jpg?1783909088",
+            "large": "https://cards.scryfall.io/large/front/a/1/a1176dcf-40ee-4342-aa74-791b8352e99a.jpg?1783909088",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/1/a1176dcf-40ee-4342-aa74-791b8352e99a.jpg?1783909088"
+          },
+          "artist": "Miro Petrov"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 584,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "de1316f2-1cca-4ac4-aead-0fd8b4036d88",
+      "scryfallId": "3983a11e-8a8a-4d9d-868b-13e0c3719abb",
+      "name": "Shimmer Dragon",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Shimmer Dragon",
+          "manaCost": "{4}{U}{U}",
+          "typeLine": "Creature — Dragon",
+          "oracleText": "Flying\nAs long as you control four or more artifacts, this creature has hexproof. (It can't be the target of spells or abilities your opponents control.)\nTap two untapped artifacts you control: Draw a card.",
+          "power": "5",
+          "toughness": "6",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/3/9/3983a11e-8a8a-4d9d-868b-13e0c3719abb.jpg?1783913013",
+            "large": "https://cards.scryfall.io/large/front/3/9/3983a11e-8a8a-4d9d-868b-13e0c3719abb.jpg?1783913013",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/3/9/3983a11e-8a8a-4d9d-868b-13e0c3719abb.jpg?1783913013"
+          },
+          "artist": "Lie Setiawan"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2750,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "e110ee80-37af-4989-a5fb-95d51dc7f102",
+      "scryfallId": "4f61479b-05e1-4c89-bf11-b79c06ace5e2",
+      "name": "Shimmer Myr",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Shimmer Myr",
+          "manaCost": "{3}",
+          "typeLine": "Artifact Creature — Myr",
+          "oracleText": "Flash\nYou may cast artifact spells as though they had flash.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/f/4f61479b-05e1-4c89-bf11-b79c06ace5e2.jpg?1783915591",
+            "large": "https://cards.scryfall.io/large/front/4/f/4f61479b-05e1-4c89-bf11-b79c06ace5e2.jpg?1783915591",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/f/4f61479b-05e1-4c89-bf11-b79c06ace5e2.jpg?1783915591"
+          },
+          "artist": "Jana Schirmer & Johannes Voss"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [
+        "Flash"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1347,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "66e8f7f8-3a6d-46ba-837c-b9713ddf7f40",
+      "scryfallId": "3ebcc053-21c6-4708-b9fc-532e3749962f",
+      "name": "Silver Myr",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Silver Myr",
+          "manaCost": "{2}",
+          "typeLine": "Artifact Creature — Myr",
+          "oracleText": "{T}: Add {U}.",
+          "power": "1",
+          "toughness": "1",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/3/e/3ebcc053-21c6-4708-b9fc-532e3749962f.jpg?1783923938",
+            "large": "https://cards.scryfall.io/large/front/3/e/3ebcc053-21c6-4708-b9fc-532e3749962f.jpg?1783923938",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/3/e/3ebcc053-21c6-4708-b9fc-532e3749962f.jpg?1783923938"
+          },
+          "artist": "Kev Walker"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 1252,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "50b14338-9318-4327-a1dd-c0ef38903cc4",
+      "scryfallId": "4f8075be-8932-49b3-990b-4b365fa27e94",
+      "name": "Skysovereign, Consul Flagship",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Skysovereign, Consul Flagship",
+          "manaCost": "{5}",
+          "typeLine": "Legendary Artifact — Vehicle",
+          "oracleText": "Flying\nWhenever Skysovereign enters or attacks, it deals 3 damage to target creature or planeswalker an opponent controls.\nCrew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)",
+          "power": "6",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/f/4f8075be-8932-49b3-990b-4b365fa27e94.jpg?1783923937",
+            "large": "https://cards.scryfall.io/large/front/4/f/4f8075be-8932-49b3-990b-4b365fa27e94.jpg?1783923937",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/f/4f8075be-8932-49b3-990b-4b365fa27e94.jpg?1783923937"
+          },
+          "artist": "Jung Park"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [],
+      "keywords": [
+        "Flying",
+        "Crew"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2712,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "6ad8011d-3471-4369-9d68-b264cc027487",
+      "scryfallId": "8ee443cc-e17a-493b-9c93-1f9e141a30e4",
+      "name": "Sol Ring",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sol Ring",
+          "manaCost": "{1}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add {C}{C}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/8/e/8ee443cc-e17a-493b-9c93-1f9e141a30e4.jpg?1789644446",
+            "large": "https://cards.scryfall.io/large/front/8/e/8ee443cc-e17a-493b-9c93-1f9e141a30e4.jpg?1789644446",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/8/e/8ee443cc-e17a-493b-9c93-1f9e141a30e4.jpg?1789644446"
+          },
+          "artist": "Titus Lunter"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 1,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "1b5e6560-ff2e-4475-96cb-63f64c8a86db",
+      "scryfallId": "f4907e7b-d6d5-4e9b-968f-bce34ae4a577",
+      "name": "Soul-Guide Lantern",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Soul-Guide Lantern",
+          "manaCost": "{1}",
+          "typeLine": "Artifact",
+          "oracleText": "When this artifact enters, exile target card from a graveyard.\n{T}, Sacrifice this artifact: Exile each opponent's graveyard.\n{1}, {T}, Sacrifice this artifact: Draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/4/f4907e7b-d6d5-4e9b-968f-bce34ae4a577.jpg?1783906018",
+            "large": "https://cards.scryfall.io/large/front/f/4/f4907e7b-d6d5-4e9b-968f-bce34ae4a577.jpg?1783906018",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/4/f4907e7b-d6d5-4e9b-968f-bce34ae4a577.jpg?1783906018"
+          },
+          "artist": "Iris Compiet"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1340,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "bfdc6bbc-7402-40ae-91be-658afca2f145",
+      "scryfallId": "b299c599-1a10-4122-ac0b-8f52a9cec7b6",
+      "name": "Spire Golem",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Spire Golem",
+          "manaCost": "{6}",
+          "typeLine": "Artifact Creature — Golem",
+          "oracleText": "Affinity for Islands (This spell costs {1} less to cast for each Island you control.)\nFlying",
+          "power": "2",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/2/b299c599-1a10-4122-ac0b-8f52a9cec7b6.jpg?1783938744",
+            "large": "https://cards.scryfall.io/large/front/b/2/b299c599-1a10-4122-ac0b-8f52a9cec7b6.jpg?1783938744",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/2/b299c599-1a10-4122-ac0b-8f52a9cec7b6.jpg?1783938744"
+          },
+          "artist": "Daren Bader"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [],
+      "keywords": [
+        "Flying",
+        "Affinity"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 22499,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "6e64f1e0-ddd6-4ee7-8797-086e234b02e8",
+      "scryfallId": "548cbc66-d915-4b94-86da-4c909a1ce645",
+      "name": "Steel Hellkite",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Steel Hellkite",
+          "manaCost": "{6}",
+          "typeLine": "Artifact Creature — Dragon",
+          "oracleText": "Flying\n{2}: This creature gets +1/+0 until end of turn.\n{X}: Destroy each nonland permanent with mana value X whose controller was dealt combat damage by this creature this turn. Activate only once each turn.",
+          "power": "5",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/4/548cbc66-d915-4b94-86da-4c909a1ce645.jpg?1783907007",
+            "large": "https://cards.scryfall.io/large/front/5/4/548cbc66-d915-4b94-86da-4c909a1ce645.jpg?1783907007",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/4/548cbc66-d915-4b94-86da-4c909a1ce645.jpg?1783907007"
+          },
+          "artist": "James Paick"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1191,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "986ae327-f433-4c58-93dc-afc544b9bfcb",
+      "scryfallId": "7601fbf2-916f-44b2-837a-201fd8304613",
+      "name": "Steel Overseer",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Steel Overseer",
+          "manaCost": "{2}",
+          "typeLine": "Artifact Creature — Construct",
+          "oracleText": "{T}: Put a +1/+1 counter on each artifact creature you control.",
+          "power": "1",
+          "toughness": "1",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/6/7601fbf2-916f-44b2-837a-201fd8304613.jpg?1783906018",
+            "large": "https://cards.scryfall.io/large/front/7/6/7601fbf2-916f-44b2-837a-201fd8304613.jpg?1783906018",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/6/7601fbf2-916f-44b2-837a-201fd8304613.jpg?1783906018"
+          },
+          "artist": "Chris Rahn"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 796,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "d9356199-4ce3-44fa-9463-90fc134088f9",
+      "scryfallId": "0edb2d01-9a94-410c-8ab7-ca1b404ab5f0",
+      "name": "Tamiyo's Logbook",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Tamiyo's Logbook",
+          "manaCost": "{2}{U}",
+          "typeLine": "Artifact — Book",
+          "oracleText": "{5}{U}, {T}: Draw a card. This ability costs {1} less to activate for each other artifact you control.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/e/0edb2d01-9a94-410c-8ab7-ca1b404ab5f0.jpg?1783918058",
+            "large": "https://cards.scryfall.io/large/front/0/e/0edb2d01-9a94-410c-8ab7-ca1b404ab5f0.jpg?1783918058",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/e/0edb2d01-9a94-410c-8ab7-ca1b404ab5f0.jpg?1783918058"
+          },
+          "artist": "Piotr Dura"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 10748,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "939e6f71-185e-41f2-9d54-72cce06f1dce",
+      "scryfallId": "5f4f77e5-0019-4a5f-bae6-136121946929",
+      "name": "Thirst for Knowledge",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thirst for Knowledge",
+          "manaCost": "{2}{U}",
+          "typeLine": "Instant",
+          "oracleText": "Draw three cards. Then discard two cards unless you discard an artifact card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/f/5f4f77e5-0019-4a5f-bae6-136121946929.jpg?1783902949",
+            "large": "https://cards.scryfall.io/large/front/5/f/5f4f77e5-0019-4a5f-bae6-136121946929.jpg?1783902949",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/f/5f4f77e5-0019-4a5f-bae6-136121946929.jpg?1783902949"
+          },
+          "artist": "Greg Smallwood"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1982,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "8aab9181-c306-471a-8061-9a7a7654dab5",
+      "scryfallId": "8924b785-b140-4212-a1eb-a10340e09fea",
+      "name": "Thopter Fabricator",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thopter Fabricator",
+          "manaCost": "{2}{U}",
+          "typeLine": "Artifact — Vehicle",
+          "oracleText": "Flying\nWhenever you draw your second card each turn, create a 1/1 colorless Thopter artifact creature token with flying.\nCrew 2",
+          "power": "4",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/8/9/8924b785-b140-4212-a1eb-a10340e09fea.jpg?1783907901",
+            "large": "https://cards.scryfall.io/large/front/8/9/8924b785-b140-4212-a1eb-a10340e09fea.jpg?1783907901",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/8/9/8924b785-b140-4212-a1eb-a10340e09fea.jpg?1783907901"
+          },
+          "artist": "Racrufi"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying",
+        "Crew"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3988,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Thopter",
+          "component": "token"
+        },
+        {
+          "name": "Thopter Fabricator",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "49be65fd-3755-410d-b0dc-2e5861ea2552",
+      "scryfallId": "babc5799-31f3-452e-a61d-5c11f9f81bf9",
+      "name": "Thopter Spy Network",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thopter Spy Network",
+          "manaCost": "{2}{U}{U}",
+          "typeLine": "Enchantment",
+          "oracleText": "At the beginning of your upkeep, if you control an artifact, create a 1/1 colorless Thopter artifact creature token with flying.\nWhenever one or more artifact creatures you control deal combat damage to a player, draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/a/babc5799-31f3-452e-a61d-5c11f9f81bf9.jpg?1783917163",
+            "large": "https://cards.scryfall.io/large/front/b/a/babc5799-31f3-452e-a61d-5c11f9f81bf9.jpg?1783917163",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/a/babc5799-31f3-452e-a61d-5c11f9f81bf9.jpg?1783917163"
+          },
+          "artist": "Jung Park"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 933,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Thopter Spy Network",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Thopter",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "9deded8b-cec4-4ede-a50b-131404d456d4",
+      "scryfallId": "18a6ea89-417c-4ee0-a410-8a0067b92967",
+      "name": "Thought Monitor",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thought Monitor",
+          "manaCost": "{6}{U}",
+          "typeLine": "Artifact Creature — Construct",
+          "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nFlying\nWhen this creature enters, draw two cards.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/8/18a6ea89-417c-4ee0-a410-8a0067b92967.jpg?1783906042",
+            "large": "https://cards.scryfall.io/large/front/1/8/18a6ea89-417c-4ee0-a410-8a0067b92967.jpg?1783906042",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/8/18a6ea89-417c-4ee0-a410-8a0067b92967.jpg?1783906042"
+          },
+          "artist": "Martina Pilcerova"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying",
+        "Affinity"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 730,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "9965d9c5-2ebf-4a6c-930e-55c5890979be",
+      "scryfallId": "ad077996-6b5e-4eb8-bb6e-93d43c5efa8f",
+      "name": "Thought Vessel",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thought Vessel",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "You have no maximum hand size.\n{T}: Add {C}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/d/ad077996-6b5e-4eb8-bb6e-93d43c5efa8f.jpg?1785759392",
+            "large": "https://cards.scryfall.io/large/front/a/d/ad077996-6b5e-4eb8-bb6e-93d43c5efa8f.jpg?1785759392",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/d/ad077996-6b5e-4eb8-bb6e-93d43c5efa8f.jpg?1785759392"
+          },
+          "artist": "rk post"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 21,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "cce9bbff-82dc-4b2f-addd-d6715588de20",
+      "scryfallId": "466a0be8-31b9-4ea0-9a96-b09a76f4ec69",
+      "name": "Thoughtcast",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thoughtcast",
+          "manaCost": "{4}{U}",
+          "typeLine": "Sorcery",
+          "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nDraw two cards.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/6/466a0be8-31b9-4ea0-9a96-b09a76f4ec69.jpg?1783917163",
+            "large": "https://cards.scryfall.io/large/front/4/6/466a0be8-31b9-4ea0-9a96-b09a76f4ec69.jpg?1783917163",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/6/466a0be8-31b9-4ea0-9a96-b09a76f4ec69.jpg?1783917163"
+          },
+          "artist": "Greg Hildebrandt"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Affinity"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 927,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "568cf486-0261-4634-ac36-a6507101b2d0",
+      "scryfallId": "508b3cb7-b434-4524-8ef0-7db7f7f22edd",
+      "name": "Vedalken Archmage",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Vedalken Archmage",
+          "manaCost": "{2}{U}{U}",
+          "typeLine": "Creature — Vedalken Wizard",
+          "oracleText": "Whenever you cast an artifact spell, draw a card.",
+          "power": "0",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/0/508b3cb7-b434-4524-8ef0-7db7f7f22edd.jpg?1783930442",
+            "large": "https://cards.scryfall.io/large/front/5/0/508b3cb7-b434-4524-8ef0-7db7f7f22edd.jpg?1783930442",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/0/508b3cb7-b434-4524-8ef0-7db7f7f22edd.jpg?1783930442"
+          },
+          "artist": "Kev Walker"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3041,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "71c52bf5-2a5d-488e-8b15-7ef290e4b77d",
+      "scryfallId": "0775b4be-881c-4832-8954-d961064315b6",
+      "name": "War Room",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "War Room",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}.\n{3}, {T}, Pay life equal to the number of colors in your commanders' color identity: Draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/7/0775b4be-881c-4832-8954-d961064315b6.jpg?1783903712",
+            "large": "https://cards.scryfall.io/large/front/0/7/0775b4be-881c-4832-8954-d961064315b6.jpg?1783903712",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/7/0775b4be-881c-4832-8954-d961064315b6.jpg?1783903712"
+          },
+          "artist": "Milivoj Ćeran"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 139,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "7060f2c8-fca0-4b7a-bddf-37682f434596",
+      "scryfallId": "d1054d2b-a424-466d-8ec6-36f014849e43",
+      "name": "Whirler Rogue",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Whirler Rogue",
+          "manaCost": "{2}{U}{U}",
+          "typeLine": "Creature — Human Rogue Artificer",
+          "oracleText": "When this creature enters, create two 1/1 colorless Thopter artifact creature tokens with flying.\nTap two untapped artifacts you control: Target creature can't be blocked this turn.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/1/d1054d2b-a424-466d-8ec6-36f014849e43.jpg?1783911934",
+            "large": "https://cards.scryfall.io/large/front/d/1/d1054d2b-a424-466d-8ec6-36f014849e43.jpg?1783911934",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/1/d1054d2b-a424-466d-8ec6-36f014849e43.jpg?1783911934"
+          },
+          "artist": "Winona Nelson"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2236,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Whirler Rogue",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Thopter",
+          "component": "token"
+        }
+      ]
+    }
+  ]
+}

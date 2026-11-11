@@ -1,0 +1,3 @@
+# The synthetic CR fixture must keep its BOM and CRLF bytes; a test checks them.
+tools/rules/fixtures/synthetic-cr.txt -text
+docs/rules/comprehensive-rules.txt -text

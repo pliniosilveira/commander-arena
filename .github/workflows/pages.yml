@@ -1,0 +1,46 @@
+name: Deploy to GitHub Pages
+
+# SPEC 17.6 A23, D-023, D-049: the playable build is normally deployed by Cloudflare Pages' Git
+# integration, because GitHub Pages is free only for public repositories. This workflow is kept
+# for the day the repository goes public: switch Settings -> Pages -> Source to "GitHub Actions"
+# and add `push: branches: [main]` under `on:`. Until then it runs only when started by hand.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @commander-arena/web build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

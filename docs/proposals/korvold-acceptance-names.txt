@@ -1,0 +1,46 @@
+# Names of the Korvold deck cards that were unsupported at parser version 39 and are not in the golden corpus yet.
+# Source: docs/proposals/korvold-deck-analysis.md (the owner's request export of 2026-10-29).
+# Run, where Scryfall's bulk file is available (see docs/CORPUS.md):
+#   pnpm corpus:extract --file <oracle_cards file> --names docs/proposals/korvold-acceptance-names.txt --acceptance
+# Fabled Passage and Tear Asunder are left out on purpose: they are in the corpus already, in the training and the hold-out group.
+Ancient Adamantoise
+Awakening Zone
+Beledros Witherbloom
+Bolt Bend
+Bootleggers' Stash
+Cabaretti Courtyard
+Cindervines
+Coin of Mastery
+Conqueror's Flail
+Decadent Dragon
+Dragon Broodmother
+Emissary Green
+Far Wanderings
+Ganax, Astral Hunter
+Gilt-Leaf's Embrace
+Goldspan Dragon
+Goldvein Hydra
+Impulsive Pilferer
+Jund Panorama
+Kaervek the Merciless
+Kardur, Doomscourge
+Lavalanche
+Lobelia Sackville-Baggins
+Maestros Theater
+Moraug, Fury of Akoum
+My Precious
+Nesting Dragon
+Prossh, Skyraider of Kher
+Rancor
+Rhythm of the Wild
+Riveteers Overlook
+Spelunking
+Stir Up Trouble
+Swashbuckler Extraordinaire
+Temur Battle Rage
+The Balrog of Moria
+The Mending of Dominaria
+There and Back Again
+Tireless Provisioner
+Treasure Nabber
+Ziatora, the Incinerator

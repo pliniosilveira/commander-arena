@@ -1,0 +1,267 @@
+/**
+ * Validation of what D-095 adds to the AST: the additional costs of casting a spell (CR 118.8,
+ * 601.2b), the alternative cost "without paying its mana cost" (CR 118.9), and the `costReduction`
+ * static ability (CR 118.7, 601.2f). `validate.ts` composes these.
+ */
+import type { AlternativeCost, Cost, ObjectFilter, StaticEffect } from './types';
+import { isCount, isOneOf, issue, kindOf, type Out } from './validate-base';
+import {
+  checkCondition,
+  checkCost,
+  checkCosts,
+  checkFilter,
+  checkStateAmount,
+  filterSome,
+} from './validate-parts';
+
+/** The costs a spell may have besides its mana cost (`CardFace.additionalCosts`). */
+export const ADDITIONAL_COST_KINDS: readonly Cost['kind'][] = [
+  'sacrifice',
+  'discard',
+  'payLife',
+  'payXLife',
+  'mana',
+];
+
+/**
+ * CR 118.8, 601.2b: the additional costs of a face. The caster chooses what to sacrifice and discard
+ * as the cost is paid, so one of each is allowed. "Pay X life" (`payXLife`, D-103) is allowed once: X is
+ * announced as the spell is cast (CR 107.3a, 601.2b). An {X} in an additional mana cost is not (the
+ * announcement and the cost would need the same symbol counted twice).
+ */
+export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: Out): void {
+  if (!Array.isArray(costs) || costs.length === 0) {
+    issue(out, path, 'additionalCosts must be a non-empty list when present');
+    return;
+  }
+  let sacrifices = 0;
+  let discards = 0;
+  let xLife = 0;
+  costs.forEach((cost, i) => {
+    const p = `${path}[${i}]`;
+    checkCost(cost, p, out);
+    if (!isOneOf(cost?.kind, ADDITIONAL_COST_KINDS)) {
+      issue(out, p, `${kindOf(cost)} is not an additional cost a spell can have in this engine`);
+      return;
+    }
+    switch (cost.kind) {
+      case 'sacrifice':
+        sacrifices += 1;
+        // "Sacrifice this" is a cost of a permanent's ability: a spell sacrifices something else.
+        if (kindOf(cost.what) === 'this') {
+          issue(out, `${p}.what`, 'a spell cannot sacrifice itself as an additional cost');
+        }
+        if (cost.count !== undefined) {
+          issue(
+            out,
+            `${p}.count`,
+            'a spell sacrifices one permanent as an additional cost: no count (D-133)',
+          );
+        }
+        break;
+      case 'discard':
+        discards += 1;
+        // D-207: the cards a filter or a name picks out are for the cost of an activated ability.
+        if (cost.filter !== undefined || cost.named !== undefined) {
+          issue(out, p, 'an additional cost discards any cards: no filter and no name (D-207)');
+        }
+        break;
+      case 'payLife':
+        if (isCount(cost.amount) && cost.amount < 1) {
+          issue(out, `${p}.amount`, 'life paid must be at least 1');
+        }
+        break;
+      case 'payXLife':
+        xLife += 1;
+        break;
+      case 'mana':
+        if (Array.isArray(cost.symbols) && cost.symbols.includes('X')) {
+          issue(
+            out,
+            `${p}.symbols`,
+            'an {X} in an additional mana cost is not supported (use payXLife for "pay X life")',
+          );
+        }
+        break;
+      default:
+        break;
+    }
+  });
+  if (sacrifices > 1) issue(out, path, 'more than one sacrifice cost is not supported');
+  if (discards > 1) issue(out, path, 'more than one discard cost is not supported');
+  if (xLife > 1) issue(out, path, 'more than one "pay X life" cost is not supported');
+}
+
+/**
+ * CR 118.8, 601.2b (D-181): "As an additional cost to cast this spell, sacrifice an artifact or creature or pay {4}": two ways to pay, each a non-empty
+ * list of the costs `additionalCosts` takes, and with the face's own `additionalCosts` at most one sacrifice and one discard. No "pay X life" and no {X}
+ * (X is announced before the targets and the choice comes first), and the two ways are not the same.
+ */
+export function checkAdditionalCostChoice(
+  choice: readonly [readonly Cost[], readonly Cost[]],
+  fixed: readonly Cost[],
+  path: string,
+  out: Out,
+): void {
+  if (!Array.isArray(choice) || choice.length !== 2) {
+    issue(out, path, 'additionalCostChoice has exactly two ways to pay');
+    return;
+  }
+  choice.forEach((way, i) => {
+    const p = `${path}[${i}]`;
+    if (!Array.isArray(way) || way.length === 0) {
+      issue(out, p, 'a way to pay is a non-empty list of costs');
+      return;
+    }
+    // With the fixed additional costs, as they are paid together: one sacrifice and one discard at most.
+    checkAdditionalCosts([...fixed, ...way], p, out);
+    if (way.some((c) => c?.kind === 'payXLife')) {
+      issue(out, p, 'a choice of additional costs has no "pay X life"');
+    }
+  });
+  if (JSON.stringify(choice[0]) === JSON.stringify(choice[1])) {
+    issue(out, path, 'the two ways to pay are the same');
+  }
+}
+
+/** The kinds a face may list (`CardFace.alternativeCosts`): `free` and the named, mana-paid ones (D-121). */
+const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
+  'free',
+  'overload',
+  'evoke',
+  'dash',
+  'spectacle',
+  'escape',
+  'madness',
+  'foretell',
+  'tapPermanents',
+];
+
+/**
+ * CR 118.9a: a face lists at most one alternative cost of each kind (the caster names the one that
+ * applies as the spell is cast, CR 601.2b). A named alternative has a mana cost, with no {X}: the cost
+ * is paid instead of the mana cost and an {X} in it would be announced (CR 107.3b, 702.96a).
+ */
+export function checkAlternativeCosts(
+  alternatives: readonly AlternativeCost[],
+  path: string,
+  out: Out,
+): void {
+  if (!Array.isArray(alternatives) || alternatives.length === 0) {
+    issue(out, path, 'alternativeCosts must be a non-empty list when present');
+    return;
+  }
+  const seen = new Set<string>();
+  alternatives.forEach((alt, i) => {
+    const p = `${path}[${i}]`;
+    if (!isOneOf(alt?.kind, ALTERNATIVE_KINDS)) {
+      issue(out, p, `unknown alternative cost ${kindOf(alt)}`);
+      return;
+    }
+    if (seen.has(alt.kind)) {
+      issue(
+        out,
+        p,
+        `more than one alternative cost of kind ${alt.kind} on a face is not supported`,
+      );
+    }
+    seen.add(alt.kind);
+    if (alt.kind !== 'free') checkNamedAlternativeCost(alt.cost, `${p}.cost`, out);
+    // CR 702.138a (D-124): an escape cost exiles at least one other card; no other kind has the field.
+    const exile = (alt as { readonly exile?: unknown }).exile;
+    if (alt.kind === 'escape') {
+      if (!Number.isSafeInteger(exile) || (exile as number) < 1) {
+        issue(out, `${p}.exile`, 'escape exiles a positive whole number of other cards');
+      }
+    } else if (exile !== undefined) {
+      issue(out, `${p}.exile`, `only escape exiles cards (${alt.kind} has no exile)`);
+    }
+    // D-149: the permanents tapped as part of the cost are checked as the tap cost of an ability is (same fields, same rules).
+    if (alt.kind === 'tapPermanents') {
+      checkCost({ kind: 'tapPermanents', filter: alt.filter, count: alt.count }, p, out);
+    } else if (
+      (alt as { readonly filter?: unknown }).filter !== undefined ||
+      (alt as { readonly count?: unknown }).count !== undefined
+    ) {
+      issue(out, p, `only tapPermanents taps permanents (${alt.kind} has no filter or count)`);
+    }
+    if (alt.condition !== undefined) checkCondition(alt.condition, `${p}.condition`, out);
+  });
+}
+
+/** The cost of a named alternative cost: a mana cost, with no {X} (the engine pays no other kind, D-121). */
+function checkNamedAlternativeCost(cost: readonly Cost[], path: string, out: Out): void {
+  checkCosts(cost, path, out);
+  if (!Array.isArray(cost)) return;
+  cost.forEach((c, i) => {
+    if (c?.kind !== 'mana') {
+      issue(out, `${path}[${i}]`, 'an alternative cost may be mana only in this engine');
+    } else if (c.symbols?.includes('X')) {
+      issue(out, `${path}[${i}]`, 'X in an alternative cost is not supported');
+    }
+  });
+}
+
+/**
+ * CR 118.7a, 601.2f: a reduction of generic mana. `spells` is `this` (the spell's own ability, CR
+ * 113.6d) or a filter describing spells on the stack. The amount is a positive number or a count.
+ */
+export function checkCostReduction(
+  s: Extract<StaticEffect, { kind: 'costReduction' }>,
+  path: string,
+  out: Out,
+): void {
+  if (kindOf(s.spells) !== 'this') {
+    const filter = s.spells as ObjectFilter;
+    checkFilter(filter, `${path}.spells`, out);
+    if (filterSome(filter, (f) => f.zone !== undefined || f.stackKind !== undefined)) {
+      issue(
+        out,
+        `${path}.spells`,
+        'the filter describes a spell being cast: zone and stackKind are not set',
+      );
+    }
+  }
+  const amount = s.amount;
+  if (typeof amount === 'number') {
+    if (!isCount(amount) || amount < 1) {
+      issue(out, `${path}.amount`, 'a cost reduction must be a positive integer');
+    }
+  } else {
+    // D-131: a count, or any amount that reads the game as the spell is cast (total power, devotion, counters on this
+    // permanent, ...): worked out at CR 601.2f.
+    checkStateAmount(amount, `${path}.amount`, out, 'a cost reduction');
+  }
+}
+
+/**
+ * CR 508.1h (D-125): the cost of "can't attack you unless their controller pays [cost] for each creature":
+ * mana only, at least one symbol, no {X} (nobody announces X when attacking), and `planeswalkers` true or absent.
+ */
+export function checkAttackTax(
+  s: Extract<StaticEffect, { kind: 'attackTax' }>,
+  path: string,
+  out: Out,
+): void {
+  if (!Array.isArray(s.cost) || s.cost.length === 0) {
+    issue(out, `${path}.cost`, 'an attack tax needs a cost');
+    return;
+  }
+  checkCosts(s.cost, `${path}.cost`, out);
+  let symbols = 0;
+  s.cost.forEach((c, i) => {
+    if (c?.kind !== 'mana') {
+      issue(out, `${path}.cost[${i}]`, 'an attack tax may be mana only in this engine');
+    } else if (Array.isArray(c.symbols)) {
+      symbols += c.symbols.length;
+      if (c.symbols.includes('X'))
+        issue(out, `${path}.cost[${i}]`, 'X in an attack tax is not supported');
+    }
+  });
+  if (symbols === 0 && s.cost.every((c) => c?.kind === 'mana')) {
+    issue(out, `${path}.cost`, 'an attack tax needs at least one mana symbol');
+  }
+  if (s.planeswalkers !== undefined && s.planeswalkers !== true) {
+    issue(out, `${path}.planeswalkers`, 'planeswalkers is true or absent');
+  }
+}

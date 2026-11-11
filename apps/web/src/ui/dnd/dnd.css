@@ -1,0 +1,100 @@
+/* Drag and drop: the drag image, the carried card and the valid drop zones. Nothing here dims. */
+
+.dnd-ghost {
+  position: fixed;
+  top: -200px;
+  left: 0;
+  max-width: 220px;
+  padding: 6px 12px;
+  color: var(--text);
+  font:
+    600 13px / 1.2 system-ui,
+    sans-serif;
+  background: var(--bg-raised);
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.45);
+  pointer-events: none;
+}
+
+.board-hand-card[draggable="true"],
+.board-tile[draggable="true"],
+.board-attach[draggable="true"],
+.board-cmdr[draggable="true"],
+.board-zone-card[draggable="true"],
+.board-flashback-chip[draggable="true"] {
+  cursor: grab;
+}
+
+.board-hand-card.is-dragging,
+.board-tile.is-dragging,
+.board-attach.is-dragging,
+.board-cmdr.is-dragging,
+.board-zone-card.is-dragging,
+.board-flashback-chip.is-dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+/* A zone that takes the dragged card: a dashed outline, and its label from `data-drop-label`. */
+[data-drop][data-drop-state],
+[data-dnd-stack] [data-drop="stack"] {
+  position: relative;
+  outline: 2px dashed var(--accent);
+  outline-offset: -3px;
+}
+
+[data-drop][data-drop-state="over"],
+[data-dnd-stack="over"] [data-drop="stack"] {
+  outline-style: solid;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+[data-drop][data-drop-state][data-drop-label]::after,
+[data-dnd-stack] [data-drop="stack"]::after {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  z-index: 70;
+  max-width: 90%;
+  padding: 2px 10px;
+  overflow: hidden;
+  color: var(--text);
+  font:
+    600 12px / 1.4 system-ui,
+    sans-serif;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: var(--bg-raised);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+[data-drop][data-drop-state][data-drop-label]::after {
+  content: attr(data-drop-label);
+}
+
+[data-dnd-stack] [data-drop="stack"]::after {
+  content: var(--dnd-stack-label);
+}
+
+/* A tile is small: its label sits above it instead of inside. */
+.board-tile[data-drop-state]::after {
+  top: -8px;
+  z-index: 80;
+}
+
+/*
+ * The graveyard list covers the board. A card carried out of it must reach the zones underneath,
+ * so the list fades and stops catching the pointer until the drop. The drag source is inside it
+ * and keeps dragging: only pointer hit testing and paint change.
+ */
+[data-dnd-active] .board-modal {
+  pointer-events: none;
+}
+
+[data-dnd-active] .board-modal-panel {
+  opacity: 0.35;
+}

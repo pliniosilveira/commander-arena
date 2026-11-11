@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.vite/
+*.tsbuildinfo
+.DS_Store
+# Local caches: Scryfall bulk files, downloaded CR text before it is committed
+.cache/
+*.log
+test-results/
+playwright-report/
+.wrangler/
+# Wizards' text, not redistributed (D-246): the Comprehensive Rules and the Update Bulletins are fetched by the owner with `pnpm rules:fetch`
+docs/rules/comprehensive-rules.txt
+docs/rules/bulletins/
+docs/rules/*.tmp

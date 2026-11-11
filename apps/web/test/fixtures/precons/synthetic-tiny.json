@@ -1,0 +1,108 @@
+{
+  "id": "synthetic-tiny",
+  "name": "SYNTHETIC tiny precon",
+  "blurb": "A SYNTHETIC deck for the tests.",
+  "source": "synthetic.jsonl.gz",
+  "decklist": "Commander\n1 Synthetic Commander\n\nDeck\n1 Synthetic Vanilla 1\n10 Forest\n",
+  "cards": [
+    {
+      "oracleId": "synthetic-oracle-forest",
+      "scryfallId": "synthetic-id-forest",
+      "name": "Forest",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Forest",
+          "manaCost": "",
+          "typeLine": "Basic Land — Forest",
+          "oracleText": "({T}: Add {G}.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.synthetic.invalid/forest/normal.jpg",
+            "large": "https://cards.synthetic.invalid/forest/large.jpg",
+            "artCrop": "https://cards.synthetic.invalid/forest/art.jpg"
+          },
+          "artist": null
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": ["G"],
+      "keywords": [],
+      "producedMana": ["G"],
+      "commanderLegality": "legal",
+      "edhrecRank": 1000,
+      "gameChanger": null,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "synthetic-oracle-synthetic-commander",
+      "scryfallId": "synthetic-id-synthetic-commander",
+      "name": "Synthetic Commander",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Synthetic Commander",
+          "manaCost": "{1}{G}",
+          "typeLine": "Legendary Creature — Synthetic Hero",
+          "oracleText": "Vigilance",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": ["G"],
+          "imageUris": {
+            "normal": "https://cards.synthetic.invalid/synthetic-commander/normal.jpg",
+            "large": "https://cards.synthetic.invalid/synthetic-commander/large.jpg",
+            "artCrop": "https://cards.synthetic.invalid/synthetic-commander/art.jpg"
+          },
+          "artist": null
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": ["G"],
+      "keywords": ["Vigilance"],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1000,
+      "gameChanger": null,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "synthetic-oracle-synthetic-vanilla-1",
+      "scryfallId": "synthetic-id-synthetic-vanilla-1",
+      "name": "Synthetic Vanilla 1",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Synthetic Vanilla 1",
+          "manaCost": "{1}{G}",
+          "typeLine": "Creature — Synthetic Beast",
+          "oracleText": "",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": ["G"],
+          "imageUris": {
+            "normal": "https://cards.synthetic.invalid/synthetic-vanilla-1/normal.jpg",
+            "large": "https://cards.synthetic.invalid/synthetic-vanilla-1/large.jpg",
+            "artCrop": "https://cards.synthetic.invalid/synthetic-vanilla-1/art.jpg"
+          },
+          "artist": null
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": ["G"],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1000,
+      "gameChanger": null,
+      "relatedParts": []
+    }
+  ]
+}
