@@ -15,7 +15,7 @@ import {
 } from '../../game/cost-text';
 import { isExtortAbility } from '../../game/describe-keywords2';
 import { beholdQuality, beholdReminder } from '../../game/dragons-text';
-import { castNowButtons, castNowPrompt } from '../../game/later-text';
+import { castNowButtons, castNowPrompt, miracleRevealPrompt } from '../../game/later-text';
 import { giftPrompt } from '../../game/recursion-text';
 import {
   findUnless,
@@ -359,9 +359,20 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: false,
     };
   }
-  if (d.purpose === 'suspend' || d.purpose === 'madness') {
-    // Suspend's "play it without paying its mana cost" and Madness's "cast it by paying its madness cost"
-    // (D-128). Declining leaves the card in exile or puts it into the graveyard; nothing is rewound.
+  if (d.purpose === 'miracleReveal') {
+    // Miracle (CR 702.94a, D-971): "reveal the card you just drew?" Declining reveals nothing; the engine refuses `cancel`.
+    const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? d.sourceName;
+    const cost = d.cost?.flatMap((c) => (c.kind === 'mana' ? [...c.symbols] : []));
+    return {
+      prompt: miracleRevealPrompt(card, cost),
+      yes: 'Reveal it',
+      no: "Don't reveal it",
+      cancellable: false,
+    };
+  }
+  if (d.purpose === 'suspend' || d.purpose === 'madness' || d.purpose === 'miracle') {
+    // Suspend's "play it without paying its mana cost", Madness's "cast it by paying its madness cost" and Miracle's "cast it by paying
+    // its miracle cost" (D-128, D-971). Declining leaves the card in exile, puts it into the graveyard or leaves it in the hand; nothing is rewound.
     const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? d.sourceName;
     const cost = d.cost?.flatMap((c) => (c.kind === 'mana' ? [...c.symbols] : []));
     return {

@@ -167,9 +167,9 @@ export function checkCastFace(
       );
     }
   }
-  // CR 702.35a, 702.143a (D-128): madness and foretell are ways to cast a card, so they are on a card that is not a
-  // land (a land is played, never cast).
-  for (const kind of ['madness', 'foretell'] as const) {
+  // CR 702.35a, 702.94a, 702.143a (D-128, D-971): madness, miracle and foretell are ways to cast a card, so they are on a
+  // card that is not a land (a land is played, never cast).
+  for (const kind of ['madness', 'miracle', 'foretell'] as const) {
     if (alternatives.some((a) => a?.kind === kind) && face.types.includes('land')) {
       issue(out, `${path}.alternativeCosts`, `${kind} is on a spell, not on a land`);
     }

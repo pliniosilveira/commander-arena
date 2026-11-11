@@ -54,6 +54,7 @@ import {
 import { answerCopyTargets } from './rules/copy-spell-answer';
 import {
   afterResolution,
+  answerMiracleDraw,
   answerUntapChoice,
   discardCards,
   passPriority,
@@ -368,9 +369,18 @@ function answerConfirm(
     const begun = acceptCascade(state);
     return begun.ok ? begun : finishResolutionAnswer(declineCascade(state));
   }
-  // CR 702.62a, 702.35a, 608.2g (D-128): "you may play it without paying its mana cost" (Suspend) and "its owner may
-  // cast it by paying [cost]" (Madness): asked while the ability resolves.
-  if (d.purpose === 'suspend' || d.purpose === 'madness') {
+  // CR 702.94a (D-971): "you may reveal this card from your hand as you draw it": asked of the player who drew it, in the draw step (no
+  // resolution) or between two draws of a resolving spell or ability.
+  if (d.purpose === 'miracleReveal') {
+    if (state.resolution === null && d.subject !== undefined) {
+      const r = answerMiracleDraw(state, d.subject, accept);
+      return ok(r.state, r.events);
+    }
+    return finishResolutionAnswer(answerResolutionOptional(state, accept));
+  }
+  // CR 702.62a, 702.35a, 702.94a, 608.2g (D-128, D-971): "you may play it without paying its mana cost" (Suspend), "its owner may
+  // cast it by paying [cost]" (Madness) and "you may cast it by paying [its miracle cost]" (Miracle): asked while the ability resolves.
+  if (d.purpose === 'suspend' || d.purpose === 'madness' || d.purpose === 'miracle') {
     if (!accept) return finishResolutionAnswer(declineCastExiled(state));
     const begun = acceptCastExiled(state);
     return begun.ok ? begun : finishResolutionAnswer(declineCastExiled(state));

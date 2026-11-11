@@ -1189,15 +1189,15 @@ export type Instruction =
    */
   | { readonly kind: 'changeTarget'; readonly object: ObjectId }
   /**
-   * CR 702.62a, 702.35a (Suspend and Madness, D-128): the resolution of `castExiled`. `start` looks at the card the ability
-   * belongs to (it must still be that card in exile) and goes on to `ask` when it could be cast, else it ends: a
-   * suspended card stays exiled, a card exiled by madness goes to its owner's graveyard. `ask` asks the owner
+   * CR 702.62a, 702.35a, 702.94a (Suspend, Madness and Miracle, D-128, D-971): the resolution of `castExiled`. `start` looks at the card the
+   * ability belongs to (it must still be that card, in exile, or in its owner's hand for Miracle) and goes on to `ask` when it could be
+   * cast, else it ends: a suspended card stays exiled, a card exiled by madness goes to its owner's graveyard, a miracle card stays in the hand. `ask` asks the owner
    * (`confirmOptional`, purpose 'suspend' or 'madness', the card as `subject`); accepting begins the cast as CR
    * 608.2g says (no player gets priority), declining ends the ability the same way as above. See rules/cast-exiled.ts.
    */
   | {
       readonly kind: 'castExiled';
-      readonly mode: 'suspend' | 'madness';
+      readonly mode: 'suspend' | 'madness' | 'miracle';
       readonly stage: 'start' | 'ask';
       readonly card: ObjectId | null;
     }
@@ -1227,6 +1227,18 @@ export type Instruction =
       readonly kind: 'vote';
       readonly options: readonly string[];
       readonly cast: readonly VoteCast[];
+    }
+  /**
+   * CR 702.94a (Miracle, D-971): the player who drew a card with miracle as the first card of their turn is asked whether to reveal it (`confirmOptional`,
+   * purpose 'miracleReveal', the card as `subject`); `answer` is theirs, null until asked. Accepting reveals the card (`cardsRevealed`, `miracleRevealed`),
+   * whose trigger goes on the stack once the resolution is over. It sits in the queue between the draw of that card and the next draw of the same
+   * instruction ("as you draw it"). See rules/miracle.ts.
+   */
+  | {
+      readonly kind: 'miracleReveal';
+      readonly seat: SeatId;
+      readonly card: ObjectId;
+      readonly answer: boolean | null;
     }
   /**
    * CR 121.2: `seat` draws `count` cards, one at a time. `commanderChoice` records the owner's

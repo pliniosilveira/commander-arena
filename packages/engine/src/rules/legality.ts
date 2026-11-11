@@ -238,9 +238,9 @@ export function castZone(
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
     return alternativeOf(faceOf(state, obj), 'escape') === null ? null : 'graveyard';
   }
-  // CR 702.35a (D-128): a card is cast for its madness cost only as the madness ability resolves (`castExiled`); it
-  // is never cast that way from a hand, so `canCast` and the option lists never offer it.
-  if (alternative === 'madness') return null;
+  // CR 702.35a, 702.94a (D-128, D-971): a card is cast for its madness or miracle cost only as that ability resolves
+  // (`castExiled`); it is never cast that way from a hand, so `canCast` and the option lists never offer it.
+  if (alternative === 'madness' || alternative === 'miracle') return null;
   // CR 702.143a (D-128): a foretold card is cast from exile, after the turn it was foretold has ended, for its
   // foretell cost.
   if (alternative === 'foretell') {
@@ -453,7 +453,7 @@ export function canCast(
  * resolving allows, without paying its mana cost: its front face, which is not a land, has a legal target for each
  * of its targets, and has additional costs that can be paid. No timing restriction applies (CR 608.2g: the player
  * does not receive priority, and the spell is not cast at the time its type allows), and the card needs no
- * alternative cost of its own: the free cast is the effect's. With `madness` the cost is the card's madness cost.
+ * alternative cost of its own: the free cast is the effect's. With `madness` or `miracle` the cost is the card's own.
  */
 export function canCastDuringResolution(
   state: GameState,
@@ -461,9 +461,10 @@ export function canCastDuringResolution(
   obj: GameObject,
   /**
    * `madness` (CR 702.35a, D-128): the card is cast for its madness cost as its ability resolves, so that cost has to be
-   * payable (the card lists one); otherwise it is the free cast of Cascade and Suspend.
+   * payable (the card lists one); otherwise it is the free cast of Cascade and Suspend. `miracle` (CR 702.94a, D-971): the same
+   * with the miracle cost, for a card that is in the hand (its X, when it has one, is announced in the cast).
    */
-  alternative: 'free' | 'madness' = 'free',
+  alternative: 'free' | 'madness' | 'miracle' = 'free',
 ): boolean {
   // D-145: a card in the hand is cast this way as well ("You may cast a spell with mana value 5 or less from your hand without paying
   // its mana cost"); Cascade, Suspend and Madness cast cards from exile.
@@ -471,7 +472,12 @@ export function canCastDuringResolution(
   // D-149 (CR 702.75a, 608.2g): a card in exile is cast by the player the effect names, whoever owns it (see `canPlayLandByEffect`); a card in a
   // hand is the player's own.
   if (obj.zone === 'hand' && obj.owner !== seat) return false;
-  if (alternative === 'madness' && alternativeOf(faceOf(state, obj), 'madness') === null) {
+  // CR 702.94a (D-971): a card is cast for its miracle cost from the hand it was revealed in.
+  if (alternative === 'miracle' && obj.zone !== 'hand') return false;
+  if (
+    (alternative === 'madness' || alternative === 'miracle') &&
+    alternativeOf(faceOf(state, obj), alternative) === null
+  ) {
     return false;
   }
   const spell = castAs(obj, seat, 0);

@@ -133,6 +133,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'spectacle',
   'escape',
   'madness',
+  'miracle',
   'foretell',
   'tapPermanents',
 ];
@@ -166,7 +167,9 @@ export function checkAlternativeCosts(
       );
     }
     seen.add(alt.kind);
-    if (alt.kind !== 'free') checkNamedAlternativeCost(alt.cost, `${p}.cost`, out);
+    if (alt.kind !== 'free') {
+      checkNamedAlternativeCost(alt.cost, `${p}.cost`, out, alt.kind === 'miracle');
+    }
     // CR 702.138a (D-124): an escape cost exiles at least one other card; no other kind has the field.
     const exile = (alt as { readonly exile?: unknown }).exile;
     if (alt.kind === 'escape') {
@@ -189,14 +192,22 @@ export function checkAlternativeCosts(
   });
 }
 
-/** The cost of a named alternative cost: a mana cost, with no {X} (the engine pays no other kind, D-121). */
-function checkNamedAlternativeCost(cost: readonly Cost[], path: string, out: Out): void {
+/**
+ * The cost of a named alternative cost: a mana cost, with no {X} (the engine pays no other kind, D-121). Miracle may have an {X}
+ * (D-971, CR 107.3a: it is announced as the spell is cast): the one named alternative that is cast with a choice of its own.
+ */
+function checkNamedAlternativeCost(
+  cost: readonly Cost[],
+  path: string,
+  out: Out,
+  allowX = false,
+): void {
   checkCosts(cost, path, out);
   if (!Array.isArray(cost)) return;
   cost.forEach((c, i) => {
     if (c?.kind !== 'mana') {
       issue(out, `${path}[${i}]`, 'an alternative cost may be mana only in this engine');
-    } else if (c.symbols?.includes('X')) {
+    } else if (!allowX && c.symbols?.includes('X')) {
       issue(out, `${path}[${i}]`, 'X in an alternative cost is not supported');
     }
   });
