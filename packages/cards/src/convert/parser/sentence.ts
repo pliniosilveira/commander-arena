@@ -75,7 +75,12 @@ const ATTACKERS_CONDITIONS = ['condition.those-attacked-you'] as const;
  * "an opponent was dealt 7 or more damage this turn" (stage P34, D-152, CR 120.3): a test of the turn, said before or after an instruction
  * ("You may play the exiled card without paying its mana cost if an opponent was dealt 7 or more damage this turn.").
  */
-const TURN_CONDITIONS = ['condition.player-dealt-damage'] as const;
+const TURN_CONDITIONS = [
+  'condition.player-dealt-damage',
+  // Stage P69 (D-252, D-253): the Bruna deck, "if you gained 3 or more life this turn", "... if your life total is greater than your starting life total".
+  'condition.life-gained-this-turn',
+  'condition.life-above-starting',
+] as const;
 
 const LEAD_CONDITIONS = [
   // Stage P52 (D-210): "If a creature card was discarded this way, ..." after a discard.
@@ -301,6 +306,14 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     }
     // "If there are seven or more cards in your graveyard, instead search your library for ..." (stage P36, D-178, CR 608.2c, 614.1a): "instead" after the
     // leading test says the same as it does at the end of the sentence, that it replaces the sentence before it.
+    let otherwise = false;
+    if (options.conditional && condition === undefined && !reflexive) {
+      const word = literal('otherwise, ')(ctx, at);
+      if (word.ok) {
+        otherwise = true;
+        at = word.pos;
+      }
+    }
     let leadingInstead = false;
     if (condition !== undefined) {
       const word = literal('instead ')(ctx, at);
@@ -397,6 +410,7 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
         clauses,
         ...(condition === undefined ? {} : { condition }),
         ...(instead ? { instead: true } : {}),
+        ...(otherwise ? { otherwise: true as const } : {}),
         ...(where === null ? {} : { where }),
         ...(reflexive ? { reflexive: true as const } : {}),
         ...(delayed === undefined ? {} : { delayed }),

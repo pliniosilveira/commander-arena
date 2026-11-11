@@ -1,5 +1,5 @@
 {
-  "parserVersion": 78,
+  "parserVersion": 79,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -3383,7 +3383,9 @@
           "closestRule": "effect.return"
         }
       ],
-      "reasons": ["layout \"meld\" is not supported"],
+      "reasons": [
+        "layout \"meld\" is not supported"
+      ],
       "ast": "0f907202"
     },
     "bd39e333-b0b8-4a85-8645-d77f4a3941db": {
@@ -4149,19 +4151,10 @@
     "ed7300f4-831a-4ba4-b5e6-ceba8d079eaa": {
       "name": "Cosmos Elixir",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of your end step, draw a card if your life total is greater than your starting life total. Otherwise, you gain 2 life.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.draw"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "ca0d7e91"
+      "ast": "b082ae89"
     },
     "edad60c6-80de-4033-af1b-a703ac332983": {
       "name": "Goblin Bombardment",
@@ -4342,7 +4335,9 @@
           "closestRule": "ability.triggered"
         }
       ],
-      "reasons": ["layout \"meld\" is not supported"],
+      "reasons": [
+        "layout \"meld\" is not supported"
+      ],
       "ast": "82803556"
     },
     "f4ce6078-8c7b-4f68-b324-13130c63a983": {
@@ -4726,7 +4721,7 @@
       "total": 60
     },
     "acceptance": {
-      "supported": 182,
+      "supported": 183,
       "total": 224
     }
   }

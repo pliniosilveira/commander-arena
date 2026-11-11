@@ -17,7 +17,7 @@ The running checklist of the deck program for `decks/bruna.txt`. One branch, one
 | Arch of Orazca | | K | open | Ascend, the city's blessing |
 | Arden Angel | | | open | |
 | Commander's Plate | | | open | |
-| Cosmos Elixir | | | open | |
+| Cosmos Elixir | 2 (D-253) | P | done | "draw a card if your life total is greater than your starting life total. Otherwise, you gain 2 life." |
 | Dawnbreak Reclaimer | | | open | |
 | Dismantling Wave | | | open | |
 | Entreat the Angels | | | open | Miracle (D-117 design, not built) |
@@ -32,4 +32,4 @@ The running checklist of the deck program for `decks/bruna.txt`. One branch, one
 | Urza's Incubator | | | open | |
 | Well of Lost Dreams | | | open | |
 
-Golden after group 1: Valkyrie Harbinger, Angelic Accord and Griffin Aerie are supported; the other 24 are unsupported. Versions: `PARSER_VERSION` 78, `ENGINE_VERSION` 74.
+Golden after group 1: Valkyrie Harbinger, Angelic Accord and Griffin Aerie are supported; after group 2: Cosmos Elixir too. Versions: `PARSER_VERSION` 79, `ENGINE_VERSION` 74.

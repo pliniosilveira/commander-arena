@@ -827,6 +827,11 @@ export interface IrSentence extends IrNode {
    */
   readonly instead?: boolean;
   /**
+   * The sentence starts "Otherwise, " (D-253, CR 608.2c): what the sentence before it, a conditional instruction, does when its condition does not hold. It has no
+   * condition of its own.
+   */
+  readonly otherwise?: true;
+  /**
    * "..., where X is the number of Zombies you control." (stage P28, CR 107.3c): what X is wherever the clauses of this
    * sentence read it. The lowering writes the amount into each slot that says X; nothing is stored.
    */

@@ -977,6 +977,32 @@ function lowerStep(
   const [first] = sentence.clauses;
   if (first === undefined) return { stopped: refuse(sentence) };
   const stop = (failed: LowerFailure): StepResult => ({ stopped: failed });
+  // "Draw a card if your life total is greater than your starting life total. Otherwise, you gain 2 life." (D-253, CR 608.2c): the `else` of the
+  // conditional instruction before it. Only a plain sentence of its own; the one before it must be a conditional with no `else` yet.
+  if (sentence.otherwise === true) {
+    const previous = steps[steps.length - 1];
+    const before = previous?.effects.length === 1 ? previous.effects[0] : undefined;
+    if (
+      before?.kind !== 'conditional' ||
+      before.else !== undefined ||
+      sentence.condition !== undefined ||
+      sentence.instead === true ||
+      sentence.where !== undefined ||
+      sentence.delayed !== undefined ||
+      sentence.reflexive === true ||
+      sentence.clauses.some((c) => c.optional)
+    ) {
+      return stop(refuse(sentence));
+    }
+    const other = lowerClauses(sentence.clauses, ctx);
+    if (!other.ok) return stop(other);
+    steps.pop();
+    steps.push({
+      effects: [{ ...before, else: oneEffect(other.value) }],
+      replaceable: false,
+    });
+    return { last: i };
+  }
   // "At the beginning of your next end step, ~ deals 2 damage to each opponent ..." (stage P34, D-152, CR 603.7): the engine's `delayedTrigger`.
   if (sentence.delayed !== undefined) {
     const { step, whose } = sentence.delayed;

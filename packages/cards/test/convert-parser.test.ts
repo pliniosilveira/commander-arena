@@ -396,6 +396,8 @@ describe('unmatched abilities', () => {
       'condition.same-name',
       'condition.had-counters',
       'condition.those-attacked-you',
+      'condition.life-gained-this-turn',
+      'condition.life-above-starting',
       'condition.control-at-least',
       'condition.control-a',
       'condition.control-at-most',

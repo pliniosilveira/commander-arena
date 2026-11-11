@@ -1,0 +1,92 @@
+// Stage P69 (D-252, D-253): the Bruna deck program (issue 5). The lines are the real Oracle text of the acceptance cards of the golden corpus, names replaced by ~,
+// with the nodes the grammar produces; the other lines are SYNTHETIC siblings and the near misses the grammar must not read.
+import { describe, expect, test } from 'vitest';
+import { dropped, readAll } from './parser-p5-helpers';
+
+const GRIFFIN = {
+  kind: 'createToken',
+  count: 1,
+  token: {
+    kind: 'custom',
+    definition: expect.objectContaining({
+      name: 'Griffin',
+      power: 2,
+      toughness: 2,
+      colors: ['W'],
+    }),
+  },
+};
+
+describe('"if you gained N or more life this turn" (D-252)', () => {
+  test('Griffin Aerie', () => {
+    const parsed = readAll(
+      'At the beginning of your end step, if you gained 3 or more life this turn, create a 2/2 white Griffin creature token with flying.',
+      'enchantment',
+    );
+    expect(parsed.abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'endStep', whose: 'you' },
+        interveningIf: { kind: 'lifeGainedThisTurn', atLeast: 3 },
+        effect: GRIFFIN,
+      },
+    ]);
+  });
+
+  test('the threshold is the number of the text (SYNTHETIC: 5)', () => {
+    const parsed = readAll(
+      'At the beginning of your end step, if you gained five or more life this turn, create a 2/2 white Griffin creature token with flying.',
+      'enchantment',
+    );
+    expect(JSON.stringify(parsed.abilities)).toContain('"atLeast":5');
+  });
+
+  test('"an opponent gained" and "gained 3 life" are not read (SYNTHETIC)', () => {
+    expect(
+      dropped(
+        'At the beginning of your end step, if an opponent gained 3 or more life this turn, create a 2/2 white Griffin creature token with flying.',
+        'enchantment',
+      ).reason,
+    ).toBeDefined();
+    expect(
+      dropped(
+        'At the beginning of your end step, if you gained 3 life this turn, create a 2/2 white Griffin creature token with flying.',
+        'enchantment',
+      ).reason,
+    ).toBeDefined();
+  });
+});
+
+describe('"Otherwise," after a conditional instruction (D-253)', () => {
+  test('Cosmos Elixir', () => {
+    const parsed = readAll(
+      'At the beginning of your end step, draw a card if your life total is greater than your starting life total. Otherwise, you gain 2 life.',
+      'artifact',
+    );
+    expect(parsed.abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'endStep', whose: 'you' },
+        effect: {
+          kind: 'conditional',
+          condition: {
+            kind: 'lifeTotal',
+            compare: { cmp: 'atLeast', value: 1 },
+            aboveStarting: true,
+          },
+          effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+          else: { kind: 'gainLife', player: { kind: 'you' }, amount: 2 },
+        },
+      },
+    ]);
+  });
+
+  test('an "Otherwise," with no conditional before it is not read (SYNTHETIC)', () => {
+    expect(
+      dropped(
+        'At the beginning of your end step, draw a card. Otherwise, you gain 2 life.',
+        'artifact',
+      ).reason,
+    ).toBeDefined();
+  });
+});
