@@ -133,6 +133,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-201: "Target player's life total becomes N" (CR 119.5).
     'setLifeTotal',
     'loseLife',
+    // D-921: "Each player this creature attacked this turn loses the game." (CR 104.3e).
+    'loseGame',
     'tap',
     'untap',
     'removeAllCounters',
@@ -513,6 +515,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachPlayer',
     'eachOpponent',
     'eachOtherOpponent',
+    // D-921: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
+    'attackedPlayers',
     'controllerOf',
     'ownerOf',
     'anyOf',
@@ -947,6 +951,8 @@ export const SELECTOR_KINDS = [
   'eachOpponent',
   /** "Each other opponent" (D-151): the opponents besides the player of the trigger's event. */
   'eachOtherOpponent',
+  /** "Each player this creature attacked this turn" (D-921, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
+  'attackedPlayers',
   'controllerOf',
   'ownerOf',
   'anyOf',
@@ -1410,6 +1416,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   gainLife: true,
   setLifeTotal: true,
   loseLife: true,
+  loseGame: true,
   tap: true,
   untap: true,
   removeAllCounters: true,

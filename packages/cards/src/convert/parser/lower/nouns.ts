@@ -59,6 +59,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   thisCard: 'selector:thisCard',
   // Stage P52 (D-210): "each player who discarded a card this way".
   discardedThisWay: 'selector:discardedThisWay',
+  // D-921: "each player ~ attacked this turn" (CR 508.6).
+  attackedPlayers: 'selector:attackedPlayers',
 };
 
 /** Features a noun can need beyond its selector kind. */
@@ -719,6 +721,12 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'discardedThisWay' });
     }
+    case 'attackedPlayers': {
+      // D-921 (CR 508.6): the permanent of the ability, which `~` is: only an ability of a permanent has attacked.
+      if (ctx.owner !== 'ability') return failure(noun, []);
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'attackedPlayers', of: { kind: 'this' } });
+    }
     case 'players': {
       // D-131: "you and target opponent each draw two cards": several players at once, each acting once, in the
       // order of CR 101.4. The members are player nouns of their own.
@@ -729,6 +737,10 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
         const selector = playerSelectorOf(member, ctx);
         if (!selector.ok) return selector;
         of.push(selector.value);
+      }
+      // D-921: a list that names the same player twice is not "you and that player" ("that player" of your own end step is you): refused, not read as one.
+      if (new Set(of.map((selector) => JSON.stringify(selector))).size < of.length) {
+        return failure(noun, []);
       }
       return of.length < 2 ? failure(noun, []) : ok({ kind: 'all', of });
     }

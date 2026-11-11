@@ -541,4 +541,11 @@ export type GameEvent =
    */
   | { readonly kind: 'ringBearerLost'; readonly seat: SeatId; readonly object: ObjectId };
 
-export type LossReason = 'life' | 'emptyLibrary' | 'poison' | 'commanderDamage' | 'concede';
+export type LossReason =
+  | 'life'
+  | 'emptyLibrary'
+  | 'poison'
+  | 'commanderDamage'
+  | 'concede'
+  /** An effect said the player loses the game (CR 104.3e, D-921). */
+  | 'effect';

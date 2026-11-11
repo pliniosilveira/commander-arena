@@ -37,6 +37,7 @@ import { GAIN_CONTROL } from './control';
 import { lowerCopyToken } from './copies';
 import { COPY_SPELL } from './copy-spell';
 import { lowerCost } from './costs';
+import { DESTINY_LOWERINGS } from './destiny';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
@@ -1264,6 +1265,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DRAGON_LOWERINGS,
   ...KORVOLD_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
+  ...DESTINY_LOWERINGS,
   GAIN_CONTROL,
 ];
 

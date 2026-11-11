@@ -20,15 +20,30 @@ function bare(det: IrNoun['det'], raw: string, extra: Partial<Bare> = {}): Bare 
  * `noun.you-and-player`: "you and target opponent each", "you and target player each" (CR 102.1, 115.1): you and one
  * chosen player, each doing what the verb says, in the order of CR 101.4 (the active player first). The "each" is part
  * of the phrase: it is how the sentence says that both act ("each draw", with no "s"). Only a target player or
- * opponent is the second player; "you and each opponent" is "each player" in other words, and is not read.
+ * opponent is the second player; "you and each opponent" is "each player" in other words, and is not read. Since
+ * D-921 the second player may also be "that player" ("you and that player each gain that much life"), the player a trigger or an earlier
+ * target names; the binding pass points it at that player (and refuses a text that names none), and the lowering at what the engine can
+ * name (`triggerPlayer` or the target).
  */
 export const NOUN_YOU_AND_PLAYER = defineRule<IrNoun>({
   id: 'noun.you-and-player',
   family: 'noun',
   leading: ['you'],
   cites: ['CR 102.1 (Players)', 'CR 115.1 (Targets)', 'CR 101.4 (Handling Simultaneous Decisions)'],
-  examples: ['you and target opponent each', 'you and target player each'],
+  examples: [
+    'you and target opponent each',
+    'you and target player each',
+    'you and that player each',
+  ],
   rejects: [
+    'you and that player',
+    'you and that players each',
+    'you and those players each',
+    'you and that creature each',
+    'you and it each',
+    'you and they each',
+    'that player and you each',
+    'you and that player each other',
     'you and target opponent',
     'you and target creature each',
     'you and each opponent each',
@@ -41,10 +56,14 @@ export const NOUN_YOU_AND_PLAYER = defineRule<IrNoun>({
   parse: (ctx, pos) => {
     const you = spanned(pattern(/you and /i))(ctx, pos);
     if (!you.ok) return you;
-    const other = family<IrNoun>('noun', { only: ['noun.player'] })(ctx, you.pos);
+    const other = family<IrNoun>('noun', { only: ['noun.player', 'noun.that-player'] })(
+      ctx,
+      you.pos,
+    );
     if (!other.ok) return other;
-    // The second player is chosen as a target; "each opponent" and "you" are other readings.
-    if (other.value.det !== 'target') return fail(ctx, you.pos);
+    // The second player is chosen as a target or is the player the text already names ("that player"); "each opponent" and "you" are other readings.
+    const named = other.value.det === 'anaphor' && /^that player$/iu.test(other.value.filter.raw);
+    if (other.value.det !== 'target' && !named) return fail(ctx, you.pos);
     const each = pattern(new RegExp(` each${END}`, 'iu'))(ctx, other.pos);
     if (!each.ok) return each;
     const youNoun: IrNoun = {

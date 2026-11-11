@@ -56,6 +56,7 @@ import { fightOnce, isFightingCreature, runFightPairs } from './fight';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
 import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
+import { loseTheGame } from './lose-game';
 import { manaValueOfCost } from './mana-value';
 import { runMayCast, runPaidReflexive, runReflexive } from './may-effects';
 import { millCards } from './mill';
@@ -1123,6 +1124,12 @@ function runEffect(
         if (effect.kind === 'loseLife') lost += Math.max(0, amount);
       }
       return { ...done(next, events), ...(lost > 0 ? { lifeLost: lost } : {}) };
+    }
+
+    case 'loseGame': {
+      // CR 104.3e (D-921): "each player this creature attacked this turn loses the game": the players the selector names lose it together.
+      const lost = loseTheGame(next, resolvePlayers(state, effect.player, ctx, targets));
+      return done(lost.state, [...events, ...lost.events]);
     }
 
     case 'setLifeTotal': {

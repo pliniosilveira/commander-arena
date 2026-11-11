@@ -137,4 +137,6 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Miracle, Pl
 
 ## Bruna deck leftovers (D-264)
 
+- Angel of Destiny (D-921): no effect makes a player win the game ("you win the game" is not read), `loseGame` is not read with a delay or a condition inside its sentence, and the permanents of a player who loses in a game of more than two seats stay on the battlefield (CR 800.4a, as for a concession). `attackedPlayers` reads only the permanent of the ability (`this`).
+
 - Ascend (D-264): the city's blessing is checked with the state-based actions (CR 704.3), so a player who reaches ten permanents in the middle of one resolution does not have it until that resolution ends. A card that says "create two tokens, then if you have the city's blessing ..." would read the answer from before the tokens (CR 702.131b says "any time"). Fixing it needs the check between the steps of an effect. Ascend on an instant or sorcery (CR 702.131a, a spell ability) is not built; a card with it is unsupported.

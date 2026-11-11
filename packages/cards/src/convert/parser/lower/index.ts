@@ -19,6 +19,7 @@ import { ANGEL_NEEDS } from './angels';
 import { ATTACHMENT_NEEDS } from './attachments';
 import { CONDITION_NEEDS } from './conditions';
 import { COST_NEEDS } from './costs';
+import { DESTINY_NEEDS } from './destiny';
 import { DRAGON_NEEDS } from './dragons';
 import { EFFECT_LOWERINGS } from './effects';
 import { SEARCH_NEEDS } from './effects-more';
@@ -142,6 +143,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...DRAGON_NEEDS,
     ...KORVOLD_NEEDS,
     ...PLANESWALKER_NEEDS,
+    ...DESTINY_NEEDS,
     ...ADAMANTOISE_NEEDS,
     ...CONDITION_NEEDS,
     ...SENTENCE_NEEDS,

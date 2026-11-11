@@ -761,6 +761,14 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
     case 'giftRecipient':
       // D-135: "the chosen player" of a gift: the face must have the Gift keyword (`checkCastFace`).
       break;
+    case 'attackedPlayers':
+      // D-921 (CR 508.6): "each player this creature attacked this turn": the permanent of an ability, never a spell (a spell attacks nothing).
+      if (kindOf(sel.of) !== 'this') {
+        issue(out, `${path}.of`, "'attackedPlayers' reads the attacks of this permanent ('this')");
+      } else if (scope.owner !== 'ability') {
+        issue(out, path, "'attackedPlayers' needs an ability of a permanent, not a spell");
+      }
+      break;
     case 'discardedThisWay':
       // D-210: "each player who discarded a card this way": a discard before it in the same sequence.
       if (!(scope.thisWay ?? []).includes('discarded')) {
@@ -823,6 +831,7 @@ export const PLAYER_ONLY = [
   'ownerOf',
   'defendingPlayer',
   'triggerPlayer',
+  'attackedPlayers',
 ];
 
 export function checkDamageRecipient(
@@ -2834,6 +2843,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'eachPlayer' ||
         e.player?.kind === 'eachOpponent' ||
         e.player?.kind === 'eachOtherOpponent' ||
+        e.player?.kind === 'attackedPlayers' ||
         e.player?.kind === 'all'
       ) {
         issue(out, `${path}.player`, 'only one player can be the monarch (CR 725.3)');
@@ -3401,6 +3411,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'gainEnergy':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       checkAmount(e.amount, `${path}.amount`, scope, out);
+      break;
+    case 'loseGame':
+      // CR 104.3e (D-921): the players the selector names lose the game; no other operand.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'setLifeTotal':
       // CR 119.5 (D-201): a whole number, 0 or more.
