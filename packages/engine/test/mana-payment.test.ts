@@ -726,7 +726,7 @@ describe('planPayment: the mana spent on the cost (spentTypes)', () => {
   });
 });
 
-// D-256: how much of the mana spent on the cost came from a snow source (CR 107.4h): "You gain 1 life for each {S} spent to cast this spell".
+// D-260: how much of the mana spent on the cost came from a snow source (CR 107.4h): "You gain 1 life for each {S} spent to cast this spell".
 describe('planPayment: the snow mana spent on the cost (spentSnow)', () => {
   test('counts the mana of snow sources that the cost consumes, on any symbol', () => {
     const plan = planPayment(

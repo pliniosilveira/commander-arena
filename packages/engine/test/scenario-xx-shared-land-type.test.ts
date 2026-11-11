@@ -1,4 +1,4 @@
-// "{2}, {T}, Sacrifice this land: Search your library for up to two basic land cards that share a land type, put them onto the battlefield tapped, then shuffle." (D-258, the
+// "{2}, {T}, Sacrifice this land: Search your library for up to two basic land cards that share a land type, put them onto the battlefield tapped, then shuffle." (D-262, the
 // Bruna deck): the `search` option `sharedLandType`, a condition on the cards found together. Pins: CR 701.23a-b (the searcher finds cards that match and may find fewer),
 // CR 205.3i (land types), CR 205.4c (a basic land), CR 701.24 (shuffle), CR 608.2d (the player chooses as the effect resolves), CR 602.2 (the cost, {2}, {T} and a
 // sacrifice of the land itself, is paid before the effect happens). Cards are SYNTHETIC (src/cards/fixtures/synthetic-bruna-search.ts) or basic lands.
@@ -120,6 +120,28 @@ describe('what may be found', () => {
     expect(answers.filter((n) => n === 0)).toHaveLength(1);
     expect(answers.filter((n) => n === 1)).toHaveLength(4);
     expect(answers.filter((n) => n === 2)).toHaveLength(1);
+  });
+
+  test('a large library still lists pairs that share a type: the cap of the list is applied to the answers, not before (CR 205.3i)', () => {
+    // The legal cards are sorted by name: four lands of four other types come first, then the Swamps. The first 500 pairs in the order of the
+    // combinations all hold one of the four, and none shares a type.
+    const lands: (readonly [string, string])[] = [
+      ['Forest', 'forest'],
+      ['Island', 'island'],
+      ['Mountain', 'mountain'],
+      ['Plains', 'plains'],
+    ];
+    for (let i = 0; i < 126; i += 1) lands.push(['Swamp', `swamp${i}`]);
+    const g = game(lands);
+    search(g);
+    expect(chooseCardsDecision(g).legal).toHaveLength(130);
+    const pairs = g
+      .legalActions(0)
+      .flatMap((a) => (a.kind === 'chooseCards' && a.objects.length === 2 ? [a.objects] : []));
+    expect(pairs.length).toBeGreaterThan(0);
+    for (const objects of pairs) {
+      expect(applyAction(g.state, 0, { kind: 'chooseCards', objects }).ok).toBe(true);
+    }
   });
 
   test('a land with two land types shares either one with a land of that type, and only those', () => {

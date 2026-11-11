@@ -480,7 +480,7 @@ export interface ChooseCardsDecision extends DecisionBase {
    */
   readonly orSingle?: readonly ObjectId[];
   /**
-   * For a search "for up to two basic land cards that share a land type" (D-258, CR 205.3i, 701.23): the land types of each card of `legal`. The cards chosen must
+   * For a search "for up to two basic land cards that share a land type" (D-262, CR 205.3i, 701.23): the land types of each card of `legal`. The cards chosen must
    * have one land type in common (one card, or none, always does). Absent for every other question.
    */
   readonly shareLandType?: Readonly<Record<ObjectId, readonly string[]>>;

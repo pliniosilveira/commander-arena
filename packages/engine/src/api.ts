@@ -590,7 +590,7 @@ function validCardsChoice(
     const [only] = chosen;
     if (chosen.length !== 1 || only === undefined || !d.orSingle.includes(only)) return false;
   }
-  // CR 205.3i (D-258): "that share a land type": two or more cards need a land type that all of them have.
+  // CR 205.3i (D-262): "that share a land type": two or more cards need a land type that all of them have.
   if (d.shareLandType !== undefined && !sharesLandType(chosen, d.shareLandType)) return false;
   // CR 202.3 (D-230): "with total mana value 4 or less": the mana values of the cards chosen add up to no more than the limit.
   if (

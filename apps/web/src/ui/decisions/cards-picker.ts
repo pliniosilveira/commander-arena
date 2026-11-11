@@ -42,7 +42,7 @@ export function toggleFound(
  * discard an artifact card" (D-139, `orSingle`) takes exactly `max` cards, or one card of its list alone.
  */
 export function foundReady(chosen: readonly ObjectId[], decision: Range): boolean {
-  // D-258: "up to two basic land cards that share a land type": the cards picked need a land type in common, which the engine would refuse otherwise.
+  // D-262: "up to two basic land cards that share a land type": the cards picked need a land type in common, which the engine would refuse otherwise.
   if (decision.shareLandType !== undefined && !sharesLandType(chosen, decision.shareLandType)) {
     return false;
   }

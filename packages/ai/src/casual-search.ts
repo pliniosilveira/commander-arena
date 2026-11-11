@@ -43,7 +43,7 @@ function coloursOwned(view: GameView): Set<Color> {
 }
 
 /**
- * "Up to two basic land cards that share a land type" (`shareLandType`, D-258): all the cards found must have one land type in common, so the agent picks a land type
+ * "Up to two basic land cards that share a land type" (`shareLandType`, D-262): all the cards found must have one land type in common, so the agent picks a land type
  * first: the one with the most cards to find (up to what is allowed), and among those a colour it has no land of, else the first the engine lists.
  */
 function chooseSharedLandType(

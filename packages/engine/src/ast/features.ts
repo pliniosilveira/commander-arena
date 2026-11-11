@@ -519,9 +519,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notCastFromHand',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
-    // D-257: "a creature card that shares a creature type with it" (`ObjectFilter.sharesCreatureTypeWith`).
+    // D-261: "a creature card that shares a creature type with it" (`ObjectFilter.sharesCreatureTypeWith`).
     'sharesCreatureTypeWith',
-    // D-258: "up to two basic land cards that share a land type" (`search.sharedLandType`).
+    // D-262: "up to two basic land cards that share a land type" (`search.sharedLandType`).
     'sharedLandType',
     // D-181: "target spell or ability with a single target" (`ObjectFilter.singleTarget`).
     'singleTarget',
@@ -958,9 +958,9 @@ export const SELECTOR_KINDS = [
   'putFromBattlefieldThisTurn',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
-  /** "That shares a creature type with it" (CR 205.3m, 603.10a, D-257): the engine's `ObjectFilter.sharesCreatureTypeWith`. */
+  /** "That shares a creature type with it" (CR 205.3m, 603.10a, D-261): the engine's `ObjectFilter.sharesCreatureTypeWith`. */
   'sharesCreatureTypeWith',
-  /** "Up to two basic land cards that share a land type" (CR 205.3i, 701.23, D-258): the engine's `search.sharedLandType`. */
+  /** "Up to two basic land cards that share a land type" (CR 205.3i, 701.23, D-262): the engine's `search.sharedLandType`. */
   'sharedLandType',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',

@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC CARDS FOR A SEARCH THAT FINDS CARDS WHICH SHARE A TYPE. NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of D-257 and D-258 (the Bruna deck). The wording of a real card, the name replaced: "Whenever equipped creature dies, you may reveal
+ * Invented for the tests of D-261 and D-262 (the Bruna deck). The wording of a real card, the name replaced: "Whenever equipped creature dies, you may reveal
  * cards from the top of your library until you reveal a creature card that shares a creature type with it. Put that card into your hand and the rest on the
  * bottom of your library in a random order." and "{2}, {T}, Sacrifice this land: Search your library for up to two basic land cards that share a land type, put
  * them onto the battlefield tapped, then shuffle.", with the creatures and lands they look for. Names start with "SYNTHETIC "; oracleId is null. The text

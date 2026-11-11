@@ -2,7 +2,7 @@
  * The mana spent to cast a spell (stage P39, D-184, the engine's `Amount` `manaSpent`, CR 601.2h): "the amount of mana spent to cast it" (a value phrase:
  * "..., where X is the amount of mana spent to cast it") and "for each mana spent to cast it", "for each mana from an artifact source spent to cast it" (a
  * count after a quantity). "It" is the spell (`who: 'it'`, which the lowering reads as the object the ability is about or as the permanent that
- * enters) and `~` is the card itself (`who: 'self'`); "an artifact source" is a card type of the source of the mana. D-256 (the Bruna deck): "for each {S} spent to
+ * enters) and `~` is the card itself (`who: 'self'`); "an artifact source" is a card type of the source of the mana. D-260 (the Bruna deck): "for each {S} spent to
  * cast ~" counts the mana of snow sources (CR 107.4h, 106.3: "mana of any type produced by a snow source").
  */
 import { pattern } from '../../combinators';
@@ -84,7 +84,7 @@ export const AMOUNT_FOR_EACH_MANA_SPENT = defineRule<IrAmount>({
       value: {
         kind: 'manaSpent',
         ...(fromType === undefined ? {} : { fromType }),
-        // D-256: "for each {S} spent to cast ~" (CR 107.4h): the mana that a snow source made.
+        // D-260: "for each {S} spent to cast ~" (CR 107.4h): the mana that a snow source made.
         ...(r.value[2] === undefined ? {} : { snow: true as const }),
         who: r.value[3] === '~' ? 'self' : 'it',
         span: { start: pos, end: r.pos },

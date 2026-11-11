@@ -1,4 +1,4 @@
-// "You gain 1 life for each {S} spent to cast this spell" and a search for "a snow permanent card, a legendary card, or a Saga card" (D-256, the Bruna deck).
+// "You gain 1 life for each {S} spent to cast this spell" and a search for "a snow permanent card, a legendary card, or a Saga card" (D-260, the Bruna deck).
 // Pins: CR 107.4h (the {S} symbol also refers to mana of any type produced by a snow source that was spent to pay a cost), CR 205.4g (a snow permanent), CR 601.2h (the
 // total cost is paid with mana; what was spent is a fact about the spell), CR 701.23a-b (search: the cards that match, finding fewer is allowed), CR 701.20 (reveal),
 // CR 707.10 (a copy of a spell is not cast: no mana was spent on it). Cards are SYNTHETIC (src/cards/fixtures/synthetic-snow.ts).

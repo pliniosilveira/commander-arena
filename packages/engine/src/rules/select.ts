@@ -185,7 +185,7 @@ export function matchesFilter(
     ...(filter.enteredThisTurn === true
       ? { entered: state.turnLog.entered.map((e) => e.object) }
       : {}),
-    // D-257: the creature the trigger is about, as it last was (a dies trigger reads the permanent that left, CR 603.10a, 113.7a).
+    // D-261: the creature the trigger is about, as it last was (a dies trigger reads the permanent that left, CR 603.10a, 113.7a).
     ...(readsSharedType(filter) ? subjectSubtypesOf(state, ctx.triggerSubject) : {}),
   };
   return matchesFilterWith(state, obj, () => describeObject(state, obj), filter, reading);
@@ -210,7 +210,7 @@ function readsGame(f: ObjectFilter): boolean {
   );
 }
 
-/** Whether the filter, or one of its `anyOf` members, asks for a creature type shared with the trigger's creature (D-257). */
+/** Whether the filter, or one of its `anyOf` members, asks for a creature type shared with the trigger's creature (D-261). */
 function readsSharedType(f: ObjectFilter): boolean {
   return f.sharesCreatureTypeWith !== undefined || (f.anyOf?.some(readsSharedType) ?? false);
 }

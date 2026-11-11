@@ -1,12 +1,13 @@
 // "Whenever equipped creature dies, you may reveal cards from the top of your library until you reveal a creature card that shares a creature type with it. Put
-// that card into your hand and the rest on the bottom of your library in a random order." (D-257, the Bruna deck): the filter `sharesCreatureTypeWith`, read in a
+// that card into your hand and the rest on the bottom of your library in a random order." (D-261, the Bruna deck): the filter `sharesCreatureTypeWith`, read in a
 // `revealUntil` of the effect of a "dies" trigger. Pins: CR 205.3m (creature types), CR 603.10a (a dies trigger looks back to the permanent that left), CR 113.7a
-// (last-known information: the creature types it had), CR 702.73a (a changeling has every creature type), CR 701.20 (reveal), CR 401.5 (the rest on the bottom in a
+// (last-known information: the creature types it had), CR 702.73a (a changeling has every creature type), CR 701.20 (reveal), CR 401.4 (the rest on the bottom in a
 // random order), CR 608.2d (a "may" is answered as the ability resolves). Cards are SYNTHETIC (src/cards/fixtures/synthetic-bruna-search.ts).
 import { describe, expect, test } from 'vitest';
 import { singleFace } from '../src/cards/fixtures/helpers';
 import type { Ability, CardDefinition, Effect, ObjectFilter } from '../src/index';
 import { syntheticCard, validateCard } from '../src/index';
+import { derive } from '../src/rules/derive';
 import { type ScenarioGame, scenario } from '../src/testing/index';
 
 const BLADE = 'SYNTHETIC Echo Blade';
@@ -59,10 +60,14 @@ describe('the equipped creature dies', () => {
       BEARS,
       HUMAN_KNIGHT,
     ]);
-    // Two went to the bottom (a random order): the library is the three cards that were not revealed, then those two.
-    const library = (g.state.seats[0]?.library ?? []).map((id) => g.state.objects[id]?.card);
-    expect(library).toHaveLength(4);
+    // Two went to the bottom (a random order): the library is the two cards that were not revealed, then those two.
+    const library = (g.state.seats[0]?.library ?? []).flatMap((id) => {
+      const obj = g.state.objects[id];
+      return obj === undefined ? [] : [derive(g.state, obj).name];
+    });
     g.expect.librarySize(0, 4);
+    expect(library.slice(0, 2)).toEqual([GOBLIN_SCOUT, 'Plains']);
+    expect([...library.slice(2)].sort()).toEqual([BEARS, WIZARD].sort());
     g.expect.invariants();
   });
 
@@ -109,6 +114,15 @@ describe('the equipped creature dies', () => {
     g.passAll();
     g.act(0).accept();
     g.expect.zone(WIZARD, 'hand', { seat: 0 });
+  });
+
+  test('a changeling card in the library shares a type with any creature that died (CR 702.73a)', () => {
+    const g = game(GOBLIN_KNIGHT, [BEARS, CHAMELEON, WIZARD]);
+    kill(g);
+    g.act(0).accept();
+    g.expect.zone(CHAMELEON, 'hand', { seat: 0 });
+    g.expect.zone(BEARS, 'library', { seat: 0 });
+    g.expect.zone(WIZARD, 'library', { seat: 0 });
   });
 
   test('last-known information: an Angel by an Aura on the battlefield, found by the Angel type it had when it died (CR 113.7a)', () => {

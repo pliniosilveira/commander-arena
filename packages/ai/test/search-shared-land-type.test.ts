@@ -1,4 +1,4 @@
-// The AI's answers to a search for "up to two basic land cards that share a land type" (D-258): the decision carries the land types of the cards offered, and the engine's own
+// The AI's answers to a search for "up to two basic land cards that share a land type" (D-262): the decision carries the land types of the cards offered, and the engine's own
 // validation is the judge of every answer. The land is SYNTHETIC (see the engine's synthetic-bruna-search.ts).
 import { applyAction, type ChooseCardsDecision, type ObjectId } from '@commander-arena/engine';
 import { type ScenarioGame, scenario } from '@commander-arena/engine/testing';

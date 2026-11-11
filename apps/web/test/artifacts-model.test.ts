@@ -700,7 +700,7 @@ describe('reselecting what a creature attacks', () => {
   });
 });
 
-// D-258: "Search your library for up to two basic land cards that share a land type": Confirm is not offered for two lands that share no land type.
+// D-262: "Search your library for up to two basic land cards that share a land type": Confirm is not offered for two lands that share no land type.
 describe('a search for lands that share a land type', () => {
   const search: ChooseCardsDecision = {
     id: 'd9',

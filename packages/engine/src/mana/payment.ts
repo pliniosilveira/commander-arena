@@ -82,7 +82,7 @@ export interface PaymentPlan {
    * CR 605.3a) and neither is mana the cost did not consume. "The amount of mana spent to cast it" reads its length.
    */
   readonly spentTypes: readonly (readonly string[])[];
-  /** D-256: how many of the mana in `spentTypes` was made by a snow source (CR 107.4h: "for each {S} spent to cast this spell"). */
+  /** D-260: how many of the mana in `spentTypes` was made by a snow source (CR 107.4h: "for each {S} spent to cast this spell"). */
   readonly spentSnow: number;
 }
 

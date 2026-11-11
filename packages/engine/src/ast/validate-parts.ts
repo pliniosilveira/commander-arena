@@ -93,7 +93,7 @@ export interface Scope {
   readonly voteOptions?: readonly string[];
   /** True in the ability "When you cast this spell" (`castSpell` with `self`), the only place `cascade` may stand. */
   readonly selfCast?: boolean;
-  /** True in the effect of a `dies` trigger: the creature that died is what the trigger is about, and `sharesCreatureTypeWith` reads its creature types (D-257). */
+  /** True in the effect of a `dies` trigger: the creature that died is what the trigger is about, and `sharesCreatureTypeWith` reads its creature types (D-261). */
   readonly diesTrigger?: boolean;
   /** True in an activated ability that functions from the graveyard, the only place `unearth` may stand (D-124). */
   readonly fromGraveyard?: boolean;
@@ -366,7 +366,7 @@ export function checkFilter(
       );
     }
   }
-  // D-257: "that shares a creature type with it" names the creature a "dies" trigger is about, which only the filter of a `revealUntil` in its effect reads.
+  // D-261: "that shares a creature type with it" names the creature a "dies" trigger is about, which only the filter of a `revealUntil` in its effect reads.
   if (f.sharesCreatureTypeWith !== undefined) {
     if (f.sharesCreatureTypeWith !== 'triggerSubject') {
       issue(out, `${path}.sharesCreatureTypeWith`, "sharesCreatureTypeWith is 'triggerSubject'");
@@ -1013,7 +1013,7 @@ export function checkManaSpentType(
   if (type !== undefined && !isOneOf(type, CARD_TYPES)) {
     issue(out, path, `fromType is a card type, not ${JSON.stringify(type)}`);
   }
-  // D-256: "for each {S} spent" is the mana of snow sources, a different cut of the mana spent than a card type of the source.
+  // D-260: "for each {S} spent" is the mana of snow sources, a different cut of the mana spent than a card type of the source.
   if (snow !== undefined && (snow !== true || type !== undefined)) {
     issue(out, path, 'snow is true and is not given with fromType');
   }
@@ -1111,7 +1111,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           issue(out, `${path}.of`, 'the spell is a target of the ability');
         else checkRef(a.of, 'object', `${path}.of`, scope, out);
       } else if (scope.selfCast !== true && scope.owner !== 'spell') {
-        // D-256: the effect of the spell itself reads what was spent to cast it ("You gain 1 life for each {S} spent to cast this spell").
+        // D-260: the effect of the spell itself reads what was spent to cast it ("You gain 1 life for each {S} spent to cast this spell").
         issue(
           out,
           path,
@@ -2364,7 +2364,7 @@ function checkSearch(
   if (!isCount(e.max) || e.max < 1) {
     issue(out, `${path}.max`, 'max must be a positive integer');
   }
-  // D-258: "that share a land type" is about two or more land cards found together.
+  // D-262: "that share a land type" is about two or more land cards found together.
   if (e.sharedLandType !== undefined) {
     if (e.sharedLandType !== true) {
       issue(out, `${path}.sharedLandType`, 'sharedLandType must be true when present');

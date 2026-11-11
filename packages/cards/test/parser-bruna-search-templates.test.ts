@@ -1,4 +1,4 @@
-// The Bruna deck program (issue 5), the search templates group (D-256 and following): Search for Glory, Heirloom Blade, Myriad Landscape. The lines are the real Oracle
+// The Bruna deck program (issue 5), the search templates group (D-260 and following): Search for Glory, Heirloom Blade, Myriad Landscape. The lines are the real Oracle
 // text of the acceptance cards of the golden corpus (names replaced by ~) with the nodes the grammar produces, played through applyAction where the engine reads them; the other
 // lines are SYNTHETIC siblings and the near misses the grammar must not read.
 import { readFileSync } from 'node:fs';
@@ -25,7 +25,7 @@ function real(name: string): CardDefinition {
 
 const PERMANENTS = ['artifact', 'creature', 'enchantment', 'land', 'planeswalker', 'battle'];
 
-describe('Search for Glory: a search for one of several kinds of card, and {S} spent (D-256)', () => {
+describe('Search for Glory: a search for one of several kinds of card, and {S} spent (D-260)', () => {
   const TEXT =
     'Search your library for a snow permanent card, a legendary card, or a Saga card, reveal it, put it into your hand, then shuffle. You gain 1 life for each {S} spent to cast ~.';
 
@@ -187,7 +187,7 @@ describe('Search for Glory: a search for one of several kinds of card, and {S} s
   });
 });
 
-describe('Heirloom Blade: a creature card that shares a creature type with the creature that died (D-257)', () => {
+describe('Heirloom Blade: a creature card that shares a creature type with the creature that died (D-261)', () => {
   const TRIGGER =
     'Whenever equipped creature dies, you may reveal cards from the top of your library until you reveal a creature card that shares a creature type with it. Put that card into your hand and the rest on the bottom of your library in a random order.';
 
@@ -309,7 +309,7 @@ describe('Heirloom Blade played from the real card', () => {
   });
 });
 
-describe('Myriad Landscape: up to two basic land cards that share a land type (D-258)', () => {
+describe('Myriad Landscape: up to two basic land cards that share a land type (D-262)', () => {
   const TEXT =
     'This land enters tapped.\n{T}: Add {C}.\n{2}, {T}, Sacrifice ~: Search your library for up to two basic land cards that share a land type, put them onto the battlefield tapped, then shuffle.';
 

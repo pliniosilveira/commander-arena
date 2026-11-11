@@ -55,7 +55,7 @@ function orList(items: readonly string[]): string {
 
 /**
  * "basic land", "artifact or enchantment", "snow permanent, legendary, or Saga", "" for any card. A member that has a choice of its own
- * ("snow" and any of the six permanent types, D-256) is described by its own words; the six permanent types together are "permanent".
+ * ("snow" and any of the six permanent types, D-260) is described by its own words; the six permanent types together are "permanent".
  */
 export function describeFilter(f: ObjectFilter): string {
   const members = f.anyOf;

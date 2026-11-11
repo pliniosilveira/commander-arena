@@ -83,7 +83,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     ) {
       return failure(clause);
     }
-    // The IR says where the cards are (the library); the engine's filter must not (CR 401.1). "That share a land type" (D-258, CR 205.3i) is about the cards found
+    // The IR says where the cards are (the library); the engine's filter must not (CR 401.1). "That share a land type" (D-262, CR 205.3i) is about the cards found
     // together, so it is an option of the search and not of the filter: the engine's `search.sharedLandType`.
     const { sharedLandType, ...single } = cards.filter;
     const shared = sharedLandType === true;

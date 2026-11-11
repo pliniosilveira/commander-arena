@@ -68,7 +68,7 @@ const CARD_WORD = (plural: boolean, spaced = true) =>
   pattern(new RegExp(`${spaced ? ' ' : ''}card${plural ? 's' : ''}${BOUNDARY}`, 'iu'));
 
 /**
- * What may follow "card" of a library phrase (D-257, D-258): " that shares a creature type with it" (one card, the creature of the trigger: CR 205.3m, 603.10a) and
+ * What may follow "card" of a library phrase (D-261, D-262): " that shares a creature type with it" (one card, the creature of the trigger: CR 205.3m, 603.10a) and
  * " that share a land type" (cards found together: CR 205.3i). Nothing otherwise.
  */
 function sharedSuffix(
@@ -129,7 +129,7 @@ function libraryPhrase(plural: boolean): Parser<IrFilter> {
     // "tapped" and "untapped" mean nothing for a card in a library.
     if (parts.tapped !== undefined) return fail(ctx, pos);
     const kind = choice<{ types: string[] } | { subtype: string } | { permanent: true }>(
-      // "a snow permanent card", "a nonland permanent card" (D-256, CR 110.1, 205.4g): a card of any of the permanent types, less those the "non" words leave out.
+      // "a snow permanent card", "a nonland permanent card" (D-260, CR 110.1, 205.4g): a card of any of the permanent types, less those the "non" words leave out.
       map(pattern(new RegExp(`permanent${BOUNDARY}`, 'iu')), () => ({ permanent: true as const })),
       map(typeWords(CARD_TYPES, false), (t) => ({ types: t })),
       map(SUBTYPE, (subtype) => ({ subtype })),
@@ -138,7 +138,7 @@ function libraryPhrase(plural: boolean): Parser<IrFilter> {
     const word = (kind.ok ? cardWord : CARD_WORD(plural, false))(ctx, kindEnd);
     if (!word.ok) return word;
     const kinds = kind.ok ? kind.value : { types: [] };
-    // D-257, D-258: " that shares a creature type with it" after a creature card, " that share a land type" after land cards; any other kind of card is left as it
+    // D-261, D-262: " that shares a creature type with it" after a creature card, " that share a land type" after land cards; any other kind of card is left as it
     // is, so the words after it are not read.
     const shared = sharedSuffix(plural)(ctx, word.pos);
     if (!shared.ok) return shared;
@@ -180,7 +180,7 @@ function libraryPhrase(plural: boolean): Parser<IrFilter> {
 }
 
 /**
- * "a snow permanent card, a legendary card, or a Saga card" (D-256, CR 701.23a): one card that is any of the kinds, each said as a card of its own ("a creature
+ * "a snow permanent card, a legendary card, or a Saga card" (D-260, CR 701.23a): one card that is any of the kinds, each said as a card of its own ("a creature
  * card or a land card"). Two or more; "A or B" has one " or a", "A, B, or C" commas with ", or " before the last (anything else is not English). The filter is
  * the choice of the kinds, each a filter with its own words; the library is where to look (CR 401.1).
  */
@@ -319,7 +319,7 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
           count: { kind: 'number', value: count.value, span: count.span },
         }),
       ),
-      // D-256: "a snow permanent card, a legendary card, or a Saga card": one card of any of several kinds, before the single kind it starts like.
+      // D-260: "a snow permanent card, a legendary card, or a Saga card": one card of any of several kinds, before the single kind it starts like.
       map(
         libraryUnion,
         (filter): Bare => ({

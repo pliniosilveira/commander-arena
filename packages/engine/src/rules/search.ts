@@ -142,7 +142,7 @@ export function runSearch(
       max: Math.min(search.max, legal.length),
       reveal: search.reveal,
       prompt: describeSearch(search),
-      // D-258: the answer is checked against the land types of the cards offered (`validCardsChoice`).
+      // D-262: the answer is checked against the land types of the cards offered (`validCardsChoice`).
       ...(search.sharedLandType === true
         ? { shareLandType: Object.fromEntries(legal.map((id) => [id, landTypesOf(state, id)])) }
         : {}),

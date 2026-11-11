@@ -84,7 +84,7 @@ describe('where "the amount of mana spent to cast it" is read', () => {
     expect(messages(withAbility(activated)).join('\n')).toMatch(/manaSpent is read/);
   });
 
-  // D-256 (Search for Glory): "You gain 1 life for each {S} spent to cast this spell" is the effect of the spell itself, where the spell is the source. Until then the
+  // D-260 (Search for Glory): "You gain 1 life for each {S} spent to cast this spell" is the effect of the spell itself, where the spell is the source. Until then the
   // validator refused any read of the mana spent outside "When you cast this spell"; a spell's own effect is the same source, read from the same stack data.
   test('in the effect of the spell itself, all of it, from a card type of the source, or the snow mana', () => {
     const spell = (amount: unknown) =>

@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC CARDS FOR SNOW MANA AND A SEARCH FOR ONE OF SEVERAL KINDS OF CARD. NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of D-256 (the Bruna deck): a snow basic land (CR 205.4g, 107.4h) and "Search your library for a snow permanent card, a
+ * Invented for the tests of D-260 (the Bruna deck): a snow basic land (CR 205.4g, 107.4h) and "Search your library for a snow permanent card, a
  * legendary card, or a Saga card, reveal it, put it into your hand, then shuffle. You gain 1 life for each {S} spent to cast this spell." (the wording of
  * a real card, the name replaced). Names start with "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle text, and
  * none of these is the definition of a real card.

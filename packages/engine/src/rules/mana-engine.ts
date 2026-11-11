@@ -274,7 +274,7 @@ export function applyPaymentPlan(
   riders: ManaRider[];
   /** The card types of the source of each mana the plan spent on the cost itself (`PaymentPlan.spentTypes`, D-183). */
   spent: readonly (readonly string[])[];
-  /** How many of that mana was from a snow source (`PaymentPlan.spentSnow`, D-256). */
+  /** How many of that mana was from a snow source (`PaymentPlan.spentSnow`, D-260). */
   spentSnow: number;
 } {
   const events: GameEvent[] = [];

@@ -106,7 +106,7 @@ export interface FilterContext {
   /** The permanents that entered the battlefield this turn (`enteredThisTurn`, group 4 of the Vraska deck): the turn log, read by the caller; absent fails the flag closed. */
   readonly entered?: readonly ObjectId[];
   /**
-   * The subtypes of the object the trigger is about, as it last was (`sharesCreatureTypeWith`, D-257, CR 603.10a, 113.7a): read by the caller; absent fails the flag closed.
+   * The subtypes of the object the trigger is about, as it last was (`sharesCreatureTypeWith`, D-261, CR 603.10a, 113.7a): read by the caller; absent fails the flag closed.
    */
   readonly subjectSubtypes?: readonly Subtype[];
 }
@@ -239,7 +239,7 @@ export function matchesFilterWith(
     const color = ctx.sourceChosen?.color;
     if (color === undefined || !d.colors.includes(color)) return false;
   }
-  // D-257, CR 205.3m: "shares a creature type with it": a creature type (CR 205.3m: the subtypes of creatures and kindreds) that both have.
+  // D-261, CR 205.3m: "shares a creature type with it": a creature type (CR 205.3m: the subtypes of creatures and kindreds) that both have.
   if (filter.sharesCreatureTypeWith !== undefined) {
     const theirs = ctx.subjectSubtypes;
     const shared =
