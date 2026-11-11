@@ -26,6 +26,7 @@
     "corpus:replay": "node tools/corpus/cli.ts replay",
     "corpus:decks": "node tools/corpus/cli.ts decks",
     "corpus:from-issue": "node tools/corpus/cli.ts from-issue",
+    "corpus:check-issue": "node tools/corpus/check-issue-cli.ts",
     "creature-types:generate": "node tools/creature-types/generate.ts",
     "planeswalker-types:generate": "node tools/creature-types/generate-planeswalker.ts",
     "ai:arena": "node tools/ai/arena.ts",
