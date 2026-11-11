@@ -80,7 +80,7 @@ export function checkStaticSubject(
 }
 
 export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): void {
-  // D-256 (CR 702.16): a static ability may give protection from colors; its colors are checked as a printed protection keyword is.
+  // D-259 (CR 702.16): a static ability may give protection from colors; its colors are checked as a printed protection keyword is.
   if (k?.kind === 'protection') {
     if (k.from === 'color') {
       if (!Array.isArray(k.colors) || k.colors.length === 0) {

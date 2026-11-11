@@ -27,7 +27,7 @@ export function protectedColors(state: GameState, obj: GameObject): readonly Col
   for (const a of derive(state, obj).abilities) {
     if (a.kind !== 'keyword' || a.keyword.kind !== 'protection') continue;
     if (a.keyword.from === 'color') colors.push(...a.keyword.colors);
-    // CR 903.4f (D-256): printed on the permanent, "your" is its controller. A static grant is resolved to colors as it is applied (`derive-statics.ts`).
+    // CR 903.4f (D-259): printed on the permanent, "your" is its controller. A static grant is resolved to colors as it is applied (`derive-statics.ts`).
     else colors.push(...colorsNotInCommanderIdentity(state, controllerOf(state, obj)));
   }
   return colors;

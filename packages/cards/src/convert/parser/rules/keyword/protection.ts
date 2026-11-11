@@ -28,7 +28,7 @@ export const PROTECTION_COLORS: Parser<string[]> = (ctx, pos) => {
   }
 };
 
-/** "protection from each color that's not in your commander's color identity" (stage P70, D-256, CR 702.16h, 903.4, 903.4f). */
+/** "protection from each color that's not in your commander's color identity" (stage P70, D-259, CR 702.16h, 903.4, 903.4f). */
 export const PROTECTION_OUTSIDE_COMMANDER_IDENTITY: Parser<RegExpExecArray> = pattern(
   /protection from each color that['\u2019]s not in your commander['\u2019]s color identity(?![\p{L}\p{N}])/iu,
 );

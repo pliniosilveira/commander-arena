@@ -393,7 +393,7 @@ export function checkFilter(f: ObjectFilter, path: string, out: Out, ownerScope?
 export const readsCombatOrSource = (f: ObjectFilter): boolean =>
   readsCombatOrSourceBesidesCommander(f) || f.commander !== undefined;
 
-/** `readsCombatOrSource` without `commander`: what the quality of an equip ability may not read ("Equip commander" reads it, D-256). */
+/** `readsCombatOrSource` without `commander`: what the quality of an equip ability may not read ("Equip commander" reads it, D-259). */
 export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.attacking !== undefined ||
   f.attackingYou !== undefined ||

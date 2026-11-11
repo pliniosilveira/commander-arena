@@ -302,7 +302,7 @@ describe('static abilities with subjects (CR 611.3, 613)', () => {
     }
   });
 
-  test('a static ability may give protection from colors, or from the colors outside the commander identity (D-256)', () => {
+  test('a static ability may give protection from colors, or from the colors outside the commander identity (D-259)', () => {
     const grant = (keyword: unknown) =>
       aura([
         enchantCreature,

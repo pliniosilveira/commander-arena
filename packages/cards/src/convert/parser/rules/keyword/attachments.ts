@@ -196,7 +196,7 @@ export const KEYWORD_EQUIP_QUALITY = defineRule<readonly IrKeyword[]>({
 });
 
 /**
- * `keyword.equip-commander`: "Equip commander {3}" (CR 702.6c, stage P70, D-256: the equip ability attaches only to a creature you control that is a
+ * `keyword.equip-commander`: "Equip commander {3}" (CR 702.6c, stage P70, D-259: the equip ability attaches only to a creature you control that is a
  * commander, CR 903.3; the permanent has "Equip {5}" besides, for any creature). A plain mana cost. Not read: another quality ("Equip legendary creature
  * {3}"), another cost, "Equip your commander {3}" and "Equip commander creature {3}" (other wordings).
  */

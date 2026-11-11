@@ -164,7 +164,7 @@ function lowerCostedKeyword(
           ...(ability.quality === undefined
             ? {}
             : { restriction: { subtypes: [ability.quality] } }),
-          // "Equip commander {3}" (stage P70, D-256, CR 702.6c, 903.3): a creature that is a commander.
+          // "Equip commander {3}" (stage P70, D-259, CR 702.6c, 903.3): a creature that is a commander.
           ...(ability.commanderOnly === true ? { restriction: { commander: true } } : {}),
         } as Keyword,
       },

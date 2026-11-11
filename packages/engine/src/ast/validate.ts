@@ -160,7 +160,7 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       checkFlashbackCost(k.cost, `${path}.cost`, out);
       break;
     case 'protection':
-      // D-256 (CR 903.4f): "each color that's not in your commander's color identity" names no color: the engine works them out.
+      // D-259 (CR 903.4f): "each color that's not in your commander's color identity" names no color: the engine works them out.
       if (k.from === 'colorsNotInCommanderIdentity') break;
       if (k.from !== 'color') {
         issue(

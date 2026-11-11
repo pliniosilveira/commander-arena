@@ -152,7 +152,7 @@ describe('keyword.equip: "Equip {M}" and "Equip—Pay N life" (CR 702.6a)', () =
       closestRule: 'keyword.equip',
       slot: 'cost',
     });
-    // "Equip commander {3}" is read since stage P70 (D-256, `keyword.equip-commander`).
+    // "Equip commander {3}" is read since stage P70 (D-259, `keyword.equip-commander`).
   });
 
   test('costs the engine does not pay for equip are not read', () => {

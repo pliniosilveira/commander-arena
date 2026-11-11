@@ -1,4 +1,4 @@
-// "Equip commander {3}" and "protection from each color that's not in your commander's color identity" (D-256, the Bruna deck).
+// "Equip commander {3}" and "protection from each color that's not in your commander's color identity" (D-259, the Bruna deck).
 // Pins: CR 702.6c (an equip ability may further restrict its target: "Equip [quality]" can target only a creature the player controls that has the quality),
 // CR 903.3 (a commander is a card a player designated), CR 903.4 (color identity), CR 903.4f (no commander: the quality is undefined and that part of the
 // ability does nothing), CR 702.16b, 702.16e (protection from a color: can't be targeted by, damage from sources of that color is prevented), CR 702.16h,
@@ -81,9 +81,10 @@ describe('"Equip commander {3}" can target only a commander (CR 702.6c, 903.3)',
   test('a creature that is not a commander is refused as a target of the commander equip', () => {
     const g = game();
     const [onlyCommander] = equipIndices(g);
+    // the engine refuses the target choice itself (the offer test above shows the legal targets)
     expect(() =>
       g.act(0).activate(PLATE, { ability: onlyCommander, targets: [BEARS], pay: true }),
-    ).toThrow();
+    ).toThrow(/rejected seat \d chooseTarget/);
   });
 
   test('equipping the commander pays {3}, attaches at resolution and gives +3/+3', () => {
@@ -266,9 +267,13 @@ describe('the protection does what protection does (CR 702.16b, 702.16e)', () =>
 
   test('a black spell and a red spell cannot target it; a blue spell can', () => {
     const g = game();
-    expect(() => g.act(1).cast(MURDER, { pay: true, targets: [BEARS] })).toThrow();
+    expect(() => g.act(1).cast(MURDER, { pay: true, targets: [BEARS] })).toThrow(
+      /rejected seat 1 (castSpell|chooseTarget)/,
+    );
     const h = game();
-    expect(() => h.act(1).cast(BOLT, { pay: true, targets: [BEARS] })).toThrow();
+    expect(() => h.act(1).cast(BOLT, { pay: true, targets: [BEARS] })).toThrow(
+      /rejected seat 1 (castSpell|chooseTarget)/,
+    );
     const i = game();
     i.act(1).cast(UNSUMMON, { pay: true, targets: [BEARS] });
     i.passAll();
@@ -287,5 +292,76 @@ describe('protection from named colors that a static ability gives (CR 702.16, 6
     expect(colorsOf(g, BEARS)).toEqual(['R', 'U']);
     const h = scenario().seat(0).battlefield(BEARS).battlefield(BLADE).seat(1).build();
     expect(colorsOf(h, BEARS)).toEqual([]);
+  });
+});
+
+describe('the protection also prevents damage, blocks and unattaches (CR 702.16d, 702.16e, 702.16f)', () => {
+  const RATS = 'Typhoid Rats'; // black 1/1 deathtouch
+  const CURSE = 'SYNTHETIC Curse Aura'; // a black Aura
+  const VANILLA = 'SYNTHETIC Vanilla 1/1'; // colorless
+
+  test('a black creature cannot block it, a colorless one can (CR 702.16f)', () => {
+    const attack = (blocker: string) => {
+      const g = scenario()
+        .seat(0)
+        .command(WU, { commander: true })
+        .battlefield(BEARS)
+        .battlefield(PLATE, { attachedTo: BEARS })
+        .seat(1)
+        .battlefield(blocker)
+        .at('precombatMain', { active: 0 })
+        .build();
+      g.advanceTo('declareAttackers');
+      g.act(0).attack(BEARS);
+      g.advanceTo('declareBlockers');
+      return g;
+    };
+    const black = attack(RATS);
+    expect(() => black.act(1).declareBlockers([{ blocker: RATS, attacker: BEARS }])).toThrow(
+      /rejected seat 1/,
+    );
+    const colorless = attack(VANILLA);
+    colorless.act(1).declareBlockers([{ blocker: VANILLA, attacker: BEARS }]);
+  });
+
+  test('damage from a black source is prevented: a deathtouch Rats deals no damage to it (CR 702.16e)', () => {
+    const g = scenario()
+      .seat(0)
+      .command(WU, { commander: true })
+      .battlefield(BEARS)
+      .battlefield(PLATE, { attachedTo: BEARS })
+      .seat(1)
+      .battlefield(RATS)
+      .at('precombatMain', { active: 1, turn: 2 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(1).attack(RATS);
+    g.advanceTo('declareBlockers');
+    g.act(0).declareBlockers([{ blocker: BEARS, attacker: RATS }]);
+    g.passAll();
+    g.expect.zone(BEARS, 'battlefield');
+    g.expect.zone(RATS, 'graveyard');
+    g.expect.invariants();
+  });
+
+  test('a black Aura attached to it falls off, a creature without the Plate keeps its Aura (CR 702.16d)', () => {
+    const g = scenario()
+      .seat(0)
+      .command(WU, { commander: true })
+      .battlefield(BEARS)
+      .battlefield(PLATE, { attachedTo: BEARS })
+      .seat(1)
+      .battlefield(CURSE, { attachedTo: BEARS })
+      .build();
+    g.passAll(); // the state-based actions are checked when a player would receive priority
+    g.expect.zone(CURSE, 'graveyard');
+    const h = scenario()
+      .seat(0)
+      .battlefield('SYNTHETIC Vanilla 5/5')
+      .seat(1)
+      .battlefield(CURSE, { attachedTo: 'SYNTHETIC Vanilla 5/5' })
+      .build();
+    h.passAll();
+    h.expect.attached(CURSE, 'SYNTHETIC Vanilla 5/5');
   });
 });

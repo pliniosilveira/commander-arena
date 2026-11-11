@@ -210,7 +210,7 @@ function effectOf(
       return ok({ kind: 'grantKeyword', subject, keyword: plainKeyword(kind) });
     }
     case 'grantProtection': {
-      // CR 702.16, 903.4 (stage P70, D-256): the engine's `grantKeyword` with a protection, from the named colors or from those outside the
+      // CR 702.16, 903.4 (stage P70, D-259): the engine's `grantKeyword` with a protection, from the named colors or from those outside the
       // commander's color identity.
       if (effect.commanderIdentity === true) {
         return ok({

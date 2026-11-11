@@ -18,7 +18,7 @@ export function commanderIdentity(state: GameState, seat: SeatId): Color[] {
 }
 
 /**
- * CR 903.4, 903.4f (D-256): "each color that's not in your commander's color identity". The colors of the five that no commander of the seat has in its
+ * CR 903.4, 903.4f (D-259): "each color that's not in your commander's color identity". The colors of the five that no commander of the seat has in its
  * color identity. A player with no commander has no color identity to compare with: the quality is undefined and that part of the ability does nothing,
  * so the list is empty (a commander with a colorless identity gives all five colors).
  */

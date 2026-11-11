@@ -545,7 +545,7 @@ export function staticEffectsOn(
     if (mod.kind === 'grantKeyword') {
       let keyword: Keyword = mod.keyword;
       if (keyword.kind === 'protection' && keyword.from === 'colorsNotInCommanderIdentity') {
-        // CR 903.4, 903.4f (D-256): "your" is the controller of the ability that gives it; no commander, or a commander of every color: nothing to give.
+        // CR 903.4, 903.4f (D-259): "your" is the controller of the ability that gives it; no commander, or a commander of every color: nothing to give.
         const colors = colorsNotInCommanderIdentity(state, controllerOf(state, source.object));
         if (colors.length === 0) return true;
         keyword = { kind: 'protection', from: 'color', colors };

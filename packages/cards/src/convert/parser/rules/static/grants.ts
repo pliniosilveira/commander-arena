@@ -91,7 +91,7 @@ const BASE_PT: Parser<Effects> = map(
 );
 
 /**
- * "protection from red and from blue", "protection from each color that's not in your commander's color identity" (stage P70, D-256, CR 702.16, 903.4):
+ * "protection from red and from blue", "protection from each color that's not in your commander's color identity" (stage P70, D-259, CR 702.16, 903.4):
  * one protection a static ability gives, with the colors it names or the colors outside the commander's color identity.
  */
 const PROTECTION: Parser<Effects> = choice(
@@ -271,7 +271,7 @@ export function statement(
  * granted mana ability, stage P14; any other quoted ability is read as text and dropped whole by the
  * lowering) and "Equipped creature can't be blocked.". Not read: "can't attack or
  * block", "loses flying", "gets +X/+X", "for each", "as long as", ward and landwalk. Protection from colors, or from each color outside the commander's color identity
- * (stage P70, D-256), is read after "has".
+ * (stage P70, D-259), is read after "has".
  */
 export const STATIC_ATTACHED = defineRule<IrStatic>({
   id: 'static.attached',
@@ -296,7 +296,7 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     "Equipped creature can't be blocked.",
     // Stage P33 (D-150): a creature type the permanent is in addition to its own.
     'Enchanted creature is an Angel in addition to its other types.',
-    // Stage P70 (D-256, CR 702.16, 903.4): protection a static ability gives.
+    // Stage P70 (D-259, CR 702.16, 903.4): protection a static ability gives.
     'Enchanted creature has protection from red.',
     'Equipped creature gets +1/+1 and has protection from black and from green.',
     "Equipped creature gets +3/+3 and has protection from each color that's not in your commander's color identity.",
@@ -311,7 +311,7 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature gets +1/+1 for each creature you control.',
     'Enchanted creature has flash.',
     'Enchanted creature has ward {2}.',
-    // Stage P70 (D-256): protection from a quality that is not a color, a list that is not Oracle's, and the identity wording changed.
+    // Stage P70 (D-259): protection from a quality that is not a color, a list that is not Oracle's, and the identity wording changed.
     'Enchanted creature has protection from everything.',
     'Enchanted creature has protection from each color.',
     'Enchanted creature has protection from red and blue.',

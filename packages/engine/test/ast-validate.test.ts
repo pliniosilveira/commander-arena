@@ -377,7 +377,7 @@ describe('costs, ward and mana symbols', () => {
     expect(validateAbility(none)).toHaveLength(1);
   });
 
-  test('protection from the colors outside the commander identity names no color (D-256)', () => {
+  test('protection from the colors outside the commander identity names no color (D-259)', () => {
     const outside: Ability = {
       kind: 'keyword',
       keyword: { kind: 'protection', from: 'colorsNotInCommanderIdentity' },
@@ -385,7 +385,7 @@ describe('costs, ward and mana symbols', () => {
     expect(validateAbility(outside)).toEqual([]);
   });
 
-  test('an equip ability may be limited to a commander, and to no zone, controller or combat (D-256, CR 702.6c)', () => {
+  test('an equip ability may be limited to a commander, and to no zone, controller or combat (D-259, CR 702.6c)', () => {
     const equip = (restriction: ObjectFilter): Ability => ({
       kind: 'keyword',
       keyword: { kind: 'equip', cost: [{ kind: 'mana', symbols: ['3'] }], restriction },

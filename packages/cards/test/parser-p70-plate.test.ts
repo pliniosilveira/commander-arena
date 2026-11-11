@@ -1,4 +1,4 @@
-// Stage P70 (D-256): Commander's Plate, the Bruna deck program (issue 5). The lines are the real Oracle text of the acceptance card of the golden corpus,
+// Stage P70 (D-259): Commander's Plate, the Bruna deck program (issue 5). The lines are the real Oracle text of the acceptance card of the golden corpus,
 // names replaced by ~, with the nodes the grammar produces; the other lines are SYNTHETIC siblings and the near misses the grammar must not read. The real
 // card is also read through the whole importer and played through applyAction (the engine scenario test of the same rules is
 // packages/engine/test/scenario-xx-commander-plate.test.ts).

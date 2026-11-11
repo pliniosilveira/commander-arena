@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC CARDS FOR "PROTECTION FROM EACH COLOR THAT'S NOT IN YOUR COMMANDER'S COLOR IDENTITY" AND "EQUIP COMMANDER". NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of D-256 (the Bruna deck): an Equipment that gives +3/+3 and protection from each color outside its controller's commander's
+ * Invented for the tests of D-259 (the Bruna deck): an Equipment that gives +3/+3 and protection from each color outside its controller's commander's
  * color identity and has an equip ability only a commander can be the target of, one that gives protection from named colors, a creature that has the
  * identity protection printed, and four commanders with different color identities. Names start with "SYNTHETIC "; oracleId is null. The text describes
  * what the AST does; it is not Oracle text, and none of these is the definition of a real card.
