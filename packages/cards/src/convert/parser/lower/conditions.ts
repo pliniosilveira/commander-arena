@@ -101,6 +101,13 @@ export function lowerCondition(
         ...(test.aboveStarting === true ? { aboveStarting: true as const } : {}),
       });
     }
+    case 'lifeGainedThisTurn': {
+      // CR 119.3, 603.4 (D-252): the life the controller gained this turn, from the turn log.
+      const blocked = missingFeatures(['condition:lifeGainedThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'lifeGainedThisTurn', atLeast: test.atLeast });
+    }
     case 'subjectControllerHasMore': {
       // CR 603.4, 109.4 (stage P68, D-229): "that player", the controller of the permanent the trigger is about, has more lands than the controller.
       const blocked = missingFeatures(['condition:subjectControllerHasMore']);
@@ -397,6 +404,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:attackingMostLife',
   'condition:attackersTotalPower',
   'condition:playerDealtDamage',
+  'condition:lifeGainedThisTurn',
   'condition:enteredThisTurn',
   'condition:yourMainPhase',
   'condition:yourTurn',

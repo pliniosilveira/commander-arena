@@ -388,6 +388,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ attacks, if ${e}, you gain 1 life.`,
   ),
   'condition.player-dealt-damage': permanent((e) => `{T}: Draw a card if ${e}.`),
+  // Stage P69 (D-252): the Bruna deck.
+  'condition.life-gained-this-turn': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
   'condition.entered-this-turn': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'noun.each-other-opponent': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.other-targets': spell((e) => `~ deals 1 damage to any target and 1 damage to ${e}.`),

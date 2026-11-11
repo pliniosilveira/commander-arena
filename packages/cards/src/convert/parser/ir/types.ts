@@ -442,6 +442,8 @@ export interface IrCondition extends IrNode {
     // Stage P29 (D-133): "you have 30 or more life", "you have at least 7 life more than your starting life total"
     // (`aboveStarting`, CR 119.1, 903.7)
     | { readonly kind: 'lifeTotal'; readonly compare: IrComparison; readonly aboveStarting?: true }
+    // D-252 (the Bruna deck): "you gained 3 or more life this turn" (CR 119.3)
+    | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
     | { readonly kind: 'cardsInGraveyard'; readonly compare: IrComparison }
     // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat

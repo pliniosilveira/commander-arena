@@ -16,8 +16,8 @@ import {
   cardsInGraveyardHolds,
   controlsCommander,
   enteredThisTurnHolds,
-  lifeTotalHolds,
   lifeGainedThisTurnHolds,
+  lifeTotalHolds,
   playerDealtDamageHolds,
 } from './condition-reads';
 import { controllerOf } from './control';

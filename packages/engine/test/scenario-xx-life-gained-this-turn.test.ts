@@ -26,7 +26,11 @@ describe('the card is valid', () => {
 
 describe('gained N or more life this turn', () => {
   test('gaining 3 life makes the end step trigger create the Griffin', () => {
-    const g = base().hand(MEND).seat(1).library(...LIBRARY).build();
+    const g = base()
+      .hand(MEND)
+      .seat(1)
+      .library(...LIBRARY)
+      .build();
     g.act(0).cast(MEND, { pay: true });
     g.passAll();
     g.advanceTo('end');
@@ -35,14 +39,21 @@ describe('gained N or more life this turn', () => {
   });
 
   test('gaining no life makes it do nothing', () => {
-    const g = base().seat(1).library(...LIBRARY).build();
+    const g = base()
+      .seat(1)
+      .library(...LIBRARY)
+      .build();
     g.advanceTo('end');
     g.passAll();
     g.expect.noObject('Griffin');
   });
 
   test('two gains of 2 life add up to 4: the totals of the turn count, not one event', () => {
-    const g = base().hand(MEND_TWICE).seat(1).library(...LIBRARY).build();
+    const g = base()
+      .hand(MEND_TWICE)
+      .seat(1)
+      .library(...LIBRARY)
+      .build();
     g.act(0).cast(MEND_TWICE, { pay: true });
     g.passAll();
     g.advanceTo('end');
@@ -51,7 +62,11 @@ describe('gained N or more life this turn', () => {
   });
 
   test("an opponent's life gain is not mine", () => {
-    const g = base().hand(MEND_THEM).seat(1).library(...LIBRARY).build();
+    const g = base()
+      .hand(MEND_THEM)
+      .seat(1)
+      .library(...LIBRARY)
+      .build();
     g.act(0).cast(MEND_THEM, { targets: [{ player: 1 }], pay: true });
     g.passAll();
     g.advanceTo('end');

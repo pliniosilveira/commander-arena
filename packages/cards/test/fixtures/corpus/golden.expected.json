@@ -1,5 +1,5 @@
 {
-  "parserVersion": 77,
+  "parserVersion": 78,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -109,6 +109,31 @@
       ],
       "ast": "c808457c"
     },
+    "02f46271-c90d-4318-9004-74e7bee64a89": {
+      "name": "Angel of Destiny",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever a creature you control deals combat damage to a player, you and that player each gain that much life.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.you-and-player"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "At the beginning of your end step, if you have at least 15 life more than your starting life total, each player ~ attacked this turn loses the game.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "828edea7"
+    },
     "03dee43b-6377-4f7b-956b-a384160322e4": {
       "name": "Drumbellower",
       "group": "acceptance",
@@ -116,6 +141,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "085b9c43"
+    },
+    "046add85-952f-46ac-974a-463d2a7d3fd4": {
+      "name": "The Book of Exalted Deeds",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{W}{W}{W}, {T}, Exile ~: Put an enlightened counter on target Angel. It gains \"You can't lose the game and your opponents can't win the game.\" Activate only as a sorcery.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.gain-keyword"
+        }
+      ],
+      "reasons": [],
+      "ast": "44e414bb"
     },
     "046f5783-cc7b-416a-8cf6-2bcef9c2cc1a": {
       "name": "Simic Growth Chamber",
@@ -261,6 +303,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cf048891"
+    },
+    "0a79237e-0811-4a8a-bd4d-db3ca91bff22": {
+      "name": "Everflowing Chalice",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "~ enters with a charge counter on it for each time it was kicked.",
+          "reason": "unrecognised",
+          "slot": "replacement",
+          "closestRule": "replacement.enters-with-counters"
+        }
+      ],
+      "reasons": [],
+      "ast": "d5d50a27"
     },
     "0acc9372-58b4-43bf-ab82-1f95831c81d4": {
       "name": "Nesting Dragon",
@@ -532,6 +591,14 @@
       "reasons": [],
       "ast": "0fd3f93a"
     },
+    "18a5e71e-eb75-4ac7-bedd-2220aaa24f78": {
+      "name": "Valkyrie Harbinger",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "28a7effb"
+    },
     "19f5a25a-97fc-41e6-bb26-7c35f4b4e37c": {
       "name": "Lobelia Sackville-Baggins",
       "group": "acceptance",
@@ -677,9 +744,26 @@
       "reasons": [],
       "ast": "83eaa363"
     },
+    "25012c1f-c069-43d7-b930-a3a5a7eb1389": {
+      "name": "Dismantling Wave",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "For each opponent, destroy up to one target artifact or enchantment that player controls.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "8e8e47fd"
+    },
     "2549bc57-9ffb-4053-9f10-f2a5f792b845": {
       "name": "Myriad Landscape",
-      "group": "training",
+      "group": "acceptance",
       "status": "unsupported",
       "unparsed": [
         {
@@ -1034,6 +1118,23 @@
       "reasons": [],
       "ast": "b28124cd"
     },
+    "367ac7e2-5056-48f3-a296-87d6cb1f7b54": {
+      "name": "Nykthos Paragon",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever you gain life, you may put that many +1/+1 counters on each creature you control. Do this only once each turn.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.add-counters"
+        }
+      ],
+      "reasons": [],
+      "ast": "1cf78215"
+    },
     "36cd2364-d113-47d1-b2c4-b088d9eb88dd": {
       "name": "Brainstorm",
       "group": "holdout",
@@ -1099,6 +1200,30 @@
       ],
       "reasons": [],
       "ast": "fd3f3928"
+    },
+    "3bb518ff-399b-4ce7-b9ad-a1d563dd7792": {
+      "name": "Arch of Orazca",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Ascend",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{5}, {T}: Draw a card. Activate only if you have the city's blessing.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "condition.opponents-at-least"
+        }
+      ],
+      "reasons": [],
+      "ast": "b77d4cd2"
     },
     "3bbad38b-7d88-4ff2-9fd3-5081536e7c56": {
       "name": "Page, Loose Leaf",
@@ -1235,6 +1360,25 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7f6775ef"
+    },
+    "49b9a3ac-d245-431a-bf40-64d1b8dc2b91": {
+      "name": "Keeper of the Accord",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "At the beginning of each opponent's end step, if that player controls more creatures than you, create a 1/1 white Soldier creature token.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [
+        "faces[0].abilities[0].interveningIf: subjectControllerHasMore reads the controller of a permanent the event is about"
+      ],
+      "ast": "18e9ffd8"
     },
     "49be65fd-3755-410d-b0dc-2e5861ea2552": {
       "name": "Thopter Spy Network",
@@ -1878,6 +2022,23 @@
       "reasons": [],
       "ast": "021d1482"
     },
+    "6fa7229d-18b6-43d8-aa57-a56cdb815767": {
+      "name": "Dawnbreak Reclaimer",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "At the beginning of your end step, choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their owners' control.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "4c2cc706"
+    },
     "6fdcb563-9279-4365-8a78-26e75fbfd917": {
       "name": "Gogo, Mysterious Mime",
       "group": "acceptance",
@@ -2129,6 +2290,23 @@
       "reasons": [],
       "ast": "40033eda"
     },
+    "7c3a8766-e440-48c5-a561-197490efdba5": {
+      "name": "Heirloom Blade",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever equipped creature dies, you may reveal cards from the top of your library until you reveal a creature card that shares a creature type with it. Put that card into your hand and the rest on the bottom of your library in a random order.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.reveal-until"
+        }
+      ],
+      "reasons": [],
+      "ast": "28012732"
+    },
     "7c779721-cd1b-4696-9ae9-68ccc284ed2a": {
       "name": "Aetherize",
       "group": "training",
@@ -2136,6 +2314,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c26d86e5"
+    },
+    "7cab62dc-a256-4da8-a3ea-b3903ec37077": {
+      "name": "Griffin Aerie",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3798a13e"
     },
     "7cb9e29f-835f-4155-a2a5-4b778866c773": {
       "name": "Mosswort Bridge",
@@ -2270,6 +2456,23 @@
       "reasons": [],
       "ast": "eb9c02d4"
     },
+    "82d51c8a-d42b-48b3-a726-3a8d28d057e5": {
+      "name": "Arden Angel",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "At the beginning of your upkeep, if ~ is in your graveyard, roll a four-sided die. If the result is 1, return ~ from your graveyard to the battlefield.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "2c47d9f8"
+    },
     "83045a9c-57da-411f-80aa-56178d14856b": {
       "name": "Vraska, Scheming Gorgon",
       "group": "acceptance",
@@ -2318,6 +2521,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9eaa310a"
+    },
+    "84dc18f0-8225-4b40-a165-b10321e41769": {
+      "name": "Nykthos, Shrine to Nyx",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{2}, {T}: Choose a color. Add an amount of mana of that color equal to your devotion to that color.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "a367bdc6"
     },
     "84ee74e9-b3e3-4f47-8b3c-5c1a70f5cad6": {
       "name": "Seraph of the Sword",
@@ -2712,6 +2932,31 @@
       "reasons": [],
       "ast": "987374ea"
     },
+    "a41e632f-9d36-44d2-b1dd-e17df0d2486e": {
+      "name": "Breathkeeper Seraph",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Flying, soulbond",
+          "reason": "unrecognised",
+          "slot": "keyword",
+          "closestRule": "keyword.line"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "As long as ~ is paired with another creature, each of those creatures has \"When ~ dies, you may return it to the battlefield under its owner's control at the beginning of your next upkeep.\"",
+          "reason": "unrecognised",
+          "slot": "static",
+          "closestRule": "static.conditional-prefix"
+        }
+      ],
+      "reasons": [],
+      "ast": "f27f1c44"
+    },
     "a492a323-df8a-40fd-bff0-50091baa7700": {
       "name": "Kenrith's Transformation",
       "group": "training",
@@ -2824,6 +3069,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d2d4459c"
+    },
+    "aa95501f-bb59-494a-bcae-b74ca10ad57e": {
+      "name": "Angelic Accord",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2cd6f756"
     },
     "ab1cc360-b9de-48d9-9983-4dfe4a7d2a37": {
       "name": "Arcane Denial",
@@ -2970,6 +3223,23 @@
       "reasons": [],
       "ast": "4a9ee0e8"
     },
+    "b0394cf2-12a0-4d4f-87e0-fe8937e6faff": {
+      "name": "Well of Lost Dreams",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever you gain life, you may pay {X}, where X is less than or equal to the amount of life you gained. If you do, draw X cards.",
+          "reason": "unrecognised",
+          "slot": "cost",
+          "closestRule": "effect.pay"
+        }
+      ],
+      "reasons": [],
+      "ast": "5e1e7f82"
+    },
     "b1544f21-7e98-461b-aed5-e748b0168c52": {
       "name": "Swords to Plowshares",
       "group": "training",
@@ -2977,6 +3247,39 @@
       "unparsed": [],
       "reasons": [],
       "ast": "82c84849"
+    },
+    "b349f018-c20b-48b0-9e65-d5fd56b24b88": {
+      "name": "Entreat the Angels",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Miracle {X}{W}{W}",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "47ba91fa"
+    },
+    "b380c04b-0bce-4328-8f0a-1425e48bee72": {
+      "name": "Urza's Incubator",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Creature spells of the chosen type cost {2} less to cast.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "b9b97f74"
     },
     "b473e293-59e3-4e04-acf2-622604aeb25f": {
       "name": "Path of Ancestry",
@@ -3066,6 +3369,23 @@
       "reasons": [],
       "ast": "cb8867d9"
     },
+    "bce7e45d-b2c5-43aa-91a6-3a3c24f30850": {
+      "name": "Bruna, the Fading Light",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When you cast ~, you may return target Angel or Human creature card from your graveyard to the battlefield.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.return"
+        }
+      ],
+      "reasons": ["layout \"meld\" is not supported"],
+      "ast": "0f907202"
+    },
     "bd39e333-b0b8-4a85-8645-d77f4a3941db": {
       "name": "Rabanastre, Royal City",
       "group": "acceptance",
@@ -3146,6 +3466,31 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5bab268b"
+    },
+    "c3974ec7-7af0-4b65-baf6-4c1c4fe8a5c4": {
+      "name": "Ajani, Strength of the Pride",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "−2: Create a 2/2 white Cat Soldier creature token named ~'s Pridemate with \"Whenever you gain life, put a +1/+1 counter on ~.\"",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "0: If you have at least 15 life more than your starting life total, exile ~ and each artifact and creature your opponents control.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "ec9cf1f5"
     },
     "c3c802ba-dfbb-4f63-ae9a-e29c2e30013d": {
       "name": "Jeskai Ascendancy",
@@ -3277,6 +3622,31 @@
       "reasons": [],
       "ast": "23301983"
     },
+    "cae166de-e681-40a0-83a8-3c17cf40e2fc": {
+      "name": "Commander's Plate",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Equipped creature gets +3/+3 and has protection from each color that's not in your commander's color identity.",
+          "reason": "unrecognised",
+          "slot": "static",
+          "closestRule": "static.attached"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Equip commander {3}",
+          "reason": "unrecognised",
+          "slot": "cost",
+          "closestRule": "keyword.equip"
+        }
+      ],
+      "reasons": [],
+      "ast": "de89fe7d"
+    },
     "cb027150-848c-4a66-88ad-e20222304dd8": {
       "name": "Scalding Tarn",
       "group": "training",
@@ -3405,6 +3775,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ba63d56e"
+    },
+    "d4e875d9-2245-470d-aa2f-1dfe66ce2d15": {
+      "name": "Karoo",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "When ~ enters, sacrifice it unless you return an untapped Plains you control to its owner's hand.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "condition.unless-pays"
+        }
+      ],
+      "reasons": [],
+      "ast": "5bf9549f"
     },
     "d4f28a4b-d821-4132-bdec-4c528318f8e2": {
       "name": "Hellkite Charger",
@@ -3759,6 +4146,23 @@
       "reasons": [],
       "ast": "5ef9c253"
     },
+    "ed7300f4-831a-4ba4-b5e6-ceba8d079eaa": {
+      "name": "Cosmos Elixir",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "At the beginning of your end step, draw a card if your life total is greater than your starting life total. Otherwise, you gain 2 life.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.draw"
+        }
+      ],
+      "reasons": [],
+      "ast": "ca0d7e91"
+    },
     "edad60c6-80de-4033-af1b-a703ac332983": {
       "name": "Goblin Bombardment",
       "group": "acceptance",
@@ -3924,6 +4328,48 @@
       "reasons": [],
       "ast": "f52df1d0"
     },
+    "f3e23d5e-bd88-4e7c-a3fb-db2a8cb05b22": {
+      "name": "Gisela, the Broken Blade",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "At the beginning of your end step, if you both own and control ~ and a creature named Bruna, the Fading Light, exile them, then meld them into Brisela, Voice of Nightmares.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": ["layout \"meld\" is not supported"],
+      "ast": "82803556"
+    },
+    "f4ce6078-8c7b-4f68-b324-13130c63a983": {
+      "name": "Angel of Serenity",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "When ~ enters, you may exile up to three other target creatures from the battlefield and/or creature cards from graveyards.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.target-graveyard-card"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "When ~ leaves the battlefield, return the exiled cards to their owners' hands.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.return"
+        }
+      ],
+      "reasons": [],
+      "ast": "8af1a452"
+    },
     "f61680da-606e-4d16-b0a0-361aa5210901": {
       "name": "Chandra's Ignition",
       "group": "training",
@@ -4011,6 +4457,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7c0d491e"
+    },
+    "fab29bc7-1f0a-4df4-b8f1-c008ce5583d2": {
+      "name": "Search for Glory",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Search your library for a snow permanent card, a legendary card, or a Saga card, reveal it, put it into your hand, then shuffle. You gain 1 life for each {S} spent to cast ~.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.library-card"
+        }
+      ],
+      "reasons": [],
+      "ast": "f8603a02"
     },
     "fae37e28-e137-4177-b973-fa8b4dd8f409": {
       "name": "Generous Gift",
@@ -4256,15 +4719,15 @@
   "summary": {
     "training": {
       "supported": 163,
-      "total": 191
+      "total": 190
     },
     "holdout": {
       "supported": 54,
       "total": 60
     },
     "acceptance": {
-      "supported": 179,
-      "total": 197
+      "supported": 182,
+      "total": 224
     }
   }
 }
