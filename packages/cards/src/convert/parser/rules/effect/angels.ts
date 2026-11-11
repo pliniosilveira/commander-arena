@@ -4,7 +4,16 @@
  * something about the ability before them: "This ability triggers only once each turn." (CR 603.2) and "Spend this mana only to cast an
  * Angel spell." (CR 106.6). The lowering of the ability that holds them reads them; anywhere else they are read and not run.
  */
-import { fail, literal, map, optional, pattern, satisfy, sequence } from '../../combinators';
+import {
+  fail,
+  literal,
+  map,
+  optional,
+  type ParseContext,
+  pattern,
+  satisfy,
+  sequence,
+} from '../../combinators';
 import type { IrFilter, IrFlag, IrNoun, Span } from '../../ir/types';
 import { BOUNDARY, permanentPhrase, spellPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, quietly, spanned } from '../registry';
@@ -49,6 +58,45 @@ export const UNTIL_SOURCE_LEAVES = pattern(
 );
 
 /**
+ * The phrase after "for each opponent, <verb> up to one target " up to and with " that player controls": the noun of the slot with one target
+ * for each opponent (CR 115.1, 601.2c). The permanent is whatever phrase of the permanent family names no controller ("that player controls"
+ * is the controller). `from` is where the sentence began, for the spans.
+ */
+function perOpponentNoun(
+  ctx: ParseContext,
+  from: number,
+  verb: 'exile' | 'destroy',
+  at: number,
+  id: string,
+) {
+  const phrase = spanned(
+    satisfy(
+      map(permanentPhrase(false, 'all'), withoutZone),
+      (filter: IrFilter) => filter.controller === undefined,
+    ),
+  )(ctx, at);
+  if (!phrase.ok) return phrase;
+  const that = pattern(new RegExp(` that player controls${BOUNDARY}`, 'iu'))(ctx, phrase.pos);
+  if (!that.ok) return that;
+  const filter: IrFilter = { ...phrase.value.value, zone: 'battlefield', controller: 'opponent' };
+  const nounAt = from + `for each opponent, ${verb} `.length;
+  const oneAt = nounAt + 'up to '.length;
+  const noun: IrNoun = {
+    kind: 'noun',
+    det: 'target',
+    filter,
+    count: { kind: 'number', value: 1, span: { start: oneAt, end: oneAt + 'one'.length } },
+    upTo: true,
+    plural: false,
+    other: false,
+    perOpponent: true,
+    span: { start: nounAt, end: that.pos },
+    rule: id,
+  };
+  return { ok: true as const, value: noun, pos: that.pos };
+}
+
+/**
  * `effect.exile-per-opponent`: "for each opponent, exile up to one target nonland permanent that player controls until ~ leaves the
  * battlefield" (CR 115.1, 601.2c, 603.3d: one slot that takes at most one target of each opponent; CR 610.3: the exiled cards return when the
  * source leaves). "Up to one" only, since a player who controls nothing of the kind cannot be chosen; the permanent is whatever
@@ -86,32 +134,10 @@ export const EFFECT_EXILE_PER_OPPONENT = defineRule<Clauses>({
     const id = 'effect.exile-per-opponent';
     const head = literal('for each opponent, exile up to one target ')(ctx, pos);
     if (!head.ok) return head;
-    const phrase = spanned(
-      satisfy(
-        map(permanentPhrase(false, 'all'), withoutZone),
-        (filter: IrFilter) => filter.controller === undefined,
-      ),
-    )(ctx, head.pos);
-    if (!phrase.ok) return phrase;
-    const that = pattern(new RegExp(` that player controls${BOUNDARY}`, 'iu'))(ctx, phrase.pos);
-    if (!that.ok) return that;
-    const until = UNTIL_SOURCE_LEAVES(ctx, that.pos);
-    const end = until.ok ? until.pos : that.pos;
-    const filter: IrFilter = { ...phrase.value.value, zone: 'battlefield', controller: 'opponent' };
-    const nounAt = pos + 'for each opponent, exile '.length;
-    const oneAt = nounAt + 'up to '.length;
-    const noun: IrNoun = {
-      kind: 'noun',
-      det: 'target',
-      filter,
-      count: { kind: 'number', value: 1, span: { start: oneAt, end: oneAt + 'one'.length } },
-      upTo: true,
-      plural: false,
-      other: false,
-      perOpponent: true,
-      span: { start: nounAt, end: that.pos },
-      rule: id,
-    };
+    const noun = perOpponentNoun(ctx, pos, 'exile', head.pos, id);
+    if (!noun.ok) return noun;
+    const until = UNTIL_SOURCE_LEAVES(ctx, noun.pos);
+    const end = until.ok ? until.pos : noun.pos;
     const span = { start: pos, end };
     return {
       ok: true,
@@ -120,13 +146,66 @@ export const EFFECT_EXILE_PER_OPPONENT = defineRule<Clauses>({
           id,
           'exile',
           {
-            objects: noun,
+            objects: noun.value,
             ...(until.ok ? { until: flag(id, span) } : {}),
           },
           span,
         ),
       ],
       pos: end,
+    };
+  },
+});
+
+/**
+ * `effect.destroy-per-opponent`: "for each opponent, destroy up to one target artifact or enchantment that player controls" (CR 115.1, 601.2c:
+ * one slot that takes at most one target of each opponent; CR 701.8a: destroy). The same slot as the exile (D-150), read for destroy (D-961).
+ * "Up to one" only: without it each opponent would need a target, and a player who controls nothing of the kind could not be chosen (the engine's
+ * slot has no minimum); "up to two" and the other counts are not this slot.
+ */
+export const EFFECT_DESTROY_PER_OPPONENT = defineRule<Clauses>({
+  id: 'effect.destroy-per-opponent',
+  family: 'effect',
+  leading: ['for'],
+  cites: ['CR 115.1 (Targets)', 'CR 601.2c (Casting Spells)', 'CR 701.8a (Destroy)'],
+  examples: [
+    'for each opponent, destroy up to one target artifact or enchantment that player controls',
+    'for each opponent, destroy up to one target creature that player controls',
+    'for each opponent, destroy up to one target nonland permanent that player controls',
+    'for each opponent, destroy up to one target artifact that player controls',
+  ],
+  rejects: [
+    'for each opponent, destroy target artifact or enchantment that player controls',
+    'for each opponent, destroy up to two target artifacts that player controls',
+    'for each opponent, destroy up to one target artifact or enchantment',
+    'for each opponent, destroy up to one target artifact or enchantment you control',
+    'for each opponent, destroy up to one target artifact or enchantment an opponent controls',
+    'for each opponent, destroy up to one target artifact or enchantment that player owns',
+    'for each opponent, destroy up to one target artifact or enchantment that player controls until end of turn',
+    'for each opponent, destroy up to one target artifact or enchantment that player controls and draw a card',
+    'for each opponent, destroy up to one target artifact or enchantment that player controls. you draw a card',
+    'for each player, destroy up to one target artifact or enchantment that player controls',
+    'for each creature, destroy up to one target artifact or enchantment that player controls',
+    'for each other opponent, destroy up to one target artifact or enchantment that player controls',
+    'for each opponent who controls an artifact, destroy up to one target artifact that player controls',
+    "for each opponent, destroy up to one target artifact card in that player's graveyard",
+    'for each opponent, destroy up to one target artifact or enchantment that player controls unless they pay {2}',
+    'destroy up to one target artifact or enchantment that player controls',
+    'for each opponent, destroys up to one target artifact or enchantment that player controls',
+    'for each opponent, you may destroy up to one target artifact or enchantment that player controls',
+    "for each opponent, destroy up to one target artifact or enchantment that player controls. it can't be regenerated",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.destroy-per-opponent';
+    const head = literal('for each opponent, destroy up to one target ')(ctx, pos);
+    if (!head.ok) return head;
+    const noun = perOpponentNoun(ctx, pos, 'destroy', head.pos, id);
+    if (!noun.ok) return noun;
+    const span = { start: pos, end: noun.pos };
+    return {
+      ok: true,
+      value: [makeClause(id, 'destroy', { objects: noun.value }, span)],
+      pos: noun.pos,
     };
   },
 });
@@ -270,6 +349,7 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
 export const ANGEL_EFFECT_RULES = [
   EFFECT_PROLIFERATE,
   EFFECT_EXILE_PER_OPPONENT,
+  EFFECT_DESTROY_PER_OPPONENT,
   EFFECT_ONCE_EACH_TURN,
   EFFECT_SPEND_ONLY,
 ].map(quietly);

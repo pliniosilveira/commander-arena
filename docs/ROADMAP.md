@@ -138,3 +138,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Miracle, Pl
 ## Bruna deck leftovers (D-264)
 
 - Ascend (D-264): the city's blessing is checked with the state-based actions (CR 704.3), so a player who reaches ten permanents in the middle of one resolution does not have it until that resolution ends. A card that says "create two tokens, then if you have the city's blessing ..." would read the answer from before the tokens (CR 702.131b says "any time"). Fixing it needs the check between the steps of an effect. Ascend on an instant or sorcery (CR 702.131a, a spell ability) is not built; a card with it is unsupported.
+
+## Dismantling Wave group leftovers (D-961)
+
+- "For each opponent, destroy up to one target ..." (D-961): the slot with one target for each opponent is tested with two seats; the case of several opponents is pinned through the answer check only (`targetAnswerError`), because the scenario DSL builds two seats. Only the count "up to one" is read; "for each opponent, destroy target ... that player controls" (a target required of each opponent) and "up to two" are refused, since the engine's slot has no minimum and one target at most for each opponent.

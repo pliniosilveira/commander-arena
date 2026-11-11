@@ -489,3 +489,9 @@ Every place where the engine knowingly differs from the CR, in one table (cleanu
 | 205.4g, 110.1, 701.23a | A search for a snow permanent card, a nonland permanent card, a union of kinds | Implemented (D-260) | The search filter may be an `anyOf` of filters; the prompt names it. |
 | 205.3m, 603.10a, 113.7a, 702.73a | A creature card that shares a creature type with the creature that died | Implemented (D-261) | `ObjectFilter.sharesCreatureTypeWith: 'triggerSubject'`, in a `revealUntil` of a `dies` trigger only; the types come from last-known information, a changeling shares with any creature. |
 | 205.3i, 701.23b | A search for cards that share a land type | Implemented (D-262) | `search.sharedLandType`; `ChooseCardsDecision.shareLandType` lists the land types of each legal card, and an answer is legal when its cards have one in common. |
+
+## Added by the Dismantling Wave group (D-961)
+
+| CR | Title | Status | Notes |
+| --- | --- | --- | --- |
+| 115.1, 601.2c, 701.8a | "For each opponent, destroy up to one target ... that player controls" on a spell | Implemented (D-961) | The slot `TargetSpec.onePerOpponent` (D-149) with a `destroy`; the grammar reads it for destroy as for exile (`effect.destroy-per-opponent`), with "up to one" only. |
