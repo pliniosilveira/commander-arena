@@ -1,10 +1,10 @@
 name: CI
 
 # The quick CI (D-132): typecheck, lint, build, and the unit tests of the engine, cards, web app and
-# tools. It leaves out the AI soak tests and the browser tests, which take most of the time: the
-# owner runs the complete suite locally every night, and the manual `Full` workflow runs it on
-# GitHub's runners when included minutes allow (D-113 explains the job split). The final job keeps the
-# name `check`, so a branch protection rule that requires it keeps working.
+# tools, on every pull request and every push to `main`. It leaves out the AI soak tests and the
+# browser tests, which take most of the time: the `Full` workflow runs them every night when `main`
+# has a new commit (D-250), and by hand. The final job keeps the name `check`, so a branch
+# protection rule that requires it keeps working.
 
 on:
   push:
