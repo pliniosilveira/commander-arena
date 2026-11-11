@@ -294,10 +294,30 @@ describe('static abilities with subjects (CR 611.3, 613)', () => {
     for (const keyword of [
       { kind: 'flash' },
       { kind: 'ward', cost: [{ kind: 'mana', symbols: ['1'] }] },
-      { kind: 'protection', from: 'color', colors: ['R'] },
       { kind: 'cycling', cost: [{ kind: 'mana', symbols: ['1'] }] },
       { kind: 'equip', cost: [{ kind: 'mana', symbols: ['1'] }] },
       { kind: 'enchant', filter: {} },
+    ]) {
+      expect(validateCardStructure(grant(keyword)), JSON.stringify(keyword)).not.toEqual([]);
+    }
+  });
+
+  test('a static ability may give protection from colors, or from the colors outside the commander identity (D-256)', () => {
+    const grant = (keyword: unknown) =>
+      aura([
+        enchantCreature,
+        stat({ kind: 'grantKeyword', subject: { kind: 'attached' }, keyword: keyword as never }),
+      ]);
+    expect(validateCard(grant({ kind: 'protection', from: 'color', colors: ['R', 'U'] }))).toEqual(
+      [],
+    );
+    expect(
+      validateCard(grant({ kind: 'protection', from: 'colorsNotInCommanderIdentity' })),
+    ).toEqual([]);
+    for (const keyword of [
+      { kind: 'protection', from: 'color', colors: [] },
+      { kind: 'protection', from: 'color', colors: ['X'] },
+      { kind: 'protection', from: 'everything' },
     ]) {
       expect(validateCardStructure(grant(keyword)), JSON.stringify(keyword)).not.toEqual([]);
     }

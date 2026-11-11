@@ -79,6 +79,7 @@ import {
   issue,
   loyaltyOffPlaneswalkerIssues,
   readsCombatOrSource,
+  readsCombatOrSourceBesidesCommander,
   type Scope,
 } from './validate-parts';
 import {
@@ -133,7 +134,7 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
               f.owner !== undefined ||
               f.controller !== undefined ||
               f.stackKind !== undefined ||
-              readsCombatOrSource(f),
+              readsCombatOrSourceBesidesCommander(f),
           )
         ) {
           issue(
@@ -159,8 +160,16 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       checkFlashbackCost(k.cost, `${path}.cost`, out);
       break;
     case 'protection':
-      if (k.from !== 'color')
-        issue(out, `${path}.from`, `unknown protection quality ${String(k.from)}`);
+      // D-256 (CR 903.4f): "each color that's not in your commander's color identity" names no color: the engine works them out.
+      if (k.from === 'colorsNotInCommanderIdentity') break;
+      if (k.from !== 'color') {
+        issue(
+          out,
+          `${path}.from`,
+          `unknown protection quality ${String((k as { from: unknown }).from)}`,
+        );
+        break;
+      }
       if (!Array.isArray(k.colors) || k.colors.length === 0) {
         issue(out, `${path}.colors`, 'protection needs at least one color');
       } else {

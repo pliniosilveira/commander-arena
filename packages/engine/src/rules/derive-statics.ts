@@ -28,6 +28,7 @@ import type {
 } from '../ast/types';
 import type { ObjectId } from '../ids';
 import type { GameObject, GameState } from '../state/types';
+import { colorsNotInCommanderIdentity } from './commander-colors';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { characteristicPtOf, staticAmountOf } from './derive-count';
@@ -542,8 +543,15 @@ export function staticEffectsOn(
       return false;
     }
     if (mod.kind === 'grantKeyword') {
+      let keyword: Keyword = mod.keyword;
+      if (keyword.kind === 'protection' && keyword.from === 'colorsNotInCommanderIdentity') {
+        // CR 903.4, 903.4f (D-256): "your" is the controller of the ability that gives it; no commander, or a commander of every color: nothing to give.
+        const colors = colorsNotInCommanderIdentity(state, controllerOf(state, source.object));
+        if (colors.length === 0) return true;
+        keyword = { kind: 'protection', from: 'color', colors };
+      }
       grants.push({
-        ability: { kind: 'keyword', keyword: mod.keyword },
+        ability: { kind: 'keyword', keyword },
         timestamp: source.object.timestamp,
       });
     } else if (mod.kind === 'loseAllAbilities') {

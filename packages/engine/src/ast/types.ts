@@ -2695,7 +2695,8 @@ export type Keyword =
       readonly cost: readonly Cost[];
       /**
        * "Equip Wizard {1}" (CR 702.6c, D-220): the equip ability attaches only to a creature this filter also matches (a creature you control as always): a creature
-       * type here. The permanent may have other equip abilities, each with its own cost and restriction.
+       * type here. The permanent may have other equip abilities, each with its own cost and restriction. "Equip commander {3}" (D-256) is `{ commander: true }`:
+       * a creature that is a card a player designated as a commander (CR 903.3); it is still a creature the activating player controls (CR 702.6c).
        */
       readonly restriction?: ObjectFilter;
     }
@@ -2722,6 +2723,15 @@ export type Keyword =
    */
   | { readonly kind: 'crew'; readonly power: number }
   | { readonly kind: 'protection'; readonly from: 'color'; readonly colors: readonly Color[] }
+  /**
+   * "Protection from each color that's not in your commander's color identity" (CR 702.16h, 702.16i, 903.4, 903.4f; D-256): protection from each of
+   * the colors the controller's commanders (all of them, as `commanderIdentity`) do not have in their color identity. "Your" is the controller of the
+   * ability that gives the keyword (a static ability's controller, `grantKeyword`), or of the permanent itself when the keyword is printed on it. A
+   * player without a commander has no such colors: the quality is undefined and the keyword does nothing (CR 903.4f). Read where a permanent's
+   * protection is read (`rules/protection.ts`) and, for a static grant, resolved to plain colors as the grant is applied (`rules/derive-statics.ts`).
+   * Only a printed keyword or a static `grantKeyword` may carry it: an effect that gives a keyword for a duration takes the keywords without a parameter.
+   */
+  | { readonly kind: 'protection'; readonly from: 'colorsNotInCommanderIdentity' }
   /**
    * CR 702.73a (Changeling): a characteristic-defining ability, "This object is every creature type"
    * (CR 604.3), in layer 4 first (CR 613.3), working in every zone, also in a hand or a library. The

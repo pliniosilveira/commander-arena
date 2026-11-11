@@ -133,7 +133,6 @@ describe('static.attached: what an Aura or Equipment gives (CR 604.4, 613.4c, 61
 
   test.each([
     ["Enchanted creature can't attack or block.", "can't attack or block."],
-    ['Enchanted creature has protection from red.', 'protection from red.'],
     ['Enchanted creature has ward {2}.', 'ward {2}.'],
     ['Enchanted creature has flash.', 'flash.'],
     ['Enchanted creature gets +1/+1 and loses flying.', 'and loses flying.'],

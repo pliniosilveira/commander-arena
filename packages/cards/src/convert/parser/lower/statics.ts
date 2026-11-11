@@ -209,6 +209,24 @@ function effectOf(
       }
       return ok({ kind: 'grantKeyword', subject, keyword: plainKeyword(kind) });
     }
+    case 'grantProtection': {
+      // CR 702.16, 903.4 (stage P70, D-256): the engine's `grantKeyword` with a protection, from the named colors or from those outside the
+      // commander's color identity.
+      if (effect.commanderIdentity === true) {
+        return ok({
+          kind: 'grantKeyword',
+          subject,
+          keyword: { kind: 'protection', from: 'colorsNotInCommanderIdentity' },
+        });
+      }
+      const colors = (effect.colors ?? []).map((w) => colorLetter(w));
+      if (colors.length === 0 || colors.some((c) => c === undefined)) return failure(at);
+      return ok({
+        kind: 'grantKeyword',
+        subject,
+        keyword: { kind: 'protection', from: 'color', colors: colors as Color[] },
+      });
+    }
     case 'grantAbility': {
       // CR 613.1f: the engine gives a mana ability, and (stage P34, D-152) an activated or a triggered ability of its own kinds; the
       // quoted text was read as an ability and is lowered like the abilities of the card itself.
@@ -362,6 +380,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return effect.keyword === 'riot'
         ? ['static:grantKeyword', 'keyword:riot']
         : ['static:grantKeyword'];
+    case 'grantProtection':
+      return ['static:grantKeyword', 'keyword:protection'];
     case 'grantQuoted':
       return ['static:grantAbility'];
     case 'restriction':
@@ -518,6 +538,7 @@ function takesCondition(effect: IrStaticEffect): boolean {
     case 'ptCount':
     case 'ptTimesAttacked':
     case 'grantKeyword':
+    case 'grantProtection':
     case 'grantAbility':
     case 'attackTax':
     case 'castFromGraveyard':
@@ -546,7 +567,7 @@ function lowerPart(
   const subject = subjectOf(
     part.subject,
     ctx,
-    part.effects.every((e) => e.kind === 'grantKeyword'),
+    part.effects.every((e) => e.kind === 'grantKeyword' || e.kind === 'grantProtection'),
   );
   if (!subject.ok) return subject;
   // D-111, CR 613.8: only a "+N/+N" effect (layer 7c) can name its subjects by power or toughness, which that layer

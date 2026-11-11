@@ -998,6 +998,15 @@ export type IrStaticEffect =
       readonly count: IrAmount;
     }
   | { readonly kind: 'grantKeyword'; readonly keyword: string; readonly params?: readonly IrArg[] }
+  /**
+   * `has protection from red and from blue` (stage P70, D-256, CR 702.16): protection from the colors the statement names (`colors`, color words as
+   * written, lowercase) or, when `commanderIdentity` is set, "each color that's not in your commander's color identity" (CR 903.4, 903.4f). One of the two.
+   */
+  | {
+      readonly kind: 'grantProtection';
+      readonly colors?: readonly string[];
+      readonly commanderIdentity?: true;
+    }
   /** `has "{T}: Add {G}."` (stage P14): a quoted mana ability, read as an activated ability. */
   | { readonly kind: 'grantAbility'; readonly ability: IrQuotedAbility }
   /**
@@ -1233,6 +1242,8 @@ export interface IrKeyword extends IrNode {
   readonly cost?: readonly IrCost[];
   /** "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type of the creature the equip ability attaches to. */
   readonly quality?: string;
+  /** "Equip commander {3}" (stage P70, D-256, CR 702.6c, 903.3): the equip ability attaches only to a creature that is a commander. */
+  readonly commanderOnly?: true;
   /** "Protection from red and from blue" (stage P68, D-229, CR 702.16): the color words, as written, lowercase. */
   readonly colors?: readonly string[];
 }

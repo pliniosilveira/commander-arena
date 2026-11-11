@@ -3,10 +3,10 @@
  * 611.3, 613): enchant filters, static subjects, granted keywords, and which cards may use them.
  * `validate.ts` and `validate-parts.ts` compose these.
  */
-import { CARD_TYPES, type CardType, SUPERTYPES, type Subtype } from '../characteristics';
+import { CARD_TYPES, type CardType, COLORS, SUPERTYPES, type Subtype } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
 import type { Ability, Keyword, ObjectFilter, StaticSubject } from './types';
-import { kindOf } from './validate-base';
+import { isOneOf, kindOf } from './validate-base';
 import {
   type AstIssue,
   checkEnumList,
@@ -80,6 +80,25 @@ export function checkStaticSubject(
 }
 
 export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): void {
+  // D-256 (CR 702.16): a static ability may give protection from colors; its colors are checked as a printed protection keyword is.
+  if (k?.kind === 'protection') {
+    if (k.from === 'color') {
+      if (!Array.isArray(k.colors) || k.colors.length === 0) {
+        issue(out, `${path}.colors`, 'protection needs at least one color');
+      } else {
+        k.colors.forEach((c, i) => {
+          if (!isOneOf(c, COLORS)) issue(out, `${path}.colors[${i}]`, `unknown color ${String(c)}`);
+        });
+      }
+    } else if (k.from !== 'colorsNotInCommanderIdentity') {
+      issue(
+        out,
+        `${path}.from`,
+        `unknown protection quality ${String((k as { from: unknown }).from)}`,
+      );
+    }
+    return;
+  }
   if (!GRANTABLE_KEYWORDS.includes(k?.kind)) {
     issue(
       out,
