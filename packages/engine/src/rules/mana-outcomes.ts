@@ -20,6 +20,7 @@ import { COLORS } from '../characteristics';
 import type { ObjectId } from '../ids';
 import type { ManaColor, ManaRestriction, ManaRider } from '../mana/types';
 import type { GameObject, GameState } from '../state/types';
+import { devotionOf } from './amounts';
 import { commanderIdentity } from './commander-identity';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
@@ -126,6 +127,10 @@ function plainOutcomes(
     case 'anyColor':
       // D-145: "two mana of any one color": `count` mana of the one color chosen.
       return COLORS.map((c) => Array.from({ length: p.count ?? 1 }, () => c));
+    case 'anyColorDevotion':
+      // CR 700.5, 605.3b: "Choose a color. Add an amount of mana of that color equal to your devotion to that color": one outcome per color, with as many
+      // mana as the controller's devotion to it now (a color with none is an empty outcome: nothing to pick).
+      return COLORS.map((c) => Array.from({ length: devotionOf(state, seat, [c]) }, () => c));
     case 'oneOf':
       return [...new Set(p.colors)].map((c) => [c]);
     case 'combination': {

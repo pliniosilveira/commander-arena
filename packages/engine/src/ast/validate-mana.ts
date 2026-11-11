@@ -65,6 +65,7 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
         issue(out, `${path}.count`, 'count is a whole number from 2 to 4');
       }
       break;
+    case 'anyColorDevotion': // the color is chosen as the ability resolves: nothing to check
     case 'commanderIdentity':
     case 'chosenColor': // D-149: the face must ask for the color as the permanent enters (`validate-chosen.ts`)
       break;

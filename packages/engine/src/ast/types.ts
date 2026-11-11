@@ -2252,6 +2252,14 @@ export type ManaProduction =
    */
   | { readonly kind: 'chosenColor' }
   /**
+   * "{2}, {T}: Choose a color. Add an amount of mana of that color equal to your devotion to that color." (Nykthos, Shrine to Nyx; CR 605.3b, 700.5): the
+   * player chooses one of the five colors as the ability resolves (so the activation names it, like `anyColor`) and as many mana of that color as the
+   * controller's devotion to it (CR 700.5, 700.5a: the mana symbols of that color, hybrid ones counted, among the mana costs of the permanents they control,
+   * read as the ability resolves). A color the controller has no devotion to adds nothing, so it is not on offer; with no devotion at all the ability makes
+   * no mana. Only a mana ability (`validateCard`): a spell or a triggered ability has no way to ask the color.
+   */
+  | { readonly kind: 'anyColorDevotion' }
+  /**
    * "{T}: Add one mana of any color that a land an opponent controls could produce." (Exotic
    * Orchard, Fellwar Stone) and "... of any type that a land you control could produce." (Reflecting
    * Pool), D-099: one mana of a type that a permanent matching `lands` could produce (CR 106.7),

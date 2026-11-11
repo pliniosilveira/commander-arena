@@ -612,6 +612,8 @@ export interface IrManaSpec extends IrNode {
     | { readonly kind: 'chosenColor' }
     // "two mana in any combination of colors" (stage P34, D-152, CR 106.1b, 605.3b): `count` mana, each of a color chosen on its own
     | { readonly kind: 'anyCombination'; readonly count: number }
+    // "an amount of mana of that color equal to your devotion to that color" (CR 605.3b, 700.5): the color of the sentence "Choose a color." before it
+    | { readonly kind: 'devotionToChosenColor' }
     // "{R}{R}, {R}{W}, or {W}{W}" (stage P14): exactly one of the listed combinations, each a run of
     // symbols as written
     | { readonly kind: 'combination'; readonly options: readonly (readonly string[])[] }

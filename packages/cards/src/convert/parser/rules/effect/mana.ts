@@ -108,7 +108,12 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
   id: 'effect.add-mana',
   family: 'effect',
   leading: ['add'],
-  cites: ['CR 106.1 (Mana)', 'CR 605.1a (Mana Abilities)', 'CR 903.4 (Commander)'],
+  cites: [
+    'CR 106.1 (Mana)',
+    'CR 605.1a (Mana Abilities)',
+    'CR 700.5 (General)',
+    'CR 903.4 (Commander)',
+  ],
   examples: [
     'add {G}',
     'add {C}{C}',
@@ -130,6 +135,8 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add three mana in any combination of colors',
     'add {R} for each tapped land your opponents control',
     'add {G}{G} for each creature you control',
+    // CR 605.3b, 700.5: the color of the sentence "Choose a color." before it; the lowering reads it only there.
+    'add an amount of mana of that color equal to your devotion to that color',
   ],
   rejects: [
     'add two mana of the chosen color',
@@ -155,6 +162,11 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add {R} or {G} for each creature you control',
     'add one mana of any color for each creature you control',
     'add {R} for each',
+    'add an amount of mana of that color',
+    'add an amount of mana of that color equal to your devotion to white',
+    'add an amount of mana of that color equal to your devotion to that colors',
+    'add an amount of mana of any color equal to your devotion to that color',
+    'add an amount of mana of that color equal to your devotion to that color for each creature you control',
   ],
   parse: single(
     'effect.add-mana',
@@ -183,6 +195,13 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
               kind: 'chosenColor' as const,
             })),
             map(literal('one mana of any color'), () => ({ kind: 'anyColor' as const })),
+            // Nykthos, Shrine to Nyx (CR 605.3b, 700.5): after "Choose a color.", as many mana of it as the devotion to it. Read here, lowered only after that sentence.
+            map(
+              pattern(
+                /an amount of mana of that color equal to your devotion to that color(?![\p{L}\p{N}])/iu,
+              ),
+              () => ({ kind: 'devotionToChosenColor' as const }),
+            ),
             // Stage P34 (D-152, CR 106.1b, 605.3b): "two mana in any combination of colors", each of a color chosen on its own.
             map(
               pattern(/(two|three) mana in any combination of colors(?![\p{L}\p{N}])/iu),
@@ -242,4 +261,32 @@ export const EFFECT_ADD_ADDITIONAL_MANA = defineRule<Clauses>({
       },
     }),
   ),
+});
+
+/**
+ * `effect.choose-color`: "choose a color" (CR 105.1, 700.5, 605.3b), the sentence of Nykthos, Shrine to Nyx that names the color the sentence after reads as "that color". The
+ * color is chosen as the mana ability resolves, so the lowering reads it only together with `effect.add-mana`'s devotion wording (`lowerChosenColorDevotion`); on its own it
+ * is reported as a choice of color the engine cannot make while an instruction resolves. Not read: another kind of choice, a restriction on the color, a number of colors.
+ */
+export const EFFECT_CHOOSE_COLOR = defineRule<Clauses>({
+  id: 'effect.choose-color',
+  family: 'effect',
+  leading: ['choose'],
+  cites: ['CR 105.1 (Colors)', 'CR 605.3b (Mana Abilities)', 'CR 700.5 (General)'],
+  examples: ['choose a color'],
+  rejects: [
+    'choose',
+    'choose color',
+    'choose a colored creature',
+    'choose a color other than white',
+    'choose two colors',
+    'choose a creature type',
+    'choose a card',
+    'choose any color',
+    'choose a color and draw a card',
+  ],
+  parse: single('effect.choose-color', pattern(/choose a color(?![\p{L}\p{N}])/iu), () => ({
+    verb: 'chooseColor',
+    args: {},
+  })),
 });
