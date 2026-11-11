@@ -241,8 +241,20 @@ const EQUIPMENT: readonly Line[] = [
   {
     kind: 'equipment',
     text: 'Equipped creature gets +1/+1.\nEquip commander {3}',
-    expect: no('commander {3}', 'keyword.equip'),
-    note: 'backlog: 2 cards',
+    expect: OK,
+    note: 'backlog: 2 cards; "Equip commander {3}" is read since stage P70 (D-259, CR 702.6c, 903.3)',
+  },
+  {
+    kind: 'equipment',
+    text: 'Equipped creature gets +1/+1.\nEquip your commander {3}',
+    expect: no('your commander {3}', 'keyword.equip'),
+    note: 'SYNTHETIC wording: only "Equip commander {N}" is read',
+  },
+  {
+    kind: 'equipment',
+    text: 'Equipped creature gets +1/+1 and has protection from everything.\nEquip {2}',
+    expect: no('everything.', 'static.attached'),
+    note: 'SYNTHETIC: protection from a quality that is not a color is not read',
   },
   {
     kind: 'equipment',
@@ -259,8 +271,8 @@ const EQUIPMENT: readonly Line[] = [
   {
     kind: 'equipment',
     text: 'Equipped creature gets +1/+1 and has protection from black and from green.\nEquip {2}',
-    expect: no('protection from black and from green.', 'static.attached'),
-    note: 'backlog: 1 card; protection cannot be granted',
+    expect: OK,
+    note: 'backlog: 1 card; protection from colors is a keyword a static ability gives since stage P70 (D-259)',
   },
   {
     kind: 'equipment',

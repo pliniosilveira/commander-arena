@@ -465,6 +465,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P67 (D-220): trigger doubling is a line of its own, and so is the equip of a creature type.
   'static.triggers-additional-time': asIs,
   'keyword.equip-quality': asIs,
+  // Stage P70 (D-259): the equip of a commander is a line of its own.
+  'keyword.equip-commander': asIs,
   // Stage P66 (D-219): the replacement of the creation of tokens is a line of its own.
   'replacement.tokens-instead': asIs,
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.

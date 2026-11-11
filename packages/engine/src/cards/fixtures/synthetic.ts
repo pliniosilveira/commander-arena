@@ -70,6 +70,7 @@ import { SYNTHETIC_MASS_LIST } from './synthetic-mass';
 import { SYNTHETIC_MODAL_LIST } from './synthetic-modal';
 import { SYNTHETIC_PARSER_SHAPES_LIST } from './synthetic-parser-shapes';
 import { SYNTHETIC_PLANESWALKER_LIST } from './synthetic-planeswalkers';
+import { SYNTHETIC_PLATE_LIST } from './synthetic-plate';
 import { SYNTHETIC_PLAY_RULE_LIST } from './synthetic-play-rules';
 import { SYNTHETIC_PLAYER_EFFECT_LIST } from './synthetic-player-effects';
 import { SYNTHETIC_PLAYER_MORE_LIST } from './synthetic-player-more';
@@ -346,6 +347,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_LIVING_LIST,
     ...SYNTHETIC_VRASKA_LIST,
     ...SYNTHETIC_EDHREC_LIST,
+    ...SYNTHETIC_PLATE_LIST,
     ...SYNTHETIC_ABILITY_COSTS_LIST,
     ...SYNTHETIC_BATCH_LIST,
     ...SYNTHETIC_RESELECT_LIST,

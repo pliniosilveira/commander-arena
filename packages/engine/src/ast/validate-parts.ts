@@ -391,6 +391,10 @@ export function checkFilter(f: ObjectFilter, path: string, out: Out, ownerScope?
 /** True when the filter or any anyOf member satisfies `test`. */
 /** True for a filter that reads the combat or the source's power, which `derive` cannot (D-120, D-131). */
 export const readsCombatOrSource = (f: ObjectFilter): boolean =>
+  readsCombatOrSourceBesidesCommander(f) || f.commander !== undefined;
+
+/** `readsCombatOrSource` without `commander`: what the quality of an equip ability may not read ("Equip commander" reads it, D-259). */
+export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.attacking !== undefined ||
   f.attackingYou !== undefined ||
   f.attackingOpponents !== undefined ||
@@ -401,8 +405,7 @@ export const readsCombatOrSource = (f: ObjectFilter): boolean =>
   f.putFromBattlefieldThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.singleTarget !== undefined ||
-  f.targetsObject !== undefined ||
-  f.commander !== undefined;
+  f.targetsObject !== undefined;
 
 /**
  * True for a filter that names keywords (D-133): `derive` matches the subject of a static ability, and the objects a

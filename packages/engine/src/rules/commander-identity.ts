@@ -2,8 +2,6 @@
  * The colors of a player's commanders (CR 903.4), read by the amount `commanderColors` (`rules/amounts.ts`) and by the mana a commander's
  * identity allows (`rules/mana-outcomes.ts`). Its own module so that neither needs the other (no import cycle).
  */
-import type { Color } from '../characteristics';
-import { COLORS } from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
 import type { SeatId } from '../ids';
 import { definitionOf, getSeat } from '../state/ops';
@@ -11,14 +9,7 @@ import type { GameState } from '../state/types';
 import { derive } from './derive';
 import { hasPrintedKeyword } from './derive-keywords';
 
-/** CR 903.4: the colors in the color identity of the seat's commanders. */
-export function commanderIdentity(state: GameState, seat: SeatId): Color[] {
-  const colors = new Set<Color>();
-  for (const card of getSeat(state, seat).commanders) {
-    for (const c of definitionOf(state, card).colorIdentity) colors.add(c);
-  }
-  return COLORS.filter((c) => colors.has(c));
-}
+export { commanderIdentity } from './commander-colors';
 
 /**
  * CR 903.3, 205.3m (group 4 of the Vraska deck, D-225): the creature types of the seat's commander cards. A commander on the battlefield or on the stack is
