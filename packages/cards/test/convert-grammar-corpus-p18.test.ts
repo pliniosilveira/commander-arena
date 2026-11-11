@@ -46,11 +46,8 @@ const STEPS: readonly Line[] = [
   {
     kind: 'enchantment',
     text: "At the beginning of each opponent's upkeep, that player sacrifices a creature of their choice.",
-    expect: no('that player sacrifices a creature of their choice.', 'noun.that-player', {
-      reason: 'notRunnable',
-      needs: ['selector:triggerActor'],
-    }),
-    note: 'replay: 1 card; "that player" is the player whose turn it is, which the engine cannot name',
+    expect: OK,
+    note: 'replay: 1 card; "that player" is the player whose turn it is, the occurrence player of a step trigger (Keeper of the Accord, bruna-keeper)',
   },
   {
     kind: 'enchantment',

@@ -693,13 +693,23 @@ describe('"unless that player pays {1}" (CR 118.12a)', () => {
     ]);
   });
 
-  test('"that player" of a trigger that names no player is read and refused naming the selector', () => {
+  test('"that player" of a step of an opponent is the player whose turn it is (the Bruna deck; it was refused naming selector:triggerActor)', () => {
     expect(
-      dropped(
+      abilities(
         "At the beginning of each opponent's upkeep, draw a card unless that player pays {1}.",
-        'enchantment',
       ),
-    ).toMatchObject({ reason: 'notRunnable', needs: ['selector:triggerActor'] });
+    ).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'step', step: 'upkeep', whose: 'opponent' },
+        effect: {
+          kind: 'unlessPays',
+          player: { kind: 'triggerPlayer' },
+          cost: [{ kind: 'mana', symbols: ['1'] }],
+          effect: DRAW,
+        },
+      },
+    ]);
   });
 
   test.each([

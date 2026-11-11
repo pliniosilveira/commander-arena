@@ -149,3 +149,102 @@ describe('"Creature spells of the chosen type cost {2} less to cast" (D-255)', (
     expect(dropped('Creature spells cost {2} less to cast.', 'artifact').reason).toBeDefined();
   });
 });
+
+describe('"if that player controls more creatures than you" at the beginning of an opponent\'s step (Keeper of the Accord)', () => {
+  const KEEPER_TEXT =
+    "At the beginning of each opponent's end step, if that player controls more creatures than you, create a 1/1 white Soldier creature token.\nAt the beginning of each opponent's end step, if that player controls more lands than you, you may search your library for a basic Plains card, put it onto the battlefield tapped, then shuffle.";
+
+  test('Keeper of the Accord: the player of the step is the player of the condition', () => {
+    const parsed = readAll(KEEPER_TEXT, 'creature');
+    expect(parsed.abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'step', step: 'endStep', whose: 'opponent' },
+        interveningIf: { kind: 'triggerPlayerHasMore', stat: 'creatures' },
+        effect: {
+          kind: 'createToken',
+          count: 1,
+          token: {
+            kind: 'custom',
+            definition: expect.objectContaining({
+              name: 'Soldier',
+              power: 1,
+              toughness: 1,
+              colors: ['W'],
+            }),
+          },
+        },
+      },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'step', step: 'endStep', whose: 'opponent' },
+        interveningIf: { kind: 'triggerPlayerHasMore', stat: 'lands' },
+        optional: true,
+        effect: {
+          kind: 'search',
+          player: { kind: 'you' },
+          filter: { supertypes: ['basic'], subtypes: ['Plains'] },
+          max: 1,
+          destinations: [{ zone: 'battlefield', tapped: true, count: 1 }],
+          reveal: false,
+          shuffle: true,
+        },
+      },
+    ]);
+  });
+
+  test("an opponent's upkeep reads the same (SYNTHETIC)", () => {
+    const parsed = readAll(
+      "At the beginning of each opponent's upkeep, if that player controls more lands than you, that player loses 1 life.",
+      'enchantment',
+    );
+    expect(parsed.abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'step', step: 'upkeep', whose: 'opponent' },
+        interveningIf: { kind: 'triggerPlayerHasMore', stat: 'lands' },
+        effect: { kind: 'loseLife', player: { kind: 'triggerPlayer' }, amount: 1 },
+      },
+    ]);
+  });
+
+  test('each player\'s upkeep: the active player is "that player" (SYNTHETIC)', () => {
+    const parsed = readAll(
+      "At the beginning of each player's upkeep, if that player controls more creatures than you, that player loses 1 life.",
+      'enchantment',
+    );
+    expect(JSON.stringify(parsed.abilities)).toContain('"triggerPlayerHasMore"');
+  });
+
+  test("a trigger about a permanent keeps the controller of that permanent (Archaeomancer's Map)", () => {
+    const parsed = readAll(
+      'Whenever a land an opponent controls enters, if that player controls more lands than you, you may put a land card from your hand onto the battlefield.',
+      'artifact',
+    );
+    expect(JSON.stringify(parsed.abilities)).toContain('"subjectControllerHasMore"');
+    expect(JSON.stringify(parsed.abilities)).not.toContain('"triggerPlayerHasMore"');
+  });
+
+  test('"that player" of your own step is you, which is no comparison: not read (SYNTHETIC)', () => {
+    expect(
+      dropped(
+        'At the beginning of your end step, if that player controls more creatures than you, create a 1/1 white Soldier creature token.',
+        'enchantment',
+      ).reason,
+    ).toBeDefined();
+  });
+
+  test('another count, "at least as many" and "an opponent controls" are not read (SYNTHETIC)', () => {
+    for (const condition of [
+      'that player controls more cards than you',
+      'that player controls at least as many creatures as you',
+    ]) {
+      expect(
+        dropped(
+          `At the beginning of each opponent's end step, if ${condition}, create a 1/1 white Soldier creature token.`,
+          'enchantment',
+        ).reason,
+      ).toBeDefined();
+    }
+  });
+});

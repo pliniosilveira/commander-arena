@@ -604,6 +604,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'subjectGreaterPt',
     // D-229: "if that player controls more lands than you".
     'subjectControllerHasMore',
+    // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
+    'triggerPlayerHasMore',
     // D-229: "as long as there are fewer than eight cards in your graveyard".
     'cardsInGraveyard',
     // D-124: "if it escaped", "unless it escaped" (as `not`).
@@ -1057,6 +1059,8 @@ export const CONDITION_KINDS = [
   'subjectGreaterPt',
   /** "If that player controls more lands than you" (CR 603.4, D-229): the engine's `subjectControllerHasMore`. */
   'subjectControllerHasMore',
+  /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
+  'triggerPlayerHasMore',
   /** "If it escaped", "unless it escaped" (CR 702.138b, D-124): the engine's `escaped`. */
   'escaped',
   /** "If this permanent came under your control since the beginning of your last upkeep" (CR 702.30a, D-127): the engine's `cameUnderControlSinceLastUpkeep`. */

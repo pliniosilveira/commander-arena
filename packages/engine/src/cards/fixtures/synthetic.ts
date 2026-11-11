@@ -71,6 +71,7 @@ import { SYNTHETIC_PARSER_SHAPES_LIST } from './synthetic-parser-shapes';
 import { SYNTHETIC_PLANESWALKER_LIST } from './synthetic-planeswalkers';
 import { SYNTHETIC_PLAY_RULE_LIST } from './synthetic-play-rules';
 import { SYNTHETIC_PLAYER_EFFECT_LIST } from './synthetic-player-effects';
+import { SYNTHETIC_PLAYER_MORE_LIST } from './synthetic-player-more';
 import { SYNTHETIC_POLYMORPH_LIST } from './synthetic-polymorph';
 import { SYNTHETIC_PREVENTION_LIST } from './synthetic-prevention';
 import { SYNTHETIC_PREVENTION_BY_LIST } from './synthetic-prevention-by';
@@ -323,6 +324,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_ANGELS_SHAPES_LIST,
     ...SYNTHETIC_ANGELS_STATICS_LIST,
     ...SYNTHETIC_LIFE_GAIN_LIST,
+    ...SYNTHETIC_PLAYER_MORE_LIST,
     ...SYNTHETIC_ATTACK_BATCH_LIST,
     ...SYNTHETIC_ENTERS_GROUP_LIST,
     ...SYNTHETIC_COMMANDER_TRIGGER_LIST,

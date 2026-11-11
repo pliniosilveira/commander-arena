@@ -1083,6 +1083,13 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'subjectControllerHasMore reads the controller of a permanent the event is about',
           );
         }
+        if (conditionHas(a.interveningIf, 'triggerPlayerHasMore') && !triggerHasPlayer(a.trigger)) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
+          );
+        }
         if (
           conditionHas(a.interveningIf, 'subjectGreaterPt') &&
           a.trigger?.kind !== 'entersBattlefield'
@@ -1109,6 +1116,13 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             out,
             `${path}.triggerCondition`,
             'subjectControllerHasMore is read as an intervening "if"',
+          );
+        }
+        if (conditionHas(a.triggerCondition, 'triggerPlayerHasMore')) {
+          issue(
+            out,
+            `${path}.triggerCondition`,
+            'triggerPlayerHasMore is read as an intervening "if"',
           );
         }
         if (conditionHas(a.triggerCondition, 'subjectGreaterPt')) {
