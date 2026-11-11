@@ -49,6 +49,7 @@ import {
   checkAttackTax,
   checkCostReduction,
 } from './validate-cost';
+import { checkCrossZoneSlots } from './validate-cross-zone';
 import { checkDinosaursFace, checkDinosaursStatic } from './validate-dinosaurs';
 import {
   checkDragonsEffect,
@@ -1016,7 +1017,15 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
     case 'triggered': {
       checkTrigger(a.trigger, `${path}.trigger`, out);
       checkGraveyardAbility(a, path, out);
-      const targets = declareTargets(a.targets, `${path}.targets`, out);
+      const targets = declareTargets(a.targets, `${path}.targets`, out, false, false, true);
+      // D-931: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
+      checkCrossZoneSlots(
+        a.targets,
+        a.effect,
+        a.modes !== undefined || a.chooseModes !== undefined,
+        path,
+        out,
+      );
       const subject = subjectOf(a.trigger);
       const selfCast = a.trigger?.kind === 'castSpell' && a.trigger.self === true;
       const scopeOf = (declared: Scope['targets']): Scope => ({

@@ -369,6 +369,26 @@ export function legalTargets(
     }
     return [...out, ...playersFor(spec.what.player)];
   }
+  if (spec.what.kind === 'objectOrGraveyardCard') {
+    // CR 115.1 (D-931): "other target creatures from the battlefield and/or creature cards from graveyards": the permanents the filter matches, then the cards
+    // of any graveyard the card filter matches. Protection from being targeted is a permanent's alone (`canBeTargetedBy`).
+    const { filter: permanents, card: cards } = spec.what;
+    for (const [filter, zone] of [
+      [permanents, 'battlefield'],
+      [cards, 'graveyard'],
+    ] as const) {
+      for (const id of objectsInZone(state, zone)) {
+        const obj = getObject(state, id);
+        if (
+          matchesFilter(state, obj, { ...filter, zone }, ctx) &&
+          canBeTargetedBy(state, obj, ctx.controller, ctx.source)
+        ) {
+          out.push({ kind: 'object', id, specId });
+        }
+      }
+    }
+    return out;
+  }
   if (spec.what.kind === 'anyTarget') {
     // CR 115.4: any target is a creature, player, planeswalker or battle.
     for (const id of state.battlefield) {

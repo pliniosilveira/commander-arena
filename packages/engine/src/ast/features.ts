@@ -507,6 +507,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyTarget',
     // D-200: "target player or planeswalker".
     'playerOrObject',
+    // D-931: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (`exile` only).
+    'objectOrGraveyardCard',
     'each',
     'choose',
     'you',
@@ -940,6 +942,8 @@ export const SELECTOR_KINDS = [
   'anyTarget',
   /** "Target player or planeswalker" (D-200): the engine's `TargetSpec.what` `playerOrObject`. */
   'playerOrObject',
+  /** "Up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-931): `TargetSpec.what` `objectOrGraveyardCard`. */
+  'objectOrGraveyardCard',
   'each',
   'choose',
   'you',

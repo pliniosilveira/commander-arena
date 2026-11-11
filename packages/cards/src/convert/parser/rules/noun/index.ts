@@ -21,6 +21,7 @@ import { ANGEL_NOUN_RULES } from './angels';
 import { NOUN_ATTACKED_BY_IT } from './attacked';
 import { CHOOSE_NOUN_RULES } from './choose';
 import { NOUN_ITS_CONTROLLER } from './controller';
+import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
 import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_NOUN_RULES } from './edhrec';
@@ -551,6 +552,8 @@ export const NOUN_RULES = [
   // Stage P34 (D-152): "each other opponent" and "each of up to two other targets".
   ...DRAGON_NOUN_RULES,
   ...KORVOLD_NOUN_RULES,
+  // D-931: "up to three other target creatures from the battlefield and/or creature cards from graveyards".
+  ...CROSS_ZONE_NOUN_RULES,
   NOUN_TARGET_GRAVEYARD_CARD,
   NOUN_PLAYER_GRAVEYARD,
   NOUN_ALL_GRAVEYARD_CARDS,

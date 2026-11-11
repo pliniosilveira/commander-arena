@@ -449,6 +449,8 @@ export function declareTargets(
   divideAllowed = false,
   /** D-187: only the targets of a reflexive ability after a sacrifice can be "up to that many" (CR 603.12). */
   thatManyAllowed = false,
+  /** D-931: only the slot of a triggered ability can name objects of two zones (the one place the engine reads it). */
+  crossZoneAllowed = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
@@ -490,6 +492,67 @@ export function declareTargets(
           );
         }
         break;
+      case 'objectOrGraveyardCard': {
+        // D-931 (CR 115.1, 115.2): "target creatures from the battlefield and/or creature cards from graveyards": a permanent or a card of any graveyard.
+        if (!crossZoneAllowed) {
+          issue(
+            out,
+            `${p}.what`,
+            'a target of two zones (the battlefield and graveyards) is read only in a triggered ability of a permanent',
+          );
+        }
+        checkFilter(what.filter, `${p}.what.filter`, out);
+        checkFilter(what.card, `${p}.what.card`, out);
+        if (
+          filterSome(
+            what.filter,
+            (f) =>
+              (f.zone !== undefined && f.zone !== 'battlefield') ||
+              f.stackKind !== undefined ||
+              f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${p}.what.filter`,
+            'the permanent half is on the battlefield: no other zone, owner or stackKind',
+          );
+        }
+        if (
+          what.card?.zone !== 'graveyard' ||
+          what.card.other !== undefined ||
+          what.card.controller !== undefined ||
+          what.card.owner !== undefined ||
+          what.card.stackKind !== undefined ||
+          (what.card.anyOf?.some(
+            (f) =>
+              f.zone !== undefined ||
+              f.other !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined,
+          ) ??
+            false)
+        ) {
+          issue(
+            out,
+            `${p}.what.card`,
+            'the card half is a card of any graveyard: zone "graveyard" and no other, controller, owner or stackKind',
+          );
+        }
+        if (
+          spec.onePerOpponent !== undefined ||
+          spec.divide !== undefined ||
+          spec.upToThatMany !== undefined ||
+          spec.anyNumber !== undefined
+        ) {
+          issue(
+            out,
+            p,
+            'a target of two zones takes a count (min and max), not onePerOpponent, divide, upToThatMany or anyNumber',
+          );
+        }
+        break;
+      }
       default:
         issue(out, `${p}.what`, `unknown target kind ${kindOf(what)}`);
     }
@@ -623,7 +686,7 @@ function checkTargetRef(
   }
   if (expect === 'object' && kind === 'player') {
     issue(out, path, `target "${id}" is a player but an object is required here`);
-  } else if (expect === 'player' && kind === 'object') {
+  } else if (expect === 'player' && (kind === 'object' || kind === 'objectOrGraveyardCard')) {
     issue(out, path, `target "${id}" is an object but a player is required here`);
   }
 }

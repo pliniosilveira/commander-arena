@@ -32,6 +32,7 @@ import { SYNTHETIC_COMMANDER_LIST } from './synthetic-commanders';
 import { SYNTHETIC_CONTROL_LIST } from './synthetic-control';
 import { SYNTHETIC_COPY_LIST } from './synthetic-copies';
 import { SYNTHETIC_COST_LIST } from './synthetic-costs';
+import { SYNTHETIC_CROSS_ZONE_LIST } from './synthetic-cross-zone';
 import { SYNTHETIC_DAMAGE_ORDER_LIST } from './synthetic-damage-order';
 import { SYNTHETIC_DELAYED_RETURN_LIST } from './synthetic-delayed-return';
 import { SYNTHETIC_DEVOTION_MANA_LIST } from './synthetic-devotion-mana';
@@ -316,6 +317,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_REFERENCE_LIST,
     ...SYNTHETIC_RESTRICTION_LIST,
     ...SYNTHETIC_COST_LIST,
+    ...SYNTHETIC_CROSS_ZONE_LIST,
     ...SYNTHETIC_MANA_PLUS_LIST,
     ...SYNTHETIC_CHOSEN_LIST,
     ...SYNTHETIC_X_LIST,

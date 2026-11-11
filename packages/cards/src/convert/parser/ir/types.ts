@@ -177,6 +177,11 @@ export interface IrNoun extends IrNode {
   readonly greatest?: 'power' | 'toughness' | 'manaValue';
   /** "target player's graveyard" has `of` = target player. */
   readonly of?: IrNoun;
+  /**
+   * "up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-931, CR 115.1): a target noun whose targets are `filter`
+   * (permanents on the battlefield) or this filter (cards of any graveyard). The engine's slot of two zones (`objectOrGraveyardCard`); only `exile` takes it.
+   */
+  readonly orCard?: IrFilter;
   /** `det` `players`: the player nouns that act together, in text order ("you", "target opponent"). */
   readonly members?: readonly IrNoun[];
   /**
