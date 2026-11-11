@@ -27,7 +27,7 @@ Do these in order and stop at the first that says no. Nothing here needs a clone
    | Friday | 95% |
    | Saturday, Sunday | always |
 
-   If the use is at or above the limit, or you cannot read it, do nothing: stop silently (do not comment on the issue every time you poll; the label stays and a later run tries again). Never guess a number. Read it again between the groups of a build (below) and stop cleanly when the day's limit is reached.
+   If the use is at or above the limit, do nothing: stop silently (do not comment on the issue every time you poll; the label stays and a later run tries again). If there is no rate-limit event to read yet (they are written now and then, not on every turn: do one small unrelated call such as `get_session`, wait a moment and read again once), you cannot know the budget: do nothing, and leave **one** comment on the oldest ready issue (marker `<!-- deck-support-budget-unreadable -->`, not repeated if it is already there) saying the budget could not be read, so a silent failure does not stay hidden. Never guess a number. Read it again between the groups of a build (below) and stop cleanly when the day's limit is reached.
 3. Only now attach the repository and clone it (`add_repo` with `access: "push"` for `pliniosilveira/commander-arena`, then clone, then `register_repo_root`), read `AGENTS.md`, `docs/STATUS.md` and `docs/CARD_SUPPORT_PLAYBOOK.md`.
 
 Take one issue at a time, the oldest ready one.
