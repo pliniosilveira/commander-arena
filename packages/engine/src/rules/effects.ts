@@ -53,6 +53,7 @@ import { runEmpowerJace } from './empower';
 import { runEnterAttacking } from './enter-attacking';
 import { runEnterToken } from './enter-token';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
+import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
 import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
@@ -140,6 +141,7 @@ export function runInstruction(
   if (instruction.kind === 'conniveNext') return runConniveNext(state, res, instruction);
   if (instruction.kind === 'spare') return runSpare(state, res, instruction);
   if (instruction.kind === 'splitExiled') return runSplitExiled(state, res, instruction);
+  if (instruction.kind === 'graveyardPair') return runGraveyardPair(state, res, instruction);
   if (instruction.kind === 'copyFromCards') return runCopyFromCards(state, res, instruction);
   if (instruction.kind === 'search') return runSearch(state, res, instruction);
   if (instruction.kind === 'shuffle') {
@@ -1445,6 +1447,10 @@ function runEffect(
     case 'splitCostExiled':
       // D-232: "An opponent chooses one of the exiled cards. You put that card on the bottom of your library and return the other ..." (rules/activation-exile.ts).
       return startSplit(state, res);
+
+    case 'returnGraveyardPair':
+      // D-951: "Choose a creature card in an opponent's graveyard, then that player chooses ... You may return those cards ..." (rules/graveyard-pair.ts).
+      return done(state, [], [startGraveyardPair(effect.cardType)]);
 
     case 'sparePermanents':
       // D-231: "For each player, you choose ... Then each player sacrifices all other nonland permanents they control" (rules/spare.ts).

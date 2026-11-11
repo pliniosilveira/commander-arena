@@ -467,7 +467,8 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'lookSplit'
     | 'reveal'
     | 'split'
-    | 'copy';
+    | 'copy'
+    | 'pair';
   readonly zone: 'library' | 'hand' | 'graveyard' | 'exile';
   readonly legal: readonly ObjectId[];
   readonly min: number;
@@ -629,7 +630,14 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'suspend'
     | 'madness'
     | 'gift'
-    | 'costChoice';
+    | 'costChoice'
+    | 'pairReturn';
+  /**
+   * For purpose `'pairReturn'` (D-951, "You may return those cards to the battlefield under their owners' control", Dawnbreak Reclaimer): the cards that would return, which are in
+   * graveyards and public: `theirs` the card chosen in an opponent's graveyard (it returns under its owner's control, the opponent's), `mine` the card chosen in the graveyard of
+   * the player asked (it returns under their control). Either is absent when no such card could be chosen. Accepting returns both, declining neither.
+   */
+  readonly pair?: { readonly theirs?: ObjectId; readonly mine?: ObjectId };
   /**
    * For purpose `'gift'` (D-135, CR 702.174a): "promise a gift to this opponent?" asked of the caster of a spell with Gift a card as it is
    * cast, after the kicker and replicate questions and before X and the targets (CR 601.2b). `source` is the spell on the

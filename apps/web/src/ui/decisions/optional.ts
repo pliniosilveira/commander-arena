@@ -402,6 +402,19 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: true,
     };
   }
+  if (d.purpose === 'pairReturn') {
+    // D-951: "You may return those cards to the battlefield under their owners' control": both or neither; nothing is rewound by declining.
+    const names = [d.pair?.theirs, d.pair?.mine].flatMap((id) => {
+      const card = id === undefined ? undefined : index.get(id);
+      return card === undefined ? [] : [card.name];
+    });
+    return {
+      prompt: `${d.sourceName}: return ${names.join(' and ')} to the battlefield under their owners' control?`,
+      yes: 'Return them',
+      no: "Don't return",
+      cancellable: false,
+    };
+  }
   if (d.purpose === 'costChoice') {
     // "Sacrifice an artifact or creature or pay {4}" (CR 118.8, 601.2b, D-181): asked as the spell is cast, each button is one way to pay;
     // Cancel rewinds the cast (CR 733).

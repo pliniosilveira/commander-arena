@@ -32,6 +32,7 @@ import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CONTROL_EFFECT_RULES } from './control';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COUNTER_RULES } from './counters';
+import { DAWNBREAK_EFFECT_RULES } from './dawnbreak';
 import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
@@ -819,6 +820,8 @@ export const EFFECT_RULES = [
   ...VRASKA_EFFECT_RULES,
   // Stage P69 (D-256, D-257): the Bruna deck, "Do this only once each turn" and "pay {X}, where X is less than or equal to the amount of life you gained".
   ...BRUNA_EFFECT_RULES,
+  // Stage P69 (D-951): Dawnbreak Reclaimer, "choose a creature card in an opponent's graveyard, then that player chooses ...".
+  ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.

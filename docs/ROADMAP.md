@@ -138,3 +138,8 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Miracle, Pl
 ## Bruna deck leftovers (D-264)
 
 - Ascend (D-264): the city's blessing is checked with the state-based actions (CR 704.3), so a player who reaches ten permanents in the middle of one resolution does not have it until that resolution ends. A card that says "create two tokens, then if you have the city's blessing ..." would read the answer from before the tokens (CR 702.131b says "any time"). Fixing it needs the check between the steps of an effect. Ascend on an instant or sorcery (CR 702.131a, a spell ability) is not built; a card with it is unsupported.
+
+## Dawnbreak Reclaimer leftovers (D-951)
+
+- The empty cases of "choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards ..." are read from the CR (608.2d: an impossible choice is not made; with no card in an opponent's graveyard there is no "that player", so nothing else is asked), not from a published ruling the sandbox could not fetch. Check them against the rulings of the card when the owner next has Scryfall access.
+- The scenario DSL has two seats, so the choice among several opponents' graveyards (the owner of the card chosen is "that player") has no scenario test; the code takes every opponent still in the game. The two cards are returned by two consecutive `move` instructions, not at one instant.

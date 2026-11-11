@@ -21,6 +21,7 @@ const DIALOG_LABELS: Readonly<
   madness: 'Madness',
   gift: 'Gift',
   costChoice: 'Additional cost',
+  pairReturn: 'Return the cards',
 };
 
 /**

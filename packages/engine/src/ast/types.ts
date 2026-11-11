@@ -1353,6 +1353,15 @@ export type Effect =
       readonly otherTo: 'battlefieldTapped';
     }
   /**
+   * "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their
+   * owners' control." (Dawnbreak Reclaimer; CR 608.2c, 608.2d, 110.2a, 400.3, D-951). The controller chooses a card of `cardType` among the cards in the graveyards of their
+   * opponents (one still in the game); the owner of that card ("that player") chooses a card of `cardType` in the controller's graveyard; then the controller may return the cards
+   * chosen, both or neither, to the battlefield under their owners' control. A choice that cannot be made (no such card) is not made (CR 608.2d): with no card in an opponent's
+   * graveyard nobody is "that player" and the second choice is not made either, and with no card in the controller's graveyard the first card alone may be returned. The wording
+   * is fixed: the effect names who chooses, where, and where the cards go.
+   */
+  | { readonly kind: 'returnGraveyardPair'; readonly cardType: CardType }
+  /**
    * "After this phase, there is an additional combat phase" (CR 500.8, 500.10, D-151): when the phase that is now going on is over, one more combat
    * phase follows it (beginning of combat, declare attackers, ... end of combat), then the turn goes on as it would have. Several of them add up, the
    * most recently created occurring first (CR 500.8); the phase is added to the turn state (`TurnState.addedPhases`) and may follow a main phase as well

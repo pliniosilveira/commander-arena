@@ -14,6 +14,7 @@ import {
   type OrderTriggersDecision,
 } from '@commander-arena/engine';
 import { LAND_TARGET } from './casual-choices';
+import { answerPairReturn } from './casual-pair';
 import {
   effectiveCost,
   findObject,
@@ -303,6 +304,8 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
       : { kind: 'acceptOptional' };
   }
   if (d.purpose === 'costChoice') return chooseAdditionalCost(d, view);
+  // D-951: "You may return those cards to the battlefield under their owners' control" (Dawnbreak Reclaimer).
+  if (d.purpose === 'pairReturn') return answerPairReturn(view, d);
   if (d.cost !== undefined) {
     // Only life payments exist here; any other cost is not weighed, so the agent declines it.
     const onlyLife = d.cost.every((c) => c.kind === 'payLife');

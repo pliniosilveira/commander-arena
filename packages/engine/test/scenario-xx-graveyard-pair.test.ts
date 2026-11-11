@@ -1,0 +1,264 @@
+// "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their
+// owners' control." (D-951, the effect `returnGraveyardPair`; Dawnbreak Reclaimer of the Bruna deck, issue 5).
+// Pins: CR 608.2c (the instructions are followed in the order written), CR 608.2d (a player can't choose an option that is impossible: with no such card nothing is chosen),
+// CR 110.2a and 400.3 (the cards enter under their owners' control), CR 603.2 (a trigger of "your end step" triggers on your end step only), CR 404.2 (graveyards are public).
+// The Angel, the spell and the cleric are SYNTHETIC (src/cards/fixtures/synthetic-dawnbreak.ts); the other cards are real fixtures.
+import { describe, expect, test } from 'vitest';
+import { getView, syntheticCard, validateCard } from '../src/index';
+import { scenario } from '../src/testing/index';
+import { chooseCardsDecision, confirmOptionalDecision } from './pending-helpers';
+
+const RECLAIMER = 'SYNTHETIC Reclaimer Angel';
+const RITE = 'SYNTHETIC Reclaimer Rite'; // the same effect for artifact cards, as a sorcery
+const CLERIC = 'SYNTHETIC Reclaimed Cleric'; // "When this creature enters, you gain 1 life."
+const BEARS = 'Grizzly Bears'; // 2/2, mana value 2
+const ANGEL = 'Serra Angel'; // 4/4, mana value 5
+const SPIDER = 'Giant Spider'; // 2/4, mana value 4
+const KNIGHT = 'Youthful Knight';
+const BOLT = 'Lightning Bolt';
+const SOL = 'Sol Ring';
+const LIBRARY = Array.from({ length: 8 }, () => 'Plains');
+
+describe('the cards are valid', () => {
+  test.each([RECLAIMER, RITE, CLERIC])('%s', (name) => {
+    expect(validateCard(syntheticCard(name))).toEqual([]);
+  });
+
+  test('the card type must be a card type', () => {
+    const card = syntheticCard(RITE);
+    const face = card.faces[0];
+    if (face === undefined) throw new Error('no face');
+    const bad = {
+      ...card,
+      faces: [{ ...face, spell: { effect: { kind: 'returnGraveyardPair', cardType: 'goblin' } } }],
+    };
+    expect(JSON.stringify(validateCard(bad as never))).toContain('returnGraveyardPair');
+  });
+});
+
+/** Seat 0 controls the Angel (and the end step is seat 0's); the graveyards are given. */
+const game = (mine: readonly string[], theirs: readonly string[], extra: readonly string[] = []) =>
+  scenario()
+    .seat(0)
+    .battlefield(RECLAIMER, ...extra)
+    .graveyard(...mine)
+    .library(...LIBRARY)
+    .seat(1)
+    .graveyard(...theirs)
+    .library(...LIBRARY)
+    .at('precombatMain', { active: 0, turn: 1 })
+    .build();
+
+/** The name of the card an object is. */
+const nameOf = (g: ReturnType<typeof game>, id: string): string | undefined =>
+  getView(g.state, 0)
+    .seats.flatMap((s) => s.graveyard)
+    .find((o) => o.id === id)?.name;
+
+/** Walks to seat 0's end step and resolves the trigger as far as its first question. */
+const atEndStep = (g: ReturnType<typeof game>) => {
+  g.advanceTo('end');
+  g.expect.stack([`${RECLAIMER} (ability)`]);
+  g.passAll();
+  return g;
+};
+
+describe('the choices: who chooses, and among which cards', () => {
+  test('you choose among the creature cards of the opponent graveyards only; then the owner chooses among yours only', () => {
+    const g = atEndStep(game([SPIDER, KNIGHT, SOL], [BEARS, ANGEL, BOLT]));
+    const first = chooseCardsDecision(g);
+    expect(first.purpose).toBe('pair');
+    expect(first.zone).toBe('graveyard');
+    expect(first.seat).toBe(0);
+    // Only creature cards, only in the opponent's graveyard (not mine, not the Bolt).
+    const names = (ids: readonly string[]) => ids.map((id) => nameOf(g, id)).sort();
+    expect(names(first.legal)).toEqual([ANGEL, BEARS].sort());
+    expect(first.min).toBe(1);
+    expect(first.max).toBe(1);
+    expect(first.reveal).toBe(true);
+    g.act(0).chooseCards({ name: ANGEL, seat: 1 });
+    // "That player" (the owner of the card chosen) chooses in YOUR graveyard.
+    const second = chooseCardsDecision(g);
+    expect(second.seat).toBe(1);
+    expect(names(second.legal)).toEqual([KNIGHT, SPIDER].sort());
+    g.expect.pending('chooseCards', 1);
+    g.act(1).chooseCards({ name: SPIDER, seat: 0 });
+    // Then you are asked once, for both.
+    const ask = confirmOptionalDecision(g);
+    expect(ask.seat).toBe(0);
+    expect(ask.purpose).toBe('pairReturn');
+    expect(nameOf(g, ask.pair?.theirs ?? '')).toBe(ANGEL);
+    expect(nameOf(g, ask.pair?.mine ?? '')).toBe(SPIDER);
+  });
+
+  test('accepting returns both under their owners control: the opponent card to the opponent, your card to you', () => {
+    const g = atEndStep(game([SPIDER, KNIGHT], [BEARS, ANGEL]));
+    g.act(0).chooseCards({ name: ANGEL, seat: 1 });
+    g.act(1).chooseCards({ name: SPIDER, seat: 0 });
+    g.act(0).accept();
+    g.expect.zone(ANGEL, 'battlefield', { seat: 1 });
+    g.expect.zone(SPIDER, 'battlefield', { seat: 0 });
+    g.expect.zone(BEARS, 'graveyard', { seat: 1 });
+    g.expect.zone(KNIGHT, 'graveyard', { seat: 0 });
+    g.expect.noObject(ANGEL, { zone: 'graveyard' });
+    g.expect.noObject(SPIDER, { zone: 'graveyard' });
+    g.expect.invariants();
+  });
+
+  test('declining returns neither card', () => {
+    const g = atEndStep(game([SPIDER, KNIGHT], [BEARS, ANGEL]));
+    g.act(0).chooseCards({ name: ANGEL, seat: 1 });
+    g.act(1).chooseCards({ name: SPIDER, seat: 0 });
+    g.act(0).decline();
+    g.expect.zone(ANGEL, 'graveyard', { seat: 1 });
+    g.expect.zone(SPIDER, 'graveyard', { seat: 0 });
+    g.expect.noObject(ANGEL, { zone: 'battlefield' });
+    g.expect.noObject(SPIDER, { zone: 'battlefield' });
+    g.expect.pending('priority' as never);
+  });
+
+  test('the wrong player, the wrong card and a noncreature card are refused', () => {
+    const g = atEndStep(game([SPIDER, KNIGHT, SOL], [BEARS, ANGEL, BOLT]));
+    // A card of my own graveyard, a noncreature card of the opponent: not legal for the first choice.
+    expect(() => g.act(0).chooseCards({ name: SPIDER, seat: 0 })).toThrow();
+    expect(() => g.act(0).chooseCards({ name: BOLT, seat: 1 })).toThrow();
+    // The first choice is mine to make, not the opponent's.
+    expect(() => g.act(1).chooseCards({ name: BEARS, seat: 1 })).toThrow();
+    g.act(0).chooseCards({ name: BEARS, seat: 1 });
+    // The second is the opponent's, and only among my creature cards.
+    expect(() => g.act(0).chooseCards({ name: SPIDER, seat: 0 })).toThrow();
+    g.act(1).chooseCards({ name: SPIDER, seat: 0 });
+    g.expect.pending('confirmOptional', 0);
+  });
+
+  test('the opponent chooses what comes back for you: it need not be the best card', () => {
+    const g = atEndStep(game([SPIDER, KNIGHT], [ANGEL]));
+    // One opponent card: no question for the first choice. The opponent then chooses among two of mine.
+    g.expect.pending('chooseCards', 1);
+    g.act(1).chooseCards({ name: KNIGHT, seat: 0 });
+    g.act(0).accept();
+    g.expect.zone(KNIGHT, 'battlefield', { seat: 0 });
+    g.expect.zone(SPIDER, 'graveyard', { seat: 0 });
+    g.expect.zone(ANGEL, 'battlefield', { seat: 1 });
+  });
+});
+
+describe('a choice with one candidate is made by the engine and says so; a choice with none is not made (CR 608.2d)', () => {
+  test('one card on each side: no question but the may, and the choices are logged as automatic', () => {
+    const g = atEndStep(game([SPIDER], [ANGEL]));
+    g.expect.pending('confirmOptional', 0);
+    const chosen = g.events.filter((e) => e.kind === 'permanentsChosen');
+    expect(chosen).toHaveLength(2);
+    expect(chosen.every((e) => e.automatic)).toBe(true);
+    expect(chosen.map((e) => e.seat)).toEqual([0, 1]);
+    g.act(0).accept();
+    g.expect.zone(ANGEL, 'battlefield', { seat: 1 });
+    g.expect.zone(SPIDER, 'battlefield', { seat: 0 });
+  });
+
+  test('no creature card in an opponent graveyard: nobody is "that player", nothing is chosen, nothing is asked, nothing returns', () => {
+    const g = atEndStep(game([SPIDER, KNIGHT], [BOLT]));
+    g.expect.pending('priority' as never);
+    g.expect.zone(SPIDER, 'graveyard', { seat: 0 });
+    g.expect.zone(KNIGHT, 'graveyard', { seat: 0 });
+    expect(g.events.filter((e) => e.kind === 'permanentsChosen')).toEqual([]);
+  });
+
+  test('no creature card in your graveyard: the opponent card alone is offered, and returns to its owner', () => {
+    const g = atEndStep(game([SOL], [ANGEL]));
+    const ask = confirmOptionalDecision(g);
+    expect(nameOf(g, ask.pair?.theirs ?? '')).toBe(ANGEL);
+    expect(ask.pair?.mine).toBeUndefined();
+    g.act(0).accept();
+    g.expect.zone(ANGEL, 'battlefield', { seat: 1 });
+    g.expect.zone(SOL, 'graveyard', { seat: 0 });
+  });
+
+  test('empty graveyards: nothing at all happens', () => {
+    const g = atEndStep(game([], []));
+    g.expect.pending('priority' as never);
+    expect(g.events.filter((e) => e.kind === 'permanentsChosen')).toEqual([]);
+  });
+});
+
+describe('it triggers on your end step only', () => {
+  test('not on the opponent end step', () => {
+    const g = scenario()
+      .seat(0)
+      .battlefield(RECLAIMER)
+      .graveyard(SPIDER)
+      .library(...LIBRARY)
+      .seat(1)
+      .graveyard(ANGEL)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 1, turn: 2 })
+      .build();
+    g.advanceTo('end');
+    g.expect.step('end', { active: 1, turn: 2 });
+    g.expect.stack([]);
+    g.expect.zone(ANGEL, 'graveyard', { seat: 1 });
+    g.expect.zone(SPIDER, 'graveyard', { seat: 0 });
+  });
+
+  test('on every end step of yours, not only the first', () => {
+    const g = game([SPIDER, KNIGHT], [ANGEL, BEARS]);
+    atEndStep(g);
+    g.act(0).chooseCards({ name: BEARS, seat: 1, zone: 'graveyard' });
+    g.act(1).chooseCards({ name: KNIGHT, seat: 0, zone: 'graveyard' });
+    g.act(0).decline();
+    // The opponent's end step (turn 2) passes without it; mine (turn 3) triggers it again.
+    g.advanceTo('end', { turn: 'next' });
+    g.expect.step('end', { active: 1, turn: 2 });
+    g.expect.stack([]);
+    g.advanceTo('end', { turn: 'next' });
+    g.expect.step('end', { active: 0, turn: 3 });
+    g.expect.stack([`${RECLAIMER} (ability)`]);
+  });
+});
+
+describe('the cards that return are new objects that enter under their owners control', () => {
+  test('the enters triggers of both cards are controlled by the player they came back under (CR 603.3a)', () => {
+    const g = atEndStep(game([CLERIC], [CLERIC]));
+    g.act(0).accept();
+    // Each cleric entered under its owner: each owner gains 1 life as its trigger resolves.
+    g.passAll();
+    g.passAll();
+    g.expect.life(0, 41);
+    g.expect.life(1, 41);
+  });
+
+  test('the effect is not tied to a trigger: as a sorcery, artifact cards return under their owners control', () => {
+    // The spell version: choose among artifact cards; nothing else can move them between the choice and the answer, so this is the whole-resolution guarantee.
+    const g = scenario()
+      .seat(0)
+      .hand(RITE)
+      .battlefield('Plains', 'Plains', 'Plains')
+      .graveyard(SOL)
+      .library(...LIBRARY)
+      .seat(1)
+      .graveyard(SOL)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(RITE, { pay: true });
+    g.passAll();
+    g.expect.pending('confirmOptional', 0);
+    g.act(0).accept();
+    g.expect.zone(SOL, 'battlefield', { seat: 0 });
+    g.expect.zone(SOL, 'battlefield', { seat: 1 });
+    g.expect.zone(RITE, 'graveyard', { seat: 0 });
+  });
+});
+
+describe('determinism', () => {
+  test('the same answers give the same game', () => {
+    const run = () => {
+      const g = atEndStep(game([SPIDER, KNIGHT], [BEARS, ANGEL]));
+      g.act(0).chooseCards({ name: BEARS, seat: 1 });
+      g.act(1).chooseCards({ name: KNIGHT, seat: 0 });
+      g.act(0).accept();
+      return JSON.stringify(g.state);
+    };
+    expect(run()).toBe(run());
+  });
+});

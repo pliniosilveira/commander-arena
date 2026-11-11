@@ -122,6 +122,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sparePermanents',
     // D-232: Coin of Fate's "An opponent chooses one of the exiled cards ...".
     'splitCostExiled',
+    // D-951: Dawnbreak Reclaimer's "choose a creature card in an opponent's graveyard, then that player chooses ...".
+    'returnGraveyardPair',
     // D-234: "Any number of other target creatures you control phase out." (CR 702.26).
     'phaseOut',
     // D-235: the level bar of a Class (CR 716) and "exile a card from your graveyard at random".
@@ -1403,6 +1405,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exileOwnGraveyardCard: true,
   sparePermanents: true,
   splitCostExiled: true,
+  returnGraveyardPair: true,
   phaseOut: true,
   gainLevel: true,
   exileRandomFromGraveyard: true,

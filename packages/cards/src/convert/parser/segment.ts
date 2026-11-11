@@ -192,6 +192,15 @@ const PUT_THAT_CARD_BOTTOM_RETURN_OTHER =
   /^you put that card on the bottom of your library and return the other to the battlefield tapped\.$/i;
 
 /**
+ * "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their
+ * owners' control." (stage P69, D-951): "those cards" are the two chosen, so the two sentences are read as one instruction (the first may follow the comma of a trigger).
+ */
+const CHOOSE_GRAVEYARD_PAIR =
+  /(?:^|, )choose an? [^.,]* card in an opponent['’]s graveyard, then that player chooses an? [^.,]* card in your graveyard\.$/i;
+const MAY_RETURN_THOSE_CARDS =
+  /^you may return those cards to the battlefield under their owners['’] control\.$/i;
+
+/**
  * "Exile a card from your graveyard at random. You may play the exiled card this turn." (stage P75, D-235): "the exiled card" is the one the first sentence exiled, so the two
  * are read as one instruction.
  */
@@ -221,7 +230,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
-        (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)))
+        (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
+        (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)))
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

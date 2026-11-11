@@ -855,6 +855,21 @@ export type Instruction =
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
+   * "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their
+   * owners' control" (`returnGraveyardPair`, D-951, `rules/graveyard-pair.ts`): `stage` is the step that comes next. `theirs`: the controller chooses a card of `cardType` among the
+   * graveyards of their opponents. `mine`: the owner of that card chooses one in the controller's graveyard. `ask`: the controller may return the cards chosen (`answer` is null until
+   * they answer; declining drops the instruction). `theirs` and `mine` are the cards chosen so far; `chosen` is the answer to the question being asked, null until then.
+   */
+  | {
+      readonly kind: 'graveyardPair';
+      readonly cardType: CardType;
+      readonly stage: 'theirs' | 'mine' | 'ask';
+      readonly theirs: ObjectId | null;
+      readonly mine: ObjectId | null;
+      readonly chosen: readonly ObjectId[] | null;
+      readonly answer: boolean | null;
+    }
+  /**
    * "An opponent chooses one of the exiled cards. You put that card on the bottom of your library and return the other to the battlefield tapped" (D-232,
    * `splitCostExiled`): `seat` is the opponent who chooses, `cards` the cards the cost exiled that are still in exile, `chosen` the answer (null until then).
    */
