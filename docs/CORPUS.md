@@ -89,6 +89,10 @@ UPDATE_GOLDEN=1 pnpm exec vitest run packages/cards/test/golden.test.ts   # then
 A card already in the file (same oracle id) is replaced by the fresh data; names not found in the bulk file are listed and the exit code is 1. Cards are split 75/25 into training and hold-out by the last hex digit of the oracle id (`0` to `b`, `c` to `f`); acceptance cards are outside the split. The test prints training and hold-out coverage; a hold-out share more than 5 points under training means rules are being written to examples, so widen rules instead of adding them.
 
 
+### Reading one page of Scryfall from a cloud session (D-294)
+
+The workflow `Scryfall lookup` (Actions, Run workflow, or the agent through `actions_run_trigger`) takes one API path, for example `cards/named?exact=Sol+Ring`, `cards/tfrf/4` or `cards/<id>/rulings`, makes one GET from a GitHub runner (which can reach Scryfall; a cloud session cannot) and prints the answer in the job log and the job summary. Only `cards/`, `sets/`, `catalog/` and `symbology` paths are accepted, with a small set of characters and no `..`; it has no secrets and runs no repository code. It must be on `main` to be started.
+
 ### Cards from a support issue (`pnpm corpus:from-issue`)
 
 A support issue opened with the import screen's "Ask for support on GitHub" button carries the deck's unsupported cards as golden records, as the player's browser received them from Scryfall, in a collapsed "Card data for the golden corpus" block (gzip, base64url; D-245). Save the issue's description to a file and run:
