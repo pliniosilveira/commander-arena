@@ -17,11 +17,16 @@
  *   2. fewest sacrifice-tier sources tapped,
  *   3. least reserve loss (how many `reserve` colors the tapped sources could have produced),
  *   4. fewest tapped sources whose ability has an extra effect (a pain land hurting its controller),
- *   5. fewest artifact-tier, then creature-tier, then land-tier sources tapped
- *      (so lands are used before creatures, creatures before artifacts),
- *   6. least produced mana left over (waste from multi-mana outcomes),
- *   7. fewest unrestricted pool mana spent (restricted pool mana is spent first),
- *   8. determinism: among exact ties the earliest object id, then ability index, then outcome.
+ *   5. fewest Improvise artifacts and Delve cards used (they exist only as extra sources, `abilityIndex < 0`, in
+ *      the artifact tier: real mana sources come first; a Convoke creature stays an ordinary creature-tier source),
+ *   6. fewest creature-tier sources tapped (a creature is kept for combat),
+ *   7. least produced mana left over (waste from multi-mana outcomes),
+ *   8. least flexibility lost (issue 18): the number of colors the tapped sources could have made, so a
+ *      colorless land or rock (Sol Ring, Wastes) is tapped before a colored land, a basic before a land that
+ *      makes two colors, and any-color mana last,
+ *   9. fewest artifact-tier, then land-tier sources tapped (a land before a rock of the same flexibility),
+ *  10. fewest unrestricted pool mana spent (restricted pool mana is spent first),
+ *  11. determinism: among exact ties the earliest object id, then ability index, then outcome.
  * Pool mana is free in every tier component, so it is spent before any source is tapped.
  * A source object is never tapped twice, even if it has several mana abilities (all of them
  * need the permanent untapped), so abilities of one object are alternatives to each other.
@@ -91,12 +96,14 @@ const C_LIFE = 0;
 const C_SACRIFICE = 1;
 const C_RESERVE = 2;
 const C_EXTRA = 3;
-const C_ARTIFACT = 4;
+const C_PAYOPT = 4;
 const C_CREATURE = 5;
-const C_LAND = 6;
-const C_WASTE = 7;
-const C_POOL = 8;
-const COMPONENTS = 9;
+const C_WASTE = 6;
+const C_FLEX = 7;
+const C_ARTIFACT = 8;
+const C_LAND = 9;
+const C_POOL = 10;
+const COMPONENTS = 11;
 
 const TIER_COMPONENT: Record<PaymentSource['tier'], number> = {
   sacrifice: C_SACRIFICE,
@@ -296,6 +303,13 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
         for (const color of outcome) if (reserve.has(color)) reserveColors.add(color);
       }
     }
+    // Issue 18: what tapping this permanent gives up: the colors (not colorless) it could make through any of its abilities.
+    const flexColors = new Set<ManaColor>();
+    for (const source of sources) {
+      for (const outcome of source.produces) {
+        for (const color of outcome) if (color !== 'C') flexColors.add(color);
+      }
+    }
     const entries: Entry[] = [];
     for (const source of sources) {
       source.produces.forEach((colors, outcome) => {
@@ -304,6 +318,8 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
         const vec = new Array<number>(COMPONENTS).fill(0);
         vec[TIER_COMPONENT[source.tier]] = 1;
         vec[C_RESERVE] = reserveColors.size;
+        vec[C_FLEX] = flexColors.size;
+        vec[C_PAYOPT] = source.abilityIndex < 0 && source.tier === 'artifact' ? 1 : 0;
         vec[C_EXTRA] = source.extraEffect === true || (source.lifeLoss ?? 0) > 0 ? 1 : 0;
         entries.push({
           abilityIndex: source.abilityIndex,
