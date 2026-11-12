@@ -13,6 +13,7 @@ import type { ChosenTarget, GameState, Instruction } from '../state/types';
 import { amountOf } from './amounts';
 import { copiableValues } from './copiable';
 import { replacementSources } from './die-replacement';
+import { drawSkippedBy } from './draw-skip';
 import { gainLife } from './life-gain';
 import { prepareCardOf } from './prepare';
 import { resolveObjects, type SelectContext } from './select';
@@ -82,7 +83,7 @@ export type DrawResult =
  * the command zone instead (CR 903.9b). The answer comes from the caller: with `commanderChoice`
  * null the result is `needsDecision` (the `commanderZone` question, `from: 'library'`); the caller
  * asks and draws again with the answer. A draw that was replaced put no card into the hand, so it
- * is not a card drawn (CR 121.1) and no `cardDrawn` event follows; the caller's remaining draws go
+ * is not a card drawn (CR 121.1) and no `cardDrawn` event follows (a `skipDraw` replacement, D-332, is one: `drawSkipped`); the caller's remaining draws go
  * on (CR 121.6b). D-097.
  */
 export function drawCard(
@@ -90,6 +91,11 @@ export function drawCard(
   seat: SeatId,
   commanderChoice: boolean | null = null,
 ): DrawResult {
+  // CR 614.11, 121.6a (D-332): a replacement of the draw ("skip that draw") applies first, even when the library has no cards in it.
+  const skippedBy = drawSkippedBy(state, seat);
+  if (skippedBy !== null) {
+    return { kind: 'done', state, events: [{ kind: 'drawSkipped', seat, source: skippedBy }] };
+  }
   const library = getSeat(state, seat).library;
   const top = library[0];
   if (top === undefined) {

@@ -84,6 +84,11 @@ export type GameEvent =
       readonly nth: number;
     }
   | { readonly kind: 'drewFromEmptyLibrary'; readonly seat: SeatId }
+  /**
+   * A draw of `seat` was skipped by the replacement effect `skipDraw` of `source` (D-332, CR 614.11, 121.6): no card was drawn and none was
+   * attempted from an empty library.
+   */
+  | { readonly kind: 'drawSkipped'; readonly seat: SeatId; readonly source: ObjectId }
   | { readonly kind: 'libraryShuffled'; readonly seat: SeatId }
   /**
    * CR 706.1, 706.2 (D-271): `seat` rolled a die of `sides` sides; `result` is the natural result (the engine has no modifiers of a roll), drawn from the

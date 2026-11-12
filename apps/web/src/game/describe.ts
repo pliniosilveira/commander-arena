@@ -385,6 +385,15 @@ export function describeEvent(
         [],
         'CR 704.5b',
       );
+    case 'drawSkipped':
+      // D-332 (CR 614.11, 121.6): a replacement effect skipped the draw; no card was drawn and the library was not attempted.
+      return line(
+        'major',
+        `${name(event.source)} skips ${possessive(event.seat, viewer).toLowerCase()} draw.`,
+        event.seat,
+        [event.source],
+        'CR 614.11',
+      );
     case 'dieRolled':
       // CR 706.1, 706.2 (D-271): the natural result of a die, which an ability may read.
       return line(

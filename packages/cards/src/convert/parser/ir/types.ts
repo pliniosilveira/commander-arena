@@ -482,6 +482,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: string }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
     | { readonly kind: 'cardsInGraveyard'; readonly compare: IrComparison }
+    // "there are no cards in your library", "your library has no cards in it" (issue 25, D-331, CR 401.1): the cards in the library of the controller
+    | { readonly kind: 'cardsInLibrary'; readonly compare: IrComparison }
     // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat; with a
     // trigger about a player (a step of an opponent's turn) the lowering reads it of that player instead (`triggerPlayerHasMore`)
     | { readonly kind: 'subjectControllerHasMore'; readonly stat: 'lands' | 'creatures' }
@@ -939,7 +941,10 @@ export interface IrTrigger extends IrNode {
   readonly alone?: true;
   /** 'becomesTarget' (stage P36, D-178, CR 603.2): "becomes the target of a spell", only a spell triggers it, not an ability. */
   readonly spellOnly?: true;
-  /** 'dealsCombatDamage': what the damage went to (stage P18, CR 120.2a); none is "any". */
+  /**
+   * 'dealsCombatDamage': what the damage went to (stage P18, CR 120.2a); none is "any". 'noncombatDamageDealt' (issue 25, D-333, CR 120.2b): the player
+   * damaged, `player` or `opponent` (never a creature).
+   */
   readonly damaged?: 'player' | 'opponent' | 'creature';
   /** 'dealsCombatDamage' to a player: the player, so that "that player" has an antecedent. */
   readonly recipient?: IrNoun;
@@ -983,6 +988,7 @@ export interface IrTrigger extends IrNode {
   /**
    * 'countersAdded': the kind of counter ("+1/+1", "page"), none for "counters" of any kind (stage P33, D-150, CR 122.6); `by` is who put
    * them: `you` ("Whenever you put one or more +1/+1 counters on ~") or `any` ("Whenever one or more +1/+1 counters are put on ~").
+   * 'noncombatDamageDealt' (issue 25, D-333): whose source dealt the damage, `you` ("a source you control") or `any` ("a source").
    */
   readonly counter?: string;
   readonly by?: 'you' | 'any';

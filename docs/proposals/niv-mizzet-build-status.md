@@ -15,11 +15,11 @@ The running checklist of the deck support routine for `decks/niv-mizzet.txt` (is
 | Firemind Vessel | 2 | P | done | "Add two mana of different colors" |
 | Bender's Waterskin | 2 | P | done | "Untap ~ during each other player's untap step" |
 | Ivory Tower | 2 | P | done | an amount "minus 4" |
-| Living Conundrum | 2 | P | waiting | skip a draw from an empty library (replacement), condition "no cards in your library" |
-| Tablet of Discovery | 2 | P | waiting | "mill a card. You may play that card this turn" and mana spendable only on instants and sorceries |
-| Niv-Mizzet, Visionary | 2 | P | waiting | "noncombat damage to an opponent, you draw that many cards" |
-| Pyromancer's Goggles | 2 | P | waiting | mana rider: copy the red instant or sorcery the mana is spent on |
-| Stock Up | 3 | P | waiting | the owner of the cards chooses the order at the bottom of the library |
+| Living Conundrum | 2 | P | done | skip a draw from an empty library (replacement), condition "no cards in your library" |
+| Tablet of Discovery | 2 | P | done | "mill a card. You may play that card this turn" and mana spendable only on instants and sorceries |
+| Niv-Mizzet, Visionary | 2 | P | done | "noncombat damage to an opponent, you draw that many cards" |
+| Pyromancer's Goggles | 2 | P | done | mana rider: copy the red instant or sorcery the mana is spent on |
+| Stock Up | 3 | P | done | the owner of the cards chooses the order at the bottom of the library |
 | Galvanic Iteration | 3 | P | waiting | delayed trigger "when you next cast an instant or sorcery spell this turn" (state shape, version bump) |
 | Thunderclap Drake | 3 | P | waiting | the same delayed trigger, copies for each commander cast |
 | Veyran, Voice of Duality | 3 | P | waiting | triggers an additional time when casting or copying an instant or sorcery; one ruling question is open |

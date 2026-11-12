@@ -354,6 +354,7 @@ const EVENT_CARD_FIELDS: Readonly<Record<GameEvent['kind'], readonly string[]>> 
   turnedFaceUp: ['card'],
   cardDrawn: [],
   drewFromEmptyLibrary: [],
+  drawSkipped: [],
   libraryShuffled: [],
   dieRolled: [],
   milled: [],

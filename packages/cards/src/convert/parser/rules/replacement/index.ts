@@ -14,6 +14,7 @@ import { EDHREC_REPLACEMENT_RULES } from './edhrec';
 import { KICKED_REPLACEMENT_RULES } from './kicked';
 import { REVEAL_REPLACEMENT_RULES } from './reveal';
 import { countersTail, ENTERS, replacement } from './shared';
+import { SKIP_DRAW_REPLACEMENT_RULES } from './skip-draw';
 import { UNLESS_RULES } from './unless';
 
 /**
@@ -228,4 +229,6 @@ export const REPLACEMENT_RULES = [
   ...ADAMANTOISE_REPLACEMENT_RULES,
   // Stage P66 (D-219): "If one or more artifact tokens would be created under your control, ... are created instead."
   ...EDHREC_REPLACEMENT_RULES,
+  // Issue 25 (D-332): "If you would draw a card while your library has no cards in it, skip that draw instead."
+  ...SKIP_DRAW_REPLACEMENT_RULES,
 ];

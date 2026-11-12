@@ -294,6 +294,19 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
             : `there are exactly ${value} cards in your graveyard`;
       return negate ? `it's not true that ${text}` : text;
     }
+    case 'cardsInLibrary': {
+      // D-331 (CR 401.1): "there are no cards in your library".
+      const { cmp, value } = condition.compare;
+      const text =
+        cmp === 'atMost'
+          ? value === 0
+            ? 'there are no cards in your library'
+            : `there are fewer than ${value + 1} cards in your library`
+          : cmp === 'atLeast'
+            ? `there are ${value} or more cards in your library`
+            : `there are exactly ${value} cards in your library`;
+      return negate ? `it's not true that ${text}` : text;
+    }
     case 'yourTurn':
       // D-206 (CR 611.3a): "during your turn".
       return negate ? "it's not your turn" : "it's your turn";

@@ -292,6 +292,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'drawn',
     'dealsCombatDamage',
     'leavesBattlefield',
+    // D-333: "Whenever a source you control deals noncombat damage to an opponent".
+    'noncombatDamageDealt',
     // D-133: "whenever [a creature] is dealt damage".
     'dealtDamage',
     // D-120: "whenever this blocks / becomes blocked" (Bushido, CR 702.45a).
@@ -446,6 +448,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'entersAsCopy',
     // D-192: "All damage that would be dealt to you and other permanents you control is dealt to this creature instead."
     'redirectDamage',
+    // D-332: "If you would draw a card while your library has no cards in it, skip that draw instead."
+    'skipDraw',
   ],
   // {T}, "Sacrifice this permanent" (a Treasure, CR 111.10a) and mana ({1}, {T}: a Signet). A mana
   // cost is paid from the pool, or by auto-pay from sources that have no mana cost themselves.
@@ -655,6 +659,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerPlayerHasMore',
     // D-229: "as long as there are fewer than eight cards in your graveyard".
     'cardsInGraveyard',
+    // D-331: "as long as there are no cards in your library".
+    'cardsInLibrary',
     // D-124: "if it escaped", "unless it escaped" (as `not`).
     'escaped',
     // D-127: "if this permanent came under your control since the beginning of your last upkeep" (Echo).
@@ -1215,6 +1221,8 @@ export const CONDITION_KINDS = [
   'soulbondReady',
   'unlessPays',
   'cardsInGraveyard',
+  /** "As long as there are no cards in your library" (CR 401.1, D-331): the engine's `cardsInLibrary`. */
+  'cardsInLibrary',
   'and',
   'or',
   'not',
@@ -1596,6 +1604,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   step: true,
   drawn: true,
   dealsCombatDamage: true,
+  noncombatDamageDealt: true,
   dealtDamage: true,
   leavesBattlefield: true,
   blocks: true,
@@ -1708,6 +1717,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   groupEntersUntapped: true,
   entersAsCopy: true,
   redirectDamage: true,
+  skipDraw: true,
 };
 const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   fixed: true,

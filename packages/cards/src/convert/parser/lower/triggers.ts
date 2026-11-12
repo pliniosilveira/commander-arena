@@ -245,6 +245,15 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ? ok({ kind: 'dealsCombatDamage', what: what.value, to: t.damaged ?? 'any' })
         : what;
     }
+    case 'noncombatDamageDealt': {
+      // "Whenever a source you control deals noncombat damage to an opponent" (issue 25, D-333, CR 120.2b, 603.2c): whose source it is and which player it damaged.
+      if (t.by === undefined || (t.damaged !== 'player' && t.damaged !== 'opponent')) {
+        return failure(t);
+      }
+      const missing = missingFeatures(['trigger:noncombatDamageDealt']);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({ kind: 'noncombatDamageDealt', by: t.by, to: t.damaged });
+    }
     case 'combatDamageBatch': {
       // "Whenever one or more artifact creatures you control deal combat damage to a player" (stage P31, D-140, CR 603.2c): one trigger
       // for each player damaged in one damage event, the creatures named by a filter of the controller's permanents.
@@ -498,7 +507,9 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
   const aboutPlayer =
     (['drawn', 'sacrifice', 'becomesTarget', 'lifeGained', 'attackBatch'].includes(only.event) &&
       only.actor !== undefined) ||
-    ((only.event === 'dealsCombatDamage' || only.event === 'combatDamageBatch') &&
+    ((only.event === 'dealsCombatDamage' ||
+      only.event === 'combatDamageBatch' ||
+      only.event === 'noncombatDamageDealt') &&
       only.recipient !== undefined);
   // The beginning of a step of another player's turn (CR 102.1: the active player is the player whose turn it is; CR 603.2b): "that player" is the active player, the engine's occurrence player of
   // `step`, `upkeep` and `endStep` (the beginning of your own step was answered above: "you").
@@ -625,14 +636,20 @@ function takeOncePerTurn(
 }
 
 /**
- * "Whenever you gain life, you may put that many +1/+1 counters on each creature you control." (D-256, CR 119.9): in the ability of a life gain
- * trigger, "that many" in the first instruction of the body is the life that was gained, which the engine reads as `triggerDamage` (the amount of the
+ * "Whenever you gain life, you may put that many +1/+1 counters on each creature you control." (D-256, CR 119.9) and "Whenever a source you control deals noncombat
+ * damage to an opponent, you draw that many cards." (D-333, CR 120.2b): in the ability of a life gain or noncombat damage
+ * trigger, "that many" in the first instruction of the body is the life that was gained or the damage that was dealt, which the engine reads as `triggerDamage` (the amount of the
  * event that caused the trigger). One that follows any other instruction (mill two cards, then draw that many; discard a card, then draw that many) may count what
  * that instruction did and is not changed, so the lowering refuses it. The engine's `validateCard` allows `triggerDamage` for this trigger.
  */
-function lifeGainThatMany(ability: Triggered): Triggered {
+function eventAmountThatMany(ability: Triggered): Triggered {
   const events = [ability.trigger, ...(ability.trigger.alternatives ?? [])];
-  if (ability.modal !== undefined || !events.every((e) => e.event === 'lifeGained')) return ability;
+  if (
+    ability.modal !== undefined ||
+    !events.every((e) => e.event === 'lifeGained' || e.event === 'noncombatDamageDealt')
+  ) {
+    return ability;
+  }
   let counted = false;
   const retarget = (amount: IrAmount): IrAmount => {
     switch (amount.kind) {
@@ -702,7 +719,7 @@ export function lowerTriggered(
   if (taken === null) return failure(written);
   const { once, doOnce } = taken;
   // "put that many +1/+1 counters" of a life gain trigger (D-256): the life gained.
-  const ability = lifeGainThatMany(taken.ability);
+  const ability = eventAmountThatMany(taken.ability);
   // "Do this only once each turn." (D-256, CR 603.2h) is for an ability with one body: not a modal one, not a triggered mana ability, which the
   // lowering of those does not carry the flag into.
   if (doOnce && ability.modal !== undefined) return failure(written);
@@ -1051,6 +1068,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:tapsForMana',
   'trigger:state',
   'trigger:lifeGained',
+  'trigger:noncombatDamageDealt',
   'trigger:countersAdded',
   'trigger:attackBatch',
   'trigger:entersBatch',

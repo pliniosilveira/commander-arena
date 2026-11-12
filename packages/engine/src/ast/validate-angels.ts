@@ -15,6 +15,7 @@ import {
   filterSome,
   issue,
 } from './validate-parts';
+import { checkPlainCondition } from './validate-static-condition';
 
 /** The trigger kinds D-149 adds. True when `t` is one of them (it was checked here). */
 export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): boolean {
@@ -132,6 +133,10 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       } else if (!isCount(r.count) || r.count < 1) {
         issue(out, `${path}.count`, 'counter count must be a positive integer or a countOf');
       }
+      return true;
+    case 'skipDraw':
+      // D-332: the draw of the controller; the condition is read as it would happen, for the controller, with nothing else.
+      if (r.while !== undefined) checkPlainCondition(r.while, `${path}.while`, out);
       return true;
     case 'groupEntersUntapped':
       // D-179: tapped is a state, not something the entering permanent has before it enters; the other fields are read as for the counters.

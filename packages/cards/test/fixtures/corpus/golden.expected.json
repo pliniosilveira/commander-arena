@@ -1,5 +1,5 @@
 {
-  "parserVersion": 91,
+  "parserVersion": 92,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -558,26 +558,10 @@
     "19cf5798-4600-4a66-b1c7-de77bde157d0": {
       "name": "Tablet of Discovery",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "When ~ enters, mill a card. You may play that card this turn.",
-          "reason": "notRunnable",
-          "closestRule": "effect.may-play"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{T}: Add {R}{R}. Spend this mana only to cast instant and sorcery spells.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "dcf653b3"
+      "ast": "60bac303"
     },
     "19f5a25a-97fc-41e6-bb26-7c35f4b4e37c": {
       "name": "Lobelia Sackville-Baggins",
@@ -695,19 +679,10 @@
     "2251e34e-4ce8-4452-9dc6-d8cce8583996": {
       "name": "Stock Up",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.look-reorder"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f046f904"
+      "ast": "cb4f5a2f"
     },
     "23467047-6dba-4498-b783-1ebc4f74b8c2": {
       "name": "Ancient Tomb",
@@ -1140,27 +1115,10 @@
     "378ae023-04d3-44cc-9248-3d787796ed6c": {
       "name": "Living Conundrum",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "If you would draw a card while your library has no cards in it, skip that draw instead.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "replacement.enters-with-counters-kicked"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "As long as there are no cards in your library, ~ has base power and toughness 10/10 and has flying and vigilance.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "condition.cards-in-graveyard"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "aa9c2fc2"
+      "ast": "80ba00b7"
     },
     "38a55562-1e2d-4240-9454-219a4a25d38d": {
       "name": "Lord Windgrace",
@@ -3904,19 +3862,10 @@
     "d9f1dc61-831e-4244-a2da-aa9da6fd5b50": {
       "name": "Niv-Mizzet, Visionary",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Whenever a source you control deals noncombat damage to an opponent, you draw that many cards.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.or"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "afa6e9f9"
+      "ast": "c6d50f19"
     },
     "da46786e-28df-4638-ab3d-121011d2f150": {
       "name": "Master Transmuter",
@@ -4431,19 +4380,10 @@
     "f76bcbfe-483f-4e63-8425-76feca1abf3e": {
       "name": "Pyromancer's Goggles",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "{T}: Add {R}. When that mana is spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "3e28624c"
+      "ast": "7f0a01bc"
     },
     "f7f435bc-1716-4412-9505-a1f2f2d83d08": {
       "name": "Dragonhawk, Fate's Tempest",
@@ -4752,7 +4692,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 218,
+      "supported": 223,
       "total": 245
     }
   }

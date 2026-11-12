@@ -35,6 +35,7 @@ import { HOFRI_CONDITION_RULES } from './hofri';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
+import { LIBRARY_CONDITION_RULES } from './library';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
 import { RECURSION_CONDITION_RULES } from './recursion';
@@ -417,6 +418,8 @@ export const CONDITION_RULES = [
   ...NIV_CONDITION_RULES,
   // Issue 25 (D-318): "you've cast three or more spells this turn".
   ...SPELLS_CAST_CONDITION_RULES,
+  // Issue 25 (D-331): "there are no cards in your library", "your library has no cards in it".
+  ...LIBRARY_CONDITION_RULES,
   // Stage P52 (D-210): "the player doesn't", "a creature card was discarded this way".
   ...CHOOSER_CONDITION_RULES,
   // Stage P63 (D-216): "you created a token this turn".

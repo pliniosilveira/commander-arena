@@ -493,6 +493,14 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     if (blocked !== null) return blocked;
     return built({ kind: 'lifeGainBonus', amount: amount.value });
   }
+  if (event.verb === 'skipDraw') {
+    // CR 614.11, 121.6 (issue 25, D-332): every draw of the controller is skipped, or only while the plain condition holds.
+    const blocked = gate(ability, ['ability:replacement', 'replacement:skipDraw']);
+    if (blocked !== null) return blocked;
+    if (event.condition === undefined) return built({ kind: 'skipDraw' });
+    const when = lowerCondition(event.condition);
+    return when.ok ? built({ kind: 'skipDraw', while: when.value }) : when;
+  }
   if (event.verb === 'entersTappedUnlessPays') {
     const amount = event.args.amount;
     if (amount?.kind !== 'number' || amount.value < 1) return failure(ability);
@@ -779,4 +787,5 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:entersTappedUnlessReveals',
   'replacement:asEntersChoose',
   'replacement:entersAsCopy',
+  'replacement:skipDraw',
 ];

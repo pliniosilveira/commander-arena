@@ -2373,6 +2373,43 @@ export const PILES_LANDS = supported([
 ]);
 
 /**
+ * The cards of the Niv-Mizzet draw slice (D-331 to D-333): the SYNTHETIC cards that skip a draw while the library has no cards in it, and the creatures that draw when a source deals
+ * noncombat damage to an opponent. Used by the 'nivDraw' style and kept out of every other pool: a skipped draw changes whether a player loses to an empty library, and the
+ * draw trigger adds triggers to the stack in the middle of other spells.
+ */
+export const NIV_DRAW_NAMES = [
+  'SYNTHETIC Hollow Warden',
+  'SYNTHETIC Draw Veto',
+  'SYNTHETIC Thin Veto',
+  'SYNTHETIC Spark Scribe',
+  'SYNTHETIC Rival Scribe',
+  'SYNTHETIC Echo Scribe',
+  'SYNTHETIC Spark Pinger',
+  'SYNTHETIC Scorch Wave',
+] as const;
+
+/** The nivDraw style: each card of the slice twice, burn that deals damage by a spell and by an ability, draw spells that empty the library, bodies and a little removal. */
+export const NIV_DRAW_SPELLS = [
+  ...supported(NIV_DRAW_NAMES),
+  ...supported(NIV_DRAW_NAMES),
+  ...supported(['Divination', 'Divination', 'SYNTHETIC Draw Three Gain Five']),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Murder', 'Unsummon']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Grizzly Bears', 'Serra Angel']),
+];
+
+/** Blue and red for the cards of the slice, a little of the others for the bodies. */
+export const NIV_DRAW_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Plains',
+  'Forest',
+]);
+
+/**
  * The soulbond style: the soulbond creatures (the keyword alone, with the Seraph's grant, with +2/+2 and with flying for the pair) several times, the creatures that
  * return when they die, a creature that is paired by another's soulbond, bodies, and removal that ends a pair (death, bounce, a type change, a change of control).
  */
@@ -2758,6 +2795,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(SOULBOND_NAMES as readonly string[]).includes(card.name))
   // The piles slice has its own style: its cards ask the other player to separate revealed cards into two piles, then ask which pile goes where.
   .filter((card) => !(PILES_NAMES as readonly string[]).includes(card.name))
+  // The Niv-Mizzet draw slice has its own style: its cards skip draws (so a player does not lose to an empty library) and draw when noncombat damage is dealt.
+  .filter((card) => !(NIV_DRAW_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
   .filter((card) => !(MANIFEST_NAMES as readonly string[]).includes(card.name))
   // The Vraska program has its own style: its cards ask other players questions in the middle of a resolution, and a payment of energy.
@@ -2937,6 +2976,7 @@ export type DeckStyle =
   | 'hofri'
   | 'soulbond'
   | 'piles'
+  | 'nivDraw'
   | 'manifest'
   | 'combat';
 
@@ -2946,6 +2986,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'hofri' && HOFRI_SPELLS.length > 0) return HOFRI_SPELLS;
   if (style === 'soulbond' && SOULBOND_SPELLS.length > 0) return SOULBOND_SPELLS;
   if (style === 'piles' && PILES_SPELLS.length > 0) return PILES_SPELLS;
+  if (style === 'nivDraw' && NIV_DRAW_SPELLS.length > 0) return NIV_DRAW_SPELLS;
   if (style === 'manifest' && MANIFEST_SPELLS.length > 0) return MANIFEST_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
   if (style === 'edhrec') return EDHREC_SPELLS;
@@ -3119,6 +3160,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'hofri' && BASIC_LANDS.length > 0) return HOFRI_LANDS;
   if (style === 'soulbond' && BASIC_LANDS.length > 0) return SOULBOND_LANDS;
   if (style === 'piles' && BASIC_LANDS.length > 0) return PILES_LANDS;
+  if (style === 'nivDraw' && BASIC_LANDS.length > 0) return NIV_DRAW_LANDS;
   if (style === 'manifest' && BASIC_LANDS.length > 0) return MANIFEST_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
 }
@@ -3532,6 +3574,13 @@ export const PILES_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['piles', 'piles'],
   ['piles', 'spells'],
   ['spells', 'piles'],
+];
+
+/** Style pairs of the Niv-Mizzet draw soak test (D-331 to D-333): a mirror match and both mixed ways. */
+export const NIV_DRAW_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['nivDraw', 'nivDraw'],
+  ['nivDraw', 'spells'],
+  ['spells', 'nivDraw'],
 ];
 
 /** Style pairs of the manifest soak test (D-316): a mirror match and both mixed ways. */
