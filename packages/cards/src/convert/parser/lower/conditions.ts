@@ -169,6 +169,8 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:paired']);
       if (blocked.length > 0) return failure(c, blocked);
       if (test.who === 'it' && !itIsSelf) return failure(c, []);
+      // D-985: "it" is `~` only where the ability is about `~`; "Each creature you control has flying as long as it's paired" has no antecedent for "it", so it is unsupported.
+      if (test.who === 'it' && ctx?.staticSubjectIsSelf !== true) return failure(c, []);
       // D-985 (CR 702.95b, 400.7, 603.4, 608.2h): the engine reads the pair of the permanent on the battlefield now and no last-known information, so the condition is
       // exact only where `derive` reads it, the "as long as" condition of a static ability of a permanent (`ctx.staticCondition`, set by `lowerStaticStatement` alone). In a
       // triggered ability the source may be gone when the intervening "if" is checked again as the ability resolves (a response killed it), an activated ability's cost may

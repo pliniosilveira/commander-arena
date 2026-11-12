@@ -104,6 +104,11 @@ export interface LowerContext {
    * last-known information of a pair.
    */
   staticCondition: boolean;
+  /**
+   * True only while the "as long as" condition of a static ability is lowered and every subject of that ability is `~` itself (D-985): "it" in "as long as it's paired" is
+   * the source then. With another subject ("Each creature you control has flying as long as it's paired") "it" has no antecedent the engine could read, so a rule refuses.
+   */
+  staticSubjectIsSelf: boolean;
   /** True only while the intervening "if" of a triggered ability is lowered (D-271): the one place "~ is in your graveyard" is read. */
   interveningCondition: boolean;
   /**
@@ -199,6 +204,7 @@ export function newContext(
     targets: [],
     usesX: false,
     selfGone: false,
+    staticSubjectIsSelf: false,
     itIsSelf: false,
     selfCast: false,
     removed: new Set(),

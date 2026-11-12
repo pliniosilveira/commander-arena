@@ -381,6 +381,49 @@ describe('"~ is paired" is read only as the "as long as" condition of a static a
       'unsupported',
     );
   });
+
+  // D-985: "it" in "as long as it's paired" is the permanent itself only in an ability about itself. With a distributive subject it has no antecedent the engine could read
+  // (it read as ~, so "Each creature you control has flying as long as it's paired" gave every creature flying while ~ was paired): unsupported, never a wrong meaning.
+  test.each([
+    [
+      'each creature you control, trailing',
+      "Each creature you control has flying as long as it's paired with another creature.",
+    ],
+    [
+      'each other creature you control',
+      "Each other creature you control has flying as long as it's paired with another creature.",
+    ],
+    [
+      'each creature you control gets',
+      "Each creature you control gets +1/+1 as long as it's paired with another creature.",
+    ],
+    [
+      'other creatures you control',
+      "Other creatures you control have flying as long as it's paired with another creature.",
+    ],
+    [
+      'leading condition, other subject',
+      "As long as it's paired with another creature, creatures you control have flying.",
+    ],
+    [
+      'leading condition, pair subject',
+      "As long as it's paired with another creature, each of those creatures has flying.",
+    ],
+  ])('"it" with another subject is not read: %s', (_why, text) => {
+    const s = status(text);
+    expect(s.status).toBe('unsupported');
+    expect(s.unparsed.length).toBeGreaterThan(0);
+  });
+
+  test('"it" is read where the ability is about the permanent itself, and a named permanent with another subject still is', () => {
+    for (const text of [
+      "~ has flying as long as it's paired with another creature.",
+      "As long as it's paired with another creature, ~ has flying.",
+      'As long as ~ is paired with another creature, creatures you control have flying.',
+    ]) {
+      expect(status(text).status, text).toBe('supported');
+    }
+  });
 });
 
 describe('"Return it" at the next upkeep names the dying creature only when nothing else came before (D-985)', () => {
