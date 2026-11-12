@@ -33,7 +33,7 @@ import { counteredByDeclining, unlessPayment, unlessQuestion } from './describe-
 import { manifestedLine, turnedUpLine } from './face-down-text';
 import { riotAnswerText } from './keywords-text';
 import { timeCounters } from './later-text';
-import { modeText } from './mode-text';
+import { modeText, timesNote } from './mode-text';
 import { inherentNameOf } from './monarch-text';
 import type { LogLevel } from './protocol';
 import { giftedText } from './recursion-text';
@@ -755,10 +755,12 @@ export function describeEvent(
       // CR 700.2: "You choose: Destroy target artifact and Draw a card." The modes are public (they are
       // on the stack). An automatic choice (one legal set) is a detail line that says so.
       const texts = modeTextsOf(after, event.source) ?? modeTextsOf(before, event.source);
+      // D-344 (CR 700.2d): a mode chosen more than once is said once, "Draw a card (x2)".
       const chosen = joinNames(
-        event.modes.map((i) => {
+        [...new Set(event.modes)].map((i) => {
           const text = texts?.[i];
-          return text === undefined ? `mode ${i + 1}` : modeText(text);
+          const times = timesNote(event.modes.filter((m) => m === i).length);
+          return `${text === undefined ? `mode ${i + 1}` : modeText(text)}${times}`;
         }),
       );
       return line(

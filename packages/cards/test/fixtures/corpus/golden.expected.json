@@ -1,5 +1,5 @@
 {
-  "parserVersion": 94,
+  "parserVersion": 95,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -1213,19 +1213,10 @@
     "3c22e031-4804-4c31-bd3c-c3f29d456b34": {
       "name": "Fiery Confluence",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Choose three. You may choose the same mode more than once.\n• ~ deals 1 damage to each creature.\n• ~ deals 2 damage to each opponent.\n• Destroy target artifact.",
-          "reason": "unrecognised",
-          "slot": "modal",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "cf442c42"
+      "ast": "29685c40"
     },
     "3c4da169-1e50-4790-abdc-214e7b8a2ad5": {
       "name": "Thorin's Last Stand",
@@ -4666,7 +4657,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 226,
+      "supported": 227,
       "total": 245
     }
   }

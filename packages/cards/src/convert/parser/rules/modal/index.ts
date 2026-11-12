@@ -5,10 +5,11 @@
  * modes (CR 903.3d is what "controls a commander" means). The bullets are not rules: each is read as a
  * spell of its own by the effect family, and a mode no rule reads leaves the whole card unread.
  *
- * Not read, because the engine does not run them (D-114): "Choose three", "Choose up to one", "Choose
- * any number —", "Choose X —", "You may choose the same mode more than once" (CR 700.2d), a choice made
- * by another player (CR 700.2e), a mode with a cost before its effect (CR 700.2h: Spree, and Escalate and
- * Entwine, whose keyword lines have no rule) and pawprint modes (CR 700.2i).
+ * "Choose three. You may choose the same mode more than once." (D-344, CR 700.2d) is read by `modal.choose-repeatable`.
+ *
+ * Not read, because the engine does not run them (D-114): "Choose three —" on its own, "Choose up to one", "Choose
+ * any number —", "Choose X —", a choice made by another player (CR 700.2e), a mode with a cost before its
+ * effect (CR 700.2h: Spree, and Escalate and Entwine, whose keyword lines have no rule) and pawprint modes (CR 700.2i).
  */
 import { literal, pattern, sequence } from '../../combinators';
 import type { IrCondition, IrModeChoice, IrModeHeader } from '../../ir/types';
@@ -196,9 +197,73 @@ export const MODAL_CHOOSE_NOT_REPEATED = defineRule<IrModeHeader>({
   },
 });
 
+/** The number words of a repeatable choice: "Choose three." (two to ten, the most the engine lists, D-344). */
+const NUMBER_WORDS: ReadonlyMap<string, number> = new Map([
+  ['two', 2],
+  ['three', 3],
+  ['four', 4],
+  ['five', 5],
+  ['six', 6],
+  ['seven', 7],
+  ['eight', 8],
+  ['nine', 9],
+  ['ten', 10],
+]);
+
+/**
+ * `modal.choose-repeatable`: "Choose three. You may choose the same mode more than once." and "Choose up to three. You may choose the same mode more
+ * than once." (D-344, CR 700.2, 700.2a, 700.2d: the controller chooses the modes as the spell is cast, and may choose the same one again; a mode
+ * chosen several times is treated as if it appeared that many times in sequence). The header is the first line, with no dash; the bullets follow. The
+ * engine's `ModeChoice.repeatable`: the number may be more than the number of bullets, and "up to" lets the controller choose fewer, down to none.
+ */
+export const MODAL_CHOOSE_REPEATABLE = defineRule<IrModeHeader>({
+  id: 'modal.choose-repeatable',
+  family: 'modal',
+  leading: ['choose'],
+  cites: [
+    'CR 700.2 (General)',
+    'CR 700.2a (General)',
+    'CR 700.2d (General)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'Choose three. You may choose the same mode more than once.',
+    'choose two. you may choose the same mode more than once.',
+    'Choose up to five. You may choose the same mode more than once.',
+  ],
+  rejects: [
+    'Choose three. You may choose the same mode more than once',
+    'Choose three. You may choose the same mode twice.',
+    'Choose one. You may choose the same mode more than once.',
+    'Choose up to one. You may choose the same mode more than once.',
+    'Choose three —',
+    'Choose three.',
+    'Choose X. You may choose the same mode more than once.',
+    'Choose eleven. You may choose the same mode more than once.',
+    'Choose one or more. You may choose the same mode more than once.',
+    'Choose three. You may choose the same mode more than once. —',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /choose (up to )?(two|three|four|five|six|seven|eight|nine|ten)\. you may choose the same mode more than once\.$/i,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const max = NUMBER_WORDS.get((r.value[2] ?? '').toLowerCase());
+    if (max === undefined) return { ok: false };
+    const header: IrModeHeader = {
+      kind: 'modeHeader',
+      choose: { min: r.value[1] === undefined ? max : 0, max, repeatable: true },
+      span: { start: pos, end: r.pos },
+      rule: 'modal.choose-repeatable',
+    };
+    return { ok: true, value: header, pos: r.pos };
+  },
+});
+
 export const MODAL_RULES = [
   MODAL_CHOOSE,
   MODAL_CHOOSE_COMMANDER,
   MODAL_CHOOSE_WIDEN,
   MODAL_CHOOSE_NOT_REPEATED,
+  MODAL_CHOOSE_REPEATABLE,
 ];

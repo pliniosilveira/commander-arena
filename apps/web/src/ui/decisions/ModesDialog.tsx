@@ -5,7 +5,10 @@ import { Dialog } from './Dialog';
 import type { Index } from './lookup';
 import type { DecisionModel } from './model';
 import {
+  addMode,
   isPickOne,
+  isRepeatable,
+  modeCount,
   modeKey,
   modesEscalate,
   modesHeading,
@@ -14,6 +17,7 @@ import {
   NO_LEGAL_MODE,
   NO_REPEAT_MODE,
   notRepeatedThisTurn,
+  removeMode,
   toggleMode,
 } from './modes-picker';
 import type { UiState } from './ui-state';
@@ -29,6 +33,10 @@ const NO_OBJECTS: Index = new Map();
  * and says why. Confirm is enabled only for one of the legal sets. Digits 1 to 9 toggle the mode of
  * that number, Enter confirms and Esc cancels the cast or activation (CR 733); a triggered ability
  * has no Cancel (CR 603.3c), so Esc does nothing. The autopilot never answers it.
+ *
+ * When the text lets the same mode be chosen more than once (`d.repeatable`, D-344, CR 700.2d) each mode is a
+ * counter instead: "-" and "+" buttons take one choice of it away or add one, up to the number to choose in all;
+ * the digit adds one and Shift with the digit takes one away.
  */
 export function ModesDialog({
   d,
@@ -63,10 +71,18 @@ export function ModesDialog({
       if (typing) return;
       const { d: decision, update: change, bar } = latest.current;
       const index = modeKey(event.key);
-      if (index !== null) {
+      // D-344: with the Shift key a digit is the symbol on it, so the mode is read from the key's code: Shift and the digit take one choice away.
+      const shifted = event.shiftKey ? /^Digit([1-9])$/.exec(event.code) : null;
+      if (shifted !== null && isRepeatable(decision)) {
+        event.preventDefault();
+        const taken = Number(shifted[1]) - 1;
+        change((u) => ({ ...u, modes: removeMode(u.modes, taken) }));
+      } else if (index !== null) {
         event.preventDefault();
         change((u) => ({ ...u, modes: toggleMode(decision, u.modes, index) }));
       } else if (onCard && event.key === 'Enter') {
+        // A counter's own buttons are pressed with Enter as any button is.
+        if (target?.tagName === 'BUTTON') return;
         const confirm = bar.buttons.find((b) => b.variant === 'primary');
         if (confirm === undefined || confirm.disabled) return;
         event.preventDefault();
@@ -82,6 +98,8 @@ export function ModesDialog({
   }, []);
 
   const one = isPickOne(d);
+  const counted = isRepeatable(d);
+  const full = ui.modes.length >= d.max;
   // D-145 (CR 702.120a): with escalate a mode that is in no payable set says so.
   // D-151: a mode this permanent chose earlier this turn is out too ("choose one that hasn't been chosen this turn").
   const repeats = !notRepeatedThisTurn(d, index);
@@ -100,6 +118,55 @@ export function ModesDialog({
         </legend>
         {d.modes.map((m) => {
           const on = ui.modes.includes(m.index);
+          if (counted) {
+            // D-344 (CR 700.2d): the mode may be chosen more than once; a counter says how many times.
+            const times = modeCount(ui.modes, m.index);
+            return (
+              <div
+                key={m.index}
+                className={`dec-mode dec-mode-counted${on ? ' is-picked' : ''}${m.legal ? '' : ' is-illegal'}`}
+                data-mode-card
+                data-mode={m.index}
+                data-legal={m.legal}
+                data-count={times}
+                title={m.legal ? undefined : noMode}
+              >
+                <span className="dec-mode-key" aria-hidden="true">
+                  {m.index + 1}
+                </span>
+                <span className="dec-mode-text">{m.text}</span>
+                {m.legal ? (
+                  <span className="dec-mode-counter">
+                    <button
+                      type="button"
+                      className="dec-mode-step"
+                      data-mode-minus
+                      aria-label={`Choose this mode once less: ${m.text}`}
+                      disabled={times === 0}
+                      onClick={() => update((u) => ({ ...u, modes: removeMode(u.modes, m.index) }))}
+                    >
+                      {'\u2212'}
+                    </button>
+                    <output className="dec-mode-times" data-mode-times aria-live="polite">
+                      {times}
+                    </output>
+                    <button
+                      type="button"
+                      className="dec-mode-step"
+                      data-mode-plus
+                      aria-label={`Choose this mode once more: ${m.text}`}
+                      disabled={full}
+                      onClick={() => update((u) => ({ ...u, modes: addMode(d, u.modes, m.index) }))}
+                    >
+                      +
+                    </button>
+                  </span>
+                ) : (
+                  <span className="dec-mode-why">{noMode}</span>
+                )}
+              </div>
+            );
+          }
           return (
             <label
               key={m.index}

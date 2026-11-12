@@ -14,13 +14,14 @@
  * its own weakest permanent for a harmful ability, the opponent's weakest for a helpful one. A slot
  * that may stay empty ("up to one") is left empty rather than aimed at the wrong side.
  */
-import type {
-  ChosenTarget,
-  Effect,
-  GameView,
-  PtAmount,
-  StackAbility,
-  TargetsDecision,
+import {
+  baseSpecId,
+  type ChosenTarget,
+  type Effect,
+  type GameView,
+  type PtAmount,
+  type StackAbility,
+  type TargetsDecision,
 } from '@commander-arena/engine';
 import { findObject, isCreature, powerOf, toughnessOf } from './casual-view';
 
@@ -183,10 +184,11 @@ export function chooseTriggerTargets(
     ? { kind: 'sequence', effects: ability.modes.map((m) => m.effect) }
     : ability.effect;
   return d.specs.flatMap((slot) => {
-    const plan = planFor(effect, slot.specId) ?? HARM_BY_DEFAULT;
+    // D-344: the slot of a later instance of a repeated mode plans as the slot it repeats.
+    const plan = planFor(effect, baseSpecId(slot.specId)) ?? HARM_BY_DEFAULT;
     // D-270: a slot of two zones (the battlefield and graveyards): only the battlefield side is aimed at.
     const crossZone = ability.targets?.some(
-      (t) => t.id === slot.specId && t.what.kind === 'objectOrGraveyardCard',
+      (t) => t.id === baseSpecId(slot.specId) && t.what.kind === 'objectOrGraveyardCard',
     );
     return chooseSlot(view, slot, crossZone === true ? { ...plan, battlefieldOnly: true } : plan);
   });

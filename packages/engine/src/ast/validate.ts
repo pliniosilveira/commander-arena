@@ -1103,7 +1103,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       if (a.modes !== undefined || a.chooseModes !== undefined) {
         // CR 603.3c, 700.2b (D-114): a modal triggered ability.
         checkModalAbilityShell(a.effect, a.targets, path, out);
-        checkModes(a.modes, a.chooseModes, path, scopeOf, out);
+        checkModes(a.modes, a.chooseModes, path, scopeOf, out, true);
       } else {
         checkEffect(a.effect, `${path}.effect`, scopeOf(targets), out);
       }

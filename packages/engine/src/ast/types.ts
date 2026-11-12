@@ -4437,7 +4437,7 @@ export interface SpellText {
  * How many modes a modal spell or ability has its controller choose (CR 700.2, D-114): "choose one" is
  * `{ min: 1, max: 1 }`, "choose two" `{ min: 2, max: 2 }`, "choose one or both" `{ min: 1, max: 2 }`,
  * "choose one or more" `{ min: 1, max: <number of modes> }`. The same mode is never chosen twice (CR
- * 700.2d).
+ * 700.2d) unless `repeatable` says it may be.
  */
 export interface ModeChoice {
   readonly min: number;
@@ -4454,6 +4454,14 @@ export interface ModeChoice {
    * be chosen again; with every mode chosen the ability is removed from the stack as it would be with no legal mode (CR 603.3c). Only a triggered ability.
    */
   readonly notRepeatedThisTurn?: true;
+  /**
+   * "Choose three. You may choose the same mode more than once." (CR 700.2d, D-344): the same mode may be chosen more than once, so the modes chosen are a
+   * multiset of between `min` and `max` of them (`max` may be more than the number of modes). Every instance of a mode is a mode of its own: a targeted
+   * mode gets a target slot for each instance (the slot of the first instance keeps the slot's id, the later ones are `<id>#2`, `<id>#3`, ...), and the same
+   * target may be chosen for each. `min` may be 0 here ("Choose up to three. You may choose the same mode more than once."), except on a triggered ability (no mode chosen removes it from the stack, CR 700.2b). Not with `maxIf`
+   * or `notRepeatedThisTurn`.
+   */
+  readonly repeatable?: true;
 }
 
 export interface SpellMode {

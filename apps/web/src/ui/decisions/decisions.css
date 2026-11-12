@@ -1127,6 +1127,47 @@
   font-style: italic;
 }
 
+/* A mode that may be chosen more than once (D-344, CR 700.2d): a counter with a minus and a plus button instead of a check box. */
+.dec-mode-counted {
+  align-items: center;
+  cursor: default;
+}
+.dec-mode-counter {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dec-mode-step {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised, var(--bg-sunken));
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dec-mode-step:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.dec-mode-step:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.dec-mode-step:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.dec-mode-times {
+  min-width: 18px;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* The legal targets of a modal spell, grouped under the mode they belong to. */
 .dec-target-group + .dec-target-group {
   margin-top: 6px;

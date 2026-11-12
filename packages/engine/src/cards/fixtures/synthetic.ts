@@ -99,6 +99,7 @@ import { SYNTHETIC_PRIDE_WALKER_LIST } from './synthetic-pride-walker';
 import { SYNTHETIC_PT_LIST } from './synthetic-pt';
 import { SYNTHETIC_RECURSION_LIST } from './synthetic-recursion';
 import { SYNTHETIC_REFERENCE_LIST } from './synthetic-references';
+import { SYNTHETIC_REPEATABLE_LIST } from './synthetic-repeatable';
 import { SYNTHETIC_RESELECT_LIST } from './synthetic-reselect';
 import { SYNTHETIC_RESTRICTION_LIST } from './synthetic-restrictions';
 import { SYNTHETIC_REVEAL_LIST } from './synthetic-reveal';
@@ -344,6 +345,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_KEYWORD2_LIST,
     ...SYNTHETIC_TRIGGER_MORE_LIST,
     ...SYNTHETIC_MODAL_LIST,
+    ...SYNTHETIC_REPEATABLE_LIST,
     ...SYNTHETIC_PT_LIST,
     ...SYNTHETIC_ALT_COST_LIST,
     ...SYNTHETIC_AMOUNT_LIST,

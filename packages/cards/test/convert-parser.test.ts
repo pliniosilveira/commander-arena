@@ -749,6 +749,7 @@ describe('unmatched abilities', () => {
       'modal.choose-commander',
       'modal.choose-widen',
       'modal.choose-not-repeated',
+      'modal.choose-repeatable',
     ]);
   });
 

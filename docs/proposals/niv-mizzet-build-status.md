@@ -24,7 +24,7 @@ The running checklist of the deck support routine for `decks/niv-mizzet.txt` (is
 | Thunderclap Drake | 3 | P | done | the same delayed trigger, copies for each commander cast |
 | Veyran, Voice of Duality | 3 | P | done | triggers an additional time when casting or copying an instant or sorcery; one ruling question is open |
 | Quistis Trepe | 3 | P | waiting | cast a target card from any graveyard, mana of any type, exile instead of the graveyard |
-| Fiery Confluence | 4 | P (large) | approved (owner, 2026-11-12), not started | "Choose three. You may choose the same mode more than once": repeatable modes (CR 700.2d), UI and AI |
+| Fiery Confluence | 4 | P (large) | done | "Choose three. You may choose the same mode more than once": repeatable modes (CR 700.2d), UI and AI |
 | Fact or Fiction | 3 | P | done | an opponent separates revealed cards into two piles (CR 700.3); new purposes of existing decision kinds, no new kind |
 | Reality Shift | M | S | done | manifest (CR 701.40) and the face-down permanents it needs; shown with the Manifest token image from Scryfall; the owner will use other manifest cards |
 

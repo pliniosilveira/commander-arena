@@ -159,16 +159,36 @@ export function answerTargets(
   });
 }
 
-/** The slots grouped by the mode they belong to, in order; null for a decision that is not modal. */
-export function modeGroups(
+/**
+ * Which time a slot's mode is chosen (D-344, CR 700.2d): 1 for the first, 2 for the second; null when the mode is chosen once, which is
+ * every mode of a spell that does not repeat modes. Every time has slots of its own.
+ */
+export function modeTime(
   specs: readonly TargetChoiceSpec[],
-): readonly { readonly mode: number; readonly specs: readonly TargetChoiceSpec[] }[] | null {
+  spec: TargetChoiceSpec,
+): number | null {
+  const repeated = specs.some((s) => s.mode === spec.mode && s.instance !== undefined);
+  return repeated ? (spec.instance ?? 0) + 1 : null;
+}
+
+/**
+ * The slots grouped by the mode they belong to, in order; null for a decision that is not modal. A mode chosen more than once (D-344, CR 700.2d)
+ * has a group for each time (`time` 1, 2, ...), each with slots of its own; `time` is null for a mode chosen once.
+ */
+export function modeGroups(specs: readonly TargetChoiceSpec[]):
+  | readonly {
+      readonly mode: number;
+      readonly time: number | null;
+      readonly specs: readonly TargetChoiceSpec[];
+    }[]
+  | null {
   if (!specs.some((s) => s.mode !== undefined)) return null;
-  const groups: { mode: number; specs: TargetChoiceSpec[] }[] = [];
+  const groups: { mode: number; time: number | null; specs: TargetChoiceSpec[] }[] = [];
   for (const spec of specs) {
     if (spec.mode === undefined) continue;
-    const group = groups.find((g) => g.mode === spec.mode);
-    if (group === undefined) groups.push({ mode: spec.mode, specs: [spec] });
+    const time = modeTime(specs, spec);
+    const group = groups.find((g) => g.mode === spec.mode && g.time === time);
+    if (group === undefined) groups.push({ mode: spec.mode, time, specs: [spec] });
     else group.specs.push(spec);
   }
   return groups;

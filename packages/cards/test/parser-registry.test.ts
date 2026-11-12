@@ -437,6 +437,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Return target creature to its owner's hand. If ${e}, scry 1.`,
   ),
   'modal.choose-not-repeated': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
+  // D-344 (repeatable modes, CR 700.2d): the header with no dash, its bullets after it.
+  'modal.choose-repeatable': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   // Stage P37 (D-180): the Korvold deck's triggers and small statics. The statics are lines of their own; the trigger follows "When"; the
   // conditions follow "As long as" or "If"; the nouns are operands of damage; the amount follows "gets +1/+1".
   'trigger.cycled': permanent((e) => `When ${e}, you gain 1 life.`),

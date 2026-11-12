@@ -3,9 +3,12 @@
  * "Choose one or more —". The controller chooses the modes as the spell is cast (CR 601.2b, 700.2a), the
  * ability is activated (CR 602.2b) or the triggered ability is put on the stack (CR 603.3c, 700.2b). A mode
  * that would be illegal (its targets cannot all be chosen) cannot be chosen (CR 700.2a), and no mode is
- * chosen more than once (CR 700.2d: "You may choose the same mode more than once" is not built). The
- * targets of a chosen mode are chosen with the rest (CR 601.2c, 700.2c: a mode that was not chosen has no
- * targets), and the effects of the chosen modes run in the order they are printed (CR 608.2c).
+ * chosen more than once (CR 700.2d) unless the text says "You may choose the same mode more than once"
+ * (`ModeChoice.repeatable`, D-344): then the modes chosen are a multiset, and each instance of a mode is
+ * treated as if the mode appeared that many times in sequence, with a target slot of its own (the same
+ * target may be chosen for each, or different ones). The targets of a chosen mode are chosen with the rest
+ * (CR 601.2c, 700.2c: a mode that was not chosen has no targets), and the effects of the chosen modes run in
+ * the order they are printed (CR 608.2c), the instances of a mode one after the other.
  *
  * This file holds the questions the three paths share: which modes the text has, how many may be chosen,
  * which sets are legal, and what the chosen set means for targets and effects.
@@ -59,6 +62,8 @@ export function modalOfAbility(ability: StackAbility | null | undefined): ModalT
  */
 export function modeLimit(state: GameState, modal: ModalText, ctx: SelectContext): number {
   const { max, maxIf } = modal.choose;
+  // D-344: a repeatable choice has no widening, and its `max` may be more than the number of modes.
+  if (modal.choose.repeatable === true) return max;
   if (maxIf !== undefined && maxIf.max > max && evaluateCondition(state, maxIf.condition, ctx)) {
     return Math.min(maxIf.max, modal.modes.length);
   }
@@ -75,7 +80,9 @@ function modePossible(state: GameState, mode: SpellMode, ctx: SelectContext): bo
 /**
  * Every legal choice of modes (CR 700.2, 700.2a, 700.2d): sets of distinct modes, each in printed order,
  * between `min` and the limit of them, built only of modes whose targets can be chosen. Fewest modes first,
- * then in printed order, so "choose one" lists the modes one by one.
+ * then in printed order, so "choose one" lists the modes one by one. A `repeatable` choice (D-344) lists
+ * multisets instead: the same mode may appear more than once, so every size from `min` to `max` is listed
+ * even when it is more than the number of modes that can be chosen.
  */
 export function legalModeSets(
   state: GameState,
@@ -90,7 +97,13 @@ export function legalModeSets(
   const available = modal.modes.flatMap((mode, i) =>
     !used.includes(i) && modePossible(state, mode, ctx) ? [i] : [],
   );
-  const max = Math.min(modeLimit(state, modal, ctx), available.length);
+  const repeatable = modal.choose.repeatable === true;
+  // With no mode to choose a repeatable choice can only be empty ("up to"); otherwise every size up to `max` is possible.
+  const max = repeatable
+    ? available.length === 0
+      ? 0
+      : modeLimit(state, modal, ctx)
+    : Math.min(modeLimit(state, modal, ctx), available.length);
   const out: number[][] = [];
   const build = (from: number, picked: number[], size: number): void => {
     if (picked.length === size) {
@@ -99,7 +112,8 @@ export function legalModeSets(
     }
     for (let k = from; k < available.length; k += 1) {
       picked.push(available[k] as number);
-      build(k + 1, picked, size);
+      // CR 700.2d: a repeatable choice may take the same mode again; any other takes only later modes.
+      build(repeatable ? k : k + 1, picked, size);
       picked.pop();
     }
   };
@@ -113,10 +127,8 @@ export function isLegalModeSet(
   chosen: readonly number[],
 ): boolean {
   const sorted = [...chosen].sort((a, b) => a - b);
-  return (
-    new Set(chosen).size === chosen.length &&
-    sets.some((s) => s.length === sorted.length && s.every((m, i) => m === sorted[i]))
-  );
+  // The legal sets say whether a mode may be chosen twice: only a repeatable choice lists a set with a repeat (CR 700.2d).
+  return sets.some((s) => s.length === sorted.length && s.every((m, i) => m === sorted[i]));
 }
 
 /** The chosen modes in printed order (CR 608.2c: they run in the order printed). */
@@ -124,14 +136,60 @@ export function printedOrder(chosen: readonly number[]): number[] {
   return [...chosen].sort((a, b) => a - b);
 }
 
-/** The target slots of the chosen modes, with the mode each belongs to, in printed order (CR 601.2c). */
+/**
+ * The id of the target slot `id` for the `occurrence`th time (0 is the first) its mode is chosen (CR 700.2d, D-344): the first
+ * instance keeps the slot's own id, so a mode chosen once is exactly what it was; the later ones are `<id>#2`, `<id>#3`, ...
+ */
+export function instanceId(id: string, occurrence: number): string {
+  return occurrence === 0 ? id : `${id}#${occurrence + 1}`;
+}
+
+/** The id the slot `id` has in the text of the mode: `<id>#2` is the slot `<id>` of the second instance (D-344). */
+export function baseSpecId(id: string): string {
+  return id.replace(/#\d+$/, '');
+}
+
+/** Every instance of the chosen modes in printed order, with how many times its mode came before it (CR 608.2c, 700.2d). */
+export function modeInstances(
+  chosen: readonly number[],
+): readonly { readonly mode: number; readonly occurrence: number }[] {
+  const seen = new Map<number, number>();
+  return printedOrder(chosen).map((mode) => {
+    const occurrence = seen.get(mode) ?? 0;
+    seen.set(mode, occurrence + 1);
+    return { mode, occurrence };
+  });
+}
+
+/** A target slot of one instance of a mode: its own id, and `differentFrom` read within the same instance. */
+function instanceSpec(mode: SpellMode, spec: TargetSpec, occurrence: number): TargetSpec {
+  if (occurrence === 0) return spec;
+  const sameMode = new Set((mode.targets ?? []).map((t) => t.id));
+  return {
+    ...spec,
+    id: instanceId(spec.id, occurrence),
+    ...(spec.differentFrom !== undefined && sameMode.has(spec.differentFrom)
+      ? { differentFrom: instanceId(spec.differentFrom, occurrence) }
+      : {}),
+  };
+}
+
+/**
+ * The target slots of the chosen modes, with the mode each belongs to and which instance of it (0 the first), in
+ * printed order (CR 601.2c). Every instance of a mode has slots of its own (CR 700.2d, D-344).
+ */
 export function chosenModeSpecs(
   modal: ModalText,
   chosen: readonly number[],
-): { readonly spec: TargetSpec; readonly mode: number }[] {
-  return printedOrder(chosen).flatMap((mode) =>
-    (modal.modes[mode]?.targets ?? []).map((spec) => ({ spec, mode })),
-  );
+): { readonly spec: TargetSpec; readonly mode: number; readonly occurrence: number }[] {
+  return modeInstances(chosen).flatMap(({ mode, occurrence }) => {
+    const text = modal.modes[mode];
+    return (text?.targets ?? []).map((spec) => ({
+      spec: text === undefined ? spec : instanceSpec(text, spec, occurrence),
+      mode,
+      occurrence,
+    }));
+  });
 }
 
 /** The modal text of a spell or ability object, or null: a card face's spell text, or the ability on the stack. */
@@ -144,23 +202,55 @@ export function modalOfObject(
   return modalOfSpellText(spell);
 }
 
-/** The effect of the chosen modes, run in printed order as one sequence (CR 608.2c, 700.2). */
+/**
+ * The effect of one instance of a mode: the mode's own effect for the first, and for a later one the same effect reading the
+ * slots of that instance (the `target` ids renamed, D-344).
+ */
+function instanceEffect(mode: SpellMode, occurrence: number): Effect {
+  if (occurrence === 0) return mode.effect;
+  const ids = new Set((mode.targets ?? []).map((t) => t.id));
+  const rename = (node: unknown): unknown => {
+    if (Array.isArray(node)) return node.map(rename);
+    if (typeof node !== 'object' || node === null) return node;
+    const record = node as Record<string, unknown>;
+    if (record.kind === 'target' && typeof record.id === 'string' && ids.has(record.id)) {
+      return { ...record, id: instanceId(record.id, occurrence) };
+    }
+    return Object.fromEntries(Object.entries(record).map(([k, v]) => [k, rename(v)]));
+  };
+  return rename(mode.effect) as Effect;
+}
+
+/**
+ * The effect of the chosen modes, run in printed order as one sequence (CR 608.2c, 700.2): a mode chosen more than once is
+ * treated as if it appeared that many times in sequence (CR 700.2d, D-344), each time reading the targets of its own instance.
+ */
 export function chosenEffect(modal: ModalText, chosen: readonly number[]): Effect {
   return {
     kind: 'sequence',
-    effects: printedOrder(chosen).flatMap((i) => {
-      const mode = modal.modes[i];
-      return mode === undefined ? [] : [mode.effect];
+    effects: modeInstances(chosen).flatMap(({ mode, occurrence }) => {
+      const text = modal.modes[mode];
+      return text === undefined ? [] : [instanceEffect(text, occurrence)];
     }),
   };
 }
 
-/** The slot-to-mode map of a chosen set, for the `mode` of each `TargetChoiceSpec`. */
+/** Where a target slot of a chosen mode comes from: the mode, and which instance of it (D-344, 0 the first). */
+export interface SlotMode {
+  readonly mode: number;
+  readonly instance: number;
+}
+
+/** The slot-to-mode map of a chosen set, for the `mode` and `instance` of each `TargetChoiceSpec`. */
 export function specModes(
   modal: ModalText,
   chosen: readonly number[],
-): ReadonlyMap<string, number> {
-  return new Map(chosenModeSpecs(modal, chosen).map(({ spec, mode }) => [spec.id, mode] as const));
+): ReadonlyMap<string, SlotMode> {
+  return new Map(
+    chosenModeSpecs(modal, chosen).map(
+      ({ spec, mode, occurrence }) => [spec.id, { mode, instance: occurrence }] as const,
+    ),
+  );
 }
 
 /**
@@ -194,6 +284,7 @@ export function modesDecision(
     })),
     min: modal.choose.min,
     max: modeLimit(state, modal, ctx),
+    ...(modal.choose.repeatable === true ? { repeatable: true as const } : {}),
     sets,
     ...(purpose === 'trigger' ? { forTrigger: true as const } : {}),
   };
