@@ -329,6 +329,28 @@ export function spendOnDragonWords(spend: {
   return null;
 }
 
+/**
+ * "a red instant or sorcery spell", "an instant spell": the spell a copy rider (D-951) names, as the card prints it: a color, then the card types joined
+ * by "or". Null for a rider the words do not cover (creature types, a color choice, the commander).
+ */
+function copiedSpellWords(spells: {
+  readonly types?: readonly string[];
+  readonly subtypes?: readonly string[];
+  readonly sharesTypeWithCommander?: true;
+  readonly commander?: true;
+  readonly colors?: readonly string[];
+}): string | null {
+  if (spells.subtypes !== undefined || spells.sharesTypeWithCommander === true) return null;
+  if (spells.commander === true) return null;
+  const colors = spells.colors ?? [];
+  const names = colors.map((c) => COLOR_NAMES[c]);
+  if (names.length > 1 || names.some((n) => n === undefined)) return null;
+  const nouns = [...names, ...(spells.types === undefined ? [] : [spells.types.join(' or ')])];
+  if (nouns.length === 0) return null;
+  const phrase = `${nouns.join(' ')} spell`;
+  return `${/^[aeiou]/i.test(phrase) ? 'an' : 'a'} ${phrase}`;
+}
+
 /** " If that mana is spent on a Dragon creature spell, it gains haste until end of turn": the rider of a mana ability. */
 export function spentRiderText(rider: {
   readonly spells: {
@@ -336,10 +358,22 @@ export function spentRiderText(rider: {
     readonly subtypes?: readonly string[];
     readonly sharesTypeWithCommander?: true;
     readonly commander?: true;
+    readonly colors?: readonly string[];
   };
-  readonly grants: 'haste' | { readonly scry: number } | { readonly scryCommanderCasts: true };
+  readonly grants:
+    | 'haste'
+    | { readonly scry: number }
+    | { readonly scryCommanderCasts: true }
+    | { readonly copySpell: 'may' | 'no' };
 }): string | null {
   const { spells, grants } = rider;
+  // D-951 (CR 707.10, 707.10c): Pyromancer's Goggles' "When that mana is spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy".
+  if (typeof grants === 'object' && 'copySpell' in grants) {
+    const spell = copiedSpellWords(spells);
+    if (spell === null) return null;
+    const copy = grants.copySpell === 'may' ? ' and you may choose new targets for the copy' : '';
+    return `When that mana is spent to cast ${spell}, copy that spell${copy}`;
+  }
   // D-229 (CR 903.8): Study Hall's "When you spend this mana to cast your commander, scry X, where X is the number of times it's been cast from the command zone this game".
   if (typeof grants === 'object' && 'scryCommanderCasts' in grants) {
     return "When you spend this mana to cast your commander, scry X, where X is the number of times it's been cast from the command zone this game";

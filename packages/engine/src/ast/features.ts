@@ -107,6 +107,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpentRider',
     // D-319: "Add two mana of different colors." (`anyCombination` with `distinct`, CR 106.1b).
     'manaDistinctColors',
+    // D-951: "When that mana is spent to cast a red instant or sorcery spell, copy that spell" (`spentRider` with `copySpell`, a color of the spell).
+    'manaSpentRiderCopy',
+    // D-950: "Mill a card. You may play that card this turn." (`mayPlay` of the cards a `mill` put into the graveyard).
+    'mayPlayFromGraveyard',
   ],
   effectKinds: [
     'sequence',
@@ -963,6 +967,10 @@ export const ABILITY_FEATURES = [
   'manaSpentRider',
   /** "Add two mana of different colors" (CR 106.1b, D-319): `anyCombination` with `distinct`, the sets of different colors of the five. */
   'manaDistinctColors',
+  /** "When that mana is spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy" (D-951): `spentRider` with `copySpell`. */
+  'manaSpentRiderCopy',
+  /** "Mill a card. You may play that card this turn" (D-950, CR 601.2, 305.1): the engine's `mayPlay` of a card a `mill` put into its owner's graveyard. */
+  'mayPlayFromGraveyard',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 
@@ -1454,6 +1462,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   doOnlyOnceEachTurn: true,
   manaSpentRider: true,
   manaDistinctColors: true,
+  manaSpentRiderCopy: true,
+  mayPlayFromGraveyard: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,

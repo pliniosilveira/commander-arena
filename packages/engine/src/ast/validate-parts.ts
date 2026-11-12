@@ -2054,7 +2054,9 @@ function movesObjects(e: Effect): boolean {
     // D-177: the cards a `search` found and put somewhere are "it" and "that land" ("Then if you control four or more lands, untap that land").
     e?.kind === 'search' ||
     // D-216: the card a `lookAndSplit` exiled is "the exiled card" ("You may play the exiled card this turn").
-    (e?.kind === 'lookAndSplit' && e.exile > 0)
+    (e?.kind === 'lookAndSplit' && e.exile > 0) ||
+    // D-950: the cards a `mill` put into a graveyard are "that card" ("Mill a card. You may play that card this turn.").
+    e?.kind === 'mill'
   );
 }
 

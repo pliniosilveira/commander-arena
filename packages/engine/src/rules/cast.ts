@@ -1038,7 +1038,11 @@ function abilitySpend(state: GameState, source: ObjectId) {
 function withSpentRiders(
   state: GameState,
   casting: NonNullable<GameState['casting']>,
-  spell: { readonly types: readonly string[]; readonly subtypes: readonly string[] },
+  spell: {
+    readonly types: readonly string[];
+    readonly subtypes: readonly string[];
+    readonly colors: readonly string[];
+  },
   riders: readonly ManaRider[],
 ): GameState {
   if (casting.activation !== null) return state;
@@ -1047,6 +1051,10 @@ function withSpentRiders(
       return false;
     }
     if (r.subtypes !== undefined && !spell.subtypes.some((t) => r.subtypes?.includes(t) === true)) {
+      return false;
+    }
+    // D-951: "a red instant or sorcery spell": the spell is of one of the colors (CR 105.2: a colorless spell is of none).
+    if (r.colors !== undefined && !spell.colors.some((c) => r.colors?.includes(c) === true)) {
       return false;
     }
     if (r.commander === true) {
@@ -1103,9 +1111,32 @@ function withSpentRiders(
       subject: r.countCommanderCasts === true ? casting.object : null,
     });
   }
-  return scries.length === 0
+  // D-951 (CR 106.6, 603.2, 603.7a, 707.10): "When that mana is spent to cast a red instant or sorcery spell, copy that spell": a triggered ability of the
+  // permanent that made the mana, for each mana spent, which waits to go on the stack above the spell. The spell it copies is its subject (the spell
+  // the mana was spent on, read from last-known information if it has left the stack, CR 113.7a), so the copy is put on the stack above the original.
+  const copies: PendingTrigger[] = [];
+  for (const r of riders) {
+    if (r.kind !== 'copy' || r.source === undefined || !matches(r)) continue;
+    copies.push({
+      source: r.source,
+      controller: casting.seat,
+      abilityIndex: -1,
+      ability: {
+        kind: 'triggered',
+        trigger: { kind: 'step', step: 'endStep', whose: 'you' },
+        effect: {
+          kind: 'copySpell',
+          spell: { kind: 'triggerSubject' },
+          newTargets: r.newTargets ?? 'may',
+        },
+      },
+      subject: casting.object,
+    });
+  }
+  const triggers = [...scries, ...copies];
+  return triggers.length === 0
     ? next
-    : { ...next, pendingTriggers: [...next.pendingTriggers, ...scries] };
+    : { ...next, pendingTriggers: [...next.pendingTriggers, ...triggers] };
 }
 
 /**

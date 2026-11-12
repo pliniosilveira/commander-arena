@@ -3,7 +3,7 @@
  * carries and the restriction on activating it (CR 602.5b, D-099). It is the mana ability of a card
  * and the one a static `grantAbility` gives. Split from `validate.ts` and `validate-mana.ts`.
  */
-import { CARD_TYPES } from '../characteristics';
+import { CARD_TYPES, COLORS } from '../characteristics';
 import type { ManaAbility } from './types';
 import { checkBattlefieldFilter } from './validate-attach';
 import { issue, kindOf, type Out } from './validate-base';
@@ -98,13 +98,15 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
           typeof scry === 'object' &&
           scry !== null &&
           (('scry' in scry && Number.isInteger(scry.scry) && scry.scry >= 1) ||
-            ('scryCommanderCasts' in scry && scry.scryCommanderCasts === true))
+            ('scryCommanderCasts' in scry && scry.scryCommanderCasts === true) ||
+            // D-951: "copy that spell" with or without "you may choose new targets for the copy".
+            ('copySpell' in scry && (scry.copySpell === 'may' || scry.copySpell === 'no')))
         )
       ) {
         issue(
           out,
           `${path}.spentRider.grants`,
-          'a rider is haste, a scry of one or more or a scry of the times the commander was cast',
+          'a rider is haste, a scry of one or more, a scry of the times the commander was cast or a copy of the spell',
         );
       }
       if (rider.spells === null || typeof rider.spells !== 'object') {
@@ -114,7 +116,8 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
           rider.spells.types === undefined &&
           rider.spells.subtypes === undefined &&
           rider.spells.sharesTypeWithCommander !== true &&
-          rider.spells.commander !== true
+          rider.spells.commander !== true &&
+          rider.spells.colors === undefined
         ) {
           issue(out, `${path}.spentRider.spells`, 'the spells have at least one type or subtype');
         }
@@ -133,6 +136,14 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
           rider.spells.types,
           CARD_TYPES,
           'card type',
+        );
+        // D-951: "a red instant or sorcery spell": the colors of the spell, one or more of the five.
+        checkEnumList(
+          out,
+          `${path}.spentRider.spells.colors`,
+          rider.spells.colors,
+          COLORS,
+          'color',
         );
         if (
           rider.spells.subtypes !== undefined &&

@@ -812,6 +812,26 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
 }
 
 /**
+ * "instant and sorcery spells" (D-952, CR 106.6, 205.2a): the spells of a list of card types joined by "and", the plural only (a spell has one of
+ * the types, so the list is a choice, as in "artifact or creature spells"). The filter is the choice `spellPhrase` reads for "or": `anyOf` of one
+ * member for each type.
+ */
+export function spellTypesAndPhrase(): Parser<IrFilter> {
+  return (ctx, pos) => {
+    const r = sequence(
+      typeChoice(CARD_TYPES, false, 'and'),
+      literal(' '),
+      pattern(new RegExp(`spells${BOUNDARY}`, 'iu')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const words = r.value[0];
+    const base = toFilter('stack', NO_PARTS, ctx.text.slice(pos, r.pos));
+    const anyOf = words.map((w): IrFilter => ({ types: [w], raw: w }));
+    return { ok: true, value: { ...base, stackKind: 'spell', anyOf }, pos: r.pos };
+  };
+}
+
+/**
  * " that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4): a card in a graveyard that went there from the battlefield
  * during this turn (a creature that died, an artifact that was destroyed).
  */

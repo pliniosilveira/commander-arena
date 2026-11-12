@@ -39,9 +39,16 @@ export type ManaRestriction =
  * from the ability that made it; if mana with it is spent on a spell that matches, the spell, if it becomes a permanent, has haste until end of turn.
  */
 export interface ManaRider {
-  /** `haste`: the spell's permanent has haste until end of turn. `scry`: its controller scries `count` (a triggered ability of `source`, group 4 of the Vraska deck). */
-  readonly kind: 'haste' | 'scry';
+  /**
+   * `haste`: the spell's permanent has haste until end of turn. `scry`: its controller scries `count` (a triggered ability of `source`, group 4 of the Vraska deck).
+   * `copy` (D-951): a triggered ability of `source` copies the spell (`newTargets`: whether its controller may choose new targets for the copy).
+   */
+  readonly kind: 'haste' | 'scry' | 'copy';
   readonly types?: readonly string[];
+  /** D-951: "a red instant or sorcery spell": the spell has one of these colors (`W`, `U`, `B`, `R`, `G`). */
+  readonly colors?: readonly string[];
+  /** The copy rider (D-951): "you may choose new targets for the copy" (`may`) or "copy that spell" (`no`). */
+  readonly newTargets?: 'may' | 'no';
   readonly subtypes?: readonly string[];
   /** "...a creature spell that shares a creature type with your commander": the spell has a creature type one of the caster's commanders has (CR 903.3). */
   readonly sharesTypeWithCommander?: true;

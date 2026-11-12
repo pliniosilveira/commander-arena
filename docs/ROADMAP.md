@@ -235,3 +235,8 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The two controllers' labels are shared: "Face-down creature N" is unique across the table, so the numbers of one player's permanents may skip (the other player has the 2). Chosen so that a label never changes when control does.
 - Real card art: the Manifest token picture is looked up at run time (`cards/tfrf/4`, verified 2026-11-12); a later move of that card on Scryfall is a change of two constants in `ui/board/face-down-art.tsx`. The hidden test deck `synthetic-manifest` draws SYNTHETIC cards as plain frames.
 - The agents turn up by value only: the casual agent in its own main phase, the heuristic agent also after blockers on its sample; neither plans to manifest-and-turn-up as a combo, neither holds mana for a turn-up in the opponent's turn, and neither turns a creature up to save it from damage or in response to removal.
+
+## The Niv-Mizzet deck, group 2b-b (issue 25, provisional D-950 to D-953)
+
+- "Mill a card. You may play that card this turn." is read only for the controller's own mill: "target opponent mills a card. You may play that card" and "each player mills" are not lowered (the permission is given for cards of the controller's graveyard only).
+- The copy rider of a mana ability names one color or none and card types: a creature type ("When that mana is spent to cast a Dragon spell, copy it"), two colors ("a red or blue instant") and the commander are not read.

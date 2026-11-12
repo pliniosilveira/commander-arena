@@ -67,18 +67,35 @@ export function spentRiderOf(ability: ManaAbility, source: ObjectId): ManaRider 
   const rider = ability.spentRider;
   if (rider === undefined) return null;
   const grants = rider.grants;
+  // D-951: "copy that spell": a triggered ability of the permanent that made the mana, which copies the spell the mana is spent on.
+  if (typeof grants === 'object' && 'copySpell' in grants) {
+    return {
+      kind: 'copy',
+      newTargets: grants.copySpell,
+      source,
+      ...riderSpells(rider.spells),
+    };
+  }
   const byCommander = typeof grants === 'object' && 'scryCommanderCasts' in grants;
   const scry = grants === 'haste' || byCommander ? null : (grants as { scry: number }).scry;
   return {
     kind: grants === 'haste' ? 'haste' : 'scry',
     ...(byCommander ? { countCommanderCasts: true as const, source } : {}),
     ...(scry === null ? {} : { count: scry, source }),
-    ...(rider.spells.commander === true ? { commander: true as const } : {}),
-    ...(rider.spells.sharesTypeWithCommander === true
-      ? { sharesTypeWithCommander: true as const }
-      : {}),
-    ...(rider.spells.types === undefined ? {} : { types: [...rider.spells.types] }),
-    ...(rider.spells.subtypes === undefined ? {} : { subtypes: [...rider.spells.subtypes] }),
+    ...riderSpells(rider.spells),
+  };
+}
+
+/** The spells a rider names, as the mana carries them (D-151, D-229, D-951). */
+function riderSpells(
+  spells: NonNullable<ManaAbility['spentRider']>['spells'],
+): Pick<ManaRider, 'commander' | 'sharesTypeWithCommander' | 'types' | 'subtypes' | 'colors'> {
+  return {
+    ...(spells.commander === true ? { commander: true as const } : {}),
+    ...(spells.sharesTypeWithCommander === true ? { sharesTypeWithCommander: true as const } : {}),
+    ...(spells.types === undefined ? {} : { types: [...spells.types] }),
+    ...(spells.subtypes === undefined ? {} : { subtypes: [...spells.subtypes] }),
+    ...(spells.colors === undefined ? {} : { colors: [...spells.colors] }),
   };
 }
 
