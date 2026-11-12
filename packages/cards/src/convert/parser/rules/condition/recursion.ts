@@ -6,6 +6,7 @@
  */
 import {
   choice,
+  fail,
   literal,
   many,
   map,
@@ -179,6 +180,78 @@ export const CONDITION_IT_MATCHES = defineRule<IrCondition>({
 });
 
 /**
+ * `condition.its-mana-value`: "its mana value was 3 or less", "its mana value is 4 or greater", "its mana value was 2" (D-954, CR 202.3, 608.2c, 113.7a: an
+ * instruction later in the text asks the mana value of an object an earlier one named, as it is or, once it has left, as it last was). "It" is an object
+ * the binding pass finds (a target of the text; the lowering refuses what it cannot find); the number is a digit string and the direction "or less" or "or
+ * greater". The engine's `objectMatches` with a mana value comparison, in a `conditional` effect.
+ */
+export const CONDITION_ITS_MANA_VALUE = defineRule<IrCondition>({
+  id: 'condition.its-mana-value',
+  family: 'condition',
+  leading: ['its', 'it’s'],
+  cites: [
+    'CR 202.3 (Mana Cost and Color)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 113.7a (Abilities)',
+  ],
+  examples: [
+    'its mana value was 3 or less',
+    'its mana value is 4 or greater',
+    'its mana value was 0',
+  ],
+  rejects: [
+    'its mana value was',
+    'its mana value was three or less',
+    'its mana value was X or less',
+    'its mana value was 3 or fewer',
+    'its mana value was 3 or more',
+    'its mana value was 3 or less or it was a land',
+    'its power was 3 or less',
+    'their mana value was 3 or less',
+    'its mana value 3 or less',
+    'its mana value was 3 or lesser',
+    'it was a land',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/its mana value (?:was|is) (\d+)(?: or (less|greater))?(?![\p{L}\p{N}])/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const value = Number(r.value[1]);
+    if (!Number.isSafeInteger(value)) return fail(ctx, pos);
+    const cmp = (r.value[2] ?? '').toLowerCase();
+    const it: IrNoun = {
+      kind: 'noun',
+      det: 'anaphor',
+      filter: { raw: 'it' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: pos + 3 },
+      rule: 'condition.its-mana-value',
+    };
+    const filter: IrFilter = {
+      manaValue: {
+        cmp: cmp === 'less' ? 'atMost' : cmp === 'greater' ? 'atLeast' : 'equal',
+        value,
+      },
+      raw: r.value[0],
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'objectMatches', who: it, filter },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.its-mana-value',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `condition.gift-promised`: "the gift was promised" (CR 702.174k: a spell was cast with its gift cost paid, or the permanent came
  * from such a spell; the opponent was chosen as it was cast). The engine's `giftPromised`, which needs the keyword Gift on the face.
  */
@@ -284,6 +357,7 @@ export const CONDITION_OPPONENT_CONTROLS_AT_LEAST = defineRule<IrCondition>({
 
 export const RECURSION_CONDITION_RULES = [
   CONDITION_IT_MATCHES,
+  CONDITION_ITS_MANA_VALUE,
   CONDITION_GIFT_PROMISED,
   CONDITION_OPPONENT_CONTROLS_AT_LEAST,
 ];

@@ -430,6 +430,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Target creature gets +1/+1 until end of turn. ${cap(e)} gains trample until end of turn.`,
   ),
+  // D-951 to D-954 (the Niv-Mizzet deck, group B): the header of a modal spell, the damage to one or two targets and the sentence about what a target was.
+  'modal.choose-widen': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.\n• Scry 1.`),
+  'noun.one-or-two-targets': spell((e) => `~ deals 1 damage to ${e}.`),
+  'condition.its-mana-value': spell(
+    (e) => `Return target creature to its owner's hand. If ${e}, scry 1.`,
+  ),
   'modal.choose-not-repeated': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   // Stage P37 (D-180): the Korvold deck's triggers and small statics. The statics are lines of their own; the trigger follows "When"; the
   // conditions follow "As long as" or "If"; the nouns are operands of damage; the amount follows "gets +1/+1".

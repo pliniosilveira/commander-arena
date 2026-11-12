@@ -117,6 +117,50 @@ export const MODAL_CHOOSE_COMMANDER = defineRule<IrModeHeader>({
 });
 
 /**
+ * `modal.choose-widen`: "Choose one. If you control a Wizard as you cast ~, you may choose two instead." (D-953, CR 700.2, 700.2a: the controller
+ * chooses the modes as the spell is cast; the engine's `maxIf` reads the condition then). One mode is chosen, or two while the condition holds, however
+ * many modes the spell has (two or more): "both" is the wording of `modal.choose-commander`, which is two modes and the commander condition. The
+ * condition is the one of `condition.control-a` ("you control a Wizard", "you control an artifact"); "two" is the only number read.
+ */
+export const MODAL_CHOOSE_WIDEN = defineRule<IrModeHeader>({
+  id: 'modal.choose-widen',
+  family: 'modal',
+  leading: ['choose'],
+  cites: ['CR 700.2 (General)', 'CR 700.2a (General)'],
+  examples: [
+    'Choose one. If you control a Wizard as you cast ~, you may choose two instead.',
+    'choose one. if you control an artifact as you cast ~, you may choose two instead.',
+    'Choose one. If you control a Dragon as you cast ~, you may choose two instead.',
+  ],
+  rejects: [
+    'Choose one. If you control a Wizard as you cast ~, you may choose two instead',
+    'Choose one. If you control a Wizard, you may choose two instead.',
+    'Choose one. If you control a Wizard as you cast ~, you may choose both instead.',
+    'Choose one. If you control a Wizard as you cast ~, you may choose three instead.',
+    'Choose one. If you control a Wizard as you cast ~, you may choose all instead.',
+    'Choose one. If an opponent controls a Wizard as you cast ~, you may choose two instead.',
+    'Choose one. If you control two Wizards as you cast ~, you may choose two instead.',
+    'Choose two. If you control a Wizard as you cast ~, you may choose two instead.',
+    'Choose one —',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('choose one. if '),
+      family<IrCondition>('condition', { only: ['condition.control-a'] }),
+      literal(' as you cast ~, you may choose two instead.'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const header: IrModeHeader = {
+      kind: 'modeHeader',
+      choose: { min: 1, max: 1, widen: r.value[1], widenTo: 2 },
+      span: { start: pos, end: r.pos },
+      rule: 'modal.choose-widen',
+    };
+    return { ok: true, value: header, pos: r.pos };
+  },
+});
+
+/**
  * `modal.choose-not-repeated`: "Choose one that hasn't been chosen this turn —" (CR 700.2, 603.3c: the modes of a triggered ability are chosen as it
  * goes on the stack; a mode that the same permanent chose earlier this turn may not be chosen again, and the ability is removed from the stack when
  * none is left). One mode.
@@ -152,4 +196,9 @@ export const MODAL_CHOOSE_NOT_REPEATED = defineRule<IrModeHeader>({
   },
 });
 
-export const MODAL_RULES = [MODAL_CHOOSE, MODAL_CHOOSE_COMMANDER, MODAL_CHOOSE_NOT_REPEATED];
+export const MODAL_RULES = [
+  MODAL_CHOOSE,
+  MODAL_CHOOSE_COMMANDER,
+  MODAL_CHOOSE_WIDEN,
+  MODAL_CHOOSE_NOT_REPEATED,
+];
