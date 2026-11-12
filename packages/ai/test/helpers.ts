@@ -2377,6 +2377,13 @@ export const PILES_LANDS = supported([
  * noncombat damage to an opponent. Used by the 'nivDraw' style and kept out of every other pool: a skipped draw changes whether a player loses to an empty library, and the
  * draw trigger adds triggers to the stack in the middle of other spells.
  */
+/** The delayed "when you next cast" cards of the Niv-Mizzet deck (D-336): they ask for new targets of a copy, so they stay out of the generic pools. */
+export const NIV_GROUP_3_A_NAMES = [
+  'SYNTHETIC Next Echo',
+  'SYNTHETIC Next Exact Echo',
+  'SYNTHETIC Commander Echo Drake',
+] as const;
+
 export const NIV_DRAW_NAMES = [
   'SYNTHETIC Hollow Warden',
   'SYNTHETIC Draw Veto',
@@ -2797,6 +2804,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(PILES_NAMES as readonly string[]).includes(card.name))
   // The Niv-Mizzet draw slice has its own style: its cards skip draws (so a player does not lose to an empty library) and draw when noncombat damage is dealt.
   .filter((card) => !(NIV_DRAW_NAMES as readonly string[]).includes(card.name))
+  // The delayed next-cast slice asks the questions of a copied spell (new targets), which games-100 expects only from dedicated styles.
+  .filter((card) => !(NIV_GROUP_3_A_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
   .filter((card) => !(MANIFEST_NAMES as readonly string[]).includes(card.name))
   // The Vraska program has its own style: its cards ask other players questions in the middle of a resolution, and a payment of energy.
