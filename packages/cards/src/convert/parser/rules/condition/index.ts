@@ -39,6 +39,7 @@ import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
 import { RECURSION_CONDITION_RULES } from './recursion';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
+import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
 import { CONDITION_UNLESS_PAYS } from './unless';
 import { VRASKA_CONDITION_RULES } from './vraska';
 
@@ -414,6 +415,8 @@ export const CONDITION_RULES = [
   ...VRASKA_CONDITION_RULES,
   // Issue 25 (the Niv-Mizzet deck): "five or more mana was spent to cast that spell".
   ...NIV_CONDITION_RULES,
+  // Issue 25 (D-318): "you've cast three or more spells this turn".
+  ...SPELLS_CAST_CONDITION_RULES,
   // Stage P52 (D-210): "the player doesn't", "a creature card was discarded this way".
   ...CHOOSER_CONDITION_RULES,
   // Stage P63 (D-216): "you created a token this turn".

@@ -156,9 +156,9 @@ const UNREAD: readonly Line[] = [
   },
   {
     kind: 'enchantment',
-    text: "Untap ~ during each other player's untap step.",
-    expect: no("Untap ~ during each other player's untap step.", NONE),
-    note: 'the real line (4 cards): a different ability',
+    text: "Untap target land during each other player's untap step.",
+    expect: no("Untap target land during each other player's untap step.", NONE),
+    note: 'another permanent (the permanent itself is read since D-320)',
   },
   {
     kind: 'artifact',

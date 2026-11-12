@@ -90,6 +90,7 @@ describe('amounts that read an object', () => {
       'affected',
       'half',
       'multiple',
+      'minus',
       'sum',
       'opponentsWithMore',
       'thisWay',

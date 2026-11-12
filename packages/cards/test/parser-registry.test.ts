@@ -492,6 +492,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever you cast a noncreature spell, if ${e}, you gain 1 life.`,
   ),
   // Issue 25 (the Niv-Mizzet deck): the condition leads the "instead" sentence of a trigger about a spell that was cast.
+  'condition.spells-cast-this-turn': permanent((e) => `{T}: Add {G}. Activate only if ${e}.`),
   'condition.mana-spent-or-more': permanent(
     (e) =>
       `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,

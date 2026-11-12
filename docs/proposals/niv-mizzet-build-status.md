@@ -11,10 +11,10 @@ The running checklist of the deck support routine for `decks/niv-mizzet.txt` (is
 | Elixir of Immortality | 1 | T | done | "Shuffle ~ and your graveyard into their owner's library." |
 | Dragonologist | 1 | T | done | "an instant, sorcery, or Dragon card" (a mix of types and a subtype) |
 | Thunderdrum Soloist | 1 | T | done | Opus: "If five or more mana was spent to cast that spell ... instead" |
-| Stella Lee, Wild Card | 2 | P | waiting | condition "you've cast three or more spells this turn" |
-| Firemind Vessel | 2 | P | waiting | "Add two mana of different colors" |
-| Bender's Waterskin | 2 | P | waiting | "Untap ~ during each other player's untap step" |
-| Ivory Tower | 2 | P | waiting | an amount "minus 4" |
+| Stella Lee, Wild Card | 2 | P | done | condition "you've cast three or more spells this turn" |
+| Firemind Vessel | 2 | P | done | "Add two mana of different colors" |
+| Bender's Waterskin | 2 | P | done | "Untap ~ during each other player's untap step" |
+| Ivory Tower | 2 | P | done | an amount "minus 4" |
 | Living Conundrum | 2 | P | waiting | skip a draw from an empty library (replacement), condition "no cards in your library" |
 | Tablet of Discovery | 2 | P | waiting | "mill a card. You may play that card this turn" and mana spendable only on instants and sorceries |
 | Niv-Mizzet, Visionary | 2 | P | waiting | "noncombat damage to an opponent, you draw that many cards" |

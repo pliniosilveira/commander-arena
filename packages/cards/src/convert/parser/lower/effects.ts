@@ -602,7 +602,9 @@ export function lowerMana(spec: IrManaSpec): ManaProduction {
       // CR 605.3b, 700.5: only after "Choose a color." in a mana ability (`lowerChosenColorDevotion`); the ordinary lowering of an instruction refuses it.
       return { kind: 'anyColorDevotion' };
     case 'anyCombination':
-      return { kind: 'anyCombination', count: spec.what.count };
+      return spec.what.distinct === true
+        ? { kind: 'anyCombination', count: spec.what.count, distinct: true }
+        : { kind: 'anyCombination', count: spec.what.count };
     case 'combination':
       // The engine stores a combination in the order W, U, B, R, G, C (CR 106.4: the pool does not
       // order mana), so {R}{W} is `['W', 'R']`.

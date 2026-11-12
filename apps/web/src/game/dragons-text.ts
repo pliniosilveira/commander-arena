@@ -293,9 +293,14 @@ function timesEach(times: Amount): string | null {
   return phrase === UNKNOWN_AMOUNT ? null : phrase;
 }
 
-/** "two mana in any combination of colors" (CR 106.1b): the production `anyCombination`. */
-export function anyCombinationWords(count: number): string {
-  return `${numberWord(count)} mana in any combination of colors`;
+/**
+ * "two mana in any combination of colors" (CR 106.1b): the production `anyCombination`; with `distinct` (D-319) "two mana of different colors", the
+ * words of a card that never makes the same color twice.
+ */
+export function anyCombinationWords(count: number, distinct = false): string {
+  return distinct
+    ? `${numberWord(count)} mana of different colors`
+    : `${numberWord(count)} mana in any combination of colors`;
 }
 
 /**

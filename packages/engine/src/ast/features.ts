@@ -105,6 +105,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'doOnlyOnceEachTurn',
     // D-151: "If that mana is spent on a Dragon creature spell, it gains haste" (`ManaAbility.spentRider`).
     'manaSpentRider',
+    // D-319: "Add two mana of different colors." (`anyCombination` with `distinct`, CR 106.1b).
+    'manaDistinctColors',
   ],
   effectKinds: [
     'sequence',
@@ -693,6 +695,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerDealtDamage',
     // D-252: "if you gained 3 or more life this turn".
     'lifeGainedThisTurn',
+    // D-318: "Activate only if you've cast three or more spells this turn".
+    'spellsCastThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
     'dieResult',
     'thisInYourGraveyard',
@@ -820,6 +824,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'affected',
     'half',
     'multiple',
+    // D-321: "the number of cards in your hand minus 4".
+    'minus',
     'sum',
     'opponentsWithMore',
     'thisWay',
@@ -955,6 +961,8 @@ export const ABILITY_FEATURES = [
   'doOnlyOnceEachTurn',
   /** "If that mana is spent on a Dragon creature spell, it gains haste until end of turn" (D-151): the engine's `ManaAbility.spentRider`. */
   'manaSpentRider',
+  /** "Add two mana of different colors" (CR 106.1b, D-319): `anyCombination` with `distinct`, the sets of different colors of the five. */
+  'manaDistinctColors',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 
@@ -1177,6 +1185,8 @@ export const CONDITION_KINDS = [
   'playerDealtDamage',
   /** "If you gained 3 or more life this turn" (D-252): the engine's `lifeGainedThisTurn`. */
   'lifeGainedThisTurn',
+  /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
+  'spellsCastThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
   'dieResult',
   /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
@@ -1355,6 +1365,8 @@ export const AMOUNT_KINDS = [
   'half',
   /** "Twice ...", "2 life for each ..." (D-131): the engine's `multiple`. */
   'multiple',
+  /** "... minus 4" (CR 107.1b, D-321): the engine's `minus`, floored at 0. */
+  'minus',
   /** "... plus ..." (D-131): the engine's `sum`. */
   'sum',
   /** "For each creature sacrificed / destroyed this way", "for each opponent who drew a card this way" (D-131): the engine's `thisWay`. */
@@ -1441,6 +1453,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,
   manaSpentRider: true,
+  manaDistinctColors: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,

@@ -1900,3 +1900,33 @@ Numbers are references; entries are never deleted. D-118 and D-119 are cited as 
 - Decision: Support for all cards is the standing goal (`AGENTS.md`). The deck support routine and its surveys never recommend skipping a card on cost alone: they give the cost, the risk and the order (cheap pieces first, the large general mechanism after). Fiery Confluence is built as general repeatable modes (`ModeChoice.repeatable`, multiset mode sets, one target slot per chosen instance, counters in the web picker, the AI). The rules still apply: an S-class gap needs a design the owner approves before it is built, and a card the engine cannot yet read stays flagged unsupported meanwhile (honesty first).
 - Alternatives: Keeping "skip" as an option in the proposals was rejected (it hides the real backlog and the cards behind it). Simplifying repeatable modes to one target slot for all instances was rejected (wrong with fewer targets than instances).
 - Consequences: Proposals list cost and order, not a skip option. Larger gaps take longer and show in the checklist as approved, not started.
+
+## D-318: Condition spellsCastThisTurn (2026-11-12)
+- Context: Stella Lee, Wild Card ("if you've cast two or more spells this turn") needs a condition on the number of spells the controller cast this turn.
+- Decision: `Condition` `spellsCastThisTurn { atLeast }` (CR 602.5b, 601.2i, 707.10, 500.4) reads `SeatState.spellsCastThisTurn`, the per-seat count Storm already uses (D-129). The parser reads "you've cast N or more spells this turn"; a kind of spell, "or fewer", "an opponent has cast", "this game" and a variable count are not read and the card stays unsupported.
+- Alternatives: Counting from the event log was rejected (the seat count exists and is exact). A kind-of-spell filter was not built (no card of the deck needs it).
+- Consequences: Any card with the plain count can use it; tests in `scenario-xx-spells-cast-this-turn.test.ts`.
+
+## D-319: Distinct colors for anyCombination mana (2026-11-12)
+- Context: Firemind Vessel ("Add two mana of different colors") needs the combinations of different colors only.
+- Decision: `ManaProduction` `anyCombination` takes `distinct: true` (CR 105.1, 106.1a, 106.1b, 605.3b): `colorMultisets(count, distinct)` in `rules/mana-outcomes.ts` offers only the sets of `count` different colors of the five. Read in a mana ability for two and three mana; the `addMana` effect of a spell or trigger runs fixed mana only, so the phrase in a spell is not read.
+- Alternatives: Letting the player pick any pair and rejecting repeats at payment was rejected (the choice list would show illegal answers).
+- Consequences: The choice list shrinks to the legal sets; the AI picks from it (`niv-distinct-mana.test.ts`).
+
+## D-320: untapInOthersUntapStep with self (2026-11-12)
+- Context: Bender's Waterskin ("Untap this artifact during each other player's untap step") names the permanent itself, not a filter (D-229).
+- Decision: `untapInOthersUntapStep` takes `self: true` in place of `what`; exactly one of the two must be given (CR 502.3, 604.1). It has no condition and no "untap target land" form; it ignores "doesn't untap during your untap step" as D-229 says, and a stun counter is removed instead.
+- Alternatives: A filter that matches only the source was rejected (a filter cannot name the permanent itself without a card-specific case).
+- Consequences: Validation refuses both or neither; tests in `scenario-xx-untap-self-in-others-step.test.ts`.
+
+## D-321: Amount minus (2026-11-12)
+- Context: Ivory Tower ("you gain X life, where X is the number of cards in your hand minus four") subtracts a number.
+- Decision: `Amount` `minus { of, by }` (CR 107.1b): `of` less a whole number of 1 or more, a negative result counting as 0, read as the instruction runs like the amount it is made of. It applies to an atom or a sum, not to "half ...", "twice ..." or a static ability's power or toughness; "minus X" and a word number are not read.
+- Alternatives: A general arithmetic amount was rejected (more surface than the cards need).
+- Consequences: Tests in `scenario-xx-amount-minus.test.ts`; the web words the amount.
+
+## D-323: A creature planeswalker that is lethally damaged with 0 loyalty leaves the battlefield once (2026-11-12)
+- Context: Merging new SYNTHETIC cards moved the random picks of the derive differential's fifth board game, and it threw "Unknown object": an animated planeswalker (a 4/4 creature that is still a planeswalker, "SYNTHETIC Animate Walker") was dealt damage that was lethal as a creature and removed all its loyalty. The state-based action check listed it twice (CR 704.5g destroyed, CR 704.5i put into the graveyard) and tried to move it twice; the second move found the object gone. The bug is in the engine, not in the new cards; it was latent for any real creature planeswalker.
+- Decision: In `rules/sba.ts` an object that is in the graveyard batch (0 loyalty, a fallen Aura) is removed from the destroyed list. It leaves once, as a card put into the graveyard, so a regeneration shield (which replaces a destruction only) does not save it, as CR 704.3 asks (all applicable actions at once; 0 loyalty is not a destruction). Test: two Lightning Bolts at an animated Animate Walker (`scenario-xx-planeswalker-damage.test.ts`); without the fix it fails with "Unknown object".
+- Alternatives: Skipping a missing object in the loop was rejected (it would hide other double moves). Dropping the loyalty list entry instead was rejected (the destruction can be regenerated; the loyalty rule cannot).
+- Consequences: Derive digests are regenerated with this branch's pool; no change for any game that never had this overlap.

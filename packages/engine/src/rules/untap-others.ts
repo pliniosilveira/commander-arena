@@ -1,5 +1,6 @@
 /**
- * "Untap all creatures you control during each other player's untap step." (CR 502.3, D-229, Drumbellower). The active player's own
+ * "Untap all creatures you control during each other player's untap step." (CR 502.3, D-229, Drumbellower), and, with `self` (D-320),
+ * "Untap this artifact during each other player's untap step." (the permanent itself). The active player's own
  * permanents untap as the step begins (`rules/flow.ts`); a static ability of another player's permanent adds the permanents it names, that
  * player controls, to the ones that untap with them. It does not ask the player anything and does not look at "doesn't untap during your untap
  * step" (a permanent with that restriction still untaps in the untap step of another player). A stun counter is removed instead
@@ -24,12 +25,16 @@ export function untappedByOthers(state: GameState, active: SeatId): ObjectId[] {
     if (holder === active || !mayHaveStatic(state, source, 'untapInOthersUntapStep')) continue;
     for (const ability of derive(state, source).abilities) {
       if (ability.kind !== 'static' || ability.static.kind !== 'untapInOthersUntapStep') continue;
+      const { what } = ability.static;
+      if (what === undefined) {
+        // D-320 ("Untap this artifact during each other player's untap step"): the permanent itself, when it is tapped.
+        if (source.tapped) chosen.add(sourceId);
+        continue;
+      }
       for (const id of state.battlefield) {
         const obj = getObject(state, id);
         if (!obj.tapped || chosen.has(id)) continue;
-        if (
-          matchesFilter(state, obj, ability.static.what, { controller: holder, source: sourceId })
-        ) {
+        if (matchesFilter(state, obj, what, { controller: holder, source: sourceId })) {
           chosen.add(id);
         }
       }

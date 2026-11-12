@@ -1,5 +1,5 @@
 {
-  "parserVersion": 90,
+  "parserVersion": 91,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -1231,18 +1231,10 @@
     "3bc46467-323f-4cbf-9d0a-f3d2ae3c3a34": {
       "name": "Bender's Waterskin",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Untap ~ during each other player's untap step.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "62b1b268"
+      "ast": "df21de06"
     },
     "3c037103-5af0-40a8-bbbe-7f3f5958b6e9": {
       "name": "Vraska, Relic Seeker",
@@ -2733,19 +2725,10 @@
     "8d0da2f9-0e05-4a94-8d42-fd57d06b09ba": {
       "name": "Stella Lee, Wild Card",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{T}: Copy target instant or sorcery spell you control. You may choose new targets for the copy. Activate only if you've cast three or more spells this turn.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "restriction.if"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "3aad4dcb"
+      "ast": "4fb06d1b"
     },
     "8d2b2675-19df-4f40-9e8e-196ec097b91c": {
       "name": "Sunscorched Divide",
@@ -3769,19 +3752,10 @@
     "d416a4ed-9f16-4a8b-8aee-03c630e1eb6c": {
       "name": "Ivory Tower",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of your upkeep, you gain X life, where X is the number of cards in your hand minus 4.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "amount.where-x"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "0d25185b"
+      "ast": "1c0ba86d"
     },
     "d4193f50-33b5-4201-ba03-eb135eced7ff": {
       "name": "Teshar, Ancestor's Apostle",
@@ -3890,19 +3864,10 @@
     "d8afd7b0-7cd0-4caf-ac43-a0e24a93ca09": {
       "name": "Firemind Vessel",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{T}: Add two mana of different colors.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.add-mana"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "fd530fe9"
+      "ast": "f77bb13d"
     },
     "d90af00a-d322-4265-9954-7b1e80702e18": {
       "name": "Skyclave Apparition",
@@ -4787,7 +4752,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 214,
+      "supported": 218,
       "total": 245
     }
   }

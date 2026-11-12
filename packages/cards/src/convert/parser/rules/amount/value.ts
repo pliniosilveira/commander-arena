@@ -335,9 +335,33 @@ const SUM_OR_ATOM = (rule: string): Parser<IrAmount> => {
   };
 };
 
-/** Any value phrase: arithmetic first, then the atoms (and their sums). */
+/**
+ * "<atom or sum> minus 4" (D-321, CR 107.1b: a calculation that would be negative uses 0): a whole number of 1 or more taken away, in digits as the
+ * cards write it ("the number of cards in your hand minus 4"). Without the suffix it is the atom or the sum itself.
+ */
+const MINUS_OR_SUM = (rule: string): Parser<IrAmount> => {
+  const base = SUM_OR_ATOM(rule);
+  return (ctx, pos) => {
+    const first = base(ctx, pos);
+    if (!first.ok) return first;
+    const minus = pattern(/ minus ([1-9][0-9]*)(?![\p{L}\p{N}])/u)(ctx, first.pos);
+    if (!minus.ok) return first;
+    return {
+      ok: true,
+      value: {
+        kind: 'minus',
+        of: first.value,
+        by: Number(minus.value[1]),
+        span: { start: pos, end: minus.pos },
+      },
+      pos: minus.pos,
+    };
+  };
+};
+
+/** Any value phrase: arithmetic first, then the atoms (and their sums, less a number). */
 export const VALUE = (rule: string): Parser<IrAmount> =>
-  choice(HALF(rule), MULTIPLE(rule), SUM_OR_ATOM(rule));
+  choice(HALF(rule), MULTIPLE(rule), MINUS_OR_SUM(rule));
 
 /** The kinds the older "equal to ..." rules read, which `amount.equal-to` leaves to them. */
 const OLDER_EQUAL_KINDS: ReadonlySet<string> = new Set([
@@ -375,6 +399,7 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to your devotion to black',
     'equal to your devotion to black and red',
     'equal to half the number of creatures you control, rounded down',
+    'equal to the number of cards in your hand plus the number of lands you control minus 1',
     'equal to half the number of cards in your hand, rounded up',
     'equal to the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards',
     'equal to the number of colors in your commanders’ color identity',
@@ -401,6 +426,8 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to half the number of creatures you control, rounded',
     'equal to the number of creatures you control plus',
     'equal to the number of creatures you control plus 1',
+    'equal to the number of cards in your hand plus the number of lands you control minus',
+    'equal to the number of cards in your hand plus the number of lands you control minus 0',
     'equal to one times the number of creatures you control',
     'equal to its',
     'the greatest power among creatures you control',
@@ -452,6 +479,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is its power',
     'where X is your devotion to black',
     'where X is half the number of Zombies you control, rounded down',
+    // Issue 25 (D-321, CR 107.1b): a number taken away, a negative result counting as 0.
+    'where X is the number of cards in your hand minus 4',
     'where X is the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards',
     'where X is the number of +1/+1 counters on ~',
     'where X is that card’s mana value',
@@ -473,6 +502,10 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the greatest power among creatures you control as you cast it',
     'where X is the greatest mana value among commanders',
     'where X is the number of Zombies you control.',
+    'where X is the number of cards in your hand minus',
+    'where X is the number of cards in your hand minus 0',
+    'where X is the number of cards in your hand minus four',
+    'where X is the number of cards in your hand minus X',
     'X is the number of Zombies you control',
     'where X is the amount of mana spent',
     'where X is the amount of mana spent to cast that spell',

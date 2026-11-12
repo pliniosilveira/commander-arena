@@ -1157,6 +1157,13 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       checkAmount(a.of, `${path}.of`, scope, out);
       break;
+    case 'minus':
+      // D-321, CR 107.1b: `of` less a whole number of 1 or more, floored at 0.
+      if (!Number.isSafeInteger(a.by) || a.by < 1) {
+        issue(out, `${path}.by`, 'a minus needs a whole number of 1 or more to take away');
+      }
+      checkAmount(a.of, `${path}.of`, scope, out);
+      break;
     case 'multiple':
       if (!Number.isSafeInteger(a.factor) || a.factor < 2) {
         issue(out, `${path}.factor`, 'a multiple needs a whole factor of 2 or more');
@@ -1956,6 +1963,12 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'lifeGainedThisTurn':
       // D-252, CR 119.3: the life the controller has gained this turn.
+      if (!isCount(c.atLeast) || c.atLeast < 1) {
+        issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
+      }
+      break;
+    case 'spellsCastThisTurn':
+      // D-318, CR 601.2i: the spells the controller has cast this turn.
       if (!isCount(c.atLeast) || c.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }

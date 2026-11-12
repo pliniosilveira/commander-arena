@@ -439,6 +439,7 @@ describe('unmatched abilities', () => {
       'condition.card-left-graveyard',
       'condition.cast-from-graveyard',
       'condition.mana-spent-or-more',
+      'condition.spells-cast-this-turn',
       'condition.player-declines',
       'condition.discarded-this-way',
       'condition.created-token',

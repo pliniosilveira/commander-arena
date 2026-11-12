@@ -319,6 +319,7 @@ class Binder {
         return { ...amount, of: this.noun(amount.of) };
       case 'half':
       case 'multiple':
+      case 'minus':
         return { ...amount, of: this.amount(amount.of) };
       case 'sum':
         return { ...amount, of: amount.of.map((part) => this.amount(part)) };

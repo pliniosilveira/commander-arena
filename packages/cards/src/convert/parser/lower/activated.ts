@@ -224,6 +224,9 @@ function lowerManaAbility(
     ...effects.map((e): FeatureRef => `manaAlso:${e.kind}`),
     ...(spendClause === undefined ? [] : (['ability:manaSpendOnly'] as const)),
     ...(riderClause === undefined ? [] : (['ability:manaSpentRider'] as const)),
+    ...(production.kind === 'anyCombination' && production.distinct === true
+      ? (['ability:manaDistinctColors'] as const)
+      : []),
   ];
   const blocked = gate(ability, needs);
   if (blocked !== null) return blocked;
@@ -352,7 +355,13 @@ function lowerManaInstead(
   const condition = lowerCondition(second.condition, false, newContext('ability', faceTypes));
   if (!condition.ok) return condition;
   const production = lowerMana(spec);
-  const blocked = gate(ability, ['ability:manaInstead', `manaProduction:${production.kind}`]);
+  const blocked = gate(ability, [
+    'ability:manaInstead',
+    `manaProduction:${production.kind}`,
+    ...(production.kind === 'anyCombination' && production.distinct === true
+      ? (['ability:manaDistinctColors'] as const)
+      : []),
+  ]);
   if (blocked !== null) return blocked;
   return {
     ok: true,
@@ -682,6 +691,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'manaProduction:chosenColor',
   'ability:manaSpendOnly',
   'ability:manaSpentRider',
+  'ability:manaDistinctColors',
   'manaProduction:anyCombination',
   'manaProduction:anyColorDevotion',
   'ability:activateOnlyIf',

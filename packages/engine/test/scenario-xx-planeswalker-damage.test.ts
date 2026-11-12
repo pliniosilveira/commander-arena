@@ -139,6 +139,21 @@ describe('damage that is not combat damage to a planeswalker (CR 120.3c)', () =>
     g.expect.counters(ANIMATE, { loyalty: 2 });
     g.expect.damage(ANIMATE, 3);
   });
+
+  test('lethal damage and 0 loyalty at once put it into the graveyard once (CR 704.3, 704.5g, 704.5i)', () => {
+    const g = scenario()
+      .seat(0)
+      .battlefield('Mountain', 'Mountain', ANIMATE)
+      .hand(BOLT, BOLT)
+      .build();
+    g.act(0).activate(ANIMATE, { ability: 0 });
+    g.passAll();
+    g.act(0).cast('Lightning Bolt[1]', { targets: [ANIMATE], pay: true });
+    g.passAll();
+    g.act(0).cast(BOLT, { targets: [ANIMATE], pay: true });
+    g.passAll();
+    g.expect.zone(ANIMATE, 'graveyard', { seat: 0 });
+  });
 });
 
 describe('prevention and redirection with a planeswalker as the recipient (CR 615, 614.9, 616.1)', () => {
