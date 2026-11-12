@@ -1,0 +1,77 @@
+Commander
+1x Niv-Mizzet, Visionary
+
+Mainboard
+1x Arcane Signet
+1x Bender's Waterskin
+1x Blasphemous Act
+1x Bolt Bend
+1x Boltwave
+1x Chain Reaction
+1x Chaos Warp
+1x Command Tower
+1x Counterspell
+1x Dragonologist
+1x Electrostatic Field
+1x Elixir of Immortality
+1x Expressive Iteration
+1x Fabled Passage
+1x Fact or Fiction
+1x Fading Hope
+1x Fiery Confluence
+1x Fiery Inscription
+1x Firebrand Archer
+1x Firemind Vessel
+1x Flame of Anor
+1x Flame Rift
+1x Frostboil Snarl
+1x Galvanic Iteration
+1x Guttersnipe
+12x Island
+1x Ivory Tower
+1x Izzet Charm
+1x Izzet Signet
+1x Lightning Greaves
+1x Living Conundrum
+1x Magic Damper
+1x Mana Geyser
+1x Master the Way
+16x Mountain
+1x Negate
+1x Ominous Seas
+1x Opt
+1x Prismari Charm
+1x Psychosis Crawler
+1x Pyromancer's Goggles
+1x Quistis Trepe
+1x Rapid Hybridization
+1x Reality Shift
+1x Reliquary Tower
+1x Ruinous Rampage
+1x Scorched Geyser
+1x Serum Visionary
+1x Shivan Reef
+1x Slagstorm
+1x Sol Ring
+1x Spiraling Embers
+1x Stella Lee, Wild Card
+1x Stock Up
+1x Stormcarved Coast
+1x Stormcatch Mentor
+1x Sulfur Falls
+1x Swiftfoot Boots
+1x Tablet of Discovery
+1x Talisman of Creativity
+1x Talrand, Sky Summoner
+1x Thermo-Alchemist
+1x Third Path Iconoclast
+1x Thought Vessel
+1x Thrill of Possibility
+1x Thunderclap Drake
+1x Thunderdrum Soloist
+1x Turbulent Springs
+1x Unruly Catapult
+1x Unsummon
+1x Untimely Malfunction
+1x Veyran, Voice of Duality
+1x Young Pyromancer

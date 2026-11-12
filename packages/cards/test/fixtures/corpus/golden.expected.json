@@ -555,6 +555,30 @@
       "reasons": [],
       "ast": "28a7effb"
     },
+    "19cf5798-4600-4a66-b1c7-de77bde157d0": {
+      "name": "Tablet of Discovery",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When ~ enters, mill a card. You may play that card this turn.",
+          "reason": "notRunnable",
+          "closestRule": "effect.may-play"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{T}: Add {R}{R}. Spend this mana only to cast instant and sorcery spells.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "dcf653b3"
+    },
     "19f5a25a-97fc-41e6-bb26-7c35f4b4e37c": {
       "name": "Lobelia Sackville-Baggins",
       "group": "acceptance",
@@ -627,6 +651,23 @@
       "reasons": [],
       "ast": "364c242c"
     },
+    "204b71fc-4d5f-40dd-903d-56c733171d84": {
+      "name": "Elixir of Immortality",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "{2}, {T}: You gain 5 life. Shuffle ~ and your graveyard into their owner's library.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "840c3d88"
+    },
     "20a6d576-a5b2-43b4-8be9-75be001e567d": {
       "name": "Treasure Nabber",
       "group": "acceptance",
@@ -659,6 +700,23 @@
       ],
       "reasons": [],
       "ast": "3661c4f4"
+    },
+    "2251e34e-4ce8-4452-9dc6-d8cce8583996": {
+      "name": "Stock Up",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.look-reorder"
+        }
+      ],
+      "reasons": [],
+      "ast": "f046f904"
     },
     "23467047-6dba-4498-b783-1ebc4f74b8c2": {
       "name": "Ancient Tomb",
@@ -811,6 +869,23 @@
       ],
       "reasons": [],
       "ast": "0cddcf4b"
+    },
+    "2c49d24a-98a4-43c2-bb59-1ef13d4214c2": {
+      "name": "Untimely Malfunction",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose one —\n• Destroy target artifact.\n• Change the target of target spell or ability with a single target.\n• One or two target creatures can't block this turn.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "modal.choose"
+        }
+      ],
+      "reasons": [],
+      "ast": "8587711c"
     },
     "2e2ace5b-4018-43af-8e72-ebafec1a7739": {
       "name": "Harmonic Prodigy",
@@ -1080,6 +1155,31 @@
       "reasons": [],
       "ast": "69007e1d"
     },
+    "378ae023-04d3-44cc-9248-3d787796ed6c": {
+      "name": "Living Conundrum",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "If you would draw a card while your library has no cards in it, skip that draw instead.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "replacement.enters-with-counters-kicked"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "As long as there are no cards in your library, ~ has base power and toughness 10/10 and has flying and vigilance.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "condition.cards-in-graveyard"
+        }
+      ],
+      "reasons": [],
+      "ast": "aa9c2fc2"
+    },
     "38a55562-1e2d-4240-9454-219a4a25d38d": {
       "name": "Lord Windgrace",
       "group": "acceptance",
@@ -1146,6 +1246,22 @@
       "reasons": [],
       "ast": "1d82c4ea"
     },
+    "3bc46467-323f-4cbf-9d0a-f3d2ae3c3a34": {
+      "name": "Bender's Waterskin",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Untap ~ during each other player's untap step.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "62b1b268"
+    },
     "3c037103-5af0-40a8-bbbe-7f3f5958b6e9": {
       "name": "Vraska, Relic Seeker",
       "group": "acceptance",
@@ -1161,6 +1277,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3c4bdf75"
+    },
+    "3c22e031-4804-4c31-bd3c-c3f29d456b34": {
+      "name": "Fiery Confluence",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose three. You may choose the same mode more than once.\n• ~ deals 1 damage to each creature.\n• ~ deals 2 damage to each opponent.\n• Destroy target artifact.",
+          "reason": "unrecognised",
+          "slot": "modal",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "cf442c42"
     },
     "3c4da169-1e50-4790-abdc-214e7b8a2ad5": {
       "name": "Thorin's Last Stand",
@@ -1209,6 +1342,40 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c61941b0"
+    },
+    "437b2dab-15e0-4b9a-a204-58622d37a3b3": {
+      "name": "Fact or Fiction",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "f342dfb5"
+    },
+    "43b5794a-4ed6-471d-bc45-22fac486895d": {
+      "name": "Thunderdrum Soloist",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever you cast an instant or sorcery spell, ~ deals 1 damage to each opponent. If five or more mana was spent to cast that spell, ~ deals 3 damage to each opponent instead.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "d30b60b2"
     },
     "446db5a4-21b0-44c1-b12b-d365313dd67a": {
       "name": "Clifftop Lookout",
@@ -1722,6 +1889,23 @@
       "reasons": [],
       "ast": "92c24290"
     },
+    "64883ef2-c536-42e2-b52f-cfd1984fcdfd": {
+      "name": "Fading Hope",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Return target creature to its owner's hand. If its mana value was 3 or less, scry 1.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "spell.effect"
+        }
+      ],
+      "reasons": [],
+      "ast": "4ff3d42c"
+    },
     "651c967c-8f71-4eb5-b22f-545e55ea050e": {
       "name": "Carnelian Orb of Dragonkind",
       "group": "holdout",
@@ -1972,6 +2156,23 @@
       ],
       "reasons": [],
       "ast": "ab936c3f"
+    },
+    "70dc830e-d05b-4fc7-88dd-879e140b3fbf": {
+      "name": "Reality Shift",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Exile target creature. Its controller manifests the top card of their library.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "14257b24"
     },
     "71355b51-e70e-47b0-8460-933af3567141": {
       "name": "Craterclaw Colossus",
@@ -2332,6 +2533,23 @@
       "reasons": [],
       "ast": "684c66a0"
     },
+    "821e8648-222c-4b33-a8bd-e8bfff7dcd9e": {
+      "name": "Quistis Trepe",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Blue Magic — When ~ enters, you may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "f0a1466e"
+    },
     "82bdf9cb-61fe-4eaf-8762-c32002403d96": {
       "name": "Magnificent End",
       "group": "acceptance",
@@ -2445,6 +2663,23 @@
       "reasons": [],
       "ast": "b50a16ee"
     },
+    "88d0a394-79e2-42ac-9a37-1a7b78231941": {
+      "name": "Thunderclap Drake",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{2}{U}, Sacrifice ~: When you next cast an instant or sorcery spell this turn, copy it for each time you've cast your commander from the command zone this game. You may choose new targets for the copies.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "ee0f81ea"
+    },
     "89ca686a-7c72-4d8f-9290-e89635624a83": {
       "name": "Cavern of Souls",
       "group": "training",
@@ -2548,6 +2783,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9de82797"
+    },
+    "8d0da2f9-0e05-4a94-8d42-fd57d06b09ba": {
+      "name": "Stella Lee, Wild Card",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{T}: Copy target instant or sorcery spell you control. You may choose new targets for the copy. Activate only if you've cast three or more spells this turn.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "restriction.if"
+        }
+      ],
+      "reasons": [],
+      "ast": "3aad4dcb"
     },
     "8d2b2675-19df-4f40-9e8e-196ec097b91c": {
       "name": "Sunscorched Divide",
@@ -3300,6 +3552,23 @@
       "reasons": [],
       "ast": "630f7928"
     },
+    "c3c25a2c-f71c-4cb7-9117-0bcda9248bfd": {
+      "name": "Prismari Charm",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose one —\n• Surveil 2, then draw a card.\n• ~ deals 1 damage to each of one or two targets.\n• Return target nonland permanent to its owner's hand.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.target-permanent"
+        }
+      ],
+      "reasons": [],
+      "ast": "b98cf592"
+    },
     "c3c802ba-dfbb-4f63-ae9a-e29c2e30013d": {
       "name": "Jeskai Ascendancy",
       "group": "acceptance",
@@ -3315,6 +3584,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9394df3a"
+    },
+    "c51ed6e3-813b-49c4-b1de-7f92a77f8f6e": {
+      "name": "Galvanic Iteration",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When you next cast an instant or sorcery spell this turn, copy that spell. You may choose new targets for the copy.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.cast"
+        }
+      ],
+      "reasons": [],
+      "ast": "97afa9d1"
     },
     "c5229c17-b7be-4b05-b683-f2277edc4849": {
       "name": "Enlightened Tutor",
@@ -3543,6 +3829,23 @@
       "reasons": [],
       "ast": "d1def719"
     },
+    "d416a4ed-9f16-4a8b-8aee-03c630e1eb6c": {
+      "name": "Ivory Tower",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "At the beginning of your upkeep, you gain X life, where X is the number of cards in your hand minus 4.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "amount.where-x"
+        }
+      ],
+      "reasons": [],
+      "ast": "0d25185b"
+    },
     "d4193f50-33b5-4201-ba03-eb135eced7ff": {
       "name": "Teshar, Ancestor's Apostle",
       "group": "acceptance",
@@ -3582,6 +3885,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "127c070a"
+    },
+    "d57a6b19-bd06-4b07-8ee1-0b45612ba9e4": {
+      "name": "Veyran, Voice of Duality",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "0a73517b"
     },
     "d683d985-9888-4d21-8b5f-69e69ce4a03b": {
       "name": "Path to Exile",
@@ -3631,6 +3950,23 @@
       "reasons": [],
       "ast": "4d69ece5"
     },
+    "d8afd7b0-7cd0-4caf-ac43-a0e24a93ca09": {
+      "name": "Firemind Vessel",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{T}: Add two mana of different colors.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.add-mana"
+        }
+      ],
+      "reasons": [],
+      "ast": "fd530fe9"
+    },
     "d90af00a-d322-4265-9954-7b1e80702e18": {
       "name": "Skyclave Apparition",
       "group": "acceptance",
@@ -3662,6 +3998,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "541e8b6f"
+    },
+    "d9f1dc61-831e-4244-a2da-aa9da6fd5b50": {
+      "name": "Niv-Mizzet, Visionary",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Whenever a source you control deals noncombat damage to an opponent, you draw that many cards.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.or"
+        }
+      ],
+      "reasons": [],
+      "ast": "afa6e9f9"
     },
     "da46786e-28df-4638-ab3d-121011d2f150": {
       "name": "Master Transmuter",
@@ -3912,6 +4265,23 @@
       "reasons": [],
       "ast": "2d451c01"
     },
+    "ecd49d85-9c8c-4cc9-9a83-072ecd433677": {
+      "name": "Flame of Anor",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose one. If you control a Wizard as you cast ~, you may choose two instead.\n• Target player draws two cards.\n• Destroy target artifact.\n• ~ deals 5 damage to target creature.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "modal.choose-commander"
+        }
+      ],
+      "reasons": [],
+      "ast": "d6fb444b"
+    },
     "ecd8d7f4-7b11-4097-afc0-ef3c81edd90c": {
       "name": "Serra Paragon",
       "group": "acceptance",
@@ -4141,6 +4511,23 @@
       "reasons": [],
       "ast": "b61e0a93"
     },
+    "f6791df0-a37b-44dc-8bf3-40ac2304d188": {
+      "name": "Dragonologist",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When ~ enters, look at the top six cards of your library. You may reveal an instant, sorcery, or Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.look-take"
+        }
+      ],
+      "reasons": [],
+      "ast": "5cc09ae5"
+    },
     "f6de5bd7-7704-4a0c-a27a-9e565e49f5e9": {
       "name": "Dragonstorm Globe",
       "group": "training",
@@ -4156,6 +4543,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0c5085da"
+    },
+    "f76bcbfe-483f-4e63-8425-76feca1abf3e": {
+      "name": "Pyromancer's Goggles",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "{T}: Add {R}. When that mana is spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "3e28624c"
     },
     "f7f435bc-1716-4412-9505-a1f2f2d83d08": {
       "name": "Dragonhawk, Fate's Tempest",
@@ -4465,7 +4869,7 @@
     },
     "acceptance": {
       "supported": 205,
-      "total": 222
+      "total": 245
     }
   }
 }
