@@ -1245,7 +1245,9 @@ function lowerStep(
     if (!lowered.ok) return stop(lowered);
     steps.push({
       effects: lowered.value,
-      replaceable: sentence.clauses.length === 1,
+      // "Roll a d6. If the result is 6, draw a card instead." (D-941, CR 706.3b, 608.2c): a roll is not replaced by the sentence after it, which reads its
+      // result: as the else of that sentence the roll would run after the test, with no result to read.
+      replaceable: sentence.clauses.length === 1 && first.verb !== 'roll',
       slots: [slotsFrom, ctx.targets.length],
     });
     return { last: i };

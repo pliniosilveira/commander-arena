@@ -198,6 +198,26 @@ describe('near misses are not read (SYNTHETIC)', () => {
     ).toBe(true);
   });
 
+  test('an "instead" sentence after a roll would replace the roll, so it is not read (CR 706.3b, 608.2c, 614.1a)', () => {
+    // The roll would become the else of the conditional that reads its result before the roll has happened: the die rolled and its result never read.
+    for (const type of ['sorcery', 'instant'] as const) {
+      expect(unread('Roll a d6. If the result is 6, draw a card instead.', type), type).toBe(true);
+      expect(unread('Roll a d6. If the result is 6, you gain 3 life instead.', type), type).toBe(
+        true,
+      );
+    }
+    expect(
+      unread(
+        'At the beginning of your upkeep, roll a d6. If the result is 6, you gain 3 life instead.',
+        'enchantment',
+      ),
+    ).toBe(true);
+    // A sentence after the roll is a different matter: it is run after the roll, so its replacement reads the result.
+    expect(
+      unread('Roll a d6. You gain 1 life. If the result is 6, you gain 3 life instead.', 'sorcery'),
+    ).toBe(false);
+  });
+
   test('"if ~ is in your graveyard" without the return of the card is not read', () => {
     // the card would be on the battlefield: an ability that does something else with the condition is not the engine's graveyard ability
     expect(

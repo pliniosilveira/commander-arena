@@ -6,6 +6,7 @@
 // object), SPEC 4.2 (all randomness comes from the seeded generator of the state, nowhere else). Cards are SYNTHETIC (src/cards/fixtures/synthetic-dice.ts).
 import { describe, expect, test } from 'vitest';
 import { nextInt, syntheticCard, validateCard } from '../src/index';
+import { evaluateCondition } from '../src/rules/conditions';
 import { type ScenarioGame, scenario } from '../src/testing/index';
 
 const ANGEL = 'SYNTHETIC Die Angel';
@@ -134,6 +135,29 @@ describe('the result is read by "If the result is ..." and by "Otherwise"', () =
     }
     // The values seen include a middle result (nothing happens).
     expect([...lifeAfter.values()]).toContain(20);
+  });
+
+  test('the edges of "2 or less" and "20" are exact: 1 and 2 lose 3, 3 does nothing, 19 does nothing, 20 gains 5', () => {
+    // A seed for each result at an edge, found by the generator of the state, so the result itself is pinned and not hoped for.
+    const seedFor = (result: number): number => {
+      for (let seed = 1; seed < 5000; seed += 1) {
+        if (expectedRoll(spellGame(WHEEL, seed), 20) === result) return seed;
+      }
+      throw new Error(`no seed in range rolls ${result}`);
+    };
+    for (const [result, life] of [
+      [1, 17],
+      [2, 17],
+      [3, 20],
+      [19, 20],
+      [20, 25],
+    ] as const) {
+      const g = spellGame(WHEEL, seedFor(result));
+      g.act(0).cast(WHEEL, { pay: true });
+      g.passAll();
+      expect(rolls(g).map((r) => r.result)).toEqual([result]);
+      g.expect.life(0, life);
+    }
   });
 
   test('a two-sided die gives 1 or 2 and the "otherwise" covers the other', () => {
@@ -293,5 +317,53 @@ describe('"At the beginning of your upkeep, if this card is in your graveyard, r
     expect(rolls(g)).toEqual([]);
     expect(g.state.rng).toEqual(rngBefore);
     g.expect.invariants();
+  });
+});
+
+describe("thisInYourGraveyard reads the card itself, in its owner's graveyard, for the controller of the ability (CR 113.6b, 108.4a, 400.7)", () => {
+  const IN_GRAVEYARD = { kind: 'thisInYourGraveyard' } as const;
+  const holds = (
+    g: ScenarioGame,
+    controller: 0 | 1,
+    source: ReturnType<ScenarioGame['id']> | null,
+  ) => evaluateCondition(g.state, IN_GRAVEYARD, { controller, source });
+
+  test('true for the card in the graveyard of the controller, false with no source', () => {
+    const g = scenario()
+      .seat(0)
+      .graveyard(ANGEL)
+      .seat(1)
+      .graveyard('Plains')
+      .at('precombatMain')
+      .build();
+    const angel = g.id({ name: ANGEL, zone: 'graveyard' });
+    expect(holds(g, 0, angel)).toBe(true);
+    // No source at all: nothing to be in a graveyard.
+    expect(holds(g, 0, null)).toBe(false);
+  });
+
+  test('false when the card is in another zone, whoever the controller is', () => {
+    for (const zone of ['battlefield', 'hand', 'exile', 'library'] as const) {
+      const b = scenario().seat(0);
+      const placed =
+        zone === 'battlefield'
+          ? b.battlefield(ANGEL)
+          : zone === 'hand'
+            ? b.hand(ANGEL)
+            : zone === 'exile'
+              ? b.exile(ANGEL)
+              : b.library(ANGEL, 'Plains');
+      const g = placed.seat(1).at('precombatMain').build();
+      const angel = g.id({ name: ANGEL, zone });
+      expect(holds(g, 0, angel), zone).toBe(false);
+    }
+  });
+
+  test("false for the card in an opponent's graveyard: a controller who does not own it does not read it as theirs", () => {
+    const g = scenario().seat(0).seat(1).graveyard(ANGEL).at('precombatMain').build();
+    const angel = g.id({ name: ANGEL, zone: 'graveyard' });
+    expect(g.object({ name: ANGEL, zone: 'graveyard' }).owner).toBe(1);
+    expect(holds(g, 1, angel)).toBe(true);
+    expect(holds(g, 0, angel)).toBe(false);
   });
 });
