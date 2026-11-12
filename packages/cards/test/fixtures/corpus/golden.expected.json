@@ -3105,6 +3105,17 @@
       "reasons": [],
       "ast": "82c84849"
     },
+    "b23587e0-9fb7-492e-8bb4-f218e8e4ce6c": {
+      "name": "Brisela, Voice of Nightmares",
+      "group": "holdout",
+      "status": "unsupported",
+      "unparsed": [],
+      "reasons": [
+        "layout \"meld\": this is the combined face of a meld pair, which exists only as the two meld cards put together (CR 712.4b)",
+        "layout \"meld\": the card data does not name its meld pair"
+      ],
+      "ast": "554c1a83"
+    },
     "b349f018-c20b-48b0-9e65-d5fd56b24b88": {
       "name": "Entreat the Angels",
       "group": "acceptance",
@@ -3211,14 +3222,11 @@
     },
     "bce7e45d-b2c5-43aa-91a6-3a3c24f30850": {
       "name": "Bruna, the Fading Light",
-      "group": "acceptance",
-      "status": "unsupported",
+      "group": "training",
+      "status": "supported",
       "unparsed": [],
-      "reasons": [
-        "layout \"meld\": the card data does not name the other card of its meld pair",
-        "layout \"meld\": the card data does not name its melded face"
-      ],
-      "ast": "6c6b4226"
+      "reasons": [],
+      "ast": "ccb41bea"
     },
     "bd39e333-b0b8-4a85-8645-d77f4a3941db": {
       "name": "Rabanastre, Royal City",
@@ -4112,14 +4120,11 @@
     },
     "f3e23d5e-bd88-4e7c-a3fb-db2a8cb05b22": {
       "name": "Gisela, the Broken Blade",
-      "group": "acceptance",
-      "status": "unsupported",
+      "group": "training",
+      "status": "supported",
       "unparsed": [],
-      "reasons": [
-        "layout \"meld\": the card data does not name the other card of its meld pair",
-        "layout \"meld\": the card data does not name its melded face"
-      ],
-      "ast": "5e9b0579"
+      "reasons": [],
+      "ast": "b8bc1bbf"
     },
     "f4ce6078-8c7b-4f68-b324-13130c63a983": {
       "name": "Angel of Serenity",
@@ -4468,16 +4473,16 @@
   },
   "summary": {
     "training": {
-      "supported": 163,
-      "total": 190
+      "supported": 165,
+      "total": 192
     },
     "holdout": {
       "supported": 54,
-      "total": 60
+      "total": 61
     },
     "acceptance": {
       "supported": 204,
-      "total": 224
+      "total": 222
     }
   }
 }
