@@ -45,6 +45,7 @@ const PLAIN_CONDITIONS: readonly Condition['kind'][] = [
   'playerDealtDamage',
   'lifeGainedThisTurn',
   'cardsInGraveyard',
+  'cardsInLibrary',
   'controlCommander',
   'yourTurn',
   'and',
@@ -52,20 +53,34 @@ const PLAIN_CONDITIONS: readonly Condition['kind'][] = [
   'not',
 ];
 
-function plainOnly(c: Condition, path: string, out: AstIssue[]): void {
+function plainOnly(
+  c: Condition,
+  path: string,
+  out: AstIssue[],
+  owner = 'a static ability that changes types or colors',
+): void {
   if (!PLAIN_CONDITIONS.includes(c?.kind)) {
     issue(
       out,
       path,
-      `a static ability that changes types or colors may only have a condition that reads no characteristic (a life total, a turn, what entered or what damage was dealt this turn, a commander), not ${kindOf(c)}`,
+      `${owner} may only have a condition that reads no characteristic (a life total, a turn, what entered or what damage was dealt this turn, the cards in a zone, a commander), not ${kindOf(c)}`,
     );
     return;
   }
   if (c.kind === 'and' || c.kind === 'or') {
-    for (const [i, t] of (c.terms ?? []).entries()) plainOnly(t, `${path}.terms[${i}]`, out);
+    for (const [i, t] of (c.terms ?? []).entries()) plainOnly(t, `${path}.terms[${i}]`, out, owner);
   } else if (c.kind === 'not') {
-    plainOnly(c.term, `${path}.term`, out);
+    plainOnly(c.term, `${path}.term`, out, owner);
   }
+}
+
+/**
+ * The `while` of a `skipDraw` replacement (D-941): read by `plainConditionHolds` as the draw would happen, for the controller of the permanent, with no
+ * trigger, source or earlier instruction, so it may only be a plain condition (the same set a layer 4 static ability may read).
+ */
+export function checkPlainCondition(c: Condition, path: string, out: AstIssue[]): void {
+  checkCondition(c, path, out);
+  plainOnly(c, path, out, 'a replacement of a draw');
 }
 
 /** Why a filter cannot be read by `derive` without the layers it is part of (D-111, D-120, D-131, D-133). */
@@ -119,6 +134,7 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
     case 'playerDealtDamage':
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
     case 'cardsInGraveyard': // D-229: the cards in a zone, which no layer changes
+    case 'cardsInLibrary': // D-940: the cards in a zone, which no layer changes
     case 'chosenOption': // D-151: what the permanent chose as it entered
     case 'paired': // D-286: the pair, read from the object table and no characteristic (`rules/pairing.ts`)
       return;

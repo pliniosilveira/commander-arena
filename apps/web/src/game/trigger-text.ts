@@ -430,6 +430,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         trigger.filter === undefined ? 'a creature' : filterPhrase(trigger.filter, 'creature');
       return victim === null ? null : `${head} to ${victim}`;
     }
+    case 'noncombatDamageDealt': {
+      // D-942 (CR 120.2b, 603.2c): "Whenever a source you control deals noncombat damage to an opponent".
+      const source = trigger.by === 'you' ? 'a source you control' : 'a source';
+      return `Whenever ${source} deals noncombat damage to ${trigger.to === 'opponent' ? 'an opponent' : 'a player'}`;
+    }
     case 'castSpell': {
       // CR 601.2i, 603.2 (D-183): the spell's own ability, "When you cast this spell".
       if (trigger.self === true) return 'When you cast this spell';

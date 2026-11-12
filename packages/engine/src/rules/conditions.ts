@@ -10,6 +10,7 @@ import { amountOf, playerStatOf, statOf } from './amounts';
 import { chosenOf } from './chosen';
 import {
   cardsInGraveyardHolds,
+  cardsInLibraryHolds,
   controlsCommander,
   enteredThisTurnHolds,
   lifeGainedThisTurnHolds,
@@ -389,6 +390,8 @@ export function evaluateCondition(
       return enteredThisTurnHolds(state, ctx.controller, condition);
     case 'cardsInGraveyard':
       return cardsInGraveyardHolds(state, ctx.controller, condition.compare);
+    case 'cardsInLibrary':
+      return cardsInLibraryHolds(state, ctx.controller, condition.compare);
     case 'playerDealtDamage':
       // D-151, CR 120.3: the damage dealt to the controller, or to an opponent, this turn.
       return playerDealtDamageHolds(state, ctx.controller, condition);

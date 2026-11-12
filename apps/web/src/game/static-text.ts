@@ -36,6 +36,7 @@ import {
   entersOptionText,
   unspentManaText,
 } from './dragons-text';
+import { skipDrawWording } from './draw-skip-text';
 import { pluralSubtype, thingsPhrase } from './filter-text';
 import { ptChangeText } from './pt-text';
 import { keepsDamageWording, redirectDamageWording } from './redirect-text';
@@ -363,6 +364,8 @@ export function replacementWording(replacement: Replacement, noun = 'permanent')
     const group = groupPhrase(replacement.what);
     return group === null ? null : `${capital(group)} enter untapped`;
   }
+  // D-941 (CR 614.11): "If you would draw a card while your library has no cards in it, skip that draw instead".
+  if (replacement.kind === 'skipDraw') return skipDrawWording(replacement);
   // D-192 (CR 614.9): "All damage that would be dealt to you and other permanents you control is dealt to this creature instead".
   if (replacement.kind === 'redirectDamage') return redirectDamageWording(replacement, noun);
   if (replacement.kind !== 'wouldDie') return null;

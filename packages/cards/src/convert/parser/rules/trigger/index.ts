@@ -35,6 +35,7 @@ import { EDHREC_TRIGGER_RULES } from './edhrec';
 import { EVENT_TRIGGER_RULES } from './events';
 import { HOFRI_TRIGGER_RULES } from './hofri';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
+import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { RECURSION_TRIGGER_RULES } from './recursion';
 import {
   isPlainLandYouControl,
@@ -1029,6 +1030,8 @@ export const TRIGGER_RULES = [
   TRIGGER_UPKEEP,
   TRIGGER_END_STEP,
   ...EVENT_TRIGGER_RULES,
+  // Issue 25 (D-942): "a source you control deals noncombat damage to an opponent".
+  ...NONCOMBAT_DAMAGE_TRIGGER_RULES,
   // Stage P49 (D-206): "one or more other creatures and/or artifacts you control die", "you discard a card".
   ...VRASKA_TRIGGER_RULES,
   TRIGGER_CHAPTER,

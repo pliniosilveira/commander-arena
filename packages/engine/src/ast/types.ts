@@ -2567,6 +2567,21 @@ export type Trigger =
       readonly filter?: ObjectFilter;
     }
   /**
+   * "Whenever a source you control deals noncombat damage to an opponent" (CR 120.2b, 603.2, 603.2c, D-942): once for each source and each player it
+   * damages, as the damage is dealt, however it was dealt (a spell, an ability, a permanent's trigger) except combat damage (CR 120.2a). Any
+   * object can be the source, a spell on the stack and a permanent that has left included (its controller is read as it last was, CR 113.7a), so it is
+   * not a permanent with a filter: `by` names whose source it is (`you`: a source the controller of this ability controls; `any`) and `to` the player
+   * damaged (`opponent`: a player the controller of this ability does not control; `player`: any player). Damage that is prevented entirely, or is 0,
+   * is not dealt (CR 120.8, 603.2g) and triggers nothing; damage that is redirected to a permanent (CR 614.9) is not dealt to a player. Damage that
+   * several sources deal at once, or one source deals to several players, is several events and triggers once for each (CR 603.2c). `triggerDamage` is
+   * the amount that source dealt to that player ("that much") and `triggerPlayer` the player damaged.
+   */
+  | {
+      readonly kind: 'noncombatDamageDealt';
+      readonly by: 'you' | 'any';
+      readonly to: 'opponent' | 'player';
+    }
+  /**
    * "Whenever [a creature | this] is dealt damage" (CR 120.3, 603.2, D-133): once for each source that deals damage to
    * the permanent `what` names (a creature, a planeswalker or a battle), in the moment the damage is dealt, so it
    * triggers for damage that kills it, and not for damage that is entirely prevented (CR 603.2g). `combat: true` is
@@ -3269,6 +3284,12 @@ export type Condition =
    */
   | { readonly kind: 'cardsInGraveyard'; readonly compare: NumberComparison }
   /**
+   * "As long as there are no cards in your library", "while your library has no cards in it" (D-940, CR 401.1): the number of cards in the library of the
+   * controller of the thing that asks meets the comparison (`atMost` 0 is "no cards"). Like `cardsInGraveyard` it reads no characteristic, so a static
+   * ability that works in layer 4 or 7b may have it; it is also the `while` of a `skipDraw` replacement.
+   */
+  | { readonly kind: 'cardsInLibrary'; readonly compare: NumberComparison }
+  /**
    * "If it escaped", "unless it escaped" (CR 702.138b, D-124): the spell that is resolving, or the permanent (and
    * its last-known information once it has left), was cast from a graveyard with an escape ability.
    * "Unless it escaped" is `not` of this. Only on a face that lists an escape cost.
@@ -3703,7 +3724,17 @@ export type Replacement =
       readonly you: boolean;
       /** The other permanents among the recipients ("other permanents you control"): no zone, `controller: 'you'`. */
       readonly permanents?: ObjectFilter;
-    };
+    }
+  /**
+   * "If you would draw a card, skip that draw instead." (D-941, CR 614.1a, 614.11, 121.6): a replacement effect of a permanent on the battlefield
+   * for every card its controller would draw, by an effect or by the draw step. The draw simply does not happen: no card moves, nothing was
+   * drawn (no "whenever you draw" ability triggers, CR 121.1) and, as the draw was not attempted, the player does not lose for an empty library
+   * (CR 121.4, 704.5b). It applies even when the library has no cards (CR 614.11, 121.6a). With `while`, "If you would draw a card while your library
+   * has no cards in it, skip that draw instead": it applies only while the condition holds for the controller as the draw would happen (a plain
+   * condition: `PLAIN_CONDITIONS` of `validate-static-condition.ts`). It is the ability of the permanent (lost with "loses all abilities"). When
+   * the other cards of a sequence of draws are not skipped they are still drawn (CR 614.11a, 121.6b): each draw is replaced on its own.
+   */
+  | { readonly kind: 'skipDraw'; readonly while?: Condition };
 
 // ---- Static abilities (CR 604)
 

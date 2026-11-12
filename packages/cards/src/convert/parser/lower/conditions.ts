@@ -170,6 +170,13 @@ export function lowerCondition(
       const { cmp, value } = test.compare;
       return ok({ kind: 'cardsInGraveyard', compare: { cmp, value } });
     }
+    case 'cardsInLibrary': {
+      // CR 401.1 (issue 25, D-940): the number of cards in the library of the controller.
+      const blocked = missingFeatures(['condition:cardsInLibrary']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const { cmp, value } = test.compare;
+      return ok({ kind: 'cardsInLibrary', compare: { cmp, value } });
+    }
     case 'paired': {
       // "~ is paired with another creature" (D-286, CR 702.95b): the permanent the ability belongs to is paired now; "it" is the source only in an
       // ability about the source itself (as for "it was kicked").
@@ -460,6 +467,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:controlCommander',
   'condition:lifeTotal',
   'condition:cardsInGraveyard',
+  'condition:cardsInLibrary',
   'condition:subjectControllerHasMore',
   'condition:triggerPlayerHasMore',
   'condition:thisMatches',

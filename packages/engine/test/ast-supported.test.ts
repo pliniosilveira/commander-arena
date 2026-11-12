@@ -300,6 +300,7 @@ describe('supported feature gate', () => {
         'leavesBattlefield',
         'leftGraveyard',
         'lifeGained',
+        'noncombatDamageDealt',
         'permanentSacrificed',
         'ringTempted',
         'state',

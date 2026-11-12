@@ -507,6 +507,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.equip-commander': asIs,
   // Stage P66 (D-219): the replacement of the creation of tokens is a line of its own.
   'replacement.tokens-instead': asIs,
+  // Issue 25 (D-941): the line of its own; the trigger follows "Whenever".
+  'replacement.skip-draw': asIs,
+  'trigger.noncombat-damage': whenever,
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
@@ -554,6 +557,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.enters-one-or-more-creatures': whenever,
   'trigger.you-create-tokens': whenever,
   'condition.cards-in-graveyard': permanent((e) => `As long as ${e}, ~ has flying.`),
+  'condition.cards-in-library': permanent((e) => `As long as ${e}, ~ has flying.`),
   'condition.opponents-control-at-least': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.that-player-more-lands': permanent(
     (e) => `Whenever a land an opponent controls enters, if ${e}, you gain 1 life.`,

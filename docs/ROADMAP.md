@@ -207,6 +207,12 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `untapInOthersUntapStep` with `self` (D-320) has no condition and no "untap target land" form; the untap of a player's permanents in another player's untap step ignores "doesn't untap during your untap step" as D-229 says, and a stun counter is removed instead.
 - `Amount` `minus` (D-321) takes digits of 1 or more, applies to an atom or a sum, and not to "half ...", "twice ..." or a static ability's power or toughness; "minus X" and a word number ("minus four") are not read.
 
+## The Niv-Mizzet deck, group 2b-a (issue 25, provisional D-940 to D-944)
+
+- `skipDraw` (D-941) only skips the draw. A replacement that does something else instead of a draw ("If you would draw a card, exile the top card of your library instead", CR 614.11b: nothing more is done to a card drawn by the replacement) is not built, and the replaced player is the controller of the permanent ("If an opponent would draw a card ..." and "If a player would draw ..." are not read). Its `while` is a plain condition of the controller; a condition on what is on the battlefield is not.
+- `cardsInLibrary` (D-940) is the controller's own library, compared with "no", "fewer than N" (and the engine's "at least" and "exactly", which no rule reads): "an opponent's library" and a kind of card in it are not read.
+- `noncombatDamageDealt` (D-942) reads the source's controller and the player damaged only: a kind of source ("a creature you control deals noncombat damage"), a batch ("one or more"), damage to a creature, a planeswalker or "you", and "that damage" of a different amount are not read. The ruling that it triggers once for each player one spell damages follows CR 603.2c and `damage.ts` (one event for each recipient); the Scryfall rulings could not be fetched in this session (UNVERIFIED against them).
+
 ## The Niv-Mizzet deck leftovers (issue 25, D-299 to D-302)
 
 - "Shuffle ~ and your graveyard into their owner's library" (D-299) is not lowered in a dies trigger of `~` or in an ability whose cost sacrifices `~` (`ctx.selfGone`): the source is then a card in a graveyard, which `this` does not name as the object to move. No known card words it; reading it would need the effect to name the card of the source (`thisCard`) for the first move.

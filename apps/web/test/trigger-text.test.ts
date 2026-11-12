@@ -177,6 +177,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   step: { kind: 'step', step: 'beginCombat', whose: 'you' },
   drawn: { kind: 'drawn', who: 'you' },
   dealsCombatDamage: { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'player' },
+  noncombatDamageDealt: { kind: 'noncombatDamageDealt', by: 'you', to: 'opponent' },
   dealtDamage: { kind: 'dealtDamage', what: { kind: 'this' } },
   leavesBattlefield: { kind: 'leavesBattlefield', what: { kind: 'this' } },
   permanentSacrificed: { kind: 'permanentSacrificed', by: 'you' },

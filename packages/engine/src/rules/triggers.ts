@@ -222,6 +222,23 @@ function occurrences(
             },
           ]
         : [];
+    case 'noncombatDamageDealt':
+      // CR 120.2b, 603.2c (D-942): one occurrence for each source and each player it damages. Damage that was prevented entirely, or is 0, has no
+      // `damageDealt` event (CR 603.2g); the controller of the source is read as it is or as it last was (CR 113.7a).
+      return event.kind === 'damageDealt' &&
+        !event.combat &&
+        event.to.kind === 'player' &&
+        event.amount > 0
+        ? [
+            {
+              subject: event.source,
+              seat: controllerOfSource(state, event.source),
+              damaged: event.to,
+              damage: event.amount,
+              player: event.to.seat,
+            },
+          ]
+        : [];
     case 'dealtDamage':
       // CR 120.3, 603.2 (D-133): one occurrence for each source that damages a permanent, when the damage is dealt.
       // The controller of the source is the player "that creature's controller" names.
@@ -595,6 +612,13 @@ function matches(
           ctx,
         )
       );
+    }
+    case 'noncombatDamageDealt': {
+      // D-942: the source is controlled by the controller of this ability (`you`), and the player damaged is an opponent of it, or any player.
+      if (trigger.by === 'you' && occ.seat !== candidate.controller) return false;
+      const damaged = occ.damaged;
+      if (damaged?.kind !== 'player') return false;
+      return trigger.to === 'player' || damaged.seat !== candidate.controller;
     }
     case 'leavesBattlefield':
       // D-135: one zone or several ("dies or is put into exile from the battlefield").

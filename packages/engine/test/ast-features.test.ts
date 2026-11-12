@@ -92,6 +92,8 @@ describe('the dimensions', () => {
       'subjectControllerHasMore',
       'triggerPlayerHasMore',
       'cardsInGraveyard',
+      // D-940: "as long as there are no cards in your library".
+      'cardsInLibrary',
       'escaped',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',

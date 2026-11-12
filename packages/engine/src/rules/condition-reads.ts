@@ -28,6 +28,18 @@ export function cardsInGraveyardHolds(
   return n === compare.value;
 }
 
+/** CR 401.1 (D-940): the number of cards in `seat`'s library meets the comparison ("no cards" is at most 0). */
+export function cardsInLibraryHolds(
+  state: GameState,
+  seat: SeatId,
+  compare: Extract<Condition, { kind: 'cardsInLibrary' }>['compare'],
+): boolean {
+  const n = getSeat(state, seat).library.length;
+  if (compare.cmp === 'atLeast') return n >= compare.value;
+  if (compare.cmp === 'atMost') return n <= compare.value;
+  return n === compare.value;
+}
+
 /**
  * CR 119.1, 903.7 (D-133): whether `seat`'s life total, or its difference from the life total the players started with, meets
  * the comparison.
@@ -128,6 +140,8 @@ export function plainConditionHolds(
       return lifeGainedThisTurnHolds(state, controller, condition);
     case 'cardsInGraveyard':
       return cardsInGraveyardHolds(state, controller, condition.compare);
+    case 'cardsInLibrary':
+      return cardsInLibraryHolds(state, controller, condition.compare);
     case 'ownTurnNumber': {
       if (state.turn.activeSeat !== controller) return false;
       const turns = getSeat(state, controller).turnsTaken;

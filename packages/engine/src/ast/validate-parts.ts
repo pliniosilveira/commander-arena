@@ -1266,7 +1266,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(
           out,
           path,
-          "'triggerDamage' needs a triggered ability whose trigger is damage being dealt (dealtDamage or dealsCombatDamage) or life being gained (lifeGained)",
+          "'triggerDamage' needs a triggered ability whose trigger is damage being dealt (dealtDamage, dealsCombatDamage or noncombatDamageDealt) or life being gained (lifeGained)",
         );
       }
       break;
@@ -1934,6 +1934,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.token`, 'token must be a boolean when present');
       }
       break;
+    case 'cardsInLibrary': // D-940, CR 401.1: the same shape, for the library
     case 'cardsInGraveyard':
       // D-229, CR 404.1: the number of cards in the controller's graveyard against a whole number.
       if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
