@@ -172,11 +172,10 @@ function checkHidden(t: Tally, step: Step): void {
         false,
       );
       if (s.oracleId !== null) expect(text.includes(s.oracleId)).toBe(false);
-      if (s.text !== '' && !visible.has(s.name)) expect(text.includes(JSON.stringify(s.text))).toBe(false);
+      if (s.text !== '' && !visible.has(s.name))
+        expect(text.includes(JSON.stringify(s.text))).toBe(false);
       if (!visible.has(s.name)) {
-        expect(text.includes(JSON.stringify(s.name)), `view ${viewer}: name ${s.name}`).toBe(
-          false,
-        );
+        expect(text.includes(JSON.stringify(s.name)), `view ${viewer}: name ${s.name}`).toBe(false);
       }
     }
   }
@@ -219,7 +218,8 @@ function checkRules(t: Tally, kinds: readonly [Kind, Kind], step: Step): void {
       );
       expect(entry, 'the zone change of a manifest').toBeDefined();
       expect(entry?.kind === 'zoneChanged' ? entry.card : 'x', 'it names no card').toBeNull();
-      const def = made?.card === null || made === undefined ? undefined : definitionOf(after, made.card);
+      const def =
+        made?.card === null || made === undefined ? undefined : definitionOf(after, made.card);
       if (def !== undefined && !def.types.includes('creature')) t.manifestedNonCreature += 1;
     }
     if (e.kind === 'turnedFaceUp') {
@@ -334,7 +334,10 @@ test(
   async () => {
     const total = newTally();
     for (let g = 1; g <= GAMES; g += 1) {
-      const styles = MANIFEST_STYLE_PAIRS[g % MANIFEST_STYLE_PAIRS.length] ?? ['manifest', 'manifest'];
+      const styles = MANIFEST_STYLE_PAIRS[g % MANIFEST_STYLE_PAIRS.length] ?? [
+        'manifest',
+        'manifest',
+      ];
       const config = smallGameConfig(g, styles);
       const kinds: readonly [Kind, Kind] = [
         KINDS[g % 4] ?? 'random',
@@ -355,7 +358,9 @@ test(
       expect(stateHash(replayGame(config, run.log)), tag).toBe(stateHash(run.state));
       add(total, t);
     }
-    console.log(`${GAMES} manifest games: ${JSON.stringify(total)} (${MANIFEST_NAMES.length} cards)`);
+    console.log(
+      `${GAMES} manifest games: ${JSON.stringify(total)} (${MANIFEST_NAMES.length} cards)`,
+    );
     // The audit was not vacuous at any size: face-down permanents were on the table and were checked.
     expect(total.manifested).toBeGreaterThan(0);
     expect(total.secretsChecked).toBeGreaterThan(0);
@@ -365,7 +370,10 @@ test(
     expectPath(total.turnedUpHeuristic, 'a heuristic agent turning one up');
     expectPath(total.offered, 'the option to turn one up');
     expectPath(total.opponentViews, 'the view of a face-down permanent of the other seat');
-    expectPath(total.revealedByLeaving, 'a face-down permanent revealed by leaving the battlefield');
+    expectPath(
+      total.revealedByLeaving,
+      'a face-down permanent revealed by leaving the battlefield',
+    );
     expectPath(total.manifestedNonCreature, 'a card that is not a creature card, manifested');
   },
   soakTimeout(600_000),

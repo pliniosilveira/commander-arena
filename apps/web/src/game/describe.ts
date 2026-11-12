@@ -28,9 +28,9 @@ import {
   regeneratedText,
 } from './describe-keywords2';
 import { castNowAnswerLine, foretoldLine, isForetellMove } from './describe-later';
-import { manifestedLine, turnedUpLine } from './face-down-text';
 import { mayEffectLine, unlessAnswerLine, unlessCancelLine } from './describe-unless';
 import { counteredByDeclining, unlessPayment, unlessQuestion } from './describe-ward';
+import { manifestedLine, turnedUpLine } from './face-down-text';
 import { riotAnswerText } from './keywords-text';
 import { timeCounters } from './later-text';
 import { modeText } from './mode-text';
@@ -1409,7 +1409,11 @@ export function describeEvent(
       // CR 701.40a (D-962, D-968): the top card of a library was put onto the battlefield face down; no card is named (CR 708.5).
       const mine = event.seat === viewer;
       const library =
-        event.from === viewer ? 'your library' : event.from === event.seat ? 'their library' : "the opponent's library";
+        event.from === viewer
+          ? 'your library'
+          : event.from === event.seat
+            ? 'their library'
+            : "the opponent's library";
       return line(
         'major',
         manifestedLine(who(event.seat) as 'You' | 'Opponent', mine, library),
@@ -1422,7 +1426,11 @@ export function describeEvent(
       // CR 116.2b, 701.40b, 708.8 (D-963, D-968): a special action; the card is public from now on, so it is named.
       return line(
         'major',
-        turnedUpLine(who(event.seat) as 'You' | 'Opponent', event.seat === viewer, name(event.object)),
+        turnedUpLine(
+          who(event.seat) as 'You' | 'Opponent',
+          event.seat === viewer,
+          name(event.object),
+        ),
         event.seat,
         [event.object],
         'CR 701.40b',

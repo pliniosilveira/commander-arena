@@ -8,6 +8,7 @@ import type { ObjectView } from '@commander-arena/engine';
 import type { CSSProperties } from 'react';
 import { alternativeBadge } from '../../game/alt-cost';
 import { chosenLabel } from '../../game/chosen';
+import { faceDownBadgeTitle, isFaceDownPermanent } from '../../game/face-down-text';
 import { loreBadge } from '../../game/saga';
 import { isBackFaceUp, isMelded, meldedFrom } from '../decisions/layouts';
 import { useDraggable, useDropZone } from '../dnd/DragProvider';
@@ -15,6 +16,7 @@ import { EVERY_CREATURE_TYPE, hasEveryCreatureType, kickedWords } from '../forma
 import { useInteraction } from '../interaction';
 import { useDefinedPt } from '../store-context';
 import { Art, artOf } from './art';
+import { FaceDownArt } from './face-down-art';
 import { useHoverPreview } from './hover';
 import { chipsOf, restrictionName } from './keywords';
 import { usePairFocus } from './pair-focus';
@@ -169,13 +171,18 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
       {count > 1 && <span className="board-tile-stack" aria-hidden="true" />}
       <span className="board-tile-inner">
         <span className="board-tile-band" style={{ background: bandBackground(o.colors) }} />
-        <Art
-          name={art.name}
-          back={art.back}
-          isToken={o.isToken}
-          version="art_crop"
-          className="board-tile-art"
-        />
+        {isFaceDownPermanent(o) ? (
+          // D-968: a face-down permanent is drawn with the picture of the Manifest token (the same for every card); the tile stays a plain card back without it.
+          <FaceDownArt version="art_crop" className="board-tile-art" />
+        ) : (
+          <Art
+            name={art.name}
+            back={art.back}
+            isToken={o.isToken}
+            version="art_crop"
+            className="board-tile-art"
+          />
+        )}
         <span className="board-tile-name">{o.name}</span>
         {o.isToken && h >= 64 && (
           <span className="board-tile-token" data-token-line>
@@ -197,6 +204,15 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
         )}
         <span className="board-tile-foot">
           <span className="board-tile-chips">
+            {isFaceDownPermanent(o) && (
+              <span
+                className="board-flag"
+                title={faceDownBadgeTitle(o)}
+                data-face-down-flag={o.faceDownBy}
+              >
+                face down
+              </span>
+            )}
             {o.summoningSick && isCreatureView(o) && (
               <span className="board-flag" title="Summoning sick">
                 zz

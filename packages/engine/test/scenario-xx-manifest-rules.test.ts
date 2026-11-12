@@ -56,7 +56,14 @@ function game(
   at: Parameters<Builder['at']>[1] = { active: 0, turn: 3 },
 ): ScenarioGame {
   return theirs(
-    mine(scenario().define(mirror).define(phase).seat(0).life(20).library(...FILLER))
+    mine(
+      scenario()
+        .define(mirror)
+        .define(phase)
+        .seat(0)
+        .life(20)
+        .library(...FILLER),
+    )
       .seat(1)
       .life(20)
       .library(...theirTop, ...FILLER),
@@ -87,7 +94,8 @@ describe('leaving the battlefield (CR 708.9, 400.7)', () => {
     expect(dead.faceDown).toBeUndefined();
     expect(dead.id).not.toBe(old);
     const events = g.eventsSince(mark);
-    expect(events.find(
+    expect(
+      events.find(
         (e) => e.kind === 'zoneChanged' && e.fromZone === 'battlefield' && e.toZone === 'graveyard',
       ),
     ).toMatchObject({ card });
@@ -160,8 +168,9 @@ describe('copying (CR 707.2, 708.10)', () => {
 
   test('a creature that becomes a copy of a face-down permanent is a 2/2 with no name (CR 707.2)', () => {
     const g = game((b) =>
-      lands(b.seat(0).hand(DOPPEL).battlefield('Grizzly Bears').battlefield(BRUTE, { faceDown: true }))
-        .seat(0),
+      lands(
+        b.seat(0).hand(DOPPEL).battlefield('Grizzly Bears').battlefield(BRUTE, { faceDown: true }),
+      ).seat(0),
     );
     g.act(0).cast(DOPPEL, { targets: ['Grizzly Bears', BRUTE], pay: true });
     g.passAll();

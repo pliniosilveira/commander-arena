@@ -61,7 +61,11 @@ describe('Reality Shift played', () => {
             .seat(1)
             .life(20)
             .library('Llanowar Elves', ...FILLER)
-        : mine.battlefield('Grizzly Bears').seat(1).life(20).library('Llanowar Elves', ...FILLER)
+        : mine
+            .battlefield('Grizzly Bears')
+            .seat(1)
+            .life(20)
+            .library('Llanowar Elves', ...FILLER)
     )
       .at('precombatMain')
       .build();

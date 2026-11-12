@@ -48,8 +48,7 @@ export function hasActivation(decision: PriorityDecision, id: ObjectId): boolean
 export function hasSpecialAction(decision: PriorityDecision, id: ObjectId): boolean {
   return decision.options.some(
     (o) =>
-      (o.kind === 'suspend' || o.kind === 'foretell' || o.kind === 'turnFaceUp') &&
-      o.object === id,
+      (o.kind === 'suspend' || o.kind === 'foretell' || o.kind === 'turnFaceUp') && o.object === id,
   );
 }
 

@@ -38,12 +38,12 @@ import type {
 import { getView } from '@commander-arena/engine';
 import { hasStorm } from './casual-copies';
 import { discountsHand } from './casual-costs';
+import { turnUpCandidates } from './casual-face-down';
 import { isHelpfulSpell } from './casual-helpful';
 import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey } from './casual-prevention';
 import { choosePriorityAction, type Play, spellPlays, spendOf, withFace } from './casual-priority';
 import { hasKeyword, manaValueOf } from './casual-view';
-import { turnUpCandidates } from './casual-face-down';
 import { creatureValue, evaluate } from './evaluate';
 import type { Think } from './heuristic-budget';
 import { planLand } from './heuristic-lands';
@@ -259,7 +259,12 @@ function scoreCast(
  * with it turned up scores better than without, by the same margin a trick must beat. The agent reads its own card through `ifFaceUp` (the view of an opponent's has
  * nothing of it); the sample it plays on is determinized for it, so the cards that are not its own are drawn again.
  */
-function faceUpWindow(view: GameView, d: PriorityDecision, think: Think, answer: Answer): PriorityChoice | null {
+function faceUpWindow(
+  view: GameView,
+  d: PriorityDecision,
+  think: Think,
+  answer: Answer,
+): PriorityChoice | null {
   if (view.step !== 'declareBlockers' || view.combat === null || view.stack.length > 0) {
     return null;
   }
@@ -285,7 +290,11 @@ function faceUpWindow(view: GameView, d: PriorityDecision, think: Think, answer:
       answer,
       think.budget,
     );
-    if (score !== null && score > base + TRICK_MARGIN && (best === undefined || score > best.score)) {
+    if (
+      score !== null &&
+      score > base + TRICK_MARGIN &&
+      (best === undefined || score > best.score)
+    ) {
       best = { object: c.object.id, score };
     }
   }

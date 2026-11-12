@@ -378,8 +378,8 @@ export function PreviewPanel() {
           {real !== null && (
             // CR 708.5 (D-968): the player who controls a face-down permanent may look at the card. The marker says what the others see.
             <p className="board-flag" data-preview-face-down>
-              Face down. Only you can see this card; {object.name}, a {object.power}/{object.toughness} creature, is
-              what everyone sees.
+              Face down. Only you can see this card; {object.name}, a {object.power}/
+              {object.toughness} creature, is what everyone sees.
             </p>
           )}
           <div className="board-preview-card" data-preview-id={object.id}>

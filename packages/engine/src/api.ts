@@ -52,6 +52,7 @@ import {
   answerDamage,
 } from './rules/combat-flow';
 import { answerCopyTargets } from './rules/copy-spell-answer';
+import { answerTurnFaceUpPayment, beginTurnFaceUp } from './rules/face-down-actions';
 import {
   afterResolution,
   answerMiracleDraw,
@@ -79,7 +80,6 @@ import { evaluateGameEnd } from './rules/sba';
 import { setPending } from './rules/set-pending';
 import { bottomCards, keepHand, takeMulligan } from './rules/setup';
 import { sharesLandType } from './rules/share-type';
-import { answerTurnFaceUpPayment, beginTurnFaceUp } from './rules/face-down-actions';
 import { answerSpecialPayment, beginSpecialAction } from './rules/special-actions';
 import {
   answerResolutionArrange,

@@ -19,9 +19,6 @@ import {
   turnUpPayPrompt,
 } from '../src/game/face-down-text';
 import { staticNotes } from '../src/game/static-notes';
-import { menuItems } from '../src/ui/decisions/abilities';
-import { payBarPrompt, payCancelLabel } from '../src/ui/decisions/payment';
-import { playableObjects } from '../src/ui/decisions/priority';
 import {
   MANIFEST_TOKEN_LOOKUP,
   MANIFEST_TOKEN_NUMBER,
@@ -30,6 +27,9 @@ import {
   parseManifestArt,
   resetManifestTokenArt,
 } from '../src/ui/board/face-down-art';
+import { menuItems } from '../src/ui/decisions/abilities';
+import { payBarPrompt, payCancelLabel } from '../src/ui/decisions/payment';
+import { playableObjects } from '../src/ui/decisions/priority';
 import { lookupIndexFor } from './decisions-helpers';
 
 const SELF = 'SYNTHETIC Manifest Self';
@@ -77,7 +77,7 @@ describe('the log says a manifest without naming the card', () => {
     expect(text.join('\n')).not.toMatch(/library to battlefield/);
   });
 
-  test("the player who did it reads \"You manifest the top card of your library\", and no card either", () => {
+  test('the player who did it reads "You manifest the top card of your library", and no card either', () => {
     const text = lines(events, before, g.state, 1);
     expect(text).toContain('You manifest the top card of your library.');
     expect(text.join('\n')).not.toContain(BRUTE);
@@ -239,7 +239,9 @@ describe('the Manifest token picture', () => {
       art_crop: ANSWER.image_uris.art_crop,
     });
     expect(parseManifestArt({ image_uris: { normal: 'https://evil.example/x.jpg' } })).toBeNull();
-    expect(parseManifestArt({ image_uris: { normal: 'http://cards.scryfall.io/x.jpg' } })).toBeNull();
+    expect(
+      parseManifestArt({ image_uris: { normal: 'http://cards.scryfall.io/x.jpg' } }),
+    ).toBeNull();
     expect(parseManifestArt({})).toBeNull();
     expect(parseManifestArt(null)).toBeNull();
     expect(parseManifestArt('x')).toBeNull();

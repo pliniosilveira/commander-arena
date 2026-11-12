@@ -14,7 +14,9 @@ export function isFaceDownPermanent(o: Pick<ObjectView, 'faceDown' | 'faceDownBy
 }
 
 /** True for a face-down permanent whose card the viewer may look at (CR 708.5): the view of the player who controls it carries the card. */
-export function isOwnFaceDown(o: Pick<ObjectView, 'faceDown' | 'faceDownBy' | 'hiddenFace'>): boolean {
+export function isOwnFaceDown(
+  o: Pick<ObjectView, 'faceDown' | 'faceDownBy' | 'hiddenFace'>,
+): boolean {
   return isFaceDownPermanent(o) && o.hiddenFace !== undefined;
 }
 

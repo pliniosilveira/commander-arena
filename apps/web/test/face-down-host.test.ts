@@ -11,7 +11,7 @@ import { hostSession } from './ward-decks';
 vi.setConfig({ testTimeout: 120_000 });
 
 describe('the AI manifests in a game with the page', () => {
-  test("the human sees labelled 2/2 cards, and the log names none of them", async () => {
+  test('the human sees labelled 2/2 cards, and the log names none of them', async () => {
     let seen = 0;
     let lineSeen = false;
     for (let seed = 1; seed <= 12 && !(seen > 0 && lineSeen); seed += 1) {

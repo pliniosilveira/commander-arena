@@ -241,7 +241,8 @@ export function checkInvariants(state: GameState): string[] {
       if (obj.card === null || obj.token !== null) {
         problems.push(`${id} is face down but is not a card`);
       }
-      if (!(obj.faceDown.n >= 1)) problems.push(`${id} is face down with the label ${obj.faceDown.n}`);
+      if (!(obj.faceDown.n >= 1))
+        problems.push(`${id} is face down with the label ${obj.faceDown.n}`);
       const same = [...state.battlefield, ...(state.phased ?? [])].filter(
         (other) => other !== id && state.objects[other]?.faceDown?.n === obj.faceDown?.n,
       );

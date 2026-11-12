@@ -56,7 +56,6 @@ import { copiableValues } from './copiable';
 import { derive, oracleTextOf } from './derive';
 import { permanentAlternative } from './derive-alt';
 import { dieReplacementFor } from './die-replacement';
-import { faceDownEntry } from './face-down';
 import {
   entersAsSaga,
   entersChoice,
@@ -81,6 +80,7 @@ import {
 } from './enters-keywords';
 import { canReveal, revealChoices, revealEvents } from './enters-reveal';
 import { withoutRun } from './enters-run';
+import { faceDownEntry } from './face-down';
 import { applyGraveyardRider } from './graveyard-play';
 import { timesKickedOf } from './kicks';
 import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
@@ -758,7 +758,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     // CR 707.10f: the token has the copiable values of the spell it was a copy of; it is no longer a copy of a spell.
     token: becomesToken ? copiableValues(state, old) : old.token,
     attachedTo: null,
-    protector: to === 'battlefield' && !entersDown ? protectorFor(next, old, controller, faceIndex) : null,
+    protector:
+      to === 'battlefield' && !entersDown ? protectorFor(next, old, controller, faceIndex) : null,
     // CR 708.2a, 708.6 (D-961): a permanent that enters face down.
     ...downEntry,
     stack: null,

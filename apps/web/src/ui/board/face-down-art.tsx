@@ -46,7 +46,9 @@ let lookup: Promise<ManifestArt | null> | null = null;
 export function manifestTokenArt(fetcher: typeof fetch = fetch): Promise<ManifestArt | null> {
   lookup ??= (async () => {
     try {
-      const response = await fetcher(MANIFEST_TOKEN_LOOKUP, { headers: { Accept: 'application/json' } });
+      const response = await fetcher(MANIFEST_TOKEN_LOOKUP, {
+        headers: { Accept: 'application/json' },
+      });
       return response.ok ? parseManifestArt(await response.json()) : null;
     } catch {
       return null;

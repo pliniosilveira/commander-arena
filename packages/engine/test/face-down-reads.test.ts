@@ -72,7 +72,7 @@ describe('the face-down designation is read only where it is owned', () => {
     expect(fieldLines('const o = { ...a, faceDown: { by, n } };')).toEqual([1]);
     expect(fieldLines('// obj.faceDown is read here')).toEqual([]);
     expect(fieldLines('if (effect.faceDown === true) go();')).toEqual([]);
-    expect(fieldLines('const m = `${path}.faceDown`;')).toEqual([]);
+    expect(fieldLines(['const m = `$', '{path}.faceDown`;'].join(''))).toEqual([]);
     expect(fieldLines('const view = { faceDown: true, name };')).toEqual([]);
     expect(fieldLines('const x = shown.hiddenFace;')).toEqual([]);
   });

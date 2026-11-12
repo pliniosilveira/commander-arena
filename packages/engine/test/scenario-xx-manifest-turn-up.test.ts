@@ -23,7 +23,12 @@ function game(
   at: Parameters<Builder['at']>[1] = { active: 0, turn: 3 },
 ): ScenarioGame {
   return theirs(
-    mine(scenario().seat(0).life(20).library(...FILLER))
+    mine(
+      scenario()
+        .seat(0)
+        .life(20)
+        .library(...FILLER),
+    )
       .seat(1)
       .life(20)
       .library(...FILLER),
@@ -187,9 +192,7 @@ describe('taking it (CR 701.40b, 116.1)', () => {
   });
 
   test('it can be taken in the other player turn when its controller has priority', () => {
-    const g = game(
-      (b) => forests(b.seat(0).battlefield(BRUTE, { faceDown: true }), 4).seat(0),
-    );
+    const g = game((b) => forests(b.seat(0).battlefield(BRUTE, { faceDown: true }), 4).seat(0));
     g.advanceTo('upkeep', { turn: 'next' });
     // Seat 1 has priority first in its own upkeep; seat 0 gets it after seat 1 passes.
     g.pass(1);

@@ -30,7 +30,12 @@ function game(
   theirs: (b: Builder) => Builder = (b) => b,
   theirTop: readonly string[] = [],
 ): ScenarioGame {
-  const a = mine(scenario().seat(0).life(20).library(...top, ...FILLER));
+  const a = mine(
+    scenario()
+      .seat(0)
+      .life(20)
+      .library(...top, ...FILLER),
+  );
   return theirs(
     a
       .seat(1)
@@ -42,7 +47,10 @@ function game(
 }
 
 const lands = (b: Builder) =>
-  b.battlefield('Forest', { count: 4 }).battlefield('Island', { count: 3 }).battlefield('Swamp', { count: 2 });
+  b
+    .battlefield('Forest', { count: 4 })
+    .battlefield('Island', { count: 3 })
+    .battlefield('Swamp', { count: 2 });
 
 const resolveAll = (g: ScenarioGame): void => {
   g.passAll();
@@ -158,7 +166,7 @@ describe('who manifests, and whose library (CR 701.40a, 110.2a)', () => {
     g.expect.librarySize(0, FILLER.length);
   });
 
-  test("it manifests from the library of the controller of the creature even if another player owns it", () => {
+  test('it manifests from the library of the controller of the creature even if another player owns it', () => {
     // The shape of Reality Shift on a creature the caster controls: the caster manifests the top card of their own library.
     const g = game(
       [BRUTE],
@@ -203,7 +211,10 @@ describe('who manifests, and whose library (CR 701.40a, 110.2a)', () => {
     expect(mine.controller).toBe(0);
     expect(theirs.controller).toBe(1);
     expect(new Set([mine.faceDown?.n, theirs.faceDown?.n]).size).toBe(2);
-    g.expect.eventLog([{ kind: 'manifested', seat: 0 }, { kind: 'manifested', seat: 1 }]);
+    g.expect.eventLog([
+      { kind: 'manifested', seat: 0 },
+      { kind: 'manifested', seat: 1 },
+    ]);
   });
 
   test('an empty library manifests nothing and nobody loses for it (CR 701.40f, 121.4)', () => {

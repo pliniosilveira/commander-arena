@@ -8,6 +8,7 @@ import type { GameEvent } from '../state/events';
 import { getObject, seatsInOrder } from '../state/ops';
 import type { GameState } from '../state/types';
 import { activatableAbilities } from './activate-legality';
+import { turnableObjects } from './face-down-legality';
 import {
   alternativeCastObjects,
   castableObjects,
@@ -21,7 +22,6 @@ import { canActivateManaAbility, manaAbilitiesOf } from './mana-engine';
 import { setPending } from './set-pending';
 import { settle } from './settle';
 import { foretellableObjects, suspendableObjects } from './special-legality';
-import { turnableObjects } from './face-down-actions';
 
 /** The alternative costs listed on a face, in the order their options are offered (D-121). */
 const ALTERNATIVES = ['free', 'overload', 'evoke', 'dash', 'spectacle', 'tapPermanents'] as const;

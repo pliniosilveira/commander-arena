@@ -127,7 +127,9 @@ describe('what stays unread (never guessed)', () => {
   });
 
   test('a wrong person is not read: "its controller manifests ... your library"', () => {
-    expect(dropped('Its controller manifests the top card of your library.', 'sorcery')).toBeDefined();
+    expect(
+      dropped('Its controller manifests the top card of your library.', 'sorcery'),
+    ).toBeDefined();
     expect(dropped('You manifests the top card of your library.', 'sorcery')).toBeDefined();
   });
 });
@@ -139,13 +141,19 @@ describe('the engine feature is declared and checked', () => {
     try {
       const parsed = read('Manifest the top card of your library.', 'sorcery');
       expect(parsed.unparsed).toHaveLength(1);
-      expect(parsed.unparsed[0]).toMatchObject({ reason: 'notRunnable', needs: ['effect:manifest'] });
+      expect(parsed.unparsed[0]).toMatchObject({
+        reason: 'notRunnable',
+        needs: ['effect:manifest'],
+      });
       expect(parsed.spell).toBeNull();
       const actor = read(
         'Exile target creature. Its controller manifests the top card of their library.',
         'instant',
       );
-      expect(actor.unparsed[0]).toMatchObject({ reason: 'notRunnable', needs: ['effect:manifest'] });
+      expect(actor.unparsed[0]).toMatchObject({
+        reason: 'notRunnable',
+        needs: ['effect:manifest'],
+      });
     } finally {
       BLOCKED.clear();
     }

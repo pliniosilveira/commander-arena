@@ -173,7 +173,9 @@ describe('the two worlds (the hidden card is the only difference)', () => {
     expect(a.state.stack).toHaveLength(1);
     expect(b.state.stack).toHaveLength(1);
     // Two face-down permanents of seat 1: the one placed and the one manifested.
-    expect(a.state.battlefield.filter((id) => a.state.objects[id]?.faceDown !== undefined)).toHaveLength(2);
+    expect(
+      a.state.battlefield.filter((id) => a.state.objects[id]?.faceDown !== undefined),
+    ).toHaveLength(2);
   });
 
   test('the view of the other seat is the same text in both worlds at every step', () => {
@@ -197,8 +199,13 @@ describe('the two worlds (the hidden card is the only difference)', () => {
       expect(secrets.length).toBeGreaterThan(4);
       for (const step of steps) {
         for (const text of secrets) {
-          expect(step.view.includes(JSON.stringify(text)), `view at ${step.step}: ${text}`).toBe(false);
-          expect(step.events.includes(JSON.stringify(text)), `events at ${step.step}: ${text}`).toBe(false);
+          expect(step.view.includes(JSON.stringify(text)), `view at ${step.step}: ${text}`).toBe(
+            false,
+          );
+          expect(
+            step.events.includes(JSON.stringify(text)),
+            `events at ${step.step}: ${text}`,
+          ).toBe(false);
         }
       }
     }
@@ -237,7 +244,9 @@ describe('the two worlds (the hidden card is the only difference)', () => {
     a.passAll();
     expect(a.find({ name: ALPHA.name, zone: 'graveyard' })).toHaveLength(1);
     const events = JSON.stringify(a.eventsSince(mark));
-    expect(events.includes(JSON.stringify(a.object({ name: ALPHA.name, zone: 'graveyard' }).card))).toBe(true);
+    expect(
+      events.includes(JSON.stringify(a.object({ name: ALPHA.name, zone: 'graveyard' }).card)),
+    ).toBe(true);
     expect(JSON.stringify(a.view(0)).includes(JSON.stringify(ALPHA.name))).toBe(true);
   });
 });
@@ -429,9 +438,10 @@ describe('the classification of the view fields and the event kinds', () => {
       expect(v).toBeDefined();
       for (const key of Object.keys(v ?? {})) {
         expect(OBJECT_VIEW_FIELDS[key as keyof ObjectView], `${key} is classified`).toBeDefined();
-        expect(OBJECT_VIEW_FIELDS[key as keyof ObjectView], `${key} is shown to the other seat`).not.toBe(
-          'controllerOnly',
-        );
+        expect(
+          OBJECT_VIEW_FIELDS[key as keyof ObjectView],
+          `${key} is shown to the other seat`,
+        ).not.toBe('controllerOnly');
       }
       expect(v).toMatchObject({
         faceDown: true,
@@ -449,7 +459,15 @@ describe('the classification of the view fields and the event kinds', () => {
         keywords: [],
       });
       expect(v?.name).toMatch(/^Face-down creature \d+$/);
-      for (const key of ['faces', 'layout', 'meld', 'face', 'hiddenFace', 'turnFaceUpCost', 'ifFaceUp']) {
+      for (const key of [
+        'faces',
+        'layout',
+        'meld',
+        'face',
+        'hiddenFace',
+        'turnFaceUpCost',
+        'ifFaceUp',
+      ]) {
         expect(v, key).not.toHaveProperty(key);
       }
     }
@@ -483,7 +501,9 @@ describe('the classification of the view fields and the event kinds', () => {
         const value = (e as unknown as Record<string, unknown>)[field];
         const cards = Array.isArray(value) ? value : [value];
         for (const c of cards) {
-          expect(secretCards.has(c as string), `${e.kind}.${field} names a face-down card`).toBe(false);
+          expect(secretCards.has(c as string), `${e.kind}.${field} names a face-down card`).toBe(
+            false,
+          );
         }
       }
     }
@@ -540,7 +560,8 @@ describe('a double-faced card face down (CR 708.2, 712.8a)', () => {
     const id = g.id({ name: DFC, zone: 'battlefield' });
     const other = getView(g.state, 0).battlefield.find((o) => o.id === id) as ObjectView;
     const mine = getView(g.state, 1).battlefield.find((o) => o.id === id) as ObjectView;
-    for (const key of ['faces', 'layout', 'face', 'meld']) expect(other, key).not.toHaveProperty(key);
+    for (const key of ['faces', 'layout', 'face', 'meld'])
+      expect(other, key).not.toHaveProperty(key);
     for (const key of ['faces', 'layout', 'face']) expect(mine, key).not.toHaveProperty(key);
     expect(mine.hiddenFace?.name).toBe('Moon Cub');
     expect(JSON.stringify(getView(g.state, 0))).not.toContain('Moon');

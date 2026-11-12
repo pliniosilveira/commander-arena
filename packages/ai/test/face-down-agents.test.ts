@@ -5,8 +5,8 @@
 import type { Action } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { CasualAgent, GreedyAgent, HeuristicAgent, RandomLegalAgent } from '../src/index';
 import { turnUpGain } from '../src/casual-face-down';
+import { CasualAgent, GreedyAgent, HeuristicAgent, RandomLegalAgent } from '../src/index';
 import { answer, expectLegal } from './casual-helpers';
 import { askHeuristic, lastReason } from './heuristic-helpers';
 
@@ -57,7 +57,12 @@ describe('what the view tells the agent', () => {
       (b) => b.seat(1).battlefield(BRUTE, { faceDown: true }),
     );
     const theirs = g.view(0).battlefield.find((o) => o.controller === 1);
-    expect(theirs).toMatchObject({ faceDown: true, power: 2, toughness: 2, name: 'Face-down creature 1' });
+    expect(theirs).toMatchObject({
+      faceDown: true,
+      power: 2,
+      toughness: 2,
+      name: 'Face-down creature 1',
+    });
     expect(theirs?.hiddenFace).toBeUndefined();
     expect(theirs?.ifFaceUp).toBeUndefined();
     expect(theirs?.turnFaceUpCost).toBeUndefined();
@@ -172,11 +177,7 @@ describe('the Heuristic agent', () => {
 
   test('a flier with a small body is worth turning up for the keyword only when it gains enough', async () => {
     const g = main((b) =>
-      b
-        .seat(0)
-        .battlefield('Plains', { count: 2 })
-        .battlefield(FLIER, { faceDown: true })
-        .seat(0),
+      b.seat(0).battlefield('Plains', { count: 2 }).battlefield(FLIER, { faceDown: true }).seat(0),
     );
     const view = g.view(0);
     const flier = view.battlefield.find((o) => o.id === g.id(FLIER));
