@@ -21,6 +21,7 @@ import {
 } from '../../combinators';
 import type { IrComparison, IrFilter } from '../../ir/types';
 import { GRANTABLE_KEYWORDS } from '../keyword/vocabulary';
+import { readCreatureType } from './creature-types';
 import { PLANESWALKER_TYPES, SUBTYPE_WORD_NUMBERED, type SubtypeWord, subtypeOf } from './subtypes';
 
 export interface FilterParts {
@@ -826,6 +827,8 @@ interface CardWords {
   readonly subtypes: readonly string[];
   /** Members of the choice that say more than a type (stage P68, D-230: "non-Aura enchantment"), after the types of `anyOf`. */
   readonly extra?: readonly IrFilter[];
+  /** D-992: a choice of creature types ("Angel or Human creature card"): the card has one of them, besides the types. */
+  readonly subtypeAnyOf?: readonly string[];
 }
 
 /**
@@ -910,9 +913,32 @@ export function graveyardPhrase(plural: boolean): Parser<IrFilter> {
       pos: r.pos,
     };
   };
+  // "Angel or Human creature card" (D-992, CR 205.3m): a card of a card type that has either of two creature types ("target Angel or Human creature card from your
+  // graveyard", Bruna's cast trigger). One card only, so not in the plural; the types follow the words, so "Angel or Human card" alone is not read.
+  const subtypeChoiceWords: Parser<CardWords> = (ctx, pos) => {
+    const r = sequence(
+      satisfy(typeChoice(SUBTYPE_WORD, true), (list) =>
+        // Creature types only: the card is a creature card of one of them (a land or Aura type with a card type is another phrase).
+        list.every((w) => {
+          const found = readCreatureType(w);
+          return found !== undefined && found.plural !== true;
+        }),
+      ),
+      literal(' '),
+      typeWords(CARD_TYPES, false),
+      literal(' '),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [list, , types] = r.value;
+    return {
+      ok: true,
+      value: { types, anyOf: [], subtypes: [], subtypeAnyOf: list },
+      pos: r.pos,
+    };
+  };
   const words: Parser<CardWords> = plural
     ? choice(permanentCards, typed)
-    : choice(permanentCards, withNonAura, choiceOfTypes, typed);
+    : choice(permanentCards, withNonAura, choiceOfTypes, quiet(subtypeChoiceWords), typed);
   // "Dragon creature card or Ugin planeswalker card from your graveyard" (stage P34, D-152, CR 205.2a, 205.3j): one card that is either kind,
   // each kind a creature type and a card type ("Dragon creature card") or a planeswalker type ("Ugin planeswalker card"). Two or more kinds,
   // each with a type or a subtype; the owner follows the last.
@@ -979,7 +1005,14 @@ export function graveyardPhrase(plural: boolean): Parser<IrFilter> {
       optional(quiet(PUT_THERE_THIS_TURN), false),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [{ types, anyOf, subtypes, extra }, , compared, atMostX, controller, putThere] = r.value;
+    const [
+      { types, anyOf, subtypes, extra, subtypeAnyOf },
+      ,
+      compared,
+      atMostX,
+      controller,
+      putThere,
+    ] = r.value;
     const filter = toFilter(
       'graveyard',
       { ...NO_PARTS, types, controller },
@@ -995,7 +1028,9 @@ export function graveyardPhrase(plural: boolean): Parser<IrFilter> {
             ? {
                 anyOf: [...anyOf.map((t): IrFilter => ({ types: [t], raw: t })), ...(extra ?? [])],
               }
-            : {}),
+            : subtypeAnyOf === undefined
+              ? {}
+              : { anyOf: subtypeAnyOf.map((w): IrFilter => ({ subtypes: [w], raw: w })) }),
           ...(putThere ? { putFromBattlefieldThisTurn: true as const } : {}),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
           card: true,

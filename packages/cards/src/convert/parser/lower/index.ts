@@ -27,6 +27,7 @@ import { SEARCH_NEEDS } from './effects-more';
 import type { FeatureRef } from './features';
 import { KORVOLD_NEEDS } from './korvold';
 import { registerLateLowerers } from './late';
+import { MELD_NEEDS } from './meld';
 import { MODAL_NEEDS } from './modal';
 import { NOUN_EXTRA_NEEDS, SELECTOR_NEEDS } from './nouns';
 import { PLANESWALKER_NEEDS } from './planeswalker';
@@ -146,6 +147,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...KORVOLD_NEEDS,
     ...PLANESWALKER_NEEDS,
     ...DESTINY_NEEDS,
+    ...MELD_NEEDS,
     ...ADAMANTOISE_NEEDS,
     ...CONDITION_NEEDS,
     ...SENTENCE_NEEDS,

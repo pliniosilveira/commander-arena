@@ -91,6 +91,11 @@ export interface LowerContext {
   /** True only while the intervening "if" of a triggered ability is lowered (D-271): the one place "~ is in your graveyard" is read. */
   interveningCondition: boolean;
   /**
+   * The name of the creature the intervening "if" of the ability named ("if you both own and control ~ and a creature named X", D-992, CR 701.42a): "exile them,
+   * then meld them into Y" reads it. Null where no such condition came before.
+   */
+  meldPartner: string | null;
+  /**
    * True when "it" in the body of a triggered ability is the card the permanent became (stage P30, D-135): every event of the
    * trigger is `~` dying or leaving the battlefield, so "exile it" and "put it into its owner's library" name `thisCard`.
    */
@@ -196,6 +201,7 @@ export function newContext(
     usedGraveyardSource: false,
     dieSides: null,
     interveningCondition: false,
+    meldPartner: null,
     itIsCard: false,
     cardName,
     selfName: '',

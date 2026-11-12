@@ -468,6 +468,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'dieResult'; readonly compare: IrComparison }
     // D-271 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard
     | { readonly kind: 'thisInYourGraveyard' }
+    // D-992 (CR 701.42a, 712.4a): "you both own and control ~ and a creature named Bruna, the Fading Light": the card itself and a permanent of the type with that name
+    | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: string }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
     | { readonly kind: 'cardsInGraveyard'; readonly compare: IrComparison }
     // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat; with a
@@ -652,6 +654,12 @@ export interface IrPtChange extends IrNode {
   readonly toughness: IrPtTerm;
 }
 
+/** A name the text gives (D-992, CR 201.2): "meld them into Brisela, Voice of Nightmares". */
+export interface IrNameArg extends IrNode {
+  readonly kind: 'name';
+  readonly name: string;
+}
+
 /** A yes or no a phrase says by being there or not: "reveal it", ", then shuffle". */
 export interface IrFlag extends IrNode {
   readonly kind: 'flag';
@@ -822,6 +830,7 @@ export type IrArg =
   | IrBasePt
   | IrDamageScope
   | IrFlag
+  | IrNameArg
   | IrQuotedAbility
   | IrDestinationList
   | IrCostList
@@ -1110,6 +1119,8 @@ export type IrStaticEffect =
   | { readonly kind: 'addTypes'; readonly subtypes: readonly string[] }
   /** "You may cast artifact spells as though they had flash." (stage P31, CR 601.3b, 702.8a). The subject is `you`. */
   | { readonly kind: 'castAsThoughFlash'; readonly spells: IrFilter }
+  /** "Your opponents can't cast spells with mana value 3 or less." (stage P70, D-996, CR 101.2, 601.2). The subject is `you`. */
+  | { readonly kind: 'opponentsCantCastSpells'; readonly spells: IrFilter }
   /**
    * "As long as a card exiled with ~ is a creature card, ~ has the power, toughness, and creature types of the last creature card
    * exiled with it. It's still a Shapeshifter." (stage P31, CR 607.2a, 613.4b, 205.1a): what the card the linked ability exiled gives.

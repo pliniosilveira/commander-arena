@@ -46,6 +46,7 @@ import { HOFRI_EFFECT_RULES } from './hofri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
 import { EFFECT_ADD_ADDITIONAL_MANA, EFFECT_ADD_MANA, EFFECT_CHOOSE_COLOR } from './mana';
+import { MELD_EFFECT_RULES } from './meld';
 import {
   type Clauses,
   DAMAGE_RECIPIENTS,
@@ -815,6 +816,8 @@ export const EFFECT_RULES = [
   EFFECT_DAMAGE_BY_IT,
   EFFECT_DAMAGE_IT,
   EFFECT_DESTROY,
+  // Stage P70 (D-992): "exile them, then meld them into X" starts like a plain exile and is tried before it.
+  ...MELD_EFFECT_RULES,
   // The flicker sentence starts like a plain exile and must be tried first: the first rule that
   // reads a prefix of the text wins, and no rule backtracks into another.
   ...FLICKER_RULES,

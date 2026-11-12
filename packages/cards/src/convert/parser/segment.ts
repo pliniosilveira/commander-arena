@@ -71,6 +71,18 @@ function isOpenQuote(c: string): boolean {
   return c === '"' || c === '“';
 }
 
+/**
+ * Whether the comma at `at` is inside the name of a card that "named" introduces (D-992, CR 201.2): the text since the last " named " has no other comma, and what follows
+ * the comma is "the", "of" or a capital letter, as the second part of a legendary name is ("Bruna, the Fading Light", "Mishra, Claimed by Gix"), never the verb of the
+ * next clause.
+ */
+function insideNamedCard(text: string, at: number, start: number): boolean {
+  const named = text.lastIndexOf(' named ', at);
+  if (named < start) return false;
+  if (text.slice(named + 7, at).includes(', ')) return false;
+  return /^, (?:the |of |[A-Z])/u.test(text.slice(at, at + 6));
+}
+
 /** Offsets of `, ` (comma and space) that are outside quotes and braces. */
 function topLevelCommas(text: string, start: number, end: number): number[] {
   const out: number[] = [];
@@ -87,7 +99,11 @@ function topLevelCommas(text: string, start: number, end: number): number[] {
       brace === 0 &&
       text.charAt(i + 1) === ' ' &&
       // Stage P68 (D-230): "a nontoken, non-Angel creature": a comma between two modifiers of a noun, not the end of a trigger condition.
-      !(text.slice(i - 8, i).toLowerCase() === 'nontoken' && /^, non-/i.test(text.slice(i, i + 6)))
+      !(
+        text.slice(i - 8, i).toLowerCase() === 'nontoken' && /^, non-/i.test(text.slice(i, i + 6))
+      ) &&
+      // D-992 (CR 201.2): the name of a card may hold a comma ("a creature named Bruna, the Fading Light"): a comma inside the name after "named" is not the end of the clause.
+      !insideNamedCard(text, i, start)
     ) {
       out.push(i);
     }

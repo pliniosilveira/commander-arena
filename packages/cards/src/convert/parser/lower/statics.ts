@@ -402,6 +402,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:setTypes'];
     case 'castAsThoughFlash':
       return ['static:castAsThoughFlash'];
+    case 'opponentsCantCastSpells':
+      return ['static:opponentsCantCastSpells'];
     case 'takeFromLinkedExile':
       return ['static:takeFromLinkedExile'];
     case 'costReduction':
@@ -716,7 +718,11 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     return lowerCostReduction(ability, first.amount, ctx);
   }
   if (first.kind === 'additionalCost' || first.kind === 'freeCast') return failure(ability);
-  if (first.kind === 'castAsThoughFlash' || first.kind === 'takeFromLinkedExile') {
+  if (
+    first.kind === 'castAsThoughFlash' ||
+    first.kind === 'takeFromLinkedExile' ||
+    first.kind === 'opponentsCantCastSpells'
+  ) {
     if (more.length > 0) return failure(ability);
     return lowerOwnStatic(ability, first);
   }
@@ -740,7 +746,10 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
  */
 function lowerOwnStatic(
   ability: Static,
-  effect: Extract<IrStaticEffect, { kind: 'castAsThoughFlash' | 'takeFromLinkedExile' }>,
+  effect: Extract<
+    IrStaticEffect,
+    { kind: 'castAsThoughFlash' | 'takeFromLinkedExile' | 'opponentsCantCastSpells' }
+  >,
 ): LowerResult<readonly Ability[]> {
   const { subject } = ability.statement;
   const missing = missingFeatures(['ability:static', ...needsOf(effect)]);
@@ -755,6 +764,22 @@ function lowerOwnStatic(
     span: ability.span,
     rule: ability.rule,
   });
+  if (effect.kind === 'opponentsCantCastSpells') {
+    // D-996: "Your opponents can't cast spells with mana value 3 or less": the engine reads the filter against the spell on the stack, so it names no zone.
+    if (subject.det !== 'you' || ability.statement.condition !== undefined) return failure(ability);
+    const { zone, stackKind, ...described } = effect.spells;
+    void zone;
+    void stackKind;
+    const spells = lowerFilter(noun(described));
+    if (!spells.ok) return spells;
+    return {
+      ok: true,
+      value: [
+        { kind: 'static', static: { kind: 'opponentsCantCastSpells', spells: spells.value } },
+      ],
+      rule: ability.rule,
+    };
+  }
   if (effect.kind === 'castAsThoughFlash') {
     if (subject.det !== 'you') return failure(ability);
     const { zone, stackKind, ...described } = effect.spells;
@@ -809,6 +834,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:cantBeBlockedBy',
   'static:setPt',
   'static:castAsThoughFlash',
+  'static:opponentsCantCastSpells',
   'static:takeFromLinkedExile',
   'static:restrictionUnless',
   'static:loseAllAbilities',

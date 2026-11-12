@@ -393,6 +393,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.life-above-starting': permanent(
     (e) => `At the beginning of your end step, draw a card if ${e}.`,
   ),
+  // Stage P70 (D-992): the meld ability, "if you both own and control ~ and a creature named X, exile them, then meld them into Y".
+  'condition.own-and-control-named': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  'effect.meld': permanent(
+    (e) =>
+      `At the beginning of your end step, if you both own and control ~ and a creature named Graf Rats, ${e}.`,
+  ),
   // Stage P69 (D-276): "It gains \"You can't lose the game ...\"" ends a sentence with the quote, so the line is the last of an ability.
   'effect.gain-static-ability': permanent(
     (e) => `{T}: Put a +1/+1 counter on target Angel. ${cap(e)}`,
@@ -436,6 +444,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-permanent-of-player': spell((e) => `~ deals 1 damage to target player and ${e}.`),
   'amount.for-each-color': permanent((e) => `Equipped creature gets +1/+1 ${e}.`),
   'static.opponents-cant-cast': asIs,
+  'static.opponents-cant-cast-spells': asIs,
   'static.group-enters-untapped': asIs,
   'static.spells-cant-be-countered': asIs,
   // Stage P43 (D-193): the damage that stays and the redirection of Ancient Adamantoise, lines of their own.

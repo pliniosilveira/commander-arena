@@ -122,6 +122,20 @@ export function lowerCondition(
         compare: { cmp: test.compare.cmp, value: test.compare.value },
       });
     }
+    case 'ownsAndControlsNamed': {
+      // CR 701.42a, 603.4 (D-992): "if you both own and control ~ and a creature named X" is read only as the intervening "if" of a triggered ability, and
+      // leaves the name for the "exile them, then meld them" that follows (which is the only instruction it is read with).
+      const blocked = missingFeatures(['condition:ownsAndControlsNamed']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (
+        ctx?.interveningCondition !== true ||
+        !(CARD_TYPES as readonly string[]).includes(test.type)
+      ) {
+        return failure(c, []);
+      }
+      ctx.meldPartner = test.name;
+      return ok({ kind: 'ownsAndControlsNamed', name: test.name, type: test.type as CardType });
+    }
     case 'thisInYourGraveyard': {
       // CR 113.6b, 603.4 (D-271): "if ~ is in your graveyard" is read only as the intervening "if" of a triggered ability (the lowering of the trigger then
       // requires that the ability works from the graveyard); anywhere else it is a test the engine does not run for that shape.
@@ -439,6 +453,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:lifeGainedThisTurn',
   'condition:dieResult',
   'condition:thisInYourGraveyard',
+  'condition:ownsAndControlsNamed',
   'condition:enteredThisTurn',
   'condition:yourMainPhase',
   'condition:yourTurn',
