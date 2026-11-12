@@ -332,6 +332,17 @@ describe('a card may give only what the engine reads', () => {
     }
   });
 
+  test('a condition on a given static ability is refused: the engine would drop it silently (D-981)', () => {
+    const conditional = [
+      {
+        kind: 'static',
+        static: { kind: 'cantLoseGame' },
+        condition: { kind: 'youControl', filter: { subtypes: ['Dragon'] }, atLeast: 1 },
+      },
+    ];
+    expect(validateCard(card(conditional) as never).length).toBeGreaterThan(0);
+  });
+
   test('until end of turn is the engine’s own (Backup), not a card’s', () => {
     const protection = [{ kind: 'static', static: { kind: 'cantLoseGame' } }];
     expect(validateCard(card(protection) as never)).toEqual([]);

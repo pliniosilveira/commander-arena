@@ -153,7 +153,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'setTypes',
     'setColors',
     'grantKeyword',
-    // D-230: Backup's grant of the abilities printed below it, until end of turn.
+    // D-230: Backup's grant of the abilities printed below it, until end of turn. D-981 (CR 611.2a): the static abilities cantLoseGame and
+    // opponentsCantWin given for the rest of the game (`duration: 'permanent'`).
     'grantAbility',
     'restrict',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".

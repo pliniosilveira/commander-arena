@@ -175,6 +175,7 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     if (!lowered.ok) return lowered;
     effects.push(...lowered.value);
     noteRemoved(lowered.value, ctx);
+    if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;
     noteMoved(lowered.value, ctx);
     noteCreated(lowered.value, ctx);
     noteMadeToken(clause, lowered.value, ctx);

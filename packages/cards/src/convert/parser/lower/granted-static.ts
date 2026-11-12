@@ -5,7 +5,7 @@
  * `grantAbility` effect lasts for the rest of the game (`duration: 'permanent'`) and gives only `cantLoseGame` and `opponentsCantWin`, so any other
  * static ability, and one with a condition, is not lowered. The object must be a target an earlier instruction of the same spell or ability chose,
  * or this clause's own, still on the battlefield as far as the text says: "it" with nothing before it, the source ("~ gains"), the object of a
- * trigger, a token the text made and a target the text destroyed, exiled, sacrificed or returned before are not read.
+ * trigger, a token the text made (also after a target: "it" is then the token, CR 111.1) and a target the text destroyed, exiled, sacrificed or returned before are not read.
  */
 import type { Ability } from '@commander-arena/engine';
 import { bind } from '../ir/bind';
@@ -36,6 +36,9 @@ export const GAIN_STATIC_ABILITY: Lowering<IrClause, Effects> = {
     // "Return target Angel card from your graveyard to the battlefield. It gains ...", "Exile target Angel, then return it ...": after the instruction
     // that destroyed, exiled, sacrificed or returned the target, "it" is a new object or a card somewhere else (CR 400.7), not what the grant would find.
     if (ctx.removed.has(objects.value.id)) return failure(clause);
+    // "Put a +1/+1 counter on target Angel. Create a 3/3 ... token. It gains ...": once a token was made, "it" and "that creature" name the new token
+    // (CR 111.1) or are ambiguous, never the earlier target, so the grant would go to another object than the text says.
+    if (subject.det === 'anaphor' && ctx.madeAToken) return failure(clause);
     const bound = bind(quoted.ability, {});
     if (!bound.ok || bound.ability.kind !== 'static') return failure(clause);
     const own = newContext('ability', [], [], ctx.cardName);

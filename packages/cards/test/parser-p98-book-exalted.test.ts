@@ -130,6 +130,12 @@ describe('the grant of a static ability with no duration (D-982)', () => {
       // a token the text made is a new object, not a target
       `{T}: Create a 3/3 white Angel creature token with flying. It gains ${QUOTE}`,
       `{T}: Create a 3/3 white Angel creature token with flying. That token gains ${QUOTE}`,
+      // after a target, a token the text made is what "it" and "that creature" name, not the target (CR 111.1)
+      `{T}: Put a +1/+1 counter on target Angel. Create a 3/3 white Angel creature token with flying. It gains ${QUOTE}`,
+      `{T}: Put a +1/+1 counter on target Angel. Create a 3/3 white Angel creature token with flying. That creature gains ${QUOTE}`,
+      `{T}: Put a +1/+1 counter on target Angel. Create a Treasure token. It gains ${QUOTE}`,
+      `{T}: Put a +1/+1 counter on target Angel. Investigate. It gains ${QUOTE}`,
+      `{T}: Put a +1/+1 counter on target Angel. Create a token that's a copy of target Angel. It gains ${QUOTE}`,
       // the object of a trigger is not a target the grant could fix
       `Whenever a creature you control dies, it gains ${QUOTE}`,
       // another static ability, or an ability that is not static

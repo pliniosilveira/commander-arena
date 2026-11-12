@@ -74,6 +74,15 @@ function checkGrantAbility(
         `${path}.abilities[${i}]`,
         `an effect gives only the static abilities ${GRANTABLE_STATICS.join(' and ')}`,
       );
+      return;
+    }
+    // The engine reads the given static with no condition (`hasStaticOf`, `derive`): a condition would be dropped, so it is refused.
+    if (a.condition !== undefined) {
+      issue(
+        out,
+        `${path}.abilities[${i}].condition`,
+        'a static ability an effect gives has no condition: the engine would not check it',
+      );
     }
   });
 }

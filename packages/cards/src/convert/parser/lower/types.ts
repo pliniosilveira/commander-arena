@@ -48,6 +48,11 @@ export interface LowerContext {
    */
   readonly removed: Set<string>;
   /**
+   * True once an instruction of this text created a token (stage P69, D-982, CR 111.1): "it" and "that creature" after it name the new token (or
+   * are ambiguous), not an earlier target, so a rule that reads "it" as the target refuses. Filled by `lowerSentences` as each clause is lowered.
+   */
+  madeAToken: boolean;
+  /**
    * What "that player" means in the body of a triggered ability (stage P18, D-111), with the engine
    * features that reading needs: the controller of the spell that was cast (`controllerOf` the
    * triggering spell, CR 608.2h) for a cast trigger, "you" when the trigger is about you. Null when the
@@ -158,6 +163,7 @@ export function newContext(
     itIsSelf: false,
     selfCast: false,
     removed: new Set(),
+    madeAToken: false,
     thatPlayer: null,
     xIs: null,
     xDefined: false,
