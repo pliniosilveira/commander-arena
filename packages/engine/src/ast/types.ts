@@ -1975,6 +1975,14 @@ export type Effect =
    */
   | { readonly kind: 'ringTempts' }
   /**
+   * "You may pair this creature with another unpaired creature you control" (CR 702.95a, 702.95c, 702.95d, D-984), the effect of the two abilities soulbond
+   * stands for. As it resolves it checks, against the game now, everything CR 702.95c asks: both creatures are still creatures on the battlefield under the
+   * control of the player who controls the ability, and both are unpaired; if not, nobody is paired. `partner: 'choose'` asks the controller which creature
+   * (a `choosePermanent` decision of purpose 'soulbond' with `min` 0: choosing none is the "may", CR 603.5; a pair is never formed over another); `'triggerSubject'`
+   * pairs it with the creature that entered, and asks only whether to. Engine only: refused in card data.
+   */
+  | { readonly kind: 'pair'; readonly partner: 'choose' | 'triggerSubject' }
+  /**
    * "You get an emblem with \"Creatures you control get +2/+2 and have flying.\"" (CR 114.1, 114.2, D-201): the controller of the effect gets an emblem, an
    * object in their command zone that has the quoted abilities (static or triggered, at least one) and nothing else (no types, no mana cost, no colors;
    * CR 114.3). The abilities work from the command zone (CR 114.4) for as long as the game lasts (CR 114.5: an emblem cannot be removed). "This emblem" in
@@ -2868,6 +2876,13 @@ export type Keyword =
    */
   | { readonly kind: 'ascend' }
   /**
+   * CR 702.95a (Soulbond, D-984): "Soulbond is a keyword that represents two triggered abilities": when this creature enters, if you control both it and
+   * another creature and both are unpaired, you may pair them; and whenever another creature you control enters, if you control both it and this one and
+   * both are unpaired, you may pair them. `derive` expands it into those two abilities (`rules/derive-keywords.ts`); the pair is the designation
+   * `GameObject.paired` (`rules/pairing.ts`). Printed only: it cannot be granted, and a face that is not a creature is refused.
+   */
+  | { readonly kind: 'soulbond' }
+  /**
    * CR 702.83a (Exalted): "Whenever a creature you control attacks alone, that creature gets +1/+1 until
    * end of turn." A triggered ability; `derive` expands it (`rules/derive-keywords.ts`), one trigger per
    * instance.
@@ -3430,6 +3445,18 @@ export type Condition =
    * control and is their Ring-bearer. Not for a static ability.
    */
   | { readonly kind: 'controlsRingBearer' }
+  /**
+   * "This creature is paired with another creature" (CR 702.95b, D-984): the permanent the condition belongs to is paired with a creature now, and both are
+   * on the battlefield (a pair with a member that is phased out, CR 702.26b, gives nothing meanwhile). Read from the pair (`rules/pairing.ts`, `partnerOf`),
+   * never from a characteristic, so a layer 6 grant may depend on it. Its negation is "isn't paired".
+   */
+  | { readonly kind: 'paired' }
+  /**
+   * The intervening "if" of the two abilities soulbond stands for (CR 702.95a, 603.4, D-984): this creature is on the battlefield under its controller's
+   * control and unpaired and, `with: 'another'`, the controller has another creature that is unpaired; `with: 'triggerSubject'`, the creature the trigger is
+   * about (that entered) is also on the battlefield under their control and unpaired. Engine only: built by `derive` for the keyword, refused in card data.
+   */
+  | { readonly kind: 'soulbondReady'; readonly with: 'another' | 'triggerSubject' }
   | { readonly kind: 'and' | 'or'; readonly terms: readonly Condition[] }
   | { readonly kind: 'not'; readonly term: Condition };
 
@@ -3661,7 +3688,13 @@ export type StaticSubject =
       /** The host must have every one of these supertypes ("Enchanted legendary creature"). */
       readonly supertypes?: readonly Supertype[];
     }
-  | { readonly kind: 'filter'; readonly filter: ObjectFilter; readonly other?: boolean };
+  | { readonly kind: 'filter'; readonly filter: ObjectFilter; readonly other?: boolean }
+  /**
+   * "Each of those creatures", "both creatures" of a soulbond card (CR 702.95b, 611.3a, D-984): the permanent the ability belongs to and the creature it is
+   * paired with, whatever the pair is at any moment (`rules/pairing.ts`, `partnerOf`): none while it is unpaired. Only for a modification of power and
+   * toughness, a granted keyword or a granted ability, which read the subject through one function (`validateCard` refuses the rest).
+   */
+  | { readonly kind: 'pair' };
 
 /** What a static ability does while its permanent is on the battlefield (CR 604, 611.3). */
 export type StaticEffect =

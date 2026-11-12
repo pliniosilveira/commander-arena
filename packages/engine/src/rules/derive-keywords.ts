@@ -12,6 +12,7 @@
  * own: two instances of prowess are two triggered abilities (CR 702.108b), and so are two of ward.
  */
 import type { Ability, Cost, Keyword, ObjectFilter, TokenDefinition } from '../ast/types';
+import { SOULBOND_ENTERS_ABILITY, SOULBOND_OTHER_ENTERS_ABILITY } from './soulbond-abilities';
 
 /** The kinds of the keyword abilities in a list (a keyword with parameters counts by its kind). */
 export function keywordKindsOf(abilities: readonly Ability[]): Keyword['kind'][] {
@@ -528,6 +529,9 @@ export function expansionOf(ability: Ability): Ability[] {
       return [crewAbility(ability.keyword.power)];
     case 'exalted':
       return [EXALTED_ABILITY];
+    case 'soulbond':
+      // CR 702.95a (D-984): "Soulbond is a keyword that represents two triggered abilities."
+      return [SOULBOND_ENTERS_ABILITY, SOULBOND_OTHER_ENTERS_ABILITY];
     case 'annihilator':
       return [annihilatorAbility(ability.keyword.count)];
     case 'persist':

@@ -146,10 +146,11 @@ export function validatePlacement(p: Placement, def: CardDefinition): void {
     o.protector !== undefined ||
     o.attachedTo !== undefined ||
     o.meldedWith !== undefined ||
+    o.pairedWith !== undefined ||
     o.chosen !== undefined;
   if (p.zone !== 'battlefield' && battlefieldOnly) {
     throw new ScenarioError(
-      `${where}: face, tapped, damage, counters, fresh, controller, protector, attachedTo, meldedWith and chosen only apply to the battlefield`,
+      `${where}: face, tapped, damage, counters, fresh, controller, protector, attachedTo, meldedWith, pairedWith and chosen only apply to the battlefield`,
     );
   }
   if (p.zone === 'battlefield') {

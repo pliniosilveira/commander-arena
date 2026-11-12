@@ -134,6 +134,9 @@ describe('the dimensions', () => {
       // D-196: "if you control your Ring-bearer".
       'controlsRingBearer',
       'ownsAndControlsNamed',
+      // D-984: "as long as this creature is paired with another creature", and the engine's own intervening "if" of soulbond.
+      'paired',
+      'soulbondReady',
       'and',
       'or',
       'not',
@@ -184,7 +187,7 @@ describe('the dimensions', () => {
       // D-192: "Damage isn't removed from this creature during cleanup steps."
       'keepsDamage',
     ]);
-    expect(SUPPORTED_FEATURES.staticSubjectKinds).toEqual(['this', 'attached', 'filter']);
+    expect(SUPPORTED_FEATURES.staticSubjectKinds).toEqual(['this', 'attached', 'filter', 'pair']);
     // D-103: X in costs is announced as a spell is cast or an ability activated, and read by `x`.
     expect(SUPPORTED_FEATURES.amountKinds).toContain('x');
     expect(SUPPORTED_FEATURES.costKinds).toContain('payXLife');

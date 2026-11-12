@@ -10,7 +10,7 @@ import type { CardDefinition } from '../definition';
 import { singleFace } from './helpers';
 
 /** "When this creature dies, you may return it to the battlefield under its owner's control at the beginning of your next upkeep." */
-export const DIES_RETURN_ABILITY: Ability = {
+export const DIES_RETURN_ABILITY: Extract<Ability, { kind: 'triggered' }> = {
   kind: 'triggered',
   trigger: { kind: 'dies', what: { kind: 'this' } },
   optional: true,

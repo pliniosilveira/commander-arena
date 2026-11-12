@@ -2314,7 +2314,15 @@ export const RING_NAMES = [
  * next upkeep, and the SYNTHETIC soulbond creatures. Kept out of every pool: soulbond asks its controller which creature to pair with in the middle of a
  * resolution, and the returning creatures ask a "you may" and create a delayed ability, which the seeded games of the other styles do not reach.
  */
-export const SOULBOND_NAMES = ['SYNTHETIC Ember Cub', 'SYNTHETIC Grave Thief'] as const;
+export const SOULBOND_NAMES = [
+  'SYNTHETIC Ember Cub',
+  'SYNTHETIC Grave Thief',
+  'SYNTHETIC Soulbound Squire',
+  'SYNTHETIC Soulbound Seraph',
+  'SYNTHETIC Soulbound Giant',
+  'SYNTHETIC Soulbound Glider',
+  'SYNTHETIC Bonded Hound',
+] as const;
 
 /** The Saga three times, the Ring's rite five times (the later levels of the Ring need many temptations) and its other cards once, with bodies to carry the designation, a Wall to block it and removal that also takes the designation away. */
 export const RING_SPELLS = [

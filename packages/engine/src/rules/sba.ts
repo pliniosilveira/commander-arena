@@ -34,6 +34,7 @@ import { derive } from './derive';
 import { replacementSources } from './die-replacement';
 import { type LegendCandidate, legendRuleDecision } from './legend-rule';
 import { monarchAfterLoss } from './monarch';
+import { endBrokenPairs } from './pairing-sba';
 import { cannotLoseGame } from './player-protection';
 import { regenerateInstead } from './regenerate';
 import { endLostRingBearers } from './ring';
@@ -115,6 +116,12 @@ export function checkStateBasedActions(input: GameState): SbaResult {
       performed: true,
       decision: null,
     };
+  }
+
+  // CR 702.95e (D-983): a pair ends when either creature left, changed controller or stopped being a creature; the next pass goes on with the new state.
+  const unpaired = endBrokenPairs(state);
+  if (unpaired !== null) {
+    return { state: unpaired.state, events: unpaired.events, performed: true, decision: null };
   }
 
   // CR 702.131b (D-264): Ascend, "any time you control ten or more permanents", is checked here; the next pass goes on with the new state.

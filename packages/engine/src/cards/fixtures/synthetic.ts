@@ -99,6 +99,7 @@ import { SYNTHETIC_RING_LIST } from './synthetic-ring';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
 import { SYNTHETIC_SEARCH_LIST } from './synthetic-search';
 import { SYNTHETIC_SNOW_LIST } from './synthetic-snow';
+import { SYNTHETIC_SOULBOND_LIST } from './synthetic-soulbond';
 import { SYNTHETIC_STATICS_ARTIFACTS_LIST } from './synthetic-statics-artifacts';
 import { SYNTHETIC_STUN_LIST } from './synthetic-stun';
 import { SYNTHETIC_SUBJECT_LIST } from './synthetic-subjects';
@@ -363,6 +364,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_MIRACLE_LIST,
     ...SYNTHETIC_DELAYED_RETURN_LIST,
     ...SYNTHETIC_DIES_RETURN_LIST,
+    ...SYNTHETIC_SOULBOND_LIST,
     ...SYNTHETIC_COPY_LIST,
     ...SYNTHETIC_SUBJECT_LIST,
     ...SYNTHETIC_MASS_LIST,

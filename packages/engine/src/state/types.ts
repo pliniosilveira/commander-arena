@@ -127,6 +127,14 @@ export interface GameObject {
    */
   readonly ringBearer?: SeatId;
   /**
+   * The pairing designation (CR 702.95b, D-983): present on a creature that is paired with another, naming the other (`with`) and the player who formed the
+   * pair (`by`, the controller of the soulbond ability: both are under their control). It is on both objects. It is a designation, not a copiable value (a
+   * copy or a token that copies a paired creature is unpaired) and a new object after any zone change (CR 400.7, 702.95e) has none. It ends when either
+   * leaves the battlefield, another player gains control of either, or either stops being a creature (`rules/pairing.ts`, `rules/pairing-sba.ts`); it
+   * survives phasing (CR 702.26d). Read only through `rules/pairing.ts`, never as the field (`test/paired-reads.test.ts`). Absent for everything else.
+   */
+  readonly paired?: { readonly with: ObjectId; readonly by: SeatId };
+  /**
    * The permanent is phased out (CR 702.26b, D-234): `zone` is `'phased'` and this is the player who controlled it as it phased out (or, for an Aura, Equipment or
    * Fortification that phased out indirectly with what it is attached to, the controller of that permanent): it phases in as that player's untap step begins.
    */
@@ -850,6 +858,16 @@ export type Instruction =
    */
   | {
       readonly kind: 'ringTempts';
+      readonly chosen: readonly ObjectId[] | null;
+    }
+  /**
+   * "You may pair this creature with another unpaired creature you control" (`pair`, CR 702.95a, D-984): the effect of the two abilities soulbond stands for.
+   * The controller is asked which creature (a `choosePermanent` decision of purpose 'soulbond', `min` 0) while there is one to pair with; `chosen` is the answer,
+   * null until then, and an empty answer is a decline. See rules/soulbond.ts.
+   */
+  | {
+      readonly kind: 'pair';
+      readonly partner: 'choose' | 'triggerSubject';
       readonly chosen: readonly ObjectId[] | null;
     }
   /**

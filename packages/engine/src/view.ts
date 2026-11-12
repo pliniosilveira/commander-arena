@@ -25,6 +25,7 @@ import { isSummoningSick, wouldBeSummoningSick } from './rules/mana-engine';
 import { manaValueOfCost } from './rules/mana-value';
 import { cardsOf, commanderCardOf } from './rules/melded';
 import { modalOfObject } from './rules/modes';
+import { partnerOf } from './rules/pairing';
 import { regenerationShieldsOn } from './rules/regenerate';
 import { ringBearerSeat } from './rules/ring-bearer';
 import { finalChapterOf, isSaga } from './rules/saga';
@@ -79,6 +80,12 @@ export interface ObjectView {
    * with the designation. Public. Absent otherwise.
    */
   readonly ringBearer?: SeatId;
+  /**
+   * The creature this one is paired with (CR 702.95b, D-984): the object it is linked to while the pair stands and both are on the battlefield
+   * (`partnerOf`: never a stale link, never a creature that is phased out). A melded permanent is one object, so its id is the one of the permanent. Public.
+   * Absent otherwise.
+   */
+  readonly pairedWith?: ObjectId;
   /**
    * For a noncreature permanent on the battlefield that its controller has not controlled since
    * their most recent turn began (and that has no haste): it would be summoning sick if it became a
@@ -585,6 +592,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
   const inherentShown = obj.stack?.inherent === undefined ? null : inherentName(obj.stack.inherent);
   const inherentText = obj.stack?.inherent === undefined ? null : INHERENT_TEXT[obj.stack.inherent];
   const bearerSeat = ringBearerSeat(state, obj);
+  const partner = partnerOf(state, obj);
   const activated = activatedAbilitiesOf(state, obj);
   const landwalks = d.abilities.flatMap((a) =>
     a.kind === 'keyword' && a.keyword.kind === 'landwalk' ? [a.keyword.landType] : [],
@@ -616,6 +624,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     summoningSick: obj.zone === 'battlefield' && isSummoningSick(state, obj),
     ...controlEndsOf(state, obj),
     ...(bearerSeat === null ? {} : { ringBearer: bearerSeat }),
+    ...(partner === null ? {} : { pairedWith: partner.id }),
     ...(asCreature && wouldBeSummoningSick(state, obj)
       ? { wouldBeSummoningSick: true as const }
       : {}),

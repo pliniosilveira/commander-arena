@@ -387,6 +387,7 @@ export function answerResolutionChoice(
     head.kind !== 'proliferate' &&
     head.kind !== 'auraEntry' &&
     head.kind !== 'ringTempts' &&
+    head.kind !== 'pair' &&
     head.kind !== 'empowerJace' &&
     head.kind !== 'conniveNext' &&
     head.kind !== 'spare'

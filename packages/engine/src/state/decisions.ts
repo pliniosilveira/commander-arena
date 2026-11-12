@@ -376,7 +376,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'empowerJace'
     | 'untapChoice'
     | 'conniveOrder'
-    | 'spare';
+    | 'spare'
+    | 'soulbond';
   /**
    * For `'fight'` (D-145, CR 701.14: "Each of those tokens fights a different one of those creatures"): `seat` (the controller of the effect)
    * chooses which creature of `legal` the creature `subject` fights; exactly one (`min` = `max` = 1). For `'auraHost'` (D-149, CR 303.4f):
@@ -396,6 +397,10 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * For `'conniveOrder'` (D-223, CR 701.50c: "the first player in APNAP order who controls ... one or more of those permanents chooses one of them and it
    * connives"): `seat`, that player, chooses which permanent of `legal` (those of theirs still to connive, some perhaps gone from the battlefield) connives
    * next; exactly one. Asked only when the player has two or more. `source` is the spell or ability.
+   * For `'soulbond'` (D-984, CR 702.95a, 603.5: "you may pair this creature with another unpaired creature you control"): `seat`, the controller of the
+   * soulbond ability, chooses which creature of `legal` (the unpaired creatures they control, as `derive` types them now, other than `subject`; for the
+   * ability of "whenever another creature you control enters", only the one that entered) the creature `subject` is paired with; `min` is 0 (choosing none
+   * is the "may") and `max` is 1. Asked even when there is a single candidate. `source` is the ability on the stack.
    * Absent for every other purpose.
    */
   readonly subject?: ObjectId;

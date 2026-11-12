@@ -236,6 +236,55 @@ export function assemble(
     if (at >= 0) battlefield.splice(at, 1);
   }
 
+  // Pairs (CR 702.95b, D-983): `pairedWith` names the other creature by label or card name; the link is written on both objects, formed by the player who
+  // controls them. A melded permanent is one object, the first card's: a placement that names the second card of one must name the first instead.
+  for (const e of expanded) {
+    const ref = e.options.pairedWith;
+    if (ref === undefined) continue;
+    const mine = objects[objectId(e.index)];
+    if (mine === undefined)
+      throw new ScenarioError(
+        `${e.def.name} is pairedWith "${ref}" but is the second card of a melded permanent: place the pairing on the first card`,
+      );
+    const onField = expanded.filter((x) => x.zone === 'battlefield' && x.index !== e.index);
+    const byLabel = onField.filter((x) => x.options.label === ref);
+    const others = byLabel.length > 0 ? byLabel : onField.filter((x) => x.def.name === ref);
+    const [other] = others;
+    if (others.length !== 1 || other === undefined) {
+      throw new ScenarioError(
+        `${e.def.name} is pairedWith "${ref}", which matches ${others.length} other permanents on the battlefield (use a label)`,
+      );
+    }
+    const theirs = objects[objectId(other.index)];
+    if (theirs === undefined)
+      throw new ScenarioError(
+        `${e.def.name} is pairedWith ${other.def.name}, which is the second card of a melded permanent: name the first card`,
+      );
+    const isCreature = (x: Expanded) =>
+      x.def.faces[x.options.face ?? (x.options.meldedWith === undefined ? 0 : 1)]?.types.includes(
+        'creature',
+      ) === true;
+    if (!isCreature(e) || !isCreature(other))
+      throw new ScenarioError(
+        `${e.def.name} and ${other.def.name} can not be paired: both must be creatures (CR 702.95a)`,
+      );
+    if (mine.controller !== theirs.controller)
+      throw new ScenarioError(
+        `${e.def.name} and ${other.def.name} can not be paired: one player controls both (CR 702.95c)`,
+      );
+    const back = other.options.pairedWith;
+    if (back !== undefined && back !== e.options.label && back !== e.def.name)
+      throw new ScenarioError(
+        `${e.def.name} is pairedWith ${other.def.name}, which is pairedWith "${back}" (a creature can be paired with only one, CR 702.95d)`,
+      );
+    if (mine.paired !== undefined && mine.paired.with !== theirs.id)
+      throw new ScenarioError(`${e.def.name} is paired twice (CR 702.95d)`);
+    if (theirs.paired !== undefined && theirs.paired.with !== mine.id)
+      throw new ScenarioError(`${other.def.name} is paired twice (CR 702.95d)`);
+    objects[mine.id] = { ...mine, paired: { with: theirs.id, by: mine.controller } };
+    objects[theirs.id] = { ...theirs, paired: { with: mine.id, by: mine.controller } };
+  }
+
   const seats: SeatState[] = spec.seats.map((s, id) => {
     checkCount(`seat ${id} poison`, s.poison);
     if (s.handSizeMax !== null) checkCount(`seat ${id} handSizeMax`, s.handSizeMax);

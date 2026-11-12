@@ -580,7 +580,28 @@ export type GameEvent =
    * A creature stopped being the Ring-bearer of `seat` (CR 701.54a), because another creature became it or because another player gained
    * control of it. Not emitted for one that left the battlefield (it is a new object, CR 400.7, and the designation is simply gone).
    */
-  | { readonly kind: 'ringBearerLost'; readonly seat: SeatId; readonly object: ObjectId };
+  | { readonly kind: 'ringBearerLost'; readonly seat: SeatId; readonly object: ObjectId }
+  /**
+   * Two creatures became paired (CR 702.95a, 702.95b, D-984): `a` is the creature whose soulbond ability paired them and `b` the other (the one that
+   * entered, for "whenever another creature you control enters"); `by` is the player who controls both and the ability.
+   */
+  | {
+      readonly kind: 'creaturesPaired';
+      readonly a: ObjectId;
+      readonly b: ObjectId;
+      readonly by: SeatId;
+    }
+  /**
+   * A pair ended while its creature `a` stays on the battlefield (CR 702.95e, D-983): `b` is the one that was its partner. `why`: `left` (the partner left
+   * the battlefield, so it is a new object), `control` (another player gained control of one of them) or `notCreature` (one stopped being a creature).
+   * Not emitted when both leave together: there is no creature left to say it about.
+   */
+  | {
+      readonly kind: 'creaturesUnpaired';
+      readonly a: ObjectId;
+      readonly b: ObjectId;
+      readonly why: 'left' | 'control' | 'notCreature';
+    };
 
 export type LossReason =
   | 'life'

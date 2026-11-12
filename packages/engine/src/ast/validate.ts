@@ -375,7 +375,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'modifyPt':
-      checkStaticSubject(s.subject, `${path}.subject`, out);
+      checkStaticSubject(s.subject, `${path}.subject`, out, false, true);
       // D-115: an integer, or a count of objects (or a multiple of one) that follows the board.
       checkStaticPtAmount(s.power, `${path}.power`, true, out);
       checkStaticPtAmount(s.toughness, `${path}.toughness`, true, out);
@@ -391,7 +391,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'grantKeyword':
-      checkStaticSubject(s.subject, `${path}.subject`, out, true);
+      checkStaticSubject(s.subject, `${path}.subject`, out, true, true);
       checkGrantedKeyword(s.keyword, `${path}.keyword`, out);
       // D-185: riot is applied as a permanent enters, so only a group the battlefield names can give it (CR 614.12).
       if (s.keyword?.kind === 'riot' && s.subject?.kind !== 'filter') {
@@ -420,7 +420,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       // D-133: the permission has no parameters; the face-level checks say where it may stand.
       break;
     case 'grantAbility':
-      checkStaticSubject(s.subject, `${path}.subject`, out);
+      checkStaticSubject(s.subject, `${path}.subject`, out, false, s.ability?.kind !== 'mana');
       // D-099: a mana ability; D-151: an activated or a triggered ability too, held to the rules of one of the card's own.
       if (s.ability?.kind === 'mana') {
         checkManaAbility(s.ability, `${path}.ability`, out);

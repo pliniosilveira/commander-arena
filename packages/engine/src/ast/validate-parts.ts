@@ -1887,6 +1887,17 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'controlsRingBearer':
       // CR 701.54e (D-196): read from the permanents of the controller; no operand.
       break;
+    case 'paired':
+      // CR 702.95b (D-984): the permanent the condition belongs to is paired with a creature; no operand. Where it may stand (a static ability that
+      // `derive` reads, an intervening "if") is checked with the ability.
+      break;
+    case 'soulbondReady':
+      issue(
+        out,
+        path,
+        "soulbondReady is the intervening 'if' of the abilities the engine builds for soulbond (CR 702.95a); a card writes the keyword",
+      );
+      break;
     case 'subjectControllerHasMore':
       // D-229: where it may stand (an intervening "if" of a trigger with a permanent as its subject) is checked with the trigger (validate.ts).
       if (!isOneOf(c.stat, PLAYER_STATS))
@@ -2647,6 +2658,16 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       }
       break;
     }
+    case 'paired':
+      // D-984 (CR 702.95b): the permanent the ability belongs to is paired; a spell is not a permanent, so it never is.
+      if (scope.owner !== 'ability') {
+        issue(
+          out,
+          path,
+          "'paired' reads the pair of a permanent: it is only valid in an ability of one",
+        );
+      }
+      break;
     case 'didPrevious':
       if (scope.mayAvailable !== true) {
         issue(
@@ -2945,6 +2966,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'removeTimeCounter':
     case 'castExiled':
       checkEngineOnlyEffect(e.kind, path, out);
+      break;
+    case 'pair':
+      // CR 702.95a (D-984): the effect of the two abilities soulbond stands for, built by the engine.
+      issue(
+        out,
+        path,
+        'pair is the effect of the abilities the engine builds for soulbond (CR 702.95a); a card writes the keyword',
+      );
       break;
     case 'delayedTrigger':
       // CR 603.7 (D-128): an effect that creates a delayed triggered ability.

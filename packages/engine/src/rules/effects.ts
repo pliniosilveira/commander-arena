@@ -83,6 +83,7 @@ import { runChooseSacrifice, sacrificeInstructions } from './sacrifice-choice';
 import { runDiscard, runSearch } from './search';
 import { apnapOrder, resolveObjects, resolvePlayers, type SelectContext } from './select';
 import { recordTogether } from './simultaneous';
+import { runPair } from './soulbond';
 import { objectOrLki, sourceInfo } from './source-info';
 import { runSpare, startSpare } from './spare';
 import { done, type StepOutcome } from './step-outcome';
@@ -148,6 +149,7 @@ export function runInstruction(
   if (instruction.kind === 'chooseOne') return runChooseOne(state, res, instruction);
   if (instruction.kind === 'vote') return runVote(state, res, instruction);
   if (instruction.kind === 'ringTempts') return runRingTempts(state, res, instruction);
+  if (instruction.kind === 'pair') return runPair(state, res, instruction);
   if (instruction.kind === 'empowerJace') return runEmpowerJace(state, res, instruction);
   if (instruction.kind === 'conniveNext') return runConniveNext(state, res, instruction);
   if (instruction.kind === 'spare') return runSpare(state, res, instruction);
@@ -979,6 +981,10 @@ function runEffect(
     case 'empowerJace':
       // CR 701.71a (D-201): the token, the choice and the counters come up as the instruction runs (rules/empower.ts).
       return done(state, [], [{ kind: 'empowerJace', amount: effect.amount, chosen: null }]);
+
+    case 'pair':
+      // CR 702.95a, 702.95c (D-984): the creature to pair with is chosen as this comes up (rules/soulbond.ts).
+      return done(state, [], [{ kind: 'pair', partner: effect.partner, chosen: null }]);
 
     case 'ringTempts':
       // CR 701.54a (D-196): the controller's Ring-bearer is chosen as this comes up (rules/ring.ts).

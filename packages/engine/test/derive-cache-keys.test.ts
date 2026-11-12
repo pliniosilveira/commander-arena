@@ -101,3 +101,65 @@ describe('the caches of derive never answer from another state', () => {
     expect(paymentSources(base, 0)).toHaveLength(1);
   });
 });
+
+// D-984 (CR 702.95b): the pair is a field of the object table, so a state with the link and one without are different object tables and nothing may answer for
+// the other: the pair subject and the "paired" condition of a layer 7 effect, a layer 6 grant and a keyword are all read through caches keyed by that table.
+describe('the caches of derive follow the pair', () => {
+  const GIANT = 'SYNTHETIC Soulbound Giant'; // as long as paired, each of those creatures gets +2/+2
+  const GLIDER = 'SYNTHETIC Soulbound Glider'; // as long as paired, each of those creatures has flying
+  const lone = scenario()
+    .seat(0)
+    .battlefield(GIANT, { label: 'giant' })
+    .battlefield(GLIDER, { label: 'glider' })
+    .battlefield(BEARS, { label: 'bears' })
+    .seat(1)
+    .build();
+  const withLink = (a: string, b: string): GameState => {
+    const first = lone.object(a);
+    const second = lone.object(b);
+    return {
+      ...lone.state,
+      objects: {
+        ...lone.state.objects,
+        [first.id]: { ...first, paired: { with: second.id, by: 0 } },
+        [second.id]: { ...second, paired: { with: first.id, by: 0 } },
+      },
+    };
+  };
+  const of = (s: GameState, name: string) => s.objects[lone.id(name)] ?? lone.object(name);
+  const flies = (s: GameState, name: string) =>
+    derive(s, of(s, name)).abilities.some(
+      (x) => x.kind === 'keyword' && x.keyword.kind === 'flying',
+    );
+
+  test('power, read for the same battlefield with and without the link, in both orders', () => {
+    const linked = withLink('giant', 'bears');
+    expect(linked.battlefield).toBe(lone.state.battlefield);
+    expect(derive(lone.state, of(lone.state, 'bears')).power).toBe(2);
+    expect(derive(linked, of(linked, 'bears')).power).toBe(4);
+    expect(derive(lone.state, of(lone.state, 'bears')).power).toBe(2);
+    expect(derive(linked, of(linked, 'giant')).power).toBe(5);
+    expect(derive(lone.state, of(lone.state, 'giant')).power).toBe(3);
+  });
+
+  test('a granted keyword, and a link that moves to another creature', () => {
+    const toBears = withLink('glider', 'bears');
+    const toGiant = withLink('glider', 'giant');
+    expect(flies(lone.state, 'bears')).toBe(false);
+    expect(flies(toBears, 'bears')).toBe(true);
+    expect(flies(toGiant, 'bears')).toBe(false);
+    expect(flies(toGiant, 'giant')).toBe(true);
+    expect(flies(lone.state, 'bears')).toBe(false);
+  });
+
+  test('a link whose partner is gone from the object table gives nothing (a stale link)', () => {
+    const linked = withLink('giant', 'bears');
+    const { [lone.id('bears')]: _gone, ...rest } = linked.objects;
+    const stale: GameState = {
+      ...linked,
+      objects: rest,
+      battlefield: linked.battlefield.filter((id) => id !== lone.id('bears')),
+    };
+    expect(derive(stale, of(stale, 'giant')).power).toBe(3);
+  });
+});

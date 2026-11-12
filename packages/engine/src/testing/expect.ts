@@ -8,6 +8,7 @@ import { checkInvariants } from '../invariants';
 import { poolColorCounts } from '../mana/pool';
 import type { ManaColor } from '../mana/types';
 import { derive } from '../rules/derive';
+import { partnerOf } from '../rules/pairing';
 import { ringBearerOf } from '../rules/ring-bearer';
 import type { Action } from '../state/actions';
 import type { GameEvent } from '../state/events';
@@ -392,6 +393,25 @@ export function createExpectations(
           state,
         );
       }
+    },
+    paired(a, b) {
+      const state = getState();
+      const first = resolveObject(ctx, a);
+      const second = resolveObject(ctx, b);
+      const partner = partnerOf(state, first);
+      if (partner?.id !== second.id || partnerOf(state, second)?.id !== first.id) {
+        fail(
+          `Expected ${first.id} and ${second.id} to be paired with each other but ${first.id} is ${partner === null ? 'not paired' : `paired with ${partner.id}`}`,
+          state,
+        );
+      }
+    },
+    unpaired(a) {
+      const state = getState();
+      const first = resolveObject(ctx, a);
+      const partner = partnerOf(state, first);
+      if (partner !== null)
+        fail(`Expected ${first.id} to be unpaired but it is paired with ${partner.id}`, state);
     },
     legal(seat, spec) {
       const state = getState();

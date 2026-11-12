@@ -21,8 +21,10 @@ import { derive } from './derive';
 import { designationHolders } from './designations';
 import { manaSpentOf } from './mana-spent';
 import { ownsAndControlsNamedHolds } from './meld-condition';
+import { partnerOf } from './pairing';
 import { ringBearerOf } from './ring-bearer';
 import { matchesFilter, resolveObjects, resolvePlayers } from './select';
+import { soulbondReadyHolds } from './soulbond';
 import { objectOrLki } from './source-info';
 
 /** CR 702.105a (D-151): `source` is attacking a player with the most life or tied for the most among the players still in the game. */
@@ -428,6 +430,14 @@ export function evaluateCondition(
         playerStatOf(state, ctx.triggerPlayer, condition.stat) >
           playerStatOf(state, ctx.controller, condition.stat)
       );
+    case 'paired': {
+      // CR 702.95b (D-984): the permanent the condition belongs to is paired with a creature now, both on the battlefield.
+      const own = ctx.source === null ? undefined : state.objects[ctx.source];
+      return own !== undefined && partnerOf(state, own) !== null;
+    }
+    case 'soulbondReady':
+      // CR 702.95a, 603.4 (D-984): the intervening "if" of the two abilities soulbond stands for.
+      return soulbondReadyHolds(state, condition, ctx);
     case 'ownsAndControlsNamed':
       // CR 701.42a, 603.4 (D-278): the source and a permanent with a name, both owned and controlled by the controller.
       return ownsAndControlsNamedHolds(state, condition, ctx.controller, ctx.source);
