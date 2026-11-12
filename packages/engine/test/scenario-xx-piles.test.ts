@@ -383,9 +383,9 @@ describe('replay and determinism', () => {
 
   test('the zone changes happen in that order: the chosen pile first, then the other, each from the top of the library down', () => {
     const g = play();
-    const moved = g.eventsSince(0).flatMap((e) =>
-      e.kind === 'zoneChanged' && e.fromZone === 'library' ? [e.to] : [],
-    );
+    const moved = g
+      .eventsSince(0)
+      .flatMap((e) => (e.kind === 'zoneChanged' && e.fromZone === 'library' ? [e.to] : []));
     // Pile 2 (b, c, e) was chosen; pile 1 (a, d) is the other.
     expect(moved).toEqual(['b', 'c', 'e', 'a', 'd'].map((label) => g.id(label)));
   });
