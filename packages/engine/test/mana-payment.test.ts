@@ -474,14 +474,17 @@ describe('planPayment: pool first, tiers, waste', () => {
     expect(planPayment(request(['W'], { pool: [mana('U')] }))).toBeNull();
   });
 
-  test('lands before creatures before artifacts before sacrifice sources', () => {
+  test('colorless sources first, then lands before artifacts, creatures last, sacrifice sources very last', () => {
     const elves = source(1, [['G']], { tier: 'creature' });
     const mindStone = source(2, [['C']], { tier: 'artifact' });
     const treasure = source(3, ANY, { tier: 'sacrifice' });
     const forest = source(9, [['G']]);
-    expect(tapped(['1'], { sources: [elves, mindStone, treasure, forest] })).toEqual(['o9/0/0']);
-    expect(tapped(['1'], { sources: [elves, mindStone, treasure] })).toEqual(['o1/0/0']);
-    expect(tapped(['1'], { sources: [mindStone, treasure] })).toEqual(['o2/0/0']);
+    // A colorless rock costs nothing in flexibility (issue 18): it goes before a colored land.
+    expect(tapped(['1'], { sources: [elves, mindStone, treasure, forest] })).toEqual(['o2/0/0']);
+    // A creature is kept for combat: a rock goes before it.
+    expect(tapped(['1'], { sources: [elves, mindStone, treasure] })).toEqual(['o2/0/0']);
+    expect(tapped(['1'], { sources: [elves, treasure, forest] })).toEqual(['o9/0/0']);
+    expect(tapped(['1'], { sources: [elves, treasure] })).toEqual(['o1/0/0']);
     expect(tapped(['1'], { sources: [treasure] })).toEqual(['o3/0/0']);
   });
 
@@ -505,6 +508,65 @@ describe('planPayment: pool first, tiers, waste', () => {
   test('fewer taps within a tier beat many small taps', () => {
     const tomb = source(5, [['C', 'C']]);
     expect(tapped(['2'], { sources: [land(1, 'G'), land(2, 'G'), tomb] })).toEqual(['o5/0/0']);
+  });
+});
+
+describe('planPayment: the least flexible mana first (issue 18)', () => {
+  const wastes = land(5, 'C');
+  test('a colorless land is tapped before a colored land for a generic cost', () => {
+    expect(tapped(['1'], { sources: [land(1, 'G'), wastes] })).toEqual(['o5/0/0']);
+    // The colorless land goes first; of two colored lands of one color count the lower id.
+    expect(tapped(['2'], { sources: [land(1, 'G'), land(2, 'U'), wastes] })).toEqual([
+      'o1/0/0',
+      'o5/0/0',
+    ]);
+  });
+
+  test('Sol Ring pays a generic cost before a colored land is tapped', () => {
+    const solRing = source(7, [['C', 'C']], { tier: 'artifact' });
+    expect(tapped(['2'], { sources: [land(1, 'G'), land(2, 'G'), solRing] })).toEqual(['o7/0/0']);
+    expect(tapped(['3'], { sources: [land(1, 'G'), land(2, 'G'), solRing] })).toEqual([
+      'o1/0/0',
+      'o7/0/0',
+    ]);
+  });
+
+  test('a basic land goes before a land that makes several colors, and before any-color mana', () => {
+    const tower = source(1, ANY);
+    const dual = source(2, [['W'], ['U']]);
+    expect(tapped(['1'], { sources: [tower, dual, land(3, 'R')] })).toEqual(['o3/0/0']);
+    expect(tapped(['1'], { sources: [tower, dual] })).toEqual(['o2/0/0']);
+  });
+
+  test('a colored cost still taps the source of that color: flexibility never changes what can be paid', () => {
+    expect(tapped(['G'], { sources: [wastes, land(1, 'G')] })).toEqual(['o1/0/0']);
+    expect(tapped(['G'], { sources: [source(1, ANY), land(2, 'G')] })).toEqual(['o2/0/0']);
+    expect(tapped(['W', 'U'], { sources: [source(1, ANY), land(2, 'W')] })).toEqual([
+      'o1/0/1',
+      'o2/0/0',
+    ]);
+  });
+
+  test('Delve, Improvise and Convoke resources come after real mana sources, flexibility or not', () => {
+    const graveyardCard = {
+      ...source(8, [['C']], { tier: 'artifact', genericOnly: true }),
+      abilityIndex: -1,
+    };
+    expect(tapped(['1'], { sources: [graveyardCard, land(1, 'G')] })).toEqual(['o1/0/0']);
+    expect(
+      tapped(['1'], { sources: [graveyardCard, source(2, [['C', 'C']], { tier: 'artifact' })] }),
+    ).toEqual(['o2/0/0']);
+    expect(tapped(['2'], { sources: [graveyardCard, land(1, 'G')] })).toEqual([
+      'o1/0/0',
+      'o8/-1/0',
+    ]);
+  });
+
+  test('a color kept in reserve still keeps its land untapped, and colorless goes first either way', () => {
+    expect(tapped(['1'], { sources: [land(1, 'G'), wastes], reserve: ['G'] })).toEqual(['o5/0/0']);
+    expect(tapped(['1'], { sources: [land(1, 'G'), land(2, 'U')], reserve: ['G'] })).toEqual([
+      'o2/0/0',
+    ]);
   });
 });
 
