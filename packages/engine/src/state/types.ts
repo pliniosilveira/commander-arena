@@ -550,10 +550,12 @@ export const DEFAULT_SETTINGS: GameSettings = {
 };
 
 /**
- * D-993: two cards that were one melded permanent, now two objects in the same zone, whose order the owner may choose (CR 712.21a, 712.21b).
+ * D-993: two cards that were one melded permanent, now two objects in the same zone, whose order a player chooses: their owner for a graveyard or a library
+ * (CR 712.21a), the player who exiled the permanent for exile (CR 712.21b).
  * `first` is the object that has the default place (put in the zone first: lower in a graveyard or library, the earlier timestamp in exile).
  */
 export interface MeldOrder {
+  /** The player who chooses the order and is asked. */
   readonly seat: SeatId;
   readonly first: ObjectId;
   readonly second: ObjectId;

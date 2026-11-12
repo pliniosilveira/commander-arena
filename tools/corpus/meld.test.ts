@@ -122,6 +122,48 @@ describe('corpus:extract', () => {
     expect(records[1].acceptance).toBeUndefined();
   });
 
+  test('the three names of the owner workflow (the two halves and the melded face) are all found: the face, not Commander-legal, was taken with the pair', async () => {
+    const forms = await writeForms(trio());
+    const names = path.join(forms.dir, 'names.txt');
+    await writeFile(names, `${FRONT}\n${BACK}\n${RESULT}\n`);
+    const golden = path.join(forms.dir, 'golden.jsonl');
+    const { io, err } = capture();
+    const code = await run(
+      ['extract', '--file', forms.jsonl, '--names', names, '--golden', golden],
+      io,
+      { repoRoot: forms.dir },
+    );
+    expect(err).toEqual([]);
+    expect(code).toBe(0);
+    const records = (await readFile(golden, 'utf8'))
+      .split('\n')
+      .filter((l) => l !== '')
+      .map((l) => JSON.parse(l));
+    expect(records.map((r) => r.name).sort()).toEqual([BACK, FRONT, RESULT].sort());
+    expect(records.find((r) => r.name === RESULT)).toMatchObject({ related: true });
+  });
+
+  test('a melded face with the layout meld that lists only the two halves is still taken with the pair', async () => {
+    const cards = trio().map((c) => (c.name === RESULT ? { ...c, layout: 'meld' } : c));
+    const forms = await writeForms(cards as SyntheticCard[]);
+    const names = path.join(forms.dir, 'names.txt');
+    await writeFile(names, `${FRONT}\n${BACK}\n${RESULT}\n`);
+    const golden = path.join(forms.dir, 'golden.jsonl');
+    const { io, err } = capture();
+    const code = await run(
+      ['extract', '--file', forms.jsonl, '--names', names, '--golden', golden],
+      io,
+      { repoRoot: forms.dir },
+    );
+    expect(err).toEqual([]);
+    expect(code).toBe(0);
+    const records = (await readFile(golden, 'utf8'))
+      .split('\n')
+      .filter((l) => l !== '')
+      .map((l) => JSON.parse(l));
+    expect(records.map((r) => r.name).sort()).toEqual([BACK, FRONT, RESULT].sort());
+  });
+
   test('a melded face that is not in the file is reported', async () => {
     const forms = await writeForms(trio().slice(0, 2));
     const names = path.join(forms.dir, 'names.txt');

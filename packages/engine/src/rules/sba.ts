@@ -287,7 +287,7 @@ export function checkStateBasedActions(input: GameState): SbaResult {
 }
 
 /**
- * CR 712.21a, 712.21b (D-993): the first of the pairs of cards that a melded permanent became, whose owner has not yet arranged them. A pair whose cards are no longer
+ * CR 712.21a, 712.21b (D-993): the first of the pairs of cards that a melded permanent became, which the player entitled to has not yet arranged. A pair whose cards are no longer
  * both in the zone they went to (or, in a graveyard or a library, next to each other: something moved or shuffled them) is dropped, with nothing asked.
  */
 function meldOrderDecision(state: GameState): {
@@ -299,12 +299,16 @@ function meldOrderDecision(state: GameState): {
   for (const entry of pending) {
     const a = state.objects[entry.first];
     const b = state.objects[entry.second];
+    // The zone a graveyard or a library belongs to is the owner's, who is not always the player asked (CR 712.21b: exile is ordered by the player who exiled it).
+    const owner = a?.owner;
     const list =
       entry.zone === 'exile'
         ? state.exile
-        : entry.zone === 'library'
-          ? (state.seats[entry.seat]?.library ?? [])
-          : (state.seats[entry.seat]?.graveyard ?? []);
+        : owner === undefined
+          ? []
+          : entry.zone === 'library'
+            ? (state.seats[owner]?.library ?? [])
+            : (state.seats[owner]?.graveyard ?? []);
     const together =
       a?.zone === entry.zone &&
       b?.zone === entry.zone &&

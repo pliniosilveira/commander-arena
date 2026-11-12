@@ -31,8 +31,9 @@ const normalized = (name: string): string => name.trim().toLowerCase();
 
 /**
  * The relation of a card in a meld pair, from its `relatedParts`. A card is the melded face when its own entry is a `meld_result` (or, when it does not list itself,
- * it is a one-faced card with no mana cost that lists `meld_part` entries and no `meld_result`); a card of layout `meld` is a half when exactly one other `meld_part`
- * and exactly one `meld_result` are named. Anything else is `none` with the problems that say why.
+ * it is a one-faced card with no mana cost that lists `meld_part` entries and no `meld_result`, whatever its layout: the melded face may itself have the layout
+ * `meld`, and a half always has a mana cost); a card of layout `meld` is a half when exactly one other `meld_part` and exactly one `meld_result` are named.
+ * Anything else is `none` with the problems that say why.
  */
 export function meldRelation(stored: StoredCard): MeldRelation {
   const me = normalized(stored.name);
@@ -47,7 +48,7 @@ export function meldRelation(stored: StoredCard): MeldRelation {
     front !== undefined &&
     (front.manaCost === null || front.manaCost === '') &&
     !parts.some((p) => normalized(p.name) === me);
-  if (listedAsResult || (stored.layout !== 'meld' && looksLikeResult)) {
+  if (listedAsResult || looksLikeResult) {
     return { role: 'result', problems: [] };
   }
   if (stored.layout !== 'meld') return { role: 'none', problems: [] };

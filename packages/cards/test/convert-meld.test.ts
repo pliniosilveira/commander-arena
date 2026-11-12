@@ -114,6 +114,20 @@ describe('what the data says (CR 712.5: the meld pairs)', () => {
     expect(meldRelation(RESULT_CARD).role).toBe('result');
   });
 
+  test('the combined face with the layout meld is the result whether or not its own data lists it (a face that lists only the two halves)', () => {
+    const listsOnlyHalves = stored(raw.result({ layout: 'meld', all_parts: PARTS.slice(0, 2) }));
+    expect(listsOnlyHalves.layout).toBe('meld');
+    expect(meldRelation(listsOnlyHalves).role).toBe('result');
+    expect(meldRelation(stored(raw.result({ layout: 'meld' }))).role).toBe('result');
+  });
+
+  test('a half with a mana cost whose data lists the other half but not itself is not mistaken for the combined face', () => {
+    const half = stored(
+      raw.front({ all_parts: [part(BACK, 'meld_part'), part(RESULT, 'meld_result')] }),
+    );
+    expect(meldRelation(half).role).not.toBe('result');
+  });
+
   test('a card that is not part of a meld pair has no relation', () => {
     expect(meldRelation(stored(syntheticCard('SYNTHETIC Bear'))).role).toBe('none');
   });

@@ -740,8 +740,8 @@ export interface ChooseOptionDecision extends DecisionBase {
   readonly attacker?: ObjectId;
   readonly attackTargets?: readonly AttackTarget[];
   /**
-   * For purpose `'meldOrder'` (D-993, CR 712.21a, 712.21b): a melded permanent left the battlefield for a graveyard, a library or exile, and the player
-   * who owns its two cards (`seat`) arranges them. `options` are the names of the two cards (the cards of `first` and `second`, in that order, which are
+   * For purpose `'meldOrder'` (D-993, CR 712.21a, 712.21b): a melded permanent left the battlefield for a graveyard, a library or exile, and `seat`
+   * arranges its two cards: their owner for a graveyard or a library (CR 712.21a), the player who exiled the permanent for exile (CR 712.21b). `options` are the names of the two cards (the cards of `first` and `second`, in that order, which are
    * the two new objects in `zone`) and the answer is a `chooseOption` of the one that goes on top of the graveyard or library, or, in exile, the one
    * that is exiled last (the later timestamp). Asked as state-based actions are next checked; the order is not revealed (CR 712.21a). `source` is `first`.
    */

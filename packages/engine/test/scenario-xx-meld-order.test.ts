@@ -1,7 +1,7 @@
 // The order of the two cards of a melded permanent that left the battlefield (CR 712.21a, 712.21b; D-993): in a graveyard or a library their owner may arrange them
 // in any order (the order in a library is not revealed), and a player who exiles a melded permanent determines the relative timestamp order of the two cards.
-// The question is asked as state-based actions are next checked, of the owner of the cards, with the names of the two cards: the answer is the card that goes on
-// top (or that is exiled last). It is not asked when the cards go to a hand or the command zone, and a pair that is no longer together is dropped.
+// The question is asked as state-based actions are next checked, of the owner of the cards (of the player who exiled the permanent, for exile), with the names of
+// the two cards: the answer is the card that goes on top (or that is exiled last). It is not asked when the cards go to a hand or the command zone, and a pair that is no longer together is dropped.
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-meld.ts).
 import { describe, expect, test } from 'vitest';
 import { checkInvariants, stateHash } from '../src/index';
@@ -95,7 +95,7 @@ describe('a melded permanent is put into a library (CR 712.21a)', () => {
 });
 
 describe('a melded permanent is exiled (CR 712.21b)', () => {
-  test('the player who exiled it determines which card has the later timestamp', () => {
+  test('the owner who exiles their own permanent determines which card has the later timestamp', () => {
     const g = build(EXILE);
     g.act(0).cast(EXILE, { targets: ['dusk'], pay: true });
     g.passAll();
@@ -112,6 +112,63 @@ describe('a melded permanent is exiled (CR 712.21b)', () => {
     g.act(0).chooseOption(DAWN);
     settle(g);
     expect(g.object(DAWN).timestamp).toBeGreaterThan(g.object(DUSK).timestamp);
+  });
+});
+
+describe('an opponent exiles the melded permanent (CR 712.21b)', () => {
+  // Seat 1 exiles what seat 0 owns and controls: the player who exiles it, not its owner, determines the timestamp order of the two cards.
+  const buildOpponent = () =>
+    scenario()
+      .seat(0)
+      .battlefield(DUSK, { label: 'dusk', meldedWith: 'dawn' })
+      .battlefield(DAWN, { label: 'dawn' })
+      .library('Island', { count: 6 })
+      .seat(1)
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Plains', 'Island', 'Island')
+      .hand(EXILE, 'Murder', TUCK)
+      .library('Island', { count: 6 })
+      .at('precombatMain', { active: 1, turn: 4, priority: 1 })
+      .build();
+
+  test('the question goes to the player who exiled it, not to the owner', () => {
+    const g = buildOpponent();
+    g.act(1).cast(EXILE, { targets: ['dusk'], pay: true });
+    g.passAll();
+    g.expect.pending('chooseOption', 1);
+    g.act(1).chooseOption(DAWN);
+    settle(g);
+    expect(g.object(DAWN).timestamp).toBeGreaterThan(g.object(DUSK).timestamp);
+    expect(checkInvariants(g.state)).toEqual([]);
+  });
+
+  test('the other answer', () => {
+    const g = buildOpponent();
+    g.act(1).cast(EXILE, { targets: ['dusk'], pay: true });
+    g.passAll();
+    g.act(1).chooseOption(DUSK);
+    settle(g);
+    expect(g.object(DUSK).timestamp).toBeGreaterThan(g.object(DAWN).timestamp);
+  });
+
+  test('the owner is not the one who answers', () => {
+    const g = buildOpponent();
+    g.act(1).cast(EXILE, { targets: ['dusk'], pay: true });
+    g.passAll();
+    expect(() => g.act(0).chooseOption(DUSK)).toThrow();
+  });
+
+  test('a graveyard is still arranged by the owner, whoever destroyed the permanent', () => {
+    const g = buildOpponent();
+    g.act(1).cast('Murder', { targets: ['dusk'], pay: true });
+    g.passAll();
+    g.expect.pending('chooseOption', 0);
+  });
+
+  test('a library is still arranged by the owner, whoever put the permanent there', () => {
+    const g = buildOpponent();
+    g.act(1).cast(TUCK, { targets: ['dusk'], pay: true });
+    g.passAll();
+    g.expect.pending('chooseOption', 0);
   });
 });
 

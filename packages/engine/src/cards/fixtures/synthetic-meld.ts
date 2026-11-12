@@ -251,6 +251,44 @@ export const SYNTHETIC_MELD_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Whenever a creature dies, exile it." The permanent is gone: "it" is the card it became in the graveyard, or both cards of a melded permanent (CR 712.21c).
+  singleFace({
+    name: 'SYNTHETIC Grave Warden',
+    manaCost: ['1', 'B'],
+    types: ['enchantment'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    oracleText: 'Whenever a creature dies, exile it.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'dies', what: { zone: 'battlefield', types: ['creature'] } },
+        effect: { kind: 'exile', objects: { kind: 'triggerSubject' } },
+      },
+    ],
+  }),
+  // "Whenever a creature dies, return that card to the battlefield under its owner's control." For a melded permanent, that card is both of its cards (CR 712.21c).
+  singleFace({
+    name: 'SYNTHETIC Grave Recaller',
+    manaCost: ['2', 'B'],
+    types: ['enchantment'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    oracleText:
+      "Whenever a creature dies, return that card to the battlefield under its owner's control.",
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'dies', what: { zone: 'battlefield', types: ['creature'] } },
+        effect: {
+          kind: 'moveToZone',
+          objects: { kind: 'triggerCard' },
+          to: 'battlefield',
+          controller: 'owner',
+        },
+      },
+    ],
+  }),
   // ---- The cast restriction of a melded face (D-996): "Your opponents can't cast spells with mana value 3 or less."
   singleFace({
     name: 'SYNTHETIC Gatekeeper',

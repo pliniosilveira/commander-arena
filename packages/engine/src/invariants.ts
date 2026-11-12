@@ -219,7 +219,8 @@ export function checkInvariants(state: GameState): string[] {
     if (obj.kicks !== undefined && (obj.kicked !== true || !(obj.kicks >= 1))) {
       problems.push(`${id} remembers ${obj.kicks} kicks without having been kicked`);
     }
-    // CR 712.8a, 715.4: a face other than the front one is up only on the stack and the battlefield.
+    // CR 712.8a, 715.4: a face other than the front one is up only on the stack and the battlefield (or phased out, CR 702.26b: a phased-out permanent is
+    // treated as though it does not exist but stays as it was, with the face it had up).
     if (card === null ? obj.face !== 0 : obj.face < 0 || obj.face >= Math.max(1, faces.length)) {
       problems.push(`${id} has face ${obj.face}, which its card does not have`);
     }
@@ -227,6 +228,7 @@ export function checkInvariants(state: GameState): string[] {
       obj.face !== 0 &&
       obj.zone !== 'stack' &&
       obj.zone !== 'battlefield' &&
+      obj.zone !== 'phased' &&
       obj.prepareOf === undefined
     ) {
       problems.push(`${id} has face ${obj.face} in ${obj.zone}`);

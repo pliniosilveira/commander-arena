@@ -11,7 +11,7 @@
  * What reads "the card of an object" and must see two of them goes through `cardsOf`, `commanderCardOf` and `successorsOf` here; a test
  * (`test/meld-reads.test.ts`) fails when a rule reads the commander flag of `obj.card` directly (the precedent is `test/control-reads.test.ts`).
  */
-import type { CardId, ObjectId, SeatId } from '../ids';
+import type { CardId, ObjectId } from '../ids';
 import { definitionOf, getObject, patchObject, patchSeat } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 
@@ -24,10 +24,12 @@ export function cardsOf(obj: GameObject): readonly CardId[] {
 /**
  * The commander card that represents the object, or null when none does (CR 903.3, 903.3b: a melded permanent one of whose cards is a player's commander
  * is that player's commander). A token, a permanent copying a commander and an ability are never commanders.
+ *
+ * A melded permanent's commander card is always its first card, the one `GameObject.card` names: the meld effect puts the commander's exile object first
+ * (`rules/meld.ts`) and `checkInvariants` fails on a melded permanent whose second card is the only commander. So the first card is the only one to read.
  */
 export function commanderCardOf(state: GameState, obj: GameObject): CardId | null {
-  for (const card of cardsOf(obj)) if (isCommanderCardId(state, card)) return card;
-  return null;
+  return isCommanderCardId(state, obj.card) ? obj.card : null;
 }
 
 /** Whether the card is a card its owner designated as a commander (CR 903.3). */
@@ -78,6 +80,15 @@ export function meldPairIssue(state: GameState, a: GameObject, b: GameObject): s
   return meldCardsIssue(state, a.card, b.card);
 }
 
+/**
+ * Whether the two objects are two commander cards. CR 701.42 would meld them (CR 903.3b names a commander that is melded, and nothing there forbids two), but a melded permanent here has one commander card (D-991): the case is not
+ * built, so the meld ability does not start at all for such a pair (`rules/meld-condition.ts`): exiling cards that then could not be melded would take them out of the game
+ * for nothing, so the permanents stay where they are.
+ */
+export function twoCommanderCards(state: GameState, a: GameObject, b: GameObject): boolean {
+  return isCommanderCardId(state, a.card) && isCommanderCardId(state, b.card);
+}
+
 /** `meldPairIssue` for two cards: the part that reads the cards and their data. */
 export function meldCardsIssue(
   state: Pick<GameState, 'cards' | 'definitions'>,
@@ -121,12 +132,12 @@ export function meldedManaCost(state: GameState, obj: GameObject): readonly stri
 
 /**
  * CR 712.21a, 712.21b (D-993): puts `top` above `other`, the two cards a melded permanent became in the zone it left for, which are next to each other in a graveyard or a
- * library (the top of a library is its first card, the top of a graveyard its last); in exile `top` is made the card exiled last, the one with the later timestamp
- * (the exiling player chooses, an exception to CR 613.7m). Does nothing when they already are in that order.
+ * library of their owner (the top of a library is its first card, the top of a graveyard its last); in exile `top` is made the card exiled last, the one with the
+ * later timestamp (the player who exiled the permanent chooses, an exception to CR 613.7m). Who chooses is the caller's business (`MeldOrder.seat`). Does nothing
+ * when they already are in that order.
  */
 export function arrangeMeldedCards(
   state: GameState,
-  seat: SeatId,
   zone: 'graveyard' | 'library' | 'exile',
   top: ObjectId,
   other: ObjectId,
@@ -139,6 +150,7 @@ export function arrangeMeldedCards(
       timestamp: a.timestamp,
     });
   }
+  const seat = getObject(state, top).owner;
   const seatState = state.seats[seat];
   if (seatState === undefined) return state;
   const list = zone === 'library' ? seatState.library : seatState.graveyard;

@@ -913,19 +913,20 @@ export function graveyardPhrase(plural: boolean): Parser<IrFilter> {
       pos: r.pos,
     };
   };
-  // "Angel or Human creature card" (D-992, CR 205.3m): a card of a card type that has either of two creature types ("target Angel or Human creature card from your
-  // graveyard", Bruna's cast trigger). One card only, so not in the plural; the types follow the words, so "Angel or Human card" alone is not read.
+  // "Angel or Human creature card" (D-992, CR 205.3m): a creature card that has either of two creature types ("target Angel or Human creature card from your
+  // graveyard", Bruna's cast trigger). One card only, so not in the plural; the word "creature" must follow the types, so "Angel or Human card" alone and
+  // "Angel or Human land card" are not read (a creature type on a card of another type is not built).
   const subtypeChoiceWords: Parser<CardWords> = (ctx, pos) => {
     const r = sequence(
       satisfy(typeChoice(SUBTYPE_WORD, true), (list) =>
-        // Creature types only: the card is a creature card of one of them (a land or Aura type with a card type is another phrase).
+        // Creature types only (a land or Aura type with a card type is another phrase).
         list.every((w) => {
           const found = readCreatureType(w);
           return found !== undefined && found.plural !== true;
         }),
       ),
       literal(' '),
-      typeWords(CARD_TYPES, false),
+      typeWords('creature', false),
       literal(' '),
     )(ctx, pos);
     if (!r.ok) return r;

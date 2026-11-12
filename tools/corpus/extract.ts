@@ -116,17 +116,23 @@ export async function extract(options: Options, repoRoot: string, io: ExtractIo)
 
   const fresh = [...found.values()];
   const noResult: string[] = [];
+  // The names that were taken as the melded face of a pair they were asked with: the face is not Commander-legal, so the loop above skipped it, and asking for it by
+  // name (the owner workflow lists the two halves and the melded face) is satisfied by taking it with its pair.
+  const takenWithPair = new Set<string>();
   for (const name of meldResultNames(halves)) {
     const face = meldFaces.get(normalizeNameKey(name));
     if (face === undefined || face === null) noResult.push(name);
     else if (!fresh.some((c) => normalizeNameKey(c.name) === normalizeNameKey(name))) {
       fresh.push(toGoldenCard(face, source, { related: true }));
+      takenWithPair.add(normalizeNameKey(name));
     }
   }
   const { merged, replaced } = mergeGolden(existing, fresh);
   await writeFile(goldenFile, `${merged.map(goldenLine).join('\n')}\n`);
 
-  const missing = wanted.filter((name) => !found.has(normalizeNameKey(name)));
+  const missing = wanted.filter(
+    (name) => !found.has(normalizeNameKey(name)) && !takenWithPair.has(normalizeNameKey(name)),
+  );
   io.out(
     `wrote ${path.relative(process.cwd(), goldenFile) || goldenFile}: ${fresh.length} card(s) from the bulk file` +
       ` (${fresh.length - replaced} new, ${replaced} replaced), ${merged.length} in all.`,

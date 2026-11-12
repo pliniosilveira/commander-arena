@@ -27,11 +27,11 @@ export const STATIC_OPPONENTS_CANT_CAST_SPELLS = defineRule<IrStatic>({
   family: 'static',
   leading: ['your'],
   cites: [
-    'CR 101.2 (Golden Rules)',
+    'CR 101.2 (The Magic Golden Rules)',
     'CR 604.1 (Handling Static Abilities)',
     'CR 601.2 (Casting Spells)',
-    'CR 202.3 (Characteristics)',
-    'CR 202.3e (Characteristics)',
+    'CR 202.3 (Mana Cost and Color)',
+    'CR 202.3e (Mana Cost and Color)',
   ],
   examples: [
     "Your opponents can't cast spells with mana value 3 or less.",

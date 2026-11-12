@@ -207,6 +207,7 @@ describe('"an Angel or Human creature card" of a graveyard', () => {
 
   test.each([
     ['no card type', 'target Angel or Human card'],
+    ['a card type that is not creature', 'target Angel or Human land card'],
     ['a plural', 'all Angel or Human creature cards'],
     ['a type that is not a creature type', 'target Aura or Equipment creature card'],
     ['one name twice', 'target Angel or Angel creature card'],

@@ -55,6 +55,17 @@ describe('at the beginning of your end step (CR 701.42a, 712.14c)', () => {
     expect(checkInvariants(g.state)).toEqual([]);
   });
 
+  test('each exile object that became the melded permanent says so in its last-known information (CR 400.7)', () => {
+    const g = base().seat(0).battlefield(DUSK).battlefield(DAWN).build();
+    g.advanceTo('end');
+    settle(g);
+    const permanent = g.object(DUSK).id;
+    // The two exile objects the cards were, one for each card, both became the one permanent.
+    const became = Object.values(g.state.lki).filter((info) => info.successor === permanent);
+    expect(became).toHaveLength(2);
+    expect(became.map((info) => info.object.zone).sort()).toEqual(['exile', 'exile']);
+  });
+
   test('it enters under the control of the player who controls the ability, summoning sick (CR 302.6) like any permanent that just entered', () => {
     const g = base().seat(0).battlefield(DUSK).battlefield(DAWN).build();
     g.advanceTo('end');
@@ -99,6 +110,25 @@ describe('the condition (CR 603.4: an intervening "if")', () => {
     expect(g.object(DUSK).zone).toBe('battlefield');
     expect(g.object(DUSK).face).toBe(0);
     expect(g.object(DAWN).controller).toBe(1);
+  });
+
+  test('a card an opponent owns but the player controls does not count: "you both own and control" (CR 108.3)', () => {
+    const g = base().seat(0).battlefield(DUSK).seat(1).battlefield(DAWN, { controller: 0 }).build();
+    g.advanceTo('end');
+    settle(g);
+    expect(g.object(DUSK).face).toBe(0);
+    expect(g.object(DAWN).zone).toBe('battlefield');
+    expect(g.object(DAWN).owner).toBe(1);
+    expect(g.object(DAWN).controller).toBe(0);
+  });
+
+  test('the card with the ability counts only when its controller owns it too', () => {
+    const g = base().seat(1).battlefield(DUSK, { controller: 0 }).seat(0).battlefield(DAWN).build();
+    g.advanceTo('end');
+    settle(g);
+    expect(g.object(DUSK).face).toBe(0);
+    expect(g.object(DAWN).face).toBe(0);
+    expect(g.object(DUSK).zone).toBe('battlefield');
   });
 
   test('a card of another pair does not count, whatever its name', () => {
@@ -234,6 +264,27 @@ describe('a commander that is the card without the meld ability (CR 903.3b)', ()
     expect(viewOf(g, DUSK).isCommander).toBe(true);
     expect(g.state.cards[g.object(DUSK).card as never]?.isCommander).toBe(true);
     expect(g.state.commanderWatch).toEqual([]);
+    expect(checkInvariants(g.state)).toEqual([]);
+  });
+});
+
+describe('two commander cards of one pair (CR 903.3b; not built, D-991)', () => {
+  test('nothing happens at all: the ability does not exile cards it could not meld, and the two stay on the battlefield', () => {
+    const g = base()
+      .seat(0)
+      .battlefield(DUSK, { label: 'dusk', commander: true })
+      .battlefield(DAWN, { label: 'dawn', commander: true })
+      .build();
+    const mark = g.mark();
+    g.advanceTo('end');
+    settle(g);
+    g.expect.zone(DUSK, 'battlefield', { seat: 0 });
+    g.expect.zone(DAWN, 'battlefield', { seat: 0 });
+    expect(g.object(DUSK).face).toBe(0);
+    expect(g.state.exile).toHaveLength(0);
+    expect(
+      g.eventsSince(mark).filter((e) => e.kind === 'meldFailed' || e.kind === 'melded'),
+    ).toEqual([]);
     expect(checkInvariants(g.state)).toEqual([]);
   });
 });

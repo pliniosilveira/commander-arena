@@ -24,7 +24,7 @@ export const CONDITION_OWN_AND_CONTROL_NAMED = defineRule<IrCondition>({
     'CR 701.42a (Meld)',
     'CR 712.4a (Double-Faced Cards)',
     'CR 603.4 (Handling Triggered Abilities)',
-    'CR 108.3 (Owners and Controllers)',
+    'CR 108.3 (Cards)',
     'CR 109.4 (Objects)',
   ],
   examples: [

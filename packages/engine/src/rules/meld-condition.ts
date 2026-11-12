@@ -7,13 +7,17 @@ import type { ObjectId, SeatId } from '../ids';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
+import { twoCommanderCards } from './melded';
 
 /** Whether the permanent is on the battlefield and both owned and controlled by `seat` (the meld ability says "you both own and control"). */
 export function ownedAndControlledBy(state: GameState, obj: GameObject, seat: SeatId): boolean {
   return obj.zone === 'battlefield' && obj.owner === seat && controllerOf(state, obj) === seat;
 }
 
-/** The permanents of the card type named `name` that `seat` owns and controls, other than `source`, in the order of the battlefield. */
+/**
+ * The permanents of the card type named `name` that `seat` owns and controls, other than `source`, in the order of the battlefield. Not the one that, with `source`, is
+ * two commander cards: that meld is not built (`twoCommanderCards`), so such a permanent is not a candidate.
+ */
 export function namedCandidates(
   state: GameState,
   source: GameObject,
@@ -27,6 +31,7 @@ export function namedCandidates(
     if (obj === undefined || obj.id === source.id || !ownedAndControlledBy(state, obj, seat)) {
       continue;
     }
+    if (twoCommanderCards(state, source, obj)) continue;
     const d = derive(state, obj);
     if (d.name === name && d.types.includes(type)) found.push(obj);
   }

@@ -418,7 +418,7 @@ function answerConfirm(
  * effect putting one onto the battlefield, a token being created), or for a land being played.
  */
 /**
- * The answer to the order of the two cards of a melded permanent that left the battlefield (CR 712.21a, 712.21b, D-993): the owner chooses which of the two goes
+ * The answer to the order of the two cards of a melded permanent that left the battlefield (CR 712.21a, 712.21b, D-993): the player asked (`d.seat`) chooses which of the two goes
  * on top of the graveyard or library, or, in exile, which has the later timestamp; the other goes below it. State-based actions are checked again after.
  */
 function answerMeldOrder(
@@ -433,7 +433,7 @@ function answerMeldOrder(
   const other = index === 0 ? order.second : order.first;
   let next: GameState = { ...state, pending: null };
   next = { ...next, meldOrders: (next.meldOrders ?? []).filter((e) => e.first !== order.first) };
-  next = arrangeMeldedCards(next, d.seat, order.zone, top, other);
+  next = arrangeMeldedCards(next, order.zone, top, other);
   return resumeAfterSbaDecision(next);
 }
 

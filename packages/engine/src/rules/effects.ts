@@ -266,6 +266,8 @@ export function runInstruction(
       tapped: instruction.tapped,
       commanderChoice: instruction.commanderChoice,
       ...(instruction.withCounters === undefined ? {} : { withCounters: instruction.withCounters }),
+      // CR 712.21b (D-993): the controller of the effect is the player who exiles a melded permanent.
+      by: res.controller,
       ...(instruction.alt === undefined ? {} : { alt: instruction.alt }),
       ...(instruction.replacers === undefined ? {} : { replacers: instruction.replacers }),
       // CR 614.12, 614.12b (D-272): the cards of a `together` run enter in one event, so what the replacement effects of this one read is the battlefield without

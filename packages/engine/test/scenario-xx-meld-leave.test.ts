@@ -140,3 +140,46 @@ describe('an effect that finds the new object finds both cards (CR 712.21c)', ()
     expect(checkInvariants(g.state)).toEqual([]);
   });
 });
+
+describe('"it" of a trigger about a melded permanent that died is both cards (CR 712.21c)', () => {
+  const WARDEN = 'SYNTHETIC Grave Warden'; // whenever a creature dies, exile it
+  const RECALLER = 'SYNTHETIC Grave Recaller'; // whenever a creature dies, return that card to the battlefield under its owner's control
+
+  const buildDying = (watcher: string) =>
+    scenario()
+      .seat(0)
+      .battlefield(DUSK, { label: 'dusk', meldedWith: 'dawn' })
+      .battlefield(DAWN, { label: 'dawn' })
+      .battlefield(watcher)
+      .battlefield('Swamp', 'Swamp', 'Swamp')
+      .hand('Murder')
+      .library('Island', { count: 6 })
+      .seat(1)
+      .library('Island', { count: 6 })
+      .build();
+
+  test('"exile it" exiles the two cards the permanent became (False Demise-style: the example of CR 712.21c)', () => {
+    const g = buildDying(WARDEN);
+    g.act(0).cast('Murder', { targets: ['dusk'], pay: true });
+    settle(g);
+    g.expect.zone(DUSK, 'exile');
+    g.expect.zone(DAWN, 'exile');
+    expect(g.state.exile).toHaveLength(2);
+    expect(g.state.seats[0]?.graveyard.length).toBe(1); // only Murder
+    expect(checkInvariants(g.state)).toEqual([]);
+  });
+
+  test('"return that card to the battlefield" returns the two cards as two permanents, each with its front face (Mimic Vat-style)', () => {
+    const g = buildDying(RECALLER);
+    g.act(0).cast('Murder', { targets: ['dusk'], pay: true });
+    settle(g);
+    g.expect.zone(DUSK, 'battlefield', { seat: 0 });
+    g.expect.zone(DAWN, 'battlefield', { seat: 0 });
+    expect(g.object(DUSK).id).not.toBe(g.object(DAWN).id);
+    expect(g.object(DUSK).meldedWith).toBeUndefined();
+    expect(g.object(DUSK).face).toBe(0);
+    g.expect.pt(DUSK, 2, 2);
+    g.expect.pt(DAWN, 1, 3);
+    expect(checkInvariants(g.state)).toEqual([]);
+  });
+});

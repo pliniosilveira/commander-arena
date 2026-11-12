@@ -159,6 +159,12 @@ export interface MoveRequest {
    * as the permanent is made. The caller (`rules/meld.ts`) has checked that they can be melded (CR 701.42b). Only for a move to the battlefield.
    */
   readonly meldWith?: ObjectId;
+  /**
+   * D-993 (CR 712.21b): the player who performs the move, when it is an effect's: the controller of the spell or ability that exiles. A player who exiles a
+   * melded permanent determines the order of the two cards, whoever owns it. Absent for a move made by a rule or paid as a cost, where it is the
+   * permanent's controller. Read only for a melded permanent that goes to exile.
+   */
+  readonly by?: SeatId;
 }
 
 export type MoveResult =
@@ -936,7 +942,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     // CR 903.9a: the owner may move it to the command zone the next time state-based actions run.
     next = { ...next, commanderWatch: [...next.commanderWatch, newId] };
   }
-  // CR 712.21a, 712.21b (D-993): the owner arranges the two cards of a melded permanent that went to a graveyard or a library, or chooses which was exiled last; asked
+  // CR 712.21a, 712.21b (D-993): the owner arranges the two cards of a melded permanent that went to a graveyard or a library, and the player who exiled it chooses which was exiled last; asked
   // as state-based actions are next checked, which is when the two objects are in their zone.
   if (
     also !== null &&
@@ -947,7 +953,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       ...next,
       meldOrders: [
         ...(next.meldOrders ?? []),
-        { seat: old.owner, first: newId, second: also.id, zone: to },
+        {
+          // CR 712.21a: the owner arranges a graveyard or a library; CR 712.21b: the player who exiles the permanent orders the cards in exile.
+          seat: to === 'exile' ? (request.by ?? controllerOf(state, old)) : old.owner,
+          first: newId,
+          second: also.id,
+          zone: to,
+        },
       ],
     };
   }

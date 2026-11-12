@@ -161,3 +161,51 @@ describe('attachments, counters and damage when it leaves (CR 400.7, 704.5m, 301
     g.expect.zone(BLADE, 'battlefield');
   });
 });
+
+describe('a melded permanent that phases out (CR 702.26b, 702.26d, 712.8g)', () => {
+  const PHASE_GUARD = 'SYNTHETIC Phase Guard'; // Flash. When it enters, any number of other target creatures you control phase out.
+  const phasing = () =>
+    scenario()
+      .seat(0)
+      .battlefield(DUSK, { label: 'dusk', meldedWith: 'dawn' })
+      .battlefield(DAWN, { label: 'dawn' })
+      .battlefield('Plains', 'Plains', 'Plains', 'Swamp', 'Swamp', 'Swamp')
+      .hand(PHASE_GUARD, 'Murder')
+      .library('Island', { count: 6 })
+      .seat(1)
+      .library('Island', { count: 6 })
+      .build();
+
+  test('stays one object with the combined face up while it is phased out, and the state is consistent', () => {
+    const g = phasing();
+    g.act(0).cast(PHASE_GUARD, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets('dusk');
+    settle(g);
+    expect(g.object('dusk').zone).toBe('phased');
+    expect(g.object('dusk').face).toBe(1);
+    expect(g.object('dusk').meldedWith).toBeDefined();
+    // Treated as though it does not exist (CR 702.26b): it is not on the battlefield of the view.
+    expect(g.view(0).battlefield.some((o) => o.meld !== undefined)).toBe(false);
+    expect(checkInvariants(g.state)).toEqual([]);
+  });
+
+  test('phases in as the same melded permanent, and dies as two cards afterwards (CR 702.26d, 712.21)', () => {
+    const g = phasing();
+    g.act(0).cast(PHASE_GUARD, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets('dusk');
+    settle(g);
+    // It stays phased out through the other player's turn and phases in as its controller's untap step begins (CR 702.26a).
+    g.advanceTo('upkeep', { turn: 'next' });
+    expect(g.object('dusk').zone).toBe('phased');
+    g.advanceTo('upkeep', { turn: 'next' });
+    expect(g.object('dusk').zone).toBe('battlefield');
+    expect(g.object('dusk').meldedWith).toBeDefined();
+    expect(checkInvariants(g.state)).toEqual([]);
+    g.act(0).cast('Murder', { targets: ['dusk'], pay: true });
+    settle(g);
+    expect(g.state.seats[0]?.graveyard.length).toBe(3); // the two cards and Murder
+    expect(checkInvariants(g.state)).toEqual([]);
+  });
+});
