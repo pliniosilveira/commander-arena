@@ -2325,6 +2325,51 @@ export const SOULBOND_NAMES = [
 ] as const;
 
 /**
+ * The cards of the piles slice (D-971): the SYNTHETIC spells that reveal the top cards of the library and have a player separate them into two piles. Used by the 'piles' style and
+ * kept out of every other pool: they ask the other player which cards form a pile, and then which pile goes where, in the middle of a resolution.
+ */
+export const PILES_NAMES = [
+  'SYNTHETIC Pile Reading',
+  'SYNTHETIC Pile Offering',
+  'SYNTHETIC Pile Tithe',
+] as const;
+
+/** The piles style: the three pile spells several times (the controller or an opponent separates, the pile goes to the hand or the graveyard), bodies and a little removal. */
+export const PILES_SPELLS = [
+  ...supported(['SYNTHETIC Pile Reading']),
+  ...supported(['SYNTHETIC Pile Reading']),
+  ...supported(['SYNTHETIC Pile Reading']),
+  ...supported(['SYNTHETIC Pile Offering']),
+  ...supported(['SYNTHETIC Pile Offering']),
+  ...supported(['SYNTHETIC Pile Tithe']),
+  ...supported(['SYNTHETIC Pile Tithe']),
+  ...supported([
+    'SYNTHETIC Vanilla 3/3',
+    'SYNTHETIC Vanilla 2/2',
+    'SYNTHETIC Vanilla 5/5',
+    'Grizzly Bears',
+    'Grizzly Bears',
+    'Wall of Stone',
+    'Serra Angel',
+    'Giant Spider',
+  ]),
+  ...supported(['Lightning Bolt', 'Murder', 'Unsummon']),
+];
+
+/** Blue for the pile spells, the others for the bodies and the removal. */
+export const PILES_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Plains',
+  'Forest',
+  'Swamp',
+  'Mountain',
+]);
+
+/**
  * The soulbond style: the soulbond creatures (the keyword alone, with the Seraph's grant, with +2/+2 and with flying for the pair) several times, the creatures that
  * return when they die, a creature that is paired by another's soulbond, bodies, and removal that ends a pair (death, bounce, a type change, a change of control).
  */
@@ -2646,6 +2691,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(RING_NAMES as readonly string[]).includes(card.name))
   // The soulbond slices have their own tests: a pairing asks which creature to pair with, and a dies ability asks "you may" and creates a delayed ability.
   .filter((card) => !(SOULBOND_NAMES as readonly string[]).includes(card.name))
+  // The piles slice has its own style: its cards ask the other player to separate revealed cards into two piles, then ask which pile goes where.
+  .filter((card) => !(PILES_NAMES as readonly string[]).includes(card.name))
   // The Vraska program has its own style: its cards ask other players questions in the middle of a resolution, and a payment of energy.
   .filter((card) => !(VRASKA_NAMES as readonly string[]).includes(card.name))
   // The Vraska EDHREC program has its own style: its cards ask other players questions in the middle of a resolution and change token creation and triggers.
@@ -2822,6 +2869,7 @@ export type DeckStyle =
   | 'edhrec'
   | 'hofri'
   | 'soulbond'
+  | 'piles'
   | 'combat';
 
 /** The spell slots of a style. A style whose pool is empty falls back to the old spell mix. */
@@ -2829,6 +2877,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   // D-229 to D-235: the Hofri Ghostforge mechanics (a style of its own, kept out of every other pool).
   if (style === 'hofri' && HOFRI_SPELLS.length > 0) return HOFRI_SPELLS;
   if (style === 'soulbond' && SOULBOND_SPELLS.length > 0) return SOULBOND_SPELLS;
+  if (style === 'piles' && PILES_SPELLS.length > 0) return PILES_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
   if (style === 'edhrec') return EDHREC_SPELLS;
   // Only the creatures with a coverage keyword, so every deck of the style draws them (see COVERAGE_KEYWORDS).
@@ -3000,6 +3049,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'edhrec' && BASIC_LANDS.length > 0) return EDHREC_LANDS;
   if (style === 'hofri' && BASIC_LANDS.length > 0) return HOFRI_LANDS;
   if (style === 'soulbond' && BASIC_LANDS.length > 0) return SOULBOND_LANDS;
+  if (style === 'piles' && BASIC_LANDS.length > 0) return PILES_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
 }
 
@@ -3405,6 +3455,13 @@ export const SOULBOND_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
   ['soulbond', 'soulbond'],
   ['soulbond', 'spells'],
   ['spells', 'soulbond'],
+];
+
+/** Style pairs of the piles soak test (D-971): a mirror match and both mixed ways. */
+export const PILES_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['piles', 'piles'],
+  ['piles', 'spells'],
+  ['spells', 'piles'],
 ];
 
 /** Style pairs of the Hofri soak test (D-229 to D-235): a mirror match and both mixed ways. */

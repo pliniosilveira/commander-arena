@@ -18,6 +18,7 @@ import { chooseAnyNumberToDiscard, chooseBehold } from './casual-dragons';
 import { chooseFreeCast } from './casual-free';
 import { choosePutOnTop } from './casual-library';
 import { chooseLeastWorthCard } from './casual-pair';
+import { chooseSeparation } from './casual-piles';
 import { findObject, isLand, manaValueOf } from './casual-view';
 
 /** The colour of a basic land, from its land type (CR 305.6), or null for any other card. */
@@ -215,6 +216,8 @@ export function chooseCardsFromZone(view: GameView, d: ChooseCardsDecision): Act
   if (d.purpose === 'putOnTop') return choosePutOnTop(view, d);
   // D-216: the piles of the cards looked at (Expressive Iteration).
   if (d.purpose === 'lookSplit') return chooseSplitPile(view, d);
+  // D-971: the cards of pile 1 when the agent separates revealed cards into two piles (Fact or Fiction).
+  if (d.purpose === 'separate') return chooseSeparation(view, d);
   // CR 701.4 (D-151): behold a Dragon; "discard any number of cards" (a discard with no minimum that is no cost).
   if (d.purpose === 'behold') return chooseBehold(view, d);
   if (d.purpose === 'discard' && d.min === 0 && d.forCost !== true && d.orSingle === undefined) {

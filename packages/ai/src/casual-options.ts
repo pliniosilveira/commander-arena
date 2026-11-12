@@ -10,6 +10,7 @@
 import type { Action, ChooseOptionDecision, GameView, ObjectView } from '@commander-arena/engine';
 import { chooseNamedOption } from './casual-dragons';
 import { chooseRiot } from './casual-keywords';
+import { choosePile } from './casual-piles';
 import { ownCommandZone, ownHand } from './casual-view';
 import { chooseVote } from './casual-vote';
 
@@ -117,6 +118,8 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   // CR 712.21a, 712.21b (D-279): the order of the two cards a melded permanent became. Nothing in the game reads it for the agent's plans, so the first
   // option, deterministic and always legal.
   if (d.purpose === 'meldOrder') return chooseFirstReplacement(d);
+  // CR 700.3 (D-971): which of two piles of revealed cards goes to the hand (casual-piles.ts).
+  if (d.purpose === 'pile') return choosePile(view, d);
   // CR 701.38a (D-194): a vote, from the words and the votes so far.
   if (d.purpose === 'vote') return chooseVote(d);
   if (d.purpose === 'attackTarget') return chooseAttackTargetAnswer(view, d);
