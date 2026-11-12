@@ -1,0 +1,64 @@
+name: Scryfall lookup
+
+# D-294: a way to read one page of Scryfall's API from a GitHub runner by hand. The cloud sessions of the coding agent cannot reach Scryfall
+# (D-245), but a runner can. Run it from the Actions tab (or let the agent start it) with a path such as `cards/named?exact=Sol+Ring`,
+# `cards/tfrf/4`, `cards/<id>/rulings` or `cards/search?q=t%3Atoken+name%3Amanifest`; the answer is printed in the log and in the job summary,
+# where the agent reads it. Read only, one GET, no secrets, no repository code: the path is validated (only `cards/`, `sets/`, `catalog/` and
+# `symbology`, a small set of characters, no `..`) and goes through the environment, never into a script. Only people with write access can start it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      path:
+        description: "A Scryfall API path to GET, for example cards/named?exact=Sol+Ring or cards/tfrf/4 or cards/<id>/rulings (use + for a space)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scryfall-lookup
+  cancel-in-progress: false
+
+jobs:
+  lookup:
+    name: GET one Scryfall API path
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Look it up
+        env:
+          LOOKUP: ${{ inputs.path }}
+        run: |
+          # The path is data: validated here, never run.
+          if [ "${#LOOKUP}" -gt 300 ]; then echo "the path is longer than 300 characters"; exit 1; fi
+          case "$LOOKUP" in
+            *..*) echo "no .. in the path"; exit 1 ;;
+            cards/*|sets/*|catalog/*|symbology|symbology/*) ;;
+            *) echo "only cards/..., sets/..., catalog/... and symbology are allowed"; exit 1 ;;
+          esac
+          if ! printf '%s' "$LOOKUP" | grep -Eq '^[A-Za-z0-9_./?=&+%:,~-]+$'; then
+            echo "the path may hold letters, digits and _ . / ? = & + % : , ~ - only (use + for a space)"
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/out"
+          status=$(curl -sS --max-time 30 -o "$RUNNER_TEMP/out/result.json" -w '%{http_code}' \
+            -H 'User-Agent: commander-arena-lookup/1 (+https://github.com/pliniosilveira/commander-arena)' \
+            -H 'Accept: application/json' \
+            "https://api.scryfall.com/${LOOKUP}") || { echo "Scryfall could not be reached"; exit 1; }
+          jq . "$RUNNER_TEMP/out/result.json" > "$RUNNER_TEMP/out/pretty.json" 2>/dev/null || cp "$RUNNER_TEMP/out/result.json" "$RUNNER_TEMP/out/pretty.json"
+          echo "GET https://api.scryfall.com/${LOOKUP}"
+          echo "HTTP ${status}"
+          head -c 60000 "$RUNNER_TEMP/out/pretty.json"
+          echo
+          {
+            echo '### GET /'"${LOOKUP}"
+            echo "HTTP ${status}"
+            echo '```json'
+            head -c 20000 "$RUNNER_TEMP/out/pretty.json"
+            echo
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          # An answer Scryfall gives with an error status (404 and the like) is still an answer: the job fails only when nothing came back.
+          test -s "$RUNNER_TEMP/out/result.json"
