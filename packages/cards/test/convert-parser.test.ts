@@ -498,6 +498,7 @@ describe('unmatched abilities', () => {
       'effect.change-target',
       'effect.proliferate',
       'effect.exile-per-opponent',
+      'effect.destroy-per-opponent',
       'effect.once-each-turn',
       'effect.spend-only',
       'effect.remove-all-counters',
