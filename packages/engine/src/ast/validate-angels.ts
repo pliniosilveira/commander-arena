@@ -200,6 +200,16 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       } else if (s.subject?.kind !== 'attached') {
         issue(out, `${path}.subject`, 'the permanents are a group or the one this is attached to');
       }
+      // D-980 (CR 603.2d): the cause is the controller casting or copying a spell the filter names, which is a filter of spells.
+      if (s.cause !== undefined) {
+        if (kindOf(s.cause) !== 'castOrCopySpell') {
+          issue(out, `${path}.cause`, 'the cause of an additional trigger is castOrCopySpell');
+        } else if (s.cause.spell === undefined || s.cause.spell.stackKind !== 'spell') {
+          issue(out, `${path}.cause.spell`, 'the spell is a filter of spells (stackKind "spell")');
+        } else {
+          checkFilter(s.cause.spell, `${path}.cause.spell`, out);
+        }
+      }
       return true;
     case 'cantCastThis':
       // The condition (checked with the ability) says when; without one the card could never be cast.
