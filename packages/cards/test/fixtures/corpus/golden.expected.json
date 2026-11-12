@@ -1,5 +1,5 @@
 {
-  "parserVersion": 82,
+  "parserVersion": 83,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -112,27 +112,10 @@
     "02f46271-c90d-4318-9004-74e7bee64a89": {
       "name": "Angel of Destiny",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever a creature you control deals combat damage to a player, you and that player each gain that much life.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.you-and-player"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "At the beginning of your end step, if you have at least 15 life more than your starting life total, each player ~ attacked this turn loses the game.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.player"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "828edea7"
+      "ast": "b344ce6e"
     },
     "03dee43b-6377-4f7b-956b-a384160322e4": {
       "name": "Drumbellower",
@@ -145,19 +128,10 @@
     "046add85-952f-46ac-974a-463d2a7d3fd4": {
       "name": "The Book of Exalted Deeds",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{W}{W}{W}, {T}, Exile ~: Put an enlightened counter on target Angel. It gains \"You can't lose the game and your opponents can't win the game.\" Activate only as a sorcery.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.gain-keyword"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "44e414bb"
+      "ast": "fb5e60dc"
     },
     "046f5783-cc7b-416a-8cf6-2bcef9c2cc1a": {
       "name": "Simic Growth Chamber",
@@ -487,19 +461,10 @@
     "131096a3-2d53-4ec2-96d3-fcb58e698a13": {
       "name": "Vraska, Golgari Queen",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "−9: You get an emblem with \"Whenever a creature you control deals combat damage to a player, that player loses the game.\"",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.get-emblem"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "670db651"
+      "ast": "f228877d"
     },
     "133c99c0-3652-410f-8100-68015a47af9f": {
       "name": "Dispatch",
@@ -738,19 +703,10 @@
     "25012c1f-c069-43d7-b930-a3a5a7eb1389": {
       "name": "Dismantling Wave",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "For each opponent, destroy up to one target artifact or enchantment that player controls.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "8e8e47fd"
+      "ast": "611aac1e"
     },
     "2549bc57-9ffb-4053-9f10-f2a5f792b845": {
       "name": "Myriad Landscape",
@@ -2396,19 +2352,10 @@
     "82d51c8a-d42b-48b3-a726-3a8d28d057e5": {
       "name": "Arden Angel",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "At the beginning of your upkeep, if ~ is in your graveyard, roll a four-sided die. If the result is 1, return ~ from your graveyard to the battlefield.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "2c47d9f8"
+      "ast": "3defdb1d"
     },
     "83045a9c-57da-411f-80aa-56178d14856b": {
       "name": "Vraska, Scheming Gorgon",
@@ -3170,19 +3117,10 @@
     "b349f018-c20b-48b0-9e65-d5fd56b24b88": {
       "name": "Entreat the Angels",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Miracle {X}{W}{W}",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "47ba91fa"
+      "ast": "e70232cf"
     },
     "b380c04b-0bce-4328-8f0a-1425e48bee72": {
       "name": "Urza's Incubator",
@@ -3383,27 +3321,10 @@
     "c3974ec7-7af0-4b65-baf6-4c1c4fe8a5c4": {
       "name": "Ajani, Strength of the Pride",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "−2: Create a 2/2 white Cat Soldier creature token named ~'s Pridemate with \"Whenever you gain life, put a +1/+1 counter on ~.\"",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "0: If you have at least 15 life more than your starting life total, exile ~ and each artifact and creature your opponents control.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "ec9cf1f5"
+      "ast": "630f7928"
     },
     "c3c802ba-dfbb-4f63-ae9a-e29c2e30013d": {
       "name": "Jeskai Ascendancy",
@@ -4228,27 +4149,10 @@
     "f4ce6078-8c7b-4f68-b324-13130c63a983": {
       "name": "Angel of Serenity",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "When ~ enters, you may exile up to three other target creatures from the battlefield and/or creature cards from graveyards.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.target-graveyard-card"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "When ~ leaves the battlefield, return the exiled cards to their owners' hands.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.return"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "8af1a452"
+      "ast": "70e67d39"
     },
     "f61680da-606e-4d16-b0a0-361aa5210901": {
       "name": "Chandra's Ignition",
@@ -4597,7 +4501,7 @@
       "total": 60
     },
     "acceptance": {
-      "supported": 195,
+      "supported": 203,
       "total": 224
     }
   }
