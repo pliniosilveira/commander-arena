@@ -6,9 +6,9 @@
  * targets for the copy" is `newTargets: 'may'`, its absence `'no'`. Which spells can be copied from where is
  * `validateCard`'s refusal (a trigger that is not about a cast, a target slot the ability does not declare).
  */
-import type { ObjectRef } from '@commander-arena/engine';
+import type { Amount, ObjectRef } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
-import { arg, type Effects, failure } from './clauses';
+import { amountArg, arg, type Effects, failure } from './clauses';
 import { missingFeatures } from './features';
 import { objectRefOf } from './nouns';
 import type { Lowering } from './types';
@@ -32,9 +32,23 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
       if (ref.value.kind !== 'target') return failure(clause);
       spell = ref.value;
     }
+    // "copy it for each time you've cast your commander from the command zone this game" (D-971, CR 707.10, 903.8): the number of copies.
+    let count: Amount | undefined;
+    if (arg(clause, 'count') !== undefined) {
+      const lowered = amountArg(clause, 'count', ctx);
+      if (!lowered.ok) return lowered;
+      count = lowered.value;
+    }
     return {
       ok: true,
-      value: [{ kind: 'copySpell', spell, newTargets: flag.value ? 'may' : 'no' }],
+      value: [
+        {
+          kind: 'copySpell',
+          spell,
+          newTargets: flag.value ? 'may' : 'no',
+          ...(count === undefined ? {} : { count }),
+        },
+      ],
       rule: clause.rule,
     };
   },

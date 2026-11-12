@@ -474,11 +474,19 @@ class Binder {
         const mayBy =
           s.mayBy === undefined ? undefined : { ...s.mayBy, who: this.noun(s.mayBy.who) };
         if (mayBy !== undefined) this.playerAsked = true;
+        // "When you next cast an instant or sorcery spell this turn, copy that spell" (D-970): the spell the delayed trigger waits for is what "that spell" and "it" say.
+        const seeded =
+          s.delayed?.spell === undefined ? undefined : this.seed(s.delayed.spell, 'triggerSubject');
+        const delayed =
+          s.delayed === undefined || seeded === undefined
+            ? undefined
+            : { ...s.delayed, spell: seeded };
         const clauses = s.clauses.map((c) => this.clause(c));
         // "..., where X is that creature's power": the definition follows the clauses in the text.
         return {
           ...s,
           clauses,
+          ...(delayed === undefined ? {} : { delayed }),
           ...(mayBy === undefined ? {} : { mayBy }),
           ...(condition === undefined ? {} : { condition }),
           ...(s.where === undefined ? {} : { where: this.amount(s.where) }),

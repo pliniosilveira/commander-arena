@@ -3014,6 +3014,43 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 603.7 (D-128): an effect that creates a delayed triggered ability.
       checkDelayedTrigger(e, path, out, scope.movedAvailable === true, scope.diesTrigger === true);
       break;
+    case 'delayedCast': {
+      // CR 603.7 (D-970): an effect that creates a delayed triggered ability on the controller's next cast of a spell the filter names.
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.stackKind !== 'spell') {
+        issue(
+          out,
+          `${path}.filter`,
+          'the filter of a delayed cast trigger is one of spells (stackKind "spell")',
+        );
+      }
+      // CR 603.7c: nothing of the spell or ability that created it is left to name, so it does something to the spell cast, and only that.
+      const inner = e.effect;
+      if (inner?.kind !== 'copySpell' || kindOf(inner.spell) !== 'triggerSubject') {
+        issue(
+          out,
+          `${path}.effect`,
+          'a delayed cast trigger copies the spell that was cast (copySpell of triggerSubject)',
+        );
+        break;
+      }
+      checkEffect(
+        inner,
+        `${path}.effect`,
+        {
+          owner: 'ability',
+          targets: new Map(),
+          xAllowed: false,
+          triggerSubject: 'stack',
+          triggerPlayer: true,
+          checkAbility: scope.checkAbility,
+          checkContinuous: scope.checkContinuous,
+          checkEffectExt: scope.checkEffectExt,
+        },
+        out,
+      );
+      break;
+    }
     case 'becomeMonarch':
       // CR 725.3 (D-127): one player becomes the monarch, so the selector names exactly one.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -3078,6 +3115,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (!isOneOf(e.newTargets, ['may', 'no'])) {
         issue(out, `${path}.newTargets`, 'newTargets is "may" or "no"');
       }
+      // D-971 (CR 707.10): how many copies, an amount of the game as the effect resolves (zero makes none).
+      if (e.count !== undefined) checkAmount(e.count, `${path}.count`, scope, out);
       break;
     case 'unearth':
       // CR 702.84a: no operand; it is the effect of an ability that functions from the graveyard and stands nowhere else.

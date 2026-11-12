@@ -55,6 +55,8 @@ export interface AbilitySkeleton {
 }
 
 const TRIGGER_WORD = /^(?:when|whenever|at)\s/i;
+/** "When you next cast an instant or sorcery spell this turn, " (D-970): the lead of a sentence that creates a delayed triggered ability. */
+const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
 const MODAL_HEADER = /^choose\b/i;
 const REPLACEMENT_ENTERS = /^(?:as )?~ enters\b/i;
@@ -124,6 +126,23 @@ function trimmed(text: string, start: number, end: number): Span {
  * stage P27): it is read with that sentence (`effect.copy-spell`), never alone.
  */
 const NEW_TARGETS_SENTENCE = /^you may choose new targets for the copy\.$/i;
+/**
+ * "You may choose new targets for the copies." (D-971, CR 707.10c): the same sentence for a clause that makes several copies, "copy it for each time you've cast your
+ * commander from the command zone this game"; joined only to a sentence that says it (`effect.copy-spell-for-each`).
+ */
+const NEW_TARGETS_COPIES_SENTENCE = /^you may choose new targets for the copies\.$/i;
+const COPY_FOR_EACH = /(?:^|, )copy (?:it|that spell) for each time [^.]*\.$/i;
+
+/** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-971). */
+function newTargetsOf(text: string, before: Span | undefined, span: Span): boolean {
+  if (before === undefined) return false;
+  const said = text.slice(span.start, span.end);
+  if (NEW_TARGETS_SENTENCE.test(said)) return true;
+  return (
+    NEW_TARGETS_COPIES_SENTENCE.test(said) &&
+    COPY_FOR_EACH.test(text.slice(before.start, before.end))
+  );
+}
 
 /**
  * "Look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on
@@ -338,7 +357,7 @@ export function splitSentences(text: string, start: number, end: number): Span[]
     } else if (c === '.' && !quote && (i + 1 === end || /\s/.test(text.charAt(i + 1)))) {
       const span = trimmed(text, from, i + 1);
       const before = out[out.length - 1];
-      if (before !== undefined && NEW_TARGETS_SENTENCE.test(text.slice(span.start, span.end))) {
+      if (before !== undefined && newTargetsOf(text, before, span)) {
         out[out.length - 1] = { start: before.start, end: span.end };
       } else if (span.end > span.start) out.push(span);
       from = i + 1;
@@ -346,7 +365,7 @@ export function splitSentences(text: string, start: number, end: number): Span[]
   }
   const rest = trimmed(text, from, end);
   const last = out[out.length - 1];
-  if (last !== undefined && NEW_TARGETS_SENTENCE.test(text.slice(rest.start, rest.end))) {
+  if (last !== undefined && newTargetsOf(text, last, rest)) {
     out[out.length - 1] = { start: last.start, end: rest.end };
   } else if (rest.end > rest.start) out.push(rest);
   return joinLookAtTop(text, out);
@@ -492,7 +511,9 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     };
   }
 
-  if (TRIGGER_WORD.test(text)) {
+  // "When you next cast an instant or sorcery spell this turn, copy that spell." (D-970, CR 603.7): a spell's sentence that creates a delayed triggered ability,
+  // not a triggered ability of a permanent; it is read as the sentences of the body (`sentence.delayed`).
+  if (TRIGGER_WORD.test(text) && !DELAYED_CAST_LEAD.test(text)) {
     const word = /^\S+/.exec(text) ?? [''];
     const wordSpan = { start: 0, end: word[0].length };
     const bodyFrom = word[0].length + 1;

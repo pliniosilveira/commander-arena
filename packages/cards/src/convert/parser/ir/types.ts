@@ -902,8 +902,13 @@ export interface IrSentence extends IrNode {
      * `thatCombat` (stage P41, D-188, CR 603.7, 500.8): "At the beginning of that combat, untap all creatures you control": the combat phase the
      * sentence before it added, which the lowering folds into the engine's `extraCombat` as what happens at its beginning.
      */
-    readonly step: 'endStep' | 'thatCombat';
+    readonly step: 'endStep' | 'thatCombat' | 'nextCast';
     readonly whose: 'you' | 'each';
+    /**
+     * `nextCast` (D-970, CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell": the spell the delayed trigger waits for,
+     * described by a filter of spells, and the subject (`triggerSubject`) of what the sentence does (the binding pass seeds it as the first antecedent).
+     */
+    readonly spell?: IrNoun;
   };
   /**
    * "When you do, ..." (stage P30, CR 603.12): a reflexive triggered ability, created by the "you may" sentence before it

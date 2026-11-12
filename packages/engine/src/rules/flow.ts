@@ -404,6 +404,13 @@ export function afterDiscard(input: GameState, prior: readonly GameEvent[] = [])
   }
   const expired = expireEndOfTurnEffects(state);
   state = expired.state;
+  // CR 514.2, 603.7 (D-970): a delayed triggered ability of "this turn" ("when you next cast an instant or sorcery spell this turn") ends with the turn.
+  if (state.delayedTriggers.some((d) => d.untilEndOfTurn === true)) {
+    state = {
+      ...state,
+      delayedTriggers: state.delayedTriggers.filter((d) => d.untilEndOfTurn !== true),
+    };
+  }
   // CR 514.3a: if state-based actions or triggers need handling, players get priority and another
   // cleanup step follows. Otherwise the turn ends (CR 514.3).
   const settled = settle(state, [...prior, ...expired.events]);

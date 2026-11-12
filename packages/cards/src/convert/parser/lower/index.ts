@@ -31,7 +31,7 @@ import { MELD_NEEDS } from './meld';
 import { MODAL_NEEDS } from './modal';
 import { NOUN_EXTRA_NEEDS, SELECTOR_NEEDS } from './nouns';
 import { PLANESWALKER_NEEDS } from './planeswalker';
-import { SENTENCE_NEEDS } from './sentences';
+import { NEXT_CAST_NEEDS, SENTENCE_NEEDS } from './sentences';
 import { ALTERNATIVE_COST_NEEDS, lowerAlternativeKeyword, lowerSpellCosts } from './spell-costs';
 import { lowerStatic, STATIC_NEEDS } from './statics';
 import { lowerTriggered, TRIGGER_NEEDS } from './triggers';
@@ -151,6 +151,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...ADAMANTOISE_NEEDS,
     ...CONDITION_NEEDS,
     ...SENTENCE_NEEDS,
+    ...NEXT_CAST_NEEDS,
     ...AMOUNT_NEEDS,
     ...(Object.values(SELECTOR_NEEDS) as FeatureRef[]),
     'token:Treasure',

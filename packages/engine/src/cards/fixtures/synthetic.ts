@@ -82,6 +82,7 @@ import { SYNTHETIC_MIRACLE_LIST } from './synthetic-miracle';
 import { SYNTHETIC_MODAL_LIST } from './synthetic-modal';
 import { SYNTHETIC_NIV_DRAW_LIST } from './synthetic-niv-draw';
 import { SYNTHETIC_NIV_GROUP_2B_B_LIST } from './synthetic-niv-group-2b-b';
+import { SYNTHETIC_NIV_GROUP_3_A_LIST } from './synthetic-niv-group-3-a';
 import { SYNTHETIC_NIV_PRIMITIVES_LIST } from './synthetic-niv-primitives';
 import { SYNTHETIC_PARSER_SHAPES_LIST } from './synthetic-parser-shapes';
 import { SYNTHETIC_PILES_LIST } from './synthetic-piles';
@@ -358,6 +359,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_COMMANDER_TRIGGER_LIST,
     ...SYNTHETIC_MANA_RESTRICTED_LIST,
     ...SYNTHETIC_NIV_GROUP_2B_B_LIST,
+    ...SYNTHETIC_NIV_GROUP_3_A_LIST,
     ...SYNTHETIC_UNTIL_LEAVES_LIST,
     ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
     ...SYNTHETIC_HOFRI_LIST,

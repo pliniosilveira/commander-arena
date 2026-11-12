@@ -218,6 +218,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manifest',
     // D-128: an effect that creates a delayed triggered ability (CR 603.7): "at the beginning of the next turn's upkeep".
     'delayedTrigger',
+    // D-970: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
+    'delayedCast',
     // D-128: the engine's own abilities of Suspend (CR 702.62a) and Madness (CR 702.35a), found from exile.
     'removeTimeCounter',
     'castExiled',
@@ -1555,6 +1557,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   cumulativeUpkeep: true,
   becomeMonarch: true,
   delayedTrigger: true,
+  delayedCast: true,
   removeTimeCounter: true,
   castExiled: true,
   may: true,

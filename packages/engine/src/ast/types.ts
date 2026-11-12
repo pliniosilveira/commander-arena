@@ -1533,6 +1533,12 @@ export type Effect =
       readonly kind: 'copySpell';
       readonly spell: ObjectRef;
       readonly newTargets: 'may' | 'no';
+      /**
+       * "Copy it for each time you've cast your commander from the command zone this game" (D-971, CR 707.10, 707.10c, 903.8): how many copies, an amount read as the
+       * effect resolves (a controller, no X and no target: the validator allows what a delayed effect's amount may read). Left out, one copy. Zero is a legal count and
+       * makes none. Each copy may have new targets when `newTargets` is `may` (CR 707.10c).
+       */
+      readonly count?: Amount;
     }
   /**
    * "Change the target of target spell or ability with a single target." (CR 115.7a, 115.7b, D-181): the controller of the resolving spell or
@@ -1603,6 +1609,20 @@ export type Effect =
        * the controller's next turn); `whose` is then `you`.
        */
       readonly at: { readonly step: TriggerStep | 'nextMain'; readonly whose: 'you' | 'each' };
+      readonly effect: Effect;
+    }
+  /**
+   * "When you next cast an instant or sorcery spell this turn, copy that spell" (D-970, CR 603.7, 603.7a, 603.7b, 603.7c, 603.7d, 514.2): the effect creates a delayed
+   * triggered ability of the controller of the spell or ability that creates it (CR 603.7d), whose trigger is `castSpell` by that player of a spell `filter`
+   * names. It waits for an event after it was created (CR 603.7a: the spell that made it is not one it sees), triggers once, at the next such cast (CR 603.7b: a spell
+   * that does not match does not use it up), and ends with the turn if it has not (the cleanup step, CR 514.2: "this turn"). Its source is the source of the
+   * spell or ability that created it, which may be gone (the creature sacrificed to activate it, CR 603.7d, 603.7e), and it does not depend on it. `effect` is what the ability does when it triggers; it is about the spell cast
+   * (`triggerSubject`), the only thing it can name (CR 603.7c: nothing else of the spell or ability is left to name): `copySpell` of the spell cast, with a
+   * count that is an `Amount` of the game as it resolves. `filter` is a filter of spells (`stackKind: 'spell'`, as the `castSpell` trigger's).
+   */
+  | {
+      readonly kind: 'delayedCast';
+      readonly filter: ObjectFilter;
       readonly effect: Effect;
     }
   /**

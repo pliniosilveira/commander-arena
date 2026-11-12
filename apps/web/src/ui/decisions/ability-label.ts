@@ -44,6 +44,7 @@ import {
   untapChooseText,
 } from '../../game/artifacts-text';
 import { gameConditionWords } from '../../game/condition-text';
+import { copySpellWords, delayedCastWords } from '../../game/copy-text';
 import { activationCostPart, activationCostText, unlessCostPhrase } from '../../game/cost-text';
 import {
   castFreeText,
@@ -76,7 +77,7 @@ import { ptEffectText } from '../../game/pt-text';
 import { isReflexiveAbility, positionPhrase } from '../../game/recursion-text';
 import { groupPhrase } from '../../game/static-text';
 import { tokenWords } from '../../game/token-text';
-import { keywordWords, withText } from '../../game/trigger-text';
+import { filterPhrase, keywordWords, withText } from '../../game/trigger-text';
 
 /** True for Cycling's expansion: an ability from the hand whose cost discards the card (CR 702.29a). */
 export function isCycling(ability: ActivatedAbility): boolean {
@@ -979,6 +980,33 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       );
       const pay = payAnyAmountText(effect.symbol);
       return inner === '' ? pay : `${pay}. When you do, ${lower(inner)}`;
+    }
+    case 'copySpell': {
+      // D-971 (CR 707.10, 707.10c, 903.8): "Copy that spell", with new targets, and once for each time the commander was cast from the command zone.
+      const count =
+        effect.count === undefined
+          ? null
+          : effect.count === 1
+            ? null
+            : typeof effect.count === 'object' && effect.count.kind === 'commanderCasts'
+              ? "time you've cast your commander from the command zone this game"
+              : UNSAID;
+      if (count === UNSAID) return UNSAID;
+      const spell = object(effect.spell);
+      return spell === UNSAID ? UNSAID : copySpellWords(spell, effect.newTargets, count);
+    }
+    case 'delayedCast': {
+      // D-970 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell".
+      const spell = filterPhrase(effect.filter, 'spell');
+      const inner = effectText(
+        effect.effect,
+        { ...ability, trigger: { kind: 'castSpell', filter: effect.filter, by: 'you' } },
+        self,
+        defs,
+      );
+      if (spell === null || inner === '' || inner.includes(UNSAID)) return UNSAID;
+      // A choice of types says "an instant or sorcery"; the trigger is about a spell, as the card says.
+      return delayedCastWords(/\bspells?$/.test(spell) ? spell : `${spell} spell`, inner);
     }
     case 'delayedTrigger': {
       // D-151 (CR 603.7): "At the beginning of your next end step, this creature deals 2 damage to each opponent for each of those cards".

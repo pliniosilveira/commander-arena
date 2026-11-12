@@ -672,6 +672,11 @@ export interface DelayedTrigger {
    * next turn's upkeep" names the player who controlled the countered spell. The effect reads it as `triggerPlayer`.
    */
   readonly player?: SeatId;
+  /**
+   * "When you next cast an instant or sorcery spell this turn" (D-970, CR 603.7, 514.2): the ability ends, unused, in the cleanup step of the turn it was
+   * created in. Absent for the abilities that wait for a step, which may wait for a later turn.
+   */
+  readonly untilEndOfTurn?: true;
 }
 
 /**
