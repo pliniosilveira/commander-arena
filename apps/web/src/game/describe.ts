@@ -167,6 +167,11 @@ function joinNames(names: readonly string[]): string {
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
+/** The cards of a pile for the log ("Giant Spider and Sol Ring"); a pile may be empty (CR 700.3d). */
+function pileText(names: readonly string[]): string {
+  return names.length === 0 ? 'no cards' : joinNames(names);
+}
+
 function cardName(state: GameState, card: CardId | null): string | null {
   if (card === null) return null;
   const instance = state.cards[card];
@@ -1148,6 +1153,23 @@ export function describeEvent(
         event.seat,
         [],
         'CR 701.20',
+      );
+    case 'pilesSeparated':
+      // CR 700.3 (D-971): the piles are public (the cards were revealed and are still in the library).
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'separate', 'separates')} the revealed cards into two piles: ${pileText(event.first)} and ${pileText(event.second)}.`,
+        event.seat,
+        [],
+        'CR 700.3',
+      );
+    case 'pileChosen':
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} pile ${event.pile} (${pileText(event.names)}).`,
+        event.seat,
+        [],
+        'CR 700.3',
       );
     case 'commanderMovedToCommandZone':
       return line(

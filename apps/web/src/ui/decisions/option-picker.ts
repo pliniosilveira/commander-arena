@@ -38,6 +38,8 @@ export function optionPrompt(
       ...(d.seat === undefined ? {} : { seat: d.seat }),
     });
   }
+  // D-971 (CR 700.3): the pile question has its own dialog and words (`piles-words.ts`); this is the plain fallback of a caller that reads the prompt anyway.
+  if (d.purpose === 'pile') return `Pick a pile (${d.sourceName}).`;
   return `As ${d.sourceName} enters, choose a ${purposeNoun(d.purpose)}.`;
 }
 

@@ -35,6 +35,7 @@ import { OrderPanel } from './OrderPanel';
 import { PassingDamagePanel } from './PassingDamagePanel';
 import { PayOptionsDialog } from './PayOptionsDialog';
 import { PermanentPanel } from './PermanentPanel';
+import { PilesDialog } from './PilesDialog';
 import { ProliferateDialog } from './ProliferateDialog';
 import { sacrificesWhenTapped } from './payment';
 import { isProliferate } from './permanents-angels';
@@ -200,6 +201,9 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
       // D-139 (CR 508.7): the attack target of a creature has its own dialog, not the creature-type picker.
       d.purpose === 'attackTarget' ? (
         <AttackTargetDialog key={d.id} d={d} view={view} act={act} />
+      ) : d.purpose === 'pile' ? (
+        // D-971 (CR 700.3): the two piles the other player made, with their cards.
+        <PilesDialog key={d.id} d={d} view={view} act={act} />
       ) : d.purpose === 'option' ||
         d.purpose === 'effect' ||
         d.purpose === 'riot' ||

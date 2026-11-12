@@ -135,6 +135,8 @@ export function confirmLabel(
   if (decision.purpose === 'copy') return 'Copy';
   // D-272: a creature card of a graveyard chosen for Dawnbreak Reclaimer's pair; the choice is made, so there is no "none".
   if (decision.purpose === 'pair') return 'Choose';
+  // D-971 (CR 700.3): the cards of pile 1; the others are pile 2, and either pile may be empty.
+  if (decision.purpose === 'separate') return 'Make the piles';
   // D-151 (CR 701.9): "Discard any number of cards": Confirm works with none.
   if (decision.purpose === 'discard' && chosen.length === 0 && (decision.min ?? 1) === 0) {
     return 'Discard none';
@@ -228,6 +230,7 @@ export function foundBadge(
   if (decision.purpose === 'split') return 'To the bottom';
   if (decision.purpose === 'copy') return 'Copy';
   if (decision.purpose === 'pair') return 'Chosen';
+  if (decision.purpose === 'separate') return 'Pile 1';
   if (decision.purpose === 'exile') return 'Exile';
   if (decision.purpose === 'move') return 'Put';
   if (decision.purpose === 'lookTake') {
@@ -240,6 +243,25 @@ export function foundBadge(
     return decision.max > 1 ? pickOrderLabel(decision, at + 1) : 'On top';
   }
   return decision.max > 1 ? ordinal(at + 1) : 'Found';
+}
+
+/**
+ * The two piles of a separation as the picks stand (D-971, CR 700.3a, 700.3d): the cards clicked are pile 1, the others pile 2; either may be empty. Names in the order of
+ * the cards given.
+ */
+export function pilesPreview(
+  cards: readonly ObjectView[],
+  chosen: readonly ObjectId[],
+): { readonly first: readonly string[]; readonly second: readonly string[] } {
+  return {
+    first: cards.filter((o) => chosen.includes(o.id)).map((o) => o.name),
+    second: cards.filter((o) => !chosen.includes(o.id)).map((o) => o.name),
+  };
+}
+
+/** "Giant Spider, Sol Ring", or "no cards" for an empty pile. */
+export function pileList(names: readonly string[]): string {
+  return names.length === 0 ? 'no cards' : names.join(', ');
 }
 
 /** A row of the card list: cards with the same name are one row with a count. */
@@ -371,6 +393,9 @@ const WAITING_WORDS: Readonly<Record<NonNullable<GameView['waitingOn']>['purpose
   split: 'choosing one of the exiled cards',
   copy: 'choosing a card to become a copy of',
   pair: 'choosing a card in a graveyard',
+  // CR 700.3 (D-971): separating revealed cards into two piles, and choosing one of the piles.
+  separate: 'separating the revealed cards into two piles',
+  pile: 'choosing one of two piles of the revealed cards',
 };
 
 /**
@@ -548,6 +573,10 @@ function castPrompt(decision: ChooseCardsDecision, index: Index): string {
 export function discardTitle(decision: ChooseCardsDecision, index: Index): string {
   if (decision.purpose === 'move')
     return `Put onto the battlefield for ${nameOf(index, decision.source)}`;
+  // D-971 (CR 700.3): the cards revealed by Fact or Fiction and its kind.
+  if (decision.purpose === 'separate') {
+    return `Separate the revealed cards into two piles (${stackName(index, decision.source)})`;
+  }
   // D-272: the two choices of Dawnbreak Reclaimer's ability.
   if (decision.purpose === 'pair') {
     return `Choose a card in a graveyard (${stackName(index, decision.source)})`;
