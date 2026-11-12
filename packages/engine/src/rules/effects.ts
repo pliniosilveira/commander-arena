@@ -62,6 +62,7 @@ import { manaValueOfCost } from './mana-value';
 import { runMayCast, runPaidReflexive, runReflexive } from './may-effects';
 import { runMeld } from './meld';
 import { successorsOf } from './melded';
+import { runManifest } from './manifest';
 import { millCards } from './mill';
 import { runMiracleReveal } from './miracle';
 import { becomeMonarch } from './monarch';
@@ -1178,6 +1179,10 @@ function runEffect(
         ...(value > 0 ? { thisWay: { milledValue: value } } : {}),
       };
     }
+
+    case 'manifest':
+      // CR 701.40a (D-962): the top card of a library goes onto the battlefield face down as a 2/2 creature.
+      return runManifest(state, effect, ctx, targets);
 
     case 'gainLife':
     case 'loseLife': {

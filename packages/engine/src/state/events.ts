@@ -51,6 +51,24 @@ export type GameEvent =
    */
   | { readonly kind: 'meldFailed'; readonly objects: readonly ObjectId[]; readonly reason: string }
   /**
+   * CR 701.40a (Manifest, D-962): `seat` manifested a card: the card was put onto the battlefield face down as a 2/2 creature, `object` is that permanent. The card is
+   * not named (hidden information, CR 708.5): the `zoneChanged` event that comes before it has no card either. Whose library it came from is not said: the events of a
+   * player's library carry no card.
+   */
+  | { readonly kind: 'manifested'; readonly seat: SeatId; readonly object: ObjectId }
+  /**
+   * CR 116.2b, 701.40b, 708.8 (D-963): `seat` turned the face-down permanent `object` face up, a special action that does not use the stack. `card` is the card it
+   * represents, which is public from now on; `object` is the same object (no zone change, so nothing entered: no enters ability triggers, CR 708.8). `cost` is the mana
+   * symbols paid.
+   */
+  | {
+      readonly kind: 'turnedFaceUp';
+      readonly seat: SeatId;
+      readonly object: ObjectId;
+      readonly card: CardId;
+      readonly cost: readonly string[];
+    }
+  /**
    * `seat` drew a card (CR 121.1): `object` is the card in their hand. `nth` is how many cards they have
    * drawn this turn including this one (D-111), which the `drawn` trigger's `nth` compares.
    */

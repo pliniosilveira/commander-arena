@@ -43,13 +43,20 @@ import {
   removeFromZone,
   setObject,
 } from '../state/ops';
-import type { ChosenValues, GameObject, GameState, LastKnownInfo } from '../state/types';
+import type {
+  ChosenValues,
+  FaceDownBy,
+  GameObject,
+  GameState,
+  LastKnownInfo,
+} from '../state/types';
 import { optionsFor } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { derive, oracleTextOf } from './derive';
 import { permanentAlternative } from './derive-alt';
 import { dieReplacementFor } from './die-replacement';
+import { faceDownEntry } from './face-down';
 import {
   entersAsSaga,
   entersChoice,
@@ -165,6 +172,12 @@ export interface MoveRequest {
    * as the permanent is made. The caller (`rules/meld.ts`) has checked that they can be melded (CR 701.42b). Only for a move to the battlefield.
    */
   readonly meldWith?: ObjectId;
+  /**
+   * The permanent enters the battlefield face down (CR 701.40a, 708.3, D-962): the card is turned face down before it enters, so none of its own enters replacement
+   * effects, counters, choices or triggers apply, and the new object is a face-down permanent (`GameObject.faceDown`, labelled). What made it face down. The event
+   * of the move carries no card (the card is hidden information while the permanent is face down). Only for a move to the battlefield.
+   */
+  readonly entersFaceDown?: FaceDownBy;
   /**
    * D-279 (CR 712.21b): the player who performs the move, when it is an effect's: the controller of the spell or ability that exiles. A player who exiles a
    * melded permanent determines the order of the two cards, whoever owns it. Absent for a move made by a rule or paid as a cost, where it is the
@@ -405,8 +418,14 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 614.12, 614.12b (D-272): what the replacement effects of the entering card read is the battlefield without the cards that enter with it (`rules/enters-run.ts`).
   const before = withoutRun(state, request.alongside);
   const faceIndex = faceAfter(old, request);
+  // CR 708.3 (D-962): a permanent that enters face down is turned face down before it enters, so the face of the card is not looked at: no enters replacement effect, counter
+  // or choice of the card applies. What it is as it enters is the face-down status (`downEntry`), which the readers below see on the object they ask about.
+  const downEntry = to === 'battlefield' ? faceDownEntry(state, request.entersFaceDown) : {};
+  const entersDown = downEntry.faceDown !== undefined;
   const entering =
-    to === 'battlefield' && printedCard(old) !== null ? enteringFace(state, old, faceIndex) : null;
+    to === 'battlefield' && printedCard(old) !== null && !entersDown
+      ? enteringFace(state, old, faceIndex)
+      : null;
   const payment = entering === null ? null : entersPayment(entering.abilities);
   const enterCtx = { controller: enterController, source: old.id };
   // CR 614.1c, 614.12, 616.1 (D-179): "Lands you control enter untapped": the permanent enters untapped whatever else would have it enter tapped
@@ -415,6 +434,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     entering !== null &&
     groupEntersUntapped(before, {
       ...old,
+      ...downEntry,
       zone: 'battlefield',
       controller: enterController,
       face: faceIndex,
@@ -604,7 +624,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   let tapped = request.tapped ?? false;
   let counters: Record<string, number> = {};
   const printed = printedCard(old);
-  if (to === 'battlefield' && printed !== null) {
+  if (to === 'battlefield' && printed !== null && !entersDown) {
     // CR 614.1c / 614.12: replacement effects of the entering object itself.
     const face = definitionOf(next, printed).faces[faceIndex];
     // CR 306.5b: a planeswalker enters with loyalty counters equal to its printed loyalty.
@@ -701,6 +721,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       counters,
       groupEntryCounters(nextBefore, {
         ...old,
+        ...downEntry,
         zone: 'battlefield',
         controller,
         token: becomesToken ? copiableValues(state, old) : old.token,
@@ -737,7 +758,9 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     // CR 707.10f: the token has the copiable values of the spell it was a copy of; it is no longer a copy of a spell.
     token: becomesToken ? copiableValues(state, old) : old.token,
     attachedTo: null,
-    protector: to === 'battlefield' ? protectorFor(next, old, controller, faceIndex) : null,
+    protector: to === 'battlefield' && !entersDown ? protectorFor(next, old, controller, faceIndex) : null,
+    // CR 708.2a, 708.6 (D-961): a permanent that enters face down.
+    ...downEntry,
     stack: null,
     // CR 702.33d: a permanent that came from a kicked spell remembers it ("if it was kicked").
     ...(to === 'battlefield' && old.stack?.kicked === true ? { kicked: true as const } : {}),
@@ -804,6 +827,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   if (
     to === 'battlefield' &&
     printed !== null &&
+    !entersDown &&
     (definitionOf(next, printed).faces[faceIndex]?.abilities ?? []).some(
       (a) => a.kind === 'replacement' && a.replacement.kind === 'entersPrepared',
     )
@@ -910,7 +934,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
 
   events.push({
     kind: 'zoneChanged',
-    card: old.card,
+    // CR 708.9 (D-965): the card of a permanent that enters face down is hidden information, so the event does not name it.
+    card: entersDown ? null : old.card,
     from: old.id,
     to: newId,
     fromZone: old.zone,
