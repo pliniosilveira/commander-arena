@@ -1,5 +1,5 @@
 /**
- * Hand-written card fixtures for engine tests (SPEC 17.6 A27, D-027, D-036): real cards in
+ * Hand-written card fixtures for engine tests (SPEC 17.6 A27, D-027): real cards in
  * FIXTURE_CARDS, invented ones in SYNTHETIC_CARDS. All fixtures are written from Oracle text
  * and are UNVERIFIED against Scryfall until the M4 import or the A20 spike matches them;
  * every oracleId is null.

@@ -23,9 +23,8 @@ const deck = parseDecklist(
 const BASICS = new Set(['Plains', 'Island', 'Swamp', 'Mountain', 'Forest']);
 
 /**
- * The cards of the deck the build has not reached yet (docs/proposals/hofri-build-status.md). The test
- * insists that exactly these fail: a card that now reads must leave the list, so the list is the
- * checklist and ends empty.
+ * The cards of the deck the engine does not read yet: none, the deck is complete. The test insists that
+ * exactly these fail, so a card that stops reading shows up here.
  */
 const PENDING: ReadonlySet<string> = new Set<string>();
 

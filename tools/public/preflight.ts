@@ -1,4 +1,4 @@
-// `node tools/public/preflight.ts [--root <dir>]`: what must not be in the tree of a repository that is about to be made public (D-248).
+// `node tools/public/preflight.ts [--root <dir>]`: what must not be in the tree of a repository that is kept public.
 // It reads the tracked files of a git checkout (`git ls-files`) and reports: Wizards' text that D-246 keeps out, things that look like
 // secrets, e-mail addresses, links to private Claude sessions and mentions of an employer's name (given in PREFLIGHT_EMPLOYER). It reads the tree only, not the
 // history: the public repository starts from a single commit (docs/GO_PUBLIC.md). Exit 0 when nothing is found, 1 otherwise.

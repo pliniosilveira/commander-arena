@@ -1,4 +1,4 @@
-// The go-public preflight (D-248) on throwaway git repositories: SYNTHETIC content only, nothing here is a real secret or address.
+// The public-repository preflight on throwaway git repositories: SYNTHETIC content only, nothing here is a real secret or address.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
