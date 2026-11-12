@@ -23,6 +23,11 @@ export type GameEvent =
       readonly to: ObjectId;
       readonly fromZone: Zone;
       readonly toZone: Zone;
+      /**
+       * Put onto the battlefield at the same time as the other consecutive `simultaneous` events (CR 603.6a, D-951): one event puts several permanents onto the battlefield,
+       * so each of them is checked for the enters triggers of all the others. Only on an event that enters the battlefield.
+       */
+      readonly simultaneous?: true;
     }
   /**
    * `seat` drew a card (CR 121.1): `object` is the card in their hand. `nth` is how many cards they have

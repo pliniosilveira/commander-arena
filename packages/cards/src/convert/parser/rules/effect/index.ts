@@ -34,6 +34,7 @@ import { CONTROL_EFFECT_RULES } from './control';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
+import { DAWNBREAK_EFFECT_RULES } from './dawnbreak';
 import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
@@ -837,6 +838,8 @@ export const EFFECT_RULES = [
   ...ARDEN_EFFECT_RULES,
   // Stage P69 (D-982): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration.
   ...GRANTED_STATIC_EFFECT_RULES,
+  // Stage P69 (D-951): Dawnbreak Reclaimer, "choose a creature card in an opponent's graveyard, then that player chooses ...".
+  ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.

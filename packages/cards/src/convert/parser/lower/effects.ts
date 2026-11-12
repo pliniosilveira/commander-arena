@@ -38,6 +38,7 @@ import { GAIN_CONTROL } from './control';
 import { lowerCopyToken } from './copies';
 import { COPY_SPELL } from './copy-spell';
 import { lowerCost } from './costs';
+import { DAWNBREAK_LOWERINGS } from './dawnbreak';
 import { DESTINY_LOWERINGS } from './destiny';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
@@ -1274,6 +1275,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ARDEN_LOWERINGS,
   ...VRASKA_LOWERINGS,
   ...HOFRI_LOWERINGS,
+  ...DAWNBREAK_LOWERINGS,
   ...EDHREC_LOWERINGS,
   ...DRAGON_LOWERINGS,
   ...KORVOLD_LOWERINGS,

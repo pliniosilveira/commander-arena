@@ -53,6 +53,7 @@ import { runEmpowerJace } from './empower';
 import { runEnterAttacking } from './enter-attacking';
 import { runEnterToken } from './enter-token';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
+import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
 import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
@@ -143,6 +144,7 @@ export function runInstruction(
   if (instruction.kind === 'conniveNext') return runConniveNext(state, res, instruction);
   if (instruction.kind === 'spare') return runSpare(state, res, instruction);
   if (instruction.kind === 'splitExiled') return runSplitExiled(state, res, instruction);
+  if (instruction.kind === 'graveyardPair') return runGraveyardPair(state, res, instruction);
   if (instruction.kind === 'copyFromCards') return runCopyFromCards(state, res, instruction);
   if (instruction.kind === 'search') return runSearch(state, res, instruction);
   if (instruction.kind === 'shuffle') {
@@ -264,6 +266,11 @@ export function runInstruction(
       ...(instruction.withCounters === undefined ? {} : { withCounters: instruction.withCounters }),
       ...(instruction.alt === undefined ? {} : { alt: instruction.alt }),
       ...(instruction.replacers === undefined ? {} : { replacers: instruction.replacers }),
+      // CR 614.12, 614.12b (D-951): the cards of a `together` run enter in one event, so what the replacement effects of this one read is the battlefield without
+      // the ones that entered before it in the run (`lastMoved` is the run: the pair starts it empty and every move adds the object it made).
+      ...(instruction.together === true && instruction.to === 'battlefield'
+        ? { alongside: res.lastMoved ?? [] }
+        : {}),
       entersPaid: res.entersPaid ?? null,
       entersChosen: res.entersChosen ?? null,
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
@@ -291,7 +298,17 @@ export function runInstruction(
       instruction.attachTo !== undefined && result.newObject !== null
         ? attachEntered(result.state, result.newObject, instruction.attachTo)
         : { state: result.state, events: [] as GameEvent[] };
-    const moveEvents = [...result.events, ...attached.events];
+    // CR 603.6a (D-951): the cards of a `together` run enter as one event, which `findTriggers` reads from this mark.
+    const moveEvents = [
+      ...(instruction.together === true
+        ? result.events.map((e) =>
+            e.kind === 'zoneChanged' && e.toZone === 'battlefield'
+              ? { ...e, simultaneous: true as const }
+              : e,
+          )
+        : result.events),
+      ...attached.events,
+    ];
     const created =
       instruction.alt === 'unearth' && result.newObject !== null
         ? {
@@ -1461,6 +1478,10 @@ function runEffect(
     case 'splitCostExiled':
       // D-232: "An opponent chooses one of the exiled cards. You put that card on the bottom of your library and return the other ..." (rules/activation-exile.ts).
       return startSplit(state, res);
+
+    case 'returnGraveyardPair':
+      // D-951: "Choose a creature card in an opponent's graveyard, then that player chooses ... You may return those cards ..." (rules/graveyard-pair.ts).
+      return done(state, [], [startGraveyardPair(effect.cardType)]);
 
     case 'sparePermanents':
       // D-231: "For each player, you choose ... Then each player sacrifices all other nonland permanents they control" (rules/spare.ts).

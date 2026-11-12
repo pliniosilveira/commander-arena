@@ -389,7 +389,12 @@ function answerConfirm(
   if (d.purpose === 'search')
     return finishResolutionAnswer(answerResolutionSearchMay(state, accept));
   const head = state.resolution?.queue[0]?.kind;
-  if (head === 'confirmOptional' || head === 'mayEffect' || head === 'playerMay') {
+  if (
+    head === 'confirmOptional' ||
+    head === 'mayEffect' ||
+    head === 'playerMay' ||
+    head === 'graveyardPair'
+  ) {
     return finishResolutionAnswer(answerResolutionOptional(state, accept));
   }
   if (state.resolution !== null) {

@@ -3451,6 +3451,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'returnGraveyardPair':
+      // D-951: the one card type both chosen cards must have ("a creature card"); the rest of the wording is fixed by the effect.
+      if (!(CARD_TYPES as readonly string[]).includes(e.cardType)) {
+        issue(out, `${path}.cardType`, 'returnGraveyardPair names one card type');
+      }
+      // CR 304.4, 307.4: an instant or a sorcery would stay in the graveyard, and the engine does not apply that to this return.
+      if (e.cardType === 'instant' || e.cardType === 'sorcery') {
+        issue(out, `${path}.cardType`, 'returnGraveyardPair cannot return an instant or a sorcery');
+      }
+      break;
     case 'sparePermanents':
       // D-231: the card types the controller chooses a permanent of, for each player.
       if (!Array.isArray(e.types) || e.types.length === 0) {

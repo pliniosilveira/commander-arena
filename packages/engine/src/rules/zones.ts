@@ -73,6 +73,7 @@ import {
   riotInstances,
 } from './enters-keywords';
 import { canReveal, revealChoices, revealEvents } from './enters-reveal';
+import { withoutRun } from './enters-run';
 import { applyGraveyardRider } from './graveyard-play';
 import { timesKickedOf } from './kicks';
 import { becomePrepared, dropPrepareCopy } from './prepare';
@@ -146,6 +147,11 @@ export interface MoveRequest {
    * if it would leave the battlefield, is exiled instead. Only for a move to the battlefield.
    */
   readonly alt?: 'unearth';
+  /**
+   * The permanents that entered the battlefield in the same event before this one (D-951, CR 603.6a, 614.12b: "return those cards to the battlefield"): the replacement
+   * effects of this card that read the battlefield read it without them (`rules/enters-run.ts`). Only for a move to the battlefield; absent for a card that enters alone.
+   */
+  readonly alongside?: readonly ObjectId[];
 }
 
 export type MoveResult =
@@ -333,6 +339,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // The question comes before anything moves. Nothing is asked when it would enter tapped anyway
   // or when the controller has too little life to pay (CR 119.4).
   const enterController = request.toSeat ?? controllerOf(state, old);
+  // CR 614.12, 614.12b (D-951): what the replacement effects of the entering card read is the battlefield without the cards that enter with it (`rules/enters-run.ts`).
+  const before = withoutRun(state, request.alongside);
   const faceIndex = faceAfter(old, request);
   const entering =
     to === 'battlefield' && printedCard(old) !== null ? enteringFace(state, old, faceIndex) : null;
@@ -342,7 +350,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // (the controller would choose that order), so a question about paying life to avoid entering tapped is moot and is not asked.
   const untappedByEffect =
     entering !== null &&
-    groupEntersUntapped(state, {
+    groupEntersUntapped(before, {
       ...old,
       zone: 'battlefield',
       controller: enterController,
@@ -353,7 +361,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     entering !== null &&
     !untappedByEffect &&
     request.tapped !== true &&
-    !entersTapped(state, entering.abilities, enterCtx) &&
+    !entersTapped(before, entering.abilities, enterCtx) &&
     getSeat(state, enterController).life >= lifeOf(payment);
   // D-208 (CR 614.12, 701.20, 701.4): "you may reveal a Mountain or Plains card from your hand. If you don't, it enters tapped": the same question as a shock
   // land's, with nothing to pay. Nothing is asked when it enters tapped anyway or when no card (or permanent) qualifies.
@@ -363,8 +371,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     entering !== null &&
     !untappedByEffect &&
     request.tapped !== true &&
-    !entersTapped(state, entering.abilities, enterCtx) &&
-    canReveal(state, enterController, revealRule, old.id);
+    !entersTapped(before, entering.abilities, enterCtx) &&
+    canReveal(before, enterController, revealRule, old.id);
   if (mayReveal && revealRule !== null && (request.entersPaid ?? null) === null) {
     const info = sourceInfo(state, old.id);
     return {
@@ -384,7 +392,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   }
   // D-225 (CR 701.20a): the player who revealed chooses which card, when there is more than one.
   if (mayReveal && revealRule !== null && request.entersPaid === true) {
-    const choices = revealChoices(state, enterController, revealRule, old.id);
+    const choices = revealChoices(before, enterController, revealRule, old.id);
     if (choices.length > 1 && request.entersRevealed === undefined) {
       const info = sourceInfo(state, old.id);
       return {
@@ -441,7 +449,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 707.9, 614.12 (D-151): "As this enters, you may have it become a copy of any creature on the battlefield". Nothing has moved yet.
   const copyRule = entering === null ? null : entersCopyOf(entering.abilities);
   if (copyRule !== null && request.entersCopy === undefined) {
-    const legal = copyCandidates(state, enterController, copyRule, old.id);
+    const legal = copyCandidates(before, enterController, copyRule, old.id);
     if (legal.length > 0) {
       return {
         kind: 'needsDecision',
@@ -464,7 +472,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   const riotCount =
     entering === null
       ? 0
-      : riotInstances(state, faceAbilities, {
+      : riotInstances(before, faceAbilities, {
           ...old,
           zone: 'battlefield',
           controller: enterController,
@@ -487,7 +495,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 702.82a (D-185): "As this object enters, you may sacrifice any number of creatures": the last question, asked only when there is a creature to
   // sacrifice (the permanent is not on the battlefield, so it is not one).
   if (devourOf(faceAbilities) > 0 && request.entersDevour === undefined) {
-    const legal = devourCandidates(state, enterController);
+    const legal = devourCandidates(before, enterController);
     if (legal.length > 0) {
       return { kind: 'needsDecision', decision: devourDecision(enterController, old.id, legal) };
     }
@@ -519,6 +527,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   const [timestamp, s2] = allocateTimestamp(s1);
   next = s2;
 
+  // CR 614.12 (D-951): the same battlefield, once the old object has left its zone: without the permanents that enter in the same event.
+  const nextBefore = withoutRun(next, request.alongside);
   let tapped = request.tapped ?? false;
   let counters: Record<string, number> = {};
   const printed = printedCard(old);
@@ -535,7 +545,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     }
     const abilities = face?.abilities ?? [];
     // CR 614.12: its conditions look at the battlefield without it, which is what `next` is.
-    if (entersTapped(next, abilities, enterCtx)) tapped = true;
+    if (entersTapped(nextBefore, abilities, enterCtx)) tapped = true;
     // CR 107.3m: "enters with X counters" reads the X of the spell it resolved from, which only a
     // spell on the stack has (D-103); a card put onto the battlefield from another zone has X = 0.
     const castX = old.zone === 'stack' && old.stack?.kind === 'spell' ? (old.stack.x ?? 0) : 0;
@@ -550,7 +560,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       counters,
       castX,
       escaped,
-      (a) => countMatching(next, a.filter, { controller: enterController, source: newId }),
+      (a) => countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
       kicks,
     );
     // CR 714.3a: a Saga enters with a lore counter.
@@ -573,7 +583,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       if (mayReveal && request.entersPaid === true) {
         // CR 701.20a, 701.4a: the card of the hand is revealed (a permanent is only chosen).
         events.push(
-          ...revealEvents(state, enterController, revealRule, old.id, request.entersRevealed),
+          ...revealEvents(before, enterController, revealRule, old.id, request.entersRevealed),
         );
       } else {
         tapped = true; // "If you don't, it enters tapped."
@@ -617,7 +627,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     // effects of the permanents already on the battlefield, read against the permanent as it would be there.
     counters = addCounterMaps(
       counters,
-      groupEntryCounters(next, {
+      groupEntryCounters(nextBefore, {
         ...old,
         zone: 'battlefield',
         controller,

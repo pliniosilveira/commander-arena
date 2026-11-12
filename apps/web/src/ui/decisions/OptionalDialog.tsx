@@ -23,6 +23,7 @@ const DIALOG_LABELS: Readonly<
   miracle: 'Miracle',
   gift: 'Gift',
   costChoice: 'Additional cost',
+  pairReturn: 'Return the cards',
 };
 
 /**

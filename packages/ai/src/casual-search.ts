@@ -17,6 +17,7 @@ import { chooseCostDiscard, isWardDiscard } from './casual-costs';
 import { chooseAnyNumberToDiscard, chooseBehold } from './casual-dragons';
 import { chooseFreeCast } from './casual-free';
 import { choosePutOnTop } from './casual-library';
+import { chooseLeastWorthCard } from './casual-pair';
 import { findObject, isLand, manaValueOf } from './casual-view';
 
 /** The colour of a basic land, from its land type (CR 305.6), or null for any other card. */
@@ -229,6 +230,8 @@ export function chooseCardsFromZone(view: GameView, d: ChooseCardsDecision): Act
   if (d.purpose === 'exile') return chooseEscapeExile(view, d);
   // D-232: the card an opponent's ability puts on the bottom of its library (Coin of Fate): the one the agent least wants the other player to have.
   if (d.purpose === 'split') return chooseSplitExiled(view, d);
+  // D-951: a creature card of a graveyard, which goes back to the other player (Dawnbreak Reclaimer): the one worth least.
+  if (d.purpose === 'pair') return chooseLeastWorthCard(view, d);
   // D-232: the card a permanent becomes a copy of until end of turn (Spirit of Resilience).
   if (d.purpose === 'copy') return chooseCopyCard(view, d);
   // A discard paid as a cost (an additional cost, an ability's cost, Ward's): the card wanted least.

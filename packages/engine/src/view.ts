@@ -437,6 +437,7 @@ export interface GameView {
       | 'reveal'
       | 'split'
       | 'copy'
+      | 'pair'
       | 'cast'
       | 'scry'
       | 'surveil'
