@@ -8,6 +8,11 @@ name: Deck support triage
 # The description is untrusted input in a public repository: it goes through the environment into a file and is only ever
 # read as data. The comment this workflow writes carries the sha256 of the description it checked, so the agent can tell
 # whether the issue was edited after the check. A person other than the owner may have one request waiting at a time.
+# D-290: what the work needs is the names of the unsupported cards and their card data. When the description has the names but no usable card data
+# (a report pasted without the data block), this runner, which can reach Scryfall (the cloud session of the agent cannot), fetches the cards through the
+# app's own Scryfall client, posts them as one comment of `github-actions[bot]` (marker `<!-- deck-support-card-data -->`, the sha256 of the description
+# it was fetched for) and checks again: the data is Scryfall's, nothing in it comes from the author. The decklist, the template report and the build line
+# are notes when missing, not reasons to refuse.
 
 on:
   issues:
@@ -54,6 +59,25 @@ jobs:
           cat "$RUNNER_TEMP/result.json"
           # 0 complete, 1 incomplete; anything else is a failure of the check itself.
           test "$code" -le 1
+      - name: Fetch the card data from Scryfall when that is all that is missing
+        run: |
+          if [ "$(jq -r .needsCardData "$RUNNER_TEMP/result.json")" != "true" ]; then
+            echo "nothing to fetch"
+            exit 0
+          fi
+          digest=$(sha256sum "$RUNNER_TEMP/issue.md" | cut -d' ' -f1)
+          code=0
+          node tools/corpus/fetch-card-data-cli.ts --body "$RUNNER_TEMP/issue.md" --out "$RUNNER_TEMP/card-data.md" --digest "$digest" > "$RUNNER_TEMP/fetch.json" || code=$?
+          cat "$RUNNER_TEMP/fetch.json"
+          # 0 fetched, 1 Scryfall could not give the cards; anything else is a failure of the tool itself.
+          test "$code" -le 1
+          if [ "$code" = 0 ]; then
+            # The same check again, now with the fetched card data in place of the description's.
+            code=0
+            node tools/corpus/check-issue-cli.ts --body "$RUNNER_TEMP/issue.md" --card-data "$RUNNER_TEMP/card-data.md" > "$RUNNER_TEMP/result.json" || code=$?
+            cat "$RUNNER_TEMP/result.json"
+            test "$code" -le 1
+          fi
       - name: Label and comment
         env:
           GH_TOKEN: ${{ github.token }}
@@ -80,16 +104,41 @@ jobs:
             body="$marker
           The request is complete, but #$other of yours is still waiting or being worked on. Only one request per person is queued at a time: edit this issue (any edit) when #$other is done, and it is checked again."
           elif [ "$(jq -r .complete "$RUNNER_TEMP/result.json")" = "true" ]; then
+            # The card data this workflow fetched goes into its own comment first, so that a ready issue never lacks it (D-290).
+            fetched_note=""
+            if [ -s "$RUNNER_TEMP/card-data.md" ] && [ "$(jq -r .ok "$RUNNER_TEMP/fetch.json" 2>/dev/null)" = "true" ]; then
+              data_existing=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${NUMBER}/comments" --jq '[.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- deck-support-card-data -->")))][0].id // empty')
+              if [ -n "$data_existing" ]; then
+                gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${data_existing}" -F body=@"$RUNNER_TEMP/card-data.md"
+              else
+                gh issue comment "$NUMBER" --body-file "$RUNNER_TEMP/card-data.md"
+              fi
+              fetched_note=" The card data was fetched from Scryfall by this workflow and is in the comment of github-actions that carries it."
+            fi
+            notes=$(jq -r '.notes[] | "- " + .' "$RUNNER_TEMP/result.json")
+            notes_text=""
+            if [ -n "$notes" ]; then
+              notes_text="
+
+          Not in the description. The unsupported cards can be built without it, but the deck as a whole cannot be checked:
+
+          $notes"
+            fi
             gh label create deck-support:ready --color 0E8A16 --description "A complete deck support request, waiting for the agent" --force
             gh issue edit "$NUMBER" --add-label deck-support:ready
             body="$marker
-          The request is complete (decklist, template report, the card data of all $(jq '.unsupported | length' "$RUNNER_TEMP/result.json") unsupported cards, build line). It is queued for the deck-support agent, which works when its budget allows."
+          The request is complete: the names of the $(jq '.unsupported | length' "$RUNNER_TEMP/result.json") unsupported cards and their card data.$fetched_note It is queued for the deck-support agent, which works when its budget allows.$notes_text"
           else
             gh issue edit "$NUMBER" --remove-label deck-support:ready || true
+            fetch_problems=""
+            if [ -s "$RUNNER_TEMP/fetch.json" ]; then
+              fetch_problems=$(jq -r 'select(.ok == false) | .problems[] | "- " + .' "$RUNNER_TEMP/fetch.json" 2>/dev/null || true)
+            fi
             body="$marker
           This deck support request is not complete yet, so it is not queued. What is missing:
 
           $(jq -r '.problems[] | "- " + .' "$RUNNER_TEMP/result.json")
+          ${fetch_problems}
 
           Press **Ask for support on GitHub** on the import screen again, paste the whole report into the description, and edit this issue: it is checked again on every edit."
           fi

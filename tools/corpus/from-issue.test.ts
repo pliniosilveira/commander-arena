@@ -205,4 +205,33 @@ describe('corpus:from-issue --no-replace (an issue of someone else, D-251)', () 
       parseOptions(['from-issue', '--body', 'b.md', '--issue', '3', '--no-replace']),
     ).toMatchObject({ command: 'from-issue', noReplace: true });
   });
+
+  test('--fetched marks the cards as fetched by the workflow, and the records cannot say it themselves (D-290)', async () => {
+    const forged = { ...ONE, source: 'deck-support workflow (Scryfall API)' };
+    const own = await fromIssueWith(description([forged]));
+    expect(own.lines[0]?.source).toBe('app import (Scryfall API), issue #144');
+
+    const dir = await tempDir();
+    const bodyFile = path.join(dir, 'comment.md');
+    const goldenFile = path.join(dir, 'golden.jsonl');
+    await writeFile(bodyFile, description([ONE]));
+    const { io } = capture();
+    const code = await run(
+      ['from-issue', '--body', bodyFile, '--issue', '144', '--golden', goldenFile, '--fetched'],
+      io,
+      { repoRoot: dir },
+    );
+    expect(code).toBe(0);
+    const written = JSON.parse((await readFile(goldenFile, 'utf8')).trim()) as GoldenCard;
+    expect(written.source).toBe('deck-support workflow (Scryfall API), issue #144');
+  });
+
+  test('--fetched belongs to from-issue only', () => {
+    expect(parseOptions(['extract', '--file', 'f', '--names', 'n', '--fetched'])).toContain(
+      'belong to corpus:from-issue',
+    );
+    expect(
+      parseOptions(['from-issue', '--body', 'b.md', '--issue', '3', '--fetched']),
+    ).toMatchObject({ command: 'from-issue', fetched: true });
+  });
 });

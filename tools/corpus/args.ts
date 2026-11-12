@@ -29,6 +29,8 @@ export interface Options {
   readonly issue: number | undefined;
   /** from-issue: never replace a card already in the golden file (an issue of someone else, D-251). */
   readonly noReplace: boolean;
+  /** from-issue: the file is the comment in which the deck support workflow keeps the card data it fetched from Scryfall (D-290), not a description. */
+  readonly fetched: boolean;
 }
 
 export const USAGE = `Usage:
@@ -40,7 +42,7 @@ export const USAGE = `Usage:
   pnpm corpus:decks --file <path> --deck <decklist> [--deck <decklist> ...] [--out <file>]
                                                                 how much of each deck the engine
                                                                 supports, and what blocks it
-  pnpm corpus:from-issue --body <file> --issue <number> [--golden <path>] [--no-replace]
+  pnpm corpus:from-issue --body <file> --issue <number> [--golden <path>] [--no-replace] [--fetched]
                                                                 add the cards of a support issue's
                                                                 card data block to the golden corpus
 
@@ -74,6 +76,8 @@ Options:
   --no-replace        keep the cards already there: a card of the issue that is already in the file
                       with the same data is skipped, with different data stops the command (for
                       issues of someone else, D-251)
+  --fetched           the file is the comment in which the deck support workflow keeps the card data
+                      it fetched from Scryfall (D-290), not a description: the cards' source says so
   coverage:cards only:
   --check             compare with reports/coverage-baseline.json, write nothing, exit 1 on a drop
   --update-baseline   also write reports/coverage-baseline.json
@@ -97,6 +101,7 @@ const SPEC = {
   body: { type: 'string' },
   issue: { type: 'string' },
   'no-replace': { type: 'boolean' },
+  fetched: { type: 'boolean' },
 } as const;
 
 /** Flags that mean nothing to `replay` and `decks`. */
@@ -139,8 +144,13 @@ export function parseOptions(argv: readonly string[]): Options | string {
   }
   if (extra.length > 0) return `unexpected argument "${extra[0]}"`;
   if (command === 'from-issue') return fromIssueOptions(values);
-  if (values.body !== undefined || values.issue !== undefined || values['no-replace'] === true) {
-    return '--body, --issue and --no-replace belong to corpus:from-issue';
+  if (
+    values.body !== undefined ||
+    values.issue !== undefined ||
+    values['no-replace'] === true ||
+    values.fetched === true
+  ) {
+    return '--body, --issue, --no-replace and --fetched belong to corpus:from-issue';
   }
   if (command === 'replay') {
     for (const flag of REPLAY_REJECTS) {
@@ -210,19 +220,20 @@ export function parseOptions(argv: readonly string[]): Options | string {
     body: undefined,
     issue: undefined,
     noReplace: false,
+    fetched: false,
   };
 }
 
-/** `from-issue` takes --body, --issue, --golden and --no-replace only. */
+/** `from-issue` takes --body, --issue, --golden, --no-replace and --fetched only. */
 function fromIssueOptions(values: ReturnType<typeof scan>['values']): Options | string {
   const others = Object.entries(values).filter(
     ([key, value]) =>
-      !['body', 'issue', 'golden', 'no-replace'].includes(key) &&
+      !['body', 'issue', 'golden', 'no-replace', 'fetched'].includes(key) &&
       value !== undefined &&
       value !== false,
   );
   if (others.length > 0) {
-    return `--${others[0]?.[0]} does not apply to corpus:from-issue (it takes --body, --issue, --golden and --no-replace)`;
+    return `--${others[0]?.[0]} does not apply to corpus:from-issue (it takes --body, --issue, --golden, --no-replace and --fetched)`;
   }
   if (values.body === undefined) return 'from-issue needs --body <file with the issue description>';
   const issue = Number(values.issue);
@@ -247,5 +258,6 @@ function fromIssueOptions(values: ReturnType<typeof scan>['values']): Options | 
     body: values.body,
     issue,
     noReplace: values['no-replace'] === true,
+    fetched: values.fetched === true,
   };
 }

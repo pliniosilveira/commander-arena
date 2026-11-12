@@ -17,6 +17,18 @@ export const CARD_DATA_ENCODING = 'gzip+base64url';
 /** The `source` of a record written by the app: Scryfall's own data, fetched by the player's browser at import. */
 export const ISSUE_CARD_SOURCE = 'app import (Scryfall API)';
 
+/**
+ * The `source` of a record the deck support workflow fetched from Scryfall itself (D-290), for an issue whose description carries no card data of its own: the
+ * workflow looks the names up through the app's Scryfall client, so the data is Scryfall's and not the issue author's.
+ */
+export const WORKFLOW_CARD_SOURCE = 'deck-support workflow (Scryfall API)';
+
+/**
+ * The marker of the comment in which the workflow keeps the card data it fetched (D-290). Only a comment of `github-actions[bot]` that carries it counts: anyone can
+ * write the words, nobody else can write as the bot.
+ */
+export const CARD_DATA_COMMENT_MARKER = '<!-- deck-support-card-data -->';
+
 /** The text that is compressed: one golden record per line. */
 export function cardDataText(records: readonly GoldenCard[]): string {
   return records.map(goldenLine).join('\n');

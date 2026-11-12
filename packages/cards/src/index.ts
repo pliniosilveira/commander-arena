@@ -17,6 +17,7 @@ export {
   toGoldenCard,
 } from './corpus/golden';
 export {
+  CARD_DATA_COMMENT_MARKER,
   CARD_DATA_ENCODING,
   CARD_DATA_SUMMARY,
   cardDataBlock,
@@ -24,6 +25,7 @@ export {
   cardDataText,
   ISSUE_CARD_SOURCE,
   parseCardDataText,
+  WORKFLOW_CARD_SOURCE,
 } from './corpus/issue-block';
 export * from './decklist/index';
 export * from './precon/index';
