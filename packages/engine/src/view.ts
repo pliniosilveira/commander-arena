@@ -460,6 +460,8 @@ export interface GameView {
       | 'move'
       | 'lookTake'
       | 'lookSplit'
+      | 'separate'
+      | 'pile'
       | 'behold'
       | 'reveal'
       | 'split'
@@ -801,7 +803,17 @@ export function getView(state: GameState, viewer: SeatId): GameView {
             purpose: pending.purpose,
             cards: pending.cards,
           }
-        : null;
+        : // CR 700.3 (D-971): both piles of the cards revealed, which are still in a library, to the player who chooses between them.
+          pending?.kind === 'chooseOption' &&
+            pending.purpose === 'pile' &&
+            pending.piles !== undefined
+          ? {
+              seat: pending.seat,
+              source: pending.source,
+              purpose: 'pile' as const,
+              cards: [...pending.piles.first, ...pending.piles.second],
+            }
+          : null;
   return {
     viewer,
     turn: state.turn.number,

@@ -2217,6 +2217,21 @@ export type Effect =
       readonly exile: number;
     }
   /**
+   * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (Fact or Fiction,
+   * D-971, CR 700.3, 701.20): the controller reveals the top `count` cards of their library (fewer when it holds fewer; the cards stay in the library while they are sorted, CR 700.3c).
+   * One player separates them into two piles, either of which may be empty (CR 700.3a, 700.3d), and the other player chooses a pile: the first opponent in turn order still in the
+   * game and the controller. `separator` says who makes the piles: `opponent` ("An opponent separates those cards into two piles", the controller then chooses) or `you` ("separate
+   * them into two piles. An opponent chooses one of those piles"). The pile that is chosen goes to `chosenTo` and the other to `otherTo` (the hand or the graveyard of the
+   * controller; the two differ), the chosen pile first, each from the top of the library down. A library of fewer than two cards has nothing to separate (D-971).
+   */
+  | {
+      readonly kind: 'revealAndSeparate';
+      readonly count: Amount;
+      readonly separator: 'opponent' | 'you';
+      readonly chosenTo: 'hand' | 'graveyard';
+      readonly otherTo: 'hand' | 'graveyard';
+    }
+  /**
    * "Put N cards from your hand on top of your library in any order" (Brainstorm's second half): the
    * controller chooses `count` cards from their hand (all of it when it holds fewer) and puts them on
    * top of their library in the order they choose, the first chosen on top.

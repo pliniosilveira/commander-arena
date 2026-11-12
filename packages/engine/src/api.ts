@@ -73,6 +73,7 @@ import { sameCombination } from './rules/mana-outcomes';
 import { arrangeMeldedCards } from './rules/melded';
 import { isLegalModeSet } from './rules/modes';
 import { monarchAfterLoss } from './rules/monarch';
+import { answerResolutionPile } from './rules/pile-answer';
 import { grantPriority } from './rules/priority';
 import { fail, ok, type Result } from './rules/result';
 import { evaluateGameEnd } from './rules/sba';
@@ -454,6 +455,11 @@ function answerChooseOption(
     // CR 608.2d (D-175): the instruction of a resolving effect that the controller chose among the ones it offered.
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionChooseOne(state, option));
+  }
+  if (d.purpose === 'pile') {
+    // CR 700.3 (D-971): the pile the chooser picked.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionPile(state, option));
   }
   if (d.purpose === 'vote') {
     // CR 701.38a (D-194): the vote of the player the decision is for.

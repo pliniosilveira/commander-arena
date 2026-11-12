@@ -3835,6 +3835,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'revealAndSeparate':
+      // D-971 (CR 700.3): who makes the piles is one of two players, and the two piles go to two different places of the controller.
+      checkAmount(e.count, `${path}.count`, scope, out);
+      if (e.separator !== 'opponent' && e.separator !== 'you') {
+        issue(out, `${path}.separator`, 'the piles are separated by an opponent or by you');
+      }
+      for (const field of ['chosenTo', 'otherTo'] as const) {
+        if (e[field] !== 'hand' && e[field] !== 'graveyard') {
+          issue(out, `${path}.${field}`, 'a pile goes into the hand or the graveyard');
+        }
+      }
+      if (e.chosenTo === e.otherTo) {
+        issue(out, path, 'the two piles go to different places');
+      }
+      break;
     case 'search':
       checkSearch(e, path, scope, out);
       break;

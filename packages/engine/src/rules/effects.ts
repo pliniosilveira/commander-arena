@@ -68,6 +68,7 @@ import { becomeMonarch } from './monarch';
 import { isCardZoneChoice, runChooseMove } from './move-choice';
 import { nextMainStep } from './next-main';
 import { phaseOut } from './phasing';
+import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
@@ -166,6 +167,7 @@ export function runInstruction(
   if (instruction.kind === 'drawUpTo') return runDrawUpTo(state, res, instruction);
   if (instruction.kind === 'lookTake') return runLookTake(state, res, instruction);
   if (instruction.kind === 'lookSplit') return runLookSplit(state, res, instruction);
+  if (instruction.kind === 'pileSeparate') return runPileSeparate(state, res, instruction);
   if (instruction.kind === 'behold') return runBehold(state, res, instruction);
   if (instruction.kind === 'putOnTop') return runPutOnTop(state, res, instruction);
   if (instruction.kind === 'confirmOptional') {
@@ -1599,6 +1601,12 @@ function runEffect(
           },
         ],
       );
+    }
+
+    case 'revealAndSeparate': {
+      // D-971 (CR 700.3, 701.20): "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your
+      // graveyard" (rules/pile-separate.ts).
+      return startPileSeparate(state, res, effect, amountOf(state, effect.count, ctx, targets));
     }
 
     case 'lookAtTop': {

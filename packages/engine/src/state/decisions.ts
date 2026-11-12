@@ -473,7 +473,8 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'reveal'
     | 'split'
     | 'copy'
-    | 'pair';
+    | 'pair'
+    | 'separate';
   readonly zone: 'library' | 'hand' | 'graveyard' | 'exile';
   readonly legal: readonly ObjectId[];
   readonly min: number;
@@ -512,6 +513,9 @@ export interface ChooseCardsDecision extends DecisionBase {
    * For `'lookSplit'` (D-216, "Put one of them into your hand, put one of them on the bottom of your library, and exile one of them"): every card looked
    * at is in `looked` (only `seat` sees them), `legal` are those still to place and exactly `min` = `max` of them are chosen for this pile, `to` says which:
    * the hand or the bottom of the library. Absent for every other question.
+   *
+   * For `'separate'` (D-971, CR 700.3, "An opponent separates those cards into two piles"): `seat` is the player who separates, `legal` the revealed cards, still in a library
+   * (`zone`), and the cards chosen (`min` 0, `max` all of them) are pile 1; the cards not chosen are pile 2 (CR 700.3a, 700.3d: either may be empty). All are public (`reveal`).
    */
   readonly to?: 'hand' | 'bottom';
   /**
@@ -705,7 +709,8 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'riot'
     | 'replacement'
     | 'vote'
-    | 'meldOrder';
+    | 'meldOrder'
+    | 'pile';
   readonly options: readonly string[];
   /**
    * For purpose `'replacement'` (D-191, CR 616.1): several prevention effects apply to one damage event and the order can change the
@@ -754,6 +759,19 @@ export interface ChooseOptionDecision extends DecisionBase {
     readonly first: ObjectId;
     readonly second: ObjectId;
     readonly zone: 'graveyard' | 'library' | 'exile';
+  };
+  /**
+   * For purpose `'pile'` (D-971, CR 700.3, "Put one pile into your hand and the other into your graveyard"): the two piles the separator made, and the player asked (`seat`)
+   * chooses one. `options` are `pile1` and `pile2`, in that order; the pile chosen goes to `chosenTo` and the other to `otherTo`, both of `receiver` (the controller of the
+   * effect, whose library the cards are in). The cards are public and still in the library. `separator` is who made the piles. Absent for the other purposes.
+   */
+  readonly piles?: {
+    readonly first: readonly ObjectId[];
+    readonly second: readonly ObjectId[];
+    readonly chosenTo: 'hand' | 'graveyard';
+    readonly otherTo: 'hand' | 'graveyard';
+    readonly separator: SeatId;
+    readonly receiver: SeatId;
   };
   readonly source: ObjectId;
   readonly sourceName: string;
