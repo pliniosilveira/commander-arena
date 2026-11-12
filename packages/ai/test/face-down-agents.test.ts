@@ -3,7 +3,7 @@
 // never see an opponent's card: an opponent's face-down permanent is a 2/2 with a label in their view and nothing else. The cards are SYNTHETIC (the engine's
 // synthetic-manifest.ts); the face-down permanents are placed with `faceDown: true`.
 import type { Action } from '@commander-arena/engine';
-import { type ScenarioGame, scenario } from '@commander-arena/engine/testing';
+import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { CasualAgent, GreedyAgent, HeuristicAgent, RandomLegalAgent } from '../src/index';
 import { turnUpGain } from '../src/casual-face-down';
