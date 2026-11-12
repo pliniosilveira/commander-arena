@@ -100,6 +100,7 @@ import {
 } from './permanents-angels';
 import { entersCopyConfirm, entersCopyDetail, isEntersCopy } from './permanents-dragons';
 import { isRingBearer, ringBearerDetail } from './permanents-ring';
+import { isSoulbond, soulbondConfirm, soulbondDetail } from './permanents-soulbond';
 import {
   clickOutcome,
   PASS_TURN_LABEL,
@@ -493,7 +494,11 @@ function handlers(
           [
             button(
               'confirm',
-              isEntersCopy(d) ? entersCopyConfirm(ui.permanents) : 'Confirm',
+              isEntersCopy(d)
+                ? entersCopyConfirm(ui.permanents)
+                : isSoulbond(d)
+                  ? soulbondConfirm(ui.permanents)
+                  : 'Confirm',
               () => act({ kind: 'choosePermanents', objects: ui.permanents }),
               { primary: true, disabled: !ready, hint: permanentsHint(ui.permanents, d) },
             ),
@@ -503,7 +508,9 @@ function handlers(
               ? entersCopyDetail(ui.permanents, d, index)
               : isRingBearer(d)
                 ? ringBearerDetail(ui.permanents, index)
-                : permanentsDetail(ui.permanents, d),
+                : isSoulbond(d)
+                  ? soulbondDetail(ui.permanents, index)
+                  : permanentsDetail(ui.permanents, d),
             // A sacrifice or a crew that is a cost of an ability being activated can be taken back:
             // Cancel rewinds the whole activation (CR 602.2b, 733), like cancelling a cast.
             cancel: d.forCost ? button('cancel', 'Cancel', () => act({ kind: 'cancel' })) : null,

@@ -818,6 +818,10 @@ export function lowerTriggered(
       'kind' in t.what &&
       t.what.kind === 'this',
   );
+  // D-284: "it" is the card of a creature that died only when every event is `~` dying: a leave-the-battlefield trigger may find the card in any zone.
+  ctx.itDied = triggers.every(
+    (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'this',
+  );
   const bodies = ability.modal === undefined ? [ability.body] : ability.modal.modes;
   const clauses = bodies.flatMap((b) => b.sentences.flatMap((s) => s.clauses));
   // "It" in the body of "becomes the target" is the spell or ability that targeted (the engine's

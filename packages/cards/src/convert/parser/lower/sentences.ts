@@ -174,6 +174,7 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     const lowered = lowerClause(clause, ctx);
     if (!lowered.ok) return lowered;
     effects.push(...lowered.value);
+    ctx.lowered += 1;
     noteRemoved(lowered.value, ctx);
     if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;
     noteMoved(lowered.value, ctx);
@@ -1320,6 +1321,15 @@ function lowerStep(
   return { last: i };
 }
 
+/** A word that names the controller of the ability in its text (CR 608.2d): "you", "your", "you've", "yourself". */
+const CONTROLLER_WORD = /\byou(?:r|rs|rself|'(?:ve|re|ll|d))?\b/iu;
+
+/**
+ * A word that is relative to the controller too: "an opponent" and "an opponent's" are the opponents of the controller (CR 102.2), and the engine would read them as the opponents of the
+ * asked player (`runsAs: 'chooser'`); "another player" and "other players" are the players but the controller. The selector of the sentence ("each opponent may") is not tested, only its clauses.
+ */
+const OTHER_PLAYER_WORD = /\b(?:opponents?|another player|other players?)\b/iu;
+
 /**
  * "Each player may discard a card." and "Target opponent may have you draw three cards. If the player doesn't, you mill three cards." (stage P52, D-210, CR 608.2d,
  * 101.4): the players the sentence names are asked, in turn order, whether to do its clauses; with "have you" the controller does them, otherwise the player asked is "you"
@@ -1349,6 +1359,32 @@ function lowerPlayersMay(
   }
   const players = playerSelectorOf(by.who, ctx);
   if (!players.ok) return refused(players);
+  // D-287: with no "have you" the player asked does the instruction, as "you" (`runsAs: 'chooser'`): a rule that reads "you" or "your" of the controller refuses then.
+  const askedActs = !by.haveYou;
+  // A word of the text that says "you" or "your" is the controller (CR 608.2d), which the engine would run as the asked player: the sentence, and the "if they don't" sentence
+  // that follows it, are not read then, whatever clause or amount says it. Without the text of the ability (a quotation lowered on its own) it cannot be told, so it is refused.
+  if (askedActs) {
+    const next = sentences[i + 1];
+    const spans = [
+      sentence,
+      ...sentence.clauses,
+      ...(next?.condition?.test.kind === 'declined' ? [next, ...next.clauses] : []),
+    ];
+    const start = Math.min(...spans.map((n) => n.span.start));
+    const end = Math.max(...spans.map((n) => n.span.end));
+    if (ctx.text === '' || CONTROLLER_WORD.test(ctx.text.slice(start, end))) {
+      return refused(refuse(sentence));
+    }
+    // D-287: the same for a word relative to the controller that is not "you": "each opponent may draw a card for each creature an opponent controls" counts the creatures of the
+    // opponents of the asked player. Only the clauses are read, not the selector.
+    const clauses = [
+      ...sentence.clauses,
+      ...(next?.condition?.test.kind === 'declined' ? next.clauses : []),
+    ];
+    if (clauses.some((c) => OTHER_PLAYER_WORD.test(ctx.text.slice(c.span.start, c.span.end)))) {
+      return refused(refuse(sentence));
+    }
+  }
   const body = lowerClauses(sentence.clauses, ctx);
   if (!body.ok) return refused(body);
   const next = sentences[i + 1];

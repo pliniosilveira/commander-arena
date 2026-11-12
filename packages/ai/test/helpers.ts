@@ -2309,6 +2309,66 @@ export const RING_NAMES = [
   'SYNTHETIC Bearer Oath',
 ] as const;
 
+/**
+ * The cards of the soulbond slices (D-284, D-286): the SYNTHETIC creatures whose dies ability returns them at the beginning of the next upkeep, and the SYNTHETIC
+ * soulbond creatures. Used by the 'soulbond' style and kept out of every other pool: soulbond asks its controller which creature to pair with in the middle of a
+ * resolution, and the returning creatures ask a "you may" and create a delayed ability, which the seeded games of the other styles do not reach.
+ */
+export const SOULBOND_NAMES = [
+  'SYNTHETIC Ember Cub',
+  'SYNTHETIC Grave Thief',
+  'SYNTHETIC Soulbound Squire',
+  'SYNTHETIC Soulbound Seraph',
+  'SYNTHETIC Soulbound Giant',
+  'SYNTHETIC Soulbound Glider',
+  'SYNTHETIC Bonded Hound',
+] as const;
+
+/**
+ * The soulbond style: the soulbond creatures (the keyword alone, with the Seraph's grant, with +2/+2 and with flying for the pair) several times, the creatures that
+ * return when they die, a creature that is paired by another's soulbond, bodies, and removal that ends a pair (death, bounce, a type change, a change of control).
+ */
+export const SOULBOND_SPELLS = [
+  ...supported(['SYNTHETIC Soulbound Squire']),
+  ...supported(['SYNTHETIC Soulbound Squire']),
+  ...supported(['SYNTHETIC Soulbound Squire']),
+  ...supported(['SYNTHETIC Soulbound Seraph']),
+  ...supported(['SYNTHETIC Soulbound Seraph']),
+  ...supported(['SYNTHETIC Soulbound Giant']),
+  ...supported(['SYNTHETIC Soulbound Giant']),
+  ...supported(['SYNTHETIC Soulbound Glider']),
+  ...supported(['SYNTHETIC Soulbound Glider']),
+  ...supported(['SYNTHETIC Bonded Hound']),
+  ...supported(['SYNTHETIC Ember Cub']),
+  ...supported(['SYNTHETIC Ember Cub']),
+  ...supported(['SYNTHETIC Grave Thief']),
+  ...supported([
+    'SYNTHETIC Vanilla 3/3',
+    'SYNTHETIC Vanilla 2/2',
+    'SYNTHETIC Vanilla 5/5',
+    'Grizzly Bears',
+    'Grizzly Bears',
+    'Wall of Stone',
+    'Serra Angel',
+  ]),
+  ...supported(['Lightning Bolt', 'Murder', 'Unsummon']),
+  ...supported(['SYNTHETIC Rust Touch', 'SYNTHETIC Flicker Spell', 'SYNTHETIC Borrow Creature']),
+];
+
+/** White for the soulbond creatures, the others for the bodies and the removal. */
+export const SOULBOND_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Forest',
+  'Forest',
+  'Swamp',
+  'Mountain',
+  'Island',
+  'Island',
+]);
+
 /** The Saga three times, the Ring's rite five times (the later levels of the Ring need many temptations) and its other cards once, with bodies to carry the designation, a Wall to block it and removal that also takes the designation away. */
 export const RING_SPELLS = [
   ...supported(['SYNTHETIC There and Back Again']),
@@ -2584,6 +2644,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(MELD_NAMES as readonly string[]).includes(card.name))
   // The Ring slice has its own style: its cards ask which creature is the Ring-bearer and give a creature three triggered abilities.
   .filter((card) => !(RING_NAMES as readonly string[]).includes(card.name))
+  // The soulbond slices have their own tests: a pairing asks which creature to pair with, and a dies ability asks "you may" and creates a delayed ability.
+  .filter((card) => !(SOULBOND_NAMES as readonly string[]).includes(card.name))
   // The Vraska program has its own style: its cards ask other players questions in the middle of a resolution, and a payment of energy.
   .filter((card) => !(VRASKA_NAMES as readonly string[]).includes(card.name))
   // The Vraska EDHREC program has its own style: its cards ask other players questions in the middle of a resolution and change token creation and triggers.
@@ -2759,12 +2821,14 @@ export type DeckStyle =
   | 'vraska'
   | 'edhrec'
   | 'hofri'
+  | 'soulbond'
   | 'combat';
 
 /** The spell slots of a style. A style whose pool is empty falls back to the old spell mix. */
 export function spellSlots(style: DeckStyle): readonly string[] {
   // D-229 to D-235: the Hofri Ghostforge mechanics (a style of its own, kept out of every other pool).
   if (style === 'hofri' && HOFRI_SPELLS.length > 0) return HOFRI_SPELLS;
+  if (style === 'soulbond' && SOULBOND_SPELLS.length > 0) return SOULBOND_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
   if (style === 'edhrec') return EDHREC_SPELLS;
   // Only the creatures with a coverage keyword, so every deck of the style draws them (see COVERAGE_KEYWORDS).
@@ -2935,6 +2999,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'vraska' && BASIC_LANDS.length > 0) return VRASKA_LANDS;
   if (style === 'edhrec' && BASIC_LANDS.length > 0) return EDHREC_LANDS;
   if (style === 'hofri' && BASIC_LANDS.length > 0) return HOFRI_LANDS;
+  if (style === 'soulbond' && BASIC_LANDS.length > 0) return SOULBOND_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
 }
 
@@ -3333,6 +3398,13 @@ export const RING_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['ring', 'ring'],
   ['ring', 'spells'],
   ['spells', 'ring'],
+];
+
+/** Style pairs of the soulbond soak test (D-286): a mirror match and both mixed ways. */
+export const SOULBOND_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['soulbond', 'soulbond'],
+  ['soulbond', 'spells'],
+  ['spells', 'soulbond'],
 ];
 
 /** Style pairs of the Hofri soak test (D-229 to D-235): a mirror match and both mixed ways. */

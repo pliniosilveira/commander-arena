@@ -34,12 +34,13 @@ import { derive } from './derive';
 import { replacementSources } from './die-replacement';
 import { type LegendCandidate, legendRuleDecision } from './legend-rule';
 import { monarchAfterLoss } from './monarch';
+import { endBrokenPairs } from './pairing-sba';
 import { cannotLoseGame } from './player-protection';
 import { regenerateInstead } from './regenerate';
 import { endLostRingBearers } from './ring';
 import { sacrificePermanent } from './sacrifice';
 import { sagaIsDone } from './saga';
-import { moveObject } from './zones';
+import { moveObject, recordLastKnown } from './zones';
 
 export interface SbaResult {
   readonly state: GameState;
@@ -117,6 +118,12 @@ export function checkStateBasedActions(input: GameState): SbaResult {
     };
   }
 
+  // CR 702.95e (D-285): a pair ends when either creature left, changed controller or stopped being a creature; the next pass goes on with the new state.
+  const unpaired = endBrokenPairs(state);
+  if (unpaired !== null) {
+    return { state: unpaired.state, events: unpaired.events, performed: true, decision: null };
+  }
+
   // CR 702.131b (D-264): Ascend, "any time you control ten or more permanents", is checked here; the next pass goes on with the new state.
   const blessed = gainCitysBlessings(state);
   if (blessed !== null) {
@@ -187,6 +194,10 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   // CR 704.3, 614.12 (D-133): the creatures put into graveyards in this check die together, so a "would die" replacement of
   // one of them replaces the deaths of the others even if it was moved first.
   const replacers = replacementSources(state);
+  // D-283 (CR 603.10a, 704.3): the permanents put into graveyards in this check leave together, so what each was (and what abilities a neighbour
+  // gave it) is recorded now, before the first of them moves.
+  const batch = [...toGraveyard, ...fallenAuras, ...destroyed];
+  if (batch.length > 1) for (const obj of batch) state = recordLastKnown(state, obj);
   // CR 704.5m: an Aura is put into the graveyard, not destroyed; the creature it enchanted may be
   // dying in the same check, which the next pass of the caller's loop settles.
   for (const obj of [...toGraveyard, ...fallenAuras, ...destroyed].sort(order)) {
@@ -200,7 +211,12 @@ export function checkStateBasedActions(input: GameState): SbaResult {
       performed = true;
       continue;
     }
-    const result = moveObject(state, { object: obj.id, to: 'graveyard', replacers });
+    const result = moveObject(state, {
+      object: obj.id,
+      to: 'graveyard',
+      replacers,
+      ...(batch.length > 1 ? { lkiRecorded: true as const } : {}),
+    });
     if (result.kind === 'done') {
       state = result.state;
       events.push(...result.events);

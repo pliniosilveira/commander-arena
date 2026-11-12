@@ -144,6 +144,12 @@ export interface MoveRequest {
    */
   readonly replacers?: readonly ObjectId[];
   /**
+   * D-283 (CR 603.10a, 113.7a): the last-known information of this object was recorded when the event of several permanents leaving together
+   * began (`recordLastKnown`, `rules/simultaneous.ts`), so it is not derived again here, after the others of the event left. Used only when that
+   * record exists, and only for the one move that follows it: a later departure of the same object (it was regenerated, say) records anew.
+   */
+  readonly lkiRecorded?: true;
+  /**
    * The permanent enters unearthed (CR 702.84a, D-124): it remembers it (`GameObject.alt`), so it has haste and,
    * if it would leave the battlefield, is exiled instead. Only for a move to the battlefield.
    */
@@ -189,6 +195,14 @@ export type MoveResult =
         | Omit<ChooseCardsDecision, 'id'>
         | Omit<ChoosePermanentDecision, 'id'>;
     };
+
+/**
+ * Records what the object looks like now as its last-known information (CR 113.7a, 603.10a). `rules/simultaneous.ts` calls it for every permanent
+ * of an event in which several leave together, against the state as the event began (D-283).
+ */
+export function recordLastKnown(state: GameState, obj: GameObject): GameState {
+  return recordLki(state, obj);
+}
 
 /** Records what the object looked like just before it left (CR 113.7a, 603.10). */
 function recordLki(state: GameState, obj: GameObject): GameState {
@@ -283,10 +297,25 @@ export function sacrificeForDevour(
   let state = input;
   const events: GameEvent[] = [];
   let count = 0;
+  // D-283 (CR 603.10a): the creatures sacrificed together keep the last-known information recorded before the first leaves.
+  const going = ids.filter((id) => {
+    const obj = input.objects[id];
+    return obj?.zone === 'battlefield' && controllerOf(input, obj) === seat;
+  });
+  if (going.length > 1) {
+    for (const id of going) {
+      const obj = input.objects[id];
+      if (obj !== undefined) state = recordLastKnown(state, obj);
+    }
+  }
   for (const id of ids) {
     const obj = state.objects[id];
     if (obj?.zone !== 'battlefield' || controllerOf(state, obj) !== seat) continue;
-    const moved = moveOne(state, { object: id, to: 'graveyard' });
+    const moved = moveOne(state, {
+      object: id,
+      to: 'graveyard',
+      ...(going.length > 1 ? { lkiRecorded: true as const } : {}),
+    });
     if (moved.kind !== 'done') continue;
     state = moved.state;
     events.push(...moved.events, { kind: 'sacrificed', permanent: id, controller: seat });
@@ -537,7 +566,9 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
 
   // --- Commit.
   // The old object ceases to exist (CR 400.7). Its last-known information is kept in `lki`.
-  let next = recordLki(state, old);
+  // D-283: a permanent of an event of several leaving together has its record from before the first of them moved (CR 603.10a).
+  let next =
+    request.lkiRecorded === true && state.lki[old.id] !== undefined ? state : recordLki(state, old);
   next = removeFromZone(next, old);
   {
     const { [old.id]: _gone, ...rest } = next.objects;

@@ -120,6 +120,7 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
     case 'cardsInGraveyard': // D-229: the cards in a zone, which no layer changes
     case 'chosenOption': // D-151: what the permanent chose as it entered
+    case 'paired': // D-286: the pair, read from the object table and no characteristic (`rules/pairing.ts`)
       return;
     case 'playerHasDesignation':
       if (

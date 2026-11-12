@@ -12,10 +12,12 @@ import {
   multikickerCostOf,
   replicateCostOf,
 } from './rules/alt-costs';
+import { derive } from './rules/derive';
 import { entersChoice, entersOptions } from './rules/enters';
 import { faceOf } from './rules/legality';
 import { cardsOf, isCommanderCardId, meldCardsIssue } from './rules/melded';
 import { modalOfObject } from './rules/modes';
+import { linkedPartnerOf } from './rules/pairing';
 import { abilityXCost, hasX, NO_X, spellXCost } from './rules/x-value';
 import { printedCard } from './state/ops';
 import type { GameState } from './state/types';
@@ -54,6 +56,40 @@ export function checkInvariants(state: GameState): string[] {
       problems.push(`${other} and ${obj.id} are both the Ring-bearer of seat ${obj.ringBearer}`);
     }
     bearers.set(obj.ringBearer, obj.id);
+  }
+  // CR 702.95b, 702.95d, 702.95e, 400.7 (D-285): a pairing is a link of two creatures from both sides, formed by one player; both are permanents in play
+  // (on the battlefield or phased out, CR 702.26d). A link whose partner has left, changed hands or stopped being a creature is cleared by the state-based
+  // actions, which have run whenever a player has priority, and is read as no pair meanwhile (`rules/pairing.ts`): so that the pair still stands is asked only
+  // while a player has priority (a resolution that destroys a creature or takes it can leave a stale link until it ends).
+  const priority = state.pending?.kind === 'priority';
+  for (const obj of Object.values(state.objects)) {
+    const link = obj.paired;
+    if (link === undefined) continue;
+    if (obj.zone !== 'battlefield' && obj.zone !== 'phased')
+      problems.push(`${obj.id} is paired but is in ${obj.zone}`);
+    if (link.with === obj.id) problems.push(`${obj.id} is paired with itself`);
+    if (state.seats[link.by] === undefined)
+      problems.push(`${obj.id} is paired by seat ${link.by}, which does not exist`);
+    const other = state.objects[link.with];
+    if (other === undefined) {
+      if (priority) problems.push(`${obj.id} is paired with ${link.with}, which does not exist`);
+      continue;
+    }
+    if (other.paired?.with !== obj.id) {
+      if (priority)
+        problems.push(`${obj.id} is paired with ${other.id}, which is not paired with it`);
+    } else if (other.paired.by !== link.by) {
+      problems.push(`${obj.id} and ${other.id} are paired by different players`);
+    } else if (priority && linkedPartnerOf(state, obj) === null) {
+      problems.push(
+        `${obj.id} and ${other.id} are paired but not both controlled by seat ${link.by}`,
+      );
+    } else if (priority && obj.zone === 'battlefield') {
+      for (const o of [obj, other]) {
+        if (o.zone === 'battlefield' && !derive(state, o).types.includes('creature'))
+          problems.push(`${o.id} is paired but is not a creature`);
+      }
+    }
   }
   for (const s of state.seats) {
     for (const zone of ['library', 'hand', 'graveyard', 'command'] as const) {

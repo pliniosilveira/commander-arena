@@ -25,6 +25,7 @@ import { isSummoningSick, wouldBeSummoningSick } from './rules/mana-engine';
 import { manaValueOfCost } from './rules/mana-value';
 import { cardsOf, commanderCardOf } from './rules/melded';
 import { modalOfObject } from './rules/modes';
+import { isPaired, partnerOf } from './rules/pairing';
 import { regenerationShieldsOn } from './rules/regenerate';
 import { ringBearerSeat } from './rules/ring-bearer';
 import { finalChapterOf, isSaga } from './rules/saga';
@@ -79,6 +80,18 @@ export interface ObjectView {
    * with the designation. Public. Absent otherwise.
    */
   readonly ringBearer?: SeatId;
+  /**
+   * The creature this one is paired with (CR 702.95b, D-286): the object it is linked to while the pair stands and both are on the battlefield
+   * (`partnerOf`: never a stale link, never a creature that is phased out). A melded permanent is one object, so its id is the one of the permanent. Public.
+   * Absent otherwise.
+   */
+  readonly pairedWith?: ObjectId;
+  /**
+   * True for a creature of a pair that stands while one of the two is phased out (CR 702.26b, 702.26d, D-286): it is still paired (phasing is not leaving the
+   * battlefield, so CR 702.95e does not end the pair) but gives and gets nothing from the pair meanwhile, so `pairedWith` is absent. For both creatures, the phased-out
+   * one included. Public. Absent otherwise.
+   */
+  readonly pairedPhasedOut?: true;
   /**
    * For a noncreature permanent on the battlefield that its controller has not controlled since
    * their most recent turn began (and that has no haste): it would be summoning sick if it became a
@@ -585,6 +598,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
   const inherentShown = obj.stack?.inherent === undefined ? null : inherentName(obj.stack.inherent);
   const inherentText = obj.stack?.inherent === undefined ? null : INHERENT_TEXT[obj.stack.inherent];
   const bearerSeat = ringBearerSeat(state, obj);
+  const partner = partnerOf(state, obj);
   const activated = activatedAbilitiesOf(state, obj);
   const landwalks = d.abilities.flatMap((a) =>
     a.kind === 'keyword' && a.keyword.kind === 'landwalk' ? [a.keyword.landType] : [],
@@ -616,6 +630,8 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     summoningSick: obj.zone === 'battlefield' && isSummoningSick(state, obj),
     ...controlEndsOf(state, obj),
     ...(bearerSeat === null ? {} : { ringBearer: bearerSeat }),
+    ...(partner === null ? {} : { pairedWith: partner.id }),
+    ...(partner === null && isPaired(state, obj) ? { pairedPhasedOut: true as const } : {}),
     ...(asCreature && wouldBeSummoningSick(state, obj)
       ? { wouldBeSummoningSick: true as const }
       : {}),

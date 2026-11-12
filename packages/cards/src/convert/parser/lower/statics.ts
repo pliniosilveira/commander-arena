@@ -113,6 +113,8 @@ function subjectOf(noun: IrNoun, ctx: LowerContext, keywords = false): LowerResu
   if (noun.det === 'self') return { ok: true, value: { kind: 'this' }, rule: noun.rule };
   if (noun.det === 'enchanted' || noun.det === 'equipped') return attachedSubject(noun, ctx);
   if (noun.det === 'each') return groupSubject(noun, keywords);
+  // "Each of those creatures" of a soulbond card (D-286, CR 702.95b): this permanent and the creature it is paired with.
+  if (noun.det === 'pair') return { ok: true, value: { kind: 'pair' }, rule: noun.rule };
   return failure(noun);
 }
 
@@ -143,9 +145,11 @@ function lowerGrantedAbility(
   // is not the card for a group, so a card that names itself inside a quotation is not read for one.
   // Stage P49 (D-206): the equipped or enchanted permanent too, for a triggered ability ("Equipped creature has \"Whenever this creature attacks, you gain 1 life.\"": `~` in the quotation is
   // the creature that has the ability, the same as for a group).
+  // D-286 (CR 702.95b): the pair, for a triggered ability ("each of those creatures has a quoted ability"): `~` in the quotation is the creature that has it.
   if (
     subject.kind !== 'this' &&
-    ((subject.kind !== 'filter' && !(subject.kind === 'attached' && inner.kind === 'triggered')) ||
+    ((subject.kind !== 'filter' &&
+      !((subject.kind === 'attached' || subject.kind === 'pair') && inner.kind === 'triggered')) ||
       ctx.namedInQuotes)
   ) {
     return failure(at);
@@ -572,6 +576,14 @@ function lowerPart(
     part.effects.every((e) => e.kind === 'grantKeyword' || e.kind === 'grantProtection'),
   );
   if (!subject.ok) return subject;
+  // D-286 (CR 702.95b): "each of those creatures" is read for a granted ability (the Seraph's line) and only "as long as ~ is paired with another creature": the engine
+  // would run a keyword or a +N/+N of the pair too, but those lines are not read yet (`docs/ROADMAP.md`), and without that condition nothing is ever paired.
+  if (
+    subject.value.kind === 'pair' &&
+    (condition?.kind !== 'paired' || part.effects.some((e) => e.kind !== 'grantAbility'))
+  ) {
+    return failure(part.subject);
+  }
   // D-111, CR 613.8: only a "+N/+N" effect (layer 7c) can name its subjects by power or toughness, which that layer
   // settles last, and a restriction, which is read where the rule acts, after the layers (D-133, "Each creature you
   // control with power 4 or greater can't be blocked by more than one creature"); a keyword or an ability granted in
@@ -688,7 +700,12 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     if (parts.length > 1) return failure(ability);
   } else {
     // The text is about this permanent: "it" in "as long as it's untapped" is `~` (CR 611.3a).
+    // D-287: this is the one condition `paired` is read in (`lowerCondition`).
+    ctx.staticCondition = true;
+    ctx.staticSubjectIsSelf = parts.every((part) => part.subject.det === 'self');
     const lowered = lowerCondition(statement.condition, true, ctx);
+    ctx.staticCondition = false;
+    ctx.staticSubjectIsSelf = false;
     if (!lowered.ok) return lowered;
     const condition = lowered.value;
     // D-133, CR 613.8: the condition of a static ability is read where no layer 7 effect changes it, so it names no
@@ -847,5 +864,6 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'staticSubject:this',
   'staticSubject:attached',
   'staticSubject:filter',
+  'staticSubject:pair',
   ...PLAY_RULE_NEEDS,
 ];

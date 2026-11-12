@@ -140,6 +140,12 @@ export interface PermanentOptions extends PlaceOptions {
    */
   readonly meldedWith?: string;
   /**
+   * D-285 (CR 702.95b): the creature is paired with another creature, named by label or card name (it must match exactly one other permanent on the
+   * battlefield; for a melded permanent, name its first card). The pair is formed by the player who controls both, written on both permanents (the other
+   * placement may name this one too, and must then agree). Refused: a creature that is not a creature on its face, two controllers, a second pairing.
+   */
+  readonly pairedWith?: string;
+  /**
    * For a battle: the player who protects it (CR 310.9). Default: the opponent of its controller,
    * as when it enters in a two-player game. A planeswalker's loyalty and a battle's defense
    * counters come from the card as when it enters (CR 306.5b, 310.4b) unless `counters` says
@@ -574,6 +580,13 @@ export interface Expectations {
   citysBlessing(seat: SeatId, has?: boolean): void;
   /** The Ring-bearer of `seat` is that permanent, or `seat` has none when `card` is null (CR 701.54e, D-196). */
   ringBearer(seat: SeatId, card: CardRef | null): void;
+  /**
+   * D-285 (CR 702.95b): the two creatures are paired with each other now (`partnerOf`: the link stands and both are on the battlefield). A creature
+   * whose partner left or changed hands reads as unpaired here, as it does to every rule.
+   */
+  paired(a: CardRef, b: CardRef): void;
+  /** D-285 (CR 702.95b): the creature is not paired with anything now. */
+  unpaired(a: CardRef): void;
   /**
    * For the combat specs (declareAttackers, declareBlockers, assignDamage) it means the engine
    * accepts the action: the legal-action list cannot enumerate every subset, so it is not consulted.

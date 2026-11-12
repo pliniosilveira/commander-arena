@@ -1339,6 +1339,32 @@ export function describeEvent(
         [event.object],
         'CR 701.54a',
       );
+    case 'creaturesPaired':
+      // CR 702.95a, 702.95b (D-286): two creatures became paired.
+      return line(
+        'major',
+        `${who(event.by)} ${verb(event.by, 'pair', 'pairs')} ${label(event.a)} with ${label(event.b)}.`,
+        event.by,
+        [event.a, event.b],
+        'CR 702.95a',
+      );
+    case 'creaturesUnpaired': {
+      // CR 702.95e (D-286): a pair ended; `a` is still on the battlefield, and `b` is who it was paired with.
+      const reason =
+        event.why === 'left'
+          ? 'its partner left the battlefield'
+          : event.why === 'control'
+            ? 'control of one of the two changed'
+            : 'one of the two stopped being a creature';
+      const partner = event.why === 'left' ? [] : [event.b];
+      return line(
+        'major',
+        `${label(event.a)} is no longer paired: ${reason}.`,
+        null,
+        [event.a, ...partner],
+        'CR 702.95e',
+      );
+    }
     case 'emblemCreated':
       // CR 114.1, 114.2 (D-201): the player got an emblem, an object in their command zone.
       return line(

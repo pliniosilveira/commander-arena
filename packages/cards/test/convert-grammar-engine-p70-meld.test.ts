@@ -168,11 +168,14 @@ describe('what the grammar reads of the real cards', () => {
     );
   });
 
-  test('without the melded face the two cards are unsupported and say so; the corpus alone has no relation', () => {
+  test('without the melded face the two cards are unsupported and say so; data without the relation is unsupported too', () => {
     const alone = importCard(realCard(GISELA), undefined, NO_OVERRIDES);
     expect(alone.support.status).toBe('unsupported');
     expect(alone.support.reasons[0]).toMatch(/layout "meld": the melded face .* was not available/);
-    const noParts = importCard(fromGoldenCard(corpus.find((c) => c.name === GISELA) as GoldenCard));
+    const gisela = corpus.find((c) => c.name === GISELA) as GoldenCard;
+    // The owner's data step put the relation into the corpus (the Scryfall components `meld_part` and `meld_result`); without it the card data names no pair.
+    expect(gisela.relatedParts?.some((p) => p.component === 'meld_part')).toBe(true);
+    const noParts = importCard(fromGoldenCard({ ...gisela, relatedParts: [] }));
     expect(noParts.support.reasons).toContain(
       'layout "meld": the card data does not name the other card of its meld pair',
     );

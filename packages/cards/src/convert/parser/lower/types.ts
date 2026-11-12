@@ -53,6 +53,11 @@ export interface LowerContext {
    */
   madeAToken: boolean;
   /**
+   * The number of instructions of this text lowered so far (D-287): "return it" after an earlier instruction may name what that one made or moved, so a rule that reads
+   * "it" as the object of the trigger itself needs this to be 0. Filled by `lowerSentences` as each clause is lowered.
+   */
+  lowered: number;
+  /**
    * What "that player" means in the body of a triggered ability (stage P18, D-111), with the engine
    * features that reading needs: the controller of the spell that was cast (`controllerOf` the
    * triggering spell, CR 608.2h) for a cast trigger, "you" when the trigger is about you. Null when the
@@ -88,6 +93,22 @@ export interface LowerContext {
    * reads it. Null before any roll; a second roll in one text is refused.
    */
   dieSides: number | null;
+  /**
+   * The normalized text of the ability the spans of the IR point into (D-287): the one place a lowering can tell the "you" the text says (the controller) from the "you"
+   * the engine reads for a player asked who acts (`runsAs: 'chooser'`). Empty where the lowering has no text (a quotation lowered on its own): a rule that needs it refuses then.
+   */
+  text: string;
+  /**
+   * True only while the "as long as" condition of a static ability is lowered (D-287, CR 604.1, 611.3a): the one place `paired` is read, because `derive` evaluates it
+   * while the permanent is on the battlefield. Anywhere else the permanent may be gone when the condition is read (CR 400.7, 603.4, 608.2h) and the engine keeps no
+   * last-known information of a pair.
+   */
+  staticCondition: boolean;
+  /**
+   * True only while the "as long as" condition of a static ability is lowered and every subject of that ability is `~` itself (D-287): "it" in "as long as it's paired" is
+   * the source then. With another subject ("Each creature you control has flying as long as it's paired") "it" has no antecedent the engine could read, so a rule refuses.
+   */
+  staticSubjectIsSelf: boolean;
   /** True only while the intervening "if" of a triggered ability is lowered (D-271): the one place "~ is in your graveyard" is read. */
   interveningCondition: boolean;
   /**
@@ -100,6 +121,11 @@ export interface LowerContext {
    * trigger is `~` dying or leaving the battlefield, so "exile it" and "put it into its owner's library" name `thisCard`.
    */
   itIsCard: boolean;
+  /**
+   * True when "it" in the body of a triggered ability is the card of a creature that died (D-284, CR 603.10a): every event of the trigger is `~` dying (not leaving the
+   * battlefield some other way, where the card may be anywhere). A subset of `itIsCard`.
+   */
+  itDied: boolean;
   /**
    * True while the total of a divided damage is lowered (stage P32, D-147, CR 601.2d): "..., where X is the greatest power among
    * creatures you control as you cast this spell" is read once, as the spell is cast, and only there.
@@ -178,10 +204,12 @@ export function newContext(
     targets: [],
     usesX: false,
     selfGone: false,
+    staticSubjectIsSelf: false,
     itIsSelf: false,
     selfCast: false,
     removed: new Set(),
     madeAToken: false,
+    lowered: 0,
     thatPlayer: null,
     xIs: null,
     xDefined: false,
@@ -200,9 +228,12 @@ export function newContext(
     graveyardSource: false,
     usedGraveyardSource: false,
     dieSides: null,
+    staticCondition: false,
+    text: '',
     interveningCondition: false,
     meldPartner: null,
     itIsCard: false,
+    itDied: false,
     cardName,
     selfName: '',
   };

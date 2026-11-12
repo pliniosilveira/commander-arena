@@ -375,7 +375,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'modifyPt':
-      checkStaticSubject(s.subject, `${path}.subject`, out);
+      checkStaticSubject(s.subject, `${path}.subject`, out, false, true);
       // D-115: an integer, or a count of objects (or a multiple of one) that follows the board.
       checkStaticPtAmount(s.power, `${path}.power`, true, out);
       checkStaticPtAmount(s.toughness, `${path}.toughness`, true, out);
@@ -391,7 +391,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'grantKeyword':
-      checkStaticSubject(s.subject, `${path}.subject`, out, true);
+      checkStaticSubject(s.subject, `${path}.subject`, out, true, true);
       checkGrantedKeyword(s.keyword, `${path}.keyword`, out);
       // D-185: riot is applied as a permanent enters, so only a group the battlefield names can give it (CR 614.12).
       if (s.keyword?.kind === 'riot' && s.subject?.kind !== 'filter') {
@@ -420,7 +420,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       // D-133: the permission has no parameters; the face-level checks say where it may stand.
       break;
     case 'grantAbility':
-      checkStaticSubject(s.subject, `${path}.subject`, out);
+      checkStaticSubject(s.subject, `${path}.subject`, out, false, s.ability?.kind !== 'mana');
       // D-099: a mana ability; D-151: an activated or a triggered ability too, held to the rules of one of the card's own.
       if (s.ability?.kind === 'mana') {
         checkManaAbility(s.ability, `${path}.ability`, out);
@@ -981,7 +981,40 @@ function checkLoyaltyAbility(
   }
 }
 
+/**
+ * D-287 (CR 702.95b, 400.7, 603.4, 608.2h): `paired` reads the pair of the permanent on the battlefield now (`partnerOf` of the object table; nothing of the
+ * last-known information). It is exact in one place only: the "as long as" condition of a static ability of a permanent on the battlefield, which `derive` reads
+ * while the permanent is there. In any other ability the source can be gone when the condition is read: a triggered ability's source may die to a response between the
+ * event and the resolution (CR 603.4 checks the intervening "if" again, 608.2h reads what left with its last-known information, which was paired) and an activated
+ * ability's cost may remove it; a replacement effect or a delayed trigger works with no permanent at all. The engine's own soulbond abilities read `soulbondReady`.
+ * The card is refused, never accepted with a condition that would be false for the wrong reason.
+ */
+function checkPairedPlacement(a: Ability, path: string, out: AstIssue[]): void {
+  const refuse = (): void =>
+    issue(
+      out,
+      path,
+      '\'paired\' is valid only as the "as long as" condition of a static ability of a permanent on the battlefield: anywhere else the permanent may have left when it is read (CR 400.7, 603.4, 608.2h)',
+    );
+  switch (a?.kind) {
+    case 'static':
+      // The condition of the ability itself; the payload (a granted ability, a nested condition) and a card in the graveyard have no place for it.
+      if (effectHas([a.static], 'paired')) refuse();
+      else if (a.functionsIn === 'graveyard' && conditionHas(a.condition, 'paired')) refuse();
+      return;
+    case 'triggered':
+    case 'activated':
+    case 'mana':
+    case 'replacement':
+      if (effectHas([a], 'paired')) refuse();
+      return;
+    default:
+      return;
+  }
+}
+
 function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
+  checkPairedPlacement(a, path, out);
   switch (a?.kind) {
     case 'keyword':
       checkKeyword(a.keyword, `${path}.keyword`, out);
@@ -1439,6 +1472,20 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
     checkAbility(a, `${path}.abilities[${i}]`, out);
   });
   loyaltyOffPlaneswalkerIssues(face.types, face.abilities, path, out);
+  // D-287: the conditions a face keeps outside its abilities (the spell itself with the choice of its modes, an alternative cost, an additional cost) are read for a card that is
+  // being cast: it is not a permanent, so it is never paired.
+  if (
+    effectHas(
+      [face.spell, face.alternativeCosts, face.additionalCosts, face.additionalCostChoice],
+      'paired',
+    )
+  ) {
+    issue(
+      out,
+      path,
+      '\'paired\' is valid only as the "as long as" condition of a static ability of a permanent on the battlefield: a card that is cast is not a permanent',
+    );
+  }
   // CR 208.2, 604.3: a printed '*' is defined by a characteristic-defining ability, and only by one.
   checkStarPairing(face, face.abilities, path, out);
   checkAttachmentFace(face.abilities, face, path, out);

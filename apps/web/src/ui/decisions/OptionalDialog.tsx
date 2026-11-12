@@ -3,7 +3,13 @@ import { BarButtons } from './BarButtons';
 import { Dialog } from './Dialog';
 import type { Index } from './lookup';
 import type { DecisionModel } from './model';
-import { cascadeKind, mayBeholdPrompt, mayEffectPrompt, optionalSource } from './optional';
+import {
+  cascadeKind,
+  mayBeholdPrompt,
+  mayDelayedPrompt,
+  mayEffectPrompt,
+  optionalSource,
+} from './optional';
 
 /** The accessible name of the dialog for each question. */
 const DIALOG_LABELS: Readonly<
@@ -49,15 +55,18 @@ export function OptionalDialog({
       ? 'Cast without paying'
       : DIALOG_LABELS[d.purpose ?? 'optional'];
   // These questions say everything in the bar's prompt; a plain "you may" is worded here.
+  // A delayed ability (D-284) is worded from the ability on the stack, which may be granted: the text of the permanent is not quoted for it.
+  const delayed = mayDelayedPrompt(d, index) !== null;
   const prompted =
     d.purpose !== undefined ||
+    delayed ||
     mayEffectPrompt(d, index) !== null ||
     mayBeholdPrompt(d, index) !== null;
   const { cancel } = model.bar;
   return (
     <Dialog label={label} className="dec-small">
       <h2 className="dec-title">{source.name}</h2>
-      {source.text === '' ? null : <p className="dec-source-quote">{source.text}</p>}
+      {source.text === '' || delayed ? null : <p className="dec-source-quote">{source.text}</p>}
       {prompted ? (
         <p className="dec-sub">{model.bar.prompt}</p>
       ) : d.cost === undefined ? (

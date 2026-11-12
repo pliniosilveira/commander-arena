@@ -159,6 +159,14 @@ function PreviewDetails({ object }: { object: ObjectView }) {
     });
     if (taken !== null) facts.push(taken);
   }
+  // CR 702.95b (D-286): the creature this one is paired with, while the pair stands (the engine says it only then).
+  if (object.pairedWith !== undefined && view !== null) {
+    const partner = findObject(view, object.pairedWith);
+    facts.push(`Paired with ${partner === null ? 'another creature' : partner.name} (CR 702.95)`);
+  }
+  if (object.pairedPhasedOut === true) {
+    facts.push('Paired, on hold: one of the two is phased out (CR 702.95, 702.26)');
+  }
   // CR 716.2 (D-235): the level of a Class; its next level is gained with the level bar ability.
   if (object.level !== undefined) facts.push(`Class level ${object.level}`);
   if (object.tapped) facts.push('Tapped');

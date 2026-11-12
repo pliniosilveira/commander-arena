@@ -49,6 +49,23 @@ function checkAscendFace(face: CardFace, path: string, out: AstIssue[]): void {
   });
 }
 
+/**
+ * CR 702.95a (D-286): Soulbond pairs creatures: on a face that is not a creature the two abilities it stands for could never find the creature they
+ * name, so the keyword would be accepted and do nothing. The face is refused.
+ */
+function checkSoulbondFace(face: CardFace, path: string, out: AstIssue[]): void {
+  if (face.types.includes('creature')) return;
+  face.abilities.forEach((a, i) => {
+    if (a?.kind === 'keyword' && a.keyword?.kind === 'soulbond') {
+      issue(
+        out,
+        `${path}.abilities[${i}]`,
+        'Soulbond is an ability of creatures (CR 702.95a): a face that is not a creature cannot have it',
+      );
+    }
+  });
+}
+
 /** Whether the effect, at any depth, moves a card chosen from the cards the permanent exiled (D-207). */
 function readsLinkedExile(e: unknown): boolean {
   const text = JSON.stringify(e ?? null);
@@ -107,6 +124,7 @@ export function checkArtifactsFace(face: CardFace, path: string, out: AstIssue[]
   checkLivingWeapon(face, path, out);
   checkLinkedExile(face, path, out);
   checkAscendFace(face, path, out);
+  checkSoulbondFace(face, path, out);
 }
 
 /** The filter of a static ability that names what it applies to by a card's own words: no zone, owner or stack kind. */

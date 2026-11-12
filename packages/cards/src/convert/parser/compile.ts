@@ -118,6 +118,7 @@ export function compileLine(text: string, options: CompileOptions): LineResult {
       options.name ?? '',
     );
     ctx.namedInQuotes = options.namedInQuotes === true;
+    ctx.text = text;
     ctx.selfName = options.selfName ?? '';
     const lowered = lower(bound.ability, ctx);
     if (!lowered.ok) {

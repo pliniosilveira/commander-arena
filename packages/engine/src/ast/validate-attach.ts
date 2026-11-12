@@ -44,9 +44,20 @@ export function checkStaticSubject(
   path: string,
   out: AstIssue[],
   keywords = false,
+  allowPair = false,
 ): void {
   switch (s?.kind) {
     case 'this':
+      break;
+    case 'pair':
+      // D-286 (CR 702.95b): "each of those creatures": read by the three static abilities that `derive` applies through `subjectAffects`.
+      if (!allowPair) {
+        issue(
+          out,
+          path,
+          "the 'pair' subject is for a static ability that changes power and toughness or grants a keyword or an ability only",
+        );
+      }
       break;
     case 'attached':
       // The host's types ("Enchanted creature"): see StaticSubject. Each list is non-empty when set.

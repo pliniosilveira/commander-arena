@@ -60,6 +60,7 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   cascade: ['Csc', 'Cascade'],
   // Ascend on a permanent (D-264, CR 702.131b).
   ascend: ['Asc', 'Ascend'],
+  soulbond: ['Sbd', 'Soulbond'],
   // The upkeep slice (D-127).
   echo: ['Ech', 'Echo'],
   cumulativeUpkeep: ['CU', 'Cumulative upkeep'],

@@ -25,6 +25,7 @@ import { countForSource } from './derive-count';
 import { typeViewOf } from './derive-view';
 import { designationHolders } from './designations';
 import { matchesFilterWith } from './filter-match';
+import { partnerOf } from './pairing';
 
 /** The players a static ability's condition names (`validateCard`: you, each player, each opponent, this permanent's controller or owner). */
 function playersOf(state: GameState, selector: PlayerSelector, source: GameObject): SeatId[] {
@@ -110,6 +111,8 @@ export function staticConditionHolds(
         )
       );
     }
+    case 'paired': // CR 702.95b (D-286): the pair, which no layer changes (`rules/pairing.ts` reads no characteristic)
+      return partnerOf(state, source) !== null;
     case 'playerHasDesignation': {
       const holders = designationHolders(state, condition.designation);
       return playersOf(state, condition.player, source).some((seat) => holders.includes(seat));

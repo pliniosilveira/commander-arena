@@ -55,6 +55,9 @@ function ariaLabel(o: ObjectView, count: number, role: CombatRole | undefined): 
   if (isCrewedVehicle(o)) parts.push('crewed');
   if (isBackFaceUp(o)) parts.push('back face');
   if (isMelded(o)) parts.push(`melded from ${meldedFrom(o)}`);
+  if (o.pairedWith !== undefined) parts.push('paired with another creature');
+  else if (o.pairedPhasedOut === true)
+    parts.push('paired, on hold while one of the two is phased out');
   if (o.tapped) parts.push('tapped');
   const kicked = kickedWords(o);
   if (kicked !== null) parts.push(kicked);
@@ -206,6 +209,24 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
                 data-ring-bearer={o.ringBearer}
               >
                 <span aria-hidden="true">{'◎ '}</span>Ring-bearer
+              </span>
+            )}
+            {o.pairedWith !== undefined && (
+              <span
+                className="board-flag board-flag-soulbond"
+                title="Paired (CR 702.95): paired with another creature for as long as both stay creatures on the battlefield under their controller's control. See the card preview for which one."
+                data-paired-with={o.pairedWith}
+              >
+                <span aria-hidden="true">{'⚭ '}</span>Paired
+              </span>
+            )}
+            {o.pairedPhasedOut === true && (
+              <span
+                className="board-flag board-flag-soulbond"
+                title="Paired, on hold (CR 702.95, 702.26): one of the two creatures is phased out. The pair stands, because phasing is not leaving the battlefield, but gives nothing until both are phased in, and neither can be paired with another creature."
+                data-paired-phased-out
+              >
+                <span aria-hidden="true">{'⚭ '}</span>Pair on hold
               </span>
             )}
             {o.loyaltyUsed === true && (

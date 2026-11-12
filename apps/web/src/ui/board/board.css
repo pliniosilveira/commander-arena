@@ -813,6 +813,11 @@
   border-color: var(--accent);
 }
 
+.board-flag-soulbond {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .board-flag-turn {
   color: var(--accent);
   border-color: var(--accent);

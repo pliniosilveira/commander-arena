@@ -163,6 +163,28 @@ export function lowerCondition(
       const { cmp, value } = test.compare;
       return ok({ kind: 'cardsInGraveyard', compare: { cmp, value } });
     }
+    case 'paired': {
+      // "~ is paired with another creature" (D-286, CR 702.95b): the permanent the ability belongs to is paired now; "it" is the source only in an
+      // ability about the source itself (as for "it was kicked").
+      const blocked = missingFeatures(['condition:paired']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (test.who === 'it' && !itIsSelf) return failure(c, []);
+      // D-287: "it" is `~` only where the ability is about `~`; "Each creature you control has flying as long as it's paired" has no antecedent for "it", so it is unsupported.
+      if (test.who === 'it' && ctx?.staticSubjectIsSelf !== true) return failure(c, []);
+      // D-287 (CR 702.95b, 400.7, 603.4, 608.2h): the engine reads the pair of the permanent on the battlefield now and no last-known information, so the condition is
+      // exact only where `derive` reads it, the "as long as" condition of a static ability of a permanent (`ctx.staticCondition`, set by `lowerStaticStatement` alone). In a
+      // triggered ability the source may be gone when the intervening "if" is checked again as the ability resolves (a response killed it), an activated ability's cost may
+      // remove it, a replacement works with no permanent: all unsupported, never a condition that is false for the wrong reason.
+      if (
+        ctx?.staticCondition !== true ||
+        ctx.owner === 'spell' ||
+        ctx.selfGone ||
+        ctx.graveyardSource
+      ) {
+        return failure(c, []);
+      }
+      return ok({ kind: 'paired' });
+    }
     case 'attachedTo': {
       // "As long as this Equipment is attached to a creature" (stage P37, D-180, CR 301.5): the permanent this one is attached to, against a
       // filter; "it" is the permanent of an ability about itself, as for `thisMatches`.
@@ -462,4 +484,5 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:castFromZone',
   'condition:spellTargets',
   'condition:controlsRingBearer',
+  'condition:paired',
 ];

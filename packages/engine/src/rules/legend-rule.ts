@@ -22,6 +22,7 @@ import type { GameEvent } from '../state/events';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
+import { recordObjectsTogether } from './simultaneous';
 import { moveObject } from './zones';
 
 /** A legendary permanent on the battlefield, with the name it has now. */
@@ -82,11 +83,16 @@ export function applyLegendRule(
   // The name is read before anything moves (a copy has the original's name).
   const name = derive(state, kept).name;
   const events: GameEvent[] = [{ kind: 'legendRule', seat: decision.seat, name, kept: keep }];
-  let next = state;
-  for (const id of decision.legal) {
-    if (id === keep) continue;
+  // D-283 (CR 603.10a): the others are put into graveyards together, so what each was is recorded before the first moves.
+  const others = decision.legal.filter((id) => id !== keep);
+  let next = recordObjectsTogether(state, others);
+  for (const id of others) {
     if (next.objects[id]?.zone !== 'battlefield') return null;
-    const moved = moveObject(next, { object: id, to: 'graveyard' });
+    const moved = moveObject(next, {
+      object: id,
+      to: 'graveyard',
+      ...(others.length > 1 ? { lkiRecorded: true as const } : {}),
+    });
     // A permanent going from the battlefield to a graveyard never asks the commander question.
     if (moved.kind !== 'done') return null;
     next = moved.state;

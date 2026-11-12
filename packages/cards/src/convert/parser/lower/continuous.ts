@@ -297,6 +297,46 @@ export const FLICKER: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "When ~ dies, you may return it to the battlefield under its owner's control at the beginning of your next upkeep." (D-284, CR 603.7, 603.7c, 400.7, 603.10a):
+ * the engine's `delayedTrigger` at the controller's next upkeep whose effect moves the card the creature became in the graveyard (`triggerCard`), which is looked
+ * for when the delayed ability is created and found again when it triggers. "It" must be the card of a creature that died (`ctx.itDied`: a trigger of `~` dying), not
+ * one that left the battlefield some other way, which may be anywhere: the return is not lowered after anything else (`ctx.lowered`, D-287). The "you may" is the ability's own choice; a player asked in a `playersMay` that they do themselves is not the "you" of "your" (refused by the text check of `lowerPlayersMay`, D-287).
+ */
+export const DELAYED_RETURN_AT_UPKEEP: Lowering<IrClause, Effects> = {
+  head: 'delayedReturnAtUpkeep',
+  id: 'lower.delayed-return-at-upkeep',
+  needs: [
+    'effect:delayedTrigger',
+    'effect:moveToZone',
+    'selector:triggerCard',
+    'selector:triggerSubject',
+  ],
+  lower(clause, ctx): LowerResult<Effects> {
+    const what = operand(clause, 'objects');
+    const to = arg(clause, 'to');
+    if (what?.kind !== 'noun' || to?.kind !== 'zoneSpec') return failure(clause);
+    if (to.zone !== 'battlefield' || to.whose === undefined || to.tapped === true) {
+      return failure(clause);
+    }
+    // D-287: "it" is the dying creature only as the first instruction: after a token made or a card discarded, "it" may name that object instead.
+    if (what.det !== 'triggerSubject' || !ctx.itDied || ctx.lowered > 0) return failure(clause);
+    // D-287 (CR 608.2d, 603.7): "your next upkeep" is the controller's; for a player asked ("each opponent may return it ...") the engine's `you` is that player. The text check
+    // of `lowerPlayersMay` refuses every such sentence (it says "your"), so this is read only when the controller acts (the ability's own "you may", or "may have you").
+    const back: Effect = {
+      kind: 'moveToZone',
+      objects: { kind: 'triggerCard' },
+      to: 'battlefield',
+      controller: to.whose,
+    };
+    return {
+      ok: true,
+      value: [{ kind: 'delayedTrigger', at: { step: 'upkeep', whose: 'you' }, effect: back }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "Exile up to one target creature or land you control. If you do, return it to the battlefield under its owner's control at the beginning of the next
  * end step." (stage P48, D-205, CR 603.7, 603.7c, 400.7j): the engine's `delayedTrigger` at the end step of each turn whose effect moves what the
  * exile before it moved (`moved`). "It" must be a target an `exile` of the same text sent away; after anything else (a destroy, a sacrifice, a

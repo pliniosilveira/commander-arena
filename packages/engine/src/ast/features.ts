@@ -225,6 +225,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'vote',
     // D-196: "The Ring tempts you" (CR 701.54a), and the engine's own sacrifice at end of combat of the Ring's third ability.
     'ringTempts',
+    // D-286: "you may pair this creature with another unpaired creature you control" (CR 702.95a): the engine's effect of the two abilities soulbond stands for.
+    'pair',
     // D-201: "Empower Jace N" (CR 701.71a).
     'empowerJace',
     // D-201: "You get an emblem with ..." (CR 114).
@@ -357,6 +359,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'canBeCommander',
     // D-264: Ascend on a permanent (CR 702.131b).
     'ascend',
+    // D-286: soulbond (CR 702.95a): two triggered abilities the engine builds for a creature; printed only.
+    'soulbond',
     'exalted',
     'annihilator',
     // D-230: Backup N (CR 702.165).
@@ -697,6 +701,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'controlsRingBearer',
     // D-278: "if you both own and control this creature and a creature named X" (CR 701.42a).
     'ownsAndControlsNamed',
+    // D-286: "as long as this creature is paired with another creature" (CR 702.95b), and the engine's own intervening "if" of soulbond.
+    'paired',
+    'soulbondReady',
     'and',
     'or',
     'not',
@@ -775,7 +782,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-192: "Damage isn't removed from this creature during cleanup steps."
     'keepsDamage',
   ],
-  staticSubjectKinds: ['this', 'attached', 'filter'],
+  // D-286: `pair`, "each of those creatures" of a soulbond card, for a modification of power and toughness, a granted keyword or a granted ability only.
+  staticSubjectKinds: ['this', 'attached', 'filter', 'pair'],
   tokenKinds: ['Treasure', 'Food', 'Clue', 'custom', 'copyOf', 'tapped'],
   amountKinds: [
     'number',
@@ -1179,6 +1187,10 @@ export const CONDITION_KINDS = [
   'controlsRingBearer',
   /** "If you both own and control this creature and a creature named X" (CR 701.42a, D-278): the engine's `ownsAndControlsNamed`. */
   'ownsAndControlsNamed',
+  /** "As long as this creature is paired with another creature" (CR 702.95b, D-286): the engine's `paired`. */
+  'paired',
+  /** The intervening "if" of the two abilities soulbond stands for (CR 702.95a, D-286): the engine's `soulbondReady`; built by the engine, refused in card data. */
+  'soulbondReady',
   'unlessPays',
   'cardsInGraveyard',
   'and',
@@ -1281,6 +1293,7 @@ export const STATIC_SUBJECT_KINDS = [
   'this',
   'attached',
   'filter',
+  'pair',
 ] as const satisfies readonly StaticSubject['kind'][];
 export type StaticSubjectKind = (typeof STATIC_SUBJECT_KINDS)[number];
 
@@ -1519,6 +1532,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   chooseOne: true,
   vote: true,
   ringTempts: true,
+  pair: true,
   empowerJace: true,
   createEmblem: true,
   delayedSacrifice: true,
@@ -1610,6 +1624,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   chooseBackground: true,
   canBeCommander: true,
   ascend: true,
+  soulbond: true,
   exalted: true,
   annihilator: true,
   backup: true,

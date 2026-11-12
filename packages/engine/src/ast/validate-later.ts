@@ -21,6 +21,7 @@ export function checkDelayedTrigger(
   path: string,
   out: Out,
   exiledAvailable = false,
+  diesTrigger = false,
 ): void {
   if (!isOneOf(e.at?.step, [...TRIGGER_STEPS, 'nextMain'])) {
     issue(out, `${path}.at.step`, `unknown step ${JSON.stringify(e.at?.step)}`);
@@ -36,13 +37,17 @@ export function checkDelayedTrigger(
   const kind = kindOf(inner);
   // D-205 (CR 603.7c, 400.7j): "return it to the battlefield under its owner's control at the beginning of the next end step", about the object an
   // earlier effect of the same sequence exiled (`moved`), as it is when the ability is created. Only onto the battlefield and only that object.
+  // D-284 (CR 603.7c, 400.7, 603.10a): in a "dies" trigger, "return it to the battlefield ... at the beginning of your next upkeep" is about the card
+  // the creature became in the graveyard (`triggerCard`), as it is when the ability is created and only if it is still there when it triggers.
   if (kind === 'moveToZone') {
     const move = inner as Extract<Effect, { kind: 'moveToZone' }>;
-    if (!exiledAvailable || kindOf(move.objects) !== 'moved') {
+    const movedObject = exiledAvailable && kindOf(move.objects) === 'moved';
+    const dyingObject = diesTrigger && kindOf(move.objects) === 'triggerCard';
+    if (!movedObject && !dyingObject) {
       issue(
         out,
         `${path}.effect.objects`,
-        "a delayed move names the object an effect before it exiled: 'moved' after an exile",
+        "a delayed move names the object an effect before it exiled: 'moved' after an exile, or 'triggerCard' in a dies trigger",
       );
     }
     if (move.to !== 'battlefield') {

@@ -158,4 +158,70 @@ export const EFFECT_RETURN_DELAYED = quietly(
   }),
 );
 
-export const FLICKER_RULES = [EFFECT_FLICKER, EFFECT_RETURN_DELAYED];
+/**
+ * `effect.return-at-upkeep`: "return it to the battlefield under its owner's control at the beginning of your next upkeep" (D-284, CR 603.7, 603.7c, 400.7, 110.2): the card
+ * a creature became when it died, brought back by a delayed triggered ability the instruction creates. "It" is read here against the one noun the clause names; the lowering
+ * reads it as the card of a creature that died (a trigger of `~` dying) and refuses it anywhere else. The control is stated ("under its owner's control" or "under your
+ * control", CR 110.2a) and the time is the controller's next upkeep: no other step, no "the next upkeep" (whoever's), no "tapped" is read.
+ */
+export const EFFECT_RETURN_AT_UPKEEP = quietly(
+  defineRule<Clauses>({
+    id: 'effect.return-at-upkeep',
+    family: 'effect',
+    leading: ['return'],
+    cites: [
+      'CR 603.7 (Handling Triggered Abilities)',
+      'CR 603.7c (Handling Triggered Abilities)',
+      'CR 400.7 (General)',
+      'CR 110.2 (Permanents)',
+    ],
+    examples: [
+      "return it to the battlefield under its owner's control at the beginning of your next upkeep",
+      'return it to the battlefield under its owner’s control at the beginning of your next upkeep',
+      'return it to the battlefield under your control at the beginning of your next upkeep',
+    ],
+    rejects: [
+      "return it to the battlefield under its owner's control",
+      "return it to the battlefield under its owner's control at the beginning of the next upkeep",
+      "return it to the battlefield under its owner's control at the beginning of the next end step",
+      "return it to the battlefield under its owner's control at the beginning of your upkeep",
+      "return it to the battlefield under its owner's control at the beginning of your next end step",
+      "return it to the battlefield under its owner's control at the beginning of your next upkeep and draw a card",
+      "return it to the battlefield tapped under its owner's control at the beginning of your next upkeep",
+      'return it to the battlefield at the beginning of your next upkeep',
+      "return it to its owner's hand at the beginning of your next upkeep",
+      "return them to the battlefield under their owners' control at the beginning of your next upkeep",
+      "return that card to the battlefield under its owner's control at the beginning of your next upkeep",
+      "return target creature card to the battlefield under its owner's control at the beginning of your next upkeep",
+      "return it to the battlefield under his owner's control at the beginning of your next upkeep",
+      "return it to the battlefield under its owner's control at the beginning of your next turn",
+    ],
+    parse: (ctx, pos) => {
+      const r = sequence(
+        literal('return '),
+        family<IrNoun>('noun', { only: ['noun.it'] }),
+        literal(' to the battlefield'),
+        UNDER_CONTROL,
+        pattern(/ at the beginning of your next upkeep(?![\p{L}\p{N}])/iu),
+      )(ctx, pos);
+      if (!r.ok) return r;
+      const [, objects, , whose] = r.value;
+      const to: IrZoneSpec = {
+        kind: 'zoneSpec',
+        zone: 'battlefield',
+        whose,
+        span: { start: objects.span.end, end: r.pos },
+        rule: 'effect.return-at-upkeep',
+      };
+      const clause = makeClause(
+        'effect.return-at-upkeep',
+        'delayedReturnAtUpkeep',
+        { objects, to },
+        { start: pos, end: r.pos },
+      );
+      return { ok: true, value: [clause], pos: r.pos };
+    },
+  }),
+);
+
+export const FLICKER_RULES = [EFFECT_FLICKER, EFFECT_RETURN_DELAYED, EFFECT_RETURN_AT_UPKEEP];

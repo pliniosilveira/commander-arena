@@ -21,10 +21,16 @@ export function sacrificePermanent(
   state: GameState,
   id: ObjectId,
   seat: SeatId,
+  lkiRecorded = false,
 ): { state: GameState; events: GameEvent[] } | null {
   const obj = state.objects[id];
   if (obj?.zone !== 'battlefield' || controllerOf(state, obj) !== seat) return null;
-  const moved = moveObject(state, { object: id, to: 'graveyard' });
+  // D-283 (CR 603.10a): permanents sacrificed together keep the last-known information recorded as the event began (`rules/simultaneous.ts`).
+  const moved = moveObject(state, {
+    object: id,
+    to: 'graveyard',
+    ...(lkiRecorded ? { lkiRecorded: true as const } : {}),
+  });
   // A battlefield permanent going to a graveyard never needs the commander decision (CR 903.9b
   // applies to hand and library), so the move is always complete.
   if (moved.kind !== 'done') return null;

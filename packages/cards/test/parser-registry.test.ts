@@ -437,6 +437,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.attached-to': permanent(
     (e) => `As long as ${e}, your opponents can't cast spells during your turn.`,
   ),
+  // D-286 (CR 702.95b): the condition follows "As long as"; the noun is the subject of the grant that follows it.
+  'condition.paired': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
+  'noun.paired-creatures': permanent(
+    (e) => `As long as ~ is paired with another creature, ${e} has flying.`,
+  ),
   'condition.put-this-way': spell(
     (e) => `You may put a land card from your hand onto the battlefield. If ${e}, you gain 4 life.`,
   ),

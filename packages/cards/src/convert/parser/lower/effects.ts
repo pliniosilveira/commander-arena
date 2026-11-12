@@ -28,6 +28,7 @@ import { lowerCondition } from './conditions';
 import {
   BECOMES,
   DELAYED_RETURN,
+  DELAYED_RETURN_AT_UPKEEP,
   FLICKER,
   GRANT_KEYWORD,
   LOSE_ALL_ABILITIES,
@@ -1268,6 +1269,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SET_PT,
   FLICKER,
   DELAYED_RETURN,
+  DELAYED_RETURN_AT_UPKEEP,
   SEARCH,
   PREVENT_DAMAGE,
   ATTACH,

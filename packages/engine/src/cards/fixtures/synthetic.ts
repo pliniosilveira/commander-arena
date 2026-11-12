@@ -40,6 +40,7 @@ import { SYNTHETIC_DELAYED_RETURN_LIST } from './synthetic-delayed-return';
 import { SYNTHETIC_DESTROY_PER_OPPONENT_LIST } from './synthetic-destroy-per-opponent';
 import { SYNTHETIC_DEVOTION_MANA_LIST } from './synthetic-devotion-mana';
 import { SYNTHETIC_DICE_LIST } from './synthetic-dice';
+import { SYNTHETIC_DIES_RETURN_LIST } from './synthetic-dies-return';
 import { SYNTHETIC_DIVIDE_LIST } from './synthetic-divide';
 import { SYNTHETIC_DOUBLING_LIST } from './synthetic-doubling';
 import { SYNTHETIC_DRAGONS_LIST } from './synthetic-dragons';
@@ -98,6 +99,7 @@ import { SYNTHETIC_RING_LIST } from './synthetic-ring';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
 import { SYNTHETIC_SEARCH_LIST } from './synthetic-search';
 import { SYNTHETIC_SNOW_LIST } from './synthetic-snow';
+import { SYNTHETIC_SOULBOND_LIST } from './synthetic-soulbond';
 import { SYNTHETIC_STATICS_ARTIFACTS_LIST } from './synthetic-statics-artifacts';
 import { SYNTHETIC_STUN_LIST } from './synthetic-stun';
 import { SYNTHETIC_SUBJECT_LIST } from './synthetic-subjects';
@@ -361,6 +363,8 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_LATER_LIST,
     ...SYNTHETIC_MIRACLE_LIST,
     ...SYNTHETIC_DELAYED_RETURN_LIST,
+    ...SYNTHETIC_DIES_RETURN_LIST,
+    ...SYNTHETIC_SOULBOND_LIST,
     ...SYNTHETIC_COPY_LIST,
     ...SYNTHETIC_SUBJECT_LIST,
     ...SYNTHETIC_MASS_LIST,

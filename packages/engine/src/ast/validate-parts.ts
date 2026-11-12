@@ -1887,6 +1887,17 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'controlsRingBearer':
       // CR 701.54e (D-196): read from the permanents of the controller; no operand.
       break;
+    case 'paired':
+      // CR 702.95b (D-286): the permanent the condition belongs to is paired with a creature; no operand. Where it may stand (a static ability that
+      // `derive` reads, an intervening "if") is checked with the ability.
+      break;
+    case 'soulbondReady':
+      issue(
+        out,
+        path,
+        "soulbondReady is the intervening 'if' of the abilities the engine builds for soulbond (CR 702.95a); a card writes the keyword",
+      );
+      break;
     case 'subjectControllerHasMore':
       // D-229: where it may stand (an intervening "if" of a trigger with a permanent as its subject) is checked with the trigger (validate.ts).
       if (!isOneOf(c.stat, PLAYER_STATS))
@@ -2313,6 +2324,18 @@ function checkTokenDefinition(def: TokenDefinition, path: string, scope: Scope, 
     ) {
       issue(out, `${path}.abilities`, 'more than one devour ability on a token is not supported');
     }
+    // CR 702.95a (D-286): soulbond pairs creatures, so on a token that is not a creature it would be accepted and do nothing (the same refusal as for a card face).
+    if (!def.types?.includes('creature')) {
+      def.abilities.forEach((a, i) => {
+        if (a?.kind === 'keyword' && a.keyword?.kind === 'soulbond') {
+          issue(
+            out,
+            `${path}.abilities[${i}]`,
+            'Soulbond is an ability of creatures (CR 702.95a): a token that is not a creature cannot have it',
+          );
+        }
+      });
+    }
     // D-100: a token that refers to "the chosen type" asks for it as it is created.
     chosenIssues(def.abilities, [], path, true, out);
   }
@@ -2647,6 +2670,16 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       }
       break;
     }
+    case 'paired':
+      // D-286 (CR 702.95b): the permanent the ability belongs to is paired; a spell is not a permanent, so it never is.
+      if (scope.owner !== 'ability') {
+        issue(
+          out,
+          path,
+          "'paired' reads the pair of a permanent: it is only valid in an ability of one",
+        );
+      }
+      break;
     case 'didPrevious':
       if (scope.mayAvailable !== true) {
         issue(
@@ -2946,9 +2979,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'castExiled':
       checkEngineOnlyEffect(e.kind, path, out);
       break;
+    case 'pair':
+      // CR 702.95a (D-286): the effect of the two abilities soulbond stands for, built by the engine.
+      issue(
+        out,
+        path,
+        'pair is the effect of the abilities the engine builds for soulbond (CR 702.95a); a card writes the keyword',
+      );
+      break;
     case 'delayedTrigger':
       // CR 603.7 (D-128): an effect that creates a delayed triggered ability.
-      checkDelayedTrigger(e, path, out, scope.movedAvailable === true);
+      checkDelayedTrigger(e, path, out, scope.movedAvailable === true, scope.diesTrigger === true);
       break;
     case 'becomeMonarch':
       // CR 725.3 (D-127): one player becomes the monarch, so the selector names exactly one.
