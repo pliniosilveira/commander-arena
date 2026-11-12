@@ -5,7 +5,8 @@
  * 1. `theirs`: the controller chooses a card of the type among the cards in the graveyards of their opponents (CR 608.2c: the instructions are followed in the order written).
  * 2. `mine`: the owner of that card, "that player", chooses a card of the type in the controller's graveyard.
  * 3. `ask`: the controller may return the cards chosen; accepting returns both to the battlefield under their owners' control (CR 110.2a: the effect states otherwise, and CR
- *    400.3 puts a card in its owner's graveyard anyway, so the owner of the card is the player whose graveyard it is in), declining returns neither.
+ *    400.3 puts a card in its owner's graveyard anyway, so the owner of the card is the player whose graveyard it is in) as one event (CR 603.6a: the moves are `together`, so
+ *    each card sees the other enter), declining returns neither.
  *
  * A choice that cannot be made is not made (CR 608.2d: a player can't choose an option that is impossible). With no such card in an opponent's graveyard no card is chosen and
  * nobody is "that player", so the second choice is not made either and nothing is asked; with no such card in the controller's graveyard the first card alone is offered. A
@@ -167,7 +168,14 @@ function runAsk(state: GameState, res: ResolutionContext, ins: GraveyardPair): S
   }
   // A declined question drops the instruction (`answerResolutionOptional`), so this one was accepted.
   return {
-    ...done(state, [], moveInstructions(cards, 'battlefield', 'top', false, 'owner')),
+    // CR 603.6a: one event puts both cards onto the battlefield, so each sees the other enter (`together`, D-951).
+    ...done(
+      state,
+      [],
+      moveInstructions(cards, 'battlefield', 'top', false, 'owner').map((m) =>
+        m.kind === 'move' ? { ...m, together: true as const } : m,
+      ),
+    ),
     performed: 1,
   };
 }

@@ -102,6 +102,13 @@ describe('near misses are dropped, never guessed (SYNTHETIC)', () => {
     expect(miss(base.replace(/a creature card/g, 'a creature'))).toBeDefined();
   });
 
+  test('an instant or a sorcery card cannot enter the battlefield (CR 304.4, 307.4), so it is not read', () => {
+    expect(miss(PAIR('instant', 'an'))).toBeDefined();
+    expect(miss(PAIR('sorcery'))).toBeDefined();
+    expect(dropped(PAIR('instant', 'an').replace(/^c/, 'C'), 'sorcery').reason).toBeDefined();
+    expect(dropped(PAIR('sorcery').replace(/^c/, 'C'), 'sorcery').reason).toBeDefined();
+  });
+
   test('a mandatory return, another place or control, or a part of them', () => {
     expect(miss(base.replace('You may return', 'Return'))).toBeDefined();
     expect(miss(base.replace("under their owners' control", 'under your control'))).toBeDefined();

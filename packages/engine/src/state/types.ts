@@ -1289,6 +1289,11 @@ export type Instruction =
       readonly faceDown?: true;
       /** The land is played (CR 305.1, 305.2a: it counts as the player's land play), as an effect allows (`castFree` with `play`, D-145). */
       readonly playAsLand?: true;
+      /**
+       * Enters the battlefield at the same time as the other consecutive moves that carry this flag (CR 603.6a, D-951: "return those cards to the battlefield"): the
+       * `zoneChanged` events of the run say `simultaneous`, and `findTriggers` lets each permanent of the run see every other one enter.
+       */
+      readonly together?: true;
     }
   /**
    * "You may cast a spell with mana value 5 or less from your hand without paying its mana cost" (`castFree`, D-145, CR 608.2g): the

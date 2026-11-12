@@ -289,7 +289,17 @@ export function runInstruction(
       instruction.attachTo !== undefined && result.newObject !== null
         ? attachEntered(result.state, result.newObject, instruction.attachTo)
         : { state: result.state, events: [] as GameEvent[] };
-    const moveEvents = [...result.events, ...attached.events];
+    // CR 603.6a (D-951): the cards of a `together` run enter as one event, which `findTriggers` reads from this mark.
+    const moveEvents = [
+      ...(instruction.together === true
+        ? result.events.map((e) =>
+            e.kind === 'zoneChanged' && e.toZone === 'battlefield'
+              ? { ...e, simultaneous: true as const }
+              : e,
+          )
+        : result.events),
+      ...attached.events,
+    ];
     const created =
       instruction.alt === 'unearth' && result.newObject !== null
         ? {

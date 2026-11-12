@@ -677,6 +677,20 @@ function battlefieldBefore(state: GameState, events: readonly GameEvent[]): Obje
   return members;
 }
 
+/** The permanents that enter in the same event as `events[from]`: its own and those of the unbroken run of `simultaneous` entries that follows it. */
+function simultaneousEntries(events: readonly GameEvent[], from: number): ObjectId[] {
+  const entering: ObjectId[] = [];
+  for (const e of events.slice(from)) {
+    if (e.kind === 'zoneChanged' && e.toZone === 'battlefield') {
+      if (e.simultaneous !== true) break;
+      entering.push(e.to);
+    } else if (e.kind === 'tokenCreated') {
+      break;
+    }
+  }
+  return entering;
+}
+
 /** Numeric order of object ids: the order objects came to exist, for a deterministic scan. */
 function byAge(a: ObjectId, b: ObjectId): number {
   return Number(a.slice(1)) - Number(b.slice(1));
@@ -729,7 +743,12 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
     else beforeDepartures = null;
     if (event.kind === 'zoneChanged') {
       if (event.fromZone === 'battlefield') members = members.filter((m) => m !== event.from);
-      if (event.toZone === 'battlefield') members = [...members, event.to].sort(byAge);
+      if (event.toZone === 'battlefield') {
+        // CR 603.6a (D-951): one event puts several permanents onto the battlefield, and every one of them is checked for the triggers of all.
+        const entering =
+          event.simultaneous === true ? simultaneousEntries(events, eventIndex) : [event.to];
+        members = [...new Set([...members, ...entering])].sort(byAge);
+      }
     } else if (event.kind === 'tokenCreated') {
       members = [...members, event.object].sort(byAge);
     }

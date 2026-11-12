@@ -11,6 +11,7 @@ import { chooseCardsDecision, confirmOptionalDecision } from './pending-helpers'
 const RECLAIMER = 'SYNTHETIC Reclaimer Angel';
 const RITE = 'SYNTHETIC Reclaimer Rite'; // the same effect for artifact cards, as a sorcery
 const CLERIC = 'SYNTHETIC Reclaimed Cleric'; // "When this creature enters, you gain 1 life."
+const WARDEN = 'SYNTHETIC Reclaimed Warden'; // "Whenever another creature enters, you gain 1 life."
 const BEARS = 'Grizzly Bears'; // 2/2, mana value 2
 const ANGEL = 'Serra Angel'; // 4/4, mana value 5
 const SPIDER = 'Giant Spider'; // 2/4, mana value 4
@@ -20,7 +21,7 @@ const SOL = 'Sol Ring';
 const LIBRARY = Array.from({ length: 8 }, () => 'Plains');
 
 describe('the cards are valid', () => {
-  test.each([RECLAIMER, RITE, CLERIC])('%s', (name) => {
+  test.each([RECLAIMER, RITE, CLERIC, WARDEN])('%s', (name) => {
     expect(validateCard(syntheticCard(name))).toEqual([]);
   });
 
@@ -34,6 +35,20 @@ describe('the cards are valid', () => {
     };
     expect(JSON.stringify(validateCard(bad as never))).toContain('returnGraveyardPair');
   });
+
+  test.each(['instant', 'sorcery'])(
+    '%s cards cannot enter the battlefield (CR 304.4, 307.4)',
+    (cardType) => {
+      const card = syntheticCard(RITE);
+      const face = card.faces[0];
+      if (face === undefined) throw new Error('no face');
+      const bad = {
+        ...card,
+        faces: [{ ...face, spell: { effect: { kind: 'returnGraveyardPair', cardType } } }],
+      };
+      expect(JSON.stringify(validateCard(bad as never))).toContain('instant or a sorcery');
+    },
+  );
 });
 
 /** Seat 0 controls the Angel (and the end step is seat 0's); the graveyards are given. */
@@ -247,6 +262,76 @@ describe('the cards that return are new objects that enter under their owners co
     g.expect.zone(SOL, 'battlefield', { seat: 0 });
     g.expect.zone(SOL, 'battlefield', { seat: 1 });
     g.expect.zone(RITE, 'graveyard', { seat: 0 });
+  });
+});
+
+describe('both cards enter in one event, so each sees the other enter (CR 603.6a)', () => {
+  test('my Warden sees the opponent card enter, whichever graveyard it comes from', () => {
+    // The Warden is in MY graveyard, the Bears in the opponent's: the Warden controller gains 1 life, and nobody else does.
+    const g = atEndStep(game([WARDEN], [BEARS]));
+    g.act(0).accept();
+    g.passAll();
+    g.expect.life(0, 41);
+    g.expect.life(1, 40);
+  });
+
+  test('the opponent Warden sees my card enter just the same', () => {
+    const g = atEndStep(game([BEARS], [WARDEN]));
+    g.act(0).accept();
+    g.passAll();
+    g.expect.life(0, 40);
+    g.expect.life(1, 41);
+  });
+
+  test('two Wardens each see the other (and not themselves)', () => {
+    const g = atEndStep(game([WARDEN], [WARDEN]));
+    g.act(0).accept();
+    g.passAll();
+    g.passAll();
+    g.expect.life(0, 41);
+    g.expect.life(1, 41);
+  });
+});
+
+describe('declining the pair drops only that instruction', () => {
+  test('a sequence of the pair and a draw: declining the pair still draws', () => {
+    const g = scenario()
+      .seat(0)
+      .hand('SYNTHETIC Reclaimer Tide')
+      .battlefield('Plains', 'Plains', 'Plains')
+      .graveyard(SPIDER)
+      .library(...LIBRARY)
+      .seat(1)
+      .graveyard(ANGEL)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast('SYNTHETIC Reclaimer Tide', { pay: true });
+    g.passAll();
+    g.expect.pending('confirmOptional', 0);
+    g.act(0).decline();
+    g.expect.zone(SPIDER, 'graveyard', { seat: 0 });
+    g.expect.zone(ANGEL, 'graveyard', { seat: 1 });
+    g.expect.handSize(0, 1);
+  });
+
+  test('accepting the pair also draws', () => {
+    const g = scenario()
+      .seat(0)
+      .hand('SYNTHETIC Reclaimer Tide')
+      .battlefield('Plains', 'Plains', 'Plains')
+      .graveyard(SPIDER)
+      .library(...LIBRARY)
+      .seat(1)
+      .graveyard(ANGEL)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast('SYNTHETIC Reclaimer Tide', { pay: true });
+    g.passAll();
+    g.act(0).accept();
+    g.expect.zone(ANGEL, 'battlefield', { seat: 1 });
+    g.expect.handSize(0, 1);
   });
 });
 

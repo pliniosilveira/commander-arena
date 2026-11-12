@@ -6,16 +6,17 @@ import type { IrArg } from '../../ir/types';
 import { defineRule, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
 
-/** The card types the engine's `returnGraveyardPair` takes: one card type, with the article that goes with it. */
+/**
+ * The card types the engine's `returnGraveyardPair` takes: one card type, with the article that goes with it. Not instant and sorcery: CR 304.4 (Instants) and CR 307.4 (Sorceries) keep
+ * such a card in its previous zone when it would enter the battlefield, which the engine does not apply to a return, so the text is unsupported rather than put on the battlefield.
+ */
 const PAIR_TYPES: Readonly<Record<string, 'a' | 'an'>> = {
   artifact: 'an',
   battle: 'a',
   creature: 'a',
   enchantment: 'an',
-  instant: 'an',
   land: 'a',
   planeswalker: 'a',
-  sorcery: 'a',
 };
 
 /**
@@ -60,6 +61,8 @@ export const EFFECT_CHOOSE_GRAVEYARD_PAIR = defineRule<Clauses>({
     "choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return one of those cards to the battlefield under its owner's control",
     "choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their owners' control and you gain 2 life",
     "choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their owners' control, then those creatures gain haste",
+    "choose an instant card in an opponent's graveyard, then that player chooses an instant card in your graveyard. You may return those cards to the battlefield under their owners' control",
+    "choose a sorcery card in an opponent's graveyard, then that player chooses a sorcery card in your graveyard. You may return those cards to the battlefield under their owners' control",
     "choose two creature cards in an opponent's graveyard, then that player chooses two creature cards in your graveyard. You may return those cards to the battlefield under their owners' control",
   ],
   parse: (ctx, pos) => {

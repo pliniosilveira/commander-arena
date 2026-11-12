@@ -62,4 +62,42 @@ export const SYNTHETIC_DAWNBREAK_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Whenever another creature enters, you gain 1 life." (a card that returned together with another one sees it enter, CR 603.6a)
+  singleFace({
+    name: 'SYNTHETIC Reclaimed Warden',
+    manaCost: ['1', 'W'],
+    types: ['creature'],
+    subtypes: ['Cleric'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    power: 1,
+    toughness: 2,
+    oracleText: 'Whenever another creature enters, you gain 1 life.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { types: ['creature'], other: true } },
+        effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 1 },
+      },
+    ],
+  }),
+  // The pair followed by another instruction: declining the "you may" of the pair must not drop the draw.
+  singleFace({
+    name: 'SYNTHETIC Reclaimer Tide',
+    manaCost: ['2', 'W'],
+    types: ['sorcery'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    oracleText:
+      "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their owners' control. Draw a card.",
+    spell: {
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'returnGraveyardPair', cardType: 'creature' },
+          { kind: 'draw', player: { kind: 'you' }, count: 1 },
+        ],
+      },
+    },
+  }),
 ];
