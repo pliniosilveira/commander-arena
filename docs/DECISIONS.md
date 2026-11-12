@@ -1786,3 +1786,27 @@ Numbers are references; entries are never deleted. D-118 and D-119 are cited as 
 - Decision: One condition rule, `condition.its-mana-value`, reads "its mana value was/is N", "... or less" and "... or greater" (digits only) as `objectMatches` of the anaphor "it" with a mana value comparison, and is added to `RECURSION_LEAD_CONDITIONS`. The binding pass resolves "it" to the target of the sentence before it.
 - Alternatives: A general "its <stat> was ..." rule (no card needs power or toughness yet, and "X or less" needs the amount machinery); a card-specific path (forbidden).
 - Consequences: The comparison is made on the object as it last was (CR 608.2c, 113.7a). "X or less", "or more", "or fewer", other stats and compound conditions are unread and flagged (ROADMAP). `PARSER_VERSION` 87; four Niv-Mizzet cards move to supported (Prismari Charm, Untimely Malfunction, Flame of Anor, Fading Hope).
+
+## D-299: Shuffle the source and the graveyard into their owners' libraries (issue 25)
+- Context: Elixir of Immortality says "Shuffle this artifact and your graveyard into their owner's library." The existing rule read only "shuffle your graveyard into your library". The source may be controlled by a player who does not own it, and CR 701.24c and 701.24d shuffle a library even when no object reached it.
+- Decision: a new rule `effect.shuffle-self-and-graveyard` lowers to `moveToZone this`, `moveToZone each(your graveyard)` and `shuffle all[you, ownerOf this]`. Each card goes to its owner's library (the engine already does this). A commander in the graveyard is asked as it moves (CR 903.9b). The lowering is refused when the source is gone (`ctx.selfGone`).
+- Alternatives: mutating `effect.shuffle-graveyard` (it would change an existing card's AST and mix two phrasings). Shuffling only the controller's library (wrong when the artifact was taken: its owner's library receives the card). A card-name special case (forbidden).
+- Consequences: a stolen Elixir behaves per CR. Reading it in a dies trigger of `~` needs a `thisCard` reference and is on the ROADMAP. The old rule is unchanged.
+
+## D-300: A list of card types and subtypes in a look-and-take (issue 25)
+- Context: Dragonologist takes "an instant, sorcery, or Dragon card" from among the cards looked at. `TAKEN_CARD` read one list of card types or one subtype only. The engine's `lookAtTop` already accepts any `ObjectFilter`.
+- Decision: `TAKEN_CARD` also reads two or more kinds, at least one a subtype, joined as English joins a list, and writes `anyOf` of `{types}` and `{subtypes}`. A list of types only keeps the old reading.
+- Alternatives: a special case for the three words (card-specific). Letting the plain parser read mixed lists (it would blur the old tests and rejects).
+- Consequences: other "an artifact or Wizard card" and "a Dragon, Elf, or Wizard card" phrasings read. Ambiguous phrasings ("a Dragon or Elf creature card") and lists with no comma before "or" stay unread.
+
+## D-301: "N or more mana was spent to cast that spell" as a sentence condition (issue 25)
+- Context: Thunderdrum Soloist's second sentence is "If five or more mana was spent to cast that spell, ... instead." The old rule reads "at least N mana was spent to cast it" as an intervening "if" and is not in the sentence-lead list.
+- Decision: a second rule, `condition.mana-spent-or-more`, produces the same engine test (`manaSpentAtLeast`, D-206) marked `ofTriggerSpell` and is in the sentence-lead list, so "if ... instead" becomes `conditional` with an else branch. The lowering reads it only in the body of a cast trigger of another spell (`LowerContext.castTrigger`).
+- Alternatives: mutating the old rule (it would risk the cards that already use it). Adding the old rule to the lead list (it would read in spells, where no spell exists to ask, and the test would silently be false). Allowing it in every trigger (same silent failure).
+- Consequences: the Soloist reads and plays. "That spell" is not lowered in a spell's text, in "cast or copy" triggers, or in "when you cast this spell". "At most" and mana of a kind stay unread.
+
+## D-302: A cast trigger keeps its spell when its effect reads the mana spent (issue 25)
+- Context: `readsTriggerSubject` kept the triggering spell on the stack only when the intervening "if" held `manaSpentAtLeast`. A conditional effect with that condition read 0 mana spent (CR 601.2h, 608.2c), so the 5-mana case dealt 1 damage instead of 3.
+- Decision: `readsTriggerSubject` (`rules/trigger-subject.ts`) also returns true when the effect holds `manaSpentAtLeast`. This is the only engine edit of the group; `ENGINE_VERSION` 81 (new derive digests), `PARSER_VERSION` 88.
+- Alternatives: carrying the subject on every cast trigger (it changes the identity of triggers for all cards and the derive digests). Reading the mana spent from the stack at trigger time only (the spell may be gone by resolution; CR 113.7a).
+- Consequences: only abilities with that condition in their effect change, and none existed. Three more Niv-Mizzet cards move to supported (Elixir of Immortality, Dragonologist, Thunderdrum Soloist).

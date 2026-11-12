@@ -50,6 +50,7 @@ import { GAIN_STATIC_ABILITY } from './granted-static';
 import { HOFRI_LOWERINGS } from './hofri';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { MELD_LOWERINGS } from './meld';
+import { NIV_LOWERINGS } from './niv';
 import {
   attackedByOf,
   colorLetter,
@@ -1282,6 +1283,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...EDHREC_LOWERINGS,
   ...DRAGON_LOWERINGS,
   ...KORVOLD_LOWERINGS,
+  ...NIV_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
   ...DESTINY_LOWERINGS,
   ...MELD_LOWERINGS,

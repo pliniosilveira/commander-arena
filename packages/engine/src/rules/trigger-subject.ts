@@ -13,6 +13,9 @@ export function readsTriggerSubject(ability: Ability): boolean {
   // A modal ability keeps its effects in the modes (D-114).
   const effects = JSON.stringify([ability.effect, ability.modes ?? []]);
   if (effects.includes('"triggerSubject"') || effects.includes('"triggerCard"')) return true;
+  // CR 601.2h, 608.2c: "If five or more mana was spent to cast that spell, ... instead" is a condition of the effect, read as the effect resolves from the spell that
+  // caused the trigger, so the subject stays on the stack as it does for the intervening "if" below.
+  if (effects.includes('"manaSpentAtLeast"')) return true;
   // D-196: the Ring's sacrifice at end of combat is about the creature that blocked the Ring-bearer.
   if (ability.effect.kind === 'delayedSacrifice') return true;
   // CR 702.100a (D-120): the intervening "if" of Evolve compares the creature that entered with the source,

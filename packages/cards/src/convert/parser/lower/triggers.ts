@@ -716,6 +716,8 @@ export function lowerTriggered(
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.
   ctx.selfCast = triggers.every((t) => t.kind === 'castSpell' && t.self === true);
+  // Issue 25: "that spell" of "if five or more mana was spent to cast that spell" is the spell of a cast trigger (`castSpell` of another spell).
+  ctx.castTrigger = triggers.every((t) => t.kind === 'castSpell' && t.self !== true);
   // CR 603.4: the intervening "if" is checked as the event happens and again on resolution, so
   // the ability does not trigger when it is false. It is not a conditional effect inside the
   // ability. "It" is the source only when every event is about the source itself.

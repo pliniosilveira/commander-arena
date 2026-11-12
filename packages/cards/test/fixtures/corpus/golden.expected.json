@@ -1,5 +1,5 @@
 {
-  "parserVersion": 87,
+  "parserVersion": 88,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -654,19 +654,10 @@
     "204b71fc-4d5f-40dd-903d-56c733171d84": {
       "name": "Elixir of Immortality",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "{2}, {T}: You gain 5 life. Shuffle ~ and your graveyard into their owner's library.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "840c3d88"
+      "ast": "e5dcaa3a"
     },
     "20a6d576-a5b2-43b4-8be9-75be001e567d": {
       "name": "Treasure Nabber",
@@ -1354,19 +1345,10 @@
     "43b5794a-4ed6-471d-bc45-22fac486895d": {
       "name": "Thunderdrum Soloist",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever you cast an instant or sorcery spell, ~ deals 1 damage to each opponent. If five or more mana was spent to cast that spell, ~ deals 3 damage to each opponent instead.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d30b60b2"
+      "ast": "643d1a98"
     },
     "446db5a4-21b0-44c1-b12b-d365313dd67a": {
       "name": "Clifftop Lookout",
@@ -4478,19 +4460,10 @@
     "f6791df0-a37b-44dc-8bf3-40ac2304d188": {
       "name": "Dragonologist",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "When ~ enters, look at the top six cards of your library. You may reveal an instant, sorcery, or Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.look-take"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "5cc09ae5"
+      "ast": "65b04af3"
     },
     "f6de5bd7-7704-4a0c-a27a-9e565e49f5e9": {
       "name": "Dragonstorm Globe",
@@ -4832,7 +4805,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 209,
+      "supported": 212,
       "total": 245
     }
   }

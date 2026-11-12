@@ -8,9 +8,9 @@ The running checklist of the deck support routine for `decks/niv-mizzet.txt` (is
 | Untimely Malfunction | 1 | T | done | "one or two target creatures can't block this turn"; change-target already exists (D-181, D-182) |
 | Flame of Anor | 1 | T | done | header "Choose one. If you control a Wizard as you cast ~, you may choose two instead." |
 | Fading Hope | 1 | T | done | "If its mana value was 3 or less, scry 1." |
-| Elixir of Immortality | 1 | T | waiting | "Shuffle ~ and your graveyard into their owner's library." |
-| Dragonologist | 1 | T | waiting | "an instant, sorcery, or Dragon card" (a mix of types and a subtype) |
-| Thunderdrum Soloist | 1 | T | waiting | Opus: "If five or more mana was spent to cast that spell ... instead" |
+| Elixir of Immortality | 1 | T | done | "Shuffle ~ and your graveyard into their owner's library." |
+| Dragonologist | 1 | T | done | "an instant, sorcery, or Dragon card" (a mix of types and a subtype) |
+| Thunderdrum Soloist | 1 | T | done | Opus: "If five or more mana was spent to cast that spell ... instead" |
 | Stella Lee, Wild Card | 2 | P | waiting | condition "you've cast three or more spells this turn" |
 | Firemind Vessel | 2 | P | waiting | "Add two mana of different colors" |
 | Bender's Waterskin | 2 | P | waiting | "Untap ~ during each other player's untap step" |
