@@ -74,6 +74,7 @@ import { SYNTHETIC_MANA_RESTRICTED_LIST } from './synthetic-mana-restricted';
 import { SYNTHETIC_MANA_SPENT_LIST } from './synthetic-mana-spent';
 import { SYNTHETIC_MANA_TRIGGERS_LIST } from './synthetic-mana-triggers';
 import { SYNTHETIC_MASS_LIST } from './synthetic-mass';
+import { SYNTHETIC_MIRACLE_LIST } from './synthetic-miracle';
 import { SYNTHETIC_MODAL_LIST } from './synthetic-modal';
 import { SYNTHETIC_PARSER_SHAPES_LIST } from './synthetic-parser-shapes';
 import { SYNTHETIC_PLANESWALKER_LIST } from './synthetic-planeswalkers';
@@ -354,6 +355,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_ASCEND_LIST,
     ...SYNTHETIC_BOOK_EXALTED_LIST,
     ...SYNTHETIC_LATER_LIST,
+    ...SYNTHETIC_MIRACLE_LIST,
     ...SYNTHETIC_DELAYED_RETURN_LIST,
     ...SYNTHETIC_COPY_LIST,
     ...SYNTHETIC_SUBJECT_LIST,

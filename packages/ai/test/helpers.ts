@@ -410,6 +410,28 @@ export const UPKEEP_SPELLS = [
 ];
 
 /**
+ * SYNTHETIC cards of Miracle (CR 702.94, D-971): miracle costs with and without {X}, a target, a permanent, and cards that draw
+ * (several cards, the opponent's). Used by the 'miracle' deck style and kept out of every other pool.
+ */
+export const MIRACLE_NAMES = [
+  'SYNTHETIC Miracle Host',
+  'SYNTHETIC Miracle Bolt',
+  'SYNTHETIC Miracle Beast',
+  'SYNTHETIC Careful Digging',
+  'SYNTHETIC Twin Draw',
+  'SYNTHETIC Generous Gift',
+] as const;
+
+/** The Miracle cards three times each (a miracle card must come as the first draw of a turn), with bodies and removal. */
+export const MIRACLE_SPELLS = [
+  ...supported(MIRACLE_NAMES),
+  ...supported(MIRACLE_NAMES),
+  ...supported(MIRACLE_NAMES),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Llanowar Elves', 'Giant Spider', 'Serra Angel']),
+  ...supported(['Lightning Bolt', 'Murder', 'Unsummon', 'Counterspell']),
+];
+
+/**
  * SYNTHETIC cards of delayed triggers (CR 603.7), Suspend (CR 702.62), Madness (CR 702.35) and Foretell (CR 702.143),
  * D-128. Used by the 'later' deck style and kept out of every other pool.
  */
@@ -2513,6 +2535,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(PLAY_RULE_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(UPKEEP_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(LATER_NAMES as readonly string[]).includes(card.name))
+  .filter((card) => !(MIRACLE_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(COPY_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(AMOUNT_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(SUBJECT_NAMES as readonly string[]).includes(card.name))
@@ -2696,6 +2719,7 @@ export type DeckStyle =
   | 'playRules'
   | 'upkeep'
   | 'later'
+  | 'miracle'
   | 'copies'
   | 'amounts'
   | 'subjects'
@@ -2791,48 +2815,51 @@ export function spellSlots(style: DeckStyle): readonly string[] {
                                                                     ? UPKEEP_SPELLS
                                                                     : style === 'later'
                                                                       ? LATER_SPELLS
-                                                                      : style === 'copies'
-                                                                        ? COPY_SPELLS
-                                                                        : style === 'amounts'
-                                                                          ? AMOUNT_SPELLS
-                                                                          : style === 'subjects'
-                                                                            ? SUBJECT_SPELLS
-                                                                            : style === 'recursion'
-                                                                              ? RECURSION_SPELLS
+                                                                      : style === 'miracle'
+                                                                        ? MIRACLE_SPELLS
+                                                                        : style === 'copies'
+                                                                          ? COPY_SPELLS
+                                                                          : style === 'amounts'
+                                                                            ? AMOUNT_SPELLS
+                                                                            : style === 'subjects'
+                                                                              ? SUBJECT_SPELLS
                                                                               : style ===
-                                                                                  'artifacts'
-                                                                                ? ARTIFACT_SPELLS
+                                                                                  'recursion'
+                                                                                ? RECURSION_SPELLS
                                                                                 : style ===
-                                                                                    'dinosaurs'
-                                                                                  ? DINOSAUR_SPELLS
+                                                                                    'artifacts'
+                                                                                  ? ARTIFACT_SPELLS
                                                                                   : style ===
-                                                                                      'angels'
-                                                                                    ? ANGEL_SPELLS
+                                                                                      'dinosaurs'
+                                                                                    ? DINOSAUR_SPELLS
                                                                                     : style ===
-                                                                                        'dragons'
-                                                                                      ? DRAGON_SPELLS
+                                                                                        'angels'
+                                                                                      ? ANGEL_SPELLS
                                                                                       : style ===
-                                                                                          'korvoldKeywords'
-                                                                                        ? KORVOLD_KEYWORD_SPELLS
+                                                                                          'dragons'
+                                                                                        ? DRAGON_SPELLS
                                                                                         : style ===
-                                                                                            'korvoldSingles'
-                                                                                          ? KORVOLD_SINGLE_SPELLS
+                                                                                            'korvoldKeywords'
+                                                                                          ? KORVOLD_KEYWORD_SPELLS
                                                                                           : style ===
-                                                                                              'korvoldControl'
-                                                                                            ? KORVOLD_CONTROL_SPELLS
+                                                                                              'korvoldSingles'
+                                                                                            ? KORVOLD_SINGLE_SPELLS
                                                                                             : style ===
-                                                                                                'adamantoise'
-                                                                                              ? ADAMANTOISE_SPELLS
+                                                                                                'korvoldControl'
+                                                                                              ? KORVOLD_CONTROL_SPELLS
                                                                                               : style ===
-                                                                                                  'vote'
-                                                                                                ? VOTE_SPELLS
+                                                                                                  'adamantoise'
+                                                                                                ? ADAMANTOISE_SPELLS
                                                                                                 : style ===
-                                                                                                    'ring'
-                                                                                                  ? RING_SPELLS
+                                                                                                    'vote'
+                                                                                                  ? VOTE_SPELLS
                                                                                                   : style ===
-                                                                                                      'planeswalkers'
-                                                                                                    ? PLANESWALKER_SPELLS
-                                                                                                    : SPELLS;
+                                                                                                      'ring'
+                                                                                                    ? RING_SPELLS
+                                                                                                    : style ===
+                                                                                                        'planeswalkers'
+                                                                                                      ? PLANESWALKER_SPELLS
+                                                                                                      : SPELLS;
   return pool.length > 0 ? pool : SPELLS;
 }
 
@@ -2868,6 +2895,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'playRules' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'upkeep' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'later' && BASIC_LANDS.length > 0) return BASIC_LANDS;
+  if (style === 'miracle' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'copies' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'amounts' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'subjects' && BASIC_LANDS.length > 0) return BASIC_LANDS;
@@ -3172,6 +3200,13 @@ export const LATER_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['later', 'later'],
   ['later', 'spells'],
   ['spells', 'later'],
+];
+
+/** Style pairs of the miracle soak test (D-971): a mirror match and both mixed ways. */
+export const MIRACLE_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['miracle', 'miracle'],
+  ['miracle', 'spells'],
+  ['spells', 'miracle'],
 ];
 
 /** Style pairs of the copies soak test (D-129): a mirror match and both mixed ways. */

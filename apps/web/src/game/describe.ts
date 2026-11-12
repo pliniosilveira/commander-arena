@@ -844,7 +844,7 @@ export function describeEvent(
       );
     }
     case 'optionalAnswered': {
-      // Suspend's "cast it now?" and Madness's "cast it for its madness cost?" (D-128).
+      // Suspend's "cast it now?", Madness's "cast it for its madness cost?" and Miracle's "cast it for its miracle cost?" (D-128, D-971).
       const later = castNowAnswerLine(before, event, viewer);
       if (later !== null) return line('major', later.text, later.seat, later.objects, later.rule);
       // Extort's "you may pay {W/B}" and Cascade's "cast it without paying its mana cost" (D-120).
@@ -1207,6 +1207,14 @@ export function describeEvent(
       const told = foretoldLine(after, event, viewer);
       return line('major', told.text, told.seat, told.objects, told.rule);
     }
+    case 'miracleRevealed':
+      return line(
+        'major',
+        `${name(event.object)} was revealed with miracle.`,
+        event.seat,
+        [event.object],
+        'CR 702.94a',
+      );
     case 'madnessExiled':
       return line(
         'major',

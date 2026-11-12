@@ -19,6 +19,8 @@ const DIALOG_LABELS: Readonly<
   cascade: 'Cascade',
   suspend: 'Suspend',
   madness: 'Madness',
+  miracleReveal: 'Miracle: reveal',
+  miracle: 'Miracle',
   gift: 'Gift',
   costChoice: 'Additional cost',
 };

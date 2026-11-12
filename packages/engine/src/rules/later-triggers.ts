@@ -1,5 +1,6 @@
 /**
- * The triggered abilities of Suspend and Madness that work from the exile zone (CR 702.62a, 702.35a, D-128).
+ * The triggered abilities of Suspend and Madness that work from the exile zone, and the one of Miracle that works from the hand (CR 702.62a,
+ * 702.35a, 702.94a, D-128, D-971).
  * They are the card's own and fixed by the rules, so the engine finds them itself instead of reading them from the
  * derived abilities of a battlefield permanent (`rules/triggers.ts` looks at the battlefield only): each is a
  * `PendingTrigger` with the card in exile as its source, no index among its abilities (`abilityIndex` -1, as a
@@ -15,7 +16,9 @@
  * - "When this card is exiled this way, its owner may cast it by paying [cost] rather than paying its mana cost. If
  *   that player doesn't, they put this card into their graveyard" (CR 702.35a): when a `madnessExiled` event says
  *   the card was exiled instead of discarded.
- * Their controller is the owner of the card (an exiled card has no controller, CR 108.4).
+ * - "When you reveal this card this way, you may cast it by paying [cost] rather than its mana cost" (CR 702.94a): when a `miracleRevealed`
+ *   event says the card in the hand was revealed as it was drawn.
+ * Their controller is the owner of the card (a card in exile or in a hand has no controller, CR 108.4).
  */
 import type { GameEvent } from '../state/events';
 import type { GameState, PendingTrigger, TriggeredAbility } from '../state/types';
@@ -46,6 +49,16 @@ export const MADNESS_ABILITY: TriggeredAbility = {
   effect: { kind: 'castExiled', mode: 'madness' },
 };
 
+/**
+ * CR 702.94a: "When you reveal this card this way, you may cast it by paying [cost] rather than its mana cost": the ability of a card revealed
+ * as it was drawn (D-971). Its source is the card in its owner's hand.
+ */
+export const MIRACLE_ABILITY: TriggeredAbility = {
+  kind: 'triggered',
+  trigger: UPKEEP_OF_OWNER,
+  effect: { kind: 'castExiled', mode: 'miracle' },
+};
+
 function trigger(
   source: PendingTrigger['source'],
   controller: number,
@@ -59,9 +72,18 @@ export function findLaterTriggers(
   state: GameState,
   events: readonly GameEvent[],
 ): PendingTrigger[] {
-  if (state.exile.length === 0) return [];
   const found: PendingTrigger[] = [];
   for (const event of events) {
+    // CR 702.94a (D-971): the trigger of a card revealed as it was drawn works from the hand (the exile may be empty).
+    // It triggers whatever became of the card since (CR 702.94a: "When you reveal this card this way"; a card an earlier instruction of the same
+    // resolution discarded is known by last-known information, and the ability then finds nothing to cast, CR 113.7a, 608.2b).
+    if (event.kind === 'miracleRevealed') {
+      if (state.objects[event.object] === undefined && state.lki[event.object] === undefined)
+        continue;
+      found.push(trigger(event.object, event.seat, MIRACLE_ABILITY));
+      continue;
+    }
+    if (state.exile.length === 0) continue;
     if (event.kind === 'stepBegan' && event.step === 'upkeep') {
       // One for each card the player owns that is suspended, in the order the cards came to exile (CR 702.62b).
       for (const id of state.exile) {

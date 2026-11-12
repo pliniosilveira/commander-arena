@@ -487,6 +487,11 @@ export type GameEvent =
    */
   | { readonly kind: 'madnessExiled'; readonly seat: SeatId; readonly object: ObjectId }
   /**
+   * CR 702.94a (Miracle, D-971): `seat` revealed the card `object`, in their hand, as they drew it (the first card they drew this turn); "When
+   * you reveal this card this way" triggers from this. The reveal itself is public through the `cardsRevealed` event before it.
+   */
+  | { readonly kind: 'miracleRevealed'; readonly seat: SeatId; readonly object: ObjectId }
+  /**
    * A card was suspended (CR 702.62a, D-128): `seat` paid its suspend cost and exiled it, face up, with `count` time
    * counters. `object` is the card in exile (public). The `counterAdded` event for the time counters follows.
    */

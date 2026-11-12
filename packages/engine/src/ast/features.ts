@@ -810,6 +810,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'escape',
     // D-128: Madness (CR 702.35) and Foretell (CR 702.143).
     'madness',
+    // D-971: Miracle (CR 702.94).
+    'miracle',
     'foretell',
     // D-149: "pay {W} and tap four untapped creatures you control with flying rather than pay this spell's mana cost".
     'tapPermanents',
@@ -1348,6 +1350,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'spectacle',
   'escape',
   'madness',
+  'miracle',
   'foretell',
   'tapPermanents',
 ] as const;

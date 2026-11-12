@@ -876,6 +876,7 @@ export type NamedAlternativeKind =
   | 'spectacle'
   | 'escape'
   | 'madness'
+  | 'miracle'
   | 'foretell'
   | 'tapPermanents';
 
@@ -921,6 +922,10 @@ export type PermanentAlternativeKind =
  *   card is cast as its madness trigger resolves: a card with it that would be discarded is exiled instead (a
  *   replacement the engine applies to every discard), and its owner may then cast it from exile for this cost
  *   or put it into the graveyard. It is never offered as a cast from a hand. On a card that is not a land.
+ * - `miracle` (D-971, CR 702.94): the `cost` (mana only; an {X} is allowed, CR 107.3a) is paid instead of the mana cost, but only when
+ *   the card is cast as its miracle trigger resolves: its owner may reveal the card as they draw it when it is the first card they have
+ *   drawn this turn, and when they do, the trigger lets them cast it from the hand for this cost. It is never offered as a cast from a
+ *   hand. On a card that is not a land.
  * - `foretell` (D-128, CR 702.143): the `cost` (the foretell cost, mana only, no X) is paid instead of the mana
  *   cost to cast the card from exile, after the turn it was foretold has ended. The card is put there face down
  *   by the special action the engine derives from this entry: "any time you have priority during your turn, pay
@@ -1586,11 +1591,12 @@ export type Effect =
    * it without paying its mana cost if able. If you don't, it remains exiled. If you cast a creature spell this
    * way, it gains haste" (the spell remembers it, `StackData.suspended`); `madness`: "its owner may cast it by
    * paying [its madness cost] rather than paying its mana cost. If that player doesn't, they put this card into
-   * their graveyard". The question is asked only when the card could be cast (a legal target for each of its
+   * their graveyard"; `miracle` (D-971, CR 702.94a): the source card is in its owner's hand, not in exile, and "you may
+   * cast it by paying [its miracle cost] rather than its mana cost"; declining leaves it in the hand. The question is asked only when the card could be cast (a legal target for each of its
    * targets, the cost payable). Only the effect of the engine's own suspend and madness abilities
    * (`validateCard` refuses it anywhere else).
    */
-  | { readonly kind: 'castExiled'; readonly mode: 'suspend' | 'madness' }
+  | { readonly kind: 'castExiled'; readonly mode: 'suspend' | 'madness' | 'miracle' }
   /**
    * "[Player] becomes the monarch" (CR 725.1, 725.3, D-127): the designation moves to the player the selector
    * names (one player), and the previous monarch ceases to be the monarch. Nothing happens when that player is

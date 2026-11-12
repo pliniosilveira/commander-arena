@@ -130,7 +130,12 @@ export function beginCast(
   if (obj.prepareOf !== undefined) face = obj.face;
   if (
     resolving
-      ? !canCastDuringResolution(state, seat, obj, alternative === 'madness' ? 'madness' : 'free')
+      ? !canCastDuringResolution(
+          state,
+          seat,
+          obj,
+          alternative === 'madness' || alternative === 'miracle' ? alternative : 'free',
+        )
       : !canCast(state, seat, obj, alternative, face)
   ) {
     return fail(
@@ -179,7 +184,9 @@ export function beginCast(
       flashback: alternative === 'flashback',
       ...(alternative === 'free' ? { free: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
-      ...(resolving && alternative !== 'madness' ? { byEffect: true as const } : {}),
+      ...(resolving && alternative !== 'madness' && alternative !== 'miracle'
+        ? { byEffect: true as const }
+        : {}),
       ...(suspended ? { suspended: true as const } : {}),
       // D-151: "If you cast a creature spell this way, it gains haste until end of turn".
       ...(zone === 'library' && libraryCastPermission(state, seat, obj)?.gainsHaste === true

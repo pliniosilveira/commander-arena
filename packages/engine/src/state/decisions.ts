@@ -616,7 +616,11 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * play it without paying its mana cost": `subject` is the suspended card (public), `source` the ability on the
    * stack; declining leaves it in exile. `'madness'` (CR 702.35a): "you may cast it by paying [its madness cost]":
    * `subject` is the card exiled by madness (public), `cost` its madness cost, `source` the ability on the stack;
-   * declining puts the card into its owner's graveyard.
+   * declining puts the card into its owner's graveyard. `'miracleReveal'` (CR 702.94a, D-971): "you may reveal this card from your hand as you
+   * draw it": asked of the player who drew it, who is `seat`, right after a card with miracle is drawn as the first card of their turn;
+   * `subject` is the card (in the hand, hidden until the answer), `cost` its miracle cost, `source` the same card. Accepting reveals it (public)
+   * and its trigger goes on the stack; declining reveals nothing. `'miracle'`: "you may cast it by paying [its miracle cost]": `subject` is
+   * the card in the hand, `cost` its miracle cost, `source` the trigger on the stack; declining leaves the card in the hand.
    */
   readonly purpose?:
     | 'kicker'
@@ -628,6 +632,8 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'cascade'
     | 'suspend'
     | 'madness'
+    | 'miracleReveal'
+    | 'miracle'
     | 'gift'
     | 'costChoice';
   /**

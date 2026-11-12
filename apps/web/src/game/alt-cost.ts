@@ -22,6 +22,7 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   spectacle: 'Spectacle',
   escape: 'Escape',
   madness: 'Madness',
+  miracle: 'Miracle',
   foretell: 'Foretell',
   // D-149: "pay {W} and tap four untapped creatures ... rather than pay this spell's mana cost".
   tapPermanents: 'Tap creatures',
@@ -82,6 +83,12 @@ const STACK_BADGES: Readonly<Partial<Record<MarkedAlternative, AlternativeBadge>
     text: 'madness',
     title: 'Cast from exile for its madness cost, after it was discarded.',
     fact: 'Cast for its madness cost',
+  },
+  miracle: {
+    text: 'miracle',
+    title:
+      'Cast from the hand for its miracle cost, after it was revealed as the first card drawn this turn.',
+    fact: 'Cast for its miracle cost',
   },
   foretell: {
     text: 'foretold',

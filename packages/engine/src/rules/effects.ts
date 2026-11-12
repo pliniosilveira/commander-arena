@@ -60,6 +60,7 @@ import { loseTheGame } from './lose-game';
 import { manaValueOfCost } from './mana-value';
 import { runMayCast, runPaidReflexive, runReflexive } from './may-effects';
 import { millCards } from './mill';
+import { runMiracleReveal } from './miracle';
 import { becomeMonarch } from './monarch';
 import { isCardZoneChoice, runChooseMove } from './move-choice';
 import { nextMainStep } from './next-main';
@@ -245,6 +246,7 @@ export function runInstruction(
   }
   if (instruction.kind === 'enterToken') return runEnterToken(state, res, instruction, flow);
   if (instruction.kind === 'draw') return runDraw(state, instruction);
+  if (instruction.kind === 'miracleReveal') return runMiracleReveal(state, res, instruction);
   if (instruction.kind === 'move') {
     // An object that already left (an earlier instruction moved it) is skipped: the spell does as
     // much as it can (CR 608.2c, 608.2b).

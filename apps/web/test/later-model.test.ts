@@ -3,7 +3,12 @@
  * questions, the engine's abilities on the stack, the badges, the marks of a card in exile, and what the
  * log says of a foretell. Fake views, no DOM.
  */
-import type { ObjectView, PriorityDecision, StackAbility } from '@commander-arena/engine';
+import type {
+  ConfirmOptionalDecision,
+  ObjectView,
+  PriorityDecision,
+  StackAbility,
+} from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
 import { alternativeBadge } from '../src/game/alt-cost';
 import {
@@ -15,13 +20,16 @@ import {
   laterAbilityWords,
   laterFacts,
   laterOrderWording,
+  miracleRevealPrompt,
   specialActionLabel,
   specialPayPrompt,
 } from '../src/game/later-text';
 import { menuItems } from '../src/ui/decisions/abilities';
 import { foretellCastLabel } from '../src/ui/decisions/alt-cost';
 import { exileBadge } from '../src/ui/decisions/layouts';
+import { optionalAsk } from '../src/ui/decisions/optional';
 import { clickOutcome, playableObjects } from '../src/ui/decisions/priority';
+import { lookupIndexFor } from './decisions-helpers';
 
 const card = (name: string, patch: Partial<ObjectView> = {}): ObjectView =>
   ({
@@ -94,6 +102,58 @@ describe('the questions', () => {
     });
     expect(castNowButtons('suspend', undefined).no).toBe("Don't cast it (it stays in exile)");
   });
+
+  test('miracle: the reveal, then the cast with the cost as the card prints it (D-971)', () => {
+    expect(miracleRevealPrompt('Angels', ['X', 'W', 'W'])).toBe(
+      'Reveal Angels, the first card you drew this turn, for its miracle trigger (miracle {X}{W}{W})?',
+    );
+    expect(castNowPrompt('miracle', 'Angels', ['X', 'W', 'W'])).toBe(
+      'Cast Angels for its miracle cost {X}{W}{W}?',
+    );
+    expect(castNowButtons('miracle', ['X', 'W', 'W'])).toEqual({
+      yes: 'Cast it for {X}{W}{W}',
+      no: "Don't cast it (it stays in your hand)",
+    });
+  });
+});
+
+describe('the two questions of miracle (D-971)', () => {
+  const angels = card('Angels', { id: 'o7', types: ['sorcery'] });
+  const index = lookupIndexFor([angels]);
+  const ask = (purpose: 'miracleReveal' | 'miracle') =>
+    optionalAsk(
+      {
+        id: 'd1',
+        seat: 0,
+        kind: 'confirmOptional',
+        source: 'o7',
+        sourceName: 'Angels',
+        sourceOracleText: '',
+        purpose,
+        subject: 'o7',
+        cost: [{ kind: 'mana', symbols: ['X', 'W', 'W'] }],
+      } as ConfirmOptionalDecision,
+      index,
+    );
+
+  test('the reveal asks about the card just drawn and cannot be taken back', () => {
+    expect(ask('miracleReveal')).toEqual({
+      prompt:
+        'Reveal Angels, the first card you drew this turn, for its miracle trigger (miracle {X}{W}{W})?',
+      yes: 'Reveal it',
+      no: "Don't reveal it",
+      cancellable: false,
+    });
+  });
+
+  test('the cast shows the cost with its X, and declining leaves the card in the hand', () => {
+    expect(ask('miracle')).toEqual({
+      prompt: 'Cast Angels for its miracle cost {X}{W}{W}?',
+      yes: 'Cast it for {X}{W}{W}',
+      no: "Don't cast it (it stays in your hand)",
+      cancellable: false,
+    });
+  });
 });
 
 describe('the engine abilities on the stack', () => {
@@ -112,6 +172,11 @@ describe('the engine abilities on the stack', () => {
     trigger: { kind: 'upkeep', whose: 'you' },
     effect: { kind: 'castExiled', mode: 'madness' },
   } as unknown as StackAbility;
+  const miracle = {
+    kind: 'triggered',
+    trigger: { kind: 'upkeep', whose: 'you' },
+    effect: { kind: 'castExiled', mode: 'miracle' },
+  } as unknown as StackAbility;
 
   test('words', () => {
     expect(laterAbilityWords(tick, 'Bear', true)).toEqual({
@@ -125,6 +190,10 @@ describe('the engine abilities on the stack', () => {
       'Cast Bear without paying its mana cost.',
     );
     expect(laterAbilityWords(mad, 'Fiend', true)?.does).toBe('Cast Fiend for its madness cost.');
+    expect(laterAbilityWords(miracle, 'Angels', true)).toEqual({
+      when: 'When you reveal Angels this way',
+      does: 'You may cast Angels for its miracle cost.',
+    });
   });
 
   test('the delayed draw says "the next turn\'s upkeep" only when the source says "next"', () => {
@@ -146,12 +215,19 @@ describe('the engine abilities on the stack', () => {
     expect(laterOrderWording(-1, { zone: 'exile', counters: {} })).toBeNull();
     expect(laterOrderWording(0, { zone: 'battlefield', counters: {} })).toBeUndefined();
   });
+
+  test('a waiting trigger of a card revealed with miracle, in a hand, shows the card’s own text (D-971)', () => {
+    expect(laterOrderWording(-1, { zone: 'hand', counters: {} })).toBeNull();
+    expect(laterOrderWording(0, { zone: 'hand', counters: {} })).toBeUndefined();
+  });
 });
 
 describe('badges and marks', () => {
   test('spells and permanents', () => {
     expect(alternativeBadge({ zone: 'stack', alternative: 'madness' })?.text).toBe('madness');
     expect(alternativeBadge({ zone: 'stack', alternative: 'foretell' })?.text).toBe('foretold');
+    expect(alternativeBadge({ zone: 'stack', alternative: 'miracle' })?.text).toBe('miracle');
+    expect(alternativeBadge({ zone: 'battlefield', alternative: 'miracle' })).toBeNull();
     expect(alternativeBadge({ zone: 'stack', suspended: true })?.text).toBe('suspended');
     expect(alternativeBadge({ zone: 'battlefield', alternative: 'suspend' })?.text).toBe(
       'suspended',
