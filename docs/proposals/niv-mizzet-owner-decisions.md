@@ -31,8 +31,8 @@ Status: PROPOSED, nothing built. These three cards of `decks/niv-mizzet.txt` nee
 - **What exists:** the modal machinery (`ModeChoice` with `min`, `max`, `maxIf`, `notRepeatedThisTurn`; `legalModeSets` enumerates sets of DISTINCT modes). The bullets of the card already parse. D-114 and the ROADMAP list repeatable modes as not built.
 - **What would change:** `ModeChoice.repeatable`; mode sets become multisets of a fixed size; every chosen instance of a targeted mode needs its own target slot (per-instance ids), which touches casting, activation, trigger stacking, copying a modal spell, invariants, the view, the web picker (counters instead of checkboxes) and the stack panel; the AI sums mode scores and already copes.
 - **Size and risk:** large, cross-cutting. Only the Confluence cycle uses it. A simplification (one slot for all instances) would be wrong when there are fewer targets than instances, so it is not offered.
-- **Recommendation:** skip unless the owner wants the Confluence cards; the card stays unsupported.
+- **DECIDED by the owner on 2026-11-12 (in chat): build.** "This is a common situation, many cards have that. Also, leaving unsupported is not an option for most cards. The long-term goal is supporting 100% of the existing cards." Built as general repeatable modes, not for one card (D-317).
 
 ## What the owner is asked
 
-For each of the three: build, build later (after the rest of the deck), or leave unsupported.
+For each of the three: build or build later (after the rest of the deck). Leaving a card unsupported is not an option (D-317).
