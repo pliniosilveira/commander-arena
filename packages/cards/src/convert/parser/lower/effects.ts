@@ -957,7 +957,7 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
 };
 
 /**
- * "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order." (Stock Up, D-960, CR 401.2, 401.4,
+ * "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order." (Stock Up, D-324, CR 401.2, 401.4,
  * 701.20a): the engine's `lookAtTop`, the controller's own library, exactly `taken` cards of any kind put into the hand without being revealed, the rest on the bottom in the order
  * the controller chooses.
  */

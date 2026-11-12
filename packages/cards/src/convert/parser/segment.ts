@@ -146,7 +146,7 @@ const SPLIT_THE_TOP =
   /^put \w+ of them into your hand, put \w+ of them on the bottom of your library, and exile \w+ of them\.$/i;
 
 /**
- * "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order." (Stock Up, D-960, CR 401.4): the second
+ * "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order." (Stock Up, D-324, CR 401.4): the second
  * sentence says what is done with the cards the first one looks at, so the two are read as one instruction (`effect.look-take-bottom`).
  */
 const PUT_HAND_REST_BOTTOM =

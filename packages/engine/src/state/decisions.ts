@@ -543,7 +543,7 @@ export interface ChooseCardsDecision extends DecisionBase {
  * a card may go: `'top'` (put back on top in the order given, the first becomes the top card) and,
  * for a scry, `'bottom'` (the cards in the order given, the last becomes the bottom card), for a
  * surveil `'graveyard'`. `purpose: 'reorder'` is "look at the top N cards, then put them back in any
- * order": every card goes back on top, so `piles` is only `['top']`. `purpose: 'bottom'` (D-960, CR 401.4, "Put two of them into your hand and the rest on the
+ * order": every card goes back on top, so `piles` is only `['top']`. `purpose: 'bottom'` (D-324, CR 401.4, "Put two of them into your hand and the rest on the
  * bottom of your library in any order"): the cards the effect did not take, which are still in the library, go to the bottom in the order the owner chooses, so `piles` is
  * only `['bottom']`: the answer has `top` empty and every card in `other`, the last becoming the bottom card (as for a scry). The answer is an `arrangeCards`
  * action that places every card exactly once.

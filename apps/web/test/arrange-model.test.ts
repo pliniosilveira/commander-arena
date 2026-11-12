@@ -224,7 +224,7 @@ describe('words', () => {
     expect(arrangeLabel(d, defaultArrangement(d), o(9), 'Island')).toBe('Island');
   });
 
-  test('the bottom arrangement (D-960, CR 401.4): one pile, titled Bottom, answered in `other` with `top` empty', () => {
+  test('the bottom arrangement (D-324, CR 401.4): one pile, titled Bottom, answered in `other` with `top` empty', () => {
     const d = bottom(3);
     const a = defaultArrangement(d);
     expect(hasOtherPile(d)).toBe(false);

@@ -1050,9 +1050,9 @@ export type Instruction =
       readonly manaValueAtMost?: number;
       /** The most the mana values of the cards taken may add up to (`take.totalManaValue`, D-230). */
       readonly totalManaValue?: number;
-      /** The cards taken are not revealed (`take.hidden`, D-960): "Put two of them into your hand". */
+      /** The cards taken are not revealed (`take.hidden`, D-324): "Put two of them into your hand". */
       readonly hidden?: true;
-      /** `bottomChosen` (D-960): the rest go on the bottom in the order their owner chooses (an `arrange` instruction of purpose 'bottom'). */
+      /** `bottomChosen` (D-324): the rest go on the bottom in the order their owner chooses (an `arrange` instruction of purpose 'bottom'). */
       readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen';
       readonly chosen: readonly ObjectId[] | null;
       readonly left?: readonly ObjectId[];
@@ -1149,7 +1149,7 @@ export type Instruction =
    * `seat` looks at the top `count` cards of their library (fewer when it holds fewer) and arranges
    * them. `arranged` is null until they have answered the `arrangeCards` decision (nothing is asked
    * for no card, and for one card that can only go back where it is); then the library is reordered
-   * and, for a surveil, the cards put into the graveyard are moved. Purpose `bottom` (D-960, CR 401.4:
+   * and, for a surveil, the cards put into the graveyard are moved. Purpose `bottom` (D-324, CR 401.4:
    * "put the rest on the bottom of your library in any order") arranges `cards`, the cards named by
    * the effect that are still in the library, which go to the bottom in the order chosen (answered in
    * `other`); `count` is how many there are. See rules/arrange.ts.

@@ -85,7 +85,7 @@ export function cardNoun(filter: ObjectFilter, many = false): string | null {
 const REST_WORDS: Readonly<Record<'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen', string>> =
   {
     bottomRandom: 'Put the rest on the bottom of your library in a random order',
-    // D-960 (CR 401.4): the owner of the cards chooses the order.
+    // D-324 (CR 401.4): the owner of the cards chooses the order.
     bottomChosen: 'Put the rest on the bottom of your library in any order',
     graveyard: 'Put the rest into your graveyard',
     top: 'Leave the rest on top of your library',
@@ -128,7 +128,7 @@ export function lookAtTopText(
     const which = plain && one ? 'one of them' : `${taken} from among them`;
     return `${look}. Exile ${which} face down. ${REST_WORDS[rest]}`;
   }
-  // D-960 (CR 701.20a): "Put two of them into your hand", with no reveal.
+  // D-324 (CR 701.20a): "Put two of them into your hand", with no reveal.
   if (take.hidden === true) {
     const which =
       plain && one

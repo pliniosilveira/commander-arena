@@ -12,7 +12,7 @@
  *   actions were impossible, so a scry or surveil of a library with no card still emits its event.
  * - CR 701.25a: a surveil puts the cards it does not keep on top into the graveyard, a real zone
  *   change (`zoneChanged` events: the graveyard is public).
- * - CR 401.4 (D-960): "put the rest on the bottom of your library in any order" (purpose `bottom`, after
+ * - CR 401.4 (D-324): "put the rest on the bottom of your library in any order" (purpose `bottom`, after
  *   a `lookTake`): the owner of the cards chooses their order, a second use of the same decision.
  * - CR 401.2: nobody may know the order of a library, so the cards looked at reach only the player
  *   who looks (the decision, shown to that seat alone by `view.ts`); everyone else sees counts.
@@ -32,7 +32,7 @@ const PILES: Readonly<Record<ArrangeInstruction['purpose'], ArrangeCardsDecision
   scry: ['top', 'bottom'],
   surveil: ['top', 'graveyard'],
   reorder: ['top'],
-  // CR 401.4 (D-960): the cards go to the bottom of the library in the order their owner chooses.
+  // CR 401.4 (D-324): the cards go to the bottom of the library in the order their owner chooses.
   bottom: ['bottom'],
 };
 
@@ -46,7 +46,7 @@ export function isArrangement(
   top: readonly ObjectId[],
   other: readonly ObjectId[],
 ): boolean {
-  // A pile the decision lacks takes no card: a reorder has only `top`, the bottom arrangement (D-960) only `other`.
+  // A pile the decision lacks takes no card: a reorder has only `top`, the bottom arrangement (D-324) only `other`.
   if (!piles.includes('top') && top.length > 0) return false;
   if (!piles.some((p) => p !== 'top') && other.length > 0) return false;
   const placed = [...top, ...other];
@@ -68,7 +68,7 @@ export function runArrange(
 ): StepOutcome {
   const { seat, purpose } = instruction;
   const library = getSeat(state, seat).library;
-  // CR 401.4 (D-960): the cards to put on the bottom are named by the effect (they are not always the top of the library any more).
+  // CR 401.4 (D-324): the cards to put on the bottom are named by the effect (they are not always the top of the library any more).
   const looked =
     purpose === 'bottom'
       ? (instruction.cards ?? []).filter((id) => library.includes(id))
@@ -126,7 +126,7 @@ export function runArrange(
 }
 
 /**
- * CR 401.4 (D-960): the cards go to the bottom of the library in the order given, the last being the bottom card. They are already in the library, so nothing changes zone
+ * CR 401.4 (D-324): the cards go to the bottom of the library in the order given, the last being the bottom card. They are already in the library, so nothing changes zone
  * (as for a scry, CR 701.22a): they keep their objects and only the order of the library changes. The owner does not reveal the order: a `cardsBottomed` event tells only how many.
  */
 function putOnBottom(

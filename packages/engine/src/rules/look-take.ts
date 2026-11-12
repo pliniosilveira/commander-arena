@@ -50,7 +50,7 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
     );
   });
   const to = ins.to ?? 'hand';
-  // D-960: "Put two of them into your hand" with only two cards that can be taken: the whole answer is forced, so nobody is asked.
+  // D-324: "Put two of them into your hand" with only two cards that can be taken: the whole answer is forced, so nobody is asked.
   const forced = ins.hidden === true && (ins.min ?? 0) >= legal.length && legal.length > 0;
   const chosenNow = ins.chosen ?? (forced ? legal : null);
   if (chosenNow === null && legal.length > 0) {
@@ -110,7 +110,7 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
   const chosen = chosenNow ?? [];
   const events: GameEvent[] = [{ kind: 'topCardsLooked', seat, count: looked.length }];
   // CR 701.20: a card put into the hand or onto the battlefield is revealed; one exiled face down by Hideaway is not (CR 702.75a), and nor
-  // is one put into the hand by an effect that does not say reveal (D-960).
+  // is one put into the hand by an effect that does not say reveal (D-324).
   if (chosen.length > 0 && to !== 'exileFaceDown' && ins.hidden !== true) {
     const cards = chosen.flatMap((id) => {
       const obj = state.objects[id];
@@ -149,7 +149,7 @@ function putRest(state: GameState, ins: LookTake): StepOutcome {
   // D-151: "look at the top card": what was not taken stays where it is.
   if (ins.rest === 'top') return done(state);
   if (ins.rest === 'graveyard') return done(state, [], moveInstructions(left, 'graveyard'));
-  // CR 401.4 (D-960): the owner of the cards chooses the order they go on the bottom in (rules/arrange.ts).
+  // CR 401.4 (D-324): the owner of the cards chooses the order they go on the bottom in (rules/arrange.ts).
   if (ins.rest === 'bottomChosen') {
     return done(
       state,

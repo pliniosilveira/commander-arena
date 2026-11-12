@@ -1640,7 +1640,7 @@ function runEffect(
             ...(effect.take.totalManaValue === undefined
               ? {}
               : { totalManaValue: effect.take.totalManaValue }),
-            // D-960 (CR 701.20a): "Put two of them into your hand" does not reveal them.
+            // D-324 (CR 701.20a): "Put two of them into your hand" does not reveal them.
             ...(effect.take.hidden === true ? { hidden: true as const } : {}),
             rest: effect.rest,
             chosen: null,

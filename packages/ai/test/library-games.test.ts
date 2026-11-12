@@ -105,7 +105,7 @@ function note(tally: Tally, casual: ReadonlySet<number>, step: StepInfo): void {
       expect(now).toEqual([...action.top, ...rest, ...action.other]);
       tally.toBottom += action.other.length;
     } else if (d.purpose === 'bottom') {
-      // D-960 (CR 401.4): the cards the look did not take go below the rest of the library in the order given; the library holds the rest first.
+      // D-324 (CR 401.4): the cards the look did not take go below the rest of the library in the order given; the library holds the rest first.
       expect(action.top).toEqual([]);
       expect(now).toEqual([...rest, ...action.other]);
       expect(events.find((x) => x.kind === 'cardsBottomed')).toEqual({

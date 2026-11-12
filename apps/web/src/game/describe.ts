@@ -1228,7 +1228,7 @@ export function describeEvent(
         'CR 701.19a',
       );
     case 'cardsBottomed':
-      // CR 702.85a (Cascade): only the count is told, the order is random and hidden. D-960 (CR 401.4): or chosen by the owner, and as hidden.
+      // CR 702.85a (Cascade): only the count is told, the order is random and hidden. D-324 (CR 401.4): or chosen by the owner, and as hidden.
       return line(
         'detail',
         bottomedText(event.seat, event.count, viewer, event.ordered === true),

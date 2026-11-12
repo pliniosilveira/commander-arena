@@ -329,7 +329,7 @@ describe('effects', () => {
     );
   });
 
-  test('look at the top cards, put two into the hand unrevealed and the rest on the bottom in any order (D-960)', () => {
+  test('look at the top cards, put two into the hand unrevealed and the rest on the bottom in any order (D-324)', () => {
     const effect: Effect = {
       kind: 'lookAtTop',
       count: 5,

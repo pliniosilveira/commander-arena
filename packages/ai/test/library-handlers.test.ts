@@ -196,7 +196,7 @@ describe('CasualAgent: put cards from the hand on top', () => {
   });
 });
 
-describe('"put two of them into your hand and the rest on the bottom in any order" (D-960, CR 401.4)', () => {
+describe('"put two of them into your hand and the rest on the bottom in any order" (D-324, CR 401.4)', () => {
   const STOCK = 'SYNTHETIC Stock Up Like';
   const TOP = ['Island', 'Serra Angel', 'Forest', 'Grizzly Bears', 'Plains'];
 

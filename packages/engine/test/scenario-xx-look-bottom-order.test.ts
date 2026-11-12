@@ -1,4 +1,4 @@
-// "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order." (D-960)
+// "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order." (D-324)
 // Pins: CR 401.4 (the owner of cards put into a library at the same time chooses their order, and does not reveal it), CR 401.2 and 701.22a (the cards looked at stay the
 // objects they are: nothing changes zone on the bottom), CR 701.20a (no "reveal" is said, so the cards put into the hand are not shown), CR 401.2 (nobody may know
 // the order of a library: the other players know only counts). The `lookAtTop` effect with `take.hidden` and `rest: 'bottomChosen'`, answered with an `arrangeCards` decision of purpose `bottom`.

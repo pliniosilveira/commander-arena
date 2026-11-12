@@ -7,7 +7,7 @@
  *
  * The piles are the engine's: `top` (put back on top, the first card becomes the top card) and
  * `other` (a scry's bottom pile, the last card becomes the bottom card; a surveil's graveyard; a
- * reorder has none). The one pile of a reorder, and of the `bottom` purpose (D-960, "the rest on
+ * reorder has none). The one pile of a reorder, and of the `bottom` purpose (D-324, "the rest on
  * the bottom of your library in any order", CR 401.4), is kept in `top` here; `arrangeAction` sends
  * the cards of the bottom one to `other`, where the engine wants them.
  */
@@ -155,7 +155,7 @@ export function flipPile(a: Arrangement, decision: Looked, id: ObjectId): Arrang
   return moveToPile(a, decision, id, at.pile === 'top' ? 'other' : 'top');
 }
 
-/** The answer: `top` and `other` as arranged; for the bottom (D-960) the one pile is the engine's `other`. */
+/** The answer: `top` and `other` as arranged; for the bottom (D-324) the one pile is the engine's `other`. */
 export function arrangeAction(
   a: Arrangement,
   decision: Pick<ArrangeCardsDecision, 'purpose'>,

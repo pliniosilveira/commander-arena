@@ -62,7 +62,7 @@ function action(top: readonly ObjectId[], other: readonly ObjectId[]): Action {
 export function arrangementActions(d: ArrangeCardsDecision): Action[] {
   const cards = d.cards;
   const hasOther = d.piles.length > 1;
-  // CR 401.4 (D-960): "the rest on the bottom in any order" has the bottom pile only: every card goes to `other`, in each order.
+  // CR 401.4 (D-324): "the rest on the bottom in any order" has the bottom pile only: every card goes to `other`, in each order.
   if (!d.piles.includes('top')) {
     if (cards.length <= EVERY_ARRANGEMENT_UP_TO)
       return permutations(cards).map((o) => action([], o));

@@ -474,7 +474,7 @@ describe('the log', () => {
     ]);
   });
 
-  test('the cards a look put on the bottom in an order their owner chose are a count only (D-960, CR 401.4)', () => {
+  test('the cards a look put on the bottom in an order their owner chose are a count only (D-324, CR 401.4)', () => {
     expect(
       lines([{ kind: 'cardsBottomed', seat: 0, count: 3, ordered: true }], stateWith(names)),
     ).toEqual(['You put 3 cards on the bottom of your library in an order you chose.']);

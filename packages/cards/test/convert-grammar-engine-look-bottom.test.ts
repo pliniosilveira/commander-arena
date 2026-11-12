@@ -1,4 +1,4 @@
-// Stock Up (issue 25, D-960, CR 401.2, 401.4, 701.20a): the REAL card of the owner's golden corpus (real Oracle text, `fixtures/corpus/golden.jsonl`) read through the grammar
+// Stock Up (issue 25, D-324, CR 401.2, 401.4, 701.20a): the REAL card of the owner's golden corpus (real Oracle text, `fixtures/corpus/golden.jsonl`) read through the grammar
 // only, defined in an engine scenario and played through applyAction. "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of
 // your library in any order." The cards that stand in for the library are real engine fixtures.
 import { readFileSync } from 'node:fs';

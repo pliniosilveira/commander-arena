@@ -219,7 +219,7 @@ export type GameEvent =
   | { readonly kind: 'removedFromCombat'; readonly object: ObjectId }
   /**
    * Cards that were exiled went to the bottom of their owner's library in a random order (CR 702.85a, Cascade,
-   * D-120). Only the number is told: which card went where is hidden, so no zone change is reported. `ordered` (D-960, CR 401.4: "Put two of them into your
+   * D-120). Only the number is told: which card went where is hidden, so no zone change is reported. `ordered` (D-324, CR 401.4: "Put two of them into your
    * hand and the rest on the bottom of your library in any order") says the owner chose the order, not the game's generator; the order is as hidden.
    */
   | {

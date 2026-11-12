@@ -88,7 +88,7 @@ function inOrderWanted(cards: readonly Looked[], board: Board): ObjectId[] {
 export function chooseArrangement(view: GameView, d: ArrangeCardsDecision): Action {
   const cards = lookedAt(view, d.cards);
   const board = boardOf(view);
-  // CR 401.4 (D-960): "the rest on the bottom of your library in any order": all of them go there; the ones it would want first if the library comes round to them lead.
+  // CR 401.4 (D-324): "the rest on the bottom of your library in any order": all of them go there; the ones it would want first if the library comes round to them lead.
   if (d.purpose === 'bottom') {
     return { kind: 'arrangeCards', top: [], other: inOrderWanted(cards, board) };
   }

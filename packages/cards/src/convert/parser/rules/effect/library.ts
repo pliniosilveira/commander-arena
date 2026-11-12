@@ -431,7 +431,7 @@ export const EFFECT_LOOK_SPLIT = defineRule<Clauses>({
 
 /**
  * `effect.look-take-bottom`: "look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order" (Stock Up,
- * D-960, CR 401.2, 401.4): two sentences that `splitSentences` keeps together. The cards put into the hand are not revealed (no "reveal" is said, CR 701.20a), the player who looks
+ * D-324, CR 401.2, 401.4): two sentences that `splitSentences` keeps together. The cards put into the hand are not revealed (no "reveal" is said, CR 701.20a), the player who looks
  * chooses which, and chooses the order of the rest on the bottom (CR 401.4: the owner arranges cards put into a library at the same time). Not read: a number of cards
  * taken that is not smaller than the number looked at (nothing would be left), "a random order" (that is `effect.look-take`), another library, X, another place for either group.
  */

@@ -59,7 +59,7 @@ export const SYNTHETIC_LIBRARY_LIST: readonly CardDefinition[] = [
     'U',
     { kind: 'lookAndReorder', count: 1 },
   ),
-  // D-960 (CR 401.4): look at the top cards, put some into the hand unrevealed, the rest on the bottom in an order the owner chooses.
+  // D-324 (CR 401.4): look at the top cards, put some into the hand unrevealed, the rest on the bottom in an order the owner chooses.
   spell(
     'SYNTHETIC Stock Up Like',
     'Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order.',
