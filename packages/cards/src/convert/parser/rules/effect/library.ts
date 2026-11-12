@@ -429,11 +429,57 @@ export const EFFECT_LOOK_SPLIT = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.look-take-bottom`: "look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order" (Stock Up,
+ * D-960, CR 401.2, 401.4): two sentences that `splitSentences` keeps together. The cards put into the hand are not revealed (no "reveal" is said, CR 701.20a), the player who looks
+ * chooses which, and chooses the order of the rest on the bottom (CR 401.4: the owner arranges cards put into a library at the same time). Not read: a number of cards
+ * taken that is not smaller than the number looked at (nothing would be left), "a random order" (that is `effect.look-take`), another library, X, another place for either group.
+ */
+export const EFFECT_LOOK_TAKE_BOTTOM = defineRule<Clauses>({
+  id: 'effect.look-take-bottom',
+  family: 'effect',
+  leading: ['look'],
+  cites: ['CR 401.2 (Library)', 'CR 401.4 (Library)', 'CR 701.20a (Reveal)'],
+  examples: [
+    'look at the top five cards of your library. put two of them into your hand and the rest on the bottom of your library in any order',
+    'look at the top four cards of your library. put one of them into your hand and the rest on the bottom of your library in any order',
+    'look at the top 3 cards of your library. put 1 of them into your hand and the rest on the bottom of your library in any order',
+  ],
+  rejects: [
+    'look at the top five cards of your library. put two of them into your hand and the rest on the bottom of your library',
+    'look at the top five cards of your library. put two of them into your hand and the rest on the bottom of your library in a random order',
+    'look at the top five cards of your library. put two of them into your hand and the rest into your graveyard',
+    'look at the top five cards of your library. put two of them onto the battlefield and the rest on the bottom of your library in any order',
+    'look at the top five cards of your library. put five of them into your hand and the rest on the bottom of your library in any order',
+    'look at the top two cards of your library. put three of them into your hand and the rest on the bottom of your library in any order',
+    'look at the top five cards of your library. put zero of them into your hand and the rest on the bottom of your library in any order',
+    'look at the top x cards of your library. put two of them into your hand and the rest on the bottom of your library in any order',
+    'look at the top five cards of target player’s library. put two of them into your hand and the rest on the bottom of your library in any order',
+    'look at the top five cards of your library. put two of them into your hand and the rest on top of your library in any order',
+    'look at the top five cards of your library. put two of them into your hand',
+  ],
+  parse: single(
+    'effect.look-take-bottom',
+    satisfy(
+      sequence(
+        literal('look at the top '),
+        AT_LEAST(2),
+        literal(' cards of your library. put '),
+        AT_LEAST(1),
+        literal(' of them into your hand and the rest on the bottom of your library in any order'),
+      ),
+      ([, count, , taken]) => numberOf(taken) < numberOf(count),
+    ),
+    ([, count, , taken]) => ({ verb: 'lookTakeBottom', args: { count, taken } }),
+  ),
+});
+
 export const LIBRARY_RULES = [
   EFFECT_SCRY,
   EFFECT_SURVEIL,
   EFFECT_LOOK_REORDER,
   EFFECT_LOOK_TAKE,
+  EFFECT_LOOK_TAKE_BOTTOM,
   EFFECT_LOOK_SPLIT,
   EFFECT_PUT_HAND_TOP,
 ];

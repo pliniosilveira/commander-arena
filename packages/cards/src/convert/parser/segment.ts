@@ -146,6 +146,13 @@ const SPLIT_THE_TOP =
   /^put \w+ of them into your hand, put \w+ of them on the bottom of your library, and exile \w+ of them\.$/i;
 
 /**
+ * "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order." (Stock Up, D-960, CR 401.4): the second
+ * sentence says what is done with the cards the first one looks at, so the two are read as one instruction (`effect.look-take-bottom`).
+ */
+const PUT_HAND_REST_BOTTOM =
+  /^put \w+ of them into your hand and the rest on the bottom of your library in any order\.$/i;
+
+/**
  * "Reveal cards from the top of your library until you reveal a land card. Put that card onto the battlefield tapped and the rest on the
  * bottom of your library in a random order." (stage P32, D-147): two sentences that are one instruction (what is revealed until, and where
  * the card found and the rest go), kept together so `effect.reveal-until` reads them as one. Only both in a row.
@@ -265,6 +272,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
+        (said(a, LOOK_AT_TOP) && said(b, PUT_HAND_REST_BOTTOM)) ||
         (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)))
     ) {
       out.push({ start: a.start, end: b.end });

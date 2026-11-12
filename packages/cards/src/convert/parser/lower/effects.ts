@@ -956,6 +956,35 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order." (Stock Up, D-960, CR 401.2, 401.4,
+ * 701.20a): the engine's `lookAtTop`, the controller's own library, exactly `taken` cards of any kind put into the hand without being revealed, the rest on the bottom in the order
+ * the controller chooses.
+ */
+const LOOK_TAKE_BOTTOM: Lowering<IrClause, Effects> = {
+  head: 'lookTakeBottom',
+  id: 'lower.look-take-bottom',
+  needs: ['effect:lookAtTop'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    const taken = arg(clause, 'taken');
+    if (!count.ok) return count;
+    if (taken?.kind !== 'number') return failure(clause);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          take: { filter: {}, max: taken.value, min: taken.value, hidden: true },
+          rest: 'bottomChosen',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** "Sacrifice ~" or "sacrifice another permanent / a creature" (CR 701.21). */
 const SACRIFICE: Lowering<IrClause, Effects> = {
   head: 'sacrifice',
@@ -1283,6 +1312,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   LOOK_AND_SPLIT,
   libraryVerb('putFromHandOnTop'),
   LOOK_TAKE,
+  LOOK_TAKE_BOTTOM,
   PUMP,
   GRANT_KEYWORD,
   RESTRICT,

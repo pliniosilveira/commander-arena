@@ -561,7 +561,7 @@ function handlers(
       bar: bar(
         arrangePrompt(d),
         [
-          button('confirm', 'Confirm', () => act(arrangeAction(ui.arrange)), {
+          button('confirm', 'Confirm', () => act(arrangeAction(ui.arrange, d)), {
             primary: true,
             disabled: !arrangementComplete(d, ui.arrange),
           }),

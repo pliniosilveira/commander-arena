@@ -928,6 +928,9 @@ export const LIBRARY_CARD_NAMES = [
   'SYNTHETIC Reorder Three',
   'SYNTHETIC Reorder One',
   'SYNTHETIC Brainstorm Like',
+  // D-960: two cards of the top five into the hand, the rest on the bottom in an order the owner chooses.
+  'SYNTHETIC Stock Up Like',
+  'SYNTHETIC Stock Up Three',
   'SYNTHETIC Put Back One',
   'SYNTHETIC Put Back Two',
   'SYNTHETIC Seer Of The Door',

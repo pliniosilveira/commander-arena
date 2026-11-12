@@ -3361,7 +3361,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
-      if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top'])) {
+      if (e.take?.hidden !== undefined && (e.take.hidden !== true || e.take.to === 'battlefield')) {
+        issue(
+          out,
+          `${path}.take.hidden`,
+          'hidden is true, and only for cards put into the hand (a card put onto the battlefield is public)',
+        );
+      }
+      if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top', 'bottomChosen'])) {
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }
       break;

@@ -84,10 +84,14 @@ function inOrderWanted(cards: readonly Looked[], board: Board): ObjectId[] {
     .map((x) => x.c.id);
 }
 
-/** CR 701.22a, 701.25a: keep what is wanted on top, the rest to the bottom or the graveyard. */
+/** CR 701.22a, 701.25a: keep what is wanted on top, the rest to the bottom or the graveyard; CR 401.4: the cards a look put on the bottom, in an order. */
 export function chooseArrangement(view: GameView, d: ArrangeCardsDecision): Action {
   const cards = lookedAt(view, d.cards);
   const board = boardOf(view);
+  // CR 401.4 (D-960): "the rest on the bottom of your library in any order": all of them go there; the ones it would want first if the library comes round to them lead.
+  if (d.purpose === 'bottom') {
+    return { kind: 'arrangeCards', top: [], other: inOrderWanted(cards, board) };
+  }
   if (d.purpose === 'reorder' || d.piles.length < 2) {
     // "Put them back in any order": every card goes back, the wanted ones first.
     return { kind: 'arrangeCards', top: inOrderWanted(cards, board), other: [] };
