@@ -14,6 +14,7 @@ import { abilityTypeLine } from '../../game/activation';
 import { alternativeBadge } from '../../game/alt-cost';
 import { withAnnouncedX } from '../../game/amount-text';
 import { designationKind, designationTypeLine, ringTemptedOf } from '../../game/designations';
+import { faceDownBadgeTitle, isFaceDownPermanent } from '../../game/face-down-text';
 import {
   exileMarks,
   FACE_DOWN_NAME,
@@ -33,6 +34,7 @@ import { kickedWords, replicatedWords, typeLine } from '../format';
 import { ManaCost } from '../mana';
 import { useAppIfPresent, useDefinedPt } from '../store-context';
 import { Art, artOf } from './art';
+import { FaceDownArt } from './face-down-art';
 import './later.css';
 import { bandBackground, cornerStat, isCrewedVehicle, PRINTED_TITLE } from './resolve';
 
@@ -243,6 +245,22 @@ export function LaterBadges({ object }: { object: ObjectView }) {
   );
 }
 
+/**
+ * "face down" on a face-down permanent (CR 708.2, 701.40a, D-968): the view says what made it face down; its controller's view says more in the title (the card is theirs to look at).
+ */
+export function FaceDownBadge({ object }: { object: ObjectView }) {
+  if (!isFaceDownPermanent(object)) return null;
+  return (
+    <span
+      className="board-badge board-badge-cast"
+      title={faceDownBadgeTitle(object)}
+      data-face-down-badge={object.faceDownBy}
+    >
+      {object.faceDownBy === 'manifest' ? 'manifested' : 'face down'}
+    </span>
+  );
+}
+
 export function CommanderMark({ object }: { object: ObjectView }) {
   if (!object.isCommander) return null;
   return (
@@ -265,6 +283,9 @@ export function CardFace({
   const defined = useDefinedPt(object.id);
   const stat = cornerStat(object, defined);
   const art = artOf(object);
+  // A face-down permanent (D-968) is drawn with the picture of the Manifest token, the same for every card; until it loads, or when it can't, the drawn card stays: a card back
+  // with its label, "Creature" and the 2/2 in the corner.
+  const down = isFaceDownPermanent(object);
   // D-243: the monarch and the Ring (small cards of the emblem strip) have a type line of their own.
   const designation = designationKind(object.id);
   const ringTempted = useAppIfPresent(
@@ -295,30 +316,40 @@ export function CardFace({
       : object.oracleText;
   const paragraphs = text === '' ? [] : text.split('\n');
   return (
-    <div className={`board-card board-card-${variant}${object.isToken ? ' board-card-token' : ''}`}>
-      {variant === 'full' && (
-        // The complete card with its artist credit (Scryfall guidelines, A19). The drawn frame
-        // below stays for assistive technology and as the fallback when the image is missing.
-        <Art
-          name={art.name}
-          back={art.back}
-          isToken={object.isToken || object.emblem === true}
-          version="normal"
-          className="board-card-image"
-        />
-      )}
+    <div
+      className={`board-card board-card-${variant}${object.isToken ? ' board-card-token' : ''}${down ? ' board-card-facedown-permanent' : ''}`}
+      {...(down ? { 'data-face-down-permanent': object.faceDownBy } : {})}
+    >
+      {variant === 'full' &&
+        (down ? (
+          <FaceDownArt version="normal" className="board-card-image" />
+        ) : (
+          // The complete card with its artist credit (Scryfall guidelines, A19). The drawn frame
+          // below stays for assistive technology and as the fallback when the image is missing.
+          <Art
+            name={art.name}
+            back={art.back}
+            isToken={object.isToken || object.emblem === true}
+            version="normal"
+            className="board-card-image"
+          />
+        ))}
       <div className="board-card-head">
         <span className="board-card-name">{stackLabel(object)}</span>
         <CostDisplay object={object} />
       </div>
       <div className="board-card-art" style={{ background: bandBackground(object.colors) }}>
-        <Art
-          name={art.name}
-          back={art.back}
-          isToken={object.isToken || object.emblem === true}
-          version="art_crop"
-          className="board-card-art-img"
-        />
+        {down ? (
+          <FaceDownArt version="art_crop" className="board-card-art-img" />
+        ) : (
+          <Art
+            name={art.name}
+            back={art.back}
+            isToken={object.isToken || object.emblem === true}
+            version="art_crop"
+            className="board-card-art-img"
+          />
+        )}
       </div>
       <div className="board-card-type">
         {object.abilitySource !== undefined
@@ -345,6 +376,7 @@ export function CardFace({
       <div className="board-card-foot">
         <span className="board-card-marks">
           <CommanderMark object={object} />
+          <FaceDownBadge object={object} />
           <CastBadges object={object} />
           <LaterBadges object={object} />
           <CrewBadge object={object} />

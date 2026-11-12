@@ -60,3 +60,23 @@
   margin-top: 2px;
   font-size: calc(11px * var(--text-scale));
 }
+
+/* A face-down permanent (D-968): the card back of a manifested card, drawn until the Manifest token's picture is there (or when it can't be had). */
+.board-card-facedown-permanent {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--card-b) 0 6px,
+    color-mix(in srgb, var(--card-b) 55%, var(--bg-sunken)) 6px 12px
+  );
+  border-style: dashed;
+}
+
+.board-card-facedown-permanent .board-card-name {
+  padding: 2px 6px;
+  background: var(--bg-raised);
+  border-radius: 4px;
+}
+
+.board-card-facedown-permanent .board-card-vanilla {
+  font-style: italic;
+}

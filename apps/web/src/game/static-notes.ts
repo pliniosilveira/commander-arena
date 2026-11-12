@@ -22,6 +22,8 @@ export function staticNotes(
   for (const o of view.battlefield) {
     if (o.isToken) continue;
     const obj = state.objects[o.id];
+    // CR 708.2 (D-965): a face-down permanent has no abilities to put in words: its card's rules are nobody's to read.
+    if (obj?.faceDown !== undefined) continue;
     const card = obj?.card === null || obj === undefined ? undefined : state.cards[obj.card];
     const face =
       card === undefined ? undefined : state.definitions[card.definition]?.faces?.[obj?.face ?? 0];

@@ -16,6 +16,7 @@ import { alternativeBadge } from '../../game/alt-cost';
 import { chosenLabel } from '../../game/chosen';
 import { additionalCostChoiceText, additionalCostsText } from '../../game/cost-text';
 import { designationKind } from '../../game/designations';
+import { realCardOf } from '../../game/face-down-text';
 import { controlFact } from '../../game/korvold-text';
 import { laterFacts } from '../../game/later-text';
 import { castCostChanged, costsX, costText, symbolsText, withX } from '../decisions/cast-cost';
@@ -174,6 +175,17 @@ function PreviewDetails({ object }: { object: ObjectView }) {
   if (isCrewedVehicle(object)) facts.push('Crewed');
   if (object.isToken) facts.push('Token');
   facts.push(...faceFacts(object));
+  // CR 701.40a, 701.40b (D-968): a face-down permanent says what made it face down and, to its controller, what turning it face up costs.
+  if (object.faceDown === true && object.faceDownBy !== undefined) {
+    facts.push(object.faceDownBy === 'manifest' ? 'Manifested: face down' : 'Face down');
+    if (object.hiddenFace !== undefined) {
+      facts.push(
+        object.turnFaceUpCost === undefined
+          ? 'It can’t be turned face up: its card is not a creature card with a mana cost'
+          : `You may turn it face up for ${object.turnFaceUpCost.map((c) => `{${c}}`).join('') || '{0}'}`,
+      );
+    }
+  }
   if (view !== null) facts.push(...laterFacts(object, view.viewer));
   const kicked = kickedWords(object);
   if (kicked !== null) facts.push(`${kicked.charAt(0).toUpperCase()}${kicked.slice(1)}`);
@@ -335,6 +347,8 @@ export function PreviewPanel() {
   const activated = useMemo(() => activatedStackIds(log), [log]);
   const object = view !== null && id !== null ? findObject(view, id) : null;
   const pinned = source === 'pinned' && object !== null;
+  // The card behind the viewer's own face-down permanent (D-968), or null.
+  const real = object === null ? null : realCardOf(object);
   return (
     <aside className="preview-panel board-preview" aria-label="Card preview" aria-live="polite">
       {object === null ? (
@@ -361,8 +375,15 @@ export function PreviewPanel() {
               <span className="board-dim">Right-click pins, Esc unpins</span>
             )}
           </div>
+          {real !== null && (
+            // CR 708.5 (D-968): the player who controls a face-down permanent may look at the card. The marker says what the others see.
+            <p className="board-flag" data-preview-face-down>
+              Face down. Only you can see this card; {object.name}, a {object.power}/{object.toughness} creature, is
+              what everyone sees.
+            </p>
+          )}
           <div className="board-preview-card" data-preview-id={object.id}>
-            <CardFace object={object} variant="full" activated={activated.has(object.id)} />
+            <CardFace object={real ?? object} variant="full" activated={activated.has(object.id)} />
           </div>
           <PreviewDetails object={object} />
           <FaceList object={object} />

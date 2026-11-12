@@ -185,6 +185,8 @@ describe('who manifests, and whose library (CR 701.40a, 110.2a)', () => {
     expect(brute.controller).toBe(0);
     expect(brute.owner).toBe(1);
     g.expect.librarySize(1, FILLER.length);
+    // The event says whose library it came from, and names no card.
+    g.expect.eventLog([{ kind: 'manifested', seat: 0, from: 1 }]);
   });
 
   test('each player manifests, one at a time, in turn order, with their own labels', () => {
@@ -242,6 +244,7 @@ describe('the events', () => {
     expect(manifested).toEqual({
       kind: 'manifested',
       seat: 0,
+      from: 0,
       object: g.id({ name: BRUTE, zone: 'battlefield' }),
     });
   });

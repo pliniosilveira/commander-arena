@@ -53,6 +53,8 @@ export function stackLabel(o: Pick<ObjectView, 'name' | 'chapter'>): string {
 export function loreCountIn(state: GameState, id: ObjectId): number | null {
   const obj: GameObject | undefined = state.objects[id];
   if (obj === undefined) return null;
+  // CR 708.2 (D-965): a face-down permanent has no subtypes: it is no Saga to anyone.
+  if (obj.faceDown !== undefined) return null;
   let subtypes: readonly string[] = [];
   if (obj.token !== null) {
     subtypes = obj.token.characteristics.subtypes ?? [];

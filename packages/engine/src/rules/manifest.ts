@@ -39,7 +39,10 @@ export function manifestTop(
   }
   return {
     state: moved.state,
-    events: [...moved.events, { kind: 'manifested', seat: manifesting, object: moved.newObject }],
+    events: [
+      ...moved.events,
+      { kind: 'manifested', seat: manifesting, from, object: moved.newObject },
+    ],
     manifested: true,
   };
 }

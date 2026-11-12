@@ -5,6 +5,7 @@
  * flows take over once an item is chosen.
  */
 import type { Action, ObjectId, PriorityDecision } from '@commander-arena/engine';
+import { turnUpDetail, turnUpLabel } from '../../game/face-down-text';
 import { specialActionDetail, specialActionLabel } from '../../game/later-text';
 import { activationLabel } from './ability-label';
 import { castAction, castLabel } from './flashback';
@@ -46,7 +47,9 @@ export function hasActivation(decision: PriorityDecision, id: ObjectId): boolean
 /** True when the decision lists a special action (Suspend, Foretell: D-128) for this card in the hand. */
 export function hasSpecialAction(decision: PriorityDecision, id: ObjectId): boolean {
   return decision.options.some(
-    (o) => (o.kind === 'suspend' || o.kind === 'foretell') && o.object === id,
+    (o) =>
+      (o.kind === 'suspend' || o.kind === 'foretell' || o.kind === 'turnFaceUp') &&
+      o.object === id,
   );
 }
 
@@ -97,6 +100,16 @@ export function menuItems(decision: PriorityDecision, id: ObjectId, index?: Inde
       label: specialActionLabel(o.kind, card),
       detail: specialActionDetail(o.kind, card),
       action: { kind: o.kind, object: id },
+    });
+  }
+  // CR 116.2b, 701.40b (D-963): turning a face-down permanent face up, "Turn face up {2}{G}": a special action of the permanent.
+  for (const o of decision.options) {
+    if (o.kind !== 'turnFaceUp' || o.object !== id) continue;
+    items.push({
+      key: 'turnFaceUp',
+      label: turnUpLabel(card),
+      detail: turnUpDetail(),
+      action: { kind: 'turnFaceUp', object: id },
     });
   }
   for (const o of decision.options) {

@@ -43,6 +43,7 @@ export { EMPTY_MANA_COST } from './mana/types';
 export { createRng, nextInt, nextUint32, shuffle } from './rng/index';
 export type * from './rng/types';
 export { defaultDivision } from './rules/combat-flow';
+export { faceDownLabel } from './rules/face-down';
 export type { ControlEnd } from './rules/control';
 export type { DeckConfig, GameConfig } from './rules/setup';
 export { createGame } from './rules/setup';
