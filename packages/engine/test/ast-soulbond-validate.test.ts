@@ -345,6 +345,23 @@ describe('the condition paired', () => {
     expect(messages(modal)).toContain("'paired' is valid only");
   });
 
+  test('is refused in the costs of an additional-cost choice of a face (D-985)', () => {
+    const choice = singleFace({
+      name: 'SYNTHETIC Validation Spell',
+      manaCost: ['1'],
+      types: ['instant'],
+      colors: [],
+      colorIdentity: [],
+      oracleText: 'SYNTHETIC',
+      spell: { effect: draw as never },
+      additionalCostChoice: [
+        [{ kind: 'payLife', amount: { kind: 'fixed', value: 1, condition: PAIRED } }],
+        [{ kind: 'mana', symbols: ['2'] }],
+      ],
+    } as never);
+    expect(messages(choice)).toContain("'paired' is valid only");
+  });
+
   test('is refused in the condition of an alternative cost (a card that is cast is not a permanent), a mana ability and a replacement', () => {
     const alternative = singleFace({
       name: 'SYNTHETIC Validation Spell',

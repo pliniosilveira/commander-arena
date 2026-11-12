@@ -94,15 +94,8 @@ export interface LowerContext {
    */
   dieSides: number | null;
   /**
-   * True while the clauses of a `playersMay` sentence whose asked players do the instruction themselves are lowered (D-985, `runsAs: 'chooser'`, CR 608.2d): the engine
-   * then runs them with the asked player as "you" (the controller of the delayed ability they create, the one who acts), so a clause whose text says "you" or "your" of the
-   * ability's own controller ("... at the beginning of your next upkeep", "return it" for the controller to decide) would be read for the wrong player. A rule of that kind
-   * refuses when this is set.
-   */
-  askedPlayerActs: boolean;
-  /**
    * The normalized text of the ability the spans of the IR point into (D-985): the one place a lowering can tell the "you" the text says (the controller) from the "you"
-   * the engine reads for a player asked who acts (`askedPlayerActs`). Empty where the lowering has no text (a quotation lowered on its own): a rule that needs it refuses then.
+   * the engine reads for a player asked who acts (`runsAs: 'chooser'`). Empty where the lowering has no text (a quotation lowered on its own): a rule that needs it refuses then.
    */
   text: string;
   /**
@@ -230,7 +223,6 @@ export function newContext(
     usedGraveyardSource: false,
     dieSides: null,
     staticCondition: false,
-    askedPlayerActs: false,
     text: '',
     interveningCondition: false,
     meldPartner: null,

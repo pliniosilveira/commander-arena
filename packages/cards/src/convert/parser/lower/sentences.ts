@@ -1325,6 +1325,12 @@ function lowerStep(
 const CONTROLLER_WORD = /\byou(?:r|rs|rself|'(?:ve|re|ll|d))?\b/iu;
 
 /**
+ * A word that is relative to the controller too: "an opponent" and "an opponent's" are the opponents of the controller (CR 102.2), and the engine would read them as the opponents of the
+ * asked player (`runsAs: 'chooser'`); "another player" and "other players" are the players but the controller. The selector of the sentence ("each opponent may") is not tested, only its clauses.
+ */
+const OTHER_PLAYER_WORD = /\b(?:opponents?|another player|other players?)\b/iu;
+
+/**
  * "Each player may discard a card." and "Target opponent may have you draw three cards. If the player doesn't, you mill three cards." (stage P52, D-210, CR 608.2d,
  * 101.4): the players the sentence names are asked, in turn order, whether to do its clauses; with "have you" the controller does them, otherwise the player asked is "you"
  * in them. A sentence "If the player doesn't, ..." right after it says what is done for a player who declines. Anything else about the sentence (a test, a "where",
@@ -1369,11 +1375,17 @@ function lowerPlayersMay(
     if (ctx.text === '' || CONTROLLER_WORD.test(ctx.text.slice(start, end))) {
       return refused(refuse(sentence));
     }
+    // D-985: the same for a word relative to the controller that is not "you": "each opponent may draw a card for each creature an opponent controls" counts the creatures of the
+    // opponents of the asked player. Only the clauses are read, not the selector.
+    const clauses = [
+      ...sentence.clauses,
+      ...(next?.condition?.test.kind === 'declined' ? next.clauses : []),
+    ];
+    if (clauses.some((c) => OTHER_PLAYER_WORD.test(ctx.text.slice(c.span.start, c.span.end)))) {
+      return refused(refuse(sentence));
+    }
   }
-  const before = ctx.askedPlayerActs;
-  ctx.askedPlayerActs = askedActs;
   const body = lowerClauses(sentence.clauses, ctx);
-  ctx.askedPlayerActs = before;
   if (!body.ok) return refused(body);
   const next = sentences[i + 1];
   const declines = next?.condition?.test.kind === 'declined';
@@ -1389,9 +1401,7 @@ function lowerPlayersMay(
     ) {
       return refused(refuse(next));
     }
-    ctx.askedPlayerActs = askedActs;
     const other = lowerClauses(next.clauses, ctx);
-    ctx.askedPlayerActs = before;
     if (!other.ok) return refused(other);
     otherwise = oneEffect(other.value);
   }

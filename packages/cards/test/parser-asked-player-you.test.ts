@@ -48,6 +48,73 @@ describe('a "you" of the controller in a sentence the asked player acts in is no
   });
 });
 
+// An "opponent" of the text is an opponent of the controller; the engine would read it as an opponent of the player asked (D-985, CR 102.2).
+describe('an "opponent" of the controller in a sentence the asked player acts in is not read', () => {
+  test.each([
+    [
+      'a token per creature',
+      'each opponent may create a Treasure token for each creature an opponent controls',
+    ],
+    ['destroy each', 'each opponent may destroy each creature an opponent controls'],
+    ['exile each', 'each opponent may exile each creature an opponent controls'],
+    ['tap each', 'each opponent may tap each creature an opponent controls'],
+    ['untap each', 'each opponent may untap each creature an opponent controls'],
+    [
+      'a counter on each',
+      'each opponent may put a +1/+1 counter on each creature an opponent controls',
+    ],
+    ['draw per land', 'each opponent may draw a card for each land an opponent controls'],
+    [
+      'gain life equal to a count',
+      'each opponent may gain life equal to the number of creatures an opponent controls',
+    ],
+    [
+      'lose life equal to a count',
+      'each opponent may lose life equal to the number of creatures an opponent controls',
+    ],
+    [
+      'draw cards equal to a count',
+      'each opponent may draw cards equal to the number of creatures an opponent controls',
+    ],
+    ['all creatures', 'each opponent may exile all creatures an opponent controls'],
+    [
+      'all nonland permanents',
+      'each opponent may exile all nonland permanents an opponent controls',
+    ],
+    ['a graveyard of an opponent', "each opponent may exile each opponent's graveyard"],
+    [
+      'a second instruction',
+      'each opponent may sacrifice a creature, then exile all creatures an opponent controls',
+    ],
+    ['each player', 'each player may draw a card for each creature an opponent controls'],
+    ['target opponent', 'target opponent may draw a card for each creature an opponent controls'],
+    // These two do not parse at all today; pinned so that a later grammar rule does not read them as supported.
+    ['another player', 'each opponent may draw a card for each creature another player controls'],
+    ['other players', 'each opponent may exile all creatures other players control'],
+  ])('is not read: %s', (_why, sentence) => {
+    expect(status(`When ~ enters, ${sentence}.`)).toBe('unsupported');
+  });
+
+  test.each([
+    'draw a card for each creature an opponent controls',
+    'destroy each creature an opponent controls',
+    'gain life equal to the number of creatures an opponent controls',
+  ])('nor in what is done for a player who declines: %s', (clause) => {
+    expect(
+      status(`When ~ enters, each opponent may discard a card. If the player doesn't, ${clause}.`),
+    ).toBe('unsupported');
+  });
+
+  test('the controller acts with "have you": "an opponent" is the opponent of the controller', () => {
+    for (const sentence of [
+      'each opponent may have you draw a card for each creature an opponent controls',
+      'target opponent may have you create a Treasure token for each creature an opponent controls',
+    ]) {
+      expect(status(`When ~ enters, ${sentence}.`), sentence).toBe('supported');
+    }
+  });
+});
+
 describe('a quotation is lowered with no text of its own, so a sentence that asks another player there is not read', () => {
   test.each([
     [
