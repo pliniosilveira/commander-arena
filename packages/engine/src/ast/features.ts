@@ -768,6 +768,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playFromGraveyardOnceEachTurn',
     // D-179: "Your opponents can't cast spells during your turn."
     'opponentsCantCastOnYourTurn',
+    // D-996: "Your opponents can't cast spells with mana value 3 or less."
+    'opponentsCantCastSpells',
     // D-185: "Creature spells you control can't be countered."
     'spellsCantBeCountered',
     // D-192: "Damage isn't removed from this creature during cleanup steps."
@@ -1257,6 +1259,8 @@ export const STATIC_KINDS = [
   'cantCastThis',
   /** "Your opponents can't cast spells during your turn" (CR 101.2, D-179): the engine's `opponentsCantCastOnYourTurn`. */
   'opponentsCantCastOnYourTurn',
+  /** "Your opponents can't cast spells with mana value 3 or less" (CR 101.2, D-996): the engine's `opponentsCantCastSpells`. */
+  'opponentsCantCastSpells',
   /** "Creature spells you control can't be countered" (CR 101.2, 701.6a, D-185): the engine's `spellsCantBeCountered`. */
   'spellsCantBeCountered',
   /** "Creatures can't block unless their controller pays {1} for each of those creatures" (CR 509.1d, D-149): `blockTax`. */

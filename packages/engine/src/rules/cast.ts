@@ -71,6 +71,7 @@ import {
   spellXCostOf,
 } from './cast-cost';
 import { answerGift, toGift } from './cast-gift';
+import { leastAllowedX } from './cast-restrictions';
 import { commanderCreatureTypes } from './commander-identity';
 import { derive } from './derive';
 import { graveyardPlayPermission, markGraveyardPlay, riderOf } from './graveyard-play';
@@ -572,7 +573,8 @@ function toX(state: GameState, events: GameEvent[]): Result {
         sourceName: info?.name ?? '',
         sourceOracleText: info?.oracleText ?? '',
         purpose: 'spell',
-        min: 0,
+        // D-996 (CR 202.3e): "Your opponents can't cast spells with mana value 3 or less" takes the X that leaves the spell inside it out of the offer.
+        min: Math.min(leastAllowedX(state, casting.seat, spell, true) ?? 0, max),
         max,
         perX,
       },

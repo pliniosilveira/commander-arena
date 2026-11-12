@@ -18,7 +18,11 @@ import {
   castAs,
   isNamedAlternative,
 } from './cast-cost';
-import { castForbiddenByOpponentsPermanent, castForbiddenByOwnAbility } from './cast-restrictions';
+import {
+  castForbiddenByOpponentsPermanent,
+  castForbiddenByOwnAbility,
+  leastAllowedX,
+} from './cast-restrictions';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
@@ -33,6 +37,7 @@ import { matchesFilter } from './select';
 import { splitSecondOnStack } from './split-second';
 import { landPlaysAllowed } from './statics';
 import { slotCanBeFilled } from './target-choice';
+import { hasX, spellXCost } from './x-value';
 
 export type { CastAlternative, CastFrom };
 
@@ -429,8 +434,14 @@ export function canCast(
   if (types.includes('land')) return false;
   // CR 101.2 (D-149): "You can't cast ~ during your first, second, or third turns of the game".
   if (castForbiddenByOwnAbility(state, seat, spell)) return false;
-  // CR 101.2 (D-179): "Your opponents can't cast spells during your turn".
-  if (castForbiddenByOpponentsPermanent(state, seat)) return false;
+  // CR 101.2 (D-179): "Your opponents can't cast spells during your turn"; (D-996) "... with mana value 3 or less", read with the least X the spell can be cast with.
+  const least = leastAllowedX(
+    state,
+    seat,
+    spell,
+    hasX(spellXCost(faceOf(state, spell), alternative)),
+  );
+  if (least === null) return false;
   if (!timingAllows(state, seat, spell)) return false;
   // CR 702.33g, 601.2c (D-181): a spell whose targets depend on the kicker can be cast either way; it is castable if one way has its targets and its cost.
   const kickedWays = hasKickedTargets(faceOf(state, spell)) ? [false, true] : [false];
@@ -444,6 +455,7 @@ export function canCast(
         alternative,
         kicked,
         excluded: obj.id,
+        x: least,
         // CR 702.120a (D-145): a modal spell with escalate needs at least the mana for the fewest modes it must choose.
         modes: modalOfSpellText(faceOf(state, spell)?.spell)?.choose.min ?? 0,
       }),
@@ -485,7 +497,7 @@ export function canCastDuringResolution(
   const spell = castAs(obj, seat, 0);
   if (derive(state, spell).types.includes('land')) return false;
   if (castForbiddenByOwnAbility(state, seat, spell)) return false; // CR 101.2 (D-149)
-  if (castForbiddenByOpponentsPermanent(state, seat)) return false; // CR 101.2 (D-179)
+  if (castForbiddenByOpponentsPermanent(state, seat, spell)) return false; // CR 101.2 (D-179, D-996: a free cast has X 0, CR 107.3b)
   const kickedWays = hasKickedTargets(faceOf(state, spell)) ? [false, true] : [false];
   const from = obj.zone;
   return kickedWays.some(

@@ -175,6 +175,14 @@ export function checkArtifactsStatic(s: StaticEffect, path: string, out: AstIssu
         checkDescribing(s.spells, `${path}.spells`, out);
       }
       return true;
+    case 'opponentsCantCastSpells':
+      // D-996: "Your opponents can't cast spells with mana value 3 or less": the filter describes the spell as it is on the stack.
+      if (s.spells === undefined || s.spells === null || typeof s.spells !== 'object') {
+        issue(out, `${path}.spells`, 'opponentsCantCastSpells needs a filter of the spells');
+      } else {
+        checkDescribing(s.spells, `${path}.spells`, out);
+      }
+      return true;
     case 'castAsThoughFlash':
       if (s.spells === undefined || s.spells === null || typeof s.spells !== 'object') {
         issue(out, `${path}.spells`, 'castAsThoughFlash needs a filter of the spells');

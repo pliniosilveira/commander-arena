@@ -251,4 +251,38 @@ export const SYNTHETIC_MELD_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // ---- The cast restriction of a melded face (D-996): "Your opponents can't cast spells with mana value 3 or less."
+  singleFace({
+    name: 'SYNTHETIC Gatekeeper',
+    manaCost: ['2', 'W'],
+    types: ['creature'],
+    subtypes: ['Human', 'Knight'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    power: 2,
+    toughness: 2,
+    oracleText: "Your opponents can't cast spells with mana value 3 or less.",
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'opponentsCantCastSpells',
+          spells: { manaValue: { cmp: 'atMost', value: 3 } },
+        },
+      },
+    ],
+  }),
+  // {X}{R} instant: "You gain X life." A spell with an {X} has the mana value its announced X gives it (CR 202.3e).
+  singleFace({
+    name: 'SYNTHETIC X Surge',
+    manaCost: ['X', 'R'],
+    types: ['instant'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText: 'You gain X life.',
+    spell: {
+      x: true,
+      effect: { kind: 'gainLife', player: { kind: 'you' }, amount: { kind: 'x' } },
+    },
+  }),
 ];

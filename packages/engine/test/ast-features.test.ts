@@ -177,6 +177,8 @@ describe('the dimensions', () => {
       'playFromGraveyardOnceEachTurn',
       // D-179: "Your opponents can't cast spells during your turn."
       'opponentsCantCastOnYourTurn',
+      // D-996: "Your opponents can't cast spells with mana value 3 or less."
+      'opponentsCantCastSpells',
       // D-185: "Creature spells you control can't be countered."
       'spellsCantBeCountered',
       // D-192: "Damage isn't removed from this creature during cleanup steps."

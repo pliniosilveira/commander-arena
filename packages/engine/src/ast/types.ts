@@ -4041,6 +4041,14 @@ export type StaticEffect =
    */
   | { readonly kind: 'opponentsCantCastOnYourTurn' }
   /**
+   * "Your opponents can't cast spells with mana value 3 or less." (CR 101.2, 601.2, 604.1, 202.3, D-996): while the permanent has the ability, no opponent of its
+   * controller can cast a spell that `spells` describes (the spell as it is on the stack, CR 601.2a: its mana value, types, colors; the filter names no zone and no
+   * controller), by any means. A spell with an {X} in its mana cost has the mana value its announced X gives it (CR 202.3e), so its X can not be less than what takes it
+   * out of the filter (the announcement offers only those values, and the spell can be cast only if one of them can be paid). Activated abilities, lands and
+   * special actions are not spells and are not stopped. Read where the engine decides whether a card can be cast (`rules/cast-restrictions.ts`).
+   */
+  | { readonly kind: 'opponentsCantCastSpells'; readonly spells: ObjectFilter }
+  /**
    * "Creature spells you control can't be countered." (CR 101.2, 701.6a, 604.1, D-185): while the permanent has the ability, a spell on the stack
    * that `spells` matches, as it is on the stack (its types, colors, mana value; `controller` is relative to the controller of the permanent: "you"),
    * is not countered by a spell or ability that tries to (it stays on the stack and resolves). It is a static ability of a permanent on the

@@ -177,6 +177,67 @@ describe('only the two cards of one meld pair can be melded (CR 701.42b)', () =>
   });
 });
 
+describe('what can not be melded stays where it is (CR 701.42b, 701.42c)', () => {
+  test('a token copy named like the counterpart is melded only when no real card is there to take: here only the token, so both are exiled and the card stays exiled', () => {
+    const g = base()
+      .seat(0)
+      .battlefield('Island', 'Island', 'Island', 'Island', 'Island')
+      .battlefield(DUSK, { label: 'dusk' })
+      .battlefield(DAWN, { label: 'dawn' })
+      .hand('SYNTHETIC Echo Image', 'SYNTHETIC Meld Exile')
+      .build();
+    g.act(0).cast('SYNTHETIC Echo Image', { targets: ['dawn'], pay: true });
+    settle(g);
+    g.act(0).cast('SYNTHETIC Meld Exile', { targets: ['dawn'], pay: true });
+    settle(g);
+    g.expect.zone(DAWN, 'exile');
+    const mark = g.mark();
+    g.advanceTo('end');
+    settle(g);
+    // CR 701.42c: the card and the token were exiled and could not be melded; the card stays exiled, the token ceased to exist.
+    g.expect.zone(DUSK, 'exile');
+    expect(g.view(0).battlefield.filter((o) => o.name === DAWN)).toHaveLength(0);
+    expect(g.eventsSince(mark).some((e) => e.kind === 'meldFailed')).toBe(true);
+    expect(g.eventsSince(mark).some((e) => e.kind === 'melded')).toBe(false);
+    expect(checkInvariants(g.state)).toEqual([]);
+  });
+
+  test('with the real card there too, the card is the one that melds, whichever the battlefield lists first', () => {
+    const g = base()
+      .seat(0)
+      .battlefield('Island', 'Island', 'Island', 'Island')
+      .battlefield(DUSK, { label: 'dusk' })
+      .battlefield(DAWN, { label: 'dawn' })
+      .hand('SYNTHETIC Echo Image')
+      .build();
+    g.act(0).cast('SYNTHETIC Echo Image', { targets: ['dawn'], pay: true });
+    settle(g);
+    g.advanceTo('end');
+    settle(g);
+    expect(viewOf(g, 'dusk').name).toBe(TITAN);
+    expect(g.object('dawn')).toBe(g.object('dusk'));
+    // The token copy of the counterpart was not touched.
+    expect(g.view(0).battlefield.filter((o) => o.name === DAWN)).toHaveLength(1);
+  });
+});
+
+describe('a commander that is the card without the meld ability (CR 903.3b)', () => {
+  test('is still the commander of the melded permanent, and the first card of it', () => {
+    const g = base()
+      .seat(0)
+      .battlefield(DUSK, { label: 'dusk' })
+      .battlefield(DAWN, { label: 'dawn', commander: true })
+      .build();
+    g.advanceTo('end');
+    settle(g);
+    expect(viewOf(g, DUSK).name).toBe(TITAN);
+    expect(viewOf(g, DUSK).isCommander).toBe(true);
+    expect(g.state.cards[g.object(DUSK).card as never]?.isCommander).toBe(true);
+    expect(g.state.commanderWatch).toEqual([]);
+    expect(checkInvariants(g.state)).toEqual([]);
+  });
+});
+
 describe('cast, copied, turned over (CR 712.8b, 712.9, 707.8, 712.16)', () => {
   test('a meld card is cast as its front face and enters as that card, not melded (CR 712.8b, 712.8a)', () => {
     const g = scenario()

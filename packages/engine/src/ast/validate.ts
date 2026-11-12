@@ -456,6 +456,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'takeFromLinkedExile':
     case 'castAsThoughFlash':
     case 'spellsCantBeCountered':
+    case 'opponentsCantCastSpells':
       checkArtifactsStatic(s, path, out);
       break;
     case 'restrictionUnless':
