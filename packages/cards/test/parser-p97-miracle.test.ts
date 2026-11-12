@@ -5,7 +5,7 @@
 import type { AlternativeCost } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
 import { parseOnly } from './convert-grammar-helpers';
-import { syntheticCard } from './convert-helpers';
+import { syntheticCard, syntheticFace } from './convert-helpers';
 import { dropped, type FaceType, readAll } from './parser-p5-helpers';
 
 const ENTREAT = 'Create X 4/4 white Angel creature tokens with flying.\nMiracle {X}{W}{W}';
@@ -109,5 +109,68 @@ describe('keyword.miracle: "Miracle {X}{W}{W}" (CR 702.94a; backlog: 14 cards)',
     expect(imported.support.reasons).toEqual([]);
     expect(imported.support.status).toBe('supported');
     expect(imported.definition.faces[0]?.alternativeCosts).toEqual([miracle('X', 'W', 'W')]);
+  });
+
+  // CR 702.94a: the engine reads the miracle cost of a card's front face only (`miracleCostOf`), so a miracle line on any other face
+  // would be accepted and then never offered. An entry the engine would not use is refused, never accepted (AGENTS.md: honesty).
+  test.each([
+    ['transform', 'Transform'],
+    ['modal_dfc', 'Modal DFC'],
+    ['split', 'Split'],
+  ])(
+    'a miracle line on the second face of a %s card is refused, not accepted (SYNTHETIC)',
+    (layout) => {
+      const front = syntheticCard(
+        {
+          name: 'SYNTHETIC Front',
+          manaCost: '{1}{U}',
+          typeLine: 'Sorcery',
+          oracleText: 'Draw a card.',
+          colors: ['U'],
+        },
+        { layout, colorIdentity: ['U'] },
+      );
+      const back = syntheticFace({
+        name: 'SYNTHETIC Back',
+        manaCost: layout === 'transform' ? '' : '{U}',
+        typeLine: 'Sorcery',
+        oracleText: 'Draw a card.\nMiracle {U}',
+        colors: ['U'],
+      });
+      const card = { ...front, faces: [...front.faces, back] };
+      const imported = parseOnly(card);
+      expect(imported.support.status).not.toBe('supported');
+      expect(JSON.stringify(imported.support.reasons)).toContain('miracle');
+    },
+  );
+
+  test('a miracle line on the front face of a two-faced card is still read (SYNTHETIC)', () => {
+    const front = syntheticCard(
+      {
+        name: 'SYNTHETIC Front Miracle',
+        manaCost: '{1}{U}',
+        typeLine: 'Sorcery',
+        oracleText: 'Draw a card.\nMiracle {U}',
+        colors: ['U'],
+      },
+      { layout: 'modal_dfc', colorIdentity: ['U'] },
+    );
+    const card = {
+      ...front,
+      faces: [
+        ...front.faces,
+        syntheticFace({
+          name: 'SYNTHETIC Other Side',
+          manaCost: '{U}',
+          typeLine: 'Sorcery',
+          oracleText: 'Draw a card.',
+          colors: ['U'],
+        }),
+      ],
+    };
+    const imported = parseOnly(card);
+    expect(imported.support.reasons).toEqual([]);
+    expect(imported.support.status).toBe('supported');
+    expect(imported.definition.faces[0]?.alternativeCosts).toEqual([miracle('U')]);
   });
 });

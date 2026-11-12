@@ -467,7 +467,9 @@ describe('what the player can answer, and whose turn it is', () => {
     ).toEqual(['acceptOptional', 'declineOptional']);
   });
 
-  test('the other player is not asked, and sees only that seat 0 is deciding (not what about)', () => {
+  // Known limit (D-971, docs/ROADMAP.md): priority is not a pending decision, so `decidingSeat` set in the draw step tells an observer that
+  // the card drawn has miracle. Nothing else of the question is in the other player's view (no `pending`, no card).
+  test('the other player is not asked and sees no question; decidingSeat shows seat 0 is deciding (known limit)', () => {
     const g = drawStep(BEAST, (b) => b.battlefield('Forest'));
     const theirs = getView(g.state, 1);
     expect(theirs.pending).toBeNull();
@@ -601,5 +603,26 @@ describe('validation and support', () => {
     const one = { kind: 'miracle', cost: [{ kind: 'mana', symbols: ['W'] }] };
     const card = { ...base, faces: [{ ...face, alternativeCosts: [one, one] }] } as never;
     expect(validateCard(card).length).toBeGreaterThan(0);
+  });
+
+  // CR 702.94a: the engine reads the miracle cost of the front face only, so another face with one is refused (D-971).
+  test('a miracle cost on a face other than the front face is refused, on the front face it is valid', () => {
+    const base = syntheticCard(HOST);
+    const face = base.faces[0];
+    if (face === undefined) throw new Error('no face');
+    const miracle = { kind: 'miracle', cost: [{ kind: 'mana', symbols: ['W'] }] };
+    const { alternativeCosts: _own, ...plain } = face;
+    const withCosts = (costs: unknown[] | undefined) =>
+      costs === undefined ? plain : { ...plain, alternativeCosts: costs };
+    const two = (front: unknown[] | undefined, back: unknown[] | undefined) =>
+      ({
+        ...base,
+        layout: 'modal_dfc',
+        faces: [withCosts(front), withCosts(back)],
+      }) as never;
+    expect(validateCard(two([miracle], undefined))).toEqual([]);
+    const issues = validateCard(two(undefined, [miracle]));
+    expect(JSON.stringify(issues)).toContain('miracle on a face other than the front face');
+    expect(JSON.stringify(issues)).toContain('faces[1].alternativeCosts');
   });
 });
