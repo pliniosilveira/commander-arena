@@ -123,13 +123,31 @@ export function mayPlayFromExile(state: GameState, seat: SeatId, obj: GameObject
   );
 }
 
+/**
+ * CR 601.2, 305.1, 611.2a (D-327): whether an effect ("Mill a card. You may play that card this turn.") lets `seat` cast or play the card `obj` in a
+ * graveyard: a `playPermission` of the seat that names this very object (a card that left the graveyard is a new one, CR 400.7) and has not ended.
+ * The effect names only cards the seat owns (`runMayPlay`).
+ */
+export function mayPlayFromGraveyard(state: GameState, seat: SeatId, obj: GameObject): boolean {
+  return (
+    obj.zone === 'graveyard' &&
+    obj.owner === seat &&
+    state.continuousEffects.some(
+      (e) =>
+        e.change.kind === 'playPermission' && e.change.seat === seat && e.objects.includes(obj.id),
+    )
+  );
+}
+
 export function canPlayLand(state: GameState, seat: SeatId, obj: GameObject, face = 0): boolean {
   if (obj.card === null) return false;
   // D-151: a land card in exile an effect lets the player play ("You may play that card this turn").
   const fromExile = obj.zone === 'exile' && mayPlayFromExile(state, seat, obj);
-  // D-232: a land card in the graveyard a permanent lets its controller play once each turn.
+  // D-232: a land card in the graveyard a permanent lets its controller play once each turn; D-327: or an effect let them play this turn.
   const fromGraveyard =
-    obj.zone === 'graveyard' && graveyardPlayPermission(state, seat, obj, true) !== null;
+    obj.zone === 'graveyard' &&
+    (mayPlayFromGraveyard(state, seat, obj) ||
+      graveyardPlayPermission(state, seat, obj, true) !== null);
   if (!fromExile && !fromGraveyard && (obj.zone !== 'hand' || obj.owner !== seat)) return false;
   if (!castableFaces(definitionOf(state, obj.card)).includes(face)) return false;
   if (!derive(state, asFace(obj, face)).types.includes('land')) return false;
@@ -155,6 +173,8 @@ export function mayCastFromGraveyard(state: GameState, seat: SeatId, obj: GameOb
   ) {
     return true;
   }
+  // D-327, CR 601.2: "Mill a card. You may play that card this turn." lets the owner cast the card they milled.
+  if (mayPlayFromGraveyard(state, seat, obj)) return true;
   const face = faceOf(state, obj);
   if (face === null) return false;
   return face.abilities.some(
@@ -619,7 +639,9 @@ export function flashbackObjects(state: GameState, seat: SeatId): ObjectId[] {
 export function playableLands(state: GameState, seat: SeatId): FaceOption[] {
   const fromExile = state.exile.filter((id) => mayPlayFromExile(state, seat, getObject(state, id)));
   const fromGraveyard = zoneList(state, 'graveyard', seat).filter(
-    (id) => graveyardPlayPermission(state, seat, getObject(state, id), true) !== null,
+    (id) =>
+      mayPlayFromGraveyard(state, seat, getObject(state, id)) ||
+      graveyardPlayPermission(state, seat, getObject(state, id), true) !== null,
   );
   return faceOptions(
     state,

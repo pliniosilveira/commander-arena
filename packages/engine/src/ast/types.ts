@@ -4316,6 +4316,11 @@ export interface ManaAbility {
    * type with your commander, scry 1." (group 4 of the Vraska deck, CR 106.6, 603.2, 701.22): `grants` is `{ scry: 1 }` and `sharesTypeWithCommander`
    * narrows the spells; when the mana is spent on a spell that matches, the controller of the permanent scries (a triggered ability of the permanent
    * that made the mana, put on the stack above the spell).
+   *
+   * "{T}: Add {R}. When that mana is spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy."
+   * (D-328, CR 106.6, 603.2, 603.7a, 707.10, 707.10c): `grants` is `{ copySpell: 'may' }` ('no': "copy that spell", the copy keeps the targets of the
+   * original) and `spells` may have `colors`; when the mana is spent on a spell that matches, a triggered ability of the permanent that made the
+   * mana goes on the stack above the spell and puts a copy of it on the stack, so the copy resolves first. Each mana spent is its own trigger.
    */
   readonly spentRider?: {
     readonly spells: {
@@ -4324,12 +4329,21 @@ export interface ManaAbility {
       readonly sharesTypeWithCommander?: true;
       /** "When you spend this mana to cast your commander" (D-229, CR 903.3): the spell is a card its caster owns that is designated a commander. */
       readonly commander?: true;
+      /**
+       * "... to cast a red instant or sorcery spell" (D-328, CR 105.2): the spell is of at least one of these colors, as it is on the stack as the mana is
+       * spent (a spell with no color is none of them). With `types` it is "a red instant or sorcery spell": of a color and of a type.
+       */
+      readonly colors?: readonly Color[];
     };
     /**
      * `{ scryCommanderCasts: true }` (D-229): "scry X, where X is the number of times it's been cast from the command zone this game": X is the number of
      * times the commander cast with this mana has been cast from the command zone (this cast included; CR 903.8), read as the scry resolves.
      */
-    readonly grants: 'haste' | { readonly scry: number } | { readonly scryCommanderCasts: true };
+    readonly grants:
+      | 'haste'
+      | { readonly scry: number }
+      | { readonly scryCommanderCasts: true }
+      | { readonly copySpell: 'may' | 'no' };
   };
   /**
    * "{T}: Add one mana of any color. If you control a creature with power 4 or greater, add two mana of any one color instead." (D-145,

@@ -485,6 +485,7 @@ describe('unmatched abilities', () => {
       'effect.shuffle-graveyard',
       'effect.require-attack',
       'effect.shuffle-self-and-graveyard',
+      'effect.mana-rider-copy',
       'effect.gain-control',
       'effect.vote',
       'effect.ring-tempts',

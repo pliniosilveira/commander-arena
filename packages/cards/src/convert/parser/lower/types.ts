@@ -146,9 +146,10 @@ export interface LowerContext {
   /**
    * What an earlier instruction of this text exiled (stage P34, D-152): `top` the cards of the top of the library ("exile the top card of
    * your library", the cards "that card" and "those cards" name), `cast` the card found by exiling until a card is found (Discover, "the
-   * discovered card"). Null before any. The engine's `moved` names them.
+   * discovered card"), `milled` (D-327) the cards the controller milled ("Mill a card. You may play that card this turn."). Null before any. The
+   * engine's `moved` names them.
    */
-  exiled: 'top' | 'cast' | null;
+  exiled: 'top' | 'cast' | 'milled' | null;
   /** True when the cards the last "exile the top ... cards" exiled were exiled face down (stage P41, D-188, CR 406.3): "you may look at and play those cards". */
   exiledFaceDown: boolean;
   /**

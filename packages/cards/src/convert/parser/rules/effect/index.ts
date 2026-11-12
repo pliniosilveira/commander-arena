@@ -48,6 +48,7 @@ import { LIBRARY_RULES } from './library';
 import { EFFECT_ADD_ADDITIONAL_MANA, EFFECT_ADD_MANA, EFFECT_CHOOSE_COLOR } from './mana';
 import { MELD_EFFECT_RULES } from './meld';
 import { NIV_EFFECT_RULES } from './niv';
+import { NIV_GROUP_2B_B_EFFECT_RULES } from './niv-group-2b-b';
 import {
   type Clauses,
   DAMAGE_RECIPIENTS,
@@ -812,6 +813,7 @@ export const EFFECT_RULES = [
   ...KORVOLD_EFFECT_RULES,
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
   ...NIV_EFFECT_RULES,
+  ...NIV_GROUP_2B_B_EFFECT_RULES,
   ...CONTROL_EFFECT_RULES,
   // Stage P44 (D-195): "starting with you, each player votes for profit or security".
   ...VOTE_EFFECT_RULES,

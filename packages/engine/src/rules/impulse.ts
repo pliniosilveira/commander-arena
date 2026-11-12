@@ -77,7 +77,12 @@ export function runMayPlay(
   res: ResolutionContext,
   effect: Extract<Effect, { kind: 'mayPlay' }>,
 ): StepOutcome {
-  const cards = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'exile');
+  // D-327 (CR 601.2, 305.1): "Mill a card. You may play that card this turn.": a card its owner (the controller) milled is in their graveyard. A card in
+  // exile is the effect's to name whoever owns it; a card in a graveyard only when its owner is the one who may play it ("from your graveyard").
+  const cards = (res.lastMoved ?? []).filter((id) => {
+    const card = state.objects[id];
+    return card?.zone === 'exile' || (card?.zone === 'graveyard' && card.owner === res.controller);
+  });
   const until = playEnd(state, res.controller, effect.lasts);
   let next = state;
   const created: ContinuousEffect[] = [];

@@ -641,7 +641,8 @@ function sequenceText(
       at += 2;
       continue;
     }
-    if (effect.kind === 'exileTop') several = effect.count !== 1;
+    // D-327: "Mill two cards. You may play those cards this turn." says it the same way after a mill.
+    if (effect.kind === 'exileTop' || effect.kind === 'mill') several = effect.count !== 1;
     const text =
       effect.kind === 'mayPlay'
         ? mayPlayText(effect, several)

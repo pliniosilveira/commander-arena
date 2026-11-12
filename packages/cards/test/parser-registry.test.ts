@@ -569,6 +569,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.graveyard-play-once-each-turn': asIs,
   // Group 4 (D-208): the rider of the mana a land adds follows the "Add" sentence of its mana ability.
   'effect.mana-rider-scry': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
+  // Group 2b-b (D-328): the rider that copies the spell the mana is spent on follows the "Add" sentence of its mana ability.
+  'effect.mana-rider-copy': permanent((e) => `{T}: Add {R}. ${cap(e)}.`),
   // Group 2 (D-230).
   'noun.each-permanent-that-is': spell((e) => `Put two +1/+1 counters on ${e}.`),
   // Bruna deck, Ajani (D-268).

@@ -15,7 +15,13 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrFilter, IrFlag, IrNoun, Span } from '../../ir/types';
-import { BOUNDARY, permanentPhrase, spellPhrase, withoutZone } from '../noun/phrases';
+import {
+  BOUNDARY,
+  permanentPhrase,
+  spellPhrase,
+  spellTypesAndPhrase,
+  withoutZone,
+} from '../noun/phrases';
 import { defineRule, quietly, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
 
@@ -266,8 +272,17 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast Dragon spells or activate abilities of Dragons',
     'spend this mana only to cast artifact spells or activate abilities of artifacts',
     'spend this mana only to cast a Dragon creature spell',
+    // D-329: the spells of two card types, joined by "and".
+    'spend this mana only to cast instant and sorcery spells',
+    'spend this mana only to cast artifact and creature spells',
   ],
   rejects: [
+    'spend this mana only to cast instant and sorcery spell',
+    'spend this mana only to cast instant and sorcery',
+    'spend this mana only to cast instant and spells',
+    'spend this mana only to cast instant and sorcery and spells',
+    'spend this mana only to cast instant, sorcery spells',
+    'spend this mana only to cast instant and sorcery spells and draw a card',
     'spend this mana only to cast',
     'spend this mana only to cast an Angel',
     'spend this mana only to cast spells',
@@ -289,7 +304,12 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     const head = literal('spend this mana only to cast ')(ctx, pos);
     if (!head.ok) return head;
     const article = pattern(/an? /iu)(ctx, head.pos);
-    const phrase = spanned(spellPhrase(!article.ok))(ctx, article.ok ? article.pos : head.pos);
+    // D-329: "instant and sorcery spells": a list of card types joined by "and", read as the choice "instant or sorcery".
+    const andList = article.ok ? null : spanned(spellTypesAndPhrase())(ctx, head.pos);
+    const phrase =
+      andList?.ok === true
+        ? andList
+        : spanned(spellPhrase(!article.ok))(ctx, article.ok ? article.pos : head.pos);
     if (!phrase.ok) return phrase;
     // A spell is named by its card types or its creature types: a color, a quality or a count says more than the engine's restriction.
     const filter: IrFilter = phrase.value.value;

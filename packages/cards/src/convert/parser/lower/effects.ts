@@ -746,6 +746,8 @@ function playerVerb(
           rule: clause.rule,
         };
       }
+      // D-327: "Mill a card. You may play that card this turn.": the cards the controller milled are what "that card" of the sentence after it names.
+      if (verb === 'mill' && player.value.kind === 'you') ctx.exiled = 'milled';
       const effect: Effect =
         verb === 'draw' || verb === 'discard' || verb === 'mill'
           ? { kind: verb, player: player.value, count: amount.value }
