@@ -2150,12 +2150,20 @@ export type Effect =
          * have this total mana value or less (their mana values added), not each. With `to: 'battlefield'`; `max` is the most cards (the number looked at).
          */
         readonly totalManaValue?: number;
+        /**
+         * "Put two of them into your hand" (Stock Up, D-960): the cards taken are put into the hand without being revealed, so the other players learn nothing of them
+         * (CR 401.5, 701.20a: nothing says reveal). Only with `to: 'hand'` (or left out); every other take reveals (the cards go to the hand or the battlefield) or hides
+         * already (`exileFaceDown`). With `min` equal to `max` and as many cards matching as `min`, nothing is asked: they are all taken.
+         */
+        readonly hidden?: true;
       };
       /**
        * What happens to the cards looked at and not taken: the bottom of the library in a random order, the graveyard, or (D-151, "look at the top card of
-       * your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand") `top`: they stay where they are.
+       * your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand") `top`: they stay where they are. `bottomChosen`
+       * (D-960, "the rest on the bottom of your library in any order", CR 401.4): the bottom of the library in the order the controller (who owns the cards
+       * looked at) chooses, an `arrangeCards` decision of purpose `bottom`; the order stays hidden.
        */
-      readonly rest: 'bottomRandom' | 'graveyard' | 'top';
+      readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen';
     }
   /**
    * "Proliferate" (CR 701.34a, D-149): the controller chooses any number of permanents and/or players that have a counter, and each chosen

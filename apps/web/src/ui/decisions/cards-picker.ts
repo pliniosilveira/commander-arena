@@ -383,6 +383,8 @@ const WAITING_WORDS: Readonly<Record<NonNullable<GameView['waitingOn']>['purpose
   scry: 'scrying',
   surveil: 'surveilling',
   reorder: 'putting the top cards of their library back in an order',
+  // CR 401.4 (D-960): the cards a look did not take go on the bottom of the library in an order their owner chooses.
+  bottom: 'putting cards on the bottom of their library in an order',
   exile: 'choosing cards to exile from their graveyard',
   move: 'choosing cards to put onto the battlefield',
   lookTake: 'choosing among the top cards of their library',

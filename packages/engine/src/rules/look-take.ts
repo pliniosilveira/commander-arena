@@ -50,7 +50,10 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
     );
   });
   const to = ins.to ?? 'hand';
-  if (ins.chosen === null && legal.length > 0) {
+  // D-960: "Put two of them into your hand" with only two cards that can be taken: the whole answer is forced, so nobody is asked.
+  const forced = ins.hidden === true && (ins.min ?? 0) >= legal.length && legal.length > 0;
+  const chosenNow = ins.chosen ?? (forced ? legal : null);
+  if (chosenNow === null && legal.length > 0) {
     const decision: Omit<ChooseCardsDecision, 'id'> = {
       kind: 'chooseCards',
       seat,
@@ -79,31 +82,36 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
               ),
             },
           }),
-      reveal: to !== 'exileFaceDown',
+      reveal: to !== 'exileFaceDown' && ins.hidden !== true,
       prompt: `Look at the top ${looked.length} card${looked.length === 1 ? '' : 's'} of your library. ${
         to === 'exileFaceDown'
           ? 'Exile one of them face down'
           : ins.totalManaValue !== undefined
             ? `Put any number of cards that match with total mana value ${ins.totalManaValue} or less onto the battlefield`
-            : `You may reveal ${
-                ins.max === 1 ? 'a card that matches' : `up to ${ins.max} cards that match`
-              } and put ${ins.max === 1 ? 'it' : 'them'} ${
-                to === 'hand' ? 'into your hand' : 'onto the battlefield'
-              }`
+            : ins.hidden === true
+              ? `Put ${ins.max === 1 ? 'one of them' : `${ins.max} of them`} into your hand`
+              : `You may reveal ${
+                  ins.max === 1 ? 'a card that matches' : `up to ${ins.max} cards that match`
+                } and put ${ins.max === 1 ? 'it' : 'them'} ${
+                  to === 'hand' ? 'into your hand' : 'onto the battlefield'
+                }`
       }; the rest ${
         ins.rest === 'graveyard'
           ? 'go into your graveyard'
           : ins.rest === 'top'
             ? 'stay on top of your library'
-            : 'go on the bottom of your library in a random order'
+            : ins.rest === 'bottomChosen'
+              ? 'go on the bottom of your library in an order you choose'
+              : 'go on the bottom of your library in a random order'
       }`,
     };
     return { state, events: [], front: [], needs: decision };
   }
-  const chosen = ins.chosen ?? [];
+  const chosen = chosenNow ?? [];
   const events: GameEvent[] = [{ kind: 'topCardsLooked', seat, count: looked.length }];
-  // CR 701.20: a card put into the hand or onto the battlefield is revealed; one exiled face down by Hideaway is not (CR 702.75a).
-  if (chosen.length > 0 && to !== 'exileFaceDown') {
+  // CR 701.20: a card put into the hand or onto the battlefield is revealed; one exiled face down by Hideaway is not (CR 702.75a), and nor
+  // is one put into the hand by an effect that does not say reveal (D-960).
+  if (chosen.length > 0 && to !== 'exileFaceDown' && ins.hidden !== true) {
     const cards = chosen.flatMap((id) => {
       const obj = state.objects[id];
       return obj?.card == null ? [] : [{ card: obj.card, name: derive(state, obj).name }];
@@ -141,6 +149,23 @@ function putRest(state: GameState, ins: LookTake): StepOutcome {
   // D-151: "look at the top card": what was not taken stays where it is.
   if (ins.rest === 'top') return done(state);
   if (ins.rest === 'graveyard') return done(state, [], moveInstructions(left, 'graveyard'));
+  // CR 401.4 (D-960): the owner of the cards chooses the order they go on the bottom in (rules/arrange.ts).
+  if (ins.rest === 'bottomChosen') {
+    return done(
+      state,
+      [],
+      [
+        {
+          kind: 'arrange',
+          purpose: 'bottom',
+          seat: ins.seat,
+          count: left.length,
+          cards: left,
+          arranged: null,
+        },
+      ],
+    );
+  }
   return bottomInRandomOrder(state, ins.seat, left);
 }
 

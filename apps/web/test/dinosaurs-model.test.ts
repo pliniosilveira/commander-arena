@@ -329,6 +329,27 @@ describe('effects', () => {
     );
   });
 
+  test('look at the top cards, put two into the hand unrevealed and the rest on the bottom in any order (D-960)', () => {
+    const effect: Effect = {
+      kind: 'lookAtTop',
+      count: 5,
+      take: { filter: {}, max: 2, min: 2, hidden: true },
+      rest: 'bottomChosen',
+    };
+    expect(
+      triggerGist(
+        {
+          kind: 'triggered',
+          trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+          effect,
+        } as never,
+        undefined,
+      ),
+    ).toBe(
+      'Look at the top five cards of your library. Put two of them into your hand. Put the rest on the bottom of your library in any order',
+    );
+  });
+
   test('a free cast', () => {
     const cast = (name: string) => castFreeText(find(spellEffect(name), 'castFree'));
     expect(cast('SYNTHETIC Free Cast Rite')).toBe(

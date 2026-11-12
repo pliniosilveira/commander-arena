@@ -501,7 +501,8 @@ export interface GameView {
       | 'cast'
       | 'scry'
       | 'surveil'
-      | 'reorder';
+      | 'reorder'
+      | 'bottom';
     readonly sourceName: string;
   };
   readonly commanderDamage: Readonly<Record<string, number>>;

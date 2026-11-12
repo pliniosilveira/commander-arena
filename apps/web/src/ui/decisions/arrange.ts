@@ -7,7 +7,9 @@
  *
  * The piles are the engine's: `top` (put back on top, the first card becomes the top card) and
  * `other` (a scry's bottom pile, the last card becomes the bottom card; a surveil's graveyard; a
- * reorder has none).
+ * reorder has none). The one pile of a reorder, and of the `bottom` purpose (D-960, "the rest on
+ * the bottom of your library in any order", CR 401.4), is kept in `top` here; `arrangeAction` sends
+ * the cards of the bottom one to `other`, where the engine wants them.
  */
 import type { Action, ArrangeCardsDecision, ObjectId } from '@commander-arena/engine';
 import { ordinal } from './cards-picker';
@@ -31,9 +33,9 @@ export function defaultArrangement(decision: Pick<ArrangeCardsDecision, 'cards'>
   return { top: decision.cards, other: [] };
 }
 
-/** True when the decision has a second pile (a scry or a surveil; a reorder has none). */
+/** True when the decision has a second pile (a scry or a surveil; a reorder and the bottom have one pile only). */
 export function hasOtherPile(decision: Pick<ArrangeCardsDecision, 'purpose'>): boolean {
-  return decision.purpose !== 'reorder';
+  return decision.purpose === 'scry' || decision.purpose === 'surveil';
 }
 
 /** The name of the second pile: "Bottom" for a scry, "Graveyard" for a surveil. */
@@ -42,12 +44,17 @@ export function otherPileTitle(decision: Pick<ArrangeCardsDecision, 'purpose'>):
 }
 
 export function pileTitle(decision: Pick<ArrangeCardsDecision, 'purpose'>, pile: Pile): string {
-  return pile === 'top' ? 'Top' : otherPileTitle(decision);
+  if (pile === 'top') return decision.purpose === 'bottom' ? 'Bottom' : 'Top';
+  return otherPileTitle(decision);
 }
 
 /** What the heading of a pile says about its order. */
 export function pileHint(decision: Pick<ArrangeCardsDecision, 'purpose'>, pile: Pile): string {
-  if (pile === 'top') return 'The first card is the top card of your library.';
+  if (pile === 'top') {
+    return decision.purpose === 'bottom'
+      ? 'The last card is the bottom card of your library.'
+      : 'The first card is the top card of your library.';
+  }
   return decision.purpose === 'surveil'
     ? 'They enter your graveyard in this order; the last one ends on top.'
     : 'The last card is the bottom card of your library.';
@@ -148,8 +155,12 @@ export function flipPile(a: Arrangement, decision: Looked, id: ObjectId): Arrang
   return moveToPile(a, decision, id, at.pile === 'top' ? 'other' : 'top');
 }
 
-/** The answer: `top` and `other` as arranged. */
-export function arrangeAction(a: Arrangement): Action {
+/** The answer: `top` and `other` as arranged; for the bottom (D-960) the one pile is the engine's `other`. */
+export function arrangeAction(
+  a: Arrangement,
+  decision: Pick<ArrangeCardsDecision, 'purpose'>,
+): Action {
+  if (decision.purpose === 'bottom') return { kind: 'arrangeCards', top: [], other: a.top };
   return { kind: 'arrangeCards', top: a.top, other: a.other };
 }
 
@@ -177,11 +188,18 @@ export function arrangePrompt(decision: Looked): string {
         : `Surveil ${n}: choose the cards to put into your graveyard and the order of the rest.`;
     case 'reorder':
       return `Look at the top ${plural(n, 'card')}: put them back in any order.`;
+    case 'bottom':
+      return n === 1
+        ? 'Put the card on the bottom of your library.'
+        : `Put the other ${n} cards on the bottom of your library in any order.`;
   }
 }
 
 /** The dialog's second line: where the cards are now. */
 export function arrangeDetail(decision: Looked, a: Arrangement): string {
+  if (decision.purpose === 'bottom') {
+    return `${a.top.length} on the bottom. The last card ends on the very bottom.`;
+  }
   const top = `${a.top.length} on top`;
   if (!hasOtherPile(decision)) return `${top}. The first card ends on top.`;
   const rest =
@@ -199,6 +217,10 @@ export function arrangeBadge(
 ): string | null {
   const at = locate(a, id);
   if (at === null) return null;
+  if (at.pile === 'top' && decision.purpose === 'bottom') {
+    const fromBottom = a.top.length - at.index;
+    return fromBottom === 1 ? 'Bottom card' : `${ordinal(fromBottom)} from bottom`;
+  }
   if (at.pile === 'top') return `${ordinal(at.index + 1)} from top`;
   if (decision.purpose === 'surveil') return null;
   const fromBottom = a.other.length - at.index;
