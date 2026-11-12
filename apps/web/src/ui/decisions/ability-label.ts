@@ -200,6 +200,20 @@ function targetText(spec: TargetSpec | undefined): string {
     case 'playerOrObject':
       // D-200: "target player or planeswalker", "target opponent or planeswalker" (or battle).
       return `target ${spec.what.player === 'opponent' ? 'opponent' : 'player'} or ${nounOf(spec.what.filter)}`;
+    case 'objectOrGraveyardCard': {
+      // D-931 (CR 115.1): "up to three other target creatures from the battlefield and/or creature cards from graveyards".
+      const cards = nounOf(spec.what.card);
+      if ((spec.max ?? 1) <= 1) {
+        const one = spec.what.filter.other === true ? 'another target' : 'target';
+        return `${one} ${nounOf(spec.what.filter)} from the battlefield or a ${cards} card from a graveyard`;
+      }
+      const other = spec.what.filter.other === true ? 'other ' : '';
+      const upTo =
+        (spec.min ?? 1) === 0
+          ? `up to ${numberWord(spec.max ?? 1)} `
+          : `${numberWord(spec.max ?? 1)} `;
+      return `${upTo}${other}target ${pluralNounOf(spec.what.filter)} from the battlefield and/or ${cards} cards from graveyards`;
+    }
   }
 }
 

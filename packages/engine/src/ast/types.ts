@@ -684,6 +684,18 @@ export interface TargetSpec {
         readonly kind: 'playerOrObject';
         readonly player: PlayerFilter;
         readonly filter: ObjectFilter;
+      }
+    /**
+     * "Up to three other target creatures from the battlefield and/or creature cards from graveyards" (CR 115.1, 115.2, 601.2c, 603.3d, D-931): one slot
+     * whose targets are objects of two zones. A target is a permanent on the battlefield that `filter` matches or a card in a graveyard (any owner's) that
+     * `card` matches; the same slot takes some of each, up to its `max`. `filter` has no zone (the battlefield) and `card` has `zone: 'graveyard'` and no
+     * `other`, controller or stack kind. Every selector reads the chosen targets as objects; they are legal again as the ability resolves (CR 608.2b) only
+     * where each now is (a card that left its graveyard is a new object, CR 400.7). Only `exile` reads such a slot, and a trigger's, so far.
+     */
+    | {
+        readonly kind: 'objectOrGraveyardCard';
+        readonly filter: ObjectFilter;
+        readonly card: ObjectFilter;
       };
   readonly min?: number;
   readonly max?: number;

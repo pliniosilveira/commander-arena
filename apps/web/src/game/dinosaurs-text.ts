@@ -248,6 +248,7 @@ export function targetsPlural(spec: TargetSpec): string | null {
     case 'anyTarget':
       return 'targets';
     case 'playerOrObject':
+    case 'objectOrGraveyardCard':
       return null;
     case 'player':
       return spec.what.filter === 'opponent' ? 'target opponents' : 'target players';

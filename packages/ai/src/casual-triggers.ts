@@ -32,6 +32,12 @@ export interface SlotPlan {
   readonly damage: number | null;
   /** True for "untap target ...": a tapped permanent is the one to help. */
   readonly untap: boolean;
+  /**
+   * D-931: a slot of targets on the battlefield and in graveyards that an `exile` uses ("up to three other target creatures from the battlefield and/or creature cards
+   * from graveyards"): a card of a graveyard is left alone, because the exile is undone when the permanent leaves (the card then goes to its owner's hand, which a card
+   * the opponent had lost for good would not have). Only the permanents of the battlefield are aimed at.
+   */
+  readonly battlefieldOnly?: true;
 }
 
 /** The triggered ability on the stack that this targets decision is for, when it is one. */
@@ -127,6 +133,7 @@ function score(view: GameView, t: ChosenTarget, plan: SlotPlan): number {
   if (t.kind === 'player') return (t.seat !== view.viewer) === wantsOpponent ? 3 : -1;
   const o = findObject(view, t.id);
   if (o === undefined) return -1;
+  if (plan.battlefieldOnly === true && !view.battlefield.some((b) => b.id === t.id)) return -1;
   const theirs = o.controller !== view.viewer;
   if (theirs !== wantsOpponent) {
     // The wrong side: the least valuable permanent does the least harm.
@@ -175,7 +182,12 @@ export function chooseTriggerTargets(
   const effect: Effect = ability.modes
     ? { kind: 'sequence', effects: ability.modes.map((m) => m.effect) }
     : ability.effect;
-  return d.specs.flatMap((slot) =>
-    chooseSlot(view, slot, planFor(effect, slot.specId) ?? HARM_BY_DEFAULT),
-  );
+  return d.specs.flatMap((slot) => {
+    const plan = planFor(effect, slot.specId) ?? HARM_BY_DEFAULT;
+    // D-931: a slot of two zones (the battlefield and graveyards): only the battlefield side is aimed at.
+    const crossZone = ability.targets?.some(
+      (t) => t.id === slot.specId && t.what.kind === 'objectOrGraveyardCard',
+    );
+    return chooseSlot(view, slot, crossZone === true ? { ...plan, battlefieldOnly: true } : plan);
+  });
 }

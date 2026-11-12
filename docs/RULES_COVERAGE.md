@@ -491,3 +491,10 @@ Every place where the engine knowingly differs from the CR, in one table (cleanu
 | 205.4g, 110.1, 701.23a | A search for a snow permanent card, a nonland permanent card, a union of kinds | Implemented (D-260) | The search filter may be an `anyOf` of filters; the prompt names it. |
 | 205.3m, 603.10a, 113.7a, 702.73a | A creature card that shares a creature type with the creature that died | Implemented (D-261) | `ObjectFilter.sharesCreatureTypeWith: 'triggerSubject'`, in a `revealUntil` of a `dies` trigger only; the types come from last-known information, a changeling shares with any creature. |
 | 205.3i, 701.23b | A search for cards that share a land type | Implemented (D-262) | `search.sharedLandType`; `ChooseCardsDecision.shareLandType` lists the land types of each legal card, and an answer is legal when its cards have one in common. |
+
+## Added by the Bruna deck, Angel of Serenity (D-931, D-932)
+
+| CR | Title | Status | Notes |
+| --- | --- | --- | --- |
+| 115.1, 115.2, 601.2c, 603.3d, 608.2b | A target slot of two zones: "up to three other target creatures from the battlefield and/or creature cards from graveyards" | Implemented (D-931) | `TargetSpec.what` `objectOrGraveyardCard { filter, card }`, a triggered ability's slot read by `exile` only (`ast/validate-cross-zone.ts`); `legalTargets` lists the permanents, then the cards of every graveyard; a target that left its zone is a new object and illegal on resolution. "Other" is read only where the source is on the battlefield as the targets are chosen (enters, attacks, a step); a dies or leaves trigger with "other" is refused (CR 603.10a, 400.7: the source is a new object in a graveyard, which the card half would list). |
+| 607.2a, 400.3, 603.10a | "Return the exiled cards to their owners' hands" | Implemented (D-932) | `moveToZone` to `hand` of `linkedExile`, read by the leaves trigger from the permanent's last-known information; every card still in exile, each to the hand of its owner. |
