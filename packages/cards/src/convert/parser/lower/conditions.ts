@@ -163,6 +163,14 @@ export function lowerCondition(
       const { cmp, value } = test.compare;
       return ok({ kind: 'cardsInGraveyard', compare: { cmp, value } });
     }
+    case 'paired': {
+      // "~ is paired with another creature" (D-984, CR 702.95b): the permanent the ability belongs to is paired now; "it" is the source only in an
+      // ability about the source itself (as for "it was kicked").
+      const blocked = missingFeatures(['condition:paired']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (test.who === 'it' && !itIsSelf) return failure(c, []);
+      return ok({ kind: 'paired' });
+    }
     case 'attachedTo': {
       // "As long as this Equipment is attached to a creature" (stage P37, D-180, CR 301.5): the permanent this one is attached to, against a
       // filter; "it" is the permanent of an ability about itself, as for `thisMatches`.
@@ -462,4 +470,5 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:castFromZone',
   'condition:spellTargets',
   'condition:controlsRingBearer',
+  'condition:paired',
 ];

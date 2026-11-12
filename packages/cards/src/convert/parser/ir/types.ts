@@ -149,6 +149,7 @@ export interface IrNoun extends IrNode {
     | 'linkedExile' // "the exiled card" (stage P32, D-147, CR 607.2a): what the linked ability of this permanent exiled
     | 'discardedThisWay' // "each player who discarded a card this way" (stage P52, D-210): the players of the discard before it
     | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
+    | 'pair' // "each of those creatures" (D-984, CR 702.95b): the permanent and the creature it is paired with
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
   readonly filter: IrFilter;
   /** "up to two", "X", "one or more"; for `target`, how many targets the phrase takes. */
@@ -475,6 +476,9 @@ export interface IrCondition extends IrNode {
     // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat; with a
     // trigger about a player (a step of an opponent's turn) the lowering reads it of that player instead (`triggerPlayerHasMore`)
     | { readonly kind: 'subjectControllerHasMore'; readonly stat: 'lands' | 'creatures' }
+    // "~ is paired with another creature" (D-984, CR 702.95b): the permanent the ability is on is paired
+    // (`who` is the word the text used for the permanent: `~`, or "it", which is the source only in an ability about it)
+    | { readonly kind: 'paired'; readonly who: 'self' | 'it' }
     // "~ is attached to a creature" (stage P37, D-180, CR 301.5, 303.4): the permanent this one is attached to, against a filter (`creature`)
     | { readonly kind: 'attachedTo'; readonly filter: IrFilter }
     // "it's untapped", "~ is untapped": this permanent against a filter (stage P29, D-133)

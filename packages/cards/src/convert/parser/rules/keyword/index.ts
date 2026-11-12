@@ -84,6 +84,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'CR 702.82a (Devour)',
     'CR 702.136a (Riot)',
     'CR 702.131b (Ascend)',
+    'CR 702.95a (Soulbond)',
   ],
   examples: [
     'Flying',
@@ -139,6 +140,11 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     // D-264 (CR 702.131b): Ascend on a permanent.
     'Ascend',
     'ascend',
+    // D-984 (CR 702.95a): Soulbond, alone and in a list (its reminder text is stripped before the line is read).
+    'Soulbond',
+    'soulbond',
+    'Flying, soulbond',
+    'Soulbond, flying',
     'Affinity for artifacts',
     'Affinity for artifact creatures',
     'Affinity for Plains',
@@ -175,6 +181,12 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Prowessx',
     'Ascendx',
     'Ascend 1',
+    'Soulbond.',
+    'Soulbonds',
+    'Soulbond 1',
+    'Soulbond {1}',
+    'Flying soulbond',
+    'Soulbonded',
     'Flying, ward {2}, haste',
     'Flying, ward {X}',
     'Flying, ward',

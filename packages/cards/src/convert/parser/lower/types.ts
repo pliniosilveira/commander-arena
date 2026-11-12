@@ -101,6 +101,11 @@ export interface LowerContext {
    */
   itIsCard: boolean;
   /**
+   * True when "it" in the body of a triggered ability is the card of a creature that died (D-982, CR 603.10a): every event of the trigger is `~` dying (not leaving the
+   * battlefield some other way, where the card may be anywhere). A subset of `itIsCard`.
+   */
+  itDied: boolean;
+  /**
    * True while the total of a divided damage is lowered (stage P32, D-147, CR 601.2d): "..., where X is the greatest power among
    * creatures you control as you cast this spell" is read once, as the spell is cast, and only there.
    */
@@ -203,6 +208,7 @@ export function newContext(
     interveningCondition: false,
     meldPartner: null,
     itIsCard: false,
+    itDied: false,
     cardName,
     selfName: '',
   };

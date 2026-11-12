@@ -50,6 +50,7 @@ export type SimpleKeyword = Extract<
   | 'myriad'
   | 'riot'
   | 'ascend'
+  | 'soulbond'
 >;
 
 /** The engine's keyword node of each `SimpleKeyword`. */
@@ -122,6 +123,9 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['riot', 'riot'],
   // D-264 (CR 702.131b): Ascend on a permanent is a printed static ability that gives the city's blessing; the engine does not let it be granted.
   ['ascend', 'ascend'],
+  // D-984 (CR 702.95a): Soulbond is printed on a creature and stands for two triggered abilities the engine builds; it can not be granted (the engine's
+  // GRANTABLE_KEYWORDS leaves it out, so no list that grants a keyword reads it).
+  ['soulbond', 'soulbond'],
 ];
 
 /** The AST kind of a keyword written as `name` (lowercased words), or undefined. */

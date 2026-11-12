@@ -1,5 +1,5 @@
 {
-  "parserVersion": 84,
+  "parserVersion": 85,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -2801,27 +2801,10 @@
     "a41e632f-9d36-44d2-b1dd-e17df0d2486e": {
       "name": "Breathkeeper Seraph",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Flying, soulbond",
-          "reason": "unrecognised",
-          "slot": "keyword",
-          "closestRule": "keyword.line"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "As long as ~ is paired with another creature, each of those creatures has \"When ~ dies, you may return it to the battlefield under its owner's control at the beginning of your next upkeep.\"",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.conditional-prefix"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f27f1c44"
+      "ast": "32e7cccb"
     },
     "a492a323-df8a-40fd-bff0-50091baa7700": {
       "name": "Kenrith's Transformation",
@@ -4476,7 +4459,7 @@
       "total": 60
     },
     "acceptance": {
-      "supported": 204,
+      "supported": 205,
       "total": 224
     }
   }

@@ -30,6 +30,7 @@ import { EDHREC_NOUN_RULES } from './edhrec';
 import { HOFRI_NOUN_RULES } from './hofri';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
+import { PAIR_NOUN_RULES } from './pair';
 import {
   graveyardPhrase,
   PLURAL_TYPE_UNION,
@@ -549,6 +550,8 @@ export const NOUN_RULES = [
   ...VRASKA_EARLY_NOUN_RULES,
   // D-269: "each player ~ attacked this turn", whose first words are those of `noun.player` ("each player").
   ...DESTINY_EARLY_NOUN_RULES,
+  // D-984: "each of those creatures", whose first words are those of `noun.each-permanent`.
+  ...PAIR_NOUN_RULES,
   NOUN_PLAYER,
   NOUN_TARGET_SPELL,
   // Stage P32 (D-147): "target commander" before `noun.target-permanent`, whose phrase would stop at "commander".
