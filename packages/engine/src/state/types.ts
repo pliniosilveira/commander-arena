@@ -788,7 +788,13 @@ export type Instruction =
    * CR 701.21: sacrifice one permanent (checked against its controller as it runs). Emits
    * `sacrificed` after the zone change.
    */
-  | { readonly kind: 'sacrifice'; readonly object: ObjectId; readonly seat?: SeatId }
+  | {
+      readonly kind: 'sacrifice';
+      readonly object: ObjectId;
+      readonly seat?: SeatId;
+      /** The last-known information of this permanent was recorded as the event of several leaving together began (D-981, `MoveRequest.lkiRecorded`). */
+      readonly lkiRecorded?: true;
+    }
   /**
    * CR 608.2d: the controller chooses permanents to sacrifice. `chosen` is null until asked (or
    * chosen automatically); then the choice is run as sacrifice instructions.
@@ -1313,6 +1319,8 @@ export type Instruction =
       readonly countsNonland?: true;
       /** Creatures destroyed together replace each other's deaths (D-133, `MoveRequest.replacers`). */
       readonly replacers?: readonly ObjectId[];
+      /** The last-known information of this permanent was recorded as the event of several leaving together began (D-981, `MoveRequest.lkiRecorded`). */
+      readonly lkiRecorded?: true;
       /** The card exiled is remembered by this permanent (`exile.linked`, D-139: "exiled with this creature"). */
       readonly linkTo?: ObjectId;
       /** The Aura enters attached to this permanent (CR 303.4f, `auraEntry`, D-149). */

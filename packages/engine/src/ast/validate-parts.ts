@@ -2948,7 +2948,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'delayedTrigger':
       // CR 603.7 (D-128): an effect that creates a delayed triggered ability.
-      checkDelayedTrigger(e, path, out, scope.movedAvailable === true);
+      checkDelayedTrigger(e, path, out, scope.movedAvailable === true, scope.diesTrigger === true);
       break;
     case 'becomeMonarch':
       // CR 725.3 (D-127): one player becomes the monarch, so the selector names exactly one.

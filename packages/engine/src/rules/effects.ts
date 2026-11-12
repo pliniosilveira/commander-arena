@@ -82,6 +82,7 @@ import { controlledCandidates, sacrificeCandidates, sacrificePermanent } from '.
 import { runChooseSacrifice, sacrificeInstructions } from './sacrifice-choice';
 import { runDiscard, runSearch } from './search';
 import { apnapOrder, resolveObjects, resolvePlayers, type SelectContext } from './select';
+import { recordTogether } from './simultaneous';
 import { objectOrLki, sourceInfo } from './source-info';
 import { runSpare, startSpare } from './spare';
 import { done, type StepOutcome } from './step-outcome';
@@ -121,7 +122,12 @@ export function runInstruction(
   if (instruction.kind === 'sacrifice') {
     // CR 701.21a: only a permanent its controller still controls can be sacrificed. One that
     // already left (an earlier instruction moved it) is skipped (CR 608.2c).
-    const r = sacrificePermanent(state, instruction.object, instruction.seat ?? res.controller);
+    const r = sacrificePermanent(
+      state,
+      instruction.object,
+      instruction.seat ?? res.controller,
+      instruction.lkiRecorded === true,
+    );
     // D-131: "for each creature sacrificed this way" counts the permanents that were sacrificed.
     return r === null
       ? done(state)
@@ -270,6 +276,8 @@ export function runInstruction(
       by: res.controller,
       ...(instruction.alt === undefined ? {} : { alt: instruction.alt }),
       ...(instruction.replacers === undefined ? {} : { replacers: instruction.replacers }),
+      // D-981 (CR 603.10a): the last-known information was recorded as the event of several leaving together began.
+      ...(instruction.lkiRecorded === true ? { lkiRecorded: true as const } : {}),
       // CR 614.12, 614.12b (D-272): the cards of a `together` run enter in one event, so what the replacement effects of this one read is the battlefield without
       // the ones that entered before it in the run (`lastMoved` is the run: the pair starts it empty and every move adds the object it made).
       ...(instruction.together === true && instruction.to === 'battlefield'
@@ -521,8 +529,13 @@ function runEffect(
         events.push(...replaced.events);
       }
       // D-131: "for each creature destroyed this way" counts the permanents the effect destroyed.
+      // D-981 (CR 603.10a): they die together, so what each was is recorded before the first moves.
+      const together = recordTogether(
+        next,
+        withReplacers(moveInstructions(destroyed, 'graveyard'), next),
+      );
       return {
-        ...done(next, events, withReplacers(moveInstructions(destroyed, 'graveyard'), next)),
+        ...done(together.state, events, together.instructions),
         lastMoved: [],
         thisWay: {
           destroyed: destroyed.length,
@@ -585,9 +598,8 @@ function runEffect(
           const o = state.objects[id];
           return o?.zone === 'battlefield' ? [controllerOf(state, o)] : [];
         });
-        return done(
+        const together = recordTogether(
           state,
-          [],
           apnapOrder(state, seats).flatMap((seat) =>
             sacrificeInstructions(
               ids.filter((id) => {
@@ -598,6 +610,7 @@ function runEffect(
             ),
           ),
         );
+        return done(together.state, [], together.instructions);
       }
       if (what.kind === 'each') {
         // CR 701.21a (D-139): "each player sacrifices all permanents they control that ...": every permanent the filter
@@ -609,9 +622,9 @@ function runEffect(
             return o === undefined ? [] : [controllerOf(state, o)];
           }),
         );
-        return done(
+        // D-981 (CR 603.10a): sacrificed together, so what each was is recorded before the first moves.
+        const together = recordTogether(
           state,
-          [],
           order.flatMap((seat) =>
             sacrificeInstructions(
               ids.filter((id) => {
@@ -622,6 +635,7 @@ function runEffect(
             ),
           ),
         );
+        return done(together.state, [], together.instructions);
       }
       return done(state, [], sacrificeInstructions(ids));
     }
@@ -659,10 +673,12 @@ function runEffect(
           ? { untilMonarch: res.source }
           : {}),
       };
-      return moving(
+      // D-981 (CR 603.10a): exiled together, so what each was is recorded before the first moves.
+      const together = recordTogether(
         state,
         moveInstructions(ids, 'exile').map((i) => (i.kind === 'move' ? { ...i, ...link } : i)),
       );
+      return moving(together.state, together.instructions);
     }
 
     case 'moveToZone': {
@@ -733,7 +749,10 @@ function runEffect(
           moves.map((m) => (m.kind === 'move' ? { ...m, attachTo: host } : m)),
         );
       }
-      return moving(state, effect.to === 'battlefield' ? withAuraEntries(state, moves) : moves);
+      if (effect.to === 'battlefield') return moving(state, withAuraEntries(state, moves));
+      // D-981 (CR 603.10a): "return all creatures to their owners' hands" and the like: what each was is recorded before the first moves.
+      const together = recordTogether(state, moves);
+      return moving(together.state, together.instructions);
     }
 
     case 'counter': {
@@ -892,14 +911,22 @@ function runEffect(
       // control at the beginning of the next end step." The ability names the card the exile moved as it was made: one delayed ability for each card
       // (nothing, when nothing was exiled), whose effect moves its subject. The card is expected in exile; one that left since is a new object and is
       // not found (CR 603.7c, 400.7), and a token that was exiled has ceased to exist (CR 111.8) and was never a card to return.
+      // D-982 (CR 603.7c, 400.7, 603.10a): "When this creature dies, you may return it to the battlefield under its owner's control at the beginning of your
+      // next upkeep": the card is the one the dying creature became, found now (in the graveyard, where it is expected, as `triggerCard` reads it); one that
+      // is gone from there when the ability triggers is a new object and is not found. A commander that went to the command zone (CR 903.9a) is not in the
+      // graveyard, and a token that died has ceased to exist (CR 111.8): nothing is created for them.
       if (effect.effect.kind === 'moveToZone') {
         const back: Effect = { ...effect.effect, objects: { kind: 'triggerSubject' } };
         const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: back };
+        const cards =
+          effect.effect.objects.kind === 'triggerCard'
+            ? resolveObjects(state, effect.effect.objects, ctx, targets)
+            : (res.lastMoved ?? []);
         return done({
           ...state,
           delayedTriggers: [
             ...state.delayedTriggers,
-            ...(res.lastMoved ?? [])
+            ...cards
               .filter((card) => state.objects[card]?.token === null)
               .map((card) => ({
                 source: res.source,

@@ -9,6 +9,7 @@ import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { derive } from './derive';
 import { manaValueOfCost } from './mana-value';
 import { sacrificeCandidates } from './sacrifice';
+import { recordTogether } from './simultaneous';
 import { done, type StepOutcome } from './step-outcome';
 
 /** CR 701.21: the instructions that sacrifice each of `ids`. */
@@ -63,17 +64,19 @@ export function runChooseSacrifice(
   // CR 101.4: the choice of one of several players who sacrifice together is held until the last has chosen; then all are sacrificed at once.
   const proceed = (chosen: readonly ObjectId[], events: readonly GameEvent[]): StepOutcome => {
     const group = instruction.together;
+    // D-981 (CR 603.10a): what is sacrificed together is recorded before the first moves.
     if (group === undefined) {
-      return done(state, events, sacrificeInstructions(chosen, instruction.seat));
+      const together = recordTogether(state, sacrificeInstructions(chosen, instruction.seat));
+      return done(together.state, events, together.instructions);
     }
     const held = [...group.held, { seat, objects: chosen }];
     const next = group.later[0];
     if (next === undefined) {
-      return done(
+      const together = recordTogether(
         state,
-        events,
         held.flatMap((h) => sacrificeInstructions(h.objects, h.seat)),
       );
+      return done(together.state, events, together.instructions);
     }
     return done(state, events, [
       {

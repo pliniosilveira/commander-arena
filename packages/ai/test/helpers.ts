@@ -2309,6 +2309,13 @@ export const RING_NAMES = [
   'SYNTHETIC Bearer Oath',
 ] as const;
 
+/**
+ * The cards of the soulbond slices (D-982 and the soulbond decisions after it): the SYNTHETIC creatures whose dies ability returns them at the beginning of the
+ * next upkeep, and the SYNTHETIC soulbond creatures. Kept out of every pool: soulbond asks its controller which creature to pair with in the middle of a
+ * resolution, and the returning creatures ask a "you may" and create a delayed ability, which the seeded games of the other styles do not reach.
+ */
+export const SOULBOND_NAMES = ['SYNTHETIC Ember Cub', 'SYNTHETIC Grave Thief'] as const;
+
 /** The Saga three times, the Ring's rite five times (the later levels of the Ring need many temptations) and its other cards once, with bodies to carry the designation, a Wall to block it and removal that also takes the designation away. */
 export const RING_SPELLS = [
   ...supported(['SYNTHETIC There and Back Again']),
@@ -2584,6 +2591,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(MELD_NAMES as readonly string[]).includes(card.name))
   // The Ring slice has its own style: its cards ask which creature is the Ring-bearer and give a creature three triggered abilities.
   .filter((card) => !(RING_NAMES as readonly string[]).includes(card.name))
+  // The soulbond slices have their own tests: a pairing asks which creature to pair with, and a dies ability asks "you may" and creates a delayed ability.
+  .filter((card) => !(SOULBOND_NAMES as readonly string[]).includes(card.name))
   // The Vraska program has its own style: its cards ask other players questions in the middle of a resolution, and a payment of energy.
   .filter((card) => !(VRASKA_NAMES as readonly string[]).includes(card.name))
   // The Vraska EDHREC program has its own style: its cards ask other players questions in the middle of a resolution and change token creation and triggers.
