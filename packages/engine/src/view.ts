@@ -18,6 +18,8 @@ import { alternativeCostsOf, castCostOf } from './rules/cast-cost';
 import { type ControlEnd, controlEndOf, controllerOf } from './rules/control';
 import { copiableValues } from './rules/copiable';
 import { derive, oracleTextOf } from './rules/derive';
+import { turnUpSymbols } from './rules/face-down-actions';
+import { faceDownBy, faceDownLabel } from './rules/face-down';
 import { INHERENT_TEXT, inherentName } from './rules/inherent';
 import { keywordsOf } from './rules/keywords';
 import { loyaltyActivatedThisTurn } from './rules/loyalty';
@@ -39,6 +41,7 @@ import { definitionOf, getObject, printedCard } from './state/ops';
 import type {
   ActivatedAbility,
   ChosenValues,
+  FaceDownBy,
   GameObject,
   GameResult,
   GameState,
@@ -252,6 +255,24 @@ export interface ObjectView {
    * `foretoldTurn` (the owner's view only) is the turn it was foretold in: it may be cast in a later turn.
    */
   readonly faceDown?: true;
+  /**
+   * For a face-down permanent on the battlefield or phased out (CR 708.2, 701.40a, D-961, D-965): `faceDown` is true and `name` is its label, "Face-down creature 2" (CR 708.6),
+   * for every viewer; the characteristics are the ones it has face down (a 2/2 creature with no mana cost and no text, plus what later layers did to it). `faceDownBy` is
+   * what made it face down (public: the effect that did it is). `isCommander` is false and `support` 'supported' for every viewer but its controller, `faces`, `layout` and
+   * `meld` are absent: nothing of the card shows. Absent for a face-up object.
+   */
+  readonly faceDownBy?: FaceDownBy;
+  /**
+   * Only in the view of the player who controls a face-down permanent (CR 708.5: nobody else may look at it, even when it is phased out): the printed front face of the card it
+   * represents, for the preview panel and for the decision whether to turn it face up. Absent for every other viewer and for a face-up object.
+   */
+  readonly hiddenFace?: FaceView;
+  /**
+   * Only in the view of the player who controls a face-down permanent that can be turned face up (CR 701.40b): the mana symbols turning it face up costs, which are the
+   * mana cost of its card. Absent when the card is not a creature card or has no mana cost (it can never be turned face up), and for every other viewer. Whether the player can
+   * pay it now is the priority decision's: it lists a `turnFaceUp` option when they can.
+   */
+  readonly turnFaceUpCost?: readonly string[];
   readonly foretold?: true;
   readonly foretoldTurn?: number;
   /**
@@ -603,6 +624,17 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
   const landwalks = d.abilities.flatMap((a) =>
     a.kind === 'keyword' && a.keyword.kind === 'landwalk' ? [a.keyword.landType] : [],
   );
+  // CR 708.2, 708.5 (D-965): a face-down permanent is shown to every viewer as what it is face down; only the player who controls it (also while it is phased out) sees the
+  // card behind it. Everything that comes from the card instead of the characteristics (the commander status, the support badge, the faces) is left out for the others.
+  const down = faceDownBy(obj);
+  const controls =
+    down !== null &&
+    (obj.zone === 'phased'
+      ? controllerOf(state, { ...obj, zone: 'battlefield' })
+      : controllerOf(state, obj)) === viewer;
+  const hiddenFront =
+    controls && obj.card !== null ? definitionOf(state, obj.card).faces[0] : undefined;
+  const turnUp = controls ? turnUpSymbols(state, obj) : null;
   // CR 301.7a, 302.6: what a permanent that is not a creature (yet) would have as one.
   const asCreature = obj.zone === 'battlefield' && !d.types.includes('creature');
   const printed = asCreature ? copiableValues(state, obj).characteristics : null;
@@ -611,7 +643,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     owner: obj.owner,
     controller: controllerOf(state, obj),
     zone: obj.zone,
-    name: inherentShown ?? origin?.name ?? d.name,
+    name: inherentShown ?? origin?.name ?? faceDownLabel(obj) ?? d.name,
     manaCost: d.manaCost,
     supertypes: d.supertypes,
     types: d.types,
@@ -626,7 +658,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     ...(obj.zone === 'battlefield' && (obj.level !== undefined || d.subtypes.includes('Class'))
       ? { level: obj.level ?? 1 }
       : {}),
-    isCommander: commanderCardOf(state, obj) !== null,
+    isCommander: (down === null || controls) && commanderCardOf(state, obj) !== null,
     summoningSick: obj.zone === 'battlefield' && isSummoningSick(state, obj),
     ...controlEndsOf(state, obj),
     ...(bearerSeat === null ? {} : { ringBearer: bearerSeat }),
@@ -652,9 +684,20 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     ...(landwalks.length === 0 ? {} : { landwalks }),
     protector: obj.protector,
     // D-277: a melded permanent is unsupported when either of its two cards is.
-    support: cardsOf(obj).some((c) => definitionOf(state, c).support === 'unsupported')
-      ? 'unsupported'
-      : (def?.support ?? 'supported'),
+    support:
+      (down === null || controls) &&
+      cardsOf(obj).some((c) => definitionOf(state, c).support === 'unsupported')
+        ? 'unsupported'
+        : down === null || controls
+          ? (def?.support ?? 'supported')
+          : 'supported',
+    ...(down === null ? {} : { faceDown: true as const, faceDownBy: down }),
+    ...(hiddenFront === undefined
+      ? {}
+      : (({ abilities: _abilities, spell: _spell, ...printed }) => ({ hiddenFace: printed }))(
+          hiddenFront,
+        )),
+    ...(turnUp === null ? {} : { turnFaceUpCost: turnUp }),
     targets: obj.stack?.chosenTargets ?? [],
     ...(abilitySource === null ? {} : { abilitySource }),
     ...(obj.stack?.kind === 'ability' && obj.stack.ability !== null
@@ -698,7 +741,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     ...castCostFields(state, obj),
     // CR 712.4b, 712.8a (D-277): the combined back face of a meld card is only the characteristics of a melded permanent, so a meld card is not shown
     // as a card with two faces; the melded permanent says what it is made of (`meld`).
-    ...(def !== null && def.faces.length > 1 && def.layout !== 'meld'
+    ...(down === null && def !== null && def.faces.length > 1 && def.layout !== 'meld'
       ? {
           face: obj.face,
           layout: def.layout,

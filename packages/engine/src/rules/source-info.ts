@@ -6,6 +6,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive, oracleTextOf } from './derive';
+import { faceDownLabel } from './face-down';
 
 export interface SourceInfo {
   readonly name: string;
@@ -22,7 +23,8 @@ export function sourceInfo(state: GameState, id: ObjectId): SourceInfo | null {
   const live = state.objects[id];
   if (live) {
     return {
-      name: derive(state, live).name,
+      // CR 708.2, 708.5 (D-965): a face-down permanent has no name; it is shown by its label, never by its card.
+      name: faceDownLabel(live) ?? derive(state, live).name,
       oracleText: oracleTextOf(state, live),
       controller: controllerOf(state, live),
     };
@@ -30,7 +32,7 @@ export function sourceInfo(state: GameState, id: ObjectId): SourceInfo | null {
   const lki = state.lki[id];
   if (!lki) return null;
   return {
-    name: lki.characteristics.name,
+    name: faceDownLabel(lki.object) ?? lki.characteristics.name,
     oracleText: lki.characteristics.oracleText,
     // Frozen when it left (`recordLki`): the controller it had then, which no effect changes now.
     controller: lki.object.controller, // stored controller: frozen as it left (`recordLki`)

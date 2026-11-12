@@ -365,7 +365,7 @@ export function specialAction(
   // A face-down permanent is turned up on the battlefield by its controller; the other two special actions are a card in the hand.
   const obj =
     kind === 'turnFaceUp'
-      ? resolveObject(ctx, card, { zones: ['battlefield'] })
+      ? resolveObject(ctx, card, { zones: ['battlefield', 'phased'] })
       : resolveObject(ctx, card, { zones: ['hand'], seat });
   return { kind, object: obj.id };
 }

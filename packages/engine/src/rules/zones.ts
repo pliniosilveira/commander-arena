@@ -421,7 +421,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 708.3 (D-962): a permanent that enters face down is turned face down before it enters, so the face of the card is not looked at: no enters replacement effect, counter
   // or choice of the card applies. What it is as it enters is the face-down status (`downEntry`), which the readers below see on the object they ask about.
   const downEntry = to === 'battlefield' ? faceDownEntry(state, request.entersFaceDown) : {};
-  const entersDown = downEntry.faceDown !== undefined;
+  const entersDown = to === 'battlefield' && request.entersFaceDown !== undefined;
   const entering =
     to === 'battlefield' && printedCard(old) !== null && !entersDown
       ? enteringFace(state, old, faceIndex)
