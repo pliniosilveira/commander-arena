@@ -7,7 +7,7 @@ import type { TargetChoiceSpec, TargetsDecision } from '@commander-arena/engine'
 import { isEquip, triggerCondition, triggerGist } from './ability-label';
 import { type Index, nameOf, stackName } from './lookup';
 import { modeText } from './modes-picker';
-import type { SlotStatus } from './targeting';
+import { modeTime, type SlotStatus } from './targeting';
 
 const WORDS: readonly string[] = ['zero', 'one', 'two', 'three', 'four', 'five'];
 
@@ -54,12 +54,15 @@ export function targetsWord(spec: TargetChoiceSpec): string {
   return spec.max === 1 ? 'a target' : 'targets';
 }
 
-/** "Mode 2" for a slot of a modal spell or ability; with several slots in one mode, "Mode 2, target 2". */
+/** "Mode 2" for a slot of a modal spell or ability; with several slots in one mode, "Mode 2, target 2"; the second time a mode is chosen, "Mode 2, time 2". */
 export function slotLabel(specs: readonly TargetChoiceSpec[], at: number): string {
   const spec = specs[at];
   if (spec?.mode === undefined) return `Slot ${at + 1}`;
-  const same = specs.filter((s) => s.mode === spec.mode);
-  const head = `Mode ${spec.mode + 1}`;
+  const time = modeTime(specs, spec);
+  const same = specs.filter(
+    (s) => s.mode === spec.mode && (s.instance ?? 0) === (spec.instance ?? 0),
+  );
+  const head = `Mode ${spec.mode + 1}${time === null ? '' : `, time ${time}`}`;
   return same.length > 1 ? `${head}, target ${same.indexOf(spec) + 1}` : head;
 }
 
@@ -68,9 +71,16 @@ export function slotLabel(specs: readonly TargetChoiceSpec[], at: number): strin
  * text is the mode's as the stack object carries it (`ObjectView.modeTexts`); when the object is not
  * in the view the heading is the number alone.
  */
-export function modeHeading(index: Index, source: TargetsDecision['source'], mode: number): string {
+export function modeHeading(
+  index: Index,
+  source: TargetsDecision['source'],
+  mode: number,
+  /** Which time the mode is chosen (D-1000): "Mode 3, time 2: Destroy target artifact"; null for a mode chosen once. */
+  time: number | null = null,
+): string {
   const text = index.get(source)?.modeTexts?.[mode];
-  return text === undefined ? `Mode ${mode + 1}` : `Mode ${mode + 1}: ${modeText(text)}`;
+  const head = `Mode ${mode + 1}${time === null ? '' : `, time ${time}`}`;
+  return text === undefined ? head : `${head}: ${modeText(text)}`;
 }
 
 export function targetsPrompt(
@@ -97,7 +107,12 @@ export function targetsPrompt(
   // A modal spell or ability: the slot's mode comes first, "Mode 2: Destroy target artifact. Choose a
   // target for X." (CR 601.2c, 700.2c).
   if (slot.spec.mode !== undefined) {
-    const head = modeHeading(index, decision.source, slot.spec.mode);
+    const head = modeHeading(
+      index,
+      decision.source,
+      slot.spec.mode,
+      modeTime(decision.specs, slot.spec),
+    );
     const choose = `Choose ${targetsWord(slot.spec)} for ${
       decision.forTrigger === true ? stackName(index, decision.source) : source
     }.`;

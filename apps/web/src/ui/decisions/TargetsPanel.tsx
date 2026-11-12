@@ -50,8 +50,14 @@ export function TargetsPanel({
       <section className="dec-panel dec-targets" aria-label="Legal targets">
         <h3 className="dec-panel-title">Legal targets</h3>
         {groups.map((group) => (
-          <div key={group.mode} className="dec-target-group" data-mode={group.mode}>
-            <h4 className="dec-target-group-title">{modeHeading(index, d.source, group.mode)}</h4>
+          <div
+            key={`${group.mode}/${group.time}`}
+            className="dec-target-group"
+            data-mode={group.mode}
+          >
+            <h4 className="dec-target-group-title">
+              {modeHeading(index, d.source, group.mode, group.time)}
+            </h4>
             {group.specs.map((spec) => (
               <ul key={spec.specId} className="dec-target-list">
                 {spec.legal.map((t) => (

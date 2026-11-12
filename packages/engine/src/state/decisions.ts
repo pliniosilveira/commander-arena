@@ -162,6 +162,11 @@ export interface TargetChoiceSpec {
    * Absent for everything that is not modal.
    */
   readonly mode?: number;
+  /**
+   * For a slot of a mode chosen more than once (CR 700.2d, D-1000): which instance of the mode it is, 1 for the second, 2 for the third; the slot of the first
+   * instance has no `instance`. Every instance has its own slot and the same target may be chosen for each.
+   */
+  readonly instance?: number;
 }
 
 /** CR 601.2g-h: pay the total cost. `auto` lets the payment planner choose the sources. */
@@ -935,7 +940,7 @@ export interface ChooseXDecision extends DecisionBase {
  * for one that is in no legal set (its targets cannot all be chosen, CR 700.2a, or the number to choose
  * cannot be reached without it). `min` and `max` are how many to choose (`max` already counts "if you
  * control a commander, choose both instead"); `sets` is every legal choice, each in printed order, fewest
- * modes first: the answer is a `chooseModes` action naming one of them (any order). Asked only when more
+ * modes first: the answer is a `chooseModes` action naming one of them (any order; a repeated mode is listed once for each time it is chosen). Asked only when more
  * than one set is legal; with exactly one the engine chooses it (the `modesChosen` event says so), and
  * with none the spell cannot be cast, the ability cannot be activated, and a triggered ability is
  * removed (CR 603.3c). `purpose` is 'spell', 'ability' (activated) or 'trigger'; `cancel` is legal for
@@ -954,6 +959,11 @@ export interface ChooseModesDecision extends DecisionBase {
   }[];
   readonly min: number;
   readonly max: number;
+  /**
+   * True when the text lets the same mode be chosen more than once (CR 700.2d, D-1000): `sets` then holds multisets, a mode index repeated for each
+   * instance, and `max` may be more than the number of modes. Absent otherwise.
+   */
+  readonly repeatable?: true;
   readonly sets: readonly (readonly number[])[];
   /** True for a triggered ability being put on the stack: it is not optional, so there is no `cancel`. */
   readonly forTrigger?: true;

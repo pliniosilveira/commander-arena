@@ -62,6 +62,15 @@ test('three modes are joined with commas; one mode is just itself', () => {
   expect(chosen('o1', [1], false)?.text).toBe('You choose: Draw a card.');
 });
 
+test('a mode chosen more than once is said once with how many times (D-1000, CR 700.2d)', () => {
+  expect(chosen('o1', [0, 0, 1], false)?.text).toBe(
+    'You choose: Destroy target artifact (x2) and Draw a card.',
+  );
+  expect(chosen('o1', [2, 2, 2], true)?.text).toBe(
+    'You choose: You gain 3 life (x3) (the only legal choice).',
+  );
+});
+
 test('a choice made because only one set was legal is a detail line that says so', () => {
   const line = chosen('o1', [1, 2], true);
   expect(line?.text).toBe('You choose: Draw a card and You gain 3 life (the only legal choice).');
