@@ -76,6 +76,7 @@ import { canReveal, revealChoices, revealEvents } from './enters-reveal';
 import { withoutRun } from './enters-run';
 import { applyGraveyardRider } from './graveyard-play';
 import { timesKickedOf } from './kicks';
+import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
 import { becomePrepared, dropPrepareCopy } from './prepare';
 import { countMatching } from './select';
 import { sourceInfo } from './source-info';
@@ -152,6 +153,12 @@ export interface MoveRequest {
    * effects of this card that read the battlefield read it without them (`rules/enters-run.ts`). Only for a move to the battlefield; absent for a card that enters alone.
    */
   readonly alongside?: readonly ObjectId[];
+  /**
+   * D-991 (CR 701.42a, 712.14c): the other card of a meld pair, in the same zone as `object`: the two cards enter the battlefield as one melded permanent, with
+   * their back faces up and combined (`face` is 1). `object` is the card the permanent is represented by first (`GameObject.card`); this object ceases to exist
+   * as the permanent is made. The caller (`rules/meld.ts`) has checked that they can be melded (CR 701.42b). Only for a move to the battlefield.
+   */
+  readonly meldWith?: ObjectId;
 }
 
 export type MoveResult =
@@ -161,6 +168,11 @@ export type MoveResult =
       readonly events: readonly GameEvent[];
       /** The new object, or null if the object ceased to exist (an ability leaving the stack). */
       readonly newObject: ObjectId | null;
+      /**
+       * D-991 (CR 712.21, 712.21c): a melded permanent that left the battlefield became two objects; `newObject` is the first card's and this the second's.
+       * An effect that follows "the new object" does the same to both cards. Absent for everything else.
+       */
+      readonly alsoNewObject?: ObjectId;
     }
   | {
       readonly kind: 'needsDecision';
@@ -234,8 +246,9 @@ function faceAfter(old: GameObject, request: MoveRequest): number {
   return old.zone === 'stack' && request.to === 'battlefield' ? old.face : 0;
 }
 
+/** CR 903.3, 903.3b: the object is a commander card, or a melded permanent one of whose two cards is a commander card. */
 export function isCommanderCard(state: GameState, obj: GameObject): boolean {
-  return obj.card !== null && state.cards[obj.card]?.isCommander === true;
+  return commanderCardOf(state, obj) !== null;
 }
 
 /**
@@ -278,6 +291,15 @@ export function sacrificeForDevour(
 
 function moveOne(state: GameState, request: MoveRequest): MoveResult {
   const old = getObject(state, request.object);
+  // D-991 (CR 701.42a, 712.14c): the other card of a meld pair that enters the battlefield with this one as one melded permanent.
+  const partner =
+    request.meldWith !== undefined && request.to === 'battlefield'
+      ? getObject(state, request.meldWith)
+      : undefined;
+  if (partner !== undefined) {
+    const issue = meldPairIssue(state, old, partner);
+    if (issue !== null) throw new Error(`moveObject: can not meld: ${issue}`);
+  }
   let to = request.to;
   let toSeat: SeatId | null = isSeatZone(to) ? (request.toSeat ?? old.owner) : null;
 
@@ -314,6 +336,12 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     to = 'exile';
     toSeat = null;
   }
+  // CR 712.21d, 903.9c (D-991): what the second card of a melded permanent does when the permanent leaves. A replacement effect applied to one of the two
+  // cards affects both, so it goes where the permanent goes; only a commander can be exempt (CR 903.9b-c), going to the command zone while the other card
+  // goes on to the zone the permanent would have been put into, which is the zone as it is here, after the replacements above.
+  const companion = old.meldedWith;
+  const companionTo = to;
+  const companionToSeat = toSeat;
   // CR 903.9b (Commander): hand or library, from anywhere, becomes command zone at the owner's choice.
   if (isCommanderCard(state, old) && (to === 'hand' || to === 'library')) {
     if (request.commanderChoice === undefined || request.commanderChoice === null) {
@@ -323,7 +351,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         decision: {
           kind: 'commanderZone',
           seat: old.owner,
-          card: old.card as NonNullable<typeof old.card>,
+          card: (commanderCardOf(state, old) ?? old.card) as NonNullable<typeof old.card>,
           object: old.id,
           from: from === 'graveyard' || from === 'exile' || from === 'library' ? from : 'hand',
         },
@@ -509,6 +537,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     const { [old.id]: _gone, ...rest } = next.objects;
     next = { ...next, objects: rest };
   }
+  // CR 701.42a, 712.14c (D-991): the second card of the pair is one object with the first from now on, so its own object ceases to exist.
+  if (partner !== undefined) {
+    next = recordLki(next, partner);
+    next = removeFromZone(next, partner);
+    const { [partner.id]: _partnerGone, ...rest } = next.objects;
+    next = { ...next, objects: rest };
+  }
   // CR 722.3c (D-214): the copy of a prepare spell stays in exile only while its permanent stays on the battlefield and prepared.
   if (old.prepareCopy !== undefined) next = dropPrepareCopy(next, old.prepareCopy);
 
@@ -655,6 +690,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     controller,
     // Only a spell on the stack and a permanent have a face other than the front one.
     face: !becomesToken && (to === 'stack' || to === 'battlefield') ? faceIndex : 0,
+    // CR 701.42a, 712.4a (D-991): the second card of the melded permanent.
+    ...(partner?.card != null ? { meldedWith: partner.card } : {}),
     tapped,
     counters,
     damage: 0,
@@ -694,6 +731,37 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   };
   next = setObject(next, created);
   next = addToZone(next, to, toSeat, newId, request.position ?? 'top');
+  // CR 712.21 (D-991): a melded permanent that leaves the battlefield is one permanent that leaves and two cards that are put into the zone: the second
+  // card becomes an object of its own, with its own new id and timestamp, in the zone its owner's card goes to (the command zone is the first card's alone,
+  // CR 903.9c). The first card's object is made above, so what is shared (the replacement effects, the moment) is decided once for both (CR 712.21d).
+  let also: GameObject | null = null;
+  if (companion !== undefined && to !== 'battlefield' && to !== 'stack') {
+    const [alsoId, s3] = allocateObjectId(next);
+    const [alsoStamp, s4] = allocateTimestamp(s3);
+    next = s4;
+    const goesOn = to === 'command' && old.zone !== 'command' ? companionTo : to;
+    const goesOnSeat = to === 'command' && old.zone !== 'command' ? companionToSeat : toSeat;
+    also = {
+      id: alsoId,
+      card: companion,
+      zone: goesOn,
+      zoneOwner: goesOnSeat,
+      owner: old.owner,
+      controller: old.owner,
+      face: 0,
+      tapped: false,
+      counters: {},
+      damage: 0,
+      damagedByDeathtouch: false,
+      timestamp: alsoStamp,
+      token: null,
+      attachedTo: null,
+      protector: null,
+      stack: null,
+    };
+    next = setObject(next, also);
+    next = addToZone(next, goesOn, goesOnSeat, alsoId, request.position ?? 'top');
+  }
   const copyEvents: GameEvent[] = [];
   // CR 722.3a, 722.3c (D-214): "This creature enters prepared."
   if (
@@ -769,6 +837,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       turnLog: { ...next.turnLog, graveyarded: [...next.turnLog.graveyarded, newId] },
     };
   }
+  // CR 712.21 (D-991): the second card of a melded permanent is a card put into a graveyard from the battlefield too.
+  if (old.zone === 'battlefield' && also?.zone === 'graveyard') {
+    next = {
+      ...next,
+      turnLog: { ...next.turnLog, graveyarded: [...next.turnLog.graveyarded, also.id] },
+    };
+  }
   // CR 400.7 (D-206): a card that left a graveyard ("if a card left your graveyard this turn").
   if (old.zone === 'graveyard' && to !== 'graveyard' && old.card !== null) {
     next = {
@@ -779,7 +854,22 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 400.7: what the old object became, for "return it" of an ability whose source left (`thisCard`).
   const left = next.lki[old.id];
   if (left !== undefined)
-    next = { ...next, lki: { ...next.lki, [old.id]: { ...left, successor: newId } } };
+    next = {
+      ...next,
+      lki: {
+        ...next.lki,
+        [old.id]: {
+          ...left,
+          successor: newId,
+          // CR 712.21c (D-991): an effect that finds the new object of a melded permanent finds both cards.
+          ...(also === null ? {} : { companionSuccessor: also.id }),
+        },
+      },
+    };
+  // CR 701.42a (D-991): the exile object of the other card became the melded permanent, as the first card's did.
+  const partnerLeft = partner === undefined ? undefined : next.lki[partner.id];
+  if (partner !== undefined && partnerLeft !== undefined)
+    next = { ...next, lki: { ...next.lki, [partner.id]: { ...partnerLeft, successor: newId } } };
 
   events.push({
     kind: 'zoneChanged',
@@ -789,6 +879,35 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     fromZone: old.zone,
     toZone: to,
   });
+  // CR 701.42a, 712.21 (D-991): the second card moves too; its event is flagged so the permanent is not counted twice.
+  if (partner !== undefined && partner.card !== null) {
+    events.push({
+      kind: 'zoneChanged',
+      card: partner.card,
+      from: partner.id,
+      to: newId,
+      fromZone: partner.zone,
+      toZone: 'battlefield',
+      component: true,
+    });
+    events.push({
+      kind: 'melded',
+      permanent: newId,
+      cards: [old.card as NonNullable<typeof old.card>, partner.card],
+      from: [old.id, partner.id],
+    });
+  }
+  if (also !== null && companion !== undefined) {
+    events.push({
+      kind: 'zoneChanged',
+      card: companion,
+      from: old.id,
+      to: also.id,
+      fromZone: old.zone,
+      toZone: also.zone,
+      component: true,
+    });
+  }
   events.push(...copyEvents);
   for (const [counter, count] of Object.entries(counters)) {
     // CR 122.6a (D-149): the player who controls the object puts the counters it enters with.
@@ -813,13 +932,42 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     next = made.state;
     events.push(...made.events);
   }
-  if ((to === 'graveyard' || to === 'exile') && isCommanderCard(state, old)) {
+  if ((to === 'graveyard' || to === 'exile') && isCommanderCardId(state, old.card)) {
     // CR 903.9a: the owner may move it to the command zone the next time state-based actions run.
     next = { ...next, commanderWatch: [...next.commanderWatch, newId] };
+  }
+  // CR 712.21a, 712.21b (D-993): the owner arranges the two cards of a melded permanent that went to a graveyard or a library, or chooses which was exiled last; asked
+  // as state-based actions are next checked, which is when the two objects are in their zone.
+  if (
+    also !== null &&
+    also.zone === to &&
+    (to === 'graveyard' || to === 'library' || to === 'exile')
+  ) {
+    next = {
+      ...next,
+      meldOrders: [
+        ...(next.meldOrders ?? []),
+        { seat: old.owner, first: newId, second: also.id, zone: to },
+      ],
+    };
+  }
+  // CR 903.9a, 712.21 (D-991): the second card of a melded permanent is a commander object of its own in a graveyard or exile, if it is a commander card.
+  if (
+    also !== null &&
+    (also.zone === 'graveyard' || also.zone === 'exile') &&
+    isCommanderCardId(state, also.card)
+  ) {
+    next = { ...next, commanderWatch: [...next.commanderWatch, also.id] };
   }
   if (to === 'command' && old.zone !== 'command') {
     if (old.card !== null)
       events.push({ kind: 'commanderMovedToCommandZone', card: old.card, from: old.zone });
   }
-  return { kind: 'done', state: next, events, newObject: newId };
+  return {
+    kind: 'done',
+    state: next,
+    events,
+    newObject: newId,
+    ...(also === null ? {} : { alsoNewObject: also.id }),
+  };
 }

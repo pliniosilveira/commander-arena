@@ -591,7 +591,13 @@ export function answerResolutionEntersChosen(
 ): ResolveOutcome | null {
   const res = state.resolution;
   const d = state.pending;
-  if (!res || d?.kind !== 'chooseOption' || d.purpose === 'replacement') return null;
+  if (
+    !res ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose === 'replacement' ||
+    d.purpose === 'meldOrder'
+  )
+    return null;
   const head = res.queue[0];
   const events: GameEvent[] = [
     {

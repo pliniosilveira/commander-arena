@@ -132,7 +132,12 @@ function occurrences(
     case 'landfall':
       // CR 603.6a. A token entering has no previous object, so it has its own event. The player the event is about (`triggerPlayer`, D-229:
       // "that player controls more lands than you") is whoever controls the permanent as it enters.
-      if (event.kind === 'zoneChanged' && event.toZone === 'battlefield') {
+      // D-991 (CR 712.21): the second card of a melded permanent is not another permanent entering.
+      if (
+        event.kind === 'zoneChanged' &&
+        event.toZone === 'battlefield' &&
+        event.component !== true
+      ) {
         const entered = state.objects[event.to];
         return [
           {
@@ -147,7 +152,11 @@ function occurrences(
         : [];
     case 'entersBatch':
       // CR 603.2c, 603.6a (D-218): every permanent that enters in these events is an occurrence; `findTriggers` keeps the first one that the filter names.
-      if (event.kind === 'zoneChanged' && event.toZone === 'battlefield') {
+      if (
+        event.kind === 'zoneChanged' &&
+        event.toZone === 'battlefield' &&
+        event.component !== true
+      ) {
         return [{ subject: event.to, seat: null }];
       }
       return event.kind === 'tokenCreated' ? [{ subject: event.object, seat: event.seat }] : [];
@@ -232,7 +241,10 @@ function occurrences(
         : [];
     case 'leavesBattlefield':
       // CR 603.6c: a permanent moved from the battlefield to another zone (a token too).
-      return event.kind === 'zoneChanged' && event.fromZone === 'battlefield'
+      // D-991 (CR 712.21): one melded permanent leaves, however many cards it becomes.
+      return event.kind === 'zoneChanged' &&
+        event.fromZone === 'battlefield' &&
+        event.component !== true
         ? [{ subject: event.from, seat: null, toZone: event.toZone }]
         : [];
     case 'upkeep':
@@ -669,7 +681,8 @@ function battlefieldBefore(state: GameState, events: readonly GameEvent[]): Obje
     const e = events[i];
     if (e?.kind === 'zoneChanged') {
       if (e.toZone === 'battlefield') members = members.filter((m) => m !== e.to);
-      if (e.fromZone === 'battlefield') members.push(e.from);
+      // D-991 (CR 712.21): a melded permanent that left is one permanent, though two events say where its cards went.
+      if (e.fromZone === 'battlefield' && e.component !== true) members.push(e.from);
     } else if (e?.kind === 'tokenCreated') {
       members = members.filter((m) => m !== e.object);
     }

@@ -15,9 +15,16 @@
  * Not yet: Siege battles (CR 704.5v, which involves a triggered ability), spell copies.
  */
 import type { SeatId } from '../ids';
-import type { NewDecision } from '../state/decisions';
+import type { ChooseOptionDecision, NewDecision } from '../state/decisions';
 import type { GameEvent, LossReason } from '../state/events';
-import { getObject, getSeat, patchObject, patchSeat, removeFromZone } from '../state/ops';
+import {
+  definitionOf,
+  getObject,
+  getSeat,
+  patchObject,
+  patchSeat,
+  removeFromZone,
+} from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { illegalAttachments, illegalAuras, unattach } from './attach';
 import { gainCitysBlessings } from './city-blessing';
@@ -269,7 +276,60 @@ export function checkStateBasedActions(input: GameState): SbaResult {
       };
     }
   }
+  if (!performed) {
+    const ordering = meldOrderDecision(state);
+    state = ordering.state;
+    if (ordering.decision !== null) {
+      return { state, events, performed: false, decision: ordering.decision };
+    }
+  }
   return { state, events, performed, decision: null };
+}
+
+/**
+ * CR 712.21a, 712.21b (D-993): the first of the pairs of cards that a melded permanent became, whose owner has not yet arranged them. A pair whose cards are no longer
+ * both in the zone they went to (or, in a graveyard or a library, next to each other: something moved or shuffled them) is dropped, with nothing asked.
+ */
+function meldOrderDecision(state: GameState): {
+  state: GameState;
+  decision: Omit<ChooseOptionDecision, 'id'> | null;
+} {
+  const pending = state.meldOrders ?? [];
+  let live = pending;
+  for (const entry of pending) {
+    const a = state.objects[entry.first];
+    const b = state.objects[entry.second];
+    const list =
+      entry.zone === 'exile'
+        ? state.exile
+        : entry.zone === 'library'
+          ? (state.seats[entry.seat]?.library ?? [])
+          : (state.seats[entry.seat]?.graveyard ?? []);
+    const together =
+      a?.zone === entry.zone &&
+      b?.zone === entry.zone &&
+      (entry.zone === 'exile' ||
+        Math.abs(list.indexOf(entry.first) - list.indexOf(entry.second)) === 1);
+    if (!together || a === undefined || b === undefined || a.card === null || b.card === null) {
+      live = live.filter((e) => e !== entry);
+      continue;
+    }
+    const names = [definitionOf(state, a.card).name, definitionOf(state, b.card).name];
+    return {
+      state: live === pending ? state : { ...state, meldOrders: live },
+      decision: {
+        kind: 'chooseOption',
+        seat: entry.seat,
+        purpose: 'meldOrder',
+        options: names,
+        meldOrder: { first: entry.first, second: entry.second, zone: entry.zone },
+        source: entry.first,
+        sourceName: names.join(' and '),
+        sourceOracleText: '',
+      },
+    };
+  }
+  return { state: live === pending ? state : { ...state, meldOrders: live }, decision: null };
 }
 
 /**

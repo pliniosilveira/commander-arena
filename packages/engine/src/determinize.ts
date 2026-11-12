@@ -27,6 +27,7 @@
 import type { CardId, ObjectId, SeatId } from './ids';
 import { createRng, nextInt, nextUint32, shuffle } from './rng/index';
 import type { RngState } from './rng/types';
+import { isCommanderCardId } from './rules/melded';
 import { foretellCostOf } from './rules/special-legality';
 import { topCardVisibleTo } from './rules/statics';
 import { definitionOf, getObject } from './state/ops';
@@ -72,7 +73,8 @@ function redealCards(
 ): { changed: Map<ObjectId, GameObject>; rng: RngState } {
   const hidden = (id: ObjectId): boolean => {
     const obj = getObject(state, id);
-    return obj.card !== null && !known.has(id) && state.cards[obj.card]?.isCommander !== true;
+    // A card in a hand or a library is one card, never a melded permanent (D-991).
+    return obj.card !== null && !known.has(id) && !isCommanderCardId(state, obj.card);
   };
   const hiddenExile = state.exile.filter((id) => {
     const obj = getObject(state, id);

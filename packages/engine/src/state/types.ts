@@ -67,9 +67,18 @@ export interface GameObject {
    * Which face is up (index into the definition's faces). Only a spell on the stack and a permanent
    * on the battlefield can have a face other than 0: the face that was cast or played, or the one a
    * double-faced permanent transformed to. In every other zone it is 0 (CR 712.8a, 715.4); a split
-   * card has the characteristics of both halves there (CR 709.4), see `rules/layouts.ts`.
+   * card has the characteristics of both halves there (CR 709.4), see `rules/layouts.ts`. A melded
+   * permanent (`meldedWith`) has face 1, the combined back face (CR 712.8g).
    */
   readonly face: number;
+  /**
+   * D-991 (CR 701.42a, 712.4a): present on a melded permanent, which is one object represented by two cards: `card` is the first card and this is the
+   * second (the counterpart of its meld pair). It exists only on the battlefield and phased out (CR 712.8g: only there are the two cards one object); in
+   * every other zone each card is an ordinary object with its own front face (CR 712.4b, 712.8a), and a permanent that leaves becomes two objects, one for
+   * each card (CR 712.21). `face` is 1, the combined back face. A commander card is always `card`, never this one, when exactly one of the two is
+   * (`rules/melded.ts`). Absent for everything else.
+   */
+  readonly meldedWith?: CardId;
   readonly tapped: boolean;
   readonly counters: Readonly<Record<string, number>>;
   /** Damage marked this turn (CR 120.3). Removed in cleanup (CR 514.2). */
@@ -540,6 +549,17 @@ export const DEFAULT_SETTINGS: GameSettings = {
   maxHandSize: 7,
 };
 
+/**
+ * D-993: two cards that were one melded permanent, now two objects in the same zone, whose order the owner may choose (CR 712.21a, 712.21b).
+ * `first` is the object that has the default place (put in the zone first: lower in a graveyard or library, the earlier timestamp in exile).
+ */
+export interface MeldOrder {
+  readonly seat: SeatId;
+  readonly first: ObjectId;
+  readonly second: ObjectId;
+  readonly zone: 'graveyard' | 'library' | 'exile';
+}
+
 /** Characteristics of an object immediately before it left its zone (CR 113.7a, 603.10). */
 export interface LastKnownInfo {
   readonly object: GameObject;
@@ -549,6 +569,11 @@ export interface LastKnownInfo {
    * only a pointer: it names a live object only while that object has not moved again.
    */
   readonly successor?: ObjectId;
+  /**
+   * D-991 (CR 712.21c): for a melded permanent that left, the object the second card became (`successor` is the first card's). An effect that can find
+   * the new object of a melded permanent finds both cards (`rules/melded.ts`, `successorsOf`). Absent for everything else.
+   */
+  readonly companionSuccessor?: ObjectId;
   readonly characteristics: Characteristics;
   readonly abilities: readonly Ability[];
   readonly power: number | null;
@@ -1761,6 +1786,12 @@ export interface GameState {
   readonly lki: Readonly<Record<ObjectId, LastKnownInfo>>;
   /** Commander objects put into a graveyard or exile since state-based actions were last checked (CR 903.9a). */
   readonly commanderWatch: readonly ObjectId[];
+  /**
+   * D-993 (CR 712.21a, 712.21b): the pairs of cards a melded permanent became as it left the battlefield for a graveyard, a library or exile, waiting for their
+   * owner to order them (the order of two cards in a graveyard or a library, the timestamp order of two exiled cards), asked as state-based actions are
+   * next checked. Absent when there are none (so a game without meld hashes as before).
+   */
+  readonly meldOrders?: readonly MeldOrder[];
   /** Triggered abilities that have triggered and wait to go on the stack (CR 603.3). */
   readonly pendingTriggers: readonly PendingTrigger[];
   /**

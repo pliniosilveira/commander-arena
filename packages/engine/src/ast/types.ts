@@ -1769,6 +1769,15 @@ export type Effect =
    */
   | { readonly kind: 'loseGame'; readonly player: PlayerSelector }
   /**
+   * "Exile them, then meld them into R." (CR 701.42a, 701.42b, 701.42c, 712.4a, D-992), the ability of a meld card: it exiles the permanent it belongs to
+   * and the creature named `partner` that its controller both owns and controls, then puts the two cards onto the battlefield as one melded permanent
+   * (CR 712.14c), under the control of the controller of the ability. The cards can be melded only if they are the two cards of one meld pair, neither a token
+   * (`rules/melded.ts`, `meldPairIssue`: the data of the cards must say so, and the name of their combined face must be `result`) and both are still in exile;
+   * otherwise they stay where they are (CR 701.42c, a `meldFailed` event). When several creatures with that name qualify, the one that can be melded is taken.
+   * Only in a triggered ability of a meld card (`validateCard`); the condition that goes with it is `ownsAndControlsNamed`.
+   */
+  | { readonly kind: 'meld'; readonly partner: string; readonly result: string }
+  /**
    * "Target player's life total becomes 1." (CR 119.5, D-201): each player the selector names gains or loses the life that takes their life total
    * to `amount`, a whole number of 0 or more (the life gained or lost triggers what it triggers, CR 119.9; nothing happens to a player who already has
    * that total). No other source of the number is supported (a life total that becomes a count is not read).
@@ -3125,6 +3134,12 @@ export type Keyword =
  */
 export type Condition =
   | { readonly kind: 'controlsAtLeast'; readonly filter: ObjectFilter; readonly count: number }
+  /**
+   * "If you both own and control this creature and a creature named Bruna, the Fading Light" (CR 603.4, 701.42a, D-992): the permanent the ability belongs
+   * to is on the battlefield and both owned and controlled by the controller of the ability, and so is another permanent of that card type whose name is
+   * `name` (its name as it is now, after copy effects, CR 201.2). Read as the ability triggers and again as it resolves (an intervening "if").
+   */
+  | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: CardType }
   | { readonly kind: 'opponentsAtLeast'; readonly count: number }
   /**
    * CR 702.33d (Kicker): the object was kicked. Read from the spell that is resolving, or, for an

@@ -9,6 +9,7 @@ import type { SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { GameState } from '../state/types';
 import { controllerOf } from './control';
+import { commanderCardOf } from './melded';
 
 type LifeCondition = Extract<Condition, { kind: 'lifeTotal' }>;
 type EnteredCondition = Extract<Condition, { kind: 'enteredThisTurn' }>;
@@ -53,8 +54,8 @@ export function controlsCommander(
     const obj = getObject(state, id);
     return (
       controllerOf(state, obj) === seat &&
-      obj.card !== null &&
-      state.cards[obj.card]?.isCommander === true &&
+      // CR 903.3b (D-991): a melded permanent one of whose cards is a commander is a commander.
+      commanderCardOf(state, obj) !== null &&
       (condition.yours !== true || obj.owner === seat)
     );
   });

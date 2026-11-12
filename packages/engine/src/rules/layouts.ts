@@ -13,6 +13,10 @@
  *                           face cast stays up on the battlefield (CR 712.13).
  *   transform (CR 712.2)    only the front face is cast (CR 712.11); it enters front face up (CR
  *                           712.13, 712.14) and `transform` flips it on the battlefield (CR 701.27).
+ *   meld (CR 701.42, 712.4) only the front face exists (and is cast) outside the battlefield (CR 712.4b, 712.8a,
+ *                           712.8b); faces[1] is the combined back face, which only a melded permanent has
+ *                           (CR 712.8g). A meld card is not a double-faced card that can transform (CR 712.4c,
+ *                           712.9: `isDoubleFaced` is false for it), see `rules/melded.ts`.
  *
  * `GameObject.face` holds which face is up for a spell on the stack and a permanent on the
  * battlefield; it is 0 everywhere else, so a card that changes zone is its front face again.
@@ -23,6 +27,7 @@ import type { CardType } from '../characteristics';
 import { COLORS, type Color, type Subtype, type Supertype } from '../characteristics';
 import { definitionOf } from '../state/ops';
 import type { CopiableValues, GameObject, GameState } from '../state/types';
+import { meldedManaCost } from './melded';
 
 /** The faces a player may choose to cast (or play as a land), as indexes into `def.faces`. */
 export function castableFaces(def: CardDefinition): readonly number[] {
@@ -108,13 +113,19 @@ export function transformedFace(def: CardDefinition, current: number): number | 
 
 /**
  * For the back face of a nonmodal double-faced permanent: the mana cost its mana value is calculated
- * from, which is the front face's (CR 712.8e, 202.3b). Null when the rule does not apply.
+ * from, which is the front face's (CR 712.8e, 202.3b); and for a melded permanent the combined mana cost of the
+ * front faces of the two cards that represent it (CR 712.8g, 202.3c, D-991). Null when the rule does not apply.
  */
 export function backFaceManaCost(
+  state: GameState,
   def: CardDefinition,
   obj: GameObject,
 ): { readonly manaCost: readonly string[] | null } | null {
-  if (def.layout !== 'transform' || obj.face !== 1 || obj.zone === 'stack') return null;
+  if (obj.face !== 1 || obj.zone === 'stack') return null;
+  if (def.layout === 'meld') {
+    return obj.meldedWith === undefined ? null : { manaCost: meldedManaCost(state, obj) };
+  }
+  if (def.layout !== 'transform') return null;
   const front = def.faces[0];
   return front === undefined ? null : { manaCost: front.manaCost };
 }

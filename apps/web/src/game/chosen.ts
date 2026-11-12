@@ -44,8 +44,10 @@ export function purposeNoun(
     | 'effect'
     | 'riot'
     | 'replacement'
-    | 'vote',
+    | 'vote'
+    | 'meldOrder',
 ): string {
+  if (purpose === 'meldOrder') return 'order of the two cards';
   if (purpose === 'riot') return 'riot choice';
   if (purpose === 'vote') return 'vote';
   if (purpose === 'replacement') return 'effect to apply first';

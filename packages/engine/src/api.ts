@@ -70,6 +70,7 @@ import { canPlayLand } from './rules/legality';
 import { applyLegendRule } from './rules/legend-rule';
 import { activateManaAbility } from './rules/mana-engine';
 import { sameCombination } from './rules/mana-outcomes';
+import { arrangeMeldedCards } from './rules/melded';
 import { isLegalModeSet } from './rules/modes';
 import { monarchAfterLoss } from './rules/monarch';
 import { grantPriority } from './rules/priority';
@@ -416,6 +417,26 @@ function answerConfirm(
  * a color". Asked while a permanent enters during a resolution (a spell becoming a permanent, an
  * effect putting one onto the battlefield, a token being created), or for a land being played.
  */
+/**
+ * The answer to the order of the two cards of a melded permanent that left the battlefield (CR 712.21a, 712.21b, D-993): the owner chooses which of the two goes
+ * on top of the graveyard or library, or, in exile, which has the later timestamp; the other goes below it. State-based actions are checked again after.
+ */
+function answerMeldOrder(
+  state: GameState,
+  d: Extract<PendingDecision, { kind: 'chooseOption' }>,
+  option: string,
+): Result {
+  const index = d.options.indexOf(option);
+  const order = d.meldOrder;
+  if (index < 0 || order === undefined) return fail('That is not one of the options');
+  const top = index === 0 ? order.first : order.second;
+  const other = index === 0 ? order.second : order.first;
+  let next: GameState = { ...state, pending: null };
+  next = { ...next, meldOrders: (next.meldOrders ?? []).filter((e) => e.first !== order.first) };
+  next = arrangeMeldedCards(next, d.seat, order.zone, top, other);
+  return resumeAfterSbaDecision(next);
+}
+
 function answerChooseOption(
   state: GameState,
   seat: SeatId,
@@ -423,6 +444,7 @@ function answerChooseOption(
   option: string,
 ): Result {
   if (d.purpose === 'replacement') return answerReplacement(state, d, option);
+  if (d.purpose === 'meldOrder') return answerMeldOrder(state, d, option);
   if (d.purpose === 'attackTarget') {
     // CR 508.7 (D-139): the attack target a creature is reselected to.
     if (!d.options.includes(option)) return fail('That is not one of the options');

@@ -14,6 +14,7 @@ import {
 } from './rules/alt-costs';
 import { entersChoice, entersOptions } from './rules/enters';
 import { faceOf } from './rules/legality';
+import { cardsOf, isCommanderCardId, meldCardsIssue } from './rules/melded';
 import { modalOfObject } from './rules/modes';
 import { abilityXCost, hasX, NO_X, spellXCost } from './rules/x-value';
 import { printedCard } from './state/ops';
@@ -230,6 +231,28 @@ export function checkInvariants(state: GameState): string[] {
     ) {
       problems.push(`${id} has face ${obj.face} in ${obj.zone}`);
     }
+    // CR 701.42a, 712.4a, 712.8g (D-991): a melded permanent is one object on the battlefield (or phased out) represented by the two cards of a meld pair,
+    // with the combined back face up; its commander card, if exactly one of the two is, is its first card.
+    if (obj.meldedWith !== undefined) {
+      if (obj.zone !== 'battlefield' && obj.zone !== 'phased') {
+        problems.push(`${id} is melded but is in ${obj.zone}`);
+      }
+      if (obj.card === null || obj.token !== null || obj.face !== 1) {
+        problems.push(`${id} is melded but is not a card with its combined back face up`);
+      } else {
+        const issue = meldCardsIssue(state, obj.card, obj.meldedWith);
+        if (issue !== null) problems.push(`${id} is melded but ${issue}`);
+        else if (isCommanderCardId(state, obj.meldedWith) && !isCommanderCardId(state, obj.card)) {
+          problems.push(`${id} is melded but its commander card is not its first card`);
+        }
+      }
+    } else if (
+      card !== null &&
+      obj.face === 1 &&
+      state.definitions[state.cards[card]?.definition ?? -1]?.layout === 'meld'
+    ) {
+      problems.push(`${id} has the combined back face of a meld card but is not melded`);
+    }
     // CR 722.3c (D-214): a prepared permanent and the copy of its prepare spell in exile name each other.
     if (obj.prepared === true) {
       const copy = obj.prepareCopy === undefined ? undefined : state.objects[obj.prepareCopy];
@@ -364,7 +387,8 @@ export function checkInvariants(state: GameState): string[] {
   // that is not a card (none today) or tokens, which have no card.
   const objectsPerCard = new Map<string, number>();
   for (const obj of Object.values(state.objects)) {
-    if (obj.card !== null) objectsPerCard.set(obj.card, (objectsPerCard.get(obj.card) ?? 0) + 1);
+    // D-991: a melded permanent is one object that two cards represent; each of them is on it.
+    for (const card of cardsOf(obj)) objectsPerCard.set(card, (objectsPerCard.get(card) ?? 0) + 1);
   }
   for (const card of Object.keys(state.cards)) {
     const n = objectsPerCard.get(card) ?? 0;

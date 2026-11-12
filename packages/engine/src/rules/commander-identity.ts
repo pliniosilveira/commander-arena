@@ -8,6 +8,7 @@ import { definitionOf, getSeat } from '../state/ops';
 import type { GameState } from '../state/types';
 import { derive } from './derive';
 import { hasPrintedKeyword } from './derive-keywords';
+import { cardsOf } from './melded';
 
 export { commanderIdentity } from './commander-colors';
 
@@ -21,7 +22,8 @@ export function commanderCreatureTypes(state: GameState, seat: SeatId): Readonly
   const types = new Set<string>();
   for (const card of getSeat(state, seat).commanders) {
     const live = Object.values(state.objects).find(
-      (o) => o.card === card && (o.zone === 'battlefield' || o.zone === 'stack'),
+      // CR 903.3b (D-991): the commander card may be one of the two cards of a melded permanent.
+      (o) => cardsOf(o).includes(card) && (o.zone === 'battlefield' || o.zone === 'stack'),
     );
     if (live !== undefined) {
       for (const t of derive(state, live).subtypes) if (CREATURE_TYPES.includes(t)) types.add(t);

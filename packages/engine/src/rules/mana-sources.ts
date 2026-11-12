@@ -15,7 +15,7 @@ import {
 import type { ManaColor } from '../mana/types';
 import { getObject, getSeat } from '../state/ops';
 import type { GameState } from '../state/types';
-import { devotionSymbols } from './amounts';
+import { devotionCostOf, devotionSymbols } from './amounts';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import {
@@ -215,7 +215,7 @@ function devotionConflicts(
   const counts = gone.some((id) => {
     const obj = state.objects[id];
     if (obj === undefined || controllerOf(state, obj) !== seat) return false;
-    const symbols = derive(state, obj).manaCost;
+    const symbols = devotionCostOf(state, obj);
     return [...colors].some((c) => c === null || (c !== 'C' && devotionSymbols(symbols, [c]) > 0));
   });
   return counts ? { sacrificing, devotion: new Set(devotionColors.keys()) } : null;

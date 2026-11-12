@@ -75,6 +75,7 @@ import { SYNTHETIC_MANA_RESTRICTED_LIST } from './synthetic-mana-restricted';
 import { SYNTHETIC_MANA_SPENT_LIST } from './synthetic-mana-spent';
 import { SYNTHETIC_MANA_TRIGGERS_LIST } from './synthetic-mana-triggers';
 import { SYNTHETIC_MASS_LIST } from './synthetic-mass';
+import { SYNTHETIC_MELD_LIST } from './synthetic-meld';
 import { SYNTHETIC_MIRACLE_LIST } from './synthetic-miracle';
 import { SYNTHETIC_MODAL_LIST } from './synthetic-modal';
 import { SYNTHETIC_PARSER_SHAPES_LIST } from './synthetic-parser-shapes';
@@ -319,6 +320,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_PREVENTION_LIST,
     ...SYNTHETIC_DAMAGE_ORDER_LIST,
     ...SYNTHETIC_LAYOUT_LIST,
+    ...SYNTHETIC_MELD_LIST,
     ...SYNTHETIC_SAGA_LIST,
     ...SYNTHETIC_LIBRARY_LIST,
     ...SYNTHETIC_REFERENCE_LIST,

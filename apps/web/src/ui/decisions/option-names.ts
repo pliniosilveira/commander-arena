@@ -23,6 +23,26 @@ export function isReplacementChoice(d: Asked): boolean {
   return d.purpose === 'replacement';
 }
 
+/**
+ * True for the order of the two cards a melded permanent became as it left the battlefield (CR 712.21a, 712.21b, D-993): the options are the names of the two cards,
+ * and the answer is the one that goes on top of the graveyard or the library, or, in exile, is exiled last.
+ */
+export function isMeldOrderChoice(d: Asked): boolean {
+  return d.purpose === 'meldOrder';
+}
+
+/** "SYNTHETIC Dusk Squire and SYNTHETIC Dawn Squire were one permanent. Choose which goes on top of your graveyard." (CR 712.21a, 712.21b) */
+export function meldOrderPrompt(
+  sourceName: string,
+  zone: NonNullable<ChooseOptionDecision['meldOrder']>['zone'] | undefined,
+): string {
+  const where =
+    zone === 'exile'
+      ? 'Choose which card is exiled last (has the later timestamp).'
+      : `Choose which card goes on top of your ${zone ?? 'graveyard'}${zone === 'library' ? ' (the order is not revealed)' : ''}.`;
+  return `${sourceName} were one permanent. ${where}`;
+}
+
 /** True for a vote (CR 701.38a, D-194): "starting with you, each player votes for profit or security". The options are the words of the card. */
 export function isVoteChoice(d: Asked): boolean {
   return d.purpose === 'vote';
@@ -67,8 +87,9 @@ export function namedOptionPrompt(
     ChooseOptionDecision,
     'purpose' | 'options' | 'sourceName' | 'riotSoFar' | 'replacement'
   > &
-    Partial<Pick<ChooseOptionDecision, 'vote' | 'seat'>>,
+    Partial<Pick<ChooseOptionDecision, 'vote' | 'seat' | 'meldOrder'>>,
 ): string {
+  if (isMeldOrderChoice(d)) return meldOrderPrompt(d.sourceName, d.meldOrder?.zone);
   if (isVoteChoice(d)) return votePrompt(d.options, d.vote, d.seat);
   if (isRiotChoice(d)) return riotPrompt(d.sourceName, d.riotSoFar ?? []);
   if (isReplacementChoice(d)) return replacementPrompt(d.replacement);

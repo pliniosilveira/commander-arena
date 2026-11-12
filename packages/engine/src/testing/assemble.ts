@@ -13,6 +13,7 @@ import { cardId, objectId } from '../ids';
 import { checkInvariants } from '../invariants';
 import type { ManaObject } from '../mana/types';
 import { createRng } from '../rng';
+import { meldCardsIssue } from '../rules/melded';
 import { grantPriority, priorityOptions } from '../rules/priority';
 import { setPending } from '../rules/set-pending';
 import type { CardInstance, GameObject, GameSettings, GameState, SeatState } from '../state/types';
@@ -126,7 +127,7 @@ export function assemble(
     cards[cid] = { id: cid, owner: e.seat, definition: defIndex.get(e.def) ?? 0, isCommander };
     const onBattlefield = e.zone === 'battlefield';
     const controller = onBattlefield ? (o.controller ?? e.seat) : e.seat;
-    const faceIndex = onBattlefield ? (o.face ?? 0) : 0;
+    const faceIndex = onBattlefield ? (o.face ?? (o.meldedWith === undefined ? 0 : 1)) : 0;
     const face = e.def.faces[faceIndex];
     // As when it enters (CR 306.5b, 310.4b): loyalty and defense come from the card unless the
     // scenario sets the counters itself. A battle's protector is an opponent of its controller.
@@ -200,6 +201,39 @@ export function assemble(
     const [host] = hosts;
     const mine = objects[objectId(e.index)];
     if (host && mine) objects[objectId(e.index)] = { ...mine, attachedTo: objectId(host.index) };
+  }
+
+  // Melded permanents (CR 701.42a, 712.4a, D-991): the placement `meldedWith` names is the second card of the same object, not an object of its own.
+  for (const e of expanded) {
+    const ref = e.options.meldedWith;
+    if (ref === undefined) continue;
+    const onField = expanded.filter((x) => x.zone === 'battlefield' && x.index !== e.index);
+    const byLabel = onField.filter((x) => x.options.label === ref);
+    const others = byLabel.length > 0 ? byLabel : onField.filter((x) => x.def.name === ref);
+    const [other] = others;
+    if (others.length !== 1 || other === undefined) {
+      throw new ScenarioError(
+        `${e.def.name} is meldedWith "${ref}", which matches ${others.length} other permanents on the battlefield (use a label)`,
+      );
+    }
+    if (other.options.meldedWith !== undefined || other.seat !== e.seat) {
+      throw new ScenarioError(
+        `${e.def.name} and ${other.def.name} can not both be melded with each other: place the second card with no meldedWith, on the same seat`,
+      );
+    }
+    const mine = objects[objectId(e.index)];
+    const theirs = objects[objectId(other.index)];
+    if (mine === undefined || theirs === undefined || mine.card === null || theirs.card === null)
+      continue;
+    const issue = meldCardsIssue({ cards, definitions: defs }, mine.card, theirs.card);
+    if (issue !== null)
+      throw new ScenarioError(`${e.def.name} can not be melded with ${other.def.name}: ${issue}`);
+    objects[objectId(e.index)] = { ...mine, meldedWith: theirs.card };
+    const { [objectId(other.index)]: _second, ...rest } = objects;
+    for (const k of Object.keys(objects)) delete objects[k as ObjectId];
+    Object.assign(objects, rest);
+    const at = battlefield.indexOf(objectId(other.index));
+    if (at >= 0) battlefield.splice(at, 1);
   }
 
   const seats: SeatState[] = spec.seats.map((s, id) => {

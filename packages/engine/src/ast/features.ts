@@ -137,6 +137,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'loseLife',
     // D-269: "Each player this creature attacked this turn loses the game." (CR 104.3e).
     'loseGame',
+    // D-992: "Exile them, then meld them into X." (CR 701.42a).
+    'meld',
     'tap',
     'untap',
     'removeAllCounters',
@@ -458,9 +460,19 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
   // CR 709 split (either half is cast), CR 715 Adventure, CR 712 modal and nonmodal double-faced, CR
-  // 714 Saga (lore counters and chapter abilities; read ahead is a keyword and is not run). Fuse,
-  // Aftermath, Rooms, flip and meld are not run (`validateCard` names the layout).
-  layouts: ['normal', 'split', 'adventure', 'modal_dfc', 'transform', 'saga', 'class', 'prepare'],
+  // 714 Saga (lore counters and chapter abilities; read ahead is a keyword and is not run), CR 701.42 and 712.4 meld
+  // (D-991: two cards, one melded permanent). Fuse, Aftermath, Rooms and flip are not run (`validateCard` names the layout).
+  layouts: [
+    'normal',
+    'split',
+    'adventure',
+    'modal_dfc',
+    'transform',
+    'saga',
+    'class',
+    'prepare',
+    'meld',
+  ],
   cardTypes: [
     'artifact',
     'battle',
@@ -683,6 +695,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackersTotalPower',
     // D-196: "if you control your Ring-bearer" (CR 701.54e).
     'controlsRingBearer',
+    // D-992: "if you both own and control this creature and a creature named X" (CR 701.42a).
+    'ownsAndControlsNamed',
     'and',
     'or',
     'not',
@@ -1161,6 +1175,8 @@ export const CONDITION_KINDS = [
   'attackersTotalPower',
   /** "If you control your Ring-bearer" (CR 701.54e, D-196): the engine's `controlsRingBearer`. */
   'controlsRingBearer',
+  /** "If you both own and control this creature and a creature named X" (CR 701.42a, D-992): the engine's `ownsAndControlsNamed`. */
+  'ownsAndControlsNamed',
   'unlessPays',
   'cardsInGraveyard',
   'and',
@@ -1437,6 +1453,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   setLifeTotal: true,
   loseLife: true,
   loseGame: true,
+  meld: true,
   tap: true,
   untap: true,
   removeAllCounters: true,

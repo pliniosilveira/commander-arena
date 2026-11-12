@@ -277,6 +277,14 @@ export function describeEvent(
       }
       // A foretell moves the card face down: the `foretold` line says it, and this one would name it (D-128).
       if (isForetellMove(after, event)) return null;
+      // CR 701.42a, 712.14c (D-991): the two cards that were melded enter as one permanent; the `melded` line says it.
+      if (
+        event.toZone === 'battlefield' &&
+        after.objects[event.to]?.meldedWith !== undefined &&
+        event.fromZone === 'exile'
+      ) {
+        return null;
+      }
       // CR 406.3 (D-187): an effect that exiles cards face down from the top of a library ("Exile the top two cards of target opponent's library face
       // down"): nobody but the player the effect let look may examine them, and the log is read by both players, so it names no card and links none.
       if (event.toZone === 'exile' && after.objects[event.to]?.exiledFaceDown === true) {
@@ -1357,6 +1365,24 @@ export function describeEvent(
         null,
         [event.object, event.copied],
         'CR 707.9',
+      );
+    case 'melded':
+      // CR 701.42a, 712.14c (D-991): two cards were exiled and became one melded permanent.
+      return line(
+        'major',
+        `${cardName(after, event.cards[0]) ?? 'A card'} and ${cardName(after, event.cards[1]) ?? 'a card'} meld into ${label(event.permanent)}.`,
+        null,
+        [event.permanent],
+        'CR 701.42a',
+      );
+    case 'meldFailed':
+      // CR 701.42b, 701.42c (D-991): what could not be melded stays where it is.
+      return line(
+        'major',
+        `They could not be melded and stay where they are: ${event.reason}.`,
+        null,
+        event.objects,
+        'CR 701.42c',
       );
     default: {
       const unreachable: never = event;

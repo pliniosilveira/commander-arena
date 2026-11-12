@@ -60,6 +60,8 @@ import { runLookTake } from './look-take';
 import { loseTheGame } from './lose-game';
 import { manaValueOfCost } from './mana-value';
 import { runMayCast, runPaidReflexive, runReflexive } from './may-effects';
+import { runMeld } from './meld';
+import { successorsOf } from './melded';
 import { millCards } from './mill';
 import { runMiracleReveal } from './miracle';
 import { becomeMonarch } from './monarch';
@@ -286,10 +288,14 @@ export function runInstruction(
       return { state, events: [], front: [], needs: result.decision };
     }
     // CR 400.7j: later parts of the effect can find the new object ("then return it").
-    const lastMoved =
+    // CR 712.21c (D-991): a melded permanent that left became two cards, and "it" finds both: the same is done to each.
+    const movedObjects =
       result.newObject === null
-        ? (res.lastMoved ?? [])
-        : [...(res.lastMoved ?? []), result.newObject];
+        ? []
+        : result.alsoNewObject === undefined
+          ? [result.newObject]
+          : [result.newObject, result.alsoNewObject];
+    const lastMoved = [...(res.lastMoved ?? []), ...movedObjects];
     // CR 702.84a, 603.7 (D-124): unearth also creates the delayed triggered ability that exiles the permanent it
     // returned at the beginning of the next end step; it belongs to the controller of the ability (CR 603.7d) and
     // names that permanent (CR 603.7c).
@@ -333,12 +339,12 @@ export function runInstruction(
             ...created,
             exileReturns: [
               ...created.exileReturns,
-              {
+              ...movedObjects.map((card) => ({
                 source: (instruction.untilLeaves ?? instruction.untilMonarch) as ObjectId,
-                card: result.newObject,
+                card,
                 controller: res.controller,
                 ...(instruction.untilMonarch !== undefined ? { untilMonarch: true as const } : {}),
-              },
+              })),
             ],
           }
         : created;
@@ -348,19 +354,23 @@ export function runInstruction(
     const linked =
       owner?.zone === 'battlefield' && result.newObject !== null && instruction.to === 'exile'
         ? patchObject(untilled, owner.id, {
-            linkedExile: [...(owner.linkedExile ?? []), result.newObject],
+            linkedExile: [...(owner.linkedExile ?? []), ...movedObjects],
           })
         : untilled;
     // CR 702.75a (D-145): a card exiled face down by Hideaway is visible to the controller of the permanent that exiled it.
     // CR 406.3 (D-187): a card an effect exiled face down, with no one to look at it, is only marked.
     const hidden =
-      instruction.faceDown === true && result.newObject !== null
-        ? patchObject(
+      instruction.faceDown === true
+        ? movedObjects.reduce(
+            (acc, id) =>
+              patchObject(
+                acc,
+                id,
+                instruction.linkTo !== undefined
+                  ? { hideaway: instruction.linkTo }
+                  : { exiledFaceDown: true },
+              ),
             linked,
-            result.newObject,
-            instruction.linkTo !== undefined
-              ? { hideaway: instruction.linkTo }
-              : { exiledFaceDown: true },
           )
         : linked;
     // CR 305.1, 305.2a (D-145): a land played as an effect says counts as the player's land play for the turn.
@@ -437,10 +447,13 @@ export function runImmediateEffects(
   return { state: next, events };
 }
 
-/** CR 400.7 (D-230): the card an object that left became in a graveyard, if it is still there; the old id when it is not (nothing is exiled then). */
-function graveyardSuccessor(state: GameState, id: ObjectId): ObjectId {
-  const successor = state.lki[id]?.successor;
-  return successor !== undefined && state.objects[successor]?.zone === 'graveyard' ? successor : id;
+/**
+ * CR 400.7 (D-230): the card an object that left became in a graveyard, if it is still there; the old id when it is not (nothing is exiled then). CR 712.21c
+ * (D-991): a melded permanent that died became two cards, and an effect that finds the new object finds both.
+ */
+function graveyardSuccessors(state: GameState, id: ObjectId): readonly ObjectId[] {
+  const found = successorsOf(state, id, (o) => o.zone === 'graveyard');
+  return found.length > 0 ? found : [id];
 }
 
 function runEffect(
@@ -614,10 +627,10 @@ function runEffect(
     case 'exile': {
       const ids = resolveObjects(state, effect.objects, ctx, targets)
         // CR 400.7, 603.10a (D-230): "exile it" in a trigger about a permanent that died: the permanent is gone, the card it became is the one in the graveyard.
-        .map((id) =>
+        .flatMap((id) =>
           effect.objects.kind === 'triggerSubject' && state.objects[id] === undefined
-            ? graveyardSuccessor(state, id)
-            : id,
+            ? graveyardSuccessors(state, id)
+            : [id],
         )
         .filter((id) => state.objects[id] !== undefined);
       // CR 610.3a, 610.3b (D-149): "until this leaves the battlefield": if it already has, as the exile would happen, nothing moves.
@@ -1145,6 +1158,10 @@ function runEffect(
       }
       return { ...done(next, events), ...(lost > 0 ? { lifeLost: lost } : {}) };
     }
+
+    case 'meld':
+      // CR 701.42a (D-992): exile the permanent and its counterpart, then meld them.
+      return runMeld(state, res, effect);
 
     case 'loseGame': {
       // CR 104.3e (D-269): "each player this creature attacked this turn loses the game": the players the selector names lose it together.

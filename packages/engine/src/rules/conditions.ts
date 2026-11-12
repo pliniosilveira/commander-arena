@@ -20,6 +20,7 @@ import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
 import { designationHolders } from './designations';
 import { manaSpentOf } from './mana-spent';
+import { ownsAndControlsNamedHolds } from './meld-condition';
 import { ringBearerOf } from './ring-bearer';
 import { matchesFilter, resolveObjects, resolvePlayers } from './select';
 import { objectOrLki } from './source-info';
@@ -427,6 +428,9 @@ export function evaluateCondition(
         playerStatOf(state, ctx.triggerPlayer, condition.stat) >
           playerStatOf(state, ctx.controller, condition.stat)
       );
+    case 'ownsAndControlsNamed':
+      // CR 701.42a, 603.4 (D-992): the source and a permanent with a name, both owned and controlled by the controller.
+      return ownsAndControlsNamedHolds(state, condition, ctx.controller, ctx.source);
     case 'and':
       return condition.terms.every((t) => evaluateCondition(state, t, ctx));
     case 'or':

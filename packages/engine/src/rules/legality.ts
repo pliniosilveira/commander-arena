@@ -26,6 +26,7 @@ import { flashPermissionSources, libraryCastSources } from './derive-statics';
 import { graveyardPlayPermission } from './graveyard-play';
 import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace } from './layouts';
+import { isCommanderCardId } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
 import { preparedPermanentOf } from './prepare';
 import { matchesFilter } from './select';
@@ -273,7 +274,8 @@ export function castZone(
     return alternative === undefined && mayPlayFromExile(state, seat, obj) ? 'exile' : null;
   }
   if (obj.zone === 'hand') return 'hand';
-  if (obj.zone === 'command' && obj.card !== null && state.cards[obj.card]?.isCommander) {
+  // A card in the command zone is one card, never a melded permanent (D-991).
+  if (obj.zone === 'command' && isCommanderCardId(state, obj.card)) {
     return 'command';
   }
   return null;

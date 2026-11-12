@@ -22,6 +22,8 @@ import { INHERENT_TEXT, inherentName } from './rules/inherent';
 import { keywordsOf } from './rules/keywords';
 import { loyaltyActivatedThisTurn } from './rules/loyalty';
 import { isSummoningSick, wouldBeSummoningSick } from './rules/mana-engine';
+import { manaValueOfCost } from './rules/mana-value';
+import { cardsOf, commanderCardOf } from './rules/melded';
 import { modalOfObject } from './rules/modes';
 import { regenerationShieldsOn } from './rules/regenerate';
 import { ringBearerSeat } from './rules/ring-bearer';
@@ -294,6 +296,8 @@ export interface ObjectView {
    * options `face` means. Absent when `face` is.
    */
   readonly layout?: CardLayout;
+  /** D-991 (CR 701.42a, 712.4a): present on a melded permanent only: the two front faces it is made of and its mana value. See `MeldView`. */
+  readonly meld?: MeldView;
   /**
    * True for a card in exile that resolved as an Adventure (CR 715.3d): its owner may cast it from
    * there. Absent otherwise.
@@ -340,6 +344,16 @@ export interface AlternativeCostView {
 
 /** One face of a multi-faced card, as printed: its name, cost, type line, rules text and values. */
 export type FaceView = Characteristics;
+
+/**
+ * D-991 (CR 701.42a, 712.4a, 202.3c): what a melded permanent is made of. `components` are the printed front faces of the two cards that represent it, in
+ * order (the commander's card first when one is), and `manaValue` its mana value, the sum of the mana values of those front faces. The characteristics of
+ * the object itself (name, types, power, abilities, text) are those of the combined back face, as for any object (CR 712.8g).
+ */
+export interface MeldView {
+  readonly components: readonly FaceView[];
+  readonly manaValue: number;
+}
 
 export interface SeatView {
   readonly id: SeatId;
@@ -598,7 +612,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     ...(obj.zone === 'battlefield' && (obj.level !== undefined || d.subtypes.includes('Class'))
       ? { level: obj.level ?? 1 }
       : {}),
-    isCommander: obj.card !== null && state.cards[obj.card]?.isCommander === true,
+    isCommander: commanderCardOf(state, obj) !== null,
     summoningSick: obj.zone === 'battlefield' && isSummoningSick(state, obj),
     ...controlEndsOf(state, obj),
     ...(bearerSeat === null ? {} : { ringBearer: bearerSeat }),
@@ -621,7 +635,10 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     ...(d.restrictions.length === 0 ? {} : { restrictions: d.restrictions }),
     ...(landwalks.length === 0 ? {} : { landwalks }),
     protector: obj.protector,
-    support: def?.support ?? 'supported',
+    // D-991: a melded permanent is unsupported when either of its two cards is.
+    support: cardsOf(obj).some((c) => definitionOf(state, c).support === 'unsupported')
+      ? 'unsupported'
+      : (def?.support ?? 'supported'),
     targets: obj.stack?.chosenTargets ?? [],
     ...(abilitySource === null ? {} : { abilitySource }),
     ...(obj.stack?.kind === 'ability' && obj.stack.ability !== null
@@ -663,13 +680,28 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
         }),
     ...(obj.chosen === undefined ? {} : { chosen: obj.chosen }),
     ...castCostFields(state, obj),
-    ...(def !== null && def.faces.length > 1
+    // CR 712.4b, 712.8a (D-991): the combined back face of a meld card is only the characteristics of a melded permanent, so a meld card is not shown
+    // as a card with two faces; the melded permanent says what it is made of (`meld`).
+    ...(def !== null && def.faces.length > 1 && def.layout !== 'meld'
       ? {
           face: obj.face,
           layout: def.layout,
           faces: def.faces.map(({ abilities: _abilities, spell: _spell, ...printed }) => printed),
         }
       : {}),
+    ...(obj.meldedWith === undefined || obj.card === null
+      ? {}
+      : {
+          meld: {
+            components: cardsOf(obj).flatMap((card) => {
+              const front = definitionOf(state, card).faces[0];
+              if (front === undefined) return [];
+              const { abilities: _abilities, spell: _spell, ...printed } = front;
+              return [printed];
+            }),
+            manaValue: manaValueOfCost(d.manaCost, obj),
+          },
+        }),
     ...(obj.onAdventure === true ? { onAdventure: true as const } : {}),
     ...(obj.prepared === true ? { prepared: true as const } : {}),
     ...(obj.prepareOf !== undefined ? { preparedSpell: true as const } : {}),

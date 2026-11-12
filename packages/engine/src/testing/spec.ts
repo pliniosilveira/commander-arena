@@ -145,10 +145,11 @@ export function validatePlacement(p: Placement, def: CardDefinition): void {
     o.controller !== undefined ||
     o.protector !== undefined ||
     o.attachedTo !== undefined ||
+    o.meldedWith !== undefined ||
     o.chosen !== undefined;
   if (p.zone !== 'battlefield' && battlefieldOnly) {
     throw new ScenarioError(
-      `${where}: face, tapped, damage, counters, fresh, controller, protector, attachedTo and chosen only apply to the battlefield`,
+      `${where}: face, tapped, damage, counters, fresh, controller, protector, attachedTo, meldedWith and chosen only apply to the battlefield`,
     );
   }
   if (p.zone === 'battlefield') {
@@ -162,6 +163,18 @@ export function validatePlacement(p: Placement, def: CardDefinition): void {
       throw new ScenarioError(`${where}: controller ${o.controller} is not a seat`);
     }
     const types = face.types;
+    if (o.meldedWith !== undefined) {
+      if (def.layout !== 'meld') {
+        throw new ScenarioError(
+          `${where}: only a meld card can be meldedWith another card (CR 701.42b)`,
+        );
+      }
+      if (o.face !== undefined && o.face !== 1) {
+        throw new ScenarioError(
+          `${where}: a melded permanent has its combined back face up, face 1 (CR 712.8g)`,
+        );
+      }
+    }
     if (
       o.attachedTo !== undefined &&
       !face.subtypes.some((t) => t === 'Aura' || t === 'Equipment')

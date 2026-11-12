@@ -1934,6 +1934,15 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
       break;
+    case 'ownsAndControlsNamed':
+      // D-992, CR 701.42a: the permanent the ability belongs to and a permanent of a card type with a name.
+      if (typeof c.name !== 'string' || c.name === '') {
+        issue(out, `${path}.name`, 'the name of the other permanent must be a non-empty string');
+      }
+      if (!isOneOf(c.type, CARD_TYPES)) {
+        issue(out, `${path}.type`, `unknown card type ${JSON.stringify(c.type)}`);
+      }
+      break;
     case 'lifeGainedThisTurn':
       // D-252, CR 119.3: the life the controller has gained this turn.
       if (!isCount(c.atLeast) || c.atLeast < 1) {
@@ -3526,6 +3535,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'gainEnergy':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       checkAmount(e.amount, `${path}.amount`, scope, out);
+      break;
+    case 'meld':
+      // CR 701.42a (D-992): the creature named `partner` and the name of the combined face the two become; `validateCard` checks them against the card.
+      if (typeof e.partner !== 'string' || e.partner === '') {
+        issue(
+          out,
+          `${path}.partner`,
+          'the name of the card to meld with must be a non-empty string',
+        );
+      }
+      if (typeof e.result !== 'string' || e.result === '') {
+        issue(out, `${path}.result`, 'the name of the melded face must be a non-empty string');
+      }
       break;
     case 'loseGame':
       // CR 104.3e (D-269): the players the selector names lose the game; no other operand.

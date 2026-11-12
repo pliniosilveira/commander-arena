@@ -1587,6 +1587,8 @@ const LAYOUT_FACES: Readonly<Record<string, number>> = {
   transform: 2,
   modal_dfc: 2,
   prepare: 2,
+  // D-991: the front face and the combined back face of the meld pair.
+  meld: 2,
 };
 
 /** Structural validity only: is the AST well-formed, regardless of what the engine can execute. */

@@ -5,6 +5,7 @@ import {
   CHAPTER_HINT,
   isChapterChoice,
   isEffectChoice,
+  isMeldOrderChoice,
   isReplacementChoice,
   isRiotChoice,
   isVoteChoice,
@@ -40,11 +41,13 @@ export function NamedOptionDialog({
           ? 'Choose a chapter'
           : replacement
             ? 'Damage replacement'
-            : isVoteChoice(d)
-              ? 'Vote'
-              : isEffectChoice(d) || isRiotChoice(d)
-                ? 'Choose one'
-                : 'Choose an option'
+            : isMeldOrderChoice(d)
+              ? 'Order the two cards'
+              : isVoteChoice(d)
+                ? 'Vote'
+                : isEffectChoice(d) || isRiotChoice(d)
+                  ? 'Choose one'
+                  : 'Choose an option'
       }
       className="dec-option dec-named"
     >

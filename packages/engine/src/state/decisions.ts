@@ -699,7 +699,8 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'effect'
     | 'riot'
     | 'replacement'
-    | 'vote';
+    | 'vote'
+    | 'meldOrder';
   readonly options: readonly string[];
   /**
    * For purpose `'replacement'` (D-191, CR 616.1): several prevention effects apply to one damage event and the order can change the
@@ -738,6 +739,17 @@ export interface ChooseOptionDecision extends DecisionBase {
    */
   readonly attacker?: ObjectId;
   readonly attackTargets?: readonly AttackTarget[];
+  /**
+   * For purpose `'meldOrder'` (D-993, CR 712.21a, 712.21b): a melded permanent left the battlefield for a graveyard, a library or exile, and the player
+   * who owns its two cards (`seat`) arranges them. `options` are the names of the two cards (the cards of `first` and `second`, in that order, which are
+   * the two new objects in `zone`) and the answer is a `chooseOption` of the one that goes on top of the graveyard or library, or, in exile, the one
+   * that is exiled last (the later timestamp). Asked as state-based actions are next checked; the order is not revealed (CR 712.21a). `source` is `first`.
+   */
+  readonly meldOrder?: {
+    readonly first: ObjectId;
+    readonly second: ObjectId;
+    readonly zone: 'graveyard' | 'library' | 'exile';
+  };
   readonly source: ObjectId;
   readonly sourceName: string;
   readonly sourceOracleText: string;

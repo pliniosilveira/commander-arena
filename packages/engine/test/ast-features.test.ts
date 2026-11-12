@@ -133,6 +133,7 @@ describe('the dimensions', () => {
       'attackersTotalPower',
       // D-196: "if you control your Ring-bearer".
       'controlsRingBearer',
+      'ownsAndControlsNamed',
       'and',
       'or',
       'not',
@@ -272,7 +273,8 @@ describe('feature references', () => {
     expect(isFeatureSupported('layout:transform')).toBe(true);
     expect(isFeatureSupported('layout:saga')).toBe(true);
     expect(isFeatureSupported('trigger:chapter')).toBe(true);
-    expect(isFeatureSupported('layout:meld')).toBe(false);
+    expect(isFeatureSupported('layout:meld')).toBe(true); // D-991
+    expect(isFeatureSupported('layout:flip')).toBe(false);
   });
 
   test('a value outside the universe is not known', () => {

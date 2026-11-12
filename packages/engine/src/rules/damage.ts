@@ -22,6 +22,7 @@ import { type Asked, type OrderFlow, quietFlow, settleDamage } from './damage-or
 import { derive } from './derive';
 import { abilitiesHaveKeyword } from './keywords';
 import { gainLife } from './life-gain';
+import { commanderCardOf } from './melded';
 import { hasProtectionFrom } from './protection';
 import { commanderDamageKey } from './sba';
 
@@ -53,7 +54,6 @@ function sourceInfo(state: GameState, source: ObjectId): SourceInfo | null {
   const obj = live ?? state.lki[source]?.object;
   if (!obj) return null;
   const abilities = live ? derive(state, live).abilities : (state.lki[source]?.abilities ?? []);
-  const card = obj.card;
   return {
     controller: controllerOf(state, obj),
     deathtouch: abilitiesHaveKeyword(abilities, 'deathtouch'),
@@ -61,7 +61,8 @@ function sourceInfo(state: GameState, source: ObjectId): SourceInfo | null {
     infect: abilitiesHaveKeyword(abilities, 'infect'),
     wither: abilitiesHaveKeyword(abilities, 'wither'),
     toxic: toxicValue(abilities),
-    commanderCard: card !== null && state.cards[card]?.isCommander ? card : null,
+    // CR 903.3b (D-991): a melded permanent one of whose cards is a commander is that commander.
+    commanderCard: commanderCardOf(state, obj),
   };
 }
 

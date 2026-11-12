@@ -60,6 +60,7 @@ export type {
   CombatView,
   FaceView,
   GameView,
+  MeldView,
   ObjectView,
   SeatView,
 } from './view';

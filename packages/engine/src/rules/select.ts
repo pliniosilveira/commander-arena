@@ -24,6 +24,7 @@ import { keywordKindsOf } from './derive-keywords';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
 import { abilitiesHaveKeyword } from './keywords';
 import { manaValueOfCost } from './mana-value';
+import { commanderCardOf, successorsOf } from './melded';
 import { playerCanBeTargetedBy } from './player-protection';
 import { hasProtectionFrom } from './protection';
 import { objectOrLki } from './source-info';
@@ -75,7 +76,8 @@ export interface SelectContext {
 
 /** CR 903.3 (D-145): the object is a card its owner designated as a commander; a token or a copy of one is not. */
 function isCommanderObject(state: GameState, obj: GameObject): boolean {
-  return obj.card !== null && state.cards[obj.card]?.isCommander === true;
+  // CR 903.3b (D-991): a melded permanent one of whose two cards is a commander is a commander.
+  return commanderCardOf(state, obj) !== null;
 }
 
 /**
@@ -510,17 +512,16 @@ export function resolveObjects(
     }
     case 'triggerCard': {
       // CR 400.7, 603.10a (D-230): the card the permanent the event is about became in the graveyard, if it is still there.
-      const successor =
-        ctx.triggerSubject === undefined ? undefined : state.lki[ctx.triggerSubject]?.successor;
-      return successor !== undefined && state.objects[successor]?.zone === 'graveyard'
-        ? [successor]
-        : [];
+      // CR 712.21c (D-991): for a melded permanent that died, both cards.
+      return ctx.triggerSubject === undefined
+        ? []
+        : successorsOf(state, ctx.triggerSubject, (o) => o.zone === 'graveyard');
     }
     case 'thisCard': {
       // CR 400.7, 603.10a: the card the source became when it left, if it is still in that zone. A
       // source that has not left has no such card.
-      const successor = ctx.source === null ? undefined : state.lki[ctx.source]?.successor;
-      return successor !== undefined && state.objects[successor] !== undefined ? [successor] : [];
+      // CR 712.21c (D-991): for a melded permanent that left, both cards.
+      return ctx.source === null ? [] : successorsOf(state, ctx.source, () => true);
     }
     case 'each': {
       const zone = selector.filter.zone ?? (selector.filter.stackKind ? 'stack' : 'battlefield');
