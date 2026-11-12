@@ -325,6 +325,26 @@ describe('the condition paired', () => {
     expect(messages(spell)).toContain('paired');
   });
 
+  test('is refused in the choice of modes of a spell (chooseModes.maxIf), not only in its effects', () => {
+    const modal = singleFace({
+      name: 'SYNTHETIC Validation Spell',
+      manaCost: ['1'],
+      types: ['instant'],
+      colors: [],
+      colorIdentity: [],
+      oracleText: 'SYNTHETIC',
+      spell: {
+        effect: { kind: 'sequence', effects: [] },
+        modes: [
+          { text: 'draw', effect: draw },
+          { text: 'draw again', effect: draw },
+        ],
+        chooseModes: { min: 1, max: 1, maxIf: { condition: PAIRED, max: 2 } },
+      } as never,
+    } as never);
+    expect(messages(modal)).toContain("'paired' is valid only");
+  });
+
   test('is refused in the condition of an alternative cost (a card that is cast is not a permanent), a mana ability and a replacement', () => {
     const alternative = singleFace({
       name: 'SYNTHETIC Validation Spell',

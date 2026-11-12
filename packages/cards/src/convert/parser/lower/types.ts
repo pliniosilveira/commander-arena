@@ -101,6 +101,11 @@ export interface LowerContext {
    */
   askedPlayerActs: boolean;
   /**
+   * The normalized text of the ability the spans of the IR point into (D-985): the one place a lowering can tell the "you" the text says (the controller) from the "you"
+   * the engine reads for a player asked who acts (`askedPlayerActs`). Empty where the lowering has no text (a quotation lowered on its own): a rule that needs it refuses then.
+   */
+  text: string;
+  /**
    * True only while the "as long as" condition of a static ability is lowered (D-985, CR 604.1, 611.3a): the one place `paired` is read, because `derive` evaluates it
    * while the permanent is on the battlefield. Anywhere else the permanent may be gone when the condition is read (CR 400.7, 603.4, 608.2h) and the engine keeps no
    * last-known information of a pair.
@@ -226,6 +231,7 @@ export function newContext(
     dieSides: null,
     staticCondition: false,
     askedPlayerActs: false,
+    text: '',
     interveningCondition: false,
     meldPartner: null,
     itIsCard: false,

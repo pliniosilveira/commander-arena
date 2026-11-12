@@ -1321,6 +1321,9 @@ function lowerStep(
   return { last: i };
 }
 
+/** A word that names the controller of the ability in its text (CR 608.2d): "you", "your", "you've", "yourself". */
+const CONTROLLER_WORD = /\byou(?:r|rs|rself|'(?:ve|re|ll|d))?\b/iu;
+
 /**
  * "Each player may discard a card." and "Target opponent may have you draw three cards. If the player doesn't, you mill three cards." (stage P52, D-210, CR 608.2d,
  * 101.4): the players the sentence names are asked, in turn order, whether to do its clauses; with "have you" the controller does them, otherwise the player asked is "you"
@@ -1352,6 +1355,21 @@ function lowerPlayersMay(
   if (!players.ok) return refused(players);
   // D-985: with no "have you" the player asked does the instruction, as "you" (`runsAs: 'chooser'`): a rule that reads "you" or "your" of the controller refuses then.
   const askedActs = !by.haveYou;
+  // A word of the text that says "you" or "your" is the controller (CR 608.2d), which the engine would run as the asked player: the sentence, and the "if they don't" sentence
+  // that follows it, are not read then, whatever clause or amount says it. Without the text of the ability (a quotation lowered on its own) it cannot be told, so it is refused.
+  if (askedActs) {
+    const next = sentences[i + 1];
+    const spans = [
+      sentence,
+      ...sentence.clauses,
+      ...(next?.condition?.test.kind === 'declined' ? [next, ...next.clauses] : []),
+    ];
+    const start = Math.min(...spans.map((n) => n.span.start));
+    const end = Math.max(...spans.map((n) => n.span.end));
+    if (ctx.text === '' || CONTROLLER_WORD.test(ctx.text.slice(start, end))) {
+      return refused(refuse(sentence));
+    }
+  }
   const before = ctx.askedPlayerActs;
   ctx.askedPlayerActs = askedActs;
   const body = lowerClauses(sentence.clauses, ctx);

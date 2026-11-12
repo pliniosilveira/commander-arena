@@ -1472,9 +1472,9 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
     checkAbility(a, `${path}.abilities[${i}]`, out);
   });
   loyaltyOffPlaneswalkerIssues(face.types, face.abilities, path, out);
-  // D-985: the conditions a face keeps outside its abilities (an alternative cost, an additional cost) are read for a card that is being cast: it is not a permanent, so
-  // it is never paired.
-  if (effectHas([face.alternativeCosts, face.additionalCosts], 'paired')) {
+  // D-985: the conditions a face keeps outside its abilities (the spell itself with the choice of its modes, an alternative cost, an additional cost) are read for a card that is
+  // being cast: it is not a permanent, so it is never paired.
+  if (effectHas([face.spell, face.alternativeCosts, face.additionalCosts], 'paired')) {
     issue(
       out,
       path,
