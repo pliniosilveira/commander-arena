@@ -32,6 +32,9 @@ export function tokenKey(o: ObjectView, extra = ''): string {
     o.summoningSick,
     o.support,
     o.attachments ?? [],
+    // D-984 (CR 702.95b): a paired token is the partner of one creature in particular, so it never groups (the ids differ); the Ring-bearer is one token of its player.
+    o.pairedWith ?? null,
+    o.ringBearer ?? null,
     extra,
   ]);
 }

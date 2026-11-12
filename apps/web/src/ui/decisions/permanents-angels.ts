@@ -17,6 +17,7 @@ import { legalNoun } from './permanents';
 import { conniveOrderPrompt, isConniveOrder } from './permanents-connive';
 import { entersCopyPrompt, isEntersCopy } from './permanents-dragons';
 import { isRingBearer, RING_BEARER_BADGE, ringBearerPrompt } from './permanents-ring';
+import { isSoulbond, SOULBOND_BADGE, soulbondPrompt } from './permanents-soulbond';
 import { isUntapChoice, UNTAP_CHOICE_BADGE, untapChoicePrompt } from './permanents-untap';
 
 type Purposed = Pick<ChoosePermanentDecision, 'purpose'>;
@@ -191,6 +192,8 @@ export function angelsPermanentPrompt(
     return entersCopyPrompt(decision, index, legalNoun(decision.legal, index));
   // D-196 (CR 701.54a): "Each time the Ring tempts you, choose a creature you control".
   if (isRingBearer(decision)) return ringBearerPrompt(decision, index);
+  // D-984 (CR 702.95a): "you may pair this creature with another unpaired creature you control".
+  if (isSoulbond(decision)) return soulbondPrompt(decision, index);
   // D-216 (CR 701.26a): "Untap up to three lands."
   if (isUntapChoice(decision)) return untapChoicePrompt(decision, index);
   // D-223 (CR 701.50c): several permanents connive at once.
@@ -207,6 +210,7 @@ export function angelsBadge(
   if (isAuraHost(decision)) return 'Enchant';
   if (isEntersCopy(decision)) return 'Copy';
   if (isRingBearer(decision)) return RING_BEARER_BADGE;
+  if (isSoulbond(decision)) return SOULBOND_BADGE;
   if (isUntapChoice(decision)) return UNTAP_CHOICE_BADGE;
   if (isConniveOrder(decision)) return 'Connives';
   return isSpellTap(decision, index) ? 'Tap' : null;

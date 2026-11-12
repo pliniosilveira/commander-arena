@@ -260,6 +260,14 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'duringStep':
       // D-139 (CR 506.1): "if it's the declare attackers step".
       return `it's ${negate ? 'not ' : ''}the ${COMBAT_STEP_WORDS[condition.step]}`;
+    case 'paired':
+      // D-984 (CR 702.95b): "as long as this creature is paired with another creature".
+      return `this creature ${negate ? "isn't" : 'is'} paired with another creature`;
+    case 'soulbondReady':
+      // D-984 (CR 702.95a, 603.4): the intervening "if" of the two abilities soulbond stands for.
+      return condition.with === 'another'
+        ? `you ${negate ? "don't control" : 'control'} both this creature and another creature and both ${negate ? "aren't" : 'are'} unpaired`
+        : `you ${negate ? "don't control" : 'control'} both that creature and this one and both ${negate ? "aren't" : 'are'} unpaired`;
     case 'controlsRingBearer':
       // D-196 (CR 701.54e): "if you control your Ring-bearer".
       return `you ${negate ? "don't control" : 'control'} your Ring-bearer`;

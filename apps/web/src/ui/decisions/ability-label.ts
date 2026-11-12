@@ -865,6 +865,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'vote':
       // D-194 (CR 701.38a): "Starting with you, each player votes for profit or security".
       return `Starting with you, each player votes for ${effect.options.length <= 2 ? effect.options.join(' or ') : `${effect.options.slice(0, -1).join(', ')} or ${effect.options[effect.options.length - 1]}`}`;
+    case 'pair':
+      // D-984 (CR 702.95a): the effect of the two abilities soulbond stands for; the creature is chosen as it resolves.
+      return effect.partner === 'choose'
+        ? 'You may pair this creature with another unpaired creature you control'
+        : 'You may pair this creature with the creature that entered';
     case 'ringTempts':
       // D-196 (CR 701.54a): the Ring tempts the controller.
       return 'The Ring tempts you';

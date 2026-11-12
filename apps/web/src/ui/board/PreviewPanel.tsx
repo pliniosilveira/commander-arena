@@ -159,6 +159,11 @@ function PreviewDetails({ object }: { object: ObjectView }) {
     });
     if (taken !== null) facts.push(taken);
   }
+  // CR 702.95b (D-984): the creature this one is paired with, while the pair stands (the engine says it only then).
+  if (object.pairedWith !== undefined && view !== null) {
+    const partner = findObject(view, object.pairedWith);
+    facts.push(`Paired with ${partner === null ? 'another creature' : partner.name} (CR 702.95)`);
+  }
   // CR 716.2 (D-235): the level of a Class; its next level is gained with the level bar ability.
   if (object.level !== undefined) facts.push(`Class level ${object.level}`);
   if (object.tapped) facts.push('Tapped');

@@ -55,6 +55,7 @@ function ariaLabel(o: ObjectView, count: number, role: CombatRole | undefined): 
   if (isCrewedVehicle(o)) parts.push('crewed');
   if (isBackFaceUp(o)) parts.push('back face');
   if (isMelded(o)) parts.push(`melded from ${meldedFrom(o)}`);
+  if (o.pairedWith !== undefined) parts.push('paired with another creature');
   if (o.tapped) parts.push('tapped');
   const kicked = kickedWords(o);
   if (kicked !== null) parts.push(kicked);
@@ -206,6 +207,15 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
                 data-ring-bearer={o.ringBearer}
               >
                 <span aria-hidden="true">{'◎ '}</span>Ring-bearer
+              </span>
+            )}
+            {o.pairedWith !== undefined && (
+              <span
+                className="board-flag board-flag-soulbond"
+                title="Paired (CR 702.95): paired with another creature for as long as both stay creatures on the battlefield under their controller's control. See the card preview for which one."
+                data-paired-with={o.pairedWith}
+              >
+                <span aria-hidden="true">{'⚭ '}</span>Paired
               </span>
             )}
             {o.loyaltyUsed === true && (
