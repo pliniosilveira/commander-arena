@@ -1,5 +1,5 @@
 /**
- * The permanents of one event that enter the battlefield together (CR 603.6a, 614.12b, 400.7, D-951: "return those cards to the battlefield"). A replacement effect that
+ * The permanents of one event that enter the battlefield together (CR 603.6a, 614.12b, 400.7, D-272: "return those cards to the battlefield"). A replacement effect that
  * modifies how a permanent enters (an "as this enters" choice, "enters with counters", "enters tapped", the effect of a permanent on the battlefield that makes others enter
  * with counters or untapped, a count of the battlefield) applies from the continuous effects that already exist as the permanent would exist on the battlefield (CR 614.12,
  * the example of Orb of Dreams: a permanent does not affect itself entering); a permanent that enters in the same event does not exist on the battlefield yet, and a choice

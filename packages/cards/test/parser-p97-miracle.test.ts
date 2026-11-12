@@ -1,4 +1,4 @@
-// Stage P97 (D-971): Miracle. "Miracle {X}{W}{W}" is the real line of Entreat the Angels (golden corpus, acceptance card of issue 5) and
+// Stage P97 (D-274): Miracle. "Miracle {X}{W}{W}" is the real line of Entreat the Angels (golden corpus, acceptance card of issue 5) and
 // "Miracle {M}" has 14 cards in reports/templates.json (example "Miracle {1}{R}"). It lowers to an entry of the face's `alternativeCosts`, not to
 // an ability: the reveal as the card is drawn, its trigger and the cast from the hand are the engine's (`rules/miracle.ts`). Every other line
 // is SYNTHETIC: the costs, the near misses and the parenthesis standing for reminder text.

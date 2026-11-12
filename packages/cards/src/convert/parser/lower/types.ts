@@ -48,7 +48,7 @@ export interface LowerContext {
    */
   readonly removed: Set<string>;
   /**
-   * True once an instruction of this text created a token (stage P69, D-982, CR 111.1): "it" and "that creature" after it name the new token (or
+   * True once an instruction of this text created a token (stage P69, D-276, CR 111.1): "it" and "that creature" after it name the new token (or
    * are ambiguous), not an earlier target, so a rule that reads "it" as the target refuses. Filled by `lowerSentences` as each clause is lowered.
    */
   madeAToken: boolean;
@@ -84,11 +84,11 @@ export interface LowerContext {
   /** Set when a lowering used `graveyardSource`: the ability functions from the graveyard. */
   usedGraveyardSource: boolean;
   /**
-   * The number of sides of the die the text rolled before this point (D-941, CR 706.2): the instruction "roll a four-sided die" sets it, and "the result is 1"
+   * The number of sides of the die the text rolled before this point (D-271, CR 706.2): the instruction "roll a four-sided die" sets it, and "the result is 1"
    * reads it. Null before any roll; a second roll in one text is refused.
    */
   dieSides: number | null;
-  /** True only while the intervening "if" of a triggered ability is lowered (D-941): the one place "~ is in your graveyard" is read. */
+  /** True only while the intervening "if" of a triggered ability is lowered (D-271): the one place "~ is in your graveyard" is read. */
   interveningCondition: boolean;
   /**
    * True when "it" in the body of a triggered ability is the card the permanent became (stage P30, D-135): every event of the
@@ -153,7 +153,7 @@ export interface LowerContext {
    */
   readonly cardName: string;
   /**
-   * The name the card gives itself in its text (D-911): the shortest of the names that normalization writes as `~` ("Ajani" for "Ajani, Strength of the Pride"),
+   * The name the card gives itself in its text (D-266): the shortest of the names that normalization writes as `~` ("Ajani" for "Ajani, Strength of the Pride"),
    * or '' when it is not known (a context made for a quoted ability or a mode, where `~` is not the card). The name of a token that begins with the card's own
    * ("named Ajani's Pridemate") is written back from it.
    */

@@ -1,4 +1,4 @@
-// D-921: the Bruna deck program (issue 5), Angel of Destiny. The lines are the real Oracle text of the acceptance card of the golden corpus, with the nodes the grammar
+// D-269: the Bruna deck program (issue 5), Angel of Destiny. The lines are the real Oracle text of the acceptance card of the golden corpus, with the nodes the grammar
 // produces; the other lines are SYNTHETIC siblings and the near misses the grammar must not read: "loses the game" of any other player word, "each player ~ attacked this
 // turn" in another place, another verb or another span, "you and that player" with no player behind "that player".
 import { describe, expect, test } from 'vitest';
@@ -61,7 +61,7 @@ describe('Angel of Destiny', () => {
   });
 });
 
-describe('"you and that player each" (D-921)', () => {
+describe('"you and that player each" (D-269)', () => {
   test('the player the trigger is about (SYNTHETIC siblings)', () => {
     const draw = readAll(
       'Whenever a creature you control deals combat damage to a player, you and that player each draw a card.',
@@ -148,7 +148,7 @@ describe('"you and that player each" (D-921)', () => {
   });
 });
 
-describe('"loses the game" (D-921, CR 104.3e)', () => {
+describe('"loses the game" (D-269, CR 104.3e)', () => {
   test('each opponent, one player, the player of the trigger (SYNTHETIC)', () => {
     const each = readAll(
       'At the beginning of your end step, each opponent loses the game.',
@@ -209,7 +209,7 @@ describe('"loses the game" (D-921, CR 104.3e)', () => {
   });
 });
 
-describe('"each player this creature attacked this turn" (D-921, CR 508.6)', () => {
+describe('"each player this creature attacked this turn" (D-269, CR 508.6)', () => {
   test('is the player of any player verb, said of the permanent of the ability (SYNTHETIC)', () => {
     const life = readAll(
       'At the beginning of your end step, each player ~ attacked this turn loses 2 life.',

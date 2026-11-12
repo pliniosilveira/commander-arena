@@ -369,7 +369,7 @@ function answerConfirm(
     const begun = acceptCascade(state);
     return begun.ok ? begun : finishResolutionAnswer(declineCascade(state));
   }
-  // CR 702.94a (D-971): "you may reveal this card from your hand as you draw it": asked of the player who drew it, in the draw step (no
+  // CR 702.94a (D-274): "you may reveal this card from your hand as you draw it": asked of the player who drew it, in the draw step (no
   // resolution) or between two draws of a resolving spell or ability.
   if (d.purpose === 'miracleReveal') {
     if (state.resolution === null && d.subject !== undefined) {
@@ -378,7 +378,7 @@ function answerConfirm(
     }
     return finishResolutionAnswer(answerResolutionOptional(state, accept));
   }
-  // CR 702.62a, 702.35a, 702.94a, 608.2g (D-128, D-971): "you may play it without paying its mana cost" (Suspend), "its owner may
+  // CR 702.62a, 702.35a, 702.94a, 608.2g (D-128, D-274): "you may play it without paying its mana cost" (Suspend), "its owner may
   // cast it by paying [cost]" (Madness) and "you may cast it by paying [its miracle cost]" (Miracle): asked while the ability resolves.
   if (d.purpose === 'suspend' || d.purpose === 'madness' || d.purpose === 'miracle') {
     if (!accept) return finishResolutionAnswer(declineCastExiled(state));

@@ -360,7 +360,7 @@ export function describeEvent(
         'CR 704.5b',
       );
     case 'dieRolled':
-      // CR 706.1, 706.2 (D-941): the natural result of a die, which an ability may read.
+      // CR 706.1, 706.2 (D-271): the natural result of a die, which an ability may read.
       return line(
         'major',
         `${who(event.seat)} ${verb(event.seat, 'roll', 'rolls')} a ${event.sides}-sided die: ${event.result}.`,
@@ -844,7 +844,7 @@ export function describeEvent(
       );
     }
     case 'optionalAnswered': {
-      // Suspend's "cast it now?", Madness's "cast it for its madness cost?" and Miracle's "cast it for its miracle cost?" (D-128, D-971).
+      // Suspend's "cast it now?", Madness's "cast it for its madness cost?" and Miracle's "cast it for its miracle cost?" (D-128, D-274).
       const later = castNowAnswerLine(before, event, viewer);
       if (later !== null) return line('major', later.text, later.seat, later.objects, later.rule);
       // Extort's "you may pay {W/B}" and Cascade's "cast it without paying its mana cost" (D-120).

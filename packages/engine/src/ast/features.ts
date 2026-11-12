@@ -122,7 +122,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sparePermanents',
     // D-232: Coin of Fate's "An opponent chooses one of the exiled cards ...".
     'splitCostExiled',
-    // D-951: Dawnbreak Reclaimer's "choose a creature card in an opponent's graveyard, then that player chooses ...".
+    // D-272: Dawnbreak Reclaimer's "choose a creature card in an opponent's graveyard, then that player chooses ...".
     'returnGraveyardPair',
     // D-234: "Any number of other target creatures you control phase out." (CR 702.26).
     'phaseOut',
@@ -135,7 +135,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-201: "Target player's life total becomes N" (CR 119.5).
     'setLifeTotal',
     'loseLife',
-    // D-921: "Each player this creature attacked this turn loses the game." (CR 104.3e).
+    // D-269: "Each player this creature attacked this turn loses the game." (CR 104.3e).
     'loseGame',
     'tap',
     'untap',
@@ -157,7 +157,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'setTypes',
     'setColors',
     'grantKeyword',
-    // D-230: Backup's grant of the abilities printed below it, until end of turn. D-981 (CR 611.2a): the static abilities cantLoseGame and
+    // D-230: Backup's grant of the abilities printed below it, until end of turn. D-275 (CR 611.2a): the static abilities cantLoseGame and
     // opponentsCantWin given for the rest of the game (`duration: 'permanent'`).
     'grantAbility',
     'restrict',
@@ -166,7 +166,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
     'gainControl',
     'shuffle',
-    // D-941: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
+    // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
     'rollDie',
     'scry',
     'surveil',
@@ -514,7 +514,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyTarget',
     // D-200: "target player or planeswalker".
     'playerOrObject',
-    // D-931: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (`exile` only).
+    // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (`exile` only).
     'objectOrGraveyardCard',
     'each',
     'choose',
@@ -522,7 +522,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachPlayer',
     'eachOpponent',
     'eachOtherOpponent',
-    // D-921: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
+    // D-269: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
     'attackedPlayers',
     'controllerOf',
     'ownerOf',
@@ -673,7 +673,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerDealtDamage',
     // D-252: "if you gained 3 or more life this turn".
     'lifeGainedThisTurn',
-    // D-941: "if the result is 1" (after a die roll), "if this card is in your graveyard".
+    // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
     'dieResult',
     'thisInYourGraveyard',
     // D-151: "Khans — ..." (the option the permanent chose as it entered).
@@ -812,7 +812,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'escape',
     // D-128: Madness (CR 702.35) and Foretell (CR 702.143).
     'madness',
-    // D-971: Miracle (CR 702.94).
+    // D-274: Miracle (CR 702.94).
     'miracle',
     'foretell',
     // D-149: "pay {W} and tap four untapped creatures you control with flying rather than pay this spell's mana cost".
@@ -956,7 +956,7 @@ export const SELECTOR_KINDS = [
   'anyTarget',
   /** "Target player or planeswalker" (D-200): the engine's `TargetSpec.what` `playerOrObject`. */
   'playerOrObject',
-  /** "Up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-931): `TargetSpec.what` `objectOrGraveyardCard`. */
+  /** "Up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270): `TargetSpec.what` `objectOrGraveyardCard`. */
   'objectOrGraveyardCard',
   'each',
   'choose',
@@ -965,7 +965,7 @@ export const SELECTOR_KINDS = [
   'eachOpponent',
   /** "Each other opponent" (D-151): the opponents besides the player of the trigger's event. */
   'eachOtherOpponent',
-  /** "Each player this creature attacked this turn" (D-921, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
+  /** "Each player this creature attacked this turn" (D-269, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
   'attackedPlayers',
   'controllerOf',
   'ownerOf',
@@ -1149,9 +1149,9 @@ export const CONDITION_KINDS = [
   'playerDealtDamage',
   /** "If you gained 3 or more life this turn" (D-252): the engine's `lifeGainedThisTurn`. */
   'lifeGainedThisTurn',
-  /** "If the result is 1" after a die roll (CR 706.2, D-941): the engine's `dieResult`. */
+  /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
   'dieResult',
-  /** "If this card is in your graveyard" (CR 113.6b, D-941): the engine's `thisInYourGraveyard`. */
+  /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
   'thisInYourGraveyard',
   /** "Khans — ..." (D-151): the engine's `chosenOption`, a linked ability of "choose Khans or Dragons". */
   'chosenOption',

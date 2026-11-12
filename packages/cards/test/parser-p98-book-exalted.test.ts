@@ -1,4 +1,4 @@
-// Stage P69 (D-982): the Bruna deck program (issue 5), The Book of Exalted Deeds: an object gains a static ability for good, "It gains \"You can't lose the game and
+// Stage P69 (D-276): the Bruna deck program (issue 5), The Book of Exalted Deeds: an object gains a static ability for good, "It gains \"You can't lose the game and
 // your opponents can't win the game.\"" (CR 611.2a, 613.1f, 104.3), and the "Activate only as a sorcery" that follows a sentence that ends with a quote. The lines
 // are the real Oracle text of the acceptance card of the golden corpus, with the nodes the grammar produces; the other lines are SYNTHETIC siblings and the near
 // misses the grammar must not read.
@@ -58,7 +58,7 @@ describe('The Book of Exalted Deeds', () => {
   });
 });
 
-describe('the grant of a static ability with no duration (D-982)', () => {
+describe('the grant of a static ability with no duration (D-276)', () => {
   test('a target says it, without a counter, at instant speed (SYNTHETIC)', () => {
     const parsed = readAll(`{T}: Target Angel gains ${QUOTE}`, 'artifact');
     expect(parsed.abilities).toEqual([
@@ -175,7 +175,7 @@ describe('the grant of a static ability with no duration (D-982)', () => {
   });
 });
 
-describe('"Activate only as a sorcery" after a sentence that ends with a quote (D-982)', () => {
+describe('"Activate only as a sorcery" after a sentence that ends with a quote (D-276)', () => {
   const slice = (t: string, s: { start: number; end: number }) => t.slice(s.start, s.end);
 
   test('the restriction is a sentence of its own', () => {

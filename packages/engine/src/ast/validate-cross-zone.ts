@@ -1,5 +1,5 @@
 /**
- * A target slot of two zones (D-931, CR 115.1): "up to three other target creatures from the battlefield and/or creature cards from graveyards". The engine runs
+ * A target slot of two zones (D-270, CR 115.1): "up to three other target creatures from the battlefield and/or creature cards from graveyards". The engine runs
  * such a slot only for `exile`, which moves each target from the zone it is in; every other effect would have to say what it does to a card in a graveyard, so a
  * slot of this kind that any other effect names is refused here, never guessed.
  */

@@ -24,7 +24,7 @@ export type GameEvent =
       readonly fromZone: Zone;
       readonly toZone: Zone;
       /**
-       * Put onto the battlefield at the same time as the other consecutive `simultaneous` events (CR 603.6a, D-951): one event puts several permanents onto the battlefield,
+       * Put onto the battlefield at the same time as the other consecutive `simultaneous` events (CR 603.6a, D-272): one event puts several permanents onto the battlefield,
        * so each of them is checked for the enters triggers of all the others. Only on an event that enters the battlefield.
        */
       readonly simultaneous?: true;
@@ -42,7 +42,7 @@ export type GameEvent =
   | { readonly kind: 'drewFromEmptyLibrary'; readonly seat: SeatId }
   | { readonly kind: 'libraryShuffled'; readonly seat: SeatId }
   /**
-   * CR 706.1, 706.2 (D-941): `seat` rolled a die of `sides` sides; `result` is the natural result (the engine has no modifiers of a roll), drawn from the
+   * CR 706.1, 706.2 (D-271): `seat` rolled a die of `sides` sides; `result` is the natural result (the engine has no modifiers of a roll), drawn from the
    * seeded generator of the game. A random event: the host does not let the player undo past it, as for a draw or a shuffle.
    */
   | {
@@ -492,7 +492,7 @@ export type GameEvent =
    */
   | { readonly kind: 'madnessExiled'; readonly seat: SeatId; readonly object: ObjectId }
   /**
-   * CR 702.94a (Miracle, D-971): `seat` revealed the card `object`, in their hand, as they drew it (the first card they drew this turn); "When
+   * CR 702.94a (Miracle, D-274): `seat` revealed the card `object`, in their hand, as they drew it (the first card they drew this turn); "When
    * you reveal this card this way" triggers from this. The reveal itself is public through the `cardsRevealed` event before it.
    */
   | { readonly kind: 'miracleRevealed'; readonly seat: SeatId; readonly object: ObjectId }
@@ -567,5 +567,5 @@ export type LossReason =
   | 'poison'
   | 'commanderDamage'
   | 'concede'
-  /** An effect said the player loses the game (CR 104.3e, D-921). */
+  /** An effect said the player loses the game (CR 104.3e, D-269). */
   | 'effect';

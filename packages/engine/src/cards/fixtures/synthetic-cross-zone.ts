@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC CARDS FOR A TARGET SLOT OF TWO ZONES AND A LINKED EXILE THAT RETURNS EVERY CARD TO ITS OWNER'S HAND. NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of D-931 and D-932 (the Bruna deck). The wording of a real card, the name replaced: "When this creature enters, you may exile up to three
+ * Invented for the tests of D-270 (the Bruna deck). The wording of a real card, the name replaced: "When this creature enters, you may exile up to three
  * other target creatures from the battlefield and/or creature cards from graveyards. When this creature leaves the battlefield, return the exiled cards to their
  * owners' hands.", with a variant that is not optional and a variant that only takes creature cards of graveyards for its second half. Names start with
  * "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle text, and none of these is the definition of a real card.

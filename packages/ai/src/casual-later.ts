@@ -1,6 +1,6 @@
 /**
  * CasualAgent choices for the "cast later" family (D-128): Suspend (CR 702.62), Madness (CR 702.35), Foretell
- * (CR 702.143) and Miracle (CR 702.94, D-971, D-972). The engine lists the special actions `suspend` and `foretell` as priority options only when the
+ * (CR 702.143) and Miracle (CR 702.94, D-274). The engine lists the special actions `suspend` and `foretell` as priority options only when the
  * player could take them and pay for them, so the agent only decides whether they are worth taking now:
  * - Suspend and Foretell are taken in the agent's own main phase, with the stack empty, and only once no worthwhile
  *   spell is left to cast from the hand (`casual-priority.ts` calls `chooseSpecialAction` after the spells). A suspended
@@ -14,7 +14,7 @@
  *   needs one); the engine asks only when the card could be cast and the cost paid. Declining a madness card costs
  *   it (it goes to the graveyard), so the agent says yes to every creature and permanent.
  * - A card with madness is the first card the agent discards in the cleanup step: discarding it is a gain.
- * - Miracle (CR 702.94a, D-972): the agent reveals the card it just drew only when it is worth casting now (`worth`) and the untapped lands and
+ * - Miracle (CR 702.94a, D-274): the agent reveals the card it just drew only when it is worth casting now (`worth`) and the untapped lands and
  *   mana in its pool cover the miracle cost (an {X} counted as 1 for an instant or sorcery, as 0 for a permanent): revealing is public
  *   and gives the opponent the card for nothing otherwise. The question that follows (cast it for the miracle cost?) is answered as
  *   Madness's is: yes when the card is worth casting.

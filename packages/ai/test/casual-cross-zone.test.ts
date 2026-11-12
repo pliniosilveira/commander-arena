@@ -1,4 +1,4 @@
-// CasualAgent and a target slot of two zones (D-931): "When this creature enters, you may exile up to three other target creatures from the battlefield and/or creature
+// CasualAgent and a target slot of two zones (D-270): "When this creature enters, you may exile up to three other target creatures from the battlefield and/or creature
 // cards from graveyards." The exile is undone when the permanent leaves (the cards go to their owners' hands), so the agent aims at the opponent's creatures on the battlefield
 // and leaves every card of a graveyard alone, and a slot with only graveyard cards legal is left empty. Every answer is one the engine takes. The card is the SYNTHETIC
 // 'SYNTHETIC Linked Banisher' of src/cards/fixtures/synthetic-cross-zone.ts.
@@ -74,7 +74,7 @@ describe('the targets of an exile of the battlefield and the graveyards', () => 
   });
 });
 
-describe('the battlefield-only plan is the slot of two zones alone (D-931)', () => {
+describe('the battlefield-only plan is the slot of two zones alone (D-270)', () => {
   // The guard of `score` reads the plan, not the zone: the same legal targets, ranked with and without it. Without it a card of a graveyard is a target like any other
   // (a "return target creature card from a graveyard" aims at one); with it only the permanents are.
   const setup = () => {

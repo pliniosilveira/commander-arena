@@ -856,7 +856,7 @@ export type Instruction =
     }
   /**
    * "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their
-   * owners' control" (`returnGraveyardPair`, D-951, `rules/graveyard-pair.ts`): `stage` is the step that comes next. `theirs`: the controller chooses a card of `cardType` among the
+   * owners' control" (`returnGraveyardPair`, D-272, `rules/graveyard-pair.ts`): `stage` is the step that comes next. `theirs`: the controller chooses a card of `cardType` among the
    * graveyards of their opponents. `mine`: the owner of that card chooses one in the controller's graveyard. `ask`: the controller may return the cards chosen (`answer` is null until
    * they answer; declining drops the instruction). `theirs` and `mine` are the cards chosen so far; `chosen` is the answer to the question being asked, null until then.
    */
@@ -1204,7 +1204,7 @@ export type Instruction =
    */
   | { readonly kind: 'changeTarget'; readonly object: ObjectId }
   /**
-   * CR 702.62a, 702.35a, 702.94a (Suspend, Madness and Miracle, D-128, D-971): the resolution of `castExiled`. `start` looks at the card the
+   * CR 702.62a, 702.35a, 702.94a (Suspend, Madness and Miracle, D-128, D-274): the resolution of `castExiled`. `start` looks at the card the
    * ability belongs to (it must still be that card, in exile, or in its owner's hand for Miracle) and goes on to `ask` when it could be
    * cast, else it ends: a suspended card stays exiled, a card exiled by madness goes to its owner's graveyard, a miracle card stays in the hand. `ask` asks the owner
    * (`confirmOptional`, purpose 'suspend' or 'madness', the card as `subject`); accepting begins the cast as CR
@@ -1244,7 +1244,7 @@ export type Instruction =
       readonly cast: readonly VoteCast[];
     }
   /**
-   * CR 702.94a (Miracle, D-971): the player who drew a card with miracle as the first card of their turn is asked whether to reveal it (`confirmOptional`,
+   * CR 702.94a (Miracle, D-274): the player who drew a card with miracle as the first card of their turn is asked whether to reveal it (`confirmOptional`,
    * purpose 'miracleReveal', the card as `subject`); `answer` is theirs, null until asked. Accepting reveals the card (`cardsRevealed`, `miracleRevealed`),
    * whose trigger goes on the stack once the resolution is over. It sits in the queue between the draw of that card and the next draw of the same
    * instruction ("as you draw it"). See rules/miracle.ts.
@@ -1302,7 +1302,7 @@ export type Instruction =
       /** The land is played (CR 305.1, 305.2a: it counts as the player's land play), as an effect allows (`castFree` with `play`, D-145). */
       readonly playAsLand?: true;
       /**
-       * Enters the battlefield at the same time as the other consecutive moves that carry this flag (CR 603.6a, D-951: "return those cards to the battlefield"): the
+       * Enters the battlefield at the same time as the other consecutive moves that carry this flag (CR 603.6a, D-272: "return those cards to the battlefield"): the
        * `zoneChanged` events of the run say `simultaneous`, and `findTriggers` lets each permanent of the run see every other one enter; the replacement effects of a card of the run read the
        * battlefield without the permanents that entered before it in the run (`MoveRequest.alongside`, `rules/enters-run.ts`, CR 614.12).
        */
@@ -1401,7 +1401,7 @@ export interface ResolutionContext {
    * whether it is more than 0; a `may` effect resets it to 0 as it comes up. Absent until one is counted.
    */
   readonly performed?: number;
-  /** The natural result of the latest `rollDie` of this resolution (CR 706.2, D-941), which the condition `dieResult` reads. Absent until a die is rolled. */
+  /** The natural result of the latest `rollDie` of this resolution (CR 706.2, D-271), which the condition `dieResult` reads. Absent until a die is rolled. */
   readonly dieResult?: number;
   /**
    * The keys answered so far to the replacement questions (CR 616.1, D-191) of the instruction at the head of the queue, in the order the
@@ -1684,7 +1684,7 @@ export interface TurnLog {
    */
   readonly attacked: readonly ObjectId[];
   /**
-   * Each player a creature was declared as an attacker attacking this turn (D-921, CR 508.6: a player has "attacked [a player]" if they declared
+   * Each player a creature was declared as an attacker attacking this turn (D-269, CR 508.6: a player has "attacked [a player]" if they declared
    * creatures as attackers attacking that player), in order: the creature and the player. A creature that attacks a planeswalker or a battle attacks
    * that permanent, not the player who controls or protects it, so it adds no entry; a creature put onto the battlefield attacking was never declared
    * as an attacker (CR 508.4: it is "attacking" but never "attacked"; CR 508.6) and adds none; a reselected attack (CR 508.7a) keeps the entry of the

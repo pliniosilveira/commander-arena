@@ -26,7 +26,7 @@ export interface StepOutcome {
   readonly votes?: Readonly<Record<string, number>>;
   /** How much this instruction did, added to `ResolutionContext.performed` for `didPrevious` and `reflexive` (D-135). */
   readonly performed?: number;
-  /** The result of a die this instruction rolled, which becomes `ResolutionContext.dieResult` (D-941). */
+  /** The result of a die this instruction rolled, which becomes `ResolutionContext.dieResult` (D-271). */
   readonly dieResult?: number;
   /** Set by a `may` effect as it comes up: `ResolutionContext.performed` starts again at 0 (D-135). */
   readonly resetPerformed?: true;

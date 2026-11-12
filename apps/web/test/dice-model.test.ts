@@ -1,4 +1,4 @@
-// What the web says about a die roll (D-941): the log line of the `dieRolled` event (CR 706.2) and the words of the conditions that read the result and the
+// What the web says about a die roll (D-271): the log line of the `dieRolled` event (CR 706.2) and the words of the conditions that read the result and the
 // card in the graveyard.
 import { describe, expect, test } from 'vitest';
 import { gameConditionWords } from '../src/game/condition-text';

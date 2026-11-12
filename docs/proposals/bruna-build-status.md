@@ -7,20 +7,20 @@ The running checklist of the deck program for `decks/bruna.txt`. One branch, one
 | Valkyrie Harbinger | 1 (D-252) | P | done | "if you gained N or more life this turn" |
 | Angelic Accord | 1 | P | done | |
 | Griffin Aerie | 1 | P | done | |
-| The Book of Exalted Deeds | 1 | P | open | the trigger reads now; the second ability ("you can't lose the game", grant, sorcery speed) is still unread |
+| The Book of Exalted Deeds | 1, 6 (D-275, D-276) | P | done | the life trigger (group 1) and a permanent grant of "you can't lose the game and your opponents can't win the game" |
 | Bruna, the Fading Light | | S | blocked | meld, `docs/proposals/meld.md` |
 | Gisela, the Broken Blade | | S | blocked | meld |
-| Breathkeeper Seraph | | S | blocked | soulbond (pairing) is new machinery; to be written as a proposal |
-| Ajani, Strength of the Pride | | | open | |
-| Angel of Destiny | | | open | |
-| Angel of Serenity | | | open | |
+| Breathkeeper Seraph | | S | blocked | soulbond (pairing) is new machinery; proposal in `docs/proposals/soulbond.md`, awaiting the owner's approval |
+| Ajani, Strength of the Pride | 6 (D-266 to D-268) | P | done | token named after the card, a leading life-total test, "each artifact and creature" |
+| Angel of Destiny | 6 (D-269) | P | done | "loses the game", players this creature attacked this turn |
+| Angel of Serenity | 6 (D-270) | P | done | a target slot of two zones, a linked exile returned to hand |
 | Arch of Orazca | 5 (D-264) | K | done | Ascend on a permanent, the city's blessing |
-| Arden Angel | | | open | |
+| Arden Angel | 6 (D-271) | P | done | rolling a die and reading its result |
 | Commander's Plate | 5 (D-259) | P | done | "Equip commander", protection from the colors outside the commander identity |
 | Cosmos Elixir | 2 (D-253) | P | done | "draw a card if your life total is greater than your starting life total. Otherwise, you gain 2 life." |
-| Dawnbreak Reclaimer | | | open | |
-| Dismantling Wave | | | open | |
-| Entreat the Angels | | | open | Miracle (D-117 design, not built) |
+| Dawnbreak Reclaimer | 6 (D-272) | P | done | a card of each graveyard returned in one event |
+| Dismantling Wave | 6 (D-273) | P | done | "for each opponent, destroy up to one target" |
+| Entreat the Angels | 6 (D-274) | K | done | Miracle |
 | Everflowing Chalice | 3 (D-254) | P | done | "enters with a charge counter on it for each time it was kicked" |
 | Heirloom Blade | 5 (D-261) | T | done | "shares a creature type with it" |
 | Karoo | 5 (D-258) | P | done | "sacrifice it unless you return a permanent you control to its owner's hand" |
@@ -32,4 +32,4 @@ The running checklist of the deck program for `decks/bruna.txt`. One branch, one
 | Urza's Incubator | 4 (D-255) | T | done | "Creature spells of the chosen type cost {2} less to cast." (every player's spells) |
 | Well of Lost Dreams | 5 (D-257) | P | done | "you may pay {X}, where X is at most the life gained. If you do, draw X cards" |
 
-Golden after group 1: Valkyrie Harbinger, Angelic Accord and Griffin Aerie are supported; after group 2: Cosmos Elixir too; after group 3: Everflowing Chalice; after group 4: Urza's Incubator. After group 5 (seven independent groups built in parallel worktrees and reviewed twice, D-256 to D-264): ten more cards supported (golden acceptance 185 to 195, D-256 to D-265). Versions: `PARSER_VERSION` 82, `ENGINE_VERSION` 76.
+Golden after group 1: Valkyrie Harbinger, Angelic Accord and Griffin Aerie are supported; after group 2: Cosmos Elixir too; after group 3: Everflowing Chalice; after group 4: Urza's Incubator. After group 5 (seven independent groups built in parallel worktrees and reviewed twice, D-256 to D-264): ten more cards supported (golden acceptance 185 to 195, D-256 to D-265). After group 6 (eight more groups, built, reviewed and fixed in parallel worktrees, D-266 to D-276): nine more cards supported (golden acceptance 195 to 204); Vraska, Golgari Queen (not of this deck) also reads now through the "loses the game" effect. Left: Bruna, the Fading Light and Gisela, the Broken Blade (meld, approved, `docs/proposals/meld.md`) and Breathkeeper Seraph (soulbond, `docs/proposals/soulbond.md`, awaiting the owner's approval). Versions: `PARSER_VERSION` 83, `ENGINE_VERSION` 77.

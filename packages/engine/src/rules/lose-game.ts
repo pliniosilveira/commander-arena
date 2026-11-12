@@ -1,5 +1,5 @@
 /**
- * "Each player ... loses the game" (CR 104.3e: an effect may state that a player loses the game; D-921).
+ * "Each player ... loses the game" (CR 104.3e: an effect may state that a player loses the game; D-269).
  *
  * The players the effect names who are still in the game lose it together, as one change: they are all marked before anything else looks (CR 104.4a: if all
  * the players remaining in a game lose simultaneously the game is a draw, which `evaluateGameEnd` finds as the result settles). A player who "can't lose the

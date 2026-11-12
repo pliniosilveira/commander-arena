@@ -1,6 +1,6 @@
 /**
  * "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their
- * owners' control" (`returnGraveyardPair`, D-951; Dawnbreak Reclaimer). Three steps, one instruction (`graveyardPair`) that stays at the head of the resolution until it is done:
+ * owners' control" (`returnGraveyardPair`, D-272; Dawnbreak Reclaimer). Three steps, one instruction (`graveyardPair`) that stays at the head of the resolution until it is done:
  *
  * 1. `theirs`: the controller chooses a card of the type among the cards in the graveyards of their opponents (CR 608.2c: the instructions are followed in the order written).
  * 2. `mine`: the owner of that card, "that player", chooses a card of the type in the controller's graveyard.
@@ -168,7 +168,7 @@ function runAsk(state: GameState, res: ResolutionContext, ins: GraveyardPair): S
   }
   // A declined question drops the instruction (`answerResolutionOptional`), so this one was accepted.
   return {
-    // CR 603.6a: one event puts both cards onto the battlefield, so each sees the other enter (`together`, D-951).
+    // CR 603.6a: one event puts both cards onto the battlefield, so each sees the other enter (`together`, D-272).
     ...done(
       state,
       [],

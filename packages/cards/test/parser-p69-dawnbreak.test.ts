@@ -1,5 +1,5 @@
 // Stage P69: the Bruna deck program (issue 5), Dawnbreak Reclaimer: "At the beginning of your end step, choose a creature card in an opponent's graveyard, then that player chooses
-// a creature card in your graveyard. You may return those cards to the battlefield under their owners' control." (D-951). The line is the real Oracle text of the acceptance card
+// a creature card in your graveyard. You may return those cards to the battlefield under their owners' control." (D-272). The line is the real Oracle text of the acceptance card
 // of the golden corpus; the others are SYNTHETIC siblings and near misses the grammar must not read. CR 608.2c, 608.2d (who chooses, and what is impossible), 110.2a, 400.3.
 import { describe, expect, test } from 'vitest';
 import { dropped, readAll } from './parser-p5-helpers';

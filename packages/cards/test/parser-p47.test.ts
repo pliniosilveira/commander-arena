@@ -146,7 +146,7 @@ describe('Lavalanche: "target player or planeswalker" is a real target now (D-20
 describe('what the real planeswalkers still stop at (no card is half read)', () => {
   const stops: readonly [string, RegExp][] = [
     ['Chandra, Torch of Defiance', /You may cast that card/],
-    // Vraska, Golgari Queen stopped at "that player loses the game" until D-921 taught the engine that effect (CR 104.3e); it is supported now and
+    // Vraska, Golgari Queen stopped at "that player loses the game" until D-269 taught the engine that effect (CR 104.3e); it is supported now and
     // `convert-grammar-engine-p92-destiny.test.ts` plays its emblem.
     ['Ugin, the Spirit Dragon', /Exile each permanent/],
     ['Liliana of the Veil', /two piles/],

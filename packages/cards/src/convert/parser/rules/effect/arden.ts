@@ -1,5 +1,5 @@
 /**
- * Effect rules of the dice (D-941, CR 706): the instruction "roll a four-sided die". One die, rolled by the controller; the result is read by the
+ * Effect rules of the dice (D-271, CR 706): the instruction "roll a four-sided die". One die, rolled by the controller; the result is read by the
  * sentences after it ("If the result is 1, ..."), which the lowering joins to the roll.
  */
 import { fail, pattern } from '../../combinators';

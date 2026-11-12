@@ -1,4 +1,4 @@
-// "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration (D-981): an effect that gives a permanent a static
+// "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration (D-275): an effect that gives a permanent a static
 // ability for the rest of the game, here as the effect of an activated ability whose source was exiled as a cost and that may be activated only
 // as a sorcery (The Book of Exalted Deeds).
 // Pins: CR 611.2a (a continuous effect from a resolving ability with no stated duration lasts until the end of the game), CR 613.1f (layer 6
@@ -332,7 +332,7 @@ describe('a card may give only what the engine reads', () => {
     }
   });
 
-  test('a condition on a given static ability is refused: the engine would drop it silently (D-981)', () => {
+  test('a condition on a given static ability is refused: the engine would drop it silently (D-275)', () => {
     const conditional = [
       {
         kind: 'static',

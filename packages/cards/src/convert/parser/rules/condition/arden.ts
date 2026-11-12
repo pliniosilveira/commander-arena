@@ -1,5 +1,5 @@
 /**
- * Conditions of the die roll and of a card in a graveyard (D-941): "the result is 1" (CR 706.2, 706.3a: the number on the die, read by the
+ * Conditions of the die roll and of a card in a graveyard (D-271): "the result is 1" (CR 706.2, 706.3a: the number on the die, read by the
  * instructions after the roll) and "~ is in your graveyard" (CR 113.6b, 603.4: the intervening "if" of an ability that works from the graveyard).
  */
 import { fail, pattern } from '../../combinators';

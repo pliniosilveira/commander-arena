@@ -40,7 +40,7 @@ export interface FaceParse {
 }
 
 /**
- * The short name a token "named ~'s X" is given back (D-911), or '' when the text does not say which name it used. Normalization writes the whole name of the
+ * The short name a token "named ~'s X" is given back (D-266), or '' when the text does not say which name it used. Normalization writes the whole name of the
  * card and its short name both as `~`, so a token named with the whole name ("named Ajani, Strength of the Pride's Pridemate", CR 111.4) cannot be told from one
  * named with the short name afterwards: the text as written is checked here, and such a name is refused instead of being given the short one.
  */

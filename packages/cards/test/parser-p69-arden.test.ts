@@ -1,4 +1,4 @@
-// Stage P69 (D-941): the Bruna deck program (issue 5), Arden Angel: "At the beginning of your upkeep, if ~ is in your graveyard, roll a four-sided die. If the result
+// Stage P69 (D-271): the Bruna deck program (issue 5), Arden Angel: "At the beginning of your upkeep, if ~ is in your graveyard, roll a four-sided die. If the result
 // is 1, return ~ from your graveyard to the battlefield." The line is the real Oracle text of the acceptance card of the golden corpus, name replaced by ~, with the
 // nodes the grammar produces; the other lines are SYNTHETIC siblings and the near misses the grammar must not read (CR 706.1 to 706.3b, 113.6b, 603.4).
 import { describe, expect, test } from 'vitest';

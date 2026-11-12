@@ -1018,7 +1018,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       checkTrigger(a.trigger, `${path}.trigger`, out);
       checkGraveyardAbility(a, path, out);
       const targets = declareTargets(a.targets, `${path}.targets`, out, false, false, true);
-      // D-931: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
+      // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
       checkCrossZoneSlots(
         a,
         a.effect,
@@ -1153,7 +1153,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           );
         }
       }
-      // D-941: "if this card is in your graveyard" is true only for an ability that works there, which the ability must say (CR 113.6b).
+      // D-271: "if this card is in your graveyard" is true only for an ability that works there, which the ability must say (CR 113.6b).
       if (
         (conditionHas(a.interveningIf, 'thisInYourGraveyard') ||
           conditionHas(a.triggerCondition, 'thisInYourGraveyard')) &&
@@ -1617,7 +1617,7 @@ export function validateCardStructure(def: CardDefinition): AstIssue[] {
   }
   def.faces.forEach((face, i) => {
     checkFace(face, `faces[${i}]`, def.support === 'supported', out);
-    // CR 702.94a (D-971): the reveal is read from the card's front face only (`rules/miracle.ts`, `miracleCostOf`), so a miracle
+    // CR 702.94a (D-274): the reveal is read from the card's front face only (`rules/miracle.ts`, `miracleCostOf`), so a miracle
     // cost on any other face would never be offered: refused here instead of accepted and dropped without a word.
     if (i > 0 && face.alternativeCosts?.some((a) => a?.kind === 'miracle')) {
       issue(

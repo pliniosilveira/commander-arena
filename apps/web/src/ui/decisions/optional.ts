@@ -360,7 +360,7 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
     };
   }
   if (d.purpose === 'miracleReveal') {
-    // Miracle (CR 702.94a, D-971): "reveal the card you just drew?" Declining reveals nothing; the engine refuses `cancel`.
+    // Miracle (CR 702.94a, D-274): "reveal the card you just drew?" Declining reveals nothing; the engine refuses `cancel`.
     const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? d.sourceName;
     const cost = d.cost?.flatMap((c) => (c.kind === 'mana' ? [...c.symbols] : []));
     return {
@@ -372,7 +372,7 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
   }
   if (d.purpose === 'suspend' || d.purpose === 'madness' || d.purpose === 'miracle') {
     // Suspend's "play it without paying its mana cost", Madness's "cast it by paying its madness cost" and Miracle's "cast it by paying
-    // its miracle cost" (D-128, D-971). Declining leaves the card in exile, puts it into the graveyard or leaves it in the hand; nothing is rewound.
+    // its miracle cost" (D-128, D-274). Declining leaves the card in exile, puts it into the graveyard or leaves it in the hand; nothing is rewound.
     const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? d.sourceName;
     const cost = d.cost?.flatMap((c) => (c.kind === 'mana' ? [...c.symbols] : []));
     return {
@@ -414,7 +414,7 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
     };
   }
   if (d.purpose === 'pairReturn') {
-    // D-951: "You may return those cards to the battlefield under their owners' control": both or neither; nothing is rewound by declining.
+    // D-272: "You may return those cards to the battlefield under their owners' control": both or neither; nothing is rewound by declining.
     const names = [d.pair?.theirs, d.pair?.mine].flatMap((id) => {
       const card = id === undefined ? undefined : index.get(id);
       return card === undefined ? [] : [card.name];

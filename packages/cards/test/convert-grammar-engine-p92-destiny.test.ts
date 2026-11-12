@@ -1,4 +1,4 @@
-// Angel of Destiny (the Bruna deck, D-921): the real Oracle text goes through the grammar as a SYNTHETIC card (never a fixture override), is defined in an engine
+// Angel of Destiny (the Bruna deck, D-269): the real Oracle text goes through the grammar as a SYNTHETIC card (never a fixture override), is defined in an engine
 // scenario and is played through applyAction, so the AST the parser writes for the real text is what the engine runs: the shared life gain of every creature of
 // the controller (double strike deals twice), the end step ability with the intervening "if" (CR 603.4), and the loss of the players the creature attacked (CR 508.6,
 // 104.3e). Pins: CR 508.6 (attacked a player), CR 506.3 (a planeswalker is not a player), CR 104.2a (the last player left wins), CR 603.4 (intervening "if").

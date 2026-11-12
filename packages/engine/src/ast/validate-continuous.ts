@@ -42,11 +42,11 @@ function isOneOf(value: unknown, allowed: readonly string[]): boolean {
   return typeof value === 'string' && allowed.includes(value);
 }
 
-/** The static abilities an effect may give for good (D-981): the ones read from the abilities an object has after the layers. */
+/** The static abilities an effect may give for good (D-275): the ones read from the abilities an object has after the layers. */
 const GRANTABLE_STATICS = ['cantLoseGame', 'opponentsCantWin'];
 
 /**
- * D-230: Backup's grant (until end of turn) is written by the engine from the abilities printed below the keyword, never in a card. D-981
+ * D-230: Backup's grant (until end of turn) is written by the engine from the abilities printed below the keyword, never in a card. D-275
  * (CR 611.2a): a card gives "You can't lose the game and your opponents can't win the game" with no duration, for the rest of the game; no other
  * ability is given by an effect (an activated or a triggered ability would need its own tests).
  */

@@ -1,6 +1,6 @@
 /**
  * Casting a card from exile (or, for Miracle, from the hand) as an ability resolves (CR 702.62a Suspend, CR 702.35a Madness, CR 702.94a
- * Miracle, CR 608.2g, D-128, D-971): the
+ * Miracle, CR 608.2g, D-128, D-274): the
  * `castExiled` effect, run as an instruction in two stages (`Instruction` `castExiled`).
  *
  *   start   the ability belongs to a card in exile (in its owner's hand for Miracle). When that card is no longer there as the same object (it moved:

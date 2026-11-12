@@ -128,7 +128,7 @@ describe('the words of the new effects and targets', () => {
     ).toBe("\u22122: Target player's life total becomes 1");
   });
 
-  test('"each player this creature attacked this turn loses the game" (D-921)', () => {
+  test('"each player this creature attacked this turn loses the game" (D-269)', () => {
     expect(
       label({
         kind: 'loseGame',

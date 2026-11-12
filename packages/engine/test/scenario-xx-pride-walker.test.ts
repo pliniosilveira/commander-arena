@@ -1,4 +1,4 @@
-// A planeswalker of the pride (D-911 to D-913): "+1: You gain life equal to the number of creatures you control plus the number of planeswalkers you control.",
+// A planeswalker of the pride (D-266 to D-268): "+1: You gain life equal to the number of creatures you control plus the number of planeswalkers you control.",
 // "-2: Create a 2/2 white Cat Soldier creature token named Pridemate with 'Whenever you gain life, put a +1/+1 counter on this token.'" and "0: If you have at
 // least 15 life more than your starting life total, exile this planeswalker and each artifact and creature your opponents control."
 // Pins: CR 606 (loyalty abilities), 111.3 and 111.4 (what the effect defines of a token, its name), 603 (the token's trigger), 119.1 and 903.7 (the life total against the starting life

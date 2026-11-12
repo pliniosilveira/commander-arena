@@ -1,12 +1,12 @@
 /**
- * Noun rules of the Angel of Destiny group (D-921): the players a creature attacked this turn.
+ * Noun rules of the Angel of Destiny group (D-269): the players a creature attacked this turn.
  */
 import { map, pattern } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { defineRule, node } from '../registry';
 
 /**
- * `noun.each-player-attacked`: "each player ~ attacked this turn" (D-921, CR 508.6: a player has "attacked [a player]" if the first player declared one
+ * `noun.each-player-attacked`: "each player ~ attacked this turn" (D-269, CR 508.6: a player has "attacked [a player]" if the first player declared one
  * or more creatures as attackers attacking the second player; CR 506.3: a planeswalker or a battle can be attacked too, and is not a player). The
  * `~` is the permanent of the ability ("this creature" in the Oracle text): the engine's `PlayerSelector` `attackedPlayers`, read from the turn log. Not
  * read: another verb of combat ("attacks", "is attacking", "was dealt combat damage by"), another span ("this combat", "last turn", no span at all),

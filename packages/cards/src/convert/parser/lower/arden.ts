@@ -1,5 +1,5 @@
 /**
- * Lowering of the die roll (D-941, CR 706): "roll a four-sided die" is the engine's `rollDie`. The sentences after it that read the result are
+ * Lowering of the die roll (D-271, CR 706): "roll a four-sided die" is the engine's `rollDie`. The sentences after it that read the result are
  * conditional sentences, whose condition `condition.die-result` the lowering of conditions checks against the sides this lowering records.
  */
 import type { IrClause } from '../ir/types';

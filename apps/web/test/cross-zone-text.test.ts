@@ -1,5 +1,5 @@
 /**
- * The words of a target slot of two zones (D-931): the gist of the enters trigger of the engine's SYNTHETIC 'SYNTHETIC Linked Banisher' and of the leaves trigger that returns
+ * The words of a target slot of two zones (D-270): the gist of the enters trigger of the engine's SYNTHETIC 'SYNTHETIC Linked Banisher' and of the leaves trigger that returns
  * what it exiled (read from the AST, so a wording that drifts from it fails here). No DOM.
  */
 import { type StackAbility, syntheticCard } from '@commander-arena/engine';

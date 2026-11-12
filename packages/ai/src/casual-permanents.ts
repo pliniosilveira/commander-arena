@@ -304,7 +304,7 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
       : { kind: 'acceptOptional' };
   }
   if (d.purpose === 'costChoice') return chooseAdditionalCost(d, view);
-  // D-951: "You may return those cards to the battlefield under their owners' control" (Dawnbreak Reclaimer).
+  // D-272: "You may return those cards to the battlefield under their owners' control" (Dawnbreak Reclaimer).
   if (d.purpose === 'pairReturn') return answerPairReturn(view, d);
   if (d.cost !== undefined) {
     // Only life payments exist here; any other cost is not weighed, so the agent declines it.

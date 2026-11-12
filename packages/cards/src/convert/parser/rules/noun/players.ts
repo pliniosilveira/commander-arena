@@ -21,7 +21,7 @@ function bare(det: IrNoun['det'], raw: string, extra: Partial<Bare> = {}): Bare 
  * chosen player, each doing what the verb says, in the order of CR 101.4 (the active player first). The "each" is part
  * of the phrase: it is how the sentence says that both act ("each draw", with no "s"). Only a target player or
  * opponent is the second player; "you and each opponent" is "each player" in other words, and is not read. Since
- * D-921 the second player may also be "that player" ("you and that player each gain that much life"), the player a trigger or an earlier
+ * D-269 the second player may also be "that player" ("you and that player each gain that much life"), the player a trigger or an earlier
  * target names; the binding pass points it at that player (and refuses a text that names none), and the lowering at what the engine can
  * name (`triggerPlayer` or the target).
  */

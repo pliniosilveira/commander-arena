@@ -1,5 +1,5 @@
 /**
- * Miracle (CR 702.94a, D-971): "You may reveal this card from your hand as you draw it if it's the first card you've drawn this
+ * Miracle (CR 702.94a, D-274): "You may reveal this card from your hand as you draw it if it's the first card you've drawn this
  * turn. When you reveal this card this way, you may cast it by paying [cost] rather than its mana cost."
  *
  * It is a static ability linked to a triggered ability (CR 603.11), and the engine models the two as three steps:

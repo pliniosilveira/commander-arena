@@ -241,7 +241,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 ],
               },
             }),
-        // D-941: the die the instruction rolled, which "if the result is 1" of a later instruction reads (a later roll replaces it).
+        // D-271: the die the instruction rolled, which "if the result is 1" of a later instruction reads (a later roll replaces it).
         ...(out.dieResult === undefined ? {} : { dieResult: out.dieResult }),
         // D-135: what the instruction did, for "if you do" and "when you do"; a `may` effect starts it again.
         ...(out.resetPerformed === true
@@ -489,7 +489,7 @@ export function answerResolutionOptional(state: GameState, accept: boolean): Res
   const head = res?.queue[0];
   if (!res || head === undefined) return null;
   if (head.kind === 'playerMay' || head.kind === 'miracleReveal') {
-    // D-210: the player asked has answered; the instruction runs the effect (or what is done otherwise) next. D-971: so does the
+    // D-210: the player asked has answered; the instruction runs the effect (or what is done otherwise) next. D-274: so does the
     // player who drew a card with miracle, who is not always the controller of the resolving spell (CR 702.94a); declining the reveal
     // leaves no event, because the events are public and one would tell the opponent that the card drawn has miracle.
     const answered: Instruction = { ...head, answer: accept };

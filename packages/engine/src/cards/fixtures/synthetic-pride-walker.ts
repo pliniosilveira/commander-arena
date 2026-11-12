@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC PLANESWALKER OF THE PRIDE (D-911 to D-913). NOT A REAL MAGIC CARD.
+ * SYNTHETIC PLANESWALKER OF THE PRIDE (D-266 to D-268). NOT A REAL MAGIC CARD.
  *
  * Invented for the tests of the abilities the Bruna deck program (issue 5) needed of a planeswalker that gains life and wipes the other side of the board: a
  * token that is named, has an ability of its own that reads life gained ("Whenever you gain life, put a +1/+1 counter on this token", CR 111.3, 111.4), an exile of the

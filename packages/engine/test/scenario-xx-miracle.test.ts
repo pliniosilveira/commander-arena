@@ -1,4 +1,4 @@
-// Miracle (CR 702.94, D-971): "You may reveal this card from your hand as you draw it if it's the first card you've drawn
+// Miracle (CR 702.94, D-274): "You may reveal this card from your hand as you draw it if it's the first card you've drawn
 // this turn. When you reveal this card this way, you may cast it by paying [cost] rather than its mana cost."
 // Pins: CR 702.94a (the reveal is a choice made as the card is drawn; the trigger; the cast is a second choice), 702.94b
 // (the card is revealed until the ability resolves), 121.1 (a card drawn), 118.9 (alternative cost), 107.3a (an X in the
@@ -467,7 +467,7 @@ describe('what the player can answer, and whose turn it is', () => {
     ).toEqual(['acceptOptional', 'declineOptional']);
   });
 
-  // Known limit (D-971, docs/ROADMAP.md): priority is not a pending decision, so `decidingSeat` set in the draw step tells an observer that
+  // Known limit (D-274, docs/ROADMAP.md): priority is not a pending decision, so `decidingSeat` set in the draw step tells an observer that
   // the card drawn has miracle. Nothing else of the question is in the other player's view (no `pending`, no card).
   test('the other player is not asked and sees no question; decidingSeat shows seat 0 is deciding (known limit)', () => {
     const g = drawStep(BEAST, (b) => b.battlefield('Forest'));
@@ -605,7 +605,7 @@ describe('validation and support', () => {
     expect(validateCard(card).length).toBeGreaterThan(0);
   });
 
-  // CR 702.94a: the engine reads the miracle cost of the front face only, so another face with one is refused (D-971).
+  // CR 702.94a: the engine reads the miracle cost of the front face only, so another face with one is refused (D-274).
   test('a miracle cost on a face other than the front face is refused, on the front face it is valid', () => {
     const base = syntheticCard(HOST);
     const face = base.faces[0];

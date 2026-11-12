@@ -410,7 +410,7 @@ export const UPKEEP_SPELLS = [
 ];
 
 /**
- * SYNTHETIC cards of Miracle (CR 702.94, D-971): miracle costs with and without {X}, a target, a permanent, and cards that draw
+ * SYNTHETIC cards of Miracle (CR 702.94, D-274): miracle costs with and without {X}, a target, a permanent, and cards that draw
  * (several cards, the opponent's). Used by the 'miracle' deck style and kept out of every other pool.
  */
 export const MIRACLE_NAMES = [
@@ -3202,7 +3202,7 @@ export const LATER_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['spells', 'later'],
 ];
 
-/** Style pairs of the miracle soak test (D-971): a mirror match and both mixed ways. */
+/** Style pairs of the miracle soak test (D-274): a mirror match and both mixed ways. */
 export const MIRACLE_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['miracle', 'miracle'],
   ['miracle', 'spells'],

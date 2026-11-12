@@ -148,7 +148,7 @@ export interface IrNoun extends IrNode {
     | 'attackedBy' // "the player or planeswalker it's attacking" (stage P31, D-140): what the creature `of` attacks
     | 'linkedExile' // "the exiled card" (stage P32, D-147, CR 607.2a): what the linked ability of this permanent exiled
     | 'discardedThisWay' // "each player who discarded a card this way" (stage P52, D-210): the players of the discard before it
-    | 'attackedPlayers' // "each player ~ attacked this turn" (D-921, CR 508.6): the players this permanent was declared attacking
+    | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
   readonly filter: IrFilter;
   /** "up to two", "X", "one or more"; for `target`, how many targets the phrase takes. */
@@ -179,7 +179,7 @@ export interface IrNoun extends IrNode {
   /** "target player's graveyard" has `of` = target player. */
   readonly of?: IrNoun;
   /**
-   * "up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-931, CR 115.1): a target noun whose targets are `filter`
+   * "up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270, CR 115.1): a target noun whose targets are `filter`
    * (permanents on the battlefield) or this filter (cards of any graveyard). The engine's slot of two zones (`objectOrGraveyardCard`); only `exile` takes it.
    */
   readonly orCard?: IrFilter;
@@ -464,9 +464,9 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'lifeTotal'; readonly compare: IrComparison; readonly aboveStarting?: true }
     // D-252 (the Bruna deck): "you gained 3 or more life this turn" (CR 119.3)
     | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
-    // D-941 (CR 706.2, 706.3a): "the result is 1", "the result is 4 or more": the die the roll before it in the same text rolled
+    // D-271 (CR 706.2, 706.3a): "the result is 1", "the result is 4 or more": the die the roll before it in the same text rolled
     | { readonly kind: 'dieResult'; readonly compare: IrComparison }
-    // D-941 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard
+    // D-271 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard
     | { readonly kind: 'thisInYourGraveyard' }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
     | { readonly kind: 'cardsInGraveyard'; readonly compare: IrComparison }

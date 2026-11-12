@@ -177,7 +177,7 @@ describe('the questions of Suspend and Madness', () => {
   });
 });
 
-describe('the questions of Miracle (D-971)', () => {
+describe('the questions of Miracle (D-274)', () => {
   /** The draw step of seat 0's turn 3 with `top` on top of its library. */
   function drawStep(top: string, place: (b: Builder) => Builder, opposing = false): ScenarioGame {
     const mine = place(scenario().seat(0).life(20))

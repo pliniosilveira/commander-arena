@@ -83,14 +83,14 @@ const TURN_CONDITIONS = [
 ] as const;
 
 /**
- * "If you have at least 15 life more than your starting life total, exile ~ and each artifact and creature your opponents control." (D-912, CR 608.2c:
+ * "If you have at least 15 life more than your starting life total, exile ~ and each artifact and creature your opponents control." (D-267, CR 608.2c:
  * the test of the sentence's own instruction, made as it resolves): the life total of the player the ability is controlled by. Read before an instruction only: the
  * trailing form is not read, and a triggered ability's own "if" before its effect is the trigger's (the intervening "if", CR 603.4).
  */
 const LIFE_LEAD_CONDITIONS = ['condition.life-total'] as const;
 
 /**
- * "If the result is 1, ..." (D-941, CR 706.2, 706.3a): the result of the roll before it. A sentence may start with it, or end with it after one
+ * "If the result is 1, ..." (D-271, CR 706.2, 706.3a): the result of the roll before it. A sentence may start with it, or end with it after one
  * instruction; the lowering reads it only after a roll of the same text.
  */
 const DIE_CONDITIONS = ['condition.die-result'] as const;

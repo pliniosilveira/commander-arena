@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC MIRACLE CARDS. NOT REAL MAGIC CARDS.
  *
- * Invented for the tests and the soak games of D-971: Miracle (CR 702.94), with an {X} in the miracle cost (CR 107.3a), a
+ * Invented for the tests and the soak games of D-274: Miracle (CR 702.94), with an {X} in the miracle cost (CR 107.3a), a
  * miracle spell with a target, a permanent with miracle, a card that draws several cards and one that gives the draw to
  * the opponent. Names start with "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle
  * text, and none of these is the definition of a real card.

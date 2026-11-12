@@ -193,7 +193,7 @@ const PUT_THAT_CARD_BOTTOM_RETURN_OTHER =
 
 /**
  * "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their
- * owners' control." (stage P69, D-951): "those cards" are the two chosen, so the two sentences are read as one instruction (the first may follow the comma of a trigger).
+ * owners' control." (stage P69, D-272): "those cards" are the two chosen, so the two sentences are read as one instruction (the first may follow the comma of a trigger).
  */
 const CHOOSE_GRAVEYARD_PAIR =
   /(?:^|, )choose an? [^.,]* card in an opponent['’]s graveyard, then that player chooses an? [^.,]* card in your graveyard\.$/i;
@@ -280,7 +280,7 @@ export function splitSentences(text: string, start: number, end: number): Span[]
     if (isOpenQuote(c) || c === '”') {
       const closes = quote;
       quote = !quote;
-      // A quote that closes right after its own period, with an "Activate only ..." restriction after it, ends the sentence (stage P69, D-982):
+      // A quote that closes right after its own period, with an "Activate only ..." restriction after it, ends the sentence (stage P69, D-276):
       // `It gains "You can't lose the game." Activate only as a sorcery.` The restriction is always a sentence of its own; the period inside the
       // quote is the one of the sentence (the sentence parser reads a quote that ends the text as its end). Any other text after a quote stays in the
       // sentence, as before ("Create a token with "Draw a card." Draw a card." is one).

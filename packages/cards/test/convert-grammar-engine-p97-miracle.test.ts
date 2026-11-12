@@ -1,4 +1,4 @@
-// Parsed text is only worth something if the engine runs it as written (stage P97, D-971). These tests import SYNTHETIC cards through the grammar (never
+// Parsed text is only worth something if the engine runs it as written (stage P97, D-274). These tests import SYNTHETIC cards through the grammar (never
 // through a fixture), define them in an engine scenario and play them through applyAction: Miracle (CR 702.94a: the reveal as the first card of the turn is
 // drawn, the trigger, the cast from the hand for the miracle cost with the {X} announced, CR 107.3a). The lines are the real ones of Entreat the Angels
 // ("Create X 4/4 white Angel creature tokens with flying." and "Miracle {X}{W}{W}", golden corpus) and the template "Miracle {1}{R}" of

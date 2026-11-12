@@ -1,6 +1,6 @@
 /**
  * The triggered abilities of Suspend and Madness that work from the exile zone, and the one of Miracle that works from the hand (CR 702.62a,
- * 702.35a, 702.94a, D-128, D-971).
+ * 702.35a, 702.94a, D-128, D-274).
  * They are the card's own and fixed by the rules, so the engine finds them itself instead of reading them from the
  * derived abilities of a battlefield permanent (`rules/triggers.ts` looks at the battlefield only): each is a
  * `PendingTrigger` with the card in exile as its source, no index among its abilities (`abilityIndex` -1, as a
@@ -51,7 +51,7 @@ export const MADNESS_ABILITY: TriggeredAbility = {
 
 /**
  * CR 702.94a: "When you reveal this card this way, you may cast it by paying [cost] rather than its mana cost": the ability of a card revealed
- * as it was drawn (D-971). Its source is the card in its owner's hand.
+ * as it was drawn (D-274). Its source is the card in its owner's hand.
  */
 export const MIRACLE_ABILITY: TriggeredAbility = {
   kind: 'triggered',
@@ -74,7 +74,7 @@ export function findLaterTriggers(
 ): PendingTrigger[] {
   const found: PendingTrigger[] = [];
   for (const event of events) {
-    // CR 702.94a (D-971): the trigger of a card revealed as it was drawn works from the hand (the exile may be empty).
+    // CR 702.94a (D-274): the trigger of a card revealed as it was drawn works from the hand (the exile may be empty).
     // It triggers whatever became of the card since (CR 702.94a: "When you reveal this card this way"; a card an earlier instruction of the same
     // resolution discarded is known by last-known information, and the ability then finds nothing to cast, CR 113.7a, 608.2b).
     if (event.kind === 'miracleRevealed') {

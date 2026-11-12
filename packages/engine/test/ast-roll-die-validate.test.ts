@@ -1,4 +1,4 @@
-// Validation of `rollDie`, `dieResult` and `thisInYourGraveyard` (D-941). CR 706.1a (a die of N sides has N outcomes numbered 1 to N), CR 706.2
+// Validation of `rollDie`, `dieResult` and `thisInYourGraveyard` (D-271). CR 706.1a (a die of N sides has N outcomes numbered 1 to N), CR 706.2
 // (the result), CR 706.3b (the roll and what reads its result are one ability), CR 113.6b (an ability that works from the graveyard says so).
 import { describe, expect, test } from 'vitest';
 import {

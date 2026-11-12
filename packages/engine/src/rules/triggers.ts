@@ -744,7 +744,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
     if (event.kind === 'zoneChanged') {
       if (event.fromZone === 'battlefield') members = members.filter((m) => m !== event.from);
       if (event.toZone === 'battlefield') {
-        // CR 603.6a (D-951): one event puts several permanents onto the battlefield, and every one of them is checked for the triggers of all.
+        // CR 603.6a (D-272): one event puts several permanents onto the battlefield, and every one of them is checked for the triggers of all.
         const entering =
           event.simultaneous === true ? simultaneousEntries(events, eventIndex) : [event.to];
         members = [...new Set([...members, ...entering])].sort(byAge);

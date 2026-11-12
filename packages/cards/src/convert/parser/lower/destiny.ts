@@ -1,5 +1,5 @@
 /**
- * Lowerings of the Angel of Destiny group (D-921): "Each player ~ attacked this turn loses the game." (CR 104.3e, 508.6).
+ * Lowerings of the Angel of Destiny group (D-269): "Each player ~ attacked this turn loses the game." (CR 104.3e, 508.6).
  */
 
 import type { IrClause } from '../ir/types';

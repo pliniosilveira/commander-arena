@@ -238,7 +238,7 @@ export function castZone(
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
     return alternativeOf(faceOf(state, obj), 'escape') === null ? null : 'graveyard';
   }
-  // CR 702.35a, 702.94a (D-128, D-971): a card is cast for its madness or miracle cost only as that ability resolves
+  // CR 702.35a, 702.94a (D-128, D-274): a card is cast for its madness or miracle cost only as that ability resolves
   // (`castExiled`); it is never cast that way from a hand, so `canCast` and the option lists never offer it.
   if (alternative === 'madness' || alternative === 'miracle') return null;
   // CR 702.143a (D-128): a foretold card is cast from exile, after the turn it was foretold has ended, for its
@@ -461,7 +461,7 @@ export function canCastDuringResolution(
   obj: GameObject,
   /**
    * `madness` (CR 702.35a, D-128): the card is cast for its madness cost as its ability resolves, so that cost has to be
-   * payable (the card lists one); otherwise it is the free cast of Cascade and Suspend. `miracle` (CR 702.94a, D-971): the same
+   * payable (the card lists one); otherwise it is the free cast of Cascade and Suspend. `miracle` (CR 702.94a, D-274): the same
    * with the miracle cost, for a card that is in the hand (its X, when it has one, is announced in the cast).
    */
   alternative: 'free' | 'madness' | 'miracle' = 'free',
@@ -472,7 +472,7 @@ export function canCastDuringResolution(
   // D-149 (CR 702.75a, 608.2g): a card in exile is cast by the player the effect names, whoever owns it (see `canPlayLandByEffect`); a card in a
   // hand is the player's own.
   if (obj.zone === 'hand' && obj.owner !== seat) return false;
-  // CR 702.94a (D-971): a card is cast for its miracle cost from the hand it was revealed in.
+  // CR 702.94a (D-274): a card is cast for its miracle cost from the hand it was revealed in.
   if (alternative === 'miracle' && obj.zone !== 'hand') return false;
   if (
     (alternative === 'madness' || alternative === 'miracle') &&

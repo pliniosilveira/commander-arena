@@ -25,7 +25,7 @@ const MANA_COST = family<IrCost>('cost', { only: ['cost.mana'] });
 /** A plain mana cost, or one with an {X} (`cost.mana-x`): Miracle's cost may have one (CR 107.3a), no other named alternative cost does. */
 const MANA_COST_WITH_X = family<IrCost>('cost', { only: ['cost.mana', 'cost.mana-x'] });
 
-/** "<word> {M}": the keyword node with its one mana cost (with an {X} when `x` is set, D-971). */
+/** "<word> {M}": the keyword node with its one mana cost (with an {X} when `x` is set, D-274). */
 export function altCostKeyword(id: string, word: string, x = false) {
   return map(
     node<readonly IrCost[], IrKeyword>(

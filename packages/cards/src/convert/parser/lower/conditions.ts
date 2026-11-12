@@ -109,7 +109,7 @@ export function lowerCondition(
         : ok({ kind: 'lifeGainedThisTurn', atLeast: test.atLeast });
     }
     case 'dieResult': {
-      // CR 706.2, 706.3a (D-941): the result of the die the text rolled before this condition, read by a `conditional`. A condition with no roll before it
+      // CR 706.2, 706.3a (D-271): the result of the die the text rolled before this condition, read by a `conditional`. A condition with no roll before it
       // in the text, or a number the die cannot show (the condition would never, or always, hold), is not a condition of the text.
       const blocked = missingFeatures(['condition:dieResult']);
       if (blocked.length > 0) return failure(c, blocked);
@@ -123,7 +123,7 @@ export function lowerCondition(
       });
     }
     case 'thisInYourGraveyard': {
-      // CR 113.6b, 603.4 (D-941): "if ~ is in your graveyard" is read only as the intervening "if" of a triggered ability (the lowering of the trigger then
+      // CR 113.6b, 603.4 (D-271): "if ~ is in your graveyard" is read only as the intervening "if" of a triggered ability (the lowering of the trigger then
       // requires that the ability works from the graveyard); anywhere else it is a test the engine does not run for that shape.
       const blocked = missingFeatures(['condition:thisInYourGraveyard']);
       if (blocked.length > 0) return failure(c, blocked);

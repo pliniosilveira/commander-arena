@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC CARDS FOR "FOR EACH OPPONENT, DESTROY UP TO ONE TARGET ... THAT PLAYER CONTROLS". NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of D-961 (the Dismantling Wave group): the slot that takes at most one target for each opponent (`TargetSpec.onePerOpponent`,
+ * Invented for the tests of D-273 (the Dismantling Wave group): the slot that takes at most one target for each opponent (`TargetSpec.onePerOpponent`,
  * D-149) on a sorcery that destroys, with the filter of two card types ("artifact or enchantment") and of one ("creature"), and a sorcery with a
  * single target, to compare. Names start with "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle text.
  */

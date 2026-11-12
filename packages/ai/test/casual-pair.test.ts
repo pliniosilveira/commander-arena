@@ -1,5 +1,5 @@
 // CasualAgent answers the three questions of "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those
-// cards to the battlefield under their owners' control" (D-951), on real engine states built with the scenario DSL. Whoever chooses gives the other player the card they like
+// cards to the battlefield under their owners' control" (D-272), on real engine states built with the scenario DSL. Whoever chooses gives the other player the card they like
 // least (the lowest mana value, then power and toughness); the controller returns the cards only when the card it gets is worth more than the card the opponent gets. Every
 // answer is one the engine lists and accepts, for both seats.
 import {

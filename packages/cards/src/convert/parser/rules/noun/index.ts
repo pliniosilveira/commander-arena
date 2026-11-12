@@ -547,7 +547,7 @@ export const NOUN_RULES = [
   ...PLAYER_NOUN_RULES,
   // Stage P52 (D-210): "each player who discarded a card this way".
   ...VRASKA_EARLY_NOUN_RULES,
-  // D-921: "each player ~ attacked this turn", whose first words are those of `noun.player` ("each player").
+  // D-269: "each player ~ attacked this turn", whose first words are those of `noun.player` ("each player").
   ...DESTINY_EARLY_NOUN_RULES,
   NOUN_PLAYER,
   NOUN_TARGET_SPELL,
@@ -556,7 +556,7 @@ export const NOUN_RULES = [
   // Stage P34 (D-152): "each other opponent" and "each of up to two other targets".
   ...DRAGON_NOUN_RULES,
   ...KORVOLD_NOUN_RULES,
-  // D-931: "up to three other target creatures from the battlefield and/or creature cards from graveyards".
+  // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards".
   ...CROSS_ZONE_NOUN_RULES,
   NOUN_TARGET_GRAVEYARD_CARD,
   NOUN_PLAYER_GRAVEYARD,
@@ -566,7 +566,7 @@ export const NOUN_RULES = [
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.
   ...HOFRI_NOUN_RULES,
-  // D-913: "each artifact and creature your opponents control", which `noun.each-permanent` would stop in the middle of.
+  // D-268: "each artifact and creature your opponents control", which `noun.each-permanent` would stop in the middle of.
   ...AJANI_NOUN_RULES,
   NOUN_EACH_PERMANENT,
   // Stage P64 and P65 (D-217, D-218): "creature tokens you control" and "creatures attacking your opponents and/or planeswalkers they control", whose first words are

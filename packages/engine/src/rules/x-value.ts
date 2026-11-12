@@ -64,7 +64,7 @@ export function abilityXCost(costs: readonly Cost[]): XCost {
  * when that is what is paid, and the "pay X life" of its additional costs. A spell cast without
  * paying its mana cost, or by paying a flashback cost, has no {X} to pay: its X is 0 and nothing is
  * announced (CR 107.3b, 107.3g). A spell cast for its miracle cost pays that cost instead, and the {X} in it (once, or as many
- * times as the cost has it) is the X announced (D-971, CR 107.3a: any X in an alternative cost is announced as the spell is cast).
+ * times as the cost has it) is the X announced (D-274, CR 107.3a: any X in an alternative cost is announced as the spell is cast).
  */
 export function spellXCost(
   face: CardFace | null,

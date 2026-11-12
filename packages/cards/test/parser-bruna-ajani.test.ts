@@ -1,4 +1,4 @@
-// D-911 to D-913: the Bruna deck program (issue 5), Ajani, Strength of the Pride. The lines are the real Oracle text of the acceptance card of the golden
+// D-266 to D-268: the Bruna deck program (issue 5), Ajani, Strength of the Pride. The lines are the real Oracle text of the acceptance card of the golden
 // corpus; the other lines are SYNTHETIC siblings and the near misses the grammar must not read. The abilities the real text lowers to are compared with the abilities
 // of the engine's SYNTHETIC fixture (`syntheticCard('SYNTHETIC Pride Walker')`), which the engine scenario test plays, so the parser and the engine tests are
 // about the same nodes.
@@ -96,7 +96,7 @@ describe('Ajani, Strength of the Pride', () => {
   });
 });
 
-describe('a token named after the card that makes it (D-911)', () => {
+describe('a token named after the card that makes it (D-266)', () => {
   const MAKER = { name: 'Pride Maker', legendary: false };
 
   test('a card without a short name gives its whole name back', () => {
@@ -178,7 +178,7 @@ describe('a token named after the card that makes it (D-911)', () => {
   });
 });
 
-describe('"If you have at least N life more than your starting life total, ..." before an instruction (D-912)', () => {
+describe('"If you have at least N life more than your starting life total, ..." before an instruction (D-267)', () => {
   test('the sentence is conditional on resolution in a loyalty ability, whatever the number (SYNTHETIC)', () => {
     const parsed = readAjani(
       '0: If you have at least 7 life more than your starting life total, draw a card.',
@@ -270,7 +270,7 @@ describe('"If you have at least N life more than your starting life total, ..." 
   });
 });
 
-describe('"each artifact and creature your opponents control" (D-913)', () => {
+describe('"each artifact and creature your opponents control" (D-268)', () => {
   const eachOf = (text: string) => {
     const parsed = readAjani(text);
     expect(parsed.unparsed, text).toEqual([]);

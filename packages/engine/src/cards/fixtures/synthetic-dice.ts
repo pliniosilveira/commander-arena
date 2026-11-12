@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC CARDS FOR ROLLING A DIE. NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of D-941 (CR 706): "roll a die of N sides" and "if the result is ...". A graveyard recursion that rolls a
+ * Invented for the tests of D-271 (CR 706): "roll a die of N sides" and "if the result is ...". A graveyard recursion that rolls a
  * four-sided die at the beginning of its owner's upkeep, spells that roll a six-sided, a twenty-sided and two dice and read the result
  * in one or more `conditional` instructions (with an "otherwise"), and one more graveyard trigger whose condition is not the one the
  * recursion needs. Names start with "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle text, and

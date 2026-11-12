@@ -1,5 +1,5 @@
 /**
- * Noun rules of the Angel of Serenity group (the Bruna deck, D-931): a target phrase whose targets are in two zones.
+ * Noun rules of the Angel of Serenity group (the Bruna deck, D-270): a target phrase whose targets are in two zones.
  */
 import { literal, pattern, satisfy, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';

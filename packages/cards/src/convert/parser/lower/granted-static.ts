@@ -1,5 +1,5 @@
 /**
- * Lowering of stage P69 (D-982): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration (CR 611.2a, 613.1f).
+ * Lowering of stage P69 (D-276): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration (CR 611.2a, 613.1f).
  *
  * The quoted text was read as a static ability of its own (`rules/static/quoted.ts`) and is lowered like one of a card (`lowerAngelStatic`); the engine's
  * `grantAbility` effect lasts for the rest of the game (`duration: 'permanent'`) and gives only `cantLoseGame` and `opponentsCantWin`, so any other

@@ -216,7 +216,7 @@ export function beginStep(input: GameState, step: StepId): Outcome {
         }
         state = r.state;
         events.push(...r.events);
-        // CR 702.94a (D-971): a card with miracle drawn as the first card of the turn may be revealed as it is drawn. The step waits for
+        // CR 702.94a (D-274): a card with miracle drawn as the first card of the turn may be revealed as it is drawn. The step waits for
         // the answer (`answerMiracleDraw`); the triggers so far (the step beginning, the draw) are noted now, as for the commander above.
         const offer = miracleOffer(state, active, r.events);
         if (offer !== null) {
@@ -270,7 +270,7 @@ export function resumeDrawStep(input: GameState, toCommandZone: boolean): Outcom
   const r = drawCard(state, active, toCommandZone);
   // With the answer given the draw cannot ask again; if it ever did, it would be asked, not lost.
   if (r.kind === 'needsDecision') return { state: setPending(state, r.decision), events: [] };
-  // CR 702.94a (D-971): a commander with miracle drawn after all is a card drawn, and may be revealed as it is drawn.
+  // CR 702.94a (D-274): a commander with miracle drawn after all is a card drawn, and may be revealed as it is drawn.
   const offer = miracleOffer(r.state, active, r.events);
   if (offer !== null) {
     return {
@@ -286,7 +286,7 @@ export function resumeDrawStep(input: GameState, toCommandZone: boolean): Outcom
 
 /**
  * The draw of the draw step (CR 504.1) drew a card with miracle as the first card of the turn, and its owner answered whether to reveal it
- * (CR 702.94a, D-971): accepting reveals it (the trigger goes on the stack with the step's other triggers), declining reveals nothing. Then
+ * (CR 702.94a, D-274): accepting reveals it (the trigger goes on the stack with the step's other triggers), declining reveals nothing. Then
  * the step goes on: triggers, then priority.
  */
 export function answerMiracleDraw(input: GameState, card: ObjectId, reveal: boolean): Outcome {

@@ -617,7 +617,7 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * play it without paying its mana cost": `subject` is the suspended card (public), `source` the ability on the
    * stack; declining leaves it in exile. `'madness'` (CR 702.35a): "you may cast it by paying [its madness cost]":
    * `subject` is the card exiled by madness (public), `cost` its madness cost, `source` the ability on the stack;
-   * declining puts the card into its owner's graveyard. `'miracleReveal'` (CR 702.94a, D-971): "you may reveal this card from your hand as you
+   * declining puts the card into its owner's graveyard. `'miracleReveal'` (CR 702.94a, D-274): "you may reveal this card from your hand as you
    * draw it": asked of the player who drew it, who is `seat`, right after a card with miracle is drawn as the first card of their turn;
    * `subject` is the card (in the hand, hidden until the answer), `cost` its miracle cost, `source` the same card. Accepting reveals it (public)
    * and its trigger goes on the stack; declining reveals nothing. `'miracle'`: "you may cast it by paying [its miracle cost]": `subject` is
@@ -639,7 +639,7 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'costChoice'
     | 'pairReturn';
   /**
-   * For purpose `'pairReturn'` (D-951, "You may return those cards to the battlefield under their owners' control", Dawnbreak Reclaimer): the cards that would return, which are in
+   * For purpose `'pairReturn'` (D-272, "You may return those cards to the battlefield under their owners' control", Dawnbreak Reclaimer): the cards that would return, which are in
    * graveyards and public: `theirs` the card chosen in an opponent's graveyard (it returns under its owner's control, the opponent's), `mine` the card chosen in the graveyard of
    * the player asked (it returns under their control). Either is absent when no such card could be chosen. Accepting returns both, declining neither.
    */

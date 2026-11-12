@@ -1,5 +1,5 @@
 /**
- * Lowerings of the Bruna deck program, Dawnbreak Reclaimer (stage P69, D-951): the instruction the grammar reads for this card that no other file lowers.
+ * Lowerings of the Bruna deck program, Dawnbreak Reclaimer (stage P69, D-272): the instruction the grammar reads for this card that no other file lowers.
  */
 import type { CardType } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';

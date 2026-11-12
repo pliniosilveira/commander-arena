@@ -201,7 +201,7 @@ function targetText(spec: TargetSpec | undefined): string {
       // D-200: "target player or planeswalker", "target opponent or planeswalker" (or battle).
       return `target ${spec.what.player === 'opponent' ? 'opponent' : 'player'} or ${nounOf(spec.what.filter)}`;
     case 'objectOrGraveyardCard': {
-      // D-931 (CR 115.1): "up to three other target creatures from the battlefield and/or creature cards from graveyards".
+      // D-270 (CR 115.1): "up to three other target creatures from the battlefield and/or creature cards from graveyards".
       const cards = nounOf(spec.what.card);
       if ((spec.max ?? 1) <= 1) {
         const one = spec.what.filter.other === true ? 'another target' : 'target';
@@ -343,7 +343,7 @@ function recipientText(
     case 'discardedThisWay':
       return 'each player who discarded a card this way';
     case 'attackedPlayers':
-      // D-921 (CR 508.6).
+      // D-269 (CR 508.6).
       return 'each player this creature attacked this turn';
     case 'all':
       return to.of.map((member) => recipientText(member, ability, self)).join(' and ');
@@ -875,7 +875,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // D-201 (CR 114.1): "You get an emblem with "...", the text the emblem shows.
       return `You get an emblem with "${effect.text}"`;
     case 'loseGame':
-      // D-921 (CR 104.3e): "Each player this creature attacked this turn loses the game".
+      // D-269 (CR 104.3e): "Each player this creature attacked this turn loses the game".
       return `${playerVerb(effect.player, ability, 'lose')} the game`;
     case 'setLifeTotal':
       // D-201 (CR 119.5): "Target player's life total becomes 1".
@@ -991,7 +991,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'shuffle':
       return 'Shuffle your library';
     case 'rollDie':
-      // CR 706.1 (D-941): "Roll a four-sided die".
+      // CR 706.1 (D-271): "Roll a four-sided die".
       return `Roll a ${effect.sides}-sided die`;
     case 'search':
       return 'Search your library';

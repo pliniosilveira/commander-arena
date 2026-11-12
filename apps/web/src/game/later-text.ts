@@ -105,7 +105,7 @@ export function castNowPrompt(
 }
 
 /**
- * Miracle's first question (CR 702.94a, D-971): reveal the card just drawn? Revealing is public and lets the card's trigger go on the
+ * Miracle's first question (CR 702.94a, D-274): reveal the card just drawn? Revealing is public and lets the card's trigger go on the
  * stack; the cost is shown as the card's own ({X} stays {X}).
  */
 export function miracleRevealPrompt(name: string, cost: readonly string[] | undefined): string {
@@ -168,7 +168,7 @@ export function laterAbilityWords(
  * (D-128): Suspend's upkeep tick says "At the beginning of your upkeep" while the card still has time
  * counters. The cast ability (last counter gone) and Madness's have no wording the decision could carry,
  * so they give null and the panel shows the card's text. Undefined when the trigger is not of that kind
- * and the usual words apply. Miracle's trigger (D-971) has its source in a hand: the engine's constant carries an upkeep trigger that
+ * and the usual words apply. Miracle's trigger (D-274) has its source in a hand: the engine's constant carries an upkeep trigger that
  * is not its text, so it gives null as well and the panel shows the card's text.
  */
 export function laterOrderWording(

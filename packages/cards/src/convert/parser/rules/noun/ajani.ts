@@ -1,5 +1,5 @@
 /**
- * Noun rules of the Ajani, Strength of the Pride card (D-913): "each artifact and creature your opponents control" (CR 110.1, 205.2a).
+ * Noun rules of the Ajani, Strength of the Pride card (D-268): "each artifact and creature your opponents control" (CR 110.1, 205.2a).
  */
 import { literal, map, optional, sequence } from '../../combinators';
 import type { IrFilter, IrNoun } from '../../ir/types';

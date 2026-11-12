@@ -189,7 +189,7 @@ const TOKEN_NAME = map(
 );
 
 /**
- * " named ~'s Pridemate" (D-911): the name of a token that begins with the name of the card that makes it, as Ajani's Pridemate does. The card's name was
+ * " named ~'s Pridemate" (D-266): the name of a token that begins with the name of the card that makes it, as Ajani's Pridemate does. The card's name was
  * written `~` when the text was normalized (a legendary card's short name too), so the possessive after it is what shows it is a name and not the card's: `~'s`
  * and one or more capitalized words, nothing else of `~`. The lowering puts the card's own short name back; a name that is only `~` or has it later is not read.
  */

@@ -59,7 +59,7 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   thisCard: 'selector:thisCard',
   // Stage P52 (D-210): "each player who discarded a card this way".
   discardedThisWay: 'selector:discardedThisWay',
-  // D-921: "each player ~ attacked this turn" (CR 508.6).
+  // D-269: "each player ~ attacked this turn" (CR 508.6).
   attackedPlayers: 'selector:attackedPlayers',
 };
 
@@ -400,7 +400,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
     } else if (noun.filter.player !== undefined) {
       spec = { id, what: { kind: 'player', filter: noun.filter.player }, ...boundsOf(noun) };
     } else if (noun.orCard !== undefined) {
-      // "up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-931, CR 115.1): the engine's slot of two zones. The text of a
+      // "up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270, CR 115.1): the engine's slot of two zones. The text of a
       // spell has no such slot (the engine reads it in a triggered ability only), and nothing else about the noun may be set that the slot does not say.
       if (ctx.owner === 'spell') return failure(noun, []);
       if (
@@ -590,7 +590,7 @@ export function objectRefOf(
     if ('self' in to) return objectRefOf({ ...noun, det: 'self' }, ctx);
     const blocked = gate(noun, ['selector:target']);
     if (blocked !== null) return blocked;
-    // D-931: "them" of a slot of targets in two zones names permanents and cards of graveyards, which the engine moves only in the exile that names the slot.
+    // D-270: "them" of a slot of targets in two zones names permanents and cards of graveyards, which the engine moves only in the exile that names the slot.
     if (ctx.targets.some((t) => t.id === to.target && t.what.kind === 'objectOrGraveyardCard')) {
       return failure(noun, []);
     }
@@ -753,7 +753,7 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       return blocked ?? ok({ kind: 'discardedThisWay' });
     }
     case 'attackedPlayers': {
-      // D-921 (CR 508.6): the permanent of the ability, which `~` is: only an ability of a permanent has attacked.
+      // D-269 (CR 508.6): the permanent of the ability, which `~` is: only an ability of a permanent has attacked.
       if (ctx.owner !== 'ability') return failure(noun, []);
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'attackedPlayers', of: { kind: 'this' } });
@@ -769,7 +769,7 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
         if (!selector.ok) return selector;
         of.push(selector.value);
       }
-      // D-921: a list that names the same player twice is not "you and that player" ("that player" of your own end step is you): refused, not read as one.
+      // D-269: a list that names the same player twice is not "you and that player" ("that player" of your own end step is you): refused, not read as one.
       if (new Set(of.map((selector) => JSON.stringify(selector))).size < of.length) {
         return failure(noun, []);
       }

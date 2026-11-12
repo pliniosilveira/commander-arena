@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC CARDS FOR "CHOOSE A CREATURE CARD IN AN OPPONENT'S GRAVEYARD, THEN THAT PLAYER CHOOSES ... YOU MAY RETURN THOSE CARDS". NOT REAL MAGIC CARDS.
  *
- * Invented for the scenario tests of D-951 (`returnGraveyardPair`, the Bruna deck program): the choice of a card in another player's graveyard, the choice of the player who
+ * Invented for the scenario tests of D-272 (`returnGraveyardPair`, the Bruna deck program): the choice of a card in another player's graveyard, the choice of the player who
  * owns it, and the one "you may" for both cards. Names start with "SYNTHETIC "; oracleId is null; the text describes what the AST does, it is not Oracle text, and none of these
  * is the definition of a real card (the real one is read from its Oracle text by `packages/cards`).
  */

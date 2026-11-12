@@ -1,5 +1,5 @@
 /**
- * Effect rules of the Angel of Serenity group (the Bruna deck, D-932): the leaves trigger of a permanent that exiled several cards with its linked ability.
+ * Effect rules of the Angel of Serenity group (the Bruna deck, D-270): the leaves trigger of a permanent that exiled several cards with its linked ability.
  */
 
 import { pattern } from '../../combinators';

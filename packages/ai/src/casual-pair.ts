@@ -1,6 +1,6 @@
 /**
  * CasualAgent choices for "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the
- * battlefield under their owners' control" (D-951, Dawnbreak Reclaimer).
+ * battlefield under their owners' control" (D-272, Dawnbreak Reclaimer).
  *
  * Each card chosen goes back to the battlefield of its own owner, and the player who chooses is the one who does not own it: the controller picks the card the opponent gets,
  * and the opponent picks the card the controller gets. So whoever chooses gives the other player the card they like least (the lowest `creatureWorth`, the first in the engine's

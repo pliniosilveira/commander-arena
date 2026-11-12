@@ -127,7 +127,7 @@ export interface Scope {
   readonly mainPhaseTrigger?: boolean;
   /** True after a `may` effect in the same sequence: `didPrevious` and `reflexive` have something to read (D-135). */
   readonly mayAvailable?: boolean;
-  /** The number of sides of the latest `rollDie` earlier in the same sequence: the condition `dieResult` reads its result (CR 706.2, D-941). */
+  /** The number of sides of the latest `rollDie` earlier in the same sequence: the condition `dieResult` reads its result (CR 706.2, D-271). */
   readonly dieSides?: number;
   /** True in the effect of a delayed trigger whose creating sequence exiled cards before it: `exiledStillThere` has cards to count (D-151). */
   readonly exiledStillThere?: boolean;
@@ -451,7 +451,7 @@ export function declareTargets(
   divideAllowed = false,
   /** D-187: only the targets of a reflexive ability after a sacrifice can be "up to that many" (CR 603.12). */
   thatManyAllowed = false,
-  /** D-931: only the slot of a triggered ability can name objects of two zones (the one place the engine reads it). */
+  /** D-270: only the slot of a triggered ability can name objects of two zones (the one place the engine reads it). */
   crossZoneAllowed = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
@@ -495,7 +495,7 @@ export function declareTargets(
         }
         break;
       case 'objectOrGraveyardCard': {
-        // D-931 (CR 115.1, 115.2): "target creatures from the battlefield and/or creature cards from graveyards": a permanent or a card of any graveyard.
+        // D-270 (CR 115.1, 115.2): "target creatures from the battlefield and/or creature cards from graveyards": a permanent or a card of any graveyard.
         if (!crossZoneAllowed) {
           issue(
             out,
@@ -827,7 +827,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
       // D-135: "the chosen player" of a gift: the face must have the Gift keyword (`checkCastFace`).
       break;
     case 'attackedPlayers':
-      // D-921 (CR 508.6): "each player this creature attacked this turn": the permanent of an ability, never a spell (a spell attacks nothing).
+      // D-269 (CR 508.6): "each player this creature attacked this turn": the permanent of an ability, never a spell (a spell attacks nothing).
       if (kindOf(sel.of) !== 'this') {
         issue(out, `${path}.of`, "'attackedPlayers' reads the attacks of this permanent ('this')");
       } else if (scope.owner !== 'ability') {
@@ -1941,7 +1941,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       break;
     case 'dieResult':
-      // D-941, CR 706.2: the result of a die is read in the `conditional` effect after the roll (`checkEffectCondition`), nowhere else.
+      // D-271, CR 706.2: the result of a die is read in the `conditional` effect after the roll (`checkEffectCondition`), nowhere else.
       issue(
         out,
         path,
@@ -1949,7 +1949,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       );
       break;
     case 'thisInYourGraveyard':
-      // D-941, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
+      // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
     case 'kicked':
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
@@ -2614,7 +2614,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       }
       break;
     case 'dieResult': {
-      // D-941, CR 706.2, 706.3a: "If the result is 1", "if the result is 4 or more": a number a die of the roll can show.
+      // D-271, CR 706.2, 706.3a: "If the result is 1", "if the result is 4 or more": a number a die of the roll can show.
       const sides = scope.dieSides;
       if (sides === undefined) {
         issue(
@@ -2709,7 +2709,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           ) {
             after = { ...after, sacrificedEarlier: true };
           }
-          // D-941: after a die is rolled, the condition `dieResult` can read its result (a later roll replaces it).
+          // D-271: after a die is rolled, the condition `dieResult` can read its result (a later roll replaces it).
           if (child?.kind === 'rollDie' && isCount(child.sides)) {
             after = { ...after, dieSides: child.sides };
           }
@@ -3452,7 +3452,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'returnGraveyardPair':
-      // D-951: the one card type both chosen cards must have ("a creature card"); the rest of the wording is fixed by the effect.
+      // D-272: the one card type both chosen cards must have ("a creature card"); the rest of the wording is fixed by the effect.
       if (!(CARD_TYPES as readonly string[]).includes(e.cardType)) {
         issue(out, `${path}.cardType`, 'returnGraveyardPair names one card type');
       }
@@ -3528,7 +3528,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkAmount(e.amount, `${path}.amount`, scope, out);
       break;
     case 'loseGame':
-      // CR 104.3e (D-921): the players the selector names lose the game; no other operand.
+      // CR 104.3e (D-269): the players the selector names lose the game; no other operand.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'setLifeTotal':
@@ -3729,7 +3729,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'rollDie':
-      // CR 706.1a (D-941): a die has N equally likely outcomes numbered 1 to N; the engine draws from the generator with `nextInt`, which takes up to 2^32.
+      // CR 706.1a (D-271): a die has N equally likely outcomes numbered 1 to N; the engine draws from the generator with `nextInt`, which takes up to 2^32.
       if (!isCount(e.sides) || e.sides < 2 || e.sides > 4294967296) {
         issue(out, `${path}.sides`, 'a die has a whole number of sides from 2 to 4294967296');
       }

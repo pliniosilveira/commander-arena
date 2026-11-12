@@ -1,5 +1,5 @@
 /**
- * Rolling a die (CR 706, D-941). The result is a draw of the seeded generator of the game state (SPEC 4.2: all randomness comes from there), so a replay
+ * Rolling a die (CR 706, D-271). The result is a draw of the seeded generator of the game state (SPEC 4.2: all randomness comes from there), so a replay
  * of the same actions from the same seed rolls the same numbers.
  */
 import type { SeatId } from '../ids';

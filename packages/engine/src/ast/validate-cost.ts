@@ -194,7 +194,7 @@ export function checkAlternativeCosts(
 
 /**
  * The cost of a named alternative cost: a mana cost, with no {X} (the engine pays no other kind, D-121). Miracle may have an {X}
- * (D-971, CR 107.3a: it is announced as the spell is cast): the one named alternative that is cast with a choice of its own.
+ * (D-274, CR 107.3a: it is announced as the spell is cast): the one named alternative that is cast with a choice of its own.
  */
 function checkNamedAlternativeCost(
   cost: readonly Cost[],

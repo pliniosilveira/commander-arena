@@ -1,4 +1,4 @@
-// The Bruna deck (issue 5), The Book of Exalted Deeds (D-981, D-982). The REAL card of the golden corpus, read through the grammar only and played through
+// The Bruna deck (issue 5), The Book of Exalted Deeds (D-275, D-276). The REAL card of the golden corpus, read through the grammar only and played through
 // applyAction: "{W}{W}{W}, {T}, Exile ~: Put an enlightened counter on target Angel. It gains \"You can't lose the game and your opponents can't win the game.\"
 // Activate only as a sorcery." Stand-ins are real engine fixtures or SYNTHETIC (named so).
 import { readFileSync } from 'node:fs';

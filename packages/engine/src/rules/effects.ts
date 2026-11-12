@@ -266,7 +266,7 @@ export function runInstruction(
       ...(instruction.withCounters === undefined ? {} : { withCounters: instruction.withCounters }),
       ...(instruction.alt === undefined ? {} : { alt: instruction.alt }),
       ...(instruction.replacers === undefined ? {} : { replacers: instruction.replacers }),
-      // CR 614.12, 614.12b (D-951): the cards of a `together` run enter in one event, so what the replacement effects of this one read is the battlefield without
+      // CR 614.12, 614.12b (D-272): the cards of a `together` run enter in one event, so what the replacement effects of this one read is the battlefield without
       // the ones that entered before it in the run (`lastMoved` is the run: the pair starts it empty and every move adds the object it made).
       ...(instruction.together === true && instruction.to === 'battlefield'
         ? { alongside: res.lastMoved ?? [] }
@@ -298,7 +298,7 @@ export function runInstruction(
       instruction.attachTo !== undefined && result.newObject !== null
         ? attachEntered(result.state, result.newObject, instruction.attachTo)
         : { state: result.state, events: [] as GameEvent[] };
-    // CR 603.6a (D-951): the cards of a `together` run enter as one event, which `findTriggers` reads from this mark.
+    // CR 603.6a (D-272): the cards of a `together` run enter as one event, which `findTriggers` reads from this mark.
     const moveEvents = [
       ...(instruction.together === true
         ? result.events.map((e) =>
@@ -1147,7 +1147,7 @@ function runEffect(
     }
 
     case 'loseGame': {
-      // CR 104.3e (D-921): "each player this creature attacked this turn loses the game": the players the selector names lose it together.
+      // CR 104.3e (D-269): "each player this creature attacked this turn loses the game": the players the selector names lose it together.
       const lost = loseTheGame(next, resolvePlayers(state, effect.player, ctx, targets));
       return done(lost.state, [...events, ...lost.events]);
     }
@@ -1386,7 +1386,7 @@ function runEffect(
     }
 
     case 'rollDie': {
-      // CR 706.1, 706.2 (D-941): the controller rolls one die; the result stays for the rest of this resolution, which `dieResult` reads.
+      // CR 706.1, 706.2 (D-271): the controller rolls one die; the result stays for the rest of this resolution, which `dieResult` reads.
       const rolled = rollDie(next, res.controller, effect.sides);
       return { ...done(rolled.state, rolled.events), dieResult: rolled.result };
     }
@@ -1480,7 +1480,7 @@ function runEffect(
       return startSplit(state, res);
 
     case 'returnGraveyardPair':
-      // D-951: "Choose a creature card in an opponent's graveyard, then that player chooses ... You may return those cards ..." (rules/graveyard-pair.ts).
+      // D-272: "Choose a creature card in an opponent's graveyard, then that player chooses ... You may return those cards ..." (rules/graveyard-pair.ts).
       return done(state, [], [startGraveyardPair(effect.cardType)]);
 
     case 'sparePermanents':
@@ -1693,7 +1693,7 @@ function runEffect(
         ...ctx,
         targets,
         ...(res.performed === undefined ? {} : { performed: res.performed }),
-        // D-941: "If the result is 1": the die the earlier instruction rolled.
+        // D-271: "If the result is 1": the die the earlier instruction rolled.
         ...(res.dieResult === undefined ? {} : { dieResult: res.dieResult }),
       });
       const chosen = holds ? effect.effect : effect.else;

@@ -1,4 +1,4 @@
-// "Roll a four-sided die. If the result is 1, return this card from your graveyard to the battlefield" (D-941): the effect `rollDie`, the
+// "Roll a four-sided die. If the result is 1, return this card from your graveyard to the battlefield" (D-271): the effect `rollDie`, the
 // result it leaves for the rest of the resolution (`dieResult`), and the condition `thisInYourGraveyard` of a trigger that works from the graveyard.
 // Pins: CR 706.1 and 706.1a (a die of N sides has N equally likely outcomes numbered 1 to N), CR 706.2 (the natural result, no modifiers in this
 // engine), CR 706.3b (the roll and what is done with its result are one ability), CR 113.6b (an ability that states its zone works from there),

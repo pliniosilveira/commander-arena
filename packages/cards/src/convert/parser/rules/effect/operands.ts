@@ -55,7 +55,7 @@ export const PERMANENT_OPERANDS = [
   'noun.target-permanent',
   'noun.all-permanents',
   'noun.each-permanent',
-  // D-913: "each artifact and creature your opponents control".
+  // D-268: "each artifact and creature your opponents control".
   'noun.each-type-union',
 ] as const;
 

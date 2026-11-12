@@ -1,5 +1,5 @@
 /**
- * The web side of D-951 (Dawnbreak Reclaimer: "choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those
+ * The web side of D-272 (Dawnbreak Reclaimer: "choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those
  * cards to the battlefield under their owners' control") as pure models: the picker lists the cards of any graveyard (every graveyard is public, CR 404.2), not only the chooser's
  * own; the words of the choice and of the one question for both cards; what the other player is shown while it waits. No DOM.
  */

@@ -1927,19 +1927,10 @@
     "6fa7229d-18b6-43d8-aa57-a56cdb815767": {
       "name": "Dawnbreak Reclaimer",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "At the beginning of your end step, choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their owners' control.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "4c2cc706"
+      "ast": "4a8ae2ea"
     },
     "6fdcb563-9279-4365-8a78-26e75fbfd917": {
       "name": "Gogo, Mysterious Mime",
@@ -3232,9 +3223,7 @@
           "closestRule": "effect.return"
         }
       ],
-      "reasons": [
-        "layout \"meld\" is not supported"
-      ],
+      "reasons": ["layout \"meld\" is not supported"],
       "ast": "0f907202"
     },
     "bd39e333-b0b8-4a85-8645-d77f4a3941db": {
@@ -4141,9 +4130,7 @@
           "closestRule": "ability.triggered"
         }
       ],
-      "reasons": [
-        "layout \"meld\" is not supported"
-      ],
+      "reasons": ["layout \"meld\" is not supported"],
       "ast": "82803556"
     },
     "f4ce6078-8c7b-4f68-b324-13130c63a983": {
@@ -4501,7 +4488,7 @@
       "total": 60
     },
     "acceptance": {
-      "supported": 203,
+      "supported": 204,
       "total": 224
     }
   }

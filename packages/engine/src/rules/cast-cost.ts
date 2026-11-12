@@ -281,7 +281,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
       : flashback !== null
         ? manaSymbolsOf(flashback)
         : named !== null
-          ? // D-971: the X of a miracle cost is the announced one (every other named alternative has none).
+          ? // D-274: the X of a miracle cost is the announced one (every other named alternative has none).
             withX(manaSymbolsOf(named), x)
           : withX(face?.manaCost ?? [], x);
   let tax = 0;

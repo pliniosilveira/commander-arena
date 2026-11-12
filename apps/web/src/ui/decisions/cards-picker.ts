@@ -133,7 +133,7 @@ export function confirmLabel(
   if (decision.purpose === 'split') return 'Choose';
   // D-232: the card a permanent becomes a copy of (Spirit of Resilience); the choice is made, so there is no "none".
   if (decision.purpose === 'copy') return 'Copy';
-  // D-951: a creature card of a graveyard chosen for Dawnbreak Reclaimer's pair; the choice is made, so there is no "none".
+  // D-272: a creature card of a graveyard chosen for Dawnbreak Reclaimer's pair; the choice is made, so there is no "none".
   if (decision.purpose === 'pair') return 'Choose';
   // D-151 (CR 701.9): "Discard any number of cards": Confirm works with none.
   if (decision.purpose === 'discard' && chosen.length === 0 && (decision.min ?? 1) === 0) {
@@ -293,7 +293,7 @@ export function pickerCards(view: GameView, decision: ChooseCardsDecision): read
   }
   if (decision.zone === 'hand') return myHand(view).filter((o) => decision.legal.includes(o.id));
   if (decision.zone === 'graveyard') {
-    // D-951: the cards may be in the graveyard of another player ("a creature card in an opponent's graveyard"); every graveyard is public (CR 404.2).
+    // D-272: the cards may be in the graveyard of another player ("a creature card in an opponent's graveyard"); every graveyard is public (CR 404.2).
     return view.seats
       .flatMap((seat) => seat.graveyard)
       .filter((o) => decision.legal.includes(o.id));
@@ -548,7 +548,7 @@ function castPrompt(decision: ChooseCardsDecision, index: Index): string {
 export function discardTitle(decision: ChooseCardsDecision, index: Index): string {
   if (decision.purpose === 'move')
     return `Put onto the battlefield for ${nameOf(index, decision.source)}`;
-  // D-951: the two choices of Dawnbreak Reclaimer's ability.
+  // D-272: the two choices of Dawnbreak Reclaimer's ability.
   if (decision.purpose === 'pair') {
     return `Choose a card in a graveyard (${stackName(index, decision.source)})`;
   }

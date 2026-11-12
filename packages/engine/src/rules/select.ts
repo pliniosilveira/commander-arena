@@ -370,7 +370,7 @@ export function legalTargets(
     return [...out, ...playersFor(spec.what.player)];
   }
   if (spec.what.kind === 'objectOrGraveyardCard') {
-    // CR 115.1 (D-931): "other target creatures from the battlefield and/or creature cards from graveyards": the permanents the filter matches, then the cards
+    // CR 115.1 (D-270): "other target creatures from the battlefield and/or creature cards from graveyards": the permanents the filter matches, then the cards
     // of any graveyard the card filter matches. Protection from being targeted is a permanent's alone (`canBeTargetedBy`).
     const { filter: permanents, card: cards } = spec.what;
     for (const [filter, zone] of [
@@ -627,7 +627,7 @@ export function resolvePlayers(
         (ctx.thisWay?.discardedBy ?? []).filter((seat) => !getSeat(state, seat).hasLost),
       );
     case 'attackedPlayers': {
-      // CR 508.6 (D-921): the players the source was declared as an attacker attacking this turn, read under the id the source has (an ability
+      // CR 508.6 (D-269): the players the source was declared as an attacker attacking this turn, read under the id the source has (an ability
       // that outlives its source reads the log of the id it had, CR 608.2h), without the players who have left the game.
       const source = ctx.source;
       if (source === null) return [];

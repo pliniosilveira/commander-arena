@@ -1,5 +1,5 @@
 /**
- * Effect rule of stage P69 (D-982): an object gains a static ability for good, "It gains \"You can't lose the game and your opponents can't win the
+ * Effect rule of stage P69 (D-276): an object gains a static ability for good, "It gains \"You can't lose the game and your opponents can't win the
  * game.\"" (The Book of Exalted Deeds). The words say no duration, so the effect lasts until the end of the game (CR 611.2a), and the ability is a
  * layer 6 grant (CR 613.1f). The text in the quotes is read as an ability of its own (`rules/static/quoted.ts`); only a static one is read here, and
  * the lowering gives only the two the engine reads from the abilities an object has after the layers (`cantLoseGame`, `opponentsCantWin`).

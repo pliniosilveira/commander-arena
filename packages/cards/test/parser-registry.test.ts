@@ -393,7 +393,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.life-above-starting': permanent(
     (e) => `At the beginning of your end step, draw a card if ${e}.`,
   ),
-  // Stage P69 (D-982): "It gains \"You can't lose the game ...\"" ends a sentence with the quote, so the line is the last of an ability.
+  // Stage P69 (D-276): "It gains \"You can't lose the game ...\"" ends a sentence with the quote, so the line is the last of an ability.
   'effect.gain-static-ability': permanent(
     (e) => `{T}: Put a +1/+1 counter on target Angel. ${cap(e)}`,
   ),
@@ -403,7 +403,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
   ),
   'condition.entered-this-turn': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
-  // Stage P69 (D-941): the die roll and the card in the graveyard (Arden Angel).
+  // Stage P69 (D-271): the die roll and the card in the graveyard (Arden Angel).
   'effect.roll-die': spell((e) => `${cap(e)}.`),
   'condition.die-result': spell((e) => `Roll a twenty-sided die. If ${e}, you gain 1 life.`),
   'condition.this-in-your-graveyard': permanent(
@@ -513,7 +513,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `At the beginning of your end step, each player may discard a card. ${cap(e)} draws a card.`,
   ),
-  // D-921: the players a permanent attacked this turn, as the subject of "loses the game".
+  // D-269: the players a permanent attacked this turn, as the subject of "loses the game".
   'noun.each-player-attacked': permanent(
     (e) => `At the beginning of your end step, ${e} loses the game.`,
   ),
@@ -545,9 +545,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.mana-rider-scry': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
   // Group 2 (D-230).
   'noun.each-permanent-that-is': spell((e) => `Put two +1/+1 counters on ${e}.`),
-  // Bruna deck, Ajani (D-913).
+  // Bruna deck, Ajani (D-268).
   'noun.each-type-union': spell((e) => `Exile ${e}.`),
-  // D-931: a target of two zones, read by `exile`.
+  // D-270: a target of two zones, read by `exile`.
   'noun.target-creatures-battlefield-or-graveyard': spell((e) => `Exile ${e}.`),
   'amount.for-each-own-nontoken-destroyed': spell(
     (e) => `Destroy all creatures. Then create a 3/2 red and white Spirit creature token ${e}.`,

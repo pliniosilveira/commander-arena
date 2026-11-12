@@ -386,7 +386,7 @@ export const CONDITION_RULES = [
   // Stage P33 (D-150): "you control three or more lands with the same name" before the plain count, whose phrase is a prefix of it.
   ...ANGEL_CONDITION_RULES,
   ...BRUNA_CONDITION_RULES,
-  // Stage P69 (D-941): "the result is 1" after a die roll, "~ is in your graveyard".
+  // Stage P69 (D-271): "the result is 1" after a die roll, "~ is in your graveyard".
   ...ARDEN_CONDITION_RULES,
   CONDITION_CONTROL_AT_LEAST,
   CONDITION_CONTROL_A,

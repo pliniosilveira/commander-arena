@@ -1,4 +1,4 @@
-// Angel of Serenity (D-931, D-932), the Bruna deck program (issue 5): a target slot of two zones ("up to three other target creatures from the battlefield and/or creature
+// Angel of Serenity (D-270), the Bruna deck program (issue 5): a target slot of two zones ("up to three other target creatures from the battlefield and/or creature
 // cards from graveyards") and the linked leaves trigger that returns the exiled cards to their owners' hands. The lines are the real Oracle text of the acceptance card of the
 // golden corpus (name replaced by ~) with the nodes the grammar produces, played through applyAction where the engine reads them; the other lines are SYNTHETIC siblings
 // and the near misses the grammar must not read.
@@ -176,7 +176,7 @@ describe('what the slot of two zones does not read (SYNTHETIC)', () => {
   });
 });
 
-describe('"return the exiled cards to their owners\' hands" (D-932)', () => {
+describe('"return the exiled cards to their owners\' hands" (D-270)', () => {
   test("one effect: the cards the permanent exiled, to their owners' hands", () => {
     // Read after an exile of the same face, which it is linked to.
     const face = readAll(

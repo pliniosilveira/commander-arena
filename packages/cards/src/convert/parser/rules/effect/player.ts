@@ -297,7 +297,7 @@ const monarchAction: Action = (subject, you, rule) =>
       );
 
 /**
- * "loses the game", "lose the game" (CR 104.3e: an effect may state that a player loses the game; D-921): said of one player or of a group the
+ * "loses the game", "lose the game" (CR 104.3e: an effect may state that a player loses the game; D-269): said of one player or of a group the
  * subject names, with nothing after it ("at the end of the turn", "unless ..." and "wins the game" are other words and stay unread). The engine's
  * `loseGame`; a player who can't lose the game does not (CR 101.2), which the engine reads.
  */
@@ -330,7 +330,7 @@ const createAction: Action = (subject, you, rule) =>
 const PLAYER_SUBJECTS = [
   // Stage P52 (D-210): "each player who discarded a card this way draws a card".
   'noun.each-player-discarded',
-  // D-921: "each player ~ attacked this turn loses the game".
+  // D-269: "each player ~ attacked this turn loses the game".
   'noun.each-player-attacked',
   'noun.you-and-player',
   'noun.each-other-player',
@@ -439,7 +439,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'target player gets {E}',
     'you draw a card, then discard a card at random',
     'target opponent discards a card at random',
-    // D-921, CR 104.3e: an effect says that a player loses the game.
+    // D-269, CR 104.3e: an effect says that a player loses the game.
     'each opponent loses the game',
     'each player ~ attacked this turn loses the game',
     'target player loses the game',

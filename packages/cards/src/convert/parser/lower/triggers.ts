@@ -735,7 +735,7 @@ export function lowerTriggered(
     triggers[0] = folded;
     foldedCounters = true;
   } else if (ifWritten !== undefined) {
-    // D-941: "if ~ is in your graveyard" is read only here, as the intervening "if" (CR 603.4), and only for an ability that works from the graveyard (below).
+    // D-271: "if ~ is in your graveyard" is read only here, as the intervening "if" (CR 603.4), and only for an ability that works from the graveyard (below).
     ctx.interveningCondition = true;
     const lowered = lowerCondition(ifWritten, itIsSelf, ctx);
     ctx.interveningCondition = false;
@@ -923,7 +923,7 @@ export function lowerTriggered(
   const [only] = effects;
   const effect: Effect =
     effects.length === 1 && only !== undefined ? only : { kind: 'sequence', effects: [...effects] };
-  // D-941 (CR 113.6b, 113.6m): "if ~ is in your graveyard" belongs to an ability that works from the graveyard, which a trigger says by what it does to its
+  // D-271 (CR 113.6b, 113.6m): "if ~ is in your graveyard" belongs to an ability that works from the graveyard, which a trigger says by what it does to its
   // own card ("return ~ from your graveyard to the battlefield"); a trigger that only has the condition is not read (its card would be on the battlefield).
   if (
     JSON.stringify(interveningIf ?? null).includes('"thisInYourGraveyard"') &&

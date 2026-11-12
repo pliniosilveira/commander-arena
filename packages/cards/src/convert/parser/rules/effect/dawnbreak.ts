@@ -1,5 +1,5 @@
 /**
- * Effect rules of the Bruna deck program, Dawnbreak Reclaimer (stage P69, D-951). The lowering is in `lower/dawnbreak.ts`.
+ * Effect rules of the Bruna deck program, Dawnbreak Reclaimer (stage P69, D-272). The lowering is in `lower/dawnbreak.ts`.
  */
 import { fail, pattern } from '../../combinators';
 import type { IrArg } from '../../ir/types';

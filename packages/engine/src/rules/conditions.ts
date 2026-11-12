@@ -69,7 +69,7 @@ export interface ConditionContext {
   readonly targets?: readonly ChosenTarget[];
   readonly moved?: readonly ObjectId[];
   readonly performed?: number;
-  /** The result of the latest die the resolution rolled, for `dieResult` (D-941). Absent where none was rolled, which fails that condition closed. */
+  /** The result of the latest die the resolution rolled, for `dieResult` (D-271). Absent where none was rolled, which fails that condition closed. */
   readonly dieResult?: number;
   /** What the earlier instructions of this resolution did, for `thisWayAtLeast` (D-210). */
   readonly thisWay?: ThisWayCounts;
@@ -393,7 +393,7 @@ export function evaluateCondition(
       // D-252, CR 119.3: the life the controller has gained this turn, from the turn log.
       return lifeGainedThisTurnHolds(state, ctx.controller, condition);
     case 'dieResult': {
-      // CR 706.2, 706.3a (D-941): the result of the die rolled earlier in this resolution against the number; no die rolled, no result.
+      // CR 706.2, 706.3a (D-271): the result of the die rolled earlier in this resolution against the number; no die rolled, no result.
       if (ctx.dieResult === undefined) return false;
       const { cmp, value } = condition.compare;
       if (cmp === 'atLeast') return ctx.dieResult >= value;
@@ -401,7 +401,7 @@ export function evaluateCondition(
       return ctx.dieResult === value;
     }
     case 'thisInYourGraveyard': {
-      // CR 113.6b, 603.4, 400.7 (D-941): the card itself is in its owner's graveyard, and the owner is the controller of the ability (the card has no
+      // CR 113.6b, 603.4, 400.7 (D-271): the card itself is in its owner's graveyard, and the owner is the controller of the ability (the card has no
       // controller in a graveyard, CR 108.4a). A card that has left is another object, so it is read live, never from last-known information.
       const source = ctx.source === null ? undefined : state.objects[ctx.source];
       return source !== undefined && source.zone === 'graveyard' && source.owner === ctx.controller;

@@ -159,7 +159,7 @@ export const EFFECT_EXILE_PER_OPPONENT = defineRule<Clauses>({
 
 /**
  * `effect.destroy-per-opponent`: "for each opponent, destroy up to one target artifact or enchantment that player controls" (CR 115.1, 601.2c:
- * one slot that takes at most one target of each opponent; CR 701.8a: destroy). The same slot as the exile (D-150), read for destroy (D-961).
+ * one slot that takes at most one target of each opponent; CR 701.8a: destroy). The same slot as the exile (D-150), read for destroy (D-273).
  * "Up to one" only: without it each opponent would need a target, and a player who controls nothing of the kind could not be chosen (the engine's
  * slot has no minimum); "up to two" and the other counts are not this slot.
  */

@@ -1,4 +1,4 @@
-// Stage P96 (provisional D-961): the Bruna deck program (issue 5), Dismantling Wave: "For each opponent, destroy up to one target artifact or enchantment that player controls."
+// Stage P96 (provisional D-273): the Bruna deck program (issue 5), Dismantling Wave: "For each opponent, destroy up to one target artifact or enchantment that player controls."
 // The first line is the real Oracle text of the acceptance card of the golden corpus, with the node the grammar produces; the other lines are SYNTHETIC siblings the
 // grammar reads and SYNTHETIC near misses it must not read. CR 115.1 and 601.2c (a slot with up to one target for each opponent), CR 701.8a (destroy).
 import { describe, expect, test } from 'vitest';

@@ -639,7 +639,7 @@ export type PlayerSelector =
    */
   | { readonly kind: 'discardedThisWay' }
   /**
-   * "Each player this creature attacked this turn" (D-921, CR 508.6): the players the creature the ability belongs to was declared as an attacker
+   * "Each player this creature attacked this turn" (D-269, CR 508.6): the players the creature the ability belongs to was declared as an attacker
    * attacking this turn, in any combat phase, each once, in the order CR 101.4 gives; the players who have left the game are not named. An
    * attack on a planeswalker or a battle is not an attack on its controller or protector. Read from the turn log under the id the ability's source
    * has, so a source that has left the battlefield by the time the ability resolves is read as it was (CR 608.2h, last-known information). `of` is
@@ -686,7 +686,7 @@ export interface TargetSpec {
         readonly filter: ObjectFilter;
       }
     /**
-     * "Up to three other target creatures from the battlefield and/or creature cards from graveyards" (CR 115.1, 115.2, 601.2c, 603.3d, D-931): one slot
+     * "Up to three other target creatures from the battlefield and/or creature cards from graveyards" (CR 115.1, 115.2, 601.2c, 603.3d, D-270): one slot
      * whose targets are objects of two zones. A target is a permanent on the battlefield that `filter` matches or a card in a graveyard (any owner's) that
      * `card` matches; the same slot takes some of each, up to its `max`. `filter` has no zone (the battlefield) and `card` has `zone: 'graveyard'` and no
      * `other`, controller or stack kind. Every selector reads the chosen targets as objects; they are legal again as the ability resolves (CR 608.2b) only
@@ -922,7 +922,7 @@ export type PermanentAlternativeKind =
  *   card is cast as its madness trigger resolves: a card with it that would be discarded is exiled instead (a
  *   replacement the engine applies to every discard), and its owner may then cast it from exile for this cost
  *   or put it into the graveyard. It is never offered as a cast from a hand. On a card that is not a land.
- * - `miracle` (D-971, CR 702.94): the `cost` (mana only; an {X} is allowed, CR 107.3a) is paid instead of the mana cost, but only when
+ * - `miracle` (D-274, CR 702.94): the `cost` (mana only; an {X} is allowed, CR 107.3a) is paid instead of the mana cost, but only when
  *   the card is cast as its miracle trigger resolves: its owner may reveal the card as they draw it when it is the first card they have
  *   drawn this turn, and when they do, the trigger lets them cast it from the hand for this cost. It is never offered as a cast from a
  *   hand. On a card that is not a land.
@@ -1379,7 +1379,7 @@ export type Effect =
     }
   /**
    * "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their
-   * owners' control." (Dawnbreak Reclaimer; CR 608.2c, 608.2d, 110.2a, 400.3, D-951). The controller chooses a card of `cardType` among the cards in the graveyards of their
+   * owners' control." (Dawnbreak Reclaimer; CR 608.2c, 608.2d, 110.2a, 400.3, D-272). The controller chooses a card of `cardType` among the cards in the graveyards of their
    * opponents (one still in the game); the owner of that card ("that player") chooses a card of `cardType` in the controller's graveyard; then the controller may return the cards
    * chosen, both or neither, to the battlefield under their owners' control. A choice that cannot be made (no such card) is not made (CR 608.2d): with no card in an opponent's
    * graveyard nobody is "that player" and the second choice is not made either, and with no card in the controller's graveyard the first card alone may be returned. The wording
@@ -1600,7 +1600,7 @@ export type Effect =
    * it without paying its mana cost if able. If you don't, it remains exiled. If you cast a creature spell this
    * way, it gains haste" (the spell remembers it, `StackData.suspended`); `madness`: "its owner may cast it by
    * paying [its madness cost] rather than paying its mana cost. If that player doesn't, they put this card into
-   * their graveyard"; `miracle` (D-971, CR 702.94a): the source card is in its owner's hand, not in exile, and "you may
+   * their graveyard"; `miracle` (D-274, CR 702.94a): the source card is in its owner's hand, not in exile, and "you may
    * cast it by paying [its miracle cost] rather than its mana cost"; declining leaves it in the hand. The question is asked only when the card could be cast (a legal target for each of its
    * targets, the cost payable). Only the effect of the engine's own suspend and madness abilities
    * (`validateCard` refuses it anywhere else).
@@ -1761,7 +1761,7 @@ export type Effect =
   | { readonly kind: 'gainLife'; readonly player: PlayerSelector; readonly amount: Amount }
   | { readonly kind: 'loseLife'; readonly player: PlayerSelector; readonly amount: Amount }
   /**
-   * "<Players> lose the game." (CR 104.3e: an effect may state that a player loses the game, D-921): each player the selector names, who is
+   * "<Players> lose the game." (CR 104.3e: an effect may state that a player loses the game, D-269): each player the selector names, who is
    * still in the game, loses it at once, together (CR 104.4a: if every player remaining loses simultaneously the game is a draw). A player who
    * "can't lose the game" (`cantLoseGame`, CR 101.2: the "can't" wins) does not. The player leaves the game as a conceding player does (CR 104.5); the
    * game ends when one player is left (CR 104.2a). Any player selector is meant: "you", "that player", "target player", "each opponent", "each
@@ -1916,7 +1916,7 @@ export type Effect =
    * "It also gains the non-backup abilities of this creature printed below this one until end of turn" (Backup, CR 702.165a, 613.1f, D-230): layer 6, each permanent the selector
    * names (a `target`, fixed now, CR 611.2c) has the abilities in `abilities` (any ability but a static one or a keyword that cannot be granted: keywords without parameters,
    * activated, triggered and mana abilities) until `duration`. The engine's own Backup writes that form (`validateCard` refuses `untilEndOfTurn` in a card).
-   * D-981 (CR 611.2a, 613.1f): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration: `duration: 'permanent'`, for
+   * D-275 (CR 611.2a, 613.1f): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration: `duration: 'permanent'`, for
    * the rest of the game (the object a zone change makes is a new one, CR 400.7). A card may write only this form, and only with static abilities
    * `cantLoseGame` and `opponentsCantWin`, the ones read from the abilities the object has after the layers (`rules/player-protection.ts`).
    */
@@ -2056,7 +2056,7 @@ export type Effect =
   /** CR 701.24 (Shuffle): each player `player` names shuffles their library ("Its controller shuffles"). */
   | { readonly kind: 'shuffle'; readonly player: PlayerSelector }
   /**
-   * "Roll a four-sided die" (CR 706.1, D-941): the controller of the effect rolls one die of `sides` sides, a whole number from 2 up (CR 706.1a: a die has N
+   * "Roll a four-sided die" (CR 706.1, D-271): the controller of the effect rolls one die of `sides` sides, a whole number from 2 up (CR 706.1a: a die has N
    * equally likely outcomes, numbered 1 to N). The natural result (CR 706.2: the engine has no modifiers of a roll) is drawn from the seeded generator of the
    * game state (`nextInt`, one draw), emitted as the `dieRolled` event and kept for the rest of the resolution of this spell or ability: the condition
    * `dieResult` of a later `conditional` reads it ("If the result is 1, ..."; CR 706.3b: the roll, what is done with its result and a results table are
@@ -3399,12 +3399,12 @@ export type Condition =
    */
   | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
   /**
-   * "If the result is 1", "if the result is 10 or more" (CR 706.2, 706.3a, D-941): the result of the latest `rollDie` of this resolution against a whole number.
+   * "If the result is 1", "if the result is 10 or more" (CR 706.2, 706.3a, D-271): the result of the latest `rollDie` of this resolution against a whole number.
    * Only in a `conditional` after a `rollDie` of the same sequence (`validateCard` checks it); false if no die was rolled.
    */
   | { readonly kind: 'dieResult'; readonly compare: NumberComparison }
   /**
-   * "If this card is in your graveyard" (CR 113.6b, 603.4, D-941): the source of the condition is an object that is in its owner's graveyard, and the
+   * "If this card is in your graveyard" (CR 113.6b, 603.4, D-271): the source of the condition is an object that is in its owner's graveyard, and the
    * controller of the condition is that owner. Read from the object itself (not from last-known information: once the card leaves, it is a new object
    * and the condition is false, CR 400.7), as the event happens and again as the ability resolves. Only for an ability that works from the graveyard
    * (`functionsIn: 'graveyard'`).

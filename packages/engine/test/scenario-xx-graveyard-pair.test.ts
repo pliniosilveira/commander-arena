@@ -1,5 +1,5 @@
 // "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their
-// owners' control." (D-951, the effect `returnGraveyardPair`; Dawnbreak Reclaimer of the Bruna deck, issue 5).
+// owners' control." (D-272, the effect `returnGraveyardPair`; Dawnbreak Reclaimer of the Bruna deck, issue 5).
 // Pins: CR 608.2c (the instructions are followed in the order written), CR 608.2d (a player can't choose an option that is impossible: with no such card nothing is chosen),
 // CR 110.2a and 400.3 (the cards enter under their owners' control), CR 603.2 (a trigger of "your end step" triggers on your end step only), CR 404.2 (graveyards are public).
 // The Angel, the spell and the cleric are SYNTHETIC (src/cards/fixtures/synthetic-dawnbreak.ts); the other cards are real fixtures.

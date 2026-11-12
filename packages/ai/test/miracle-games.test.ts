@@ -1,4 +1,4 @@
-// Slice soak (D-971): whole games with the 'miracle' deck style (SYNTHETIC Miracle cards: an {X} in the miracle cost, a target, a
+// Slice soak (D-274): whole games with the 'miracle' deck style (SYNTHETIC Miracle cards: an {X} in the miracle cost, a target, a
 // permanent, cards that draw several cards or give the draw to the opponent) between random agents, with CasualAgent in some seats.
 // Every game finishes with a result, no fallback, no rejected action, no agent error and consistent state after every action; the
 // action log replays to the same final state; declining the reveal leaves no public trace (no event at all); and every path of the

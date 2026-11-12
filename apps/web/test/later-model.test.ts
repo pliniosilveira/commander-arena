@@ -103,7 +103,7 @@ describe('the questions', () => {
     expect(castNowButtons('suspend', undefined).no).toBe("Don't cast it (it stays in exile)");
   });
 
-  test('miracle: the reveal, then the cast with the cost as the card prints it (D-971)', () => {
+  test('miracle: the reveal, then the cast with the cost as the card prints it (D-274)', () => {
     expect(miracleRevealPrompt('Angels', ['X', 'W', 'W'])).toBe(
       'Reveal Angels, the first card you drew this turn, for its miracle trigger (miracle {X}{W}{W})?',
     );
@@ -117,7 +117,7 @@ describe('the questions', () => {
   });
 });
 
-describe('the two questions of miracle (D-971)', () => {
+describe('the two questions of miracle (D-274)', () => {
   const angels = card('Angels', { id: 'o7', types: ['sorcery'] });
   const index = lookupIndexFor([angels]);
   const ask = (purpose: 'miracleReveal' | 'miracle') =>
@@ -216,7 +216,7 @@ describe('the engine abilities on the stack', () => {
     expect(laterOrderWording(0, { zone: 'battlefield', counters: {} })).toBeUndefined();
   });
 
-  test('a waiting trigger of a card revealed with miracle, in a hand, shows the card’s own text (D-971)', () => {
+  test('a waiting trigger of a card revealed with miracle, in a hand, shows the card’s own text (D-274)', () => {
     expect(laterOrderWording(-1, { zone: 'hand', counters: {} })).toBeNull();
     expect(laterOrderWording(0, { zone: 'hand', counters: {} })).toBeUndefined();
   });

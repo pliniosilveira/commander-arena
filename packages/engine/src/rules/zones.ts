@@ -148,7 +148,7 @@ export interface MoveRequest {
    */
   readonly alt?: 'unearth';
   /**
-   * The permanents that entered the battlefield in the same event before this one (D-951, CR 603.6a, 614.12b: "return those cards to the battlefield"): the replacement
+   * The permanents that entered the battlefield in the same event before this one (D-272, CR 603.6a, 614.12b: "return those cards to the battlefield"): the replacement
    * effects of this card that read the battlefield read it without them (`rules/enters-run.ts`). Only for a move to the battlefield; absent for a card that enters alone.
    */
   readonly alongside?: readonly ObjectId[];
@@ -339,7 +339,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // The question comes before anything moves. Nothing is asked when it would enter tapped anyway
   // or when the controller has too little life to pay (CR 119.4).
   const enterController = request.toSeat ?? controllerOf(state, old);
-  // CR 614.12, 614.12b (D-951): what the replacement effects of the entering card read is the battlefield without the cards that enter with it (`rules/enters-run.ts`).
+  // CR 614.12, 614.12b (D-272): what the replacement effects of the entering card read is the battlefield without the cards that enter with it (`rules/enters-run.ts`).
   const before = withoutRun(state, request.alongside);
   const faceIndex = faceAfter(old, request);
   const entering =
@@ -527,7 +527,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   const [timestamp, s2] = allocateTimestamp(s1);
   next = s2;
 
-  // CR 614.12 (D-951): the same battlefield, once the old object has left its zone: without the permanents that enter in the same event.
+  // CR 614.12 (D-272): the same battlefield, once the old object has left its zone: without the permanents that enter in the same event.
   const nextBefore = withoutRun(next, request.alongside);
   let tapped = request.tapped ?? false;
   let counters: Record<string, number> = {};

@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC CARDS FOR AN EFFECT THAT GIVES A PERMANENT A STATIC ABILITY FOR GOOD. NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of D-981 (the Bruna deck program, The Book of Exalted Deeds): "It gains \"You can't lose the game and your opponents
+ * Invented for the tests of D-275 (the Bruna deck program, The Book of Exalted Deeds): "It gains \"You can't lose the game and your opponents
  * can't win the game.\"" with no duration, which lasts for the rest of the game (CR 611.2a), as an effect of an activated ability whose source was
  * exiled as a cost. Names start with "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle text, and none of
  * these is the definition of a real card.

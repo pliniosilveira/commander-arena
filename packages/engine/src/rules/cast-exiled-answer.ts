@@ -1,5 +1,5 @@
 /**
- * The answers to the question of `castExiled` (CR 702.62a Suspend, CR 702.35a Madness, CR 702.94a Miracle, D-128, D-971), apart from
+ * The answers to the question of `castExiled` (CR 702.62a Suspend, CR 702.35a Madness, CR 702.94a Miracle, D-128, D-274), apart from
  * `rules/cast-exiled.ts` because they start a cast (`rules/cast.ts`) and go on with a resolution (`rules/stack.ts`),
  * which the interpreter that runs the instruction cannot import (as for Cascade, `rules/cascade-cast.ts`).
  *

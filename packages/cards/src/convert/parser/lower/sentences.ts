@@ -1086,7 +1086,7 @@ function lowerStep(
   const [first] = sentence.clauses;
   if (first === undefined) return { stopped: refuse(sentence) };
   const stop = (failed: LowerFailure): StepResult => ({ stopped: failed });
-  // "Roll a four-sided die." (D-941, CR 706.3b): the result is read by the instructions after the roll in the same sequence, so a roll is a plain sentence of
+  // "Roll a four-sided die." (D-271, CR 706.3b): the result is read by the instructions after the roll in the same sequence, so a roll is a plain sentence of
   // its own: not under a condition, an "otherwise", a delayed trigger, a question to a player or a reflexive ability, where the engine would not keep it for them.
   if (
     sentence.clauses.some((c) => c.verb === 'roll') &&
@@ -1246,7 +1246,7 @@ function lowerStep(
     if (!lowered.ok) return stop(lowered);
     steps.push({
       effects: lowered.value,
-      // "Roll a d6. If the result is 6, draw a card instead." (D-941, CR 706.3b, 608.2c): a roll is not replaced by the sentence after it, which reads its
+      // "Roll a d6. If the result is 6, draw a card instead." (D-271, CR 706.3b, 608.2c): a roll is not replaced by the sentence after it, which reads its
       // result: as the else of that sentence the roll would run after the test, with no result to read.
       replaceable: sentence.clauses.length === 1 && first.verb !== 'roll',
       slots: [slotsFrom, ctx.targets.length],

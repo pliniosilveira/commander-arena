@@ -112,7 +112,7 @@ describe('poison counters in the log', () => {
   });
 });
 
-describe('a loss to an effect (D-921)', () => {
+describe('a loss to an effect (D-269)', () => {
   test('keeps the "(effect)" the game-over screen reads', () => {
     const text = line({ kind: 'playerLost', seat: 1, reason: 'effect' });
     expect(text).toBe('Opponent loses the game (effect).');

@@ -333,7 +333,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     // Stage P33 (D-150, CR 610.3): until the permanent with the ability leaves the battlefield.
     'exile target nonland permanent an opponent controls until ~ leaves the battlefield',
     'exile up to two target artifacts and/or enchantments',
-    // D-931 (CR 115.1, 404.1): one slot of targets in two zones.
+    // D-270 (CR 115.1, 404.1): one slot of targets in two zones.
     'exile up to three other target creatures from the battlefield and/or creature cards from graveyards',
     // Stage P70 (D-231, CR 610.3): until an opponent becomes the monarch (Palace Jailer).
     'exile target creature an opponent controls until an opponent becomes the monarch',
@@ -352,7 +352,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile this card from your hand',
     'exile that card from your hand',
     'exile that card from a graveyard',
-    // D-931: the second half is another kind of target, which the slot of two zones does not say.
+    // D-270: the second half is another kind of target, which the slot of two zones does not say.
     'exile up to three other target creatures from the battlefield and/or creature cards from a graveyard',
     'exile up to three other target creatures from the battlefield and/or creature cards from graveyards until ~ leaves the battlefield',
   ],
@@ -367,7 +367,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             ...GRAVEYARD_OPERANDS,
             'noun.player-graveyard',
             'noun.all-graveyards',
-            // D-931: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (the one verb that moves a card out of any zone).
+            // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (the one verb that moves a card out of any zone).
             'noun.target-creatures-battlefield-or-graveyard',
             ...SELF_OR_PERMANENT_OPERANDS,
             // Stage P30 (D-135): "you may exile it" (the card a permanent became when it died, or a target of the text).
@@ -391,7 +391,7 @@ export const EFFECT_EXILE = defineRule<Clauses>({
         (objects.kind === 'noun' &&
           objects.det === 'target' &&
           objects.filter.zone === 'battlefield' &&
-          // D-931: cards of graveyards are not put back by "until": the slot of two zones is exiled for good.
+          // D-270: cards of graveyards are not put back by "until": the slot of two zones is exiled for good.
           objects.orCard === undefined &&
           objects.filter.player === undefined),
     ),
@@ -832,13 +832,13 @@ export const EFFECT_RULES = [
   ...VRASKA_EFFECT_RULES,
   // Stage P69 (D-256, D-257): the Bruna deck, "Do this only once each turn" and "pay {X}, where X is less than or equal to the amount of life you gained".
   ...BRUNA_EFFECT_RULES,
-  // D-932: "return the exiled cards to their owners' hands" (Angel of Serenity).
+  // D-270: "return the exiled cards to their owners' hands" (Angel of Serenity).
   ...CROSS_ZONE_EFFECT_RULES,
-  // Stage P69 (D-941): rolling a die, "roll a four-sided die".
+  // Stage P69 (D-271): rolling a die, "roll a four-sided die".
   ...ARDEN_EFFECT_RULES,
-  // Stage P69 (D-982): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration.
+  // Stage P69 (D-276): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration.
   ...GRANTED_STATIC_EFFECT_RULES,
-  // Stage P69 (D-951): Dawnbreak Reclaimer, "choose a creature card in an opponent's graveyard, then that player chooses ...".
+  // Stage P69 (D-272): Dawnbreak Reclaimer, "choose a creature card in an opponent's graveyard, then that player chooses ...".
   ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,

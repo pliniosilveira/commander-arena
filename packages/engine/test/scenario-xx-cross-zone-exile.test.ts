@@ -1,5 +1,5 @@
 // "When this creature enters, you may exile up to three other target creatures from the battlefield and/or creature cards from graveyards. When this creature leaves
-// the battlefield, return the exiled cards to their owners' hands." (D-931, D-932): a target slot of two zones, and the cards of a linked exile returned to hand.
+// the battlefield, return the exiled cards to their owners' hands." (D-270): a target slot of two zones, and the cards of a linked exile returned to hand.
 // Pins: CR 115.1 and 115.2 (a spell or ability may say it can target an object in another zone: one slot may name permanents and cards of graveyards), CR 601.2c
 // and 603.3d (a variable number of targets is announced as the triggered ability is put on the stack), CR 115.6 (an ability that requires targets may allow zero),
 // CR 603.5 ("you may" is asked as the ability resolves), CR 608.2b (a target that is no longer in the zone it was in is illegal and is not affected), CR 702.11b (hexproof is

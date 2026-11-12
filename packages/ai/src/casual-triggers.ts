@@ -33,7 +33,7 @@ export interface SlotPlan {
   /** True for "untap target ...": a tapped permanent is the one to help. */
   readonly untap: boolean;
   /**
-   * D-931: a slot of targets on the battlefield and in graveyards that an `exile` uses ("up to three other target creatures from the battlefield and/or creature cards
+   * D-270: a slot of targets on the battlefield and in graveyards that an `exile` uses ("up to three other target creatures from the battlefield and/or creature cards
    * from graveyards"): a card of a graveyard is left alone, because the exile is undone when the permanent leaves (the card then goes to its owner's hand, which a card
    * the opponent had lost for good would not have). Only the permanents of the battlefield are aimed at.
    */
@@ -184,7 +184,7 @@ export function chooseTriggerTargets(
     : ability.effect;
   return d.specs.flatMap((slot) => {
     const plan = planFor(effect, slot.specId) ?? HARM_BY_DEFAULT;
-    // D-931: a slot of two zones (the battlefield and graveyards): only the battlefield side is aimed at.
+    // D-270: a slot of two zones (the battlefield and graveyards): only the battlefield side is aimed at.
     const crossZone = ability.targets?.some(
       (t) => t.id === slot.specId && t.what.kind === 'objectOrGraveyardCard',
     );

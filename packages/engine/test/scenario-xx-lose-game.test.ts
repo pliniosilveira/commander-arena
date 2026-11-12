@@ -1,4 +1,4 @@
-// "Each player this creature attacked this turn loses the game" (D-921): the effect `loseGame` (CR 104.3e) with the selector `attackedPlayers` (CR 508.6),
+// "Each player this creature attacked this turn loses the game" (D-269): the effect `loseGame` (CR 104.3e) with the selector `attackedPlayers` (CR 508.6),
 // "Whenever a creature you control deals combat damage to a player, you and that player each gain that much life", and an intervening "if you have at least 15
 // life more than your starting life total" (CR 603.4). Cards are SYNTHETIC (src/cards/fixtures/synthetic-lose-game.ts).
 import { describe, expect, test } from 'vitest';

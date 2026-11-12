@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC CARDS FOR "LOSES THE GAME" AND "EACH PLAYER THIS CREATURE ATTACKED THIS TURN". NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of D-921: the effect `loseGame` (CR 104.3e) with the player selectors `attackedPlayers` (CR 508.6), `eachOpponent` and
+ * Invented for the tests of D-269: the effect `loseGame` (CR 104.3e) with the player selectors `attackedPlayers` (CR 508.6), `eachOpponent` and
  * `eachPlayer`, the trigger "Whenever a creature you control deals combat damage to a player, you and that player each gain that much life" and an
  * end step trigger with an intervening "if you have at least 15 life more than your starting life total" (CR 603.4). Names start with "SYNTHETIC ";
  * oracleId is null. The text describes what the AST does; it is not Oracle text, and none of these is the definition of a real card.

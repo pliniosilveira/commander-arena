@@ -1,4 +1,4 @@
-// The Bruna deck (issue 5), Arden Angel (D-941): "At the beginning of your upkeep, if ~ is in your graveyard, roll a four-sided die. If the result is 1, return ~ from your
+// The Bruna deck (issue 5), Arden Angel (D-271): "At the beginning of your upkeep, if ~ is in your graveyard, roll a four-sided die. If the result is 1, return ~ from your
 // graveyard to the battlefield." The REAL card of the golden corpus, read through the grammar only and played through applyAction: the roll is one draw of the seeded
 // generator of the state (CR 706.1a, SPEC 4.2), the card returns exactly when the die shows 1 (CR 706.3b), and the trigger works from the graveyard only (CR 113.6b, 113.6m).
 import { readFileSync } from 'node:fs';

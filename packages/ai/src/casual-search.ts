@@ -230,7 +230,7 @@ export function chooseCardsFromZone(view: GameView, d: ChooseCardsDecision): Act
   if (d.purpose === 'exile') return chooseEscapeExile(view, d);
   // D-232: the card an opponent's ability puts on the bottom of its library (Coin of Fate): the one the agent least wants the other player to have.
   if (d.purpose === 'split') return chooseSplitExiled(view, d);
-  // D-951: a creature card of a graveyard, which goes back to the other player (Dawnbreak Reclaimer): the one worth least.
+  // D-272: a creature card of a graveyard, which goes back to the other player (Dawnbreak Reclaimer): the one worth least.
   if (d.purpose === 'pair') return chooseLeastWorthCard(view, d);
   // D-232: the card a permanent becomes a copy of until end of turn (Spirit of Resilience).
   if (d.purpose === 'copy') return chooseCopyCard(view, d);

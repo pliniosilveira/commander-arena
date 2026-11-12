@@ -1,4 +1,4 @@
-// "For each opponent, destroy up to one target artifact or enchantment that player controls" on a sorcery (D-961, the slot of D-149 with destroy).
+// "For each opponent, destroy up to one target artifact or enchantment that player controls" on a sorcery (D-273, the slot of D-149 with destroy).
 // Pins: CR 115.1 and 601.2c (a target slot: up to one target for each opponent, controlled by that opponent, chosen as the spell is cast),
 // CR 701.8a (destroy: move the permanent from the battlefield to its owner's graveyard).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-destroy-per-opponent.ts) or real fixtures.
