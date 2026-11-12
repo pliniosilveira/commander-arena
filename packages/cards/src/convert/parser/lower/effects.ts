@@ -60,6 +60,7 @@ import {
   playerSelectorOf,
   recipientOf,
 } from './nouns';
+import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { PREVENT_DAMAGE } from './prevent';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
@@ -1278,6 +1279,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ARDEN_LOWERINGS,
   ...VRASKA_LOWERINGS,
   ...HOFRI_LOWERINGS,
+  ...PILES_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,
   ...EDHREC_LOWERINGS,
   ...DRAGON_LOWERINGS,

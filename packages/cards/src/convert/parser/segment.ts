@@ -223,6 +223,15 @@ const MAY_RETURN_THOSE_CARDS =
 const EXILE_AT_RANDOM = /(?:^|, then )exile a card from your graveyard at random\.$/i;
 const PLAY_THE_EXILED_CARD = /^you may play the exiled card this turn\.$/i;
 
+/**
+ * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (D-971, CR 700.3):
+ * three sentences that are one instruction (what is revealed, who separates it and where each pile goes), kept together so `effect.reveal-separate-piles` reads them as one. Only all
+ * three in a row.
+ */
+const REVEAL_THE_TOP = /^reveal the top [^.]* cards of your library\.$/i;
+const SEPARATES_INTO_PILES = /^an opponent separates those cards into two piles\.$/i;
+const PUT_ONE_PILE = /^put one pile into your hand and the other into your graveyard\.$/i;
+
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
   for (let i = 0; i < spans.length; i++) {
@@ -230,6 +239,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     const said = (span: Span | undefined, re: RegExp) =>
       span !== undefined && re.test(text.slice(span.start, span.end));
     if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, REVEAL_THE_TOP) &&
+      said(b, SEPARATES_INTO_PILES) &&
+      said(c, PUT_ONE_PILE)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
       a !== undefined &&
       c !== undefined &&
       said(a, EXILE_UNTIL_NONLAND) &&

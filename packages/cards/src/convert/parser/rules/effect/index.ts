@@ -58,6 +58,7 @@ import {
   UNDER_CONTROL,
 } from './operands';
 import { EFFECT_PAY } from './pay';
+import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
 import {
   EFFECT_DISCARD,
@@ -845,6 +846,8 @@ export const EFFECT_RULES = [
   ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
+  // D-971: "Reveal the top five cards of your library. An opponent separates those cards into two piles. ..." (three sentences kept together).
+  ...PILES_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.
   ...ARTIFACT_EFFECT_RULES,
   EFFECT_TAP,

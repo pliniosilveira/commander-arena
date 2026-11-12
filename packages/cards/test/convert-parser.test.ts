@@ -537,6 +537,7 @@ describe('unmatched abilities', () => {
       'effect.player-adds-mana',
       'effect.copy-this-spell',
       'effect.becomes-in-addition',
+      'effect.reveal-separate-piles',
       'effect.tap-chosen',
       'effect.untap-chosen',
       'effect.untap-those',
