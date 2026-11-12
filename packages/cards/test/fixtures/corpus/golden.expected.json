@@ -1,5 +1,5 @@
 {
-  "parserVersion": 88,
+  "parserVersion": 89,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -1048,8 +1048,8 @@
           "ability": 0,
           "text": "+1: Reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put it into your hand.",
           "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
+          "slot": "amount",
+          "closestRule": "effect.reveal-separate-piles"
         },
         {
           "face": 1,
@@ -1328,19 +1328,10 @@
     "437b2dab-15e0-4b9a-a204-58622d37a3b3": {
       "name": "Fact or Fiction",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f342dfb5"
+      "ast": "18cece80"
     },
     "43b5794a-4ed6-471d-bc45-22fac486895d": {
       "name": "Thunderdrum Soloist",
@@ -4805,7 +4796,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 212,
+      "supported": 213,
       "total": 245
     }
   }

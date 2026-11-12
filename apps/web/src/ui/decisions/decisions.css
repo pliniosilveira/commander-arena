@@ -911,6 +911,39 @@
   font-weight: 400;
   white-space: normal;
 }
+/* "Pick a pile" (PilesDialog.tsx, D-303, CR 700.3): the two piles side by side, a button under each. */
+.dec-piles {
+  width: min(720px, 94vw);
+}
+.dec-piles-row {
+  display: flex;
+  gap: 16px;
+  align-self: stretch;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.dec-pile {
+  flex: 1 1 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.dec-pile-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: calc(84px * 1.4);
+}
+.dec-pile-btn {
+  width: 100%;
+}
 /* "Choose what X attacks" (AttackTargetDialog.tsx, D-139, CR 508.7). */
 .dec-attack-target-list {
   list-style: none;

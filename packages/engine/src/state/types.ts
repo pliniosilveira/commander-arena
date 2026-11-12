@@ -999,6 +999,24 @@ export type Instruction =
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
+   * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (`revealAndSeparate`,
+   * D-303, CR 700.3): `seat` is the controller, who receives the piles; `separator` makes them and `chooser` picks which goes where; `cards` are the cards revealed, top first, still
+   * in the library. `chosen` is the answer to the question being asked (the cards of pile 1 while the separator is asked); `first` is pile 1 once made; `pick` the pile that was
+   * chosen. See rules/pile-separate.ts.
+   */
+  | {
+      readonly kind: 'pileSeparate';
+      readonly seat: SeatId;
+      readonly separator: SeatId;
+      readonly chooser: SeatId;
+      readonly cards: readonly ObjectId[];
+      readonly chosenTo: 'hand' | 'graveyard';
+      readonly otherTo: 'hand' | 'graveyard';
+      readonly first?: readonly ObjectId[];
+      readonly chosen: readonly ObjectId[] | null;
+      readonly pick?: 1 | 2;
+    }
+  /**
    * "Look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest
    * on the bottom of your library in a random order" (`lookAtTop`, D-139), in two stages: `take` looks, asks which matching cards to take
    * (`chosen` is null until answered; no question when none matches) and moves them to the hand; `rest` puts `left` (the cards looked at

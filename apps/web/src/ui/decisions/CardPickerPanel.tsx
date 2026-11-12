@@ -18,6 +18,8 @@ import {
   pickerCards,
   pickOrderLabel,
   pickOrderMatters,
+  pileList,
+  pilesPreview,
   toggleFound,
 } from './cards-picker';
 import { useHoverProps } from './hover';
@@ -60,6 +62,9 @@ export function CardPickerPanel({
   const exile = decision.purpose === 'exile';
   const move = decision.purpose === 'move';
   const lookTake = decision.purpose === 'lookTake';
+  // D-303 (CR 700.3): the cards to separate into two piles; the cards clicked are pile 1.
+  const separate = decision.purpose === 'separate';
+  const piles = separate ? pilesPreview(pickerCards(view, decision), ui.found) : null;
   // D-145: a free cast or play ("You may cast a spell ... without paying its mana cost") and where a looked-at card goes.
   const cast = decision.purpose === 'cast';
   const takeTo = lookTake ? lookTakeDestination(decision, objectIndex(view)) : 'hand';
@@ -127,11 +132,13 @@ export function CardPickerPanel({
                   ? 'Cards looked at'
                   : cast
                     ? 'Cards to cast for free'
-                    : decision.purpose === 'behold'
-                      ? 'Cards to behold'
-                      : decision.purpose === 'pair'
-                        ? 'Cards to choose from'
-                        : 'Cards to discard'
+                    : separate
+                      ? 'Cards to separate into two piles'
+                      : decision.purpose === 'behold'
+                        ? 'Cards to behold'
+                        : decision.purpose === 'pair'
+                          ? 'Cards to choose from'
+                          : 'Cards to discard'
       }
     >
       <h3 className="dec-panel-title">
@@ -142,13 +149,15 @@ export function CardPickerPanel({
             : discardTitle(decision, objectIndex(view))}
       </h3>
       <p className="dec-sub dec-left">
-        {cast
-          ? `Choose a card to ${castVerb(decision)} without paying its mana cost, or none`
-          : behold !== null
-            ? beholdHelp(decision, objectIndex(view)).replace(/\.$/, '')
-            : decision.orSingle === undefined
-              ? `Choose ${cardsRange(decision.min, decision.max)}`
-              : `Choose ${cardsRange(decision.max, decision.max)}, or one card marked “${ALONE}”`}
+        {separate
+          ? 'Click the cards of pile 1; the other cards are pile 2. Either pile may be empty. The cards are revealed to everyone and stay in the library'
+          : cast
+            ? `Choose a card to ${castVerb(decision)} without paying its mana cost, or none`
+            : behold !== null
+              ? beholdHelp(decision, objectIndex(view)).replace(/\.$/, '')
+              : decision.orSingle === undefined
+                ? `Choose ${cardsRange(decision.min, decision.max)}`
+                : `Choose ${cardsRange(decision.max, decision.max)}, or one card marked “${ALONE}”`}
         {exile ? ' from your graveyard' : ''}
         {lookTake ? LOOK_TAKE_WORDS[takeTo] : ''}.{lookTake ? ' Only you see these cards.' : ''}
         {decision.reveal && search ? ' The cards you find are revealed.' : ''}
@@ -210,6 +219,11 @@ export function CardPickerPanel({
           ))}
         </ol>
       ) : null}
+      {piles === null ? null : (
+        <p className="dec-sub dec-left" data-piles>
+          Pile 1: {pileList(piles.first)}. Pile 2: {pileList(piles.second)}.
+        </p>
+      )}
       <p className="dec-sub dec-left">{foundCount(ui.found, decision)}</p>
     </section>
   );

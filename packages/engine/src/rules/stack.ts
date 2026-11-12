@@ -432,6 +432,7 @@ export function answerResolutionCards(
       head.kind !== 'putOnTop' &&
       head.kind !== 'lookTake' &&
       head.kind !== 'lookSplit' &&
+      head.kind !== 'pileSeparate' &&
       head.kind !== 'castFree' &&
       head.kind !== 'behold' &&
       head.kind !== 'splitExiled' &&
@@ -596,7 +597,8 @@ export function answerResolutionEntersChosen(
     !res ||
     d?.kind !== 'chooseOption' ||
     d.purpose === 'replacement' ||
-    d.purpose === 'meldOrder'
+    d.purpose === 'meldOrder' ||
+    d.purpose === 'pile'
   )
     return null;
   const head = res.queue[0];

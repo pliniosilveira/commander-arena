@@ -80,6 +80,7 @@ import { SYNTHETIC_MELD_LIST } from './synthetic-meld';
 import { SYNTHETIC_MIRACLE_LIST } from './synthetic-miracle';
 import { SYNTHETIC_MODAL_LIST } from './synthetic-modal';
 import { SYNTHETIC_PARSER_SHAPES_LIST } from './synthetic-parser-shapes';
+import { SYNTHETIC_PILES_LIST } from './synthetic-piles';
 import { SYNTHETIC_PLANESWALKER_LIST } from './synthetic-planeswalkers';
 import { SYNTHETIC_PLATE_LIST } from './synthetic-plate';
 import { SYNTHETIC_PLAY_RULE_LIST } from './synthetic-play-rules';
@@ -412,6 +413,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_MANA_INSTEAD_LIST,
     ...SYNTHETIC_ATTACK_LIMIT_LIST,
     ...SYNTHETIC_DRAGONS_LIST,
+    ...SYNTHETIC_PILES_LIST,
   ].map((card) => [card.name, card]),
 );
 

@@ -1810,3 +1810,33 @@ Numbers are references; entries are never deleted. D-118 and D-119 are cited as 
 - Decision: `readsTriggerSubject` (`rules/trigger-subject.ts`) also returns true when the effect holds `manaSpentAtLeast`. This is the only engine edit of the group; `ENGINE_VERSION` 81 (new derive digests), `PARSER_VERSION` 88.
 - Alternatives: carrying the subject on every cast trigger (it changes the identity of triggers for all cards and the derive digests). Reading the mana spent from the stack at trigger time only (the spell may be gone by resolution; CR 113.7a).
 - Consequences: only abilities with that condition in their effect change, and none existed. Three more Niv-Mizzet cards move to supported (Elixir of Immortality, Dragonologist, Thunderdrum Soloist).
+
+## D-303: Piles: reveal the top cards, one player separates them, the other chooses (2026-11-12)
+- Context: Fact or Fiction (issue 25) needs "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." CR 700.3 says the cards stay where they are while sorted, each is in exactly one pile, and a pile may be empty. The owner approved a P-class build.
+- Decision: the effect `revealAndSeparate { count, separator: 'opponent' | 'you', chosenTo, otherTo }` (rules in `rules/pile-separate.ts`, the instruction `pileSeparate`). The controller reveals the top N cards with a public `cardsRevealed` event; they stay in the library. The separator chooses pile 1 and the other player chooses which pile goes where; `chosenTo` and `otherTo` are the hand or the graveyard and differ (`validateCard`). The cards move as ordinary zone changes, the chosen pile first and then the other, each from the top of the library down; a commander uses the existing CR 903.9 path. With fewer than two cards the separator is not asked; the chooser is always asked. Events `pilesSeparated` and `pileChosen` make the piles public.
+- Alternatives: a dedicated piles decision kind (S-class, not approved). Copying `lookSplit`'s three-step pattern with a fixed "hand and graveyard" wording (not general). Skipping the chooser's question when a pile is empty (rejected: the choice is real).
+- Consequences: Fact or Fiction is supported; other cards of this shape need only a grammar rule. The order of cards put into a graveyard is the library order, so the CR 404.3 owner choice is not offered, as for mill.
+
+## D-304: The two pile questions are new purposes of `chooseCards` and `chooseOption` (2026-11-12)
+- Context: the owner allowed new purposes of existing decision kinds only.
+- Decision: `ChooseCardsDecision.purpose 'separate'` (zone `library`, min 0, max all, `reveal` true; answered by the existing `chooseCards` action, validated by `validCardsChoice`). `ChooseOptionDecision.purpose 'pile'` (options `pile1`/`pile2`, `piles { first, second, chosenTo, otherTo, separator, receiver }`; answered by the existing `chooseOption` action through `rules/pile-answer.ts`). `getView` puts the cards in `pendingCards` for whoever decides (both piles for `pile`); `waitingOn` names the purpose for the other seat.
+- Alternatives: a new decision or action kind (S-class).
+- Consequences: no change to `legalActionsForDecision` or `applyAction` dispatch beyond the purposes; the web needed a dialog and words, not a new kind in every handler.
+
+## D-305: "An opponent" is the first opponent in turn order still in the game (2026-11-12)
+- Context: CR 700.3 and the rules around it do not say who "an opponent" is in a game of more than two players; 800.4g covers only a chooser who left. The repository's precedent is Coin of Fate (D-233).
+- Decision: the player who separates (or chooses) is `opponentsOf(state, controller)[0]`. Tested by adding a third seat to a scenario state (seat 1, or seat 2 when seat 1 has lost).
+- Alternatives: the controller chooses the opponent (no rule says so); a new decision (not worth it for v1, which has one opponent).
+- Consequences: recorded in `docs/ROADMAP.md` ("Piles leftovers"); revisit with the first multiplayer build.
+
+## D-306: Parser: one rule for the three sentences (2026-11-12)
+- Context: `splitSentences` splits the card into three sentences that are one instruction; the registry needs examples, rejects and cites.
+- Decision: `segment.ts` keeps the three together (only all three in a row); the class T rule `effect.reveal-separate-piles` (`rules/effect/piles.ts`) reads a count of two or more and lowers to `revealAndSeparate` with `separator: 'opponent'`, `chosenTo: 'hand'` and `otherTo: 'graveyard'` (`lower/piles.ts`). Not read: other wordings, X counts, the controller-separates wording (no real Oracle text in the repository).
+- Alternatives: three separate rules (they make no sense alone); reading wordings from memory (not allowed).
+- Consequences: Fact or Fiction is supported in the golden corpus; one unsupported card's `closestRule` diagnostic moved (a snapshot diff only).
+
+## D-307: AI and web for the piles (2026-11-12)
+- Context: every new decision purpose needs an agent answer and a UI.
+- Decision: the casual agent (the others delegate) separates by worth into two similar piles and takes the better pile into its own hand, or gives the worse one when it chooses for the controller. The web shows the separation in the card picker with a preview, the pile choice in `PilesDialog` with both piles' cards, and log lines "X separates the revealed cards into two piles: ..." and "X chooses pile N (...)". A `piles` soak style plays whole games between every agent kind. `ENGINE_VERSION` 82 (new derive digests), `PARSER_VERSION` 89.
+- Alternatives: a search over piles for the Heuristic agent (not worth it for the first version); a pile panel in the dock (the cards do not fit).
+- Consequences: the AI does not read what the other player needs; recorded in the ROADMAP.

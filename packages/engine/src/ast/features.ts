@@ -174,6 +174,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'surveil',
     'lookAndReorder',
     'lookAndSplit',
+    // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (CR 700.3).
+    'revealAndSeparate',
     'putFromHandOnTop',
     'createToken',
     'search',
@@ -1496,6 +1498,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   surveil: true,
   lookAndReorder: true,
   lookAndSplit: true,
+  revealAndSeparate: true,
   putFromHandOnTop: true,
   createToken: true,
   search: true,

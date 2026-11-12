@@ -447,6 +447,23 @@ export type GameEvent =
       readonly names: readonly string[];
       readonly from: Zone;
     }
+  /**
+   * CR 700.3 (D-303): `seat` separated the revealed cards into two piles; `first` and `second` are the names of the cards of each, in library order. Public: the cards were revealed
+   * (`cardsRevealed`) and are still in the library. A pile may be empty (CR 700.3d).
+   */
+  | {
+      readonly kind: 'pilesSeparated';
+      readonly seat: SeatId;
+      readonly first: readonly string[];
+      readonly second: readonly string[];
+    }
+  /** CR 700.3 (D-303): `seat` chose pile `pile` (1 or 2, as `pilesSeparated` lists them); `names` are its cards, which go where the effect says. */
+  | {
+      readonly kind: 'pileChosen';
+      readonly seat: SeatId;
+      readonly pile: 1 | 2;
+      readonly names: readonly string[];
+    }
   /** CR 603.5: the controller of an optional ("you may") triggered ability answered. */
   | {
       readonly kind: 'optionalAnswered';
