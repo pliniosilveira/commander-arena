@@ -356,6 +356,8 @@ export function lowerCondition(
       // CR 601.2h (stage P49, D-206): the mana spent on the spell that caused the trigger.
       const test = c.test;
       if (test.kind !== 'manaSpentAtLeast') return failure(c, []);
+      // Issue 25: "that spell" is the spell that caused the trigger, read from its `triggerSubject`; in any other text no spell is named, so it is not lowered.
+      if (test.ofTriggerSpell === true && ctx?.castTrigger !== true) return failure(c, []);
       const blocked = missingFeatures(['condition:manaSpentAtLeast']);
       return blocked.length > 0
         ? failure(c, blocked)

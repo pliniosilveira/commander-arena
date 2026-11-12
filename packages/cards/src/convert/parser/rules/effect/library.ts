@@ -168,8 +168,79 @@ export const EFFECT_PUT_HAND_TOP = defineRule<Clauses>({
   ),
 });
 
-/** The card a look at the top cards lets the player take: "an artifact card", "a creature or land card", "a Dragon card". */
-export const TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
+function takenNoun(
+  ctx: { readonly text: string },
+  pos: number,
+  end: number,
+  filter: Omit<IrFilter, 'raw'>,
+) {
+  const noun: IrNoun = {
+    kind: 'noun',
+    det: 'a',
+    filter: { ...filter, card: true, raw: ctx.text.slice(pos, end) },
+    upTo: false,
+    plural: false,
+    other: false,
+    span: { start: pos, end },
+    rule: 'effect.look-take',
+  };
+  return { ok: true, value: noun, pos: end } as const;
+}
+
+/** One kind of a list of kinds: a card type (lowercase in Oracle text, CR 205.2a) or a capitalised subtype (CR 205.3). */
+type KindItem = { readonly kind: 'type' | 'subtype'; readonly value: string };
+
+const KIND_ITEM: Parser<KindItem> = choice(
+  map(
+    pattern(new RegExp(`(?:${CARD_TYPES})(?![\\p{L}\\p{N}])`, 'iu')),
+    (m): KindItem => ({ kind: 'type', value: (m[0] ?? '').toLowerCase() }),
+  ),
+  map(
+    satisfy(SUBTYPE_WORD_NUMBERED, (w) => w.plural !== true),
+    (w): KindItem => ({ kind: 'subtype', value: w.subtype }),
+  ),
+);
+
+/**
+ * "an instant, sorcery, or Dragon card", "an artifact or Wizard card" (issue 25, CR 205.2a, 205.3, 701.20a): two or more kinds, some card types and some
+ * subtypes, joined as English joins a list ("A or B", "A, B, or C"); the card is any one of them (the engine's `anyOf`). A list of card types only is the
+ * list of `typeChoice`, and one subtype with its card types ("a Goblin creature card") has no separator, so neither is read here.
+ */
+const MIXED_TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
+  const head = pattern(/an? /i)(ctx, pos);
+  if (!head.ok) return head;
+  const first = KIND_ITEM(ctx, head.pos);
+  if (!first.ok) return first;
+  const more = many(
+    map(sequence(pattern(/, or | or |, /u), KIND_ITEM), ([separator, item]) => ({
+      separator: separator[0] ?? '',
+      item,
+    })),
+  )(ctx, first.pos);
+  if (!more.ok) return more;
+  const rest = more.value;
+  const last = rest[rest.length - 1];
+  if (last === undefined) return fail(ctx, pos);
+  const items = [first.value, ...rest.map((r) => r.item)];
+  const shaped =
+    rest.slice(0, -1).every((r) => r.separator === ', ') &&
+    (rest.length > 1 ? last.separator === ', or ' : last.separator === ' or ');
+  const distinct = new Set(items.map((i) => i.value)).size === items.length;
+  if (!shaped || !distinct || !items.some((i) => i.kind === 'subtype')) return fail(ctx, pos);
+  const tail = pattern(/ card(?![\p{L}\p{N}])/iu)(ctx, more.pos);
+  if (!tail.ok) return tail;
+  return takenNoun(ctx, pos, tail.pos, {
+    anyOf: items.map(
+      (i): IrFilter =>
+        i.kind === 'type'
+          ? { types: [i.value], raw: i.value }
+          : { subtypes: [i.value], raw: i.value },
+    ),
+  });
+};
+
+/** One list of card types or subtypes: "an artifact card", "a creature or land card", "a Dragon card", "a Goblin creature card". */
+const PLAIN_TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
   const r = sequence(
     pattern(/an? /i),
     many(
@@ -215,6 +286,12 @@ export const TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
 };
 
 /**
+ * The card a look at the top cards lets the player take: one list of card types or subtypes ("an artifact card", "a creature or land card", "a Dragon
+ * card"), or a list of both kinds, "an instant, sorcery, or Dragon card" (issue 25).
+ */
+export const TAKEN_CARD: Parser<IrNoun> = choice(PLAIN_TAKEN_CARD, MIXED_TAKEN_CARD);
+
+/**
  * `effect.look-take`: "look at the top six cards of your library. You may reveal an artifact card from among them and put it into your
  * hand. Put the rest on the bottom of your library in a random order" (stage P31, D-140, CR 401.2, 701.20a: revealing shows the card,
  * CR 401.4). Three sentences that `splitSentences` keeps together: the cards looked at, the one of a kind the player may take into their
@@ -233,6 +310,9 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
     'look at the top six cards of your library. You may reveal a creature card with mana value less than or equal to the number of lands you control from among them and put it onto the battlefield. Put the rest on the bottom of your library in a random order',
     'look at the top four cards of your library. You may reveal a land card from among them and put it onto the battlefield. Put the rest into your graveyard',
     'look at the top six cards of your library. You may reveal a creature card from among them and put it onto the battlefield. Put the rest on the bottom in a random order',
+    // Issue 25: a list of card types and subtypes, any one of which the card may be.
+    'look at the top six cards of your library. You may reveal an instant, sorcery, or Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top four cards of your library. You may reveal an artifact or Wizard card from among them and put it into your hand. Put the rest into your graveyard',
   ],
   rejects: [
     'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand',
@@ -241,6 +321,12 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
     'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in any order',
     'look at the top card of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top X cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may reveal an instant, sorcery or Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may reveal an instant, or Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may reveal an instant, sorcery, or dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may reveal an instant, sorcery, or Dragons card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may reveal a Dragon or Elf creature card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may reveal an instant, sorcery, or sorcery card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
   ],
   parse: single(
     'effect.look-take',

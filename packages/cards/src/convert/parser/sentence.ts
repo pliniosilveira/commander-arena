@@ -95,7 +95,14 @@ const LIFE_LEAD_CONDITIONS = ['condition.life-total'] as const;
  */
 const DIE_CONDITIONS = ['condition.die-result'] as const;
 
+/**
+ * "If five or more mana was spent to cast that spell, ~ deals 3 damage to each opponent instead." (issue 25, CR 601.2h, 608.2c): the mana spent on the spell a
+ * cast trigger is about; the lowering reads it in the body of such a trigger only.
+ */
+const MANA_SPENT_CONDITIONS = ['condition.mana-spent-or-more'] as const;
+
 const LEAD_CONDITIONS = [
+  ...MANA_SPENT_CONDITIONS,
   ...DIE_CONDITIONS,
   // Stage P52 (D-210): "If a creature card was discarded this way, ..." after a discard.
   'condition.discarded-this-way',

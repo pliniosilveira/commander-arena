@@ -42,6 +42,11 @@ export interface LowerContext {
    */
   selfCast: boolean;
   /**
+   * True in the body of "Whenever you cast an instant or sorcery spell" (issue 25): every event of the trigger is a spell being cast (not a copy, not the
+   * spell itself), so "that spell" is the spell that caused the trigger, which the engine reads as its `triggerSubject` (CR 601.2h).
+   */
+  castTrigger: boolean;
+  /**
    * The ids of targets an earlier instruction of this text sent away from the battlefield (destroy,
    * exile, return, sacrifice): "it" after them is the card in its new zone, which a tap or an untap
    * cannot reach. Filled by `lowerSentences` as each clause is lowered.
@@ -207,6 +212,7 @@ export function newContext(
     staticSubjectIsSelf: false,
     itIsSelf: false,
     selfCast: false,
+    castTrigger: false,
     removed: new Set(),
     madeAToken: false,
     lowered: 0,
