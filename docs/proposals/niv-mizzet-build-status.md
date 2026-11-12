@@ -26,16 +26,18 @@ The running checklist of the deck support routine for `decks/niv-mizzet.txt` (is
 | Quistis Trepe | 3 | P | waiting | cast a target card from any graveyard, mana of any type, exile instead of the graveyard |
 | Fiery Confluence | 4 | P (large) | waiting for the owner | "Choose three. You may choose the same mode more than once": repeatable modes (CR 700.2d), UI and AI |
 | Fact or Fiction | 4 | P/S | waiting for the owner | an opponent separates cards into two piles; a dedicated piles decision would be S |
-| Reality Shift | 4 | S | blocked, waiting for the owner | manifest needs face-down permanents the engine does not have (`docs/proposals/face-down.md` does not cover it) |
+| Reality Shift | M | S | approved by the owner (2026-11-12), waiting | manifest (CR 701.40) and the face-down permanents it needs; shown with the Manifest token image from Scryfall; the owner will use other manifest cards |
 
 ## Order
 
 1. Group 1: parser rules only (no engine change). Seven cards.
 2. Group 2: small engine primitives, each with a scenario test first.
 3. Group 3: medium engine pieces (the delayed next-cast trigger, additional triggers, casting from a graveyard).
-4. Group 4: S-class or cross-cutting items: a proposal for each in `docs/proposals/`, and the owner decides (the card stays unsupported meanwhile).
+4. Group M (manifest, S-class, approved): the face-down permanent and the manifest effect, built in its own worktree in parallel with groups 1 to 3 (`docs/proposals/face-down.md` steps 1, 3, 4, 5 and 6, plus manifest).
+5. Group 4: Fact or Fiction and Fiery Confluence wait for the owner (`docs/proposals/niv-mizzet-owner-decisions.md`).
 
 ## Open questions
 
 - Veyran: whether triggers caused by the cast but not about the spell (for example "becomes the target of a spell") are also doubled. Scryfall rulings could not be fetched, so the card is supported only for the cast triggers and the limit is stated in the report.
-- Fiery Confluence, Fact or Fiction, Reality Shift: build or not (the owner).
+- Fiery Confluence, Fact or Fiction: build or not (the owner). Reality Shift: decided, build.
+- The Manifest token image: the lookup on Scryfall (set and number, or a search by name) is UNVERIFIED because the cloud session cannot reach Scryfall; the web draws a plain face-down card when the image cannot be had.

@@ -11,6 +11,7 @@ Status: PROPOSED, nothing built. These three cards of `decks/niv-mizzet.txt` nee
 - **What manifest would add on top:** an effect `manifest` (the top card of a library, "its controller" through last-known information), the rule that a non-creature card cannot be turned up, the parser verb, the web card back and a "Turn face up" button.
 - **Size and risk:** large and high risk (hidden information in views, events and logs; `derive`). Only Reality Shift in this deck needs it.
 - **Recommendation:** do not build for one card. If the owner later wants Morph or Disguise, build the face-down slice and add manifest then. Reality Shift stays unsupported until then.
+- **DECIDED by the owner on 2026-11-12 (in chat): build it.** "Manifest is needed. I'll use other cards with this ability." So manifest is built generally (the face-down permanent, the manifest effect, turning a manifested creature card face up for its mana cost), not for one card. A face-down manifested permanent is shown with the image of Scryfall's Manifest token (a 2/2 creature, from Fate Reforged, shown in the owner's message), fetched by the game at run time like every card image; nothing of that image is kept in the repository. The recommendation above is superseded.
 
 ## 2. Fact or Fiction: piles (gap class P, possibly S)
 
