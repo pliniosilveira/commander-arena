@@ -1291,7 +1291,8 @@ export type Instruction =
       readonly playAsLand?: true;
       /**
        * Enters the battlefield at the same time as the other consecutive moves that carry this flag (CR 603.6a, D-951: "return those cards to the battlefield"): the
-       * `zoneChanged` events of the run say `simultaneous`, and `findTriggers` lets each permanent of the run see every other one enter.
+       * `zoneChanged` events of the run say `simultaneous`, and `findTriggers` lets each permanent of the run see every other one enter; the replacement effects of a card of the run read the
+       * battlefield without the permanents that entered before it in the run (`MoveRequest.alongside`, `rules/enters-run.ts`, CR 614.12).
        */
       readonly together?: true;
     }

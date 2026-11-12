@@ -262,6 +262,11 @@ export function runInstruction(
       ...(instruction.withCounters === undefined ? {} : { withCounters: instruction.withCounters }),
       ...(instruction.alt === undefined ? {} : { alt: instruction.alt }),
       ...(instruction.replacers === undefined ? {} : { replacers: instruction.replacers }),
+      // CR 614.12, 614.12b (D-951): the cards of a `together` run enter in one event, so what the replacement effects of this one read is the battlefield without
+      // the ones that entered before it in the run (`lastMoved` is the run: the pair starts it empty and every move adds the object it made).
+      ...(instruction.together === true && instruction.to === 'battlefield'
+        ? { alongside: res.lastMoved ?? [] }
+        : {}),
       entersPaid: res.entersPaid ?? null,
       entersChosen: res.entersChosen ?? null,
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),

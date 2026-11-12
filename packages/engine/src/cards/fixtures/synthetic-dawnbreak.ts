@@ -81,6 +81,120 @@ export const SYNTHETIC_DAWNBREAK_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "As this creature enters, choose a creature type. Whenever another creature enters, you gain 1 life." (a question as it enters, and a trigger that must see the card that
+  // enters with it, CR 603.6a)
+  singleFace({
+    name: 'SYNTHETIC Reclaimed Seer',
+    manaCost: ['1', 'W'],
+    types: ['creature'],
+    subtypes: ['Cleric'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    power: 1,
+    toughness: 2,
+    oracleText:
+      'As this creature enters, choose a creature type. Whenever another creature enters, you gain 1 life.',
+    abilities: [
+      { kind: 'replacement', replacement: { kind: 'asEntersChoose', what: 'creatureType' } },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { types: ['creature'], other: true } },
+        effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 1 },
+      },
+    ],
+  }),
+  // The cards the pair returns in the tests of the simultaneous entering (CR 614.12, 603.6a): artifact creatures, so the "artifact" version of the pair returns them. What
+  // each one says is read from the battlefield as it is before the pair enters.
+  // "" (a vanilla artifact creature)
+  singleFace({
+    name: 'SYNTHETIC Clay Golem',
+    manaCost: ['3'],
+    types: ['artifact', 'creature'],
+    subtypes: ['Golem'],
+    colors: [],
+    colorIdentity: [],
+    power: 2,
+    toughness: 2,
+    oracleText: '',
+    abilities: [],
+  }),
+  // "Each other creature enters with an additional +1/+1 counter on it."
+  singleFace({
+    name: 'SYNTHETIC Banner Golem',
+    manaCost: ['3'],
+    types: ['artifact', 'creature'],
+    subtypes: ['Golem'],
+    colors: [],
+    colorIdentity: [],
+    power: 2,
+    toughness: 2,
+    oracleText: 'Each other creature enters with an additional +1/+1 counter on it.',
+    abilities: [
+      {
+        kind: 'replacement',
+        replacement: {
+          kind: 'othersEnterWithCounters',
+          what: { types: ['creature'], other: true },
+          counter: '+1/+1',
+          count: 1,
+        },
+      },
+    ],
+  }),
+  // "This creature enters with a +1/+1 counter on it for each creature on the battlefield."
+  singleFace({
+    name: 'SYNTHETIC Crowd Golem',
+    manaCost: ['3'],
+    types: ['artifact', 'creature'],
+    subtypes: ['Golem'],
+    colors: [],
+    colorIdentity: [],
+    power: 1,
+    toughness: 1,
+    oracleText:
+      'This creature enters with a +1/+1 counter on it for each creature on the battlefield.',
+    abilities: [
+      {
+        kind: 'replacement',
+        replacement: {
+          kind: 'entersWithCounters',
+          counter: '+1/+1',
+          count: { kind: 'countOf', filter: { types: ['creature'] } },
+        },
+      },
+    ],
+  }),
+  // "Creatures enter untapped."
+  singleFace({
+    name: 'SYNTHETIC Dawn Golem',
+    manaCost: ['3'],
+    types: ['artifact', 'creature'],
+    subtypes: ['Golem'],
+    colors: [],
+    colorIdentity: [],
+    power: 2,
+    toughness: 2,
+    oracleText: 'Creatures enter untapped.',
+    abilities: [
+      {
+        kind: 'replacement',
+        replacement: { kind: 'groupEntersUntapped', what: { types: ['creature'] } },
+      },
+    ],
+  }),
+  // "This creature enters tapped."
+  singleFace({
+    name: 'SYNTHETIC Weary Golem',
+    manaCost: ['3'],
+    types: ['artifact', 'creature'],
+    subtypes: ['Golem'],
+    colors: [],
+    colorIdentity: [],
+    power: 2,
+    toughness: 2,
+    oracleText: 'This creature enters tapped.',
+    abilities: [{ kind: 'replacement', replacement: { kind: 'entersTapped' } }],
+  }),
   // The pair followed by another instruction: declining the "you may" of the pair must not drop the draw.
   singleFace({
     name: 'SYNTHETIC Reclaimer Tide',

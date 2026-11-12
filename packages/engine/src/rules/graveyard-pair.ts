@@ -176,6 +176,8 @@ function runAsk(state: GameState, res: ResolutionContext, ins: GraveyardPair): S
         m.kind === 'move' ? { ...m, together: true as const } : m,
       ),
     ),
+    // The run starts empty and each move adds the permanent it made, which the next one's replacement effects must not see (`alongside`, `rules/enters-run.ts`).
+    lastMoved: [],
     performed: 1,
   };
 }

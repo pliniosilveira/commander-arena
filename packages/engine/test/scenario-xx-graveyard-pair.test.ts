@@ -6,7 +6,11 @@
 import { describe, expect, test } from 'vitest';
 import { getView, syntheticCard, validateCard } from '../src/index';
 import { scenario } from '../src/testing/index';
-import { chooseCardsDecision, confirmOptionalDecision } from './pending-helpers';
+import {
+  chooseCardsDecision,
+  chooseOptionDecision,
+  confirmOptionalDecision,
+} from './pending-helpers';
 
 const RECLAIMER = 'SYNTHETIC Reclaimer Angel';
 const RITE = 'SYNTHETIC Reclaimer Rite'; // the same effect for artifact cards, as a sorcery
@@ -21,7 +25,7 @@ const SOL = 'Sol Ring';
 const LIBRARY = Array.from({ length: 8 }, () => 'Plains');
 
 describe('the cards are valid', () => {
-  test.each([RECLAIMER, RITE, CLERIC, WARDEN])('%s', (name) => {
+  test.each([RECLAIMER, RITE, CLERIC, WARDEN, 'SYNTHETIC Reclaimed Seer'])('%s', (name) => {
     expect(validateCard(syntheticCard(name))).toEqual([]);
   });
 
@@ -290,6 +294,155 @@ describe('both cards enter in one event, so each sees the other enter (CR 603.6a
     g.passAll();
     g.expect.life(0, 41);
     g.expect.life(1, 41);
+  });
+});
+
+/**
+ * CR 614.12, 400.7: the two cards enter in one event, and the replacement effects that modify how they enter (as it enters you may have it become a copy, a permanent that
+ * makes others enter with counters or untapped, a count of the battlefield) look at the battlefield as it is before they enter. The first card to be moved is the
+ * opponent's, the second is mine: the second must not see the first, and a permanent of the pair gives its replacement effect to nothing of the pair.
+ */
+describe('both cards enter in one event, so their replacement effects do not see each other (CR 614.12)', () => {
+  const GLASS = 'SYNTHETIC Cursed Looking Glass'; // "As this artifact enters, you may have it become a copy of any creature on the battlefield"
+  const RUIN = 'SYNTHETIC Ruin Angel'; // an artifact creature
+  const CLAY = 'SYNTHETIC Clay Golem';
+  const BANNER = 'SYNTHETIC Banner Golem'; // "Each other creature enters with an additional +1/+1 counter on it."
+  const CROWD = 'SYNTHETIC Crowd Golem'; // "enters with a +1/+1 counter on it for each creature on the battlefield"
+  const DAWN = 'SYNTHETIC Dawn Golem'; // "Creatures enter untapped."
+  const WEARY = 'SYNTHETIC Weary Golem'; // "This creature enters tapped."
+
+  /** Seat 0 casts the artifact version of the pair: `mine` and `theirs` are the artifact cards of the graveyards, `onBattlefield` stands for seat 1. */
+  const rite = (
+    mine: readonly string[],
+    theirs: readonly string[],
+    onBattlefield: readonly string[] = [],
+  ) => {
+    const g = scenario()
+      .seat(0)
+      .hand(RITE)
+      .battlefield('Plains', 'Plains', 'Plains')
+      .graveyard(...mine)
+      .library(...LIBRARY)
+      .seat(1)
+      .battlefield(...onBattlefield)
+      .graveyard(...theirs)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(RITE, { pay: true });
+    g.passAll();
+    return g;
+  };
+
+  /** The names of the permanents `legal` of the pending "become a copy of" question. */
+  const copyChoices = (g: ReturnType<typeof rite>): string[] => {
+    const d = g.state.pending;
+    if (d?.kind !== 'choosePermanent') throw new Error(`pending is ${d?.kind}`);
+    expect(d.purpose).toBe('entersCopy');
+    const battlefield = getView(g.state, 0).battlefield;
+    return d.legal.map((id) => battlefield.find((o) => o.id === id)?.name ?? '?');
+  };
+
+  test('a permanent that enters as a copy cannot copy the creature that enters with it: with no other creature nothing is asked', () => {
+    const g = rite([GLASS], [RUIN]);
+    g.expect.pending('confirmOptional', 0);
+    g.act(0).accept();
+    g.expect.zone(RUIN, 'battlefield', { seat: 1 });
+    expect(g.state.pending?.kind).not.toBe('choosePermanent');
+    g.expect.derived(GLASS, { types: ['artifact'], keywords: [] });
+    g.expect.invariants();
+  });
+
+  test('with a creature on the battlefield already, it is the only one to copy, and the question survives the pause', () => {
+    const g = rite([GLASS], [RUIN], [BEARS]);
+    g.act(0).accept();
+    expect(copyChoices(g)).toEqual([BEARS]);
+    g.act(0).choosePermanents({ name: BEARS, seat: 1 });
+    g.expect.derived(GLASS, { types: ['creature'], subtypes: ['Bear'] });
+    g.expect.zone(RUIN, 'battlefield', { seat: 1 });
+    g.expect.invariants();
+  });
+
+  test('the card that enters first is not asked about the card that enters second either', () => {
+    // The Glass is the opponent's card (the first to be moved) and my Ruin Angel the second: only the Bears can be copied.
+    const g = rite([RUIN], [GLASS], [BEARS]);
+    g.act(0).accept();
+    expect(copyChoices(g)).toEqual([BEARS]);
+  });
+
+  test('a permanent that makes other creatures enter with a counter gives none to the creature that enters with it', () => {
+    // The Banner (the opponent's card, the first to enter) is not on the battlefield yet when my Golem enters.
+    const g = rite([CLAY], [BANNER]);
+    g.act(0).accept();
+    g.expect.zone(BANNER, 'battlefield', { seat: 1 });
+    g.expect.counters(CLAY, {});
+    g.expect.pt(CLAY, 2, 2);
+    g.expect.invariants();
+  });
+
+  test('the same permanent still gives its counter to a creature already there that it did not see, and one on the battlefield before the pair counts', () => {
+    // A Banner on the battlefield before the pair does apply to both cards that enter.
+    const g = rite([CLAY], [CLAY], [BANNER]);
+    g.act(0).accept();
+    g.expect.counters(`${CLAY}[0]`, { '+1/+1': 1 });
+    g.expect.counters(`${CLAY}[1]`, { '+1/+1': 1 });
+  });
+
+  test('a count of the battlefield is made without the creature that enters with it', () => {
+    // One Bears on the battlefield; my Crowd Golem counts it only, not the opponent card that enters in the same event.
+    const g = rite([CROWD], [CLAY], [BEARS]);
+    g.act(0).accept();
+    g.expect.counters(CROWD, { '+1/+1': 1 });
+    g.expect.pt(CROWD, 2, 2);
+  });
+
+  test('"creatures enter untapped" does not apply to the creature that enters with it', () => {
+    const g = rite([WEARY], [DAWN]);
+    g.act(0).accept();
+    g.expect.zone(DAWN, 'battlefield', { seat: 1 });
+    g.expect.tapped(WEARY, true);
+  });
+
+  test('and it does apply to a creature that was on the battlefield before', () => {
+    const g = rite([WEARY], [CLAY], [DAWN]);
+    g.act(0).accept();
+    g.expect.tapped(WEARY, false);
+  });
+});
+
+describe('a question the card asks as it enters pauses the run, and each card still sees the other enter (CR 603.6a)', () => {
+  const MIMIC = 'SYNTHETIC Type Mimic'; // "As this creature enters, choose a creature type." (an artifact creature)
+
+  test('the second card asks: the Warden of the first sees it enter', () => {
+    const g = atEndStep(game([MIMIC], [WARDEN]));
+    g.act(0).accept();
+    g.expect.pending('chooseOption', 0);
+    g.act(0).chooseOption(chooseOptionDecision(g).options[0] as string);
+    g.passAll();
+    g.expect.life(0, 40);
+    g.expect.life(1, 41);
+  });
+
+  test('the first card asks: the Warden of the second sees it enter', () => {
+    const g = atEndStep(game([WARDEN], [MIMIC]));
+    g.act(0).accept();
+    g.expect.pending('chooseOption', 1);
+    g.act(1).chooseOption(chooseOptionDecision(g).options[0] as string);
+    g.passAll();
+    g.expect.life(0, 41);
+    g.expect.life(1, 40);
+  });
+});
+
+describe('known limit: the second card pauses the run (docs/ROADMAP.md)', () => {
+  // CR 603.6a says the Seer sees the Bears enter in the same event; the engine notices the triggers of the Bears' entering when the Seer's question pauses the resolution,
+  // before the Seer is on the battlefield. `test.fails` flips to a failure when the gap is closed, which is the time to turn it into a plain test.
+  test.fails('the Seer, which asks as it enters, sees the card that entered with it', () => {
+    const g = atEndStep(game(['SYNTHETIC Reclaimed Seer'], [BEARS]));
+    g.act(0).accept();
+    g.act(0).chooseOption(chooseOptionDecision(g).options[0] as string);
+    g.passAll();
+    g.expect.life(0, 41);
   });
 });
 
