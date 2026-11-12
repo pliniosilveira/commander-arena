@@ -74,7 +74,7 @@ export function devotionSymbols(cost: readonly string[] | null, colors: readonly
 /**
  * CR 700.5, 700.5a: a player's devotion to the colors: the mana symbols in the mana costs of their permanents, after copy effects (the copiable values, CR 707.2)
  * and before any other effect. The mana cost a permanent has printed is not the one its mana value is calculated from when that is only "as though" (CR 202.3b:
- * the back face of a transformed permanent, CR 202.3c: a melded permanent, D-995): the combined face of a meld pair has no mana cost, so a melded permanent adds nothing.
+ * the back face of a transformed permanent, CR 202.3c: a melded permanent, D-281): the combined face of a meld pair has no mana cost, so a melded permanent adds nothing.
  */
 export function devotionOf(state: GameState, seat: SeatId, colors: readonly Color[]): number {
   let total = 0;

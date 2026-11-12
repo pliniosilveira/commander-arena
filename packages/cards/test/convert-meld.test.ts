@@ -1,4 +1,4 @@
-// Meld cards in the card data (D-994, CR 701.42, 712.4, 712.5): the two halves of a pair and the combined face they become are three cards of Scryfall's data, and the
+// Meld cards in the card data (D-280, CR 701.42, 712.4, 712.5): the two halves of a pair and the combined face they become are three cards of Scryfall's data, and the
 // game fetches the third with the pair. Every card here is SYNTHETIC: Scryfall's shape (the layout `meld`, one face on each half, `all_parts` naming the parts with the
 // components `meld_part` and `meld_result`, the combined face a card of its own) with invented names and text. The component names are UNVERIFIED against the real
 // Scryfall data (see `src/convert/meld.ts`); these tests pin what the importer does with them, and that every disagreement is a reason, never a guess.
@@ -143,7 +143,7 @@ describe('what the data says (CR 712.5: the meld pairs)', () => {
   });
 });
 
-describe('a meld half with its combined face (D-994)', () => {
+describe('a meld half with its combined face (D-280)', () => {
   test('both halves are supported when the combined face is there and fully read: the definition holds it as its second face', () => {
     const front = importWith(FRONT_CARD, RESULT_CARD);
     expect(front.support.reasons).toEqual([]);
@@ -267,7 +267,7 @@ describe('a meld half with its combined face (D-994)', () => {
   });
 });
 
-describe('the support report of a meld card is never kept (D-994)', () => {
+describe('the support report of a meld card is never kept (D-280)', () => {
   test('a report computed without the combined face does not poison the next import that has it', async () => {
     const cache = new MemorySupportCache();
     const first = await cachedSupport(cache, FRONT_CARD);
@@ -291,7 +291,7 @@ describe('the support report of a meld card is never kept (D-994)', () => {
   });
 });
 
-describe('fetching the combined face with the pair (D-994)', () => {
+describe('fetching the combined face with the pair (D-280)', () => {
   const setup = (cards: RawCard[]) => {
     const clock = createFakeClock();
     const http = createFakeFetch(clock, emulateScryfall({ cards }));

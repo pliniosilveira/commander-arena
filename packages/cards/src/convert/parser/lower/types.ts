@@ -91,7 +91,7 @@ export interface LowerContext {
   /** True only while the intervening "if" of a triggered ability is lowered (D-271): the one place "~ is in your graveyard" is read. */
   interveningCondition: boolean;
   /**
-   * The name of the creature the intervening "if" of the ability named ("if you both own and control ~ and a creature named X", D-992, CR 701.42a): "exile them,
+   * The name of the creature the intervening "if" of the ability named ("if you both own and control ~ and a creature named X", D-278, CR 701.42a): "exile them,
    * then meld them into Y" reads it. Null where no such condition came before.
    */
   meldPartner: string | null;

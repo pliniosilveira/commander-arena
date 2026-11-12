@@ -1,5 +1,5 @@
 /**
- * The condition of the meld ability (D-992, CR 603.4, 701.42a): "if you both own and control this creature and a creature named X". Apart from `rules/meld.ts` so that
+ * The condition of the meld ability (D-278, CR 603.4, 701.42a): "if you both own and control this creature and a creature named X". Apart from `rules/meld.ts` so that
  * `rules/conditions.ts` can read it without the zone-change pipeline (which reads conditions itself).
  */
 import type { Condition } from '../ast/types';
@@ -39,7 +39,7 @@ export function namedCandidates(
 }
 
 /**
- * CR 603.4, 701.42a (D-992): "if you both own and control this creature and a creature named X": the permanent the ability belongs to is on the battlefield,
+ * CR 603.4, 701.42a (D-278): "if you both own and control this creature and a creature named X": the permanent the ability belongs to is on the battlefield,
  * owned and controlled by the controller of the ability, and so is another permanent of the card type whose name is now `name`.
  */
 export function ownsAndControlsNamedHolds(

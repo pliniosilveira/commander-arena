@@ -1,4 +1,4 @@
-/** Helpers shared by the meld tests (D-991, D-992). */
+/** Helpers shared by the meld tests (D-277, D-278). */
 import type { ScenarioGame } from '../src/testing/index';
 
 /**
@@ -12,7 +12,7 @@ export function settle(g: ScenarioGame): ScenarioGame {
       g.act(d.seat).orderTriggers(...d.triggers.map((_, index) => index));
       continue;
     }
-    // The order of the two cards of a melded permanent that left (D-993): the default one, which keeps the cards where they were put.
+    // The order of the two cards of a melded permanent that left (D-279): the default one, which keeps the cards where they were put.
     if (d?.kind === 'chooseOption' && d.purpose === 'meldOrder') {
       g.act(d.seat).chooseOption(d.options[1] ?? '');
       continue;

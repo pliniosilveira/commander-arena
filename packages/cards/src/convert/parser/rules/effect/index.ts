@@ -816,7 +816,7 @@ export const EFFECT_RULES = [
   EFFECT_DAMAGE_BY_IT,
   EFFECT_DAMAGE_IT,
   EFFECT_DESTROY,
-  // Stage P70 (D-992): "exile them, then meld them into X" starts like a plain exile and is tried before it.
+  // Stage P70 (D-278): "exile them, then meld them into X" starts like a plain exile and is tried before it.
   ...MELD_EFFECT_RULES,
   // The flicker sentence starts like a plain exile and must be tried first: the first rule that
   // reads a prefix of the text wins, and no rule backtracks into another.

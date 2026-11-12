@@ -298,7 +298,7 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       return negate ? `it's not true that ${text}` : text;
     }
     case 'ownsAndControlsNamed': {
-      // D-992 (CR 701.42a, 603.4): "if you both own and control this creature and a creature named Bruna, the Fading Light".
+      // D-278 (CR 701.42a, 603.4): "if you both own and control this creature and a creature named Bruna, the Fading Light".
       const text = `you both own and control this permanent and a ${condition.type} named ${condition.name}`;
       return negate ? `it's not true that ${text}` : text;
     }

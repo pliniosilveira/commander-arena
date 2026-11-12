@@ -143,7 +143,7 @@ export function isBackFaceUp(card: ObjectView): boolean {
   );
 }
 
-/** True for a melded permanent (D-991, CR 701.42a, 712.4a): one object that two cards represent. */
+/** True for a melded permanent (D-277, CR 701.42a, 712.4a): one object that two cards represent. */
 export function isMelded(card: ObjectView): boolean {
   return card.meld !== undefined;
 }
@@ -178,7 +178,7 @@ export function faceFacts(card: ObjectView): string[] {
       'A copy of a prepare spell: it may be cast from exile while its permanent stays prepared',
     );
   }
-  // D-991 (CR 701.42a, 712.8g, 202.3c): two cards, one permanent, with the mana value of the two front faces together.
+  // D-277 (CR 701.42a, 712.8g, 202.3c): two cards, one permanent, with the mana value of the two front faces together.
   if (card.meld !== undefined) {
     facts.push(`Two cards, one permanent (melded from ${meldedFrom(card)})`);
     facts.push(`Mana value ${card.meld.manaValue}, the front faces together`);

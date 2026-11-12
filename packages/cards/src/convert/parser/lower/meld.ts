@@ -1,5 +1,5 @@
 /**
- * Lowering of the meld ability (D-992, CR 701.42a, 712.4a): the condition "you both own and control ~ and a creature named X" and the effect "exile them, then meld them
+ * Lowering of the meld ability (D-278, CR 701.42a, 712.4a): the condition "you both own and control ~ and a creature named X" and the effect "exile them, then meld them
  * into Y". The effect names no counterpart of its own ("them" are the card and the creature of the condition), so the condition leaves the name in the lowering context
  * and the effect reads it from there; an effect with no such condition before it is not read.
  */

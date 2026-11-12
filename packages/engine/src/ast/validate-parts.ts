@@ -1935,7 +1935,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       break;
     case 'ownsAndControlsNamed':
-      // D-992, CR 701.42a: the permanent the ability belongs to and a permanent of a card type with a name.
+      // D-278, CR 701.42a: the permanent the ability belongs to and a permanent of a card type with a name.
       if (typeof c.name !== 'string' || c.name === '') {
         issue(out, `${path}.name`, 'the name of the other permanent must be a non-empty string');
       }
@@ -3537,7 +3537,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkAmount(e.amount, `${path}.amount`, scope, out);
       break;
     case 'meld':
-      // CR 701.42a (D-992): the creature named `partner` and the name of the combined face the two become; `validateCard` checks them against the card.
+      // CR 701.42a (D-278): the creature named `partner` and the name of the combined face the two become; `validateCard` checks them against the card.
       if (typeof e.partner !== 'string' || e.partner === '') {
         issue(
           out,

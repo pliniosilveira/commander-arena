@@ -146,7 +146,7 @@ describe('an incomplete request says what is missing', () => {
   });
 });
 
-describe('a meld card (D-994, CR 712.5)', () => {
+describe('a meld card (D-280, CR 712.5)', () => {
   const half: GoldenCard = {
     ...card('SYNTHETIC Issue Squire', '33333333-0000-0000-0000-000000000003'),
     layout: 'meld',

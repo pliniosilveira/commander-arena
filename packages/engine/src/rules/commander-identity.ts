@@ -22,7 +22,7 @@ export function commanderCreatureTypes(state: GameState, seat: SeatId): Readonly
   const types = new Set<string>();
   for (const card of getSeat(state, seat).commanders) {
     const live = Object.values(state.objects).find(
-      // CR 903.3b (D-991): the commander card may be one of the two cards of a melded permanent.
+      // CR 903.3b (D-277): the commander card may be one of the two cards of a melded permanent.
       (o) => cardsOf(o).includes(card) && (o.zone === 'battlefield' || o.zone === 'stack'),
     );
     if (live !== undefined) {

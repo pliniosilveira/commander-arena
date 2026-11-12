@@ -429,7 +429,7 @@ export function evaluateCondition(
           playerStatOf(state, ctx.controller, condition.stat)
       );
     case 'ownsAndControlsNamed':
-      // CR 701.42a, 603.4 (D-992): the source and a permanent with a name, both owned and controlled by the controller.
+      // CR 701.42a, 603.4 (D-278): the source and a permanent with a name, both owned and controlled by the controller.
       return ownsAndControlsNamedHolds(state, condition, ctx.controller, ctx.source);
     case 'and':
       return condition.terms.every((t) => evaluateCondition(state, t, ctx));

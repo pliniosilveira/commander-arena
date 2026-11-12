@@ -387,7 +387,7 @@ export const CONDITION_RULES = [
   // Stage P33 (D-150): "you control three or more lands with the same name" before the plain count, whose phrase is a prefix of it.
   ...ANGEL_CONDITION_RULES,
   ...BRUNA_CONDITION_RULES,
-  // Stage P70 (D-992): "you both own and control ~ and a creature named X", the condition of the meld ability.
+  // Stage P70 (D-278): "you both own and control ~ and a creature named X", the condition of the meld ability.
   ...MELD_CONDITION_RULES,
   // Stage P69 (D-271): "the result is 1" after a die roll, "~ is in your graveyard".
   ...ARDEN_CONDITION_RULES,

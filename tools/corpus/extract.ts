@@ -89,7 +89,7 @@ export async function extract(options: Options, repoRoot: string, io: ExtractIo)
 
   const keys = new Map(wanted.map((name) => [normalizeNameKey(name), name] as const));
   const found = new Map<string, ReturnType<typeof toGoldenCard>>();
-  // D-994: the melded face of a meld pair is a card of its own that is not Commander-legal; the cards of the pairs that were found take theirs along, whatever its legality.
+  // D-280: the melded face of a meld pair is a card of its own that is not Commander-legal; the cards of the pairs that were found take theirs along, whatever its legality.
   const meldFaces = new Map<string, ReturnType<typeof parseStoredCard>['card']>();
   const halves: NonNullable<ReturnType<typeof parseStoredCard>['card']>[] = [];
   const source = `scryfall-bulk ${path.basename(options.file)}`;

@@ -137,7 +137,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'loseLife',
     // D-269: "Each player this creature attacked this turn loses the game." (CR 104.3e).
     'loseGame',
-    // D-992: "Exile them, then meld them into X." (CR 701.42a).
+    // D-278: "Exile them, then meld them into X." (CR 701.42a).
     'meld',
     'tap',
     'untap',
@@ -461,7 +461,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
   // CR 709 split (either half is cast), CR 715 Adventure, CR 712 modal and nonmodal double-faced, CR
   // 714 Saga (lore counters and chapter abilities; read ahead is a keyword and is not run), CR 701.42 and 712.4 meld
-  // (D-991: two cards, one melded permanent). Fuse, Aftermath, Rooms and flip are not run (`validateCard` names the layout).
+  // (D-277: two cards, one melded permanent). Fuse, Aftermath, Rooms and flip are not run (`validateCard` names the layout).
   layouts: [
     'normal',
     'split',
@@ -695,7 +695,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackersTotalPower',
     // D-196: "if you control your Ring-bearer" (CR 701.54e).
     'controlsRingBearer',
-    // D-992: "if you both own and control this creature and a creature named X" (CR 701.42a).
+    // D-278: "if you both own and control this creature and a creature named X" (CR 701.42a).
     'ownsAndControlsNamed',
     'and',
     'or',
@@ -768,7 +768,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playFromGraveyardOnceEachTurn',
     // D-179: "Your opponents can't cast spells during your turn."
     'opponentsCantCastOnYourTurn',
-    // D-996: "Your opponents can't cast spells with mana value 3 or less."
+    // D-282: "Your opponents can't cast spells with mana value 3 or less."
     'opponentsCantCastSpells',
     // D-185: "Creature spells you control can't be countered."
     'spellsCantBeCountered',
@@ -1177,7 +1177,7 @@ export const CONDITION_KINDS = [
   'attackersTotalPower',
   /** "If you control your Ring-bearer" (CR 701.54e, D-196): the engine's `controlsRingBearer`. */
   'controlsRingBearer',
-  /** "If you both own and control this creature and a creature named X" (CR 701.42a, D-992): the engine's `ownsAndControlsNamed`. */
+  /** "If you both own and control this creature and a creature named X" (CR 701.42a, D-278): the engine's `ownsAndControlsNamed`. */
   'ownsAndControlsNamed',
   'unlessPays',
   'cardsInGraveyard',
@@ -1259,7 +1259,7 @@ export const STATIC_KINDS = [
   'cantCastThis',
   /** "Your opponents can't cast spells during your turn" (CR 101.2, D-179): the engine's `opponentsCantCastOnYourTurn`. */
   'opponentsCantCastOnYourTurn',
-  /** "Your opponents can't cast spells with mana value 3 or less" (CR 101.2, D-996): the engine's `opponentsCantCastSpells`. */
+  /** "Your opponents can't cast spells with mana value 3 or less" (CR 101.2, D-282): the engine's `opponentsCantCastSpells`. */
   'opponentsCantCastSpells',
   /** "Creature spells you control can't be countered" (CR 101.2, 701.6a, D-185): the engine's `spellsCantBeCountered`. */
   'spellsCantBeCountered',

@@ -1,5 +1,5 @@
 /**
- * A melded permanent is one object that two cards represent (D-991, `rules/melded.ts`): `GameObject.card` is the first and `meldedWith` the second. A rule that asks
+ * A melded permanent is one object that two cards represent (D-277, `rules/melded.ts`): `GameObject.card` is the first and `meldedWith` the second. A rule that asks
  * about "the card of an object" and needs to see both goes through `cardsOf`, `commanderCardOf` or `isCommanderObject`. This test reads the sources of the engine and
  * fails when one reads the commander flag of `obj.card` directly (`state.cards[obj.card]?.isCommander`), which would forget the second card: whether a melded
  * permanent is a commander (CR 903.3b) is the question where that goes wrong. A read that is meant (the card itself, with no object) says so with the comment

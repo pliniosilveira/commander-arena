@@ -2248,7 +2248,7 @@ export const ADAMANTOISE_LANDS = supported([
 export const VOTE_NAMES = ['SYNTHETIC Emissary Green', 'SYNTHETIC Ballot Rite'] as const;
 
 /**
- * The cards of the meld slice (D-991 to D-996): the SYNTHETIC meld pairs, the two spells that exile or tuck a melded permanent, the watcher of the second card, the
+ * The cards of the meld slice (D-277 to D-282): the SYNTHETIC meld pairs, the two spells that exile or tuck a melded permanent, the watcher of the second card, the
  * restriction by mana value and an X spell. Kept out of every pool: a pair melds into one permanent that leaves as two cards and asks its owner an order (a
  * chooseOption), and a restriction changes which spells the opponents can cast, which the seeded games of the other styles do not reach. `meld-games.test.ts`
  * builds its own states with them.

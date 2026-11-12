@@ -24,7 +24,7 @@ export function isReplacementChoice(d: Asked): boolean {
 }
 
 /**
- * True for the order of the two cards a melded permanent became as it left the battlefield (CR 712.21a, 712.21b, D-993): the options are the names of the two cards,
+ * True for the order of the two cards a melded permanent became as it left the battlefield (CR 712.21a, 712.21b, D-279): the options are the names of the two cards,
  * and the answer is the one that goes on top of the graveyard or the library, or, in exile, is exiled last.
  */
 export function isMeldOrderChoice(d: Asked): boolean {

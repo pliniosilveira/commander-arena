@@ -154,13 +154,13 @@ export interface MoveRequest {
    */
   readonly alongside?: readonly ObjectId[];
   /**
-   * D-991 (CR 701.42a, 712.14c): the other card of a meld pair, in the same zone as `object`: the two cards enter the battlefield as one melded permanent, with
+   * D-277 (CR 701.42a, 712.14c): the other card of a meld pair, in the same zone as `object`: the two cards enter the battlefield as one melded permanent, with
    * their back faces up and combined (`face` is 1). `object` is the card the permanent is represented by first (`GameObject.card`); this object ceases to exist
    * as the permanent is made. The caller (`rules/meld.ts`) has checked that they can be melded (CR 701.42b). Only for a move to the battlefield.
    */
   readonly meldWith?: ObjectId;
   /**
-   * D-993 (CR 712.21b): the player who performs the move, when it is an effect's: the controller of the spell or ability that exiles. A player who exiles a
+   * D-279 (CR 712.21b): the player who performs the move, when it is an effect's: the controller of the spell or ability that exiles. A player who exiles a
    * melded permanent determines the order of the two cards, whoever owns it. Absent for a move made by a rule or paid as a cost, where it is the
    * permanent's controller. Read only for a melded permanent that goes to exile.
    */
@@ -175,7 +175,7 @@ export type MoveResult =
       /** The new object, or null if the object ceased to exist (an ability leaving the stack). */
       readonly newObject: ObjectId | null;
       /**
-       * D-991 (CR 712.21, 712.21c): a melded permanent that left the battlefield became two objects; `newObject` is the first card's and this the second's.
+       * D-277 (CR 712.21, 712.21c): a melded permanent that left the battlefield became two objects; `newObject` is the first card's and this the second's.
        * An effect that follows "the new object" does the same to both cards. Absent for everything else.
        */
       readonly alsoNewObject?: ObjectId;
@@ -297,7 +297,7 @@ export function sacrificeForDevour(
 
 function moveOne(state: GameState, request: MoveRequest): MoveResult {
   const old = getObject(state, request.object);
-  // D-991 (CR 701.42a, 712.14c): the other card of a meld pair that enters the battlefield with this one as one melded permanent.
+  // D-277 (CR 701.42a, 712.14c): the other card of a meld pair that enters the battlefield with this one as one melded permanent.
   const partner =
     request.meldWith !== undefined && request.to === 'battlefield'
       ? getObject(state, request.meldWith)
@@ -342,7 +342,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     to = 'exile';
     toSeat = null;
   }
-  // CR 712.21d, 903.9c (D-991): what the second card of a melded permanent does when the permanent leaves. A replacement effect applied to one of the two
+  // CR 712.21d, 903.9c (D-277): what the second card of a melded permanent does when the permanent leaves. A replacement effect applied to one of the two
   // cards affects both, so it goes where the permanent goes; only a commander can be exempt (CR 903.9b-c), going to the command zone while the other card
   // goes on to the zone the permanent would have been put into, which is the zone as it is here, after the replacements above.
   const companion = old.meldedWith;
@@ -543,7 +543,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     const { [old.id]: _gone, ...rest } = next.objects;
     next = { ...next, objects: rest };
   }
-  // CR 701.42a, 712.14c (D-991): the second card of the pair is one object with the first from now on, so its own object ceases to exist.
+  // CR 701.42a, 712.14c (D-277): the second card of the pair is one object with the first from now on, so its own object ceases to exist.
   if (partner !== undefined) {
     next = recordLki(next, partner);
     next = removeFromZone(next, partner);
@@ -696,7 +696,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     controller,
     // Only a spell on the stack and a permanent have a face other than the front one.
     face: !becomesToken && (to === 'stack' || to === 'battlefield') ? faceIndex : 0,
-    // CR 701.42a, 712.4a (D-991): the second card of the melded permanent.
+    // CR 701.42a, 712.4a (D-277): the second card of the melded permanent.
     ...(partner?.card != null ? { meldedWith: partner.card } : {}),
     tapped,
     counters,
@@ -737,7 +737,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   };
   next = setObject(next, created);
   next = addToZone(next, to, toSeat, newId, request.position ?? 'top');
-  // CR 712.21 (D-991): a melded permanent that leaves the battlefield is one permanent that leaves and two cards that are put into the zone: the second
+  // CR 712.21 (D-277): a melded permanent that leaves the battlefield is one permanent that leaves and two cards that are put into the zone: the second
   // card becomes an object of its own, with its own new id and timestamp, in the zone its owner's card goes to (the command zone is the first card's alone,
   // CR 903.9c). The first card's object is made above, so what is shared (the replacement effects, the moment) is decided once for both (CR 712.21d).
   let also: GameObject | null = null;
@@ -843,7 +843,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       turnLog: { ...next.turnLog, graveyarded: [...next.turnLog.graveyarded, newId] },
     };
   }
-  // CR 712.21 (D-991): the second card of a melded permanent is a card put into a graveyard from the battlefield too.
+  // CR 712.21 (D-277): the second card of a melded permanent is a card put into a graveyard from the battlefield too.
   if (old.zone === 'battlefield' && also?.zone === 'graveyard') {
     next = {
       ...next,
@@ -867,12 +867,12 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         [old.id]: {
           ...left,
           successor: newId,
-          // CR 712.21c (D-991): an effect that finds the new object of a melded permanent finds both cards.
+          // CR 712.21c (D-277): an effect that finds the new object of a melded permanent finds both cards.
           ...(also === null ? {} : { companionSuccessor: also.id }),
         },
       },
     };
-  // CR 701.42a (D-991): the exile object of the other card became the melded permanent, as the first card's did.
+  // CR 701.42a (D-277): the exile object of the other card became the melded permanent, as the first card's did.
   const partnerLeft = partner === undefined ? undefined : next.lki[partner.id];
   if (partner !== undefined && partnerLeft !== undefined)
     next = { ...next, lki: { ...next.lki, [partner.id]: { ...partnerLeft, successor: newId } } };
@@ -885,7 +885,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     fromZone: old.zone,
     toZone: to,
   });
-  // CR 701.42a, 712.21 (D-991): the second card moves too; its event is flagged so the permanent is not counted twice.
+  // CR 701.42a, 712.21 (D-277): the second card moves too; its event is flagged so the permanent is not counted twice.
   if (partner !== undefined && partner.card !== null) {
     events.push({
       kind: 'zoneChanged',
@@ -942,7 +942,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     // CR 903.9a: the owner may move it to the command zone the next time state-based actions run.
     next = { ...next, commanderWatch: [...next.commanderWatch, newId] };
   }
-  // CR 712.21a, 712.21b (D-993): the owner arranges the two cards of a melded permanent that went to a graveyard or a library, and the player who exiled it chooses which was exiled last; asked
+  // CR 712.21a, 712.21b (D-279): the owner arranges the two cards of a melded permanent that went to a graveyard or a library, and the player who exiled it chooses which was exiled last; asked
   // as state-based actions are next checked, which is when the two objects are in their zone.
   if (
     also !== null &&
@@ -963,7 +963,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       ],
     };
   }
-  // CR 903.9a, 712.21 (D-991): the second card of a melded permanent is a commander object of its own in a graveyard or exile, if it is a commander card.
+  // CR 903.9a, 712.21 (D-277): the second card of a melded permanent is a commander object of its own in a graveyard or exile, if it is a commander card.
   if (
     also !== null &&
     (also.zone === 'graveyard' || also.zone === 'exile') &&

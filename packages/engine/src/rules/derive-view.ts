@@ -112,7 +112,7 @@ export function applyTypeAndColorLayers(
 /**
  * The mana cost an object has, which is the printed one except for the back face of a nonmodal
  * double-faced permanent: its mana value is calculated from the front face's cost (CR 712.8e,
- * 202.3b), and for a melded permanent the combined cost of its two front faces (CR 202.3c, D-991), unless it is a copy
+ * 202.3b), and for a melded permanent the combined cost of its two front faces (CR 202.3c, D-277), unless it is a copy
  * of that back face or of the melded permanent, whose mana value is 0.
  */
 export function manaCostOf(

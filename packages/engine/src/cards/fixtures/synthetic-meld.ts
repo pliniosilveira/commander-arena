@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC MELD CARDS. NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of meld (CR 701.42, 712.4, 712.8g, 712.21, D-991, D-992). Two trios, each two meld cards that form a pair and the combined face
+ * Invented for the tests of meld (CR 701.42, 712.4, 712.8g, 712.21, D-277, D-278). Two trios, each two meld cards that form a pair and the combined face
  * they become (`faces[1]` of both cards, the same face, as the card data of a real pair holds it): SYNTHETIC Dusk Squire and SYNTHETIC Dawn Squire meld
  * into SYNTHETIC Twilight Titan, SYNTHETIC Ember Squire and SYNTHETIC Ash Squire into SYNTHETIC Cinder Titan. SYNTHETIC Stray Squire is a meld card whose
  * counterpart is not in any game, for the checks of CR 701.42b. The names start with "SYNTHETIC ", oracleId is null, and the text describes what the AST
@@ -289,7 +289,7 @@ export const SYNTHETIC_MELD_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
-  // ---- The cast restriction of a melded face (D-996): "Your opponents can't cast spells with mana value 3 or less."
+  // ---- The cast restriction of a melded face (D-282): "Your opponents can't cast spells with mana value 3 or less."
   singleFace({
     name: 'SYNTHETIC Gatekeeper',
     manaCost: ['2', 'W'],

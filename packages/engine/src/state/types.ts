@@ -72,7 +72,7 @@ export interface GameObject {
    */
   readonly face: number;
   /**
-   * D-991 (CR 701.42a, 712.4a): present on a melded permanent, which is one object represented by two cards: `card` is the first card and this is the
+   * D-277 (CR 701.42a, 712.4a): present on a melded permanent, which is one object represented by two cards: `card` is the first card and this is the
    * second (the counterpart of its meld pair). It exists only on the battlefield and phased out (CR 712.8g: only there are the two cards one object); in
    * every other zone each card is an ordinary object with its own front face (CR 712.4b, 712.8a), and a permanent that leaves becomes two objects, one for
    * each card (CR 712.21). `face` is 1, the combined back face. A commander card is always `card`, never this one, when exactly one of the two is
@@ -550,7 +550,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
 };
 
 /**
- * D-993: two cards that were one melded permanent, now two objects in the same zone, whose order a player chooses: their owner for a graveyard or a library
+ * D-279: two cards that were one melded permanent, now two objects in the same zone, whose order a player chooses: their owner for a graveyard or a library
  * (CR 712.21a), the player who exiled the permanent for exile (CR 712.21b).
  * `first` is the object that has the default place (put in the zone first: lower in a graveyard or library, the earlier timestamp in exile).
  */
@@ -572,7 +572,7 @@ export interface LastKnownInfo {
    */
   readonly successor?: ObjectId;
   /**
-   * D-991 (CR 712.21c): for a melded permanent that left, the object the second card became (`successor` is the first card's). An effect that can find
+   * D-277 (CR 712.21c): for a melded permanent that left, the object the second card became (`successor` is the first card's). An effect that can find
    * the new object of a melded permanent finds both cards (`rules/melded.ts`, `successorsOf`). Absent for everything else.
    */
   readonly companionSuccessor?: ObjectId;
@@ -1789,7 +1789,7 @@ export interface GameState {
   /** Commander objects put into a graveyard or exile since state-based actions were last checked (CR 903.9a). */
   readonly commanderWatch: readonly ObjectId[];
   /**
-   * D-993 (CR 712.21a, 712.21b): the pairs of cards a melded permanent became as it left the battlefield for a graveyard, a library or exile, waiting for their
+   * D-279 (CR 712.21a, 712.21b): the pairs of cards a melded permanent became as it left the battlefield for a graveyard, a library or exile, waiting for their
    * owner to order them (the order of two cards in a graveyard or a library, the timestamp order of two exiled cards), asked as state-based actions are
    * next checked. Absent when there are none (so a game without meld hashes as before).
    */

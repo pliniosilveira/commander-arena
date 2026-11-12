@@ -393,7 +393,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.life-above-starting': permanent(
     (e) => `At the beginning of your end step, draw a card if ${e}.`,
   ),
-  // Stage P70 (D-992): the meld ability, "if you both own and control ~ and a creature named X, exile them, then meld them into Y".
+  // Stage P70 (D-278): the meld ability, "if you both own and control ~ and a creature named X, exile them, then meld them into Y".
   'condition.own-and-control-named': permanent(
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
   ),

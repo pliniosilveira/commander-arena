@@ -2,7 +2,7 @@
 
 Written for issue 5 (the Bruna deck), which needs it for Breathkeeper Seraph. Nothing of it is built. The rule text below was read with `pnpm rule` from the CR copy of the owner's private rules repository (CR effective September 25, 2026, `docs/rules/RULES_VERSION.md`); what is quoted is quoted from that text, the rest is paraphrase with the rule number. The card text is the issue author's, as stored in the golden corpus (not checked against Scryfall). Facts about the engine were read in the code at the base of `support-bruna` (`ENGINE_VERSION` 76, `PARSER_VERSION` 82); the numbers move, check them when building.
 
-What the owner decided earlier and still applies here: card data comes from Scryfall and nothing is invented or hard-coded (the instruction recorded in `docs/proposals/meld.md`); no card-name special cases in engine code (AGENTS.md); a card the engine does not fully understand is flagged, never guessed. The owner has approved nothing about soulbond yet.
+What the owner decided earlier and still applies here: card data comes from Scryfall and nothing is invented or hard-coded (the instruction recorded in `docs/design/meld.md`); no card-name special cases in engine code (AGENTS.md); a card the engine does not fully understand is flagged, never guessed. The owner has approved nothing about soulbond yet.
 
 ## The card, and what blocks it today
 
@@ -150,4 +150,4 @@ Size, my estimate and not measured: a medium slice, clearly smaller than meld an
 
 ## Not built
 
-Until it is approved, Breathkeeper Seraph stays unsupported, with the unparsed line "Flying, soulbond" reported as it is now, and the Bruna deck cannot reach "FULLY SUPPORTED" without it (and without meld, `docs/proposals/meld.md`).
+Until it is approved, Breathkeeper Seraph stays unsupported, with the unparsed line "Flying, soulbond" reported as it is now, and the Bruna deck cannot reach "FULLY SUPPORTED" without it (and without meld, `docs/design/meld.md`).

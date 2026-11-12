@@ -1,5 +1,5 @@
 /**
- * What the card data says about a meld pair (D-994, CR 701.42, 712.4, 712.5): which card is the other half and which is the melded face. Scryfall lists the
+ * What the card data says about a meld pair (D-280, CR 701.42, 712.4, 712.5): which card is the other half and which is the melded face. Scryfall lists the
  * parts of a card in `all_parts`, each with a `component`; the stored card keeps their names and components (`StoredCard.relatedParts`).
  *
  * UNVERIFIED (the cloud sandbox cannot reach Scryfall, and no card of the repository's snapshots or golden corpus keeps these entries): the component names

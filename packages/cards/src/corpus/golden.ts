@@ -39,12 +39,12 @@ export interface GoldenCard {
   /** An acceptance card (a card of the owner's deck): reported apart, outside the hold-out split. */
   readonly acceptance?: true;
   /**
-   * The parts of a meld pair the card names in Scryfall's `all_parts` (D-994, CR 712.5): only the entries with the components `meld_part` and `meld_result`, which the
+   * The parts of a meld pair the card names in Scryfall's `all_parts` (D-280, CR 712.5): only the entries with the components `meld_part` and `meld_result`, which the
    * importer reads (`convert/meld.ts`; the component names are UNVERIFIED). Left out for every card that has none.
    */
   readonly relatedParts?: readonly { readonly name: string; readonly component: string }[];
   /**
-   * The card is in the corpus only because another card of it needs it (D-994: the combined face of a meld pair, which is a card of its own in Scryfall's data and is
+   * The card is in the corpus only because another card of it needs it (D-280: the combined face of a meld pair, which is a card of its own in Scryfall's data and is
    * fetched with the pair): the golden test gives it to the importer as the melded face but does not count it, in any group, as a card of the corpus.
    */
   readonly related?: true;

@@ -30,7 +30,7 @@ export class MemorySupportCache implements SupportCache {
  * `parserVersion`; otherwise it is recomputed with importCard and stored (SPEC test 30: after
  * PARSER_VERSION changes, cached statuses are recomputed). A report cached while community
  * definitions existed (removed in D-167) carries a `definitionKey`; it is recomputed too, so a card
- * that was supported only through a definition is not trusted any more. A meld card's report is never kept or read (D-994, see below).
+ * that was supported only through a definition is not trusted any more. A meld card's report is never kept or read (D-280, see below).
  */
 export async function cachedSupport(
   cache: SupportCache,
@@ -39,7 +39,7 @@ export async function cachedSupport(
   overrides: OverrideRegistry = DEFAULT_OVERRIDES,
   related?: MeldLookup,
 ): Promise<SupportReport> {
-  // D-994: the support of a meld card depends on a card that is not the key (its melded face, which may not have been had on the day the report was kept, or
+  // D-280: the support of a meld card depends on a card that is not the key (its melded face, which may not have been had on the day the report was kept, or
   // may differ): it is worked out every time, from the card data the import has now, and never kept.
   if (stored.layout === 'meld') {
     return importCard(stored, parserVersion, overrides, undefined, undefined, related).support;

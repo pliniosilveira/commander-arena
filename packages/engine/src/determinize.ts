@@ -73,7 +73,7 @@ function redealCards(
 ): { changed: Map<ObjectId, GameObject>; rng: RngState } {
   const hidden = (id: ObjectId): boolean => {
     const obj = getObject(state, id);
-    // A card in a hand or a library is one card, never a melded permanent (D-991).
+    // A card in a hand or a library is one card, never a melded permanent (D-277).
     return obj.card !== null && !known.has(id) && !isCommanderCardId(state, obj.card);
   };
   const hiddenExile = state.exile.filter((id) => {

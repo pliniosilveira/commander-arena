@@ -123,7 +123,7 @@ export function lowerCondition(
       });
     }
     case 'ownsAndControlsNamed': {
-      // CR 701.42a, 603.4 (D-992): "if you both own and control ~ and a creature named X" is read only as the intervening "if" of a triggered ability, and
+      // CR 701.42a, 603.4 (D-278): "if you both own and control ~ and a creature named X" is read only as the intervening "if" of a triggered ability, and
       // leaves the name for the "exile them, then meld them" that follows (which is the only instruction it is read with).
       const blocked = missingFeatures(['condition:ownsAndControlsNamed']);
       if (blocked.length > 0) return failure(c, blocked);

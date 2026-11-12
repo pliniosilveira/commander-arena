@@ -29,14 +29,14 @@ export type GameEvent =
        */
       readonly simultaneous?: true;
       /**
-       * D-991 (CR 712.21, 701.42a): the second card of a melded permanent. A melded permanent is one object represented by two cards, so one permanent
+       * D-277 (CR 712.21, 701.42a): the second card of a melded permanent. A melded permanent is one object represented by two cards, so one permanent
        * enters (or leaves) the battlefield and two cards move: the first card's event is the permanent's and this one is only the other card's own move
        * (a trigger about permanents entering or leaving does not count it again; a trigger about cards does). Only on a move to or from the battlefield.
        */
       readonly component?: true;
     }
   /**
-   * D-991 (CR 701.42a): two cards were exiled and melded: `permanent` is the one object that entered the battlefield, `cards` the two cards that
+   * D-277 (CR 701.42a): two cards were exiled and melded: `permanent` is the one object that entered the battlefield, `cards` the two cards that
    * represent it (the first card's object entered, the second card is its `meldedWith`), `from` the two exile objects they were.
    */
   | {
@@ -46,7 +46,7 @@ export type GameEvent =
       readonly from: readonly [ObjectId, ObjectId];
     }
   /**
-   * D-991 (CR 701.42c): an effect told a player to meld objects that can't be melded (a token, a card that is not part of a meld pair, a card that is
+   * D-277 (CR 701.42c): an effect told a player to meld objects that can't be melded (a token, a card that is not part of a meld pair, a card that is
    * no longer where it was); `objects` stay in their zone. `reason` says which rule stopped it.
    */
   | { readonly kind: 'meldFailed'; readonly objects: readonly ObjectId[]; readonly reason: string }

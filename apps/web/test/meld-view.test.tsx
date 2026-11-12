@@ -1,5 +1,5 @@
 /**
- * A melded permanent in the web app (D-991, D-992, D-996; CR 701.42a, 712.4a, 712.8g, 712.21, 903.9c): one object with the combined face, drawn as that card, with a flag, an accessible name
+ * A melded permanent in the web app (D-277, D-278, D-282; CR 701.42a, 712.4a, 712.8g, 712.21, 903.9c): one object with the combined face, drawn as that card, with a flag, an accessible name
  * and a preview row that say what it is made of; the log says that two cards melded and that one permanent died as two cards; the words of the ability, the condition and the static ability
  * of the pair are written from the engine's data. Cards are SYNTHETIC (the engine's fixtures `SYNTHETIC Dusk Squire`, `SYNTHETIC Dawn Squire` and their combined face).
  */
@@ -49,7 +49,7 @@ describe('the object', () => {
     expect(o.layout).toBeUndefined();
   });
 
-  test('is drawn as the combined face, a card of its own, never as a front half (D-991)', () => {
+  test('is drawn as the combined face, a card of its own, never as a front half (D-277)', () => {
     expect(artOf(meldedView())).toEqual({ name: TITAN, back: false });
   });
 

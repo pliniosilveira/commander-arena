@@ -76,7 +76,7 @@ export interface SelectContext {
 
 /** CR 903.3 (D-145): the object is a card its owner designated as a commander; a token or a copy of one is not. */
 function isCommanderObject(state: GameState, obj: GameObject): boolean {
-  // CR 903.3b (D-991): a melded permanent one of whose two cards is a commander is a commander.
+  // CR 903.3b (D-277): a melded permanent one of whose two cards is a commander is a commander.
   return commanderCardOf(state, obj) !== null;
 }
 
@@ -512,7 +512,7 @@ export function resolveObjects(
     }
     case 'triggerCard': {
       // CR 400.7, 603.10a (D-230): the card the permanent the event is about became in the graveyard, if it is still there.
-      // CR 712.21c (D-991): for a melded permanent that died, both cards.
+      // CR 712.21c (D-277): for a melded permanent that died, both cards.
       return ctx.triggerSubject === undefined
         ? []
         : successorsOf(state, ctx.triggerSubject, (o) => o.zone === 'graveyard');
@@ -520,7 +520,7 @@ export function resolveObjects(
     case 'thisCard': {
       // CR 400.7, 603.10a: the card the source became when it left, if it is still in that zone. A
       // source that has not left has no such card.
-      // CR 712.21c (D-991): for a melded permanent that left, both cards.
+      // CR 712.21c (D-277): for a melded permanent that left, both cards.
       return ctx.source === null ? [] : successorsOf(state, ctx.source, () => true);
     }
     case 'each': {

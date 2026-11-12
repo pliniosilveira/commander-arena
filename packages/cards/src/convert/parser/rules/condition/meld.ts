@@ -1,5 +1,5 @@
 /**
- * The condition of the meld ability (D-992, CR 701.42a, 712.4a, 603.4): "if you both own and control ~ and a creature named Bruna, the Fading Light". The
+ * The condition of the meld ability (D-278, CR 701.42a, 712.4a, 603.4): "if you both own and control ~ and a creature named Bruna, the Fading Light". The
  * intervening "if" of a triggered ability of a meld card: the card itself and a permanent of a card type with the counterpart's name, both owned and controlled by the
  * controller of the ability.
  */

@@ -1,5 +1,5 @@
 /**
- * The meld ability (D-992, CR 701.42 Meld, CR 712.4a, 712.14c): "At the beginning of your end step, if you both own and control this creature and a creature
+ * The meld ability (D-278, CR 701.42 Meld, CR 712.4a, 712.14c): "At the beginning of your end step, if you both own and control this creature and a creature
  * named X, exile them, then meld them into Y." The objects are in `rules/melded.ts`; this is the condition and the effect.
  *
  * The effect exiles the two permanents (CR 701.42a: to meld two cards is to put them onto the battlefield with their back faces up and combined, which the ability
@@ -18,7 +18,7 @@ import { done, type StepOutcome } from './step-outcome';
 import { moveObject } from './zones';
 
 /**
- * CR 701.42a-c, 712.4a, 712.14c (D-992): exile the permanent the ability belongs to and the creature named `partner` that its controller owns and controls, then
+ * CR 701.42a-c, 712.4a, 712.14c (D-278): exile the permanent the ability belongs to and the creature named `partner` that its controller owns and controls, then
  * meld them into the combined face `result`. When several permanents qualify, the one that can be melded with this card is taken (a token copy that
  * shares the name could not be, CR 701.42b); nothing is chosen for a player that could hurt them.
  */

@@ -573,7 +573,7 @@ function toX(state: GameState, events: GameEvent[]): Result {
         sourceName: info?.name ?? '',
         sourceOracleText: info?.oracleText ?? '',
         purpose: 'spell',
-        // D-996 (CR 202.3e): "Your opponents can't cast spells with mana value 3 or less" takes the X that leaves the spell inside it out of the offer.
+        // D-282 (CR 202.3e): "Your opponents can't cast spells with mana value 3 or less" takes the X that leaves the spell inside it out of the offer.
         min: Math.min(leastAllowedX(state, casting.seat, spell, true) ?? 0, max),
         max,
         perX,

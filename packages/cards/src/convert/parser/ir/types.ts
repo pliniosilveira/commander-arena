@@ -468,7 +468,7 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'dieResult'; readonly compare: IrComparison }
     // D-271 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard
     | { readonly kind: 'thisInYourGraveyard' }
-    // D-992 (CR 701.42a, 712.4a): "you both own and control ~ and a creature named Bruna, the Fading Light": the card itself and a permanent of the type with that name
+    // D-278 (CR 701.42a, 712.4a): "you both own and control ~ and a creature named Bruna, the Fading Light": the card itself and a permanent of the type with that name
     | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: string }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
     | { readonly kind: 'cardsInGraveyard'; readonly compare: IrComparison }
@@ -654,7 +654,7 @@ export interface IrPtChange extends IrNode {
   readonly toughness: IrPtTerm;
 }
 
-/** A name the text gives (D-992, CR 201.2): "meld them into Brisela, Voice of Nightmares". */
+/** A name the text gives (D-278, CR 201.2): "meld them into Brisela, Voice of Nightmares". */
 export interface IrNameArg extends IrNode {
   readonly kind: 'name';
   readonly name: string;
@@ -1119,7 +1119,7 @@ export type IrStaticEffect =
   | { readonly kind: 'addTypes'; readonly subtypes: readonly string[] }
   /** "You may cast artifact spells as though they had flash." (stage P31, CR 601.3b, 702.8a). The subject is `you`. */
   | { readonly kind: 'castAsThoughFlash'; readonly spells: IrFilter }
-  /** "Your opponents can't cast spells with mana value 3 or less." (stage P70, D-996, CR 101.2, 601.2). The subject is `you`. */
+  /** "Your opponents can't cast spells with mana value 3 or less." (stage P70, D-282, CR 101.2, 601.2). The subject is `you`. */
   | { readonly kind: 'opponentsCantCastSpells'; readonly spells: IrFilter }
   /**
    * "As long as a card exiled with ~ is a creature card, ~ has the power, toughness, and creature types of the last creature card

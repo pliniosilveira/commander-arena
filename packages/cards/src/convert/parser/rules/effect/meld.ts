@@ -1,5 +1,5 @@
 /**
- * The effect of the meld ability (D-992, CR 701.42a, 701.42b, 701.42c, 712.4a, 712.14c): "exile them, then meld them into Brisela, Voice of Nightmares". One
+ * The effect of the meld ability (D-278, CR 701.42a, 701.42b, 701.42c, 712.4a, 712.14c): "exile them, then meld them into Brisela, Voice of Nightmares". One
  * instruction of two clauses that name the same two objects, read together: the objects are "this and the creature named X" of the condition that goes with it.
  */
 import { fail, pattern } from '../../combinators';

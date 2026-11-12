@@ -233,7 +233,7 @@ export function checkInvariants(state: GameState): string[] {
     ) {
       problems.push(`${id} has face ${obj.face} in ${obj.zone}`);
     }
-    // CR 701.42a, 712.4a, 712.8g (D-991): a melded permanent is one object on the battlefield (or phased out) represented by the two cards of a meld pair,
+    // CR 701.42a, 712.4a, 712.8g (D-277): a melded permanent is one object on the battlefield (or phased out) represented by the two cards of a meld pair,
     // with the combined back face up; its commander card, if exactly one of the two is, is its first card.
     if (obj.meldedWith !== undefined) {
       if (obj.zone !== 'battlefield' && obj.zone !== 'phased') {
@@ -389,7 +389,7 @@ export function checkInvariants(state: GameState): string[] {
   // that is not a card (none today) or tokens, which have no card.
   const objectsPerCard = new Map<string, number>();
   for (const obj of Object.values(state.objects)) {
-    // D-991: a melded permanent is one object that two cards represent; each of them is on it.
+    // D-277: a melded permanent is one object that two cards represent; each of them is on it.
     for (const card of cardsOf(obj)) objectsPerCard.set(card, (objectsPerCard.get(card) ?? 0) + 1);
   }
   for (const card of Object.keys(state.cards)) {

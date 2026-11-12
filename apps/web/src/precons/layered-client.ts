@@ -22,7 +22,7 @@ export function layeredClient(first: ScryfallClient, then: ScryfallClient): Scry
           : await then.resolveNames([...primary.notFound]);
       const found = new Map(primary.found);
       for (const [key, card] of rest?.found ?? []) found.set(key, card);
-      // D-994: the melded face of every meld card, from the first source when it holds it, else asked of the second like any card that is missing.
+      // D-280: the melded face of every meld card, from the first source when it holds it, else asked of the second like any card that is missing.
       const related = new Map<string, RelatedCard>();
       for (const source of [rest, primary]) {
         for (const [key, entry] of source?.related ?? []) {

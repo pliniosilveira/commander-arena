@@ -765,7 +765,7 @@ function lowerOwnStatic(
     rule: ability.rule,
   });
   if (effect.kind === 'opponentsCantCastSpells') {
-    // D-996: "Your opponents can't cast spells with mana value 3 or less": the engine reads the filter against the spell on the stack, so it names no zone.
+    // D-282: "Your opponents can't cast spells with mana value 3 or less": the engine reads the filter against the spell on the stack, so it names no zone.
     if (subject.det !== 'you' || ability.statement.condition !== undefined) return failure(ability);
     const { zone, stackKind, ...described } = effect.spells;
     void zone;

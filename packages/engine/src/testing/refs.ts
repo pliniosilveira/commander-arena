@@ -108,7 +108,7 @@ export function resolveObject(ctx: RefContext, ref: CardRef, defaults: Defaults 
     }
     const cid = ctx.labels.get(ref);
     if (cid !== undefined) {
-      // D-991: a card of a melded permanent is on the one object that both cards represent.
+      // D-277: a card of a melded permanent is on the one object that both cards represent.
       const obj = allObjects(state).find((o) => cardsOf(o).includes(cid));
       if (!obj) throw new ScenarioError(`The card labelled "${ref}" is no longer in the game`);
       return obj;

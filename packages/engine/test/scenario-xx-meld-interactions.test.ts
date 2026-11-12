@@ -1,4 +1,4 @@
-// A melded permanent among the other rules (D-991, D-995): copying it (CR 707.8, 712.8g, 202.3c), transforming or turning it face down (CR 712.4c, 712.9, 712.16),
+// A melded permanent among the other rules (D-277, D-281): copying it (CR 707.8, 712.8g, 202.3c), transforming or turning it face down (CR 712.4c, 712.9, 712.16),
 // control (CR 712.8, 108.3, 110.2), devotion (CR 700.5, 700.5a), attachments and counters when it leaves (CR 400.7, 303.4, 301.5). Cards are SYNTHETIC
 // (src/cards/fixtures/synthetic-meld.ts).
 import { describe, expect, test } from 'vitest';

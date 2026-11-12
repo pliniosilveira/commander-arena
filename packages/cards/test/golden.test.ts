@@ -28,7 +28,7 @@ const EXPECTED = new URL('./fixtures/corpus/golden.expected.json', import.meta.u
 const cards: readonly GoldenCard[] = parseGolden(readFileSync(CORPUS, 'utf8'));
 
 /**
- * The other cards of the corpus, by name, for a meld card's melded face (D-994): a record marked `related` is the combined face of a meld pair, which the app fetches
+ * The other cards of the corpus, by name, for a meld card's melded face (D-280): a record marked `related` is the combined face of a meld pair, which the app fetches
  * with the pair. A corpus that does not hold it leaves the meld card unsupported with the reason "was not available", which is the truth about that corpus.
  */
 const byName = new Map(cards.map((c) => [c.name.toLowerCase(), fromGoldenCard(c)] as const));
@@ -99,7 +99,7 @@ function summarise(results: readonly Result[]): Expected['summary'] {
   return out;
 }
 
-// A card kept only as the melded face of a pair is no card of the corpus: it is not counted in any group (D-994).
+// A card kept only as the melded face of a pair is no card of the corpus: it is not counted in any group (D-280).
 const counted = cards.filter((card) => card.related !== true);
 const results = new Map(counted.map((card) => [goldenKey(card), analyse(card)] as const));
 

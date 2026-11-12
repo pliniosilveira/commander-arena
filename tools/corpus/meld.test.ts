@@ -1,4 +1,4 @@
-// Meld in the corpus tools (D-994, CR 701.42, 712.5): the combined face of a pair is a card of its own that is not Commander-legal and that no list names, so the tools that
+// Meld in the corpus tools (D-280, CR 701.42, 712.5): the combined face of a pair is a card of its own that is not Commander-legal and that no list names, so the tools that
 // read the bulk file carry it along: `corpus:extract` takes it with the pair (as a `related` record that no group counts), `coverage:cards` reads a half with the face wherever in
 // the file it is, `corpus:decks` and `precon:snapshot` too, and `corpus:check-issue` calls an issue without it incomplete. SYNTHETIC cards only; the component names
 // `meld_part` and `meld_result` are UNVERIFIED against the real Scryfall data.

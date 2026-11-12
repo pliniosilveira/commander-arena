@@ -61,7 +61,7 @@ function sourceInfo(state: GameState, source: ObjectId): SourceInfo | null {
     infect: abilitiesHaveKeyword(abilities, 'infect'),
     wither: abilitiesHaveKeyword(abilities, 'wither'),
     toxic: toxicValue(abilities),
-    // CR 903.3b (D-991): a melded permanent one of whose cards is a commander is that commander.
+    // CR 903.3b (D-277): a melded permanent one of whose cards is a commander is that commander.
     commanderCard: commanderCardOf(state, obj),
   };
 }

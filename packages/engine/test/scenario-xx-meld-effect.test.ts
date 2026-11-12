@@ -1,4 +1,4 @@
-// The meld ability (CR 701.42, 712.4a, 712.14c, 603.4; D-992): "At the beginning of your end step, if you both own and control this creature and a creature
+// The meld ability (CR 701.42, 712.4a, 712.14c, 603.4; D-278): "At the beginning of your end step, if you both own and control this creature and a creature
 // named X, exile them, then meld them into Y." The two cards are exiled and then enter the battlefield as one melded permanent: one object, one "enters"
 // event for the permanent (CR 712.14c). What can't be melded stays where it is (CR 701.42c); only the two cards of one meld pair can be (CR 701.42b).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-meld.ts).
@@ -268,7 +268,7 @@ describe('a commander that is the card without the meld ability (CR 903.3b)', ()
   });
 });
 
-describe('two commander cards of one pair (CR 903.3b; not built, D-991)', () => {
+describe('two commander cards of one pair (CR 903.3b; not built, D-277)', () => {
   test('nothing happens at all: the ability does not exile cards it could not meld, and the two stay on the battlefield', () => {
     const g = base()
       .seat(0)

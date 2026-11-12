@@ -1769,7 +1769,7 @@ export type Effect =
    */
   | { readonly kind: 'loseGame'; readonly player: PlayerSelector }
   /**
-   * "Exile them, then meld them into R." (CR 701.42a, 701.42b, 701.42c, 712.4a, D-992), the ability of a meld card: it exiles the permanent it belongs to
+   * "Exile them, then meld them into R." (CR 701.42a, 701.42b, 701.42c, 712.4a, D-278), the ability of a meld card: it exiles the permanent it belongs to
    * and the creature named `partner` that its controller both owns and controls, then puts the two cards onto the battlefield as one melded permanent
    * (CR 712.14c), under the control of the controller of the ability. The cards can be melded only if they are the two cards of one meld pair, neither a token
    * (`rules/melded.ts`, `meldPairIssue`: the data of the cards must say so, and the name of their combined face must be `result`) and both are still in exile;
@@ -3135,7 +3135,7 @@ export type Keyword =
 export type Condition =
   | { readonly kind: 'controlsAtLeast'; readonly filter: ObjectFilter; readonly count: number }
   /**
-   * "If you both own and control this creature and a creature named Bruna, the Fading Light" (CR 603.4, 701.42a, D-992): the permanent the ability belongs
+   * "If you both own and control this creature and a creature named Bruna, the Fading Light" (CR 603.4, 701.42a, D-278): the permanent the ability belongs
    * to is on the battlefield and both owned and controlled by the controller of the ability, and so is another permanent of that card type whose name is
    * `name` (its name as it is now, after copy effects, CR 201.2). Read as the ability triggers and again as it resolves (an intervening "if").
    */
@@ -4041,7 +4041,7 @@ export type StaticEffect =
    */
   | { readonly kind: 'opponentsCantCastOnYourTurn' }
   /**
-   * "Your opponents can't cast spells with mana value 3 or less." (CR 101.2, 601.2, 604.1, 202.3, D-996): while the permanent has the ability, no opponent of its
+   * "Your opponents can't cast spells with mana value 3 or less." (CR 101.2, 601.2, 604.1, 202.3, D-282): while the permanent has the ability, no opponent of its
    * controller can cast a spell that `spells` describes (the spell as it is on the stack, CR 601.2a: its mana value, types, colors; the filter names no zone and no
    * controller), by any means. A spell with an {X} in its mana cost has the mana value its announced X gives it (CR 202.3e), so its X can not be less than what takes it
    * out of the filter (the announcement offers only those values, and the spell can be cast only if one of them can be paid). Activated abilities, lands and

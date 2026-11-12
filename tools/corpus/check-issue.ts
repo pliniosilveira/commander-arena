@@ -102,7 +102,7 @@ export function checkIssue(description: string): IssueCheck {
       problems.push(`the card data has no record for: ${missing.join('; ')}`);
     }
   }
-  // D-994: a meld card is worked on with its melded face, a card of its own: the issue carries it as a `related` record, or the work would have nothing to read.
+  // D-280: a meld card is worked on with its melded face, a card of its own: the issue carries it as a `related` record, or the work would have nothing to read.
   try {
     const records = cardsOfIssue(description, 0);
     const related = new Set(

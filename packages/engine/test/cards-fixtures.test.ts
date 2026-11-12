@@ -304,7 +304,7 @@ describe('real card fixtures', () => {
     for (const [key, card] of Object.entries(FIXTURE_CARDS)) {
       expect(card.name).toBe(key);
       // A card with several faces is named by its faces joined with " // " (Scryfall's convention).
-      // A meld card (D-991) is named by its front face, as Scryfall names it; its second face is the combined face of its pair.
+      // A meld card (D-277) is named by its front face, as Scryfall names it; its second face is the combined face of its pair.
       expect(
         card.faces.length === 1 || card.layout === 'meld'
           ? face(card).name
@@ -436,7 +436,7 @@ describe('synthetic fixtures', () => {
       expect(key.startsWith('SYNTHETIC ')).toBe(true);
       expect(card.name).toBe(key);
       // A card with several faces is named by its faces joined with " // " (Scryfall's convention).
-      // A meld card (D-991) is named by its front face, as Scryfall names it; its second face is the combined face of its pair.
+      // A meld card (D-277) is named by its front face, as Scryfall names it; its second face is the combined face of its pair.
       expect(
         card.faces.length === 1 || card.layout === 'meld'
           ? face(card).name

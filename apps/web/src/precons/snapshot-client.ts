@@ -47,7 +47,7 @@ export function snapshotClient(cards: readonly SnapshotCard[]): ScryfallClient {
         if (card) found.set(key, card);
         else notFound.push(requested);
       }
-      // D-994: the melded face of a meld card the snapshot holds (`pnpm precon:snapshot` stores it with the pair): from the snapshot only, never the network.
+      // D-280: the melded face of a meld card the snapshot holds (`pnpm precon:snapshot` stores it with the pair): from the snapshot only, never the network.
       const related = new Map<string, RelatedCard>();
       for (const name of meldResultNames(found.values())) {
         const card = lookup(normalizeNameKey(name));

@@ -1,4 +1,4 @@
-// "Your opponents can't cast spells with mana value 3 or less." (CR 101.2, 601.2, 604.1, 202.3, 202.3e; D-996): the static ability of a permanent that describes the spells
+// "Your opponents can't cast spells with mana value 3 or less." (CR 101.2, 601.2, 604.1, 202.3, 202.3e; D-282): the static ability of a permanent that describes the spells
 // its controller's opponents can't cast, by any means ("can't" beats "can", CR 101.2). The filter describes the spell as it is on the stack: its mana value, with the
 // announced X of an {X} in its cost (CR 202.3e), so a spell with an X is cast only with an X that takes it out of the filter. Cards are SYNTHETIC
 // (src/cards/fixtures/synthetic-meld.ts); Lightning Bolt, Murder and Serra Angel are the fixtures of real cards.

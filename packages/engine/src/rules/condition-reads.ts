@@ -54,7 +54,7 @@ export function controlsCommander(
     const obj = getObject(state, id);
     return (
       controllerOf(state, obj) === seat &&
-      // CR 903.3b (D-991): a melded permanent one of whose cards is a commander is a commander.
+      // CR 903.3b (D-277): a melded permanent one of whose cards is a commander is a commander.
       commanderCardOf(state, obj) !== null &&
       (condition.yours !== true || obj.owner === seat)
     );

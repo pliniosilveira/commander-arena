@@ -1,4 +1,4 @@
-// Stage P70 (D-992, D-996): what the grammar reads of the meld ability and of the combined face of a pair: "if you both own and control ~ and a creature named X, exile them,
+// Stage P70 (D-278, D-282): what the grammar reads of the meld ability and of the combined face of a pair: "if you both own and control ~ and a creature named X, exile them,
 // then meld them into Y" (CR 701.42a, 712.4a), "Your opponents can't cast spells with mana value 3 or less." (CR 101.2) and "an Angel or Human creature card" of a graveyard
 // (CR 205.3m). The texts are SYNTHETIC or the shapes of real cards; every refusal is a line left unparsed, never half read.
 import { describe, expect, test } from 'vitest';

@@ -355,7 +355,7 @@ describe('supported feature gate', () => {
       'class',
       // D-214: a preparation card (CR 722).
       'prepare',
-      // D-991: a meld card (CR 701.42, 712.4).
+      // D-277: a meld card (CR 701.42, 712.4).
       'meld',
     ]);
     expect(SUPPORTED_FEATURES.effectKinds).toEqual(expect.arrayContaining(['discard', 'search']));

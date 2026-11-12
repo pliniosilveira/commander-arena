@@ -418,7 +418,7 @@ function answerConfirm(
  * effect putting one onto the battlefield, a token being created), or for a land being played.
  */
 /**
- * The answer to the order of the two cards of a melded permanent that left the battlefield (CR 712.21a, 712.21b, D-993): the player asked (`d.seat`) chooses which of the two goes
+ * The answer to the order of the two cards of a melded permanent that left the battlefield (CR 712.21a, 712.21b, D-279): the player asked (`d.seat`) chooses which of the two goes
  * on top of the graveyard or library, or, in exile, which has the later timestamp; the other goes below it. State-based actions are checked again after.
  */
 function answerMeldOrder(

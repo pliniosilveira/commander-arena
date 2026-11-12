@@ -1,5 +1,5 @@
 /**
- * The static ability of a melded face that the engine runs (D-996, CR 101.2, 601.2, 604.1, 202.3): "Your opponents can't cast spells with mana value 3 or less."
+ * The static ability of a melded face that the engine runs (D-282, CR 101.2, 601.2, 604.1, 202.3): "Your opponents can't cast spells with mana value 3 or less."
  * (the combined face of the pair of Bruna, the Fading Light and Gisela, the Broken Blade). One whole line.
  */
 import { fail, pattern } from '../../combinators';

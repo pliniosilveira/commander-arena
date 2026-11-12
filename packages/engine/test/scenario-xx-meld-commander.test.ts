@@ -1,4 +1,4 @@
-// A melded commander (CR 903.3b, 903.9a, 903.9b, 903.9c, 903.10a; D-991). If a player's commander is a meld card and it is melded with the other member of its pair,
+// A melded commander (CR 903.3b, 903.9a, 903.9b, 903.9c, 903.10a; D-277). If a player's commander is a meld card and it is melded with the other member of its pair,
 // the melded permanent is that player's commander (CR 903.3b): it deals commander damage under the commander card, it is "a commander" to everything that asks,
 // and when the player puts it into the command zone instead of their hand or library only the commander card goes there and the other card goes where the
 // permanent would have gone (CR 903.9c). In a graveyard or exile each card is its own object and only the commander card may go to the command zone

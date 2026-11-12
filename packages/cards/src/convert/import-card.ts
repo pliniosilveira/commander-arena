@@ -39,7 +39,7 @@ interface ParsedCard {
 const normalizedName = (name: string): string => name.trim().toLowerCase();
 
 /**
- * The combined face of a meld pair (CR 712.4, 712.8g, D-994): the melded face is a card of its own in the data, which the game fetches like any other card (the
+ * The combined face of a meld pair (CR 712.4, 712.8g, D-280): the melded face is a card of its own in the data, which the game fetches like any other card (the
  * card of this layout names it in `relatedParts`), and the engine's definition of each half holds its converted face as `faces[1]`. A half is usable only if
  * the data names its counterpart and its melded face, the reminder text agrees, and the melded face was available, one-faced and fully read; every one of those
  * that fails is a reason beginning `layout "meld"`, and the card falls back to its front face as a card of the layout `normal`.
@@ -133,7 +133,7 @@ function parseWithGrammar(
     }
     return converted.face;
   });
-  // CR 712.4b (D-994): the melded face of a pair is only the characteristics of a melded permanent; a card that is that face is not a card a game can hold.
+  // CR 712.4b (D-280): the melded face of a pair is only the characteristics of a melded permanent; a card that is that face is not a card a game can hold.
   if (meldRelation(stored).role === 'result') {
     reasons.push(
       'layout "meld": this is the combined face of a meld pair, which exists only as the two meld cards put together (CR 712.4b)',
@@ -171,7 +171,7 @@ function isRedundant(
   layoutReported: boolean,
 ) {
   if (layoutReported && issue.path === 'layout') return true;
-  // A meld card whose pair could not be read falls back to a card of the layout `normal` that still holds its meld ability: the layout reason is the cause (D-994).
+  // A meld card whose pair could not be read falls back to a card of the layout `normal` that still holds its meld ability: the layout reason is the cause (D-280).
   if (layoutReported && issue.message.startsWith('only a meld card has a meld ability'))
     return true;
   // The engine's check of an Adventure face (card type only) repeats the import's own, which also
@@ -228,7 +228,7 @@ function isRedundant(
  * the engine's `validateCard`. There is no partial status: text that was not understood is
  * dropped from the definition and listed in `support.unparsed`.
  *
- * `related` finds the melded face of a meld card by name (D-994): the cards the importer fetched with the deck. A meld card whose melded face it does not give is unsupported with
+ * `related` finds the melded face of a meld card by name (D-280): the cards the importer fetched with the deck. A meld card whose melded face it does not give is unsupported with
  * a reason that says so, so a caller that passes none gets the honest answer, not a guess.
  */
 export function importCard(

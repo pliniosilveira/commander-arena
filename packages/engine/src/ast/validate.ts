@@ -1588,7 +1588,7 @@ const LAYOUT_FACES: Readonly<Record<string, number>> = {
   transform: 2,
   modal_dfc: 2,
   prepare: 2,
-  // D-991: the front face and the combined back face of the meld pair.
+  // D-277: the front face and the combined back face of the meld pair.
   meld: 2,
 };
 

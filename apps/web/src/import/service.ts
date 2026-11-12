@@ -72,7 +72,7 @@ function nameKeys(card: StoredCard): string[] {
   return [...keys];
 }
 
-/** The melded faces the client fetched with the deck (D-994), once each. */
+/** The melded faces the client fetched with the deck (D-280), once each. */
 function meldFacesOf(resolved: ResolveResult): StoredCard[] {
   const faces = new Map<string, StoredCard>();
   for (const entry of resolved.related?.values() ?? []) {
@@ -109,7 +109,7 @@ export function createImportService(options: ImportServiceOptions): ImportServic
   const parserVersion = options.parserVersion ?? PARSER_VERSION;
 
   /**
-   * D-994: a meld card is read with its melded face, the card the client fetched with the deck (`ResolveResult.related`); the support report of a meld card is
+   * D-280: a meld card is read with its melded face, the card the client fetched with the deck (`ResolveResult.related`); the support report of a meld card is
    * worked out for the import being made and never taken from the cache, which cannot know whether that card was had.
    */
   async function convert(stored: StoredCard, meldFaces: MeldLookup): Promise<ImportedCard> {

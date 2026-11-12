@@ -203,7 +203,7 @@ export function assemble(
     if (host && mine) objects[objectId(e.index)] = { ...mine, attachedTo: objectId(host.index) };
   }
 
-  // Melded permanents (CR 701.42a, 712.4a, D-991): the placement `meldedWith` names is the second card of the same object, not an object of its own.
+  // Melded permanents (CR 701.42a, 712.4a, D-277): the placement `meldedWith` names is the second card of the same object, not an object of its own.
   for (const e of expanded) {
     const ref = e.options.meldedWith;
     if (ref === undefined) continue;

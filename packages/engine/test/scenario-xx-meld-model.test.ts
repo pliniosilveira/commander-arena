@@ -1,4 +1,4 @@
-// Meld (CR 701.42, 712.4, 712.8g, 712.21; D-991): one permanent on the battlefield that two cards represent, two ordinary cards in every other
+// Meld (CR 701.42, 712.4, 712.8g, 712.21; D-277): one permanent on the battlefield that two cards represent, two ordinary cards in every other
 // zone. Cards are SYNTHETIC (src/cards/fixtures/synthetic-meld.ts); the pair is placed melded with `meldedWith`.
 // CR 712.8g: the melded permanent has only the characteristics of the combined back face, and its mana value is the sum of the mana values of the
 // two front faces (CR 202.3c). CR 712.21: when it leaves the battlefield one permanent leaves and two cards are put into the zone: "dies" triggers

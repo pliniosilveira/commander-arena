@@ -27,7 +27,7 @@ export interface ResolveFailure {
 }
 
 /**
- * A card the game needs although it is not in the list (D-994): the melded face of a meld card. Fetched with the cards of the list, by the same path (the cache
+ * A card the game needs although it is not in the list (D-280): the melded face of a meld card. Fetched with the cards of the list, by the same path (the cache
  * first, then Scryfall), and kept apart from `found` because nobody asked for it.
  */
 export type RelatedCard =
@@ -43,13 +43,13 @@ export interface ResolveResult {
   /** Names that could not be looked up at all (network trouble, HTTP errors). */
   readonly failures: ResolveFailure[];
   /**
-   * The melded faces of the meld cards among `found` and the fuzzy candidates (D-994, CR 712.4), by normalized name: the card, or why it could not be had.
+   * The melded faces of the meld cards among `found` and the fuzzy candidates (D-280, CR 712.4), by normalized name: the card, or why it could not be had.
    * Absent from a client that does not look them up, which leaves a meld card unsupported with the reason "was not available".
    */
   readonly related?: ReadonlyMap<string, RelatedCard>;
 }
 
-/** The lookup a meld card's import reads its melded face with, from what the client answered (D-994). */
+/** The lookup a meld card's import reads its melded face with, from what the client answered (D-280). */
 export function relatedLookup(related: ReadonlyMap<string, RelatedCard> | undefined): MeldLookup {
   return (name) => {
     const hit = related?.get(normalizeNameKey(name));
@@ -218,7 +218,7 @@ async function fallback(deps: ResolveDeps, pending: Pending): Promise<Outcome> {
 }
 
 /**
- * Resolves the names of a list, and the melded faces the meld cards found among them name (D-994): after the cards of the list, one more pass for those faces by the
+ * Resolves the names of a list, and the melded faces the meld cards found among them name (D-280): after the cards of the list, one more pass for those faces by the
  * same path, so a deck with a meld card costs one more request (none when the cache has them). A face that cannot be had is reported with the reason, which the import
  * puts in the meld card's support report.
  */

@@ -68,7 +68,7 @@ function names(
 function departedDoublers(state: GameState, events: readonly GameEvent[]): readonly Doubler[] {
   const out: Doubler[] = [];
   for (const event of events) {
-    // D-991 (CR 712.21): one melded permanent leaves; the second card's event is not another permanent.
+    // D-277 (CR 712.21): one melded permanent leaves; the second card's event is not another permanent.
     if (
       event.kind !== 'zoneChanged' ||
       event.fromZone !== 'battlefield' ||

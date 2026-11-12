@@ -13,7 +13,7 @@ import { definitionOf } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 
 export function nameOf(state: GameState, obj: GameObject): string {
-  // D-991: a melded permanent is named by both of its cards.
+  // D-277: a melded permanent is named by both of its cards.
   if (obj.card !== null)
     return cardsOf(obj)
       .map((c) => definitionOf(state, c).name)

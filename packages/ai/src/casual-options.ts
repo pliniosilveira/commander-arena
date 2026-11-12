@@ -114,7 +114,7 @@ function chooseFirstReplacement(d: ChooseOptionDecision): Action {
 
 export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Action {
   if (d.purpose === 'replacement') return chooseFirstReplacement(d);
-  // CR 712.21a, 712.21b (D-993): the order of the two cards a melded permanent became. Nothing in the game reads it for the agent's plans, so the first
+  // CR 712.21a, 712.21b (D-279): the order of the two cards a melded permanent became. Nothing in the game reads it for the agent's plans, so the first
   // option, deterministic and always legal.
   if (d.purpose === 'meldOrder') return chooseFirstReplacement(d);
   // CR 701.38a (D-194): a vote, from the words and the votes so far.

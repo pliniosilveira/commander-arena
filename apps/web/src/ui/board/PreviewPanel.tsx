@@ -76,7 +76,7 @@ function FaceList({ object }: { object: ObjectView }) {
 }
 
 /**
- * What a melded permanent is made of (D-991, CR 701.42a, 712.4a): the two cards that represent it, each as its front face (the permanent itself has the characteristics
+ * What a melded permanent is made of (D-277, CR 701.42a, 712.4a): the two cards that represent it, each as its front face (the permanent itself has the characteristics
  * of the combined face, which the card above shows), with the cost, the type line and the rules text of each.
  */
 export function MeldList({ object }: { object: ObjectView }) {

@@ -1,4 +1,4 @@
-// A melded permanent leaves the battlefield (CR 712.21; D-991): one permanent leaves and two cards are put into the appropriate zone. "Whenever a creature
+// A melded permanent leaves the battlefield (CR 712.21; D-277): one permanent leaves and two cards are put into the appropriate zone. "Whenever a creature
 // dies" triggers once (CR 712.21 example), and an effect that finds the new object finds both cards (CR 712.21c). The new objects are ordinary cards with
 // their front faces (CR 712.8a), each a new object (CR 400.7) with no counters and no damage. Cards are SYNTHETIC (src/cards/fixtures/synthetic-meld.ts).
 import { describe, expect, test } from 'vitest';

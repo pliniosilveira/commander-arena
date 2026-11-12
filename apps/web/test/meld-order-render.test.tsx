@@ -1,5 +1,5 @@
 /**
- * The question of the order of the two cards of a melded permanent that left the battlefield (D-993; CR 712.21a, 712.21b), drawn from the engine's own decision:
+ * The question of the order of the two cards of a melded permanent that left the battlefield (D-279; CR 712.21a, 712.21b), drawn from the engine's own decision:
  * the dialog "Order the two cards" with one button for each card, the prompt for a graveyard, a library and exile, and its routing in the modal overlays.
  * Cards are SYNTHETIC (the engine's fixtures `SYNTHETIC Dusk Squire` and `SYNTHETIC Dawn Squire`).
  */

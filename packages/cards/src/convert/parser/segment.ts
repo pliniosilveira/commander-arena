@@ -72,7 +72,7 @@ function isOpenQuote(c: string): boolean {
 }
 
 /**
- * Whether the comma at `at` is inside the name of a card that "named" introduces (D-992, CR 201.2): the text since the last " named " has no other comma, and what follows
+ * Whether the comma at `at` is inside the name of a card that "named" introduces (D-278, CR 201.2): the text since the last " named " has no other comma, and what follows
  * the comma is "the", "of" or a capital letter, as the second part of a legendary name is ("Bruna, the Fading Light", "Mishra, Claimed by Gix"), never the verb of the
  * next clause.
  */
@@ -102,7 +102,7 @@ function topLevelCommas(text: string, start: number, end: number): number[] {
       !(
         text.slice(i - 8, i).toLowerCase() === 'nontoken' && /^, non-/i.test(text.slice(i, i + 6))
       ) &&
-      // D-992 (CR 201.2): the name of a card may hold a comma ("a creature named Bruna, the Fading Light"): a comma inside the name after "named" is not the end of the clause.
+      // D-278 (CR 201.2): the name of a card may hold a comma ("a creature named Bruna, the Fading Light"): a comma inside the name after "named" is not the end of the clause.
       !insideNamedCard(text, i, start)
     ) {
       out.push(i);

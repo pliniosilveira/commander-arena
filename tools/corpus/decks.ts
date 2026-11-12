@@ -86,7 +86,7 @@ interface Candidate {
 export interface CardIndex {
   readonly byFull: ReadonlyMap<string, ImportedCard>;
   readonly byFront: ReadonlyMap<string, ImportedCard>;
-  /** D-994: the melded faces of meld pairs seen in the file (cards of their own, any legality), by normalized name: a precon snapshot stores the one its meld card needs. */
+  /** D-280: the melded faces of meld pairs seen in the file (cards of their own, any legality), by normalized name: a precon snapshot stores the one its meld card needs. */
   readonly meldFaces: ReadonlyMap<string, StoredCard>;
   readonly read: number;
   readonly malformed: number;
@@ -117,7 +117,7 @@ export async function indexCards(
   let read = 0;
   let malformed = 0;
   let rejected = 0;
-  // D-994: a meld card waits for the melded face, a card of its own that no deck names and that may come later in the file: the halves are imported at the end.
+  // D-280: a meld card waits for the melded face, a card of its own that no deck names and that may come later in the file: the halves are imported at the end.
   const meldFaces = new Map<string, StoredCard>();
   const halves: StoredCard[] = [];
   const add = (stored: StoredCard, imported: ImportedCard): void => {

@@ -35,7 +35,7 @@ function withAnnouncedX(spell: GameObject, x: number): GameObject {
 }
 
 /**
- * CR 101.2, 604.1, 601.2 (D-996): whether a static ability `opponentsCantCastSpells` of a permanent that `seat` does not control describes `spell`, as it would be on
+ * CR 101.2, 604.1, 601.2 (D-282): whether a static ability `opponentsCantCastSpells` of a permanent that `seat` does not control describes `spell`, as it would be on
  * the stack with `x` announced. A permanent that lost its abilities has none (`derive`); every way of casting asks (`canCast`, `canCastDuringResolution`, the announcement of X).
  */
 function forbiddenBySpellFilter(
@@ -74,7 +74,7 @@ function forbiddenBySpellFilter(
 }
 
 /**
- * The least X (CR 107.3a) with which `seat` may cast `spell` as far as the restrictions on who may cast what go (D-996: "Your opponents can't cast spells with mana
+ * The least X (CR 107.3a) with which `seat` may cast `spell` as far as the restrictions on who may cast what go (D-282: "Your opponents can't cast spells with mana
  * value 3 or less" is read with the mana value the announced X gives the spell, CR 202.3e), or null when no X does. 0 for a spell with no {X} in its mana cost
  * and no restriction, which is all of them but those a static ability describes. `hasX` says whether the cost has an {X}; only then is more than 0 tried.
  */
@@ -126,7 +126,7 @@ export function castForbiddenByOpponentsPermanent(
   spell?: GameObject,
   x = 0,
 ): boolean {
-  // CR 101.2, 604.1 (D-996): "Your opponents can't cast spells with mana value 3 or less": a spell that a permanent of an opponent of the caster describes.
+  // CR 101.2, 604.1 (D-282): "Your opponents can't cast spells with mana value 3 or less": a spell that a permanent of an opponent of the caster describes.
   if (spell !== undefined && forbiddenBySpellFilter(state, seat, spell, x)) return true;
   const active = state.turn.activeSeat;
   if (seat === active) return false;

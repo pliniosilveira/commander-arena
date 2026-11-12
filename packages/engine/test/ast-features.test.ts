@@ -177,7 +177,7 @@ describe('the dimensions', () => {
       'playFromGraveyardOnceEachTurn',
       // D-179: "Your opponents can't cast spells during your turn."
       'opponentsCantCastOnYourTurn',
-      // D-996: "Your opponents can't cast spells with mana value 3 or less."
+      // D-282: "Your opponents can't cast spells with mana value 3 or less."
       'opponentsCantCastSpells',
       // D-185: "Creature spells you control can't be countered."
       'spellsCantBeCountered',
@@ -275,7 +275,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('layout:transform')).toBe(true);
     expect(isFeatureSupported('layout:saga')).toBe(true);
     expect(isFeatureSupported('trigger:chapter')).toBe(true);
-    expect(isFeatureSupported('layout:meld')).toBe(true); // D-991
+    expect(isFeatureSupported('layout:meld')).toBe(true); // D-277
     expect(isFeatureSupported('layout:flip')).toBe(false);
   });
 

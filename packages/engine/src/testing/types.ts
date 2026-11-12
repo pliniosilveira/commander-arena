@@ -133,7 +133,7 @@ export interface PermanentOptions extends PlaceOptions {
    */
   readonly attachedTo?: string;
   /**
-   * D-991 (CR 701.42a, 712.4a): the card is a meld card that is melded with the other card of its pair, which is placed on the battlefield too, named by label
+   * D-277 (CR 701.42a, 712.4a): the card is a meld card that is melded with the other card of its pair, which is placed on the battlefield too, named by label
    * or card name (it must match exactly one other permanent). The two become one melded permanent with the combined back face up (`face` 1), represented by
    * both cards; the other placement is not an object of its own. Put it on the commander's placement when one of the two is the commander (a melded
    * permanent's commander card is its first card). The pair is checked as `701.42b` says: two meld cards that form a pair, owned by the same player.

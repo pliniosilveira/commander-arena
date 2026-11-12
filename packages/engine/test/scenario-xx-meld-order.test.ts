@@ -1,4 +1,4 @@
-// The order of the two cards of a melded permanent that left the battlefield (CR 712.21a, 712.21b; D-993): in a graveyard or a library their owner may arrange them
+// The order of the two cards of a melded permanent that left the battlefield (CR 712.21a, 712.21b; D-279): in a graveyard or a library their owner may arrange them
 // in any order (the order in a library is not revealed), and a player who exiles a melded permanent determines the relative timestamp order of the two cards.
 // The question is asked as state-based actions are next checked, of the owner of the cards (of the player who exiled the permanent, for exile), with the names of
 // the two cards: the answer is the card that goes on top (or that is exiled last). It is not asked when the cards go to a hand or the command zone, and a pair that is no longer together is dropped.

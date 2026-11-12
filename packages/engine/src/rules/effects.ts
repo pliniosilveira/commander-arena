@@ -266,7 +266,7 @@ export function runInstruction(
       tapped: instruction.tapped,
       commanderChoice: instruction.commanderChoice,
       ...(instruction.withCounters === undefined ? {} : { withCounters: instruction.withCounters }),
-      // CR 712.21b (D-993): the controller of the effect is the player who exiles a melded permanent.
+      // CR 712.21b (D-279): the controller of the effect is the player who exiles a melded permanent.
       by: res.controller,
       ...(instruction.alt === undefined ? {} : { alt: instruction.alt }),
       ...(instruction.replacers === undefined ? {} : { replacers: instruction.replacers }),
@@ -290,7 +290,7 @@ export function runInstruction(
       return { state, events: [], front: [], needs: result.decision };
     }
     // CR 400.7j: later parts of the effect can find the new object ("then return it").
-    // CR 712.21c (D-991): a melded permanent that left became two cards, and "it" finds both: the same is done to each.
+    // CR 712.21c (D-277): a melded permanent that left became two cards, and "it" finds both: the same is done to each.
     const movedObjects =
       result.newObject === null
         ? []
@@ -451,7 +451,7 @@ export function runImmediateEffects(
 
 /**
  * CR 400.7 (D-230): the card an object that left became in a graveyard, if it is still there; the old id when it is not (nothing is exiled then). CR 712.21c
- * (D-991): a melded permanent that died became two cards, and an effect that finds the new object finds both.
+ * (D-277): a melded permanent that died became two cards, and an effect that finds the new object finds both.
  */
 function graveyardSuccessors(state: GameState, id: ObjectId): readonly ObjectId[] {
   const found = successorsOf(state, id, (o) => o.zone === 'graveyard');
@@ -1162,7 +1162,7 @@ function runEffect(
     }
 
     case 'meld':
-      // CR 701.42a (D-992): exile the permanent and its counterpart, then meld them.
+      // CR 701.42a (D-278): exile the permanent and its counterpart, then meld them.
       return runMeld(state, res, effect);
 
     case 'loseGame': {

@@ -41,7 +41,7 @@ export async function analyzeFile(
     if (problems.length < MAX_PROBLEMS) problems.push(message);
   };
 
-  // D-994: a meld card is read with its melded face, a card of its own that is not Commander-legal and may come later in the file than the half: the halves wait
+  // D-280: a meld card is read with its melded face, a card of its own that is not Commander-legal and may come later in the file than the half: the halves wait
   // until the whole file has been read, the melded faces are kept whatever their legality.
   const meldFaces = new Map<string, StoredCard>();
   const halves: StoredCard[] = [];

@@ -1,4 +1,4 @@
-// Slice soak (D-991, D-993): whole games from states with a meld pair, with the SYNTHETIC cards of the engine's fixtures (SYNTHETIC Dusk Squire and SYNTHETIC Dawn Squire meld into
+// Slice soak (D-277, D-279): whole games from states with a meld pair, with the SYNTHETIC cards of the engine's fixtures (SYNTHETIC Dusk Squire and SYNTHETIC Dawn Squire meld into
 // SYNTHETIC Twilight Titan at the beginning of their controller's end step; removal spells wait in the opponent's hand), between every kind of agent. Every game finishes with a result,
 // no fallback, no rejected action and consistent state after every action; the action log replays to the same final state; and the rules of the slice are restated from the events and the
 // state, apart from the engine: two cards that meld become one object that both represent (the second card has no object of its own), a melded permanent that leaves the battlefield

@@ -94,7 +94,7 @@ export function issueRecord(card: ImportedCard): GoldenCard {
 }
 
 /**
- * The records of the melded faces the shown meld cards need (D-994): cards of their own that the corpus keeps as `related`, not as cards of the deck, so that the work
+ * The records of the melded faces the shown meld cards need (D-280): cards of their own that the corpus keeps as `related`, not as cards of the deck, so that the work
  * on the pair has the data of all three cards. A meld card whose melded face the import did not have gets none (the issue then says nothing of it, and
  * `pnpm corpus:check-issue` calls the issue incomplete).
  */

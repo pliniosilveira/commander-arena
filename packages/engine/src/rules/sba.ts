@@ -287,7 +287,7 @@ export function checkStateBasedActions(input: GameState): SbaResult {
 }
 
 /**
- * CR 712.21a, 712.21b (D-993): the first of the pairs of cards that a melded permanent became, which the player entitled to has not yet arranged. A pair whose cards are no longer
+ * CR 712.21a, 712.21b (D-279): the first of the pairs of cards that a melded permanent became, which the player entitled to has not yet arranged. A pair whose cards are no longer
  * both in the zone they went to (or, in a graveyard or a library, next to each other: something moved or shuffled them) is dropped, with nothing asked.
  */
 function meldOrderDecision(state: GameState): {

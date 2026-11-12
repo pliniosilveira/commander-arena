@@ -1,5 +1,5 @@
 /**
- * Meld in the import (D-994, CR 701.42, 712.5): the combined face of a pair is a card of its own that the deck does not name, which the client fetches with the pair (`ResolveResult.related`).
+ * Meld in the import (D-280, CR 701.42, 712.5): the combined face of a pair is a card of its own that the deck does not name, which the client fetches with the pair (`ResolveResult.related`).
  * The service reads a meld card with it, never takes the support of a meld card from the cache, and a deck-support issue carries the face of every unsupported meld card as a `related` record.
  * Every card is SYNTHETIC (Scryfall's shape, invented names and text); the component names `meld_part` and `meld_result` are UNVERIFIED against the real Scryfall data.
  */

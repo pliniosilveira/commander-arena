@@ -132,7 +132,7 @@ function occurrences(
     case 'landfall':
       // CR 603.6a. A token entering has no previous object, so it has its own event. The player the event is about (`triggerPlayer`, D-229:
       // "that player controls more lands than you") is whoever controls the permanent as it enters.
-      // D-991 (CR 712.21): the second card of a melded permanent is not another permanent entering.
+      // D-277 (CR 712.21): the second card of a melded permanent is not another permanent entering.
       if (
         event.kind === 'zoneChanged' &&
         event.toZone === 'battlefield' &&
@@ -241,7 +241,7 @@ function occurrences(
         : [];
     case 'leavesBattlefield':
       // CR 603.6c: a permanent moved from the battlefield to another zone (a token too).
-      // D-991 (CR 712.21): one melded permanent leaves, however many cards it becomes.
+      // D-277 (CR 712.21): one melded permanent leaves, however many cards it becomes.
       return event.kind === 'zoneChanged' &&
         event.fromZone === 'battlefield' &&
         event.component !== true
@@ -681,7 +681,7 @@ function battlefieldBefore(state: GameState, events: readonly GameEvent[]): Obje
     const e = events[i];
     if (e?.kind === 'zoneChanged') {
       if (e.toZone === 'battlefield') members = members.filter((m) => m !== e.to);
-      // D-991 (CR 712.21): a melded permanent that left is one permanent, though two events say where its cards went.
+      // D-277 (CR 712.21): a melded permanent that left is one permanent, though two events say where its cards went.
       if (e.fromZone === 'battlefield' && e.component !== true) members.push(e.from);
     } else if (e?.kind === 'tokenCreated') {
       members = members.filter((m) => m !== e.object);

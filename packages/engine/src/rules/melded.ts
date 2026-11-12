@@ -1,5 +1,5 @@
 /**
- * Melded permanents (D-991, CR 701.42 Meld, CR 712.4 and 712.8g Double-Faced Cards, 712.21): the object model and its readers.
+ * Melded permanents (D-277, CR 701.42 Meld, CR 712.4 and 712.8g Double-Faced Cards, 712.21): the object model and its readers.
  *
  * The model is "one permanent on the battlefield, two cards in every other zone". A melded permanent is one `GameObject` represented by two cards
  * (CR 701.42a, 712.4a): `card` is the first card, `meldedWith` the second, `face` is 1, the combined back face, which the definition of the first card
@@ -71,7 +71,7 @@ function sameFace(a: unknown, b: unknown): boolean {
  * Why two cards cannot be melded (CR 701.42b: "Only two cards belonging to the same meld pair can be melded. Tokens, cards that aren't meld cards, or meld cards
  * that don't form a meld pair can't be melded"), or null when they can. The pair is read from data: each card is a meld card whose `meld.partner` is the other's
  * name, and both hold the same combined face (CR 712.8g). Both cards must have the same owner (the meld abilities say "you both own and control"), and, because
- * a melded permanent has one commander card, they are not both commanders (not built, D-991).
+ * a melded permanent has one commander card, they are not both commanders (not built, D-277).
  */
 export function meldPairIssue(state: GameState, a: GameObject, b: GameObject): string | null {
   if (a.token !== null || b.token !== null || a.card === null || b.card === null) {
@@ -81,7 +81,7 @@ export function meldPairIssue(state: GameState, a: GameObject, b: GameObject): s
 }
 
 /**
- * Whether the two objects are two commander cards. CR 701.42 would meld them (CR 903.3b names a commander that is melded, and nothing there forbids two), but a melded permanent here has one commander card (D-991): the case is not
+ * Whether the two objects are two commander cards. CR 701.42 would meld them (CR 903.3b names a commander that is melded, and nothing there forbids two), but a melded permanent here has one commander card (D-277): the case is not
  * built, so the meld ability does not start at all for such a pair (`rules/meld-condition.ts`): exiling cards that then could not be melded would take them out of the game
  * for nothing, so the permanents stay where they are.
  */
@@ -131,7 +131,7 @@ export function meldedManaCost(state: GameState, obj: GameObject): readonly stri
 }
 
 /**
- * CR 712.21a, 712.21b (D-993): puts `top` above `other`, the two cards a melded permanent became in the zone it left for, which are next to each other in a graveyard or a
+ * CR 712.21a, 712.21b (D-279): puts `top` above `other`, the two cards a melded permanent became in the zone it left for, which are next to each other in a graveyard or a
  * library of their owner (the top of a library is its first card, the top of a graveyard its last); in exile `top` is made the card exiled last, the one with the
  * later timestamp (the player who exiled the permanent chooses, an exception to CR 613.7m). Who chooses is the caller's business (`MeldOrder.seat`). Does nothing
  * when they already are in that order.

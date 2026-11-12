@@ -277,7 +277,7 @@ export function describeEvent(
       }
       // A foretell moves the card face down: the `foretold` line says it, and this one would name it (D-128).
       if (isForetellMove(after, event)) return null;
-      // CR 701.42a, 712.14c (D-991): the two cards that were melded enter as one permanent; the `melded` line says it.
+      // CR 701.42a, 712.14c (D-277): the two cards that were melded enter as one permanent; the `melded` line says it.
       if (
         event.toZone === 'battlefield' &&
         after.objects[event.to]?.meldedWith !== undefined &&
@@ -1367,7 +1367,7 @@ export function describeEvent(
         'CR 707.9',
       );
     case 'melded':
-      // CR 701.42a, 712.14c (D-991): two cards were exiled and became one melded permanent.
+      // CR 701.42a, 712.14c (D-277): two cards were exiled and became one melded permanent.
       return line(
         'major',
         `${cardName(after, event.cards[0]) ?? 'A card'} and ${cardName(after, event.cards[1]) ?? 'a card'} meld into ${label(event.permanent)}.`,
@@ -1376,7 +1376,7 @@ export function describeEvent(
         'CR 701.42a',
       );
     case 'meldFailed':
-      // CR 701.42b, 701.42c (D-991): what could not be melded stays where it is.
+      // CR 701.42b, 701.42c (D-277): what could not be melded stays where it is.
       return line(
         'major',
         `They could not be melded and stay where they are: ${event.reason}.`,

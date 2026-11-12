@@ -14,7 +14,7 @@ const LAYOUT_FACES: Readonly<Record<string, { layout: CardLayout; faces: number 
   modal_dfc: { layout: 'modal_dfc', faces: 2 },
   // CR 722 (stage P56, D-214): a preparation card, its prepare spell the second face.
   prepare: { layout: 'prepare', faces: 2 },
-  // CR 701.42, 712.4 (D-991, D-994): a meld card is one card face in the data; the engine's definition adds the combined face of its pair as a second
+  // CR 701.42, 712.4 (D-277, D-280): a meld card is one card face in the data; the engine's definition adds the combined face of its pair as a second
   // face, which the importer reads from the card of that face (`convert/meld.ts`), so `faces` here counts the stored faces.
   meld: { layout: 'meld', faces: 1 },
 };

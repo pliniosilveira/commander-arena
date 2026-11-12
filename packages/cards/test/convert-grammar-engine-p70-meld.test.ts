@@ -1,4 +1,4 @@
-// The Bruna deck (issue 5), meld (D-991 to D-996): Bruna, the Fading Light and Gisela, the Broken Blade, the REAL cards of the golden corpus, read through the grammar only and played
+// The Bruna deck (issue 5), meld (D-277 to D-282): Bruna, the Fading Light and Gisela, the Broken Blade, the REAL cards of the golden corpus, read through the grammar only and played
 // through applyAction, with the melded face the game would fetch: Brisela, Voice of Nightmares, whose Oracle text is the one the owner copied from Scryfall ("Flying, first strike,
 // vigilance, lifelink / Your opponents can't cast spells with mana value 3 or less. / 9/10"). The golden corpus holds neither the `all_parts` of the two cards nor Brisela's card, so
 // this test adds both: the parts as the UNVERIFIED components `meld_part` and `meld_result` (`src/convert/meld.ts`) and Brisela with the text above (its ids and colors are not

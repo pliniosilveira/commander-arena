@@ -114,7 +114,7 @@ export function transformedFace(def: CardDefinition, current: number): number | 
 /**
  * For the back face of a nonmodal double-faced permanent: the mana cost its mana value is calculated
  * from, which is the front face's (CR 712.8e, 202.3b); and for a melded permanent the combined mana cost of the
- * front faces of the two cards that represent it (CR 712.8g, 202.3c, D-991). Null when the rule does not apply.
+ * front faces of the two cards that represent it (CR 712.8g, 202.3c, D-277). Null when the rule does not apply.
  */
 export function backFaceManaCost(
   state: GameState,

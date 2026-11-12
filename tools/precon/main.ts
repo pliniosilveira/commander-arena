@@ -153,7 +153,7 @@ export async function run(argv: readonly string[], io: Io, deps: Deps): Promise<
     return 1;
   }
 
-  // D-994: a meld card needs its melded face, a card of its own that is not in the decklist: the snapshot stores it with the cards, so the precon is played offline.
+  // D-280: a meld card needs its melded face, a card of its own that is not in the decklist: the snapshot stores it with the cards, so the precon is played offline.
   const faces: StoredCard[] = [];
   const noFace: string[] = [];
   for (const name of meldResultNames([...resolved.cards.values()].map((c) => c.stored))) {

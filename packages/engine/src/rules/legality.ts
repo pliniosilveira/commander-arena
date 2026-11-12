@@ -279,7 +279,7 @@ export function castZone(
     return alternative === undefined && mayPlayFromExile(state, seat, obj) ? 'exile' : null;
   }
   if (obj.zone === 'hand') return 'hand';
-  // A card in the command zone is one card, never a melded permanent (D-991).
+  // A card in the command zone is one card, never a melded permanent (D-277).
   if (obj.zone === 'command' && isCommanderCardId(state, obj.card)) {
     return 'command';
   }
@@ -434,7 +434,7 @@ export function canCast(
   if (types.includes('land')) return false;
   // CR 101.2 (D-149): "You can't cast ~ during your first, second, or third turns of the game".
   if (castForbiddenByOwnAbility(state, seat, spell)) return false;
-  // CR 101.2 (D-179): "Your opponents can't cast spells during your turn"; (D-996) "... with mana value 3 or less", read with the least X the spell can be cast with.
+  // CR 101.2 (D-179): "Your opponents can't cast spells during your turn"; (D-282) "... with mana value 3 or less", read with the least X the spell can be cast with.
   const least = leastAllowedX(
     state,
     seat,
@@ -497,7 +497,7 @@ export function canCastDuringResolution(
   const spell = castAs(obj, seat, 0);
   if (derive(state, spell).types.includes('land')) return false;
   if (castForbiddenByOwnAbility(state, seat, spell)) return false; // CR 101.2 (D-149)
-  if (castForbiddenByOpponentsPermanent(state, seat, spell)) return false; // CR 101.2 (D-179, D-996: a free cast has X 0, CR 107.3b)
+  if (castForbiddenByOpponentsPermanent(state, seat, spell)) return false; // CR 101.2 (D-179, D-282: a free cast has X 0, CR 107.3b)
   const kickedWays = hasKickedTargets(faceOf(state, spell)) ? [false, true] : [false];
   const from = obj.zone;
   return kickedWays.some(

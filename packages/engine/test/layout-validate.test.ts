@@ -47,7 +47,7 @@ describe('the supported layouts', () => {
       'class',
       // D-214: a preparation card (CR 722).
       'prepare',
-      // D-991: a meld card (CR 701.42, 712.4).
+      // D-277: a meld card (CR 701.42, 712.4).
       'meld',
     ]);
     for (const def of [
@@ -173,7 +173,7 @@ describe('what is refused, naming the layout', () => {
     }
   });
 
-  describe('a meld card (CR 701.42, 712.4, 712.8g; D-991, D-992)', () => {
+  describe('a meld card (CR 701.42, 712.4, 712.8g; D-277, D-278)', () => {
     const DUSK = syntheticCard('SYNTHETIC Dusk Squire');
     const issues = (def: CardDefinition): string[] =>
       validateCard(def).map((i) => `${i.path}: ${i.message}`);

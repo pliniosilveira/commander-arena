@@ -827,7 +827,7 @@ interface CardWords {
   readonly subtypes: readonly string[];
   /** Members of the choice that say more than a type (stage P68, D-230: "non-Aura enchantment"), after the types of `anyOf`. */
   readonly extra?: readonly IrFilter[];
-  /** D-992: a choice of creature types ("Angel or Human creature card"): the card has one of them, besides the types. */
+  /** D-278: a choice of creature types ("Angel or Human creature card"): the card has one of them, besides the types. */
   readonly subtypeAnyOf?: readonly string[];
 }
 
@@ -913,7 +913,7 @@ export function graveyardPhrase(plural: boolean): Parser<IrFilter> {
       pos: r.pos,
     };
   };
-  // "Angel or Human creature card" (D-992, CR 205.3m): a creature card that has either of two creature types ("target Angel or Human creature card from your
+  // "Angel or Human creature card" (D-278, CR 205.3m): a creature card that has either of two creature types ("target Angel or Human creature card from your
   // graveyard", Bruna's cast trigger). One card only, so not in the plural; the word "creature" must follow the types, so "Angel or Human card" alone and
   // "Angel or Human land card" are not read (a creature type on a card of another type is not built).
   const subtypeChoiceWords: Parser<CardWords> = (ctx, pos) => {

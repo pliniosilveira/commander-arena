@@ -154,7 +154,7 @@ function meldEffectCount(face: CardFace): number {
 }
 
 /**
- * CR 701.42, 712.4, 712.8g (D-991, D-992): a meld card has its front face and the combined back face of its pair (both permanent faces, the back one with no mana cost: the
+ * CR 701.42, 712.4, 712.8g (D-277, D-278): a meld card has its front face and the combined back face of its pair (both permanent faces, the back one with no mana cost: the
  * mana value of a melded permanent is calculated from the two front faces, CR 202.3c), names its counterpart, and only a card of that layout names one. The meld
  * ability is the whole effect of a triggered ability of the front face and names the counterpart and the combined face the card has (CR 712.4a).
  */
@@ -325,7 +325,7 @@ export function layoutSupportIssues(def: CardDefinition): AstIssue[] {
     }
   }
   if (def.layout === 'meld') {
-    // CR 712.14c (D-992): the two cards enter as one permanent as the ability resolves, which does not stop to ask a question; a combined face with a
+    // CR 712.14c (D-278): the two cards enter as one permanent as the ability resolves, which does not stop to ask a question; a combined face with a
     // replacement effect (it may ask, CR 614.12) or riot or devour (CR 702.136a, 702.82a) is not run.
     def.faces.forEach((face, i) => {
       if (i === 0) return;
