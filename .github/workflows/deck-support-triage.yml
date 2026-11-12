@@ -128,11 +128,17 @@ jobs:
           esac
           digest=$(sha256sum "$RUNNER_TEMP/issue.md" | cut -d' ' -f1)
           marker="$marker<!-- sha256:$digest -->"
-          # Someone other than the owner has one request waiting at a time.
+          # Someone other than the owner has one request waiting at a time (D-322). The `labels` parameter of the issue list is an AND (both labels at
+          # once), so each label is asked for on its own, for this author only (`creator`). An issue yields to another of the same author that is
+          # being worked on, or that is waiting and older (a lower number): the oldest waiting request keeps its label, and two waiting requests
+          # that are checked again never both lose theirs.
           other=""
           if [ "$AUTHOR" != "$GITHUB_REPOSITORY_OWNER" ]; then
-            other=$(gh api "repos/${GITHUB_REPOSITORY}/issues?state=open&labels=deck-support:ready,deck-support:in-progress&per_page=100" \
-              --jq "[.[] | select(.user.login == \"${AUTHOR}\" and .number != ${NUMBER})][0].number // empty" || true)
+            busy=$(gh api "repos/${GITHUB_REPOSITORY}/issues?state=open&labels=deck-support:in-progress&creator=${AUTHOR}&per_page=100" \
+              --jq "[.[] | select(.pull_request | not) | select(.number != ${NUMBER})][0].number // empty" || true)
+            older=$(gh api "repos/${GITHUB_REPOSITORY}/issues?state=open&labels=deck-support:ready&creator=${AUTHOR}&per_page=100" \
+              --jq "[.[] | select(.pull_request | not) | select(.number < ${NUMBER})][0].number // empty" || true)
+            other="${busy:-$older}"
           fi
           if [ "$(jq -r .complete "$RUNNER_TEMP/result.json")" = "true" ] && [ -n "$other" ]; then
             gh issue edit "$NUMBER" --remove-label deck-support:ready || true
