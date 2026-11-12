@@ -9,7 +9,7 @@ import { defineRule, spanned } from '../registry';
 /**
  * `noun.target-creatures-battlefield-or-graveyard`: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (CR 115.1, 115.2,
  * 601.2c, 404.1): one target slot whose targets are creatures on the battlefield or creature cards in the graveyard of any player, at most the number said and none
- * needed ("up to"); "other" leaves out the permanent the ability is on. The engine's target of two zones (`objectOrGraveyardCard`), which only `exile` takes (a card of
+ * needed ("up to"); "other" leaves out the permanent the ability is on (the engine reads it only where that permanent is on the battlefield as the targets are chosen: a dies or leaves trigger with "other" is refused by the validator, CR 603.10a). The engine's target of two zones (`objectOrGraveyardCard`), which only `exile` takes (a card of
  * a graveyard is not a permanent: every other verb would have to say what it does to one). Not read: a count that is not "up to" two or more, one creature, any other
  * type than creatures, "or" for "and/or", a graveyard that is "a", "your", "an opponent's" or "all", or words that go on after "graveyards".
  */

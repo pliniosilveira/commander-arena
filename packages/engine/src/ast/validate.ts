@@ -1020,7 +1020,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       const targets = declareTargets(a.targets, `${path}.targets`, out, false, false, true);
       // D-931: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
       checkCrossZoneSlots(
-        a.targets,
+        a,
         a.effect,
         a.modes !== undefined || a.chooseModes !== undefined,
         path,

@@ -122,6 +122,59 @@ describe('the cards are valid', () => {
     );
   });
 
+  test('"other" is read only where the source is on the battlefield as the targets are chosen (CR 115.1, 115.2)', () => {
+    const card = syntheticCard(BANISHER);
+    const face = card.faces[0];
+    if (face === undefined) throw new Error('no face');
+    const trigger = face.abilities.find((a) => a.kind === 'triggered');
+    if (trigger?.kind !== 'triggered') throw new Error('no trigger');
+    const on = (t: unknown, extra: object = {}) =>
+      ({
+        ...card,
+        faces: [{ ...face, abilities: [{ ...trigger, trigger: t, ...extra }] }],
+        // biome-ignore lint/suspicious/noExplicitAny: a deliberately malformed card for the validator
+      }) as any;
+    const refused = expect.stringContaining('says "other"');
+    // The source is a card of a graveyard (or in exile) when its look-back trigger chooses targets: it would be a legal target the text leaves out.
+    for (const t of [
+      { kind: 'dies', what: { kind: 'this' } },
+      { kind: 'leavesBattlefield', what: { kind: 'this' } },
+      { kind: 'cycled' },
+    ]) {
+      expect(
+        validateCard(on(t)).map((i) => i.message),
+        t.kind,
+      ).toContainEqual(refused);
+    }
+    // An ability that works from the graveyard has its source there.
+    expect(
+      validateCard(on({ kind: 'upkeep', whose: 'you' }, { functionsIn: 'graveyard' })).map(
+        (i) => i.message,
+      ),
+    ).toContainEqual(refused);
+    // The source is on the battlefield: entering, attacking, a step.
+    for (const t of [
+      { kind: 'entersBattlefield', what: { kind: 'this' } },
+      { kind: 'attacks', what: { kind: 'this' } },
+      { kind: 'upkeep', whose: 'you' },
+      { kind: 'endStep', whose: 'each' },
+      { kind: 'step', step: 'draw', whose: 'you' },
+    ]) {
+      expect(
+        validateCard(on(t)).map((i) => i.message),
+        t.kind,
+      ).not.toContainEqual(refused);
+    }
+    // Without "other" the source may be a target, so any trigger is read.
+    const slot = trigger.targets?.[0];
+    if (slot?.what.kind !== 'objectOrGraveyardCard') throw new Error('no cross-zone slot');
+    const plain = on(
+      { kind: 'dies', what: { kind: 'this' } },
+      { targets: [{ ...slot, what: { ...slot.what, filter: { types: ['creature'] } } }] },
+    );
+    expect(validateCard(plain).map((i) => i.message)).not.toContainEqual(refused);
+  });
+
   test('the card half is a card of any graveyard, the permanent half is on the battlefield', () => {
     const card = syntheticCard(BANISHER);
     const face = card.faces[0];

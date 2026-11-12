@@ -287,3 +287,70 @@ describe('the parsed card played through applyAction', () => {
     expect(d.specs[0]).toMatchObject({ min: 0, max: 3 });
   });
 });
+
+describe('"other" when the source can be in a graveyard (CR 115.1, 115.2) (SYNTHETIC)', () => {
+  const slot = (head: string) =>
+    `${head}, exile up to two other target creatures from the battlefield and/or creature cards from graveyards.\n${LEAVES}`;
+  const card = (head: string, name: string) =>
+    parseOnly(
+      syntheticCard({
+        name,
+        typeLine: 'Creature — Angel',
+        manaCost: '{4}{W}',
+        power: '2',
+        toughness: '2',
+        colors: ['W'],
+        oracleText: slot(head).replaceAll('~', name),
+      }),
+    );
+
+  test.each(['When ~ dies', 'When ~ leaves the battlefield'])(
+    '"%s" with "other" is not supported: the source is in a graveyard then and would be one of the targets',
+    (head) => {
+      const imported = card(head, 'SYNTHETIC Parsed Leaver');
+      expect(imported.support.status).toBe('unsupported');
+      expect(imported.support.reasons.join(' ')).toContain('says "other"');
+    },
+  );
+
+  test.each(['When ~ dies', 'When ~ leaves the battlefield'])(
+    '"%s" without "other" is supported: the source may be one of the targets',
+    (head) => {
+      const name = 'SYNTHETIC Parsed Leaver';
+      const imported = parseOnly(
+        syntheticCard({
+          name,
+          typeLine: 'Creature — Angel',
+          manaCost: '{4}{W}',
+          power: '2',
+          toughness: '2',
+          colors: ['W'],
+          oracleText:
+            `${head}, exile up to two target creatures from the battlefield and/or creature cards from graveyards.\n${LEAVES}`.replaceAll(
+              '~',
+              name,
+            ),
+        }),
+      );
+      expect(imported.support.status).toBe('supported');
+    },
+  );
+
+  test.each([
+    'When ~ enters',
+    'Whenever ~ attacks',
+    'At the beginning of your upkeep',
+    'At the beginning of your end step',
+  ])('"%s" with "other" is still supported: the source is on the battlefield then', (head) => {
+    expect(card(head, 'SYNTHETIC Parsed Stayer').support.status).toBe('supported');
+  });
+
+  test('the smallest count is two: "up to one other target creatures ..." is not read', () => {
+    expect(
+      dropped(
+        'When ~ enters, exile up to one other target creatures from the battlefield and/or creature cards from graveyards.',
+        'creature',
+      ).reason,
+    ).toBeDefined();
+  });
+});
