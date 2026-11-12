@@ -772,11 +772,7 @@ export const EFFECT_MANIFEST = defineRule<Clauses>({
   family: 'effect',
   leading: ['manifest'],
   cites: ['CR 701.40a (Manifest)', 'CR 701.40b (Manifest)'],
-  examples: [
-    'manifest the top card of your library',
-    'Manifest the top card of your library',
-    'manifest the top card of your library and you gain 2 life',
-  ],
+  examples: ['manifest the top card of your library', 'Manifest the top card of your library'],
   rejects: [
     'manifests the top card of your library',
     'manifest the top card',

@@ -555,6 +555,7 @@ describe('unmatched abilities', () => {
       'effect.discard-hand',
       'effect.discard',
       'effect.life',
+      'effect.manifest',
       'effect.mill',
       'effect.shuffle',
       'effect.sacrifice',
