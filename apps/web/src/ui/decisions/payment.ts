@@ -1,5 +1,6 @@
 /** Manual mana payment (CR 601.2g-h): the order in which the player taps sources. */
 import type { ManaColor, ObjectId, ObjectView, PayManaDecision } from '@commander-arena/engine';
+import { turnUpPayPrompt } from '../../game/face-down-text';
 import { SPECIAL_CANCEL, specialPayPrompt } from '../../game/later-text';
 import { ATTACK_TAX_CANCEL, attackTaxPrompt } from './attack-tax';
 import { BLOCK_TAX_CANCEL, blockTaxPrompt } from './block-tax';
@@ -198,6 +199,10 @@ export function payBarPrompt(d: PayManaDecision, index: Index): string {
   if (d.purpose === 'attackTax') return attackTaxPrompt(d);
   if (d.purpose === 'blockTax') return blockTaxPrompt(d);
   // Suspend and Foretell (D-128): a special action, its cost paid before the card is exiled.
+  // Turning a face-down permanent face up (D-310, CR 701.40b): its cost, paid before it is turned.
+  if (d.purpose === 'turnFaceUp') {
+    return `${turnUpPayPrompt(d.totalCost, nameOf(index, d.source))}: tap your mana sources.`;
+  }
   if (d.purpose === 'suspend' || d.purpose === 'foretell') {
     const prompt = specialPayPrompt(
       d.purpose,
@@ -249,7 +254,9 @@ export function payCancelLabel(d: Pick<PayManaDecision, 'purpose' | 'upkeep'>): 
   // The cost of blocking (CR 509.1d, D-149): `cancel` asks for the blockers again, nothing is countered.
   if (d.purpose === 'blockTax') return BLOCK_TAX_CANCEL;
   // Suspend and Foretell (D-128): nothing has happened yet; priority comes back.
-  if (d.purpose === 'suspend' || d.purpose === 'foretell') return SPECIAL_CANCEL;
+  if (d.purpose === 'suspend' || d.purpose === 'foretell' || d.purpose === 'turnFaceUp') {
+    return SPECIAL_CANCEL;
+  }
   // Echo and Cumulative upkeep (D-127): not paying sacrifices the permanent.
   if (d.purpose === 'unlessPays' && d.upkeep !== undefined) return SACRIFICE_IT;
   if (d.purpose === 'unlessPays' || d.purpose === 'mayPay') return "Don't pay";

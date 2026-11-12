@@ -1199,6 +1199,18 @@ export type Effect =
    */
   | { readonly kind: 'mill'; readonly player: PlayerSelector; readonly count: Amount }
   /**
+   * CR 701.40 (Manifest, D-309): the player `player` names manifests the top card of a library: it is put onto the battlefield face down as a 2/2 creature
+   * (CR 701.40a, 708.2a) under that player's control, and stays one until it is turned face up (the special action `turnFaceUp`, CR 701.40b). The library is
+   * the same player's, or `fromLibraryOf`'s when that is given ("the top card of target opponent's library"). "Its controller manifests the top card of their
+   * library" is `player: controllerOf` the exiled object (last-known information). An empty library manifests nothing (CR 701.40f: the card stays where it
+   * was; milling and manifesting from an empty library lose nothing). Cloak (CR 701.58) and manifest dread (CR 701.62) are other effects, not built.
+   */
+  | {
+      readonly kind: 'manifest';
+      readonly player: PlayerSelector;
+      readonly fromLibraryOf?: PlayerSelector;
+    }
+  /**
    * CR 701.8 (Destroy). `cantBeRegenerated` is "It can't be regenerated" (CR 701.19c, D-120): the
    * regeneration shields of the permanents it destroys are not applied (they stay until they end).
    */

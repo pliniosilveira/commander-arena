@@ -52,6 +52,7 @@ import {
   answerDamage,
 } from './rules/combat-flow';
 import { answerCopyTargets } from './rules/copy-spell-answer';
+import { answerTurnFaceUpPayment, beginTurnFaceUp } from './rules/face-down-actions';
 import {
   afterResolution,
   answerMiracleDraw,
@@ -174,7 +175,7 @@ function isOffered(options: readonly PriorityOption[], action: Action): boolean 
         (o.face ?? 0) === (action.face ?? 0)
       );
     }
-    if (o.kind === 'suspend' || o.kind === 'foretell') {
+    if (o.kind === 'suspend' || o.kind === 'foretell' || o.kind === 'turnFaceUp') {
       return action.kind === o.kind && action.object === o.object;
     }
     if (o.kind === 'activate') {
@@ -718,6 +719,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
         case 'foretell':
           // CR 116.2f, 116.2h (D-128): a special action; it asks for its payment, then exiles the card.
           return beginSpecialAction(state, seat, action.kind, action.object);
+        case 'turnFaceUp':
+          // CR 116.2b, 701.40b (D-310): a special action; it asks for its payment, then turns the permanent face up.
+          return beginTurnFaceUp(state, seat, action.object);
         case 'activate':
           return beginActivate(state, seat, action.object, action.abilityIndex);
         case 'activateAbility': {
@@ -800,6 +804,13 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           return fail('Pay the cost or cancel');
         }
         return answerSpecialPayment(state, seat, { ...d, purpose: d.purpose }, action);
+      }
+      // CR 701.40b (D-310): the cost of turning a face-down permanent face up.
+      if (d.purpose === 'turnFaceUp') {
+        if (action.kind !== 'payAuto' && action.kind !== 'payManual' && action.kind !== 'cancel') {
+          return fail('Pay the cost or cancel');
+        }
+        return answerTurnFaceUpPayment(state, seat, d, action);
       }
       // CR 702.21a: the mana of a Ward cost is paid while the ability resolves, not in a cast; there
       // `cancel` means "do not pay", which counters the spell or ability.

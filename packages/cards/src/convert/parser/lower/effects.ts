@@ -754,6 +754,23 @@ function playerVerb(
 }
 
 /**
+ * "Manifest the top card of your library." and "Its controller manifests the top card of their library." (CR 701.40a, D-314): the player the clause names puts the top card of
+ * their library onto the battlefield face down.
+ */
+const MANIFEST: Lowering<IrClause, Effects> = {
+  head: 'manifest',
+  id: 'lower.manifest',
+  needs: ['effect:manifest'],
+  lower(clause, ctx) {
+    const who = arg(clause, 'player');
+    if (who?.kind !== 'noun') return failure(clause);
+    const player = playerSelectorOf(who, ctx);
+    if (!player.ok) return player;
+    return { ok: true, value: [{ kind: 'manifest', player: player.value }], rule: clause.rule };
+  },
+};
+
+/**
  * "You draw a card at the beginning of the next turn's upkeep." (CR 603.7, stage P26, D-128): the engine's
  * `delayedTrigger` at the upkeep of each turn (`whose: 'each'`, the next one to begin, whoever's it is), whose effect
  * is the draw by the controller (the grammar reads "you" only). The amount is a fixed number of at least 1, as
@@ -1252,6 +1269,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   playerVerb('gainEnergy'),
   playerVerb('loseLife'),
   playerVerb('mill'),
+  MANIFEST,
   playerVerb('shuffle'),
   BECOME_MONARCH,
   DELAYED_DRAW,

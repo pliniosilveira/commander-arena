@@ -127,6 +127,15 @@ export interface GameObject {
    */
   readonly ringBearer?: SeatId;
   /**
+   * Present on a face-down permanent (CR 708.2, 701.40a, D-308): it has only the characteristics the rules give a face-down permanent (a 2/2 creature with no name, no
+   * subtypes, no mana cost, no text: layer 1b, `rules/copiable.ts`) until it is turned face up (CR 708.8). `by` is what made it face down (`'manifest'`; the later kinds,
+   * Morph, Megamorph, Disguise, cloak, would be other values) and `n` its label number, the smallest positive integer no other face-down permanent has, which it keeps
+   * for as long as it is face down so that a player can tell their face-down permanents apart (CR 708.6). It is a designation, not a copiable value, and the object's own:
+   * a new object after any zone change (CR 400.7, 708.9) is face up. Read only through `rules/face-down.ts`, never as the field (`test/face-down-reads.test.ts`). Absent
+   * for every face-up object.
+   */
+  readonly faceDown?: { readonly by: FaceDownBy; readonly n: number };
+  /**
    * The pairing designation (CR 702.95b, D-285): present on a creature that is paired with another, naming the other (`with`) and the player who formed the
    * pair (`by`, the controller of the soulbond ability: both are under their control). It is on both objects. It is a designation, not a copiable value (a
    * copy or a token that copies a paired creature is unpaired) and a new object after any zone change (CR 400.7, 702.95e) has none. It ends when either
@@ -238,6 +247,9 @@ export interface GameObject {
    */
   readonly riotHaste?: true;
 }
+
+/** What made a permanent face down (D-308): only `manifest` is built. The face-down proposal's Morph, Megamorph and Disguise, and cloak, would be more values. */
+export type FaceDownBy = 'manifest';
 
 /** The choices made as a permanent entered (D-100). A face asks at most one question, so one field is set. */
 export interface ChosenValues {

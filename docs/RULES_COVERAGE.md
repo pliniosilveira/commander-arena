@@ -543,3 +543,28 @@ Rule numbers and titles are the ones the proposal `docs/design/meld.md` read fro
 | 601.2h, 707.10, 608.2c, 614.1a | "If five or more mana was spent to cast that spell, ... instead" | Implemented (issue 25, D-301, D-302) | `conditional { manaSpentAtLeast N }` with the else branch in the body of a cast trigger; the trigger keeps the spell (`readsTriggerSubject`). A copy of a spell is not cast, so it triggers nothing and has no mana spent. `test/convert-grammar-engine-niv-text.test.ts`. |
 | 700.3, 700.3a, 700.3b, 700.3c, 700.3d | Piles: "An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard" | Implemented (D-303) | `Effect` `revealAndSeparate`, `rules/pile-separate.ts`, `rules/pile-answer.ts`: each revealed card is in exactly one pile (the separator chooses the cards of pile 1, a `chooseCards` decision of purpose `separate`; the rest is pile 2), either pile may be empty, the cards stay in the library until the chooser (`chooseOption` of purpose `pile`) has picked a pile and the two piles move (the pile is not an object: only the cards move). "An opponent" is the first opponent in turn order still in the game (the CR gives that choice to nobody). `test/scenario-xx-piles.test.ts`. |
 | 404.3 | Cards put into a graveyard together | Not implemented for any effect | The owner may arrange them in any order; the engine puts them in the order the effect moves them (for piles: the library order, top card first). |
+| 712.16 | Turning a melded permanent face down | Not implemented | No effect turns a permanent face down except manifest (a melded permanent is never manifested: a manifest takes a card from a library); no way to turn a permanent face down by an effect (`docs/proposals/face-down.md`). |
+
+## Added by the manifest slice (provisional D-308 to D-316)
+
+Rule numbers and titles were read with `pnpm rule` from the CR copy of the owner's private rules repository (CR 701.40, 708, 613.2b, 116.2b, 701.58, 701.62, 702.37, 903.9). A newer CR version may move them: check with `pnpm rule` before relying on a number.
+
+| CR | Title | Status | Notes |
+| --- | --- | --- | --- |
+| 701.40a, 701.40e | Manifest | Implemented (D-309) | `Effect` `manifest { player, fromLibraryOf? }` (`rules/manifest.ts`): the top card of a library onto the battlefield face down, one at a time in turn order. `test/scenario-xx-manifest.test.ts`. |
+| 701.40b, 116.2b | Turning a manifested permanent face up | Implemented (D-310) | The special action `turnFaceUp` (`rules/face-down-actions.ts`): a creature card with a mana cost, its cost paid through a `payMana` decision, any time its controller has priority, no stack. `test/scenario-xx-manifest-turn-up.test.ts`. |
+| 701.40f | A prohibition on the face-down object entering | Not applicable | The engine has no effect that stops a permanent entering the battlefield; an empty library manifests nothing. |
+| 701.40g | A manifested instant or sorcery that would turn face up | Not applicable | Nothing but the special action turns a permanent face up, and it is refused for a card that is not a creature card. |
+| 701.40c, 701.40d, 702.37e, 702.168d | A manifested card with morph or disguise | Not implemented | Morph, Megamorph and Disguise are not built (`docs/proposals/face-down.md`), so a manifested card with one has only the manifest way of being turned up. |
+| 708.2, 708.2a, 613.2b | Face-down characteristics, layer 1b | Implemented (D-308) | `GameObject.faceDown`, `rules/face-down.ts` `FACE_DOWN_VALUES` applied in `copiableValues` after the copy effects. |
+| 708.2b | A face-down permanent can't be turned face down | Not applicable | No effect of the engine turns a permanent face down. |
+| 708.3 | Turned face down before it enters | Implemented (D-309) | `MoveRequest.entersFaceDown`: no enters replacement, counter, choice or trigger of the card applies; other permanents see a creature enter. |
+| 708.5, 708.6 | Only the controller may look; telling them apart | Implemented (D-312, D-308) | `getView` masks the card and gives the controller `hiddenFace`, `turnFaceUpCost`, `ifFaceUp`; the labels "Face-down creature N". `test/face-down-hidden.test.ts`. |
+| 708.8 | Turned face up | Implemented (D-310) | Copiable values revert, applied effects stay, no enters ability, same object. |
+| 708.9 | Revealed when it leaves the battlefield | Implemented (D-308, D-312) | The new object is face up and the events name its card. Not built: the reveal at the end of the game and when a player leaves (the web log does not list the cards then). |
+| 708.10, 707.2 | Copies of and by a face-down permanent | Implemented (D-308) | Layer 1b after the copy effects. `test/scenario-xx-manifest-rules.test.ts`. |
+| 708.11 | "As this is turned face up" abilities | Not applicable | A manifested card has none the engine reads. |
+| 708.12 | Revealing a face-down permanent | Not applicable | No effect that reveals one is built. |
+| 903.3, 903.9 | A manifested commander | Implemented with a limit (D-311) | The commander status follows the card; the view hides it from the other seat; the commander damage table is public and keyed by the card (`docs/ROADMAP.md`). |
+| 702.26b, 702.26d, 708.5 | A face-down permanent that phases out | Implemented (D-311) | It stays face down and hidden, and can not be turned up while phased out. |
+| 701.58, 701.62 | Cloak, manifest dread | Not implemented | Other effects; `faceDown.by` is the switch a cloak would extend. |

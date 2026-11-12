@@ -1840,3 +1840,57 @@ Numbers are references; entries are never deleted. D-118 and D-119 are cited as 
 - Decision: the casual agent (the others delegate) separates by worth into two similar piles and takes the better pile into its own hand, or gives the worse one when it chooses for the controller. The web shows the separation in the card picker with a preview, the pile choice in `PilesDialog` with both piles' cards, and log lines "X separates the revealed cards into two piles: ..." and "X chooses pile N (...)". A `piles` soak style plays whole games between every agent kind. `ENGINE_VERSION` 82 (new derive digests), `PARSER_VERSION` 89.
 - Alternatives: a search over piles for the Heuristic agent (not worth it for the first version); a pile panel in the dock (the cards do not fit).
 - Consequences: the AI does not read what the other player needs; recorded in the ROADMAP.
+
+## D-308: Face-down permanents and layer 1b (2026-11-12)
+- Context: manifest (CR 701.40) needs a permanent whose card is hidden and whose characteristics are a 2/2 creature with no name. The owner approved the subsystem in chat on 2026-11-12 ("Manifest is needed. I'll use other cards with this ability"); the design is `docs/design/manifest.md`, covering steps 1, 3, 4, 5 and 6 of the approved `docs/proposals/face-down.md`.
+- Decision: `GameObject.faceDown { by, n }` (a designation, not copiable, a new object after any zone change). `copiableValues` applies the face-down values after copy effects (layer 1b, CR 613.2b, 708.2, 708.10). `n` is the smallest free label number and stays with the permanent (CR 708.6). `rules/face-down.ts` is the only reader, guarded by `face-down-reads.test.ts`.
+- Alternatives: a separate token-like object (rejected: it breaks counters and last-known information, CR 708.2); hiding only in the web (rejected: the AI and replays share the view).
+- Consequences: every reader of characteristics is blind to the card for free. Only code that reads the card behind the object can leak, and a two-world audit watches it.
+
+## D-309: The manifest effect and entering face down (2026-11-12)
+- Context: "manifest the top card of a library" must put a card onto the battlefield face down under the manifesting player's control.
+- Decision: `Effect` `manifest { player, fromLibraryOf? }`. `MoveRequest.entersFaceDown` skips the card's enters rules (CR 708.3). `zoneChanged.card` is null and `manifested` carries no card. An empty library does nothing. "Its controller" reads last-known information.
+- Alternatives: a new decision kind (not needed); reading the face on entry (breaks CR 708.3).
+- Consequences: other permanents still see a creature enter. Cloak and manifest dread would reuse the same entry; they are not built.
+
+## D-310: The special action `turnFaceUp` (2026-11-12)
+- Context: CR 701.40b (a manifested creature card can be turned face up for its mana cost) and 116.2b (special actions).
+- Decision: a priority option and action, paid like Suspend and Foretell through a `payMana` decision of purpose `turnFaceUp`. It is offered only to the controller, for a creature card with a mana cost they can pay; an {X} counts as 0. It is the same object, with no stack and no enters trigger, and it emits `turnedFaceUp`.
+- Alternatives: a new decision kind (rejected, the pay decision already exists); a "when turned face up" trigger kind (not built: nothing manifest-related reads it).
+- Consequences: Morph would add a branch to `turnUpSymbols`. The cost is revealed when the card is turned up, not when the action starts (ROADMAP).
+
+## D-311: Leaving, copies, commanders and phasing of a face-down permanent (2026-11-12)
+- Context: CR 708.9, 708.10, 903.9, 702.26.
+- Decision: leaving is the ordinary zone change, so the new object is face up and the events name the card. A copy of a face-down permanent is a face-up 2/2, and a face-down permanent that becomes a copy keeps the 2/2 until turned up. Face-down permanents keep their status through phasing. A commander stays a commander.
+- Alternatives: none worth recording; each follows the cited rule.
+- Consequences: a manifested commander would show in the public commander-damage table once it deals combat damage: a known leak (ROADMAP).
+
+## D-312: Hidden information of face-down permanents (2026-11-12)
+- Context: the core risk of the subsystem: the opponent must never learn what a face-down card is.
+- Decision: the view masks name, commander status, support and faces for everyone but the controller; `hiddenFace`, `turnFaceUpCost` and `ifFaceUp` are controller-only; `sourceInfo` uses the label; `determinize` deals other controllers' face-down cards again; host notes skip face-down permanents. `face-down-hidden.test.ts` plays the same game twice, with only the hidden cards differing, and the other seat's view and every event must be identical text; every `ObjectView` field and every `GameEvent` kind is classified in a table typed by its keys, so a new one does not compile until it is classified. The soak and `hidden-info.test.ts` audit random games.
+- Alternatives: a search for the card name alone (rejected as weaker).
+- Consequences: object ids of hidden cards appear in events, as they do for draws today.
+
+## D-313: The AI turns face-down creatures up (2026-11-12)
+- Context: agents see only their view and never an opponent's hidden card.
+- Decision: turning up is chosen by the gain in the evaluator's value (`ifFaceUp` against the 2/2), with a margin of 0.5. The casual agent turns up in its own main phase after its spells; the heuristic agent also plays the combat out on its sample after blockers (reason `face-up`).
+- Alternatives: holding mana for a turn-up or turning up in response (not built).
+- Consequences: the AI does not plan around hidden information of the opponent.
+
+## D-314: Parser: the verb "manifest" (2026-11-12)
+- Context: Reality Shift says "Its controller manifests the top card of their library."
+- Decision: `effect.player` reads the actor forms ("its controller / you / target player / each player manifests the top card of their/your library") and `effect.manifest` the imperative; both lower to `manifest`. Manifest dread, cloak, several cards and another player's library by name stay unread.
+- Alternatives: reading "manifest dread" now (no card, a different effect).
+- Consequences: Reality Shift is supported.
+
+## D-315: The web draws a face-down permanent with the Manifest token (2026-11-12)
+- Context: the owner asked that a manifested card show Scryfall's Manifest token image, fetched by the game at run time like every card image.
+- Decision: a card back with the picture from `GET https://api.scryfall.com/cards/tfrf/4` (the lookup was verified on 2026-11-12 from a GitHub runner with the Scryfall lookup workflow, D-294: the token "Manifest" of Fate Reforged Tokens, id e9f896d4-34b4-407d-be7e-bf7a69aaf811), reading `image_uris` at run time and storing nothing; a plain face-down card is the fallback. The preview shows the real card to the controller; a "Turn face up {cost}" menu item and payment prompt; the log never names a hidden card.
+- Alternatives: committing the image (rejected: nothing of the picture is kept in the repository).
+- Consequences: the image needs the network; the game works without it. `apps/web/e2e/manifest.e2e.ts` covers both.
+
+## D-316: SYNTHETIC style and soak for manifest (2026-11-12)
+- Context: every new mechanic gets a deck style that puts it in front of the agents (D-126).
+- Decision: SYNTHETIC cards in `synthetic-manifest.ts` (kept out of the other pools), the `manifest` style, `manifest-games.test.ts` (hidden information checked after every action for both seats, the rules restated from the events, exact replay), the hidden web deck `synthetic-manifest` and the browser test. `ENGINE_VERSION` 83 (new derive digests: the SYNTHETIC pool grew), `PARSER_VERSION` 90.
+- Alternatives: none.
+- Consequences: Reality Shift moves to supported in the golden snapshot.

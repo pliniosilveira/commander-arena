@@ -233,6 +233,21 @@ export function checkInvariants(state: GameState): string[] {
         problems.push(`${id} is a copy of a spell but is not a spell on the stack with no card`);
       }
     }
+    // CR 708.2, 708.6 (D-308): a face-down object is a card on the battlefield (or phased out), and its label is its own among the face-down permanents.
+    if (obj.faceDown !== undefined) {
+      if (obj.zone !== 'battlefield' && obj.zone !== 'phased') {
+        problems.push(`${id} is face down but is in ${obj.zone}`);
+      }
+      if (obj.card === null || obj.token !== null) {
+        problems.push(`${id} is face down but is not a card`);
+      }
+      if (!(obj.faceDown.n >= 1))
+        problems.push(`${id} is face down with the label ${obj.faceDown.n}`);
+      const same = [...state.battlefield, ...(state.phased ?? [])].filter(
+        (other) => other !== id && state.objects[other]?.faceDown?.n === obj.faceDown?.n,
+      );
+      if (same.length > 0) problems.push(`${id} is face down with the label of ${same.join(', ')}`);
+    }
     // A permanent that transformed after entering kicked may show a face without the keyword.
     // A copy of a spell shows the face it copies (D-129).
     const card = printedCard(obj);

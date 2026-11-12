@@ -230,6 +230,26 @@ const shuffleAction: Action = (subject, you, rule) =>
     ({ span }) => actionClause(rule, 'shuffle', { player: subject }, span),
   );
 
+/**
+ * "manifests the top card of their library", "manifest the top card of your library" (CR 701.40a, D-314): the player puts the top card of their own library onto the
+ * battlefield face down as a 2/2 creature. The words are the whole phrase: another library ("of target opponent's library"), several cards and "manifest dread" are other
+ * instructions that the engine does not run through this effect, so they do not read.
+ */
+const manifestAction: Action = (subject, you, rule) =>
+  map(
+    spanned(
+      sequence(
+        verbWord('manifest', you),
+        pattern(
+          you
+            ? /the top card of your library(?![\p{L}\p{N}])/iu
+            : /the top card of their library(?![\p{L}\p{N}])/iu,
+        ),
+      ),
+    ),
+    ({ span }) => actionClause(rule, 'manifest', { player: subject }, span),
+  );
+
 /** "mills two cards", "mill X cards", "mills cards equal to ..." (CR 701.17: the top cards of the library go to the graveyard). */
 const millAction: Action = (subject, you, rule) =>
   map(spanned(cardsAmount(verbWord('mill', you))), ({ value: amount, span }) =>
@@ -361,6 +381,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'CR 121.1 (Drawing a Card)',
     'CR 701.9 (Discard)',
     'CR 701.17 (Mill)',
+    'CR 701.40a (Manifest)',
     'CR 701.21 (Sacrifice)',
     'CR 701.16 (Investigate)',
     'CR 701.24 (Shuffle)',
@@ -377,6 +398,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'each opponent loses 3 life',
     'target player draws two cards and loses 2 life',
     'target player shuffles their library',
+    'its controller manifests the top card of their library',
+    'you manifest the top card of your library',
+    'target player manifests the top card of their library',
+    'each player manifests the top card of their library',
     'you draw two cards, then lose 2 life',
     'each player discards a card',
     'target player discards two cards',
@@ -490,6 +515,16 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'target player mills',
     'target player discards their hand',
     'you may draw a card',
+    'you manifests the top card of your library',
+    'its controller manifest the top card of their library',
+    'its controller manifests the top card of your library',
+    'you manifest the top card of their library',
+    'its controller manifests the top two cards of their library',
+    'its controller manifests dread',
+    "its controller manifests the top card of target opponent's library",
+    'its controller manifests the top card of their library face up',
+    'its controller manifests the top card',
+    'you and target opponent each manifest the top card of your library',
     'target player discards a card at random unless you discard an artifact card',
     'each creature draws a card',
     'target player discards',
@@ -519,6 +554,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         part('effect.player.discard', discardAction),
         part('effect.player.life', lifeAction),
         part('effect.player.mill', millAction),
+        alone('effect.player.manifest', manifestAction),
         part('effect.player.energy', energyAction),
         alone('effect.player.sacrifice', sacrificeAction),
         alone('effect.player.investigate', investigateAction),
@@ -722,6 +758,43 @@ export const EFFECT_MILL = defineRule<Clauses>({
       spanned(cardsAmount(verbWord('mill', true))),
       ({ value: amount, span }): Clauses => [
         makeClause('effect.mill', 'mill', { player: impliedYou('effect.mill', pos), amount }, span),
+      ],
+    )(ctx, pos),
+});
+
+/**
+ * `effect.manifest`: "Manifest the top card of your library." with no subject: you manifest it (CR 701.40a: the card is put onto the battlefield face down as a 2/2 creature with
+ * no name, no subtypes, no mana cost and no text, under your control; a creature card with a mana cost can be turned face up for that cost, CR 701.40b). Only the top card of your
+ * own library: several cards, another player's library and "manifest dread" (CR 701.62) are other instructions and do not read (D-314).
+ */
+export const EFFECT_MANIFEST = defineRule<Clauses>({
+  id: 'effect.manifest',
+  family: 'effect',
+  leading: ['manifest'],
+  cites: ['CR 701.40a (Manifest)', 'CR 701.40b (Manifest)'],
+  examples: ['manifest the top card of your library', 'Manifest the top card of your library'],
+  rejects: [
+    'manifests the top card of your library',
+    'manifest the top card',
+    'manifest the top card of their library',
+    "manifest the top card of target opponent's library",
+    'manifest the top two cards of your library',
+    'manifest dread',
+    'manifest your library',
+    'manifest',
+    'manifest the top card of your libraryy',
+    'cloak the top card of your library',
+  ],
+  parse: (ctx, pos) =>
+    map(
+      spanned(pattern(/[Mm]anifest the top card of your library(?![\p{L}\p{N}])/u)),
+      ({ span }): Clauses => [
+        makeClause(
+          'effect.manifest',
+          'manifest',
+          { player: impliedYou('effect.manifest', pos) },
+          span,
+        ),
       ],
     )(ctx, pos),
 });

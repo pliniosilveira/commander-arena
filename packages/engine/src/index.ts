@@ -44,6 +44,7 @@ export { createRng, nextInt, nextUint32, shuffle } from './rng/index';
 export type * from './rng/types';
 export { defaultDivision } from './rules/combat-flow';
 export type { ControlEnd } from './rules/control';
+export { faceDownLabel } from './rules/face-down';
 export type { DeckConfig, GameConfig } from './rules/setup';
 export { createGame } from './rules/setup';
 export { sharesLandType } from './rules/share-type';

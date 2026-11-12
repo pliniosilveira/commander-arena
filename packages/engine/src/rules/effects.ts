@@ -59,6 +59,7 @@ import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
 import { loseTheGame } from './lose-game';
 import { manaValueOfCost } from './mana-value';
+import { runManifest } from './manifest';
 import { runMayCast, runPaidReflexive, runReflexive } from './may-effects';
 import { runMeld } from './meld';
 import { successorsOf } from './melded';
@@ -1180,6 +1181,10 @@ function runEffect(
         ...(value > 0 ? { thisWay: { milledValue: value } } : {}),
       };
     }
+
+    case 'manifest':
+      // CR 701.40a (D-309): the top card of a library goes onto the battlefield face down as a 2/2 creature.
+      return runManifest(state, effect, ctx, targets);
 
     case 'gainLife':
     case 'loseLife': {

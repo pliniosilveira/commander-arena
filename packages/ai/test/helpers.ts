@@ -2414,6 +2414,68 @@ export const SOULBOND_LANDS = supported([
   'Island',
 ]);
 
+/**
+ * The cards of manifest and face-down permanents (D-316): the SYNTHETIC cards of `synthetic-manifest.ts`. Used by the 'manifest' style and kept out of every other pool:
+ * manifesting puts a card of a library onto the battlefield face down, and the agents may turn it face up, which the seeded games of the other styles do not reach.
+ */
+export const MANIFEST_NAMES = [
+  'SYNTHETIC Manifest Brute',
+  'SYNTHETIC Manifest Flier',
+  'SYNTHETIC Manifest Variable',
+  'SYNTHETIC Manifest Laggard',
+  'SYNTHETIC Manifest Lord',
+  'SYNTHETIC Manifest Costless',
+  'SYNTHETIC Manifest Watcher',
+  'SYNTHETIC Manifest Maker',
+  'SYNTHETIC Manifest Bolt',
+  'SYNTHETIC Manifest Shift',
+  'SYNTHETIC Manifest Self',
+  'SYNTHETIC Manifest Theft',
+  'SYNTHETIC Manifest Everyone',
+] as const;
+
+/**
+ * The manifest style: the cards that manifest (a sorcery, one for each player, the top card of an opponent's library, a creature whose enters trigger manifests, the removal of
+ * Reality Shift's shape), the creature cards a manifested card can be turned up as (a vanilla one, a flier, an {X} cost, one that enters tapped with a counter, a lord, one with
+ * no mana cost), an instant that is not a creature card, a watcher of creatures entering, bodies and removal (also exile, damage and bounce, which reveal a face-down creature).
+ */
+export const MANIFEST_SPELLS = [
+  ...supported(['SYNTHETIC Manifest Self']),
+  ...supported(['SYNTHETIC Manifest Self']),
+  ...supported(['SYNTHETIC Manifest Everyone']),
+  ...supported(['SYNTHETIC Manifest Theft']),
+  ...supported(['SYNTHETIC Manifest Maker']),
+  ...supported(['SYNTHETIC Manifest Maker']),
+  ...supported(['SYNTHETIC Manifest Shift']),
+  ...supported(['SYNTHETIC Manifest Shift']),
+  ...supported(['SYNTHETIC Manifest Brute']),
+  ...supported(['SYNTHETIC Manifest Brute']),
+  ...supported(['SYNTHETIC Manifest Flier']),
+  ...supported(['SYNTHETIC Manifest Variable']),
+  ...supported(['SYNTHETIC Manifest Laggard']),
+  ...supported(['SYNTHETIC Manifest Lord']),
+  ...supported(['SYNTHETIC Manifest Costless']),
+  ...supported(['SYNTHETIC Manifest Watcher']),
+  ...supported(['SYNTHETIC Manifest Bolt']),
+  ...supported(['SYNTHETIC Manifest Bolt']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Grizzly Bears', 'Serra Angel']),
+  ...supported(['Lightning Bolt', 'Murder', 'Unsummon']),
+];
+
+/** Every color, so the manifested cards of every cost can be turned up. */
+export const MANIFEST_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Island',
+  'Island',
+  'Swamp',
+  'Mountain',
+  'Mountain',
+]);
+
 /** The Saga three times, the Ring's rite five times (the later levels of the Ring need many temptations) and its other cards once, with bodies to carry the designation, a Wall to block it and removal that also takes the designation away. */
 export const RING_SPELLS = [
   ...supported(['SYNTHETIC There and Back Again']),
@@ -2693,6 +2755,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(SOULBOND_NAMES as readonly string[]).includes(card.name))
   // The piles slice has its own style: its cards ask the other player to separate revealed cards into two piles, then ask which pile goes where.
   .filter((card) => !(PILES_NAMES as readonly string[]).includes(card.name))
+  // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
+  .filter((card) => !(MANIFEST_NAMES as readonly string[]).includes(card.name))
   // The Vraska program has its own style: its cards ask other players questions in the middle of a resolution, and a payment of energy.
   .filter((card) => !(VRASKA_NAMES as readonly string[]).includes(card.name))
   // The Vraska EDHREC program has its own style: its cards ask other players questions in the middle of a resolution and change token creation and triggers.
@@ -2870,6 +2934,7 @@ export type DeckStyle =
   | 'hofri'
   | 'soulbond'
   | 'piles'
+  | 'manifest'
   | 'combat';
 
 /** The spell slots of a style. A style whose pool is empty falls back to the old spell mix. */
@@ -2878,6 +2943,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'hofri' && HOFRI_SPELLS.length > 0) return HOFRI_SPELLS;
   if (style === 'soulbond' && SOULBOND_SPELLS.length > 0) return SOULBOND_SPELLS;
   if (style === 'piles' && PILES_SPELLS.length > 0) return PILES_SPELLS;
+  if (style === 'manifest' && MANIFEST_SPELLS.length > 0) return MANIFEST_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
   if (style === 'edhrec') return EDHREC_SPELLS;
   // Only the creatures with a coverage keyword, so every deck of the style draws them (see COVERAGE_KEYWORDS).
@@ -3050,6 +3116,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'hofri' && BASIC_LANDS.length > 0) return HOFRI_LANDS;
   if (style === 'soulbond' && BASIC_LANDS.length > 0) return SOULBOND_LANDS;
   if (style === 'piles' && BASIC_LANDS.length > 0) return PILES_LANDS;
+  if (style === 'manifest' && BASIC_LANDS.length > 0) return MANIFEST_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
 }
 
@@ -3462,6 +3529,13 @@ export const PILES_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['piles', 'piles'],
   ['piles', 'spells'],
   ['spells', 'piles'],
+];
+
+/** Style pairs of the manifest soak test (D-316): a mirror match and both mixed ways. */
+export const MANIFEST_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['manifest', 'manifest'],
+  ['manifest', 'spells'],
+  ['spells', 'manifest'],
 ];
 
 /** Style pairs of the Hofri soak test (D-229 to D-235): a mirror match and both mixed ways. */

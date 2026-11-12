@@ -54,6 +54,7 @@ export function describeAction(state: GameState, action: Action): string {
       return `castSpell ${named(action.object)}${action.alternative ? ` (${action.alternative})` : ''}${action.face ? ` (face ${action.face})` : ''}`;
     case 'suspend':
     case 'foretell':
+    case 'turnFaceUp':
       return `${action.kind} ${named(action.object)}`;
     case 'activate':
       return `activate ${named(action.object)}#${action.abilityIndex}`;

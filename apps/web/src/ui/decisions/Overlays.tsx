@@ -11,6 +11,7 @@ import {
   type PendingDecision,
 } from '@commander-arena/engine';
 import type { ReactNode } from 'react';
+import { turnUpPayDetail } from '../../game/face-down-text';
 import { specialPayDetail } from '../../game/later-text';
 import { ManaCost } from '../mana';
 import { ArrangePanel } from './ArrangePanel';
@@ -298,6 +299,11 @@ export function DockPanel(props: OverlayProps): ReactNode {
           {d.purpose === 'blockTax' ? (
             <p className="dec-sub dec-left" data-block-tax>
               {blockTaxDetail(d, index)}
+            </p>
+          ) : null}
+          {d.purpose === 'turnFaceUp' ? (
+            <p className="dec-sub dec-left" data-turn-up-pay>
+              {turnUpPayDetail(nameOf(index, d.source))}
             </p>
           ) : null}
           {d.purpose === 'suspend' || d.purpose === 'foretell' ? (

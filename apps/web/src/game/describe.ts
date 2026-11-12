@@ -13,6 +13,7 @@ import type {
   SeatId,
   StepId,
 } from '@commander-arena/engine';
+import { faceDownLabel } from '@commander-arena/engine';
 import { alternativeLogWords, isNamedAlternative } from './alt-cost';
 import { findEffect } from './artifacts-text';
 import { optionText } from './chosen';
@@ -29,6 +30,7 @@ import {
 import { castNowAnswerLine, foretoldLine, isForetellMove } from './describe-later';
 import { mayEffectLine, unlessAnswerLine, unlessCancelLine } from './describe-unless';
 import { counteredByDeclining, unlessPayment, unlessQuestion } from './describe-ward';
+import { manifestedLine, turnedUpLine } from './face-down-text';
 import { riotAnswerText } from './keywords-text';
 import { timeCounters } from './later-text';
 import { modeText } from './mode-text';
@@ -108,6 +110,9 @@ function nameIn(state: GameState, id: ObjectId): string | null {
     return lastKnown === undefined || lastKnown === '' ? null : lastKnown;
   }
   if (obj.token !== null) return obj.token.characteristics.name;
+  // CR 708.2, 708.5 (D-312): a face-down permanent has no name, and the log is read by both players: it is "Face-down creature N", never its card.
+  const down = faceDownLabel(obj);
+  if (down !== null) return down;
   // An ability on the stack has no card: it is named after the object it belongs to.
   if (obj.stack?.kind === 'ability') {
     // CR 725.2, 701.54c (D-127, D-196): the abilities of the monarch and of the Ring have no source; they are "The monarch" and "The Ring".
@@ -282,6 +287,14 @@ export function describeEvent(
       }
       // A foretell moves the card face down: the `foretold` line says it, and this one would name it (D-128).
       if (isForetellMove(after, event)) return null;
+      // CR 701.40a, 708.3 (D-309): a card that entered the battlefield face down is hidden: the `manifested` line says it and names no card.
+      if (
+        event.toZone === 'battlefield' &&
+        event.card === null &&
+        after.objects[event.to]?.faceDown !== undefined
+      ) {
+        return null;
+      }
       // CR 701.42a, 712.14c (D-277): the two cards that were melded enter as one permanent; the `melded` line says it.
       if (
         event.toZone === 'battlefield' &&
@@ -1413,6 +1426,36 @@ export function describeEvent(
         null,
         [event.object, event.copied],
         'CR 707.9',
+      );
+    case 'manifested': {
+      // CR 701.40a (D-309, D-315): the top card of a library was put onto the battlefield face down; no card is named (CR 708.5).
+      const mine = event.seat === viewer;
+      const library =
+        event.from === viewer
+          ? 'your library'
+          : event.from === event.seat
+            ? 'their library'
+            : "the opponent's library";
+      return line(
+        'major',
+        manifestedLine(who(event.seat) as 'You' | 'Opponent', mine, library),
+        event.seat,
+        [event.object],
+        'CR 701.40a',
+      );
+    }
+    case 'turnedFaceUp':
+      // CR 116.2b, 701.40b, 708.8 (D-310, D-315): a special action; the card is public from now on, so it is named.
+      return line(
+        'major',
+        turnedUpLine(
+          who(event.seat) as 'You' | 'Opponent',
+          event.seat === viewer,
+          name(event.object),
+        ),
+        event.seat,
+        [event.object],
+        'CR 701.40b',
       );
     case 'melded':
       // CR 701.42a, 712.14c (D-277): two cards were exiled and became one melded permanent.

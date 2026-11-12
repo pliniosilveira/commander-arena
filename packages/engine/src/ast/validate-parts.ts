@@ -2808,6 +2808,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       checkAmount(e.count, `${path}.count`, scope, out);
       break;
+    case 'manifest':
+      // CR 701.40a (D-309): each player the selector names manifests the top card of a library, theirs or `fromLibraryOf`'s.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.fromLibraryOf !== undefined) {
+        checkPlayerSelector(e.fromLibraryOf, `${path}.fromLibraryOf`, scope, out);
+      }
+      break;
     case 'sacrifice':
       checkSacrificeSelector(e.objects, `${path}.objects`, scope, out);
       if (e.player !== undefined) {

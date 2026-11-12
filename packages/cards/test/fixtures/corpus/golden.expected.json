@@ -1,5 +1,5 @@
 {
-  "parserVersion": 89,
+  "parserVersion": 90,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -2115,19 +2115,10 @@
     "70dc830e-d05b-4fc7-88dd-879e140b3fbf": {
       "name": "Reality Shift",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Exile target creature. Its controller manifests the top card of their library.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.player"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "14257b24"
+      "ast": "2d9cd11f"
     },
     "71355b51-e70e-47b0-8460-933af3567141": {
       "name": "Craterclaw Colossus",
@@ -4796,7 +4787,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 213,
+      "supported": 214,
       "total": 245
     }
   }

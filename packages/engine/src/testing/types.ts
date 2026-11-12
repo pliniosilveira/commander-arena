@@ -114,6 +114,8 @@ export interface PermanentOptions extends PlaceOptions {
    */
   readonly face?: number;
   readonly tapped?: boolean;
+  /** The permanent is face down, manifested (CR 701.40a, 708.2a, D-308): a 2/2 creature with no name until it is turned face up. Labelled in the order placed. */
+  readonly faceDown?: true;
   /** Damage marked on it (CR 120.3). */
   readonly damage?: number;
   /** Counters, for example { '+1/+1': 2 }. */
@@ -294,6 +296,8 @@ export interface SpecialOptions {
 export interface TryVerbs {
   suspend(card: CardRef): TryResult;
   foretell(card: CardRef): TryResult;
+  /** Turn a face-down permanent face up (D-310), any permanent on the battlefield the seat names. */
+  turnFaceUp(card: CardRef): TryResult;
   playLand(card: CardRef, options?: PlayLandOptions): TryResult;
   cast(card: CardRef, options?: Pick<CastOptions, 'alternative' | 'face'>): TryResult;
   tapForMana(card: CardRef, options?: TapOptions): TryResult;
@@ -421,6 +425,8 @@ export interface Actor {
   suspend(card: CardRef, options?: SpecialOptions): CastHandle;
   /** Foretell a card in the player's hand (CR 702.143a, 116.2h, D-128): the special action, paid as `suspend`. */
   foretell(card: CardRef, options?: SpecialOptions): CastHandle;
+  /** Turn a face-down permanent face up (CR 116.2b, 701.40b, D-310): the special action, paid as `suspend`. */
+  turnFaceUp(card: CardRef, options?: SpecialOptions): CastHandle;
   pass(): Actor;
   concede(): Actor;
   /** Mulligan decisions (CR 103.5). */
@@ -508,6 +514,7 @@ export type ActionSpec =
   | { readonly activate: CardRef; readonly ability?: number }
   | { readonly suspend: CardRef }
   | { readonly foretell: CardRef }
+  | { readonly turnFaceUp: CardRef }
   | {
       readonly tap: CardRef;
       readonly color?: ManaColor;

@@ -27,6 +27,7 @@ import {
   deckFromMix,
   LATER_STYLE_PAIRS,
   LIBRARY_STYLE_PAIRS,
+  MANIFEST_STYLE_PAIRS,
   PLAY_RULE_STYLE_PAIRS,
   SEARCH_STYLE_PAIRS,
   smallGameConfig,
@@ -66,14 +67,23 @@ function secretsFor(state: GameState, viewer: SeatId): Secrets {
     const obj = state.objects[id];
     return obj?.foretoldTurn !== undefined && obj.owner !== viewer;
   });
+  // D-312 (CR 708.5): a face-down permanent controlled by another player is a secret too: its card id, its name and its text are not shown, and its object is on the
+  // battlefield as a 2/2 with a label. Which seat controls it is what the view says (control effects are derived, not stored).
+  const shown = getView(state, viewer);
+  const downOfOthers = [...state.battlefield, ...(state.phased ?? [])].filter((id) => {
+    if (state.objects[id]?.faceDown === undefined) return false;
+    const v = [...shown.battlefield, ...(shown.phasedOut ?? [])].find((o) => o.id === id);
+    return v?.controller !== viewer;
+  });
   const visible: ObjectId[] = [
-    ...state.battlefield,
+    ...state.battlefield.filter((id) => !downOfOthers.includes(id)),
     ...state.exile.filter((id) => !faceDown.includes(id)),
     ...state.stack,
     // D-234 (CR 702.26): a phased-out permanent is on the battlefield, face up, and the view shows it to both players, so
     // its name is no secret even when another card of that name is in a library.
-    ...(state.phased ?? []),
+    ...(state.phased ?? []).filter((id) => !downOfOthers.includes(id)),
   ];
+  faceDown.push(...downOfOthers);
   for (const seat of state.seats) {
     hidden.push(...seat.library);
     visible.push(...seat.graveyard, ...seat.command);
@@ -114,6 +124,8 @@ interface Audit {
   topCardViews: number;
   /** Views that showed a face-down foretold card of the other seat as a placeholder (CR 702.143a, D-128). */
   faceDownViews: number;
+  /** Views that showed a face-down permanent of the other seat as a labelled 2/2 (CR 708.2, D-312). */
+  faceDownPermanentViews: number;
 }
 
 const newAudit = (): Audit => ({
@@ -129,6 +141,7 @@ const newAudit = (): Audit => ({
   arrangeOtherViews: 0,
   topCardViews: 0,
   faceDownViews: 0,
+  faceDownPermanentViews: 0,
 });
 
 const COMBAT_KINDS = ['declareAttackers', 'declareBlockers', 'assignDamage'];
@@ -187,6 +200,20 @@ function auditView(state: GameState, viewer: SeatId, audit: Audit): void {
       expect(shown?.faceDown, at).toBe(true);
       expect(shown?.name, at).toBe('Face-down card');
       audit.faceDownViews += 1;
+    }
+  }
+
+  // D-312: a face-down permanent of the other seat is a labelled 2/2 with nothing of its card.
+  for (const id of [...state.battlefield, ...(state.phased ?? [])]) {
+    const obj = state.objects[id];
+    if (obj?.faceDown === undefined) continue;
+    const shown = [...view.battlefield, ...(view.phasedOut ?? [])].find((o) => o.id === id);
+    expect(shown?.faceDown, at).toBe(true);
+    expect(shown?.name, at).toMatch(/^Face-down creature \d+$/);
+    if (shown?.controller !== viewer) {
+      audit.faceDownPermanentViews += 1;
+      expect(shown?.hiddenFace, at).toBeUndefined();
+      expect(shown?.oracleText, at).toBe('');
     }
   }
 
@@ -416,6 +443,21 @@ describe('hidden information (SPEC scenario test 28)', () => {
     }
     // Foretold cards were on the table in many views, as placeholders for the other seat (checked in auditView).
     expect(total.faceDownViews).toBeGreaterThan(20);
+    expect(total.forbiddenIdsChecked).toBeGreaterThan(10_000);
+  }, 120_000);
+
+  test('manifest decks: a face-down permanent of the other seat is a labelled 2/2 and nothing about its card leaks', async () => {
+    const total = newAudit();
+    for (let g = 1; g <= 9; g += 1) {
+      const styles = MANIFEST_STYLE_PAIRS[g % MANIFEST_STYLE_PAIRS.length] ?? [
+        'manifest',
+        'manifest',
+      ];
+      const audit = await playAndAudit(smallGameConfig(120 + g, styles), [140 + g, 240 + g]);
+      for (const key of Object.keys(total) as (keyof Audit)[]) total[key] += audit[key];
+    }
+    // Face-down permanents of the other seat were on the table in many views (checked in auditView), and their names and card ids were among the secrets.
+    expect(total.faceDownPermanentViews).toBeGreaterThan(20);
     expect(total.forbiddenIdsChecked).toBeGreaterThan(10_000);
   }, 120_000);
 

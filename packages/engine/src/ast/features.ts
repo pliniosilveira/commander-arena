@@ -208,6 +208,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomeMonarch',
     // D-131: "mill N cards" (CR 701.17).
     'mill',
+    // D-309: "manifest the top card of your library" (CR 701.40), and the face-down permanent it makes.
+    'manifest',
     // D-128: an effect that creates a delayed triggered ability (CR 603.7): "at the beginning of the next turn's upkeep".
     'delayedTrigger',
     // D-128: the engine's own abilities of Suspend (CR 702.62a) and Madness (CR 702.35a), found from exile.
@@ -1452,6 +1454,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
 const EFFECT_TABLE: KindTable<Effect['kind']> = {
   sequence: true,
   mill: true,
+  manifest: true,
   dealDamage: true,
   destroy: true,
   exile: true,

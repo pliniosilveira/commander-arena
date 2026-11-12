@@ -5,7 +5,7 @@
  *
  * What is re-drawn, for the viewer `v` (the rest of the state is copied as it is):
  * - every other seat's hand and library, and its cards in exile that `v` may not look at (foretold, Hideaway:
- *   `isFaceDownTo`): the cards of all those slots are pooled per seat and dealt back into the same slots, so the
+ *   `isFaceDownTo`) and the face-down permanents of other controllers (D-312): the cards of all those slots are pooled per seat and dealt back into the same slots, so the
  *   counts of every zone are unchanged and the multiset of cards of the pool is too. Because the cards of a deck
  *   are known to the AI (its initial decklist, A31), the pool "decklist minus public cards" is exactly this
  *   multiset, so no decklist input is needed. A foretold slot only receives a card with a foretell cost (the
@@ -27,6 +27,8 @@
 import type { CardId, ObjectId, SeatId } from './ids';
 import { createRng, nextInt, nextUint32, shuffle } from './rng/index';
 import type { RngState } from './rng/types';
+import { controllerOf } from './rules/control';
+import { faceDownPermanents } from './rules/face-down';
 import { isCommanderCardId } from './rules/melded';
 import { foretellCostOf } from './rules/special-legality';
 import { topCardVisibleTo } from './rules/statics';
@@ -80,15 +82,30 @@ function redealCards(
     const obj = getObject(state, id);
     return obj.owner === seat.id && isFaceDownTo(state, obj, viewer) && hidden(id);
   });
+  // CR 708.5 (D-312): a face-down permanent that another player controls is a card the viewer may not look at, whoever owns it: it is a hidden slot of its owner's cards.
+  const hiddenDown = faceDownPermanents(state).filter((id) => {
+    const obj = getObject(state, id);
+    return (
+      obj.owner === seat.id &&
+      (obj.zone === 'phased'
+        ? controllerOf(state, { ...obj, zone: 'battlefield' })
+        : controllerOf(state, obj)) !== viewer &&
+      hidden(id)
+    );
+  });
   const slots = [
     ...(seat.id === viewer ? [] : seat.hand.filter(hidden)),
     ...seat.library.filter(hidden),
     ...hiddenExile,
+    ...hiddenDown,
   ];
   const changed = new Map<ObjectId, GameObject>();
   // With one hand-and-library pool and no card in exile the dealing is a plain shuffle; the viewer's own library
   // has no other slot, and its order is shuffled below, so its cards stay where they are.
-  if (slots.length === 0 || (seat.id === viewer && hiddenExile.length === 0)) {
+  if (
+    slots.length === 0 ||
+    (seat.id === viewer && hiddenExile.length === 0 && hiddenDown.length === 0)
+  ) {
     return { changed, rng };
   }
   let pool = slots.map((id) => getObject(state, id).card as CardId);

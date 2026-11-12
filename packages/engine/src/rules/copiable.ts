@@ -17,6 +17,7 @@ import type { CardDefinition, CardFace } from '../cards/definition';
 import { definitionOf, printedCard } from '../state/ops';
 import type { CopiableValues, GameObject, GameState } from '../state/types';
 import { effectsOn } from './derive-layers';
+import { FACE_DOWN_VALUES, isFaceDown } from './face-down';
 import { combinedValues, hasCombinedFaces } from './layouts';
 
 const NOTHING: CopiableValues = {
@@ -100,6 +101,9 @@ export function copiableValues(state: GameState, obj: GameObject): CopiableValue
   for (const effect of effectsOn(state, obj.id)) {
     if (effect.change.kind === 'copy') values = effect.change.values;
   }
+  // Layer 1b (CR 613.2b, 708.2, 708.10): a face-down permanent has the characteristics of the rules for face-down permanents, applied after the copy effects, so one
+  // that became a copy keeps them and one that is copied is copied as it is (CR 707.2).
+  if (isFaceDown(obj)) return FACE_DOWN_VALUES;
   return atLevel(values, obj.level ?? 1);
 }
 
