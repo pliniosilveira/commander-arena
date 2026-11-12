@@ -1,5 +1,5 @@
 {
-  "parserVersion": 93,
+  "parserVersion": 94,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -3740,18 +3740,10 @@
     "d57a6b19-bd06-4b07-8ee1-0b45612ba9e4": {
       "name": "Veyran, Voice of Duality",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "0a73517b"
+      "ast": "82ebee59"
     },
     "d683d985-9888-4d21-8b5f-69e69ce4a03b": {
       "name": "Path to Exile",
@@ -4674,7 +4666,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 225,
+      "supported": 226,
       "total": 245
     }
   }

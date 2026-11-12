@@ -6,7 +6,7 @@
  * three triggers. Only the triggered abilities of permanents (an ability with an index among the abilities of its source): not a delayed ability, the
  * monarch's, the Ring's, a reflexive one or a state trigger.
  *
- * With a `cause` (D-980, "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, that ability
+ * With a `cause` (D-339, "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, that ability
  * triggers an additional time", CR 603.2d) only the triggers the event named causes count: the ability is a `castSpell` ability (it triggered on the cast of a
  * spell, or on the copy of one when it says "or copy"), the player who cast or copied is the controller of the doubler, and the spell is one the cause's filter
  * names. A trigger the spell brings about another way (a permanent becoming its target, a creature spell entering) has another event and is not doubled.

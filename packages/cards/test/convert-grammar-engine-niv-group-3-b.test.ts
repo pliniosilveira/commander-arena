@@ -1,4 +1,4 @@
-// The Niv-Mizzet deck (issue 25), group 3-b (D-980 to D-984): Veyran, Voice of Duality, the REAL card of the owner's golden corpus read through the grammar only and
+// The Niv-Mizzet deck (issue 25), group 3-b (D-339 to D-343): Veyran, Voice of Duality, the REAL card of the owner's golden corpus read through the grammar only and
 // played through applyAction: its magecraft ability and "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you
 // control to trigger, that ability triggers an additional time." (CR 603.2d). Stand-ins are SYNTHETIC (named so), with invented power and toughness.
 import { readFileSync } from 'node:fs';

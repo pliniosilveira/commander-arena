@@ -1,5 +1,5 @@
 // "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, that ability triggers an additional
-// time." (D-980 to D-984, group 3-b of the Niv-Mizzet deck): the static `doubleTriggers` with a `cause`.
+// time." (D-339 to D-343, group 3-b of the Niv-Mizzet deck): the static `doubleTriggers` with a `cause`.
 // Pins: CR 603.2d (a triggered ability triggers additional times: the number is determined first, then that many triggers; two such effects make three), CR 601.2i
 // (casting a spell is the event), CR 707.10 (a copy put onto the stack is not cast: "or copy" is a second event), CR 603.2 (what triggers an ability is its own event:
 // a permanent becoming the target of a spell, or a creature entering, is not the cast event), CR 603.3d (each trigger chooses its targets on its own).

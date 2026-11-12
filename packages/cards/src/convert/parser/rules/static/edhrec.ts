@@ -1,7 +1,7 @@
 /**
  * Static ability rules of the Vraska EDHREC deck (stage P67, D-220): "If a triggered ability of a Shaman or another Wizard you control triggers, that ability
  * triggers an additional time." and "If a triggered ability of equipped creature triggers, that ability triggers an additional time." (CR 603.2d); and of the
- * Niv-Mizzet deck (D-980): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, that
+ * Niv-Mizzet deck (D-339): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, that
  * ability triggers an additional time."
  */
 import { fail, literal, map, pattern, sequence } from '../../combinators';

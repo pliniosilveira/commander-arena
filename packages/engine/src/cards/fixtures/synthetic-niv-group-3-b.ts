@@ -2,7 +2,7 @@
  * SYNTHETIC CARDS FOR "IF YOU CASTING OR COPYING AN INSTANT OR SORCERY SPELL CAUSES A TRIGGERED ABILITY OF A PERMANENT YOU CONTROL TO TRIGGER, THAT ABILITY
  * TRIGGERS AN ADDITIONAL TIME". NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of D-980 to D-984 (group 3-b of the Niv-Mizzet deck): the static `doubleTriggers` with a `cause`, a triggered ability that triggers
+ * Invented for the tests of D-339 to D-343 (group 3-b of the Niv-Mizzet deck): the static `doubleTriggers` with a `cause`, a triggered ability that triggers
  * additional times only when the event that triggers it is the controller casting or copying a spell the cause's filter names (CR 603.2d). Names start with
  * "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle text, and none of these is the definition of a real card.
  */

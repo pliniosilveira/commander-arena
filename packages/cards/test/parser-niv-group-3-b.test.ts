@@ -1,4 +1,4 @@
-// The Niv-Mizzet deck (issue 25), group 3-b (D-980 to D-984): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent
+// The Niv-Mizzet deck (issue 25), group 3-b (D-339 to D-343): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent
 // you control to trigger, that ability triggers an additional time." (Veyran, Voice of Duality). The line is the real Oracle text of the acceptance card of
 // the golden corpus (the wording, "you casting", is the card's own) read through the whole pipeline; the other lines are SYNTHETIC siblings and the near
 // misses the grammar must not read. The engine runs what is lowered in convert-grammar-engine-niv-group-3-b.test.ts.

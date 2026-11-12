@@ -4109,7 +4109,7 @@ export type StaticEffect =
    * and resolves on its own). Each permanent with the ability adds one, so two of them make three. It applies to the triggered abilities of permanents on the
    * battlefield (not to delayed triggered abilities or to those of an emblem or the monarch), as they trigger, whatever the effect of the ability. `subject`
    * is a group of permanents (`controller: 'you'` the controller of the permanent with this ability, `other` leaves it out) or `attached`.
-   * `cause` (D-980, group 3-b of the Niv-Mizzet deck): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you
+   * `cause` (D-339, group 3-b of the Niv-Mizzet deck): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you
    * control to trigger, that ability triggers an additional time." Only a trigger whose event is the cause counts: the controller of this ability casting a
    * spell (`castSpell`) or copying one (`castSpell` with `orCopy`) that `spell` names (the spell as it is on the stack, or as it last was). The abilities
    * that trigger on that cast event are doubled (a `castSpell` trigger, a magecraft one too); one that merely follows from the spell (it entering, or a
