@@ -160,7 +160,7 @@ export function namesItselfInQuotes(text: string, options: NormalizeOptions): bo
   );
 }
 
-function escapeRegExp(s: string): string {
+export function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 

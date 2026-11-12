@@ -82,11 +82,19 @@ const TURN_CONDITIONS = [
   'condition.life-above-starting',
 ] as const;
 
+/**
+ * "If you have at least 15 life more than your starting life total, exile ~ and each artifact and creature your opponents control." (D-912, CR 608.2c:
+ * the test of the sentence's own instruction, made as it resolves): the life total of the player the ability is controlled by. Read before an instruction only: the
+ * trailing form is not read, and a triggered ability's own "if" before its effect is the trigger's (the intervening "if", CR 603.4).
+ */
+const LIFE_LEAD_CONDITIONS = ['condition.life-total'] as const;
+
 const LEAD_CONDITIONS = [
   // Stage P52 (D-210): "If a creature card was discarded this way, ..." after a discard.
   'condition.discarded-this-way',
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
+  ...LIFE_LEAD_CONDITIONS,
   ...RECURSION_LEAD_CONDITIONS,
   ...CONTROL_CONDITIONS,
   ...OBJECT_LEAD_CONDITIONS,

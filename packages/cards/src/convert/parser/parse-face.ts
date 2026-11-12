@@ -4,9 +4,11 @@ import { type CompileOptions, compileLine } from './compile';
 import { unparsedAbility } from './diagnostics';
 import { finishSpell, type SpellParts } from './lower/index';
 import {
+  escapeRegExp,
   type NormalizeOptions,
   namesItselfInQuotes,
   normalizeOracleText,
+  selfNames,
   splitAbilities,
   stripFlavorWord,
 } from './normalize';
@@ -38,6 +40,20 @@ export interface FaceParse {
 }
 
 /**
+ * The short name a token "named ~'s X" is given back (D-911), or '' when the text does not say which name it used. Normalization writes the whole name of the
+ * card and its short name both as `~`, so a token named with the whole name ("named Ajani, Strength of the Pride's Pridemate", CR 111.4) cannot be told from one
+ * named with the short name afterwards: the text as written is checked here, and such a name is refused instead of being given the short one.
+ */
+function tokenSelfName(oracleText: string, options: NormalizeOptions): string {
+  const names = selfNames(options);
+  const short = names.at(-1) ?? '';
+  const whole = names[0] ?? '';
+  if (short === whole) return short;
+  const wholeInName = new RegExp(`\\bnamed ${escapeRegExp(whole)}(?![\\p{L}\\p{N}])`, 'u');
+  return wholeInName.test(oracleText) ? '' : short;
+}
+
+/**
  * Parses one face's Oracle text. `ability` in an UnparsedAbility is the 0-based index of the
  * line among the normalized ability lines (reminder text removed, bullets joined).
  *
@@ -59,6 +75,7 @@ export function parseFaceText(
   const lines = face === 'spell' ? joinReferenceLines(joinInsteadLines(split)) : split;
   const ruleSet = buildRuleSet(rules);
   const namedInQuotes = namesItselfInQuotes(oracleText, options);
+  const selfName = tokenSelfName(oracleText, options);
   const scope = { targetCount: 0 };
   const abilities: Ability[] = [];
   const spellParts: { parts: SpellParts; index: number; text: string; ruleId: string }[] = [];
@@ -77,6 +94,7 @@ export function parseFaceText(
       scope,
       name: options.name,
       namedInQuotes,
+      selfName,
     };
     const asWritten = compileLine(text, lineOptions);
     // CR 207.2d (D-204): a flavor word has no rules meaning, but no list names them, so the label is taken off only when the line did not

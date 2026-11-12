@@ -17,6 +17,7 @@ import {
 import type { IrFilter, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { defineRule, family, node, spanned } from '../registry';
+import { AJANI_NOUN_RULES } from './ajani';
 import { ANGEL_NOUN_RULES } from './angels';
 import { NOUN_ATTACKED_BY_IT } from './attacked';
 import { CHOOSE_NOUN_RULES } from './choose';
@@ -559,6 +560,8 @@ export const NOUN_RULES = [
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.
   ...HOFRI_NOUN_RULES,
+  // D-913: "each artifact and creature your opponents control", which `noun.each-permanent` would stop in the middle of.
+  ...AJANI_NOUN_RULES,
   NOUN_EACH_PERMANENT,
   // Stage P64 and P65 (D-217, D-218): "creature tokens you control" and "creatures attacking your opponents and/or planeswalkers they control", whose first words are
   // those of `noun.plain-permanents`.
