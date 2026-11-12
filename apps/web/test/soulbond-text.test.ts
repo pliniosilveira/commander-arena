@@ -5,6 +5,7 @@
  */
 import type {
   ChoosePermanentDecision,
+  ConfirmOptionalDecision,
   GameState,
   ObjectView,
   StackAbility,
@@ -13,6 +14,7 @@ import { expect, test } from 'vitest';
 import { gameConditionWords } from '../src/game/condition-text';
 import { describeEvent } from '../src/game/describe';
 import { triggerGist } from '../src/ui/decisions/ability-label';
+import { optionalAsk } from '../src/ui/decisions/optional';
 import { choosePermanentPrompt, permanentsDetail } from '../src/ui/decisions/permanents';
 import { angelsBadge, angelsPermanentPrompt } from '../src/ui/decisions/permanents-angels';
 import {
@@ -137,6 +139,12 @@ test('the condition "paired" and the intervening "if" of soulbond are worded, an
   expect(gameConditionWords({ kind: 'soulbondReady', with: 'triggerSubject' })).toBe(
     'you control both that creature and this one and both are unpaired',
   );
+  // The negation is of the whole statement, never "don't control both ... aren't unpaired".
+  expect(
+    gameConditionWords({ kind: 'not', term: { kind: 'soulbondReady', with: 'another' } }),
+  ).toBe(
+    "it's not the case that you control both this creature and another creature and both are unpaired",
+  );
 });
 
 test('the stack: the two abilities soulbond stands for say what they do and their "if"', () => {
@@ -162,4 +170,47 @@ test('the stack: the two abilities soulbond stands for say what they do and thei
   expect(b).toMatch(/pair this creature with the creature that entered/i);
   expect(b).toMatch(/if you control both that creature and this one and both are unpaired/);
   expect(a + b).not.toMatch(/undefined|null|\[object|"kind"|NaN/);
+});
+
+test('the "you may" of the dies-and-return ability is worded from the ability on the stack, not from the creature that died', () => {
+  const ability = {
+    kind: 'triggered',
+    trigger: { kind: 'dies', what: { kind: 'this' } },
+    optional: true,
+    effect: {
+      kind: 'delayedTrigger',
+      at: { step: 'upkeep', whose: 'you' },
+      effect: {
+        kind: 'moveToZone',
+        objects: { kind: 'triggerCard' },
+        to: 'battlefield',
+        controller: 'owner',
+      },
+    },
+  };
+  const stackAbility = objectView('o9', 'Grizzly Bears', {
+    zone: 'stack',
+    abilitySource: 'o1',
+    ability,
+  } as never);
+  const ask = (oracleText: string, view: ObjectView | undefined) =>
+    optionalAsk(
+      {
+        kind: 'confirmOptional',
+        id: 'd1',
+        seat: 0,
+        source: 'o9',
+        sourceName: 'Grizzly Bears',
+        sourceOracleText: oracleText,
+      } as unknown as ConfirmOptionalDecision,
+      new Map(view === undefined ? [] : [['o9', view]]),
+    );
+  // Whatever the creature's own text says (nothing, or an unrelated "you may"), the question quotes the ability it is asked about.
+  for (const text of ['', 'Whenever this creature attacks, you may sacrifice a land.']) {
+    expect(ask(text, stackAbility).prompt).toBe(
+      'Grizzly Bears: At the beginning of your next upkeep, return it to the battlefield — do it?',
+    );
+  }
+  // An ability the view does not show keeps the old words (nothing is guessed).
+  expect(ask('', undefined).prompt).toBe('Grizzly Bears — do it?');
 });

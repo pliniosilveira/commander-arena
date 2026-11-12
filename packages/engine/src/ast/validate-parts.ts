@@ -2324,6 +2324,18 @@ function checkTokenDefinition(def: TokenDefinition, path: string, scope: Scope, 
     ) {
       issue(out, `${path}.abilities`, 'more than one devour ability on a token is not supported');
     }
+    // CR 702.95a (D-984): soulbond pairs creatures, so on a token that is not a creature it would be accepted and do nothing (the same refusal as for a card face).
+    if (!def.types?.includes('creature')) {
+      def.abilities.forEach((a, i) => {
+        if (a?.kind === 'keyword' && a.keyword?.kind === 'soulbond') {
+          issue(
+            out,
+            `${path}.abilities[${i}]`,
+            'Soulbond is an ability of creatures (CR 702.95a): a token that is not a creature cannot have it',
+          );
+        }
+      });
+    }
     // D-100: a token that refers to "the chosen type" asks for it as it is created.
     chosenIssues(def.abilities, [], path, true, out);
   }

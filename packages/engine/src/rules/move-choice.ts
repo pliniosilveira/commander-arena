@@ -13,6 +13,7 @@ import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { moveInstructions } from './effect-support';
 import { controlledCandidates } from './sacrifice';
 import { matchesFilter } from './select';
+import { recordTogether } from './simultaneous';
 import { done, type StepOutcome } from './step-outcome';
 
 type ChooseMoveInstruction = Extract<Instruction, { kind: 'chooseMove' }>;
@@ -82,25 +83,23 @@ export function runChooseMove(
       purpose: 'effect',
       automatic,
     };
-    return {
-      ...done(
-        state,
-        [event],
-        moveInstructions(
-          objects,
-          instruction.to,
-          instruction.position,
-          instruction.tapped ?? false,
-          instruction.controller,
-          instruction.withCounters,
-        ).map((i) =>
-          i.kind === 'move' && instruction.countsNonland === true
-            ? { ...i, countsNonland: true as const }
-            : i,
-        ),
+    // D-981 (CR 603.10a): permanents put into a graveyard (or elsewhere) together keep the last-known information recorded before the first leaves.
+    const together = recordTogether(
+      state,
+      moveInstructions(
+        objects,
+        instruction.to,
+        instruction.position,
+        instruction.tapped ?? false,
+        instruction.controller,
+        instruction.withCounters,
+      ).map((i) =>
+        i.kind === 'move' && instruction.countsNonland === true
+          ? { ...i, countsNonland: true as const }
+          : i,
       ),
-      lastMoved: [],
-    };
+    );
+    return { ...done(together.state, [event], together.instructions), lastMoved: [] };
   };
   if (instruction.chosen !== null) return run(instruction.chosen, false);
   const fromCards = isCardZoneChoice(instruction.filter);

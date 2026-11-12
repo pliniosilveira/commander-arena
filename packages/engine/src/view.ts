@@ -25,7 +25,7 @@ import { isSummoningSick, wouldBeSummoningSick } from './rules/mana-engine';
 import { manaValueOfCost } from './rules/mana-value';
 import { cardsOf, commanderCardOf } from './rules/melded';
 import { modalOfObject } from './rules/modes';
-import { partnerOf } from './rules/pairing';
+import { isPaired, partnerOf } from './rules/pairing';
 import { regenerationShieldsOn } from './rules/regenerate';
 import { ringBearerSeat } from './rules/ring-bearer';
 import { finalChapterOf, isSaga } from './rules/saga';
@@ -86,6 +86,12 @@ export interface ObjectView {
    * Absent otherwise.
    */
   readonly pairedWith?: ObjectId;
+  /**
+   * True for a creature of a pair that stands while one of the two is phased out (CR 702.26b, 702.26d, D-984): it is still paired (phasing is not leaving the
+   * battlefield, so CR 702.95e does not end the pair) but gives and gets nothing from the pair meanwhile, so `pairedWith` is absent. For both creatures, the phased-out
+   * one included. Public. Absent otherwise.
+   */
+  readonly pairedPhasedOut?: true;
   /**
    * For a noncreature permanent on the battlefield that its controller has not controlled since
    * their most recent turn began (and that has no haste): it would be summoning sick if it became a
@@ -625,6 +631,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     ...controlEndsOf(state, obj),
     ...(bearerSeat === null ? {} : { ringBearer: bearerSeat }),
     ...(partner === null ? {} : { pairedWith: partner.id }),
+    ...(partner === null && isPaired(state, obj) ? { pairedPhasedOut: true as const } : {}),
     ...(asCreature && wouldBeSummoningSick(state, obj)
       ? { wouldBeSummoningSick: true as const }
       : {}),

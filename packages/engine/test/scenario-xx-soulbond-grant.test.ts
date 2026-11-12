@@ -495,3 +495,61 @@ describe('phasing: the pair survives it, and the grant is off while either is ph
     expect(hasDiesReturn(g, 'bears')).toBe(true);
   });
 });
+
+describe('the pair subject on its own (CR 702.95b): nothing while the source is unpaired, whatever condition the ability names', () => {
+  // SYNTHETIC: "Each of those creatures has flying", with no `paired` condition on the static ability.
+  const BARE = 'SYNTHETIC Bare Pair Glider';
+  const bare = singleFace({
+    name: BARE,
+    manaCost: ['1'],
+    types: ['creature'],
+    colors: [],
+    colorIdentity: [],
+    power: 1,
+    toughness: 1,
+    oracleText: 'SYNTHETIC: each of those creatures has flying.',
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'grantKeyword',
+          subject: { kind: 'pair' },
+          keyword: { kind: 'flying' },
+        },
+      },
+    ],
+  });
+  const flies = (g: ScenarioGame, card: string) =>
+    derive(g.state, g.object(card)).abilities.some(
+      (a) => a.kind === 'keyword' && a.keyword.kind === 'flying',
+    );
+
+  test('unpaired, it gives nothing, not even to itself', () => {
+    const g = scenario()
+      .define(bare)
+      .seat(0)
+      .battlefield(BARE, { label: 'bare' })
+      .battlefield(BEARS, { label: 'bears' })
+      .library(...LIBRARY)
+      .seat(1)
+      .library(...LIBRARY)
+      .build();
+    expect(flies(g, 'bare')).toBe(false);
+    expect(flies(g, 'bears')).toBe(false);
+  });
+
+  test('paired, it gives flying to both and to no one else', () => {
+    const g = scenario()
+      .define(bare)
+      .seat(0)
+      .battlefield(BARE, { label: 'bare', pairedWith: 'bears' })
+      .battlefield(BEARS, { label: 'bears' })
+      .battlefield('Serra Angel', { label: 'serra' })
+      .library(...LIBRARY)
+      .seat(1)
+      .library(...LIBRARY)
+      .build();
+    expect(flies(g, 'bare')).toBe(true);
+    expect(flies(g, 'bears')).toBe(true);
+  });
+});

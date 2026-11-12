@@ -24,6 +24,7 @@ import {
   unlessResultText,
   type Who,
 } from '../../game/unless-text';
+import { triggerGist } from './ability-label';
 import { type Index, plural, stackName } from './lookup';
 
 /** "Name: oracle text — do it?" (the text is the whole card's; empty for a vanilla source). */
@@ -231,6 +232,23 @@ export function mayEffectPrompt(d: ConfirmOptionalDecision, index: Index): strin
       ? `${result.base.charAt(0).toUpperCase()}${result.base.slice(1)}`
       : `Have ${result.subject === 'Opponent' ? 'Opponent' : 'each player'} ${result.base}`;
   return `${did} didn't ${unlessCostPhrase(unless.cost)}. ${doIt}?`;
+}
+
+/**
+ * The plain "you may" of a triggered ability whose effect is a delayed ability ("When this creature dies, you may return it to the battlefield ... at the beginning of
+ * your next upkeep", D-982): worded from the ability on the stack, "Name: At the beginning of your next upkeep, return it to the battlefield — do it?". The decision
+ * quotes the Oracle text of the permanent the ability belongs to, which is not the ability when it was granted (the Seraph gives it to both creatures of its pair,
+ * CR 613.1f): a vanilla partner would read "Grizzly Bears — do it?" and another creature's text would be quoted for it. Null for any other plain question, and for
+ * an ability the view does not show or the words do not know (never guessed).
+ */
+export function mayDelayedPrompt(d: ConfirmOptionalDecision, index: Index): string | null {
+  if (d.purpose !== undefined || d.cost !== undefined) return null;
+  const object = index.get(d.source);
+  const ability = object?.ability;
+  if (ability?.kind !== 'triggered' || ability.optional !== true) return null;
+  if (ability.effect.kind !== 'delayedTrigger') return null;
+  const gist = triggerGist(ability, object);
+  return gist === '' ? null : optionalPrompt(d.sourceName, gist);
 }
 
 /**
@@ -445,6 +463,10 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
   const mayEffect = mayEffectPrompt(d, index);
   if (mayEffect !== null) {
     return { prompt: mayEffect, yes: 'Yes', no: 'No', cancellable: false };
+  }
+  const mayDelayed = mayDelayedPrompt(d, index);
+  if (mayDelayed !== null) {
+    return { prompt: mayDelayed, yes: 'Yes', no: 'No', cancellable: false };
   }
   if (d.cost !== undefined) {
     return { prompt: payPrompt(d.cost), yes: 'Pay', no: "Don't pay", cancellable: false };

@@ -639,7 +639,9 @@ function runEffect(
         );
         return done(together.state, [], together.instructions);
       }
-      return done(state, [], sacrificeInstructions(ids));
+      // D-981 (CR 603.10a): sacrificed together, so what each was is recorded before the first moves.
+      const together = recordTogether(state, sacrificeInstructions(ids));
+      return done(together.state, [], together.instructions);
     }
 
     case 'exile': {

@@ -265,9 +265,12 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       return `this creature ${negate ? "isn't" : 'is'} paired with another creature`;
     case 'soulbondReady':
       // D-984 (CR 702.95a, 603.4): the intervening "if" of the two abilities soulbond stands for.
-      return condition.with === 'another'
-        ? `you ${negate ? "don't control" : 'control'} both this creature and another creature and both ${negate ? "aren't" : 'are'} unpaired`
-        : `you ${negate ? "don't control" : 'control'} both that creature and this one and both ${negate ? "aren't" : 'are'} unpaired`;
+      // One statement is negated as a whole ("it's not the case that ..."): "you don't control both ... and both aren't unpaired" would say something else.
+      return `${negate ? "it's not the case that " : ''}you control both ${
+        condition.with === 'another'
+          ? 'this creature and another creature'
+          : 'that creature and this one'
+      } and both are unpaired`;
     case 'controlsRingBearer':
       // D-196 (CR 701.54e): "if you control your Ring-bearer".
       return `you ${negate ? "don't control" : 'control'} your Ring-bearer`;

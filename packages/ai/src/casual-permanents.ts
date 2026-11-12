@@ -15,6 +15,7 @@ import {
 } from '@commander-arena/engine';
 import { LAND_TARGET } from './casual-choices';
 import { answerPairReturn } from './casual-pair';
+import { answerDelayedMay } from './casual-soulbond';
 import {
   effectiveCost,
   findObject,
@@ -313,6 +314,9 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
       ? { kind: 'acceptOptional' }
       : { kind: 'declineOptional' };
   }
+  // D-982: read the ability on the stack, not the text of the creature it belongs to (a granted ability is not in that text).
+  const delayed = answerDelayedMay(view, d);
+  if (delayed !== null) return delayed;
   return COSTLY_OPTION.test(d.sourceOracleText)
     ? { kind: 'declineOptional' }
     : { kind: 'acceptOptional' };

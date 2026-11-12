@@ -54,10 +54,10 @@ export function subjectAffects(
     );
   }
   if (subject.kind === 'pair') {
-    // CR 702.95b, 611.3a (D-984): the permanent itself and the creature it is paired with now, whatever the pair is at this moment (none while it is
-    // unpaired, or while either is phased out, CR 702.26b).
-    if (source.id === target.id) return true;
-    return partnerOf(state, source)?.id === target.id;
+    // CR 702.95b, 611.3a (D-984): the permanent itself and the creature it is paired with now, whatever the pair is at this moment: nothing while it is
+    // unpaired, or while either is phased out (CR 702.26b), whether or not the ability also names the `paired` condition.
+    const partner = partnerOf(state, source);
+    return partner !== null && (source.id === target.id || partner.id === target.id);
   }
   return matchesFilterWith(state, target, () => view, filterOf(subject), context);
 }

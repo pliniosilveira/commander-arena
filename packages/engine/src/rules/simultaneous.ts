@@ -7,8 +7,24 @@
  * Each record is made against the state as the event began and marked on the move (`lkiRecorded`), so the move keeps it. A record of a permanent that
  * then did not leave (a regeneration shield, a replaced move) is never reused: only a flagged move keeps a record, and any later departure records anew.
  */
+import type { ObjectId } from '../ids';
 import type { GameState, Instruction } from '../state/types';
 import { recordLastKnown } from './zones';
+
+/**
+ * The last-known information of the battlefield permanents `ids` recorded now, for a mover that moves objects directly (a cost that sacrifices several
+ * permanents, the legend rule) and passes `lkiRecorded` on each move. Nothing is recorded for fewer than two: a lone departure records itself.
+ */
+export function recordObjectsTogether(state: GameState, ids: readonly ObjectId[]): GameState {
+  const leaving = ids.filter((id) => state.objects[id]?.zone === 'battlefield');
+  if (leaving.length < 2) return state;
+  let next = state;
+  for (const id of leaving) {
+    const obj = state.objects[id];
+    if (obj !== undefined) next = recordLastKnown(next, obj);
+  }
+  return next;
+}
 
 /** The instructions with the last-known information of the battlefield permanents among them recorded now, when there are several. */
 export function recordTogether(

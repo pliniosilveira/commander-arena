@@ -8,7 +8,12 @@
  * delegates to it; a version that weighs what the pair gives and whether a better partner is likely to come is in `docs/ROADMAP.md`. The answer is always a member
  * of `legal`, or empty when `legal` is.
  */
-import type { Action, ChoosePermanentDecision, GameView } from '@commander-arena/engine';
+import type {
+  Action,
+  ChoosePermanentDecision,
+  ConfirmOptionalDecision,
+  GameView,
+} from '@commander-arena/engine';
 import { findObject, isCreature, powerOf, toughnessOf } from './casual-view';
 
 export function chooseSoulbondPartner(view: GameView, d: ChoosePermanentDecision): Action {
@@ -29,4 +34,19 @@ export function chooseSoulbondPartner(view: GameView, d: ChoosePermanentDecision
   // A candidate the view cannot show as a creature is still a legal answer; with none shown, the first of the list is as good as any.
   const chosen = top ?? d.legal[0];
   return { kind: 'choosePermanents', objects: chosen === undefined ? [] : [chosen] };
+}
+
+/**
+ * "When this creature dies, you may return it to the battlefield ... at the beginning of your next upkeep" (D-982): the question names the creature that died, and the
+ * ability may be granted (the Seraph gives it to both creatures of its pair, CR 613.1f), so what the creature's own text says is not what is asked. The ability on the
+ * stack is: an optional triggered ability whose whole effect is a delayed ability costs nothing now (the delayed ability does the return), so the agent always accepts it.
+ * Null for any other question, and for one whose ability the view does not show: those are answered from the text as before.
+ */
+export function answerDelayedMay(view: GameView, d: ConfirmOptionalDecision): Action | null {
+  const ability = findObject(view, d.source)?.ability;
+  return ability?.kind === 'triggered' &&
+    ability.optional === true &&
+    ability.effect.kind === 'delayedTrigger'
+    ? { kind: 'acceptOptional' }
+    : null;
 }

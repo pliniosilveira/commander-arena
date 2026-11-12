@@ -8,7 +8,13 @@
  * actions that clear it (`rules/pairing-sba.ts`) run only at the next priority point.
  *
  * Two readers, because phasing (CR 702.26b, 702.26d, D-234) is not a zone change or a change of control, so CR 702.95e does not end a pair when a creature
- * phases out, but a phased-out permanent is treated as though it does not exist, so what the pair gives is switched off while either is phased out:
+ * phases out, but a phased-out permanent is treated as though it does not exist, so what the pair gives is switched off while either is phased out.
+ *
+ * The reading is the owner's approved one and is not settled by the CR text: CR 702.26f (with 611.2b) ends "for as long as" effects that track a permanent when it phases
+ * out, and CR 702.95a words the pair "for as long as both remain creatures on the battlefield under your control", which could be read as ending the pair; CR 702.95e does
+ * not list phasing and CR 702.26d says phasing is no zone change or change of control. No published ruling was checked. Changing the reading is a change of `rules/pairing-sba.ts`.
+ *
+ * The two readers:
  * - `linkedPartnerOf`: the pair stands (both exist, on the battlefield or phased out, linked from both sides, controlled by the player who formed it). It decides
  *   whether a creature is "unpaired" (CR 702.95d: a creature that is paired can't be paired again, so a pair with a phased-out member is not re-formed), what
  *   the invariants check and what the state-based action clears.

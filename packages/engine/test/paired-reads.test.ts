@@ -28,30 +28,74 @@ function sources(dir: string): string[] {
   return out;
 }
 
-/** The field read (`obj.paired`, `old.paired?.with`) or written as a property of an object literal (`paired: {`). */
-const FIELD = /(?:\.paired\b|\bpaired\s*:\s*\{)/;
+/**
+ * The field read (`obj.paired`, `old.paired?.with`), read by bracket (`obj['paired']`), destructured (`const { paired } = obj`, also over several lines), written as a
+ * property of an object literal (`paired: {`, `paired: undefined`, the shorthand `{ ...o, paired }`) or named as an optional property (`paired?:`). The designation
+ * on a line that is only a comment is not a read; a text after the code of a line (`// ...`) is removed first, so a comment cannot hide a read or make one up.
+ */
+const FIELD =
+  /(?:\??\.paired\b|\[\s*['"`]paired['"`]\s*\]|\bpaired\s*\??:|[{,]\s*paired\s*[,}]|\{[^{}]*\bpaired\b[^{}]*\}\s*=[^=>])/;
 const COMMENT = /^\s*(?:\/\/|\/?\*)/;
+
+/** The code of the source: whole-line comments and the trailing `// ...` of a line blanked, the lines kept so a position still names its line. */
+function code(text: string): string {
+  return text
+    .split('\n')
+    .map((line) => (COMMENT.test(line) ? '' : line.replace(/\s\/\/\s.*$/, '')))
+    .join('\n');
+}
+
+/** The lines (1-based) of the source's code that read or write the field. */
+function fieldLines(text: string): number[] {
+  const body = code(text);
+  const lines = new Set<number>();
+  body.split('\n').forEach((line, i) => {
+    if (FIELD.test(line)) lines.add(i + 1);
+  });
+  // A destructuring pattern over several lines: `const {\n  paired,\n  other,\n} = obj;`.
+  for (const m of body.matchAll(/\{[^{}]*\bpaired\b[^{}]*\}\s*=[^=>]/g)) {
+    lines.add(body.slice(0, m.index).split('\n').length);
+  }
+  return [...lines].sort((a, b) => a - b);
+}
 
 describe('paired reads', () => {
   test('no file but the owners of the designation reads or writes GameObject.paired', () => {
     const offenders: string[] = [];
     for (const file of sources(SRC)) {
-      readFileSync(file, 'utf8')
-        .split('\n')
-        .forEach((line, i) => {
-          if (FIELD.test(line) && !COMMENT.test(line) && !line.includes('stored link')) {
-            offenders.push(`${file.slice(SRC.length + 1)}:${i + 1}: ${line.trim()}`);
-          }
-        });
+      const text = readFileSync(file, 'utf8');
+      const rows = text.split('\n');
+      for (const n of fieldLines(text)) {
+        offenders.push(`${file.slice(SRC.length + 1)}:${n}: ${(rows[n - 1] ?? '').trim()}`);
+      }
     }
     expect(offenders).toEqual([]);
   });
 
-  test('the check does catch the pattern it is about', () => {
-    expect(FIELD.test('return obj.paired !== undefined && x;')).toBe(true);
-    expect(FIELD.test('const w = old.paired?.with;')).toBe(true);
-    expect(FIELD.test('setObject(state, { ...o, paired: { with: b, by } });')).toBe(true);
-    expect(FIELD.test('const partner = partnerOf(state, obj);')).toBe(false);
-    expect(FIELD.test('const unpaired = endBrokenPairs(state);')).toBe(false);
+  test('the check does catch the patterns it is about', () => {
+    const reads = (line: string) => fieldLines(line).length > 0;
+    expect(reads('return obj.paired !== undefined && x;')).toBe(true);
+    expect(reads('const w = old.paired?.with;')).toBe(true);
+    expect(reads("const w = obj['paired'];")).toBe(true);
+    expect(reads('const { paired } = obj;')).toBe(true);
+    expect(reads('const { id, paired: link } = obj;')).toBe(true);
+    expect(reads('const { id, paired, zone } = obj;')).toBe(true);
+    expect(reads('const o = { ...obj, paired: undefined };')).toBe(true);
+    expect(reads('setObject(state, { ...o, paired: { with: b, by } });')).toBe(true);
+    expect(reads('setObject(state, { ...o, paired });')).toBe(true);
+    expect(reads('const x = { paired };')).toBe(true);
+    expect(reads('const stored = obj.paired; // stored link')).toBe(true);
+    expect(reads('const {\n  id,\n  paired,\n} = obj;')).toBe(true);
+  });
+
+  test('the check leaves alone what is not the field', () => {
+    const reads = (line: string) => fieldLines(line).length > 0;
+    expect(reads('const partner = partnerOf(state, obj);')).toBe(false);
+    expect(reads('const unpaired = endBrokenPairs(state);')).toBe(false);
+    expect(reads("if (c.kind === 'paired') return partnerOf(state, obj) !== null;")).toBe(false);
+    expect(reads("const c = { kind: 'paired' };")).toBe(false);
+    expect(reads('// the stored link: obj.paired')).toBe(false);
+    expect(reads('const x = isPaired(state, obj); // not obj.paired')).toBe(false);
+    expect(reads('const { id } = obj;')).toBe(false);
   });
 });

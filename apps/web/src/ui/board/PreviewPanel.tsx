@@ -164,6 +164,9 @@ function PreviewDetails({ object }: { object: ObjectView }) {
     const partner = findObject(view, object.pairedWith);
     facts.push(`Paired with ${partner === null ? 'another creature' : partner.name} (CR 702.95)`);
   }
+  if (object.pairedPhasedOut === true) {
+    facts.push('Paired, on hold: one of the two is phased out (CR 702.95, 702.26)');
+  }
   // CR 716.2 (D-235): the level of a Class; its next level is gained with the level bar ability.
   if (object.level !== undefined) facts.push(`Class level ${object.level}`);
   if (object.tapped) facts.push('Tapped');

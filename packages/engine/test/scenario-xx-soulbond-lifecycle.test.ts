@@ -508,6 +508,11 @@ describe('phasing: the pair survives, and what it gives is switched off meanwhil
     expect(g.object('bears').paired).toBeDefined();
     expect(partnerOf(g.state, g.object('sq'))).toBeNull(); // not on the battlefield: it does not exist (CR 702.26b)
     expect(g.view(0).battlefield.find((o) => o.id === g.id('sq'))?.pairedWith).toBeUndefined();
+    // The view says the pair stands but is on hold, for the creature that is phased in and for the one that is phased out, so a player is not shown an unpaired creature.
+    const survivor = g.view(0).battlefield.find((o) => o.id === g.id('sq'));
+    const away = g.view(0).phasedOut?.find((o) => o.id === g.id('bears'));
+    expect(survivor?.pairedPhasedOut).toBe(true);
+    expect(away?.pairedPhasedOut).toBe(true);
     g.expect.invariants();
   });
 
@@ -536,6 +541,7 @@ describe('phasing: the pair survives, and what it gives is switched off meanwhil
     g.advanceTo('upkeep', { turn: 'next' });
     expect(g.object('bears').zone).toBe('battlefield');
     g.expect.paired('sq', 'bears');
+    expect(g.view(0).battlefield.find((o) => o.id === g.id('sq'))?.pairedPhasedOut).toBeUndefined();
     g.expect.invariants();
   });
 });

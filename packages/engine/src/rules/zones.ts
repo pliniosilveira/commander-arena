@@ -297,10 +297,25 @@ export function sacrificeForDevour(
   let state = input;
   const events: GameEvent[] = [];
   let count = 0;
+  // D-981 (CR 603.10a): the creatures sacrificed together keep the last-known information recorded before the first leaves.
+  const going = ids.filter((id) => {
+    const obj = input.objects[id];
+    return obj?.zone === 'battlefield' && controllerOf(input, obj) === seat;
+  });
+  if (going.length > 1) {
+    for (const id of going) {
+      const obj = input.objects[id];
+      if (obj !== undefined) state = recordLastKnown(state, obj);
+    }
+  }
   for (const id of ids) {
     const obj = state.objects[id];
     if (obj?.zone !== 'battlefield' || controllerOf(state, obj) !== seat) continue;
-    const moved = moveOne(state, { object: id, to: 'graveyard' });
+    const moved = moveOne(state, {
+      object: id,
+      to: 'graveyard',
+      ...(going.length > 1 ? { lkiRecorded: true as const } : {}),
+    });
     if (moved.kind !== 'done') continue;
     state = moved.state;
     events.push(...moved.events, { kind: 'sacrificed', permanent: id, controller: seat });

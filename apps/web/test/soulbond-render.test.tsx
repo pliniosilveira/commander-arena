@@ -112,6 +112,22 @@ describe('the board', () => {
     expect(markup).not.toContain('paired with another creature');
   });
 
+  test('a pair with a creature phased out is shown on hold, not as an unpaired creature', () => {
+    const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
+    const hold = { ...(named(SQUIRE)[0] as ObjectView) } as ObjectView;
+    const { pairedWith: _gone, ...rest } = hold;
+    const onHold: ObjectView = { ...rest, pairedPhasedOut: true };
+    const markup = renderToStaticMarkup(
+      <StoreProvider store={live(store)}>
+        <Tile object={onHold} w={90} h={120} />
+      </StoreProvider>,
+    );
+    expect(markup).toContain('>Pair on hold<');
+    expect(markup).toContain('data-paired-phased-out');
+    expect(markup).toContain('paired, on hold while one of the two is phased out');
+    expect(markup).not.toContain('>Paired<');
+  });
+
   test('the keyword has a chip of its own, not the first letters of its kind', () => {
     const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
     const squire = named(SQUIRE)[0];

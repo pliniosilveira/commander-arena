@@ -56,6 +56,34 @@ describe('the keyword', () => {
     expect(validateCard(withAbilities(['creature'], [keyword('soulbond')]))).toEqual([]);
   });
 
+  test('is refused on a token definition that is not a creature, accepted on a creature token (CR 702.95a)', () => {
+    const makes = (types: string[]): Ability =>
+      ({
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        effect: {
+          kind: 'createToken',
+          count: 1,
+          token: {
+            kind: 'custom',
+            definition: {
+              name: 'Soul Token',
+              types,
+              subtypes: [],
+              colors: [],
+              power: types.includes('creature') ? 1 : null,
+              toughness: types.includes('creature') ? 1 : null,
+              abilities: [keyword('soulbond')],
+            },
+          },
+        },
+      }) as unknown as Ability;
+    expect(messages(withAbilities(['creature'], [makes(['artifact'])]))).toContain(
+      'not a creature',
+    );
+    expect(validateCard(withAbilities(['creature'], [makes(['creature'])]))).toEqual([]);
+  });
+
   test('can not be granted: a static ability that grants it is refused, and so is a granted ability that is the keyword', () => {
     const grant = staticAbility({
       kind: 'grantKeyword',

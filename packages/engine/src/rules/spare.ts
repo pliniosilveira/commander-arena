@@ -15,6 +15,7 @@ import { controllerOf } from './control';
 import { derive } from './derive';
 import { sacrificeInstructions } from './sacrifice-choice';
 import { apnapOrder } from './select';
+import { recordTogether } from './simultaneous';
 import { done, type StepOutcome } from './step-outcome';
 
 type SpareInstruction = Extract<Instruction, { kind: 'spare' }>;
@@ -57,9 +58,9 @@ export function runSpare(
       state,
       doomed.map((p) => p.controller),
     );
-    return done(
+    // D-981 (CR 603.10a): all of them are sacrificed at once, so what each was is recorded before the first moves.
+    const together = recordTogether(
       state,
-      [],
       seats.flatMap((seat) =>
         sacrificeInstructions(
           doomed.filter((p) => p.controller === seat).map((p) => p.id),
@@ -67,6 +68,7 @@ export function runSpare(
         ),
       ),
     );
+    return done(together.state, [], together.instructions);
   }
   const candidates = permanentsOf(state)
     .filter((p) => p.controller === pair.player && p.types.includes(pair.type))

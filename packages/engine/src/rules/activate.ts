@@ -45,6 +45,7 @@ import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
 import { sacrificeCandidates, sacrificePermanent, tapCandidates } from './sacrifice';
 import { setPending } from './set-pending';
+import { recordObjectsTogether } from './simultaneous';
 import { sourceInfo } from './source-info';
 import { targetChoiceSpecs } from './target-choice';
 import { collectTriggers } from './triggers';
@@ -472,8 +473,10 @@ function sacrificeChosen(
     purpose: 'sacrifice',
     automatic,
   });
+  // D-981 (CR 603.10a): permanents sacrificed together as one cost keep the last-known information recorded before the first leaves.
+  next = recordObjectsTogether(next, chosen);
   for (const id of chosen) {
-    const done = sacrificePermanent(next, id, casting.seat);
+    const done = sacrificePermanent(next, id, casting.seat, chosen.length > 1);
     if (done === null) return fail('That permanent cannot be sacrificed');
     next = done.state;
     events.push(...done.events);

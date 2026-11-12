@@ -248,3 +248,31 @@ describe('the line of the Seraph', () => {
     ).toBe('unsupported');
   });
 });
+
+describe("any triggered ability quoted to the pair is read, not only the Seraph's (D-984)", () => {
+  // The lowering of a granted ability is general: the subject `pair` is accepted for a quoted triggered ability, and the engine runs a layer 6 grant of it through the
+  // same subject (`scenario-xx-soulbond-grant.test.ts`). So these shapes are read and supported although no card of the deck has them. A granted keyword, +N/+N or activated
+  // ability of the pair stays unsupported (`parser-soulbond-needs.test.ts`, the table above).
+  test.each([
+    ['an attack trigger', 'Whenever this creature attacks, you draw a card.', 'attacks'],
+    ['a death trigger', 'When this creature dies, each opponent loses 2 life.', 'dies'],
+    ['an upkeep trigger', 'At the beginning of your upkeep, you gain 1 life.', '"upkeep"'],
+  ])('%s', (_name, quoted, trigger) => {
+    const text = `As long as ~ is paired with another creature, each of those creatures has "${quoted}"`;
+    const c = read(text);
+    expect(c.unparsed).toEqual([]);
+    const grant = c.face.abilities[0];
+    expect(grant).toMatchObject({
+      kind: 'static',
+      static: { kind: 'grantAbility', subject: { kind: 'pair' } },
+      condition: { kind: 'paired' },
+    });
+    const given =
+      grant?.kind === 'static' && grant.static.kind === 'grantAbility'
+        ? grant.static.ability
+        : null;
+    expect(given?.kind).toBe('triggered');
+    expect(JSON.stringify(given)).toContain(trigger);
+    expect(status(text).status).toBe('supported');
+  });
+});
