@@ -13,22 +13,31 @@ name: Deck support triage
 # app's own Scryfall client, posts them as one comment of `github-actions[bot]` (marker `<!-- deck-support-card-data -->`, the sha256 of the description
 # it was fetched for) and checks again: the data is Scryfall's, nothing in it comes from the author. The decklist, the template report and the build line
 # are notes when missing, not reasons to refuse.
+# D-292: the same check can be run by hand on an existing issue (Actions, "Deck support triage", Run workflow, the issue number), for an issue opened
+# before this workflow existed or one whose last check ran under older rules. Only people with write access can start it. The issue is read through the
+# API instead of the event, and what the author wrote still only ever goes into files, never into a script or the environment file.
 
 on:
   issues:
     types: [opened, edited]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: The number of the deck support issue to check again
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: deck-support-triage-${{ github.event.issue.number }}
+  group: deck-support-triage-${{ github.event.issue.number || inputs.issue }}
   cancel-in-progress: true
 
 jobs:
   triage:
     name: is the request complete?
-    if: ${{ startsWith(github.event.issue.title, 'deck support') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.event.issue.title, 'deck support') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -48,12 +57,37 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Check the description
+      - name: Read the issue
         env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_ISSUE: ${{ inputs.issue }}
+          EVENT_NUMBER: ${{ github.event.issue.number }}
+          EVENT_AUTHOR: ${{ github.event.issue.user.login }}
+          EVENT_LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
           # The description is data: it goes through the environment into a file, never into a script.
           BODY: ${{ github.event.issue.body }}
         run: |
-          printf '%s' "$BODY" > "$RUNNER_TEMP/issue.md"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            case "$INPUT_ISSUE" in
+              ''|*[!0-9]*) echo "the issue must be a number"; exit 1 ;;
+            esac
+            gh api "repos/${GITHUB_REPOSITORY}/issues/${INPUT_ISSUE}" > "$RUNNER_TEMP/issue-api.json"
+            jq -e '(.pull_request | not) and .state == "open" and (.title | ascii_downcase | startswith("deck support"))' "$RUNNER_TEMP/issue-api.json" > /dev/null \
+              || { echo "#${INPUT_ISSUE} is not an open deck support issue"; exit 1; }
+            jq -j '.body // ""' "$RUNNER_TEMP/issue-api.json" > "$RUNNER_TEMP/issue.md"
+            jq -r '.number' "$RUNNER_TEMP/issue-api.json" > "$RUNNER_TEMP/number"
+            jq -r '.user.login' "$RUNNER_TEMP/issue-api.json" > "$RUNNER_TEMP/author"
+            jq -r '[.labels[].name] | join(",")' "$RUNNER_TEMP/issue-api.json" > "$RUNNER_TEMP/labels"
+          else
+            printf '%s' "$BODY" > "$RUNNER_TEMP/issue.md"
+            printf '%s' "$EVENT_NUMBER" > "$RUNNER_TEMP/number"
+            printf '%s' "$EVENT_AUTHOR" > "$RUNNER_TEMP/author"
+            printf '%s' "$EVENT_LABELS" > "$RUNNER_TEMP/labels"
+          fi
+          echo "checking issue #$(cat "$RUNNER_TEMP/number") of $(cat "$RUNNER_TEMP/author")"
+      - name: Check the description
+        run: |
           code=0
           node tools/corpus/check-issue-cli.ts --body "$RUNNER_TEMP/issue.md" > "$RUNNER_TEMP/result.json" || code=$?
           cat "$RUNNER_TEMP/result.json"
@@ -81,10 +115,11 @@ jobs:
       - name: Label and comment
         env:
           GH_TOKEN: ${{ github.token }}
-          NUMBER: ${{ github.event.issue.number }}
-          LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
-          AUTHOR: ${{ github.event.issue.user.login }}
         run: |
+          # The issue number, its author and its labels were written to files by "Read the issue" (from the event or from the API).
+          NUMBER=$(cat "$RUNNER_TEMP/number")
+          LABELS=$(cat "$RUNNER_TEMP/labels")
+          AUTHOR=$(cat "$RUNNER_TEMP/author")
           marker='<!-- deck-support-triage -->'
           case ",$LABELS," in
             *,deck-support:in-progress,*|*,deck-support:done,*|*,deck-support:blocked,*)

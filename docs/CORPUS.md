@@ -104,6 +104,8 @@ The cards are added as acceptance cards (a card already in the file, same oracle
 
 A report pasted without the data block (for example only the template report, with its `cards:` lines) is still built when its names can be read. The deck support workflow, whose GitHub runner can reach Scryfall, fetches the cards (`pnpm corpus:fetch-card-data --body issue.md --out card-data.md`, through the app's own Scryfall client, the melded faces of meld cards included) and posts them as one comment of `github-actions[bot]` that starts with `<!-- deck-support-card-data -->` and carries the sha256 of the description. `pnpm corpus:check-issue --body issue.md --card-data card-data.md` is then the check that counts, and the cards are added with `pnpm corpus:from-issue --body card-data.md --issue <number> --fetched` (source "deck-support workflow (Scryfall API), issue #N"). The decklist, the template report and the build line are `notes` when missing: the cards can be built without them, the deck as a whole cannot then be checked. A name Scryfall does not find exactly, or finds only by a fuzzy match, stops the fetch: nothing is guessed.
 
+The workflow checks an issue when it is opened or edited. To check one that already exists (opened before the workflow, or checked under older rules) without editing it: Actions, "Deck support triage", Run workflow, with the issue number (D-292; only people with write access can).
+
 ## What each report says
 
 All files are written to `reports/`, are deterministic (two runs over the same file are identical) and carry no timestamps; the first line says which file, how many cards and which parser version.
