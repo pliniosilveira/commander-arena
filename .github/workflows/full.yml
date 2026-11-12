@@ -1,6 +1,6 @@
 name: Full
 
-# The complete suite as parallel jobs (the former CI, D-113): typecheck, lint, build, all unit tests
+# The complete suite as parallel jobs (the former CI): typecheck, lint, build, all unit tests
 # in four shards (the AI soak tests of 20 games each included) and the browser tests. It runs every
 # night on `main` and by hand (D-250). The scheduled run is skipped when no commit entered `main`
 # since the last scheduled run (the `gate` job); a run started by hand always runs. When a
