@@ -22,6 +22,7 @@ Status: PROPOSED, nothing built. These three cards of `decks/niv-mizzet.txt` nee
 - **Size:** medium to large, no hidden-information risk (the cards are revealed).
 - **Class:** P if the two decisions are accepted as new purposes of `chooseCards`; S only if the owner wants a dedicated "piles" decision kind.
 - **Recommendation:** build it as P after groups 1 to 3, if the owner agrees that a new purpose on an existing decision is enough.
+- **DECIDED by the owner on 2026-11-12 (in chat): approved for implementation.** Built as the P-class version above: new purposes of the existing `chooseCards` and `chooseOption` decision kinds, no new decision kind; a dedicated piles decision kind would be S and is not approved by this.
 
 ## 3. Fiery Confluence: repeatable modes (gap class P, large)
 
