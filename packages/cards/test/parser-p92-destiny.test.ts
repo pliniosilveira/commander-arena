@@ -175,6 +175,17 @@ describe('"loses the game" (D-921, CR 104.3e)', () => {
     });
   });
 
+  test('"you lose the game" is read too: the effect is not limited to other players (CR 104.3e)', () => {
+    const upkeep = readAll('At the beginning of your upkeep, you lose the game.', 'creature');
+    expect(upkeep.abilities).toMatchObject([
+      { kind: 'triggered', effect: { kind: 'loseGame', player: { kind: 'you' } } },
+    ]);
+    const dies = readAll('Whenever a creature dies, you lose the game.', 'creature');
+    expect(dies.abilities).toMatchObject([
+      { kind: 'triggered', effect: { kind: 'loseGame', player: { kind: 'you' } } },
+    ]);
+  });
+
   test('the near misses are not read (SYNTHETIC)', () => {
     for (const text of [
       // winning is another thing: the engine ends a game only by losses and the last player left

@@ -1652,7 +1652,8 @@ export interface TurnLog {
    * Each player a creature was declared as an attacker attacking this turn (D-921, CR 508.6: a player has "attacked [a player]" if they declared
    * creatures as attackers attacking that player), in order: the creature and the player. A creature that attacks a planeswalker or a battle attacks
    * that permanent, not the player who controls or protects it, so it adds no entry; a creature put onto the battlefield attacking was never declared
-   * (CR 508.3b) and adds none; a reselected attack (CR 508.7a) keeps the entry of the player it was declared attacking and adds none for the new one.
+   * as an attacker (CR 508.4: it is "attacking" but never "attacked"; CR 508.6) and adds none; a reselected attack (CR 508.7a) keeps the entry of the
+   * player it was declared attacking and adds none for the new one.
    * "Each player this creature attacked this turn" reads it.
    */
   readonly attackedPlayers: readonly { readonly attacker: ObjectId; readonly player: SeatId }[];

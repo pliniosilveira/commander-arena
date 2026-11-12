@@ -240,6 +240,18 @@ describe('the loss is an effect like any other (CR 104.3e)', () => {
     g.expect.eventLog([{ kind: 'playerLost', seat: 1, reason: 'effect' }]);
   });
 
+  test('the monarch who loses to the effect hands the designation to the active player (CR 725.4)', () => {
+    const g = base(HERALD).at('precombatMain', { active: 0, monarch: 1 }).build();
+    g.advanceTo('end');
+    g.passAll();
+    g.expect.hasLost(1, true);
+    g.expect.monarch(0);
+    g.expect.eventLog([
+      { kind: 'playerLost', seat: 1, reason: 'effect' },
+      { kind: 'monarchChanged', from: 1, to: 0 },
+    ]);
+  });
+
   test('every player losing at once is a draw (CR 104.4a)', () => {
     const g = base(EVERYONE).at('precombatMain', { active: 0 }).build();
     g.advanceTo('end');

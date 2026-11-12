@@ -1734,10 +1734,11 @@ export type Effect =
   | { readonly kind: 'gainLife'; readonly player: PlayerSelector; readonly amount: Amount }
   | { readonly kind: 'loseLife'; readonly player: PlayerSelector; readonly amount: Amount }
   /**
-   * "Each player ... loses the game." (CR 104.3e: an effect may state that a player loses the game, D-921): each player the selector names, who is
+   * "<Players> lose the game." (CR 104.3e: an effect may state that a player loses the game, D-921): each player the selector names, who is
    * still in the game, loses it at once, together (CR 104.4a: if every player remaining loses simultaneously the game is a draw). A player who
    * "can't lose the game" (`cantLoseGame`, CR 101.2: the "can't" wins) does not. The player leaves the game as a conceding player does (CR 104.5); the
-   * game ends when one player is left (CR 104.2a). Only a selector of other players than the controller is meant: "you lose the game" is not read.
+   * game ends when one player is left (CR 104.2a). Any player selector is meant: "you", "that player", "target player", "each opponent", "each
+   * player" and "each player this creature attacked this turn" are all read (CR 104.3e: the effect names the player).
    */
   | { readonly kind: 'loseGame'; readonly player: PlayerSelector }
   /**
