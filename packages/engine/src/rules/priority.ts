@@ -21,6 +21,7 @@ import { canActivateManaAbility, manaAbilitiesOf } from './mana-engine';
 import { setPending } from './set-pending';
 import { settle } from './settle';
 import { foretellableObjects, suspendableObjects } from './special-legality';
+import { turnableObjects } from './face-down-actions';
 
 /** The alternative costs listed on a face, in the order their options are offered (D-121). */
 const ALTERNATIVES = ['free', 'overload', 'evoke', 'dash', 'spectacle', 'tapPermanents'] as const;
@@ -52,6 +53,8 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   // CR 116.2f, 116.2h (D-128): the special actions of Suspend and Foretell; they do not use the stack.
   for (const object of suspendableObjects(state, seat)) options.push({ kind: 'suspend', object });
   for (const object of foretellableObjects(state, seat)) options.push({ kind: 'foretell', object });
+  // CR 116.2b, 701.40b (D-963): turning a face-down permanent face up is a special action too, with priority and no other timing.
+  for (const object of turnableObjects(state, seat)) options.push({ kind: 'turnFaceUp', object });
   // Activated abilities that are not mana abilities (CR 602): from the battlefield and from the hand.
   for (const { object, abilityIndex } of activatableAbilities(state, seat)) {
     options.push({ kind: 'activate', object, abilityIndex });

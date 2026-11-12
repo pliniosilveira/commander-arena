@@ -48,6 +48,12 @@ export type Action =
    * A special action. Paid with a `payMana` decision.
    */
   | { readonly kind: 'foretell'; readonly object: ObjectId }
+  /**
+   * Turn a face-down permanent you control face up (CR 116.2b, 701.40b, 708.8, D-963): a special action, any time you have priority, that does not use the stack. For a
+   * manifested permanent it pays the mana cost of its card, with a `payMana` decision (purpose `turnFaceUp`), and is legal only when the card is a creature card with a
+   * mana cost.
+   */
+  | { readonly kind: 'turnFaceUp'; readonly object: ObjectId }
   | { readonly kind: 'concede' }
   /** Answer a mulligan decision. */
   | { readonly kind: 'keepHand' }

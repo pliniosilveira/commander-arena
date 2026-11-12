@@ -359,10 +359,14 @@ export function playLandAction(
 export function specialAction(
   ctx: RefContext,
   seat: SeatId,
-  kind: 'suspend' | 'foretell',
+  kind: 'suspend' | 'foretell' | 'turnFaceUp',
   card: CardRef,
 ): Action {
-  const obj = resolveObject(ctx, card, { zones: ['hand'], seat });
+  // A face-down permanent is turned up on the battlefield by its controller; the other two special actions are a card in the hand.
+  const obj =
+    kind === 'turnFaceUp'
+      ? resolveObject(ctx, card, { zones: ['battlefield'] })
+      : resolveObject(ctx, card, { zones: ['hand'], seat });
   return { kind, object: obj.id };
 }
 
@@ -373,6 +377,7 @@ export function specToAction(ctx: RefContext, seat: SeatId, spec: ActionSpec): A
   if ('activate' in spec) return activateAction(ctx, seat, spec.activate, spec.ability);
   if ('suspend' in spec) return specialAction(ctx, seat, 'suspend', spec.suspend);
   if ('foretell' in spec) return specialAction(ctx, seat, 'foretell', spec.foretell);
+  if ('turnFaceUp' in spec) return specialAction(ctx, seat, 'turnFaceUp', spec.turnFaceUp);
   if ('tap' in spec) {
     return tapAction(ctx, seat, spec.tap, {
       ...(spec.color ? { color: spec.color } : {}),

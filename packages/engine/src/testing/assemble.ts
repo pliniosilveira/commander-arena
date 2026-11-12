@@ -118,6 +118,7 @@ export function assemble(
   const exile: ObjectId[] = [];
   const commanders: CardId[][] = [[], []];
   const commanderCasts: Record<CardId, number> = {};
+  let faceDownCount = 0;
 
   for (const e of expanded) {
     const cid = cardId(e.index);
@@ -160,6 +161,10 @@ export function assemble(
       ...(onBattlefield && o.ringBearer === true ? { ringBearer: controller } : {}),
       ...(onBattlefield && o.level !== undefined ? { level: o.level } : {}),
       ...(onBattlefield && o.chosen !== undefined ? { chosen: o.chosen } : {}),
+      // D-961: a face-down permanent, labelled in the order the scenario places them.
+      ...(onBattlefield && o.faceDown === true
+        ? { faceDown: { by: 'manifest' as const, n: ++faceDownCount } }
+        : {}),
     };
     if (e.zone === 'battlefield') battlefield.push(oid);
     else if (e.zone === 'exile') exile.push(oid);

@@ -73,6 +73,8 @@ export type PriorityOption =
   | { readonly kind: 'suspend'; readonly object: ObjectId }
   /** Foretell a card from the hand (CR 702.143a, D-128): a special action, see the `foretell` action. */
   | { readonly kind: 'foretell'; readonly object: ObjectId }
+  /** Turn a face-down permanent face up (CR 116.2b, 701.40b, D-963): a special action, see the `turnFaceUp` action. */
+  | { readonly kind: 'turnFaceUp'; readonly object: ObjectId }
   | { readonly kind: 'concede' };
 
 export interface PriorityDecision extends DecisionBase {
@@ -209,7 +211,8 @@ export interface PayManaDecision extends DecisionBase {
     | 'attackTax'
     | 'blockTax'
     | 'suspend'
-    | 'foretell';
+    | 'foretell'
+    | 'turnFaceUp';
   readonly subject?: ObjectId;
   /**
    * For purpose `'unlessPays'` when the payment is the one of an upkeep keyword (D-127): `'echo'` (CR 702.30a:
@@ -240,6 +243,9 @@ export interface PayManaDecision extends DecisionBase {
  * before the card is exiled. `source` is the card in the hand, `seat` its owner, `totalCost` the cost ({M} of the
  * suspend cost, or {2} for foretell). `payAuto` or `payManual` pays it and takes the action; `cancel` takes
  * nothing and gives priority back (nothing has happened).
+ *
+ * For `'turnFaceUp'` (CR 701.40b, 708.8, D-963): the cost of turning a face-down permanent face up, paid before it is turned. `source` is the permanent, `seat` its
+ * controller (the only seat that gets the decision), `totalCost` the mana cost of its card. Answered like the cost of a special action.
  */
 
 /** Cleanup: discard down to maximum hand size (CR 514.1). */
