@@ -72,6 +72,7 @@ These are the three things you type to the coding agent:
 - Out of scope: online play between humans, other formats, sideboarding, ante, subgames, Un-cards, Conspiracies, Attractions, accounts and monetization.
 - Every card is either supported or unsupported, with no "partially supported". A deck that contains an unsupported card cannot be played until the card is supported or replaced; the import screen's "Why unsupported?" shows the text the parser did not read and says whether the grammar or the engine is the blocker. Text the engine does not understand is never half-executed.
 - Card layouts: normal, split, adventure, transform, modal double-faced and Saga are supported (not Fuse, Aftermath, Rooms, flip, meld, day and night, or read ahead). Other layouts are unsupported until added through the card support loop.
+- Face-down permanents: manifest is supported (the top card of a library goes onto the battlefield face down as a 2/2 creature; you may turn a creature card with a mana cost face up for that cost; only you can look at it, and it is drawn with the Manifest token picture from Scryfall). Morph, Megamorph, Disguise, cloak and manifest dread are not.
 - The rules baseline is the Comprehensive Rules effective September 25, 2026 with the Update Bulletin of October 19, 2026, verified and recorded in `docs/rules/RULES_VERSION.md`.
 - Card data and images come from Scryfall, so deck import needs a connection to it; the precons carry their own card data.
 
