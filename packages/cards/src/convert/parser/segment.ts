@@ -267,8 +267,23 @@ export function splitSentences(text: string, start: number, end: number): Span[]
   let from = start;
   for (let i = start; i < end; i++) {
     const c = text.charAt(i);
-    if (isOpenQuote(c) || c === '”') quote = !quote;
-    else if (c === '.' && !quote && (i + 1 === end || /\s/.test(text.charAt(i + 1)))) {
+    if (isOpenQuote(c) || c === '”') {
+      const closes = quote;
+      quote = !quote;
+      // A quote that closes right after its own period, with an "Activate only ..." restriction after it, ends the sentence (stage P69, D-982):
+      // `It gains "You can't lose the game." Activate only as a sorcery.` The restriction is always a sentence of its own; the period inside the
+      // quote is the one of the sentence (the sentence parser reads a quote that ends the text as its end). Any other text after a quote stays in the
+      // sentence, as before ("Create a token with "Draw a card." Draw a card." is one).
+      if (
+        closes &&
+        /\.['’]?$/u.test(text.slice(from, i)) &&
+        /^\s+(?:activate\b|this ability costs\b)/iu.test(text.slice(i + 1, end))
+      ) {
+        const span = trimmed(text, from, i + 1);
+        if (span.end > span.start) out.push(span);
+        from = i + 1;
+      }
+    } else if (c === '.' && !quote && (i + 1 === end || /\s/.test(text.charAt(i + 1)))) {
       const span = trimmed(text, from, i + 1);
       const before = out[out.length - 1];
       if (before !== undefined && NEW_TARGETS_SENTENCE.test(text.slice(span.start, span.end))) {

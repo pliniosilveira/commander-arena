@@ -515,6 +515,7 @@ describe('unmatched abilities', () => {
       'effect.pay-x-at-most',
       'effect.return-exiled-cards-to-hand',
       'effect.roll-die',
+      'effect.gain-static-ability',
       'effect.gain-class-level',
       'effect.exile-random-and-play',
       'effect.phase-out',
