@@ -50,16 +50,19 @@ export function lowerModes(modal: IrModes, ctx: LowerContext): LowerResult<Lower
   if (choose.exactly !== undefined && choose.exactly !== count) return refuse(modal);
   const max = choose.max === 'all' ? count : choose.max;
   if (choose.min < 1 || choose.min > max || max > count) return refuse(modal);
+  // "You may choose two instead" (D-953): the widened maximum is more than the usual one and no more than the number of modes.
+  const widened = choose.widenTo ?? count;
+  if (choose.widenTo !== undefined && (widened <= max || widened > count)) return refuse(modal);
   const blocked = missingFeatures(MODAL_NEEDS);
   if (blocked.length > 0) return refuse(modal, blocked);
 
   let maxIf: ModeChoice['maxIf'];
   if (choose.widen !== undefined) {
-    // "If you control a commander as you cast ~, you may choose both instead": all the modes (two).
+    // "If you control a commander as you cast ~, you may choose both instead": all the modes (two); "you may choose two instead" (D-953): that many.
     const condition = lowerCondition(choose.widen);
     if (!condition.ok) return condition;
     if (count <= max) return refuse(modal);
-    maxIf = { condition: condition.value, max: count };
+    maxIf = { condition: condition.value, max: widened };
   }
 
   const modes: SpellMode[] = [];

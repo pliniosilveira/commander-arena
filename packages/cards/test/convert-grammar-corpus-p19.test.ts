@@ -64,8 +64,8 @@ const REPLAY: readonly Line[] = [
   {
     kind: 'instant',
     text: "Choose one —\n• Destroy target artifact.\n• Change the target of target spell or ability with a single target.\n• One or two target creatures can't block this turn.",
-    expect: no("One or two target creatures can't block this turn.", 'modal.choose'),
-    note: 'replay: 1 card; the second mode ("Change the target of target spell or ability", stage P38, D-182) is read, the third ("One or two target creatures can\'t block") by no rule',
+    expect: OK,
+    note: 'replay: 1 card; the second mode ("Change the target of target spell or ability", stage P38, D-182) is read, and since D-951 the third ("One or two target creatures can\'t block this turn")',
   },
   {
     kind: 'creature',

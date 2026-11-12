@@ -421,6 +421,7 @@ describe('unmatched abilities', () => {
       'condition.attached-to',
       'condition.paired',
       'condition.it-matches',
+      'condition.its-mana-value',
       'condition.gift-promised',
       'condition.opponent-controls-at-least',
       'condition.control-greatest',
@@ -631,6 +632,7 @@ describe('unmatched abilities', () => {
       'noun.any-number-targets',
       'noun.each-other-opponent',
       'noun.other-targets',
+      'noun.one-or-two-targets',
       'noun.that-object',
       'noun.target-creatures-battlefield-or-graveyard',
       'noun.target-graveyard-card',
@@ -734,6 +736,7 @@ describe('unmatched abilities', () => {
       'static.graveyard-play-once-each-turn',
       'modal.choose',
       'modal.choose-commander',
+      'modal.choose-widen',
       'modal.choose-not-repeated',
     ]);
   });

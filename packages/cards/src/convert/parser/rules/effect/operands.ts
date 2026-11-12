@@ -70,6 +70,8 @@ export const GRAVEYARD_OPERANDS = [
 /** The nouns an instruction that deals damage can name as the recipient: a target, any target, a player, a group. */
 export const DAMAGE_RECIPIENTS = [
   'noun.any-target',
+  // D-951: "each of one or two targets".
+  'noun.one-or-two-targets',
   'noun.player',
   // Stage P37 (D-180): "target player or planeswalker" and "each creature that player controls".
   'noun.player-or-planeswalker',

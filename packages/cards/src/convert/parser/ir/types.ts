@@ -163,6 +163,11 @@ export interface IrNoun extends IrNode {
    * ability before it, which a target noun without it may share.
    */
   readonly otherTarget?: true;
+  /**
+   * "one or two target creatures", "each of one or two targets" (D-951, CR 115.1, 601.2c): at least this many targets, at most `count`. A target noun
+   * without it takes none (`upTo`) or exactly `count`.
+   */
+  readonly minTargets?: number;
   /** "any number of other permanents" (stage P30, CR 701.21): the player chooses none, some or all of them. */
   readonly anyNumber?: true;
   /** "one or more Treasures" (stage P41, D-188, CR 701.21): with `anyNumber`, the player chooses at least one of them. */
@@ -1306,6 +1311,8 @@ export interface IrModeChoice {
   /** The wording only fits this many modes ("both"): any other number of bullets is not read. */
   readonly exactly?: number;
   readonly widen?: IrCondition;
+  /** "you may choose two instead" (D-953, CR 700.2): the widened maximum, when the wording says a number; without it, every mode ("both"). */
+  readonly widenTo?: number;
   /** "Choose one that hasn't been chosen this turn" (stage P34, D-152, CR 700.2): a mode this permanent chose earlier this turn is not offered. */
   readonly notRepeatedThisTurn?: true;
 }
