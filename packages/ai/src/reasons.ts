@@ -70,6 +70,8 @@ export const REASONS = [
   'target-commander',
   /** The target of a removal spell is the best target by score. */
   'target-best',
+  /** A face-down permanent of the agent's was turned face up because it is worth more as the card (D-966). */
+  'face-up',
   /** A loyalty ability of a planeswalker of the agent's was activated (D-203). */
   'loyalty',
   /** The decision was answered by the casual handlers (choices, targets, payments, ...). */

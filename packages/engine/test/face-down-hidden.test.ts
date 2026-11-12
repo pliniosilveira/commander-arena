@@ -309,6 +309,7 @@ const OBJECT_VIEW_FIELDS: Readonly<Record<keyof ObjectView, FieldClass>> = {
   faceDownBy: 'public',
   hiddenFace: 'controllerOnly',
   turnFaceUpCost: 'controllerOnly',
+  ifFaceUp: 'controllerOnly',
   foretold: 'public',
   foretoldTurn: 'public',
   exiledFaceDown: 'public',
@@ -448,7 +449,7 @@ describe('the classification of the view fields and the event kinds', () => {
         keywords: [],
       });
       expect(v?.name).toMatch(/^Face-down creature \d+$/);
-      for (const key of ['faces', 'layout', 'meld', 'face', 'hiddenFace', 'turnFaceUpCost']) {
+      for (const key of ['faces', 'layout', 'meld', 'face', 'hiddenFace', 'turnFaceUpCost', 'ifFaceUp']) {
         expect(v, key).not.toHaveProperty(key);
       }
     }

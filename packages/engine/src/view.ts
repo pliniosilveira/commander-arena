@@ -19,7 +19,7 @@ import { type ControlEnd, controlEndOf, controllerOf } from './rules/control';
 import { copiableValues } from './rules/copiable';
 import { derive, oracleTextOf } from './rules/derive';
 import { turnUpSymbols } from './rules/face-down-actions';
-import { faceDownBy, faceDownLabel } from './rules/face-down';
+import { faceDownBy, faceDownLabel, withoutFaceDown } from './rules/face-down';
 import { INHERENT_TEXT, inherentName } from './rules/inherent';
 import { keywordsOf } from './rules/keywords';
 import { loyaltyActivatedThisTurn } from './rules/loyalty';
@@ -273,6 +273,16 @@ export interface ObjectView {
    * pay it now is the priority decision's: it lists a `turnFaceUp` option when they can.
    */
   readonly turnFaceUpCost?: readonly string[];
+  /**
+   * Only in the view of the player who controls a face-down permanent that can be turned face up: what it would be the moment it was turned face up now, with everything that
+   * applies to it as it is (counters, effects, other permanents' abilities): its power and toughness and its keyword abilities. For deciding whether to turn it up (the AI reads
+   * it); absent for every other viewer and when the card can't be turned face up.
+   */
+  readonly ifFaceUp?: {
+    readonly power: number | null;
+    readonly toughness: number | null;
+    readonly keywords: readonly string[];
+  };
   readonly foretold?: true;
   readonly foretoldTurn?: number;
   /**
@@ -635,6 +645,8 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
   const hiddenFront =
     controls && obj.card !== null ? definitionOf(state, obj.card).faces[0] : undefined;
   const turnUp = controls ? turnUpSymbols(state, obj) : null;
+  const upNow = turnUp === null ? null : withoutFaceDown(obj);
+  const upDerived = upNow === null ? null : derive(state, upNow);
   // CR 301.7a, 302.6: what a permanent that is not a creature (yet) would have as one.
   const asCreature = obj.zone === 'battlefield' && !d.types.includes('creature');
   const printed = asCreature ? copiableValues(state, obj).characteristics : null;
@@ -698,6 +710,15 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
           hiddenFront,
         )),
     ...(turnUp === null ? {} : { turnFaceUpCost: turnUp }),
+    ...(upNow === null || upDerived === null
+      ? {}
+      : {
+          ifFaceUp: {
+            power: upDerived.power,
+            toughness: upDerived.toughness,
+            keywords: keywordsOf(state, upNow),
+          },
+        }),
     targets: obj.stack?.chosenTargets ?? [],
     ...(abilitySource === null ? {} : { abilitySource }),
     ...(obj.stack?.kind === 'ability' && obj.stack.ability !== null

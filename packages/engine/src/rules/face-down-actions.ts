@@ -18,7 +18,7 @@ import type { GameEvent } from '../state/events';
 import { definitionOf, getObject, setObject } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
-import { faceDownBy, withoutFaceDown } from './face-down';
+import { faceDownBy, faceDownPermanents, withoutFaceDown } from './face-down';
 import { applyPaymentPlan, payableSources, planFor } from './mana-engine';
 import { type ManualTap, payByTapping } from './pay-manual';
 import { grantPriority, priorityOptions } from './priority';
@@ -50,7 +50,10 @@ export function canTurnFaceUp(state: GameState, seat: SeatId, obj: GameObject): 
 
 /** The face-down permanents `seat` may turn face up now, in battlefield order. */
 export function turnableObjects(state: GameState, seat: SeatId): ObjectId[] {
-  return state.battlefield.filter((id) => canTurnFaceUp(state, seat, getObject(state, id)));
+  // Face-down permanents are few and the options are listed at every priority decision: the others are skipped before anything is derived.
+  return faceDownPermanents(state).filter(
+    (id) => state.objects[id]?.zone === 'battlefield' && canTurnFaceUp(state, seat, getObject(state, id)),
+  );
 }
 
 /**
