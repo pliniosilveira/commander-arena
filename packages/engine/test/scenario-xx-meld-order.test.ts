@@ -203,3 +203,37 @@ describe('replay', () => {
     expect(run()).toBe(run());
   });
 });
+
+describe('"the last card exiled with it" follows the order chosen for the two cards (CR 607.2a, 712.21b)', () => {
+  // SYNTHETIC Shape Twin takes the creature types of the last creature card it exiled: the card with the later timestamp, which the player who exiled the permanent chose.
+  const TWIN = 'SYNTHETIC Shape Twin';
+  const twinAfter = (last: string) => {
+    const g = scenario()
+      .seat(0)
+      .battlefield(DUSK, { label: 'dusk', meldedWith: 'dawn' })
+      .battlefield(DAWN, { label: 'dawn' })
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Plains', 'Island', 'Island')
+      .hand(TWIN)
+      .library('Island', { count: 6 })
+      .seat(1)
+      .library('Island', { count: 6 })
+      .build();
+    g.act(0).cast(TWIN, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets('dusk');
+    g.passAll();
+    g.act(0).accept();
+    g.expect.pending('chooseOption', 0);
+    g.act(0).chooseOption(last);
+    settle(g);
+    return g;
+  };
+
+  test('Dusk exiled last: the types of Dusk (Human Knight)', () => {
+    twinAfter(DUSK).expect.derived(TWIN, { subtypes: ['Human', 'Knight', 'Shapeshifter'] });
+  });
+
+  test('Dawn exiled last: the types of Dawn (Human Cleric)', () => {
+    twinAfter(DAWN).expect.derived(TWIN, { subtypes: ['Human', 'Cleric', 'Shapeshifter'] });
+  });
+});

@@ -140,7 +140,12 @@ export function linkedCardOf(
   source: GameObject,
   from: ObjectFilter,
 ): GameObject | null {
-  const ids = source.linkedExile ?? [];
+  // "Last" is by timestamp (CR 607.2a, 712.21b): the two cards of an exiled melded permanent are listed in the order they were put in, but the player who exiled it
+  // chose which has the later timestamp. The sort is stable, so cards with the same timestamp keep the order they were remembered in.
+  const ids = [...(source.linkedExile ?? [])]
+    .map((id, index) => ({ id, index, stamp: state.objects[id]?.timestamp ?? 0 }))
+    .sort((a, b) => a.stamp - b.stamp || a.index - b.index)
+    .map((entry) => entry.id);
   for (let i = ids.length - 1; i >= 0; i -= 1) {
     const card = state.objects[ids[i] as ObjectId];
     if (card?.zone !== 'exile') continue;

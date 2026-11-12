@@ -177,12 +177,12 @@ function meldStructureIssues(def: CardDefinition, out: AstIssue[]): void {
   if (typeof partner !== 'string' || partner === '' || partner === def.name) {
     out.push({
       path: 'meld.partner',
-      message: 'layout meld needs the name of the other card of its meld pair (CR 701.42b)',
+      message: 'layout meld needs the name of the other card of its meld pair',
     });
   }
   const [front, back] = def.faces;
   if (front !== undefined && !front.types.some((t) => isPermanentType(t))) {
-    out.push({ path: 'faces[0].types', message: 'a meld card is a permanent card (CR 712.4)' });
+    out.push({ path: 'faces[0].types', message: 'a meld card is a permanent card' });
   }
   if (back !== undefined) {
     if (!back.types.some((t) => isPermanentType(t))) {
