@@ -20,8 +20,10 @@ export {
 export {
   COLLECTION_BATCH_SIZE,
   type FuzzyMatch,
+  type RelatedCard,
   type ResolveFailure,
   type ResolveResult,
+  relatedLookup,
 } from './resolve';
 export {
   type CardConversion,

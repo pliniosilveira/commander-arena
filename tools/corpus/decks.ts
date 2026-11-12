@@ -11,9 +11,12 @@
 import {
   type ImportedCard,
   importCard,
+  type MeldLookup,
+  meldRelation,
   normalizeNameKey,
   parseDecklistDetailed,
   parseStoredCard,
+  type StoredCard,
   templateOf,
 } from '@commander-arena/cards';
 import { reasonCategory } from './coverage.ts';
@@ -83,6 +86,8 @@ interface Candidate {
 export interface CardIndex {
   readonly byFull: ReadonlyMap<string, ImportedCard>;
   readonly byFront: ReadonlyMap<string, ImportedCard>;
+  /** D-994: the melded faces of meld pairs seen in the file (cards of their own, any legality), by normalized name: a precon snapshot stores the one its meld card needs. */
+  readonly meldFaces: ReadonlyMap<string, StoredCard>;
   readonly read: number;
   readonly malformed: number;
   readonly rejected: number;
@@ -112,6 +117,19 @@ export async function indexCards(
   let read = 0;
   let malformed = 0;
   let rejected = 0;
+  // D-994: a meld card waits for the melded face, a card of its own that no deck names and that may come later in the file: the halves are imported at the end.
+  const meldFaces = new Map<string, StoredCard>();
+  const halves: StoredCard[] = [];
+  const add = (stored: StoredCard, imported: ImportedCard): void => {
+    const keys = keysOf(stored.name);
+    const candidate: Candidate = {
+      card: imported,
+      single: keys.full === keys.front,
+      legal: stored.commanderLegality === 'legal' || stored.commanderLegality === 'restricted',
+    };
+    if (better(candidate, full.get(keys.full))) full.set(keys.full, candidate);
+    if (better(candidate, front.get(keys.front))) front.set(keys.front, candidate);
+  };
   for await (const item of items) {
     if (item.kind === 'bad') {
       malformed += 1;
@@ -125,26 +143,31 @@ export async function indexCards(
       continue;
     }
     const stored = converted.card;
+    if (meldRelation(stored).role === 'result')
+      meldFaces.set(normalizeNameKey(stored.name), stored);
     const keys = keysOf(stored.name);
     if (!wanted.has(keys.full) && !wanted.has(keys.front)) continue;
-    let imported: ImportedCard;
-    try {
-      imported = importCard(stored);
-    } catch {
-      rejected += 1;
+    if (stored.layout === 'meld') {
+      halves.push(stored);
       continue;
     }
-    const candidate: Candidate = {
-      card: imported,
-      single: keys.full === keys.front,
-      legal: stored.commanderLegality === 'legal' || stored.commanderLegality === 'restricted',
-    };
-    if (better(candidate, full.get(keys.full))) full.set(keys.full, candidate);
-    if (better(candidate, front.get(keys.front))) front.set(keys.front, candidate);
+    try {
+      add(stored, importCard(stored));
+    } catch {
+      rejected += 1;
+    }
+  }
+  const related: MeldLookup = (name) => meldFaces.get(normalizeNameKey(name));
+  for (const stored of halves) {
+    try {
+      add(stored, importCard(stored, undefined, undefined, undefined, undefined, related));
+    } catch {
+      rejected += 1;
+    }
   }
   const unwrap = (map: Map<string, Candidate>) =>
     new Map([...map].map(([key, candidate]) => [key, candidate.card]));
-  return { byFull: unwrap(full), byFront: unwrap(front), read, malformed, rejected };
+  return { byFull: unwrap(full), byFront: unwrap(front), meldFaces, read, malformed, rejected };
 }
 
 /** Every name key the decks need looked up: the full name and the front face of each line. */

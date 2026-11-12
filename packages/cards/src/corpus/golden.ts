@@ -7,6 +7,7 @@
  * Shared by the golden test and by `pnpm corpus:extract`, which appends cards read from the
  * Scryfall bulk file the owner downloaded.
  */
+import { MELD_PART, MELD_RESULT } from '../convert/meld';
 import type { StoredCard, StoredFace } from '../types';
 
 export interface GoldenFace {
@@ -37,14 +38,27 @@ export interface GoldenCard {
   readonly source: string;
   /** An acceptance card (a card of the owner's deck): reported apart, outside the hold-out split. */
   readonly acceptance?: true;
+  /**
+   * The parts of a meld pair the card names in Scryfall's `all_parts` (D-994, CR 712.5): only the entries with the components `meld_part` and `meld_result`, which the
+   * importer reads (`convert/meld.ts`; the component names are UNVERIFIED). Left out for every card that has none.
+   */
+  readonly relatedParts?: readonly { readonly name: string; readonly component: string }[];
+  /**
+   * The card is in the corpus only because another card of it needs it (D-994: the combined face of a meld pair, which is a card of its own in Scryfall's data and is
+   * fetched with the pair): the golden test gives it to the importer as the melded face but does not count it, in any group, as a card of the corpus.
+   */
+  readonly related?: true;
 }
 
 /** The record of a stored card, from the Scryfall bulk file or the app's cache. */
 export function toGoldenCard(
   card: StoredCard,
   source: string,
-  options: { acceptance?: boolean } = {},
+  options: { acceptance?: boolean; related?: boolean } = {},
 ): GoldenCard {
+  const meldParts = card.relatedParts.filter(
+    (p) => p.component === MELD_PART || p.component === MELD_RESULT,
+  );
   return {
     oracleId: card.oracleId,
     name: card.name,
@@ -63,7 +77,11 @@ export function toGoldenCard(
       colors: [...f.colors],
     })),
     source,
+    ...(meldParts.length === 0
+      ? {}
+      : { relatedParts: meldParts.map((p) => ({ name: p.name, component: p.component })) }),
     ...(options.acceptance === true ? { acceptance: true as const } : {}),
+    ...(options.related === true ? { related: true as const } : {}),
   };
 }
 
@@ -87,7 +105,10 @@ export function fromGoldenCard(golden: GoldenCard): StoredCard {
     commanderLegality: 'legal',
     edhrecRank: golden.edhrecRank,
     gameChanger: null,
-    relatedParts: [],
+    relatedParts: (golden.relatedParts ?? []).map((p) => ({
+      name: p.name,
+      component: p.component,
+    })),
     fetchedAt: 0,
   };
 }

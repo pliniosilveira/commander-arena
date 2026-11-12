@@ -4,6 +4,7 @@
  * `?fuzzy=` for what the batches did not return. Results are matched to requests by name, never
  * by position. A fuzzy hit is only a candidate for the user to confirm.
  */
+import { type MeldLookup, meldResultNames } from '../convert/meld';
 import type { StoredCard } from '../types';
 import type { CardCache } from './cache';
 import { frontFaceName, normalizeNameKey } from './names';
@@ -25,6 +26,14 @@ export interface ResolveFailure {
   readonly message: string;
 }
 
+/**
+ * A card the game needs although it is not in the list (D-994): the melded face of a meld card. Fetched with the cards of the list, by the same path (the cache
+ * first, then Scryfall), and kept apart from `found` because nobody asked for it.
+ */
+export type RelatedCard =
+  | { readonly kind: 'card'; readonly card: StoredCard }
+  | { readonly kind: 'missing'; readonly message: string };
+
 export interface ResolveResult {
   /** Cards by normalized requested name. */
   readonly found: ReadonlyMap<string, StoredCard>;
@@ -33,6 +42,20 @@ export interface ResolveResult {
   readonly fuzzy: FuzzyMatch[];
   /** Names that could not be looked up at all (network trouble, HTTP errors). */
   readonly failures: ResolveFailure[];
+  /**
+   * The melded faces of the meld cards among `found` and the fuzzy candidates (D-994, CR 712.4), by normalized name: the card, or why it could not be had.
+   * Absent from a client that does not look them up, which leaves a meld card unsupported with the reason "was not available".
+   */
+  readonly related?: ReadonlyMap<string, RelatedCard>;
+}
+
+/** The lookup a meld card's import reads its melded face with, from what the client answered (D-994). */
+export function relatedLookup(related: ReadonlyMap<string, RelatedCard> | undefined): MeldLookup {
+  return (name) => {
+    const hit = related?.get(normalizeNameKey(name));
+    if (hit === undefined) return undefined;
+    return hit.kind === 'card' ? hit.card : { error: hit.message };
+  };
 }
 
 export interface ResolveDeps {
@@ -194,7 +217,43 @@ async function fallback(deps: ResolveDeps, pending: Pending): Promise<Outcome> {
   return { kind: 'fuzzy', card: fuzzy.card };
 }
 
+/**
+ * Resolves the names of a list, and the melded faces the meld cards found among them name (D-994): after the cards of the list, one more pass for those faces by the
+ * same path, so a deck with a meld card costs one more request (none when the cache has them). A face that cannot be had is reported with the reason, which the import
+ * puts in the meld card's support report.
+ */
 export async function resolveNames(
+  deps: ResolveDeps,
+  names: readonly string[],
+): Promise<ResolveResult> {
+  const base = await resolveListNames(deps, names);
+  const wanted = meldResultNames([...base.found.values(), ...base.fuzzy.map((f) => f.candidate)]);
+  if (wanted.length === 0) return base;
+  const second = await resolveListNames(deps, wanted);
+  const related = new Map<string, RelatedCard>();
+  for (const name of wanted) {
+    const key = normalizeNameKey(name);
+    const card = second.found.get(key);
+    const failure = second.failures.find((f) => normalizeNameKey(f.requested) === key);
+    related.set(
+      key,
+      card !== undefined
+        ? { kind: 'card', card }
+        : {
+            kind: 'missing',
+            message:
+              failure !== undefined
+                ? failure.message
+                : second.fuzzy.some((f) => normalizeNameKey(f.requested) === key)
+                  ? 'only an approximate match was found'
+                  : 'no card of that name was found',
+          },
+    );
+  }
+  return { ...base, related };
+}
+
+async function resolveListNames(
   deps: ResolveDeps,
   names: readonly string[],
 ): Promise<ResolveResult> {

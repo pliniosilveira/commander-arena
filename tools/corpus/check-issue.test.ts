@@ -146,6 +146,38 @@ describe('an incomplete request says what is missing', () => {
   });
 });
 
+describe('a meld card (D-994, CR 712.5)', () => {
+  const half: GoldenCard = {
+    ...card('SYNTHETIC Issue Squire', '33333333-0000-0000-0000-000000000003'),
+    layout: 'meld',
+    relatedParts: [
+      { name: 'SYNTHETIC Issue Squire', component: 'meld_part' },
+      { name: 'SYNTHETIC Issue Titan', component: 'meld_result' },
+    ],
+  };
+  const titan: GoldenCard = {
+    ...card('SYNTHETIC Issue Titan', '33333333-0000-0000-0000-000000000004'),
+    related: true,
+  };
+  const { acceptance: _no, ...titanRecord } = titan;
+
+  test('is complete with the record of its melded face, which is no card of the deck', () => {
+    const result = checkIssue(
+      description({ records: [half, titanRecord as GoldenCard], names: [half.name] }),
+    );
+    expect(result.problems).toEqual([]);
+    expect(result.complete).toBe(true);
+  });
+
+  test('is incomplete without it: the work would have nothing to read for the third card', () => {
+    const result = checkIssue(description({ records: [half], names: [half.name] }));
+    expect(result.complete).toBe(false);
+    expect(result.problems).toEqual([
+      'the card data has no record of the melded face: SYNTHETIC Issue Titan (the melded face of SYNTHETIC Issue Squire)',
+    ]);
+  });
+});
+
 describe('the command line', () => {
   test('needs --body', async () => {
     const out: string[] = [];

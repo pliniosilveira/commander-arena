@@ -14,6 +14,9 @@ const LAYOUT_FACES: Readonly<Record<string, { layout: CardLayout; faces: number 
   modal_dfc: { layout: 'modal_dfc', faces: 2 },
   // CR 722 (stage P56, D-214): a preparation card, its prepare spell the second face.
   prepare: { layout: 'prepare', faces: 2 },
+  // CR 701.42, 712.4 (D-991, D-994): a meld card is one card face in the data; the engine's definition adds the combined face of its pair as a second
+  // face, which the importer reads from the card of that face (`convert/meld.ts`), so `faces` here counts the stored faces.
+  meld: { layout: 'meld', faces: 1 },
 };
 
 export interface ResolvedLayout {
@@ -44,8 +47,7 @@ function adventureReasons(faces: ResolvedLayout['faces']): string[] {
  * Maps Scryfall's layout string to the engine's and decides whether the engine runs it. The gate is
  * the engine's own registry, `SUPPORTED_FEATURES.layouts`, read at call time: a layout the engine
  * starts to run and that `LAYOUT_FACES` already maps (saga) needs no change here (D-087); a layout
- * the engine adds to `CardLayout` needs its line in `LAYOUT_FACES`. Layouts the engine does not model (flip, meld, class,
- * leveler, prototype, token and so on) and layouts whose face count does not fit become `normal`
+ * the engine adds to `CardLayout` needs its line in `LAYOUT_FACES`. Layouts the engine does not model (flip, leveler, prototype, token and so on) and layouts whose face count does not fit become `normal`
  * with face 0, a definition the engine can still load, together with a reason naming the layout.
  * A layout the engine models but does not list (saga before it ran, say) keeps all its faces and
  * says "is not supported yet"; `validateCard` would report the same.

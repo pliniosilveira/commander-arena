@@ -102,6 +102,27 @@ export function checkIssue(description: string): IssueCheck {
       problems.push(`the card data has no record for: ${missing.join('; ')}`);
     }
   }
+  // D-994: a meld card is worked on with its melded face, a card of its own: the issue carries it as a `related` record, or the work would have nothing to read.
+  try {
+    const records = cardsOfIssue(description, 0);
+    const related = new Set(
+      records.filter((c) => c.related === true).map((c) => c.name.toLowerCase()),
+    );
+    const lacking = records
+      .filter((c) => c.layout === 'meld' && names.includes(c.name))
+      .flatMap((c) =>
+        (c.relatedParts ?? [])
+          .filter((p) => p.component === 'meld_result' && !related.has(p.name.toLowerCase()))
+          .map((p) => `${p.name} (the melded face of ${c.name})`),
+      );
+    if (lacking.length > 0) {
+      problems.push(
+        `the card data has no record of the melded face: ${[...new Set(lacking)].join('; ')}`,
+      );
+    }
+  } catch {
+    // Already reported above: an unreadable block.
+  }
   return { complete: problems.length === 0, problems, commander, unsupported: names };
 }
 
