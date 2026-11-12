@@ -112,8 +112,8 @@ const IT_CONTROLLER: readonly Line[] = [
   {
     kind: 'instant',
     text: 'Exile target creature. Its controller manifests the top card of their library.',
-    expect: no('manifests the top card of their library.', 'effect.player'),
-    note: 'replay: 1 card; manifest is not an engine effect',
+    expect: OK,
+    note: 'replay: 1 card; read since manifest (D-967, CR 701.40a): the engine effect `manifest` and the verb of effect.player',
   },
   {
     kind: 'instant',

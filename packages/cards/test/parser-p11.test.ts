@@ -278,9 +278,10 @@ describe('"Its controller creates ..." (CR 111.2): a token for the controller of
       'token.predefined',
     ],
     [
-      'Exile target creature. Its controller manifests the top card of their library.',
-      'manifests the top card of their library.',
-      'effect.player',
+      // Manifest is read since D-967 (the top card of their library); several cards are another instruction and stay unread.
+      'Exile target creature. Its controller manifests the top two cards of their library.',
+      'the top two cards of their library.',
+      'effect.player.manifest',
     ],
   ])('%s stops at "%s"', (text, stoppedAt, closestRule) => {
     expect(dropped(text)).toMatchObject({ reason: 'unrecognised', stoppedAt, closestRule });
