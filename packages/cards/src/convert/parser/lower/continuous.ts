@@ -300,7 +300,7 @@ export const FLICKER: Lowering<IrClause, Effects> = {
  * "When ~ dies, you may return it to the battlefield under its owner's control at the beginning of your next upkeep." (D-982, CR 603.7, 603.7c, 400.7, 603.10a):
  * the engine's `delayedTrigger` at the controller's next upkeep whose effect moves the card the creature became in the graveyard (`triggerCard`), which is looked
  * for when the delayed ability is created and found again when it triggers. "It" must be the card of a creature that died (`ctx.itDied`: a trigger of `~` dying), not
- * one that left the battlefield some other way, which may be anywhere: the return is not lowered after anything else. The "you may" is the ability's own choice.
+ * one that left the battlefield some other way, which may be anywhere: the return is not lowered after anything else (`ctx.lowered`, D-985). The "you may" is the ability's own choice.
  */
 export const DELAYED_RETURN_AT_UPKEEP: Lowering<IrClause, Effects> = {
   head: 'delayedReturnAtUpkeep',
@@ -318,7 +318,8 @@ export const DELAYED_RETURN_AT_UPKEEP: Lowering<IrClause, Effects> = {
     if (to.zone !== 'battlefield' || to.whose === undefined || to.tapped === true) {
       return failure(clause);
     }
-    if (what.det !== 'triggerSubject' || !ctx.itDied) return failure(clause);
+    // D-985: "it" is the dying creature only as the first instruction: after a token made or a card discarded, "it" may name that object instead.
+    if (what.det !== 'triggerSubject' || !ctx.itDied || ctx.lowered > 0) return failure(clause);
     const back: Effect = {
       kind: 'moveToZone',
       objects: { kind: 'triggerCard' },

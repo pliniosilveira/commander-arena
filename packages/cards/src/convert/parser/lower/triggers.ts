@@ -721,6 +721,15 @@ export function lowerTriggered(
   // ability. "It" is the source only when every event is about the source itself.
   const itIsSelf = events.every((e) => e.subject?.det === 'self');
   ctx.itIsSelf = itIsSelf;
+  // D-985 (CR 400.7, 603.10a): a trigger that looks back at a permanent leaving, or at a card cycled, runs when the source may be a new object in another zone.
+  ctx.sourceMayLeave = triggers.some(
+    (t) =>
+      t.kind === 'dies' ||
+      t.kind === 'leavesBattlefield' ||
+      t.kind === 'diesBatch' ||
+      t.kind === 'permanentSacrificed' ||
+      t.kind === 'cycled',
+  );
   let interveningIf: Condition | undefined;
   let foldedCounters = false;
   const ifWritten = ability.interveningIf ?? lift.condition;

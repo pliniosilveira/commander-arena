@@ -134,6 +134,61 @@ describe('CR 702.95c: both must still qualify as the ability resolves', () => {
   });
 });
 
+describe('CR 702.95c: the ability "whenever another creature you control enters" checks the newcomer as it resolves (D-985)', () => {
+  // The Squire is on the battlefield and the Bears is cast: the ability that waits on the stack names the Bears as the creature that entered.
+  const newcomer = () => {
+    const g = scenario()
+      .seat(0)
+      .hand(BEARS, RUST)
+      .battlefield('Forest', { count: 2 })
+      .battlefield('Island', { count: 2 })
+      .battlefield(SQUIRE, { label: 'sq' })
+      .library(...LIBRARY)
+      .seat(1)
+      .battlefield('Island', { count: 2 })
+      .battlefield('Mountain', { count: 2 })
+      .hand(BORROW)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).cast(BEARS, { pay: true });
+    resolveTop(g);
+    g.expect.stack([`${SQUIRE} (ability)`]);
+    return g;
+  };
+
+  test('with nothing in response the newcomer is the one candidate, and the pair is made', () => {
+    const g = newcomer();
+    resolveTop(g);
+    choosePermanentDecision(g);
+    g.act(0).choosePermanents(BEARS);
+    g.expect.paired(SQUIRE, BEARS);
+  });
+
+  test('another player gained control of the newcomer in response: nothing is asked, nobody is paired', () => {
+    const g = newcomer();
+    g.act(0).pass();
+    g.act(1).cast(BORROW, { targets: [BEARS], pay: true });
+    resolveTop(g);
+    resolveTop(g);
+    expect(g.state.pending?.kind).toBe('priority');
+    g.expect.unpaired(SQUIRE);
+    g.expect.noEvent({ kind: 'creaturesPaired' });
+    g.expect.invariants();
+  });
+
+  test('the newcomer became an artifact in response: nothing is asked, nobody is paired', () => {
+    const g = newcomer();
+    g.act(0).cast(RUST, { targets: [BEARS], pay: true });
+    resolveTop(g);
+    resolveTop(g);
+    expect(g.state.pending?.kind).toBe('priority');
+    g.expect.unpaired(SQUIRE);
+    g.expect.noEvent({ kind: 'creaturesPaired' });
+    g.expect.invariants();
+  });
+});
+
 describe('CR 603.4, 702.95d: a second ability finds them paired and does nothing', () => {
   // Two creatures with soulbond and a third entering: the controller has two triggers and orders them.
   const two = () =>

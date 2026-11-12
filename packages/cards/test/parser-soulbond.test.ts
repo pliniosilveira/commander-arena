@@ -276,3 +276,68 @@ describe("any triggered ability quoted to the pair is read, not only the Seraph'
     expect(status(text).status).toBe('supported');
   });
 });
+
+describe('"if ~ is paired" where the permanent may be gone is not read (D-985, CR 400.7, 603.10a)', () => {
+  // The engine reads a pair on the permanent that is on the battlefield now. A dies or leaves trigger of the permanent runs on the card in the graveyard (CR 400.7), which has
+  // no pair, so the condition would be false for ever: such a card must be unsupported, not wrong.
+  test.each([
+    ['dies, intervening if', 'When ~ dies, if ~ is paired with another creature, draw a card.'],
+    [
+      "dies, intervening if, 'it'",
+      "When ~ dies, if it's paired with another creature, draw a card.",
+    ],
+    [
+      'leaves the battlefield',
+      'Whenever ~ leaves the battlefield, if ~ is paired with another creature, draw a card.',
+    ],
+    [
+      'another creature dies (the permanent may die with it)',
+      'Whenever another creature dies, if ~ is paired with another creature, draw a card.',
+    ],
+    [
+      'a dies trigger of the pair',
+      'As long as ~ is paired with another creature, each of those creatures has "When this creature dies, if this creature is paired with another creature, you draw a card."',
+    ],
+  ])('%s', (_why, text) => {
+    const s = status(text);
+    expect(s.status).toBe('unsupported');
+    expect(s.unparsed.length).toBeGreaterThan(0);
+  });
+
+  test('the same condition in a trigger of a permanent that stays is read', () => {
+    for (const text of [
+      'As long as ~ is paired with another creature, each of those creatures has "Whenever this creature attacks, if this creature is paired with another creature, you draw a card."',
+      'When ~ attacks, if ~ is paired with another creature, you gain 1 life.',
+      'Whenever ~ deals combat damage to a player, if ~ is paired with another creature, draw a card.',
+    ]) {
+      expect(status(text).status, text).toBe('supported');
+    }
+  });
+});
+
+describe('"Return it" at the next upkeep names the dying creature only when nothing else came before (D-985)', () => {
+  test.each([
+    [
+      'a token before',
+      "When ~ dies, create a 1/1 white Spirit creature token with flying. Return it to the battlefield under its owner's control at the beginning of your next upkeep.",
+    ],
+    [
+      'a Treasure before',
+      "When ~ dies, create a Treasure token. Return it to the battlefield under its owner's control at the beginning of your next upkeep.",
+    ],
+    [
+      'a discard before',
+      "When ~ dies, you may discard a card. If you do, return it to the battlefield under its owner's control at the beginning of your next upkeep.",
+    ],
+  ])('is not read: %s', (_why, text) => {
+    expect(status(text).status).toBe('unsupported');
+  });
+
+  test('is read as the only instruction', () => {
+    expect(
+      status(
+        "When ~ dies, you may return it to the battlefield under its owner's control at the beginning of your next upkeep.",
+      ).status,
+    ).toBe('supported');
+  });
+});

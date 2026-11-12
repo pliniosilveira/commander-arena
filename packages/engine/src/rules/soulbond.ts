@@ -71,6 +71,9 @@ type Pair = Extract<Instruction, { kind: 'pair' }>;
  * is paired. The controller is asked (a `choosePermanent` decision of purpose 'soulbond', `min` 0: choosing none is the "may", CR 603.5, and a
  * creature that is the only candidate is still asked) while there is a creature to pair with; nothing is asked, and nobody paired, when there is none (a
  * creature left in response). The instruction stays at the head of the queue until it is answered; an empty answer is a decline, never a prompt again.
+ *
+ * These checks repeat the intervening "if" that `soulbondReadyHolds` read as the ability began to resolve (CR 603.4): no player acts between that and this, so they cannot
+ * fail alone today. They stay as the engine's own guard of CR 702.95c (a check on the instruction does not depend on the ability that built it).
  */
 export function runPair(state: GameState, res: ResolutionContext, ins: Pair): StepOutcome {
   const seat = res.controller;

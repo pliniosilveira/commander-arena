@@ -1166,6 +1166,24 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           "thisInYourGraveyard needs functionsIn: 'graveyard': an ability that works on the battlefield has its card there",
         );
       }
+      // D-985 (CR 400.7, 603.10a): the pair is read on the permanent on the battlefield now. A trigger that looks back at a permanent leaving (it may be the source, or
+      // leave with the others), a sacrifice or a cycled card runs when the source may be a new object in another zone, and an ability from the graveyard has its card
+      // there: `paired` would be false for ever, so the card is refused instead of accepted with a condition that never holds.
+      if (
+        (['dies', 'leavesBattlefield', 'diesBatch', 'permanentSacrificed', 'cycled'].includes(
+          a.trigger?.kind,
+        ) ||
+          a.functionsIn === 'graveyard') &&
+        (conditionHas(a.interveningIf, 'paired') ||
+          conditionHas(a.triggerCondition, 'paired') ||
+          effectHas([a.effect, a.modes, a.chooseModes], 'paired'))
+      ) {
+        issue(
+          out,
+          path,
+          "'paired' reads the pair of a permanent on the battlefield: it is not valid where the permanent may have left it (a dies, leaves, sacrifice or cycled trigger, an ability that works from the graveyard)",
+        );
+      }
       // D-145: "attacks while you don't control another Dinosaur": the condition of the event itself, read once.
       if (a.triggerCondition !== undefined) {
         checkCondition(a.triggerCondition, `${path}.triggerCondition`, out);

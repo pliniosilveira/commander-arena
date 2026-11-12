@@ -174,6 +174,7 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     const lowered = lowerClause(clause, ctx);
     if (!lowered.ok) return lowered;
     effects.push(...lowered.value);
+    ctx.lowered += 1;
     noteRemoved(lowered.value, ctx);
     if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;
     noteMoved(lowered.value, ctx);

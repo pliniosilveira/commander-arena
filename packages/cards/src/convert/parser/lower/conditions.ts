@@ -169,6 +169,14 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:paired']);
       if (blocked.length > 0) return failure(c, blocked);
       if (test.who === 'it' && !itIsSelf) return failure(c, []);
+      // D-985 (CR 400.7, 603.10a): the engine reads the pair of the permanent on the battlefield now. Where the permanent may be gone (a dies or leaves trigger, a
+      // sacrifice, a spell, an ability from the graveyard) the card it would be read on has no pair: not read, never a condition that is false for ever.
+      if (
+        ctx !== undefined &&
+        (ctx.owner === 'spell' || ctx.selfGone || ctx.sourceMayLeave || ctx.graveyardSource)
+      ) {
+        return failure(c, []);
+      }
       return ok({ kind: 'paired' });
     }
     case 'attachedTo': {

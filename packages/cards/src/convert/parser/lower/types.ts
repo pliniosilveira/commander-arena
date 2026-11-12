@@ -53,6 +53,11 @@ export interface LowerContext {
    */
   madeAToken: boolean;
   /**
+   * The number of instructions of this text lowered so far (D-985): "return it" after an earlier instruction may name what that one made or moved, so a rule that reads
+   * "it" as the object of the trigger itself needs this to be 0. Filled by `lowerSentences` as each clause is lowered.
+   */
+  lowered: number;
+  /**
    * What "that player" means in the body of a triggered ability (stage P18, D-111), with the engine
    * features that reading needs: the controller of the spell that was cast (`controllerOf` the
    * triggering spell, CR 608.2h) for a cast trigger, "you" when the trigger is about you. Null when the
@@ -88,6 +93,12 @@ export interface LowerContext {
    * reads it. Null before any roll; a second roll in one text is refused.
    */
   dieSides: number | null;
+  /**
+   * True when the permanent the ability is on may be gone, or may have changed zones, when the conditions of the ability are read (D-985, CR 400.7, 603.10a): the
+   * ability triggers on a permanent dying, leaving the battlefield or being sacrificed (the source may be the one that left, or leave with the others), or on a
+   * card being cycled. A condition about the state of the permanent on the battlefield (`paired`) is then not read: the card it would be read on is a new object.
+   */
+  sourceMayLeave: boolean;
   /** True only while the intervening "if" of a triggered ability is lowered (D-271): the one place "~ is in your graveyard" is read. */
   interveningCondition: boolean;
   /**
@@ -187,6 +198,7 @@ export function newContext(
     selfCast: false,
     removed: new Set(),
     madeAToken: false,
+    lowered: 0,
     thatPlayer: null,
     xIs: null,
     xDefined: false,
@@ -205,6 +217,7 @@ export function newContext(
     graveyardSource: false,
     usedGraveyardSource: false,
     dieSides: null,
+    sourceMayLeave: false,
     interveningCondition: false,
     meldPartner: null,
     itIsCard: false,

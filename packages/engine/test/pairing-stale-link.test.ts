@@ -87,3 +87,40 @@ describe('a link that is not mirrored reads as unpaired', () => {
     expect(readers(state, a, b).linked[0]).toBeNull();
   });
 });
+
+describe('a link to a creature that is not in play reads as unpaired (CR 702.95e, 400.7, D-985)', () => {
+  // Phased out is in play (CR 702.26b, 702.26d: the pair survives); a card in a graveyard, in exile or in a hand is not. The links are intact from both sides and for the same
+  // player, so only the zone says the pair is over.
+  const moved = (
+    state: GameState,
+    id: ObjectId,
+    zone: 'graveyard' | 'exile' | 'hand' | 'phased',
+  ) => {
+    const obj = state.objects[id];
+    if (obj === undefined) throw new Error(`no object ${id}`);
+    return setObject(state, { ...obj, zone });
+  };
+
+  test.each(['graveyard', 'exile', 'hand'] as const)('the other creature is in %s', (zone) => {
+    const { g, a, b } = board();
+    const state = moved(g.state, b, zone);
+    expect(readers(state, a, b).linked[0]).toBeNull();
+    expect(readers(state, a, b).partner[0]).toBeNull();
+    expect(readers(state, a, b).paired[0]).toBe(false);
+  });
+
+  test('the creature itself is in a graveyard: it reads no partner', () => {
+    const { g, a, b } = board();
+    const state = moved(g.state, a, 'graveyard');
+    expect(readers(state, a, b).linked[0]).toBeNull();
+    expect(readers(state, a, b).linked[1]).toBeNull();
+  });
+
+  test('the other creature is phased out: the pair stands, and nothing it gives is on (CR 702.26b)', () => {
+    const { g, a, b } = board();
+    const state = moved(g.state, b, 'phased');
+    expect(readers(state, a, b).linked).toEqual([b, a]);
+    expect(readers(state, a, b).partner).toEqual([null, null]);
+    expect(readers(state, a, b).paired).toEqual([true, true]);
+  });
+});

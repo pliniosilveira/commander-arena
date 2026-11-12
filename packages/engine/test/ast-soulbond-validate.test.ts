@@ -160,6 +160,31 @@ describe('the condition paired', () => {
     expect(validateCard(withAbilities(['creature'], [ability]))).toEqual([]);
   });
 
+  test('is refused where the permanent may be gone when it is read: a dies or leaves trigger, a sacrifice, a card from the graveyard (D-985, CR 400.7, 603.10a)', () => {
+    const draw = { kind: 'draw', player: { kind: 'you' }, count: 1 } as const;
+    const triggers = [
+      { kind: 'dies', what: { kind: 'this' } },
+      { kind: 'leavesBattlefield', what: { kind: 'this' } },
+      { kind: 'dies', what: { kind: 'another', filter: { types: ['creature'] } } },
+      { kind: 'permanentSacrificed', by: 'you' },
+    ];
+    for (const trigger of triggers) {
+      for (const where of ['interveningIf', 'triggerCondition', 'effect']) {
+        const ability = {
+          kind: 'triggered',
+          trigger,
+          ...(where === 'effect'
+            ? { effect: { kind: 'conditional', condition: PAIRED, effect: draw } }
+            : { effect: draw, [where]: PAIRED }),
+        } as unknown as Ability;
+        expect(
+          messages(withAbilities(['creature'], [ability])),
+          `${trigger.kind} ${where}`,
+        ).toContain("'paired'");
+      }
+    }
+  });
+
   test('is refused in a spell (a spell is not a permanent: it is never paired)', () => {
     const spell = singleFace({
       name: 'SYNTHETIC Validation Spell',
