@@ -124,6 +124,32 @@ export const SYNTHETIC_NIV_PRIMITIVES_LIST: readonly CardDefinition[] = [
       },
     },
   }),
+  // "You gain 2 life plus X life, where X is the number of cards in your hand minus 4." (D-984: the floor is applied before the sum, so a small hand gains 2)
+  singleFace({
+    name: 'SYNTHETIC Hand Tithe Plus',
+    manaCost: ['1', 'W'],
+    types: ['instant'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    oracleText: 'You gain 2 life plus X life, where X is the number of cards in your hand minus 4.',
+    spell: {
+      effect: {
+        kind: 'gainLife',
+        player: { kind: 'you' },
+        amount: {
+          kind: 'sum',
+          of: [
+            2,
+            {
+              kind: 'minus',
+              of: { kind: 'countOf', filter: { zone: 'hand', controller: 'you' } },
+              by: 4,
+            },
+          ],
+        },
+      },
+    },
+  }),
   // "Each opponent loses X life, where X is the number of cards in your hand minus 4." (D-984: a negative result is 0, so it never gains life)
   singleFace({
     name: 'SYNTHETIC Hand Drain',

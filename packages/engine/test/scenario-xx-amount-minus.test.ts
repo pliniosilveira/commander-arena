@@ -9,6 +9,7 @@ import { scenario } from '../src/testing/index';
 
 const TITHE = 'SYNTHETIC Hand Tithe'; // {W} instant: gain X life, X = cards in your hand minus 4
 const DRAIN = 'SYNTHETIC Hand Drain'; // {B} instant: each opponent loses X life, same X
+const PLUS = 'SYNTHETIC Hand Tithe Plus'; // {1}{W} instant: gain 2 plus X life, same X
 const MEND = 'SYNTHETIC Mend'; // {W} instant: gain 3 life
 const LIBRARY = Array.from({ length: 12 }, () => 'Plains');
 
@@ -27,7 +28,7 @@ const game = (spell: string, others: number) =>
     .build();
 
 describe('the cards are valid and the amount is a supported feature', () => {
-  test.each([TITHE, DRAIN])('%s', (name) => {
+  test.each([TITHE, DRAIN, PLUS])('%s', (name) => {
     expect(validateCard(syntheticCard(name))).toEqual([]);
   });
   test('amount:minus is listed', () => {
@@ -72,6 +73,17 @@ describe('the number of cards in your hand minus 4 (CR 107.1b)', () => {
     big.act(0).cast(DRAIN, { pay: true });
     big.passAll();
     big.expect.life(1, 18); // 6 left - 4 = 2
+  });
+
+  test('the floor is applied before another amount adds to it (CR 107.1b): a small hand adds 0, not a negative', () => {
+    const small = game(PLUS, 1); // 1 card left: 0 + 2
+    small.act(0).cast(PLUS, { pay: true });
+    small.passAll();
+    small.expect.life(0, 22);
+    const big = game(PLUS, 6); // 6 left: 2 + 2
+    big.act(0).cast(PLUS, { pay: true });
+    big.passAll();
+    big.expect.life(0, 24);
   });
 
   test('the count is read as the spell resolves, not as it is cast (CR 608.2c)', () => {
