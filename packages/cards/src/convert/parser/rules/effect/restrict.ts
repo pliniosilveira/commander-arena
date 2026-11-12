@@ -5,7 +5,7 @@
  * 611.2a: a rule-changing effect of a resolving spell or ability lasts as long as it says, here "this
  * turn", and ends in the cleanup step, CR 514.2). The restriction is not an ability of the creature,
  * so "loses all abilities" does not remove it (CR 613.11). Creatures that are targets: one, "up to one", and
- * since D-951 "one or two" and "up to two" or more (a slot of the engine with a minimum and a maximum of
+ * since D-295 "one or two" and "up to two" or more (a slot of the engine with a minimum and a maximum of
  * targets, CR 601.2c; the engine's `restrict` takes the whole slot). An exact count ("two target creatures"), an
  * exception ("except by creatures with flying") and a quality of the target the noun rules do not read ("with
  * flying") are other lines and stay unread; "with power 3 or less" is read since stage P18 (D-111).
@@ -51,7 +51,7 @@ const TAIL_ALL = tail(true);
 
 /**
  * The creatures that are targets of a restriction (CR 115.1): one creature (a spell's "target" is a creature), "up to N" of them (CR 115.2) or "one
- * or two" (D-951, CR 601.2c). An exact count of two or more is not read, and neither is "up to that many" (a count a sacrifice before it made).
+ * or two" (D-295, CR 601.2c). An exact count of two or more is not read, and neither is "up to that many" (a count a sacrifice before it made).
  */
 const targetCreatures = refuseAt(
   family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
@@ -85,7 +85,7 @@ export const EFFECT_RESTRICT = defineRule<Clauses>({
     "target creature with power 3 or less can't be blocked this turn",
     // Stage P49 (D-206): "up to one target creature" (Key to the City).
     "up to one target creature can't be blocked this turn",
-    // D-951 (CR 601.2c): the creatures of a slot of one to two, or of none to N.
+    // D-295 (CR 601.2c): the creatures of a slot of one to two, or of none to N.
     "one or two target creatures can't block this turn",
     "one or two target creatures can't be blocked this turn",
     'one or two target creatures attack this turn if able',

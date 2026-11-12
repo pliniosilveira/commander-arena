@@ -430,7 +430,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Target creature gets +1/+1 until end of turn. ${cap(e)} gains trample until end of turn.`,
   ),
-  // D-951 to D-954 (the Niv-Mizzet deck, group B): the header of a modal spell, the damage to one or two targets and the sentence about what a target was.
+  // D-295 to D-298 (the Niv-Mizzet deck, group B): the header of a modal spell, the damage to one or two targets and the sentence about what a target was.
   'modal.choose-widen': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.\n• Scry 1.`),
   'noun.one-or-two-targets': spell((e) => `~ deals 1 damage to ${e}.`),
   'condition.its-mana-value': spell(

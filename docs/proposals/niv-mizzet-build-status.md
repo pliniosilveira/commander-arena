@@ -4,10 +4,10 @@ The running checklist of the deck support routine for `decks/niv-mizzet.txt` (is
 
 | Card | Group | Class | Status | Note |
 | --- | --- | --- | --- | --- |
-| Prismari Charm | 1 | T | waiting | "each of one or two targets" (a minimum number of targets in the noun) |
-| Untimely Malfunction | 1 | T | waiting | "one or two target creatures can't block this turn"; change-target already exists (D-181, D-182) |
-| Flame of Anor | 1 | T | waiting | header "Choose one. If you control a Wizard as you cast ~, you may choose two instead." |
-| Fading Hope | 1 | T | waiting | "If its mana value was 3 or less, scry 1." |
+| Prismari Charm | 1 | T | done | "each of one or two targets" (a minimum number of targets in the noun) |
+| Untimely Malfunction | 1 | T | done | "one or two target creatures can't block this turn"; change-target already exists (D-181, D-182) |
+| Flame of Anor | 1 | T | done | header "Choose one. If you control a Wizard as you cast ~, you may choose two instead." |
+| Fading Hope | 1 | T | done | "If its mana value was 3 or less, scry 1." |
 | Elixir of Immortality | 1 | T | waiting | "Shuffle ~ and your graveyard into their owner's library." |
 | Dragonologist | 1 | T | waiting | "an instant, sorcery, or Dragon card" (a mix of types and a subtype) |
 | Thunderdrum Soloist | 1 | T | waiting | Opus: "If five or more mana was spent to cast that spell ... instead" |

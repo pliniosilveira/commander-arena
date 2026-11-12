@@ -1,4 +1,4 @@
-// The Niv-Mizzet deck (issue 25), group B (D-951 to D-954): the REAL cards of the golden corpus, read through the grammar only (no override) and played
+// The Niv-Mizzet deck (issue 25), group B (D-295 to D-298): the REAL cards of the golden corpus, read through the grammar only (no override) and played
 // through applyAction: Prismari Charm ("each of one or two targets", CR 115.1, 115.3), Untimely Malfunction ("one or two target creatures can't block
 // this turn", CR 509.1b), Flame of Anor ("you may choose two instead", CR 700.2) and Fading Hope ("if its mana value was 3 or less", CR 202.3, 608.2c,
 // 113.7a). The creatures that stand in for the board are SYNTHETIC (named so) or real engine fixtures (Grizzly Bears, Giant Spider, Serra Angel, Sol Ring).

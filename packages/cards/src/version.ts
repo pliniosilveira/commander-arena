@@ -7,4 +7,4 @@
  * What each version added: `git log -p -- packages/cards/src/version.ts`, `docs/DECISIONS.md`
  * (one entry per slice) and `docs/MECHANICS.md`.
  */
-export const PARSER_VERSION = 86;
+export const PARSER_VERSION = 87;

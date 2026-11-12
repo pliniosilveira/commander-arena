@@ -1,5 +1,5 @@
 /**
- * Noun rule of the Niv-Mizzet deck, group B (D-951): "each of one or two targets" (CR 115.1, 601.2c: the targets of any kind are chosen as the spell is
+ * Noun rule of the Niv-Mizzet deck, group B (D-295): "each of one or two targets" (CR 115.1, 601.2c: the targets of any kind are chosen as the spell is
  * cast, at least one and at most two; CR 115.3: the same target can't be chosen twice for one instance of the word "target"). The creature form,
  * "one or two target creatures", is part of `targetOf` (`noun.target-permanent`).
  */

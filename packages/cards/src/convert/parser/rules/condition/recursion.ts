@@ -180,7 +180,7 @@ export const CONDITION_IT_MATCHES = defineRule<IrCondition>({
 });
 
 /**
- * `condition.its-mana-value`: "its mana value was 3 or less", "its mana value is 4 or greater", "its mana value was 2" (D-954, CR 202.3, 608.2c, 113.7a: an
+ * `condition.its-mana-value`: "its mana value was 3 or less", "its mana value is 4 or greater", "its mana value was 2" (D-298, CR 202.3, 608.2c, 113.7a: an
  * instruction later in the text asks the mana value of an object an earlier one named, as it is or, once it has left, as it last was). "It" is an object
  * the binding pass finds (a target of the text; the lowering refuses what it cannot find); the number is a digit string and the direction "or less" or "or
  * greater". The engine's `objectMatches` with a mana value comparison, in a `conditional` effect.

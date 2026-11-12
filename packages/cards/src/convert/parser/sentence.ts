@@ -43,7 +43,7 @@ const CLAUSES: Parser<{ items: (readonly IrClause[])[]; joins: string[] }> = lis
  */
 const RECURSION_LEAD_CONDITIONS = [
   'condition.it-matches',
-  // D-954: "If its mana value was 3 or less, scry 1."
+  // D-298: "If its mana value was 3 or less, scry 1."
   'condition.its-mana-value',
   'condition.gift-promised',
   // Stage P37 (D-180): "If you put a Cave onto the battlefield this way, you gain 4 life."

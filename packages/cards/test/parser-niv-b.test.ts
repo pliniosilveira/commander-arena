@@ -1,4 +1,4 @@
-// The Niv-Mizzet deck (issue 25), group B (D-951 to D-954): four cards that only needed the text parser. "Each of one or two targets" and "one or two
+// The Niv-Mizzet deck (issue 25), group B (D-295 to D-298): four cards that only needed the text parser. "Each of one or two targets" and "one or two
 // target creatures" (a minimum of one target, CR 115.1, 601.2c), a modal header that widens the choice to two modes (CR 700.2, 700.2a), and "if its mana
 // value was 3 or less" (CR 202.3, 608.2c, 113.7a). The lines are the real Oracle text of the acceptance cards of the golden corpus (Prismari Charm,
 // Untimely Malfunction, Flame of Anor, Fading Hope), names replaced by ~, read through the whole pipeline; the other lines are SYNTHETIC siblings and

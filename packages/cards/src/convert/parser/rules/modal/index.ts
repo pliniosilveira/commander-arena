@@ -117,7 +117,7 @@ export const MODAL_CHOOSE_COMMANDER = defineRule<IrModeHeader>({
 });
 
 /**
- * `modal.choose-widen`: "Choose one. If you control a Wizard as you cast ~, you may choose two instead." (D-953, CR 700.2, 700.2a: the controller
+ * `modal.choose-widen`: "Choose one. If you control a Wizard as you cast ~, you may choose two instead." (D-297, CR 700.2, 700.2a: the controller
  * chooses the modes as the spell is cast; the engine's `maxIf` reads the condition then). One mode is chosen, or two while the condition holds, however
  * many modes the spell has (two or more): "both" is the wording of `modal.choose-commander`, which is two modes and the commander condition. The
  * condition is the one of `condition.control-a` ("you control a Wizard", "you control an artifact"); "two" is the only number read.

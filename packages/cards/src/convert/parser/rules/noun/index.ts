@@ -66,7 +66,7 @@ function targetOf(id: string, phrase: (plural: boolean) => Parser<IrFilter>): Pa
         plural: true,
       }),
   );
-  // "one or two target creatures" (D-951, CR 115.1, 601.2c): at least one target and at most two. No other pair of numbers is a phrase of the text.
+  // "one or two target creatures" (D-295, CR 115.1, 601.2c): at least one target and at most two. No other pair of numbers is a phrase of the text.
   const oneOrTwo: Parser<Bare> = map(
     sequence(spanned(literal('one or two')), literal(' target '), phrase(true)),
     ([count, , filter]) =>
@@ -372,7 +372,7 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'target artifact or enchantment you control',
     'up to one target creature',
     'up to two target creatures',
-    // D-951 (CR 115.1, 601.2c): at least one target and at most two.
+    // D-295 (CR 115.1, 601.2c): at least one target and at most two.
     'one or two target creatures',
     'one or two target nonland permanents you control',
     'up to one target artifact or enchantment',
@@ -576,7 +576,7 @@ export const NOUN_RULES = [
   ...DINOSAUR_NOUN_RULES,
   // Stage P34 (D-152): "each other opponent" and "each of up to two other targets".
   ...DRAGON_NOUN_RULES,
-  // D-951: "each of one or two targets".
+  // D-295: "each of one or two targets".
   ...ONE_OR_TWO_NOUN_RULES,
   ...KORVOLD_NOUN_RULES,
   // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards".
