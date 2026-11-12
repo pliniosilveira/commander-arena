@@ -22,6 +22,7 @@ import { ANGEL_NOUN_RULES } from './angels';
 import { NOUN_ATTACKED_BY_IT } from './attacked';
 import { CHOOSE_NOUN_RULES } from './choose';
 import { NOUN_ITS_CONTROLLER } from './controller';
+import { DESTINY_EARLY_NOUN_RULES } from './destiny';
 import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_NOUN_RULES } from './edhrec';
@@ -545,6 +546,8 @@ export const NOUN_RULES = [
   ...PLAYER_NOUN_RULES,
   // Stage P52 (D-210): "each player who discarded a card this way".
   ...VRASKA_EARLY_NOUN_RULES,
+  // D-921: "each player ~ attacked this turn", whose first words are those of `noun.player` ("each player").
+  ...DESTINY_EARLY_NOUN_RULES,
   NOUN_PLAYER,
   NOUN_TARGET_SPELL,
   // Stage P32 (D-147): "target commander" before `noun.target-permanent`, whose phrase would stop at "commander".

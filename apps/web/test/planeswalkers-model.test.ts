@@ -128,6 +128,18 @@ describe('the words of the new effects and targets', () => {
     ).toBe("\u22122: Target player's life total becomes 1");
   });
 
+  test('"each player this creature attacked this turn loses the game" (D-921)', () => {
+    expect(
+      label({
+        kind: 'loseGame',
+        player: { kind: 'attackedPlayers', of: { kind: 'this' } },
+      }),
+    ).toBe('\u22122: Each player this creature attacked this turn loses the game');
+    expect(label({ kind: 'loseGame', player: { kind: 'eachOpponent' } })).toBe(
+      '\u22122: Each opponent loses the game',
+    );
+  });
+
   test('"target player or planeswalker" and "target opponent or planeswalker"', () => {
     const damage: Effect = { kind: 'dealDamage', amount: 3, to: { kind: 'target', id: 't1' } };
     for (const [player, words] of [

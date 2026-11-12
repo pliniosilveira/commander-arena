@@ -501,6 +501,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `At the beginning of your end step, each player may discard a card. ${cap(e)} draws a card.`,
   ),
+  // D-921: the players a permanent attacked this turn, as the subject of "loses the game".
+  'noun.each-player-attacked': permanent(
+    (e) => `At the beginning of your end step, ${e} loses the game.`,
+  ),
   'amount.milled-value-this-way': permanent(
     (e) => `When ~ enters, you mill three cards, then ~ deals damage to target opponent ${e}.`,
   ),

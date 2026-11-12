@@ -95,6 +95,8 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   // Stage P28: "you and target opponent each", "defending player" (CR 508.5)
   'players',
   'defendingPlayer',
+  // D-921: "each player ~ attacked this turn": several players, so a later "that player" is bound to it and refused by the lowering.
+  'attackedPlayers',
 ]);
 
 function isPlayerNoun(noun: IrNoun): boolean {
@@ -251,7 +253,24 @@ class Binder {
     const seen = this.byKey.get(key(noun.span));
     if (seen !== undefined) return seen;
     const of = noun.of === undefined ? undefined : this.noun(noun.of);
-    const members = noun.members?.map((member) => this.noun(member));
+    // D-921: "you and that player each gain that much life": a pronoun of the list points at what came before the list, never at "you" of its own list
+    // (as for a list of nouns, stage P53, D-212), so the pronouns are bound first.
+    let members: IrNoun[] | undefined;
+    if (noun.members !== undefined) {
+      const bound: IrNoun[] = [];
+      const order = noun.members
+        .map((_member, i) => i)
+        .sort(
+          (a, b) =>
+            Number(noun.members?.[a]?.det !== 'anaphor') -
+            Number(noun.members?.[b]?.det !== 'anaphor'),
+        );
+      for (const i of order) {
+        const member = noun.members[i];
+        if (member !== undefined) bound[i] = this.noun(member);
+      }
+      members = bound;
+    }
     const controller = noun.filter.controller;
     const filter =
       typeof controller === 'object'

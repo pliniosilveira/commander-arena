@@ -62,6 +62,7 @@ import { SYNTHETIC_LIBRARY_LIST } from './synthetic-library';
 import { SYNTHETIC_LIBRARY_ARTIFACTS_LIST } from './synthetic-library-artifacts';
 import { SYNTHETIC_LIFE_GAIN_LIST } from './synthetic-life-gain';
 import { SYNTHETIC_LIVING_LIST } from './synthetic-living';
+import { SYNTHETIC_LOSE_GAME_LIST } from './synthetic-lose-game';
 import { SYNTHETIC_MANA_LIST } from './synthetic-mana';
 import { SYNTHETIC_MANA_INSTEAD_LIST } from './synthetic-mana-instead';
 import { SYNTHETIC_MANA_PLUS_LIST } from './synthetic-mana-plus';
@@ -330,6 +331,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_ANGELS_SHAPES_LIST,
     ...SYNTHETIC_ANGELS_STATICS_LIST,
     ...SYNTHETIC_LIFE_GAIN_LIST,
+    ...SYNTHETIC_LOSE_GAME_LIST,
     ...SYNTHETIC_PLAYER_MORE_LIST,
     ...SYNTHETIC_DEVOTION_MANA_LIST,
     ...SYNTHETIC_ATTACK_BATCH_LIST,

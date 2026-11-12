@@ -1649,6 +1649,15 @@ export interface TurnLog {
    */
   readonly attacked: readonly ObjectId[];
   /**
+   * Each player a creature was declared as an attacker attacking this turn (D-921, CR 508.6: a player has "attacked [a player]" if they declared
+   * creatures as attackers attacking that player), in order: the creature and the player. A creature that attacks a planeswalker or a battle attacks
+   * that permanent, not the player who controls or protects it, so it adds no entry; a creature put onto the battlefield attacking was never declared
+   * as an attacker (CR 508.4: it is "attacking" but never "attacked"; CR 508.6) and adds none; a reselected attack (CR 508.7a) keeps the entry of the
+   * player it was declared attacking and adds none for the new one.
+   * "Each player this creature attacked this turn" reads it.
+   */
+  readonly attackedPlayers: readonly { readonly attacker: ObjectId; readonly player: SeatId }[];
+  /**
    * Each card that was put into a graveyard from the battlefield this turn (D-179, CR 700.4: "put there from the battlefield this turn"), by the id it has
    * in the graveyard: a card that moved on from there is a new object (CR 400.7) and is not in it. A token is not (it is not a card).
    */
@@ -1672,6 +1681,7 @@ export const EMPTY_TURN_LOG: TurnLog = {
   entered: [],
   damageTaken: [],
   attacked: [],
+  attackedPlayers: [],
   graveyarded: [],
   leftGraveyard: [],
   modesChosen: [],

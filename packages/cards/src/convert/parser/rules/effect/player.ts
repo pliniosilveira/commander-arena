@@ -297,6 +297,17 @@ const monarchAction: Action = (subject, you, rule) =>
       );
 
 /**
+ * "loses the game", "lose the game" (CR 104.3e: an effect may state that a player loses the game; D-921): said of one player or of a group the
+ * subject names, with nothing after it ("at the end of the turn", "unless ..." and "wins the game" are other words and stay unread). The engine's
+ * `loseGame`; a player who can't lose the game does not (CR 101.2), which the engine reads.
+ */
+const loseGameAction: Action = (subject, you, rule) =>
+  map(
+    spanned(pattern(new RegExp(`lose${you ? '' : 's'} the game(?![\\p{L}\\p{N}])`, 'iu'))),
+    ({ span }) => actionClause(rule, 'loseGame', { player: subject }, span),
+  );
+
+/**
  * "creates a 3/3 green Beast creature token", "creates two Treasure tokens", "you create a tapped 2/2 black Zombie
  * creature token for each creature sacrificed this way" (CR 111.2: the player who creates a token owns it and controls
  * it). Said of the controller of an earlier object ("Its controller creates ..."), of you and of the other players
@@ -319,6 +330,8 @@ const createAction: Action = (subject, you, rule) =>
 const PLAYER_SUBJECTS = [
   // Stage P52 (D-210): "each player who discarded a card this way draws a card".
   'noun.each-player-discarded',
+  // D-921: "each player ~ attacked this turn loses the game".
+  'noun.each-player-attacked',
   'noun.you-and-player',
   'noun.each-other-player',
   'noun.defending-player',
@@ -355,6 +368,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'CR 725.1 (The Monarch)',
     'CR 725.3 (The Monarch)',
     'CR 101.4 (Handling Simultaneous Decisions)',
+    'CR 104.3e (Ending the Game)',
   ],
   examples: [
     'you become the monarch',
@@ -425,8 +439,27 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'target player gets {E}',
     'you draw a card, then discard a card at random',
     'target opponent discards a card at random',
+    // D-921, CR 104.3e: an effect says that a player loses the game.
+    'each opponent loses the game',
+    'each player ~ attacked this turn loses the game',
+    'target player loses the game',
+    'you lose the game',
+    'that player loses the game',
+    'target opponent loses 3 life and loses the game',
   ],
   rejects: [
+    'you lose the game at the beginning of the next turn',
+    'you loses the game',
+    'each opponent lose the game',
+    'each opponent loses the game unless you pay {2}',
+    'each opponent loses the games',
+    'each opponent loses game',
+    'each opponent wins the game',
+    'you win the game',
+    'each opponent loses the game if able',
+    'you and target opponent each lose the game',
+    'each player ~ attacked loses the game',
+    'each opponent loses the game and you win the game',
     'you get {E}{R}',
     'you get {E} {E}',
     'you get E',
@@ -492,6 +525,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         alone('effect.player.shuffle', shuffleAction),
         alone('effect.player.create-token', createAction),
         alone('effect.player.monarch', monarchAction),
+        alone('effect.player.lose-game', loseGameAction),
       );
       return map(
         listWithJoins(actions, CLAUSE_JOIN),

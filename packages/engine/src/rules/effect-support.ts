@@ -33,6 +33,7 @@ export const PLAYER_ONLY_KINDS: readonly string[] = [
   'triggerPlayer',
   'discardedThisWay',
   'giftRecipient',
+  'attackedPlayers',
 ];
 
 /**

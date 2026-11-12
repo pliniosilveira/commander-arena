@@ -611,6 +611,7 @@ describe('unmatched abilities', () => {
       'noun.that-player',
       'noun.they',
       'noun.each-player-discarded',
+      'noun.each-player-attacked',
       'noun.player',
       'noun.target-spell',
       'noun.target-commander',

@@ -328,6 +328,9 @@ function recipientText(
       return 'the chosen player';
     case 'discardedThisWay':
       return 'each player who discarded a card this way';
+    case 'attackedPlayers':
+      // D-921 (CR 508.6).
+      return 'each player this creature attacked this turn';
     case 'all':
       return to.of.map((member) => recipientText(member, ability, self)).join(' and ');
     case 'target':
@@ -478,6 +481,7 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'giftRecipient':
       return { who: 'the chosen player', third: true };
     case 'discardedThisWay':
+    case 'attackedPlayers':
       return { who: 'they', third: false };
     case 'all':
       return { who: 'they', third: false };
@@ -856,6 +860,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'createEmblem':
       // D-201 (CR 114.1): "You get an emblem with "...", the text the emblem shows.
       return `You get an emblem with "${effect.text}"`;
+    case 'loseGame':
+      // D-921 (CR 104.3e): "Each player this creature attacked this turn loses the game".
+      return `${playerVerb(effect.player, ability, 'lose')} the game`;
     case 'setLifeTotal':
       // D-201 (CR 119.5): "Target player's life total becomes 1".
       return `${capital(playerOwner(effect.player, ability))} life total becomes ${effect.amount}`;

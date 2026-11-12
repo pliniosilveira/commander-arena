@@ -637,7 +637,15 @@ export type PlayerSelector =
    * "Each player who discarded a card this way" (D-210, CR 701.9): the players who discarded at least one card to the `discard` effects of this same resolution
    * so far, in the order CR 101.4 gives. Valid after a `discard` effect (or a `playersMay` of one) in the same sequence.
    */
-  | { readonly kind: 'discardedThisWay' };
+  | { readonly kind: 'discardedThisWay' }
+  /**
+   * "Each player this creature attacked this turn" (D-921, CR 508.6): the players the creature the ability belongs to was declared as an attacker
+   * attacking this turn, in any combat phase, each once, in the order CR 101.4 gives; the players who have left the game are not named. An
+   * attack on a planeswalker or a battle is not an attack on its controller or protector. Read from the turn log under the id the ability's source
+   * has, so a source that has left the battlefield by the time the ability resolves is read as it was (CR 608.2h, last-known information). `of` is
+   * `this`, the permanent of the ability; no other creature's attacks are read.
+   */
+  | { readonly kind: 'attackedPlayers'; readonly of: { readonly kind: 'this' } };
 
 /**
  * A target declaration (CR 115). "any target" is a creature, player, planeswalker or battle
@@ -1725,6 +1733,14 @@ export type Effect =
     }
   | { readonly kind: 'gainLife'; readonly player: PlayerSelector; readonly amount: Amount }
   | { readonly kind: 'loseLife'; readonly player: PlayerSelector; readonly amount: Amount }
+  /**
+   * "<Players> lose the game." (CR 104.3e: an effect may state that a player loses the game, D-921): each player the selector names, who is
+   * still in the game, loses it at once, together (CR 104.4a: if every player remaining loses simultaneously the game is a draw). A player who
+   * "can't lose the game" (`cantLoseGame`, CR 101.2: the "can't" wins) does not. The player leaves the game as a conceding player does (CR 104.5); the
+   * game ends when one player is left (CR 104.2a). Any player selector is meant: "you", "that player", "target player", "each opponent", "each
+   * player" and "each player this creature attacked this turn" are all read (CR 104.3e: the effect names the player).
+   */
+  | { readonly kind: 'loseGame'; readonly player: PlayerSelector }
   /**
    * "Target player's life total becomes 1." (CR 119.5, D-201): each player the selector names gains or loses the life that takes their life total
    * to `amount`, a whole number of 0 or more (the life gained or lost triggers what it triggers, CR 119.9; nothing happens to a player who already has

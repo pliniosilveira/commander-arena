@@ -606,6 +606,20 @@ export function resolvePlayers(
         state,
         (ctx.thisWay?.discardedBy ?? []).filter((seat) => !getSeat(state, seat).hasLost),
       );
+    case 'attackedPlayers': {
+      // CR 508.6 (D-921): the players the source was declared as an attacker attacking this turn, read under the id the source has (an ability
+      // that outlives its source reads the log of the id it had, CR 608.2h), without the players who have left the game.
+      const source = ctx.source;
+      if (source === null) return [];
+      return apnapOrder(
+        state,
+        [
+          ...new Set(
+            state.turnLog.attackedPlayers.flatMap((a) => (a.attacker === source ? [a.player] : [])),
+          ),
+        ].filter((seat) => !getSeat(state, seat).hasLost),
+      );
+    }
     case 'giftRecipient': {
       // CR 702.174a (D-135): "the chosen player": the opponent the gift was promised to, read from the spell, from the
       // permanent that came from it, or from last-known information once either has left (CR 113.7a).
@@ -639,6 +653,7 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'defendingPlayer' ||
     sel.kind === 'triggerPlayer' ||
     sel.kind === 'discardedThisWay' ||
+    sel.kind === 'attackedPlayers' ||
     sel.kind === 'giftRecipient'
   );
 }
