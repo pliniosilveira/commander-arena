@@ -33,7 +33,9 @@ export function staticWording(effect: StaticEffect): string | null {
     case 'optionalUntap':
       return 'You may choose not to untap this permanent during your untap step';
     case 'untapInOthersUntapStep':
-      return "Untap all creatures you control during each other player's untap step";
+      return effect.self === true
+        ? "Untap this permanent during each other player's untap step"
+        : "Untap all creatures you control during each other player's untap step";
     default:
       return null;
   }

@@ -170,6 +170,12 @@ export type Amount =
    * of a power or toughness that may be negative is `times` of a `PtAmount`.)
    */
   | { readonly kind: 'multiple'; readonly factor: number; readonly of: Amount }
+  /**
+   * "The number of cards in your hand minus 4" (CR 107.1b, D-984): `of` less `by`, a negative result counting as 0 (CR 107.1b: "if a calculation or
+   * comparison would use a negative number, it uses 0 instead"). `by` is a whole number of 1 or more. Read as the instruction runs, like the amount it
+   * is made of. Not for a static ability's power or toughness.
+   */
+  | { readonly kind: 'minus'; readonly of: Amount; readonly by: number }
   /** "The number of Zombies on the battlefield plus the number of Zombie cards in all graveyards" (D-131): the sum of two or more amounts. */
   | { readonly kind: 'sum'; readonly of: readonly Amount[] }
   /**
@@ -2300,9 +2306,10 @@ export type ManaProduction =
   /**
    * "Add two mana in any combination of colors." (D-151, CR 106.1b, 605.3b): `count` mana, each of a color of the five (colorless is not a color), chosen
    * independently as the ability resolves, so the activation names the combination (the same `combination` answer a filter land gets). At
-   * least 2.
+   * least 2. `distinct: true` (D-982, "Add two mana of different colors."): no color is chosen twice, so the combinations are the sets of `count` different
+   * colors of the five (ten pairs for two mana; colorless is not a color, CR 105.1, 106.1b, so never one of them). At most 4 mana still.
    */
-  | { readonly kind: 'anyCombination'; readonly count: number }
+  | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
   | {
       readonly kind: 'anyColor';
       /**
@@ -3429,6 +3436,13 @@ export type Condition =
    */
   | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
   /**
+   * "Activate only if you've cast three or more spells this turn" (CR 602.5b, 601.2i, D-981): the controller of the condition has cast at least
+   * `atLeast` spells this turn (`SeatState.spellsCastThisTurn`: a spell counts once it is on the stack with its costs paid, whether or not it
+   * resolved or was countered; a copy is not cast, CR 707.10, and an opponent's spell is not the controller's). Reads a count, so it is read as
+   * the ability is activated. Not for a static ability.
+   */
+  | { readonly kind: 'spellsCastThisTurn'; readonly atLeast: number }
+  /**
    * "If the result is 1", "if the result is 10 or more" (CR 706.2, 706.3a, D-271): the result of the latest `rollDie` of this resolution against a whole number.
    * Only in a `conditional` after a `rollDie` of the same sequence (`validateCard` checks it); false if no die was rolled.
    */
@@ -3772,8 +3786,14 @@ export type StaticEffect =
    * controller of the permanent begins, the permanents the filter names that the controller controls untap together with that player's own (the
    * controller of the ability is "you" in the filter). A stun counter is removed instead (CR 122.1d), and "doesn't untap" does not stop it: that is said
    * of the controller's own untap step. Read from the permanent's abilities, so a permanent that lost them does nothing.
+   * `self: true` instead of `what` (D-983, "Untap this artifact during each other player's untap step."): the permanent itself is the one that untaps, in the
+   * untap step of every player but its controller as it is then (a stolen one has its new controller). Exactly one of `what` and `self`.
    */
-  | { readonly kind: 'untapInOthersUntapStep'; readonly what: ObjectFilter }
+  | {
+      readonly kind: 'untapInOthersUntapStep';
+      readonly what?: ObjectFilter;
+      readonly self?: true;
+    }
   /**
    * "You may cast this card from your graveyard [as long as you control a Zombie]." (D-133, CR 113.6b, 601.2a): the ability of
    * a card, working while that card is in its owner's graveyard: its owner may cast it from there, at the timing its type

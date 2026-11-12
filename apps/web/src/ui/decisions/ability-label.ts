@@ -924,7 +924,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       }
       // D-151 (CR 106.1b): "Add two mana in any combination of colors".
       return effect.mana.kind === 'anyCombination'
-        ? `Add ${anyCombinationWords(effect.mana.count)}`
+        ? `Add ${anyCombinationWords(effect.mana.count, effect.mana.distinct === true)}`
         : 'Add mana';
     }
     case 'exileTop':

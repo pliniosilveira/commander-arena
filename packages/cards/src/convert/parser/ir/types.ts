@@ -383,6 +383,8 @@ export type IrAmount =
       readonly of: IrAmount;
       readonly span: Span;
     }
+  // "the number of cards in your hand minus 4" (D-984, CR 107.1b: a negative result counts as 0): a whole number of 1 or more taken away
+  | { readonly kind: 'minus'; readonly of: IrAmount; readonly by: number; readonly span: Span }
   // "the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards"
   | { readonly kind: 'sum'; readonly of: readonly IrAmount[]; readonly span: Span }
   // "for each opponent who has more cards in hand than you"
@@ -470,6 +472,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'lifeTotal'; readonly compare: IrComparison; readonly aboveStarting?: true }
     // D-252 (the Bruna deck): "you gained 3 or more life this turn" (CR 119.3)
     | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
+    // D-981 (the Niv-Mizzet deck): "you've cast three or more spells this turn" (CR 601.2i)
+    | { readonly kind: 'spellsCastThisTurn'; readonly atLeast: number }
     // D-271 (CR 706.2, 706.3a): "the result is 1", "the result is 4 or more": the die the roll before it in the same text rolled
     | { readonly kind: 'dieResult'; readonly compare: IrComparison }
     // D-271 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard
@@ -633,7 +637,8 @@ export interface IrManaSpec extends IrNode {
     // "one mana of the chosen color" (stage P33, D-150, CR 106.1b, 607.2d): the color the permanent chose as it entered
     | { readonly kind: 'chosenColor' }
     // "two mana in any combination of colors" (stage P34, D-152, CR 106.1b, 605.3b): `count` mana, each of a color chosen on its own
-    | { readonly kind: 'anyCombination'; readonly count: number }
+    // stage P34; issue 25 (D-982): "two mana of different colors" is `distinct` (no color twice)
+    | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
     // "an amount of mana of that color equal to your devotion to that color" (CR 605.3b, 700.5): the color of the sentence "Choose a color." before it
     | { readonly kind: 'devotionToChosenColor' }
     // "{R}{R}, {R}{W}, or {W}{W}" (stage P14): exactly one of the listed combinations, each a run of
@@ -1117,8 +1122,11 @@ export type IrStaticEffect =
   | { readonly kind: 'attackTax'; readonly cost: IrCost; readonly planeswalkers?: true }
   /** "You may choose not to untap ~ during your untap step." (stage P24, D-125, CR 502.3). The subject is `~`. */
   | { readonly kind: 'optionalUntap' }
-  /** "Untap all creatures you control during each other player's untap step." (stage P68, D-229, CR 502.3). The subject is `you`. */
-  | { readonly kind: 'untapInOthersStep' }
+  /**
+   * "Untap all creatures you control during each other player's untap step." (stage P68, D-229, CR 502.3). The subject is `you`; with `self` (D-983,
+   * "Untap ~ during each other player's untap step.") the permanent itself untaps and the subject is `~`.
+   */
+  | { readonly kind: 'untapInOthersStep'; readonly self?: true }
   /** "You may cast this card from your graveyard." (stage P29, D-133, CR 113.6b). The subject is `~`; a condition makes it "as long as ...". */
   | { readonly kind: 'castFromGraveyard' }
   /** "can't be blocked by Walls", "can't be blocked by creatures with power 2 or less" (stage P31, CR 509.1b): the blockers excluded. */
@@ -1389,6 +1397,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'commanderCasts',
   'half',
   'multiple',
+  'minus',
   'sum',
   'opponentsWithMore',
   'thisWay',
@@ -1417,6 +1426,7 @@ export function nounsOfAmount(amount: IrAmount): IrNoun[] {
       return [amount.of];
     case 'half':
     case 'multiple':
+    case 'minus':
       return nounsOfAmount(amount.of);
     case 'sum':
       return amount.of.flatMap(nounsOfAmount);

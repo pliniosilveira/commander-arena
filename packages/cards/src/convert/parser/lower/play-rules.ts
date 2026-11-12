@@ -85,12 +85,16 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
       return ok({ kind: 'static', static: { kind: 'optionalUntap' } });
     case 'untapInOthersStep':
       // "Untap all creatures you control during each other player's untap step." (stage P68, D-229): the creatures of the controller.
+      // "Untap ~ during each other player's untap step." (D-983): the permanent itself.
       return ok({
         kind: 'static',
-        static: {
-          kind: 'untapInOthersUntapStep',
-          what: { types: ['creature'], controller: 'you' },
-        },
+        static:
+          effect.self === true
+            ? { kind: 'untapInOthersUntapStep', self: true }
+            : {
+                kind: 'untapInOthersUntapStep',
+                what: { types: ['creature'], controller: 'you' },
+              },
       });
     case 'attackTax': {
       const cost = lowerCost(effect.cost, { hybrid: true });

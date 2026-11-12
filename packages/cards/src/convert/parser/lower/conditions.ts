@@ -108,6 +108,13 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'lifeGainedThisTurn', atLeast: test.atLeast });
     }
+    case 'spellsCastThisTurn': {
+      // CR 602.5b, 601.2i (D-981): the spells the controller has cast this turn, read as the ability is activated.
+      const blocked = missingFeatures(['condition:spellsCastThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'spellsCastThisTurn', atLeast: test.atLeast });
+    }
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die the text rolled before this condition, read by a `conditional`. A condition with no roll before it
       // in the text, or a number the die cannot show (the condition would never, or always, hold), is not a condition of the text.
@@ -475,6 +482,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:attackersTotalPower',
   'condition:playerDealtDamage',
   'condition:lifeGainedThisTurn',
+  'condition:spellsCastThisTurn',
   'condition:dieResult',
   'condition:thisInYourGraveyard',
   'condition:ownsAndControlsNamed',

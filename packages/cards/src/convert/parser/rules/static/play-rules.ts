@@ -356,19 +356,33 @@ export const STATIC_OPTIONAL_UNTAP = defineRule<IrStatic>({
 
 /**
  * `static.untap-in-others-step`: "Untap all creatures you control during each other player's untap step." (CR 502.3: a permanent untaps in the untap step of
- * its controller; this ability makes the creatures of its controller untap in the untap step of every other player too; stage P68, D-229). The creatures are
- * "all creatures you control": another group, "~" alone ("Untap ~ during each other player's untap step.", a different engine ability), another step and a
- * condition are not read.
+ * its controller; this ability makes the creatures of its controller untap in the untap step of every other player too; stage P68, D-229) and, D-983,
+ * "Untap ~ during each other player's untap step." (the permanent itself, the engine's `self`). The creatures are "all creatures you control": another group,
+ * another permanent ("Untap target land", "Untap enchanted creature"), another step and a condition are not read.
  */
 export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
   id: 'static.untap-in-others-step',
   family: 'static',
   leading: ['untap'],
   cites: ['CR 502.3 (Untap Step)', 'CR 604.1 (Handling Static Abilities)'],
-  examples: ["Untap all creatures you control during each other player's untap step."],
+  examples: [
+    "Untap all creatures you control during each other player's untap step.",
+    "Untap ~ during each other player's untap step.",
+    'Untap ~ during each other player’s untap step.',
+  ],
   rejects: [
     "Untap all creatures you control during each other player's untap step",
-    "Untap ~ during each other player's untap step.",
+    "Untap ~ during each other player's untap step",
+    "Untap ~ during each other player's untap step if you control a Swamp.",
+    "Untap ~ during each player's untap step.",
+    "Untap ~ during each opponent's untap step.",
+    'Untap ~ during your untap step.',
+    "Untap it during each other player's untap step.",
+    "Untap enchanted creature during each other player's untap step.",
+    "Untap target land during each other player's untap step.",
+    "Untap ~ during each other player's untap step and draw a card.",
+    "Untap ~ during each other player's upkeep.",
+    "Untap ~ during another player's untap step.",
     "Untap all lands you control during each other player's untap step.",
     "Untap all creatures you control during each other player's untap step if you control a Swamp.",
     "Untap all creatures during each other player's untap step.",
@@ -378,25 +392,36 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
     "Untap all creatures you control during each other player's upkeep.",
   ],
   parse: (ctx, pos) => {
-    const r = pattern(
-      /untap all creatures you control during each other player['’]s untap step\./iu,
-    )(ctx, pos);
+    const rule = 'static.untap-in-others-step';
+    const tail = /during each other player['’]s untap step\./iu.source;
+    // D-983: "Untap ~ during each other player's untap step." (the permanent itself).
+    const self = pattern(new RegExp(`untap ~ ${tail}`, 'iu'))(ctx, pos);
+    if (self.ok) {
+      const at = 'untap '.length;
+      const who = subject('self', '~', { start: pos + at, end: pos + at + 1 }, rule);
+      return {
+        ok: true,
+        value: statement(
+          rule,
+          who,
+          { kind: 'untapInOthersStep', self: true },
+          { start: pos, end: self.pos },
+        ),
+        pos: self.pos,
+      };
+    }
+    const r = pattern(new RegExp(`untap all creatures you control ${tail}`, 'iu'))(ctx, pos);
     if (!r.ok) return r;
     const at = 'untap all creatures '.length;
     const who = subject(
       'you',
       'you',
       { start: pos + at, end: pos + at + 'you control'.length },
-      'static.untap-in-others-step',
+      rule,
     );
     return {
       ok: true,
-      value: statement(
-        'static.untap-in-others-step',
-        who,
-        { kind: 'untapInOthersStep' },
-        { start: pos, end: r.pos },
-      ),
+      value: statement(rule, who, { kind: 'untapInOthersStep' }, { start: pos, end: r.pos }),
       pos: r.pos,
     };
   },

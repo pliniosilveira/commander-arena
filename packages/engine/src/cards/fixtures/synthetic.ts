@@ -79,6 +79,7 @@ import { SYNTHETIC_MASS_LIST } from './synthetic-mass';
 import { SYNTHETIC_MELD_LIST } from './synthetic-meld';
 import { SYNTHETIC_MIRACLE_LIST } from './synthetic-miracle';
 import { SYNTHETIC_MODAL_LIST } from './synthetic-modal';
+import { SYNTHETIC_NIV_PRIMITIVES_LIST } from './synthetic-niv-primitives';
 import { SYNTHETIC_PARSER_SHAPES_LIST } from './synthetic-parser-shapes';
 import { SYNTHETIC_PLANESWALKER_LIST } from './synthetic-planeswalkers';
 import { SYNTHETIC_PLATE_LIST } from './synthetic-plate';
@@ -366,6 +367,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_DIES_RETURN_LIST,
     ...SYNTHETIC_SOULBOND_LIST,
     ...SYNTHETIC_COPY_LIST,
+    ...SYNTHETIC_NIV_PRIMITIVES_LIST,
     ...SYNTHETIC_SUBJECT_LIST,
     ...SYNTHETIC_MASS_LIST,
     ...SYNTHETIC_GREATEST_LIST,

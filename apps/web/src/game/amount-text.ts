@@ -212,6 +212,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return amount.factor === 2
         ? `twice ${amountPhrase(amount.of, ctx)}`
         : `${amount.factor} times ${amountPhrase(amount.of, ctx)}`;
+    case 'minus':
+      // D-984 (CR 107.1b): "the number of cards in your hand minus 4", never below 0.
+      return `${amountPhrase(amount.of, ctx)} minus ${amount.by}`;
     case 'sum':
       return amount.of.map((part) => amountPhrase(part, ctx)).join(' plus ');
     case 'thisWay':

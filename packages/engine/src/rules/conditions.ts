@@ -395,6 +395,9 @@ export function evaluateCondition(
     case 'lifeGainedThisTurn':
       // D-252, CR 119.3: the life the controller has gained this turn, from the turn log.
       return lifeGainedThisTurnHolds(state, ctx.controller, condition);
+    case 'spellsCastThisTurn':
+      // D-981, CR 601.2i: the spells the controller has cast this turn (copies are not cast, CR 707.10).
+      return getSeat(state, ctx.controller).spellsCastThisTurn >= condition.atLeast;
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die rolled earlier in this resolution against the number; no die rolled, no result.
       if (ctx.dieResult === undefined) return false;

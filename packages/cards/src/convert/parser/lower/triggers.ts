@@ -642,6 +642,7 @@ function lifeGainThatMany(ability: Triggered): Triggered {
           : amount;
       case 'half':
       case 'multiple':
+      case 'minus':
         return { ...amount, of: retarget(amount.of) };
       case 'sum':
         return { ...amount, of: amount.of.map(retarget) };

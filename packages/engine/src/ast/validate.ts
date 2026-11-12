@@ -343,6 +343,14 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'optionalUntap':
       break;
     case 'untapInOthersUntapStep':
+      // D-983: the permanent itself (`self`), or (D-229) the permanents a filter names: exactly one of the two.
+      if (s.self !== undefined && s.self !== true) {
+        issue(out, `${path}.self`, 'self is true or absent');
+      }
+      if ((s.self === true) === (s.what !== undefined)) {
+        issue(out, path, 'name the permanents that untap with exactly one of `what` and `self`');
+      }
+      if (s.what === undefined) break;
       // D-229: permanents on the battlefield: no zone, owner, stack kind or combat.
       checkFilter(s.what, `${path}.what`, out);
       if (

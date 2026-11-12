@@ -64,6 +64,10 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
       if (!Number.isSafeInteger(mp.count) || mp.count < 2 || mp.count > 4) {
         issue(out, `${path}.count`, 'count is a whole number from 2 to 4');
       }
+      // D-982: "two mana of different colors": no color twice. `distinct` is true or absent.
+      if (mp.distinct !== undefined && mp.distinct !== true) {
+        issue(out, `${path}.distinct`, 'distinct is true or absent');
+      }
       break;
     case 'anyColorDevotion': // the color is chosen as the ability resolves: nothing to check
     case 'commanderIdentity':

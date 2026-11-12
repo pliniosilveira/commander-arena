@@ -87,8 +87,12 @@ export function isCombinationProduction(production: ManaProduction): boolean {
   return production.kind === 'combination' || production.kind === 'anyCombination';
 }
 
-/** Every way to choose `count` mana of the five colors, each as a combination in `TYPE_ORDER` (D-151). */
-function colorMultisets(count: number): ManaColor[][] {
+/**
+ * Every way to choose `count` mana of the five colors, each as a combination in `TYPE_ORDER` (D-151). With `distinct` (D-982, "two mana of different
+ * colors") only the sets of different colors: the next pick starts after the last one, so no color is picked twice; colorless is not one of the five
+ * (CR 105.1, 106.1b).
+ */
+function colorMultisets(count: number, distinct: boolean): ManaColor[][] {
   const colors = COLORS as readonly ManaColor[];
   const out: ManaColor[][] = [];
   const build = (from: number, picked: ManaColor[]): void => {
@@ -98,7 +102,7 @@ function colorMultisets(count: number): ManaColor[][] {
     }
     for (let i = from; i < colors.length; i += 1) {
       picked.push(colors[i] as ManaColor);
-      build(i, picked);
+      build(distinct ? i + 1 : i, picked);
       picked.pop();
     }
   };
@@ -123,7 +127,7 @@ function plainOutcomes(
       return [[...p.mana]];
     case 'anyCombination':
       // D-151: "two mana in any combination of colors": every multiset of `count` of the five colors.
-      return colorMultisets(p.count);
+      return colorMultisets(p.count, p.distinct === true);
     case 'anyColor':
       // D-145: "two mana of any one color": `count` mana of the one color chosen.
       return COLORS.map((c) => Array.from({ length: p.count ?? 1 }, () => c));

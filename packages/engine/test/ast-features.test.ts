@@ -125,6 +125,8 @@ describe('the dimensions', () => {
       'playerDealtDamage',
       // D-252: "if you gained 3 or more life this turn".
       'lifeGainedThisTurn',
+      // D-981: "Activate only if you've cast three or more spells this turn".
+      'spellsCastThisTurn',
       'dieResult',
       'thisInYourGraveyard',
       'chosenOption',
