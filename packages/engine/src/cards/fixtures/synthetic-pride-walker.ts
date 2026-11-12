@@ -5,7 +5,7 @@
  * token that is named, has an ability of its own that reads life gained ("Whenever you gain life, put a +1/+1 counter on this token", CR 111.3, 111.4), an exile of the
  * walker itself and of every artifact and creature the opponents control with a test of the life total against the starting life total at resolution
  * (CR 608.2c, 119.1, 903.7), and a gain of life equal to a count of two kinds of permanent you control. Names start with "SYNTHETIC "; oracleId is null. The text
- * describes what the AST does; it is not Oracle text. The parser test of the real card (`parser-p70-ajani.test.ts`) reads the real Oracle text and compares what it
+ * describes what the AST does; it is not Oracle text. The parser test of the real card (`packages/cards/test/parser-bruna-ajani.test.ts`) reads the real Oracle text and compares what it
  * lowers to with the abilities here, so the two cannot drift apart.
  */
 import type { Ability, TokenDefinition } from '../../ast/types';

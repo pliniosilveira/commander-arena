@@ -64,7 +64,7 @@ export interface CompileOptions {
   readonly name?: string;
   /** The text of the face puts its own name inside a quotation (stage P36, D-178): `~` there may be the card, not the permanent that has the quoted ability. */
   readonly namedInQuotes?: boolean;
-  /** The shortest name the face's text calls itself by before normalization turned it into `~` (stage P70, D-911): the name a token "named ~'s Pridemate" is given back. */
+  /** The shortest name the face's text calls itself by before normalization turned it into `~` (D-911): the name a token "named ~'s Pridemate" is given back. */
   readonly selfName?: string;
 }
 

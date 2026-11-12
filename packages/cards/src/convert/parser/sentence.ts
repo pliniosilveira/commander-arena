@@ -83,7 +83,7 @@ const TURN_CONDITIONS = [
 ] as const;
 
 /**
- * "If you have at least 15 life more than your starting life total, exile ~ and each artifact and creature your opponents control." (stage P70, D-912, CR 608.2c:
+ * "If you have at least 15 life more than your starting life total, exile ~ and each artifact and creature your opponents control." (D-912, CR 608.2c:
  * the test of the sentence's own instruction, made as it resolves): the life total of the player the ability is controlled by. Read before an instruction only: the
  * trailing form is not read, and a triggered ability's own "if" before its effect is the trigger's (the intervening "if", CR 603.4).
  */

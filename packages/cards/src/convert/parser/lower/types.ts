@@ -141,7 +141,7 @@ export interface LowerContext {
    */
   readonly cardName: string;
   /**
-   * The name the card gives itself in its text (stage P70, D-911): the shortest of the names that normalization writes as `~` ("Ajani" for "Ajani, Strength of the Pride"),
+   * The name the card gives itself in its text (D-911): the shortest of the names that normalization writes as `~` ("Ajani" for "Ajani, Strength of the Pride"),
    * or '' when it is not known (a context made for a quoted ability or a mode, where `~` is not the card). The name of a token that begins with the card's own
    * ("named Ajani's Pridemate") is written back from it.
    */

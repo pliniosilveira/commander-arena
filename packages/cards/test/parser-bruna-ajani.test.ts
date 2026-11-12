@@ -1,10 +1,10 @@
-// Stage P70 (D-911 to D-913): the Bruna deck program (issue 5), Ajani, Strength of the Pride. The lines are the real Oracle text of the acceptance card of the golden
+// D-911 to D-913: the Bruna deck program (issue 5), Ajani, Strength of the Pride. The lines are the real Oracle text of the acceptance card of the golden
 // corpus; the other lines are SYNTHETIC siblings and the near misses the grammar must not read. The abilities the real text lowers to are compared with the abilities
 // of the engine's SYNTHETIC fixture (`syntheticCard('SYNTHETIC Pride Walker')`), which the engine scenario test plays, so the parser and the engine tests are
 // about the same nodes.
 import { syntheticCard } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
-import { DEFAULT_RULES, parseFaceText } from '../src/convert/parser/index';
+import { DEFAULT_RULES, DEFAULT_SPELL_RULES, parseFaceText } from '../src/convert/parser/index';
 import { dropped } from './parser-p5-helpers';
 
 const AJANI = { name: 'Ajani, Strength of the Pride', legendary: true };
@@ -13,6 +13,8 @@ const TEXT = [
   '−2: Create a 2/2 white Cat Soldier creature token named Ajani’s Pridemate with "Whenever you gain life, put a +1/+1 counter on this token."',
   '0: If you have at least 15 life more than your starting life total, exile Ajani and each artifact and creature your opponents control.',
 ].join('\n');
+
+const OPTS_SPELL = { name: 'SYNTHETIC Card', legendary: false };
 
 const readAjani = (text: string, options = AJANI) =>
   parseFaceText(text, options, 0, DEFAULT_RULES, [], ['planeswalker'], ['Ajani']);
@@ -148,6 +150,24 @@ describe('a token named after the card that makes it (D-911)', () => {
     expect(d.reason).toBe('notRunnable');
   });
 
+  test('a name written with the whole name of the card is refused, not given the short name (SYNTHETIC)', () => {
+    // Normalization turns the whole name and the short name into the same tilde; the text as written says which one the effect used (CR 111.4).
+    for (const named of [
+      'Ajani, Strength of the Pride’s Pridemate',
+      'Ajani, Strength of the Pride’s Pride of the Plains',
+    ]) {
+      const d = refused(`−2: Create a 2/2 white Cat Soldier creature token named ${named}.`);
+      expect(d.reason, named).toBe('notRunnable');
+    }
+  });
+
+  test('the whole name elsewhere in the text does not change a token named with the short name (SYNTHETIC)', () => {
+    const parsed = readAjani(
+      '−2: Ajani, Strength of the Pride deals 1 damage to each opponent. Create a 2/2 white Cat Soldier creature token named Ajani’s Pridemate.',
+    );
+    expect(JSON.stringify(parsed.abilities)).toContain('"name":"Ajani’s Pridemate"');
+  });
+
   test('a sentence after the token reads as another instruction, not as part of its name (SYNTHETIC)', () => {
     const parsed = readAjani(
       '−2: Create a 2/2 white Cat Soldier creature token named Ajani’s Pridemate. You gain 2 life.',
@@ -159,7 +179,7 @@ describe('a token named after the card that makes it (D-911)', () => {
 });
 
 describe('"If you have at least N life more than your starting life total, ..." before an instruction (D-912)', () => {
-  test('the sentence is conditional on resolution for a spell too, whatever the number (SYNTHETIC)', () => {
+  test('the sentence is conditional on resolution in a loyalty ability, whatever the number (SYNTHETIC)', () => {
     const parsed = readAjani(
       '0: If you have at least 7 life more than your starting life total, draw a card.',
     );
@@ -190,6 +210,28 @@ describe('"If you have at least N life more than your starting life total, ..." 
       },
     ]);
     expect(JSON.stringify(parsed.abilities)).not.toContain('aboveStarting');
+  });
+
+  test("on an instant it is the spell's own conditional; as a static line of a permanent it is refused (SYNTHETIC)", () => {
+    const text = 'If you have 30 or more life, draw a card.';
+    const spell = parseFaceText(
+      text,
+      OPTS_SPELL,
+      0,
+      DEFAULT_RULES,
+      DEFAULT_SPELL_RULES,
+      ['instant'],
+      [],
+    );
+    expect(spell.unparsed).toEqual([]);
+    expect(spell.spell).toMatchObject({
+      effect: {
+        kind: 'conditional',
+        condition: { kind: 'lifeTotal', compare: { cmp: 'atLeast', value: 30 } },
+        effect: { kind: 'draw' },
+      },
+    });
+    expect(refused(text).reason).toBe('unrecognised');
   });
 
   test('a triggered ability\'s own "if" stays the intervening "if" of its trigger (CR 603.4)', () => {
