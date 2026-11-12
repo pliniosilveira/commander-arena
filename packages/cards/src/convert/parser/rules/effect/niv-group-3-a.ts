@@ -1,7 +1,7 @@
 /**
- * Effect rules of group 3-a of the Niv-Mizzet deck (issue 25, D-971): "copy it for each time you've cast your commander from the command zone this game",
+ * Effect rules of group 3-a of the Niv-Mizzet deck (issue 25, D-337): "copy it for each time you've cast your commander from the command zone this game",
  * the copy of a spell whose number comes from the game. ("When you next cast an instant or sorcery spell this turn, " is the lead of a sentence, read in
- * `sentence.ts`, D-970.)
+ * `sentence.ts`, D-336.)
  */
 import { literal, optional, pattern, sequence } from '../../combinators';
 import type { IrAmount, IrNoun } from '../../ir/types';

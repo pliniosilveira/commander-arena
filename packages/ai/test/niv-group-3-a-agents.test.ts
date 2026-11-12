@@ -1,4 +1,4 @@
-// The agents and group 3-a of the Niv-Mizzet deck (D-970, D-971, SYNTHETIC cards of the engine fixtures `synthetic-niv-group-3-a.ts`): the delayed trigger "when you
+// The agents and group 3-a of the Niv-Mizzet deck (D-336, D-337, SYNTHETIC cards of the engine fixtures `synthetic-niv-group-3-a.ts`): the delayed trigger "when you
 // next cast an instant or sorcery spell this turn, copy that spell" asks no new kind of question. The copy asks the ordinary question about the new targets (once
 // for each copy), and the activated ability with the sacrifice is an ordinary `activate`. Each agent is checked on real engine states: every answer is one the
 // engine lists and accepts, and whole turns with the cards finish without a rejected action.

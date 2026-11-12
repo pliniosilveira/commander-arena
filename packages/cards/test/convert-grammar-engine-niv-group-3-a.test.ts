@@ -1,4 +1,4 @@
-// The Niv-Mizzet deck (issue 25), group 3-a (D-970, D-971): the REAL Oracle text of Galvanic Iteration and Thunderclap Drake (the corpus's golden.jsonl, taken from
+// The Niv-Mizzet deck (issue 25), group 3-a (D-336, D-337): the REAL Oracle text of Galvanic Iteration and Thunderclap Drake (the corpus's golden.jsonl, taken from
 // the issue) goes through the grammar as a card with no override, is defined in an engine scenario and is played through applyAction, so the nodes the parser
 // writes for the real text are what the engine runs. The helper cards are SYNTHETIC (src/cards/fixtures) or old fixtures. Pins: CR 603.7, 603.7a, 603.7b (a
 // delayed triggered ability waits for an event after it was created and triggers once), CR 514.2 ("this turn"), CR 707.10 and 707.10c (the copies are not cast;

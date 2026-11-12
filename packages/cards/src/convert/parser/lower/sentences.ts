@@ -1035,11 +1035,11 @@ function lowerTrampleExcess(
   return { ok: true, value: [{ ...base, trampleExcess: true }], rule: clause.rule };
 }
 
-/** The engine features of "When you next cast an instant or sorcery spell this turn, copy that spell." (D-970). */
+/** The engine features of "When you next cast an instant or sorcery spell this turn, copy that spell." (D-336). */
 export const NEXT_CAST_NEEDS: readonly FeatureRef[] = ['effect:delayedCast', 'effect:copySpell'];
 
 /**
- * "When you next cast an instant or sorcery spell this turn, copy that spell. You may choose new targets for the copy." (D-970, CR 603.7, 603.7a, 603.7b, 514.2):
+ * "When you next cast an instant or sorcery spell this turn, copy that spell. You may choose new targets for the copy." (D-336, CR 603.7, 603.7a, 603.7b, 514.2):
  * the sentence is what a delayed triggered ability does, created as the spell or ability resolves, on the next cast by its controller of a spell the lead names; the
  * engine's `delayedCast`. The only thing it can do is copy the spell that was cast (the engine's own limit, `validateCard`); a test, a "you may" or any other
  * instruction in the sentence is not read inside it.
@@ -1179,7 +1179,7 @@ function lowerStep(
     // "there's an additional combat phase after this phase. At the beginning of that combat, untap all creatures you control." (stage P41, D-188, CR 603.7,
     // 500.8): what happens at the beginning of the combat phase the sentence before it added; it is the engine's `extraCombat` with `atBeginning`.
     if (step === 'thatCombat') return lowerAtThatCombat(sentence, i, steps, ctx);
-    // "When you next cast an instant or sorcery spell this turn, copy that spell." (D-970, CR 603.7, 603.7a): the engine's `delayedCast`.
+    // "When you next cast an instant or sorcery spell this turn, copy that spell." (D-336, CR 603.7, 603.7a): the engine's `delayedCast`.
     if (step === 'nextCast') return lowerNextCast(sentence, i, steps, ctx);
     const blocked = missingFeatures(['effect:delayedTrigger']);
     if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });

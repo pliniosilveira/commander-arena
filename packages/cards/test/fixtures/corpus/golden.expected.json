@@ -1,5 +1,5 @@
 {
-  "parserVersion": 92,
+  "parserVersion": 93,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -2562,19 +2562,10 @@
     "88d0a394-79e2-42ac-9a37-1a7b78231941": {
       "name": "Thunderclap Drake",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{2}{U}, Sacrifice ~: When you next cast an instant or sorcery spell this turn, copy it for each time you've cast your commander from the command zone this game. You may choose new targets for the copies.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "ee0f81ea"
+      "ast": "cde6715d"
     },
     "89ca686a-7c72-4d8f-9290-e89635624a83": {
       "name": "Cavern of Souls",
@@ -3466,19 +3457,10 @@
     "c51ed6e3-813b-49c4-b1de-7f92a77f8f6e": {
       "name": "Galvanic Iteration",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "When you next cast an instant or sorcery spell this turn, copy that spell. You may choose new targets for the copy.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.cast"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "97afa9d1"
+      "ast": "f7365a16"
     },
     "c5229c17-b7be-4b05-b683-f2277edc4849": {
       "name": "Enlightened Tutor",
@@ -4692,7 +4674,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 223,
+      "supported": 225,
       "total": 245
     }
   }

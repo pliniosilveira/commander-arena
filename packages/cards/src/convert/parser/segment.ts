@@ -55,7 +55,7 @@ export interface AbilitySkeleton {
 }
 
 const TRIGGER_WORD = /^(?:when|whenever|at)\s/i;
-/** "When you next cast an instant or sorcery spell this turn, " (D-970): the lead of a sentence that creates a delayed triggered ability. */
+/** "When you next cast an instant or sorcery spell this turn, " (D-336): the lead of a sentence that creates a delayed triggered ability. */
 const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
 const MODAL_HEADER = /^choose\b/i;
@@ -127,13 +127,13 @@ function trimmed(text: string, start: number, end: number): Span {
  */
 const NEW_TARGETS_SENTENCE = /^you may choose new targets for the copy\.$/i;
 /**
- * "You may choose new targets for the copies." (D-971, CR 707.10c): the same sentence for a clause that makes several copies, "copy it for each time you've cast your
+ * "You may choose new targets for the copies." (D-337, CR 707.10c): the same sentence for a clause that makes several copies, "copy it for each time you've cast your
  * commander from the command zone this game"; joined only to a sentence that says it (`effect.copy-spell-for-each`).
  */
 const NEW_TARGETS_COPIES_SENTENCE = /^you may choose new targets for the copies\.$/i;
 const COPY_FOR_EACH = /(?:^|, )copy (?:it|that spell) for each time [^.]*\.$/i;
 
-/** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-971). */
+/** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-337). */
 function newTargetsOf(text: string, before: Span | undefined, span: Span): boolean {
   if (before === undefined) return false;
   const said = text.slice(span.start, span.end);
@@ -511,7 +511,7 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     };
   }
 
-  // "When you next cast an instant or sorcery spell this turn, copy that spell." (D-970, CR 603.7): a spell's sentence that creates a delayed triggered ability,
+  // "When you next cast an instant or sorcery spell this turn, copy that spell." (D-336, CR 603.7): a spell's sentence that creates a delayed triggered ability,
   // not a triggered ability of a permanent; it is read as the sentences of the body (`sentence.delayed`).
   if (TRIGGER_WORD.test(text) && !DELAYED_CAST_LEAD.test(text)) {
     const word = /^\S+/.exec(text) ?? [''];

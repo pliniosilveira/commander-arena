@@ -37,7 +37,7 @@ export function copyAbilityWords(
 
 /**
  * "Copy that spell. You may choose new targets for the copy." and, with a count, "Copy it for each time you've cast your commander from the command
- * zone this game. You may choose new targets for the copies." (CR 707.10, 707.10c, 903.8; D-971): the effect `copySpell`. `spell` is how the spell is
+ * zone this game. You may choose new targets for the copies." (CR 707.10, 707.10c, 903.8; D-337): the effect `copySpell`. `spell` is how the spell is
  * named ("that spell", "this spell", a target), and `count` the words of the amount when the copies are counted, null for the one copy.
  */
 export function copySpellWords(
@@ -54,7 +54,7 @@ export function copySpellWords(
 }
 
 /**
- * "When you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7, 603.7a; D-970): the delayed triggered ability a spell or ability
+ * "When you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7, 603.7a; D-336): the delayed triggered ability a spell or ability
  * creates. `spell` is the spell the filter names ("an instant or sorcery spell"), `does` what the ability does.
  */
 export function delayedCastWords(spell: string, does: string): string {

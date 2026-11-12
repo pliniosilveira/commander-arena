@@ -32,7 +32,7 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
       if (ref.value.kind !== 'target') return failure(clause);
       spell = ref.value;
     }
-    // "copy it for each time you've cast your commander from the command zone this game" (D-971, CR 707.10, 903.8): the number of copies.
+    // "copy it for each time you've cast your commander from the command zone this game" (D-337, CR 707.10, 903.8): the number of copies.
     let count: Amount | undefined;
     if (arg(clause, 'count') !== undefined) {
       const lowered = amountArg(clause, 'count', ctx);

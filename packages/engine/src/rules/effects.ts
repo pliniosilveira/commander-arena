@@ -858,7 +858,7 @@ function runEffect(
       const spells = resolveObjects(state, effect.spell, ctx, targets).filter(
         (id) => copiedSpell(state, id) !== null,
       );
-      // D-971 (CR 707.10, 903.8): "copy it for each time you've cast your commander from the command zone this game": the count is read as this resolves; none
+      // D-337 (CR 707.10, 903.8): "copy it for each time you've cast your commander from the command zone this game": the count is read as this resolves; none
       // when it is zero (copyInstructions makes nothing for it).
       const copies = effect.count === undefined ? 1 : amountOf(state, effect.count, ctx, targets);
       return {
@@ -981,7 +981,7 @@ function runEffect(
     }
 
     case 'delayedCast': {
-      // CR 603.7, 603.7a, 603.7b, 603.7d, 514.2 (D-970): "When you next cast an instant or sorcery spell this turn, copy that spell": a delayed triggered
+      // CR 603.7, 603.7a, 603.7b, 603.7d, 514.2 (D-336): "When you next cast an instant or sorcery spell this turn, copy that spell": a delayed triggered
       // ability of the controller of the spell or ability as it resolved, on a cast by that player of a spell the filter names. It is found after events that
       // happen after this (`findDelayedTriggers`: the cast that made it is already past), triggers once and ends with the turn.
       const ability: TriggeredAbility = {

@@ -815,7 +815,7 @@ export const EFFECT_RULES = [
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
   ...NIV_EFFECT_RULES,
   ...NIV_GROUP_2B_B_EFFECT_RULES,
-  // D-971: "copy it for each time you've cast your commander from the command zone this game".
+  // D-337: "copy it for each time you've cast your commander from the command zone this game".
   ...NIV_GROUP_3_A_EFFECT_RULES,
   ...CONTROL_EFFECT_RULES,
   // Stage P44 (D-195): "starting with you, each player votes for profit or security".

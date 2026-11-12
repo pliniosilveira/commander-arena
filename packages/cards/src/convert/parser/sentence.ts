@@ -222,7 +222,7 @@ interface SentenceOptions {
   readonly delayed?: boolean;
 }
 
-/** "When you next cast an instant or sorcery spell this turn, " (D-970): the spell is the subject of what the sentence does. */
+/** "When you next cast an instant or sorcery spell this turn, " (D-336): the spell is the subject of what the sentence does. */
 const NEXT_CAST_LEAD: Parser<NonNullable<IrSentence['delayed']>> = map(
   spanned(
     sequence(
@@ -255,7 +255,7 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
       step: 'thatCombat' as const,
       whose: 'you' as const,
     })),
-    // D-970 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, ": the next spell of that kind its controller casts.
+    // D-336 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, ": the next spell of that kind its controller casts.
     NEXT_CAST_LEAD,
   ),
 );

@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC CARDS FOR "WHEN YOU NEXT CAST AN INSTANT OR SORCERY SPELL THIS TURN, COPY THAT SPELL". NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of D-970 to D-972 (group 3-a of the Niv-Mizzet deck): a delayed triggered ability on a cast event that is created as a spell or an
+ * Invented for the tests of D-336 to D-338 (group 3-a of the Niv-Mizzet deck): a delayed triggered ability on a cast event that is created as a spell or an
  * activated ability resolves, triggers once (the next matching spell its controller casts) and ends with the turn (CR 603.7, 603.7a, 603.7c), and
  * `copySpell` with a count taken from the game ("for each time you've cast your commander from the command zone this game", CR 903.8, 707.10).
  * Names start with "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle text, and none of these is the definition of

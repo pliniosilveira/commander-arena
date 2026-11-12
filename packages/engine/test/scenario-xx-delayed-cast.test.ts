@@ -1,5 +1,5 @@
 // "When you next cast an instant or sorcery spell this turn, copy that spell." and the same created by an activated ability, copying once for each time the
-// commander was cast from the command zone (D-970 to D-972, group 3-a of the Niv-Mizzet deck).
+// commander was cast from the command zone (D-336 to D-338, group 3-a of the Niv-Mizzet deck).
 // Pins: CR 603.7 (an effect creates a delayed triggered ability), CR 603.7a (a spell or ability that creates one does not trigger it for the spell that made
 // it: it waits for an event after it was created), CR 603.7b (it triggers once, the next time the event happens), CR 603.7d and 603.7e (it belongs to the
 // controller of the spell or ability as it resolved, whatever became of its source, a sacrificed creature included), CR 514.2 ("this turn": it ends

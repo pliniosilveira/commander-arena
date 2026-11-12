@@ -20,8 +20,8 @@ The running checklist of the deck support routine for `decks/niv-mizzet.txt` (is
 | Niv-Mizzet, Visionary | 2 | P | done | "noncombat damage to an opponent, you draw that many cards" |
 | Pyromancer's Goggles | 2 | P | done | mana rider: copy the red instant or sorcery the mana is spent on |
 | Stock Up | 3 | P | done | the owner of the cards chooses the order at the bottom of the library |
-| Galvanic Iteration | 3 | P | waiting | delayed trigger "when you next cast an instant or sorcery spell this turn" (state shape, version bump) |
-| Thunderclap Drake | 3 | P | waiting | the same delayed trigger, copies for each commander cast |
+| Galvanic Iteration | 3 | P | done | delayed trigger "when you next cast an instant or sorcery spell this turn" (state shape, version bump) |
+| Thunderclap Drake | 3 | P | done | the same delayed trigger, copies for each commander cast |
 | Veyran, Voice of Duality | 3 | P | waiting | triggers an additional time when casting or copying an instant or sorcery; one ruling question is open |
 | Quistis Trepe | 3 | P | waiting | cast a target card from any graveyard, mana of any type, exile instead of the graveyard |
 | Fiery Confluence | 4 | P (large) | approved (owner, 2026-11-12), not started | "Choose three. You may choose the same mode more than once": repeatable modes (CR 700.2d), UI and AI |

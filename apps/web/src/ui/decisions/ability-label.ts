@@ -982,7 +982,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return inner === '' ? pay : `${pay}. When you do, ${lower(inner)}`;
     }
     case 'copySpell': {
-      // D-971 (CR 707.10, 707.10c, 903.8): "Copy that spell", with new targets, and once for each time the commander was cast from the command zone.
+      // D-337 (CR 707.10, 707.10c, 903.8): "Copy that spell", with new targets, and once for each time the commander was cast from the command zone.
       const count =
         effect.count === undefined
           ? null
@@ -996,7 +996,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return spell === UNSAID ? UNSAID : copySpellWords(spell, effect.newTargets, count);
     }
     case 'delayedCast': {
-      // D-970 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell".
+      // D-336 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell".
       const spell = filterPhrase(effect.filter, 'spell');
       const inner = effectText(
         effect.effect,

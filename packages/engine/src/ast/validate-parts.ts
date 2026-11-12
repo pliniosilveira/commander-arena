@@ -3015,7 +3015,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkDelayedTrigger(e, path, out, scope.movedAvailable === true, scope.diesTrigger === true);
       break;
     case 'delayedCast': {
-      // CR 603.7 (D-970): an effect that creates a delayed triggered ability on the controller's next cast of a spell the filter names.
+      // CR 603.7 (D-336): an effect that creates a delayed triggered ability on the controller's next cast of a spell the filter names.
       checkFilter(e.filter, `${path}.filter`, out);
       if (e.filter?.stackKind !== 'spell') {
         issue(
@@ -3115,7 +3115,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (!isOneOf(e.newTargets, ['may', 'no'])) {
         issue(out, `${path}.newTargets`, 'newTargets is "may" or "no"');
       }
-      // D-971 (CR 707.10): how many copies, an amount of the game as the effect resolves (zero makes none).
+      // D-337 (CR 707.10): how many copies, an amount of the game as the effect resolves (zero makes none).
       if (e.count !== undefined) checkAmount(e.count, `${path}.count`, scope, out);
       break;
     case 'unearth':

@@ -1,4 +1,4 @@
-// The Niv-Mizzet deck (issue 25), group 3-a (D-970, D-971): "When you next cast an instant or sorcery spell this turn, copy that spell." (Galvanic Iteration)
+// The Niv-Mizzet deck (issue 25), group 3-a (D-336, D-337): "When you next cast an instant or sorcery spell this turn, copy that spell." (Galvanic Iteration)
 // and "{2}{U}, Sacrifice this creature: When you next cast an instant or sorcery spell this turn, copy it for each time you've cast your commander from the
 // command zone this game." (Thunderclap Drake). The lines are the real Oracle text of the acceptance cards of the golden corpus read through the whole
 // pipeline; the other lines are SYNTHETIC siblings and the near misses the grammar must not read. The engine runs what is lowered in

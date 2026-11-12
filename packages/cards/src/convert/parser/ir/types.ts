@@ -905,7 +905,7 @@ export interface IrSentence extends IrNode {
     readonly step: 'endStep' | 'thatCombat' | 'nextCast';
     readonly whose: 'you' | 'each';
     /**
-     * `nextCast` (D-970, CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell": the spell the delayed trigger waits for,
+     * `nextCast` (D-336, CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell": the spell the delayed trigger waits for,
      * described by a filter of spells, and the subject (`triggerSubject`) of what the sentence does (the binding pass seeds it as the first antecedent).
      */
     readonly spell?: IrNoun;

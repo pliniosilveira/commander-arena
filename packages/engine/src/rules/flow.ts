@@ -404,7 +404,7 @@ export function afterDiscard(input: GameState, prior: readonly GameEvent[] = [])
   }
   const expired = expireEndOfTurnEffects(state);
   state = expired.state;
-  // CR 514.2, 603.7 (D-970): a delayed triggered ability of "this turn" ("when you next cast an instant or sorcery spell this turn") ends with the turn.
+  // CR 514.2, 603.7 (D-336): a delayed triggered ability of "this turn" ("when you next cast an instant or sorcery spell this turn") ends with the turn.
   if (state.delayedTriggers.some((d) => d.untilEndOfTurn === true)) {
     state = {
       ...state,

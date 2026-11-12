@@ -1,5 +1,5 @@
 /**
- * The web side of D-970 and D-971 (the delayed trigger "when you next cast an instant or sorcery spell this turn" and the copy count): the words of the
+ * The web side of D-336 and D-337 (the delayed trigger "when you next cast an instant or sorcery spell this turn" and the copy count): the words of the
  * activated ability and of the trigger that goes on the stack, read from the engine's SYNTHETIC cards so a wording that drifts from the AST fails here. Pure
  * models, no DOM.
  */
