@@ -94,11 +94,18 @@ export interface LowerContext {
    */
   dieSides: number | null;
   /**
-   * True when the permanent the ability is on may be gone, or may have changed zones, when the conditions of the ability are read (D-985, CR 400.7, 603.10a): the
-   * ability triggers on a permanent dying, leaving the battlefield or being sacrificed (the source may be the one that left, or leave with the others), or on a
-   * card being cycled. A condition about the state of the permanent on the battlefield (`paired`) is then not read: the card it would be read on is a new object.
+   * True while the clauses of a `playersMay` sentence whose asked players do the instruction themselves are lowered (D-985, `runsAs: 'chooser'`, CR 608.2d): the engine
+   * then runs them with the asked player as "you" (the controller of the delayed ability they create, the one who acts), so a clause whose text says "you" or "your" of the
+   * ability's own controller ("... at the beginning of your next upkeep", "return it" for the controller to decide) would be read for the wrong player. A rule of that kind
+   * refuses when this is set.
    */
-  sourceMayLeave: boolean;
+  askedPlayerActs: boolean;
+  /**
+   * True only while the "as long as" condition of a static ability is lowered (D-985, CR 604.1, 611.3a): the one place `paired` is read, because `derive` evaluates it
+   * while the permanent is on the battlefield. Anywhere else the permanent may be gone when the condition is read (CR 400.7, 603.4, 608.2h) and the engine keeps no
+   * last-known information of a pair.
+   */
+  staticCondition: boolean;
   /** True only while the intervening "if" of a triggered ability is lowered (D-271): the one place "~ is in your graveyard" is read. */
   interveningCondition: boolean;
   /**
@@ -217,7 +224,8 @@ export function newContext(
     graveyardSource: false,
     usedGraveyardSource: false,
     dieSides: null,
-    sourceMayLeave: false,
+    staticCondition: false,
+    askedPlayerActs: false,
     interveningCondition: false,
     meldPartner: null,
     itIsCard: false,

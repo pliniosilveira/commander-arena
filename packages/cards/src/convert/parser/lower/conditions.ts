@@ -169,11 +169,15 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:paired']);
       if (blocked.length > 0) return failure(c, blocked);
       if (test.who === 'it' && !itIsSelf) return failure(c, []);
-      // D-985 (CR 400.7, 603.10a): the engine reads the pair of the permanent on the battlefield now. Where the permanent may be gone (a dies or leaves trigger, a
-      // sacrifice, a spell, an ability from the graveyard) the card it would be read on has no pair: not read, never a condition that is false for ever.
+      // D-985 (CR 702.95b, 400.7, 603.4, 608.2h): the engine reads the pair of the permanent on the battlefield now and no last-known information, so the condition is
+      // exact only where `derive` reads it, the "as long as" condition of a static ability of a permanent (`ctx.staticCondition`, set by `lowerStaticStatement` alone). In a
+      // triggered ability the source may be gone when the intervening "if" is checked again as the ability resolves (a response killed it), an activated ability's cost may
+      // remove it, a replacement works with no permanent: all unsupported, never a condition that is false for the wrong reason.
       if (
-        ctx !== undefined &&
-        (ctx.owner === 'spell' || ctx.selfGone || ctx.sourceMayLeave || ctx.graveyardSource)
+        ctx?.staticCondition !== true ||
+        ctx.owner === 'spell' ||
+        ctx.selfGone ||
+        ctx.graveyardSource
       ) {
         return failure(c, []);
       }

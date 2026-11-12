@@ -981,7 +981,40 @@ function checkLoyaltyAbility(
   }
 }
 
+/**
+ * D-985 (CR 702.95b, 400.7, 603.4, 608.2h): `paired` reads the pair of the permanent on the battlefield now (`partnerOf` of the object table; nothing of the
+ * last-known information). It is exact in one place only: the "as long as" condition of a static ability of a permanent on the battlefield, which `derive` reads
+ * while the permanent is there. In any other ability the source can be gone when the condition is read: a triggered ability's source may die to a response between the
+ * event and the resolution (CR 603.4 checks the intervening "if" again, 608.2h reads what left with its last-known information, which was paired) and an activated
+ * ability's cost may remove it; a replacement effect or a delayed trigger works with no permanent at all. The engine's own soulbond abilities read `soulbondReady`.
+ * The card is refused, never accepted with a condition that would be false for the wrong reason.
+ */
+function checkPairedPlacement(a: Ability, path: string, out: AstIssue[]): void {
+  const refuse = (): void =>
+    issue(
+      out,
+      path,
+      '\'paired\' is valid only as the "as long as" condition of a static ability of a permanent on the battlefield: anywhere else the permanent may have left when it is read (CR 400.7, 603.4, 608.2h)',
+    );
+  switch (a?.kind) {
+    case 'static':
+      // The condition of the ability itself; the payload (a granted ability, a nested condition) and a card in the graveyard have no place for it.
+      if (effectHas([a.static], 'paired')) refuse();
+      else if (a.functionsIn === 'graveyard' && conditionHas(a.condition, 'paired')) refuse();
+      return;
+    case 'triggered':
+    case 'activated':
+    case 'mana':
+    case 'replacement':
+      if (effectHas([a], 'paired')) refuse();
+      return;
+    default:
+      return;
+  }
+}
+
 function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
+  checkPairedPlacement(a, path, out);
   switch (a?.kind) {
     case 'keyword':
       checkKeyword(a.keyword, `${path}.keyword`, out);
@@ -1164,24 +1197,6 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           out,
           `${path}.interveningIf`,
           "thisInYourGraveyard needs functionsIn: 'graveyard': an ability that works on the battlefield has its card there",
-        );
-      }
-      // D-985 (CR 400.7, 603.10a): the pair is read on the permanent on the battlefield now. A trigger that looks back at a permanent leaving (it may be the source, or
-      // leave with the others), a sacrifice or a cycled card runs when the source may be a new object in another zone, and an ability from the graveyard has its card
-      // there: `paired` would be false for ever, so the card is refused instead of accepted with a condition that never holds.
-      if (
-        (['dies', 'leavesBattlefield', 'diesBatch', 'permanentSacrificed', 'cycled'].includes(
-          a.trigger?.kind,
-        ) ||
-          a.functionsIn === 'graveyard') &&
-        (conditionHas(a.interveningIf, 'paired') ||
-          conditionHas(a.triggerCondition, 'paired') ||
-          effectHas([a.effect, a.modes, a.chooseModes], 'paired'))
-      ) {
-        issue(
-          out,
-          path,
-          "'paired' reads the pair of a permanent on the battlefield: it is not valid where the permanent may have left it (a dies, leaves, sacrifice or cycled trigger, an ability that works from the graveyard)",
         );
       }
       // D-145: "attacks while you don't control another Dinosaur": the condition of the event itself, read once.
@@ -1457,6 +1472,15 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
     checkAbility(a, `${path}.abilities[${i}]`, out);
   });
   loyaltyOffPlaneswalkerIssues(face.types, face.abilities, path, out);
+  // D-985: the conditions a face keeps outside its abilities (an alternative cost, an additional cost) are read for a card that is being cast: it is not a permanent, so
+  // it is never paired.
+  if (effectHas([face.alternativeCosts, face.additionalCosts], 'paired')) {
+    issue(
+      out,
+      path,
+      '\'paired\' is valid only as the "as long as" condition of a static ability of a permanent on the battlefield: a card that is cast is not a permanent',
+    );
+  }
   // CR 208.2, 604.3: a printed '*' is defined by a characteristic-defining ability, and only by one.
   checkStarPairing(face, face.abilities, path, out);
   checkAttachmentFace(face.abilities, face, path, out);

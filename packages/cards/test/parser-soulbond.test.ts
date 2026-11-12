@@ -238,10 +238,10 @@ describe('the line of the Seraph', () => {
     }
   });
 
-  test('"if ~ is paired with another creature" reads as the condition of an ability of the permanent, nothing else', () => {
+  test('"if ~ is paired with another creature" is read as the condition of no triggered ability (D-985)', () => {
     const c = read('When ~ attacks, if ~ is paired with another creature, you gain 1 life.');
-    expect(c.unparsed).toEqual([]);
-    expect(c.face.abilities[0]).toMatchObject({ interveningIf: { kind: 'paired' } });
+    expect(c.unparsed.length).toBeGreaterThan(0);
+    expect(JSON.stringify(c.face.abilities)).not.toContain('paired');
     expect(
       status('When ~ attacks, if target creature is paired with another creature, you gain 1 life.')
         .status,
@@ -277,15 +277,39 @@ describe("any triggered ability quoted to the pair is read, not only the Seraph'
   });
 });
 
-describe('"if ~ is paired" where the permanent may be gone is not read (D-985, CR 400.7, 603.10a)', () => {
-  // The engine reads a pair on the permanent that is on the battlefield now. A dies or leaves trigger of the permanent runs on the card in the graveyard (CR 400.7), which has
-  // no pair, so the condition would be false for ever: such a card must be unsupported, not wrong.
+describe('"~ is paired" is read only as the "as long as" condition of a static ability (D-985, CR 400.7, 603.4, 608.2h)', () => {
+  // The engine reads a pair on the permanent that is on the battlefield now. In a triggered ability the source can leave between the event and the resolution (a Lightning
+  // Bolt in response to the attack trigger): CR 603.4 checks the intervening "if" again then and CR 608.2h reads the permanent with its last-known information, which was
+  // paired, but the engine reads no pair of a permanent that is gone. So the card is unsupported, never wrong; the same for every consumer of a condition that is not a static one.
   test.each([
-    ['dies, intervening if', 'When ~ dies, if ~ is paired with another creature, draw a card.'],
+    ['attacks', 'Whenever ~ attacks, if ~ is paired with another creature, you gain 3 life.'],
+    ['attacks, "it"', "Whenever ~ attacks, if it's paired with another creature, you gain 3 life."],
     [
-      "dies, intervening if, 'it'",
-      "When ~ dies, if it's paired with another creature, draw a card.",
+      'is dealt damage',
+      'Whenever ~ is dealt damage, if ~ is paired with another creature, you gain 3 life.',
     ],
+    [
+      'becomes blocked',
+      'Whenever ~ becomes blocked, if ~ is paired with another creature, you gain 3 life.',
+    ],
+    [
+      'attacks or blocks',
+      'Whenever ~ attacks or blocks, if ~ is paired with another creature, you gain 3 life.',
+    ],
+    [
+      'enters or attacks',
+      'Whenever ~ enters or attacks, if ~ is paired with another creature, you gain 3 life.',
+    ],
+    [
+      'deals combat damage',
+      'Whenever ~ deals combat damage to a player, if ~ is paired with another creature, draw a card.',
+    ],
+    [
+      'upkeep',
+      'At the beginning of your upkeep, if ~ is paired with another creature, draw a card.',
+    ],
+    ['dies', 'When ~ dies, if ~ is paired with another creature, draw a card.'],
+    ["dies, 'it'", "When ~ dies, if it's paired with another creature, draw a card."],
     [
       'leaves the battlefield',
       'Whenever ~ leaves the battlefield, if ~ is paired with another creature, draw a card.',
@@ -295,23 +319,67 @@ describe('"if ~ is paired" where the permanent may be gone is not read (D-985, C
       'Whenever another creature dies, if ~ is paired with another creature, draw a card.',
     ],
     [
-      'a dies trigger of the pair',
+      'another creature enters',
+      'Whenever another creature enters under your control, if ~ is paired with another creature, draw a card.',
+    ],
+    [
+      'a conditional effect of a trigger',
+      'Whenever ~ attacks, if ~ is paired with another creature, you gain 3 life. Otherwise, you gain 1 life.',
+    ],
+    [
+      'a conditional instruction of a trigger',
+      'Whenever ~ attacks, draw a card. If ~ is paired with another creature, you gain 3 life.',
+    ],
+    [
+      'a conditional effect, otherwise form',
+      'Whenever ~ attacks, if ~ is paired with another creature, draw a card, otherwise you gain 1 life.',
+    ],
+    [
+      'a conditional instruction of an activated ability',
+      '{T}: Draw a card. If ~ is paired with another creature, you gain 3 life.',
+    ],
+    [
+      'an activation restriction',
+      '{T}: Draw a card. Activate only if ~ is paired with another creature.',
+    ],
+    [
+      'a mana ability condition',
+      '{T}: Add {G}. Activate only if ~ is paired with another creature.',
+    ],
+    [
+      'a trigger of the pair, inside the quotation',
+      'As long as ~ is paired with another creature, each of those creatures has "Whenever this creature attacks, if this creature is paired with another creature, you draw a card."',
+    ],
+    [
+      'a dies trigger of the pair, inside the quotation',
       'As long as ~ is paired with another creature, each of those creatures has "When this creature dies, if this creature is paired with another creature, you draw a card."',
     ],
-  ])('%s', (_why, text) => {
+    [
+      'a static ability inside the quotation',
+      'As long as ~ is paired with another creature, each of those creatures has "As long as this creature is paired with another creature, this creature has flying."',
+    ],
+    [
+      'a conditional effect inside the quotation',
+      'As long as ~ is paired with another creature, each of those creatures has "Whenever this creature attacks, you gain 1 life. If this creature is paired with another creature, you gain 3 life."',
+    ],
+    ['a restriction that is lifted', "~ can't attack unless it's paired with another creature."],
+    ['a spell', 'Draw a card. If ~ is paired with another creature, gain 3 life.'],
+  ])('is not read: %s', (_why, text) => {
     const s = status(text);
     expect(s.status).toBe('unsupported');
     expect(s.unparsed.length).toBeGreaterThan(0);
   });
 
-  test('the same condition in a trigger of a permanent that stays is read', () => {
+  test('is still read as the condition of a static ability: a keyword of the permanent, a granted ability, in and, a negation is not', () => {
     for (const text of [
-      'As long as ~ is paired with another creature, each of those creatures has "Whenever this creature attacks, if this creature is paired with another creature, you draw a card."',
-      'When ~ attacks, if ~ is paired with another creature, you gain 1 life.',
-      'Whenever ~ deals combat damage to a player, if ~ is paired with another creature, draw a card.',
+      'As long as ~ is paired with another creature, ~ has flying.',
+      SERAPH_LINE,
     ]) {
       expect(status(text).status, text).toBe('supported');
     }
+    expect(status("As long as ~ isn't paired with another creature, ~ has flying.").status).toBe(
+      'unsupported',
+    );
   });
 });
 
@@ -339,5 +407,73 @@ describe('"Return it" at the next upkeep names the dying creature only when noth
         "When ~ dies, you may return it to the battlefield under its owner's control at the beginning of your next upkeep.",
       ).status,
     ).toBe('supported');
+  });
+});
+
+describe('"your next upkeep" is the controller\'s: not read when another player is the one who acts (D-985, CR 608.2d, 603.7)', () => {
+  // With "may" asked of another player and no "have you", the engine runs the instruction with the asked player as "you" (`runsAs: 'chooser'`), so a delayed ability created
+  // there belongs to them and triggers at their upkeep, not at the controller's that the text names. The text is refused, never read for the wrong player.
+  const RETURN =
+    "return it to the battlefield under its owner's control at the beginning of your next upkeep";
+  test.each([
+    ['each opponent may', `When ~ dies, each opponent may ${RETURN}.`],
+    ['target opponent may', `When ~ dies, target opponent may ${RETURN}.`],
+    ['each player may', `When ~ dies, each player may ${RETURN}.`],
+    ['target player may', `When ~ dies, target player may ${RETURN}.`],
+    [
+      'a second instruction in the same "may"',
+      `When ~ dies, each opponent may ${RETURN} and you draw a card.`,
+    ],
+    ['each opponent, no "may"', `When ~ dies, each opponent ${RETURN}.`],
+    ['target opponent, no "may"', `When ~ dies, target opponent ${RETURN}.`],
+    ['for each opponent', `When ~ dies, for each opponent, ${RETURN}.`],
+    [
+      '"if they do" after a question to the opponent',
+      `When ~ dies, each opponent may discard a card. If they do, ${RETURN}.`,
+    ],
+    [
+      "the opponent's refusal",
+      `When ~ dies, each opponent may discard a card. If they don't, ${RETURN}.`,
+    ],
+  ])('is not read: %s', (_why, text) => {
+    const s = status(text);
+    expect(s.status).toBe('unsupported');
+  });
+
+  test('"your next main phase" of an added mana is not read for a player asked either, and is for the controller', () => {
+    const add =
+      'add an amount of {C} equal to the amount of mana spent to cast that spell at the beginning of your next main phase';
+    const spell = (text: string) =>
+      parseOnly(
+        syntheticCard({
+          name: 'SYNTHETIC Denial',
+          manaCost: '{1}{U}',
+          typeLine: 'Instant',
+          oracleText: text,
+        }),
+      ).support.status;
+    expect(spell(`Counter target spell. If you control a Wizard, ${add}.`)).toBe('supported');
+    expect(spell(`Counter target spell. Each opponent may ${add}.`)).toBe('unsupported');
+    expect(spell(`Counter target spell. Target opponent may ${add}.`)).toBe('unsupported');
+  });
+
+  test('is read when the controller is the one who acts: the ability\'s own "you may", no "may", and "may have you"', () => {
+    for (const text of [
+      `When ~ dies, you may ${RETURN}.`,
+      `When ~ dies, ${RETURN}.`,
+      `When ~ dies, target opponent may have you ${RETURN}.`,
+      `When ~ dies, each opponent may have you ${RETURN}.`,
+    ]) {
+      expect(status(text).status, text).toBe('supported');
+    }
+    const c = read(`When ~ dies, each opponent may have you ${RETURN}.`);
+    expect(c.face.abilities[0]).toMatchObject({
+      effect: {
+        kind: 'playersMay',
+        players: { kind: 'eachOpponent' },
+        effect: { kind: 'delayedTrigger', at: { step: 'upkeep', whose: 'you' } },
+      },
+    });
+    expect(JSON.stringify(c.face.abilities[0])).not.toContain('chooser');
   });
 });

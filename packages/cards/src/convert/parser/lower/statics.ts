@@ -700,7 +700,10 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     if (parts.length > 1) return failure(ability);
   } else {
     // The text is about this permanent: "it" in "as long as it's untapped" is `~` (CR 611.3a).
+    // D-985: this is the one condition `paired` is read in (`lowerCondition`).
+    ctx.staticCondition = true;
     const lowered = lowerCondition(statement.condition, true, ctx);
+    ctx.staticCondition = false;
     if (!lowered.ok) return lowered;
     const condition = lowered.value;
     // D-133, CR 613.8: the condition of a static ability is read where no layer 7 effect changes it, so it names no

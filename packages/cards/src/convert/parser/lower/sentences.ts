@@ -1350,7 +1350,12 @@ function lowerPlayersMay(
   }
   const players = playerSelectorOf(by.who, ctx);
   if (!players.ok) return refused(players);
+  // D-985: with no "have you" the player asked does the instruction, as "you" (`runsAs: 'chooser'`): a rule that reads "you" or "your" of the controller refuses then.
+  const askedActs = !by.haveYou;
+  const before = ctx.askedPlayerActs;
+  ctx.askedPlayerActs = askedActs;
   const body = lowerClauses(sentence.clauses, ctx);
+  ctx.askedPlayerActs = before;
   if (!body.ok) return refused(body);
   const next = sentences[i + 1];
   const declines = next?.condition?.test.kind === 'declined';
@@ -1366,7 +1371,9 @@ function lowerPlayersMay(
     ) {
       return refused(refuse(next));
     }
+    ctx.askedPlayerActs = askedActs;
     const other = lowerClauses(next.clauses, ctx);
+    ctx.askedPlayerActs = before;
     if (!other.ok) return refused(other);
     otherwise = oneEffect(other.value);
   }
