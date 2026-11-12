@@ -28,6 +28,7 @@ import type { Cost, NamedAlternativeKind, ObjectFilter } from '../ast/types';
 import type { CardFace } from '../cards/definition';
 import type { ObjectId, SeatId } from '../ids';
 import type { PaymentPlan, PaymentSource } from '../mana';
+import type { ManaColor } from '../mana/types';
 import { definitionOf, getSeat, patchSeat, printedCard } from '../state/ops';
 import type { GameObject, GameState, StackData } from '../state/types';
 import {
@@ -393,7 +394,8 @@ export function castManaPlan(
   // D-149: mana that may be spent only on a spell of a type and creature type ("only to cast an Angel spell") reads the subtypes.
   const target = { types: derived.types, subtypes: derived.subtypes };
   const options = extraSources === undefined ? {} : { extraSources };
-  const plan = planFor(state, seat, symbols, target, undefined, options);
+  const reserve = handReserve(state, seat, spell);
+  const plan = planFor(state, seat, symbols, target, reserve, options);
   if (plan === null || (sacrifice === null && (tap ?? null) === null)) return plan;
   const leaves = (p: PaymentPlan): boolean => {
     const after = applyPaymentPlan(state, seat, p, p.lifePaid).state;
@@ -413,10 +415,28 @@ export function castManaPlan(
       : []),
   ];
   for (const variant of variants) {
-    const other = planFor(state, seat, symbols, target, undefined, { ...options, ...variant });
+    const other = planFor(state, seat, symbols, target, reserve, { ...options, ...variant });
     if (other !== null && leaves(other)) return other;
   }
   return null;
+}
+
+/**
+ * Issue 18: the colors of mana the cards still in the seat's hand ask for (the symbols of their mana costs, a hybrid or Phyrexian
+ * symbol counting each of its colors). Automatic payment keeps the sources of these colors untapped when the spell being paid for
+ * can be paid another way (`reserve` of the payment planner, a preference and never a reason to fail), so a second spell can be cast.
+ */
+function handReserve(state: GameState, seat: SeatId, spell: GameObject): readonly ManaColor[] {
+  const colors = new Set<ManaColor>();
+  for (const id of getSeat(state, seat).hand) {
+    if (id === spell.id) continue;
+    const obj = state.objects[id];
+    if (obj === undefined) continue;
+    for (const symbol of derive(state, obj).manaCost ?? []) {
+      for (const letter of symbol.match(/[WUBRG]/g) ?? []) colors.add(letter as ManaColor);
+    }
+  }
+  return [...colors];
 }
 
 /**
