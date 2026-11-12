@@ -76,6 +76,11 @@ export interface ImportReport {
   readonly coverage: Coverage;
   /** True when every name resolved, a commander is set and validation has no errors. */
   readonly playable: boolean;
+  /**
+   * D-994: the melded faces of the meld cards of the list that the import fetched with it (cards of their own, not in the list): a deck-support issue carries the one of
+   * every unsupported meld card, so the work does not need the owner to extract it. Absent when no meld card was looked up.
+   */
+  readonly meldFaces?: readonly StoredCard[];
 }
 
 export interface ImportInput {

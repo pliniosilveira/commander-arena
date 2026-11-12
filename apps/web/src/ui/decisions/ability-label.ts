@@ -874,6 +874,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'createEmblem':
       // D-201 (CR 114.1): "You get an emblem with "...", the text the emblem shows.
       return `You get an emblem with "${effect.text}"`;
+    case 'meld':
+      // D-992 (CR 701.42a): "Exile this creature and the creature named Bruna, the Fading Light, then meld them into Brisela, Voice of Nightmares".
+      return `Exile this permanent and the creature named ${effect.partner}, then meld them into ${effect.result}`;
     case 'loseGame':
       // D-269 (CR 104.3e): "Each player this creature attacked this turn loses the game".
       return `${playerVerb(effect.player, ability, 'lose')} the game`;

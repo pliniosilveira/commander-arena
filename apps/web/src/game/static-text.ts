@@ -248,6 +248,11 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
         ? null
         : `${spells.charAt(0).toUpperCase()}${spells.slice(1)} you control can't be countered`;
     }
+    case 'opponentsCantCastSpells': {
+      // D-996 (CR 101.2, 601.2): "Your opponents can't cast spells with mana value 3 or less".
+      const spells = spellsPhrase(effect.spells);
+      return spells === null ? null : `Your opponents can't cast ${spells}`;
+    }
     case 'castAsThoughFlash': {
       // D-139 (CR 601.3b, 702.8a): "You may cast artifact spells as though they had flash".
       const spells = spellsPhrase(effect.spells);

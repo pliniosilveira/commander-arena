@@ -2247,6 +2247,25 @@ export const ADAMANTOISE_LANDS = supported([
  */
 export const VOTE_NAMES = ['SYNTHETIC Emissary Green', 'SYNTHETIC Ballot Rite'] as const;
 
+/**
+ * The cards of the meld slice (D-991 to D-996): the SYNTHETIC meld pairs, the two spells that exile or tuck a melded permanent, the watcher of the second card, the
+ * restriction by mana value and an X spell. Kept out of every pool: a pair melds into one permanent that leaves as two cards and asks its owner an order (a
+ * chooseOption), and a restriction changes which spells the opponents can cast, which the seeded games of the other styles do not reach. `meld-games.test.ts`
+ * builds its own states with them.
+ */
+export const MELD_NAMES = [
+  'SYNTHETIC Dusk Squire',
+  'SYNTHETIC Dawn Squire',
+  'SYNTHETIC Ember Squire',
+  'SYNTHETIC Ash Squire',
+  'SYNTHETIC Stray Squire',
+  'SYNTHETIC Meld Exile',
+  'SYNTHETIC Meld Tuck',
+  'SYNTHETIC Meld Watcher',
+  'SYNTHETIC Gatekeeper',
+  'SYNTHETIC X Surge',
+] as const;
+
 /** Emissary Green three times and the rite twice, with bodies to carry the counters and cheap removal. */
 export const VOTE_SPELLS = [
   ...supported(['SYNTHETIC Emissary Green']),
@@ -2561,6 +2580,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(ADAMANTOISE_NAMES as readonly string[]).includes(card.name))
   // The voting slice has its own style: its cards ask each player a vote in the middle of a resolution.
   .filter((card) => !(VOTE_NAMES as readonly string[]).includes(card.name))
+  // The meld slice has its own soak test: a pair melds and leaves as two cards, and its owner is asked their order.
+  .filter((card) => !(MELD_NAMES as readonly string[]).includes(card.name))
   // The Ring slice has its own style: its cards ask which creature is the Ring-bearer and give a creature three triggered abilities.
   .filter((card) => !(RING_NAMES as readonly string[]).includes(card.name))
   // The Vraska program has its own style: its cards ask other players questions in the middle of a resolution, and a payment of energy.

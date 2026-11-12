@@ -75,6 +75,34 @@ function FaceList({ object }: { object: ObjectView }) {
   );
 }
 
+/**
+ * What a melded permanent is made of (D-991, CR 701.42a, 712.4a): the two cards that represent it, each as its front face (the permanent itself has the characteristics
+ * of the combined face, which the card above shows), with the cost, the type line and the rules text of each.
+ */
+export function MeldList({ object }: { object: ObjectView }) {
+  if (object.meld === undefined) return null;
+  return (
+    <section className="board-preview-faces" aria-label="Melded from">
+      <ol>
+        {object.meld.components.map((face) => (
+          <li key={face.name}>
+            <p className="board-preview-face-head">
+              <span className="board-preview-face-role">Melded from</span>
+              <b>{face.name}</b>
+            </p>
+            <p className="board-dim">
+              {[faceCostText(face), typeLine(face)].filter((x) => x !== '').join(' · ')}
+            </p>
+            {face.oracleText === '' ? null : (
+              <p className="board-preview-face-text">{face.oracleText}</p>
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 function PreviewDetails({ object }: { object: ObjectView }) {
   const view = useApp((s) => s.snapshot?.view ?? null);
   const defined = useDefinedPt(object.id);
@@ -330,6 +358,7 @@ export function PreviewPanel() {
           </div>
           <PreviewDetails object={object} />
           <FaceList object={object} />
+          <MeldList object={object} />
         </>
       )}
     </aside>

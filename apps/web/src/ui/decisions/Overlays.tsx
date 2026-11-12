@@ -183,7 +183,12 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
       <Dialog label="Command zone" className="dec-small">
         <h2 className="dec-title">{model.bar.prompt}</h2>
         <p className="dec-sub">
-          {commanderZoneDetail(nameOf(index, d.object), d.from, index.get(d.object)?.zone)}
+          {commanderZoneDetail(
+            nameOf(index, d.object),
+            d.from,
+            index.get(d.object)?.zone,
+            index.get(d.object)?.meld,
+          )}
         </p>
         <BarButtons buttons={model.bar.buttons} />
       </Dialog>

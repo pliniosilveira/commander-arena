@@ -11,6 +11,7 @@ export function commanderZoneDetail(
   name: string,
   from: CommanderZoneDecision['from'],
   zoneNow: ObjectView['zone'] | undefined,
+  meld?: ObjectView['meld'],
 ): string {
   // "your hand", "your library", "the graveyard", "exile" (an unearthed commander is exiled, D-124).
   const there =
@@ -20,5 +21,9 @@ export function commanderZoneDetail(
         ? 'exile'
         : `the ${from}`;
   const pending = zoneNow === 'battlefield' || zoneNow === 'stack';
-  return `${name} ${pending ? 'would be put into' : 'is in'} ${there}. You may put it into the command zone instead.`;
+  const base = `${name} ${pending ? 'would be put into' : 'is in'} ${there}. You may put it into the command zone instead.`;
+  // CR 903.9c (D-991): a melded permanent that is a commander: only the commander card goes to the command zone, the other card goes where the permanent would have gone.
+  const [commander, other] = meld?.components ?? [];
+  if (!pending || commander === undefined || other === undefined) return base;
+  return `${base} It is a melded permanent: if you do, only ${commander.name} goes there, and ${other.name} goes into ${there} (CR 903.9c).`;
 }

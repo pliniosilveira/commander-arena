@@ -12,11 +12,13 @@ import {
   eligibleCommanders,
   type ImportedCard,
   importCard,
+  type MeldLookup,
   normalizeNameKey,
   type OverrideRegistry,
   PARSER_VERSION,
   parseDecklist,
   type ResolveResult,
+  relatedLookup,
   type ScryfallClient,
   type StoredCard,
   type SupportCache,
@@ -70,6 +72,15 @@ function nameKeys(card: StoredCard): string[] {
   return [...keys];
 }
 
+/** The melded faces the client fetched with the deck (D-994), once each. */
+function meldFacesOf(resolved: ResolveResult): StoredCard[] {
+  const faces = new Map<string, StoredCard>();
+  for (const entry of resolved.related?.values() ?? []) {
+    if (entry.kind === 'card') faces.set(entry.card.oracleId, entry.card);
+  }
+  return [...faces.values()];
+}
+
 function failureResult(names: readonly string[], message: string): ResolveResult {
   return {
     found: new Map(),
@@ -97,14 +108,22 @@ function mergeRows(rows: readonly Row[]): Row[] {
 export function createImportService(options: ImportServiceOptions): ImportService {
   const parserVersion = options.parserVersion ?? PARSER_VERSION;
 
-  async function convert(stored: StoredCard): Promise<ImportedCard> {
+  /**
+   * D-994: a meld card is read with its melded face, the card the client fetched with the deck (`ResolveResult.related`); the support report of a meld card is
+   * worked out for the import being made and never taken from the cache, which cannot know whether that card was had.
+   */
+  async function convert(stored: StoredCard, meldFaces: MeldLookup): Promise<ImportedCard> {
     const support = await cachedSupport(
       options.supportCache,
       stored,
       parserVersion,
       options.overrides,
+      meldFaces,
     );
-    return { ...importCard(stored, parserVersion, options.overrides), support };
+    return {
+      ...importCard(stored, parserVersion, options.overrides, undefined, undefined, meldFaces),
+      support,
+    };
   }
 
   return {
@@ -174,10 +193,11 @@ export function createImportService(options: ImportServiceOptions): ImportServic
         const card = cards.get(row.key);
         if (card) distinct.set(card.oracleId, card);
       }
+      const meldFaces = relatedLookup(resolved.related);
       progress('converting', 0, distinct.size);
       const imported = new Map<string, ImportedCard>();
       for (const [oracleId, stored] of distinct) {
-        imported.set(oracleId, await convert(stored));
+        imported.set(oracleId, await convert(stored, meldFaces));
         progress('converting', imported.size, distinct.size);
       }
       const importedFor = (row: Row): ImportedCard | undefined => {
@@ -283,6 +303,7 @@ export function createImportService(options: ImportServiceOptions): ImportServic
         commanders,
         validation,
         coverage,
+        ...(meldFacesOf(resolved).length === 0 ? {} : { meldFaces: meldFacesOf(resolved) }),
         playable:
           notFound.length === 0 &&
           fuzzy.length === 0 &&

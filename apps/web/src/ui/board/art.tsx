@@ -36,6 +36,8 @@ export function imageUrl(
  * (D-048). Other cards ask by `name`.
  */
 export function artOf(object: ObjectView): { readonly name: string; readonly back: boolean } {
+  // D-991 (CR 701.42a, 712.4a): a melded permanent is drawn as the combined face, which is a card of its own that Scryfall finds by name: never one of the two front halves.
+  if (object.meld !== undefined) return { name: object.name, back: false };
   const front = object.faces?.[0]?.name;
   if (front === undefined) return { name: object.name, back: false };
   const doubleFaced = object.layout === 'transform' || object.layout === 'modal_dfc';

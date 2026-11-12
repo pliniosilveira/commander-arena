@@ -143,6 +143,16 @@ export function isBackFaceUp(card: ObjectView): boolean {
   );
 }
 
+/** True for a melded permanent (D-991, CR 701.42a, 712.4a): one object that two cards represent. */
+export function isMelded(card: ObjectView): boolean {
+  return card.meld !== undefined;
+}
+
+/** "Bruna, the Fading Light and Gisela, the Broken Blade": the names of the two cards a melded permanent is made of, in the order of the view. */
+export function meldedFrom(card: ObjectView): string {
+  return (card.meld?.components ?? []).map((c) => c.name).join(' and ');
+}
+
 /** What a face is in its card: "Front face", "Back face", "Adventure", "Split, left half". */
 export function faceRole(layout: Layout, index: number): string {
   switch (layout) {
@@ -167,6 +177,11 @@ export function faceFacts(card: ObjectView): string[] {
     facts.push(
       'A copy of a prepare spell: it may be cast from exile while its permanent stays prepared',
     );
+  }
+  // D-991 (CR 701.42a, 712.8g, 202.3c): two cards, one permanent, with the mana value of the two front faces together.
+  if (card.meld !== undefined) {
+    facts.push(`Two cards, one permanent (melded from ${meldedFrom(card)})`);
+    facts.push(`Mana value ${card.meld.manaValue}, the front faces together`);
   }
   if (card.face === undefined || card.faces === undefined) return facts;
   if (isBackFaceUp(card)) facts.push('Back face up');

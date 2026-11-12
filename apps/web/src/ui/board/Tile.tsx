@@ -9,7 +9,7 @@ import type { CSSProperties } from 'react';
 import { alternativeBadge } from '../../game/alt-cost';
 import { chosenLabel } from '../../game/chosen';
 import { loreBadge } from '../../game/saga';
-import { isBackFaceUp } from '../decisions/layouts';
+import { isBackFaceUp, isMelded, meldedFrom } from '../decisions/layouts';
 import { useDraggable, useDropZone } from '../dnd/DragProvider';
 import { EVERY_CREATURE_TYPE, hasEveryCreatureType, kickedWords } from '../format';
 import { useInteraction } from '../interaction';
@@ -54,6 +54,7 @@ function ariaLabel(o: ObjectView, count: number, role: CombatRole | undefined): 
     parts.push(`${o.printedPt.power}/${o.printedPt.toughness} if crewed`);
   if (isCrewedVehicle(o)) parts.push('crewed');
   if (isBackFaceUp(o)) parts.push('back face');
+  if (isMelded(o)) parts.push(`melded from ${meldedFrom(o)}`);
   if (o.tapped) parts.push('tapped');
   const kicked = kickedWords(o);
   if (kicked !== null) parts.push(kicked);
@@ -241,6 +242,11 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
             {isBackFaceUp(o) && (
               <span className="board-flag" title="Back face up">
                 back
+              </span>
+            )}
+            {isMelded(o) && (
+              <span className="board-flag" title={`Melded from ${meldedFrom(o)}`}>
+                melded
               </span>
             )}
             {kickedWords(o) !== null && (
