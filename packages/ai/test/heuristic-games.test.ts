@@ -23,6 +23,8 @@ import { soakGames, soakTimeout } from './soak';
 const TIMEOUT_MS = 600_000;
 const GAMES = soakGames();
 const LIMITS = { maxTurns: 150, maxActions: 5000 };
+/** Better than chance on the unbalanced soak decks (greedy-games.test.ts uses the same kind of floor). */
+const SOAK_FLOOR = 0.6;
 
 type Kind = 'heuristic' | 'random' | 'greedy' | 'casual';
 
@@ -106,11 +108,36 @@ describe('HeuristicAgent games run clean', () => {
           );
           if (run.result?.kind === 'win' && run.result.winner === seat) wins += 1;
         }
-        if (opponent === 'random') expect(wins / GAMES).toBeGreaterThanOrEqual(0.8);
+        // A floor, not a measure of strength (issue 21): the small soak decks are unbalanced on purpose (some
+        // style pairs give the random agent the better deck), so the rate here is 0.75 to 0.8 whatever the agent
+        // does, and it moves with every card added to the pool. The strength claim is the paired arena test below.
+        if (opponent === 'random') expect(wins / GAMES).toBeGreaterThanOrEqual(SOAK_FLOOR);
       },
       soakTimeout(TIMEOUT_MS),
     );
   }
+});
+
+describe('HeuristicAgent strength against RandomLegalAgent (issue 21, D-163)', () => {
+  // On the arena decks with the same list on both seats and every seed played twice with the seats swapped,
+  // deck and seat luck cancel out, so the rate measures the agent: 200 of 200 games at the time of writing
+  // (`pnpm ai:arena --a heuristic --b random --games 200 --seed 1`). SPEC A11 asks for 95% in 200 games; 20
+  // games keep the run short, and 0.9 leaves two lost games of room.
+  test(
+    'wins at least 90% of 20 paired games on the arena decks',
+    async () => {
+      const r = await playMatch({
+        a: AGENT_FACTORIES.heuristic,
+        b: AGENT_FACTORIES.random,
+        decks: ARENA_DECKS,
+        games: 20,
+        baseSeed: 1,
+      });
+      expect(r.unfinished).toBe(0);
+      expect(r.wins.a / 20).toBeGreaterThanOrEqual(0.9);
+    },
+    soakTimeout(TIMEOUT_MS),
+  );
 });
 
 describe('HeuristicAgent in the match harness', () => {
