@@ -306,6 +306,48 @@ describe('the dies ability the pair gives: a partner that dies returns at your n
   }
 });
 
+describe('a melded permanent in a pair (D-277)', () => {
+  const DUSK = 'SYNTHETIC Dusk Squire';
+  const DAWN = 'SYNTHETIC Dawn Squire';
+
+  test('it has the grant as one creature; when it dies both its cards may return, as two creatures, unpaired (CR 712.21c, 603.7)', () => {
+    const g = scenario()
+      .seat(0)
+      .hand(MURDER)
+      .battlefield('Plains', { count: 2 })
+      .battlefield('Swamp', { count: 3 })
+      .battlefield(SERAPH, { label: 'seraph', pairedWith: 'dusk' })
+      .battlefield(DUSK, { label: 'dusk', meldedWith: 'dawn' })
+      .battlefield(DAWN, { label: 'dawn' })
+      .library(...LIBRARY)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    expect(hasDiesReturn(g, 'dusk')).toBe(true);
+    g.act(0).cast(MURDER, { targets: ['dusk'], pay: true });
+    settle(g);
+    // One dies ability for the one permanent that died; its "you may" is answered once.
+    if (g.state.pending?.kind === 'confirmOptional') g.act(0).accept();
+    settle(g);
+    expect(g.state.delayedTriggers.length).toBe(2); // one for each card (CR 712.21c: "it" finds both)
+    g.expect.unpaired('seraph');
+    g.advanceTo('upkeep', { turn: 5 });
+    if (g.state.pending?.kind === 'orderTriggers') g.act(0).orderTriggers(0, 1);
+    // Each card that comes back enters: the Seraph, unpaired now, may be paired with it (its second ability); here it declines.
+    for (let i = 0; i < 6; i += 1) {
+      settle(g);
+      if (g.state.pending?.kind !== 'choosePermanent') break;
+      g.act(0).choosePermanents();
+    }
+    g.expect.zone(DUSK, 'battlefield', { seat: 0 });
+    g.expect.zone(DAWN, 'battlefield', { seat: 0 });
+    expect(g.object(DUSK).meldedWith).toBeUndefined();
+    g.expect.unpaired(DUSK);
+    g.expect.invariants();
+  });
+});
+
 describe('a token and a commander', () => {
   const COPIER = 'SYNTHETIC Grant Copier';
   const copier = singleFace({

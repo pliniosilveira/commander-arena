@@ -2310,7 +2310,7 @@ export const RING_NAMES = [
 ] as const;
 
 /**
- * The cards of the soulbond slices (D-982 to D-985): the SYNTHETIC creatures whose dies ability returns them at the beginning of the next upkeep, and the SYNTHETIC
+ * The cards of the soulbond slices (D-982, D-984): the SYNTHETIC creatures whose dies ability returns them at the beginning of the next upkeep, and the SYNTHETIC
  * soulbond creatures. Used by the 'soulbond' style and kept out of every other pool: soulbond asks its controller which creature to pair with in the middle of a
  * resolution, and the returning creatures ask a "you may" and create a delayed ability, which the seeded games of the other styles do not reach.
  */

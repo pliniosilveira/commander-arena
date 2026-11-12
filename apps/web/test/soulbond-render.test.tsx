@@ -3,7 +3,7 @@
  * shows a flag and an accessible name on both tiles and a fact in the card preview, and two identical tokens of which one is paired are not grouped, from a real engine
  * view built with the scenario DSL. Cards are SYNTHETIC (the engine's `SYNTHETIC Soulbound Squire`).
  */
-import { type GameView, getView } from '@commander-arena/engine';
+import { type GameView, getView, type ObjectView } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test, vi } from 'vitest';
@@ -147,15 +147,16 @@ describe('identical tokens', () => {
     const bears = view.battlefield.filter((o) => o.name === 'Grizzly Bears');
     const [a, b] = bears;
     if (a === undefined || b === undefined) throw new Error('no bears');
-    // The same two creatures as tokens, one of which is paired: their keys differ.
-    const token = (o: typeof a, extra: Partial<typeof a>) => ({ ...o, isToken: true, ...extra });
-    const paired = token(a, { pairedWith: 'o99' });
-    const plain = token(b, { pairedWith: undefined });
-    expect(tokenKey(paired as never)).not.toBe(tokenKey(plain as never));
-    expect(groupTokens([paired as never, plain as never])).toHaveLength(2);
+    // The same two creatures as tokens, with no pair of their own: one of them paired by a creature, the other not.
+    const unpaired = (o: typeof a): ObjectView => {
+      const { pairedWith: _gone, ...rest } = o;
+      return { ...rest, isToken: true };
+    };
+    const paired: ObjectView = { ...unpaired(a), pairedWith: 'o99' };
+    const plain = unpaired(b);
+    expect(tokenKey(paired)).not.toBe(tokenKey(plain));
+    expect(groupTokens([paired, plain])).toHaveLength(2);
     // Two that are not paired are one group.
-    expect(
-      groupTokens([token(a, { pairedWith: undefined }) as never, plain as never]),
-    ).toHaveLength(1);
+    expect(groupTokens([unpaired(a), plain])).toHaveLength(1);
   });
 });

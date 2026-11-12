@@ -16,6 +16,7 @@ import {
   type GameEvent,
   type GameState,
   getView,
+  type ObjectId,
   type ObjectView,
   type SeatId,
   stateHash,
@@ -94,9 +95,9 @@ interface Step {
 const fieldOf = (s: GameState, seat: SeatId): readonly ObjectView[] => getView(s, seat).battlefield;
 
 /** The pairs of the state as the views say them: each pair once, as [a, b] with a < b. */
-function pairsOf(s: GameState): [string, string][] {
+function pairsOf(s: GameState): [ObjectId, ObjectId][] {
   const field = fieldOf(s, 0);
-  const out: [string, string][] = [];
+  const out: [ObjectId, ObjectId][] = [];
   for (const o of field) {
     if (o.pairedWith === undefined || o.id > o.pairedWith) continue;
     out.push([o.id, o.pairedWith]);
@@ -181,9 +182,9 @@ function checkPairs(t: Tally, kinds: readonly [Kind, Kind], step: Step): void {
       t.pairsSeen += 1;
       continue;
     }
-    const phased = (id: string) => after.objects[id]?.zone === 'phased';
+    const phased = (id: ObjectId) => after.objects[id]?.zone === 'phased';
     const ca = fieldBefore.find((o) => o.id === a)?.controller;
-    const gone = (id: string, o: ObjectView | undefined) =>
+    const gone = (id: ObjectId, o: ObjectView | undefined) =>
       o === undefined && !phased(id) && after.objects[id] === undefined;
     const reasons: string[] = [];
     if (gone(a, x) || gone(b, y)) reasons.push('left');
@@ -219,7 +220,9 @@ function checkPairs(t: Tally, kinds: readonly [Kind, Kind], step: Step): void {
     // A card that comes back from the graveyard (the returning creatures) is a new object and unpaired.
     if (e.kind === 'zoneChanged' && e.fromZone === 'graveyard' && e.toZone === 'battlefield') {
       t.graveyardReturns += 1;
-      expect(findAfter(e.object)?.pairedWith).toBeUndefined();
+      const back = findAfter(e.to);
+      expect(back, 'the card that came back is on the battlefield').toBeDefined();
+      expect(back?.pairedWith).toBeUndefined();
     }
   }
 }
