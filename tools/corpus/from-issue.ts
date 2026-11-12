@@ -14,12 +14,17 @@ import {
   ISSUE_CARD_SOURCE,
   parseCardDataText,
   parseGolden,
+  WORKFLOW_CARD_SOURCE,
 } from '@commander-arena/cards';
 import type { Options } from './args.ts';
 import { DEFAULT_GOLDEN, type ExtractIo, mergeGolden } from './extract.ts';
 
 /** The cards of an issue description, each marked as coming from that issue; throws when the block is missing or damaged. */
-export function cardsOfIssue(description: string, issue: number): ReturnType<typeof parseGolden> {
+export function cardsOfIssue(
+  description: string,
+  issue: number,
+  fetched = false,
+): ReturnType<typeof parseGolden> {
   const payload = cardDataPayload(description);
   if (payload === null)
     throw new Error('the description has no "Card data for the golden corpus" block');
@@ -33,7 +38,8 @@ export function cardsOfIssue(description: string, issue: number): ReturnType<typ
   }
   return parseCardDataText(text).map((card) => ({
     ...card,
-    source: `${ISSUE_CARD_SOURCE}, issue #${issue}`,
+    // D-290: the caller says where the text came from, never the record (an issue's author could write any `source` in a block of the description).
+    source: `${fetched ? WORKFLOW_CARD_SOURCE : ISSUE_CARD_SOURCE}, issue #${issue}`,
     // D-280: the melded face of a pair is kept as `related` (no card of the deck, no acceptance card), the others are acceptance cards.
     ...(card.related === true ? {} : { acceptance: true as const }),
   }));
@@ -51,7 +57,11 @@ export async function fromIssue(
   }
   let fresh: ReturnType<typeof parseGolden>;
   try {
-    fresh = cardsOfIssue(await readFile(path.resolve(options.body), 'utf8'), options.issue);
+    fresh = cardsOfIssue(
+      await readFile(path.resolve(options.body), 'utf8'),
+      options.issue,
+      options.fetched,
+    );
   } catch (error) {
     io.err(`error: ${error instanceof Error ? error.message : String(error)}`);
     return 2;
