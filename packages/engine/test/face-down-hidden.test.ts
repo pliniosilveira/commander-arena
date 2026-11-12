@@ -508,7 +508,8 @@ describe('a commander that is manifested (CR 903.3, 708.5)', () => {
       .life(20)
       .hand(SELF)
       .battlefield('Forest', { count: 4 })
-      .library(COMMANDER.name, ...FILLER)
+      .library(COMMANDER.name, { commander: true })
+      .library(...FILLER)
       .at('precombatMain', { active: 1, turn: 4 })
       .build();
     g.act(1).cast(SELF, { pay: true });
@@ -518,6 +519,30 @@ describe('a commander that is manifested (CR 903.3, 708.5)', () => {
     const mine = getView(g.state, 1).battlefield.find((o) => o.id === id) as ObjectView;
     expect(other.isCommander).toBe(false);
     expect(mine.faceDown).toBe(true);
+    expect(mine.isCommander).toBe(true);
     expect(JSON.stringify(getView(g.state, 0) satisfies GameView)).not.toContain(COMMANDER.name);
+  });
+});
+
+describe('a double-faced card face down (CR 708.2, 712.8a)', () => {
+  const DFC = 'SYNTHETIC Moon Cub // Moon Beast';
+  test('shows the other seat no faces, no layout and no face; its controller sees the front face', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .library(...FILLER)
+      .seat(1)
+      .life(20)
+      .battlefield(DFC, { faceDown: true })
+      .library(...FILLER)
+      .at('precombatMain', { active: 1, turn: 4 })
+      .build();
+    const id = g.id({ name: DFC, zone: 'battlefield' });
+    const other = getView(g.state, 0).battlefield.find((o) => o.id === id) as ObjectView;
+    const mine = getView(g.state, 1).battlefield.find((o) => o.id === id) as ObjectView;
+    for (const key of ['faces', 'layout', 'face', 'meld']) expect(other, key).not.toHaveProperty(key);
+    for (const key of ['faces', 'layout', 'face']) expect(mine, key).not.toHaveProperty(key);
+    expect(mine.hiddenFace?.name).toBe('Moon Cub');
+    expect(JSON.stringify(getView(g.state, 0))).not.toContain('Moon');
   });
 });

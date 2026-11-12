@@ -54,10 +54,14 @@ describe('the special action is offered when it can be taken', () => {
     g.expect.derived(VARIABLE, { subtypes: ['Elemental'], colors: ['G'] });
   });
 
-  test('not a card that is not a creature card (CR 701.40b)', () => {
-    // A land (a card that is not a creature card); a nonpermanent card can be manifested but a scenario can only place permanents, so the card type is a land.
-    const g = game((b) => forests(b.seat(0).battlefield('Mountain', { faceDown: true }), 4).seat(0));
+  test('not a card that is not a creature card (CR 701.40b): a land, and an artifact that has a mana cost', () => {
+    const g = game((b) =>
+      forests(b.seat(0).battlefield('Mountain', { faceDown: true }), 4)
+        .battlefield('Sol Ring', { faceDown: true })
+        .seat(0),
+    );
     g.expect.illegal(0, { turnFaceUp: 'Mountain' });
+    g.expect.illegal(0, { turnFaceUp: 'Sol Ring' });
   });
 
   test('not a creature card that has no mana cost (CR 701.40b)', () => {
