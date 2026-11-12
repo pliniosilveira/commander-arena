@@ -41,9 +41,9 @@ const card = (id: string, name: string): ObjectView =>
   }) as unknown as ObjectView;
 
 const CARDS = [
-  card('a', 'Grizzly Bears'),
-  card('b', 'Giant Spider'),
-  card('c', 'Serra Angel'),
+  card('o1', 'Grizzly Bears'),
+  card('o2', 'Giant Spider'),
+  card('o3', 'Serra Angel'),
 ] as const;
 
 const separate: ChooseCardsDecision = {
@@ -53,7 +53,7 @@ const separate: ChooseCardsDecision = {
   source: 'o9',
   purpose: 'separate',
   zone: 'library',
-  legal: ['a', 'b', 'c'],
+  legal: ['o1', 'o2', 'o3'],
   min: 0,
   max: 3,
   reveal: true,
@@ -68,8 +68,8 @@ const pile = (receiver: 0 | 1, seat: 0 | 1, chosenTo: 'hand' | 'graveyard' = 'ha
     purpose: 'pile',
     options: ['pile1', 'pile2'],
     piles: {
-      first: ['a'],
-      second: ['b', 'c'],
+      first: ['o1'],
+      second: ['o2', 'o3'],
       chosenTo,
       otherTo: chosenTo === 'hand' ? 'graveyard' : 'hand',
       separator: 1 - seat,
@@ -99,12 +99,12 @@ describe('the question which cards form pile 1', () => {
       'Separate the revealed cards into two piles (Fact or Fiction)',
     );
     expect(confirmLabel(separate, [])).toBe('Make the piles');
-    expect(foundBadge(separate, ['a'], 'a')).toBe('Pile 1');
-    expect(foundBadge(separate, ['a'], 'b')).toBeNull();
+    expect(foundBadge(separate, ['o1'], 'o1')).toBe('Pile 1');
+    expect(foundBadge(separate, ['o1'], 'o2')).toBeNull();
   });
 
   test('the preview: the cards clicked are pile 1, the others pile 2, and either may be empty (CR 700.3d)', () => {
-    expect(pilesPreview(CARDS, ['b'])).toEqual({
+    expect(pilesPreview(CARDS, ['o2'])).toEqual({
       first: ['Giant Spider'],
       second: ['Grizzly Bears', 'Serra Angel'],
     });
@@ -152,8 +152,8 @@ describe('the question which pile goes where', () => {
   });
 
   test('the labels count the cards and the options are the engine ones', () => {
-    expect(pileLabel(1, ['a'])).toBe('Pile 1 (1 card)');
-    expect(pileLabel(2, ['b', 'c'])).toBe('Pile 2 (2 cards)');
+    expect(pileLabel(1, ['o1'])).toBe('Pile 1 (1 card)');
+    expect(pileLabel(2, ['o2', 'o3'])).toBe('Pile 2 (2 cards)');
     expect(pileLabel(2, [])).toBe('Pile 2 (no cards)');
     expect([pileOption(1), pileOption(2)]).toEqual(['pile1', 'pile2']);
   });
