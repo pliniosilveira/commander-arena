@@ -132,6 +132,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P26: Suspend, Madness and Foretell are lines of their own.
   'keyword.suspend': asIs,
   'keyword.madness': asIs,
+  'keyword.miracle': asIs,
   'keyword.foretell': asIs,
   // Stage P27: Storm and Replicate are lines of their own.
   'keyword.storm': asIs,
@@ -388,7 +389,35 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ attacks, if ${e}, you gain 1 life.`,
   ),
   'condition.player-dealt-damage': permanent((e) => `{T}: Draw a card if ${e}.`),
+  // Stage P69 (D-252): the Bruna deck.
+  'condition.life-above-starting': permanent(
+    (e) => `At the beginning of your end step, draw a card if ${e}.`,
+  ),
+  // Stage P70 (D-278): the meld ability, "if you both own and control ~ and a creature named X, exile them, then meld them into Y".
+  'condition.own-and-control-named': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  'effect.meld': permanent(
+    (e) =>
+      `At the beginning of your end step, if you both own and control ~ and a creature named Graf Rats, ${e}.`,
+  ),
+  // Stage P69 (D-276): "It gains \"You can't lose the game ...\"" ends a sentence with the quote, so the line is the last of an ability.
+  'effect.gain-static-ability': permanent(
+    (e) => `{T}: Put a +1/+1 counter on target Angel. ${cap(e)}`,
+  ),
+  // Stage P69 (D-258): "sacrifice it unless you return ..." ends the one instruction of an enters trigger.
+  'condition.unless-return': permanent((e) => `When ~ enters, sacrifice it ${e}.`),
+  'condition.life-gained-this-turn': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
   'condition.entered-this-turn': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
+  // Stage P69 (D-271): the die roll and the card in the graveyard (Arden Angel).
+  'effect.roll-die': spell((e) => `${cap(e)}.`),
+  'condition.die-result': spell((e) => `Roll a twenty-sided die. If ${e}, you gain 1 life.`),
+  'condition.this-in-your-graveyard': permanent(
+    (e) =>
+      `At the beginning of your upkeep, if ${e}, roll a four-sided die. If the result is 1, return ~ from your graveyard to the battlefield.`,
+  ),
   'noun.each-other-opponent': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.other-targets': spell((e) => `~ deals 1 damage to any target and 1 damage to ${e}.`),
   'amount.for-each-still-exiled': spell((e) => `~ deals 2 damage to each opponent ${e}.`),
@@ -408,6 +437,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.attached-to': permanent(
     (e) => `As long as ${e}, your opponents can't cast spells during your turn.`,
   ),
+  // D-286 (CR 702.95b): the condition follows "As long as"; the noun is the subject of the grant that follows it.
+  'condition.paired': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
+  'noun.paired-creatures': permanent(
+    (e) => `As long as ~ is paired with another creature, ${e} has flying.`,
+  ),
   'condition.put-this-way': spell(
     (e) => `You may put a land card from your hand onto the battlefield. If ${e}, you gain 4 life.`,
   ),
@@ -415,6 +449,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-permanent-of-player': spell((e) => `~ deals 1 damage to target player and ${e}.`),
   'amount.for-each-color': permanent((e) => `Equipped creature gets +1/+1 ${e}.`),
   'static.opponents-cant-cast': asIs,
+  'static.opponents-cant-cast-spells': asIs,
   'static.group-enters-untapped': asIs,
   'static.spells-cant-be-countered': asIs,
   // Stage P43 (D-193): the damage that stays and the redirection of Ancient Adamantoise, lines of their own.
@@ -456,6 +491,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P67 (D-220): trigger doubling is a line of its own, and so is the equip of a creature type.
   'static.triggers-additional-time': asIs,
   'keyword.equip-quality': asIs,
+  // Stage P70 (D-259): the equip of a commander is a line of its own.
+  'keyword.equip-commander': asIs,
   // Stage P66 (D-219): the replacement of the creation of tokens is a line of its own.
   'replacement.tokens-instead': asIs,
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
@@ -490,6 +527,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `At the beginning of your end step, each player may discard a card. ${cap(e)} draws a card.`,
   ),
+  // D-269: the players a permanent attacked this turn, as the subject of "loses the game".
+  'noun.each-player-attacked': permanent(
+    (e) => `At the beginning of your end step, ${e} loses the game.`,
+  ),
   'amount.milled-value-this-way': permanent(
     (e) => `When ~ enters, you mill three cards, then ~ deals damage to target opponent ${e}.`,
   ),
@@ -518,6 +559,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.mana-rider-scry': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
   // Group 2 (D-230).
   'noun.each-permanent-that-is': spell((e) => `Put two +1/+1 counters on ${e}.`),
+  // Bruna deck, Ajani (D-268).
+  'noun.each-type-union': spell((e) => `Exile ${e}.`),
+  // D-270: a target of two zones, read by `exile`.
+  'noun.target-creatures-battlefield-or-graveyard': spell((e) => `Exile ${e}.`),
   'amount.for-each-own-nontoken-destroyed': spell(
     (e) => `Destroy all creatures. Then create a 3/2 red and white Spirit creature token ${e}.`,
   ),

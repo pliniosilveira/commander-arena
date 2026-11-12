@@ -66,6 +66,7 @@ export function lowerModes(modal: IrModes, ctx: LowerContext): LowerResult<Lower
   let usesX = false;
   for (const [i, body] of modal.modes.entries()) {
     const mode = newContext(ctx.owner, ctx.faceTypes, ctx.faceSubtypes, ctx.cardName);
+    mode.text = ctx.text;
     mode.selfGone = ctx.selfGone;
     mode.itIsSelf = ctx.itIsSelf;
     mode.selfCast = ctx.selfCast;

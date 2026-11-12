@@ -12,6 +12,7 @@
  *   discarding player chooses which.
  */
 import type { ObjectFilter } from '../ast/types';
+import { LAND_TYPES } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
 import type { ChooseCardsDecision } from '../state/decisions';
@@ -56,6 +57,12 @@ export function searchCandidates(
     a.name === b.name ? idNumber(a.id) - idNumber(b.id) : a.name < b.name ? -1 : 1,
   );
   return found.map((f) => f.id);
+}
+
+/** The land types (CR 205.3i) a card in a library has. */
+function landTypesOf(state: GameState, id: ObjectId): string[] {
+  const obj = state.objects[id];
+  return obj === undefined ? [] : derive(state, obj).subtypes.filter((s) => LAND_TYPES.includes(s));
 }
 
 function moveInstruction(
@@ -135,6 +142,10 @@ export function runSearch(
       max: Math.min(search.max, legal.length),
       reveal: search.reveal,
       prompt: describeSearch(search),
+      // D-262: the answer is checked against the land types of the cards offered (`validCardsChoice`).
+      ...(search.sharedLandType === true
+        ? { shareLandType: Object.fromEntries(legal.map((id) => [id, landTypesOf(state, id)])) }
+        : {}),
     };
     return { state, events: [], front: [], needs: decision };
   }

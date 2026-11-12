@@ -183,7 +183,12 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
       <Dialog label="Command zone" className="dec-small">
         <h2 className="dec-title">{model.bar.prompt}</h2>
         <p className="dec-sub">
-          {commanderZoneDetail(nameOf(index, d.object), d.from, index.get(d.object)?.zone)}
+          {commanderZoneDetail(
+            nameOf(index, d.object),
+            d.from,
+            index.get(d.object)?.zone,
+            index.get(d.object)?.meld,
+          )}
         </p>
         <BarButtons buttons={model.bar.buttons} />
       </Dialog>
@@ -199,6 +204,7 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
         d.purpose === 'effect' ||
         d.purpose === 'riot' ||
         d.purpose === 'replacement' ||
+        d.purpose === 'meldOrder' ||
         d.purpose === 'vote' ? (
         // D-151 (CR 614.12a, 702.155b): a name the card gives, or the chapter a Saga with read ahead starts with; D-175 (CR 608.2d): the
         // instruction an effect offers; D-191 (CR 616.1): which of several prevention effects to apply first to a damage event; D-194 (CR 701.38a): a vote.

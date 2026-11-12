@@ -15,12 +15,15 @@ import { SYNTHETIC_ALT_COST_LIST } from './synthetic-alt-costs';
 import { SYNTHETIC_AMOUNT_LIST } from './synthetic-amounts';
 import { SYNTHETIC_ANGELS_SHAPES_LIST } from './synthetic-angels-shapes';
 import { SYNTHETIC_ANGELS_STATICS_LIST } from './synthetic-angels-statics';
+import { SYNTHETIC_ASCEND_LIST } from './synthetic-ascend';
 import { SYNTHETIC_ATTACHMENT_LIST } from './synthetic-attachments';
 import { SYNTHETIC_ATTACK_BATCH_LIST } from './synthetic-attack-batch';
 import { SYNTHETIC_ATTACK_LIMIT_LIST } from './synthetic-attack-limits';
 import { SYNTHETIC_BATCH_LIST } from './synthetic-batch';
 import { SYNTHETIC_BIG_DISCOUNT_LIST } from './synthetic-big-discount';
 import { SYNTHETIC_BITE_EXCESS_LIST } from './synthetic-bite-excess';
+import { SYNTHETIC_BOOK_EXALTED_LIST } from './synthetic-book-exalted';
+import { SYNTHETIC_BRUNA_SEARCH_LIST } from './synthetic-bruna-search';
 import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
 import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
 import { SYNTHETIC_CHOSEN_LIST } from './synthetic-chosen';
@@ -30,8 +33,14 @@ import { SYNTHETIC_COMMANDER_LIST } from './synthetic-commanders';
 import { SYNTHETIC_CONTROL_LIST } from './synthetic-control';
 import { SYNTHETIC_COPY_LIST } from './synthetic-copies';
 import { SYNTHETIC_COST_LIST } from './synthetic-costs';
+import { SYNTHETIC_CROSS_ZONE_LIST } from './synthetic-cross-zone';
 import { SYNTHETIC_DAMAGE_ORDER_LIST } from './synthetic-damage-order';
+import { SYNTHETIC_DAWNBREAK_LIST } from './synthetic-dawnbreak';
 import { SYNTHETIC_DELAYED_RETURN_LIST } from './synthetic-delayed-return';
+import { SYNTHETIC_DESTROY_PER_OPPONENT_LIST } from './synthetic-destroy-per-opponent';
+import { SYNTHETIC_DEVOTION_MANA_LIST } from './synthetic-devotion-mana';
+import { SYNTHETIC_DICE_LIST } from './synthetic-dice';
+import { SYNTHETIC_DIES_RETURN_LIST } from './synthetic-dies-return';
 import { SYNTHETIC_DIVIDE_LIST } from './synthetic-divide';
 import { SYNTHETIC_DOUBLING_LIST } from './synthetic-doubling';
 import { SYNTHETIC_DRAGONS_LIST } from './synthetic-dragons';
@@ -59,6 +68,7 @@ import { SYNTHETIC_LIBRARY_LIST } from './synthetic-library';
 import { SYNTHETIC_LIBRARY_ARTIFACTS_LIST } from './synthetic-library-artifacts';
 import { SYNTHETIC_LIFE_GAIN_LIST } from './synthetic-life-gain';
 import { SYNTHETIC_LIVING_LIST } from './synthetic-living';
+import { SYNTHETIC_LOSE_GAME_LIST } from './synthetic-lose-game';
 import { SYNTHETIC_MANA_LIST } from './synthetic-mana';
 import { SYNTHETIC_MANA_INSTEAD_LIST } from './synthetic-mana-instead';
 import { SYNTHETIC_MANA_PLUS_LIST } from './synthetic-mana-plus';
@@ -66,14 +76,19 @@ import { SYNTHETIC_MANA_RESTRICTED_LIST } from './synthetic-mana-restricted';
 import { SYNTHETIC_MANA_SPENT_LIST } from './synthetic-mana-spent';
 import { SYNTHETIC_MANA_TRIGGERS_LIST } from './synthetic-mana-triggers';
 import { SYNTHETIC_MASS_LIST } from './synthetic-mass';
+import { SYNTHETIC_MELD_LIST } from './synthetic-meld';
+import { SYNTHETIC_MIRACLE_LIST } from './synthetic-miracle';
 import { SYNTHETIC_MODAL_LIST } from './synthetic-modal';
 import { SYNTHETIC_PARSER_SHAPES_LIST } from './synthetic-parser-shapes';
 import { SYNTHETIC_PLANESWALKER_LIST } from './synthetic-planeswalkers';
+import { SYNTHETIC_PLATE_LIST } from './synthetic-plate';
 import { SYNTHETIC_PLAY_RULE_LIST } from './synthetic-play-rules';
 import { SYNTHETIC_PLAYER_EFFECT_LIST } from './synthetic-player-effects';
+import { SYNTHETIC_PLAYER_MORE_LIST } from './synthetic-player-more';
 import { SYNTHETIC_POLYMORPH_LIST } from './synthetic-polymorph';
 import { SYNTHETIC_PREVENTION_LIST } from './synthetic-prevention';
 import { SYNTHETIC_PREVENTION_BY_LIST } from './synthetic-prevention-by';
+import { SYNTHETIC_PRIDE_WALKER_LIST } from './synthetic-pride-walker';
 import { SYNTHETIC_PT_LIST } from './synthetic-pt';
 import { SYNTHETIC_RECURSION_LIST } from './synthetic-recursion';
 import { SYNTHETIC_REFERENCE_LIST } from './synthetic-references';
@@ -83,6 +98,8 @@ import { SYNTHETIC_REVEAL_LIST } from './synthetic-reveal';
 import { SYNTHETIC_RING_LIST } from './synthetic-ring';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
 import { SYNTHETIC_SEARCH_LIST } from './synthetic-search';
+import { SYNTHETIC_SNOW_LIST } from './synthetic-snow';
+import { SYNTHETIC_SOULBOND_LIST } from './synthetic-soulbond';
 import { SYNTHETIC_STATICS_ARTIFACTS_LIST } from './synthetic-statics-artifacts';
 import { SYNTHETIC_STUN_LIST } from './synthetic-stun';
 import { SYNTHETIC_SUBJECT_LIST } from './synthetic-subjects';
@@ -305,11 +322,13 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_PREVENTION_LIST,
     ...SYNTHETIC_DAMAGE_ORDER_LIST,
     ...SYNTHETIC_LAYOUT_LIST,
+    ...SYNTHETIC_MELD_LIST,
     ...SYNTHETIC_SAGA_LIST,
     ...SYNTHETIC_LIBRARY_LIST,
     ...SYNTHETIC_REFERENCE_LIST,
     ...SYNTHETIC_RESTRICTION_LIST,
     ...SYNTHETIC_COST_LIST,
+    ...SYNTHETIC_CROSS_ZONE_LIST,
     ...SYNTHETIC_MANA_PLUS_LIST,
     ...SYNTHETIC_CHOSEN_LIST,
     ...SYNTHETIC_X_LIST,
@@ -323,18 +342,29 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_ANGELS_SHAPES_LIST,
     ...SYNTHETIC_ANGELS_STATICS_LIST,
     ...SYNTHETIC_LIFE_GAIN_LIST,
+    ...SYNTHETIC_LOSE_GAME_LIST,
+    ...SYNTHETIC_DICE_LIST,
+    ...SYNTHETIC_PLAYER_MORE_LIST,
+    ...SYNTHETIC_DEVOTION_MANA_LIST,
+    ...SYNTHETIC_DAWNBREAK_LIST,
     ...SYNTHETIC_ATTACK_BATCH_LIST,
     ...SYNTHETIC_ENTERS_GROUP_LIST,
     ...SYNTHETIC_COMMANDER_TRIGGER_LIST,
     ...SYNTHETIC_MANA_RESTRICTED_LIST,
     ...SYNTHETIC_UNTIL_LEAVES_LIST,
+    ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
     ...SYNTHETIC_HOFRI_LIST,
     ...SYNTHETIC_TAP_ALT_LIST,
     ...SYNTHETIC_PLAYER_EFFECT_LIST,
     ...SYNTHETIC_PLAY_RULE_LIST,
     ...SYNTHETIC_UPKEEP_LIST,
+    ...SYNTHETIC_ASCEND_LIST,
+    ...SYNTHETIC_BOOK_EXALTED_LIST,
     ...SYNTHETIC_LATER_LIST,
+    ...SYNTHETIC_MIRACLE_LIST,
     ...SYNTHETIC_DELAYED_RETURN_LIST,
+    ...SYNTHETIC_DIES_RETURN_LIST,
+    ...SYNTHETIC_SOULBOND_LIST,
     ...SYNTHETIC_COPY_LIST,
     ...SYNTHETIC_SUBJECT_LIST,
     ...SYNTHETIC_MASS_LIST,
@@ -342,6 +372,7 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_LIVING_LIST,
     ...SYNTHETIC_VRASKA_LIST,
     ...SYNTHETIC_EDHREC_LIST,
+    ...SYNTHETIC_PLATE_LIST,
     ...SYNTHETIC_ABILITY_COSTS_LIST,
     ...SYNTHETIC_BATCH_LIST,
     ...SYNTHETIC_RESELECT_LIST,
@@ -358,7 +389,10 @@ export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.
     ...SYNTHETIC_ADAMANTOISE_LIST,
     ...SYNTHETIC_VOTE_LIST,
     ...SYNTHETIC_RING_LIST,
+    ...SYNTHETIC_SNOW_LIST,
+    ...SYNTHETIC_BRUNA_SEARCH_LIST,
     ...SYNTHETIC_PLANESWALKER_LIST,
+    ...SYNTHETIC_PRIDE_WALKER_LIST,
     ...SYNTHETIC_MANA_TRIGGERS_LIST,
     ...SYNTHETIC_LIBRARY_ARTIFACTS_LIST,
     ...SYNTHETIC_STATICS_ARTIFACTS_LIST,

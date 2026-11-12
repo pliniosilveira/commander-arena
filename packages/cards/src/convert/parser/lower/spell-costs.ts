@@ -173,7 +173,7 @@ export function lowerSpellCosts(ability: Static): SpellCostLowering | null {
 
 /**
  * The keywords that are alternative costs of the engine (stage P22, D-121; Spectacle and Escape: P23, D-124;
- * Madness and Foretell: P26, D-128).
+ * Madness and Foretell: P26, D-128; Miracle, with an {X} allowed in its cost: D-274).
  */
 const NAMED_ALTERNATIVES = [
   'overload',
@@ -182,6 +182,7 @@ const NAMED_ALTERNATIVES = [
   'spectacle',
   'escape',
   'madness',
+  'miracle',
   'foretell',
 ] as const;
 type NamedAlternative = (typeof NAMED_ALTERNATIVES)[number];
@@ -219,8 +220,8 @@ export function lowerAlternativeKeyword(ability: IrKeyword): SpellCostLowering |
   } else if (count !== undefined) {
     return failure(ability);
   }
-  // A hybrid symbol or an {X} is refused here, as the engine's own check would.
-  const cost = lowerCost(only);
+  // A hybrid symbol or an {X} is refused here, as the engine's own check would; Miracle's cost may have an {X} (D-274, CR 107.3a).
+  const cost = lowerCost(only, { x: kind === 'miracle' });
   if (!cost.ok) return cost;
   const blocked = missingFeatures([`castAlternative:${kind}`, `cost:${cost.value.kind}`]);
   if (blocked.length > 0) return failure(ability, blocked);
@@ -241,6 +242,7 @@ export const ALTERNATIVE_COST_NEEDS: readonly FeatureRef[] = [
   'castAlternative:spectacle',
   'castAlternative:escape',
   'castAlternative:madness',
+  'castAlternative:miracle',
   'castAlternative:foretell',
   'cost:mana',
 ];

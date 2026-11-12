@@ -220,9 +220,52 @@ export const CONDITION_ATTACHED_TO = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.paired`: "~ is paired with another creature", "it's paired with another creature" (CR 702.95b: a creature becomes paired with another as the result of a
+ * soulbond ability; abilities may refer to whether a creature is paired). The permanent is the one the ability is on: `~`, or "it" in an ability about itself. The engine's
+ * `paired`. Not read: another kind of partner ("a Human"), "isn't paired", "is paired" alone, "unpaired" and a pair of another permanent.
+ */
+export const CONDITION_PAIRED = defineRule<IrCondition>({
+  id: 'condition.paired',
+  family: 'condition',
+  leading: ['~', 'it', 'it’s', "it's"],
+  cites: ['CR 702.95b (Soulbond)', 'CR 611.3a (Continuous Effects)'],
+  examples: [
+    '~ is paired with another creature',
+    'it is paired with another creature',
+    "it's paired with another creature",
+    'it’s paired with another creature',
+  ],
+  rejects: [
+    '~ is paired with another creature.',
+    '~ is paired',
+    '~ is paired with a creature',
+    '~ is paired with another Human',
+    '~ is paired with another creature you control',
+    "~ isn't paired with another creature",
+    '~ is unpaired',
+    'another creature is paired with another creature',
+    'target creature is paired with another creature',
+    '~ is paired with another creatures',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(/(~|it)(?: is|['’]s) paired with another creature(?![\p{L}\p{N}])(?! you control)/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const who = (r.value.value[1] ?? '').toLowerCase() === '~' ? 'self' : 'it';
+    return {
+      ok: true,
+      value: condition('condition.paired', pos, r.pos, { kind: 'paired', who }),
+      pos: r.pos,
+    };
+  },
+});
+
 export const SELF_STATE_CONDITION_RULES = [
   CONDITION_CONTROL_YOUR_COMMANDER,
   CONDITION_LIFE_TOTAL,
   CONDITION_THIS_TAPPED,
   CONDITION_ATTACHED_TO,
+  CONDITION_PAIRED,
 ];

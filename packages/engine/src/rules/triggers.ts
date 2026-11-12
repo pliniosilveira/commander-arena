@@ -52,6 +52,7 @@ import { matchesFilter } from './select';
 import { objectOrLki } from './source-info';
 import { findStateTriggers } from './state-triggers';
 import { withDoubledTriggers } from './trigger-doubling';
+import { readsTriggerPlayer } from './trigger-subject';
 
 /** Trigger kinds that look back in time (CR 603.10a). */
 const LOOK_BACK: ReadonlySet<Trigger['kind']> = new Set(LOOK_BACK_TRIGGER_KINDS);
@@ -107,6 +108,18 @@ function controllerOfSource(state: GameState, source: ObjectId): SeatId | null {
   return state.lki[source]?.object.controller ?? null; // stored controller: frozen as it left (`recordLki`)
 }
 
+/**
+ * The player the event is about, for the pending trigger. The player of the beginning of a step is the active player (the Bruna deck, "that player" of
+ * "at the beginning of each opponent's end step"): it is kept only for an ability that reads it, so the other step triggers stay as they were.
+ */
+function eventPlayer(ability: Ability, occ: Occurrence): { readonly player?: SeatId } {
+  const kind = ability.kind === 'triggered' ? ability.trigger.kind : null;
+  const ofStep = kind === 'step' || kind === 'upkeep' || kind === 'endStep';
+  return occ.player === undefined || (ofStep && !readsTriggerPlayer(ability))
+    ? {}
+    : { player: occ.player };
+}
+
 /** The trigger occurrences an event contains for a trigger kind. */
 function occurrences(
   state: GameState,
@@ -119,7 +132,12 @@ function occurrences(
     case 'landfall':
       // CR 603.6a. A token entering has no previous object, so it has its own event. The player the event is about (`triggerPlayer`, D-229:
       // "that player controls more lands than you") is whoever controls the permanent as it enters.
-      if (event.kind === 'zoneChanged' && event.toZone === 'battlefield') {
+      // D-277 (CR 712.21): the second card of a melded permanent is not another permanent entering.
+      if (
+        event.kind === 'zoneChanged' &&
+        event.toZone === 'battlefield' &&
+        event.component !== true
+      ) {
         const entered = state.objects[event.to];
         return [
           {
@@ -134,7 +152,11 @@ function occurrences(
         : [];
     case 'entersBatch':
       // CR 603.2c, 603.6a (D-218): every permanent that enters in these events is an occurrence; `findTriggers` keeps the first one that the filter names.
-      if (event.kind === 'zoneChanged' && event.toZone === 'battlefield') {
+      if (
+        event.kind === 'zoneChanged' &&
+        event.toZone === 'battlefield' &&
+        event.component !== true
+      ) {
         return [{ subject: event.to, seat: null }];
       }
       return event.kind === 'tokenCreated' ? [{ subject: event.object, seat: event.seat }] : [];
@@ -179,7 +201,7 @@ function occurrences(
     case 'step':
       // CR 500.2, 603.2: as the step begins; the active player is the one whose turn it is.
       return event.kind === 'stepBegan' && event.step === STEP_OF[trigger.step]
-        ? [{ subject: null, seat: event.seat }]
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
     case 'drawn':
       // CR 121.1: a card drawn; a draw that was replaced (CR 903.9b) has no `cardDrawn` event.
@@ -219,16 +241,19 @@ function occurrences(
         : [];
     case 'leavesBattlefield':
       // CR 603.6c: a permanent moved from the battlefield to another zone (a token too).
-      return event.kind === 'zoneChanged' && event.fromZone === 'battlefield'
+      // D-277 (CR 712.21): one melded permanent leaves, however many cards it becomes.
+      return event.kind === 'zoneChanged' &&
+        event.fromZone === 'battlefield' &&
+        event.component !== true
         ? [{ subject: event.from, seat: null, toZone: event.toZone }]
         : [];
     case 'upkeep':
       return event.kind === 'stepBegan' && event.step === 'upkeep'
-        ? [{ subject: null, seat: event.seat }]
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
     case 'endStep':
       return event.kind === 'stepBegan' && event.step === 'end'
-        ? [{ subject: null, seat: event.seat }]
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
     case 'permanentSacrificed':
       return event.kind === 'sacrificed'
@@ -286,7 +311,16 @@ function occurrences(
     case 'lifeGained':
       // CR 119.9 (D-149): one occurrence for each gain of life.
       return event.kind === 'lifeGained'
-        ? [{ subject: null, seat: event.seat, player: event.seat, gainNth: event.nth }]
+        ? [
+            {
+              subject: null,
+              seat: event.seat,
+              player: event.seat,
+              gainNth: event.nth,
+              // D-256: "that many" is the life gained, after replacement (CR 119.9).
+              damage: event.amount,
+            },
+          ]
         : [];
     case 'countersAdded':
       // CR 122.6, 122.6a (D-149): counters put on a permanent, by the player who put them.
@@ -647,12 +681,27 @@ function battlefieldBefore(state: GameState, events: readonly GameEvent[]): Obje
     const e = events[i];
     if (e?.kind === 'zoneChanged') {
       if (e.toZone === 'battlefield') members = members.filter((m) => m !== e.to);
-      if (e.fromZone === 'battlefield') members.push(e.from);
+      // D-277 (CR 712.21): a melded permanent that left is one permanent, though two events say where its cards went.
+      if (e.fromZone === 'battlefield' && e.component !== true) members.push(e.from);
     } else if (e?.kind === 'tokenCreated') {
       members = members.filter((m) => m !== e.object);
     }
   }
   return members;
+}
+
+/** The permanents that enter in the same event as `events[from]`: its own and those of the unbroken run of `simultaneous` entries that follows it. */
+function simultaneousEntries(events: readonly GameEvent[], from: number): ObjectId[] {
+  const entering: ObjectId[] = [];
+  for (const e of events.slice(from)) {
+    if (e.kind === 'zoneChanged' && e.toZone === 'battlefield') {
+      if (e.simultaneous !== true) break;
+      entering.push(e.to);
+    } else if (e.kind === 'tokenCreated') {
+      break;
+    }
+  }
+  return entering;
 }
 
 /** Numeric order of object ids: the order objects came to exist, for a deterministic scan. */
@@ -707,7 +756,12 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
     else beforeDepartures = null;
     if (event.kind === 'zoneChanged') {
       if (event.fromZone === 'battlefield') members = members.filter((m) => m !== event.from);
-      if (event.toZone === 'battlefield') members = [...members, event.to].sort(byAge);
+      if (event.toZone === 'battlefield') {
+        // CR 603.6a (D-272): one event puts several permanents onto the battlefield, and every one of them is checked for the triggers of all.
+        const entering =
+          event.simultaneous === true ? simultaneousEntries(events, eventIndex) : [event.to];
+        members = [...new Set([...members, ...entering])].sort(byAge);
+      }
     } else if (event.kind === 'tokenCreated') {
       members = [...members, event.object].sort(byAge);
     }
@@ -773,6 +827,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
               controller: candidate.controller,
               source: id,
               ...(occ.subject === null ? {} : { triggerSubject: occ.subject }),
+              ...(occ.player === undefined ? {} : { triggerPlayer: occ.player }),
             })
           ) {
             continue;
@@ -784,6 +839,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
               controller: candidate.controller,
               source: id,
               ...(occ.subject === null ? {} : { triggerSubject: occ.subject }),
+              ...(occ.player === undefined ? {} : { triggerPlayer: occ.player }),
             })
           ) {
             continue;
@@ -794,7 +850,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             abilityIndex: index,
             ability,
             subject: occ.subject,
-            ...(occ.player === undefined ? {} : { player: occ.player }),
+            ...eventPlayer(ability, occ),
             ...(occ.damage === undefined ? {} : { damage: occ.damage }),
             ...(occ.chapter === undefined ? {} : { chapter: occ.chapter }),
             ...(occ.attacked === undefined ? {} : { attacked: occ.attacked }),
@@ -857,6 +913,7 @@ function batchTriggers(
           !evaluateCondition(state, ability.interveningIf, {
             controller: candidate.controller,
             source: id,
+            triggerPlayer: seat, // the player damaged: "if that player controls more creatures than you"
           })
         ) {
           continue;
@@ -866,6 +923,7 @@ function batchTriggers(
           !evaluateCondition(state, ability.triggerCondition, {
             controller: candidate.controller,
             source: id,
+            triggerPlayer: seat,
           })
         ) {
           continue;
@@ -925,9 +983,7 @@ function findDelayedTriggers(
       // D-217: the player a delayed effect is about, fixed as it was created, or the one the event is about.
       ...(delayed.player !== undefined
         ? { player: delayed.player }
-        : occurrence.player === undefined
-          ? {}
-          : { player: occurrence.player }),
+        : eventPlayer(delayed.ability, occurrence)),
       ...(occurrence.damage === undefined ? {} : { damage: occurrence.damage }),
     });
   }
@@ -942,10 +998,23 @@ function limitOncePerTurn(
   state: GameState,
   found: readonly PendingTrigger[],
 ): { readonly found: PendingTrigger[]; readonly state: GameState } {
-  if (!found.some((t) => t.ability.oncePerTurn === true)) return { found: [...found], state };
+  // CR 603.2h (D-256): "Do this only once each turn": the ability triggers only if its controller has not yet taken the action this turn.
+  // The action is recorded as the ability resolves (`recordActionTaken`), not as it triggers.
+  const afterAction = found.filter(
+    (t) =>
+      t.ability.doOnlyOnceEachTurn !== true ||
+      t.source === null ||
+      !state.turnLog.actionTaken.some(
+        (a) =>
+          a.object === t.source && a.abilityIndex === t.abilityIndex && a.seat === t.controller,
+      ),
+  );
+  if (!afterAction.some((t) => t.ability.oncePerTurn === true)) {
+    return { found: afterAction, state };
+  }
   const seen = [...state.turnLog.triggered];
   const kept: PendingTrigger[] = [];
-  for (const t of found) {
+  for (const t of afterAction) {
     if (t.ability.oncePerTurn === true && t.source !== null) {
       const source = t.source;
       if (seen.some((s) => s.object === source && s.abilityIndex === t.abilityIndex)) continue;

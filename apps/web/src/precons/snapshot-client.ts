@@ -10,7 +10,9 @@
 import {
   fromSnapshotCard,
   frontFaceName,
+  meldResultNames,
   normalizeNameKey,
+  type RelatedCard,
   type ResolveResult,
   type ScryfallClient,
   type SnapshotCard,
@@ -45,7 +47,24 @@ export function snapshotClient(cards: readonly SnapshotCard[]): ScryfallClient {
         if (card) found.set(key, card);
         else notFound.push(requested);
       }
-      return { found, notFound, fuzzy: [], failures: [] };
+      // D-280: the melded face of a meld card the snapshot holds (`pnpm precon:snapshot` stores it with the pair): from the snapshot only, never the network.
+      const related = new Map<string, RelatedCard>();
+      for (const name of meldResultNames(found.values())) {
+        const card = lookup(normalizeNameKey(name));
+        related.set(
+          normalizeNameKey(name),
+          card === undefined
+            ? { kind: 'missing', message: 'the precon snapshot does not hold it' }
+            : { kind: 'card', card },
+        );
+      }
+      return {
+        found,
+        notFound,
+        fuzzy: [],
+        failures: [],
+        ...(related.size === 0 ? {} : { related }),
+      };
     },
   };
 }

@@ -6,6 +6,7 @@ import type { ObjectFilter, StaticSubject } from '../ast/types';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { type FilterContext, type FilterSubject, matchesFilterWith } from './filter-match';
+import { partnerOf } from './pairing';
 
 /** What a filter of `source`'s static ability reads of the source: whose "you" it is, which permanent "other" leaves out, what it chose (D-100). */
 export function subjectContextOf(state: GameState, source: GameObject): FilterContext {
@@ -51,6 +52,12 @@ export function subjectAffects(
       (subject.types ?? []).every((t) => view.types.includes(t)) &&
       (subject.supertypes ?? []).every((t) => view.supertypes.includes(t))
     );
+  }
+  if (subject.kind === 'pair') {
+    // CR 702.95b, 611.3a (D-286): the permanent itself and the creature it is paired with now, whatever the pair is at this moment: nothing while it is
+    // unpaired, or while either is phased out (CR 702.26b), whether or not the ability also names the `paired` condition.
+    const partner = partnerOf(state, source);
+    return partner !== null && (source.id === target.id || partner.id === target.id);
   }
   return matchesFilterWith(state, target, () => view, filterOf(subject), context);
 }

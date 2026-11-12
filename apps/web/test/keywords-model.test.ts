@@ -112,6 +112,25 @@ describe('poison counters in the log', () => {
   });
 });
 
+describe('a loss to an effect (D-269)', () => {
+  test('keeps the "(effect)" the game-over screen reads', () => {
+    const text = line({ kind: 'playerLost', seat: 1, reason: 'effect' });
+    expect(text).toBe('Opponent loses the game (effect).');
+    const entry = {
+      id: 1,
+      turn: 4,
+      seat: 1,
+      level: 'major',
+      text: text ?? '',
+      objects: [],
+      rule: 'CR 104.3',
+    } as const;
+    expect(lossReason([entry], { kind: 'win', winner: 0 }, 0)).toBe(
+      'An effect made the opponent lose.',
+    );
+  });
+});
+
 describe('the cast line says how many times it was kicked', () => {
   const cast = (extra: object): GameEvent =>
     ({

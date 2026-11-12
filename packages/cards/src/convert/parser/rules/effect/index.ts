@@ -23,24 +23,30 @@ import type { IrArg, IrCost, IrNoun, IrNounList, IrZoneSpec, Span } from '../../
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
+import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
 import { ATTACH_RULES } from './attach';
 import { BECOMES_RULES } from './becomes';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
+import { BRUNA_EFFECT_RULES } from './bruna';
 import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CONTROL_EFFECT_RULES } from './control';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COUNTER_RULES } from './counters';
+import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
+import { DAWNBREAK_EFFECT_RULES } from './dawnbreak';
 import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
+import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
-import { EFFECT_ADD_ADDITIONAL_MANA, EFFECT_ADD_MANA } from './mana';
+import { EFFECT_ADD_ADDITIONAL_MANA, EFFECT_ADD_MANA, EFFECT_CHOOSE_COLOR } from './mana';
+import { MELD_EFFECT_RULES } from './meld';
 import {
   type Clauses,
   DAMAGE_RECIPIENTS,
@@ -328,6 +334,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     // Stage P33 (D-150, CR 610.3): until the permanent with the ability leaves the battlefield.
     'exile target nonland permanent an opponent controls until ~ leaves the battlefield',
     'exile up to two target artifacts and/or enchantments',
+    // D-270 (CR 115.1, 404.1): one slot of targets in two zones.
+    'exile up to three other target creatures from the battlefield and/or creature cards from graveyards',
     // Stage P70 (D-231, CR 610.3): until an opponent becomes the monarch (Palace Jailer).
     'exile target creature an opponent controls until an opponent becomes the monarch',
   ],
@@ -345,6 +353,9 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile this card from your hand',
     'exile that card from your hand',
     'exile that card from a graveyard',
+    // D-270: the second half is another kind of target, which the slot of two zones does not say.
+    'exile up to three other target creatures from the battlefield and/or creature cards from a graveyard',
+    'exile up to three other target creatures from the battlefield and/or creature cards from graveyards until ~ leaves the battlefield',
   ],
   parse: single(
     'effect.exile',
@@ -357,6 +368,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             ...GRAVEYARD_OPERANDS,
             'noun.player-graveyard',
             'noun.all-graveyards',
+            // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (the one verb that moves a card out of any zone).
+            'noun.target-creatures-battlefield-or-graveyard',
             ...SELF_OR_PERMANENT_OPERANDS,
             // Stage P30 (D-135): "you may exile it" (the card a permanent became when it died, or a target of the text).
             'noun.it',
@@ -379,6 +392,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
         (objects.kind === 'noun' &&
           objects.det === 'target' &&
           objects.filter.zone === 'battlefield' &&
+          // D-270: cards of graveyards are not put back by "until": the slot of two zones is exiled for good.
+          objects.orCard === undefined &&
           objects.filter.player === undefined),
     ),
     ([, objects, , until, monarch]) => ({
@@ -801,6 +816,8 @@ export const EFFECT_RULES = [
   EFFECT_DAMAGE_BY_IT,
   EFFECT_DAMAGE_IT,
   EFFECT_DESTROY,
+  // Stage P70 (D-278): "exile them, then meld them into X" starts like a plain exile and is tried before it.
+  ...MELD_EFFECT_RULES,
   // The flicker sentence starts like a plain exile and must be tried first: the first rule that
   // reads a prefix of the text wins, and no rule backtracks into another.
   ...FLICKER_RULES,
@@ -816,6 +833,16 @@ export const EFFECT_RULES = [
   ...ANGEL_EFFECT_RULES,
   // Stage P50 (D-207): "remove all counters from it".
   ...VRASKA_EFFECT_RULES,
+  // Stage P69 (D-256, D-257): the Bruna deck, "Do this only once each turn" and "pay {X}, where X is less than or equal to the amount of life you gained".
+  ...BRUNA_EFFECT_RULES,
+  // D-270: "return the exiled cards to their owners' hands" (Angel of Serenity).
+  ...CROSS_ZONE_EFFECT_RULES,
+  // Stage P69 (D-271): rolling a die, "roll a four-sided die".
+  ...ARDEN_EFFECT_RULES,
+  // Stage P69 (D-276): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration.
+  ...GRANTED_STATIC_EFFECT_RULES,
+  // Stage P69 (D-272): Dawnbreak Reclaimer, "choose a creature card in an opponent's graveyard, then that player chooses ...".
+  ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.
@@ -824,6 +851,8 @@ export const EFFECT_RULES = [
   EFFECT_UNTAP,
   EFFECT_ADD_ADDITIONAL_MANA,
   EFFECT_ADD_MANA,
+  // The sentence before "Add an amount of mana of that color equal to your devotion to that color" (Nykthos, Shrine to Nyx).
+  EFFECT_CHOOSE_COLOR,
   // Before `effect.player` and `effect.draw`: "you draw a card" is a prefix of the delayed draw (stage P26).
   ...DELAYED_RULES,
   EFFECT_PLAYER,

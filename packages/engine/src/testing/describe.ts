@@ -4,6 +4,7 @@ import type { SeatId } from '../ids';
 import { controllerOf } from '../rules/control';
 import { derive } from '../rules/derive';
 import { inherentName } from '../rules/inherent';
+import { cardsOf } from '../rules/melded';
 import type { Action } from '../state/actions';
 import type { AttackTarget } from '../state/combat-types';
 import type { PendingDecision } from '../state/decisions';
@@ -12,7 +13,11 @@ import { definitionOf } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 
 export function nameOf(state: GameState, obj: GameObject): string {
-  if (obj.card !== null) return definitionOf(state, obj.card).name;
+  // D-277: a melded permanent is named by both of its cards.
+  if (obj.card !== null)
+    return cardsOf(obj)
+      .map((c) => definitionOf(state, c).name)
+      .join(' + ');
   // A token, and a copy of a spell (D-129), are named by what they are.
   if (obj.token || obj.copyOf !== undefined) return derive(state, obj).name;
   // An ability on the stack is named after its source, which may have left (CR 113.7a).

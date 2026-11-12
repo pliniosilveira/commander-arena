@@ -38,6 +38,7 @@ export function payByTapping(
       events: GameEvent[];
       riders: ManaRider[];
       spent: readonly (readonly string[])[];
+      spentSnow: number;
     }
   | { error: string } {
   let working = state;
@@ -71,5 +72,6 @@ export function payByTapping(
     events: [...events, ...applied.events],
     riders: applied.riders,
     spent: applied.spent,
+    spentSnow: applied.spentSnow,
   };
 }

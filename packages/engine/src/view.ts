@@ -22,7 +22,10 @@ import { INHERENT_TEXT, inherentName } from './rules/inherent';
 import { keywordsOf } from './rules/keywords';
 import { loyaltyActivatedThisTurn } from './rules/loyalty';
 import { isSummoningSick, wouldBeSummoningSick } from './rules/mana-engine';
+import { manaValueOfCost } from './rules/mana-value';
+import { cardsOf, commanderCardOf } from './rules/melded';
 import { modalOfObject } from './rules/modes';
+import { isPaired, partnerOf } from './rules/pairing';
 import { regenerationShieldsOn } from './rules/regenerate';
 import { ringBearerSeat } from './rules/ring-bearer';
 import { finalChapterOf, isSaga } from './rules/saga';
@@ -77,6 +80,18 @@ export interface ObjectView {
    * with the designation. Public. Absent otherwise.
    */
   readonly ringBearer?: SeatId;
+  /**
+   * The creature this one is paired with (CR 702.95b, D-286): the object it is linked to while the pair stands and both are on the battlefield
+   * (`partnerOf`: never a stale link, never a creature that is phased out). A melded permanent is one object, so its id is the one of the permanent. Public.
+   * Absent otherwise.
+   */
+  readonly pairedWith?: ObjectId;
+  /**
+   * True for a creature of a pair that stands while one of the two is phased out (CR 702.26b, 702.26d, D-286): it is still paired (phasing is not leaving the
+   * battlefield, so CR 702.95e does not end the pair) but gives and gets nothing from the pair meanwhile, so `pairedWith` is absent. For both creatures, the phased-out
+   * one included. Public. Absent otherwise.
+   */
+  readonly pairedPhasedOut?: true;
   /**
    * For a noncreature permanent on the battlefield that its controller has not controlled since
    * their most recent turn began (and that has no haste): it would be summoning sick if it became a
@@ -294,6 +309,8 @@ export interface ObjectView {
    * options `face` means. Absent when `face` is.
    */
   readonly layout?: CardLayout;
+  /** D-277 (CR 701.42a, 712.4a): present on a melded permanent only: the two front faces it is made of and its mana value. See `MeldView`. */
+  readonly meld?: MeldView;
   /**
    * True for a card in exile that resolved as an Adventure (CR 715.3d): its owner may cast it from
    * there. Absent otherwise.
@@ -341,6 +358,16 @@ export interface AlternativeCostView {
 /** One face of a multi-faced card, as printed: its name, cost, type line, rules text and values. */
 export type FaceView = Characteristics;
 
+/**
+ * D-277 (CR 701.42a, 712.4a, 202.3c): what a melded permanent is made of. `components` are the printed front faces of the two cards that represent it, in
+ * order (the commander's card first when one is), and `manaValue` its mana value, the sum of the mana values of those front faces. The characteristics of
+ * the object itself (name, types, power, abilities, text) are those of the combined back face, as for any object (CR 712.8g).
+ */
+export interface MeldView {
+  readonly components: readonly FaceView[];
+  readonly manaValue: number;
+}
+
 export interface SeatView {
   readonly id: SeatId;
   readonly life: number;
@@ -373,6 +400,8 @@ export interface SeatView {
    * Ring-bearer that evades greater power; 2: the loot; 3: the sacrifice of a blocker; 4: the life loss). Public. Absent until the first time.
    */
   readonly ringTempted?: number;
+  /** This player has the city's blessing (CR 702.131c, D-264): public, kept for the rest of the game. Absent until they get it. */
+  readonly citysBlessing?: true;
   /** The energy counters this player has (CR 107.14, D-209). Public. Absent until the first time. */
   readonly energy?: number;
 }
@@ -435,6 +464,7 @@ export interface GameView {
       | 'reveal'
       | 'split'
       | 'copy'
+      | 'pair'
       | 'cast'
       | 'scry'
       | 'surveil'
@@ -568,6 +598,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
   const inherentShown = obj.stack?.inherent === undefined ? null : inherentName(obj.stack.inherent);
   const inherentText = obj.stack?.inherent === undefined ? null : INHERENT_TEXT[obj.stack.inherent];
   const bearerSeat = ringBearerSeat(state, obj);
+  const partner = partnerOf(state, obj);
   const activated = activatedAbilitiesOf(state, obj);
   const landwalks = d.abilities.flatMap((a) =>
     a.kind === 'keyword' && a.keyword.kind === 'landwalk' ? [a.keyword.landType] : [],
@@ -595,10 +626,12 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     ...(obj.zone === 'battlefield' && (obj.level !== undefined || d.subtypes.includes('Class'))
       ? { level: obj.level ?? 1 }
       : {}),
-    isCommander: obj.card !== null && state.cards[obj.card]?.isCommander === true,
+    isCommander: commanderCardOf(state, obj) !== null,
     summoningSick: obj.zone === 'battlefield' && isSummoningSick(state, obj),
     ...controlEndsOf(state, obj),
     ...(bearerSeat === null ? {} : { ringBearer: bearerSeat }),
+    ...(partner === null ? {} : { pairedWith: partner.id }),
+    ...(partner === null && isPaired(state, obj) ? { pairedPhasedOut: true as const } : {}),
     ...(asCreature && wouldBeSummoningSick(state, obj)
       ? { wouldBeSummoningSick: true as const }
       : {}),
@@ -618,7 +651,10 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     ...(d.restrictions.length === 0 ? {} : { restrictions: d.restrictions }),
     ...(landwalks.length === 0 ? {} : { landwalks }),
     protector: obj.protector,
-    support: def?.support ?? 'supported',
+    // D-277: a melded permanent is unsupported when either of its two cards is.
+    support: cardsOf(obj).some((c) => definitionOf(state, c).support === 'unsupported')
+      ? 'unsupported'
+      : (def?.support ?? 'supported'),
     targets: obj.stack?.chosenTargets ?? [],
     ...(abilitySource === null ? {} : { abilitySource }),
     ...(obj.stack?.kind === 'ability' && obj.stack.ability !== null
@@ -660,13 +696,28 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
         }),
     ...(obj.chosen === undefined ? {} : { chosen: obj.chosen }),
     ...castCostFields(state, obj),
-    ...(def !== null && def.faces.length > 1
+    // CR 712.4b, 712.8a (D-277): the combined back face of a meld card is only the characteristics of a melded permanent, so a meld card is not shown
+    // as a card with two faces; the melded permanent says what it is made of (`meld`).
+    ...(def !== null && def.faces.length > 1 && def.layout !== 'meld'
       ? {
           face: obj.face,
           layout: def.layout,
           faces: def.faces.map(({ abilities: _abilities, spell: _spell, ...printed }) => printed),
         }
       : {}),
+    ...(obj.meldedWith === undefined || obj.card === null
+      ? {}
+      : {
+          meld: {
+            components: cardsOf(obj).flatMap((card) => {
+              const front = definitionOf(state, card).faces[0];
+              if (front === undefined) return [];
+              const { abilities: _abilities, spell: _spell, ...printed } = front;
+              return [printed];
+            }),
+            manaValue: manaValueOfCost(d.manaCost, obj),
+          },
+        }),
     ...(obj.onAdventure === true ? { onAdventure: true as const } : {}),
     ...(obj.prepared === true ? { prepared: true as const } : {}),
     ...(obj.prepareOf !== undefined ? { preparedSpell: true as const } : {}),
@@ -729,6 +780,7 @@ export function getView(state: GameState, viewer: SeatId): GameView {
         s.commanders.map((c) => [c, 2 * (state.commanderCasts[c] ?? 0)]),
       ),
       ...(s.ring === undefined ? {} : { ringTempted: s.ring.tempted }),
+      ...(s.citysBlessing === true ? { citysBlessing: true as const } : {}),
       ...(s.energy === undefined ? {} : { energy: s.energy }),
     };
   });

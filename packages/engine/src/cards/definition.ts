@@ -50,7 +50,10 @@ export type CardLayout =
   // CR 716 (D-235): a Class enchantment, one face, its class level bars among its abilities.
   | 'class'
   // CR 722 (D-214): faces[0] is the card, faces[1] its prepare spell, which is never cast from the card.
-  | 'prepare';
+  | 'prepare'
+  // CR 701.42, 712.4 (D-277): a meld card. faces[0] is the front face (the only face outside the battlefield, CR 712.4b, 712.8a, 712.8b), faces[1] the combined
+  // back face of its meld pair, read from the card of that face and the same on both cards of the pair (CR 712.8g); `meld` names the counterpart.
+  | 'meld';
 
 export interface CardDefinition {
   /** Scryfall oracle_id. Null only in hand-written fixtures that have not been matched yet. */
@@ -60,6 +63,11 @@ export interface CardDefinition {
   readonly faces: readonly CardFace[];
   /** Color identity for Commander deck rules (CR 903.4), from Scryfall. */
   readonly colorIdentity: readonly ('W' | 'U' | 'B' | 'R' | 'G')[];
+  /**
+   * Layout `meld` only (D-277, CR 701.42b, 712.5): the other card of the meld pair. A card's counterpart is the card with this name, whose own `meld.partner`
+   * is this card's name and whose `faces[1]` is the same combined face; nothing else can be melded with it. The engine compares these data; it never names a card.
+   */
+  readonly meld?: { readonly partner: string };
   /** SPEC 7.1: supported or unsupported, never partial. */
   readonly support: 'supported' | 'unsupported';
 }

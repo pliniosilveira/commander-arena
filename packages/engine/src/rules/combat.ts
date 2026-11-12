@@ -70,6 +70,13 @@ export function declareAttackers(
     turnLog: {
       ...state.turnLog,
       attacked: [...state.turnLog.attacked, ...attacks.map((a) => a.attacker)],
+      // CR 508.6 (D-269): only an attack on a player is an attack on that player; one on a planeswalker or a battle is not.
+      attackedPlayers: [
+        ...state.turnLog.attackedPlayers,
+        ...attacks.flatMap((a) =>
+          a.target.kind === 'player' ? [{ attacker: a.attacker, player: a.target.seat }] : [],
+        ),
+      ],
     },
   };
   events.push({

@@ -90,6 +90,11 @@ export type Amount =
       readonly kind: 'manaSpent';
       readonly fromType?: string;
       /**
+       * "for each {S} spent to cast this spell" (D-260, CR 107.4h, 106.3, 601.2h): only the mana that a snow source made. Not with `fromType`. In the
+       * effect of the spell itself as well as in "When you cast this spell": the spell is the source of its own effect (a copy has 0, CR 707.10).
+       */
+      readonly snow?: true;
+      /**
        * "the amount of mana spent to cast that spell" (D-217, CR 601.2h, 113.7a): the spell a target slot of the ability named, as it is or as it last was
        * (a countered spell is gone). Only the target of the same spell or ability.
        */
@@ -220,8 +225,11 @@ export type ThisWayKind =
   | 'discardedCreature'
   | 'discardedNoncreature';
 
-/** A designation a player can have (CR 725.1, D-131): only the monarch today; the initiative and the city's blessing can join. */
-export type Designation = 'monarch';
+/**
+ * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
+ * any number of players, `SeatState.citysBlessing`); the initiative can join.
+ */
+export type Designation = 'monarch' | 'citysBlessing';
 
 /** What two players are compared by in "has more [life | cards in hand | creatures] than you" (D-131). */
 export type PlayerStat = 'life' | 'cardsInHand' | 'creatures' | 'lands';
@@ -464,6 +472,12 @@ export interface ObjectFilter {
    * `asEntersChoose` of `creatureType` (linked abilities, CR 607.2d).
    */
   readonly chosenType?: true;
+  /**
+   * "that shares a creature type with it" (D-261, CR 205.3m, 603.10a, 113.7a): the object has at least one creature type that the creature the trigger is
+   * about has (`triggerSubject`: the one that died), as that creature last was on the battlefield; a changeling has every creature type (CR 702.73a).
+   * Only in the filter of a `revealUntil` in the effect of a "dies" trigger.
+   */
+  readonly sharesCreatureTypeWith?: 'triggerSubject';
   /** "Of the chosen color" (D-100): as `chosenType`, for `chosen.color` and an `asEntersChoose` of `color`. */
   readonly chosenColor?: true;
   /**
@@ -623,7 +637,15 @@ export type PlayerSelector =
    * "Each player who discarded a card this way" (D-210, CR 701.9): the players who discarded at least one card to the `discard` effects of this same resolution
    * so far, in the order CR 101.4 gives. Valid after a `discard` effect (or a `playersMay` of one) in the same sequence.
    */
-  | { readonly kind: 'discardedThisWay' };
+  | { readonly kind: 'discardedThisWay' }
+  /**
+   * "Each player this creature attacked this turn" (D-269, CR 508.6): the players the creature the ability belongs to was declared as an attacker
+   * attacking this turn, in any combat phase, each once, in the order CR 101.4 gives; the players who have left the game are not named. An
+   * attack on a planeswalker or a battle is not an attack on its controller or protector. Read from the turn log under the id the ability's source
+   * has, so a source that has left the battlefield by the time the ability resolves is read as it was (CR 608.2h, last-known information). `of` is
+   * `this`, the permanent of the ability; no other creature's attacks are read.
+   */
+  | { readonly kind: 'attackedPlayers'; readonly of: { readonly kind: 'this' } };
 
 /**
  * A target declaration (CR 115). "any target" is a creature, player, planeswalker or battle
@@ -662,6 +684,18 @@ export interface TargetSpec {
         readonly kind: 'playerOrObject';
         readonly player: PlayerFilter;
         readonly filter: ObjectFilter;
+      }
+    /**
+     * "Up to three other target creatures from the battlefield and/or creature cards from graveyards" (CR 115.1, 115.2, 601.2c, 603.3d, D-270): one slot
+     * whose targets are objects of two zones. A target is a permanent on the battlefield that `filter` matches or a card in a graveyard (any owner's) that
+     * `card` matches; the same slot takes some of each, up to its `max`. `filter` has no zone (the battlefield) and `card` has `zone: 'graveyard'` and no
+     * `other`, controller or stack kind. Every selector reads the chosen targets as objects; they are legal again as the ability resolves (CR 608.2b) only
+     * where each now is (a card that left its graveyard is a new object, CR 400.7). Only `exile` reads such a slot, and a trigger's, so far.
+     */
+    | {
+        readonly kind: 'objectOrGraveyardCard';
+        readonly filter: ObjectFilter;
+        readonly card: ObjectFilter;
       };
   readonly min?: number;
   readonly max?: number;
@@ -842,6 +876,7 @@ export type NamedAlternativeKind =
   | 'spectacle'
   | 'escape'
   | 'madness'
+  | 'miracle'
   | 'foretell'
   | 'tapPermanents';
 
@@ -887,6 +922,10 @@ export type PermanentAlternativeKind =
  *   card is cast as its madness trigger resolves: a card with it that would be discarded is exiled instead (a
  *   replacement the engine applies to every discard), and its owner may then cast it from exile for this cost
  *   or put it into the graveyard. It is never offered as a cast from a hand. On a card that is not a land.
+ * - `miracle` (D-274, CR 702.94): the `cost` (mana only; an {X} is allowed, CR 107.3a) is paid instead of the mana cost, but only when
+ *   the card is cast as its miracle trigger resolves: its owner may reveal the card as they draw it when it is the first card they have
+ *   drawn this turn, and when they do, the trigger lets them cast it from the hand for this cost. It is never offered as a cast from a
+ *   hand. On a card that is not a land.
  * - `foretell` (D-128, CR 702.143): the `cost` (the foretell cost, mana only, no X) is paid instead of the mana
  *   cost to cast the card from exile, after the turn it was foretold has ended. The card is put there face down
  *   by the special action the engine derives from this entry: "any time you have priority during your turn, pay
@@ -1339,6 +1378,15 @@ export type Effect =
       readonly otherTo: 'battlefieldTapped';
     }
   /**
+   * "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their
+   * owners' control." (Dawnbreak Reclaimer; CR 608.2c, 608.2d, 110.2a, 400.3, D-272). The controller chooses a card of `cardType` among the cards in the graveyards of their
+   * opponents (one still in the game); the owner of that card ("that player") chooses a card of `cardType` in the controller's graveyard; then the controller may return the cards
+   * chosen, both or neither, to the battlefield under their owners' control. A choice that cannot be made (no such card) is not made (CR 608.2d): with no card in an opponent's
+   * graveyard nobody is "that player" and the second choice is not made either, and with no card in the controller's graveyard the first card alone may be returned. The wording
+   * is fixed: the effect names who chooses, where, and where the cards go.
+   */
+  | { readonly kind: 'returnGraveyardPair'; readonly cardType: CardType }
+  /**
    * "After this phase, there is an additional combat phase" (CR 500.8, 500.10, D-151): when the phase that is now going on is over, one more combat
    * phase follows it (beginning of combat, declare attackers, ... end of combat), then the turn goes on as it would have. Several of them add up, the
    * most recently created occurring first (CR 500.8); the phase is added to the turn state (`TurnState.addedPhases`) and may follow a main phase as well
@@ -1355,14 +1403,21 @@ export type Effect =
    * a reflexive triggered ability `reflexive` is created (as `reflexive` after a `may` effect is) in which `triggerDamage` ("that much") is the number
    * of times they paid. Nothing happens for 0. `paid` is the engine's own (the number paid, on the effect that runs once the payment is made) and is never
    * written in a card.
+   * D-257, "you may pay {X}, where X is less than or equal to the amount of life you gained. If you do, draw X cards": `symbol` may be `'1'`, a generic
+   * {1} paid X times, and `atMost` caps X (an amount read as the effect starts: `triggerDamage`, the life gained, or a number; the cap and the mana the controller
+   * could pay both limit the answer). With `ifPaid` instead of `reflexive` it is "If you do" (CR 608.2c): the effect runs as the next instruction of the same
+   * resolution when at least one was paid, and its `{ kind: 'x' }` amounts are the number paid (CR 107.3f); no reflexive ability is created. Exactly one of
+   * `reflexive` and `ifPaid`.
    */
   | {
       readonly kind: 'payAnyAmount';
-      readonly symbol: 'W' | 'U' | 'B' | 'R' | 'G' | 'C';
-      readonly reflexive: {
+      readonly symbol: 'W' | 'U' | 'B' | 'R' | 'G' | 'C' | '1';
+      readonly atMost?: Amount;
+      readonly reflexive?: {
         readonly targets?: readonly TargetSpec[];
         readonly effect: Effect;
       };
+      readonly ifPaid?: Effect;
       readonly paid?: number;
     }
   /**
@@ -1545,11 +1600,12 @@ export type Effect =
    * it without paying its mana cost if able. If you don't, it remains exiled. If you cast a creature spell this
    * way, it gains haste" (the spell remembers it, `StackData.suspended`); `madness`: "its owner may cast it by
    * paying [its madness cost] rather than paying its mana cost. If that player doesn't, they put this card into
-   * their graveyard". The question is asked only when the card could be cast (a legal target for each of its
+   * their graveyard"; `miracle` (D-274, CR 702.94a): the source card is in its owner's hand, not in exile, and "you may
+   * cast it by paying [its miracle cost] rather than its mana cost"; declining leaves it in the hand. The question is asked only when the card could be cast (a legal target for each of its
    * targets, the cost payable). Only the effect of the engine's own suspend and madness abilities
    * (`validateCard` refuses it anywhere else).
    */
-  | { readonly kind: 'castExiled'; readonly mode: 'suspend' | 'madness' }
+  | { readonly kind: 'castExiled'; readonly mode: 'suspend' | 'madness' | 'miracle' }
   /**
    * "[Player] becomes the monarch" (CR 725.1, 725.3, D-127): the designation moves to the player the selector
    * names (one player), and the previous monarch ceases to be the monarch. Nothing happens when that player is
@@ -1705,6 +1761,23 @@ export type Effect =
   | { readonly kind: 'gainLife'; readonly player: PlayerSelector; readonly amount: Amount }
   | { readonly kind: 'loseLife'; readonly player: PlayerSelector; readonly amount: Amount }
   /**
+   * "<Players> lose the game." (CR 104.3e: an effect may state that a player loses the game, D-269): each player the selector names, who is
+   * still in the game, loses it at once, together (CR 104.4a: if every player remaining loses simultaneously the game is a draw). A player who
+   * "can't lose the game" (`cantLoseGame`, CR 101.2: the "can't" wins) does not. The player leaves the game as a conceding player does (CR 104.5); the
+   * game ends when one player is left (CR 104.2a). Any player selector is meant: "you", "that player", "target player", "each opponent", "each
+   * player" and "each player this creature attacked this turn" are all read (CR 104.3e: the effect names the player).
+   */
+  | { readonly kind: 'loseGame'; readonly player: PlayerSelector }
+  /**
+   * "Exile them, then meld them into R." (CR 701.42a, 701.42b, 701.42c, 712.4a, D-278), the ability of a meld card: it exiles the permanent it belongs to
+   * and the creature named `partner` that its controller both owns and controls, then puts the two cards onto the battlefield as one melded permanent
+   * (CR 712.14c), under the control of the controller of the ability. The cards can be melded only if they are the two cards of one meld pair, neither a token
+   * (`rules/melded.ts`, `meldPairIssue`: the data of the cards must say so, and the name of their combined face must be `result`) and both are still in exile;
+   * otherwise they stay where they are (CR 701.42c, a `meldFailed` event). When several creatures with that name qualify, the one that can be melded is taken.
+   * Only in a triggered ability of a meld card (`validateCard`); the condition that goes with it is `ownsAndControlsNamed`.
+   */
+  | { readonly kind: 'meld'; readonly partner: string; readonly result: string }
+  /**
    * "Target player's life total becomes 1." (CR 119.5, D-201): each player the selector names gains or loses the life that takes their life total
    * to `amount`, a whole number of 0 or more (the life gained or lost triggers what it triggers, CR 119.9; nothing happens to a player who already has
    * that total). No other source of the number is supported (a life total that becomes a count is not read).
@@ -1851,13 +1924,16 @@ export type Effect =
   /**
    * "It also gains the non-backup abilities of this creature printed below this one until end of turn" (Backup, CR 702.165a, 613.1f, D-230): layer 6, each permanent the selector
    * names (a `target`, fixed now, CR 611.2c) has the abilities in `abilities` (any ability but a static one or a keyword that cannot be granted: keywords without parameters,
-   * activated, triggered and mana abilities) until `duration`. Only the engine's own Backup writes it (`validateCard` refuses it in a card).
+   * activated, triggered and mana abilities) until `duration`. The engine's own Backup writes that form (`validateCard` refuses `untilEndOfTurn` in a card).
+   * D-275 (CR 611.2a, 613.1f): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration: `duration: 'permanent'`, for
+   * the rest of the game (the object a zone change makes is a new one, CR 400.7). A card may write only this form, and only with static abilities
+   * `cantLoseGame` and `opponentsCantWin`, the ones read from the abilities the object has after the layers (`rules/player-protection.ts`).
    */
   | {
       readonly kind: 'grantAbility';
       readonly objects: ObjectSelector;
       readonly abilities: readonly Ability[];
-      readonly duration: 'untilEndOfTurn';
+      readonly duration: 'untilEndOfTurn' | 'permanent';
     }
   /** "Target creature gains flying until end of turn": layer 6 (CR 613.1f), a keyword without parameters. */
   | {
@@ -1898,6 +1974,14 @@ export type Effect =
    * there was no creature to choose (CR 701.54d). No operand: only "you".
    */
   | { readonly kind: 'ringTempts' }
+  /**
+   * "You may pair this creature with another unpaired creature you control" (CR 702.95a, 702.95c, 702.95d, D-286), the effect of the two abilities soulbond
+   * stands for. As it resolves it checks, against the game now, everything CR 702.95c asks: both creatures are still creatures on the battlefield under the
+   * control of the player who controls the ability, and both are unpaired; if not, nobody is paired. `partner: 'choose'` asks the controller which creature
+   * (a `choosePermanent` decision of purpose 'soulbond' with `min` 0: choosing none is the "may", CR 603.5; a pair is never formed over another); `'triggerSubject'`
+   * pairs it with the creature that entered, and asks only whether to. Engine only: refused in card data.
+   */
+  | { readonly kind: 'pair'; readonly partner: 'choose' | 'triggerSubject' }
   /**
    * "You get an emblem with \"Creatures you control get +2/+2 and have flying.\"" (CR 114.1, 114.2, D-201): the controller of the effect gets an emblem, an
    * object in their command zone that has the quoted abilities (static or triggered, at least one) and nothing else (no types, no mana cost, no colors;
@@ -1988,6 +2072,15 @@ export type Effect =
   | { readonly kind: 'transform'; readonly objects: ObjectSelector }
   /** CR 701.24 (Shuffle): each player `player` names shuffles their library ("Its controller shuffles"). */
   | { readonly kind: 'shuffle'; readonly player: PlayerSelector }
+  /**
+   * "Roll a four-sided die" (CR 706.1, D-271): the controller of the effect rolls one die of `sides` sides, a whole number from 2 up (CR 706.1a: a die has N
+   * equally likely outcomes, numbered 1 to N). The natural result (CR 706.2: the engine has no modifiers of a roll) is drawn from the seeded generator of the
+   * game state (`nextInt`, one draw), emitted as the `dieRolled` event and kept for the rest of the resolution of this spell or ability: the condition
+   * `dieResult` of a later `conditional` reads it ("If the result is 1, ..."; CR 706.3b: the roll, what is done with its result and a results table are
+   * one ability). A later roll of the same resolution replaces it. Only one die, rolled by the controller; "roll two dice", "each player rolls", modifiers,
+   * rerolls and triggers on a roll are not built (`docs/ROADMAP.md`).
+   */
+  | { readonly kind: 'rollDie'; readonly sides: number }
   /**
    * CR 701.22 (Scry): look at the top `count` cards of the library, put any number of them on the
    * bottom in any order and the rest on top in any order. `player` is left out or `you`: the
@@ -2146,6 +2239,11 @@ export type Effect =
       readonly optional?: true;
       readonly filter: ObjectFilter;
       readonly max: number;
+      /**
+       * "Search your library for up to two basic land cards that share a land type" (D-262, CR 205.3i, 701.23): the cards found must share a land type, which is a
+       * condition on the choice as a whole: any one card may be found, two only when some land type is on both. The land cards are of `filter`; `max` is at least 2.
+       */
+      readonly sharedLandType?: true;
       readonly destinations: readonly SearchDestination[];
       readonly reveal: boolean;
       readonly shuffle: boolean;
@@ -2225,6 +2323,14 @@ export type ManaProduction =
    * `asEntersChoose` of `color` on the same face, linked abilities); nothing when it made no choice.
    */
   | { readonly kind: 'chosenColor' }
+  /**
+   * "{2}, {T}: Choose a color. Add an amount of mana of that color equal to your devotion to that color." (Nykthos, Shrine to Nyx; CR 605.3b, 700.5): the
+   * player chooses one of the five colors as the ability resolves (so the activation names it, like `anyColor`) and as many mana of that color as the
+   * controller's devotion to it (CR 700.5, 700.5a: the mana symbols of that color, hybrid ones counted, among the mana costs of the permanents they control,
+   * read as the ability resolves). A color the controller has no devotion to adds nothing, so it is not on offer; with no devotion at all the ability makes
+   * no mana. Only a mana ability (`validateCard`): a spell or a triggered ability has no way to ask the color.
+   */
+  | { readonly kind: 'anyColorDevotion' }
   /**
    * "{T}: Add one mana of any color that a land an opponent controls could produce." (Exotic
    * Orchard, Fellwar Stone) and "... of any type that a land you control could produce." (Reflecting
@@ -2695,7 +2801,8 @@ export type Keyword =
       readonly cost: readonly Cost[];
       /**
        * "Equip Wizard {1}" (CR 702.6c, D-220): the equip ability attaches only to a creature this filter also matches (a creature you control as always): a creature
-       * type here. The permanent may have other equip abilities, each with its own cost and restriction.
+       * type here. The permanent may have other equip abilities, each with its own cost and restriction. "Equip commander {3}" (D-259) is `{ commander: true }`:
+       * a creature that is a card a player designated as a commander (CR 903.3); it is still a creature the activating player controls (CR 702.6c).
        */
       readonly restriction?: ObjectFilter;
     }
@@ -2722,6 +2829,15 @@ export type Keyword =
    */
   | { readonly kind: 'crew'; readonly power: number }
   | { readonly kind: 'protection'; readonly from: 'color'; readonly colors: readonly Color[] }
+  /**
+   * "Protection from each color that's not in your commander's color identity" (CR 702.16h, 702.16i, 903.4, 903.4f; D-259): protection from each of
+   * the colors the controller's commanders (all of them, as `commanderIdentity`) do not have in their color identity. "Your" is the controller of the
+   * ability that gives the keyword (a static ability's controller, `grantKeyword`), or of the permanent itself when the keyword is printed on it. A
+   * player without a commander has no such colors: the quality is undefined and the keyword does nothing (CR 903.4f). Read where a permanent's
+   * protection is read (`rules/protection.ts`) and, for a static grant, resolved to plain colors as the grant is applied (`rules/derive-statics.ts`).
+   * Only a printed keyword or a static `grantKeyword` may carry it: an effect that gives a keyword for a duration takes the keywords without a parameter.
+   */
+  | { readonly kind: 'protection'; readonly from: 'colorsNotInCommanderIdentity' }
   /**
    * CR 702.73a (Changeling): a characteristic-defining ability, "This object is every creature type"
    * (CR 604.3), in layer 4 first (CR 613.3), working in every zone, also in a hand or a library. The
@@ -2753,6 +2869,19 @@ export type Keyword =
    * `packages/cards` reads the line when it checks a commander (D-053). It cannot be granted.
    */
   | { readonly kind: 'canBeCommander' }
+  /**
+   * CR 702.131b (Ascend on a permanent, D-264): a static ability, "Any time you control ten or more permanents and you don't have the city's blessing, you get
+   * the city's blessing for the rest of the game." The engine checks it with the state-based actions (`rules/city-blessing.ts`) for the controller of
+   * a permanent that has it. The instant and sorcery form (CR 702.131a) is a spell ability and is not built. It cannot be granted.
+   */
+  | { readonly kind: 'ascend' }
+  /**
+   * CR 702.95a (Soulbond, D-286): "Soulbond is a keyword that represents two triggered abilities": when this creature enters, if you control both it and
+   * another creature and both are unpaired, you may pair them; and whenever another creature you control enters, if you control both it and this one and
+   * both are unpaired, you may pair them. `derive` expands it into those two abilities (`rules/derive-keywords.ts`); the pair is the designation
+   * `GameObject.paired` (`rules/pairing.ts`). Printed only: it cannot be granted, and a face that is not a creature is refused.
+   */
+  | { readonly kind: 'soulbond' }
   /**
    * CR 702.83a (Exalted): "Whenever a creature you control attacks alone, that creature gets +1/+1 until
    * end of turn." A triggered ability; `derive` expands it (`rules/derive-keywords.ts`), one trigger per
@@ -3020,6 +3149,12 @@ export type Keyword =
  */
 export type Condition =
   | { readonly kind: 'controlsAtLeast'; readonly filter: ObjectFilter; readonly count: number }
+  /**
+   * "If you both own and control this creature and a creature named Bruna, the Fading Light" (CR 603.4, 701.42a, D-278): the permanent the ability belongs
+   * to is on the battlefield and both owned and controlled by the controller of the ability, and so is another permanent of that card type whose name is
+   * `name` (its name as it is now, after copy effects, CR 201.2). Read as the ability triggers and again as it resolves (an intervening "if").
+   */
+  | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: CardType }
   | { readonly kind: 'opponentsAtLeast'; readonly count: number }
   /**
    * CR 702.33d (Kicker): the object was kicked. Read from the spell that is resolving, or, for an
@@ -3087,6 +3222,13 @@ export type Condition =
    * (`entersBattlefield`, `landfall`, `dies` and the like); fails when there is none.
    */
   | { readonly kind: 'subjectControllerHasMore'; readonly stat: PlayerStat }
+  /**
+   * "If that player controls more creatures than you" (CR 603.4, 110.2; the Bruna deck, Keeper of the Accord): the player the event of the trigger is
+   * about (`triggerPlayer`: the active player of a `step`, `upkeep` or `endStep` trigger, the player who drew, who cast, ...) has a greater `stat` than
+   * the controller of this ability. Read as the ability triggers and again as it resolves (an intervening "if"), so the player stays on the stack
+   * with the ability. Only the intervening "if" of a trigger whose event is about a player; fails when there is none.
+   */
+  | { readonly kind: 'triggerPlayerHasMore'; readonly stat: PlayerStat }
   /**
    * "As long as there are fewer than eight cards in your graveyard" (D-229, CR 404.1): the number of cards in the graveyard of the controller of the thing
    * that asks meets the comparison (`atMost` 7 is "fewer than eight"). It reads no characteristic, so a static ability that works in layer 4 may have it.
@@ -3282,10 +3424,39 @@ export type Condition =
    */
   | { readonly kind: 'attackersTotalPower'; readonly atLeast: number }
   /**
+   * "If you gained 3 or more life this turn" (CR 119.3, 603.4, D-252): the controller of the condition gained at least `atLeast` life in all this turn (every gain
+   * after replacement, summed; a gain of 0 is no event, CR 119.9). Reads the turn log only, so it is read as the event happens and again as the ability resolves.
+   */
+  | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
+  /**
+   * "If the result is 1", "if the result is 10 or more" (CR 706.2, 706.3a, D-271): the result of the latest `rollDie` of this resolution against a whole number.
+   * Only in a `conditional` after a `rollDie` of the same sequence (`validateCard` checks it); false if no die was rolled.
+   */
+  | { readonly kind: 'dieResult'; readonly compare: NumberComparison }
+  /**
+   * "If this card is in your graveyard" (CR 113.6b, 603.4, D-271): the source of the condition is an object that is in its owner's graveyard, and the
+   * controller of the condition is that owner. Read from the object itself (not from last-known information: once the card leaves, it is a new object
+   * and the condition is false, CR 400.7), as the event happens and again as the ability resolves. Only for an ability that works from the graveyard
+   * (`functionsIn: 'graveyard'`).
+   */
+  | { readonly kind: 'thisInYourGraveyard' }
+  /**
    * "If you control your Ring-bearer" (CR 701.54e, D-196): the controller of the condition has a creature that is on the battlefield under their
    * control and is their Ring-bearer. Not for a static ability.
    */
   | { readonly kind: 'controlsRingBearer' }
+  /**
+   * "This creature is paired with another creature" (CR 702.95b, D-286): the permanent the condition belongs to is paired with a creature now, and both are
+   * on the battlefield (a pair with a member that is phased out, CR 702.26b, gives nothing meanwhile). Read from the pair (`rules/pairing.ts`, `partnerOf`),
+   * never from a characteristic, so a layer 6 grant may depend on it. Its negation is "isn't paired".
+   */
+  | { readonly kind: 'paired' }
+  /**
+   * The intervening "if" of the two abilities soulbond stands for (CR 702.95a, 603.4, D-286): this creature is on the battlefield under its controller's
+   * control and unpaired and, `with: 'another'`, the controller has another creature that is unpaired; `with: 'triggerSubject'`, the creature the trigger is
+   * about (that entered) is also on the battlefield under their control and unpaired. Engine only: built by `derive` for the keyword, refused in card data.
+   */
+  | { readonly kind: 'soulbondReady'; readonly with: 'another' | 'triggerSubject' }
   | { readonly kind: 'and' | 'or'; readonly terms: readonly Condition[] }
   | { readonly kind: 'not'; readonly term: Condition };
 
@@ -3351,7 +3522,14 @@ export type Replacement =
   | {
       readonly kind: 'entersWithCounters';
       readonly counter: string;
-      readonly count: number | { readonly kind: 'x' } | CountAmount;
+      /**
+       * `timesKicked` (D-254, CR 702.33c, 614.1c): "enters with a charge counter on it for each time it was kicked", the kicks of the spell the permanent came from.
+       */
+      readonly count:
+        | number
+        | { readonly kind: 'x' }
+        | { readonly kind: 'timesKicked' }
+        | CountAmount;
       /**
        * "This permanent escapes with a +1/+1 counter" (CR 702.138c, D-124): the counters are put on it only if it
        * escaped, i.e. its spell was cast from a graveyard for its escape cost. Only on a face with an escape cost.
@@ -3510,7 +3688,13 @@ export type StaticSubject =
       /** The host must have every one of these supertypes ("Enchanted legendary creature"). */
       readonly supertypes?: readonly Supertype[];
     }
-  | { readonly kind: 'filter'; readonly filter: ObjectFilter; readonly other?: boolean };
+  | { readonly kind: 'filter'; readonly filter: ObjectFilter; readonly other?: boolean }
+  /**
+   * "Each of those creatures", "both creatures" of a soulbond card (CR 702.95b, 611.3a, D-286): the permanent the ability belongs to and the creature it is
+   * paired with, whatever the pair is at any moment (`rules/pairing.ts`, `partnerOf`): none while it is unpaired. Only for a modification of power and
+   * toughness, a granted keyword or a granted ability, which read the subject through one function (`validateCard` refuses the rest).
+   */
+  | { readonly kind: 'pair' };
 
 /** What a static ability does while its permanent is on the battlefield (CR 604, 611.3). */
 export type StaticEffect =
@@ -3890,6 +4074,14 @@ export type StaticEffect =
    */
   | { readonly kind: 'opponentsCantCastOnYourTurn' }
   /**
+   * "Your opponents can't cast spells with mana value 3 or less." (CR 101.2, 601.2, 604.1, 202.3, D-282): while the permanent has the ability, no opponent of its
+   * controller can cast a spell that `spells` describes (the spell as it is on the stack, CR 601.2a: its mana value, types, colors; the filter names no zone and no
+   * controller), by any means. A spell with an {X} in its mana cost has the mana value its announced X gives it (CR 202.3e), so its X can not be less than what takes it
+   * out of the filter (the announcement offers only those values, and the spell can be cast only if one of them can be paid). Activated abilities, lands and
+   * special actions are not spells and are not stopped. Read where the engine decides whether a card can be cast (`rules/cast-restrictions.ts`).
+   */
+  | { readonly kind: 'opponentsCantCastSpells'; readonly spells: ObjectFilter }
+  /**
    * "Creature spells you control can't be countered." (CR 101.2, 701.6a, 604.1, D-185): while the permanent has the ability, a spell on the stack
    * that `spells` matches, as it is on the stack (its types, colors, mana value; `controller` is relative to the controller of the permanent: "you"),
    * is not countered by a spell or ability that tries to (it stays on the stack and resolves). It is a static ability of a permanent on the
@@ -3967,6 +4159,13 @@ export type Ability =
        * permanent that left and came back is a new object (CR 400.7).
        */
       readonly oncePerTurn?: true;
+      /**
+       * "Whenever you gain life, you may put that many +1/+1 counters on each creature you control. Do this only once each turn." (CR 603.2h, D-256):
+       * the ability triggers only if its controller has not yet taken the action it represents this turn. The action is taken as the ability resolves
+       * and its effect is begun: for an ability with "you may" only when the controller accepts, so a declined ability can trigger again the same
+       * turn, and an ability that triggers twice before the first resolves resolves twice. Not with `oncePerTurn`, which counts the triggering.
+       */
+      readonly doOnlyOnceEachTurn?: true;
       /**
        * "Whenever a Dragon you control enters, you may pay {R}. If you do, return this card from your graveyard to your hand." (CR 113.6b, 603.2, D-151):
        * the ability triggers while its card is in its owner's graveyard, and not on the battlefield. The card is "this" (`this` names it while it

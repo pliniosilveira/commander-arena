@@ -21,12 +21,14 @@ import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
 import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
+import { ARDEN_LOWERINGS } from './arden';
 import { CHANGE_TARGET } from './change-target';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
 import { lowerCondition } from './conditions';
 import {
   BECOMES,
   DELAYED_RETURN,
+  DELAYED_RETURN_AT_UPKEEP,
   FLICKER,
   GRANT_KEYWORD,
   LOSE_ALL_ABILITIES,
@@ -37,13 +39,17 @@ import { GAIN_CONTROL } from './control';
 import { lowerCopyToken } from './copies';
 import { COPY_SPELL } from './copy-spell';
 import { lowerCost } from './costs';
+import { DAWNBREAK_LOWERINGS } from './dawnbreak';
+import { DESTINY_LOWERINGS } from './destiny';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { missingFeatures } from './features';
+import { GAIN_STATIC_ABILITY } from './granted-static';
 import { HOFRI_LOWERINGS } from './hofri';
 import { KORVOLD_LOWERINGS } from './korvold';
+import { MELD_LOWERINGS } from './meld';
 import {
   attackedByOf,
   colorLetter,
@@ -590,6 +596,9 @@ export function lowerMana(spec: IrManaSpec): ManaProduction {
       return { kind: 'commanderIdentity' };
     case 'chosenColor':
       return { kind: 'chosenColor' };
+    case 'devotionToChosenColor':
+      // CR 605.3b, 700.5: only after "Choose a color." in a mana ability (`lowerChosenColorDevotion`); the ordinary lowering of an instruction refuses it.
+      return { kind: 'anyColorDevotion' };
     case 'anyCombination':
       return { kind: 'anyCombination', count: spec.what.count };
     case 'combination':
@@ -648,6 +657,22 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
       rule: clause.rule,
     };
   },
+};
+
+/**
+ * "Choose a color." (CR 105.1, 605.3b): a color is chosen as the mana ability that says so resolves, which `lowerChosenColorDevotion` reads together with the sentence
+ * after it. Anywhere else the engine has no way to ask for a color while an instruction resolves, so it is reported, never guessed.
+ */
+const CHOOSE_COLOR: Lowering<IrClause, Effects> = {
+  head: 'chooseColor',
+  id: 'lower.choose-color',
+  needs: [],
+  lower: (clause) => ({
+    ok: false,
+    needs: ['selector:colorChoice'],
+    at: clause.span,
+    rule: clause.rule,
+  }),
 };
 
 function playerVerb(
@@ -1076,6 +1101,12 @@ function lowerEitherToken(
   return { ok: true, value: [{ kind: 'chooseOne', options }], rule: clause.rule };
 }
 
+/** The name of a created token, with the card's own short name where the text said the tilde (D-266); null when that name is not known here. */
+function ownTokenName(named: string, ctx: LowerContext): string | null {
+  if (!named.includes('~')) return named;
+  return ctx.selfName === '' ? null : named.split('~').join(ctx.selfName);
+}
+
 function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effects> {
   const token = arg(clause, 'token');
   if (token?.kind !== 'token') return failure(clause);
@@ -1155,9 +1186,13 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     if (!own.ok) return own;
     abilities.push(own.value);
   }
+  // CR 111.4: the name the effect gives the token. "named ~'s Pridemate" (D-266): the card's own short name, which normalization wrote as the tilde;
+  // a context that does not know it (a quoted ability, where the tilde is the token) refuses the name instead of guessing.
+  const named = token.named === undefined ? undefined : ownTokenName(token.named, ctx);
+  if (named === null) return { ok: false, needs: [], ...at };
   const definition: TokenDefinition = {
     // CR 111.4: the name the effect gives the token, or else its creature types.
-    name: token.named ?? subtypes.join(' '),
+    name: named ?? subtypes.join(' '),
     manaCost: null,
     supertypes: token.legendary === true ? ['legendary'] : [],
     types,
@@ -1169,7 +1204,7 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     defense: null,
     // The words of the token's abilities, which the card face prints (CR 111.4): its keywords on one line, then each ability in
     // quotes as the card writes it. A token with no abilities has no text.
-    oracleText: tokenRulesText(token.keywords ?? [], token.abilities ?? [], token.named),
+    oracleText: tokenRulesText(token.keywords ?? [], token.abilities ?? [], named),
     abilities,
   };
   return {
@@ -1208,6 +1243,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   simple('transform'),
   REGENERATE,
   ADD_MANA,
+  CHOOSE_COLOR,
   playerVerb('draw'),
   playerVerb('discard'),
   playerVerb('gainLife'),
@@ -1233,17 +1269,23 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SET_PT,
   FLICKER,
   DELAYED_RETURN,
+  DELAYED_RETURN_AT_UPKEEP,
   SEARCH,
   PREVENT_DAMAGE,
   ATTACH,
   ...DINOSAUR_LOWERINGS,
   ...ANGEL_LOWERINGS,
+  ...ARDEN_LOWERINGS,
   ...VRASKA_LOWERINGS,
   ...HOFRI_LOWERINGS,
+  ...DAWNBREAK_LOWERINGS,
   ...EDHREC_LOWERINGS,
   ...DRAGON_LOWERINGS,
   ...KORVOLD_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
+  ...DESTINY_LOWERINGS,
+  ...MELD_LOWERINGS,
+  GAIN_STATIC_ABILITY,
   GAIN_CONTROL,
 ];
 
@@ -1293,7 +1335,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                   : test;
     return failure(
       clause,
-      kind === 'raw' || kind === 'hadCounters' || kind === 'declined'
+      kind === 'raw' || kind === 'hadCounters' || kind === 'declined' || kind === 'unlessReturn'
         ? []
         : missingFeatures([`condition:${kind}`]),
     );

@@ -6,6 +6,7 @@ import type { Zone } from '../ast/types';
 import type { CardId, ObjectId, SeatId } from '../ids';
 import { derive } from '../rules/derive';
 import { choosesFace } from '../rules/layouts';
+import { cardsOf } from '../rules/melded';
 import type { Action } from '../state/actions';
 import type { ChosenTarget } from '../state/chosen';
 import { definitionOf } from '../state/ops';
@@ -57,10 +58,12 @@ export function allObjects(state: GameState): GameObject[] {
 }
 
 function matchesName(state: GameState, obj: GameObject, name: string): boolean {
-  if (obj.card !== null) {
-    // A card is also named by any one of its faces ("Stomp" for an Adventure card).
-    const def = definitionOf(state, obj.card);
-    if (def.name === name || def.faces.some((f) => f.name === name)) return true;
+  for (const card of cardsOf(obj)) {
+    // A card is also named by any one of its faces ("Stomp" for an Adventure card). A meld card is named by its front face only: its back face is only
+    // the characteristics of the melded permanent (CR 712.4b), which `derive` names below, and two melded cards are each named by their own front face.
+    const def = definitionOf(state, card);
+    if (def.name === name) return true;
+    if (def.layout !== 'meld' && def.faces.some((f) => f.name === name)) return true;
   }
   return nameOf(state, obj) === name || derive(state, obj).name === name;
 }
@@ -105,7 +108,8 @@ export function resolveObject(ctx: RefContext, ref: CardRef, defaults: Defaults 
     }
     const cid = ctx.labels.get(ref);
     if (cid !== undefined) {
-      const obj = allObjects(state).find((o) => o.card === cid);
+      // D-277: a card of a melded permanent is on the one object that both cards represent.
+      const obj = allObjects(state).find((o) => cardsOf(o).includes(cid));
       if (!obj) throw new ScenarioError(`The card labelled "${ref}" is no longer in the game`);
       return obj;
     }

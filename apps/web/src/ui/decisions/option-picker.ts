@@ -10,7 +10,12 @@ import { namedOptionPrompt } from './option-names';
 /** "As SYNTHETIC Rally Banner enters, choose a creature type." */
 export function optionPrompt(
   d: Pick<ChooseOptionDecision, 'purpose' | 'sourceName'> &
-    Partial<Pick<ChooseOptionDecision, 'options' | 'riotSoFar' | 'replacement' | 'vote' | 'seat'>>,
+    Partial<
+      Pick<
+        ChooseOptionDecision,
+        'options' | 'riotSoFar' | 'replacement' | 'vote' | 'seat' | 'meldOrder'
+      >
+    >,
 ): string {
   // D-151: a choice among names the card gives, or the chapter a Saga with read ahead starts with.
   if (
@@ -18,6 +23,7 @@ export function optionPrompt(
       d.purpose === 'effect' ||
       d.purpose === 'riot' ||
       d.purpose === 'replacement' ||
+      d.purpose === 'meldOrder' ||
       d.purpose === 'vote') &&
     d.options !== undefined
   ) {
@@ -28,6 +34,7 @@ export function optionPrompt(
       ...(d.riotSoFar === undefined ? {} : { riotSoFar: d.riotSoFar }),
       ...(d.replacement === undefined ? {} : { replacement: d.replacement }),
       ...(d.vote === undefined ? {} : { vote: d.vote }),
+      ...(d.meldOrder === undefined ? {} : { meldOrder: d.meldOrder }),
       ...(d.seat === undefined ? {} : { seat: d.seat }),
     });
   }

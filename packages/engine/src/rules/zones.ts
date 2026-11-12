@@ -73,7 +73,10 @@ import {
   riotInstances,
 } from './enters-keywords';
 import { canReveal, revealChoices, revealEvents } from './enters-reveal';
+import { withoutRun } from './enters-run';
 import { applyGraveyardRider } from './graveyard-play';
+import { timesKickedOf } from './kicks';
+import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
 import { becomePrepared, dropPrepareCopy } from './prepare';
 import { countMatching } from './select';
 import { sourceInfo } from './source-info';
@@ -141,10 +144,33 @@ export interface MoveRequest {
    */
   readonly replacers?: readonly ObjectId[];
   /**
+   * D-283 (CR 603.10a, 113.7a): the last-known information of this object was recorded when the event of several permanents leaving together
+   * began (`recordLastKnown`, `rules/simultaneous.ts`), so it is not derived again here, after the others of the event left. Used only when that
+   * record exists, and only for the one move that follows it: a later departure of the same object (it was regenerated, say) records anew.
+   */
+  readonly lkiRecorded?: true;
+  /**
    * The permanent enters unearthed (CR 702.84a, D-124): it remembers it (`GameObject.alt`), so it has haste and,
    * if it would leave the battlefield, is exiled instead. Only for a move to the battlefield.
    */
   readonly alt?: 'unearth';
+  /**
+   * The permanents that entered the battlefield in the same event before this one (D-272, CR 603.6a, 614.12b: "return those cards to the battlefield"): the replacement
+   * effects of this card that read the battlefield read it without them (`rules/enters-run.ts`). Only for a move to the battlefield; absent for a card that enters alone.
+   */
+  readonly alongside?: readonly ObjectId[];
+  /**
+   * D-277 (CR 701.42a, 712.14c): the other card of a meld pair, in the same zone as `object`: the two cards enter the battlefield as one melded permanent, with
+   * their back faces up and combined (`face` is 1). `object` is the card the permanent is represented by first (`GameObject.card`); this object ceases to exist
+   * as the permanent is made. The caller (`rules/meld.ts`) has checked that they can be melded (CR 701.42b). Only for a move to the battlefield.
+   */
+  readonly meldWith?: ObjectId;
+  /**
+   * D-279 (CR 712.21b): the player who performs the move, when it is an effect's: the controller of the spell or ability that exiles. A player who exiles a
+   * melded permanent determines the order of the two cards, whoever owns it. Absent for a move made by a rule or paid as a cost, where it is the
+   * permanent's controller. Read only for a melded permanent that goes to exile.
+   */
+  readonly by?: SeatId;
 }
 
 export type MoveResult =
@@ -154,6 +180,11 @@ export type MoveResult =
       readonly events: readonly GameEvent[];
       /** The new object, or null if the object ceased to exist (an ability leaving the stack). */
       readonly newObject: ObjectId | null;
+      /**
+       * D-277 (CR 712.21, 712.21c): a melded permanent that left the battlefield became two objects; `newObject` is the first card's and this the second's.
+       * An effect that follows "the new object" does the same to both cards. Absent for everything else.
+       */
+      readonly alsoNewObject?: ObjectId;
     }
   | {
       readonly kind: 'needsDecision';
@@ -164,6 +195,14 @@ export type MoveResult =
         | Omit<ChooseCardsDecision, 'id'>
         | Omit<ChoosePermanentDecision, 'id'>;
     };
+
+/**
+ * Records what the object looks like now as its last-known information (CR 113.7a, 603.10a). `rules/simultaneous.ts` calls it for every permanent
+ * of an event in which several leave together, against the state as the event began (D-283).
+ */
+export function recordLastKnown(state: GameState, obj: GameObject): GameState {
+  return recordLki(state, obj);
+}
 
 /** Records what the object looked like just before it left (CR 113.7a, 603.10). */
 function recordLki(state: GameState, obj: GameObject): GameState {
@@ -227,8 +266,9 @@ function faceAfter(old: GameObject, request: MoveRequest): number {
   return old.zone === 'stack' && request.to === 'battlefield' ? old.face : 0;
 }
 
+/** CR 903.3, 903.3b: the object is a commander card, or a melded permanent one of whose two cards is a commander card. */
 export function isCommanderCard(state: GameState, obj: GameObject): boolean {
-  return obj.card !== null && state.cards[obj.card]?.isCommander === true;
+  return commanderCardOf(state, obj) !== null;
 }
 
 /**
@@ -257,10 +297,25 @@ export function sacrificeForDevour(
   let state = input;
   const events: GameEvent[] = [];
   let count = 0;
+  // D-283 (CR 603.10a): the creatures sacrificed together keep the last-known information recorded before the first leaves.
+  const going = ids.filter((id) => {
+    const obj = input.objects[id];
+    return obj?.zone === 'battlefield' && controllerOf(input, obj) === seat;
+  });
+  if (going.length > 1) {
+    for (const id of going) {
+      const obj = input.objects[id];
+      if (obj !== undefined) state = recordLastKnown(state, obj);
+    }
+  }
   for (const id of ids) {
     const obj = state.objects[id];
     if (obj?.zone !== 'battlefield' || controllerOf(state, obj) !== seat) continue;
-    const moved = moveOne(state, { object: id, to: 'graveyard' });
+    const moved = moveOne(state, {
+      object: id,
+      to: 'graveyard',
+      ...(going.length > 1 ? { lkiRecorded: true as const } : {}),
+    });
     if (moved.kind !== 'done') continue;
     state = moved.state;
     events.push(...moved.events, { kind: 'sacrificed', permanent: id, controller: seat });
@@ -271,6 +326,15 @@ export function sacrificeForDevour(
 
 function moveOne(state: GameState, request: MoveRequest): MoveResult {
   const old = getObject(state, request.object);
+  // D-277 (CR 701.42a, 712.14c): the other card of a meld pair that enters the battlefield with this one as one melded permanent.
+  const partner =
+    request.meldWith !== undefined && request.to === 'battlefield'
+      ? getObject(state, request.meldWith)
+      : undefined;
+  if (partner !== undefined) {
+    const issue = meldPairIssue(state, old, partner);
+    if (issue !== null) throw new Error(`moveObject: can not meld: ${issue}`);
+  }
   let to = request.to;
   let toSeat: SeatId | null = isSeatZone(to) ? (request.toSeat ?? old.owner) : null;
 
@@ -307,6 +371,12 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     to = 'exile';
     toSeat = null;
   }
+  // CR 712.21d, 903.9c (D-277): what the second card of a melded permanent does when the permanent leaves. A replacement effect applied to one of the two
+  // cards affects both, so it goes where the permanent goes; only a commander can be exempt (CR 903.9b-c), going to the command zone while the other card
+  // goes on to the zone the permanent would have been put into, which is the zone as it is here, after the replacements above.
+  const companion = old.meldedWith;
+  const companionTo = to;
+  const companionToSeat = toSeat;
   // CR 903.9b (Commander): hand or library, from anywhere, becomes command zone at the owner's choice.
   if (isCommanderCard(state, old) && (to === 'hand' || to === 'library')) {
     if (request.commanderChoice === undefined || request.commanderChoice === null) {
@@ -316,7 +386,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         decision: {
           kind: 'commanderZone',
           seat: old.owner,
-          card: old.card as NonNullable<typeof old.card>,
+          card: (commanderCardOf(state, old) ?? old.card) as NonNullable<typeof old.card>,
           object: old.id,
           from: from === 'graveyard' || from === 'exile' || from === 'library' ? from : 'hand',
         },
@@ -332,6 +402,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // The question comes before anything moves. Nothing is asked when it would enter tapped anyway
   // or when the controller has too little life to pay (CR 119.4).
   const enterController = request.toSeat ?? controllerOf(state, old);
+  // CR 614.12, 614.12b (D-272): what the replacement effects of the entering card read is the battlefield without the cards that enter with it (`rules/enters-run.ts`).
+  const before = withoutRun(state, request.alongside);
   const faceIndex = faceAfter(old, request);
   const entering =
     to === 'battlefield' && printedCard(old) !== null ? enteringFace(state, old, faceIndex) : null;
@@ -341,7 +413,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // (the controller would choose that order), so a question about paying life to avoid entering tapped is moot and is not asked.
   const untappedByEffect =
     entering !== null &&
-    groupEntersUntapped(state, {
+    groupEntersUntapped(before, {
       ...old,
       zone: 'battlefield',
       controller: enterController,
@@ -352,7 +424,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     entering !== null &&
     !untappedByEffect &&
     request.tapped !== true &&
-    !entersTapped(state, entering.abilities, enterCtx) &&
+    !entersTapped(before, entering.abilities, enterCtx) &&
     getSeat(state, enterController).life >= lifeOf(payment);
   // D-208 (CR 614.12, 701.20, 701.4): "you may reveal a Mountain or Plains card from your hand. If you don't, it enters tapped": the same question as a shock
   // land's, with nothing to pay. Nothing is asked when it enters tapped anyway or when no card (or permanent) qualifies.
@@ -362,8 +434,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     entering !== null &&
     !untappedByEffect &&
     request.tapped !== true &&
-    !entersTapped(state, entering.abilities, enterCtx) &&
-    canReveal(state, enterController, revealRule, old.id);
+    !entersTapped(before, entering.abilities, enterCtx) &&
+    canReveal(before, enterController, revealRule, old.id);
   if (mayReveal && revealRule !== null && (request.entersPaid ?? null) === null) {
     const info = sourceInfo(state, old.id);
     return {
@@ -383,7 +455,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   }
   // D-225 (CR 701.20a): the player who revealed chooses which card, when there is more than one.
   if (mayReveal && revealRule !== null && request.entersPaid === true) {
-    const choices = revealChoices(state, enterController, revealRule, old.id);
+    const choices = revealChoices(before, enterController, revealRule, old.id);
     if (choices.length > 1 && request.entersRevealed === undefined) {
       const info = sourceInfo(state, old.id);
       return {
@@ -440,7 +512,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 707.9, 614.12 (D-151): "As this enters, you may have it become a copy of any creature on the battlefield". Nothing has moved yet.
   const copyRule = entering === null ? null : entersCopyOf(entering.abilities);
   if (copyRule !== null && request.entersCopy === undefined) {
-    const legal = copyCandidates(state, enterController, copyRule, old.id);
+    const legal = copyCandidates(before, enterController, copyRule, old.id);
     if (legal.length > 0) {
       return {
         kind: 'needsDecision',
@@ -463,7 +535,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   const riotCount =
     entering === null
       ? 0
-      : riotInstances(state, faceAbilities, {
+      : riotInstances(before, faceAbilities, {
           ...old,
           zone: 'battlefield',
           controller: enterController,
@@ -486,7 +558,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 702.82a (D-185): "As this object enters, you may sacrifice any number of creatures": the last question, asked only when there is a creature to
   // sacrifice (the permanent is not on the battlefield, so it is not one).
   if (devourOf(faceAbilities) > 0 && request.entersDevour === undefined) {
-    const legal = devourCandidates(state, enterController);
+    const legal = devourCandidates(before, enterController);
     if (legal.length > 0) {
       return { kind: 'needsDecision', decision: devourDecision(enterController, old.id, legal) };
     }
@@ -494,10 +566,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
 
   // --- Commit.
   // The old object ceases to exist (CR 400.7). Its last-known information is kept in `lki`.
-  let next = recordLki(state, old);
+  // D-283: a permanent of an event of several leaving together has its record from before the first of them moved (CR 603.10a).
+  let next =
+    request.lkiRecorded === true && state.lki[old.id] !== undefined ? state : recordLki(state, old);
   next = removeFromZone(next, old);
   {
     const { [old.id]: _gone, ...rest } = next.objects;
+    next = { ...next, objects: rest };
+  }
+  // CR 701.42a, 712.14c (D-277): the second card of the pair is one object with the first from now on, so its own object ceases to exist.
+  if (partner !== undefined) {
+    next = recordLki(next, partner);
+    next = removeFromZone(next, partner);
+    const { [partner.id]: _partnerGone, ...rest } = next.objects;
     next = { ...next, objects: rest };
   }
   // CR 722.3c (D-214): the copy of a prepare spell stays in exile only while its permanent stays on the battlefield and prepared.
@@ -518,6 +599,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   const [timestamp, s2] = allocateTimestamp(s1);
   next = s2;
 
+  // CR 614.12 (D-272): the same battlefield, once the old object has left its zone: without the permanents that enter in the same event.
+  const nextBefore = withoutRun(next, request.alongside);
   let tapped = request.tapped ?? false;
   let counters: Record<string, number> = {};
   const printed = printedCard(old);
@@ -534,7 +617,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     }
     const abilities = face?.abilities ?? [];
     // CR 614.12: its conditions look at the battlefield without it, which is what `next` is.
-    if (entersTapped(next, abilities, enterCtx)) tapped = true;
+    if (entersTapped(nextBefore, abilities, enterCtx)) tapped = true;
     // CR 107.3m: "enters with X counters" reads the X of the spell it resolved from, which only a
     // spell on the stack has (D-103); a card put onto the battlefield from another zone has X = 0.
     const castX = old.zone === 'stack' && old.stack?.kind === 'spell' ? (old.stack.x ?? 0) : 0;
@@ -542,8 +625,15 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     const escaped = old.zone === 'stack' && old.stack?.alt === 'escape';
     // D-131: "a +1/+1 counter on it for each Zombie card in your graveyard" counts as it enters, for the player who
     // controls it, looking at the game without it (the card has already left its old zone).
-    counters = entersWithCounters(abilities, counters, castX, escaped, (a) =>
-      countMatching(next, a.filter, { controller: enterController, source: newId }),
+    // D-254, CR 702.33c: "for each time it was kicked" reads the kicks of the spell it resolved from (0 for a card put onto the battlefield by an effect).
+    const kicks = old.zone === 'stack' && old.stack?.kind === 'spell' ? timesKickedOf(old) : 0;
+    counters = entersWithCounters(
+      abilities,
+      counters,
+      castX,
+      escaped,
+      (a) => countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
+      kicks,
     );
     // CR 714.3a: a Saga enters with a lore counter.
     counters = entersAsSaga(
@@ -565,7 +655,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       if (mayReveal && request.entersPaid === true) {
         // CR 701.20a, 701.4a: the card of the hand is revealed (a permanent is only chosen).
         events.push(
-          ...revealEvents(state, enterController, revealRule, old.id, request.entersRevealed),
+          ...revealEvents(before, enterController, revealRule, old.id, request.entersRevealed),
         );
       } else {
         tapped = true; // "If you don't, it enters tapped."
@@ -609,7 +699,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     // effects of the permanents already on the battlefield, read against the permanent as it would be there.
     counters = addCounterMaps(
       counters,
-      groupEntryCounters(next, {
+      groupEntryCounters(nextBefore, {
         ...old,
         zone: 'battlefield',
         controller,
@@ -637,6 +727,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     controller,
     // Only a spell on the stack and a permanent have a face other than the front one.
     face: !becomesToken && (to === 'stack' || to === 'battlefield') ? faceIndex : 0,
+    // CR 701.42a, 712.4a (D-277): the second card of the melded permanent.
+    ...(partner?.card != null ? { meldedWith: partner.card } : {}),
     tapped,
     counters,
     damage: 0,
@@ -676,6 +768,37 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   };
   next = setObject(next, created);
   next = addToZone(next, to, toSeat, newId, request.position ?? 'top');
+  // CR 712.21 (D-277): a melded permanent that leaves the battlefield is one permanent that leaves and two cards that are put into the zone: the second
+  // card becomes an object of its own, with its own new id and timestamp, in the zone its owner's card goes to (the command zone is the first card's alone,
+  // CR 903.9c). The first card's object is made above, so what is shared (the replacement effects, the moment) is decided once for both (CR 712.21d).
+  let also: GameObject | null = null;
+  if (companion !== undefined && to !== 'battlefield' && to !== 'stack') {
+    const [alsoId, s3] = allocateObjectId(next);
+    const [alsoStamp, s4] = allocateTimestamp(s3);
+    next = s4;
+    const goesOn = to === 'command' && old.zone !== 'command' ? companionTo : to;
+    const goesOnSeat = to === 'command' && old.zone !== 'command' ? companionToSeat : toSeat;
+    also = {
+      id: alsoId,
+      card: companion,
+      zone: goesOn,
+      zoneOwner: goesOnSeat,
+      owner: old.owner,
+      controller: old.owner,
+      face: 0,
+      tapped: false,
+      counters: {},
+      damage: 0,
+      damagedByDeathtouch: false,
+      timestamp: alsoStamp,
+      token: null,
+      attachedTo: null,
+      protector: null,
+      stack: null,
+    };
+    next = setObject(next, also);
+    next = addToZone(next, goesOn, goesOnSeat, alsoId, request.position ?? 'top');
+  }
   const copyEvents: GameEvent[] = [];
   // CR 722.3a, 722.3c (D-214): "This creature enters prepared."
   if (
@@ -751,6 +874,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       turnLog: { ...next.turnLog, graveyarded: [...next.turnLog.graveyarded, newId] },
     };
   }
+  // CR 712.21 (D-277): the second card of a melded permanent is a card put into a graveyard from the battlefield too.
+  if (old.zone === 'battlefield' && also?.zone === 'graveyard') {
+    next = {
+      ...next,
+      turnLog: { ...next.turnLog, graveyarded: [...next.turnLog.graveyarded, also.id] },
+    };
+  }
   // CR 400.7 (D-206): a card that left a graveyard ("if a card left your graveyard this turn").
   if (old.zone === 'graveyard' && to !== 'graveyard' && old.card !== null) {
     next = {
@@ -761,7 +891,22 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 400.7: what the old object became, for "return it" of an ability whose source left (`thisCard`).
   const left = next.lki[old.id];
   if (left !== undefined)
-    next = { ...next, lki: { ...next.lki, [old.id]: { ...left, successor: newId } } };
+    next = {
+      ...next,
+      lki: {
+        ...next.lki,
+        [old.id]: {
+          ...left,
+          successor: newId,
+          // CR 712.21c (D-277): an effect that finds the new object of a melded permanent finds both cards.
+          ...(also === null ? {} : { companionSuccessor: also.id }),
+        },
+      },
+    };
+  // CR 701.42a (D-277): the exile object of the other card became the melded permanent, as the first card's did.
+  const partnerLeft = partner === undefined ? undefined : next.lki[partner.id];
+  if (partner !== undefined && partnerLeft !== undefined)
+    next = { ...next, lki: { ...next.lki, [partner.id]: { ...partnerLeft, successor: newId } } };
 
   events.push({
     kind: 'zoneChanged',
@@ -771,6 +916,35 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     fromZone: old.zone,
     toZone: to,
   });
+  // CR 701.42a, 712.21 (D-277): the second card moves too; its event is flagged so the permanent is not counted twice.
+  if (partner !== undefined && partner.card !== null) {
+    events.push({
+      kind: 'zoneChanged',
+      card: partner.card,
+      from: partner.id,
+      to: newId,
+      fromZone: partner.zone,
+      toZone: 'battlefield',
+      component: true,
+    });
+    events.push({
+      kind: 'melded',
+      permanent: newId,
+      cards: [old.card as NonNullable<typeof old.card>, partner.card],
+      from: [old.id, partner.id],
+    });
+  }
+  if (also !== null && companion !== undefined) {
+    events.push({
+      kind: 'zoneChanged',
+      card: companion,
+      from: old.id,
+      to: also.id,
+      fromZone: old.zone,
+      toZone: also.zone,
+      component: true,
+    });
+  }
   events.push(...copyEvents);
   for (const [counter, count] of Object.entries(counters)) {
     // CR 122.6a (D-149): the player who controls the object puts the counters it enters with.
@@ -795,13 +969,48 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     next = made.state;
     events.push(...made.events);
   }
-  if ((to === 'graveyard' || to === 'exile') && isCommanderCard(state, old)) {
+  if ((to === 'graveyard' || to === 'exile') && isCommanderCardId(state, old.card)) {
     // CR 903.9a: the owner may move it to the command zone the next time state-based actions run.
     next = { ...next, commanderWatch: [...next.commanderWatch, newId] };
+  }
+  // CR 712.21a, 712.21b (D-279): the owner arranges the two cards of a melded permanent that went to a graveyard or a library, and the player who exiled it chooses which was exiled last; asked
+  // as state-based actions are next checked, which is when the two objects are in their zone.
+  if (
+    also !== null &&
+    also.zone === to &&
+    (to === 'graveyard' || to === 'library' || to === 'exile')
+  ) {
+    next = {
+      ...next,
+      meldOrders: [
+        ...(next.meldOrders ?? []),
+        {
+          // CR 712.21a: the owner arranges a graveyard or a library; CR 712.21b: the player who exiles the permanent orders the cards in exile.
+          seat: to === 'exile' ? (request.by ?? controllerOf(state, old)) : old.owner,
+          first: newId,
+          second: also.id,
+          zone: to,
+        },
+      ],
+    };
+  }
+  // CR 903.9a, 712.21 (D-277): the second card of a melded permanent is a commander object of its own in a graveyard or exile, if it is a commander card.
+  if (
+    also !== null &&
+    (also.zone === 'graveyard' || also.zone === 'exile') &&
+    isCommanderCardId(state, also.card)
+  ) {
+    next = { ...next, commanderWatch: [...next.commanderWatch, also.id] };
   }
   if (to === 'command' && old.zone !== 'command') {
     if (old.card !== null)
       events.push({ kind: 'commanderMovedToCommandZone', card: old.card, from: old.zone });
   }
-  return { kind: 'done', state: next, events, newObject: newId };
+  return {
+    kind: 'done',
+    state: next,
+    events,
+    newObject: newId,
+    ...(also === null ? {} : { alsoNewObject: also.id }),
+  };
 }

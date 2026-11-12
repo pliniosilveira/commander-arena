@@ -127,6 +127,7 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
           (r.count as { fromType?: string }).fromType,
           `${path}.count.fromType`,
           out,
+          (r.count as { snow?: unknown }).snow,
         );
       } else if (!isCount(r.count) || r.count < 1) {
         issue(out, `${path}.count`, 'counter count must be a positive integer or a countOf');

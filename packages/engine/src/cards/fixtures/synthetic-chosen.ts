@@ -133,6 +133,27 @@ export const SYNTHETIC_CHOSEN_LIST: readonly CardDefinition[] = [
       { kind: 'static', static: { kind: 'costReduction', spells: OF_TYPE, amount: 1 } },
     ],
   }),
+  // "Creature spells of the chosen type cost {1} less to cast." (D-255): no "you cast", so the spells of every player (the shape of Urza's Incubator)
+  singleFace({
+    name: 'SYNTHETIC Shared Discount',
+    manaCost: ['2'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText:
+      'As this artifact enters, choose a creature type. Creature spells of the chosen type cost {1} less to cast.',
+    abilities: [
+      CHOOSE_TYPE,
+      {
+        kind: 'static',
+        static: {
+          kind: 'costReduction',
+          spells: { types: ['creature'], chosenType: true },
+          amount: 1,
+        },
+      },
+    ],
+  }),
   // "Whenever another creature of the chosen type enters under your control, you gain 1 life."
   singleFace({
     name: 'SYNTHETIC Tribal Scout',

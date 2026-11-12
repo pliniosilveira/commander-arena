@@ -177,6 +177,69 @@ describe('the questions of Suspend and Madness', () => {
   });
 });
 
+describe('the questions of Miracle (D-274)', () => {
+  /** The draw step of seat 0's turn 3 with `top` on top of its library. */
+  function drawStep(top: string, place: (b: Builder) => Builder, opposing = false): ScenarioGame {
+    const mine = place(scenario().seat(0).life(20))
+      .library(top)
+      .library(...FILLER);
+    const theirs = mine.seat(1).life(20);
+    const g = (opposing ? theirs.battlefield('Grizzly Bears') : theirs)
+      .library(...FILLER)
+      .at('upkeep', { active: 0, turn: 3 })
+      .build();
+    g.passAll();
+    return g;
+  }
+
+  test('it reveals a creature it can pay the miracle cost of', async () => {
+    const g = drawStep('SYNTHETIC Miracle Beast', (b) => b.battlefield('Forest'));
+    g.expect.pending('confirmOptional', 0);
+    const action = await answer(g);
+    expect(action).toEqual({ kind: 'acceptOptional' });
+    expectLegal(g, action);
+  });
+
+  test('it does not reveal a card it could not pay for: revealing gives the opponent the card for nothing', async () => {
+    const g = drawStep('SYNTHETIC Miracle Beast', (b) => b.battlefield('Plains'));
+    g.expect.pending('confirmOptional', 0);
+    const action = await answer(g);
+    expect(action).toEqual({ kind: 'declineOptional' });
+    expectLegal(g, action);
+  });
+
+  test('it does not reveal a removal spell with no creature to aim at, and reveals it with one', async () => {
+    const none = drawStep('SYNTHETIC Miracle Bolt', (b) => b.battlefield('Mountain'));
+    expect(await answer(none)).toEqual({ kind: 'declineOptional' });
+    const some = drawStep('SYNTHETIC Miracle Bolt', (b) => b.battlefield('Mountain'), true);
+    expect(await answer(some)).toEqual({ kind: 'acceptOptional' });
+  });
+
+  test('an X spell needs mana for the {W}{W} and at least 1 for the X; with it, it reveals and casts with all it can', async () => {
+    const short = drawStep('SYNTHETIC Miracle Host', (b) => b.battlefield('Plains', { count: 2 }));
+    expect(await answer(short)).toEqual({ kind: 'declineOptional' });
+    const g = drawStep('SYNTHETIC Miracle Host', (b) => b.battlefield('Plains', { count: 5 }));
+    g.act(0).accept();
+    g.pass();
+    g.pass();
+    g.expect.pending('confirmOptional', 0);
+    expect(await answer(g)).toEqual({ kind: 'acceptOptional' });
+    g.act(0).accept();
+    g.expect.pending('chooseX', 0);
+    expect(await answer(g)).toEqual({ kind: 'chooseX', value: 3 });
+  });
+
+  test('RandomLegalAgent answers both questions legally', async () => {
+    const g = drawStep('SYNTHETIC Miracle Beast', (b) => b.battlefield('Forest', { count: 2 }));
+    const agent = new RandomLegalAgent({ seed: 3 });
+    const d = g.state.pending;
+    if (d?.kind !== 'confirmOptional') throw new Error('no question');
+    const view = g.view(0);
+    if (view.pending === null) throw new Error('no pending');
+    expectLegal(g, await agent.decide(view, view.pending, CTX));
+  });
+});
+
 describe('the cleanup discard', () => {
   test('a card with madness is the first card it discards', async () => {
     const g = main((b) =>

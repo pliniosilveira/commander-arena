@@ -15,6 +15,8 @@ import {
 import type { ManaColor } from '../mana/types';
 import { getObject, getSeat } from '../state/ops';
 import type { GameState } from '../state/types';
+import { devotionCostOf, devotionSymbols } from './amounts';
+import { controllerOf } from './control';
 import { derive } from './derive';
 import {
   canPayPhysicalCosts,
@@ -24,6 +26,7 @@ import {
   manaCostSymbols,
   manaSacrificeCandidates,
   outcomeColor,
+  payManaAbilityCosts,
   tierOfAbility,
 } from './mana-abilities';
 import { isCombinationProduction, productionOutcomes, spendRestrictionOf } from './mana-outcomes';
@@ -117,11 +120,29 @@ export function planFor(
   const sources = [...paymentSources(state, seat), ...(options.extraSources ?? [])]
     .filter((s) => options.avoidSacrificing !== true || s.tier !== 'sacrifice')
     .filter((s) => options.avoidObjects === undefined || !options.avoidObjects.includes(s.object));
+  return planWithout(state, seat, cost, spell, reserve, sources, 0);
+}
+
+const abilityKey = (s: { object: ObjectId; abilityIndex: number }): string =>
+  `${s.object}#${s.abilityIndex}`;
+
+/** The most rounds of leaving a source out because of the devotion check (`devotionConflicts`); each round leaves out at least one more. */
+const MAX_DEVOTION_ROUNDS = 6;
+
+function planWithout(
+  state: GameState,
+  seat: SeatId,
+  cost: readonly string[],
+  spell: SpendTarget,
+  reserve: readonly ManaColor[] | undefined,
+  sources: readonly PaymentSource[],
+  round: number,
+): PaymentPlan | null {
   // Automatic payment never kills its own player: the life paid for Phyrexian mana and the life the
   // tapped sources cost or take (a pain land, "Pay 1 life") stay below the life total, so the
   // planner is given life - 1 and leaves such a source out when it would not fit. (Paying by hand is
   // still allowed: a player may do what they like with their own life, CR 119.4.)
-  return planPayment({
+  const plan = planPayment({
     cost: parseManaCost(cost),
     x: 0,
     pool: getSeat(state, seat).manaPool,
@@ -130,6 +151,74 @@ export function planFor(
     spell,
     ...(reserve ? { reserve } : {}),
   });
+  if (plan === null) return null;
+  const conflict = devotionConflicts(state, seat, plan);
+  if (conflict === null) return plan;
+  // D-265: the plan sacrifices a permanent whose symbols its own devotion mana counts. Plan again without the sacrificing abilities, then without the
+  // devotion abilities; a plan is offered only when it has no such conflict, so the mana it counts on is mana it really makes.
+  if (round >= MAX_DEVOTION_ROUNDS) return null;
+  for (const left of [conflict.sacrificing, conflict.devotion]) {
+    const rest = sources.filter((s) => !left.has(abilityKey(s)));
+    const other = planWithout(state, seat, cost, spell, reserve, rest, round + 1);
+    if (other !== null) return other;
+  }
+  return null;
+}
+
+/**
+ * CR 605.3a, 605.3b, 700.5 (D-265): the amount a devotion ability (`anyColorDevotion`) makes is read as the ability resolves, after all its costs are paid, and
+ * the planner counts it before it knows which costs the plan pays by giving permanents up. A plan whose abilities sacrifice a permanent of the seat that
+ * counts toward the devotion to the color a devotion tap of the same plan names would count that permanent although it would be gone: the plan over-counts
+ * (the {2} of the devotion ability paid by sacrificing a creature that carries the devotion is the case; a sacrifice for the cost of the spell, after the
+ * tap, would not over-count, but the order of the taps is not the order the rules fix, so it is refused too). Null when the plan has no such conflict,
+ * else the sacrificing abilities and the devotion abilities of the plan, as `object#abilityIndex` keys.
+ */
+function devotionConflicts(
+  state: GameState,
+  seat: SeatId,
+  plan: PaymentPlan,
+): { sacrificing: Set<string>; devotion: Set<string> } | null {
+  const devotionColors = new Map<string, ManaColor | null>();
+  const sacrificing = new Set<string>();
+  const found = plan.taps.map((tap) => {
+    const obj = state.objects[tap.object];
+    const ability =
+      obj === undefined
+        ? undefined
+        : manaAbilitiesOf(state, obj).find((m) => m.abilityIndex === tap.abilityIndex)?.ability;
+    return { tap, ability };
+  });
+  for (const { tap, ability } of found) {
+    if (ability === undefined) continue;
+    if (ability.production.kind === 'anyColorDevotion') {
+      const obj = state.objects[tap.object];
+      // `tap.outcome` indexes the outcomes that make mana, as `paymentSourcesFresh` lists them.
+      const outcome =
+        obj === undefined
+          ? undefined
+          : productionOutcomes(state, obj, ability).filter((o) => o.length > 0)[tap.outcome];
+      devotionColors.set(abilityKey(tap), outcome === undefined ? null : outcomeColor(outcome));
+    } else if (ability.cost.some((c) => c.kind === 'sacrifice')) {
+      sacrificing.add(abilityKey(tap));
+    }
+  }
+  if (devotionColors.size === 0 || sacrificing.size === 0) return null;
+  // The permanents the plan really gives up: pay the costs of its sacrificing abilities in the order it taps them (what `applyPaymentPlan` does).
+  let after = state;
+  for (const { tap, ability } of found) {
+    if (ability !== undefined && sacrificing.has(abilityKey(tap))) {
+      after = payManaAbilityCosts(after, seat, tap.object, ability).state;
+    }
+  }
+  const gone = state.battlefield.filter((id) => !after.battlefield.includes(id));
+  const colors = new Set(devotionColors.values());
+  const counts = gone.some((id) => {
+    const obj = state.objects[id];
+    if (obj === undefined || controllerOf(state, obj) !== seat) return false;
+    const symbols = devotionCostOf(state, obj);
+    return [...colors].some((c) => c === null || (c !== 'C' && devotionSymbols(symbols, [c]) > 0));
+  });
+  return counts ? { sacrificing, devotion: new Set(devotionColors.keys()) } : null;
 }
 
 /**

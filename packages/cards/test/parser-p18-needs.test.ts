@@ -10,7 +10,7 @@ vi.mock('@commander-arena/engine', async (importOriginal) =>
   ),
 );
 
-import { dropped, type FaceType, withoutFeature } from './parser-p5-helpers';
+import { type FaceType, readAll, withoutFeature } from './parser-p5-helpers';
 
 describe('the lowerings of stage P18 name the engine feature they need (D-111)', () => {
   test.each([
@@ -106,11 +106,11 @@ describe('the lowerings of stage P18 name the engine feature they need (D-111)',
     expect(missing.needs).toContain(ref);
   });
 
-  test('a trigger that names no player the engine can point at needs the selector it lacks', () => {
-    const missing = dropped(
+  test('a step of another player names the player whose turn it is: "that player" is read since the Bruna deck (it needed selector:triggerActor)', () => {
+    const [ability] = readAll(
       "At the beginning of each opponent's upkeep, draw a card unless that player pays {1}.",
       'creature',
-    );
-    expect(missing).toMatchObject({ reason: 'notRunnable', needs: ['selector:triggerActor'] });
+    ).abilities;
+    expect(JSON.stringify(ability)).toContain('"player":{"kind":"triggerPlayer"}');
   });
 });

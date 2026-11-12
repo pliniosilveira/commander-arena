@@ -200,6 +200,20 @@ function targetText(spec: TargetSpec | undefined): string {
     case 'playerOrObject':
       // D-200: "target player or planeswalker", "target opponent or planeswalker" (or battle).
       return `target ${spec.what.player === 'opponent' ? 'opponent' : 'player'} or ${nounOf(spec.what.filter)}`;
+    case 'objectOrGraveyardCard': {
+      // D-270 (CR 115.1): "up to three other target creatures from the battlefield and/or creature cards from graveyards".
+      const cards = nounOf(spec.what.card);
+      if ((spec.max ?? 1) <= 1) {
+        const one = spec.what.filter.other === true ? 'another target' : 'target';
+        return `${one} ${nounOf(spec.what.filter)} from the battlefield or a ${cards} card from a graveyard`;
+      }
+      const other = spec.what.filter.other === true ? 'other ' : '';
+      const upTo =
+        (spec.min ?? 1) === 0
+          ? `up to ${numberWord(spec.max ?? 1)} `
+          : `${numberWord(spec.max ?? 1)} `;
+      return `${upTo}${other}target ${pluralNounOf(spec.what.filter)} from the battlefield and/or ${cards} cards from graveyards`;
+    }
   }
 }
 
@@ -328,6 +342,9 @@ function recipientText(
       return 'the chosen player';
     case 'discardedThisWay':
       return 'each player who discarded a card this way';
+    case 'attackedPlayers':
+      // D-269 (CR 508.6).
+      return 'each player this creature attacked this turn';
     case 'all':
       return to.of.map((member) => recipientText(member, ability, self)).join(' and ');
     case 'target':
@@ -478,6 +495,7 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'giftRecipient':
       return { who: 'the chosen player', third: true };
     case 'discardedThisWay':
+    case 'attackedPlayers':
       return { who: 'they', third: false };
     case 'all':
       return { who: 'they', third: false };
@@ -847,6 +865,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'vote':
       // D-194 (CR 701.38a): "Starting with you, each player votes for profit or security".
       return `Starting with you, each player votes for ${effect.options.length <= 2 ? effect.options.join(' or ') : `${effect.options.slice(0, -1).join(', ')} or ${effect.options[effect.options.length - 1]}`}`;
+    case 'pair':
+      // D-286 (CR 702.95a): the effect of the two abilities soulbond stands for; the creature is chosen as it resolves.
+      return effect.partner === 'choose'
+        ? 'You may pair this creature with another unpaired creature you control'
+        : 'You may pair this creature with the creature that entered';
     case 'ringTempts':
       // D-196 (CR 701.54a): the Ring tempts the controller.
       return 'The Ring tempts you';
@@ -856,6 +879,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'createEmblem':
       // D-201 (CR 114.1): "You get an emblem with "...", the text the emblem shows.
       return `You get an emblem with "${effect.text}"`;
+    case 'meld':
+      // D-278 (CR 701.42a): "Exile this creature and the creature named Bruna, the Fading Light, then meld them into Brisela, Voice of Nightmares".
+      return `Exile this permanent and the creature named ${effect.partner}, then meld them into ${effect.result}`;
+    case 'loseGame':
+      // D-269 (CR 104.3e): "Each player this creature attacked this turn loses the game".
+      return `${playerVerb(effect.player, ability, 'lose')} the game`;
     case 'setLifeTotal':
       // D-201 (CR 119.5): "Target player's life total becomes 1".
       return `${capital(playerOwner(effect.player, ability))} life total becomes ${effect.amount}`;
@@ -930,6 +959,14 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // D-151 (CR 701.4a): "Behold a Dragon".
       return beholdText(effect) ?? UNSAID;
     case 'payAnyAmount': {
+      // D-257 (CR 608.2c): "You may pay {X}, up to that much. If you do, draw X cards": no reflexive ability, the follow-up runs at once.
+      if (effect.ifPaid !== undefined) {
+        const follow = effectText(effect.ifPaid, ability, self, defs);
+        const pay =
+          effect.atMost === undefined ? 'You may pay {X}' : 'You may pay {X}, up to that much';
+        return follow === '' ? pay : `${pay}. If you do, ${lower(follow)}`;
+      }
+      if (effect.reflexive === undefined) return UNSAID;
       // D-151 (CR 118.1, 603.12): "You may pay any amount of {R}. When you do, it deals that much damage to any target".
       const inner = effectText(
         effect.reflexive.effect,
@@ -961,6 +998,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return PROLIFERATE_TEXT;
     case 'shuffle':
       return 'Shuffle your library';
+    case 'rollDie':
+      // CR 706.1 (D-271): "Roll a four-sided die".
+      return `Roll a ${effect.sides}-sided die`;
     case 'search':
       return 'Search your library';
     case 'createToken':

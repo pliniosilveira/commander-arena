@@ -4,6 +4,16 @@ export { importCard } from './import-card';
 export { resolveLayout } from './layout';
 export { convertManaCost } from './mana-cost';
 export {
+  isMeldLookupError,
+  MELD_PART,
+  MELD_RESULT,
+  type MeldLookup,
+  type MeldRelation,
+  meldRelation,
+  meldReminderPartner,
+  meldResultNames,
+} from './meld';
+export {
   createFixtureRegistry,
   DEFAULT_OVERRIDES,
   fixtureDifferences,

@@ -1677,7 +1677,7 @@ describe('subjects of triggers and the player an event is about (CR 603.2, 508.1
     expect(drop(text)).toMatchObject({ reason: 'unrecognised', stoppedAt });
   });
 
-  test('the player of a death, of a step and of a combat damage that hit a creature is not an event player', () => {
+  test('the player of a death and of a combat damage that hit a creature is not an event player; the player of a step is the active player', () => {
     for (const text of [
       'Whenever a nontoken creature you control dies, that player loses 1 life.',
       'Whenever ~ deals combat damage to a creature, that player discards a card.',
@@ -1685,8 +1685,17 @@ describe('subjects of triggers and the player an event is about (CR 603.2, 508.1
       expect(drop(text)).toMatchObject({ reason: 'unboundReference' });
     }
     expect(
-      drop("At the beginning of each opponent's upkeep, that player loses 1 life.", 'enchantment'),
-    ).toMatchObject({ reason: 'notRunnable', needs: ['selector:triggerActor'] });
+      abilities(
+        "At the beginning of each opponent's upkeep, that player loses 1 life.",
+        'enchantment',
+      ),
+    ).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'step', step: 'upkeep', whose: 'opponent' },
+        effect: { kind: 'loseLife', player: PLAYER, amount: 1 },
+      },
+    ]);
   });
 
   test('"it" after a cast is the spell, which a counter cannot be put on', () => {

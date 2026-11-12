@@ -64,6 +64,8 @@ export interface CompileOptions {
   readonly name?: string;
   /** The text of the face puts its own name inside a quotation (stage P36, D-178): `~` there may be the card, not the permanent that has the quoted ability. */
   readonly namedInQuotes?: boolean;
+  /** The shortest name the face's text calls itself by before normalization turned it into `~` (D-266): the name a token "named ~'s Pridemate" is given back. */
+  readonly selfName?: string;
 }
 
 function from(text: string, at: number): string {
@@ -116,6 +118,8 @@ export function compileLine(text: string, options: CompileOptions): LineResult {
       options.name ?? '',
     );
     ctx.namedInQuotes = options.namedInQuotes === true;
+    ctx.text = text;
+    ctx.selfName = options.selfName ?? '';
     const lowered = lower(bound.ability, ctx);
     if (!lowered.ok) {
       scope.targetCount = before;

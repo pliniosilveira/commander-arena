@@ -277,6 +277,14 @@ export function describeEvent(
       }
       // A foretell moves the card face down: the `foretold` line says it, and this one would name it (D-128).
       if (isForetellMove(after, event)) return null;
+      // CR 701.42a, 712.14c (D-277): the two cards that were melded enter as one permanent; the `melded` line says it.
+      if (
+        event.toZone === 'battlefield' &&
+        after.objects[event.to]?.meldedWith !== undefined &&
+        event.fromZone === 'exile'
+      ) {
+        return null;
+      }
       // CR 406.3 (D-187): an effect that exiles cards face down from the top of a library ("Exile the top two cards of target opponent's library face
       // down"): nobody but the player the effect let look may examine them, and the log is read by both players, so it names no card and links none.
       if (event.toZone === 'exile' && after.objects[event.to]?.exiledFaceDown === true) {
@@ -358,6 +366,15 @@ export function describeEvent(
         event.seat,
         [],
         'CR 704.5b',
+      );
+    case 'dieRolled':
+      // CR 706.1, 706.2 (D-271): the natural result of a die, which an ability may read.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'roll', 'rolls')} a ${event.sides}-sided die: ${event.result}.`,
+        event.seat,
+        [],
+        'CR 706.2',
       );
     case 'libraryShuffled':
       return line(
@@ -835,7 +852,7 @@ export function describeEvent(
       );
     }
     case 'optionalAnswered': {
-      // Suspend's "cast it now?" and Madness's "cast it for its madness cost?" (D-128).
+      // Suspend's "cast it now?", Madness's "cast it for its madness cost?" and Miracle's "cast it for its miracle cost?" (D-128, D-274).
       const later = castNowAnswerLine(before, event, viewer);
       if (later !== null) return line('major', later.text, later.seat, later.objects, later.rule);
       // Extort's "you may pay {W/B}" and Cascade's "cast it without paying its mana cost" (D-120).
@@ -1198,6 +1215,14 @@ export function describeEvent(
       const told = foretoldLine(after, event, viewer);
       return line('major', told.text, told.seat, told.objects, told.rule);
     }
+    case 'miracleRevealed':
+      return line(
+        'major',
+        `${name(event.object)} was revealed with miracle.`,
+        event.seat,
+        [event.object],
+        'CR 702.94a',
+      );
     case 'madnessExiled':
       return line(
         'major',
@@ -1314,6 +1339,32 @@ export function describeEvent(
         [event.object],
         'CR 701.54a',
       );
+    case 'creaturesPaired':
+      // CR 702.95a, 702.95b (D-286): two creatures became paired.
+      return line(
+        'major',
+        `${who(event.by)} ${verb(event.by, 'pair', 'pairs')} ${label(event.a)} with ${label(event.b)}.`,
+        event.by,
+        [event.a, event.b],
+        'CR 702.95a',
+      );
+    case 'creaturesUnpaired': {
+      // CR 702.95e (D-286): a pair ended; `a` is still on the battlefield, and `b` is who it was paired with.
+      const reason =
+        event.why === 'left'
+          ? 'its partner left the battlefield'
+          : event.why === 'control'
+            ? 'control of one of the two changed'
+            : 'one of the two stopped being a creature';
+      const partner = event.why === 'left' ? [] : [event.b];
+      return line(
+        'major',
+        `${label(event.a)} is no longer paired: ${reason}.`,
+        null,
+        [event.a, ...partner],
+        'CR 702.95e',
+      );
+    }
     case 'emblemCreated':
       // CR 114.1, 114.2 (D-201): the player got an emblem, an object in their command zone.
       return line(
@@ -1323,6 +1374,15 @@ export function describeEvent(
         [event.object],
         'CR 114.1',
       );
+    case 'citysBlessingGained':
+      // CR 702.131b (D-264): Ascend gave the player the designation, for the rest of the game.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'get', 'gets')} the city's blessing.`,
+        event.seat,
+        [],
+        'CR 702.131b',
+      );
     case 'enteredAsCopy':
       // CR 707.9 (D-151): "As this enters, you may have it become a copy of ...".
       return line(
@@ -1331,6 +1391,24 @@ export function describeEvent(
         null,
         [event.object, event.copied],
         'CR 707.9',
+      );
+    case 'melded':
+      // CR 701.42a, 712.14c (D-277): two cards were exiled and became one melded permanent.
+      return line(
+        'major',
+        `${cardName(after, event.cards[0]) ?? 'A card'} and ${cardName(after, event.cards[1]) ?? 'a card'} meld into ${label(event.permanent)}.`,
+        null,
+        [event.permanent],
+        'CR 701.42a',
+      );
+    case 'meldFailed':
+      // CR 701.42b, 701.42c (D-277): what could not be melded stays where it is.
+      return line(
+        'major',
+        `They could not be melded and stay where they are: ${event.reason}.`,
+        null,
+        event.objects,
+        'CR 701.42c',
       );
     default: {
       const unreachable: never = event;

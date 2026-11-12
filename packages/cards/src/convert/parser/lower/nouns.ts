@@ -59,6 +59,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   thisCard: 'selector:thisCard',
   // Stage P52 (D-210): "each player who discarded a card this way".
   discardedThisWay: 'selector:discardedThisWay',
+  // D-269: "each player ~ attacked this turn" (CR 508.6).
+  attackedPlayers: 'selector:attackedPlayers',
 };
 
 /** Features a noun can need beyond its selector kind. */
@@ -100,6 +102,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:hasCounter',
   'selector:commander',
   'selector:enteredThisTurn',
+  'selector:sharesCreatureTypeWith',
   'selector:eachOtherOpponent',
   'selector:discardedThisWay',
 ];
@@ -219,6 +222,11 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
     if (inner) return bad([]);
     parts.push('selector:enteredThisTurn');
   }
+  // D-262: "that share a land type" is a condition on the cards found together, which a filter of one card cannot say: the search lowering takes it off first.
+  if (filter.sharedLandType === true) return bad([]);
+  // D-261: "that shares a creature type with it" (CR 205.3m, 603.10a): the creature a "dies" trigger is about; the engine refuses it anywhere but the filter of a `revealUntil`
+  // of such a trigger (`validateCard`).
+  if (filter.sharesCreatureTypeWithIt === true) parts.push('selector:sharesCreatureTypeWith');
   // D-181 (stage P38): "with a single target" (CR 115.9a), a spell or ability on the stack (a target slot, never a member of a choice).
   if (filter.singleTarget === true) {
     if (inner || filter.zone !== 'stack') return bad([]);
@@ -301,6 +309,9 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),
+    ...(filter.sharesCreatureTypeWithIt === true
+      ? { sharesCreatureTypeWith: 'triggerSubject' as const }
+      : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
     ...compared,
     ...chosen,
@@ -388,6 +399,33 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       };
     } else if (noun.filter.player !== undefined) {
       spec = { id, what: { kind: 'player', filter: noun.filter.player }, ...boundsOf(noun) };
+    } else if (noun.orCard !== undefined) {
+      // "up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270, CR 115.1): the engine's slot of two zones. The text of a
+      // spell has no such slot (the engine reads it in a triggered ability only), and nothing else about the noun may be set that the slot does not say.
+      if (ctx.owner === 'spell') return failure(noun, []);
+      if (
+        noun.upToThatMany === true ||
+        anyNumberTarget ||
+        noun.perOpponent === true ||
+        noun.otherTarget === true ||
+        noun.atLeastOne === true ||
+        noun.greatest !== undefined ||
+        noun.filter.manaValueAtMostX === true ||
+        noun.upTo !== true
+      ) {
+        return failure(noun, []);
+      }
+      const blocked = missingFeatures(['selector:objectOrGraveyardCard']);
+      if (blocked.length > 0) return failure(noun, blocked);
+      const permanents = lowerFilter(noun);
+      if (!permanents.ok) return permanents;
+      const cards = lowerFilterAt(noun.orCard, { ...noun, other: false }, false);
+      if (!cards.ok) return cards;
+      spec = {
+        id,
+        what: { kind: 'objectOrGraveyardCard', filter: permanents.value, card: cards.value },
+        ...boundsOf(noun),
+      };
     } else {
       // "return target nonland permanent card with mana value X or less from your graveyard ..., where X is ~'s power" (stage P68, D-230, CR 202.3, 601.2c):
       // the X the sentence defines becomes the limit of the filter, read as the targets are chosen.
@@ -552,6 +590,10 @@ export function objectRefOf(
     if ('self' in to) return objectRefOf({ ...noun, det: 'self' }, ctx);
     const blocked = gate(noun, ['selector:target']);
     if (blocked !== null) return blocked;
+    // D-270: "them" of a slot of targets in two zones names permanents and cards of graveyards, which the engine moves only in the exile that names the slot.
+    if (ctx.targets.some((t) => t.id === to.target && t.what.kind === 'objectOrGraveyardCard')) {
+      return failure(noun, []);
+    }
     // After an instruction that put this target onto the battlefield "it" is the new object (CR 400.7): the engine's `moved`.
     if (options.moved === true && ctx.movedOnto === to.target)
       return { ok: true, value: { kind: 'moved' }, rule: noun.rule };
@@ -710,6 +752,12 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'discardedThisWay' });
     }
+    case 'attackedPlayers': {
+      // D-269 (CR 508.6): the permanent of the ability, which `~` is: only an ability of a permanent has attacked.
+      if (ctx.owner !== 'ability') return failure(noun, []);
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'attackedPlayers', of: { kind: 'this' } });
+    }
     case 'players': {
       // D-131: "you and target opponent each draw two cards": several players at once, each acting once, in the
       // order of CR 101.4. The members are player nouns of their own.
@@ -720,6 +768,10 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
         const selector = playerSelectorOf(member, ctx);
         if (!selector.ok) return selector;
         of.push(selector.value);
+      }
+      // D-269: a list that names the same player twice is not "you and that player" ("that player" of your own end step is you): refused, not read as one.
+      if (new Set(of.map((selector) => JSON.stringify(selector))).size < of.length) {
+        return failure(noun, []);
       }
       return of.length < 2 ? failure(noun, []) : ok({ kind: 'all', of });
     }

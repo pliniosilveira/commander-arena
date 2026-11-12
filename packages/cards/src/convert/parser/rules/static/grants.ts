@@ -22,6 +22,7 @@ import {
 } from '../../combinators';
 import type { IrClause, IrCost, IrNoun, IrStatic, IrStaticEffect } from '../../ir/types';
 import { KEYWORD_WORDS } from '../keyword/list';
+import { PROTECTION_COLORS, PROTECTION_OUTSIDE_COMMANDER_IDENTITY } from '../keyword/protection';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family } from '../registry';
 import { QUOTED_ABILITY } from './quoted';
@@ -89,12 +90,28 @@ const BASE_PT: Parser<Effects> = map(
   (m): Effects => [{ kind: 'basePt', power: Number(m[1]), toughness: Number(m[2]) }],
 );
 
-/** What a subject has: keywords it can be granted, one ability in quotes, or (stage P31) a base power and toughness. */
+/**
+ * "protection from red and from blue", "protection from each color that's not in your commander's color identity" (stage P70, D-259, CR 702.16, 903.4):
+ * one protection a static ability gives, with the colors it names or the colors outside the commander's color identity.
+ */
+const PROTECTION: Parser<Effects> = choice(
+  map(
+    PROTECTION_OUTSIDE_COMMANDER_IDENTITY,
+    (): Effects => [{ kind: 'grantProtection', commanderIdentity: true }],
+  ),
+  map(
+    (ctx, pos) => PROTECTION_COLORS(ctx, pos),
+    (colors): Effects => [{ kind: 'grantProtection', colors }],
+  ),
+);
+
+/** What a subject has: keywords it can be granted, one ability in quotes, a protection (stage P70) or (stage P31) a base power and toughness. */
 const HAS_WHAT: Parser<Effects> = choice(
   QUOTED_MANA,
   QUOTED_ABILITY,
   QUOTED,
   BASE_PT,
+  PROTECTION,
   KEYWORD_LIST,
 );
 
@@ -253,7 +270,8 @@ export function statement(
  * "Enchanted creature gets +1/+1 and has vigilance.", "Equipped creature has "{T}: Add {G}."" (a
  * granted mana ability, stage P14; any other quoted ability is read as text and dropped whole by the
  * lowering) and "Equipped creature can't be blocked.". Not read: "can't attack or
- * block", "loses flying", "gets +X/+X", "for each", "as long as", protection, ward and landwalk.
+ * block", "loses flying", "gets +X/+X", "for each", "as long as", ward and landwalk. Protection from colors, or from each color outside the commander's color identity
+ * (stage P70, D-259), is read after "has".
  */
 export const STATIC_ATTACHED = defineRule<IrStatic>({
   id: 'static.attached',
@@ -278,6 +296,10 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     "Equipped creature can't be blocked.",
     // Stage P33 (D-150): a creature type the permanent is in addition to its own.
     'Enchanted creature is an Angel in addition to its other types.',
+    // Stage P70 (D-259, CR 702.16, 903.4): protection a static ability gives.
+    'Enchanted creature has protection from red.',
+    'Equipped creature gets +1/+1 and has protection from black and from green.',
+    "Equipped creature gets +3/+3 and has protection from each color that's not in your commander's color identity.",
     'Enchanted creature gets +4/+4, has flying and first strike, and is an Angel in addition to its other types.',
     'Enchanted creature gets +2/+2, has flying, and is a Zombie in addition to its other types.',
   ],
@@ -288,8 +310,15 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature gets +X/+X.',
     'Enchanted creature gets +1/+1 for each creature you control.',
     'Enchanted creature has flash.',
-    'Enchanted creature has protection from red.',
     'Enchanted creature has ward {2}.',
+    // Stage P70 (D-259): protection from a quality that is not a color, a list that is not Oracle's, and the identity wording changed.
+    'Enchanted creature has protection from everything.',
+    'Enchanted creature has protection from each color.',
+    'Enchanted creature has protection from red and blue.',
+    'Enchanted creature has protection from red and from red.',
+    'Enchanted creature has protection from red',
+    "Equipped creature has protection from each color that's not in their commander's color identity.",
+    "Equipped creature has protection from each color that's in your commander's color identity.",
     'Enchanted creature has flying and flying.',
     'Enchanted creature is an Angel.',
     'Enchanted creature is Angel in addition to its other types.',

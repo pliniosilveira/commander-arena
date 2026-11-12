@@ -71,6 +71,12 @@ export interface Characteristics extends TypeLine {
   readonly oracleText: string;
 }
 
+/** The land types (CR 205.3i); Forest, Island, Mountain, Plains and Swamp of them are the basic land types (`BASIC_LAND_TYPES`). */
+export const LAND_TYPES: readonly Subtype[] = [
+  ...['Cave', 'Desert', 'Forest', 'Gate', 'Island', 'Lair', 'Locus', 'Mine', 'Mountain', 'Plains'],
+  ...['Planet', 'Power-Plant', 'Sphere', 'Swamp', 'Tower', 'Town', 'Urza’s'],
+];
+
 /**
  * Subtypes that are not creature types: artifact types (CR 205.3g), enchantment types (205.3h),
  * land types (205.3i) and spell types (205.3k). An effect that sets creature types (CR 205.1a,
@@ -83,8 +89,7 @@ const NON_CREATURE_SUBTYPES: ReadonlySet<Subtype> = new Set([
   ...['Map', 'Mutagen', 'Powerstone', 'Spacecraft', 'Stone', 'Treasure', 'Vehicle', 'Vibranium'],
   ...['Aura', 'Background', 'Cartouche', 'Case', 'Class', 'Curse', 'Plan', 'Role', 'Room', 'Rune'],
   ...['Saga', 'Shard', 'Shrine'],
-  ...['Cave', 'Desert', 'Forest', 'Gate', 'Island', 'Lair', 'Locus', 'Mine', 'Mountain', 'Plains'],
-  ...['Planet', 'Power-Plant', 'Sphere', 'Swamp', 'Tower', 'Town', 'Urza’s'],
+  ...LAND_TYPES,
   ...['Adventure', 'Arcane', 'Lesson', 'Omen', 'Trap'],
   ...PLANESWALKER_TYPES,
 ]);

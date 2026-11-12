@@ -14,6 +14,8 @@ import {
   type OrderTriggersDecision,
 } from '@commander-arena/engine';
 import { LAND_TARGET } from './casual-choices';
+import { answerPairReturn } from './casual-pair';
+import { answerDelayedMay } from './casual-soulbond';
 import {
   effectiveCost,
   findObject,
@@ -303,6 +305,8 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
       : { kind: 'acceptOptional' };
   }
   if (d.purpose === 'costChoice') return chooseAdditionalCost(d, view);
+  // D-272: "You may return those cards to the battlefield under their owners' control" (Dawnbreak Reclaimer).
+  if (d.purpose === 'pairReturn') return answerPairReturn(view, d);
   if (d.cost !== undefined) {
     // Only life payments exist here; any other cost is not weighed, so the agent declines it.
     const onlyLife = d.cost.every((c) => c.kind === 'payLife');
@@ -310,6 +314,9 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
       ? { kind: 'acceptOptional' }
       : { kind: 'declineOptional' };
   }
+  // D-284: read the ability on the stack, not the text of the creature it belongs to (a granted ability is not in that text).
+  const delayed = answerDelayedMay(view, d);
+  if (delayed !== null) return delayed;
   return COSTLY_OPTION.test(d.sourceOracleText)
     ? { kind: 'declineOptional' }
     : { kind: 'acceptOptional' };

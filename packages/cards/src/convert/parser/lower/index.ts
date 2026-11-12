@@ -16,15 +16,18 @@ import { ACTIVATED_NEEDS, lowerActivated } from './activated';
 import { ADAMANTOISE_NEEDS, lowerRedirectDamage } from './adamantoise';
 import { AMOUNT_NEEDS } from './amounts';
 import { ANGEL_NEEDS } from './angels';
+import { ARDEN_NEEDS } from './arden';
 import { ATTACHMENT_NEEDS } from './attachments';
 import { CONDITION_NEEDS } from './conditions';
 import { COST_NEEDS } from './costs';
+import { DESTINY_NEEDS } from './destiny';
 import { DRAGON_NEEDS } from './dragons';
 import { EFFECT_LOWERINGS } from './effects';
 import { SEARCH_NEEDS } from './effects-more';
 import type { FeatureRef } from './features';
 import { KORVOLD_NEEDS } from './korvold';
 import { registerLateLowerers } from './late';
+import { MELD_NEEDS } from './meld';
 import { MODAL_NEEDS } from './modal';
 import { NOUN_EXTRA_NEEDS, SELECTOR_NEEDS } from './nouns';
 import { PLANESWALKER_NEEDS } from './planeswalker';
@@ -139,9 +142,12 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...STATIC_NEEDS,
     ...ATTACHMENT_NEEDS,
     ...ANGEL_NEEDS,
+    ...ARDEN_NEEDS,
     ...DRAGON_NEEDS,
     ...KORVOLD_NEEDS,
     ...PLANESWALKER_NEEDS,
+    ...DESTINY_NEEDS,
+    ...MELD_NEEDS,
     ...ADAMANTOISE_NEEDS,
     ...CONDITION_NEEDS,
     ...SENTENCE_NEEDS,

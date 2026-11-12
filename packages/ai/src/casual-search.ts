@@ -17,6 +17,7 @@ import { chooseCostDiscard, isWardDiscard } from './casual-costs';
 import { chooseAnyNumberToDiscard, chooseBehold } from './casual-dragons';
 import { chooseFreeCast } from './casual-free';
 import { choosePutOnTop } from './casual-library';
+import { chooseLeastWorthCard } from './casual-pair';
 import { findObject, isLand, manaValueOf } from './casual-view';
 
 /** The colour of a basic land, from its land type (CR 305.6), or null for any other card. */
@@ -43,6 +44,32 @@ function coloursOwned(view: GameView): Set<Color> {
 }
 
 /**
+ * "Up to two basic land cards that share a land type" (`shareLandType`, D-262): all the cards found must have one land type in common, so the agent picks a land type
+ * first: the one with the most cards to find (up to what is allowed), and among those a colour it has no land of, else the first the engine lists.
+ */
+function chooseSharedLandType(
+  d: ChooseCardsDecision,
+  types: Readonly<Record<ObjectId, readonly string[]>>,
+  owned: ReadonlySet<Color>,
+): Action {
+  const kinds = [...new Set(d.legal.flatMap((id) => types[id] ?? []))];
+  let best: { cards: ObjectId[]; lacking: boolean } | null = null;
+  for (const kind of kinds) {
+    const cards = d.legal.filter((id) => (types[id] ?? []).includes(kind)).slice(0, d.max);
+    const color = BASIC_LAND_TYPES[kind];
+    const lacking = color !== undefined && !owned.has(color);
+    if (
+      best === null ||
+      cards.length > best.cards.length ||
+      (cards.length === best.cards.length && lacking && !best.lacking)
+    ) {
+      best = { cards, lacking };
+    }
+  }
+  return { kind: 'chooseCards', objects: best === null ? [] : best.cards };
+}
+
+/**
  * A search: find as many cards as allowed. A basic land of a colour the agent has no land of comes
  * first (and each colour counts once, so two Forests are not taken while Islands are missing);
  * otherwise the first card the engine lists. The answer is in the order found, which is the order
@@ -57,6 +84,7 @@ function chooseToFind(view: GameView, d: ChooseCardsDecision): Action {
     const o = cards.get(id);
     return o === undefined ? null : basicLandColor(o);
   };
+  if (d.shareLandType !== undefined) return chooseSharedLandType(d, d.shareLandType, owned);
   const remaining = [...d.legal];
   const found: ObjectId[] = [];
   const want = Math.min(d.max, remaining.length);
@@ -202,6 +230,8 @@ export function chooseCardsFromZone(view: GameView, d: ChooseCardsDecision): Act
   if (d.purpose === 'exile') return chooseEscapeExile(view, d);
   // D-232: the card an opponent's ability puts on the bottom of its library (Coin of Fate): the one the agent least wants the other player to have.
   if (d.purpose === 'split') return chooseSplitExiled(view, d);
+  // D-272: a creature card of a graveyard, which goes back to the other player (Dawnbreak Reclaimer): the one worth least.
+  if (d.purpose === 'pair') return chooseLeastWorthCard(view, d);
   // D-232: the card a permanent becomes a copy of until end of turn (Spirit of Resilience).
   if (d.purpose === 'copy') return chooseCopyCard(view, d);
   // A discard paid as a cost (an additional cost, an ability's cost, Ward's): the card wanted least.

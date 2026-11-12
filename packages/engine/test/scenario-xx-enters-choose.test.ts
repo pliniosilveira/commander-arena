@@ -784,6 +784,25 @@ describe('what else reads the choice', () => {
     expect(cost(ELVES)).toEqual(['G']);
   });
 
+  test('"Creature spells of the chosen type cost {1} less" with no "you cast": every player\'s spells (D-255)', () => {
+    const g = scenario()
+      .seat(0)
+      .hand(SCOUT, BEARS)
+      .battlefield('SYNTHETIC Shared Discount', { chosen: { creatureType: 'Elf' } })
+      .battlefield('Forest', 'Forest')
+      .seat(1)
+      .hand(SCOUT, BEARS)
+      .battlefield('Forest', 'Forest')
+      .build();
+    const cost = (seat: 0 | 1, name: string) =>
+      getView(g.state, seat).seats[seat]?.hand?.find((o) => o.name === name)?.castCost;
+    // The permanent is mine; the reduction is the same for me and for the opponent, and only for the chosen type (CR 601.2f, 118.7a).
+    expect(cost(0, SCOUT)).toEqual(['G']);
+    expect(cost(1, SCOUT)).toEqual(['G']);
+    expect(cost(0, BEARS)).toEqual(['1', 'G']);
+    expect(cost(1, BEARS)).toEqual(['1', 'G']);
+  });
+
   test('"Whenever another creature of the chosen type enters under your control": only those', () => {
     const g = scenario()
       .seat(0)

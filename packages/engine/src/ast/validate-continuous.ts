@@ -42,6 +42,51 @@ function isOneOf(value: unknown, allowed: readonly string[]): boolean {
   return typeof value === 'string' && allowed.includes(value);
 }
 
+/** The static abilities an effect may give for good (D-275): the ones read from the abilities an object has after the layers. */
+const GRANTABLE_STATICS = ['cantLoseGame', 'opponentsCantWin'];
+
+/**
+ * D-230: Backup's grant (until end of turn) is written by the engine from the abilities printed below the keyword, never in a card. D-275
+ * (CR 611.2a): a card gives "You can't lose the game and your opponents can't win the game" with no duration, for the rest of the game; no other
+ * ability is given by an effect (an activated or a triggered ability would need its own tests).
+ */
+function checkGrantAbility(
+  e: Extract<ContinuousNode, { kind: 'grantAbility' }>,
+  path: string,
+  out: AstIssue[],
+): void {
+  if (e.duration !== 'permanent') {
+    issue(
+      out,
+      path,
+      "'grantAbility' until end of turn is written by the engine for Backup, not in a card",
+    );
+    return;
+  }
+  if (!Array.isArray(e.abilities) || e.abilities.length === 0) {
+    issue(out, `${path}.abilities`, 'a grant gives at least one ability');
+    return;
+  }
+  e.abilities.forEach((a, i) => {
+    if (a?.kind !== 'static' || !isOneOf(a.static?.kind, GRANTABLE_STATICS)) {
+      issue(
+        out,
+        `${path}.abilities[${i}]`,
+        `an effect gives only the static abilities ${GRANTABLE_STATICS.join(' and ')}`,
+      );
+      return;
+    }
+    // The engine reads the given static with no condition (`hasStaticOf`, `derive`): a condition would be dropped, so it is refused.
+    if (a.condition !== undefined) {
+      issue(
+        out,
+        `${path}.abilities[${i}].condition`,
+        'a static ability an effect gives has no condition: the engine would not check it',
+      );
+    }
+  });
+}
+
 /**
  * CR 205.1a, 205.3d: card types replace card types, subtypes replace creature types. With `additive`
  * (CR 205.1b) they are added to what the object has, so a subtype need not be checked against the
@@ -177,8 +222,7 @@ export function checkContinuousEffect(
       checkSetColors(e, path, out);
       break;
     case 'grantAbility':
-      // D-230: Backup's grant; written by the engine from the abilities printed below the keyword, never in a card.
-      issue(out, path, "'grantAbility' is written by the engine for Backup, not in a card");
+      checkGrantAbility(e, path, out);
       break;
     case 'grantKeyword':
       if (!GRANTABLE_KEYWORDS.includes(e.keyword?.kind)) {

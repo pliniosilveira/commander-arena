@@ -13,6 +13,9 @@ import {
   type GoldenCard,
   type ImportedCard,
   ISSUE_CARD_SOURCE,
+  meldResultNames,
+  normalizeNameKey,
+  type StoredCard,
   toGoldenCard,
   type UnparsedAbility,
 } from '@commander-arena/cards';
@@ -90,6 +93,23 @@ export function issueRecord(card: ImportedCard): GoldenCard {
   return toGoldenCard(card.stored, ISSUE_CARD_SOURCE, { acceptance: true });
 }
 
+/**
+ * The records of the melded faces the shown meld cards need (D-280): cards of their own that the corpus keeps as `related`, not as cards of the deck, so that the work
+ * on the pair has the data of all three cards. A meld card whose melded face the import did not have gets none (the issue then says nothing of it, and
+ * `pnpm corpus:check-issue` calls the issue incomplete).
+ */
+function faceRecords(shown: readonly ImportedCard[], faces: readonly StoredCard[]): GoldenCard[] {
+  const byName = new Map(faces.map((f) => [normalizeNameKey(f.name), f] as const));
+  const records = new Map<string, GoldenCard>();
+  for (const name of meldResultNames(shown.map((c) => c.stored))) {
+    const face = byName.get(normalizeNameKey(name));
+    if (face !== undefined) {
+      records.set(face.oracleId, toGoldenCard(face, ISSUE_CARD_SOURCE, { related: true }));
+    }
+  }
+  return [...records.values()];
+}
+
 /** The gzip of a text in base64url, with the browser's own compression. */
 export async function gzipBase64url(text: string): Promise<string> {
   const stream = new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'));
@@ -119,15 +139,20 @@ function sectionsText(shown: readonly ImportedCard[], omitted: readonly Imported
  * The card sections and the card data block, with as many cards as fit in `budget` characters, in coverage order; the cards that do not
  * fit are only named. A browser without compression gets the sections and a line that says the data is missing.
  */
-async function cardParts(cards: readonly ImportedCard[], budget: number): Promise<string[]> {
+async function cardParts(
+  cards: readonly ImportedCard[],
+  budget: number,
+  faces: readonly StoredCard[],
+): Promise<string[]> {
   if (cards.length === 0) return [];
   for (let n = cards.length; n >= 0; n -= 1) {
     const shown = cards.slice(0, n);
     const parts = [sectionsText(shown, cards.slice(n))];
     if (n > 0) {
       try {
-        const payload = await gzipBase64url(cardDataText(shown.map(issueRecord)));
-        parts.push(cardDataBlock(payload, n));
+        const records = [...shown.map(issueRecord), ...faceRecords(shown, faces)];
+        const payload = await gzipBase64url(cardDataText(records));
+        parts.push(cardDataBlock(payload, records.length));
       } catch {
         parts.push('This browser could not compress the card data, so it is not included.');
       }
@@ -156,7 +181,11 @@ export async function deckIssueBody(report: ImportReport, version: VersionInfo):
   tail.push(versionLine(version));
   const fixed = [...head, ...tail].filter((part) => part !== '').join('\n\n');
   // The cards take what the size limit leaves (blank lines join the parts).
-  const cards = await cardParts(unsupported, MAX_ISSUE_BODY_LENGTH - fixed.length - 6);
+  const cards = await cardParts(
+    unsupported,
+    MAX_ISSUE_BODY_LENGTH - fixed.length - 6,
+    report.meldFaces ?? [],
+  );
   return [...head, ...cards, ...tail].filter((part) => part !== '').join('\n\n');
 }
 

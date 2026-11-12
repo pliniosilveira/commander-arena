@@ -1,11 +1,11 @@
 /**
- * The answers to the question of `castExiled` (CR 702.62a Suspend, CR 702.35a Madness, D-128), apart from
+ * The answers to the question of `castExiled` (CR 702.62a Suspend, CR 702.35a Madness, CR 702.94a Miracle, D-128, D-274), apart from
  * `rules/cast-exiled.ts` because they start a cast (`rules/cast.ts`) and go on with a resolution (`rules/stack.ts`),
  * which the interpreter that runs the instruction cannot import (as for Cascade, `rules/cascade-cast.ts`).
  *
  * Accepting begins the cast as CR 608.2g says: the steps of CR 601.2a-i, no player receives priority, the spell
  * becomes the topmost object of the stack and the ability goes on resolving, which `applyAction` does once the cast
- * is finished. Declining leaves a suspended card in exile and puts a card exiled by madness into the graveyard. The
+ * is finished. Declining leaves a suspended card in exile, puts a card exiled by madness into the graveyard and leaves a miracle card in the hand. The
  * cast can be taken back with `cancel` at any question (CR 733): that rewinds to the question, as it was asked.
  */
 import type { ObjectId } from '../ids';
@@ -25,13 +25,13 @@ function asking(
   const head = res?.queue[0];
   if (!res || head?.kind !== 'castExiled' || head.stage !== 'ask') return null;
   const purpose = state.pending?.kind === 'confirmOptional' ? state.pending.purpose : undefined;
-  if (purpose !== 'suspend' && purpose !== 'madness') return null;
+  if (purpose !== 'suspend' && purpose !== 'madness' && purpose !== 'miracle') return null;
   return { head, rest: res.queue.slice(1) };
 }
 
 /**
  * Declining (or a card that turns out not to be castable): the suspended card stays exiled; a card exiled by madness
- * goes to its owner's graveyard. The resolution goes on. Null when the question is not the one pending.
+ * goes to its owner's graveyard; a card revealed by miracle stays in the hand. The resolution goes on. Null when the question is not the one pending.
  */
 export function declineCastExiled(state: GameState): ResolveOutcome | null {
   const a = asking(state);
@@ -65,7 +65,7 @@ export function acceptCastExiled(state: GameState): Result {
     state,
     res.controller,
     card,
-    suspend ? 'free' : 'madness',
+    a.head.mode === 'suspend' ? 'free' : a.head.mode,
     0,
     true,
     suspend,

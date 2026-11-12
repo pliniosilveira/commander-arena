@@ -148,6 +148,8 @@ export interface IrNoun extends IrNode {
     | 'attackedBy' // "the player or planeswalker it's attacking" (stage P31, D-140): what the creature `of` attacks
     | 'linkedExile' // "the exiled card" (stage P32, D-147, CR 607.2a): what the linked ability of this permanent exiled
     | 'discardedThisWay' // "each player who discarded a card this way" (stage P52, D-210): the players of the discard before it
+    | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
+    | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
   readonly filter: IrFilter;
   /** "up to two", "X", "one or more"; for `target`, how many targets the phrase takes. */
@@ -177,6 +179,11 @@ export interface IrNoun extends IrNode {
   readonly greatest?: 'power' | 'toughness' | 'manaValue';
   /** "target player's graveyard" has `of` = target player. */
   readonly of?: IrNoun;
+  /**
+   * "up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270, CR 115.1): a target noun whose targets are `filter`
+   * (permanents on the battlefield) or this filter (cards of any graveyard). The engine's slot of two zones (`objectOrGraveyardCard`); only `exile` takes it.
+   */
+  readonly orCard?: IrFilter;
   /** `det` `players`: the player nouns that act together, in text order ("you", "target opponent"). */
   readonly members?: readonly IrNoun[];
   /**
@@ -264,6 +271,16 @@ export interface IrFilter {
   readonly manaValueAtMostX?: true;
   /** "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga. */
   readonly historic?: true;
+  /**
+   * "that shares a creature type with it" (D-261, CR 205.3m, 603.10a): the card has a creature type the creature of the trigger had (the one that died), as it last was
+   * (CR 113.7a). Read in the filter of a library search `revealUntil` only; the engine's `sharesCreatureTypeWith`.
+   */
+  readonly sharesCreatureTypeWithIt?: true;
+  /**
+   * "up to two basic land cards that share a land type" (D-262, CR 205.3i, 701.23): the cards found share a land type among them, which is a condition on the whole
+   * choice and not on a card. A filter that still has it is not lowered; the search lowering takes it off (the engine's `search.sharedLandType`).
+   */
+  readonly sharedLandType?: true;
   /**
    * "with a counter on it", "with a +1/+1 counter on it" (stage P32, D-147, CR 122.1): the object has a counter, of any kind (`true`) or
    * of the kind named ("+1/+1", "stun").
@@ -396,6 +413,8 @@ export type IrAmount =
   | {
       readonly kind: 'manaSpent';
       readonly fromType?: string;
+      /** "for each {S} spent to cast ~" (D-260, CR 107.4h): only the mana of snow sources. */
+      readonly snow?: true;
       readonly who: 'self' | 'it';
       readonly span: Span;
     }
@@ -433,6 +452,8 @@ export interface IrCondition extends IrNode {
     // "If a creature card was discarded this way", "if a noncreature card was discarded this way" (stage P52, D-210, CR 608.2c)
     | { readonly kind: 'discardedThisWay'; readonly creature: boolean }
     | { readonly kind: 'unlessPays'; readonly who: IrNoun; readonly cost: readonly IrCost[] }
+    // D-258 (the Bruna deck, CR 118.12a): "unless you return an untapped Plains you control to its owner's hand": the `return` clause of one permanent the controller chooses
+    | { readonly kind: 'unlessReturn'; readonly clause: IrClause }
     // "you have two or more opponents" (CR 102.1: the players you play against)
     | { readonly kind: 'opponentsAtLeast'; readonly atLeast: IrAmount }
     // "~ was kicked", "it was kicked" (CR 702.33d); `who` is the word the text used for the object
@@ -442,10 +463,22 @@ export interface IrCondition extends IrNode {
     // Stage P29 (D-133): "you have 30 or more life", "you have at least 7 life more than your starting life total"
     // (`aboveStarting`, CR 119.1, 903.7)
     | { readonly kind: 'lifeTotal'; readonly compare: IrComparison; readonly aboveStarting?: true }
+    // D-252 (the Bruna deck): "you gained 3 or more life this turn" (CR 119.3)
+    | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
+    // D-271 (CR 706.2, 706.3a): "the result is 1", "the result is 4 or more": the die the roll before it in the same text rolled
+    | { readonly kind: 'dieResult'; readonly compare: IrComparison }
+    // D-271 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard
+    | { readonly kind: 'thisInYourGraveyard' }
+    // D-278 (CR 701.42a, 712.4a): "you both own and control ~ and a creature named Bruna, the Fading Light": the card itself and a permanent of the type with that name
+    | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: string }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
     | { readonly kind: 'cardsInGraveyard'; readonly compare: IrComparison }
-    // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat
-    | { readonly kind: 'subjectControllerHasMore'; readonly stat: 'lands' }
+    // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat; with a
+    // trigger about a player (a step of an opponent's turn) the lowering reads it of that player instead (`triggerPlayerHasMore`)
+    | { readonly kind: 'subjectControllerHasMore'; readonly stat: 'lands' | 'creatures' }
+    // "~ is paired with another creature" (D-286, CR 702.95b): the permanent the ability is on is paired
+    // (`who` is the word the text used for the permanent: `~`, or "it", which is the source only in an ability about it)
+    | { readonly kind: 'paired'; readonly who: 'self' | 'it' }
     // "~ is attached to a creature" (stage P37, D-180, CR 301.5, 303.4): the permanent this one is attached to, against a filter (`creature`)
     | { readonly kind: 'attachedTo'; readonly filter: IrFilter }
     // "it's untapped", "~ is untapped": this permanent against a filter (stage P29, D-133)
@@ -469,7 +502,11 @@ export interface IrCondition extends IrNode {
     // game compared with a number
     | { readonly kind: 'amountIs'; readonly amount: IrAmount; readonly compare: IrComparison }
     // "if you're the monarch", "if an opponent is the monarch" (CR 725.1: a designation); `not` for the negative
-    | { readonly kind: 'designation'; readonly who: IrNoun; readonly designation: 'monarch' }
+    | {
+        readonly kind: 'designation';
+        readonly who: IrNoun;
+        readonly designation: 'monarch' | 'citysBlessing';
+      }
     // Stage P31 (D-140): "you control the artifact with the greatest mana value or tied for the greatest mana value" (CR 603.4): one of
     // the permanents of the kind, whoever controls them, with the greatest value of the stat, a tie counting for each tied one
     | {
@@ -591,6 +628,8 @@ export interface IrManaSpec extends IrNode {
     | { readonly kind: 'chosenColor' }
     // "two mana in any combination of colors" (stage P34, D-152, CR 106.1b, 605.3b): `count` mana, each of a color chosen on its own
     | { readonly kind: 'anyCombination'; readonly count: number }
+    // "an amount of mana of that color equal to your devotion to that color" (CR 605.3b, 700.5): the color of the sentence "Choose a color." before it
+    | { readonly kind: 'devotionToChosenColor' }
     // "{R}{R}, {R}{W}, or {W}{W}" (stage P14): exactly one of the listed combinations, each a run of
     // symbols as written
     | { readonly kind: 'combination'; readonly options: readonly (readonly string[])[] }
@@ -617,6 +656,12 @@ export interface IrPtChange extends IrNode {
   readonly kind: 'ptChange';
   readonly power: IrPtTerm;
   readonly toughness: IrPtTerm;
+}
+
+/** A name the text gives (D-278, CR 201.2): "meld them into Brisela, Voice of Nightmares". */
+export interface IrNameArg extends IrNode {
+  readonly kind: 'name';
+  readonly name: string;
 }
 
 /** A yes or no a phrase says by being there or not: "reveal it", ", then shuffle". */
@@ -789,6 +834,7 @@ export type IrArg =
   | IrBasePt
   | IrDamageScope
   | IrFlag
+  | IrNameArg
   | IrQuotedAbility
   | IrDestinationList
   | IrCostList
@@ -824,6 +870,11 @@ export interface IrSentence extends IrNode {
    * (CR 614.1a). Only with `condition`.
    */
   readonly instead?: boolean;
+  /**
+   * The sentence starts "Otherwise, " (D-253, CR 608.2c): what the sentence before it, a conditional instruction, does when its condition does not hold. It has no
+   * condition of its own.
+   */
+  readonly otherwise?: true;
   /**
    * "..., where X is the number of Zombies you control." (stage P28, CR 107.3c): what X is wherever the clauses of this
    * sentence read it. The lowering writes the amount into each slot that says X; nothing is stored.
@@ -991,6 +1042,15 @@ export type IrStaticEffect =
       readonly count: IrAmount;
     }
   | { readonly kind: 'grantKeyword'; readonly keyword: string; readonly params?: readonly IrArg[] }
+  /**
+   * `has protection from red and from blue` (stage P70, D-259, CR 702.16): protection from the colors the statement names (`colors`, color words as
+   * written, lowercase) or, when `commanderIdentity` is set, "each color that's not in your commander's color identity" (CR 903.4, 903.4f). One of the two.
+   */
+  | {
+      readonly kind: 'grantProtection';
+      readonly colors?: readonly string[];
+      readonly commanderIdentity?: true;
+    }
   /** `has "{T}: Add {G}."` (stage P14): a quoted mana ability, read as an activated ability. */
   | { readonly kind: 'grantAbility'; readonly ability: IrQuotedAbility }
   /**
@@ -1063,6 +1123,8 @@ export type IrStaticEffect =
   | { readonly kind: 'addTypes'; readonly subtypes: readonly string[] }
   /** "You may cast artifact spells as though they had flash." (stage P31, CR 601.3b, 702.8a). The subject is `you`. */
   | { readonly kind: 'castAsThoughFlash'; readonly spells: IrFilter }
+  /** "Your opponents can't cast spells with mana value 3 or less." (stage P70, D-282, CR 101.2, 601.2). The subject is `you`. */
+  | { readonly kind: 'opponentsCantCastSpells'; readonly spells: IrFilter }
   /**
    * "As long as a card exiled with ~ is a creature card, ~ has the power, toughness, and creature types of the last creature card
    * exiled with it. It's still a Shapeshifter." (stage P31, CR 607.2a, 613.4b, 205.1a): what the card the linked ability exiled gives.
@@ -1226,6 +1288,8 @@ export interface IrKeyword extends IrNode {
   readonly cost?: readonly IrCost[];
   /** "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type of the creature the equip ability attaches to. */
   readonly quality?: string;
+  /** "Equip commander {3}" (stage P70, D-259, CR 702.6c, 903.3): the equip ability attaches only to a creature that is a commander. */
+  readonly commanderOnly?: true;
   /** "Protection from red and from blue" (stage P68, D-229, CR 702.16): the color words, as written, lowercase. */
   readonly colors?: readonly string[];
 }

@@ -41,7 +41,7 @@ export function groupEntryCounters(state: GameState, entering: GameObject): Reco
         typeof r.count === 'number'
           ? r.count
           : r.count.kind === 'manaSpent'
-            ? manaSpentOf(entering, r.count.fromType)
+            ? manaSpentOf(entering, r.count.fromType, r.count.snow === true)
             : countMatching(state, r.count.filter, ctx);
       if (count > 0) added[r.counter] = (added[r.counter] ?? 0) + count;
     }

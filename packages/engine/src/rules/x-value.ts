@@ -12,6 +12,7 @@
 import type { CastAlternativeKind } from '../ast/features';
 import type { Cost } from '../ast/types';
 import type { CardFace } from '../cards/definition';
+import { manaSymbolsOf, namedAlternativeCostOf } from './alt-costs';
 
 /** How much each point of X costs: generic mana (one per {X} symbol) and life ("pay X life"). */
 export interface XCost {
@@ -62,16 +63,23 @@ export function abilityXCost(costs: readonly Cost[]): XCost {
  * What one point of X costs for a spell cast as `alternative` (CR 107.3a): the {X} of its mana cost
  * when that is what is paid, and the "pay X life" of its additional costs. A spell cast without
  * paying its mana cost, or by paying a flashback cost, has no {X} to pay: its X is 0 and nothing is
- * announced (CR 107.3b, 107.3g).
+ * announced (CR 107.3b, 107.3g). A spell cast for its miracle cost pays that cost instead, and the {X} in it (once, or as many
+ * times as the cost has it) is the X announced (D-274, CR 107.3a: any X in an alternative cost is announced as the spell is cast).
  */
 export function spellXCost(
   face: CardFace | null,
   alternative: CastAlternativeKind | undefined,
 ): XCost {
   if (face === null) return NO_X;
+  const life = (face.additionalCosts ?? []).filter((c) => c.kind === 'payXLife').length;
+  if (alternative === 'miracle') {
+    return {
+      mana: xSymbolCount(manaSymbolsOf(namedAlternativeCostOf(face, 'miracle') ?? [])),
+      life,
+    };
+  }
   const printed = xSymbolCount(face.manaCost ?? []);
   if (alternative !== undefined && printed > 0) return NO_X;
-  const life = (face.additionalCosts ?? []).filter((c) => c.kind === 'payXLife').length;
   return { mana: printed, life };
 }
 

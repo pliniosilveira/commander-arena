@@ -31,6 +31,7 @@ describe('planPayment: basic costs', () => {
       lifePaid: 0,
       leftover: [],
       spentTypes: [],
+      spentSnow: 0,
     });
     expect(planPayment(request(['0']))).toEqual({
       fromPool: [],
@@ -38,6 +39,7 @@ describe('planPayment: basic costs', () => {
       lifePaid: 0,
       leftover: [],
       spentTypes: [],
+      spentSnow: 0,
     });
   });
 
@@ -286,7 +288,14 @@ describe('planPayment: hybrid and Phyrexian mana', () => {
 
   test('Phyrexian mana is paid with 2 life when no mana is available (CR 107.4f)', () => {
     const plan = planPayment(request(['W/P'], { sources: [land(1, 'U')], lifeAvailable: 2 }));
-    expect(plan).toEqual({ fromPool: [], taps: [], lifePaid: 2, leftover: [], spentTypes: [] });
+    expect(plan).toEqual({
+      fromPool: [],
+      taps: [],
+      lifePaid: 2,
+      leftover: [],
+      spentTypes: [],
+      spentSnow: 0,
+    });
   });
 
   test('not enough life means no payment', () => {
@@ -776,5 +785,39 @@ describe('planPayment: the mana spent on the cost (spentTypes)', () => {
     const plan = planPayment(request(['U', 'B'], { pool, sources: [signet] }));
     expect(plan?.fromPool).toEqual([0]);
     expect(plan?.spentTypes).toEqual([['artifact'], ['artifact']]);
+  });
+});
+
+// D-260: how much of the mana spent on the cost came from a snow source (CR 107.4h): "You gain 1 life for each {S} spent to cast this spell".
+describe('planPayment: the snow mana spent on the cost (spentSnow)', () => {
+  test('counts the mana of snow sources that the cost consumes, on any symbol', () => {
+    const plan = planPayment(
+      request(['1', 'G'], {
+        sources: [
+          source(1, [['G']], { snow: true }),
+          source(2, [['R']], { snow: true }),
+          source(3, [['U']]),
+        ],
+      }),
+    );
+    expect(plan?.spentTypes).toHaveLength(2);
+    expect(plan?.spentSnow).toBe(2);
+  });
+
+  test('mana a snow source made and the cost did not use is not spent', () => {
+    const plan = planPayment(
+      request(['1'], { sources: [source(1, [['C', 'C']], { snow: true })] }),
+    );
+    expect(plan?.spentTypes).toHaveLength(1);
+    expect(plan?.spentSnow).toBe(1);
+  });
+
+  test('snow mana in the pool counts as it is spent, other pool mana does not', () => {
+    const plan = planPayment(request(['W', 'U'], { pool: [mana('W', { snow: true }), mana('U')] }));
+    expect(plan?.spentSnow).toBe(1);
+  });
+
+  test('no snow, none', () => {
+    expect(planPayment(request(['G'], { sources: [source(1, [['G']])] }))?.spentSnow).toBe(0);
   });
 });

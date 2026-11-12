@@ -62,7 +62,7 @@ describe('the layout gate reads the engine registry', () => {
     expect(resolveLayout(syntheticCard()).reasons).toEqual([]);
   });
 
-  test.each(['flip', 'meld', 'leveler', 'prototype', 'mutate', 'case', 'battle', 'token'])(
+  test.each(['flip', 'leveler', 'prototype', 'mutate', 'case', 'battle', 'token'])(
     'the layout %s is not modelled: face 0 as a normal card and a reason naming it',
     (layout) => {
       const resolved = resolveLayout(multi(layout, faces));

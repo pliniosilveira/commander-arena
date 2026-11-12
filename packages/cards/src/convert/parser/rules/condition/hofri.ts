@@ -72,7 +72,9 @@ export const CONDITION_CARDS_IN_GRAVEYARD = defineRule<IrCondition>({
 
 /**
  * `condition.that-player-more-lands`: "that player controls more lands than you" (CR 603.4, 109.4: the intervening "if" of a trigger about a land that entered; "that
- * player" is the one who controls it). The engine's `subjectControllerHasMore` of `lands`. Not read: another count ("more creatures"), "at least as many", another
+ * player" is the one who controls it) and, the Bruna deck, "that player controls more creatures than you". The engine's `subjectControllerHasMore` of `lands` or
+ * `creatures`; in a trigger about a player ("at the beginning of each opponent's end step", CR 603.2b, 102.1) "that player" is the player of the event and the lowering
+ * writes `triggerPlayerHasMore` (see `lowerCondition`). Not read: another count ("more cards in hand"), "at least as many", another
  * player than "that player", "you control fewer lands than that player".
  */
 export const CONDITION_THAT_PLAYER_MORE_LANDS = defineRule<IrCondition>({
@@ -80,9 +82,12 @@ export const CONDITION_THAT_PLAYER_MORE_LANDS = defineRule<IrCondition>({
   family: 'condition',
   leading: ['that'],
   cites: ['CR 603.4 (Triggered Abilities)', 'CR 109.4 (Objects)', 'CR 305.1 (Lands)'],
-  examples: ['that player controls more lands than you'],
-  rejects: [
+  examples: [
+    'that player controls more lands than you',
     'that player controls more creatures than you',
+  ],
+  rejects: [
+    'that player controls more cards than you',
     'that player controls at least as many lands as you',
     'that player controls more lands than each opponent',
     'that player controls more lands than you.',
@@ -92,16 +97,18 @@ export const CONDITION_THAT_PLAYER_MORE_LANDS = defineRule<IrCondition>({
     'that player controls more lands',
   ],
   parse: (ctx, pos) => {
-    const r = spanned(pattern(/that player controls more lands than you(?![\p{L}\p{N}])/iu))(
-      ctx,
-      pos,
-    );
+    const r = spanned(
+      pattern(/that player controls more (lands|creatures) than you(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
     if (!r.ok) return r;
+    const stat = /^creatures$/i.test(r.value.value[1] ?? '')
+      ? ('creatures' as const)
+      : ('lands' as const);
     return {
       ok: true,
       value: {
         kind: 'condition',
-        test: { kind: 'subjectControllerHasMore', stat: 'lands' },
+        test: { kind: 'subjectControllerHasMore', stat },
         span: r.value.span,
         rule: 'condition.that-player-more-lands',
       },

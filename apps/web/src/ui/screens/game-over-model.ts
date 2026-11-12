@@ -26,6 +26,8 @@ const REASONS: Readonly<Record<LossReason, (you: boolean) => string>> = {
       ? 'You took 21 or more damage from one commander.'
       : 'The opponent took 21 or more damage from one commander.',
   concede: (you) => (you ? 'You conceded.' : 'The opponent conceded.'),
+  effect: (you) =>
+    you ? 'An effect made you lose the game.' : 'An effect made the opponent lose.',
 };
 
 const LOSS_LINE = /the game \((\w+)\)/;

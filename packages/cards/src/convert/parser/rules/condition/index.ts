@@ -22,7 +22,9 @@ import { quantity } from '../amount/index';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
 import { ANGEL_CONDITION_RULES } from './angels';
+import { ARDEN_CONDITION_RULES } from './arden';
 import { ARTIFACT_CONDITION_RULES } from './artifacts';
+import { BRUNA_CONDITION_RULES } from './bruna';
 import { CHOOSER_CONDITION_RULES } from './choosers';
 import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
@@ -33,6 +35,7 @@ import { HOFRI_CONDITION_RULES } from './hofri';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
+import { MELD_CONDITION_RULES } from './meld';
 import { RECURSION_CONDITION_RULES } from './recursion';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { CONDITION_UNLESS_PAYS } from './unless';
@@ -383,6 +386,11 @@ export const CONDITION_CONTROL_COMMANDER = defineRule<IrCondition>({
 export const CONDITION_RULES = [
   // Stage P33 (D-150): "you control three or more lands with the same name" before the plain count, whose phrase is a prefix of it.
   ...ANGEL_CONDITION_RULES,
+  ...BRUNA_CONDITION_RULES,
+  // Stage P70 (D-278): "you both own and control ~ and a creature named X", the condition of the meld ability.
+  ...MELD_CONDITION_RULES,
+  // Stage P69 (D-271): "the result is 1" after a die roll, "~ is in your graveyard".
+  ...ARDEN_CONDITION_RULES,
   CONDITION_CONTROL_AT_LEAST,
   CONDITION_CONTROL_A,
   CONDITION_CONTROL_AT_MOST,

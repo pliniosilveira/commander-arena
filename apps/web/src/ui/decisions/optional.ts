@@ -15,7 +15,7 @@ import {
 } from '../../game/cost-text';
 import { isExtortAbility } from '../../game/describe-keywords2';
 import { beholdQuality, beholdReminder } from '../../game/dragons-text';
-import { castNowButtons, castNowPrompt } from '../../game/later-text';
+import { castNowButtons, castNowPrompt, miracleRevealPrompt } from '../../game/later-text';
 import { giftPrompt } from '../../game/recursion-text';
 import {
   findUnless,
@@ -24,6 +24,7 @@ import {
   unlessResultText,
   type Who,
 } from '../../game/unless-text';
+import { triggerGist } from './ability-label';
 import { type Index, plural, stackName } from './lookup';
 
 /** "Name: oracle text — do it?" (the text is the whole card's; empty for a vanilla source). */
@@ -234,6 +235,23 @@ export function mayEffectPrompt(d: ConfirmOptionalDecision, index: Index): strin
 }
 
 /**
+ * The plain "you may" of a triggered ability whose effect is a delayed ability ("When this creature dies, you may return it to the battlefield ... at the beginning of
+ * your next upkeep", D-284): worded from the ability on the stack, "Name: At the beginning of your next upkeep, return it to the battlefield — do it?". The decision
+ * quotes the Oracle text of the permanent the ability belongs to, which is not the ability when it was granted (the Seraph gives it to both creatures of its pair,
+ * CR 613.1f): a vanilla partner would read "Grizzly Bears — do it?" and another creature's text would be quoted for it. Null for any other plain question, and for
+ * an ability the view does not show or the words do not know (never guessed).
+ */
+export function mayDelayedPrompt(d: ConfirmOptionalDecision, index: Index): string | null {
+  if (d.purpose !== undefined || d.cost !== undefined) return null;
+  const object = index.get(d.source);
+  const ability = object?.ability;
+  if (ability?.kind !== 'triggered' || ability.optional !== true) return null;
+  if (ability.effect.kind !== 'delayedTrigger') return null;
+  const gist = triggerGist(ability, object);
+  return gist === '' ? null : optionalPrompt(d.sourceName, gist);
+}
+
+/**
  * "You may behold a Dragon" (D-151, CR 701.4a): the plain "you may" of an ability whose effect is a `may` over a Behold, worded
  * "Behold a Dragon? Reveal a Dragon card from your hand or choose a Dragon you control on the battlefield.". Null for any other plain
  * question, and for one the view does not show the ability of (never guessed).
@@ -359,9 +377,20 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: false,
     };
   }
-  if (d.purpose === 'suspend' || d.purpose === 'madness') {
-    // Suspend's "play it without paying its mana cost" and Madness's "cast it by paying its madness cost"
-    // (D-128). Declining leaves the card in exile or puts it into the graveyard; nothing is rewound.
+  if (d.purpose === 'miracleReveal') {
+    // Miracle (CR 702.94a, D-274): "reveal the card you just drew?" Declining reveals nothing; the engine refuses `cancel`.
+    const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? d.sourceName;
+    const cost = d.cost?.flatMap((c) => (c.kind === 'mana' ? [...c.symbols] : []));
+    return {
+      prompt: miracleRevealPrompt(card, cost),
+      yes: 'Reveal it',
+      no: "Don't reveal it",
+      cancellable: false,
+    };
+  }
+  if (d.purpose === 'suspend' || d.purpose === 'madness' || d.purpose === 'miracle') {
+    // Suspend's "play it without paying its mana cost", Madness's "cast it by paying its madness cost" and Miracle's "cast it by paying
+    // its miracle cost" (D-128, D-274). Declining leaves the card in exile, puts it into the graveyard or leaves it in the hand; nothing is rewound.
     const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? d.sourceName;
     const cost = d.cost?.flatMap((c) => (c.kind === 'mana' ? [...c.symbols] : []));
     return {
@@ -402,6 +431,19 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: true,
     };
   }
+  if (d.purpose === 'pairReturn') {
+    // D-272: "You may return those cards to the battlefield under their owners' control": both or neither; nothing is rewound by declining.
+    const names = [d.pair?.theirs, d.pair?.mine].flatMap((id) => {
+      const card = id === undefined ? undefined : index.get(id);
+      return card === undefined ? [] : [card.name];
+    });
+    return {
+      prompt: `${d.sourceName}: return ${names.join(' and ')} to the battlefield under their owners' control?`,
+      yes: 'Return them',
+      no: "Don't return",
+      cancellable: false,
+    };
+  }
   if (d.purpose === 'costChoice') {
     // "Sacrifice an artifact or creature or pay {4}" (CR 118.8, 601.2b, D-181): asked as the spell is cast, each button is one way to pay;
     // Cancel rewinds the cast (CR 733).
@@ -421,6 +463,10 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
   const mayEffect = mayEffectPrompt(d, index);
   if (mayEffect !== null) {
     return { prompt: mayEffect, yes: 'Yes', no: 'No', cancellable: false };
+  }
+  const mayDelayed = mayDelayedPrompt(d, index);
+  if (mayDelayed !== null) {
+    return { prompt: mayDelayed, yes: 'Yes', no: 'No', cancellable: false };
   }
   if (d.cost !== undefined) {
     return { prompt: payPrompt(d.cost), yes: 'Pay', no: "Don't pay", cancellable: false };

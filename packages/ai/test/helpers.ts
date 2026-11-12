@@ -410,6 +410,28 @@ export const UPKEEP_SPELLS = [
 ];
 
 /**
+ * SYNTHETIC cards of Miracle (CR 702.94, D-274): miracle costs with and without {X}, a target, a permanent, and cards that draw
+ * (several cards, the opponent's). Used by the 'miracle' deck style and kept out of every other pool.
+ */
+export const MIRACLE_NAMES = [
+  'SYNTHETIC Miracle Host',
+  'SYNTHETIC Miracle Bolt',
+  'SYNTHETIC Miracle Beast',
+  'SYNTHETIC Careful Digging',
+  'SYNTHETIC Twin Draw',
+  'SYNTHETIC Generous Gift',
+] as const;
+
+/** The Miracle cards three times each (a miracle card must come as the first draw of a turn), with bodies and removal. */
+export const MIRACLE_SPELLS = [
+  ...supported(MIRACLE_NAMES),
+  ...supported(MIRACLE_NAMES),
+  ...supported(MIRACLE_NAMES),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Llanowar Elves', 'Giant Spider', 'Serra Angel']),
+  ...supported(['Lightning Bolt', 'Murder', 'Unsummon', 'Counterspell']),
+];
+
+/**
  * SYNTHETIC cards of delayed triggers (CR 603.7), Suspend (CR 702.62), Madness (CR 702.35) and Foretell (CR 702.143),
  * D-128. Used by the 'later' deck style and kept out of every other pool.
  */
@@ -2225,6 +2247,25 @@ export const ADAMANTOISE_LANDS = supported([
  */
 export const VOTE_NAMES = ['SYNTHETIC Emissary Green', 'SYNTHETIC Ballot Rite'] as const;
 
+/**
+ * The cards of the meld slice (D-277 to D-282): the SYNTHETIC meld pairs, the two spells that exile or tuck a melded permanent, the watcher of the second card, the
+ * restriction by mana value and an X spell. Kept out of every pool: a pair melds into one permanent that leaves as two cards and asks its owner an order (a
+ * chooseOption), and a restriction changes which spells the opponents can cast, which the seeded games of the other styles do not reach. `meld-games.test.ts`
+ * builds its own states with them.
+ */
+export const MELD_NAMES = [
+  'SYNTHETIC Dusk Squire',
+  'SYNTHETIC Dawn Squire',
+  'SYNTHETIC Ember Squire',
+  'SYNTHETIC Ash Squire',
+  'SYNTHETIC Stray Squire',
+  'SYNTHETIC Meld Exile',
+  'SYNTHETIC Meld Tuck',
+  'SYNTHETIC Meld Watcher',
+  'SYNTHETIC Gatekeeper',
+  'SYNTHETIC X Surge',
+] as const;
+
 /** Emissary Green three times and the rite twice, with bodies to carry the counters and cheap removal. */
 export const VOTE_SPELLS = [
   ...supported(['SYNTHETIC Emissary Green']),
@@ -2267,6 +2308,66 @@ export const RING_NAMES = [
   'SYNTHETIC Ring Watcher',
   'SYNTHETIC Bearer Oath',
 ] as const;
+
+/**
+ * The cards of the soulbond slices (D-284, D-286): the SYNTHETIC creatures whose dies ability returns them at the beginning of the next upkeep, and the SYNTHETIC
+ * soulbond creatures. Used by the 'soulbond' style and kept out of every other pool: soulbond asks its controller which creature to pair with in the middle of a
+ * resolution, and the returning creatures ask a "you may" and create a delayed ability, which the seeded games of the other styles do not reach.
+ */
+export const SOULBOND_NAMES = [
+  'SYNTHETIC Ember Cub',
+  'SYNTHETIC Grave Thief',
+  'SYNTHETIC Soulbound Squire',
+  'SYNTHETIC Soulbound Seraph',
+  'SYNTHETIC Soulbound Giant',
+  'SYNTHETIC Soulbound Glider',
+  'SYNTHETIC Bonded Hound',
+] as const;
+
+/**
+ * The soulbond style: the soulbond creatures (the keyword alone, with the Seraph's grant, with +2/+2 and with flying for the pair) several times, the creatures that
+ * return when they die, a creature that is paired by another's soulbond, bodies, and removal that ends a pair (death, bounce, a type change, a change of control).
+ */
+export const SOULBOND_SPELLS = [
+  ...supported(['SYNTHETIC Soulbound Squire']),
+  ...supported(['SYNTHETIC Soulbound Squire']),
+  ...supported(['SYNTHETIC Soulbound Squire']),
+  ...supported(['SYNTHETIC Soulbound Seraph']),
+  ...supported(['SYNTHETIC Soulbound Seraph']),
+  ...supported(['SYNTHETIC Soulbound Giant']),
+  ...supported(['SYNTHETIC Soulbound Giant']),
+  ...supported(['SYNTHETIC Soulbound Glider']),
+  ...supported(['SYNTHETIC Soulbound Glider']),
+  ...supported(['SYNTHETIC Bonded Hound']),
+  ...supported(['SYNTHETIC Ember Cub']),
+  ...supported(['SYNTHETIC Ember Cub']),
+  ...supported(['SYNTHETIC Grave Thief']),
+  ...supported([
+    'SYNTHETIC Vanilla 3/3',
+    'SYNTHETIC Vanilla 2/2',
+    'SYNTHETIC Vanilla 5/5',
+    'Grizzly Bears',
+    'Grizzly Bears',
+    'Wall of Stone',
+    'Serra Angel',
+  ]),
+  ...supported(['Lightning Bolt', 'Murder', 'Unsummon']),
+  ...supported(['SYNTHETIC Rust Touch', 'SYNTHETIC Flicker Spell', 'SYNTHETIC Borrow Creature']),
+];
+
+/** White for the soulbond creatures, the others for the bodies and the removal. */
+export const SOULBOND_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Forest',
+  'Forest',
+  'Swamp',
+  'Mountain',
+  'Island',
+  'Island',
+]);
 
 /** The Saga three times, the Ring's rite five times (the later levels of the Ring need many temptations) and its other cards once, with bodies to carry the designation, a Wall to block it and removal that also takes the designation away. */
 export const RING_SPELLS = [
@@ -2513,6 +2614,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(PLAY_RULE_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(UPKEEP_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(LATER_NAMES as readonly string[]).includes(card.name))
+  .filter((card) => !(MIRACLE_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(COPY_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(AMOUNT_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(SUBJECT_NAMES as readonly string[]).includes(card.name))
@@ -2538,8 +2640,12 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(ADAMANTOISE_NAMES as readonly string[]).includes(card.name))
   // The voting slice has its own style: its cards ask each player a vote in the middle of a resolution.
   .filter((card) => !(VOTE_NAMES as readonly string[]).includes(card.name))
+  // The meld slice has its own soak test: a pair melds and leaves as two cards, and its owner is asked their order.
+  .filter((card) => !(MELD_NAMES as readonly string[]).includes(card.name))
   // The Ring slice has its own style: its cards ask which creature is the Ring-bearer and give a creature three triggered abilities.
   .filter((card) => !(RING_NAMES as readonly string[]).includes(card.name))
+  // The soulbond slices have their own tests: a pairing asks which creature to pair with, and a dies ability asks "you may" and creates a delayed ability.
+  .filter((card) => !(SOULBOND_NAMES as readonly string[]).includes(card.name))
   // The Vraska program has its own style: its cards ask other players questions in the middle of a resolution, and a payment of energy.
   .filter((card) => !(VRASKA_NAMES as readonly string[]).includes(card.name))
   // The Vraska EDHREC program has its own style: its cards ask other players questions in the middle of a resolution and change token creation and triggers.
@@ -2696,6 +2802,7 @@ export type DeckStyle =
   | 'playRules'
   | 'upkeep'
   | 'later'
+  | 'miracle'
   | 'copies'
   | 'amounts'
   | 'subjects'
@@ -2714,12 +2821,14 @@ export type DeckStyle =
   | 'vraska'
   | 'edhrec'
   | 'hofri'
+  | 'soulbond'
   | 'combat';
 
 /** The spell slots of a style. A style whose pool is empty falls back to the old spell mix. */
 export function spellSlots(style: DeckStyle): readonly string[] {
   // D-229 to D-235: the Hofri Ghostforge mechanics (a style of its own, kept out of every other pool).
   if (style === 'hofri' && HOFRI_SPELLS.length > 0) return HOFRI_SPELLS;
+  if (style === 'soulbond' && SOULBOND_SPELLS.length > 0) return SOULBOND_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
   if (style === 'edhrec') return EDHREC_SPELLS;
   // Only the creatures with a coverage keyword, so every deck of the style draws them (see COVERAGE_KEYWORDS).
@@ -2791,48 +2900,51 @@ export function spellSlots(style: DeckStyle): readonly string[] {
                                                                     ? UPKEEP_SPELLS
                                                                     : style === 'later'
                                                                       ? LATER_SPELLS
-                                                                      : style === 'copies'
-                                                                        ? COPY_SPELLS
-                                                                        : style === 'amounts'
-                                                                          ? AMOUNT_SPELLS
-                                                                          : style === 'subjects'
-                                                                            ? SUBJECT_SPELLS
-                                                                            : style === 'recursion'
-                                                                              ? RECURSION_SPELLS
+                                                                      : style === 'miracle'
+                                                                        ? MIRACLE_SPELLS
+                                                                        : style === 'copies'
+                                                                          ? COPY_SPELLS
+                                                                          : style === 'amounts'
+                                                                            ? AMOUNT_SPELLS
+                                                                            : style === 'subjects'
+                                                                              ? SUBJECT_SPELLS
                                                                               : style ===
-                                                                                  'artifacts'
-                                                                                ? ARTIFACT_SPELLS
+                                                                                  'recursion'
+                                                                                ? RECURSION_SPELLS
                                                                                 : style ===
-                                                                                    'dinosaurs'
-                                                                                  ? DINOSAUR_SPELLS
+                                                                                    'artifacts'
+                                                                                  ? ARTIFACT_SPELLS
                                                                                   : style ===
-                                                                                      'angels'
-                                                                                    ? ANGEL_SPELLS
+                                                                                      'dinosaurs'
+                                                                                    ? DINOSAUR_SPELLS
                                                                                     : style ===
-                                                                                        'dragons'
-                                                                                      ? DRAGON_SPELLS
+                                                                                        'angels'
+                                                                                      ? ANGEL_SPELLS
                                                                                       : style ===
-                                                                                          'korvoldKeywords'
-                                                                                        ? KORVOLD_KEYWORD_SPELLS
+                                                                                          'dragons'
+                                                                                        ? DRAGON_SPELLS
                                                                                         : style ===
-                                                                                            'korvoldSingles'
-                                                                                          ? KORVOLD_SINGLE_SPELLS
+                                                                                            'korvoldKeywords'
+                                                                                          ? KORVOLD_KEYWORD_SPELLS
                                                                                           : style ===
-                                                                                              'korvoldControl'
-                                                                                            ? KORVOLD_CONTROL_SPELLS
+                                                                                              'korvoldSingles'
+                                                                                            ? KORVOLD_SINGLE_SPELLS
                                                                                             : style ===
-                                                                                                'adamantoise'
-                                                                                              ? ADAMANTOISE_SPELLS
+                                                                                                'korvoldControl'
+                                                                                              ? KORVOLD_CONTROL_SPELLS
                                                                                               : style ===
-                                                                                                  'vote'
-                                                                                                ? VOTE_SPELLS
+                                                                                                  'adamantoise'
+                                                                                                ? ADAMANTOISE_SPELLS
                                                                                                 : style ===
-                                                                                                    'ring'
-                                                                                                  ? RING_SPELLS
+                                                                                                    'vote'
+                                                                                                  ? VOTE_SPELLS
                                                                                                   : style ===
-                                                                                                      'planeswalkers'
-                                                                                                    ? PLANESWALKER_SPELLS
-                                                                                                    : SPELLS;
+                                                                                                      'ring'
+                                                                                                    ? RING_SPELLS
+                                                                                                    : style ===
+                                                                                                        'planeswalkers'
+                                                                                                      ? PLANESWALKER_SPELLS
+                                                                                                      : SPELLS;
   return pool.length > 0 ? pool : SPELLS;
 }
 
@@ -2868,6 +2980,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'playRules' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'upkeep' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'later' && BASIC_LANDS.length > 0) return BASIC_LANDS;
+  if (style === 'miracle' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'copies' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'amounts' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'subjects' && BASIC_LANDS.length > 0) return BASIC_LANDS;
@@ -2886,6 +2999,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'vraska' && BASIC_LANDS.length > 0) return VRASKA_LANDS;
   if (style === 'edhrec' && BASIC_LANDS.length > 0) return EDHREC_LANDS;
   if (style === 'hofri' && BASIC_LANDS.length > 0) return HOFRI_LANDS;
+  if (style === 'soulbond' && BASIC_LANDS.length > 0) return SOULBOND_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
 }
 
@@ -3174,6 +3288,13 @@ export const LATER_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['spells', 'later'],
 ];
 
+/** Style pairs of the miracle soak test (D-274): a mirror match and both mixed ways. */
+export const MIRACLE_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['miracle', 'miracle'],
+  ['miracle', 'spells'],
+  ['spells', 'miracle'],
+];
+
 /** Style pairs of the copies soak test (D-129): a mirror match and both mixed ways. */
 export const COPY_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['copies', 'copies'],
@@ -3277,6 +3398,13 @@ export const RING_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['ring', 'ring'],
   ['ring', 'spells'],
   ['spells', 'ring'],
+];
+
+/** Style pairs of the soulbond soak test (D-286): a mirror match and both mixed ways. */
+export const SOULBOND_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['soulbond', 'soulbond'],
+  ['soulbond', 'spells'],
+  ['spells', 'soulbond'],
 ];
 
 /** Style pairs of the Hofri soak test (D-229 to D-235): a mirror match and both mixed ways. */
@@ -3420,9 +3548,9 @@ export function combatAnswerErrors(decision: PendingDecision, action: Action): s
       if (seen.has(attacker)) errors.push(`${attacker} attacks twice`);
       seen.add(attacker);
     }
-    // CR 508.1d: a creature that attacks each combat if able is in every declaration.
+    // CR 508.1d: "attacks each combat if able": the decision lists the creatures that must be declared (`mustAttack`); a declaration that leaves one out is not legal.
     for (const required of decision.mustAttack) {
-      if (!seen.has(required)) errors.push(`${required} must attack (CR 508.1d)`);
+      if (!seen.has(required)) errors.push(`${required} must attack`);
     }
   } else if (decision.kind === 'declareBlockers') {
     if (action.kind !== 'declareBlockers') return [`answered with ${action.kind}`];

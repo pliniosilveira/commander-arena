@@ -49,6 +49,7 @@ import {
   checkAttackTax,
   checkCostReduction,
 } from './validate-cost';
+import { checkCrossZoneSlots } from './validate-cross-zone';
 import { checkDinosaursFace, checkDinosaursStatic } from './validate-dinosaurs';
 import {
   checkDragonsEffect,
@@ -79,6 +80,7 @@ import {
   issue,
   loyaltyOffPlaneswalkerIssues,
   readsCombatOrSource,
+  readsCombatOrSourceBesidesCommander,
   type Scope,
 } from './validate-parts';
 import {
@@ -133,7 +135,7 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
               f.owner !== undefined ||
               f.controller !== undefined ||
               f.stackKind !== undefined ||
-              readsCombatOrSource(f),
+              readsCombatOrSourceBesidesCommander(f),
           )
         ) {
           issue(
@@ -159,8 +161,16 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       checkFlashbackCost(k.cost, `${path}.cost`, out);
       break;
     case 'protection':
-      if (k.from !== 'color')
-        issue(out, `${path}.from`, `unknown protection quality ${String(k.from)}`);
+      // D-259 (CR 903.4f): "each color that's not in your commander's color identity" names no color: the engine works them out.
+      if (k.from === 'colorsNotInCommanderIdentity') break;
+      if (k.from !== 'color') {
+        issue(
+          out,
+          `${path}.from`,
+          `unknown protection quality ${String((k as { from: unknown }).from)}`,
+        );
+        break;
+      }
       if (!Array.isArray(k.colors) || k.colors.length === 0) {
         issue(out, `${path}.colors`, 'protection needs at least one color');
       } else {
@@ -251,11 +261,15 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       // D-131: a `countOf` is "a +1/+1 counter on it for each Zombie card in your graveyard".
       if (kindOf(r.count) === 'countOf') {
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
-      } else if (kindOf(r.count) !== 'x' && (!isCount(r.count) || r.count < 1)) {
+      } else if (
+        kindOf(r.count) !== 'x' &&
+        kindOf(r.count) !== 'timesKicked' &&
+        (!isCount(r.count) || r.count < 1)
+      ) {
         issue(
           out,
           `${path}.count`,
-          'counter count must be a positive integer, { kind: "x" } or a countOf',
+          'counter count must be a positive integer, { kind: "x" }, { kind: "timesKicked" } or a countOf',
         );
       }
       // CR 702.138c (D-124): "escapes with" is the only conditional form; it needs an escape cost (`checkCastFace`).
@@ -361,7 +375,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'modifyPt':
-      checkStaticSubject(s.subject, `${path}.subject`, out);
+      checkStaticSubject(s.subject, `${path}.subject`, out, false, true);
       // D-115: an integer, or a count of objects (or a multiple of one) that follows the board.
       checkStaticPtAmount(s.power, `${path}.power`, true, out);
       checkStaticPtAmount(s.toughness, `${path}.toughness`, true, out);
@@ -377,7 +391,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'grantKeyword':
-      checkStaticSubject(s.subject, `${path}.subject`, out, true);
+      checkStaticSubject(s.subject, `${path}.subject`, out, true, true);
       checkGrantedKeyword(s.keyword, `${path}.keyword`, out);
       // D-185: riot is applied as a permanent enters, so only a group the battlefield names can give it (CR 614.12).
       if (s.keyword?.kind === 'riot' && s.subject?.kind !== 'filter') {
@@ -406,7 +420,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       // D-133: the permission has no parameters; the face-level checks say where it may stand.
       break;
     case 'grantAbility':
-      checkStaticSubject(s.subject, `${path}.subject`, out);
+      checkStaticSubject(s.subject, `${path}.subject`, out, false, s.ability?.kind !== 'mana');
       // D-099: a mana ability; D-151: an activated or a triggered ability too, held to the rules of one of the card's own.
       if (s.ability?.kind === 'mana') {
         checkManaAbility(s.ability, `${path}.ability`, out);
@@ -442,6 +456,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'takeFromLinkedExile':
     case 'castAsThoughFlash':
     case 'spellsCantBeCountered':
+    case 'opponentsCantCastSpells':
       checkArtifactsStatic(s, path, out);
       break;
     case 'restrictionUnless':
@@ -807,9 +822,12 @@ function checkTriggerSubject(
   checkFilter(what as never, path, out);
 }
 
-/** Whether the trigger's event is damage being dealt, so that "that much" means its amount (D-133). */
+/**
+ * Whether the trigger's event has an amount that "that much" or "that many" can mean (`triggerDamage`): the damage dealt (D-133) or the life
+ * gained (D-256, CR 119.9).
+ */
 function hasDamage(t: Trigger): boolean {
-  return t?.kind === 'dealtDamage' || t?.kind === 'dealsCombatDamage';
+  return t?.kind === 'dealtDamage' || t?.kind === 'dealsCombatDamage' || t?.kind === 'lifeGained';
 }
 
 /** Whether the effect, or one of a sequence or a "may" inside it, adds mana (D-189). */
@@ -963,7 +981,40 @@ function checkLoyaltyAbility(
   }
 }
 
+/**
+ * D-287 (CR 702.95b, 400.7, 603.4, 608.2h): `paired` reads the pair of the permanent on the battlefield now (`partnerOf` of the object table; nothing of the
+ * last-known information). It is exact in one place only: the "as long as" condition of a static ability of a permanent on the battlefield, which `derive` reads
+ * while the permanent is there. In any other ability the source can be gone when the condition is read: a triggered ability's source may die to a response between the
+ * event and the resolution (CR 603.4 checks the intervening "if" again, 608.2h reads what left with its last-known information, which was paired) and an activated
+ * ability's cost may remove it; a replacement effect or a delayed trigger works with no permanent at all. The engine's own soulbond abilities read `soulbondReady`.
+ * The card is refused, never accepted with a condition that would be false for the wrong reason.
+ */
+function checkPairedPlacement(a: Ability, path: string, out: AstIssue[]): void {
+  const refuse = (): void =>
+    issue(
+      out,
+      path,
+      '\'paired\' is valid only as the "as long as" condition of a static ability of a permanent on the battlefield: anywhere else the permanent may have left when it is read (CR 400.7, 603.4, 608.2h)',
+    );
+  switch (a?.kind) {
+    case 'static':
+      // The condition of the ability itself; the payload (a granted ability, a nested condition) and a card in the graveyard have no place for it.
+      if (effectHas([a.static], 'paired')) refuse();
+      else if (a.functionsIn === 'graveyard' && conditionHas(a.condition, 'paired')) refuse();
+      return;
+    case 'triggered':
+    case 'activated':
+    case 'mana':
+    case 'replacement':
+      if (effectHas([a], 'paired')) refuse();
+      return;
+    default:
+      return;
+  }
+}
+
 function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
+  checkPairedPlacement(a, path, out);
   switch (a?.kind) {
     case 'keyword':
       checkKeyword(a.keyword, `${path}.keyword`, out);
@@ -1000,7 +1051,15 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
     case 'triggered': {
       checkTrigger(a.trigger, `${path}.trigger`, out);
       checkGraveyardAbility(a, path, out);
-      const targets = declareTargets(a.targets, `${path}.targets`, out);
+      const targets = declareTargets(a.targets, `${path}.targets`, out, false, false, true);
+      // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
+      checkCrossZoneSlots(
+        a,
+        a.effect,
+        a.modes !== undefined || a.chooseModes !== undefined,
+        path,
+        out,
+      );
       const subject = subjectOf(a.trigger);
       const selfCast = a.trigger?.kind === 'castSpell' && a.trigger.self === true;
       const scopeOf = (declared: Scope['targets']): Scope => ({
@@ -1016,6 +1075,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
         ...(selfCast ? { selfCast: true } : {}),
+        ...(a.trigger?.kind === 'dies' ? { diesTrigger: true } : {}),
         ...HOOKS,
       });
       if (a.modes !== undefined || a.chooseModes !== undefined) {
@@ -1027,6 +1087,36 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       if (a.optional !== undefined && typeof a.optional !== 'boolean') {
         issue(out, `${path}.optional`, 'optional must be a boolean');
+      }
+      // D-256 (CR 603.2h): "Do this only once each turn."
+      if (a.doOnlyOnceEachTurn !== undefined) {
+        if (a.doOnlyOnceEachTurn !== true) {
+          issue(out, `${path}.doOnlyOnceEachTurn`, 'doOnlyOnceEachTurn must be true');
+        }
+        if (a.oncePerTurn !== undefined) {
+          issue(
+            out,
+            `${path}.doOnlyOnceEachTurn`,
+            'oncePerTurn and doOnlyOnceEachTurn are two different limits (CR 603.2, 603.2h): one of them',
+          );
+        }
+        if (a.trigger?.kind === 'state' || a.trigger?.kind === 'tappedForMana') {
+          issue(
+            out,
+            `${path}.doOnlyOnceEachTurn`,
+            'a state trigger and a triggered mana ability have their own rules: no doOnlyOnceEachTurn',
+          );
+        }
+        // CR 603.2h: the action is "taken" when the player does what is asked. A choice inside the effect
+        // (a `may`, a payment of any amount) is not the ability's own `optional`, so the engine would count
+        // a declined or zero payment as taken: refused, never guessed (D-256).
+        if (a.optional !== true && hasPlayerChoiceStep(a.effect)) {
+          issue(
+            out,
+            `${path}.doOnlyOnceEachTurn`,
+            'doOnlyOnceEachTurn with a choice inside the effect (may, payAnyAmount) needs the ability to be optional',
+          );
+        }
       }
       // D-149: "This ability triggers only once each turn."
       if (a.oncePerTurn !== undefined) {
@@ -1079,6 +1169,13 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'subjectControllerHasMore reads the controller of a permanent the event is about',
           );
         }
+        if (conditionHas(a.interveningIf, 'triggerPlayerHasMore') && !triggerHasPlayer(a.trigger)) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
+          );
+        }
         if (
           conditionHas(a.interveningIf, 'subjectGreaterPt') &&
           a.trigger?.kind !== 'entersBattlefield'
@@ -1089,6 +1186,18 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'subjectGreaterPt compares the creature that entered: it needs an entersBattlefield trigger',
           );
         }
+      }
+      // D-271: "if this card is in your graveyard" is true only for an ability that works there, which the ability must say (CR 113.6b).
+      if (
+        (conditionHas(a.interveningIf, 'thisInYourGraveyard') ||
+          conditionHas(a.triggerCondition, 'thisInYourGraveyard')) &&
+        a.functionsIn !== 'graveyard'
+      ) {
+        issue(
+          out,
+          `${path}.interveningIf`,
+          "thisInYourGraveyard needs functionsIn: 'graveyard': an ability that works on the battlefield has its card there",
+        );
       }
       // D-145: "attacks while you don't control another Dinosaur": the condition of the event itself, read once.
       if (a.triggerCondition !== undefined) {
@@ -1105,6 +1214,13 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             out,
             `${path}.triggerCondition`,
             'subjectControllerHasMore is read as an intervening "if"',
+          );
+        }
+        if (conditionHas(a.triggerCondition, 'triggerPlayerHasMore')) {
+          issue(
+            out,
+            `${path}.triggerCondition`,
+            'triggerPlayerHasMore is read as an intervening "if"',
           );
         }
         if (conditionHas(a.triggerCondition, 'subjectGreaterPt')) {
@@ -1250,6 +1366,13 @@ const HOOKS = {
   checkEffectExt: checkDragonsEffect,
 };
 
+/** True if the effect, or a step of a top-level sequence, is a `may` or a `payAnyAmount` (a choice of the player inside the effect). */
+function hasPlayerChoiceStep(effect: Effect): boolean {
+  if (effect.kind === 'may' || effect.kind === 'payAnyAmount') return true;
+  if (effect.kind === 'sequence') return effect.effects.some(hasPlayerChoiceStep);
+  return false;
+}
+
 export function validateAbility(a: Ability): AstIssue[] {
   const out: AstIssue[] = [];
   checkAbility(a, 'ability', out);
@@ -1349,6 +1472,20 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
     checkAbility(a, `${path}.abilities[${i}]`, out);
   });
   loyaltyOffPlaneswalkerIssues(face.types, face.abilities, path, out);
+  // D-287: the conditions a face keeps outside its abilities (the spell itself with the choice of its modes, an alternative cost, an additional cost) are read for a card that is
+  // being cast: it is not a permanent, so it is never paired.
+  if (
+    effectHas(
+      [face.spell, face.alternativeCosts, face.additionalCosts, face.additionalCostChoice],
+      'paired',
+    )
+  ) {
+    issue(
+      out,
+      path,
+      '\'paired\' is valid only as the "as long as" condition of a static ability of a permanent on the battlefield: a card that is cast is not a permanent',
+    );
+  }
   // CR 208.2, 604.3: a printed '*' is defined by a characteristic-defining ability, and only by one.
   checkStarPairing(face, face.abilities, path, out);
   checkAttachmentFace(face.abilities, face, path, out);
@@ -1498,6 +1635,8 @@ const LAYOUT_FACES: Readonly<Record<string, number>> = {
   transform: 2,
   modal_dfc: 2,
   prepare: 2,
+  // D-277: the front face and the combined back face of the meld pair.
+  meld: 2,
 };
 
 /** Structural validity only: is the AST well-formed, regardless of what the engine can execute. */
@@ -1528,6 +1667,15 @@ export function validateCardStructure(def: CardDefinition): AstIssue[] {
   }
   def.faces.forEach((face, i) => {
     checkFace(face, `faces[${i}]`, def.support === 'supported', out);
+    // CR 702.94a (D-274): the reveal is read from the card's front face only (`rules/miracle.ts`, `miracleCostOf`), so a miracle
+    // cost on any other face would never be offered: refused here instead of accepted and dropped without a word.
+    if (i > 0 && face.alternativeCosts?.some((a) => a?.kind === 'miracle')) {
+      issue(
+        out,
+        `faces[${i}].alternativeCosts`,
+        'miracle on a face other than the front face is not supported (CR 702.94a)',
+      );
+    }
   });
   out.push(...layoutStructureIssues(def));
   return out;

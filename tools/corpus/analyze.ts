@@ -7,8 +7,12 @@ import path from 'node:path';
 import {
   type ImportedCard,
   importCard,
+  type MeldLookup,
+  meldRelation,
+  normalizeNameKey,
   PARSER_VERSION,
   parseStoredCard,
+  type StoredCard,
 } from '@commander-arena/cards';
 import { type CardItem, readCardObjects } from './read-cards.ts';
 import type { CardRecord, CorpusResult } from './types.ts';
@@ -37,6 +41,25 @@ export async function analyzeFile(
     if (problems.length < MAX_PROBLEMS) problems.push(message);
   };
 
+  // D-280: a meld card is read with its melded face, a card of its own that is not Commander-legal and may come later in the file than the half: the halves wait
+  // until the whole file has been read, the melded faces are kept whatever their legality.
+  const meldFaces = new Map<string, StoredCard>();
+  const halves: StoredCard[] = [];
+  const record = (stored: StoredCard, imported: ImportedCard) => {
+    const supported = imported.support.status === 'supported';
+    cards.push({ name: stored.name, rank: stored.edhrecRank, supported });
+    if (!supported) unsupported.push(imported);
+  };
+  const importOne = (stored: StoredCard, related?: MeldLookup): ImportedCard | null => {
+    try {
+      return importCard(stored, undefined, undefined, undefined, undefined, related);
+    } catch (error) {
+      rejected += 1;
+      note(`${stored.name}: the import threw (${error instanceof Error ? error.message : error})`);
+      return null;
+    }
+  };
+
   for await (const item of items) {
     if (item.kind === 'bad') {
       malformed += 1;
@@ -52,21 +75,23 @@ export async function analyzeFile(
       continue;
     }
     const stored = converted.card;
+    if (meldRelation(stored).role === 'result')
+      meldFaces.set(normalizeNameKey(stored.name), stored);
     if (!all && stored.commanderLegality !== 'legal' && stored.commanderLegality !== 'restricted') {
       notLegal += 1;
       continue;
     }
-    let imported: ImportedCard;
-    try {
-      imported = importCard(stored);
-    } catch (error) {
-      rejected += 1;
-      note(`${stored.name}: the import threw (${error instanceof Error ? error.message : error})`);
+    if (stored.layout === 'meld') {
+      halves.push(stored);
       continue;
     }
-    const supported = imported.support.status === 'supported';
-    cards.push({ name: stored.name, rank: stored.edhrecRank, supported });
-    if (!supported) unsupported.push(imported);
+    const imported = importOne(stored);
+    if (imported !== null) record(stored, imported);
+  }
+  const related: MeldLookup = (name) => meldFaces.get(normalizeNameKey(name));
+  for (const stored of halves) {
+    const imported = importOne(stored, related);
+    if (imported !== null) record(stored, imported);
   }
 
   return {

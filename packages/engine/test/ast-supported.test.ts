@@ -43,6 +43,8 @@ const EXECUTABLE_KEYWORDS = [
   'partner', // scenario-xx-changeling-devoid
   'chooseBackground', // scenario-xx-choose-background
   'canBeCommander', // scenario-xx-planeswalker-commander
+  'ascend', // scenario-xx-ascend
+  'soulbond', // scenario-xx-soulbond (D-286)
   'exalted', // scenario-xx-exalted-annihilator
   'annihilator', // scenario-xx-exalted-annihilator
   'backup', // convert-grammar-engine-p69 (Guardian Scalelord, on the real card)
@@ -129,6 +131,8 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   partner: { kind: 'partner' },
   chooseBackground: { kind: 'chooseBackground' },
   canBeCommander: { kind: 'canBeCommander' },
+  ascend: { kind: 'ascend' },
+  soulbond: { kind: 'soulbond' },
   exalted: { kind: 'exalted' },
   annihilator: { kind: 'annihilator', count: 2 },
   backup: { kind: 'backup', count: 1 },
@@ -353,6 +357,8 @@ describe('supported feature gate', () => {
       'class',
       // D-214: a preparation card (CR 722).
       'prepare',
+      // D-277: a meld card (CR 701.42, 712.4).
+      'meld',
     ]);
     expect(SUPPORTED_FEATURES.effectKinds).toEqual(expect.arrayContaining(['discard', 'search']));
     expect(SUPPORTED_FEATURES.effectKinds).toContain('modifyPt');

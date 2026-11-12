@@ -1161,7 +1161,8 @@ describe('exiling until the source leaves, a slot for each opponent, and a choic
     'For each opponent, exile up to one target creature you control.',
     'For each opponent, exile up to one target creature that player controls until end of turn.',
     'For each player, exile up to one target creature that player controls.',
-    'For each opponent, destroy up to one target creature that player controls.',
+    // D-273: "destroy up to one" is read now (effect.destroy-per-opponent); without "up to" each opponent would need a target, which is not read.
+    'For each opponent, destroy target creature that player controls.',
     'Exile target creature card from a graveyard until ~ leaves the battlefield.',
     'Exile all creatures until ~ leaves the battlefield.',
     'Destroy target artifact, enchantment, or creature with mana value 3 or less.',

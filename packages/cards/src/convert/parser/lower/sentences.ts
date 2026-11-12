@@ -174,7 +174,9 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     const lowered = lowerClause(clause, ctx);
     if (!lowered.ok) return lowered;
     effects.push(...lowered.value);
+    ctx.lowered += 1;
     noteRemoved(lowered.value, ctx);
+    if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;
     noteMoved(lowered.value, ctx);
     noteCreated(lowered.value, ctx);
     noteMadeToken(clause, lowered.value, ctx);
@@ -226,6 +228,56 @@ function lowerUnless(sentence: IrSentence, ctx: LowerContext): LowerResult<Effec
     ...(clause.optional ? { optional: true as const } : {}),
   };
   return { ok: true, value: [effect], rule: clause.rule };
+}
+
+/**
+ * "Sacrifice it unless you return an untapped Plains you control to its owner's hand" (Karoo, D-258, CR 118.12a): "[Do something] unless [a player does
+ * something else]" means "[A player may do something else]. If [that player doesn't], [do something]", so the engine's `may` of the return (a choice among the
+ * matching permanents the controller controls, asked only when there is one: nothing that cannot be done is offered, CR 608.2d) and a `conditional` on "not
+ * `didPrevious`" for the instruction. It follows exactly one clause that is not itself optional; the offered clause must lower to the choosing return of one
+ * permanent to its owner's hand, anything else is refused (never lowered as if the clause were unconditional).
+ */
+function lowerUnlessReturn(sentence: IrSentence, ctx: LowerContext): LowerResult<Effects> | null {
+  const [clause, ...more] = sentence.clauses;
+  const test = clause?.condition?.test;
+  if (clause === undefined || test?.kind !== 'unlessReturn') return null;
+  if (more.length > 0 || sentence.condition !== undefined || clause.optional) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures([
+    'effect:may',
+    'effect:conditional',
+    'condition:didPrevious',
+    'condition:not',
+  ]);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const { condition: _unless, ...instruction } = clause;
+  void _unless;
+  const offered = lowerClauses([{ ...test.clause, optional: false }], ctx);
+  if (!offered.ok) return offered;
+  const [offer, ...rest] = offered.value;
+  if (
+    rest.length > 0 ||
+    offer?.kind !== 'moveToZone' ||
+    offer.to !== 'hand' ||
+    offer.objects.kind !== 'choose'
+  ) {
+    return refuse(sentence);
+  }
+  const body = lowerClauses([instruction], ctx);
+  if (!body.ok) return body;
+  return {
+    ok: true,
+    value: [
+      { kind: 'may', effect: offer },
+      {
+        kind: 'conditional',
+        condition: { kind: 'not', term: { kind: 'didPrevious' } },
+        effect: oneEffect(body.value),
+      },
+    ],
+    rule: clause.rule,
+  };
 }
 
 /** "it deals 4 damage": a damage clause that names no recipient (`effect.damage-it`). */
@@ -453,6 +505,64 @@ function lowerPayAnyAmount(
       ...(own.length > 0 ? { targets: own } : {}),
       effect: ownSource(oneEffect(after.value), ctx),
     },
+  };
+  return { ok: true, value: [effect], rule: clause.rule };
+}
+
+/**
+ * "You may pay {X}, where X is less than or equal to the amount of life you gained. If you do, draw X cards." (D-257, CR 107.3f, 118.1, 608.2c): the
+ * offer and the sentence after it are one engine `payAnyAmount` of a generic {1} with a most (`atMost`, the life gained) and an "If you do" (`ifPaid`): the
+ * controller chooses X as the ability resolves, pays it, and when they paid at least one the instruction after runs at once with X the number paid, not as
+ * an ability of its own. Only in a life gain trigger, where the amount is known. The offer is one clause that "you may" made optional; the sentence after it
+ * is "If you do," and the last of the body. Null when the sentence is not such an offer; one that does not fit is refused, never guessed.
+ */
+function lowerPayXAtMost(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const [clause, ...more] = sentence.clauses;
+  if (clause?.verb !== 'payXAtMost') return null;
+  const next = sentences[i + 1];
+  const limit = clause.args.atMost;
+  if (
+    more.length > 0 ||
+    !clause.optional ||
+    clause.condition !== undefined ||
+    clause.duration !== undefined ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    !ctx.lifeGainTrigger ||
+    limit === undefined ||
+    !isIrAmount(limit) ||
+    next?.condition?.test.kind !== 'didPrevious' ||
+    next.instead === true ||
+    next.where !== undefined ||
+    next.reflexive === true ||
+    next.clauses.some((c) => c.optional) ||
+    i + 2 < sentences.length
+  ) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures(['effect:payAnyAmount', 'amount:triggerDamage', 'amount:x']);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const most = lowerAmount(limit, ctx, clause.rule);
+  if (!most.ok) return most;
+  // The X of the follow-up is the number paid, which this effect defines: the text of the ability has no X of its own to announce (CR 107.3f).
+  const usedX = ctx.usesX;
+  ctx.usesX = false;
+  const after = lowerClauses(next.clauses, ctx);
+  const readX = ctx.usesX;
+  ctx.usesX = usedX;
+  if (!after.ok) return after;
+  if (!readX) return refuse(next);
+  const effect: Effect = {
+    kind: 'payAnyAmount',
+    symbol: '1',
+    atMost: most.value,
+    ifPaid: oneEffect(after.value),
   };
   return { ok: true, value: [effect], rule: clause.rule };
 }
@@ -977,6 +1087,47 @@ function lowerStep(
   const [first] = sentence.clauses;
   if (first === undefined) return { stopped: refuse(sentence) };
   const stop = (failed: LowerFailure): StepResult => ({ stopped: failed });
+  // "Roll a four-sided die." (D-271, CR 706.3b): the result is read by the instructions after the roll in the same sequence, so a roll is a plain sentence of
+  // its own: not under a condition, an "otherwise", a delayed trigger, a question to a player or a reflexive ability, where the engine would not keep it for them.
+  if (
+    sentence.clauses.some((c) => c.verb === 'roll') &&
+    (sentence.condition !== undefined ||
+      sentence.otherwise === true ||
+      sentence.delayed !== undefined ||
+      sentence.reflexive === true ||
+      sentence.mayBy !== undefined ||
+      sentence.instead === true ||
+      sentence.where !== undefined ||
+      sentence.clauses.some((c) => c.optional || c.condition !== undefined))
+  ) {
+    return stop(refuse(sentence));
+  }
+  // "Draw a card if your life total is greater than your starting life total. Otherwise, you gain 2 life." (D-253, CR 608.2c): the `else` of the
+  // conditional instruction before it. Only a plain sentence of its own; the one before it must be a conditional with no `else` yet.
+  if (sentence.otherwise === true) {
+    const previous = steps[steps.length - 1];
+    const before = previous?.effects.length === 1 ? previous.effects[0] : undefined;
+    if (
+      before?.kind !== 'conditional' ||
+      before.else !== undefined ||
+      sentence.condition !== undefined ||
+      sentence.instead === true ||
+      sentence.where !== undefined ||
+      sentence.delayed !== undefined ||
+      sentence.reflexive === true ||
+      sentence.clauses.some((c) => c.optional)
+    ) {
+      return stop(refuse(sentence));
+    }
+    const other = lowerClauses(sentence.clauses, ctx);
+    if (!other.ok) return stop(other);
+    steps.pop();
+    steps.push({
+      effects: [{ ...before, else: oneEffect(other.value) }],
+      replaceable: false,
+    });
+    return { last: i };
+  }
   // "At the beginning of your next end step, ~ deals 2 damage to each opponent ..." (stage P34, D-152, CR 603.7): the engine's `delayedTrigger`.
   if (sentence.delayed !== undefined) {
     const { step, whose } = sentence.delayed;
@@ -1006,6 +1157,12 @@ function lowerStep(
     return { last: i };
   }
   // "You may pay any amount of {R}. When you do, it deals that much damage to any target." (stage P34, D-152, CR 603.12, 118.1).
+  const payX = lowerPayXAtMost(sentence, sentences, i, ctx);
+  if (payX !== null) {
+    if (!payX.ok) return stop(payX);
+    steps.push({ effects: payX.value, replaceable: false });
+    return { last: i + 1 };
+  }
   const payAny = lowerPayAnyAmount(sentence, sentences, i, ctx);
   if (payAny !== null) {
     if (!payAny.ok) return stop(payAny);
@@ -1078,13 +1235,21 @@ function lowerStep(
     steps.push({ effects: unless.value, replaceable: false });
     return { last: i };
   }
+  const unlessReturn = lowerUnlessReturn(sentence, ctx);
+  if (unlessReturn !== null) {
+    if (!unlessReturn.ok) return stop(unlessReturn);
+    steps.push({ effects: unlessReturn.value, replaceable: false });
+    return { last: i };
+  }
   if (sentence.condition === undefined) {
     const slotsFrom = ctx.targets.length;
     const lowered = lowerClauses(sentence.clauses, ctx);
     if (!lowered.ok) return stop(lowered);
     steps.push({
       effects: lowered.value,
-      replaceable: sentence.clauses.length === 1,
+      // "Roll a d6. If the result is 6, draw a card instead." (D-271, CR 706.3b, 608.2c): a roll is not replaced by the sentence after it, which reads its
+      // result: as the else of that sentence the roll would run after the test, with no result to read.
+      replaceable: sentence.clauses.length === 1 && first.verb !== 'roll',
       slots: [slotsFrom, ctx.targets.length],
     });
     return { last: i };
@@ -1156,6 +1321,15 @@ function lowerStep(
   return { last: i };
 }
 
+/** A word that names the controller of the ability in its text (CR 608.2d): "you", "your", "you've", "yourself". */
+const CONTROLLER_WORD = /\byou(?:r|rs|rself|'(?:ve|re|ll|d))?\b/iu;
+
+/**
+ * A word that is relative to the controller too: "an opponent" and "an opponent's" are the opponents of the controller (CR 102.2), and the engine would read them as the opponents of the
+ * asked player (`runsAs: 'chooser'`); "another player" and "other players" are the players but the controller. The selector of the sentence ("each opponent may") is not tested, only its clauses.
+ */
+const OTHER_PLAYER_WORD = /\b(?:opponents?|another player|other players?)\b/iu;
+
 /**
  * "Each player may discard a card." and "Target opponent may have you draw three cards. If the player doesn't, you mill three cards." (stage P52, D-210, CR 608.2d,
  * 101.4): the players the sentence names are asked, in turn order, whether to do its clauses; with "have you" the controller does them, otherwise the player asked is "you"
@@ -1185,6 +1359,32 @@ function lowerPlayersMay(
   }
   const players = playerSelectorOf(by.who, ctx);
   if (!players.ok) return refused(players);
+  // D-287: with no "have you" the player asked does the instruction, as "you" (`runsAs: 'chooser'`): a rule that reads "you" or "your" of the controller refuses then.
+  const askedActs = !by.haveYou;
+  // A word of the text that says "you" or "your" is the controller (CR 608.2d), which the engine would run as the asked player: the sentence, and the "if they don't" sentence
+  // that follows it, are not read then, whatever clause or amount says it. Without the text of the ability (a quotation lowered on its own) it cannot be told, so it is refused.
+  if (askedActs) {
+    const next = sentences[i + 1];
+    const spans = [
+      sentence,
+      ...sentence.clauses,
+      ...(next?.condition?.test.kind === 'declined' ? [next, ...next.clauses] : []),
+    ];
+    const start = Math.min(...spans.map((n) => n.span.start));
+    const end = Math.max(...spans.map((n) => n.span.end));
+    if (ctx.text === '' || CONTROLLER_WORD.test(ctx.text.slice(start, end))) {
+      return refused(refuse(sentence));
+    }
+    // D-287: the same for a word relative to the controller that is not "you": "each opponent may draw a card for each creature an opponent controls" counts the creatures of the
+    // opponents of the asked player. Only the clauses are read, not the selector.
+    const clauses = [
+      ...sentence.clauses,
+      ...(next?.condition?.test.kind === 'declined' ? next.clauses : []),
+    ];
+    if (clauses.some((c) => OTHER_PLAYER_WORD.test(ctx.text.slice(c.span.start, c.span.end)))) {
+      return refused(refuse(sentence));
+    }
+  }
   const body = lowerClauses(sentence.clauses, ctx);
   if (!body.ok) return refused(body);
   const next = sentences[i + 1];

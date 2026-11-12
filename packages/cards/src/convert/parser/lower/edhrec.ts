@@ -60,6 +60,7 @@ const DELAYED_MANA: Lowering<IrClause, Effects> = {
     const ref = objectRefOf(spell, ctx);
     if (!ref.ok) return ref;
     if (ref.value.kind !== 'target') return failure(clause);
+    // D-287: "your next main phase" is the controller's; a sentence that asks another player who acts is refused by `lowerPlayersMay` (its text says "your").
     if (spec.what.kind !== 'symbols') return failure(clause);
     const mana = { kind: 'fixed' as const, mana: spec.what.symbols as ManaColor[] };
     return {

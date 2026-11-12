@@ -23,7 +23,33 @@ export type GameEvent =
       readonly to: ObjectId;
       readonly fromZone: Zone;
       readonly toZone: Zone;
+      /**
+       * Put onto the battlefield at the same time as the other consecutive `simultaneous` events (CR 603.6a, D-272): one event puts several permanents onto the battlefield,
+       * so each of them is checked for the enters triggers of all the others. Only on an event that enters the battlefield.
+       */
+      readonly simultaneous?: true;
+      /**
+       * D-277 (CR 712.21, 701.42a): the second card of a melded permanent. A melded permanent is one object represented by two cards, so one permanent
+       * enters (or leaves) the battlefield and two cards move: the first card's event is the permanent's and this one is only the other card's own move
+       * (a trigger about permanents entering or leaving does not count it again; a trigger about cards does). Only on a move to or from the battlefield.
+       */
+      readonly component?: true;
     }
+  /**
+   * D-277 (CR 701.42a): two cards were exiled and melded: `permanent` is the one object that entered the battlefield, `cards` the two cards that
+   * represent it (the first card's object entered, the second card is its `meldedWith`), `from` the two exile objects they were.
+   */
+  | {
+      readonly kind: 'melded';
+      readonly permanent: ObjectId;
+      readonly cards: readonly [CardId, CardId];
+      readonly from: readonly [ObjectId, ObjectId];
+    }
+  /**
+   * D-277 (CR 701.42c): an effect told a player to meld objects that can't be melded (a token, a card that is not part of a meld pair, a card that is
+   * no longer where it was); `objects` stay in their zone. `reason` says which rule stopped it.
+   */
+  | { readonly kind: 'meldFailed'; readonly objects: readonly ObjectId[]; readonly reason: string }
   /**
    * `seat` drew a card (CR 121.1): `object` is the card in their hand. `nth` is how many cards they have
    * drawn this turn including this one (D-111), which the `drawn` trigger's `nth` compares.
@@ -36,6 +62,16 @@ export type GameEvent =
     }
   | { readonly kind: 'drewFromEmptyLibrary'; readonly seat: SeatId }
   | { readonly kind: 'libraryShuffled'; readonly seat: SeatId }
+  /**
+   * CR 706.1, 706.2 (D-271): `seat` rolled a die of `sides` sides; `result` is the natural result (the engine has no modifiers of a roll), drawn from the
+   * seeded generator of the game. A random event: the host does not let the player undo past it, as for a draw or a shuffle.
+   */
+  | {
+      readonly kind: 'dieRolled';
+      readonly seat: SeatId;
+      readonly sides: number;
+      readonly result: number;
+    }
   /**
    * CR 701.17a (Mill, D-131): `seat` put the top cards of their library into their graveyard, as the new objects they
    * became there (CR 400.7), in the order they were milled (the top card first). One event for each player and each
@@ -477,6 +513,11 @@ export type GameEvent =
    */
   | { readonly kind: 'madnessExiled'; readonly seat: SeatId; readonly object: ObjectId }
   /**
+   * CR 702.94a (Miracle, D-274): `seat` revealed the card `object`, in their hand, as they drew it (the first card they drew this turn); "When
+   * you reveal this card this way" triggers from this. The reveal itself is public through the `cardsRevealed` event before it.
+   */
+  | { readonly kind: 'miracleRevealed'; readonly seat: SeatId; readonly object: ObjectId }
+  /**
    * A card was suspended (CR 702.62a, D-128): `seat` paid its suspend cost and exiled it, face up, with `count` time
    * counters. `object` is the card in exile (public). The `counterAdded` event for the time counters follows.
    */
@@ -520,6 +561,8 @@ export type GameEvent =
       readonly from: SeatId | null;
       readonly to: SeatId | null;
     }
+  /** `seat` got the city's blessing (CR 702.131b, D-264): they controlled ten or more permanents, one of them with Ascend. Once per player. */
+  | { readonly kind: 'citysBlessingGained'; readonly seat: SeatId }
   /**
    * The Ring tempted `seat` (CR 701.54a, 701.54d, D-196), once they had done what the rule says, even when some or all of it was impossible.
    * `times` is how often it has tempted them now (the emblem has abilities from 2, 3 and 4), `bearer` the creature they chose as their
@@ -537,6 +580,34 @@ export type GameEvent =
    * A creature stopped being the Ring-bearer of `seat` (CR 701.54a), because another creature became it or because another player gained
    * control of it. Not emitted for one that left the battlefield (it is a new object, CR 400.7, and the designation is simply gone).
    */
-  | { readonly kind: 'ringBearerLost'; readonly seat: SeatId; readonly object: ObjectId };
+  | { readonly kind: 'ringBearerLost'; readonly seat: SeatId; readonly object: ObjectId }
+  /**
+   * Two creatures became paired (CR 702.95a, 702.95b, D-286): `a` is the creature whose soulbond ability paired them and `b` the other (the one that
+   * entered, for "whenever another creature you control enters"); `by` is the player who controls both and the ability.
+   */
+  | {
+      readonly kind: 'creaturesPaired';
+      readonly a: ObjectId;
+      readonly b: ObjectId;
+      readonly by: SeatId;
+    }
+  /**
+   * A pair ended while its creature `a` stays on the battlefield (CR 702.95e, D-285): `b` is the one that was its partner. `why`: `left` (the partner left
+   * the battlefield, so it is a new object), `control` (another player gained control of one of them) or `notCreature` (one stopped being a creature).
+   * Not emitted when both leave together: there is no creature left to say it about.
+   */
+  | {
+      readonly kind: 'creaturesUnpaired';
+      readonly a: ObjectId;
+      readonly b: ObjectId;
+      readonly why: 'left' | 'control' | 'notCreature';
+    };
 
-export type LossReason = 'life' | 'emptyLibrary' | 'poison' | 'commanderDamage' | 'concede';
+export type LossReason =
+  | 'life'
+  | 'emptyLibrary'
+  | 'poison'
+  | 'commanderDamage'
+  | 'concede'
+  /** An effect said the player loses the game (CR 104.3e, D-269). */
+  | 'effect';

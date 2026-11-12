@@ -48,6 +48,16 @@ export interface LowerContext {
    */
   readonly removed: Set<string>;
   /**
+   * True once an instruction of this text created a token (stage P69, D-276, CR 111.1): "it" and "that creature" after it name the new token (or
+   * are ambiguous), not an earlier target, so a rule that reads "it" as the target refuses. Filled by `lowerSentences` as each clause is lowered.
+   */
+  madeAToken: boolean;
+  /**
+   * The number of instructions of this text lowered so far (D-287): "return it" after an earlier instruction may name what that one made or moved, so a rule that reads
+   * "it" as the object of the trigger itself needs this to be 0. Filled by `lowerSentences` as each clause is lowered.
+   */
+  lowered: number;
+  /**
    * What "that player" means in the body of a triggered ability (stage P18, D-111), with the engine
    * features that reading needs: the controller of the spell that was cast (`controllerOf` the
    * triggering spell, CR 608.2h) for a cast trigger, "you" when the trigger is about you. Null when the
@@ -79,10 +89,43 @@ export interface LowerContext {
   /** Set when a lowering used `graveyardSource`: the ability functions from the graveyard. */
   usedGraveyardSource: boolean;
   /**
+   * The number of sides of the die the text rolled before this point (D-271, CR 706.2): the instruction "roll a four-sided die" sets it, and "the result is 1"
+   * reads it. Null before any roll; a second roll in one text is refused.
+   */
+  dieSides: number | null;
+  /**
+   * The normalized text of the ability the spans of the IR point into (D-287): the one place a lowering can tell the "you" the text says (the controller) from the "you"
+   * the engine reads for a player asked who acts (`runsAs: 'chooser'`). Empty where the lowering has no text (a quotation lowered on its own): a rule that needs it refuses then.
+   */
+  text: string;
+  /**
+   * True only while the "as long as" condition of a static ability is lowered (D-287, CR 604.1, 611.3a): the one place `paired` is read, because `derive` evaluates it
+   * while the permanent is on the battlefield. Anywhere else the permanent may be gone when the condition is read (CR 400.7, 603.4, 608.2h) and the engine keeps no
+   * last-known information of a pair.
+   */
+  staticCondition: boolean;
+  /**
+   * True only while the "as long as" condition of a static ability is lowered and every subject of that ability is `~` itself (D-287): "it" in "as long as it's paired" is
+   * the source then. With another subject ("Each creature you control has flying as long as it's paired") "it" has no antecedent the engine could read, so a rule refuses.
+   */
+  staticSubjectIsSelf: boolean;
+  /** True only while the intervening "if" of a triggered ability is lowered (D-271): the one place "~ is in your graveyard" is read. */
+  interveningCondition: boolean;
+  /**
+   * The name of the creature the intervening "if" of the ability named ("if you both own and control ~ and a creature named X", D-278, CR 701.42a): "exile them,
+   * then meld them into Y" reads it. Null where no such condition came before.
+   */
+  meldPartner: string | null;
+  /**
    * True when "it" in the body of a triggered ability is the card the permanent became (stage P30, D-135): every event of the
    * trigger is `~` dying or leaving the battlefield, so "exile it" and "put it into its owner's library" name `thisCard`.
    */
   itIsCard: boolean;
+  /**
+   * True when "it" in the body of a triggered ability is the card of a creature that died (D-284, CR 603.10a): every event of the trigger is `~` dying (not leaving the
+   * battlefield some other way, where the card may be anywhere). A subset of `itIsCard`.
+   */
+  itDied: boolean;
   /**
    * True while the total of a divided damage is lowered (stage P32, D-147, CR 601.2d): "..., where X is the greatest power among
    * creatures you control as you cast this spell" is read once, as the spell is cast, and only there.
@@ -108,6 +151,8 @@ export interface LowerContext {
    * "discard any number of cards" discarded. The engine's `thisWay` names which.
    */
   thisWay: 'sacrificed' | 'discarded';
+  /** True in the body of a triggered ability whose every event is life being gained (D-256, CR 119.9): `triggerDamage` is the life gained. */
+  lifeGainTrigger: boolean;
   /**
    * What "it" and "that land" mean after a search (stage P36, D-178, CR 400.7j, 701.23): the reference of the noun the last search looked for, which
    * the engine's `moved` names (the cards that search put somewhere). Null before a search and after any other move, destroy or exile.
@@ -138,6 +183,12 @@ export interface LowerContext {
    * the player with `~` replaced by it (stage P19).
    */
   readonly cardName: string;
+  /**
+   * The name the card gives itself in its text (D-266): the shortest of the names that normalization writes as `~` ("Ajani" for "Ajani, Strength of the Pride"),
+   * or '' when it is not known (a context made for a quoted ability or a mode, where `~` is not the card). The name of a token that begins with the card's own
+   * ("named Ajani's Pridemate") is written back from it.
+   */
+  selfName: string;
 }
 
 export function newContext(
@@ -153,15 +204,19 @@ export function newContext(
     targets: [],
     usesX: false,
     selfGone: false,
+    staticSubjectIsSelf: false,
     itIsSelf: false,
     selfCast: false,
     removed: new Set(),
+    madeAToken: false,
+    lowered: 0,
     thatPlayer: null,
     xIs: null,
     xDefined: false,
     exiled: null,
     exiledFaceDown: false,
     thisWay: 'sacrificed',
+    lifeGainTrigger: false,
     searched: null,
     sacrificedRef: null,
     madeToken: null,
@@ -172,8 +227,15 @@ export function newContext(
     movedOnto: null,
     graveyardSource: false,
     usedGraveyardSource: false,
+    dieSides: null,
+    staticCondition: false,
+    text: '',
+    interveningCondition: false,
+    meldPartner: null,
     itIsCard: false,
+    itDied: false,
     cardName,
+    selfName: '',
   };
 }
 

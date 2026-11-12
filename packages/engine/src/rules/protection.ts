@@ -8,6 +8,8 @@
 import type { Color } from '../characteristics';
 import type { ObjectId } from '../ids';
 import type { GameObject, GameState } from '../state/types';
+import { colorsNotInCommanderIdentity } from './commander-colors';
+import { controllerOf } from './control';
 import { derive } from './derive';
 
 /** The colors a source has: the object as it is, or as it last existed. Empty for a source the engine knows nothing about. */
@@ -23,7 +25,10 @@ export function protectedColors(state: GameState, obj: GameObject): readonly Col
   if (obj.zone !== 'battlefield') return [];
   const colors: Color[] = [];
   for (const a of derive(state, obj).abilities) {
-    if (a.kind === 'keyword' && a.keyword.kind === 'protection') colors.push(...a.keyword.colors);
+    if (a.kind !== 'keyword' || a.keyword.kind !== 'protection') continue;
+    if (a.keyword.from === 'color') colors.push(...a.keyword.colors);
+    // CR 903.4f (D-259): printed on the permanent, "your" is its controller. A static grant is resolved to colors as it is applied (`derive-statics.ts`).
+    else colors.push(...colorsNotInCommanderIdentity(state, controllerOf(state, obj)));
   }
   return colors;
 }

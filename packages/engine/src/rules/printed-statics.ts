@@ -3,14 +3,16 @@
  * ability ("You have hexproof", "You have no maximum hand size") and would otherwise derive every permanent for it. The abilities
  * `derive` gives an object are its copiable abilities with their keyword expansions, plus what layer 6 adds: keywords, the keyword
  * expansions of Exalted and Prowess (triggered), and the abilities a static `grantAbility` gives, which are mana, activated or
- * triggered, never static (D-099, D-151), and the alternative-cost abilities (triggered or keyword); "loses all abilities" only
- * removes. So an object whose copiable abilities and their expansions hold no static ability of the kind cannot have one after any
- * layer, and the answer needs no `derive`. A `true` answer means "maybe": the caller still derives.
+ * triggered, never static (D-099, D-151), and the alternative-cost abilities (triggered or keyword), and (D-275) the static abilities an effect
+ * gave the object, which the check reads from the continuous effects on it; "loses all abilities" only removes. So an object whose copiable
+ * abilities and their expansions hold no static ability of the kind and that no effect gave one cannot have one after any layer, and the answer
+ * needs no `derive`. A `true` answer means "maybe": the caller still derives.
  */
 import type { StaticEffect } from '../ast/types';
 import type { GameObject, GameState } from '../state/types';
 import { copiableValues } from './copiable';
 import { expandKeywords } from './derive-keywords';
+import { effectsOn } from './effects-on';
 
 /** False only when `obj` certainly has no static ability of `kind` as `derive` reads it, in any layer. */
 export function mayHaveStatic(
@@ -19,6 +21,16 @@ export function mayHaveStatic(
   kind: StaticEffect['kind'],
 ): boolean {
   if (obj.card === null && obj.token === null && obj.copyOf === undefined) return false;
+  // D-275 (CR 611.2a, 613.1f): an effect that gave the object the static ability, for good.
+  for (const e of effectsOn(state, obj.id)) {
+    if (
+      e.change.kind === 'grantAbility' &&
+      e.change.ability.kind === 'static' &&
+      e.change.ability.static.kind === kind
+    ) {
+      return true;
+    }
+  }
   return expandKeywords(copiableValues(state, obj).abilities).some(
     (a) => a.kind === 'static' && a.static.kind === kind,
   );

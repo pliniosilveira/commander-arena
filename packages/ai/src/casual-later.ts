@@ -1,6 +1,6 @@
 /**
- * CasualAgent choices for the "cast later" family (D-128): Suspend (CR 702.62), Madness (CR 702.35) and Foretell
- * (CR 702.143). The engine lists the special actions `suspend` and `foretell` as priority options only when the
+ * CasualAgent choices for the "cast later" family (D-128): Suspend (CR 702.62), Madness (CR 702.35), Foretell
+ * (CR 702.143) and Miracle (CR 702.94, D-274). The engine lists the special actions `suspend` and `foretell` as priority options only when the
  * player could take them and pay for them, so the agent only decides whether they are worth taking now:
  * - Suspend and Foretell are taken in the agent's own main phase, with the stack empty, and only once no worthwhile
  *   spell is left to cast from the hand (`casual-priority.ts` calls `chooseSpecialAction` after the spells). A suspended
@@ -14,6 +14,10 @@
  *   needs one); the engine asks only when the card could be cast and the cost paid. Declining a madness card costs
  *   it (it goes to the graveyard), so the agent says yes to every creature and permanent.
  * - A card with madness is the first card the agent discards in the cleanup step: discarding it is a gain.
+ * - Miracle (CR 702.94a, D-274): the agent reveals the card it just drew only when it is worth casting now (`worth`) and the untapped lands and
+ *   mana in its pool cover the miracle cost (an {X} counted as 1 for an instant or sorcery, as 0 for a permanent): revealing is public
+ *   and gives the opponent the card for nothing otherwise. The question that follows (cast it for the miracle cost?) is answered as
+ *   Madness's is: yes when the card is worth casting.
  */
 import {
   type Action,
@@ -31,15 +35,70 @@ export const hasMadness = (o: ObjectView): boolean => /\bmadness\b/i.test(o.orac
 /** Whether a worthwhile permanent or spell: a function the caller gives, `worthCasting` of `casual-priority.ts`. */
 export type Worth = (view: GameView, card: ObjectView) => boolean;
 
-/** The answer to the question of a suspend or madness ability, or null for any other question. */
+const BASIC_TYPE: Readonly<Record<string, string>> = {
+  W: 'Plains',
+  U: 'Island',
+  B: 'Swamp',
+  R: 'Mountain',
+  G: 'Forest',
+};
+
+/** Whether the land can make mana of the color: its basic land type, or the symbol in its text ("Add {W}", "any color"). */
+const makes = (land: ObjectView, color: string): boolean =>
+  (land.subtypes as readonly string[]).includes(BASIC_TYPE[color] ?? '') ||
+  land.oracleText.includes(`{${color}}`) ||
+  /\bany (?:one )?color\b/i.test(land.oracleText);
+
+/**
+ * Whether the agent's untapped lands and the mana in its pool cover the mana cost of the decision (a miracle cost): each colored symbol
+ * needs an untapped land that makes its color, the rest is paid with what is left and the pool; a number counts for what it is, an {X}
+ * for 1 when the card is an instant or a sorcery (X = 0 does nothing) and for 0 otherwise. Mana from other sources is not counted, so
+ * the agent is cautious, never wrong the other way.
+ */
+function coversMiracleCost(view: GameView, d: ConfirmOptionalDecision, card: ObjectView): boolean {
+  const nonPermanent = card.types.includes('instant') || card.types.includes('sorcery');
+  const seat = view.seats.find((s) => s.id === view.viewer);
+  const free = view.battlefield.filter(
+    (p) => p.controller === view.viewer && p.types.includes('land') && !p.tapped,
+  );
+  let generic = 0;
+  for (const c of d.cost ?? []) {
+    if (c.kind !== 'mana') return false;
+    for (const s of c.symbols) {
+      if (s === 'X') generic += nonPermanent ? 1 : 0;
+      else if (/^[0-9]+$/.test(s)) generic += Number(s);
+      else if (BASIC_TYPE[s] === undefined) generic += 1;
+      else {
+        const at = free.findIndex((land) => makes(land, s));
+        if (at < 0) return false;
+        free.splice(at, 1);
+      }
+    }
+  }
+  return free.length + (seat?.manaPool.length ?? 0) >= generic;
+}
+
+/** The answer to the question of a suspend, madness or miracle ability, or null for any other question. */
 export function laterAnswer(
   view: GameView,
   d: ConfirmOptionalDecision,
   worth: Worth,
 ): Action | null {
-  if (d.purpose !== 'suspend' && d.purpose !== 'madness') return null;
+  if (
+    d.purpose !== 'suspend' &&
+    d.purpose !== 'madness' &&
+    d.purpose !== 'miracle' &&
+    d.purpose !== 'miracleReveal'
+  ) {
+    return null;
+  }
   const card = d.subject === undefined ? undefined : findObject(view, d.subject);
   if (card === undefined) return { kind: 'acceptOptional' };
+  if (d.purpose === 'miracleReveal') {
+    return coversMiracleCost(view, d, card) && worth(view, card)
+      ? { kind: 'acceptOptional' }
+      : { kind: 'declineOptional' };
+  }
   return worth(view, card) ? { kind: 'acceptOptional' } : { kind: 'declineOptional' };
 }
 

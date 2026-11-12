@@ -18,7 +18,11 @@ import {
   castAs,
   isNamedAlternative,
 } from './cast-cost';
-import { castForbiddenByOpponentsPermanent, castForbiddenByOwnAbility } from './cast-restrictions';
+import {
+  castForbiddenByOpponentsPermanent,
+  castForbiddenByOwnAbility,
+  leastAllowedX,
+} from './cast-restrictions';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
@@ -26,12 +30,14 @@ import { flashPermissionSources, libraryCastSources } from './derive-statics';
 import { graveyardPlayPermission } from './graveyard-play';
 import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace } from './layouts';
+import { isCommanderCardId } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
 import { preparedPermanentOf } from './prepare';
 import { matchesFilter } from './select';
 import { splitSecondOnStack } from './split-second';
 import { landPlaysAllowed } from './statics';
 import { slotCanBeFilled } from './target-choice';
+import { hasX, spellXCost } from './x-value';
 
 export type { CastAlternative, CastFrom };
 
@@ -238,9 +244,9 @@ export function castZone(
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
     return alternativeOf(faceOf(state, obj), 'escape') === null ? null : 'graveyard';
   }
-  // CR 702.35a (D-128): a card is cast for its madness cost only as the madness ability resolves (`castExiled`); it
-  // is never cast that way from a hand, so `canCast` and the option lists never offer it.
-  if (alternative === 'madness') return null;
+  // CR 702.35a, 702.94a (D-128, D-274): a card is cast for its madness or miracle cost only as that ability resolves
+  // (`castExiled`); it is never cast that way from a hand, so `canCast` and the option lists never offer it.
+  if (alternative === 'madness' || alternative === 'miracle') return null;
   // CR 702.143a (D-128): a foretold card is cast from exile, after the turn it was foretold has ended, for its
   // foretell cost.
   if (alternative === 'foretell') {
@@ -273,7 +279,8 @@ export function castZone(
     return alternative === undefined && mayPlayFromExile(state, seat, obj) ? 'exile' : null;
   }
   if (obj.zone === 'hand') return 'hand';
-  if (obj.zone === 'command' && obj.card !== null && state.cards[obj.card]?.isCommander) {
+  // A card in the command zone is one card, never a melded permanent (D-277).
+  if (obj.zone === 'command' && isCommanderCardId(state, obj.card)) {
     return 'command';
   }
   return null;
@@ -427,8 +434,14 @@ export function canCast(
   if (types.includes('land')) return false;
   // CR 101.2 (D-149): "You can't cast ~ during your first, second, or third turns of the game".
   if (castForbiddenByOwnAbility(state, seat, spell)) return false;
-  // CR 101.2 (D-179): "Your opponents can't cast spells during your turn".
-  if (castForbiddenByOpponentsPermanent(state, seat)) return false;
+  // CR 101.2 (D-179): "Your opponents can't cast spells during your turn"; (D-282) "... with mana value 3 or less", read with the least X the spell can be cast with.
+  const least = leastAllowedX(
+    state,
+    seat,
+    spell,
+    hasX(spellXCost(faceOf(state, spell), alternative)),
+  );
+  if (least === null) return false;
   if (!timingAllows(state, seat, spell)) return false;
   // CR 702.33g, 601.2c (D-181): a spell whose targets depend on the kicker can be cast either way; it is castable if one way has its targets and its cost.
   const kickedWays = hasKickedTargets(faceOf(state, spell)) ? [false, true] : [false];
@@ -442,6 +455,7 @@ export function canCast(
         alternative,
         kicked,
         excluded: obj.id,
+        x: least,
         // CR 702.120a (D-145): a modal spell with escalate needs at least the mana for the fewest modes it must choose.
         modes: modalOfSpellText(faceOf(state, spell)?.spell)?.choose.min ?? 0,
       }),
@@ -453,7 +467,7 @@ export function canCast(
  * resolving allows, without paying its mana cost: its front face, which is not a land, has a legal target for each
  * of its targets, and has additional costs that can be paid. No timing restriction applies (CR 608.2g: the player
  * does not receive priority, and the spell is not cast at the time its type allows), and the card needs no
- * alternative cost of its own: the free cast is the effect's. With `madness` the cost is the card's madness cost.
+ * alternative cost of its own: the free cast is the effect's. With `madness` or `miracle` the cost is the card's own.
  */
 export function canCastDuringResolution(
   state: GameState,
@@ -461,9 +475,10 @@ export function canCastDuringResolution(
   obj: GameObject,
   /**
    * `madness` (CR 702.35a, D-128): the card is cast for its madness cost as its ability resolves, so that cost has to be
-   * payable (the card lists one); otherwise it is the free cast of Cascade and Suspend.
+   * payable (the card lists one); otherwise it is the free cast of Cascade and Suspend. `miracle` (CR 702.94a, D-274): the same
+   * with the miracle cost, for a card that is in the hand (its X, when it has one, is announced in the cast).
    */
-  alternative: 'free' | 'madness' = 'free',
+  alternative: 'free' | 'madness' | 'miracle' = 'free',
 ): boolean {
   // D-145: a card in the hand is cast this way as well ("You may cast a spell with mana value 5 or less from your hand without paying
   // its mana cost"); Cascade, Suspend and Madness cast cards from exile.
@@ -471,13 +486,18 @@ export function canCastDuringResolution(
   // D-149 (CR 702.75a, 608.2g): a card in exile is cast by the player the effect names, whoever owns it (see `canPlayLandByEffect`); a card in a
   // hand is the player's own.
   if (obj.zone === 'hand' && obj.owner !== seat) return false;
-  if (alternative === 'madness' && alternativeOf(faceOf(state, obj), 'madness') === null) {
+  // CR 702.94a (D-274): a card is cast for its miracle cost from the hand it was revealed in.
+  if (alternative === 'miracle' && obj.zone !== 'hand') return false;
+  if (
+    (alternative === 'madness' || alternative === 'miracle') &&
+    alternativeOf(faceOf(state, obj), alternative) === null
+  ) {
     return false;
   }
   const spell = castAs(obj, seat, 0);
   if (derive(state, spell).types.includes('land')) return false;
   if (castForbiddenByOwnAbility(state, seat, spell)) return false; // CR 101.2 (D-149)
-  if (castForbiddenByOpponentsPermanent(state, seat)) return false; // CR 101.2 (D-179)
+  if (castForbiddenByOpponentsPermanent(state, seat, spell)) return false; // CR 101.2 (D-179, D-282: a free cast has X 0, CR 107.3b)
   const kickedWays = hasKickedTargets(faceOf(state, spell)) ? [false, true] : [false];
   const from = obj.zone;
   return kickedWays.some(

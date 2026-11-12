@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { isValidManaSymbol } from '../src/ast/symbols';
-import type { Ability, Effect, SpellText, TargetSpec } from '../src/ast/types';
+import type { Ability, Effect, ObjectFilter, SpellText, TargetSpec } from '../src/ast/types';
 import { validateAbility, validateCardStructure as validateCard } from '../src/ast/validate';
 import type { CardDefinition } from '../src/cards/definition';
 import { fixtureCard } from '../src/cards/fixtures/index';
@@ -375,6 +375,25 @@ describe('costs, ward and mana symbols', () => {
       keyword: { kind: 'protection', from: 'color', colors: [] },
     };
     expect(validateAbility(none)).toHaveLength(1);
+  });
+
+  test('protection from the colors outside the commander identity names no color (D-259)', () => {
+    const outside: Ability = {
+      kind: 'keyword',
+      keyword: { kind: 'protection', from: 'colorsNotInCommanderIdentity' },
+    };
+    expect(validateAbility(outside)).toEqual([]);
+  });
+
+  test('an equip ability may be limited to a commander, and to no zone, controller or combat (D-259, CR 702.6c)', () => {
+    const equip = (restriction: ObjectFilter): Ability => ({
+      kind: 'keyword',
+      keyword: { kind: 'equip', cost: [{ kind: 'mana', symbols: ['3'] }], restriction },
+    });
+    expect(validateAbility(equip({ commander: true }))).toEqual([]);
+    expect(validateAbility(equip({ commander: 'yours' }))).toEqual([]);
+    expect(validateAbility(equip({ commander: true, attacking: true }))).not.toEqual([]);
+    expect(validateAbility(equip({ commander: true, controller: 'you' }))).not.toEqual([]);
   });
 
   test('cost amounts must be integers', () => {

@@ -11,6 +11,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
   goldenLine,
+  meldRelation,
+  meldResultNames,
   normalizeNameKey,
   parseGolden,
   parseStoredCard,
@@ -87,6 +89,9 @@ export async function extract(options: Options, repoRoot: string, io: ExtractIo)
 
   const keys = new Map(wanted.map((name) => [normalizeNameKey(name), name] as const));
   const found = new Map<string, ReturnType<typeof toGoldenCard>>();
+  // D-280: the melded face of a meld pair is a card of its own that is not Commander-legal; the cards of the pairs that were found take theirs along, whatever its legality.
+  const meldFaces = new Map<string, ReturnType<typeof parseStoredCard>['card']>();
+  const halves: NonNullable<ReturnType<typeof parseStoredCard>['card']>[] = [];
   const source = `scryfall-bulk ${path.basename(options.file)}`;
   try {
     for await (const item of readCardObjects(path.resolve(options.file))) {
@@ -94,6 +99,7 @@ export async function extract(options: Options, repoRoot: string, io: ExtractIo)
       const converted = parseStoredCard(item.value, 0);
       if (converted.card === null) continue;
       const card = converted.card;
+      if (meldRelation(card).role === 'result') meldFaces.set(normalizeNameKey(card.name), card);
       // The same filter as the coverage run: art-series prints, tokens and other non-playable
       // objects share a name with the real card and must not be the entry that gets extracted.
       if (card.commanderLegality !== 'legal' && card.commanderLegality !== 'restricted') continue;
@@ -101,6 +107,7 @@ export async function extract(options: Options, repoRoot: string, io: ExtractIo)
       const hit = names.map(normalizeNameKey).find((key) => keys.has(key));
       if (hit === undefined || found.has(hit)) continue;
       found.set(hit, toGoldenCard(card, source, { acceptance: options.acceptance }));
+      if (card.layout === 'meld') halves.push(card);
     }
   } catch (error) {
     io.err(`error: cannot read ${options.file}: ${error instanceof Error ? error.message : error}`);
@@ -108,14 +115,34 @@ export async function extract(options: Options, repoRoot: string, io: ExtractIo)
   }
 
   const fresh = [...found.values()];
+  const noResult: string[] = [];
+  // The names that were taken as the melded face of a pair they were asked with: the face is not Commander-legal, so the loop above skipped it, and asking for it by
+  // name (the owner workflow lists the two halves and the melded face) is satisfied by taking it with its pair.
+  const takenWithPair = new Set<string>();
+  for (const name of meldResultNames(halves)) {
+    const face = meldFaces.get(normalizeNameKey(name));
+    if (face === undefined || face === null) noResult.push(name);
+    else if (!fresh.some((c) => normalizeNameKey(c.name) === normalizeNameKey(name))) {
+      fresh.push(toGoldenCard(face, source, { related: true }));
+      takenWithPair.add(normalizeNameKey(name));
+    }
+  }
   const { merged, replaced } = mergeGolden(existing, fresh);
   await writeFile(goldenFile, `${merged.map(goldenLine).join('\n')}\n`);
 
-  const missing = wanted.filter((name) => !found.has(normalizeNameKey(name)));
+  const missing = wanted.filter(
+    (name) => !found.has(normalizeNameKey(name)) && !takenWithPair.has(normalizeNameKey(name)),
+  );
   io.out(
     `wrote ${path.relative(process.cwd(), goldenFile) || goldenFile}: ${fresh.length} card(s) from the bulk file` +
       ` (${fresh.length - replaced} new, ${replaced} replaced), ${merged.length} in all.`,
   );
+  if (noResult.length > 0) {
+    io.err(
+      `the melded face of a meld card was not found in the bulk file (${noResult.length}): ${noResult.join('; ')}`,
+    );
+    return 1;
+  }
   if (missing.length > 0) {
     io.err(`not found in the bulk file (${missing.length}): ${missing.join('; ')}`);
     return 1;

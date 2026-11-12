@@ -100,6 +100,7 @@ export function isNamedAlternative(
     alternative === 'spectacle' ||
     alternative === 'escape' ||
     alternative === 'madness' ||
+    alternative === 'miracle' ||
     alternative === 'foretell' ||
     alternative === 'tapPermanents'
   );
@@ -281,7 +282,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
       : flashback !== null
         ? manaSymbolsOf(flashback)
         : named !== null
-          ? manaSymbolsOf(named)
+          ? // D-274: the X of a miracle cost is the announced one (every other named alternative has none).
+            withX(manaSymbolsOf(named), x)
           : withX(face?.manaCost ?? [], x);
   let tax = 0;
   if (zone === 'command' && spell.card !== null) {
@@ -530,8 +532,8 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
   const spell = castAs(obj, obj.owner, 0);
   const out: AlternativeCostInfo[] = [];
   for (const alt of face?.alternativeCosts ?? []) {
-    // Madness is cast only as its ability resolves (CR 702.35a), never from a hand: no cast option, so no cost to show.
-    if (!isNamedAlternative(alt.kind) || alt.kind === 'madness') continue;
+    // Madness and miracle are cast only as their ability resolves (CR 702.35a, 702.94a), never from a hand: no cast option, so no cost to show.
+    if (!isNamedAlternative(alt.kind) || alt.kind === 'madness' || alt.kind === 'miracle') continue;
     // Where each is cast from: escape from a graveyard, foretell from exile, the others from a hand or a command zone.
     const home = alt.kind === 'escape' ? 'graveyard' : alt.kind === 'foretell' ? 'exile' : 'hand';
     if (home !== (zone === 'command' ? 'hand' : zone)) continue;

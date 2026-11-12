@@ -101,11 +101,60 @@ export function lowerCondition(
         ...(test.aboveStarting === true ? { aboveStarting: true as const } : {}),
       });
     }
+    case 'lifeGainedThisTurn': {
+      // CR 119.3, 603.4 (D-252): the life the controller gained this turn, from the turn log.
+      const blocked = missingFeatures(['condition:lifeGainedThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'lifeGainedThisTurn', atLeast: test.atLeast });
+    }
+    case 'dieResult': {
+      // CR 706.2, 706.3a (D-271): the result of the die the text rolled before this condition, read by a `conditional`. A condition with no roll before it
+      // in the text, or a number the die cannot show (the condition would never, or always, hold), is not a condition of the text.
+      const blocked = missingFeatures(['condition:dieResult']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const sides = ctx?.dieSides ?? null;
+      if (sides === null || test.compare.value < 1 || test.compare.value > sides) {
+        return failure(c, []);
+      }
+      return ok({
+        kind: 'dieResult',
+        compare: { cmp: test.compare.cmp, value: test.compare.value },
+      });
+    }
+    case 'ownsAndControlsNamed': {
+      // CR 701.42a, 603.4 (D-278): "if you both own and control ~ and a creature named X" is read only as the intervening "if" of a triggered ability, and
+      // leaves the name for the "exile them, then meld them" that follows (which is the only instruction it is read with).
+      const blocked = missingFeatures(['condition:ownsAndControlsNamed']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (
+        ctx?.interveningCondition !== true ||
+        !(CARD_TYPES as readonly string[]).includes(test.type)
+      ) {
+        return failure(c, []);
+      }
+      ctx.meldPartner = test.name;
+      return ok({ kind: 'ownsAndControlsNamed', name: test.name, type: test.type as CardType });
+    }
+    case 'thisInYourGraveyard': {
+      // CR 113.6b, 603.4 (D-271): "if ~ is in your graveyard" is read only as the intervening "if" of a triggered ability (the lowering of the trigger then
+      // requires that the ability works from the graveyard); anywhere else it is a test the engine does not run for that shape.
+      const blocked = missingFeatures(['condition:thisInYourGraveyard']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'thisInYourGraveyard' });
+    }
     case 'subjectControllerHasMore': {
       // CR 603.4, 109.4 (stage P68, D-229): "that player", the controller of the permanent the trigger is about, has more lands than the controller.
-      const blocked = missingFeatures(['condition:subjectControllerHasMore']);
+      // "That player" of a trigger about a player (the active player of an opponent's end step, CR 102.1, 603.2b) is that player, not the controller of a
+      // permanent: the engine's `triggerPlayerHasMore`. When "that player" is the controller of the ability itself it compares a player with
+      // themselves, which is no condition of the text.
+      const about = ctx?.thatPlayer?.selector.kind;
+      if (about === 'you') return failure(c, []);
+      const kind = about === 'triggerPlayer' ? 'triggerPlayerHasMore' : 'subjectControllerHasMore';
+      const blocked = missingFeatures([`condition:${kind}`]);
       if (blocked.length > 0) return failure(c, blocked);
-      return ok({ kind: 'subjectControllerHasMore', stat: test.stat });
+      return ok({ kind, stat: test.stat });
     }
     case 'cardsInGraveyard': {
       // CR 404.1 (stage P68, D-229): the number of cards in the graveyard of the controller.
@@ -113,6 +162,28 @@ export function lowerCondition(
       if (blocked.length > 0) return failure(c, blocked);
       const { cmp, value } = test.compare;
       return ok({ kind: 'cardsInGraveyard', compare: { cmp, value } });
+    }
+    case 'paired': {
+      // "~ is paired with another creature" (D-286, CR 702.95b): the permanent the ability belongs to is paired now; "it" is the source only in an
+      // ability about the source itself (as for "it was kicked").
+      const blocked = missingFeatures(['condition:paired']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (test.who === 'it' && !itIsSelf) return failure(c, []);
+      // D-287: "it" is `~` only where the ability is about `~`; "Each creature you control has flying as long as it's paired" has no antecedent for "it", so it is unsupported.
+      if (test.who === 'it' && ctx?.staticSubjectIsSelf !== true) return failure(c, []);
+      // D-287 (CR 702.95b, 400.7, 603.4, 608.2h): the engine reads the pair of the permanent on the battlefield now and no last-known information, so the condition is
+      // exact only where `derive` reads it, the "as long as" condition of a static ability of a permanent (`ctx.staticCondition`, set by `lowerStaticStatement` alone). In a
+      // triggered ability the source may be gone when the intervening "if" is checked again as the ability resolves (a response killed it), an activated ability's cost may
+      // remove it, a replacement works with no permanent: all unsupported, never a condition that is false for the wrong reason.
+      if (
+        ctx?.staticCondition !== true ||
+        ctx.owner === 'spell' ||
+        ctx.selfGone ||
+        ctx.graveyardSource
+      ) {
+        return failure(c, []);
+      }
+      return ok({ kind: 'paired' });
     }
     case 'attachedTo': {
       // "As long as this Equipment is attached to a creature" (stage P37, D-180, CR 301.5): the permanent this one is attached to, against a
@@ -361,6 +432,9 @@ export function lowerCondition(
         count: 1,
       });
     }
+    case 'unlessReturn':
+      // "... unless you return a land you control to its owner's hand" belongs to the sentence of one instruction, which the lowering of the sentences reads (D-258).
+      return failure(c, []);
     case 'declined':
       // "If the player doesn't" belongs to a "may have you" sentence, which the lowering of the sentences reads; anywhere else it is not run.
       return failure(c, []);
@@ -378,6 +452,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:lifeTotal',
   'condition:cardsInGraveyard',
   'condition:subjectControllerHasMore',
+  'condition:triggerPlayerHasMore',
   'condition:thisMatches',
   'condition:escaped',
   'condition:and',
@@ -397,6 +472,10 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:attackingMostLife',
   'condition:attackersTotalPower',
   'condition:playerDealtDamage',
+  'condition:lifeGainedThisTurn',
+  'condition:dieResult',
+  'condition:thisInYourGraveyard',
+  'condition:ownsAndControlsNamed',
   'condition:enteredThisTurn',
   'condition:yourMainPhase',
   'condition:yourTurn',
@@ -405,4 +484,5 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:castFromZone',
   'condition:spellTargets',
   'condition:controlsRingBearer',
+  'condition:paired',
 ];

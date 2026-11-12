@@ -376,7 +376,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'empowerJace'
     | 'untapChoice'
     | 'conniveOrder'
-    | 'spare';
+    | 'spare'
+    | 'soulbond';
   /**
    * For `'fight'` (D-145, CR 701.14: "Each of those tokens fights a different one of those creatures"): `seat` (the controller of the effect)
    * chooses which creature of `legal` the creature `subject` fights; exactly one (`min` = `max` = 1). For `'auraHost'` (D-149, CR 303.4f):
@@ -396,6 +397,10 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * For `'conniveOrder'` (D-223, CR 701.50c: "the first player in APNAP order who controls ... one or more of those permanents chooses one of them and it
    * connives"): `seat`, that player, chooses which permanent of `legal` (those of theirs still to connive, some perhaps gone from the battlefield) connives
    * next; exactly one. Asked only when the player has two or more. `source` is the spell or ability.
+   * For `'soulbond'` (D-286, CR 702.95a, 603.5: "you may pair this creature with another unpaired creature you control"): `seat`, the controller of the
+   * soulbond ability, chooses which creature of `legal` (the unpaired creatures they control, as `derive` types them now, other than `subject`; for the
+   * ability of "whenever another creature you control enters", only the one that entered) the creature `subject` is paired with; `min` is 0 (choosing none
+   * is the "may") and `max` is 1. Asked even when there is a single candidate. `source` is the ability on the stack.
    * Absent for every other purpose.
    */
   readonly subject?: ObjectId;
@@ -467,7 +472,8 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'lookSplit'
     | 'reveal'
     | 'split'
-    | 'copy';
+    | 'copy'
+    | 'pair';
   readonly zone: 'library' | 'hand' | 'graveyard' | 'exile';
   readonly legal: readonly ObjectId[];
   readonly min: number;
@@ -479,6 +485,11 @@ export interface ChooseCardsDecision extends DecisionBase {
    * exactly `max` cards, or one single card of this list (`min` is 1: the fewest cards an answer has). Absent for every other question.
    */
   readonly orSingle?: readonly ObjectId[];
+  /**
+   * For a search "for up to two basic land cards that share a land type" (D-262, CR 205.3i, 701.23): the land types of each card of `legal`. The cards chosen must
+   * have one land type in common (one card, or none, always does). Absent for every other question.
+   */
+  readonly shareLandType?: Readonly<Record<ObjectId, readonly string[]>>;
   /**
    * For `'reveal'` (D-225, CR 614.12, 701.20a: "As this land enters, you may reveal a Mountain or Plains card from your hand"): the player who accepted chooses which
    * of the cards of `legal` (all in their hand, more than one) to reveal; exactly one (`min` = `max` = 1), and `source` is the land that is entering (or the spell
@@ -611,7 +622,11 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * play it without paying its mana cost": `subject` is the suspended card (public), `source` the ability on the
    * stack; declining leaves it in exile. `'madness'` (CR 702.35a): "you may cast it by paying [its madness cost]":
    * `subject` is the card exiled by madness (public), `cost` its madness cost, `source` the ability on the stack;
-   * declining puts the card into its owner's graveyard.
+   * declining puts the card into its owner's graveyard. `'miracleReveal'` (CR 702.94a, D-274): "you may reveal this card from your hand as you
+   * draw it": asked of the player who drew it, who is `seat`, right after a card with miracle is drawn as the first card of their turn;
+   * `subject` is the card (in the hand, hidden until the answer), `cost` its miracle cost, `source` the same card. Accepting reveals it (public)
+   * and its trigger goes on the stack; declining reveals nothing. `'miracle'`: "you may cast it by paying [its miracle cost]": `subject` is
+   * the card in the hand, `cost` its miracle cost, `source` the trigger on the stack; declining leaves the card in the hand.
    */
   readonly purpose?:
     | 'kicker'
@@ -623,8 +638,17 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'cascade'
     | 'suspend'
     | 'madness'
+    | 'miracleReveal'
+    | 'miracle'
     | 'gift'
-    | 'costChoice';
+    | 'costChoice'
+    | 'pairReturn';
+  /**
+   * For purpose `'pairReturn'` (D-272, "You may return those cards to the battlefield under their owners' control", Dawnbreak Reclaimer): the cards that would return, which are in
+   * graveyards and public: `theirs` the card chosen in an opponent's graveyard (it returns under its owner's control, the opponent's), `mine` the card chosen in the graveyard of
+   * the player asked (it returns under their control). Either is absent when no such card could be chosen. Accepting returns both, declining neither.
+   */
+  readonly pair?: { readonly theirs?: ObjectId; readonly mine?: ObjectId };
   /**
    * For purpose `'gift'` (D-135, CR 702.174a): "promise a gift to this opponent?" asked of the caster of a spell with Gift a card as it is
    * cast, after the kicker and replicate questions and before X and the targets (CR 601.2b). `source` is the spell on the
@@ -680,7 +704,8 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'effect'
     | 'riot'
     | 'replacement'
-    | 'vote';
+    | 'vote'
+    | 'meldOrder';
   readonly options: readonly string[];
   /**
    * For purpose `'replacement'` (D-191, CR 616.1): several prevention effects apply to one damage event and the order can change the
@@ -719,6 +744,17 @@ export interface ChooseOptionDecision extends DecisionBase {
    */
   readonly attacker?: ObjectId;
   readonly attackTargets?: readonly AttackTarget[];
+  /**
+   * For purpose `'meldOrder'` (D-279, CR 712.21a, 712.21b): a melded permanent left the battlefield for a graveyard, a library or exile, and `seat`
+   * arranges its two cards: their owner for a graveyard or a library (CR 712.21a), the player who exiled the permanent for exile (CR 712.21b). `options` are the names of the two cards (the cards of `first` and `second`, in that order, which are
+   * the two new objects in `zone`) and the answer is a `chooseOption` of the one that goes on top of the graveyard or library, or, in exile, the one
+   * that is exiled last (the later timestamp). Asked as state-based actions are next checked; the order is not revealed (CR 712.21a). `source` is `first`.
+   */
+  readonly meldOrder?: {
+    readonly first: ObjectId;
+    readonly second: ObjectId;
+    readonly zone: 'graveyard' | 'library' | 'exile';
+  };
   readonly source: ObjectId;
   readonly sourceName: string;
   readonly sourceOracleText: string;

@@ -856,7 +856,7 @@ describe('the choice made as a permanent enters and what reads it (D-100; CR 614
   });
 
   test.each([
-    ['Creature spells of the chosen type cost {2} less to cast.', 'none'],
+    // 'Creature spells of the chosen type cost {2} less to cast.' is read since D-255 (every player's spells).
     [
       'Creature spells you cast of the chosen type of the chosen color cost {1} less to cast.',
       'none',

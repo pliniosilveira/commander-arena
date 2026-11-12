@@ -148,10 +148,106 @@ function classStructureIssues(def: CardDefinition, out: AstIssue[]): void {
   });
 }
 
+/** The meld effects among the effects a face's abilities have, anywhere in them (the effect nodes are the only ones of the kind `meld`). */
+function meldEffectCount(face: CardFace): number {
+  return JSON.stringify(face.abilities).split('"kind":"meld"').length - 1;
+}
+
+/**
+ * CR 701.42, 712.4, 712.8g (D-277, D-278): a meld card has its front face and the combined back face of its pair (both permanent faces, the back one with no mana cost: the
+ * mana value of a melded permanent is calculated from the two front faces, CR 202.3c), names its counterpart, and only a card of that layout names one. The meld
+ * ability is the whole effect of a triggered ability of the front face and names the counterpart and the combined face the card has (CR 712.4a).
+ */
+function meldStructureIssues(def: CardDefinition, out: AstIssue[]): void {
+  if (def.layout !== 'meld') {
+    if (def.meld !== undefined) {
+      out.push({ path: 'meld', message: 'only a card of layout meld has a meld counterpart' });
+    }
+    def.faces.forEach((face, i) => {
+      if (meldEffectCount(face) > 0) {
+        out.push({
+          path: `faces[${i}].abilities`,
+          message: 'only a meld card has a meld ability (CR 712.4a)',
+        });
+      }
+    });
+    return;
+  }
+  const partner = def.meld?.partner;
+  if (typeof partner !== 'string' || partner === '' || partner === def.name) {
+    out.push({
+      path: 'meld.partner',
+      message: 'layout meld needs the name of the other card of its meld pair',
+    });
+  }
+  const [front, back] = def.faces;
+  if (front !== undefined && !front.types.some((t) => isPermanentType(t))) {
+    out.push({ path: 'faces[0].types', message: 'a meld card is a permanent card' });
+  }
+  if (back !== undefined) {
+    if (!back.types.some((t) => isPermanentType(t))) {
+      out.push({
+        path: 'faces[1].types',
+        message: 'the combined face of a meld pair is a permanent (CR 712.8g)',
+      });
+    }
+    if (back.manaCost !== null) {
+      out.push({
+        path: 'faces[1].manaCost',
+        message:
+          'the combined face of a meld pair has no mana cost: its mana value comes from the two front faces (CR 202.3c)',
+      });
+    }
+    if (back.name === def.name || back.name === partner) {
+      out.push({
+        path: 'faces[1].name',
+        message: 'the combined face of a meld pair has a name of its own (CR 712.8)',
+      });
+    }
+    if (meldEffectCount(back) > 0) {
+      out.push({
+        path: 'faces[1].abilities',
+        message:
+          'the combined face of a meld pair does not meld (CR 712.4a: the front half has the ability)',
+      });
+    }
+  }
+  if (front === undefined) return;
+  // The meld ability: the whole effect of a triggered ability of the front face, naming this card's counterpart and combined face.
+  const abilities = front.abilities.flatMap((a, index) =>
+    a.kind === 'triggered' && a.effect.kind === 'meld' ? [{ a, index }] : [],
+  );
+  if (meldEffectCount(front) !== abilities.length) {
+    out.push({
+      path: 'faces[0].abilities',
+      message:
+        'a meld effect is the whole effect of a triggered ability of a meld card (CR 701.42a, 712.4a)',
+    });
+  }
+  for (const { a, index } of abilities) {
+    if (a.effect.kind !== 'meld') continue;
+    if (a.effect.partner !== partner || a.effect.result !== back?.name) {
+      out.push({
+        path: `faces[0].abilities[${index}].effect`,
+        message:
+          "the meld ability must name this card's counterpart and the combined face its pair becomes (CR 712.5)",
+      });
+    }
+    if (a.interveningIf?.kind !== 'ownsAndControlsNamed' || a.interveningIf.name !== partner) {
+      out.push({
+        path: `faces[0].abilities[${index}].interveningIf`,
+        message:
+          'the meld ability is an intervening "if you both own and control this creature and a creature named" its counterpart (CR 603.4, 701.42a)',
+      });
+    }
+  }
+}
+
 /** Structural rules of a layout that depend on what the faces are. */
 export function layoutStructureIssues(def: CardDefinition): AstIssue[] {
   const out: AstIssue[] = [];
   sagaStructureIssues(def, out);
+  meldStructureIssues(def, out);
   classStructureIssues(def, out);
   // CR 715.2: the Adventure is an instant or sorcery card face; it resolves to exile, never onto
   // the battlefield (CR 715.3d).
@@ -227,6 +323,25 @@ export function layoutSupportIssues(def: CardDefinition): AstIssue[] {
         });
       }
     }
+  }
+  if (def.layout === 'meld') {
+    // CR 712.14c (D-278): the two cards enter as one permanent as the ability resolves, which does not stop to ask a question; a combined face with a
+    // replacement effect (it may ask, CR 614.12) or riot or devour (CR 702.136a, 702.82a) is not run.
+    def.faces.forEach((face, i) => {
+      if (i === 0) return;
+      face.abilities.forEach((a, index) => {
+        if (
+          a.kind === 'replacement' ||
+          (a.kind === 'keyword' && (a.keyword.kind === 'riot' || a.keyword.kind === 'devour'))
+        ) {
+          out.push({
+            path: `faces[${i}].abilities[${index}]`,
+            message:
+              'layout meld with a replacement effect, riot or devour on the combined face is not implemented by the engine yet',
+          });
+        }
+      });
+    });
   }
   if (def.layout === 'transform') {
     // CR 306.5b, 310.4b: a planeswalker or battle gets its loyalty or defense counters as it

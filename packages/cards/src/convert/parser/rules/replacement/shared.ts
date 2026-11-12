@@ -59,7 +59,12 @@ export function countersTail(
         ? optional(
             quiet(
               map(
-                sequence(literal(' '), family<IrAmount>('amount', { only: ['amount.for-each'] })),
+                sequence(
+                  literal(' '),
+                  family<IrAmount>('amount', {
+                    only: ['amount.for-each', 'amount.times-kicked'],
+                  }),
+                ),
                 ([, each]) => each,
               ),
             ),

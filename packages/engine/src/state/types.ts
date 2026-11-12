@@ -67,9 +67,18 @@ export interface GameObject {
    * Which face is up (index into the definition's faces). Only a spell on the stack and a permanent
    * on the battlefield can have a face other than 0: the face that was cast or played, or the one a
    * double-faced permanent transformed to. In every other zone it is 0 (CR 712.8a, 715.4); a split
-   * card has the characteristics of both halves there (CR 709.4), see `rules/layouts.ts`.
+   * card has the characteristics of both halves there (CR 709.4), see `rules/layouts.ts`. A melded
+   * permanent (`meldedWith`) has face 1, the combined back face (CR 712.8g).
    */
   readonly face: number;
+  /**
+   * D-277 (CR 701.42a, 712.4a): present on a melded permanent, which is one object represented by two cards: `card` is the first card and this is the
+   * second (the counterpart of its meld pair). It exists only on the battlefield and phased out (CR 712.8g: only there are the two cards one object); in
+   * every other zone each card is an ordinary object with its own front face (CR 712.4b, 712.8a), and a permanent that leaves becomes two objects, one for
+   * each card (CR 712.21). `face` is 1, the combined back face. A commander card is always `card`, never this one, when exactly one of the two is
+   * (`rules/melded.ts`). Absent for everything else.
+   */
+  readonly meldedWith?: CardId;
   readonly tapped: boolean;
   readonly counters: Readonly<Record<string, number>>;
   /** Damage marked this turn (CR 120.3). Removed in cleanup (CR 514.2). */
@@ -117,6 +126,14 @@ export interface GameObject {
    * under that player's control (`isRingBearerOf`). Absent for everything else.
    */
   readonly ringBearer?: SeatId;
+  /**
+   * The pairing designation (CR 702.95b, D-285): present on a creature that is paired with another, naming the other (`with`) and the player who formed the
+   * pair (`by`, the controller of the soulbond ability: both are under their control). It is on both objects. It is a designation, not a copiable value (a
+   * copy or a token that copies a paired creature is unpaired) and a new object after any zone change (CR 400.7, 702.95e) has none. It ends when either
+   * leaves the battlefield, another player gains control of either, or either stops being a creature (`rules/pairing.ts`, `rules/pairing-sba.ts`); it
+   * survives phasing (CR 702.26d). Read only through `rules/pairing.ts`, never as the field (`test/paired-reads.test.ts`). Absent for everything else.
+   */
+  readonly paired?: { readonly with: ObjectId; readonly by: SeatId };
   /**
    * The permanent is phased out (CR 702.26b, D-234): `zone` is `'phased'` and this is the player who controlled it as it phased out (or, for an Aura, Equipment or
    * Fortification that phased out indirectly with what it is attached to, the controller of that permanent): it phases in as that player's untap step begins.
@@ -254,6 +271,8 @@ export type StackAbility = TriggeredAbility | ActivatedAbility;
 export interface ManaSpent {
   readonly total: number;
   readonly fromTypes: Readonly<Record<string, number>>;
+  /** How many of them came from a snow source (CR 107.4h, 106.3: "for each {S} spent to cast this spell"); left out when none did. */
+  readonly snow?: number;
 }
 
 export interface StackData {
@@ -465,6 +484,11 @@ export interface SeatState {
    */
   readonly ring?: { readonly tempted: number };
   /**
+   * The city's blessing (CR 702.131c, D-264): a designation this player has for the rest of the game, set by Ascend (`rules/city-blessing.ts`).
+   * Any number of players may have it. Absent until the first time. Public.
+   */
+  readonly citysBlessing?: true;
+  /**
    * The energy counters the player has (CR 107.14, 122.1, D-209), kept for the rest of the game; paid by removing them. Absent until the first time
    * (a player has none). Public.
    */
@@ -533,6 +557,19 @@ export const DEFAULT_SETTINGS: GameSettings = {
   maxHandSize: 7,
 };
 
+/**
+ * D-279: two cards that were one melded permanent, now two objects in the same zone, whose order a player chooses: their owner for a graveyard or a library
+ * (CR 712.21a), the player who exiled the permanent for exile (CR 712.21b).
+ * `first` is the object that has the default place (put in the zone first: lower in a graveyard or library, the earlier timestamp in exile).
+ */
+export interface MeldOrder {
+  /** The player who chooses the order and is asked. */
+  readonly seat: SeatId;
+  readonly first: ObjectId;
+  readonly second: ObjectId;
+  readonly zone: 'graveyard' | 'library' | 'exile';
+}
+
 /** Characteristics of an object immediately before it left its zone (CR 113.7a, 603.10). */
 export interface LastKnownInfo {
   readonly object: GameObject;
@@ -542,6 +579,11 @@ export interface LastKnownInfo {
    * only a pointer: it names a live object only while that object has not moved again.
    */
   readonly successor?: ObjectId;
+  /**
+   * D-277 (CR 712.21c): for a melded permanent that left, the object the second card became (`successor` is the first card's). An effect that can find
+   * the new object of a melded permanent finds both cards (`rules/melded.ts`, `successorsOf`). Absent for everything else.
+   */
+  readonly companionSuccessor?: ObjectId;
   readonly characteristics: Characteristics;
   readonly abilities: readonly Ability[];
   readonly power: number | null;
@@ -754,7 +796,13 @@ export type Instruction =
    * CR 701.21: sacrifice one permanent (checked against its controller as it runs). Emits
    * `sacrificed` after the zone change.
    */
-  | { readonly kind: 'sacrifice'; readonly object: ObjectId; readonly seat?: SeatId }
+  | {
+      readonly kind: 'sacrifice';
+      readonly object: ObjectId;
+      readonly seat?: SeatId;
+      /** The last-known information of this permanent was recorded as the event of several leaving together began (D-283, `MoveRequest.lkiRecorded`). */
+      readonly lkiRecorded?: true;
+    }
   /**
    * CR 608.2d: the controller chooses permanents to sacrifice. `chosen` is null until asked (or
    * chosen automatically); then the choice is run as sacrifice instructions.
@@ -813,6 +861,16 @@ export type Instruction =
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
+   * "You may pair this creature with another unpaired creature you control" (`pair`, CR 702.95a, D-286): the effect of the two abilities soulbond stands for.
+   * The controller is asked which creature (a `choosePermanent` decision of purpose 'soulbond', `min` 0) while there is one to pair with; `chosen` is the answer,
+   * null until then, and an empty answer is a decline. See rules/soulbond.ts.
+   */
+  | {
+      readonly kind: 'pair';
+      readonly partner: 'choose' | 'triggerSubject';
+      readonly chosen: readonly ObjectId[] | null;
+    }
+  /**
    * "Empower Jace N" (`empowerJace`, CR 701.71a, D-201): the controller creates a blue Jace planeswalker token if they control none, chooses a Jace
    * planeswalker token they control (a `choosePermanent` decision of purpose 'empowerJace', asked only with two or more) and puts `amount` loyalty
    * counters on it. `chosen` is the answer, null until then. See rules/empower.ts.
@@ -846,6 +904,21 @@ export type Instruction =
       readonly step: number;
       readonly spared: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
+    }
+  /**
+   * "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their
+   * owners' control" (`returnGraveyardPair`, D-272, `rules/graveyard-pair.ts`): `stage` is the step that comes next. `theirs`: the controller chooses a card of `cardType` among the
+   * graveyards of their opponents. `mine`: the owner of that card chooses one in the controller's graveyard. `ask`: the controller may return the cards chosen (`answer` is null until
+   * they answer; declining drops the instruction). `theirs` and `mine` are the cards chosen so far; `chosen` is the answer to the question being asked, null until then.
+   */
+  | {
+      readonly kind: 'graveyardPair';
+      readonly cardType: CardType;
+      readonly stage: 'theirs' | 'mine' | 'ask';
+      readonly theirs: ObjectId | null;
+      readonly mine: ObjectId | null;
+      readonly chosen: readonly ObjectId[] | null;
+      readonly answer: boolean | null;
     }
   /**
    * "An opponent chooses one of the exiled cards. You put that card on the bottom of your library and return the other to the battlefield tapped" (D-232,
@@ -1182,15 +1255,15 @@ export type Instruction =
    */
   | { readonly kind: 'changeTarget'; readonly object: ObjectId }
   /**
-   * CR 702.62a, 702.35a (Suspend and Madness, D-128): the resolution of `castExiled`. `start` looks at the card the ability
-   * belongs to (it must still be that card in exile) and goes on to `ask` when it could be cast, else it ends: a
-   * suspended card stays exiled, a card exiled by madness goes to its owner's graveyard. `ask` asks the owner
+   * CR 702.62a, 702.35a, 702.94a (Suspend, Madness and Miracle, D-128, D-274): the resolution of `castExiled`. `start` looks at the card the
+   * ability belongs to (it must still be that card, in exile, or in its owner's hand for Miracle) and goes on to `ask` when it could be
+   * cast, else it ends: a suspended card stays exiled, a card exiled by madness goes to its owner's graveyard, a miracle card stays in the hand. `ask` asks the owner
    * (`confirmOptional`, purpose 'suspend' or 'madness', the card as `subject`); accepting begins the cast as CR
    * 608.2g says (no player gets priority), declining ends the ability the same way as above. See rules/cast-exiled.ts.
    */
   | {
       readonly kind: 'castExiled';
-      readonly mode: 'suspend' | 'madness';
+      readonly mode: 'suspend' | 'madness' | 'miracle';
       readonly stage: 'start' | 'ask';
       readonly card: ObjectId | null;
     }
@@ -1220,6 +1293,18 @@ export type Instruction =
       readonly kind: 'vote';
       readonly options: readonly string[];
       readonly cast: readonly VoteCast[];
+    }
+  /**
+   * CR 702.94a (Miracle, D-274): the player who drew a card with miracle as the first card of their turn is asked whether to reveal it (`confirmOptional`,
+   * purpose 'miracleReveal', the card as `subject`); `answer` is theirs, null until asked. Accepting reveals the card (`cardsRevealed`, `miracleRevealed`),
+   * whose trigger goes on the stack once the resolution is over. It sits in the queue between the draw of that card and the next draw of the same
+   * instruction ("as you draw it"). See rules/miracle.ts.
+   */
+  | {
+      readonly kind: 'miracleReveal';
+      readonly seat: SeatId;
+      readonly card: ObjectId;
+      readonly answer: boolean | null;
     }
   /**
    * CR 121.2: `seat` draws `count` cards, one at a time. `commanderChoice` records the owner's
@@ -1252,6 +1337,8 @@ export type Instruction =
       readonly countsNonland?: true;
       /** Creatures destroyed together replace each other's deaths (D-133, `MoveRequest.replacers`). */
       readonly replacers?: readonly ObjectId[];
+      /** The last-known information of this permanent was recorded as the event of several leaving together began (D-283, `MoveRequest.lkiRecorded`). */
+      readonly lkiRecorded?: true;
       /** The card exiled is remembered by this permanent (`exile.linked`, D-139: "exiled with this creature"). */
       readonly linkTo?: ObjectId;
       /** The Aura enters attached to this permanent (CR 303.4f, `auraEntry`, D-149). */
@@ -1267,6 +1354,12 @@ export type Instruction =
       readonly faceDown?: true;
       /** The land is played (CR 305.1, 305.2a: it counts as the player's land play), as an effect allows (`castFree` with `play`, D-145). */
       readonly playAsLand?: true;
+      /**
+       * Enters the battlefield at the same time as the other consecutive moves that carry this flag (CR 603.6a, D-272: "return those cards to the battlefield"): the
+       * `zoneChanged` events of the run say `simultaneous`, and `findTriggers` lets each permanent of the run see every other one enter; the replacement effects of a card of the run read the
+       * battlefield without the permanents that entered before it in the run (`MoveRequest.alongside`, `rules/enters-run.ts`, CR 614.12).
+       */
+      readonly together?: true;
     }
   /**
    * "You may cast a spell with mana value 5 or less from your hand without paying its mana cost" (`castFree`, D-145, CR 608.2g): the
@@ -1361,6 +1454,8 @@ export interface ResolutionContext {
    * whether it is more than 0; a `may` effect resets it to 0 as it comes up. Absent until one is counted.
    */
   readonly performed?: number;
+  /** The natural result of the latest `rollDie` of this resolution (CR 706.2, D-271), which the condition `dieResult` reads. Absent until a die is rolled. */
+  readonly dieResult?: number;
   /**
    * The keys answered so far to the replacement questions (CR 616.1, D-191) of the instruction at the head of the queue, in the order the
    * questions came: the damage it deals is simulated again with them (nothing is dealt until no question is left) and the next question, if
@@ -1609,8 +1704,19 @@ export interface TurnLog {
   readonly combatDamaged: readonly { readonly source: ObjectId; readonly player: SeatId }[];
   /** Each time a player gained life this turn (D-149), in order, one entry for each life gain event: "for the first time each turn". */
   readonly lifeGained: readonly SeatId[];
+  /** The life each player has gained this turn, by seat (D-252, CR 119.3): the sum of every life gain after replacement, for "if you gained 3 or more life this turn". */
+  readonly lifeGainedTotal: readonly number[];
   /** Each triggered ability that has triggered this turn (D-149): "this ability triggers only once each turn" (CR 603.2). */
   readonly triggered: readonly { readonly object: ObjectId; readonly abilityIndex: number }[];
+  /**
+   * Each triggered ability whose controller has taken the action it represents this turn (D-256): "Do this only once each turn" (CR 603.2h): the
+   * source permanent, the ability on it and the player who took the action (the source's controller as the ability resolved).
+   */
+  readonly actionTaken: readonly {
+    readonly object: ObjectId;
+    readonly abilityIndex: number;
+    readonly seat: SeatId;
+  }[];
   /**
    * Each permanent that entered the battlefield this turn (D-151, Celebration: "two or more nonland permanents entered the battlefield under your
    * control this turn"), in order: who controlled it as it entered, its card types as it entered and whether it is a token. It stays when the
@@ -1631,6 +1737,15 @@ export interface TurnLog {
    */
   readonly attacked: readonly ObjectId[];
   /**
+   * Each player a creature was declared as an attacker attacking this turn (D-269, CR 508.6: a player has "attacked [a player]" if they declared
+   * creatures as attackers attacking that player), in order: the creature and the player. A creature that attacks a planeswalker or a battle attacks
+   * that permanent, not the player who controls or protects it, so it adds no entry; a creature put onto the battlefield attacking was never declared
+   * as an attacker (CR 508.4: it is "attacking" but never "attacked"; CR 508.6) and adds none; a reselected attack (CR 508.7a) keeps the entry of the
+   * player it was declared attacking and adds none for the new one.
+   * "Each player this creature attacked this turn" reads it.
+   */
+  readonly attackedPlayers: readonly { readonly attacker: ObjectId; readonly player: SeatId }[];
+  /**
    * Each card that was put into a graveyard from the battlefield this turn (D-179, CR 700.4: "put there from the battlefield this turn"), by the id it has
    * in the graveyard: a card that moved on from there is a new object (CR 400.7) and is not in it. A token is not (it is not a card).
    */
@@ -1648,10 +1763,13 @@ export const EMPTY_TURN_LOG: TurnLog = {
   activated: [],
   combatDamaged: [],
   lifeGained: [],
+  lifeGainedTotal: [],
   triggered: [],
+  actionTaken: [],
   entered: [],
   damageTaken: [],
   attacked: [],
+  attackedPlayers: [],
   graveyarded: [],
   leftGraveyard: [],
   modesChosen: [],
@@ -1696,6 +1814,12 @@ export interface GameState {
   readonly lki: Readonly<Record<ObjectId, LastKnownInfo>>;
   /** Commander objects put into a graveyard or exile since state-based actions were last checked (CR 903.9a). */
   readonly commanderWatch: readonly ObjectId[];
+  /**
+   * D-279 (CR 712.21a, 712.21b): the pairs of cards a melded permanent became as it left the battlefield for a graveyard, a library or exile, waiting for their
+   * owner to order them (the order of two cards in a graveyard or a library, the timestamp order of two exiled cards), asked as state-based actions are
+   * next checked. Absent when there are none (so a game without meld hashes as before).
+   */
+  readonly meldOrders?: readonly MeldOrder[];
   /** Triggered abilities that have triggered and wait to go on the stack (CR 603.3). */
   readonly pendingTriggers: readonly PendingTrigger[];
   /**

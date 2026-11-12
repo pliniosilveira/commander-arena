@@ -47,6 +47,8 @@ describe('the supported layouts', () => {
       'class',
       // D-214: a preparation card (CR 722).
       'prepare',
+      // D-277: a meld card (CR 701.42, 712.4).
+      'meld',
     ]);
     for (const def of [
       SPLIT,
@@ -55,6 +57,8 @@ describe('the supported layouts', () => {
       TRANSFORM,
       syntheticCard('SYNTHETIC Rite of Three'),
       syntheticCard('SYNTHETIC Prepared Scout // Scout Tidings'),
+      syntheticCard('SYNTHETIC Dusk Squire'),
+      syntheticCard('SYNTHETIC Dawn Squire'),
     ]) {
       expect(validateCard(def), def.name).toEqual([]);
     }
@@ -159,14 +163,94 @@ describe('what is refused, naming the layout', () => {
     ]);
   });
 
-  test('the layouts the engine does not model: flip, meld, fuse, aftermath', () => {
-    for (const layout of ['flip', 'meld', 'fuse', 'aftermath', 'leveler']) {
+  test('the layouts the engine does not model: flip, fuse, aftermath', () => {
+    for (const layout of ['flip', 'fuse', 'aftermath', 'leveler']) {
       const def = asLayout(SPLIT, layout);
       expect(
         validateCard(def).some((i) => i.message.includes(`"${layout}"`)),
         layout,
       ).toBe(true);
     }
+  });
+
+  describe('a meld card (CR 701.42, 712.4, 712.8g; D-277, D-278)', () => {
+    const DUSK = syntheticCard('SYNTHETIC Dusk Squire');
+    const issues = (def: CardDefinition): string[] =>
+      validateCard(def).map((i) => `${i.path}: ${i.message}`);
+    const has = (def: CardDefinition, text: RegExp): boolean =>
+      issues(def).some((m) => text.test(m));
+
+    test('a meld card has two faces (its front and the combined face) and names its counterpart', () => {
+      expect(validateCard(DUSK)).toEqual([]);
+      expect(has({ ...DUSK, faces: [DUSK.faces[0] as CardFace] }, /needs 2 face/)).toBe(true);
+      const { meld: _meld, ...noPartner } = DUSK;
+      expect(has(noPartner, /needs the name of the other card/)).toBe(true);
+      expect(
+        has({ ...DUSK, meld: { partner: DUSK.name } }, /needs the name of the other card/),
+      ).toBe(true);
+    });
+
+    test('only a card of layout meld names a counterpart or has the meld ability', () => {
+      expect(
+        has(
+          { ...SPLIT, meld: { partner: 'X' } },
+          /only a card of layout meld has a meld counterpart/,
+        ),
+      ).toBe(true);
+      const withAbility = withFace(SPLIT, 0, { abilities: DUSK.faces[0]?.abilities ?? [] });
+      expect(has(withAbility, /only a meld card has a meld ability/)).toBe(true);
+    });
+
+    test('the combined face is a permanent with no mana cost and a name of its own', () => {
+      expect(
+        has(
+          withFace(DUSK, 1, { manaCost: ['5'] }),
+          /combined face of a meld pair has no mana cost/,
+        ),
+      ).toBe(true);
+      expect(
+        has(
+          withFace(DUSK, 1, { types: ['instant'] }),
+          /combined face of a meld pair is a permanent/,
+        ),
+      ).toBe(true);
+      expect(has(withFace(DUSK, 1, { name: DUSK.name }), /name of its own/)).toBe(true);
+    });
+
+    test('the meld ability names the counterpart and the combined face, with the intervening if', () => {
+      const wrongPartner = withFace(DUSK, 0, {
+        abilities: (DUSK.faces[0]?.abilities ?? []).map((a) =>
+          a.kind === 'triggered' && a.effect.kind === 'meld'
+            ? { ...a, effect: { ...a.effect, partner: 'Somebody Else' } }
+            : a,
+        ),
+      });
+      expect(has(wrongPartner, /must name this card's counterpart/)).toBe(true);
+      const noIf = withFace(DUSK, 0, {
+        abilities: (DUSK.faces[0]?.abilities ?? []).map((a) => {
+          if (a.kind !== 'triggered') return a;
+          const { interveningIf: _if, ...rest } = a;
+          return rest;
+        }),
+      });
+      expect(has(noIf, /intervening "if/)).toBe(true);
+      // A meld effect that is only a part of a larger effect is not run.
+      const nested = withFace(DUSK, 0, {
+        abilities: (DUSK.faces[0]?.abilities ?? []).map((a) =>
+          a.kind === 'triggered' && a.effect.kind === 'meld'
+            ? { ...a, effect: { kind: 'sequence' as const, effects: [a.effect] } }
+            : a,
+        ),
+      });
+      expect(has(nested, /whole effect of a triggered ability/)).toBe(true);
+    });
+
+    test('a combined face that asks a question as it enters is refused (not run)', () => {
+      const riot = withFace(DUSK, 1, {
+        abilities: [{ kind: 'keyword', keyword: { kind: 'riot' } }],
+      });
+      expect(has(riot, /replacement effect, riot or devour on the combined face/)).toBe(true);
+    });
   });
 
   test('an unsupported card with a layout the engine models is structurally valid', () => {

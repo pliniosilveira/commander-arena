@@ -803,7 +803,17 @@
   border-color: var(--accent);
 }
 
+.board-flag-blessing {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .board-flag-ring {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.board-flag-soulbond {
   color: var(--accent);
   border-color: var(--accent);
 }

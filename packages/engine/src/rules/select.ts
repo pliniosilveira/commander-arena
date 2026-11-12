@@ -12,6 +12,7 @@ import type {
   PlayerSelector,
   TargetSpec,
 } from '../ast/types';
+import type { Subtype } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf, seatsInOrder } from '../state/ops';
 import type { ChosenTarget, GameObject, GameState, ThisWayCounts } from '../state/types';
@@ -23,6 +24,7 @@ import { keywordKindsOf } from './derive-keywords';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
 import { abilitiesHaveKeyword } from './keywords';
 import { manaValueOfCost } from './mana-value';
+import { commanderCardOf, successorsOf } from './melded';
 import { playerCanBeTargetedBy } from './player-protection';
 import { hasProtectionFrom } from './protection';
 import { objectOrLki } from './source-info';
@@ -74,7 +76,8 @@ export interface SelectContext {
 
 /** CR 903.3 (D-145): the object is a card its owner designated as a commander; a token or a copy of one is not. */
 function isCommanderObject(state: GameState, obj: GameObject): boolean {
-  return obj.card !== null && state.cards[obj.card]?.isCommander === true;
+  // CR 903.3b (D-277): a melded permanent one of whose two cards is a commander is a commander.
+  return commanderCardOf(state, obj) !== null;
 }
 
 /**
@@ -184,6 +187,8 @@ export function matchesFilter(
     ...(filter.enteredThisTurn === true
       ? { entered: state.turnLog.entered.map((e) => e.object) }
       : {}),
+    // D-261: the creature the trigger is about, as it last was (a dies trigger reads the permanent that left, CR 603.10a, 113.7a).
+    ...(readsSharedType(filter) ? subjectSubtypesOf(state, ctx.triggerSubject) : {}),
   };
   return matchesFilterWith(state, obj, () => describeObject(state, obj), filter, reading);
 }
@@ -201,9 +206,24 @@ function readsGame(f: ObjectFilter): boolean {
     f.controllerDealtDamageBySource === true ||
     f.putFromBattlefieldThisTurn === true ||
     f.enteredThisTurn === true ||
+    f.sharesCreatureTypeWith !== undefined ||
     f.controller === 'defendingPlayer' ||
     (f.anyOf?.some(readsGame) ?? false)
   );
+}
+
+/** Whether the filter, or one of its `anyOf` members, asks for a creature type shared with the trigger's creature (D-261). */
+function readsSharedType(f: ObjectFilter): boolean {
+  return f.sharesCreatureTypeWith !== undefined || (f.anyOf?.some(readsSharedType) ?? false);
+}
+
+/** The subtypes of the object a trigger is about, as it is or as it last was; none known when there is no such object. */
+function subjectSubtypesOf(
+  state: GameState,
+  subject: ObjectId | undefined,
+): { subjectSubtypes?: readonly Subtype[] } {
+  const obj = subject === undefined ? null : objectOrLki(state, subject);
+  return obj === null ? {} : { subjectSubtypes: describeObject(state, obj).subtypes };
 }
 
 /** The X of the resolving spell or ability: `ctx.x`, else the source's own stack data (CR 107.3a); none if neither has one. */
@@ -351,6 +371,26 @@ export function legalTargets(
     }
     return [...out, ...playersFor(spec.what.player)];
   }
+  if (spec.what.kind === 'objectOrGraveyardCard') {
+    // CR 115.1 (D-270): "other target creatures from the battlefield and/or creature cards from graveyards": the permanents the filter matches, then the cards
+    // of any graveyard the card filter matches. Protection from being targeted is a permanent's alone (`canBeTargetedBy`).
+    const { filter: permanents, card: cards } = spec.what;
+    for (const [filter, zone] of [
+      [permanents, 'battlefield'],
+      [cards, 'graveyard'],
+    ] as const) {
+      for (const id of objectsInZone(state, zone)) {
+        const obj = getObject(state, id);
+        if (
+          matchesFilter(state, obj, { ...filter, zone }, ctx) &&
+          canBeTargetedBy(state, obj, ctx.controller, ctx.source)
+        ) {
+          out.push({ kind: 'object', id, specId });
+        }
+      }
+    }
+    return out;
+  }
   if (spec.what.kind === 'anyTarget') {
     // CR 115.4: any target is a creature, player, planeswalker or battle.
     for (const id of state.battlefield) {
@@ -472,17 +512,16 @@ export function resolveObjects(
     }
     case 'triggerCard': {
       // CR 400.7, 603.10a (D-230): the card the permanent the event is about became in the graveyard, if it is still there.
-      const successor =
-        ctx.triggerSubject === undefined ? undefined : state.lki[ctx.triggerSubject]?.successor;
-      return successor !== undefined && state.objects[successor]?.zone === 'graveyard'
-        ? [successor]
-        : [];
+      // CR 712.21c (D-277): for a melded permanent that died, both cards.
+      return ctx.triggerSubject === undefined
+        ? []
+        : successorsOf(state, ctx.triggerSubject, (o) => o.zone === 'graveyard');
     }
     case 'thisCard': {
       // CR 400.7, 603.10a: the card the source became when it left, if it is still in that zone. A
       // source that has not left has no such card.
-      const successor = ctx.source === null ? undefined : state.lki[ctx.source]?.successor;
-      return successor !== undefined && state.objects[successor] !== undefined ? [successor] : [];
+      // CR 712.21c (D-277): for a melded permanent that left, both cards.
+      return ctx.source === null ? [] : successorsOf(state, ctx.source, () => true);
     }
     case 'each': {
       const zone = selector.filter.zone ?? (selector.filter.stackKind ? 'stack' : 'battlefield');
@@ -588,6 +627,20 @@ export function resolvePlayers(
         state,
         (ctx.thisWay?.discardedBy ?? []).filter((seat) => !getSeat(state, seat).hasLost),
       );
+    case 'attackedPlayers': {
+      // CR 508.6 (D-269): the players the source was declared as an attacker attacking this turn, read under the id the source has (an ability
+      // that outlives its source reads the log of the id it had, CR 608.2h), without the players who have left the game.
+      const source = ctx.source;
+      if (source === null) return [];
+      return apnapOrder(
+        state,
+        [
+          ...new Set(
+            state.turnLog.attackedPlayers.flatMap((a) => (a.attacker === source ? [a.player] : [])),
+          ),
+        ].filter((seat) => !getSeat(state, seat).hasLost),
+      );
+    }
     case 'giftRecipient': {
       // CR 702.174a (D-135): "the chosen player": the opponent the gift was promised to, read from the spell, from the
       // permanent that came from it, or from last-known information once either has left (CR 113.7a).
@@ -621,6 +674,7 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'defendingPlayer' ||
     sel.kind === 'triggerPlayer' ||
     sel.kind === 'discardedThisWay' ||
+    sel.kind === 'attackedPlayers' ||
     sel.kind === 'giftRecipient'
   );
 }

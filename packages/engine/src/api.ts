@@ -54,6 +54,7 @@ import {
 import { answerCopyTargets } from './rules/copy-spell-answer';
 import {
   afterResolution,
+  answerMiracleDraw,
   answerUntapChoice,
   discardCards,
   passPriority,
@@ -69,6 +70,7 @@ import { canPlayLand } from './rules/legality';
 import { applyLegendRule } from './rules/legend-rule';
 import { activateManaAbility } from './rules/mana-engine';
 import { sameCombination } from './rules/mana-outcomes';
+import { arrangeMeldedCards } from './rules/melded';
 import { isLegalModeSet } from './rules/modes';
 import { monarchAfterLoss } from './rules/monarch';
 import { grantPriority } from './rules/priority';
@@ -76,6 +78,7 @@ import { fail, ok, type Result } from './rules/result';
 import { evaluateGameEnd } from './rules/sba';
 import { setPending } from './rules/set-pending';
 import { bottomCards, keepHand, takeMulligan } from './rules/setup';
+import { sharesLandType } from './rules/share-type';
 import { answerSpecialPayment, beginSpecialAction } from './rules/special-actions';
 import {
   answerResolutionArrange,
@@ -367,9 +370,18 @@ function answerConfirm(
     const begun = acceptCascade(state);
     return begun.ok ? begun : finishResolutionAnswer(declineCascade(state));
   }
-  // CR 702.62a, 702.35a, 608.2g (D-128): "you may play it without paying its mana cost" (Suspend) and "its owner may
-  // cast it by paying [cost]" (Madness): asked while the ability resolves.
-  if (d.purpose === 'suspend' || d.purpose === 'madness') {
+  // CR 702.94a (D-274): "you may reveal this card from your hand as you draw it": asked of the player who drew it, in the draw step (no
+  // resolution) or between two draws of a resolving spell or ability.
+  if (d.purpose === 'miracleReveal') {
+    if (state.resolution === null && d.subject !== undefined) {
+      const r = answerMiracleDraw(state, d.subject, accept);
+      return ok(r.state, r.events);
+    }
+    return finishResolutionAnswer(answerResolutionOptional(state, accept));
+  }
+  // CR 702.62a, 702.35a, 702.94a, 608.2g (D-128, D-274): "you may play it without paying its mana cost" (Suspend), "its owner may
+  // cast it by paying [cost]" (Madness) and "you may cast it by paying [its miracle cost]" (Miracle): asked while the ability resolves.
+  if (d.purpose === 'suspend' || d.purpose === 'madness' || d.purpose === 'miracle') {
     if (!accept) return finishResolutionAnswer(declineCastExiled(state));
     const begun = acceptCastExiled(state);
     return begun.ok ? begun : finishResolutionAnswer(declineCastExiled(state));
@@ -378,7 +390,12 @@ function answerConfirm(
   if (d.purpose === 'search')
     return finishResolutionAnswer(answerResolutionSearchMay(state, accept));
   const head = state.resolution?.queue[0]?.kind;
-  if (head === 'confirmOptional' || head === 'mayEffect' || head === 'playerMay') {
+  if (
+    head === 'confirmOptional' ||
+    head === 'mayEffect' ||
+    head === 'playerMay' ||
+    head === 'graveyardPair'
+  ) {
     return finishResolutionAnswer(answerResolutionOptional(state, accept));
   }
   if (state.resolution !== null) {
@@ -400,6 +417,26 @@ function answerConfirm(
  * a color". Asked while a permanent enters during a resolution (a spell becoming a permanent, an
  * effect putting one onto the battlefield, a token being created), or for a land being played.
  */
+/**
+ * The answer to the order of the two cards of a melded permanent that left the battlefield (CR 712.21a, 712.21b, D-279): the player asked (`d.seat`) chooses which of the two goes
+ * on top of the graveyard or library, or, in exile, which has the later timestamp; the other goes below it. State-based actions are checked again after.
+ */
+function answerMeldOrder(
+  state: GameState,
+  d: Extract<PendingDecision, { kind: 'chooseOption' }>,
+  option: string,
+): Result {
+  const index = d.options.indexOf(option);
+  const order = d.meldOrder;
+  if (index < 0 || order === undefined) return fail('That is not one of the options');
+  const top = index === 0 ? order.first : order.second;
+  const other = index === 0 ? order.second : order.first;
+  let next: GameState = { ...state, pending: null };
+  next = { ...next, meldOrders: (next.meldOrders ?? []).filter((e) => e.first !== order.first) };
+  next = arrangeMeldedCards(next, order.zone, top, other);
+  return resumeAfterSbaDecision(next);
+}
+
 function answerChooseOption(
   state: GameState,
   seat: SeatId,
@@ -407,6 +444,7 @@ function answerChooseOption(
   option: string,
 ): Result {
   if (d.purpose === 'replacement') return answerReplacement(state, d, option);
+  if (d.purpose === 'meldOrder') return answerMeldOrder(state, d, option);
   if (d.purpose === 'attackTarget') {
     // CR 508.7 (D-139): the attack target a creature is reselected to.
     if (!d.options.includes(option)) return fail('That is not one of the options');
@@ -589,6 +627,8 @@ function validCardsChoice(
     const [only] = chosen;
     if (chosen.length !== 1 || only === undefined || !d.orSingle.includes(only)) return false;
   }
+  // CR 205.3i (D-262): "that share a land type": two or more cards need a land type that all of them have.
+  if (d.shareLandType !== undefined && !sharesLandType(chosen, d.shareLandType)) return false;
   // CR 202.3 (D-230): "with total mana value 4 or less": the mana values of the cards chosen add up to no more than the limit.
   if (
     d.totalManaValue !== undefined &&

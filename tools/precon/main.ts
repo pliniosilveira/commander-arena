@@ -10,7 +10,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   type ImportedCard,
+  meldResultNames,
+  normalizeNameKey,
   type PreconSnapshot,
+  type StoredCard,
   serializePreconSnapshot,
   toSnapshotCard,
   validateDeck,
@@ -150,13 +153,32 @@ export async function run(argv: readonly string[], io: Io, deps: Deps): Promise<
     return 1;
   }
 
+  // D-280: a meld card needs its melded face, a card of its own that is not in the decklist: the snapshot stores it with the cards, so the precon is played offline.
+  const faces: StoredCard[] = [];
+  const noFace: string[] = [];
+  for (const name of meldResultNames([...resolved.cards.values()].map((c) => c.stored))) {
+    const face = index.meldFaces.get(normalizeNameKey(name));
+    if (face === undefined) noFace.push(name);
+    else faces.push(face);
+  }
+  if (noFace.length > 0) {
+    io.err(
+      `error: the melded face of a meld card is not in ${path.basename(file)}: ${noFace.join('; ')}`,
+    );
+    io.err('nothing was written');
+    return 1;
+  }
+
   const snapshot: PreconSnapshot = {
     id: options.id,
     name: options.name,
     blurb: options.blurb,
     source: path.basename(file),
     decklist,
-    cards: [...resolved.cards.values()].map((card) => toSnapshotCard(card.stored)),
+    cards: [...resolved.cards.values()]
+      .map((card) => card.stored)
+      .concat(faces)
+      .map(toSnapshotCard),
   };
   const dir = path.resolve(
     options.out ?? path.join(deps.repoRoot, 'apps/web/src/precons/snapshots'),

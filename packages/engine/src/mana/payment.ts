@@ -87,6 +87,8 @@ export interface PaymentPlan {
    * CR 605.3a) and neither is mana the cost did not consume. "The amount of mana spent to cast it" reads its length.
    */
   readonly spentTypes: readonly (readonly string[])[];
+  /** D-260: how many of the mana in `spentTypes` was made by a snow source (CR 107.4h: "for each {S} spent to cast this spell"). */
+  readonly spentSnow: number;
 }
 
 // Objective vector components (lower is better, compared lexicographically).
@@ -539,10 +541,13 @@ function planOnce(request: PaymentRequest): PaymentPlan | null {
   const taps: { object: ObjectId; abilityIndex: number; outcome: number }[] = [];
   const leftover: ManaObject[] = [];
   const spentTypes: (readonly string[])[] = [];
+  let spentSnow = 0;
   for (const { item, entry, usedMask, actMask } of best.solution.picks) {
     // D-183: a unit that is used and does not pay the activation cost of a costed ability is spent on the cost of the spell.
     entry.colors.forEach((_, j) => {
-      if ((usedMask & (1 << j)) !== 0 && (actMask & (1 << j)) === 0) spentTypes.push(entry.types);
+      if ((usedMask & (1 << j)) === 0 || (actMask & (1 << j)) !== 0) return;
+      spentTypes.push(entry.types);
+      if (entry.snow) spentSnow += 1;
     });
     if (item.poolIndex >= 0) {
       fromPool.push(item.poolIndex);
@@ -562,5 +567,5 @@ function planOnce(request: PaymentRequest): PaymentPlan | null {
     });
   }
   fromPool.sort((a, b) => a - b);
-  return { fromPool, taps, lifePaid: best.life, leftover, spentTypes };
+  return { fromPool, taps, lifePaid: best.life, leftover, spentTypes, spentSnow };
 }

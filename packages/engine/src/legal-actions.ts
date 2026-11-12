@@ -6,9 +6,11 @@
  * still accepts every legal answer.
  */
 
+import type { ObjectId } from './ids';
 import { arrangementActions, orderedChoices } from './rules/arrange-choices';
 import { defaultDivision } from './rules/combat-flow';
 import { crewChoices } from './rules/crew-choices';
+import { sharesLandType } from './rules/share-type';
 import { targetAnswerError } from './rules/target-choice';
 import type { Action } from './state/actions';
 import type { ChosenTarget } from './state/chosen';
@@ -26,24 +28,46 @@ function combinations<T>(items: readonly T[], k: number): T[][] {
 /** Longest list of answers `legalActionsForDecision` builds for a choice among many permanents. */
 const MAX_LISTED_CHOICES = 500;
 
-/** The first `limit` combinations of `k` items, in the order `combinations` lists them. */
-function firstCombinations<T>(items: readonly T[], k: number, limit: number): T[][] {
+/** Most combinations `firstCombinations` looks at while it waits for `limit` that `accept` takes. */
+const MAX_COMBINATIONS_TRIED = 200_000;
+
+/**
+ * The first `limit` combinations of `k` items that `accept` takes (all of them by default), in the order
+ * `combinations` lists them. The cap applies to the accepted ones, so a constraint on the whole answer (D-262:
+ * cards that share a land type) cannot leave the list empty of answers that exist; the search for them stops after
+ * `MAX_COMBINATIONS_TRIED` combinations.
+ */
+function firstCombinations<T>(
+  items: readonly T[],
+  k: number,
+  limit: number,
+  accept: (combination: readonly T[]) => boolean = () => true,
+): T[][] {
   const out: T[][] = [];
   const chosen: T[] = [];
+  let tried = 0;
   const walk = (start: number): void => {
     if (chosen.length === k) {
-      out.push([...chosen]);
+      tried += 1;
+      if (accept(chosen)) out.push([...chosen]);
       return;
     }
     for (let i = start; i <= items.length - (k - chosen.length); i += 1) {
       chosen.push(items[i] as T);
       walk(i + 1);
       chosen.pop();
-      if (out.length >= limit) return;
+      if (out.length >= limit || tried >= MAX_COMBINATIONS_TRIED) return;
     }
   };
   walk(0);
   return out;
+}
+
+/** CR 205.3i (D-262): a choice whose cards have no land type in common is no answer; every choice is one without the option. */
+function sharesTypeOf(
+  types: Readonly<Record<ObjectId, readonly string[]>> | undefined,
+): (chosen: readonly ObjectId[]) => boolean {
+  return (chosen) => types === undefined || sharesLandType(chosen, types);
 }
 
 function range(from: number, to: number): number[] {
@@ -209,7 +233,9 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
       return [
         ...(d.purpose === 'putOnTop'
           ? range(d.min, d.max).flatMap((n) => orderedChoices(d.legal, n, MAX_LISTED_CHOICES))
-          : range(d.min, d.max).flatMap((n) => firstCombinations(d.legal, n, MAX_LISTED_CHOICES))
+          : range(d.min, d.max).flatMap((n) =>
+              firstCombinations(d.legal, n, MAX_LISTED_CHOICES, sharesTypeOf(d.shareLandType)),
+            )
         )
           // CR 202.3 (D-230): a choice whose mana values add up to more than the limit is no answer.
           .filter(

@@ -12,9 +12,12 @@ import {
   multikickerCostOf,
   replicateCostOf,
 } from './rules/alt-costs';
+import { derive } from './rules/derive';
 import { entersChoice, entersOptions } from './rules/enters';
 import { faceOf } from './rules/legality';
+import { cardsOf, isCommanderCardId, meldCardsIssue } from './rules/melded';
 import { modalOfObject } from './rules/modes';
+import { linkedPartnerOf } from './rules/pairing';
 import { abilityXCost, hasX, NO_X, spellXCost } from './rules/x-value';
 import { printedCard } from './state/ops';
 import type { GameState } from './state/types';
@@ -53,6 +56,40 @@ export function checkInvariants(state: GameState): string[] {
       problems.push(`${other} and ${obj.id} are both the Ring-bearer of seat ${obj.ringBearer}`);
     }
     bearers.set(obj.ringBearer, obj.id);
+  }
+  // CR 702.95b, 702.95d, 702.95e, 400.7 (D-285): a pairing is a link of two creatures from both sides, formed by one player; both are permanents in play
+  // (on the battlefield or phased out, CR 702.26d). A link whose partner has left, changed hands or stopped being a creature is cleared by the state-based
+  // actions, which have run whenever a player has priority, and is read as no pair meanwhile (`rules/pairing.ts`): so that the pair still stands is asked only
+  // while a player has priority (a resolution that destroys a creature or takes it can leave a stale link until it ends).
+  const priority = state.pending?.kind === 'priority';
+  for (const obj of Object.values(state.objects)) {
+    const link = obj.paired;
+    if (link === undefined) continue;
+    if (obj.zone !== 'battlefield' && obj.zone !== 'phased')
+      problems.push(`${obj.id} is paired but is in ${obj.zone}`);
+    if (link.with === obj.id) problems.push(`${obj.id} is paired with itself`);
+    if (state.seats[link.by] === undefined)
+      problems.push(`${obj.id} is paired by seat ${link.by}, which does not exist`);
+    const other = state.objects[link.with];
+    if (other === undefined) {
+      if (priority) problems.push(`${obj.id} is paired with ${link.with}, which does not exist`);
+      continue;
+    }
+    if (other.paired?.with !== obj.id) {
+      if (priority)
+        problems.push(`${obj.id} is paired with ${other.id}, which is not paired with it`);
+    } else if (other.paired.by !== link.by) {
+      problems.push(`${obj.id} and ${other.id} are paired by different players`);
+    } else if (priority && linkedPartnerOf(state, obj) === null) {
+      problems.push(
+        `${obj.id} and ${other.id} are paired but not both controlled by seat ${link.by}`,
+      );
+    } else if (priority && obj.zone === 'battlefield') {
+      for (const o of [obj, other]) {
+        if (o.zone === 'battlefield' && !derive(state, o).types.includes('creature'))
+          problems.push(`${o.id} is paired but is not a creature`);
+      }
+    }
   }
   for (const s of state.seats) {
     for (const zone of ['library', 'hand', 'graveyard', 'command'] as const) {
@@ -116,12 +153,13 @@ export function checkInvariants(state: GameState): string[] {
     }
     // CR 601.2h (D-183): the mana spent to cast a spell belongs to a spell, is at least 1 when present, and no card type has more of it than there is.
     if (obj.stack?.manaSpent !== undefined) {
-      const { total, fromTypes } = obj.stack.manaSpent;
+      const { total, fromTypes, snow } = obj.stack.manaSpent;
       if (
         obj.stack.kind !== 'spell' ||
         !Number.isSafeInteger(total) ||
         total < 1 ||
-        Object.values(fromTypes).some((n) => !Number.isSafeInteger(n) || n < 1 || n > total)
+        Object.values(fromTypes).some((n) => !Number.isSafeInteger(n) || n < 1 || n > total) ||
+        (snow !== undefined && (!Number.isSafeInteger(snow) || snow < 1 || snow > total))
       ) {
         problems.push(`${id} has mana spent that it cannot have`);
       }
@@ -217,7 +255,8 @@ export function checkInvariants(state: GameState): string[] {
     if (obj.kicks !== undefined && (obj.kicked !== true || !(obj.kicks >= 1))) {
       problems.push(`${id} remembers ${obj.kicks} kicks without having been kicked`);
     }
-    // CR 712.8a, 715.4: a face other than the front one is up only on the stack and the battlefield.
+    // CR 712.8a, 715.4: a face other than the front one is up only on the stack and the battlefield (or phased out, CR 702.26b: a phased-out permanent is
+    // treated as though it does not exist but stays as it was, with the face it had up).
     if (card === null ? obj.face !== 0 : obj.face < 0 || obj.face >= Math.max(1, faces.length)) {
       problems.push(`${id} has face ${obj.face}, which its card does not have`);
     }
@@ -225,9 +264,32 @@ export function checkInvariants(state: GameState): string[] {
       obj.face !== 0 &&
       obj.zone !== 'stack' &&
       obj.zone !== 'battlefield' &&
+      obj.zone !== 'phased' &&
       obj.prepareOf === undefined
     ) {
       problems.push(`${id} has face ${obj.face} in ${obj.zone}`);
+    }
+    // CR 701.42a, 712.4a, 712.8g (D-277): a melded permanent is one object on the battlefield (or phased out) represented by the two cards of a meld pair,
+    // with the combined back face up; its commander card, if exactly one of the two is, is its first card.
+    if (obj.meldedWith !== undefined) {
+      if (obj.zone !== 'battlefield' && obj.zone !== 'phased') {
+        problems.push(`${id} is melded but is in ${obj.zone}`);
+      }
+      if (obj.card === null || obj.token !== null || obj.face !== 1) {
+        problems.push(`${id} is melded but is not a card with its combined back face up`);
+      } else {
+        const issue = meldCardsIssue(state, obj.card, obj.meldedWith);
+        if (issue !== null) problems.push(`${id} is melded but ${issue}`);
+        else if (isCommanderCardId(state, obj.meldedWith) && !isCommanderCardId(state, obj.card)) {
+          problems.push(`${id} is melded but its commander card is not its first card`);
+        }
+      }
+    } else if (
+      card !== null &&
+      obj.face === 1 &&
+      state.definitions[state.cards[card]?.definition ?? -1]?.layout === 'meld'
+    ) {
+      problems.push(`${id} has the combined back face of a meld card but is not melded`);
     }
     // CR 722.3c (D-214): a prepared permanent and the copy of its prepare spell in exile name each other.
     if (obj.prepared === true) {
@@ -363,7 +425,8 @@ export function checkInvariants(state: GameState): string[] {
   // that is not a card (none today) or tokens, which have no card.
   const objectsPerCard = new Map<string, number>();
   for (const obj of Object.values(state.objects)) {
-    if (obj.card !== null) objectsPerCard.set(obj.card, (objectsPerCard.get(obj.card) ?? 0) + 1);
+    // D-277: a melded permanent is one object that two cards represent; each of them is on it.
+    for (const card of cardsOf(obj)) objectsPerCard.set(card, (objectsPerCard.get(card) ?? 0) + 1);
   }
   for (const card of Object.keys(state.cards)) {
     const n = objectsPerCard.get(card) ?? 0;

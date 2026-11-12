@@ -133,6 +133,19 @@ export interface PermanentOptions extends PlaceOptions {
    */
   readonly attachedTo?: string;
   /**
+   * D-277 (CR 701.42a, 712.4a): the card is a meld card that is melded with the other card of its pair, which is placed on the battlefield too, named by label
+   * or card name (it must match exactly one other permanent). The two become one melded permanent with the combined back face up (`face` 1), represented by
+   * both cards; the other placement is not an object of its own. Put it on the commander's placement when one of the two is the commander (a melded
+   * permanent's commander card is its first card). The pair is checked as `701.42b` says: two meld cards that form a pair, owned by the same player.
+   */
+  readonly meldedWith?: string;
+  /**
+   * D-285 (CR 702.95b): the creature is paired with another creature, named by label or card name (it must match exactly one other permanent on the
+   * battlefield; for a melded permanent, name its first card). The pair is formed by the player who controls both, written on both permanents (the other
+   * placement may name this one too, and must then agree). Refused: a creature that is not a creature on its face, two controllers, a second pairing.
+   */
+  readonly pairedWith?: string;
+  /**
    * For a battle: the player who protects it (CR 310.9). Default: the opponent of its controller,
    * as when it enters in a two-player game. A planeswalker's loyalty and a battle's defense
    * counters come from the card as when it enters (CR 306.5b, 310.4b) unless `counters` says
@@ -563,8 +576,17 @@ export interface Expectations {
   monarch(seat: SeatId | null): void;
   /** The Ring has tempted `seat` this many times (CR 701.54c, D-196); 0 means it has not, and the seat has no emblem. */
   ringLevel(seat: SeatId, tempted: number): void;
+  /** `seat` has the city's blessing (CR 702.131c, D-264), or does not when `has` is false. */
+  citysBlessing(seat: SeatId, has?: boolean): void;
   /** The Ring-bearer of `seat` is that permanent, or `seat` has none when `card` is null (CR 701.54e, D-196). */
   ringBearer(seat: SeatId, card: CardRef | null): void;
+  /**
+   * D-285 (CR 702.95b): the two creatures are paired with each other now (`partnerOf`: the link stands and both are on the battlefield). A creature
+   * whose partner left or changed hands reads as unpaired here, as it does to every rule.
+   */
+  paired(a: CardRef, b: CardRef): void;
+  /** D-285 (CR 702.95b): the creature is not paired with anything now. */
+  unpaired(a: CardRef): void;
   /**
    * For the combat specs (declareAttackers, declareBlockers, assignDamage) it means the engine
    * accepts the action: the legal-action list cannot enumerate every subset, so it is not consulted.

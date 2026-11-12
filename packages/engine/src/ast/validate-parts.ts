@@ -93,6 +93,8 @@ export interface Scope {
   readonly voteOptions?: readonly string[];
   /** True in the ability "When you cast this spell" (`castSpell` with `self`), the only place `cascade` may stand. */
   readonly selfCast?: boolean;
+  /** True in the effect of a `dies` trigger: the creature that died is what the trigger is about, and `sharesCreatureTypeWith` reads its creature types (D-261). */
+  readonly diesTrigger?: boolean;
   /** True in an activated ability that functions from the graveyard, the only place `unearth` may stand (D-124). */
   readonly fromGraveyard?: boolean;
   /**
@@ -125,6 +127,8 @@ export interface Scope {
   readonly mainPhaseTrigger?: boolean;
   /** True after a `may` effect in the same sequence: `didPrevious` and `reflexive` have something to read (D-135). */
   readonly mayAvailable?: boolean;
+  /** The number of sides of the latest `rollDie` earlier in the same sequence: the condition `dieResult` reads its result (CR 706.2, D-271). */
+  readonly dieSides?: number;
   /** True in the effect of a delayed trigger whose creating sequence exiled cards before it: `exiledStillThere` has cards to count (D-151). */
   readonly exiledStillThere?: boolean;
 }
@@ -152,7 +156,13 @@ export function checkEnumList(
  * `ownerScope` is given only where the filter is an effect's `each` selector, the one place that
  * reads `owner` (it knows the effect's targets); anywhere else `owner` is refused.
  */
-export function checkFilter(f: ObjectFilter, path: string, out: Out, ownerScope?: Scope): void {
+export function checkFilter(
+  f: ObjectFilter,
+  path: string,
+  out: Out,
+  ownerScope?: Scope,
+  sharesWith?: boolean,
+): void {
   if (f.controlledBy !== undefined) {
     if (ownerScope === undefined) {
       issue(
@@ -358,6 +368,18 @@ export function checkFilter(f: ObjectFilter, path: string, out: Out, ownerScope?
       );
     }
   }
+  // D-261: "that shares a creature type with it" names the creature a "dies" trigger is about, which only the filter of a `revealUntil` in its effect reads.
+  if (f.sharesCreatureTypeWith !== undefined) {
+    if (f.sharesCreatureTypeWith !== 'triggerSubject') {
+      issue(out, `${path}.sharesCreatureTypeWith`, "sharesCreatureTypeWith is 'triggerSubject'");
+    } else if (sharesWith !== true) {
+      issue(
+        out,
+        `${path}.sharesCreatureTypeWith`,
+        'sharesCreatureTypeWith is read in the filter of a revealUntil in the effect of a "dies" trigger, where the creature that died is what the trigger is about',
+      );
+    }
+  }
   // D-100: "of the chosen type" / "of the chosen color" are flags; the card must ask for the choice.
   for (const key of ['chosenType', 'chosenColor'] as const) {
     if (f[key] !== undefined && f[key] !== true)
@@ -371,7 +393,7 @@ export function checkFilter(f: ObjectFilter, path: string, out: Out, ownerScope?
     }
     f.anyOf.forEach((member, i) => {
       const p = `${path}.anyOf[${i}]`;
-      checkFilter(member, p, out);
+      checkFilter(member, p, out, undefined, sharesWith);
       // Where to look (CR 115.1, 601.2c) is the outer filter's business.
       // D-207: a member may say what kind of stack object it is when the outer filter, on the stack, does not ("triggered ability or colorless spell").
       if (member.zone !== undefined) {
@@ -391,6 +413,10 @@ export function checkFilter(f: ObjectFilter, path: string, out: Out, ownerScope?
 /** True when the filter or any anyOf member satisfies `test`. */
 /** True for a filter that reads the combat or the source's power, which `derive` cannot (D-120, D-131). */
 export const readsCombatOrSource = (f: ObjectFilter): boolean =>
+  readsCombatOrSourceBesidesCommander(f) || f.commander !== undefined;
+
+/** `readsCombatOrSource` without `commander`: what the quality of an equip ability may not read ("Equip commander" reads it, D-259). */
+export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.attacking !== undefined ||
   f.attackingYou !== undefined ||
   f.attackingOpponents !== undefined ||
@@ -401,8 +427,7 @@ export const readsCombatOrSource = (f: ObjectFilter): boolean =>
   f.putFromBattlefieldThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.singleTarget !== undefined ||
-  f.targetsObject !== undefined ||
-  f.commander !== undefined;
+  f.targetsObject !== undefined;
 
 /**
  * True for a filter that names keywords (D-133): `derive` matches the subject of a static ability, and the objects a
@@ -426,6 +451,8 @@ export function declareTargets(
   divideAllowed = false,
   /** D-187: only the targets of a reflexive ability after a sacrifice can be "up to that many" (CR 603.12). */
   thatManyAllowed = false,
+  /** D-270: only the slot of a triggered ability can name objects of two zones (the one place the engine reads it). */
+  crossZoneAllowed = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
@@ -467,6 +494,67 @@ export function declareTargets(
           );
         }
         break;
+      case 'objectOrGraveyardCard': {
+        // D-270 (CR 115.1, 115.2): "target creatures from the battlefield and/or creature cards from graveyards": a permanent or a card of any graveyard.
+        if (!crossZoneAllowed) {
+          issue(
+            out,
+            `${p}.what`,
+            'a target of two zones (the battlefield and graveyards) is read only in a triggered ability of a permanent',
+          );
+        }
+        checkFilter(what.filter, `${p}.what.filter`, out);
+        checkFilter(what.card, `${p}.what.card`, out);
+        if (
+          filterSome(
+            what.filter,
+            (f) =>
+              (f.zone !== undefined && f.zone !== 'battlefield') ||
+              f.stackKind !== undefined ||
+              f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${p}.what.filter`,
+            'the permanent half is on the battlefield: no other zone, owner or stackKind',
+          );
+        }
+        if (
+          what.card?.zone !== 'graveyard' ||
+          what.card.other !== undefined ||
+          what.card.controller !== undefined ||
+          what.card.owner !== undefined ||
+          what.card.stackKind !== undefined ||
+          (what.card.anyOf?.some(
+            (f) =>
+              f.zone !== undefined ||
+              f.other !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined,
+          ) ??
+            false)
+        ) {
+          issue(
+            out,
+            `${p}.what.card`,
+            'the card half is a card of any graveyard: zone "graveyard" and no other, controller, owner or stackKind',
+          );
+        }
+        if (
+          spec.onePerOpponent !== undefined ||
+          spec.divide !== undefined ||
+          spec.upToThatMany !== undefined ||
+          spec.anyNumber !== undefined
+        ) {
+          issue(
+            out,
+            p,
+            'a target of two zones takes a count (min and max), not onePerOpponent, divide, upToThatMany or anyNumber',
+          );
+        }
+        break;
+      }
       default:
         issue(out, `${p}.what`, `unknown target kind ${kindOf(what)}`);
     }
@@ -600,7 +688,7 @@ function checkTargetRef(
   }
   if (expect === 'object' && kind === 'player') {
     issue(out, path, `target "${id}" is a player but an object is required here`);
-  } else if (expect === 'player' && kind === 'object') {
+  } else if (expect === 'player' && (kind === 'object' || kind === 'objectOrGraveyardCard')) {
     issue(out, path, `target "${id}" is an object but a player is required here`);
   }
 }
@@ -738,6 +826,14 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
     case 'giftRecipient':
       // D-135: "the chosen player" of a gift: the face must have the Gift keyword (`checkCastFace`).
       break;
+    case 'attackedPlayers':
+      // D-269 (CR 508.6): "each player this creature attacked this turn": the permanent of an ability, never a spell (a spell attacks nothing).
+      if (kindOf(sel.of) !== 'this') {
+        issue(out, `${path}.of`, "'attackedPlayers' reads the attacks of this permanent ('this')");
+      } else if (scope.owner !== 'ability') {
+        issue(out, path, "'attackedPlayers' needs an ability of a permanent, not a spell");
+      }
+      break;
     case 'discardedThisWay':
       // D-210: "each player who discarded a card this way": a discard before it in the same sequence.
       if (!(scope.thisWay ?? []).includes('discarded')) {
@@ -800,6 +896,7 @@ export const PLAYER_ONLY = [
   'ownerOf',
   'defendingPlayer',
   'triggerPlayer',
+  'attackedPlayers',
 ];
 
 export function checkDamageRecipient(
@@ -984,9 +1081,18 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
 }
 
 /** D-183: the card type of the source of the mana an amount counts, when it names one: a card type of CR 205.2a, in lower case. */
-export function checkManaSpentType(type: string | undefined, path: string, out: Out): void {
+export function checkManaSpentType(
+  type: string | undefined,
+  path: string,
+  out: Out,
+  snow?: unknown,
+): void {
   if (type !== undefined && !isOneOf(type, CARD_TYPES)) {
     issue(out, path, `fromType is a card type, not ${JSON.stringify(type)}`);
+  }
+  // D-260: "for each {S} spent" is the mana of snow sources, a different cut of the mana spent than a card type of the source.
+  if (snow !== undefined && (snow !== true || type !== undefined)) {
+    issue(out, path, 'snow is true and is not given with fromType');
   }
 }
 
@@ -1081,14 +1187,15 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         if (a.of.kind !== 'target')
           issue(out, `${path}.of`, 'the spell is a target of the ability');
         else checkRef(a.of, 'object', `${path}.of`, scope, out);
-      } else if (scope.selfCast !== true) {
+      } else if (scope.selfCast !== true && scope.owner !== 'spell') {
+        // D-260: the effect of the spell itself reads what was spent to cast it ("You gain 1 life for each {S} spent to cast this spell").
         issue(
           out,
           path,
-          'manaSpent is read in the effect of a "when you cast this spell" ability, where the spell is the source',
+          'manaSpent is read in the effect of a spell, or of a "when you cast this spell" ability, where the spell is the source',
         );
       }
-      checkManaSpentType(a.fromType, `${path}.fromType`, out);
+      checkManaSpentType(a.fromType, `${path}.fromType`, out, a.snow);
       break;
     case 'exiledStillThere':
       // D-151: only the effect of a delayed trigger created after an effect that exiled cards (`checkDelayedTrigger`).
@@ -1152,7 +1259,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(
           out,
           path,
-          "'triggerDamage' needs a triggered ability whose trigger is damage being dealt (dealtDamage or dealsCombatDamage)",
+          "'triggerDamage' needs a triggered ability whose trigger is damage being dealt (dealtDamage or dealsCombatDamage) or life being gained (lifeGained)",
         );
       }
       break;
@@ -1569,7 +1676,7 @@ export function loyaltyOffPlaneswalkerIssues(
   });
 }
 
-export const DESIGNATIONS = ['monarch'];
+export const DESIGNATIONS = ['monarch', 'citysBlessing'];
 
 /** The players a condition names: no target and no trigger subject to read there (D-131). */
 function checkConditionPlayers(sel: PlayerSelector, path: string, out: Out): void {
@@ -1780,8 +1887,24 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'controlsRingBearer':
       // CR 701.54e (D-196): read from the permanents of the controller; no operand.
       break;
+    case 'paired':
+      // CR 702.95b (D-286): the permanent the condition belongs to is paired with a creature; no operand. Where it may stand (a static ability that
+      // `derive` reads, an intervening "if") is checked with the ability.
+      break;
+    case 'soulbondReady':
+      issue(
+        out,
+        path,
+        "soulbondReady is the intervening 'if' of the abilities the engine builds for soulbond (CR 702.95a); a card writes the keyword",
+      );
+      break;
     case 'subjectControllerHasMore':
       // D-229: where it may stand (an intervening "if" of a trigger with a permanent as its subject) is checked with the trigger (validate.ts).
+      if (!isOneOf(c.stat, PLAYER_STATS))
+        issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
+      break;
+    case 'triggerPlayerHasMore':
+      // Where it may stand (an intervening "if" of a trigger whose event is about a player) is checked with the trigger (validate.ts).
       if (!isOneOf(c.stat, PLAYER_STATS))
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
       break;
@@ -1821,6 +1944,32 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isCount(c.atLeast) || c.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
+      break;
+    case 'ownsAndControlsNamed':
+      // D-278, CR 701.42a: the permanent the ability belongs to and a permanent of a card type with a name.
+      if (typeof c.name !== 'string' || c.name === '') {
+        issue(out, `${path}.name`, 'the name of the other permanent must be a non-empty string');
+      }
+      if (!isOneOf(c.type, CARD_TYPES)) {
+        issue(out, `${path}.type`, `unknown card type ${JSON.stringify(c.type)}`);
+      }
+      break;
+    case 'lifeGainedThisTurn':
+      // D-252, CR 119.3: the life the controller has gained this turn.
+      if (!isCount(c.atLeast) || c.atLeast < 1) {
+        issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
+      }
+      break;
+    case 'dieResult':
+      // D-271, CR 706.2: the result of a die is read in the `conditional` effect after the roll (`checkEffectCondition`), nowhere else.
+      issue(
+        out,
+        path,
+        'dieResult reads the die rolled earlier in the same resolution: it is only valid in a conditional effect after a rollDie of the same sequence',
+      );
+      break;
+    case 'thisInYourGraveyard':
+      // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
     case 'kicked':
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
@@ -2175,6 +2324,18 @@ function checkTokenDefinition(def: TokenDefinition, path: string, scope: Scope, 
     ) {
       issue(out, `${path}.abilities`, 'more than one devour ability on a token is not supported');
     }
+    // CR 702.95a (D-286): soulbond pairs creatures, so on a token that is not a creature it would be accepted and do nothing (the same refusal as for a card face).
+    if (!def.types?.includes('creature')) {
+      def.abilities.forEach((a, i) => {
+        if (a?.kind === 'keyword' && a.keyword?.kind === 'soulbond') {
+          issue(
+            out,
+            `${path}.abilities[${i}]`,
+            'Soulbond is an ability of creatures (CR 702.95a): a token that is not a creature cannot have it',
+          );
+        }
+      });
+    }
     // D-100: a token that refers to "the chosen type" asks for it as it is created.
     chosenIssues(def.abilities, [], path, true, out);
   }
@@ -2328,6 +2489,24 @@ function checkSearch(
   if (!isCount(e.max) || e.max < 1) {
     issue(out, `${path}.max`, 'max must be a positive integer');
   }
+  // D-262: "that share a land type" is about two or more land cards found together.
+  if (e.sharedLandType !== undefined) {
+    if (e.sharedLandType !== true) {
+      issue(out, `${path}.sharedLandType`, 'sharedLandType must be true when present');
+    } else if (!isCount(e.max) || e.max < 2) {
+      issue(
+        out,
+        `${path}.sharedLandType`,
+        'cards share a land type only when two or more are found',
+      );
+    } else if (!(filter?.types ?? []).includes('land')) {
+      issue(
+        out,
+        `${path}.sharedLandType`,
+        "the cards found are land cards: the filter's types include 'land'",
+      );
+    }
+  }
   for (const key of ['reveal', 'shuffle'] as const) {
     if (typeof e[key] !== 'boolean') issue(out, `${path}.${key}`, `${key} must be a boolean`);
   }
@@ -2466,6 +2645,41 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         issue(out, `${path}.count`, 'a count of one or more');
       }
       break;
+    case 'dieResult': {
+      // D-271, CR 706.2, 706.3a: "If the result is 1", "if the result is 4 or more": a number a die of the roll can show.
+      const sides = scope.dieSides;
+      if (sides === undefined) {
+        issue(
+          out,
+          path,
+          'dieResult needs a rollDie before it in the same sequence (the result of the roll is what it reads)',
+        );
+      }
+      if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
+        issue(out, `${path}.compare.cmp`, `unknown comparison ${JSON.stringify(c.compare?.cmp)}`);
+      }
+      const value = c.compare?.value;
+      if (!isCount(value) || value < 1 || (sides !== undefined && value > sides)) {
+        issue(
+          out,
+          `${path}.compare.value`,
+          sides === undefined
+            ? 'a die result is a whole number from 1'
+            : `a die result is a whole number from 1 to ${sides} (the sides of the roll)`,
+        );
+      }
+      break;
+    }
+    case 'paired':
+      // D-286 (CR 702.95b): the permanent the ability belongs to is paired; a spell is not a permanent, so it never is.
+      if (scope.owner !== 'ability') {
+        issue(
+          out,
+          path,
+          "'paired' reads the pair of a permanent: it is only valid in an ability of one",
+        );
+      }
+      break;
     case 'didPrevious':
       if (scope.mayAvailable !== true) {
         issue(
@@ -2536,6 +2750,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             after.sacrificedEarlier !== true
           ) {
             after = { ...after, sacrificedEarlier: true };
+          }
+          // D-271: after a die is rolled, the condition `dieResult` can read its result (a later roll replaces it).
+          if (child?.kind === 'rollDie' && isCount(child.sides)) {
+            after = { ...after, dieSides: child.sides };
           }
           // D-194: after a vote, the amount `votesFor` can read the tally of its options.
           if (child?.kind === 'vote' && Array.isArray(child.options)) {
@@ -2761,9 +2979,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'castExiled':
       checkEngineOnlyEffect(e.kind, path, out);
       break;
+    case 'pair':
+      // CR 702.95a (D-286): the effect of the two abilities soulbond stands for, built by the engine.
+      issue(
+        out,
+        path,
+        'pair is the effect of the abilities the engine builds for soulbond (CR 702.95a); a card writes the keyword',
+      );
+      break;
     case 'delayedTrigger':
       // CR 603.7 (D-128): an effect that creates a delayed triggered ability.
-      checkDelayedTrigger(e, path, out, scope.movedAvailable === true);
+      checkDelayedTrigger(e, path, out, scope.movedAvailable === true, scope.diesTrigger === true);
       break;
     case 'becomeMonarch':
       // CR 725.3 (D-127): one player becomes the monarch, so the selector names exactly one.
@@ -2772,6 +2998,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'eachPlayer' ||
         e.player?.kind === 'eachOpponent' ||
         e.player?.kind === 'eachOtherOpponent' ||
+        e.player?.kind === 'attackedPlayers' ||
         e.player?.kind === 'all'
       ) {
         issue(out, `${path}.player`, 'only one player can be the monarch (CR 725.3)');
@@ -3192,7 +3419,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'revealUntil':
       // D-145: "reveal cards until you reveal a land card": a filter of cards in the library, and where the card found goes.
-      checkFilter(e.filter, `${path}.filter`, out);
+      checkFilter(e.filter, `${path}.filter`, out, undefined, scope.diesTrigger === true);
       if (
         filterSome(
           e.filter,
@@ -3274,6 +3501,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'returnGraveyardPair':
+      // D-272: the one card type both chosen cards must have ("a creature card"); the rest of the wording is fixed by the effect.
+      if (!(CARD_TYPES as readonly string[]).includes(e.cardType)) {
+        issue(out, `${path}.cardType`, 'returnGraveyardPair names one card type');
+      }
+      // CR 304.4, 307.4: an instant or a sorcery would stay in the graveyard, and the engine does not apply that to this return.
+      if (e.cardType === 'instant' || e.cardType === 'sorcery') {
+        issue(out, `${path}.cardType`, 'returnGraveyardPair cannot return an instant or a sorcery');
+      }
+      break;
     case 'sparePermanents':
       // D-231: the card types the controller chooses a permanent of, for each player.
       if (!Array.isArray(e.types) || e.types.length === 0) {
@@ -3339,6 +3576,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'gainEnergy':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       checkAmount(e.amount, `${path}.amount`, scope, out);
+      break;
+    case 'meld':
+      // CR 701.42a (D-278): the creature named `partner` and the name of the combined face the two become; `validateCard` checks them against the card.
+      if (typeof e.partner !== 'string' || e.partner === '') {
+        issue(
+          out,
+          `${path}.partner`,
+          'the name of the card to meld with must be a non-empty string',
+        );
+      }
+      if (typeof e.result !== 'string' || e.result === '') {
+        issue(out, `${path}.result`, 'the name of the melded face must be a non-empty string');
+      }
+      break;
+    case 'loseGame':
+      // CR 104.3e (D-269): the players the selector names lose the game; no other operand.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'setLifeTotal':
       // CR 119.5 (D-201): a whole number, 0 or more.
@@ -3536,6 +3790,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'shuffle':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      break;
+    case 'rollDie':
+      // CR 706.1a (D-271): a die has N equally likely outcomes numbered 1 to N; the engine draws from the generator with `nextInt`, which takes up to 2^32.
+      if (!isCount(e.sides) || e.sides < 2 || e.sides > 4294967296) {
+        issue(out, `${path}.sides`, 'a die has a whole number of sides from 2 to 4294967296');
+      }
       break;
     case 'proliferate':
       // CR 701.34a (D-149): no parameters; the controller chooses what to give counters to as it resolves.

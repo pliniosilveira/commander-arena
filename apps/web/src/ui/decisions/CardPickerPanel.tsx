@@ -129,7 +129,9 @@ export function CardPickerPanel({
                     ? 'Cards to cast for free'
                     : decision.purpose === 'behold'
                       ? 'Cards to behold'
-                      : 'Cards to discard'
+                      : decision.purpose === 'pair'
+                        ? 'Cards to choose from'
+                        : 'Cards to discard'
       }
     >
       <h3 className="dec-panel-title">

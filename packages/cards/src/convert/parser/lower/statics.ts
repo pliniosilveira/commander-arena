@@ -113,6 +113,8 @@ function subjectOf(noun: IrNoun, ctx: LowerContext, keywords = false): LowerResu
   if (noun.det === 'self') return { ok: true, value: { kind: 'this' }, rule: noun.rule };
   if (noun.det === 'enchanted' || noun.det === 'equipped') return attachedSubject(noun, ctx);
   if (noun.det === 'each') return groupSubject(noun, keywords);
+  // "Each of those creatures" of a soulbond card (D-286, CR 702.95b): this permanent and the creature it is paired with.
+  if (noun.det === 'pair') return { ok: true, value: { kind: 'pair' }, rule: noun.rule };
   return failure(noun);
 }
 
@@ -143,9 +145,11 @@ function lowerGrantedAbility(
   // is not the card for a group, so a card that names itself inside a quotation is not read for one.
   // Stage P49 (D-206): the equipped or enchanted permanent too, for a triggered ability ("Equipped creature has \"Whenever this creature attacks, you gain 1 life.\"": `~` in the quotation is
   // the creature that has the ability, the same as for a group).
+  // D-286 (CR 702.95b): the pair, for a triggered ability ("each of those creatures has a quoted ability"): `~` in the quotation is the creature that has it.
   if (
     subject.kind !== 'this' &&
-    ((subject.kind !== 'filter' && !(subject.kind === 'attached' && inner.kind === 'triggered')) ||
+    ((subject.kind !== 'filter' &&
+      !((subject.kind === 'attached' || subject.kind === 'pair') && inner.kind === 'triggered')) ||
       ctx.namedInQuotes)
   ) {
     return failure(at);
@@ -208,6 +212,24 @@ function effectOf(
         return failure(at);
       }
       return ok({ kind: 'grantKeyword', subject, keyword: plainKeyword(kind) });
+    }
+    case 'grantProtection': {
+      // CR 702.16, 903.4 (stage P70, D-259): the engine's `grantKeyword` with a protection, from the named colors or from those outside the
+      // commander's color identity.
+      if (effect.commanderIdentity === true) {
+        return ok({
+          kind: 'grantKeyword',
+          subject,
+          keyword: { kind: 'protection', from: 'colorsNotInCommanderIdentity' },
+        });
+      }
+      const colors = (effect.colors ?? []).map((w) => colorLetter(w));
+      if (colors.length === 0 || colors.some((c) => c === undefined)) return failure(at);
+      return ok({
+        kind: 'grantKeyword',
+        subject,
+        keyword: { kind: 'protection', from: 'color', colors: colors as Color[] },
+      });
     }
     case 'grantAbility': {
       // CR 613.1f: the engine gives a mana ability, and (stage P34, D-152) an activated or a triggered ability of its own kinds; the
@@ -362,6 +384,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return effect.keyword === 'riot'
         ? ['static:grantKeyword', 'keyword:riot']
         : ['static:grantKeyword'];
+    case 'grantProtection':
+      return ['static:grantKeyword', 'keyword:protection'];
     case 'grantQuoted':
       return ['static:grantAbility'];
     case 'restriction':
@@ -382,6 +406,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:setTypes'];
     case 'castAsThoughFlash':
       return ['static:castAsThoughFlash'];
+    case 'opponentsCantCastSpells':
+      return ['static:opponentsCantCastSpells'];
     case 'takeFromLinkedExile':
       return ['static:takeFromLinkedExile'];
     case 'costReduction':
@@ -518,6 +544,7 @@ function takesCondition(effect: IrStaticEffect): boolean {
     case 'ptCount':
     case 'ptTimesAttacked':
     case 'grantKeyword':
+    case 'grantProtection':
     case 'grantAbility':
     case 'attackTax':
     case 'castFromGraveyard':
@@ -546,9 +573,17 @@ function lowerPart(
   const subject = subjectOf(
     part.subject,
     ctx,
-    part.effects.every((e) => e.kind === 'grantKeyword'),
+    part.effects.every((e) => e.kind === 'grantKeyword' || e.kind === 'grantProtection'),
   );
   if (!subject.ok) return subject;
+  // D-286 (CR 702.95b): "each of those creatures" is read for a granted ability (the Seraph's line) and only "as long as ~ is paired with another creature": the engine
+  // would run a keyword or a +N/+N of the pair too, but those lines are not read yet (`docs/ROADMAP.md`), and without that condition nothing is ever paired.
+  if (
+    subject.value.kind === 'pair' &&
+    (condition?.kind !== 'paired' || part.effects.some((e) => e.kind !== 'grantAbility'))
+  ) {
+    return failure(part.subject);
+  }
   // D-111, CR 613.8: only a "+N/+N" effect (layer 7c) can name its subjects by power or toughness, which that layer
   // settles last, and a restriction, which is read where the rule acts, after the layers (D-133, "Each creature you
   // control with power 4 or greater can't be blocked by more than one creature"); a keyword or an ability granted in
@@ -665,7 +700,12 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     if (parts.length > 1) return failure(ability);
   } else {
     // The text is about this permanent: "it" in "as long as it's untapped" is `~` (CR 611.3a).
+    // D-287: this is the one condition `paired` is read in (`lowerCondition`).
+    ctx.staticCondition = true;
+    ctx.staticSubjectIsSelf = parts.every((part) => part.subject.det === 'self');
     const lowered = lowerCondition(statement.condition, true, ctx);
+    ctx.staticCondition = false;
+    ctx.staticSubjectIsSelf = false;
     if (!lowered.ok) return lowered;
     const condition = lowered.value;
     // D-133, CR 613.8: the condition of a static ability is read where no layer 7 effect changes it, so it names no
@@ -695,7 +735,11 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     return lowerCostReduction(ability, first.amount, ctx);
   }
   if (first.kind === 'additionalCost' || first.kind === 'freeCast') return failure(ability);
-  if (first.kind === 'castAsThoughFlash' || first.kind === 'takeFromLinkedExile') {
+  if (
+    first.kind === 'castAsThoughFlash' ||
+    first.kind === 'takeFromLinkedExile' ||
+    first.kind === 'opponentsCantCastSpells'
+  ) {
     if (more.length > 0) return failure(ability);
     return lowerOwnStatic(ability, first);
   }
@@ -719,7 +763,10 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
  */
 function lowerOwnStatic(
   ability: Static,
-  effect: Extract<IrStaticEffect, { kind: 'castAsThoughFlash' | 'takeFromLinkedExile' }>,
+  effect: Extract<
+    IrStaticEffect,
+    { kind: 'castAsThoughFlash' | 'takeFromLinkedExile' | 'opponentsCantCastSpells' }
+  >,
 ): LowerResult<readonly Ability[]> {
   const { subject } = ability.statement;
   const missing = missingFeatures(['ability:static', ...needsOf(effect)]);
@@ -734,6 +781,22 @@ function lowerOwnStatic(
     span: ability.span,
     rule: ability.rule,
   });
+  if (effect.kind === 'opponentsCantCastSpells') {
+    // D-282: "Your opponents can't cast spells with mana value 3 or less": the engine reads the filter against the spell on the stack, so it names no zone.
+    if (subject.det !== 'you' || ability.statement.condition !== undefined) return failure(ability);
+    const { zone, stackKind, ...described } = effect.spells;
+    void zone;
+    void stackKind;
+    const spells = lowerFilter(noun(described));
+    if (!spells.ok) return spells;
+    return {
+      ok: true,
+      value: [
+        { kind: 'static', static: { kind: 'opponentsCantCastSpells', spells: spells.value } },
+      ],
+      rule: ability.rule,
+    };
+  }
   if (effect.kind === 'castAsThoughFlash') {
     if (subject.det !== 'you') return failure(ability);
     const { zone, stackKind, ...described } = effect.spells;
@@ -788,6 +851,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:cantBeBlockedBy',
   'static:setPt',
   'static:castAsThoughFlash',
+  'static:opponentsCantCastSpells',
   'static:takeFromLinkedExile',
   'static:restrictionUnless',
   'static:loseAllAbilities',
@@ -800,5 +864,6 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'staticSubject:this',
   'staticSubject:attached',
   'staticSubject:filter',
+  'staticSubject:pair',
   ...PLAY_RULE_NEEDS,
 ];

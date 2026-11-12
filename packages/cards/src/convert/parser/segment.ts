@@ -71,6 +71,18 @@ function isOpenQuote(c: string): boolean {
   return c === '"' || c === '“';
 }
 
+/**
+ * Whether the comma at `at` is inside the name of a card that "named" introduces (D-278, CR 201.2): the text since the last " named " has no other comma, and what follows
+ * the comma is "the", "of" or a capital letter, as the second part of a legendary name is ("Bruna, the Fading Light", "Mishra, Claimed by Gix"), never the verb of the
+ * next clause.
+ */
+function insideNamedCard(text: string, at: number, start: number): boolean {
+  const named = text.lastIndexOf(' named ', at);
+  if (named < start) return false;
+  if (text.slice(named + 7, at).includes(', ')) return false;
+  return /^, (?:the |of |[A-Z])/u.test(text.slice(at, at + 6));
+}
+
 /** Offsets of `, ` (comma and space) that are outside quotes and braces. */
 function topLevelCommas(text: string, start: number, end: number): number[] {
   const out: number[] = [];
@@ -87,7 +99,11 @@ function topLevelCommas(text: string, start: number, end: number): number[] {
       brace === 0 &&
       text.charAt(i + 1) === ' ' &&
       // Stage P68 (D-230): "a nontoken, non-Angel creature": a comma between two modifiers of a noun, not the end of a trigger condition.
-      !(text.slice(i - 8, i).toLowerCase() === 'nontoken' && /^, non-/i.test(text.slice(i, i + 6)))
+      !(
+        text.slice(i - 8, i).toLowerCase() === 'nontoken' && /^, non-/i.test(text.slice(i, i + 6))
+      ) &&
+      // D-278 (CR 201.2): the name of a card may hold a comma ("a creature named Bruna, the Fading Light"): a comma inside the name after "named" is not the end of the clause.
+      !insideNamedCard(text, i, start)
     ) {
       out.push(i);
     }
@@ -134,7 +150,8 @@ const SPLIT_THE_TOP =
  * bottom of your library in a random order." (stage P32, D-147): two sentences that are one instruction (what is revealed until, and where
  * the card found and the rest go), kept together so `effect.reveal-until` reads them as one. Only both in a row.
  */
-const REVEAL_UNTIL = /^reveal cards from the top of your library until you reveal [^.]*\.$/i;
+const REVEAL_UNTIL =
+  /^(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
 const PUT_THAT_CARD = /^put that card [^.]*\.$/i;
 
 /**
@@ -191,6 +208,15 @@ const PUT_THAT_CARD_BOTTOM_RETURN_OTHER =
   /^you put that card on the bottom of your library and return the other to the battlefield tapped\.$/i;
 
 /**
+ * "Choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards to the battlefield under their
+ * owners' control." (stage P69, D-272): "those cards" are the two chosen, so the two sentences are read as one instruction (the first may follow the comma of a trigger).
+ */
+const CHOOSE_GRAVEYARD_PAIR =
+  /(?:^|, )choose an? [^.,]* card in an opponent['’]s graveyard, then that player chooses an? [^.,]* card in your graveyard\.$/i;
+const MAY_RETURN_THOSE_CARDS =
+  /^you may return those cards to the battlefield under their owners['’] control\.$/i;
+
+/**
  * "Exile a card from your graveyard at random. You may play the exiled card this turn." (stage P75, D-235): "the exiled card" is the one the first sentence exiled, so the two
  * are read as one instruction.
  */
@@ -220,7 +246,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
-        (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)))
+        (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
+        (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)))
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
@@ -266,8 +293,23 @@ export function splitSentences(text: string, start: number, end: number): Span[]
   let from = start;
   for (let i = start; i < end; i++) {
     const c = text.charAt(i);
-    if (isOpenQuote(c) || c === '”') quote = !quote;
-    else if (c === '.' && !quote && (i + 1 === end || /\s/.test(text.charAt(i + 1)))) {
+    if (isOpenQuote(c) || c === '”') {
+      const closes = quote;
+      quote = !quote;
+      // A quote that closes right after its own period, with an "Activate only ..." restriction after it, ends the sentence (stage P69, D-276):
+      // `It gains "You can't lose the game." Activate only as a sorcery.` The restriction is always a sentence of its own; the period inside the
+      // quote is the one of the sentence (the sentence parser reads a quote that ends the text as its end). Any other text after a quote stays in the
+      // sentence, as before ("Create a token with "Draw a card." Draw a card." is one).
+      if (
+        closes &&
+        /\.['’]?$/u.test(text.slice(from, i)) &&
+        /^\s+(?:activate\b|this ability costs\b)/iu.test(text.slice(i + 1, end))
+      ) {
+        const span = trimmed(text, from, i + 1);
+        if (span.end > span.start) out.push(span);
+        from = i + 1;
+      }
+    } else if (c === '.' && !quote && (i + 1 === end || /\s/.test(text.charAt(i + 1)))) {
       const span = trimmed(text, from, i + 1);
       const before = out[out.length - 1];
       if (before !== undefined && NEW_TARGETS_SENTENCE.test(text.slice(span.start, span.end))) {

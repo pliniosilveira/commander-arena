@@ -33,6 +33,8 @@ const STATIC_CONDITIONS = [
   'condition.attached-to',
   // Stage P68 (D-229): "there are fewer than eight cards in your graveyard".
   'condition.cards-in-graveyard',
+  // D-286 (CR 702.95b): "~ is paired with another creature".
+  'condition.paired',
 ] as const;
 
 const CONDITION: Parser<IrCondition> = family<IrCondition>('condition', {
@@ -52,6 +54,8 @@ const GROUP = [
 const SELF_UNIT = unit(['noun.self'], 'selfGrant');
 const GROUP_UNIT = unit(GROUP, 'plural');
 const EACH_UNIT = unit(['noun.each-permanent'], 'each');
+// D-286 (CR 702.95b): "each of those creatures has ..." of a soulbond card; the verb is singular, as the one of "each".
+const PAIR_UNIT = unit(['noun.paired-creatures'], 'each');
 
 const ANY_UNIT: Parser<StaticUnit> = choice(
   SELF_BECOMES_UNIT,
@@ -60,6 +64,7 @@ const ANY_UNIT: Parser<StaticUnit> = choice(
   SELF_UNIT,
   GROUP_UNIT,
   EACH_UNIT,
+  PAIR_UNIT,
   // Stage P37 (D-180): "your opponents can't cast spells during your turn".
   OPPONENTS_CANT_CAST_UNIT,
 );

@@ -32,7 +32,9 @@ export function castNowAnswerLine(
 ): LaterLine | null {
   const asked = before.pending;
   if (asked?.kind !== 'confirmOptional' || asked.source !== event.source) return null;
-  if (asked.purpose !== 'suspend' && asked.purpose !== 'madness') return null;
+  if (asked.purpose !== 'suspend' && asked.purpose !== 'madness' && asked.purpose !== 'miracle') {
+    return null;
+  }
   const name =
     asked.subject === undefined
       ? asked.sourceName
@@ -53,6 +55,16 @@ export function castNowAnswerLine(
     };
   }
   const cost = asked.cost?.flatMap((c) => (c.kind === 'mana' ? [...c.symbols] : [])) ?? [];
+  if (asked.purpose === 'miracle') {
+    return {
+      text: event.accepted
+        ? `${subject} choose${you ? '' : 's'} to cast ${name} for its miracle cost${cost.length === 0 ? '' : ` ${manaText(cost)}`}.`
+        : `${subject} ${you ? "don't" : "doesn't"} cast ${name}; it stays in the hand.`,
+      seat: event.seat,
+      objects,
+      rule: 'CR 702.94a',
+    };
+  }
   return {
     text: event.accepted
       ? `${subject} choose${you ? '' : 's'} to cast ${name} for its madness cost${cost.length === 0 ? '' : ` ${manaText(cost)}`}.`

@@ -28,6 +28,7 @@ import { exileCostDecision, exileObjects } from './exile-cost';
 import { fail, ok, type Result } from './result';
 import { sacrificeCandidates, sacrificePermanent, tapCandidates } from './sacrifice';
 import { setPending } from './set-pending';
+import { recordObjectsTogether } from './simultaneous';
 import { collectTriggers } from './triggers';
 
 /** What happens once every cost is paid: the spell becomes cast (CR 601.2i). */
@@ -135,8 +136,10 @@ function sacrificeChosen(
     purpose: 'sacrifice',
     automatic,
   });
+  // D-283 (CR 603.10a): permanents sacrificed together keep the last-known information recorded before the first leaves.
+  next = recordObjectsTogether(next, chosen);
   for (const id of chosen) {
-    const done = sacrificePermanent(next, id, casting.seat);
+    const done = sacrificePermanent(next, id, casting.seat, chosen.length > 1);
     if (done === null) return fail('That permanent cannot be sacrificed');
     next = done.state;
     events.push(...done.events);

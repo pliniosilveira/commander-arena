@@ -44,7 +44,13 @@ function designationWords(
 ): string | null {
   // Several selectors at once ("you or an opponent") have no sentence of their own here: left out, not guessed.
   if (player.kind === 'all') return null;
-  if (player.kind === 'you') return `you're ${negate ? 'not ' : ''}the ${designation}`;
+  // The city's blessing (CR 702.131c, D-264) is had, not "been": "you have the city's blessing".
+  const blessing = designation === 'citysBlessing';
+  if (player.kind === 'you') {
+    return blessing
+      ? `you ${negate ? "don't have" : 'have'} the city's blessing`
+      : `you're ${negate ? 'not ' : ''}the ${designation}`;
+  }
   // "if an opponent is the monarch": a condition about the opponents asks whether any of them is.
   const who =
     player.kind === 'eachOpponent'
@@ -52,7 +58,9 @@ function designationWords(
       : player.kind === 'eachPlayer'
         ? 'a player'
         : playerSubject(player).text;
-  return `${who} ${negate ? 'is not' : 'is'} the ${designation}`;
+  return blessing
+    ? `${who} ${negate ? "doesn't have" : 'has'} the city's blessing`
+    : `${who} ${negate ? 'is not' : 'is'} the ${designation}`;
 }
 
 const OPPONENT_AHEAD: Readonly<Record<PlayerStat, string>> = {
@@ -252,11 +260,25 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'duringStep':
       // D-139 (CR 506.1): "if it's the declare attackers step".
       return `it's ${negate ? 'not ' : ''}the ${COMBAT_STEP_WORDS[condition.step]}`;
+    case 'paired':
+      // D-286 (CR 702.95b): "as long as this creature is paired with another creature".
+      return `this creature ${negate ? "isn't" : 'is'} paired with another creature`;
+    case 'soulbondReady':
+      // D-286 (CR 702.95a, 603.4): the intervening "if" of the two abilities soulbond stands for.
+      // One statement is negated as a whole ("it's not the case that ..."): "you don't control both ... and both aren't unpaired" would say something else.
+      return `${negate ? "it's not the case that " : ''}you control both ${
+        condition.with === 'another'
+          ? 'this creature and another creature'
+          : 'that creature and this one'
+      } and both are unpaired`;
     case 'controlsRingBearer':
       // D-196 (CR 701.54e): "if you control your Ring-bearer".
       return `you ${negate ? "don't control" : 'control'} your Ring-bearer`;
     case 'subjectControllerHasMore':
       // D-229 (CR 603.4): "if that player controls more lands than you".
+      return `that player ${negate ? "doesn't control" : 'controls'} more ${condition.stat === 'lands' ? 'lands' : condition.stat === 'creatures' ? 'creatures' : 'cards'} than you`;
+    case 'triggerPlayerHasMore':
+      // "if that player controls more creatures than you" (CR 603.4): the player the event is about.
       return `that player ${negate ? "doesn't control" : 'controls'} more ${condition.stat === 'lands' ? 'lands' : condition.stat === 'creatures' ? 'creatures' : 'cards'} than you`;
     case 'cardsInGraveyard': {
       // D-229 (CR 404.1): "there are fewer than eight cards in your graveyard".
@@ -275,6 +297,25 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'yourMainPhase':
       // D-187 (CR 505.1): "if it's your main phase".
       return `it's ${negate ? 'not ' : ''}your main phase`;
+    case 'dieResult': {
+      // D-271 (CR 706.2, 706.3a): "if the result is 1", "if the result is 4 or more".
+      const { cmp, value } = condition.compare;
+      const text =
+        cmp === 'atLeast'
+          ? `the result is ${value} or more`
+          : cmp === 'atMost'
+            ? `the result is ${value} or less`
+            : `the result is ${value}`;
+      return negate ? `it's not true that ${text}` : text;
+    }
+    case 'ownsAndControlsNamed': {
+      // D-278 (CR 701.42a, 603.4): "if you both own and control this creature and a creature named Bruna, the Fading Light".
+      const text = `you both own and control this permanent and a ${condition.type} named ${condition.name}`;
+      return negate ? `it's not true that ${text}` : text;
+    }
+    case 'thisInYourGraveyard':
+      // D-271 (CR 113.6b, 603.4): "if this card is in your graveyard".
+      return `this card is ${negate ? 'not ' : ''}in your graveyard`;
     case 'cardLeftYourGraveyard':
       // D-206 (CR 400.7): "if a card left your graveyard this turn".
       return negate

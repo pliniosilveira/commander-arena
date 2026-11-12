@@ -15,6 +15,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getObject, getSeat } from '../state/ops';
 import type { ChosenValues, GameState, Instruction, ResolutionContext } from '../state/types';
+import { recordActionTaken } from './action-taken';
 import { attachEntered, auraTargetSpec, ENCHANT_TARGET_ID } from './attach';
 import { runCascade } from './cascade';
 import { runCastExiled } from './cast-exiled';
@@ -70,6 +71,7 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.triggerSubject === undefined
         ? {}
         : { triggerSubject: obj.stack.triggerSubject }),
+      ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
     })
   ) {
     events.push({ kind: 'fizzled', object: id, reason: 'interveningIf' });
@@ -128,8 +130,11 @@ export function resolveTop(input: GameState): ResolveOutcome {
   // CR 603.5: "you may": the controller answers when the ability resolves, before anything else.
   if (ability?.kind === 'triggered' && ability.optional)
     queue.unshift({ kind: 'confirmOptional', answer: null });
+  // CR 603.2h (D-256): "Do this only once each turn": the action is taken as the ability begins, or, with "you may", when it is accepted.
+  const begun: GameState =
+    ability?.kind === 'triggered' && ability.optional ? input : recordActionTaken(input, id);
   const state: GameState = {
-    ...input,
+    ...begun,
     resolution: {
       object: id,
       source: obj.stack?.source ?? id,
@@ -236,6 +241,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 ],
               },
             }),
+        // D-271: the die the instruction rolled, which "if the result is 1" of a later instruction reads (a later roll replaces it).
+        ...(out.dieResult === undefined ? {} : { dieResult: out.dieResult }),
         // D-135: what the instruction did, for "if you do" and "when you do"; a `may` effect starts it again.
         ...(out.resetPerformed === true
           ? { performed: 0 }
@@ -380,6 +387,7 @@ export function answerResolutionChoice(
     head.kind !== 'proliferate' &&
     head.kind !== 'auraEntry' &&
     head.kind !== 'ringTempts' &&
+    head.kind !== 'pair' &&
     head.kind !== 'empowerJace' &&
     head.kind !== 'conniveNext' &&
     head.kind !== 'spare'
@@ -427,6 +435,7 @@ export function answerResolutionCards(
       head.kind !== 'castFree' &&
       head.kind !== 'behold' &&
       head.kind !== 'splitExiled' &&
+      head.kind !== 'graveyardPair' &&
       head.kind !== 'copyFromCards' &&
       head.kind !== 'chooseMove')
   ) {
@@ -480,15 +489,25 @@ export function answerResolutionOptional(state: GameState, accept: boolean): Res
   const res = state.resolution;
   const head = res?.queue[0];
   if (!res || head === undefined) return null;
-  if (head.kind === 'playerMay') {
-    // D-210: the player asked has answered; the instruction runs the effect (or what is done otherwise) next.
+  if (head.kind === 'playerMay' || head.kind === 'miracleReveal') {
+    // D-210: the player asked has answered; the instruction runs the effect (or what is done otherwise) next. D-274: so does the
+    // player who drew a card with miracle, who is not always the controller of the resolving spell (CR 702.94a); declining the reveal
+    // leaves no event, because the events are public and one would tell the opponent that the card drawn has miracle.
     const answered: Instruction = { ...head, answer: accept };
     return continueResolution(
       { ...state, pending: null, resolution: { ...res, queue: [answered, ...res.queue.slice(1)] } },
-      [{ kind: 'optionalAnswered', seat: head.seat, source: res.source, accepted: accept }],
+      head.kind === 'miracleReveal'
+        ? []
+        : [{ kind: 'optionalAnswered', seat: head.seat, source: res.source, accepted: accept }],
     );
   }
-  if (head.kind !== 'confirmOptional' && head.kind !== 'mayEffect') return null;
+  if (
+    head.kind !== 'confirmOptional' &&
+    head.kind !== 'mayEffect' &&
+    head.kind !== 'graveyardPair'
+  ) {
+    return null;
+  }
   const events: GameEvent[] = [
     { kind: 'optionalAnswered', seat: res.controller, source: res.source, accepted: accept },
   ];
@@ -496,10 +515,13 @@ export function answerResolutionOptional(state: GameState, accept: boolean): Res
   // (`mayEffect`, D-111) only drops that effect.
   const queue: readonly Instruction[] = accept
     ? [{ ...head, answer: true }, ...res.queue.slice(1)]
-    : head.kind === 'mayEffect'
+    : head.kind === 'mayEffect' || head.kind === 'graveyardPair'
       ? res.queue.slice(1)
       : [];
-  return continueResolution({ ...state, pending: null, resolution: { ...res, queue } }, events);
+  // CR 603.2h (D-256): accepting the ability's own "you may" takes the action of "Do this only once each turn".
+  const answered =
+    accept && head.kind === 'confirmOptional' ? recordActionTaken(state, res.object) : state;
+  return continueResolution({ ...answered, pending: null, resolution: { ...res, queue } }, events);
 }
 
 /**
@@ -570,7 +592,13 @@ export function answerResolutionEntersChosen(
 ): ResolveOutcome | null {
   const res = state.resolution;
   const d = state.pending;
-  if (!res || d?.kind !== 'chooseOption' || d.purpose === 'replacement') return null;
+  if (
+    !res ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose === 'replacement' ||
+    d.purpose === 'meldOrder'
+  )
+    return null;
   const head = res.queue[0];
   const events: GameEvent[] = [
     {

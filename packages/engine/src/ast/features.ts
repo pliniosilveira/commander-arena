@@ -101,6 +101,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnly',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
     'functionsInGraveyard',
+    // D-256: "Do this only once each turn." (`TriggeredAbility.doOnlyOnceEachTurn`, CR 603.2h)
+    'doOnlyOnceEachTurn',
     // D-151: "If that mana is spent on a Dragon creature spell, it gains haste" (`ManaAbility.spentRider`).
     'manaSpentRider',
   ],
@@ -120,6 +122,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sparePermanents',
     // D-232: Coin of Fate's "An opponent chooses one of the exiled cards ...".
     'splitCostExiled',
+    // D-272: Dawnbreak Reclaimer's "choose a creature card in an opponent's graveyard, then that player chooses ...".
+    'returnGraveyardPair',
     // D-234: "Any number of other target creatures you control phase out." (CR 702.26).
     'phaseOut',
     // D-235: the level bar of a Class (CR 716) and "exile a card from your graveyard at random".
@@ -131,6 +135,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-201: "Target player's life total becomes N" (CR 119.5).
     'setLifeTotal',
     'loseLife',
+    // D-269: "Each player this creature attacked this turn loses the game." (CR 104.3e).
+    'loseGame',
+    // D-278: "Exile them, then meld them into X." (CR 701.42a).
+    'meld',
     'tap',
     'untap',
     'removeAllCounters',
@@ -151,7 +159,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'setTypes',
     'setColors',
     'grantKeyword',
-    // D-230: Backup's grant of the abilities printed below it, until end of turn.
+    // D-230: Backup's grant of the abilities printed below it, until end of turn. D-275 (CR 611.2a): the static abilities cantLoseGame and
+    // opponentsCantWin given for the rest of the game (`duration: 'permanent'`).
     'grantAbility',
     'restrict',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".
@@ -159,6 +168,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
     'gainControl',
     'shuffle',
+    // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
+    'rollDie',
     'scry',
     'surveil',
     'lookAndReorder',
@@ -214,6 +225,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'vote',
     // D-196: "The Ring tempts you" (CR 701.54a), and the engine's own sacrifice at end of combat of the Ring's third ability.
     'ringTempts',
+    // D-286: "you may pair this creature with another unpaired creature you control" (CR 702.95a): the engine's effect of the two abilities soulbond stands for.
+    'pair',
     // D-201: "Empower Jace N" (CR 701.71a).
     'empowerJace',
     // D-201: "You get an emblem with ..." (CR 114).
@@ -344,6 +357,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseBackground',
     // D-200: "~ can be your commander".
     'canBeCommander',
+    // D-264: Ascend on a permanent (CR 702.131b).
+    'ascend',
+    // D-286: soulbond (CR 702.95a): two triggered abilities the engine builds for a creature; printed only.
+    'soulbond',
     'exalted',
     'annihilator',
     // D-230: Backup N (CR 702.165).
@@ -436,6 +453,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chosenColor',
     // D-151: "Add two mana in any combination of colors."
     'anyCombination',
+    // "Choose a color. Add an amount of mana of that color equal to your devotion to that color."
+    'anyColorDevotion',
   ],
   manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife'],
   // D-139: `each`, "each player sacrifices all permanents they control that ..." (every permanent by its own controller).
@@ -445,9 +464,19 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
   // CR 709 split (either half is cast), CR 715 Adventure, CR 712 modal and nonmodal double-faced, CR
-  // 714 Saga (lore counters and chapter abilities; read ahead is a keyword and is not run). Fuse,
-  // Aftermath, Rooms, flip and meld are not run (`validateCard` names the layout).
-  layouts: ['normal', 'split', 'adventure', 'modal_dfc', 'transform', 'saga', 'class', 'prepare'],
+  // 714 Saga (lore counters and chapter abilities; read ahead is a keyword and is not run), CR 701.42 and 712.4 meld
+  // (D-277: two cards, one melded permanent). Fuse, Aftermath, Rooms and flip are not run (`validateCard` names the layout).
+  layouts: [
+    'normal',
+    'split',
+    'adventure',
+    'modal_dfc',
+    'transform',
+    'saga',
+    'class',
+    'prepare',
+    'meld',
+  ],
   cardTypes: [
     'artifact',
     'battle',
@@ -501,12 +530,16 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyTarget',
     // D-200: "target player or planeswalker".
     'playerOrObject',
+    // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (`exile` only).
+    'objectOrGraveyardCard',
     'each',
     'choose',
     'you',
     'eachPlayer',
     'eachOpponent',
     'eachOtherOpponent',
+    // D-269: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
+    'attackedPlayers',
     'controllerOf',
     'ownerOf',
     'anyOf',
@@ -519,6 +552,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notCastFromHand',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
+    // D-261: "a creature card that shares a creature type with it" (`ObjectFilter.sharesCreatureTypeWith`).
+    'sharesCreatureTypeWith',
+    // D-262: "up to two basic land cards that share a land type" (`search.sharedLandType`).
+    'sharedLandType',
     // D-181: "target spell or ability with a single target" (`ObjectFilter.singleTarget`).
     'singleTarget',
     // D-206: "an instant or sorcery spell that targets a creature" (`ObjectFilter.targetsObject`).
@@ -604,6 +641,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'subjectGreaterPt',
     // D-229: "if that player controls more lands than you".
     'subjectControllerHasMore',
+    // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
+    'triggerPlayerHasMore',
     // D-229: "as long as there are fewer than eight cards in your graveyard".
     'cardsInGraveyard',
     // D-124: "if it escaped", "unless it escaped" (as `not`).
@@ -648,6 +687,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-151: "two or more nonland permanents entered the battlefield under your control this turn", "an opponent was dealt 7 or more damage".
     'enteredThisTurn',
     'playerDealtDamage',
+    // D-252: "if you gained 3 or more life this turn".
+    'lifeGainedThisTurn',
+    // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
+    'dieResult',
+    'thisInYourGraveyard',
     // D-151: "Khans — ..." (the option the permanent chose as it entered).
     'chosenOption',
     // D-151: Dethrone ("attacking the player with the most life or tied for most life") and Pack tactics ("total power 6 or greater").
@@ -655,6 +699,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackersTotalPower',
     // D-196: "if you control your Ring-bearer" (CR 701.54e).
     'controlsRingBearer',
+    // D-278: "if you both own and control this creature and a creature named X" (CR 701.42a).
+    'ownsAndControlsNamed',
+    // D-286: "as long as this creature is paired with another creature" (CR 702.95b), and the engine's own intervening "if" of soulbond.
+    'paired',
+    'soulbondReady',
     'and',
     'or',
     'not',
@@ -726,12 +775,15 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playFromGraveyardOnceEachTurn',
     // D-179: "Your opponents can't cast spells during your turn."
     'opponentsCantCastOnYourTurn',
+    // D-282: "Your opponents can't cast spells with mana value 3 or less."
+    'opponentsCantCastSpells',
     // D-185: "Creature spells you control can't be countered."
     'spellsCantBeCountered',
     // D-192: "Damage isn't removed from this creature during cleanup steps."
     'keepsDamage',
   ],
-  staticSubjectKinds: ['this', 'attached', 'filter'],
+  // D-286: `pair`, "each of those creatures" of a soulbond card, for a modification of power and toughness, a granted keyword or a granted ability only.
+  staticSubjectKinds: ['this', 'attached', 'filter', 'pair'],
   tokenKinds: ['Treasure', 'Food', 'Clue', 'custom', 'copyOf', 'tapped'],
   amountKinds: [
     'number',
@@ -784,6 +836,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'escape',
     // D-128: Madness (CR 702.35) and Foretell (CR 702.143).
     'madness',
+    // D-274: Miracle (CR 702.94).
+    'miracle',
     'foretell',
     // D-149: "pay {W} and tap four untapped creatures you control with flying rather than pay this spell's mana cost".
     'tapPermanents',
@@ -893,6 +947,8 @@ export const ABILITY_FEATURES = [
   'manaSpendOnly',
   /** An ability that works while its card is in the graveyard (CR 113.6b, D-151): `functionsIn: 'graveyard'` on a static or triggered ability. */
   'functionsInGraveyard',
+  /** "Do this only once each turn" (D-256): the engine's `doOnlyOnceEachTurn` of a triggered ability (CR 603.2h). */
+  'doOnlyOnceEachTurn',
   /** "If that mana is spent on a Dragon creature spell, it gains haste until end of turn" (D-151): the engine's `ManaAbility.spentRider`. */
   'manaSpentRider',
 ] as const;
@@ -924,6 +980,8 @@ export const SELECTOR_KINDS = [
   'anyTarget',
   /** "Target player or planeswalker" (D-200): the engine's `TargetSpec.what` `playerOrObject`. */
   'playerOrObject',
+  /** "Up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270): `TargetSpec.what` `objectOrGraveyardCard`. */
+  'objectOrGraveyardCard',
   'each',
   'choose',
   'you',
@@ -931,6 +989,8 @@ export const SELECTOR_KINDS = [
   'eachOpponent',
   /** "Each other opponent" (D-151): the opponents besides the player of the trigger's event. */
   'eachOtherOpponent',
+  /** "Each player this creature attacked this turn" (D-269, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
+  'attackedPlayers',
   'controllerOf',
   'ownerOf',
   'anyOf',
@@ -952,6 +1012,10 @@ export const SELECTOR_KINDS = [
   'putFromBattlefieldThisTurn',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
+  /** "That shares a creature type with it" (CR 205.3m, 603.10a, D-261): the engine's `ObjectFilter.sharesCreatureTypeWith`. */
+  'sharesCreatureTypeWith',
+  /** "Up to two basic land cards that share a land type" (CR 205.3i, 701.23, D-262): the engine's `search.sharedLandType`. */
+  'sharedLandType',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
@@ -1055,6 +1119,8 @@ export const CONDITION_KINDS = [
   'subjectGreaterPt',
   /** "If that player controls more lands than you" (CR 603.4, D-229): the engine's `subjectControllerHasMore`. */
   'subjectControllerHasMore',
+  /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
+  'triggerPlayerHasMore',
   /** "If it escaped", "unless it escaped" (CR 702.138b, D-124): the engine's `escaped`. */
   'escaped',
   /** "If this permanent came under your control since the beginning of your last upkeep" (CR 702.30a, D-127): the engine's `cameUnderControlSinceLastUpkeep`. */
@@ -1105,6 +1171,12 @@ export const CONDITION_KINDS = [
   'enteredThisTurn',
   /** "An opponent was dealt 7 or more damage this turn" (D-151): the engine's `playerDealtDamage`. */
   'playerDealtDamage',
+  /** "If you gained 3 or more life this turn" (D-252): the engine's `lifeGainedThisTurn`. */
+  'lifeGainedThisTurn',
+  /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
+  'dieResult',
+  /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
+  'thisInYourGraveyard',
   /** "Khans — ..." (D-151): the engine's `chosenOption`, a linked ability of "choose Khans or Dragons". */
   'chosenOption',
   /** "Attacks the player with the most life or tied for most life" (D-151): the engine's `attackingMostLife`. */
@@ -1113,6 +1185,12 @@ export const CONDITION_KINDS = [
   'attackersTotalPower',
   /** "If you control your Ring-bearer" (CR 701.54e, D-196): the engine's `controlsRingBearer`. */
   'controlsRingBearer',
+  /** "If you both own and control this creature and a creature named X" (CR 701.42a, D-278): the engine's `ownsAndControlsNamed`. */
+  'ownsAndControlsNamed',
+  /** "As long as this creature is paired with another creature" (CR 702.95b, D-286): the engine's `paired`. */
+  'paired',
+  /** The intervening "if" of the two abilities soulbond stands for (CR 702.95a, D-286): the engine's `soulbondReady`; built by the engine, refused in card data. */
+  'soulbondReady',
   'unlessPays',
   'cardsInGraveyard',
   'and',
@@ -1193,6 +1271,8 @@ export const STATIC_KINDS = [
   'cantCastThis',
   /** "Your opponents can't cast spells during your turn" (CR 101.2, D-179): the engine's `opponentsCantCastOnYourTurn`. */
   'opponentsCantCastOnYourTurn',
+  /** "Your opponents can't cast spells with mana value 3 or less" (CR 101.2, D-282): the engine's `opponentsCantCastSpells`. */
+  'opponentsCantCastSpells',
   /** "Creature spells you control can't be countered" (CR 101.2, 701.6a, D-185): the engine's `spellsCantBeCountered`. */
   'spellsCantBeCountered',
   /** "Creatures can't block unless their controller pays {1} for each of those creatures" (CR 509.1d, D-149): `blockTax`. */
@@ -1213,6 +1293,7 @@ export const STATIC_SUBJECT_KINDS = [
   'this',
   'attached',
   'filter',
+  'pair',
 ] as const satisfies readonly StaticSubject['kind'][];
 export type StaticSubjectKind = (typeof STATIC_SUBJECT_KINDS)[number];
 
@@ -1304,6 +1385,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'spectacle',
   'escape',
   'madness',
+  'miracle',
   'foretell',
   'tapPermanents',
 ] as const;
@@ -1353,6 +1435,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaInstead: true,
   manaSpendOnly: true,
   functionsInGraveyard: true,
+  doOnlyOnceEachTurn: true,
   manaSpentRider: true,
   activateOnlyIf: true,
   xCost: true,
@@ -1378,6 +1461,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exileOwnGraveyardCard: true,
   sparePermanents: true,
   splitCostExiled: true,
+  returnGraveyardPair: true,
   phaseOut: true,
   gainLevel: true,
   exileRandomFromGraveyard: true,
@@ -1385,6 +1469,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   gainLife: true,
   setLifeTotal: true,
   loseLife: true,
+  loseGame: true,
+  meld: true,
   tap: true,
   untap: true,
   removeAllCounters: true,
@@ -1405,6 +1491,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   requireAttack: true,
   gainControl: true,
   shuffle: true,
+  rollDie: true,
   scry: true,
   surveil: true,
   lookAndReorder: true,
@@ -1445,6 +1532,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   chooseOne: true,
   vote: true,
   ringTempts: true,
+  pair: true,
   empowerJace: true,
   createEmblem: true,
   delayedSacrifice: true,
@@ -1535,6 +1623,8 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   partner: true,
   chooseBackground: true,
   canBeCommander: true,
+  ascend: true,
+  soulbond: true,
   exalted: true,
   annihilator: true,
   backup: true,
@@ -1599,6 +1689,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   couldProduce: true,
   combination: true,
   anyCombination: true,
+  anyColorDevotion: true,
 };
 const COST_TABLE: KindTable<Cost['kind']> = {
   mana: true,

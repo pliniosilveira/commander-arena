@@ -22,12 +22,18 @@ import { defineRule, family, node, spanned } from '../registry';
 
 const MANA_COST = family<IrCost>('cost', { only: ['cost.mana'] });
 
-/** "<word> {M}": the keyword node with its one mana cost. */
-export function altCostKeyword(id: string, word: string) {
+/** A plain mana cost, or one with an {X} (`cost.mana-x`): Miracle's cost may have one (CR 107.3a), no other named alternative cost does. */
+const MANA_COST_WITH_X = family<IrCost>('cost', { only: ['cost.mana', 'cost.mana-x'] });
+
+/** "<word> {M}": the keyword node with its one mana cost (with an {X} when `x` is set, D-274). */
+export function altCostKeyword(id: string, word: string, x = false) {
   return map(
     node<readonly IrCost[], IrKeyword>(
       id,
-      map(sequence(literal(`${word} `), MANA_COST), ([, cost]): readonly IrCost[] => [cost]),
+      map(
+        sequence(literal(`${word} `), x ? MANA_COST_WITH_X : MANA_COST),
+        ([, cost]): readonly IrCost[] => [cost],
+      ),
       (cost) => ({ kind: 'keyword', name: word, params: [], cost }),
     ),
     (keyword): readonly IrKeyword[] => [keyword],

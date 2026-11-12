@@ -34,7 +34,8 @@ export function cardsOfIssue(description: string, issue: number): ReturnType<typ
   return parseCardDataText(text).map((card) => ({
     ...card,
     source: `${ISSUE_CARD_SOURCE}, issue #${issue}`,
-    acceptance: true as const,
+    // D-280: the melded face of a pair is kept as `related` (no card of the deck, no acceptance card), the others are acceptance cards.
+    ...(card.related === true ? {} : { acceptance: true as const }),
   }));
 }
 

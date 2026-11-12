@@ -92,36 +92,46 @@ export function specialPayDetail(
 /** The label of Cancel at the payment of a special action: nothing has happened, priority comes back. */
 export const SPECIAL_CANCEL = 'Cancel';
 
-/** What a suspend or madness question is about, for the log and the dialog. */
+/** What a suspend, madness or miracle question is about, for the log and the dialog. */
 export function castNowPrompt(
-  purpose: 'suspend' | 'madness',
+  purpose: 'suspend' | 'madness' | 'miracle',
   name: string,
   cost: readonly string[] | undefined,
 ): string {
   if (purpose === 'suspend') {
     return `Cast ${name} now without paying its mana cost? (its last time counter was removed)`;
   }
-  return `Cast ${name} for its madness cost${cost === undefined ? '' : ` ${manaText(cost)}`}?`;
+  return `Cast ${name} for its ${purpose} cost${cost === undefined ? '' : ` ${manaText(cost)}`}?`;
+}
+
+/**
+ * Miracle's first question (CR 702.94a, D-274): reveal the card just drawn? Revealing is public and lets the card's trigger go on the
+ * stack; the cost is shown as the card's own ({X} stays {X}).
+ */
+export function miracleRevealPrompt(name: string, cost: readonly string[] | undefined): string {
+  return `Reveal ${name}, the first card you drew this turn, for its miracle trigger${cost === undefined ? '' : ` (miracle ${manaText(cost)})`}?`;
 }
 
 /** The two buttons of those questions, with what declining does to the card. */
 export function castNowButtons(
-  purpose: 'suspend' | 'madness',
+  purpose: 'suspend' | 'madness' | 'miracle',
   cost: readonly string[] | undefined,
 ): { readonly yes: string; readonly no: string } {
-  return purpose === 'suspend'
-    ? { yes: 'Cast it', no: "Don't cast it (it stays in exile)" }
-    : {
-        yes: cost === undefined ? 'Cast it' : `Cast it for ${manaText(cost)}`,
-        no: "Don't cast it (it goes to the graveyard)",
-      };
+  if (purpose === 'suspend') return { yes: 'Cast it', no: "Don't cast it (it stays in exile)" };
+  return {
+    yes: cost === undefined ? 'Cast it' : `Cast it for ${manaText(cost)}`,
+    no:
+      purpose === 'miracle'
+        ? "Don't cast it (it stays in your hand)"
+        : "Don't cast it (it goes to the graveyard)",
+  };
 }
 
 /**
- * What an engine ability of Suspend or Madness says on the stack: when it happened ("At the beginning of
+ * What an engine ability of Suspend, Madness or Miracle says on the stack: when it happened ("At the beginning of
  * your upkeep", "When the last time counter is removed from Name", "When Name is exiled with madness"; the
  * upkeep is the controller's) and what it does ("Remove a time counter from Name.", "Cast Name without
- * paying its mana cost.", "Cast Name for its madness cost."). Null for any other ability.
+ * paying its mana cost.", "Cast Name for its madness cost."; Miracle's "When you reveal Name this way"). Null for any other ability.
  */
 export function laterAbilityWords(
   ability: StackAbility,
@@ -136,6 +146,12 @@ export function laterAbilityWords(
     };
   }
   if (effect.kind !== 'castExiled') return null;
+  if (effect.mode === 'miracle') {
+    return {
+      when: `When you reveal ${name} this way`,
+      does: `You may cast ${name} for its miracle cost.`,
+    };
+  }
   return effect.mode === 'suspend'
     ? {
         when: `When the last time counter is removed from ${name}`,
@@ -152,13 +168,16 @@ export function laterAbilityWords(
  * (D-128): Suspend's upkeep tick says "At the beginning of your upkeep" while the card still has time
  * counters. The cast ability (last counter gone) and Madness's have no wording the decision could carry,
  * so they give null and the panel shows the card's text. Undefined when the trigger is not of that kind
- * and the usual words apply.
+ * and the usual words apply. Miracle's trigger (D-274) has its source in a hand: the engine's constant carries an upkeep trigger that
+ * is not its text, so it gives null as well and the panel shows the card's text.
  */
 export function laterOrderWording(
   abilityIndex: number,
   source: Pick<ObjectView, 'zone' | 'counters'> | undefined,
 ): string | null | undefined {
-  if (abilityIndex !== -1 || source?.zone !== 'exile') return undefined;
+  if (abilityIndex !== -1) return undefined;
+  if (source?.zone === 'hand') return null;
+  if (source?.zone !== 'exile') return undefined;
   return timeCountersOn(source) > 0 ? 'At the beginning of your upkeep' : null;
 }
 

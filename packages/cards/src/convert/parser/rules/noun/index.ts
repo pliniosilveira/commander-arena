@@ -17,16 +17,20 @@ import {
 import type { IrFilter, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { defineRule, family, node, spanned } from '../registry';
+import { AJANI_NOUN_RULES } from './ajani';
 import { ANGEL_NOUN_RULES } from './angels';
 import { NOUN_ATTACKED_BY_IT } from './attacked';
 import { CHOOSE_NOUN_RULES } from './choose';
 import { NOUN_ITS_CONTROLLER } from './controller';
+import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
+import { DESTINY_EARLY_NOUN_RULES } from './destiny';
 import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_NOUN_RULES } from './edhrec';
 import { HOFRI_NOUN_RULES } from './hofri';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
+import { PAIR_NOUN_RULES } from './pair';
 import {
   graveyardPhrase,
   PLURAL_TYPE_UNION,
@@ -544,6 +548,10 @@ export const NOUN_RULES = [
   ...PLAYER_NOUN_RULES,
   // Stage P52 (D-210): "each player who discarded a card this way".
   ...VRASKA_EARLY_NOUN_RULES,
+  // D-269: "each player ~ attacked this turn", whose first words are those of `noun.player` ("each player").
+  ...DESTINY_EARLY_NOUN_RULES,
+  // D-286: "each of those creatures", whose first words are those of `noun.each-permanent`.
+  ...PAIR_NOUN_RULES,
   NOUN_PLAYER,
   NOUN_TARGET_SPELL,
   // Stage P32 (D-147): "target commander" before `noun.target-permanent`, whose phrase would stop at "commander".
@@ -551,6 +559,8 @@ export const NOUN_RULES = [
   // Stage P34 (D-152): "each other opponent" and "each of up to two other targets".
   ...DRAGON_NOUN_RULES,
   ...KORVOLD_NOUN_RULES,
+  // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards".
+  ...CROSS_ZONE_NOUN_RULES,
   NOUN_TARGET_GRAVEYARD_CARD,
   NOUN_PLAYER_GRAVEYARD,
   NOUN_ALL_GRAVEYARD_CARDS,
@@ -559,6 +569,8 @@ export const NOUN_RULES = [
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.
   ...HOFRI_NOUN_RULES,
+  // D-268: "each artifact and creature your opponents control", which `noun.each-permanent` would stop in the middle of.
+  ...AJANI_NOUN_RULES,
   NOUN_EACH_PERMANENT,
   // Stage P64 and P65 (D-217, D-218): "creature tokens you control" and "creatures attacking your opponents and/or planeswalkers they control", whose first words are
   // those of `noun.plain-permanents`.

@@ -46,6 +46,7 @@ import { chooseAnyNumberToSacrifice, giftAnswer } from './casual-recursion';
 import { chooseNewTarget } from './casual-redirect';
 import { chooseRingBearer } from './casual-ring';
 import { chooseCardsFromZone } from './casual-search';
+import { chooseSoulbondPartner } from './casual-soulbond';
 import { chooseCrewCreatures } from './casual-vehicles';
 import { chooseXAnswer, chooseXDamageTarget } from './casual-x';
 import { firstSafeAction } from './legal';
@@ -124,9 +125,11 @@ export function createCasualHandlers(
                                 ? chooseProliferate(view, d) // CR 701.34a, D-149: the permanents and players that get another counter
                                 : d.purpose === 'auraHost'
                                   ? chooseAuraHost(view, d) // CR 303.4f, D-149: what an Aura that enters by an effect enchants
-                                  : d.min === 0
-                                    ? chooseAnyNumberToSacrifice(view, d) // D-135: "sacrifice any number of other permanents"
-                                    : choosePermanentToSacrifice(view, d),
+                                  : d.purpose === 'soulbond'
+                                    ? chooseSoulbondPartner(view, d) // CR 702.95a, D-286: always pair, with the strongest creature
+                                    : d.min === 0
+                                      ? chooseAnyNumberToSacrifice(view, d) // D-135: "sacrifice any number of other permanents"
+                                      : choosePermanentToSacrifice(view, d),
     chooseCards: (d) => chooseCardsFromZone(view, d),
     arrangeCards: (d) => chooseArrangement(view, d),
     orderTriggers: (d) => orderTriggersAsListed(d),

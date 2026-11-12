@@ -1,6 +1,6 @@
 /**
  * The keyword lines of the "cast later" family (stage P26; D-128): Suspend (CR 702.62), Madness (CR 702.35) and
- * Foretell (CR 702.143). Madness and Foretell are alternative costs of the face, `{ kind, cost }`, like the
+ * Foretell (CR 702.143), and Miracle (CR 702.94, D-274, below). Madness and Foretell are alternative costs of the face, `{ kind, cost }`, like the
  * named ones of stages P22 and P23 (the engine owns the discard replacement, the cast from exile and the special
  * action that exiles the card face down); Suspend is the keyword `suspend { count, cost }`, whose special action
  * and two abilities the engine runs itself. The reminder text in parentheses is dropped before the line is read.
@@ -130,4 +130,50 @@ export const KEYWORD_FORETELL = defineRule<readonly IrKeyword[]>({
   parse: altCostKeyword('keyword.foretell', 'foretell'),
 });
 
-export const LATER_KEYWORD_RULES = [KEYWORD_SUSPEND, KEYWORD_MADNESS, KEYWORD_FORETELL];
+/**
+ * `keyword.miracle`: "Miracle {X}{W}{W}" (CR 702.94a: "You may reveal this card from your hand as you draw it if it's the first card you've
+ * drawn this turn. When you reveal this card this way, you may cast it by paying [cost] rather than its mana cost"; D-274). The line is the
+ * cost and nothing else: the reveal as the card is drawn, its trigger and the cast from the hand are the engine's (`rules/miracle.ts`). The
+ * cost is a plain mana cost, with an {X} when the card has one (the real Entreat the Angels and Bonfire of the Damned do; X is announced as the
+ * spell is cast, CR 107.3a); a hybrid symbol, a non-mana cost or any other word with it is not read. 14 cards of the owner's run.
+ */
+export const KEYWORD_MIRACLE = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.miracle',
+  family: 'keyword',
+  leading: ['miracle'],
+  cites: [
+    'CR 702.94a (Miracle)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 107.3a (Numbers and Symbols)',
+    'CR 601.2b (Casting Spells)',
+  ],
+  examples: [
+    'Miracle {1}{R}',
+    'Miracle {X}{W}{W}',
+    'Miracle {X}{R}',
+    'Miracle {W}',
+    'miracle {2}{U}',
+  ],
+  rejects: [
+    'Miracle',
+    'Miracle {W/U}',
+    'Miracle {X}{W/U}',
+    'Miracle {X/R}',
+    'Miracle {G/P}',
+    'Miracle—Pay 2 life.',
+    'Miracle {1}{W}.',
+    'Miracle {1}{W}, miracle {W}',
+    'Miracle {1}{W}, flying',
+    'Miracle {1}{W} {1}',
+    'Miracles {1}{W}',
+    'Madness {1}{W}',
+  ],
+  parse: altCostKeyword('keyword.miracle', 'miracle', true),
+});
+
+export const LATER_KEYWORD_RULES = [
+  KEYWORD_SUSPEND,
+  KEYWORD_MADNESS,
+  KEYWORD_FORETELL,
+  KEYWORD_MIRACLE,
+];

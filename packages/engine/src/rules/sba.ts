@@ -15,23 +15,32 @@
  * Not yet: Siege battles (CR 704.5v, which involves a triggered ability), spell copies.
  */
 import type { SeatId } from '../ids';
-import type { NewDecision } from '../state/decisions';
+import type { ChooseOptionDecision, NewDecision } from '../state/decisions';
 import type { GameEvent, LossReason } from '../state/events';
-import { getObject, getSeat, patchObject, patchSeat, removeFromZone } from '../state/ops';
+import {
+  definitionOf,
+  getObject,
+  getSeat,
+  patchObject,
+  patchSeat,
+  removeFromZone,
+} from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { illegalAttachments, illegalAuras, unattach } from './attach';
+import { gainCitysBlessings } from './city-blessing';
 import { controllerOf } from './control';
 import { endLostControlEffects } from './control-effects';
 import { derive } from './derive';
 import { replacementSources } from './die-replacement';
 import { type LegendCandidate, legendRuleDecision } from './legend-rule';
 import { monarchAfterLoss } from './monarch';
+import { endBrokenPairs } from './pairing-sba';
 import { cannotLoseGame } from './player-protection';
 import { regenerateInstead } from './regenerate';
 import { endLostRingBearers } from './ring';
 import { sacrificePermanent } from './sacrifice';
 import { sagaIsDone } from './saga';
-import { moveObject } from './zones';
+import { moveObject, recordLastKnown } from './zones';
 
 export interface SbaResult {
   readonly state: GameState;
@@ -109,6 +118,18 @@ export function checkStateBasedActions(input: GameState): SbaResult {
     };
   }
 
+  // CR 702.95e (D-285): a pair ends when either creature left, changed controller or stopped being a creature; the next pass goes on with the new state.
+  const unpaired = endBrokenPairs(state);
+  if (unpaired !== null) {
+    return { state: unpaired.state, events: unpaired.events, performed: true, decision: null };
+  }
+
+  // CR 702.131b (D-264): Ascend, "any time you control ten or more permanents", is checked here; the next pass goes on with the new state.
+  const blessed = gainCitysBlessings(state);
+  if (blessed !== null) {
+    return { state: blessed.state, events: blessed.events, performed: true, decision: null };
+  }
+
   // 1. Find everything against the unchanged state (CR 704.3).
   const losses = lossReasons(state);
   const toGraveyard: GameObject[] = []; // CR 704.5f, not a destruction
@@ -173,6 +194,10 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   // CR 704.3, 614.12 (D-133): the creatures put into graveyards in this check die together, so a "would die" replacement of
   // one of them replaces the deaths of the others even if it was moved first.
   const replacers = replacementSources(state);
+  // D-283 (CR 603.10a, 704.3): the permanents put into graveyards in this check leave together, so what each was (and what abilities a neighbour
+  // gave it) is recorded now, before the first of them moves.
+  const batch = [...toGraveyard, ...fallenAuras, ...destroyed];
+  if (batch.length > 1) for (const obj of batch) state = recordLastKnown(state, obj);
   // CR 704.5m: an Aura is put into the graveyard, not destroyed; the creature it enchanted may be
   // dying in the same check, which the next pass of the caller's loop settles.
   for (const obj of [...toGraveyard, ...fallenAuras, ...destroyed].sort(order)) {
@@ -186,7 +211,12 @@ export function checkStateBasedActions(input: GameState): SbaResult {
       performed = true;
       continue;
     }
-    const result = moveObject(state, { object: obj.id, to: 'graveyard', replacers });
+    const result = moveObject(state, {
+      object: obj.id,
+      to: 'graveyard',
+      replacers,
+      ...(batch.length > 1 ? { lkiRecorded: true as const } : {}),
+    });
     if (result.kind === 'done') {
       state = result.state;
       events.push(...result.events);
@@ -262,7 +292,64 @@ export function checkStateBasedActions(input: GameState): SbaResult {
       };
     }
   }
+  if (!performed) {
+    const ordering = meldOrderDecision(state);
+    state = ordering.state;
+    if (ordering.decision !== null) {
+      return { state, events, performed: false, decision: ordering.decision };
+    }
+  }
   return { state, events, performed, decision: null };
+}
+
+/**
+ * CR 712.21a, 712.21b (D-279): the first of the pairs of cards that a melded permanent became, which the player entitled to has not yet arranged. A pair whose cards are no longer
+ * both in the zone they went to (or, in a graveyard or a library, next to each other: something moved or shuffled them) is dropped, with nothing asked.
+ */
+function meldOrderDecision(state: GameState): {
+  state: GameState;
+  decision: Omit<ChooseOptionDecision, 'id'> | null;
+} {
+  const pending = state.meldOrders ?? [];
+  let live = pending;
+  for (const entry of pending) {
+    const a = state.objects[entry.first];
+    const b = state.objects[entry.second];
+    // The zone a graveyard or a library belongs to is the owner's, who is not always the player asked (CR 712.21b: exile is ordered by the player who exiled it).
+    const owner = a?.owner;
+    const list =
+      entry.zone === 'exile'
+        ? state.exile
+        : owner === undefined
+          ? []
+          : entry.zone === 'library'
+            ? (state.seats[owner]?.library ?? [])
+            : (state.seats[owner]?.graveyard ?? []);
+    const together =
+      a?.zone === entry.zone &&
+      b?.zone === entry.zone &&
+      (entry.zone === 'exile' ||
+        Math.abs(list.indexOf(entry.first) - list.indexOf(entry.second)) === 1);
+    if (!together || a === undefined || b === undefined || a.card === null || b.card === null) {
+      live = live.filter((e) => e !== entry);
+      continue;
+    }
+    const names = [definitionOf(state, a.card).name, definitionOf(state, b.card).name];
+    return {
+      state: live === pending ? state : { ...state, meldOrders: live },
+      decision: {
+        kind: 'chooseOption',
+        seat: entry.seat,
+        purpose: 'meldOrder',
+        options: names,
+        meldOrder: { first: entry.first, second: entry.second, zone: entry.zone },
+        source: entry.first,
+        sourceName: names.join(' and '),
+        sourceOracleText: '',
+      },
+    };
+  }
+  return { state: live === pending ? state : { ...state, meldOrders: live }, decision: null };
 }
 
 /**

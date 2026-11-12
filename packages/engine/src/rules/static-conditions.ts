@@ -16,13 +16,16 @@ import {
   cardsInGraveyardHolds,
   controlsCommander,
   enteredThisTurnHolds,
+  lifeGainedThisTurnHolds,
   lifeTotalHolds,
   playerDealtDamageHolds,
 } from './condition-reads';
 import { controllerOf } from './control';
 import { countForSource } from './derive-count';
 import { typeViewOf } from './derive-view';
+import { designationHolders } from './designations';
 import { matchesFilterWith } from './filter-match';
+import { partnerOf } from './pairing';
 
 /** The players a static ability's condition names (`validateCard`: you, each player, each opponent, this permanent's controller or owner). */
 function playersOf(state: GameState, selector: PlayerSelector, source: GameObject): SeatId[] {
@@ -80,6 +83,8 @@ export function staticConditionHolds(
       return enteredThisTurnHolds(state, controllerOf(state, source), condition);
     case 'playerDealtDamage':
       return playerDealtDamageHolds(state, controllerOf(state, source), condition);
+    case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
+      return lifeGainedThisTurnHolds(state, controllerOf(state, source), condition);
     case 'cardsInGraveyard': // D-229: the number of cards in a zone, which no layer changes
       return cardsInGraveyardHolds(state, controllerOf(state, source), condition.compare);
     case 'thisMatches':
@@ -106,9 +111,11 @@ export function staticConditionHolds(
         )
       );
     }
+    case 'paired': // CR 702.95b (D-286): the pair, which no layer changes (`rules/pairing.ts` reads no characteristic)
+      return partnerOf(state, source) !== null;
     case 'playerHasDesignation': {
-      const holder = state.monarch;
-      return holder !== null && playersOf(state, condition.player, source).includes(holder);
+      const holders = designationHolders(state, condition.designation);
+      return playersOf(state, condition.player, source).some((seat) => holders.includes(seat));
     }
     case 'and':
       return condition.terms.every((t) => staticConditionHolds(state, t, source));

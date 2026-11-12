@@ -188,6 +188,16 @@ const TOKEN_NAME = map(
   (m) => m[0],
 );
 
+/**
+ * " named ~'s Pridemate" (D-266): the name of a token that begins with the name of the card that makes it, as Ajani's Pridemate does. The card's name was
+ * written `~` when the text was normalized (a legendary card's short name too), so the possessive after it is what shows it is a name and not the card's: `~'s`
+ * and one or more capitalized words, nothing else of `~`. The lowering puts the card's own short name back; a name that is only `~` or has it later is not read.
+ */
+const SELF_TOKEN_NAME = map(
+  pattern(/~['’]s(?:(?: (?:of|the|de|la|in|on))* [A-Z][\p{L}'’-]*)+/u),
+  (m) => m[0],
+);
+
 /** The words of a described token after its count: "tapped 2/2 black Zombie creature tokens with menace" (CR 111.3, 111.4). */
 export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser<Bare> {
   return map(
@@ -212,7 +222,10 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
         ),
         TOKEN_WORD,
         optional(
-          map(sequence(literal(' named '), TOKEN_NAME), ([, name]) => name),
+          map(
+            sequence(literal(' named '), choice(SELF_TOKEN_NAME, TOKEN_NAME)),
+            ([, name]) => name,
+          ),
           null,
         ),
         optional(quiet(map(sequence(literal(' with '), TOKEN_WITH), ([, what]) => what)), {

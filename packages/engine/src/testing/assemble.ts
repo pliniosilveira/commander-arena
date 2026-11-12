@@ -13,6 +13,7 @@ import { cardId, objectId } from '../ids';
 import { checkInvariants } from '../invariants';
 import type { ManaObject } from '../mana/types';
 import { createRng } from '../rng';
+import { meldCardsIssue } from '../rules/melded';
 import { grantPriority, priorityOptions } from '../rules/priority';
 import { setPending } from '../rules/set-pending';
 import type { CardInstance, GameObject, GameSettings, GameState, SeatState } from '../state/types';
@@ -126,7 +127,7 @@ export function assemble(
     cards[cid] = { id: cid, owner: e.seat, definition: defIndex.get(e.def) ?? 0, isCommander };
     const onBattlefield = e.zone === 'battlefield';
     const controller = onBattlefield ? (o.controller ?? e.seat) : e.seat;
-    const faceIndex = onBattlefield ? (o.face ?? 0) : 0;
+    const faceIndex = onBattlefield ? (o.face ?? (o.meldedWith === undefined ? 0 : 1)) : 0;
     const face = e.def.faces[faceIndex];
     // As when it enters (CR 306.5b, 310.4b): loyalty and defense come from the card unless the
     // scenario sets the counters itself. A battle's protector is an opponent of its controller.
@@ -202,6 +203,88 @@ export function assemble(
     if (host && mine) objects[objectId(e.index)] = { ...mine, attachedTo: objectId(host.index) };
   }
 
+  // Melded permanents (CR 701.42a, 712.4a, D-277): the placement `meldedWith` names is the second card of the same object, not an object of its own.
+  for (const e of expanded) {
+    const ref = e.options.meldedWith;
+    if (ref === undefined) continue;
+    const onField = expanded.filter((x) => x.zone === 'battlefield' && x.index !== e.index);
+    const byLabel = onField.filter((x) => x.options.label === ref);
+    const others = byLabel.length > 0 ? byLabel : onField.filter((x) => x.def.name === ref);
+    const [other] = others;
+    if (others.length !== 1 || other === undefined) {
+      throw new ScenarioError(
+        `${e.def.name} is meldedWith "${ref}", which matches ${others.length} other permanents on the battlefield (use a label)`,
+      );
+    }
+    if (other.options.meldedWith !== undefined || other.seat !== e.seat) {
+      throw new ScenarioError(
+        `${e.def.name} and ${other.def.name} can not both be melded with each other: place the second card with no meldedWith, on the same seat`,
+      );
+    }
+    const mine = objects[objectId(e.index)];
+    const theirs = objects[objectId(other.index)];
+    if (mine === undefined || theirs === undefined || mine.card === null || theirs.card === null)
+      continue;
+    const issue = meldCardsIssue({ cards, definitions: defs }, mine.card, theirs.card);
+    if (issue !== null)
+      throw new ScenarioError(`${e.def.name} can not be melded with ${other.def.name}: ${issue}`);
+    objects[objectId(e.index)] = { ...mine, meldedWith: theirs.card };
+    const { [objectId(other.index)]: _second, ...rest } = objects;
+    for (const k of Object.keys(objects)) delete objects[k as ObjectId];
+    Object.assign(objects, rest);
+    const at = battlefield.indexOf(objectId(other.index));
+    if (at >= 0) battlefield.splice(at, 1);
+  }
+
+  // Pairs (CR 702.95b, D-285): `pairedWith` names the other creature by label or card name; the link is written on both objects, formed by the player who
+  // controls them. A melded permanent is one object, the first card's: a placement that names the second card of one must name the first instead.
+  for (const e of expanded) {
+    const ref = e.options.pairedWith;
+    if (ref === undefined) continue;
+    const mine = objects[objectId(e.index)];
+    if (mine === undefined)
+      throw new ScenarioError(
+        `${e.def.name} is pairedWith "${ref}" but is the second card of a melded permanent: place the pairing on the first card`,
+      );
+    const onField = expanded.filter((x) => x.zone === 'battlefield' && x.index !== e.index);
+    const byLabel = onField.filter((x) => x.options.label === ref);
+    const others = byLabel.length > 0 ? byLabel : onField.filter((x) => x.def.name === ref);
+    const [other] = others;
+    if (others.length !== 1 || other === undefined) {
+      throw new ScenarioError(
+        `${e.def.name} is pairedWith "${ref}", which matches ${others.length} other permanents on the battlefield (use a label)`,
+      );
+    }
+    const theirs = objects[objectId(other.index)];
+    if (theirs === undefined)
+      throw new ScenarioError(
+        `${e.def.name} is pairedWith ${other.def.name}, which is the second card of a melded permanent: name the first card`,
+      );
+    const isCreature = (x: Expanded) =>
+      x.def.faces[x.options.face ?? (x.options.meldedWith === undefined ? 0 : 1)]?.types.includes(
+        'creature',
+      ) === true;
+    if (!isCreature(e) || !isCreature(other))
+      throw new ScenarioError(
+        `${e.def.name} and ${other.def.name} can not be paired: both must be creatures (CR 702.95a)`,
+      );
+    if (mine.controller !== theirs.controller)
+      throw new ScenarioError(
+        `${e.def.name} and ${other.def.name} can not be paired: one player controls both (CR 702.95c)`,
+      );
+    const back = other.options.pairedWith;
+    if (back !== undefined && back !== e.options.label && back !== e.def.name)
+      throw new ScenarioError(
+        `${e.def.name} is pairedWith ${other.def.name}, which is pairedWith "${back}" (a creature can be paired with only one, CR 702.95d)`,
+      );
+    if (mine.paired !== undefined && mine.paired.with !== theirs.id)
+      throw new ScenarioError(`${e.def.name} is paired twice (CR 702.95d)`);
+    if (theirs.paired !== undefined && theirs.paired.with !== mine.id)
+      throw new ScenarioError(`${other.def.name} is paired twice (CR 702.95d)`);
+    objects[mine.id] = { ...mine, paired: { with: theirs.id, by: mine.controller } };
+    objects[theirs.id] = { ...theirs, paired: { with: mine.id, by: mine.controller } };
+  }
+
   const seats: SeatState[] = spec.seats.map((s, id) => {
     checkCount(`seat ${id} poison`, s.poison);
     if (s.handSizeMax !== null) checkCount(`seat ${id} handSizeMax`, s.handSizeMax);
@@ -239,6 +322,7 @@ export function assemble(
       commanders: commanders[id] ?? [],
       handSizeMax: s.handSizeMax,
       ...(s.ring === null || s.ring === 0 ? {} : { ring: { tempted: s.ring } }),
+      ...(s.citysBlessing ? { citysBlessing: true as const } : {}),
     };
   });
 

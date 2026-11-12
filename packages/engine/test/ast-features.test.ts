@@ -90,6 +90,7 @@ describe('the dimensions', () => {
       'sourceHasCounter',
       'subjectGreaterPt',
       'subjectControllerHasMore',
+      'triggerPlayerHasMore',
       'cardsInGraveyard',
       'escaped',
       'cameUnderControlSinceLastUpkeep',
@@ -122,12 +123,20 @@ describe('the dimensions', () => {
       // D-151: what entered this turn, damage dealt this turn.
       'enteredThisTurn',
       'playerDealtDamage',
+      // D-252: "if you gained 3 or more life this turn".
+      'lifeGainedThisTurn',
+      'dieResult',
+      'thisInYourGraveyard',
       'chosenOption',
       // D-151: Dethrone's "attacking the player with the most life", Pack tactics' total power.
       'attackingMostLife',
       'attackersTotalPower',
       // D-196: "if you control your Ring-bearer".
       'controlsRingBearer',
+      'ownsAndControlsNamed',
+      // D-286: "as long as this creature is paired with another creature", and the engine's own intervening "if" of soulbond.
+      'paired',
+      'soulbondReady',
       'and',
       'or',
       'not',
@@ -171,12 +180,14 @@ describe('the dimensions', () => {
       'playFromGraveyardOnceEachTurn',
       // D-179: "Your opponents can't cast spells during your turn."
       'opponentsCantCastOnYourTurn',
+      // D-282: "Your opponents can't cast spells with mana value 3 or less."
+      'opponentsCantCastSpells',
       // D-185: "Creature spells you control can't be countered."
       'spellsCantBeCountered',
       // D-192: "Damage isn't removed from this creature during cleanup steps."
       'keepsDamage',
     ]);
-    expect(SUPPORTED_FEATURES.staticSubjectKinds).toEqual(['this', 'attached', 'filter']);
+    expect(SUPPORTED_FEATURES.staticSubjectKinds).toEqual(['this', 'attached', 'filter', 'pair']);
     // D-103: X in costs is announced as a spell is cast or an ability activated, and read by `x`.
     expect(SUPPORTED_FEATURES.amountKinds).toContain('x');
     expect(SUPPORTED_FEATURES.costKinds).toContain('payXLife');
@@ -267,7 +278,8 @@ describe('feature references', () => {
     expect(isFeatureSupported('layout:transform')).toBe(true);
     expect(isFeatureSupported('layout:saga')).toBe(true);
     expect(isFeatureSupported('trigger:chapter')).toBe(true);
-    expect(isFeatureSupported('layout:meld')).toBe(false);
+    expect(isFeatureSupported('layout:meld')).toBe(true); // D-277
+    expect(isFeatureSupported('layout:flip')).toBe(false);
   });
 
   test('a value outside the universe is not known', () => {

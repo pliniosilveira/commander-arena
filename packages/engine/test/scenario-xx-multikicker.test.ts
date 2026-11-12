@@ -278,3 +278,32 @@ describe('plain Kicker counts once', () => {
     plain.expect.life(1, 40);
   });
 });
+
+// D-254, CR 702.33c, 614.1c: "enters with a charge counter on it for each time it was kicked" (a replacement effect of the permanent, not a trigger).
+describe('enters with a counter for each time it was kicked', () => {
+  const CHALICE = 'SYNTHETIC Kicked Chalice';
+  const chalice = (lands: number) =>
+    scenario().seat(0).hand(CHALICE).battlefield('Forest', { count: lands }).seat(1).build();
+
+  test('kicked 2 times: it enters with 2 charge counters, as it enters (no trigger)', () => {
+    const g = chalice(3);
+    g.act(0).cast(CHALICE);
+    g.act(0).chooseX(2);
+    g.act(0).payAuto();
+    g.passAll();
+    g.expect.counters(CHALICE, { charge: 2 });
+  });
+
+  test('not kicked: it enters with none', () => {
+    const g = chalice(3);
+    g.act(0).cast(CHALICE);
+    g.act(0).chooseX(0);
+    g.passAll();
+    g.expect.counters(CHALICE, {});
+  });
+
+  test('put onto the battlefield without being cast: none', () => {
+    const g = scenario().seat(0).battlefield(CHALICE).seat(1).build();
+    g.expect.counters(CHALICE, {});
+  });
+});

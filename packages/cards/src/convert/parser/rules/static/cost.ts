@@ -339,10 +339,17 @@ const CAST_HEAD: Parser<{
   readonly chosen: 'type' | 'color' | undefined;
   readonly compared: Comparison | undefined;
   readonly notHand?: true;
+  readonly anyCaster?: true;
 }> = choice(
   map(sequence(CHOSEN_SUFFIX, literal(' you cast cost ')), ([chosen]) => ({
     chosen,
     compared: undefined,
+  })),
+  // Stage P69 (D-255, CR 601.2f, 604.2): "Creature spells of the chosen type cost {2} less to cast." says no "you cast": the spells of every player.
+  map(sequence(CHOSEN_SUFFIX, literal(' cost ')), ([chosen]) => ({
+    chosen,
+    compared: undefined,
+    anyCaster: true as const,
   })),
   // Stage P75 (D-235, CR 601.2a): "Spells you cast from anywhere other than your hand cost {2} less to cast".
   map(literal(' you cast from anywhere other than your hand cost '), () => ({
@@ -396,6 +403,8 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells you cast cost {1} less to cast.',
     'Creature spells you cast of the chosen type cost {1} less to cast.',
     'Creature spells of the chosen type you cast cost {1} less to cast.',
+    // Stage P69 (D-255): Urza's Incubator.
+    'Creature spells of the chosen type cost {2} less to cast.',
     'Spells you cast of the chosen type cost {1} less to cast.',
     'Red spells you cast of the chosen color cost {1} less to cast.',
     'Creature spells you cast cost {1} less to cast for each creature you control.',
@@ -417,7 +426,8 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Artifact spells you cast cost {W} less to cast.',
     'Artifact spells you cast cost {1} more to cast.',
     'Artifact spells you cast cost {X} less to cast.',
-    'Creature spells of the chosen type cost {2} less to cast.',
+    'Creature spells cost {2} less to cast.',
+    'Creature spells of the chosen type cost {2} less to cast',
     'Creature spells you cast of the chosen type of the chosen color cost {1} less to cast.',
     'Creature spells you cast of the chosen player cost {1} less to cast.',
     'Creature spells you cast with power 4 cost {2} less to cast for each creature you control.',
@@ -438,7 +448,7 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     // ("Creature spells you control can't be countered.") was never this statement.
     const r = sequence(quiet(sequence(spellSubject(), CAST_HEAD)), reduction(), PERIOD)(ctx, pos);
     if (!r.ok) return r;
-    const [[filter, { chosen, compared, notHand }], amount] = r.value;
+    const [[filter, { chosen, compared, notHand, anyCaster }], amount] = r.value;
     const subjectEnd = pos + filter.raw.length;
     const subject: IrNoun = {
       kind: 'noun',
@@ -446,7 +456,7 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
       filter: withComparison(
         {
           ...filter,
-          controller: 'you',
+          ...(anyCaster === true ? {} : { controller: 'you' as const }),
           ...(chosen === undefined ? {} : { chosen }),
           ...(notHand === true ? { notCastFromHand: true as const } : {}),
         },

@@ -53,12 +53,17 @@ import { runEmpowerJace } from './empower';
 import { runEnterAttacking } from './enter-attacking';
 import { runEnterToken } from './enter-token';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
+import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
 import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
+import { loseTheGame } from './lose-game';
 import { manaValueOfCost } from './mana-value';
 import { runMayCast, runPaidReflexive, runReflexive } from './may-effects';
+import { runMeld } from './meld';
+import { successorsOf } from './melded';
 import { millCards } from './mill';
+import { runMiracleReveal } from './miracle';
 import { becomeMonarch } from './monarch';
 import { isCardZoneChoice, runChooseMove } from './move-choice';
 import { nextMainStep } from './next-main';
@@ -72,10 +77,13 @@ import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
 import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
-import { sacrificeCandidates, sacrificePermanent } from './sacrifice';
+import { rollDie } from './roll-die';
+import { controlledCandidates, sacrificeCandidates, sacrificePermanent } from './sacrifice';
 import { runChooseSacrifice, sacrificeInstructions } from './sacrifice-choice';
 import { runDiscard, runSearch } from './search';
 import { apnapOrder, resolveObjects, resolvePlayers, type SelectContext } from './select';
+import { recordTogether } from './simultaneous';
+import { runPair } from './soulbond';
 import { objectOrLki, sourceInfo } from './source-info';
 import { runSpare, startSpare } from './spare';
 import { done, type StepOutcome } from './step-outcome';
@@ -115,7 +123,12 @@ export function runInstruction(
   if (instruction.kind === 'sacrifice') {
     // CR 701.21a: only a permanent its controller still controls can be sacrificed. One that
     // already left (an earlier instruction moved it) is skipped (CR 608.2c).
-    const r = sacrificePermanent(state, instruction.object, instruction.seat ?? res.controller);
+    const r = sacrificePermanent(
+      state,
+      instruction.object,
+      instruction.seat ?? res.controller,
+      instruction.lkiRecorded === true,
+    );
     // D-131: "for each creature sacrificed this way" counts the permanents that were sacrificed.
     return r === null
       ? done(state)
@@ -136,10 +149,12 @@ export function runInstruction(
   if (instruction.kind === 'chooseOne') return runChooseOne(state, res, instruction);
   if (instruction.kind === 'vote') return runVote(state, res, instruction);
   if (instruction.kind === 'ringTempts') return runRingTempts(state, res, instruction);
+  if (instruction.kind === 'pair') return runPair(state, res, instruction);
   if (instruction.kind === 'empowerJace') return runEmpowerJace(state, res, instruction);
   if (instruction.kind === 'conniveNext') return runConniveNext(state, res, instruction);
   if (instruction.kind === 'spare') return runSpare(state, res, instruction);
   if (instruction.kind === 'splitExiled') return runSplitExiled(state, res, instruction);
+  if (instruction.kind === 'graveyardPair') return runGraveyardPair(state, res, instruction);
   if (instruction.kind === 'copyFromCards') return runCopyFromCards(state, res, instruction);
   if (instruction.kind === 'search') return runSearch(state, res, instruction);
   if (instruction.kind === 'shuffle') {
@@ -216,6 +231,17 @@ export function runInstruction(
     ) {
       return done(state);
     }
+    // D-258, CR 118.12a, 608.2d: "you may return an untapped Plains you control to its owner's hand" with no such permanent: the cost cannot be paid, so nothing is
+    // asked and it was not paid (the "if you don't" that follows runs).
+    if (
+      offered.kind === 'moveToZone' &&
+      offered.objects.kind === 'choose' &&
+      offered.to !== 'battlefield' &&
+      !isCardZoneChoice(offered.objects.filter) &&
+      controlledCandidates(state, res.controller, res.source, offered.objects.filter).length === 0
+    ) {
+      return done(state);
+    }
     const info = sourceInfo(state, res.source);
     return {
       state,
@@ -232,6 +258,7 @@ export function runInstruction(
   }
   if (instruction.kind === 'enterToken') return runEnterToken(state, res, instruction, flow);
   if (instruction.kind === 'draw') return runDraw(state, instruction);
+  if (instruction.kind === 'miracleReveal') return runMiracleReveal(state, res, instruction);
   if (instruction.kind === 'move') {
     // An object that already left (an earlier instruction moved it) is skipped: the spell does as
     // much as it can (CR 608.2c, 608.2b).
@@ -247,8 +274,17 @@ export function runInstruction(
       tapped: instruction.tapped,
       commanderChoice: instruction.commanderChoice,
       ...(instruction.withCounters === undefined ? {} : { withCounters: instruction.withCounters }),
+      // CR 712.21b (D-279): the controller of the effect is the player who exiles a melded permanent.
+      by: res.controller,
       ...(instruction.alt === undefined ? {} : { alt: instruction.alt }),
       ...(instruction.replacers === undefined ? {} : { replacers: instruction.replacers }),
+      // D-283 (CR 603.10a): the last-known information was recorded as the event of several leaving together began.
+      ...(instruction.lkiRecorded === true ? { lkiRecorded: true as const } : {}),
+      // CR 614.12, 614.12b (D-272): the cards of a `together` run enter in one event, so what the replacement effects of this one read is the battlefield without
+      // the ones that entered before it in the run (`lastMoved` is the run: the pair starts it empty and every move adds the object it made).
+      ...(instruction.together === true && instruction.to === 'battlefield'
+        ? { alongside: res.lastMoved ?? [] }
+        : {}),
       entersPaid: res.entersPaid ?? null,
       entersChosen: res.entersChosen ?? null,
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
@@ -264,10 +300,14 @@ export function runInstruction(
       return { state, events: [], front: [], needs: result.decision };
     }
     // CR 400.7j: later parts of the effect can find the new object ("then return it").
-    const lastMoved =
+    // CR 712.21c (D-277): a melded permanent that left became two cards, and "it" finds both: the same is done to each.
+    const movedObjects =
       result.newObject === null
-        ? (res.lastMoved ?? [])
-        : [...(res.lastMoved ?? []), result.newObject];
+        ? []
+        : result.alsoNewObject === undefined
+          ? [result.newObject]
+          : [result.newObject, result.alsoNewObject];
+    const lastMoved = [...(res.lastMoved ?? []), ...movedObjects];
     // CR 702.84a, 603.7 (D-124): unearth also creates the delayed triggered ability that exiles the permanent it
     // returned at the beginning of the next end step; it belongs to the controller of the ability (CR 603.7d) and
     // names that permanent (CR 603.7c).
@@ -276,7 +316,17 @@ export function runInstruction(
       instruction.attachTo !== undefined && result.newObject !== null
         ? attachEntered(result.state, result.newObject, instruction.attachTo)
         : { state: result.state, events: [] as GameEvent[] };
-    const moveEvents = [...result.events, ...attached.events];
+    // CR 603.6a (D-272): the cards of a `together` run enter as one event, which `findTriggers` reads from this mark.
+    const moveEvents = [
+      ...(instruction.together === true
+        ? result.events.map((e) =>
+            e.kind === 'zoneChanged' && e.toZone === 'battlefield'
+              ? { ...e, simultaneous: true as const }
+              : e,
+          )
+        : result.events),
+      ...attached.events,
+    ];
     const created =
       instruction.alt === 'unearth' && result.newObject !== null
         ? {
@@ -301,12 +351,12 @@ export function runInstruction(
             ...created,
             exileReturns: [
               ...created.exileReturns,
-              {
+              ...movedObjects.map((card) => ({
                 source: (instruction.untilLeaves ?? instruction.untilMonarch) as ObjectId,
-                card: result.newObject,
+                card,
                 controller: res.controller,
                 ...(instruction.untilMonarch !== undefined ? { untilMonarch: true as const } : {}),
-              },
+              })),
             ],
           }
         : created;
@@ -316,19 +366,23 @@ export function runInstruction(
     const linked =
       owner?.zone === 'battlefield' && result.newObject !== null && instruction.to === 'exile'
         ? patchObject(untilled, owner.id, {
-            linkedExile: [...(owner.linkedExile ?? []), result.newObject],
+            linkedExile: [...(owner.linkedExile ?? []), ...movedObjects],
           })
         : untilled;
     // CR 702.75a (D-145): a card exiled face down by Hideaway is visible to the controller of the permanent that exiled it.
     // CR 406.3 (D-187): a card an effect exiled face down, with no one to look at it, is only marked.
     const hidden =
-      instruction.faceDown === true && result.newObject !== null
-        ? patchObject(
+      instruction.faceDown === true
+        ? movedObjects.reduce(
+            (acc, id) =>
+              patchObject(
+                acc,
+                id,
+                instruction.linkTo !== undefined
+                  ? { hideaway: instruction.linkTo }
+                  : { exiledFaceDown: true },
+              ),
             linked,
-            result.newObject,
-            instruction.linkTo !== undefined
-              ? { hideaway: instruction.linkTo }
-              : { exiledFaceDown: true },
           )
         : linked;
     // CR 305.1, 305.2a (D-145): a land played as an effect says counts as the player's land play for the turn.
@@ -405,10 +459,13 @@ export function runImmediateEffects(
   return { state: next, events };
 }
 
-/** CR 400.7 (D-230): the card an object that left became in a graveyard, if it is still there; the old id when it is not (nothing is exiled then). */
-function graveyardSuccessor(state: GameState, id: ObjectId): ObjectId {
-  const successor = state.lki[id]?.successor;
-  return successor !== undefined && state.objects[successor]?.zone === 'graveyard' ? successor : id;
+/**
+ * CR 400.7 (D-230): the card an object that left became in a graveyard, if it is still there; the old id when it is not (nothing is exiled then). CR 712.21c
+ * (D-277): a melded permanent that died became two cards, and an effect that finds the new object finds both.
+ */
+function graveyardSuccessors(state: GameState, id: ObjectId): readonly ObjectId[] {
+  const found = successorsOf(state, id, (o) => o.zone === 'graveyard');
+  return found.length > 0 ? found : [id];
 }
 
 function runEffect(
@@ -474,8 +531,13 @@ function runEffect(
         events.push(...replaced.events);
       }
       // D-131: "for each creature destroyed this way" counts the permanents the effect destroyed.
+      // D-283 (CR 603.10a): they die together, so what each was is recorded before the first moves.
+      const together = recordTogether(
+        next,
+        withReplacers(moveInstructions(destroyed, 'graveyard'), next),
+      );
       return {
-        ...done(next, events, withReplacers(moveInstructions(destroyed, 'graveyard'), next)),
+        ...done(together.state, events, together.instructions),
         lastMoved: [],
         thisWay: {
           destroyed: destroyed.length,
@@ -538,9 +600,8 @@ function runEffect(
           const o = state.objects[id];
           return o?.zone === 'battlefield' ? [controllerOf(state, o)] : [];
         });
-        return done(
+        const together = recordTogether(
           state,
-          [],
           apnapOrder(state, seats).flatMap((seat) =>
             sacrificeInstructions(
               ids.filter((id) => {
@@ -551,6 +612,7 @@ function runEffect(
             ),
           ),
         );
+        return done(together.state, [], together.instructions);
       }
       if (what.kind === 'each') {
         // CR 701.21a (D-139): "each player sacrifices all permanents they control that ...": every permanent the filter
@@ -562,9 +624,9 @@ function runEffect(
             return o === undefined ? [] : [controllerOf(state, o)];
           }),
         );
-        return done(
+        // D-283 (CR 603.10a): sacrificed together, so what each was is recorded before the first moves.
+        const together = recordTogether(
           state,
-          [],
           order.flatMap((seat) =>
             sacrificeInstructions(
               ids.filter((id) => {
@@ -575,17 +637,20 @@ function runEffect(
             ),
           ),
         );
+        return done(together.state, [], together.instructions);
       }
-      return done(state, [], sacrificeInstructions(ids));
+      // D-283 (CR 603.10a): sacrificed together, so what each was is recorded before the first moves.
+      const together = recordTogether(state, sacrificeInstructions(ids));
+      return done(together.state, [], together.instructions);
     }
 
     case 'exile': {
       const ids = resolveObjects(state, effect.objects, ctx, targets)
         // CR 400.7, 603.10a (D-230): "exile it" in a trigger about a permanent that died: the permanent is gone, the card it became is the one in the graveyard.
-        .map((id) =>
+        .flatMap((id) =>
           effect.objects.kind === 'triggerSubject' && state.objects[id] === undefined
-            ? graveyardSuccessor(state, id)
-            : id,
+            ? graveyardSuccessors(state, id)
+            : [id],
         )
         .filter((id) => state.objects[id] !== undefined);
       // CR 610.3a, 610.3b (D-149): "until this leaves the battlefield": if it already has, as the exile would happen, nothing moves.
@@ -612,10 +677,12 @@ function runEffect(
           ? { untilMonarch: res.source }
           : {}),
       };
-      return moving(
+      // D-283 (CR 603.10a): exiled together, so what each was is recorded before the first moves.
+      const together = recordTogether(
         state,
         moveInstructions(ids, 'exile').map((i) => (i.kind === 'move' ? { ...i, ...link } : i)),
       );
+      return moving(together.state, together.instructions);
     }
 
     case 'moveToZone': {
@@ -686,7 +753,10 @@ function runEffect(
           moves.map((m) => (m.kind === 'move' ? { ...m, attachTo: host } : m)),
         );
       }
-      return moving(state, effect.to === 'battlefield' ? withAuraEntries(state, moves) : moves);
+      if (effect.to === 'battlefield') return moving(state, withAuraEntries(state, moves));
+      // D-283 (CR 603.10a): "return all creatures to their owners' hands" and the like: what each was is recorded before the first moves.
+      const together = recordTogether(state, moves);
+      return moving(together.state, together.instructions);
     }
 
     case 'counter': {
@@ -845,14 +915,22 @@ function runEffect(
       // control at the beginning of the next end step." The ability names the card the exile moved as it was made: one delayed ability for each card
       // (nothing, when nothing was exiled), whose effect moves its subject. The card is expected in exile; one that left since is a new object and is
       // not found (CR 603.7c, 400.7), and a token that was exiled has ceased to exist (CR 111.8) and was never a card to return.
+      // D-284 (CR 603.7c, 400.7, 603.10a): "When this creature dies, you may return it to the battlefield under its owner's control at the beginning of your
+      // next upkeep": the card is the one the dying creature became, found now (in the graveyard, where it is expected, as `triggerCard` reads it); one that
+      // is gone from there when the ability triggers is a new object and is not found. A commander that went to the command zone (CR 903.9a) is not in the
+      // graveyard, and a token that died has ceased to exist (CR 111.8): nothing is created for them.
       if (effect.effect.kind === 'moveToZone') {
         const back: Effect = { ...effect.effect, objects: { kind: 'triggerSubject' } };
         const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: back };
+        const cards =
+          effect.effect.objects.kind === 'triggerCard'
+            ? resolveObjects(state, effect.effect.objects, ctx, targets)
+            : (res.lastMoved ?? []);
         return done({
           ...state,
           delayedTriggers: [
             ...state.delayedTriggers,
-            ...(res.lastMoved ?? [])
+            ...cards
               .filter((card) => state.objects[card]?.token === null)
               .map((card) => ({
                 source: res.source,
@@ -905,6 +983,10 @@ function runEffect(
     case 'empowerJace':
       // CR 701.71a (D-201): the token, the choice and the counters come up as the instruction runs (rules/empower.ts).
       return done(state, [], [{ kind: 'empowerJace', amount: effect.amount, chosen: null }]);
+
+    case 'pair':
+      // CR 702.95a, 702.95c (D-286): the creature to pair with is chosen as this comes up (rules/soulbond.ts).
+      return done(state, [], [{ kind: 'pair', partner: effect.partner, chosen: null }]);
 
     case 'ringTempts':
       // CR 701.54a (D-196): the controller's Ring-bearer is chosen as this comes up (rules/ring.ts).
@@ -1112,6 +1194,16 @@ function runEffect(
         if (effect.kind === 'loseLife') lost += Math.max(0, amount);
       }
       return { ...done(next, events), ...(lost > 0 ? { lifeLost: lost } : {}) };
+    }
+
+    case 'meld':
+      // CR 701.42a (D-278): exile the permanent and its counterpart, then meld them.
+      return runMeld(state, res, effect);
+
+    case 'loseGame': {
+      // CR 104.3e (D-269): "each player this creature attacked this turn loses the game": the players the selector names lose it together.
+      const lost = loseTheGame(next, resolvePlayers(state, effect.player, ctx, targets));
+      return done(lost.state, [...events, ...lost.events]);
     }
 
     case 'setLifeTotal': {
@@ -1347,6 +1439,12 @@ function runEffect(
       return { ...done(next, events), performed: shuffled };
     }
 
+    case 'rollDie': {
+      // CR 706.1, 706.2 (D-271): the controller rolls one die; the result stays for the rest of this resolution, which `dieResult` reads.
+      const rolled = rollDie(next, res.controller, effect.sides);
+      return { ...done(rolled.state, rolled.events), dieResult: rolled.result };
+    }
+
     case 'playersMay': {
       // D-210 (CR 608.2d, 101.4): each player named, in order, is asked whether to do it.
       const asked: Instruction[] = resolvePlayers(state, effect.players, ctx, targets).map(
@@ -1434,6 +1532,10 @@ function runEffect(
     case 'splitCostExiled':
       // D-232: "An opponent chooses one of the exiled cards. You put that card on the bottom of your library and return the other ..." (rules/activation-exile.ts).
       return startSplit(state, res);
+
+    case 'returnGraveyardPair':
+      // D-272: "Choose a creature card in an opponent's graveyard, then that player chooses ... You may return those cards ..." (rules/graveyard-pair.ts).
+      return done(state, [], [startGraveyardPair(effect.cardType)]);
 
     case 'sparePermanents':
       // D-231: "For each player, you choose ... Then each player sacrifices all other nonland permanents they control" (rules/spare.ts).
@@ -1645,6 +1747,8 @@ function runEffect(
         ...ctx,
         targets,
         ...(res.performed === undefined ? {} : { performed: res.performed }),
+        // D-271: "If the result is 1": the die the earlier instruction rolled.
+        ...(res.dieResult === undefined ? {} : { dieResult: res.dieResult }),
       });
       const chosen = holds ? effect.effect : effect.else;
       return chosen === undefined

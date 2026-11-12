@@ -12,14 +12,19 @@ import {
   cardsInGraveyardHolds,
   controlsCommander,
   enteredThisTurnHolds,
+  lifeGainedThisTurnHolds,
   lifeTotalHolds,
   playerDealtDamageHolds,
 } from './condition-reads';
 import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
+import { designationHolders } from './designations';
 import { manaSpentOf } from './mana-spent';
+import { ownsAndControlsNamedHolds } from './meld-condition';
+import { partnerOf } from './pairing';
 import { ringBearerOf } from './ring-bearer';
 import { matchesFilter, resolveObjects, resolvePlayers } from './select';
+import { soulbondReadyHolds } from './soulbond';
 import { objectOrLki } from './source-info';
 
 /** CR 702.105a (D-151): `source` is attacking a player with the most life or tied for the most among the players still in the game. */
@@ -57,6 +62,8 @@ export interface ConditionContext {
    * D-120): the creature that entered. Absent where there is none, which fails that condition closed.
    */
   readonly triggerSubject?: ObjectId;
+  /** The player the event of the trigger is about (`triggerPlayerHasMore`): the active player of a step trigger, the player who drew, who cast, ... */
+  readonly triggerPlayer?: SeatId;
   /**
    * What the resolving effect knows (D-135), for `objectMatches` and `didPrevious`: the targets still legal, what the earlier
    * move effect produced (`moved`) and how much the instructions since the last `may` effect did (`performed`). Absent
@@ -65,6 +72,8 @@ export interface ConditionContext {
   readonly targets?: readonly ChosenTarget[];
   readonly moved?: readonly ObjectId[];
   readonly performed?: number;
+  /** The result of the latest die the resolution rolled, for `dieResult` (D-271). Absent where none was rolled, which fails that condition closed. */
+  readonly dieResult?: number;
   /** What the earlier instructions of this resolution did, for `thisWayAtLeast` (D-210). */
   readonly thisWay?: ThisWayCounts;
   /** For `attackersAttackedYou` (D-149): the players the creatures of the trigger's attack event were declared as attacking. */
@@ -285,8 +294,9 @@ export function evaluateCondition(
     case 'playerHasDesignation': {
       // D-131, CR 725: whether the holder of the designation is one of the players the selector names. Nobody has
       // it until an effect gives it (CR 725.1).
-      const holder = state.monarch;
-      if (holder === null) return false;
+      // The city's blessing (CR 702.131c, D-264) can be had by several players, so it is any of them.
+      const holders = designationHolders(state, condition.designation);
+      if (holders.length === 0) return false;
       // (The validator lets a condition name only players that need neither a target nor the trigger subject.)
       const named = resolvePlayers(
         state,
@@ -294,7 +304,7 @@ export function evaluateCondition(
         { controller: ctx.controller, source: ctx.source },
         [],
       );
-      return named.includes(holder);
+      return named.some((seat) => holders.includes(seat));
     }
     case 'ownTurnNumber': {
       // CR 500.1 (D-149): the controller's own turn, and how many turns they have had (this one included).
@@ -382,6 +392,23 @@ export function evaluateCondition(
     case 'playerDealtDamage':
       // D-151, CR 120.3: the damage dealt to the controller, or to an opponent, this turn.
       return playerDealtDamageHolds(state, ctx.controller, condition);
+    case 'lifeGainedThisTurn':
+      // D-252, CR 119.3: the life the controller has gained this turn, from the turn log.
+      return lifeGainedThisTurnHolds(state, ctx.controller, condition);
+    case 'dieResult': {
+      // CR 706.2, 706.3a (D-271): the result of the die rolled earlier in this resolution against the number; no die rolled, no result.
+      if (ctx.dieResult === undefined) return false;
+      const { cmp, value } = condition.compare;
+      if (cmp === 'atLeast') return ctx.dieResult >= value;
+      if (cmp === 'atMost') return ctx.dieResult <= value;
+      return ctx.dieResult === value;
+    }
+    case 'thisInYourGraveyard': {
+      // CR 113.6b, 603.4, 400.7 (D-271): the card itself is in its owner's graveyard, and the owner is the controller of the ability (the card has no
+      // controller in a graveyard, CR 108.4a). A card that has left is another object, so it is read live, never from last-known information.
+      const source = ctx.source === null ? undefined : state.objects[ctx.source];
+      return source !== undefined && source.zone === 'graveyard' && source.owner === ctx.controller;
+    }
     case 'controlsRingBearer':
       // CR 701.54e (D-196): a creature on the battlefield under the controller's control with their Ring-bearer designation.
       return ringBearerOf(state, ctx.controller) !== null;
@@ -396,6 +423,24 @@ export function evaluateCondition(
         playerStatOf(state, ctx.controller, condition.stat)
       );
     }
+    case 'triggerPlayerHasMore':
+      // CR 603.4, 110.2: "that player", the player the event is about, has more of the stat than the controller of the ability.
+      return (
+        ctx.triggerPlayer !== undefined &&
+        playerStatOf(state, ctx.triggerPlayer, condition.stat) >
+          playerStatOf(state, ctx.controller, condition.stat)
+      );
+    case 'paired': {
+      // CR 702.95b (D-286): the permanent the condition belongs to is paired with a creature now, both on the battlefield.
+      const own = ctx.source === null ? undefined : state.objects[ctx.source];
+      return own !== undefined && partnerOf(state, own) !== null;
+    }
+    case 'soulbondReady':
+      // CR 702.95a, 603.4 (D-286): the intervening "if" of the two abilities soulbond stands for.
+      return soulbondReadyHolds(state, condition, ctx);
+    case 'ownsAndControlsNamed':
+      // CR 701.42a, 603.4 (D-278): the source and a permanent with a name, both owned and controlled by the controller.
+      return ownsAndControlsNamedHolds(state, condition, ctx.controller, ctx.source);
     case 'and':
       return condition.terms.every((t) => evaluateCondition(state, t, ctx));
     case 'or':

@@ -12,6 +12,7 @@ import type {
   ObjectId,
   ObjectView,
 } from '@commander-arena/engine';
+import { sharesLandType } from '@commander-arena/engine';
 import { cardNoun, chosenCardMoveText, findEffect, lookAtTopText } from '../../game/artifacts-text';
 import { castFreeText } from '../../game/dinosaurs-text';
 import { beholdQuality, beholdReminder } from '../../game/dragons-text';
@@ -21,7 +22,7 @@ import { unlessPaysPrompt, wardPrompt } from './optional';
 import { togglePermanent } from './permanents';
 
 type Range = Pick<ChooseCardsDecision, 'min' | 'max'> &
-  Partial<Pick<ChooseCardsDecision, 'orSingle'>>;
+  Partial<Pick<ChooseCardsDecision, 'orSingle' | 'shareLandType'>>;
 
 /**
  * Toggles a card, keeping the order of the picks. Clicking a chosen card takes it back (the later
@@ -41,6 +42,10 @@ export function toggleFound(
  * discard an artifact card" (D-139, `orSingle`) takes exactly `max` cards, or one card of its list alone.
  */
 export function foundReady(chosen: readonly ObjectId[], decision: Range): boolean {
+  // D-262: "up to two basic land cards that share a land type": the cards picked need a land type in common, which the engine would refuse otherwise.
+  if (decision.shareLandType !== undefined && !sharesLandType(chosen, decision.shareLandType)) {
+    return false;
+  }
   const { orSingle } = decision;
   if (orSingle !== undefined && chosen.length !== decision.max) {
     const [only] = chosen;
@@ -52,6 +57,13 @@ export function foundReady(chosen: readonly ObjectId[], decision: Range): boolea
 /** Why Confirm is disabled (its tooltip), or null when the picks may be sent. */
 export function foundHint(chosen: readonly ObjectId[], decision: Range): string | null {
   if (foundReady(chosen, decision)) return null;
+  if (
+    decision.shareLandType !== undefined &&
+    chosen.length >= decision.min &&
+    chosen.length <= decision.max
+  ) {
+    return 'Choose lands that share a land type';
+  }
   if (decision.orSingle !== undefined) {
     return `Choose ${plural(decision.max, 'card')}, or one card marked “${ALONE}”`;
   }
@@ -121,6 +133,8 @@ export function confirmLabel(
   if (decision.purpose === 'split') return 'Choose';
   // D-232: the card a permanent becomes a copy of (Spirit of Resilience); the choice is made, so there is no "none".
   if (decision.purpose === 'copy') return 'Copy';
+  // D-272: a creature card of a graveyard chosen for Dawnbreak Reclaimer's pair; the choice is made, so there is no "none".
+  if (decision.purpose === 'pair') return 'Choose';
   // D-151 (CR 701.9): "Discard any number of cards": Confirm works with none.
   if (decision.purpose === 'discard' && chosen.length === 0 && (decision.min ?? 1) === 0) {
     return 'Discard none';
@@ -213,6 +227,7 @@ export function foundBadge(
   if (decision.purpose === 'reveal') return 'Reveal';
   if (decision.purpose === 'split') return 'To the bottom';
   if (decision.purpose === 'copy') return 'Copy';
+  if (decision.purpose === 'pair') return 'Chosen';
   if (decision.purpose === 'exile') return 'Exile';
   if (decision.purpose === 'move') return 'Put';
   if (decision.purpose === 'lookTake') {
@@ -278,9 +293,10 @@ export function pickerCards(view: GameView, decision: ChooseCardsDecision): read
   }
   if (decision.zone === 'hand') return myHand(view).filter((o) => decision.legal.includes(o.id));
   if (decision.zone === 'graveyard') {
-    return (view.seats[decision.seat]?.graveyard ?? []).filter((o) =>
-      decision.legal.includes(o.id),
-    );
+    // D-272: the cards may be in the graveyard of another player ("a creature card in an opponent's graveyard"); every graveyard is public (CR 404.2).
+    return view.seats
+      .flatMap((seat) => seat.graveyard)
+      .filter((o) => decision.legal.includes(o.id));
   }
   // D-145: a card to cast or play from exile (Hideaway's card, face down; the view shows it to the player who may look at it).
   if (decision.zone === 'exile') return view.exile.filter((o) => decision.legal.includes(o.id));
@@ -354,6 +370,7 @@ const WAITING_WORDS: Readonly<Record<NonNullable<GameView['waitingOn']>['purpose
   reveal: 'choosing a card to reveal',
   split: 'choosing one of the exiled cards',
   copy: 'choosing a card to become a copy of',
+  pair: 'choosing a card in a graveyard',
 };
 
 /**
@@ -531,6 +548,10 @@ function castPrompt(decision: ChooseCardsDecision, index: Index): string {
 export function discardTitle(decision: ChooseCardsDecision, index: Index): string {
   if (decision.purpose === 'move')
     return `Put onto the battlefield for ${nameOf(index, decision.source)}`;
+  // D-272: the two choices of Dawnbreak Reclaimer's ability.
+  if (decision.purpose === 'pair') {
+    return `Choose a card in a graveyard (${stackName(index, decision.source)})`;
+  }
   if (decision.purpose === 'behold') {
     const effect = beholdEffect(decision, index);
     const quality = effect === null ? null : beholdQuality(effect.filter);
