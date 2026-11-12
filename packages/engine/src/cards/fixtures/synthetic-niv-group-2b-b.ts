@@ -145,4 +145,39 @@ export const SYNTHETIC_NIV_GROUP_2B_B_LIST: readonly CardDefinition[] = [
       effect: { kind: 'dealDamage', amount: 1, to: { kind: 'target', id: 't1' } },
     },
   }),
+  // "Each opponent mills a card. You may play that card this turn." (the permission is the controller's, so a card of an opponent's graveyard gets none)
+  singleFace({
+    name: 'SYNTHETIC Spite Mill Rite',
+    manaCost: ['1', 'R'],
+    types: ['sorcery'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText: 'Each opponent mills a card. You may play that card this turn.',
+    spell: {
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'mill', player: { kind: 'eachOpponent' }, count: 1 },
+          { kind: 'mayPlay', objects: { kind: 'moved' }, lasts: 'endOfTurn' },
+        ],
+      },
+    },
+  }),
+  // "{T}: Add {C}. When that mana is spent to cast an artifact spell, copy that spell." (a rider that names a type an ability's source can have)
+  singleFace({
+    name: 'SYNTHETIC Artifact Copier',
+    manaCost: ['3'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText: '{T}: Add {C}. When that mana is spent to cast an artifact spell, copy that spell.',
+    abilities: [
+      {
+        kind: 'mana',
+        cost: [{ kind: 'tap' }],
+        production: { kind: 'fixed', mana: ['C'] },
+        spentRider: { spells: { types: ['artifact'] }, grants: { copySpell: 'no' } },
+      },
+    ],
+  }),
 ];

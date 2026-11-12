@@ -15,6 +15,8 @@ const DOUBLE = 'SYNTHETIC Double Mill Rite';
 const TABLET = 'SYNTHETIC Spell Tablet';
 const GOGGLES = 'SYNTHETIC Mirror Goggles';
 const EXACT = 'SYNTHETIC Exact Goggles';
+const SPITE = 'SYNTHETIC Spite Mill Rite';
+const ARTIFACT_COPIER = 'SYNTHETIC Artifact Copier';
 const BLUE_BOLT = 'SYNTHETIC Blue Bolt';
 const SINGE = 'SYNTHETIC Twin Singe';
 const SINK = 'SYNTHETIC Mana Sink';
@@ -23,9 +25,12 @@ const GOBLIN = 'Raging Goblin'; // {R} creature
 const FILLER = Array.from({ length: 10 }, () => 'Mountain');
 
 describe('the cards are valid', () => {
-  test.each([RITE, DOUBLE, TABLET, GOGGLES, EXACT, BLUE_BOLT, SINGE])('%s', (name) => {
-    expect(validateCard(syntheticCard(name))).toEqual([]);
-  });
+  test.each([RITE, DOUBLE, TABLET, GOGGLES, EXACT, BLUE_BOLT, SINGE, SPITE, ARTIFACT_COPIER])(
+    '%s',
+    (name) => {
+      expect(validateCard(syntheticCard(name))).toEqual([]);
+    },
+  );
 
   test('a copy rider needs a mode, and a color of a spell is a color', () => {
     const card = syntheticCard(GOGGLES);
@@ -187,6 +192,22 @@ describe('"Mill a card. You may play that card this turn."', () => {
     // It resolved into the graveyard as a new object (CR 400.7): the permission did not follow it.
     g.expect.zone(BOLT, 'graveyard', { seat: 0 });
     g.expect.illegal(0, { cast: BOLT });
+  });
+
+  test("a card of the opponent's graveyard is not the controller's to play: the permission is for cards they own", () => {
+    const g = scenario()
+      .seat(0)
+      .hand(SPITE)
+      .battlefield('Mountain', 'Mountain', 'Mountain')
+      .library(...FILLER)
+      .seat(1)
+      .library(BOLT, ...FILLER)
+      .at('precombatMain')
+      .build();
+    g.act(0).cast(SPITE, { pay: true });
+    g.passAll();
+    g.expect.zone(BOLT, 'graveyard', { seat: 1 });
+    g.expect.illegal(0, { cast: { name: BOLT, seat: 1 } });
   });
 
   test('an empty library mills nothing and nothing happens', () => {
@@ -383,6 +404,12 @@ describe('"{T}: Add {R}. When that mana is spent to cast a red instant or sorcer
 
   test('mana spent on an ability, not a spell, carries no copy: nothing goes on the stack but the ability', () => {
     const g = goggles([], [GOGGLES, GOGGLES, SINK]);
+    g.act(0).activate(SINK, { pay: true });
+    g.expect.stack([`${SINK} (ability)`]);
+  });
+
+  test('mana spent on an ability is not spent on a spell even when the rider names the type the ability source has', () => {
+    const g = goggles([], [ARTIFACT_COPIER, ARTIFACT_COPIER, SINK]);
     g.act(0).activate(SINK, { pay: true });
     g.expect.stack([`${SINK} (ability)`]);
   });
