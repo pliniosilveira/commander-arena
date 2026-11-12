@@ -398,6 +398,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
   ),
   'condition.entered-this-turn': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
+  // Stage P69 (D-941): the die roll and the card in the graveyard (Arden Angel).
+  'effect.roll-die': spell((e) => `${cap(e)}.`),
+  'condition.die-result': spell((e) => `Roll a twenty-sided die. If ${e}, you gain 1 life.`),
+  'condition.this-in-your-graveyard': permanent(
+    (e) =>
+      `At the beginning of your upkeep, if ${e}, roll a four-sided die. If the result is 1, return ~ from your graveyard to the battlefield.`,
+  ),
   'noun.each-other-opponent': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.other-targets': spell((e) => `~ deals 1 damage to any target and 1 damage to ${e}.`),
   'amount.for-each-still-exiled': spell((e) => `~ deals 2 damage to each opponent ${e}.`),

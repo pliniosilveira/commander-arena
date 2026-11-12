@@ -464,6 +464,10 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'lifeTotal'; readonly compare: IrComparison; readonly aboveStarting?: true }
     // D-252 (the Bruna deck): "you gained 3 or more life this turn" (CR 119.3)
     | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
+    // D-941 (CR 706.2, 706.3a): "the result is 1", "the result is 4 or more": the die the roll before it in the same text rolled
+    | { readonly kind: 'dieResult'; readonly compare: IrComparison }
+    // D-941 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard
+    | { readonly kind: 'thisInYourGraveyard' }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
     | { readonly kind: 'cardsInGraveyard'; readonly compare: IrComparison }
     // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat; with a

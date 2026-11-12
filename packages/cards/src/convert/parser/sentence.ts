@@ -88,8 +88,13 @@ const TURN_CONDITIONS = [
  * trailing form is not read, and a triggered ability's own "if" before its effect is the trigger's (the intervening "if", CR 603.4).
  */
 const LIFE_LEAD_CONDITIONS = ['condition.life-total'] as const;
+ * "If the result is 1, ..." (D-941, CR 706.2, 706.3a): the result of the roll before it. A sentence may start with it, or end with it after one
+ * instruction; the lowering reads it only after a roll of the same text.
+ */
+const DIE_CONDITIONS = ['condition.die-result'] as const;
 
 const LEAD_CONDITIONS = [
+  ...DIE_CONDITIONS,
   // Stage P52 (D-210): "If a creature card was discarded this way, ..." after a discard.
   'condition.discarded-this-way',
   ...LEAD_GAME_STATE_CONDITIONS,
@@ -153,6 +158,7 @@ const IF_KICKED_OR_YOU_DO = leadCondition(true);
  * stops where it always did.
  */
 const TRAILING_CONDITIONS = [
+  ...DIE_CONDITIONS,
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
   ...CONTROL_CONDITIONS,

@@ -163,6 +163,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
     'gainControl',
     'shuffle',
+    // D-941: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
+    'rollDie',
     'scry',
     'surveil',
     'lookAndReorder',
@@ -668,6 +670,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerDealtDamage',
     // D-252: "if you gained 3 or more life this turn".
     'lifeGainedThisTurn',
+    // D-941: "if the result is 1" (after a die roll), "if this card is in your graveyard".
+    'dieResult',
+    'thisInYourGraveyard',
     // D-151: "Khans — ..." (the option the permanent chose as it entered).
     'chosenOption',
     // D-151: Dethrone ("attacking the player with the most life or tied for most life") and Pack tactics ("total power 6 or greater").
@@ -1139,6 +1144,10 @@ export const CONDITION_KINDS = [
   'playerDealtDamage',
   /** "If you gained 3 or more life this turn" (D-252): the engine's `lifeGainedThisTurn`. */
   'lifeGainedThisTurn',
+  /** "If the result is 1" after a die roll (CR 706.2, D-941): the engine's `dieResult`. */
+  'dieResult',
+  /** "If this card is in your graveyard" (CR 113.6b, D-941): the engine's `thisInYourGraveyard`. */
+  'thisInYourGraveyard',
   /** "Khans — ..." (D-151): the engine's `chosenOption`, a linked ability of "choose Khans or Dragons". */
   'chosenOption',
   /** "Attacks the player with the most life or tied for most life" (D-151): the engine's `attackingMostLife`. */
@@ -1441,6 +1450,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   requireAttack: true,
   gainControl: true,
   shuffle: true,
+  rollDie: true,
   scry: true,
   surveil: true,
   lookAndReorder: true,

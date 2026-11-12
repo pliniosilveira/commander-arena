@@ -359,6 +359,15 @@ export function describeEvent(
         [],
         'CR 704.5b',
       );
+    case 'dieRolled':
+      // CR 706.1, 706.2 (D-941): the natural result of a die, which an ability may read.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'roll', 'rolls')} a ${event.sides}-sided die: ${event.result}.`,
+        event.seat,
+        [],
+        'CR 706.2',
+      );
     case 'libraryShuffled':
       return line(
         'detail',

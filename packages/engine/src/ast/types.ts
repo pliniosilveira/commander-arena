@@ -2038,6 +2038,15 @@ export type Effect =
   /** CR 701.24 (Shuffle): each player `player` names shuffles their library ("Its controller shuffles"). */
   | { readonly kind: 'shuffle'; readonly player: PlayerSelector }
   /**
+   * "Roll a four-sided die" (CR 706.1, D-941): the controller of the effect rolls one die of `sides` sides, a whole number from 2 up (CR 706.1a: a die has N
+   * equally likely outcomes, numbered 1 to N). The natural result (CR 706.2: the engine has no modifiers of a roll) is drawn from the seeded generator of the
+   * game state (`nextInt`, one draw), emitted as the `dieRolled` event and kept for the rest of the resolution of this spell or ability: the condition
+   * `dieResult` of a later `conditional` reads it ("If the result is 1, ..."; CR 706.3b: the roll, what is done with its result and a results table are
+   * one ability). A later roll of the same resolution replaces it. Only one die, rolled by the controller; "roll two dice", "each player rolls", modifiers,
+   * rerolls and triggers on a roll are not built (`docs/ROADMAP.md`).
+   */
+  | { readonly kind: 'rollDie'; readonly sides: number }
+  /**
    * CR 701.22 (Scry): look at the top `count` cards of the library, put any number of them on the
    * bottom in any order and the rest on top in any order. `player` is left out or `you`: the
    * controller of the effect scries (another player's scry is not supported, `docs/ROADMAP.md`).
@@ -3371,6 +3380,18 @@ export type Condition =
    * after replacement, summed; a gain of 0 is no event, CR 119.9). Reads the turn log only, so it is read as the event happens and again as the ability resolves.
    */
   | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
+  /**
+   * "If the result is 1", "if the result is 10 or more" (CR 706.2, 706.3a, D-941): the result of the latest `rollDie` of this resolution against a whole number.
+   * Only in a `conditional` after a `rollDie` of the same sequence (`validateCard` checks it); false if no die was rolled.
+   */
+  | { readonly kind: 'dieResult'; readonly compare: NumberComparison }
+  /**
+   * "If this card is in your graveyard" (CR 113.6b, 603.4, D-941): the source of the condition is an object that is in its owner's graveyard, and the
+   * controller of the condition is that owner. Read from the object itself (not from last-known information: once the card leaves, it is a new object
+   * and the condition is false, CR 400.7), as the event happens and again as the ability resolves. Only for an ability that works from the graveyard
+   * (`functionsIn: 'graveyard'`).
+   */
+  | { readonly kind: 'thisInYourGraveyard' }
   /**
    * "If you control your Ring-bearer" (CR 701.54e, D-196): the controller of the condition has a creature that is on the battlefield under their
    * control and is their Ring-bearer. Not for a static ability.

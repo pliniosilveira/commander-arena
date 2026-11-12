@@ -23,6 +23,7 @@ import type { IrArg, IrCost, IrNoun, IrNounList, IrZoneSpec, Span } from '../../
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
+import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
 import { ATTACH_RULES } from './attach';
 import { BECOMES_RULES } from './becomes';
@@ -831,6 +832,8 @@ export const EFFECT_RULES = [
   ...BRUNA_EFFECT_RULES,
   // D-932: "return the exiled cards to their owners' hands" (Angel of Serenity).
   ...CROSS_ZONE_EFFECT_RULES,
+  // Stage P69 (D-941): rolling a die, "roll a four-sided die".
+  ...ARDEN_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.

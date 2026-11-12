@@ -286,6 +286,20 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'yourMainPhase':
       // D-187 (CR 505.1): "if it's your main phase".
       return `it's ${negate ? 'not ' : ''}your main phase`;
+    case 'dieResult': {
+      // D-941 (CR 706.2, 706.3a): "if the result is 1", "if the result is 4 or more".
+      const { cmp, value } = condition.compare;
+      const text =
+        cmp === 'atLeast'
+          ? `the result is ${value} or more`
+          : cmp === 'atMost'
+            ? `the result is ${value} or less`
+            : `the result is ${value}`;
+      return negate ? `it's not true that ${text}` : text;
+    }
+    case 'thisInYourGraveyard':
+      // D-941 (CR 113.6b, 603.4): "if this card is in your graveyard".
+      return `this card is ${negate ? 'not ' : ''}in your graveyard`;
     case 'cardLeftYourGraveyard':
       // D-206 (CR 400.7): "if a card left your graveyard this turn".
       return negate

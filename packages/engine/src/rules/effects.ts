@@ -73,6 +73,7 @@ import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
 import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
+import { rollDie } from './roll-die';
 import { controlledCandidates, sacrificeCandidates, sacrificePermanent } from './sacrifice';
 import { runChooseSacrifice, sacrificeInstructions } from './sacrifice-choice';
 import { runDiscard, runSearch } from './search';
@@ -1365,6 +1366,12 @@ function runEffect(
       return { ...done(next, events), performed: shuffled };
     }
 
+    case 'rollDie': {
+      // CR 706.1, 706.2 (D-941): the controller rolls one die; the result stays for the rest of this resolution, which `dieResult` reads.
+      const rolled = rollDie(next, res.controller, effect.sides);
+      return { ...done(rolled.state, rolled.events), dieResult: rolled.result };
+    }
+
     case 'playersMay': {
       // D-210 (CR 608.2d, 101.4): each player named, in order, is asked whether to do it.
       const asked: Instruction[] = resolvePlayers(state, effect.players, ctx, targets).map(
@@ -1663,6 +1670,8 @@ function runEffect(
         ...ctx,
         targets,
         ...(res.performed === undefined ? {} : { performed: res.performed }),
+        // D-941: "If the result is 1": the die the earlier instruction rolled.
+        ...(res.dieResult === undefined ? {} : { dieResult: res.dieResult }),
       });
       const chosen = holds ? effect.effect : effect.else;
       return chosen === undefined

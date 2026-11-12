@@ -142,6 +142,8 @@ const NO_UNDO_EVENTS: ReadonlySet<GameEvent['kind']> = new Set([
   'cardDrawn',
   'drewFromEmptyLibrary',
   'libraryShuffled',
+  // D-941: a die roll is random like a shuffle: an undo past it would let the player roll again.
+  'dieRolled',
   'mulliganTaken',
   'handKept',
   'turnBegan',

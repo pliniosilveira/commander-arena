@@ -79,6 +79,13 @@ export interface LowerContext {
   /** Set when a lowering used `graveyardSource`: the ability functions from the graveyard. */
   usedGraveyardSource: boolean;
   /**
+   * The number of sides of the die the text rolled before this point (D-941, CR 706.2): the instruction "roll a four-sided die" sets it, and "the result is 1"
+   * reads it. Null before any roll; a second roll in one text is refused.
+   */
+  dieSides: number | null;
+  /** True only while the intervening "if" of a triggered ability is lowered (D-941): the one place "~ is in your graveyard" is read. */
+  interveningCondition: boolean;
+  /**
    * True when "it" in the body of a triggered ability is the card the permanent became (stage P30, D-135): every event of the
    * trigger is `~` dying or leaving the battlefield, so "exile it" and "put it into its owner's library" name `thisCard`.
    */
@@ -181,6 +188,8 @@ export function newContext(
     movedOnto: null,
     graveyardSource: false,
     usedGraveyardSource: false,
+    dieSides: null,
+    interveningCondition: false,
     itIsCard: false,
     cardName,
     selfName: '',

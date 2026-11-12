@@ -69,6 +69,8 @@ export interface ConditionContext {
   readonly targets?: readonly ChosenTarget[];
   readonly moved?: readonly ObjectId[];
   readonly performed?: number;
+  /** The result of the latest die the resolution rolled, for `dieResult` (D-941). Absent where none was rolled, which fails that condition closed. */
+  readonly dieResult?: number;
   /** What the earlier instructions of this resolution did, for `thisWayAtLeast` (D-210). */
   readonly thisWay?: ThisWayCounts;
   /** For `attackersAttackedYou` (D-149): the players the creatures of the trigger's attack event were declared as attacking. */
@@ -390,6 +392,20 @@ export function evaluateCondition(
     case 'lifeGainedThisTurn':
       // D-252, CR 119.3: the life the controller has gained this turn, from the turn log.
       return lifeGainedThisTurnHolds(state, ctx.controller, condition);
+    case 'dieResult': {
+      // CR 706.2, 706.3a (D-941): the result of the die rolled earlier in this resolution against the number; no die rolled, no result.
+      if (ctx.dieResult === undefined) return false;
+      const { cmp, value } = condition.compare;
+      if (cmp === 'atLeast') return ctx.dieResult >= value;
+      if (cmp === 'atMost') return ctx.dieResult <= value;
+      return ctx.dieResult === value;
+    }
+    case 'thisInYourGraveyard': {
+      // CR 113.6b, 603.4, 400.7 (D-941): the card itself is in its owner's graveyard, and the owner is the controller of the ability (the card has no
+      // controller in a graveyard, CR 108.4a). A card that has left is another object, so it is read live, never from last-known information.
+      const source = ctx.source === null ? undefined : state.objects[ctx.source];
+      return source !== undefined && source.zone === 'graveyard' && source.owner === ctx.controller;
+    }
     case 'controlsRingBearer':
       // CR 701.54e (D-196): a creature on the battlefield under the controller's control with their Ring-bearer designation.
       return ringBearerOf(state, ctx.controller) !== null;

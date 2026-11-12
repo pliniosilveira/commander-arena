@@ -1368,6 +1368,8 @@ export interface ResolutionContext {
    * whether it is more than 0; a `may` effect resets it to 0 as it comes up. Absent until one is counted.
    */
   readonly performed?: number;
+  /** The natural result of the latest `rollDie` of this resolution (CR 706.2, D-941), which the condition `dieResult` reads. Absent until a die is rolled. */
+  readonly dieResult?: number;
   /**
    * The keys answered so far to the replacement questions (CR 616.1, D-191) of the instruction at the head of the queue, in the order the
    * questions came: the damage it deals is simulated again with them (nothing is dealt until no question is left) and the next question, if
