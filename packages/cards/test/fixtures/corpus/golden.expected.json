@@ -1,5 +1,5 @@
 {
-  "parserVersion": 98,
+  "parserVersion": 99,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -905,19 +905,10 @@
     "2c275a85-5a15-46cd-a6e7-add63f9b853d": {
       "name": "Sterling Grove",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{1}, Sacrifice ~: Search your library for an enchantment card, reveal it, then shuffle and put that card on top.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.search"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "03ce6236"
+      "ast": "9491d3d2"
     },
     "2c49d24a-98a4-43c2-bb59-1ef13d4214c2": {
       "name": "Untimely Malfunction",
@@ -1369,19 +1360,10 @@
     "3f4e300a-ec5c-42f3-a97b-d58e62abe22b": {
       "name": "Season of Growth",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever you cast a spell that targets a creature you control, draw a card.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.cast"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "b0045a48"
+      "ast": "15ebdb8d"
     },
     "3fd8ba0c-75ec-43ea-8706-f71e6cf1d236": {
       "name": "Champion of Wits",
@@ -1947,19 +1929,10 @@
     "6042a806-6e6a-4f1d-9563-5932a17f32f9": {
       "name": "Commune with the Gods",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.reveal-separate-piles"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "c4f4b2ad"
+      "ast": "e477ccf0"
     },
     "610af0f7-b5e3-43fb-9d02-7c59bd99034c": {
       "name": "Tear Asunder",
@@ -2531,19 +2504,10 @@
     "79085dea-8daa-41c0-a975-61e3e6da2e26": {
       "name": "Shielded by Faith",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Whenever a creature enters, you may attach ~ to that creature.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.attach"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "e4cf3b76"
+      "ast": "fd3ec62c"
     },
     "79bc2c6d-b03d-4ceb-b468-293378ec73ae": {
       "name": "Midnight Tilling",
@@ -2764,19 +2728,10 @@
     "81a51328-b995-4f3b-90bc-a20ae21dd254": {
       "name": "Spirit Mantle",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Enchanted creature gets +1/+1 and has protection from creatures.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "159161ae"
+      "ast": "ef95aec4"
     },
     "82004860-e589-4e38-8d61-8c0210e4ea39": {
       "name": "Demonic Tutor",
@@ -3088,18 +3043,10 @@
     "8e589dca-d31e-4d2f-81b1-18e5f9198795": {
       "name": "Timely Ward",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "You may cast ~ as though it had flash if it targets a commander.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "95ffa2c2"
+      "ast": "f7b5da7a"
     },
     "8e7641e1-e814-4d5a-9cb3-71ad2f4ceee8": {
       "name": "Rugged Prairie",
@@ -3209,18 +3156,10 @@
     "971b30a8-4ab4-4e96-9d50-597da4d52994": {
       "name": "Danitha, New Benalia's Light",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Once during each of your turns, you may cast an Aura or Equipment spell from your graveyard.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "fb637b86"
+      "ast": "4bbc4df9"
     },
     "97407cd0-2bd2-4074-94d3-4ec3d243fa78": {
       "name": "Rishkar's Expertise",
@@ -3696,19 +3635,10 @@
     "add60aad-2532-4f59-bfb9-f0168c2adda6": {
       "name": "Cosmic Rebirth",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Choose target permanent card in your graveyard. If it has mana value 3 or less, you may put it onto the battlefield. If you don't put it onto the battlefield, put it into your hand.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "spell.effect"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "9187f09c"
+      "ast": "a9546bd9"
     },
     "ae120613-97d6-4393-b39d-c3e6c076f5d6": {
       "name": "Deflecting Swat",
@@ -4063,19 +3993,10 @@
     "c5229c17-b7be-4b05-b683-f2277edc4849": {
       "name": "Enlightened Tutor",
       "group": "training",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Search your library for an artifact or enchantment card, reveal it, then shuffle and put that card on top.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.search"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "b159d360"
+      "ast": "dc095baf"
     },
     "c53ba31a-ba27-4e17-9a92-311acb1cab29": {
       "name": "Myr Battlesphere",
@@ -4298,19 +4219,10 @@
     "d30d8968-ec24-4155-97e2-28efd52c8810": {
       "name": "Malevolent Rumble",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Reveal the top four cards of your library. You may put a permanent card from among them into your hand. Put the rest into your graveyard. Create a 0/1 colorless Eldrazi Spawn creature token with \"Sacrifice ~: Add {C}.\"",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.reveal-separate-piles"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d4fea0c1"
+      "ast": "2e12ae48"
     },
     "d3576617-7867-4c3d-aa31-d6742483465b": {
       "name": "Chandra's Emberling",
@@ -4435,27 +4347,10 @@
     "d8599f06-f030-4575-8497-307a4d7ec182": {
       "name": "Spiral into Solitude",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Enchanted creature can't attack or block.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "static.attached"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{1}{W}, Blight 1, Sacrifice ~: Exile enchanted creature.",
-          "reason": "unrecognised",
-          "slot": "cost",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "a0df5185"
+      "ast": "eff7245f"
     },
     "d8afd7b0-7cd0-4caf-ac43-a0e24a93ca09": {
       "name": "Firemind Vessel",
@@ -4695,19 +4590,10 @@
     "e33dec01-c114-436a-befc-dab4e806c10b": {
       "name": "Vessel of Nascency",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "{1}{G}, Sacrifice ~: Reveal the top four cards of your library. You may put an artifact, creature, enchantment, land, or planeswalker card from among them into your hand. Put the rest into your graveyard.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.reveal-separate-piles"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f2b7813f"
+      "ast": "6cb785aa"
     },
     "e3afc704-220f-498f-9eaa-0821b17dc24c": {
       "name": "Sakura-Tribe Elder",
@@ -4800,19 +4686,10 @@
     "ead4c01a-e2ae-49c9-95d9-651d81005907": {
       "name": "Satyr Wayfinder",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "When ~ enters, reveal the top four cards of your library. You may put a land card from among them into your hand. Put the rest into your graveyard.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.reveal-separate-piles"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "20b76d12"
+      "ast": "52b36118"
     },
     "eaffdf95-8e20-408d-99fa-3adc9e19523d": {
       "name": "Misleading Signpost",
@@ -4881,19 +4758,10 @@
     "ededbdae-d9dc-4206-9335-d7158f2d7700": {
       "name": "Vampiric Tutor",
       "group": "training",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Search your library for a card, then shuffle and put that card on top. You lose 2 life.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.search"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "be207db8"
+      "ast": "db3fc478"
     },
     "ee57fba8-e68b-4c52-8de7-9b9873d84506": {
       "name": "Homesickness",
@@ -5430,7 +5298,7 @@
   },
   "summary": {
     "training": {
-      "supported": 165,
+      "supported": 167,
       "total": 192
     },
     "holdout": {
@@ -5438,7 +5306,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 248,
+      "supported": 260,
       "total": 300
     }
   }
