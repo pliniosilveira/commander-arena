@@ -29,7 +29,7 @@ import type { GameEvent } from '../state/events';
 import { patchObject } from '../state/ops';
 import type { ActivationContext, CastingContext, GameState, StackAbility } from '../state/types';
 import { pushAbilityObject } from './ability-object';
-import { adjustedAbility } from './activate-adjust';
+import { adjustedAbility, reducedForTargets } from './activate-adjust';
 import { answerBlightCost, payBlight } from './activate-blight';
 import { answerBounceCommander, answerBounceCost, payBounce } from './activate-bounce';
 import { breakDown, type CostBreakdown, costRefusal, payImmediateCosts } from './activate-costs';
@@ -233,6 +233,25 @@ export function toActivationTargets(state: GameState, events: GameEvent[] = []):
     ),
     events,
   );
+}
+
+/**
+ * CR 601.2f, 602.2b (D-1233): the targets are chosen before the total cost is determined, so a reduction that depends on them ("Equip abilities you activate that target
+ * enchanted creature cost {3} less") is applied once they are: the ability on the stack and in the activation takes the reduced cost.
+ */
+export function reduceForChosenTargets(state: GameState): GameState {
+  const casting = state.casting;
+  const activation = casting?.activation ?? null;
+  const object = casting === null ? undefined : state.objects[casting.object];
+  const stack = object?.stack ?? null;
+  if (!casting || !activation || stack === null) return state;
+  const targets = stack.chosenTargets.flatMap((t) => (t.kind === 'object' ? [t.id] : []));
+  const reduced = reducedForTargets(state, casting.seat, activation.ability, targets);
+  if (reduced === activation.ability) return state;
+  const withStack = patchObject(state, casting.object, {
+    stack: { ...stack, ability: reduced },
+  });
+  return { ...withStack, casting: { ...casting, activation: { ...activation, ability: reduced } } };
 }
 
 /** The costs that need no mana and no choice, then mana (CR 601.2g-h), then the rest. */

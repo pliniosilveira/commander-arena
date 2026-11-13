@@ -104,6 +104,10 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:hasCounter',
   'selector:commander',
   'selector:enteredThisTurn',
+  // D-1234 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
+  'selector:attachedTo',
+  'selector:enchanted',
+  'selector:hostOfSource',
   'selector:sharesCreatureTypeWith',
   'selector:eachOtherOpponent',
   'selector:discardedThisWay',
@@ -243,6 +247,32 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
   }
+  // D-1234 (CR 303.4, 301.5, 701.3): the permanent something is attached to, and "enchanted": a permanent on the battlefield, so no member of a choice and no other zone.
+  let attachedTo: ObjectFilter['attachedTo'];
+  if (filter.attachedTo !== undefined) {
+    if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
+    parts.push('selector:attachedTo');
+    const to = filter.attachedTo;
+    // The statement the count is in says what "it" is (the lowering of a static ability does); anywhere else there is no such permanent.
+    if (to.kind === 'it') return bad([]);
+    if (to.kind === 'type') {
+      if (!to.types.every((t) => (CARD_TYPES as readonly string[]).includes(t))) return bad([]);
+      attachedTo = { kind: 'matching', filter: { types: to.types as CardType[] } };
+    } else {
+      attachedTo = { kind: to.kind };
+    }
+  }
+  if (filter.enchanted !== undefined) {
+    if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
+    parts.push('selector:enchanted');
+  }
+  // D-1234 (CR 601.2c, 303.4): "that target enchanted creature", the objects a spell targets are the permanent its source is attached to. Only a spell's filter says it
+  // (a cost reduction), as `targets`: not a member of a choice, and not together with it.
+  if (filter.targetsHost === true) {
+    if (inner || targetsObject !== undefined) return bad([]);
+    parts.push('selector:hostOfSource');
+    targetsObject = { hostOfSource: true };
+  }
   const missingParts = missingFeatures(parts);
   if (missingParts.length > 0) return bad(missingParts);
   // D-131: "creatures attacking you" (CR 508.1b): the attackers whose attack target is the controller as a player.
@@ -315,6 +345,8 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
       ? { sharesCreatureTypeWith: 'triggerSubject' as const }
       : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
+    ...(attachedTo === undefined ? {} : { attachedTo }),
+    ...(filter.enchanted === undefined ? {} : { enchanted: filter.enchanted }),
     ...compared,
     ...chosen,
     ...(anyOfFinal === undefined ? {} : { anyOf: anyOfFinal }),

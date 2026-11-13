@@ -27,6 +27,7 @@ import { ARTIFACT_CONDITION_RULES } from './artifacts';
 import { BRUNA_CONDITION_RULES } from './bruna';
 import { CHOOSER_CONDITION_RULES } from './choosers';
 import { DANITHA_G1B_CONDITION_RULES } from './danitha-g1b';
+import { DANITHA_G3_CONDITION_RULES } from './danitha-g3';
 import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
@@ -429,6 +430,8 @@ export const CONDITION_RULES = [
   ...HOFRI_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-403): "you don't put it onto the battlefield".
   ...DANITHA_G1B_CONDITION_RULES,
+  // Issue 26 (the Danitha deck, D-1235): "enchanted creature is green", "another Aura is attached to enchanted creature", "~ entered this turn".
+  ...DANITHA_G3_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,

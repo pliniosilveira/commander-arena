@@ -340,6 +340,7 @@ const CAST_HEAD: Parser<{
   readonly compared: Comparison | undefined;
   readonly notHand?: true;
   readonly anyCaster?: true;
+  readonly targetsHost?: true;
 }> = choice(
   map(sequence(CHOSEN_SUFFIX, literal(' you cast cost ')), ([chosen]) => ({
     chosen,
@@ -350,6 +351,12 @@ const CAST_HEAD: Parser<{
     chosen,
     compared: undefined,
     anyCaster: true as const,
+  })),
+  // D-1234 (Danitha group 3, CR 601.2c, 601.2f, 303.4): "Aura spells you cast that target enchanted creature cost {3} less to cast": the targets are chosen before the cost.
+  map(literal(' you cast that target enchanted creature cost '), () => ({
+    chosen: undefined,
+    compared: undefined,
+    targetsHost: true as const,
   })),
   // Stage P75 (D-235, CR 601.2a): "Spells you cast from anywhere other than your hand cost {2} less to cast".
   map(literal(' you cast from anywhere other than your hand cost '), () => ({
@@ -415,6 +422,9 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells you cast from anywhere other than your hand cost {2} less to cast.',
     'Spells you cast with mana value 5 or greater cost {1} less to cast.',
     'Creature spells you cast with toughness 3 or less cost {1} less to cast.',
+    // D-1234 (Danitha group 3): the spells that target the permanent the Aura is attached to.
+    'Aura spells you cast that target enchanted creature cost {3} less to cast.',
+    'Aura and Equipment spells you cast that target enchanted creature cost {1} less to cast.',
   ],
   rejects: [
     'Angel spells and Angel spells you cast cost {1} less to cast.',
@@ -442,13 +452,21 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     '~ costs {1} less to cast.',
     'Spells you cast from anywhere other than your graveyard cost {2} less to cast.',
     'Spells you cast from your graveyard cost {2} less to cast.',
+    'Aura spells you cast that target enchanted creature cost {3} less to cast',
+    'Aura spells you cast that target equipped creature cost {3} less to cast.',
+    'Aura spells you cast that target a creature cost {3} less to cast.',
+    'Aura spells you cast that target enchanted creature cost {3} less to activate.',
+    'Aura spells that target enchanted creature cost {3} less to cast.',
+    'Aura spells your opponents cast that target enchanted creature cost {3} less to cast.',
+    'Aura spells you cast that target enchanted creature of the chosen type cost {3} less to cast.',
+    'Aura spells you cast that target enchanted creatures cost {3} less to cast.',
   ],
   parse: (ctx, pos) => {
     // The subject and "you cast cost" are read as one: a line that merely starts like a subject
     // ("Creature spells you control can't be countered.") was never this statement.
     const r = sequence(quiet(sequence(spellSubject(), CAST_HEAD)), reduction(), PERIOD)(ctx, pos);
     if (!r.ok) return r;
-    const [[filter, { chosen, compared, notHand, anyCaster }], amount] = r.value;
+    const [[filter, { chosen, compared, notHand, anyCaster, targetsHost }], amount] = r.value;
     const subjectEnd = pos + filter.raw.length;
     const subject: IrNoun = {
       kind: 'noun',
@@ -459,6 +477,7 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
           ...(anyCaster === true ? {} : { controller: 'you' as const }),
           ...(chosen === undefined ? {} : { chosen }),
           ...(notHand === true ? { notCastFromHand: true as const } : {}),
+          ...(targetsHost === true ? { targetsHost: true as const } : {}),
         },
         compared,
       ),

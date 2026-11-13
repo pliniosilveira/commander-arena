@@ -322,6 +322,21 @@ export interface IrFilter {
   readonly notCastFromHand?: true;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
+  /**
+   * "attached to it", "attached to enchanted creature", "that's attached to a creature" (Danitha deck group 3, D-1234, CR 303.4, 301.5, 701.3): the object is a permanent attached to
+   * another one. `it` is the permanent the statement is about (the lowering of a static ability reads it as the source or, for "enchanted creature gets ...", the permanent the
+   * source is attached to); `type` a permanent of these card types.
+   */
+  readonly attachedTo?:
+    | { readonly kind: 'it' }
+    // the two things the lowering of a static ability makes of `it` (the source, or the permanent the source is attached to)
+    | { readonly kind: 'source' }
+    | { readonly kind: 'host' }
+    | { readonly kind: 'type'; readonly types: readonly string[] };
+  /** "that aren't enchanted" (`false`), "that are enchanted" (`true`) (D-1234, CR 303.4): the permanent has no Aura attached to it (or has one). */
+  readonly enchanted?: boolean;
+  /** "that target enchanted creature" (D-1234, CR 601.2c, 303.4): of a spell, that it targets the permanent the source is attached to. Read in the filter of a cost reduction only. */
+  readonly targetsHost?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
   readonly anyTarget?: boolean;
   /** The words the filter was read from, for diagnostics and templateOf. */
@@ -496,8 +511,17 @@ export interface IrCondition extends IrNode {
     // "~ is paired with another creature" (D-286, CR 702.95b): the permanent the ability is on is paired
     // (`who` is the word the text used for the permanent: `~`, or "it", which is the source only in an ability about it)
     | { readonly kind: 'paired'; readonly who: 'self' | 'it' }
-    // "~ is attached to a creature" (stage P37, D-180, CR 301.5, 303.4): the permanent this one is attached to, against a filter (`creature`)
-    | { readonly kind: 'attachedTo'; readonly filter: IrFilter }
+    // "~ is attached to a creature" (stage P37, D-180, CR 301.5, 303.4): the permanent this one is attached to, against a filter (`creature`); D-1235 (Danitha group 3):
+    // "enchanted creature is green" says the same of the permanent an Aura enchants (`via`: the word, "enchanted" for an Aura, "equipped" for an Equipment)
+    | { readonly kind: 'attachedTo'; readonly filter: IrFilter; readonly via?: 'enchanted' | 'equipped' }
+    // "another Aura is attached to enchanted creature" (D-1235, CR 303.4, 301.5): at least one other permanent of the kind is attached to the permanent the source is attached to
+    | {
+        readonly kind: 'otherAttachedToHost';
+        readonly attachment: IrFilter;
+        readonly via: 'enchanted' | 'equipped';
+      }
+    // "~ entered this turn" (D-1235, CR 400.7): the permanent itself entered the battlefield this turn
+    | { readonly kind: 'thisEnteredThisTurn' }
     // "it's untapped", "~ is untapped": this permanent against a filter (stage P29, D-133)
     // (`who` is the word the text used for the permanent: `~`, or "it", which is the source only in an ability about it)
     | { readonly kind: 'thisMatches'; readonly filter: IrFilter; readonly who?: 'self' | 'it' }
@@ -1123,6 +1147,8 @@ export type IrStaticEffect =
    * subject is `~` (the spell itself) or the spells described (`det` `each`, `controller` you).
    */
   | { readonly kind: 'costReduction'; readonly amount: IrAmount }
+  // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-1236, CR 601.2f, 602.2b, 702.6a): the generic mana taken off
+  | { readonly kind: 'abilityCostReduction'; readonly amount: number }
   /**
    * "As an additional cost to cast ~, sacrifice a creature." (stage P13, CR 118.8): costs paid with
    * the spell's total cost. The statement's subject is `~`.

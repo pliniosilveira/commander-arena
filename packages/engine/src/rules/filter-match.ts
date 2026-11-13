@@ -6,7 +6,7 @@
  * colors and subtypes it reads are the final ones). It must not
  * import `derive`: `derive` depends on it.
  */
-import type { Keyword, NumberComparison, ObjectFilter } from '../ast/types';
+import type { AttachedTo, Keyword, NumberComparison, ObjectFilter } from '../ast/types';
 import type { CardType, Color, Subtype, Supertype } from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
@@ -109,6 +109,51 @@ export interface FilterContext {
    * The subtypes of the object the trigger is about, as it last was (`sharesCreatureTypeWith`, D-261, CR 603.10a, 113.7a): read by the caller; absent fails the flag closed.
    */
   readonly subjectSubtypes?: readonly Subtype[];
+  /**
+   * What another object is, for the filters that read objects attached to this one or the one this is attached to (`attachedTo`, `enchanted`, D-1230): the caller says how
+   * (`derive` for a rule that reads the game, the view after layers 1, 4 and 5 for `derive` itself). Absent fails those filters closed.
+   */
+  readonly describeOther?: (obj: GameObject) => FilterSubject;
+}
+
+/** Whether `obj` is attached to what `attached` names (CR 303.4, 301.5, 701.3, D-1230). */
+function attachedToHolds(
+  state: GameState,
+  obj: GameObject,
+  attached: AttachedTo,
+  ctx: FilterContext,
+): boolean {
+  const target = obj.attachedTo;
+  if (target === null) return false;
+  if (attached.kind === 'source') return ctx.source !== null && target === ctx.source;
+  if (attached.kind === 'host') {
+    const source = ctx.source === null ? undefined : state.objects[ctx.source];
+    return source !== undefined && source.attachedTo !== null && target === source.attachedTo;
+  }
+  const host = state.objects[target];
+  if (host === undefined || ctx.describeOther === undefined) return false;
+  const describeOther = ctx.describeOther;
+  return matchesFilterWith(
+    state,
+    host,
+    () => describeOther(host),
+    { ...attached.filter, zone: 'battlefield' },
+    ctx,
+  );
+}
+
+/** CR 303.4: "enchanted": at least one Aura is attached to the permanent (an Equipment or a Fortification is not an Aura). Fails closed without `describeOther`. */
+function hasAuraAttached(state: GameState, obj: GameObject, ctx: FilterContext): boolean | null {
+  const describeOther = ctx.describeOther;
+  if (describeOther === undefined) return null;
+  return state.battlefield.some((id) => {
+    const other = state.objects[id];
+    return (
+      other !== undefined &&
+      other.attachedTo === obj.id &&
+      describeOther(other).subtypes.includes('Aura')
+    );
+  });
 }
 
 /**
@@ -143,6 +188,17 @@ export function matchesFilterWith(
     return false;
   }
   if (filter.tapped !== undefined && obj.tapped !== filter.tapped) return false;
+  // CR 303.4, 301.5, 701.3 (D-1230): "Aura attached to it", "attached to a creature", "creatures that aren't enchanted", "enchanted creature".
+  if (filter.attachedTo !== undefined && !attachedToHolds(state, obj, filter.attachedTo, ctx)) {
+    return false;
+  }
+  if (filter.hostOfSource === true) {
+    const source = ctx.source === null ? undefined : state.objects[ctx.source];
+    if (source === undefined || source.attachedTo !== obj.id) return false;
+  }
+  if (filter.enchanted !== undefined && hasAuraAttached(state, obj, ctx) !== filter.enchanted) {
+    return false;
+  }
   // CR 122.1 (D-145): "with a counter on it": a counter of any kind, or of the named kind.
   if (filter.hasCounter !== undefined) {
     const has =

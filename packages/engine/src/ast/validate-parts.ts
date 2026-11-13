@@ -8,6 +8,7 @@ import { GRANTABLE_KEYWORDS } from './features';
 import type {
   Ability,
   Amount,
+  AttachedTo,
   AttackedBySelector,
   ChooseSelector,
   Condition,
@@ -275,6 +276,25 @@ export function checkFilter(
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
   }
+  // D-1230: attachments: "attached to it", "that isn't enchanted", "enchanted creature" (of the source).
+  if (f.attachedTo !== undefined) checkAttachedTo(f.attachedTo, `${path}.attachedTo`, out);
+  if (f.enchanted !== undefined && typeof f.enchanted !== 'boolean') {
+    issue(out, `${path}.enchanted`, 'enchanted must be a boolean (true: has an Aura, false: has none)');
+  }
+  if (f.hostOfSource !== undefined && f.hostOfSource !== true) {
+    issue(out, `${path}.hostOfSource`, 'hostOfSource must be true');
+  }
+  if (
+    (f.attachedTo !== undefined || f.enchanted !== undefined || f.hostOfSource === true) &&
+    f.zone !== undefined &&
+    f.zone !== 'battlefield'
+  ) {
+    issue(
+      out,
+      `${path}.attachedTo`,
+      'only a permanent on the battlefield is attached to, or has something attached: the filter has no other zone',
+    );
+  }
   // D-230: "mana value X or less, where X is ...": an amount that reads no target and no earlier instruction.
   if (f.manaValueAtMost !== undefined) {
     const a = f.manaValueAtMost as { kind?: string; of?: { kind?: string } };
@@ -409,6 +429,56 @@ export function checkFilter(
         );
       }
     });
+  }
+}
+
+/** The parts of a filter a host named by `attachedTo` may have (D-1230): what layers 1, 4 and 5 give it, and its controller; nothing of layers 6 and 7, nothing of the game. */
+const HOST_FILTER_KEYS: readonly string[] = [
+  'types',
+  'notTypes',
+  'supertypes',
+  'notSupertypes',
+  'subtypes',
+  'notSubtypes',
+  'colors',
+  'colorless',
+  'controller',
+];
+
+/** D-1230: what an `attachedTo` filter names: the source, its host, or a permanent a plain filter describes. */
+function checkAttachedTo(a: AttachedTo, path: string, out: Out): void {
+  switch (a?.kind) {
+    case 'source':
+    case 'host':
+      return;
+    case 'matching': {
+      const inner = a.filter;
+      if (inner === undefined || inner === null || typeof inner !== 'object') {
+        issue(out, `${path}.filter`, 'a matching host needs a filter');
+        return;
+      }
+      checkFilter(inner, `${path}.filter`, out);
+      for (const key of Object.keys(inner)) {
+        if (!HOST_FILTER_KEYS.includes(key)) {
+          issue(
+            out,
+            `${path}.filter.${key}`,
+            'the permanent something is attached to is described by types, subtypes, colors, supertypes and its controller only',
+          );
+        }
+      }
+      if (
+        inner.controller !== undefined &&
+        inner.controller !== 'you' &&
+        inner.controller !== 'opponent' &&
+        inner.controller !== 'any'
+      ) {
+        issue(out, `${path}.filter.controller`, 'the host\'s controller is you, opponent or any');
+      }
+      return;
+    }
+    default:
+      issue(out, path, `attachedTo is source, host or matching, not ${kindOf(a)}`);
   }
 }
 
@@ -1938,6 +2008,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'controlsRingBearer':
       // CR 701.54e (D-196): read from the permanents of the controller; no operand.
+      break;
+    case 'thisEnteredThisTurn':
+      // D-1231 (CR 400.7): the permanent the condition belongs to entered this turn; no operand.
       break;
     case 'paired':
       // CR 702.95b (D-286): the permanent the condition belongs to is paired with a creature; no operand. Where it may stand (a static ability that

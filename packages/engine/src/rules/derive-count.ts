@@ -64,6 +64,8 @@ function countFresh(state: GameState, filter: ObjectFilter, source: GameObject):
     controller: controllerOf(state, source),
     source: source.id,
     ...(chosen === undefined ? {} : { sourceChosen: chosen }),
+    // D-1230: the Auras attached to a permanent, and the permanent an Aura is attached to, as layers 1, 4 and 5 leave them.
+    describeOther: (other: GameObject) => typeViewOf(state, other),
   };
   let total = 0;
   for (const id of objectsInZone(state, zone)) {

@@ -42,6 +42,7 @@ import type { GameState, PendingTrigger } from '../state/types';
 import {
   afterManaPaid,
   payCosts,
+  reduceForChosenTargets,
   setChosenModes,
   setX,
   toActivationTargets,
@@ -979,7 +980,7 @@ export function answerTargets(state: GameState, chosen: readonly ChosenTarget[])
     stack: { ...stack, chosenTargets: chosen },
   });
   // CR 602.2b: an activation goes on from the targets to its costs, a spell to its total cost.
-  return casting.activation ? payCosts(next, []) : toPayment(next, []);
+  return casting.activation ? payCosts(reduceForChosenTargets(next), []) : toPayment(next, []);
 }
 
 export function answerPayment(

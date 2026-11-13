@@ -388,6 +388,9 @@ export function evaluateCondition(
     case 'enteredThisTurn':
       // D-151: permanents that entered under the controller's control this turn (Celebration).
       return enteredThisTurnHolds(state, ctx.controller, condition);
+    case 'thisEnteredThisTurn':
+      // D-1231, CR 400.7: the source is the object that entered the battlefield this turn (a permanent that left and came back is a new object).
+      return ctx.source !== null && state.turnLog.entered.some((e) => e.object === ctx.source);
     case 'cardsInGraveyard':
       return cardsInGraveyardHolds(state, ctx.controller, condition.compare);
     case 'cardsInLibrary':

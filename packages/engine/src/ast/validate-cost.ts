@@ -233,8 +233,24 @@ export function checkCostReduction(
 ): void {
   if (kindOf(s.spells) !== 'this') {
     const filter = s.spells as ObjectFilter;
-    checkFilter(filter, `${path}.spells`, out);
-    if (filterSome(filter, (f) => f.zone !== undefined || f.stackKind !== undefined)) {
+    // D-1232 (CR 601.2c, 601.2f): "Aura spells you cast that target enchanted creature cost {3} less": the targets are chosen before the cost is determined, so the outer
+    // filter may say what the spell targets; the object it targets is a permanent, described by a filter of its own.
+    const { targetsObject, ...spell } = filter;
+    checkFilter(spell, `${path}.spells`, out);
+    if (targetsObject !== undefined) {
+      checkFilter(targetsObject, `${path}.spells.targetsObject`, out);
+      if (
+        filterSome(targetsObject, (f) => f.zone !== undefined && f.zone !== 'battlefield') ||
+        filterSome(targetsObject, (f) => f.targetsObject !== undefined)
+      ) {
+        issue(
+          out,
+          `${path}.spells.targetsObject`,
+          'the object a spell targets is a permanent on the battlefield, described without a zone of its own',
+        );
+      }
+    }
+    if (filterSome(spell, (f) => f.zone !== undefined || f.stackKind !== undefined)) {
       issue(
         out,
         `${path}.spells`,
@@ -251,6 +267,45 @@ export function checkCostReduction(
     // D-131: a count, or any amount that reads the game as the spell is cast (total power, devotion, counters on this
     // permanent, ...): worked out at CR 601.2f.
     checkStateAmount(amount, `${path}.amount`, out, 'a cost reduction');
+  }
+}
+
+/**
+ * D-1233, CR 601.2f, 602.2b, 702.6a: "Equip abilities you activate that target enchanted creature cost {3} less to activate." `abilities` is `equip`; `targeting` describes the
+ * object the activation targets (a permanent on the battlefield: the source of this ability is the permanent that has it, so `hostOfSource` is the permanent it is attached to);
+ * `amount` is read as `costReduction`'s is.
+ */
+export function checkAbilityCostReduction(
+  s: Extract<StaticEffect, { kind: 'abilityCostReduction' }>,
+  path: string,
+  out: Out,
+): void {
+  if (s.abilities !== 'equip') {
+    issue(out, `${path}.abilities`, 'only Equip abilities are named (abilities: "equip")');
+  }
+  if (s.targeting === undefined || s.targeting === null || typeof s.targeting !== 'object') {
+    issue(out, `${path}.targeting`, 'an ability cost reduction needs a filter of what it targets');
+  } else {
+    checkFilter(s.targeting, `${path}.targeting`, out);
+    if (
+      filterSome(
+        s.targeting,
+        (f) => f.zone !== undefined || f.stackKind !== undefined || f.targetsObject !== undefined,
+      )
+    ) {
+      issue(
+        out,
+        `${path}.targeting`,
+        'the object an ability targets is a permanent on the battlefield: no zone, stackKind or targetsObject',
+      );
+    }
+  }
+  if (typeof s.amount === 'number') {
+    if (!isCount(s.amount) || s.amount < 1) {
+      issue(out, `${path}.amount`, 'a cost reduction must be a positive integer');
+    }
+  } else {
+    checkStateAmount(s.amount, `${path}.amount`, out, 'a cost reduction');
   }
 }
 

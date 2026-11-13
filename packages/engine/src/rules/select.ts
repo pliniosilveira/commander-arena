@@ -72,6 +72,11 @@ export interface SelectContext {
   readonly thisWay?: ThisWayCounts;
   /** The tally of the latest vote of this resolution, for `votesFor` amounts (D-194). */
   readonly votes?: Readonly<Record<string, number>>;
+  /**
+   * Whether `targetsObject` assumes a target the spell has not chosen yet could match (D-1232): the question "may this spell be cast at all?" asks it before any target is chosen
+   * (the cost reduction of a permanent that names the spells that target a kind of permanent).
+   */
+  readonly spellTargetsMayHold?: boolean;
 }
 
 /** CR 903.3 (D-145): the object is a card its owner designated as a commander; a token or a copy of one is not. */
@@ -140,16 +145,25 @@ export function matchesFilter(
   // CR 115.1, 601.2c (D-206): "that targets a creature": one of the spell's chosen targets is an object the inner filter matches.
   if (filter.targetsObject !== undefined) {
     const { targetsObject, ...rest } = filter;
-    const aimed = (obj.stack?.chosenTargets ?? []).some((t) => {
+    // D-1232: the question "may this spell be cast at all?" asks before any target is chosen, and assumes the most favourable one (as `spellTargets` does, D-207).
+    const unchosen = (obj.stack?.chosenTargets.length ?? 0) === 0;
+    const aimed =
+      (ctx.spellTargetsMayHold === true && unchosen) ||
+      (obj.stack?.chosenTargets ?? []).some((t) => {
       if (t.kind !== 'object') return false;
       const target = objectOrLki(state, t.id);
-      return target !== null && matchesFilter(state, target, targetsObject, ctx);
-    });
+        return target !== null && matchesFilter(state, target, targetsObject, ctx);
+      });
     return aimed && matchesFilter(state, obj, rest, ctx);
   }
   // D-100: "of the chosen type" reads what the source chose as it entered, which only the state knows.
   const chosen = chosenOf(state, ctx.source);
-  const withChoice = chosen === undefined ? ctx : { ...ctx, sourceChosen: chosen };
+  const withChoice = {
+    ...ctx,
+    ...(chosen === undefined ? {} : { sourceChosen: chosen }),
+    // D-1230: what the objects attached to this one, or the one it is attached to, are.
+    describeOther: (other: GameObject) => describeObject(state, other),
+  };
   if (!readsGame(filter))
     return matchesFilterWith(state, obj, () => describeObject(state, obj), filter, withChoice);
   // D-120: "attacking" reads the combat, and "power less than this creature's power" the source's power.
