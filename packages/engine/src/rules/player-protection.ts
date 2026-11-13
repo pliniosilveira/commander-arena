@@ -4,6 +4,7 @@
  * - `playerHexproof` ("You have hexproof", CR 702.11b): opponents' spells and abilities can't target the player;
  * - `cantLoseGame` ("You can't lose the game", CR 104.3): the state-based actions that make a player lose do not (`rules/sba.ts`).
  * `opponentsCantWin` needs no read: no effect makes a player win but CR 104.2a, which overrides it.
+ * - `cantGainLife` ("Your opponents can't gain life", CR 119.7, D-1110): the opponents of the controller gain no life (`rules/life-gain.ts`).
  */
 import type { StaticEffect } from '../ast/types';
 import type { SeatId } from '../ids';
@@ -33,4 +34,26 @@ export function playerCanBeTargetedBy(state: GameState, seat: SeatId, by: SeatId
 /** CR 104.3: whether the state-based actions leave the player in the game whatever their life total and counters. */
 export function cannotLoseGame(state: GameState, seat: SeatId): boolean {
   return hasStaticOf(state, seat, 'cantLoseGame');
+}
+
+/**
+ * CR 119.7, 604.1 (D-1110): whether an effect says the player `seat` can't gain life: a permanent an opponent of `seat` controls has `cantGainLife` ("Your
+ * opponents can't gain life"). `rules/life-gain.ts` reads it, so every gain of life the player would make (an effect, lifelink damage, an exchange that
+ * raises the life total) does not happen.
+ */
+export function cannotGainLife(state: GameState, seat: SeatId): boolean {
+  for (const id of state.battlefield) {
+    const obj = state.objects[id];
+    if (obj === undefined) continue;
+    const controller = controllerOf(state, obj);
+    if (controller === seat || !mayHaveStatic(state, obj, 'cantGainLife')) continue;
+    if (
+      derive(state, obj).abilities.some(
+        (a) => a.kind === 'static' && a.static.kind === 'cantGainLife',
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
 }

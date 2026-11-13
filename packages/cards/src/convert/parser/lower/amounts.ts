@@ -191,6 +191,13 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'lifeLostThisWay' }, rule };
     }
+    case 'lifeLostThisTurn': {
+      // CR 119.3 (D-1112): the engine reads each affected player's own life lost this turn; `playerVerb` refuses it for any instruction but a
+      // `loseLife` of a player other than "you" (`validateCard` refuses it elsewhere).
+      const blocked = needs('lifeLostThisTurn');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'lifeLostThisTurn' }, rule };
+    }
     case 'countOf': {
       const blocked = needs('countOf');
       if (blocked !== null) return blocked;
@@ -518,6 +525,7 @@ export const AMOUNT_NEEDS = [
   'amount:timesKicked',
   'amount:manaSpent',
   'amount:lifeLostThisWay',
+  'amount:lifeLostThisTurn',
   'amount:times',
   'amount:toughnessOf',
   'amount:countersOn',

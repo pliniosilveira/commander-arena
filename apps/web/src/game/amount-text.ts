@@ -186,6 +186,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return `the amount of ${manaSpentWords(amount.fromType)}`;
     case 'lifeLostThisWay':
       return 'the total life lost this way';
+    case 'lifeLostThisTurn':
+      // D-1112 (CR 119.3): read for each player the instruction affects.
+      return 'the life that player lost this turn';
     case 'aggregate': {
       const things = thingsPhrase(amount.filter, true);
       if (things === null) return UNKNOWN_AMOUNT;

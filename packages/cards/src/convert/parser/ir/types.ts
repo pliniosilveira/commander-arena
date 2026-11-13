@@ -342,6 +342,8 @@ export type IrAmount =
   | { readonly kind: 'timesKicked'; readonly who: 'self' | 'it'; readonly span: Span }
   // "equal to the total life lost this way" (CR 702.101a), stage P21: what an earlier loss of life in the same text lost
   | { readonly kind: 'lifeLostThisWay'; readonly span: Span }
+  // "equal to the life that player lost this turn" (Hashaton deck group 2, D-1112, CR 119.3): the life the player the instruction affects lost this turn
+  | { readonly kind: 'lifeLostThisTurn'; readonly span: Span }
   // Stage P28 (D-131): "equal to that creature's toughness", "for each +1/+1 counter on ~"
   | { readonly kind: 'toughnessOf'; readonly of: IrNoun; readonly span: Span }
   | {
@@ -1199,6 +1201,8 @@ export type IrStaticEffect =
   | { readonly kind: 'cantLoseGame' }
   /** "your opponents can't win the game" (stage P33, D-150, CR 104.2). The subject is `you`. */
   | { readonly kind: 'opponentsCantWin' }
+  /** "Your opponents can't gain life." (Hashaton deck group 2, D-1110, CR 119.7). The subject is `you`, the controller of the permanent. */
+  | { readonly kind: 'cantGainLife'; readonly who: 'opponents' }
   /**
    * "Prevent all combat damage that would be dealt to ~." (stage P33, D-150, CR 615.1): the damage of the kind named that would be dealt to
    * the permanent is prevented. The subject is `~`.
@@ -1404,6 +1408,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'manaValueOf',
   'timesKicked',
   'lifeLostThisWay',
+  'lifeLostThisTurn',
   'toughnessOf',
   'countersOn',
   'aggregate',

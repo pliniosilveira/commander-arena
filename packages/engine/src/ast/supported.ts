@@ -240,7 +240,8 @@ function walkEffect(
       return;
     case 'mayPay':
       // CR 702.101a (D-120): paid as Ward's cost is (rules/pay-unless.ts): mana and life, no X.
-      activationCostIssues(effect.cost, `${path}.cost`, out, ['mana', 'payLife']);
+      // D-1111: the life may be an amount, worked out as the instruction resolves (`rules/life-amounts.ts`).
+      activationCostIssues(effect.cost, `${path}.cost`, out, ['mana', 'payLife'], false, true);
       walkEffect(effect.effect, `${path}.effect`, out, targets, moved, subject);
       return;
     case 'regenerate':

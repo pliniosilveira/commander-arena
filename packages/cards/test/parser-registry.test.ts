@@ -353,6 +353,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.cant-lose-win': asIs,
   'static.prevent-damage-to-self': asIs,
   'static.cant-cast-early': asIs,
+  // Hashaton deck, group 2 (D-1110 to D-1112): the static is a line of its own; the amount follows "loses life"; the cost follows "you may" in a life gain trigger.
+  'static.opponents-cant-gain-life': asIs,
+  'amount.life-lost-this-turn': permanent(
+    (e) => `At the beginning of each end step, each opponent loses life ${e}.`,
+  ),
+  'cost.pay-life-that-much': permanent(
+    (e) => `Whenever you gain life, you may ${e.toLowerCase()}. If you do, draw that many cards.`,
+  ),
   'static.block-tax': asIs,
   'static.others-enter-with-counters': asIs,
   'static.tap-alt-cost': asIs,

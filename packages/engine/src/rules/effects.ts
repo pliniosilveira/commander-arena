@@ -55,6 +55,7 @@ import { runEnterToken } from './enter-token';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
+import { lifeAmountFor, resolveMayPayCost } from './life-amounts';
 import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
 import { loseTheGame } from './lose-game';
@@ -1121,8 +1122,11 @@ function runEffect(
       // CR 601.2, 611.2a (D-135): "You may cast target [card] from your graveyard this turn" (rules/may-effects.ts).
       return runMayCast(state, res, effect, ctx, targets);
 
-    case 'mayPay':
+    case 'mayPay': {
       // CR 702.101a (D-120): the controller may pay; the effect runs only if they do (rules/pay-unless.ts).
+      // D-1111 (CR 119.4, 608.2c): a payment of life by an amount ("pay that much life") is worked out now; one of 0 life is no offer.
+      const cost = resolveMayPayCost(state, effect.cost, ctx);
+      if (cost === null) return done(state);
       return done(
         state,
         [],
@@ -1130,7 +1134,7 @@ function runEffect(
           {
             kind: 'unlessPays' as const,
             seat: res.controller,
-            cost: effect.cost,
+            cost,
             stage: 'ask' as const,
             effect: effect.effect,
             optional: false,
@@ -1138,6 +1142,7 @@ function runEffect(
           },
         ],
       );
+    }
 
     case 'draw': {
       const count = amountOf(state, effect.count, ctx, targets);
@@ -1213,9 +1218,11 @@ function runEffect(
 
     case 'gainLife':
     case 'loseLife': {
-      const amount = amountOf(state, effect.amount, ctx, targets);
+      const everyone = amountOf(state, effect.amount, ctx, targets);
       let lost = 0;
       for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
+        // D-1112: "the life that player lost this turn" is each player's own number, read before they lose any more.
+        const amount = lifeAmountFor(next, effect.amount, seat, () => everyone);
         const r =
           effect.kind === 'gainLife'
             ? gainLifeOf(next, seat, amount)

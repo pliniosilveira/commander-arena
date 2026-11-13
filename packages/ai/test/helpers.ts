@@ -2443,6 +2443,43 @@ export const NIV_GROUP_3_A_NAMES = [
   'SYNTHETIC Commander Echo Drake',
 ] as const;
 
+/**
+ * The cards of group 2 of the Hashaton deck program (D-1110 to D-1112, provisional): an artifact and creatures that stop the opponents' life gain, the demon that
+ * makes opponents lose the life they lost this turn again, the angel that makes a token at each end step after a life gain, and the dragon (and the well) that ask
+ * "you may pay that much life. If you do, draw that many cards" (a `confirmOptional` of purpose `mayPay`). The style 'hashatonLife' plays them; every other pool
+ * leaves them out: a life gain that does not happen, an extra loss at every end step and a payment question change how many games end in a result and which
+ * questions the agents are asked.
+ */
+export const HASHATON_G2_NAMES = [
+  'SYNTHETIC Joyless Idol',
+  'SYNTHETIC Grudge Demon',
+  'SYNTHETIC Hollow Demon',
+  'SYNTHETIC Dusk Seraph',
+  'SYNTHETIC Ghostly Dragon',
+  'SYNTHETIC Paid Well',
+] as const;
+
+/** The hashatonLife style: each card of the group twice, spells and a lifelinker that gain life, burn that makes life lost, bodies and a little removal. */
+export const HASHATON_G2_SPELLS = [
+  ...supported(HASHATON_G2_NAMES),
+  ...supported(HASHATON_G2_NAMES),
+  ...supported(['SYNTHETIC Mend', 'SYNTHETIC Mend', 'SYNTHETIC Mend Twice', 'SYNTHETIC Mend Them']),
+  ...supported(["Healer's Hawk", "Healer's Hawk", 'Lightning Bolt', 'Lightning Bolt', 'Murder']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Grizzly Bears', 'Serra Angel']),
+];
+
+/** White, black and red for the cards of the group, a little of the others for the bodies. */
+export const HASHATON_G2_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Island',
+]);
+
 export const NIV_DRAW_NAMES = [
   'SYNTHETIC Hollow Warden',
   'SYNTHETIC Draw Veto',
@@ -2869,6 +2906,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(NIV_GROUP_3_B_NAMES as readonly string[]).includes(card.name))
   // The graveyard casters (D-350) ask "you may cast it" as a trigger resolves (a confirmOptional), which games-100 expects only from dedicated styles.
   .filter((card) => !(NIV_GROUP_3_C_NAMES as readonly string[]).includes(card.name))
+  // The life cards of the Hashaton deck (D-1110 to D-1112) have their own style: a life gain that does not happen, an end step loss and a payment question.
+  .filter((card) => !(HASHATON_G2_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
@@ -3051,6 +3090,7 @@ export type DeckStyle =
   | 'soulbond'
   | 'piles'
   | 'nivDraw'
+  | 'hashatonLife'
   | 'repeatable'
   | 'manifest'
   | 'combat';
@@ -3062,6 +3102,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'soulbond' && SOULBOND_SPELLS.length > 0) return SOULBOND_SPELLS;
   if (style === 'piles' && PILES_SPELLS.length > 0) return PILES_SPELLS;
   if (style === 'nivDraw' && NIV_DRAW_SPELLS.length > 0) return NIV_DRAW_SPELLS;
+  if (style === 'hashatonLife' && HASHATON_G2_SPELLS.length > 0) return HASHATON_G2_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
   if (style === 'manifest' && MANIFEST_SPELLS.length > 0) return MANIFEST_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
@@ -3237,6 +3278,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'soulbond' && BASIC_LANDS.length > 0) return SOULBOND_LANDS;
   if (style === 'piles' && BASIC_LANDS.length > 0) return PILES_LANDS;
   if (style === 'nivDraw' && BASIC_LANDS.length > 0) return NIV_DRAW_LANDS;
+  if (style === 'hashatonLife' && BASIC_LANDS.length > 0) return HASHATON_G2_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
   if (style === 'manifest' && BASIC_LANDS.length > 0) return MANIFEST_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
@@ -3658,6 +3700,13 @@ export const NIV_DRAW_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
   ['nivDraw', 'nivDraw'],
   ['nivDraw', 'spells'],
   ['spells', 'nivDraw'],
+];
+
+/** Style pairs of the Hashaton life soak test (D-1110 to D-1112): a mirror match and both mixed ways. */
+export const HASHATON_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hashatonLife', 'hashatonLife'],
+  ['hashatonLife', 'spells'],
+  ['spells', 'hashatonLife'],
 ];
 
 /** Style pairs of the repeatable-mode soak test (D-344): a mirror match and both mixed ways. */

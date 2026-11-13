@@ -260,6 +260,12 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'spellsCastThisTurn':
       // D-318 (CR 601.2i): "you've cast three or more spells this turn".
       return `you ${negate ? "haven't" : 'have'} cast ${condition.atLeast} or more spells this turn`;
+    case 'lifeGainedThisTurn':
+      // D-252, D-1110 (CR 119.3, 603.4): "if you gained life this turn" (at least 1), "if you gained 3 or more life this turn".
+      if (condition.atLeast <= 1) return `you ${negate ? "didn't gain" : 'gained'} life this turn`;
+      return negate
+        ? `you haven't gained ${condition.atLeast} or more life this turn`
+        : `you gained ${condition.atLeast} or more life this turn`;
     case 'duringStep':
       // D-139 (CR 506.1): "if it's the declare attackers step".
       return `it's ${negate ? 'not ' : ''}the ${COMBAT_STEP_WORDS[condition.step]}`;

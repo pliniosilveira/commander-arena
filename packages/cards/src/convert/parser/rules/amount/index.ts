@@ -4,6 +4,7 @@ import { possessedNoun } from '../noun/controller';
 import { defineRule, spanned } from '../registry';
 import { COUNT_AMOUNT_RULES } from './count';
 import { AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
+import { HASHATON_G2_AMOUNT_RULES } from './hashaton-group-2';
 import { HOFRI_AMOUNT_RULES } from './hofri';
 import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
@@ -306,6 +307,8 @@ export const AMOUNT_RULES = [
   ...KORVOLD_AMOUNT_RULES,
   // Stage P68 (D-229): "for each time you've cast your commander from the command zone this game".
   ...HOFRI_AMOUNT_RULES,
+  // Hashaton deck, group 2 (D-1112): "equal to the life that player lost this turn".
+  ...HASHATON_G2_AMOUNT_RULES,
   AMOUNT_NUMBER,
   AMOUNT_X,
   AMOUNT_ARTICLE,

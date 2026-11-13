@@ -107,6 +107,13 @@ export type Amount =
    */
   | { readonly kind: 'lifeLostThisWay' }
   /**
+   * "The life that player lost this turn" (CR 119.3, D-1112; the Hashaton deck, Archfiend of Despair): the life the player an effect affects has lost
+   * this turn (`SeatState.lifeLostThisTurn`, from damage, life loss and life paid), read for each of them as the effect applies to them, before that
+   * player loses any more. It is the whole `amount` of a `loseLife` effect and nothing else (a `loseLife` of "each opponent" reads each opponent's own
+   * number: two opponents who lost 3 and 5 lose 3 and 5), so it is not valid inside another amount or in any other effect.
+   */
+  | { readonly kind: 'lifeLostThisTurn' }
+  /**
    * The toughness of an object a reference names, read as `powerOf` is (D-131): "you gain life equal to that
    * creature's toughness". From last-known information when the object left (CR 608.2h, 113.7a). `of` may be the
    * `triggerSubject` permanent of a trigger.
@@ -1246,6 +1253,9 @@ export type Effect =
    * 'mayPay'); a player who cannot pay the whole cost is not asked and does nothing (CR 118.3). When they pay,
    * `effect` runs next, with the life lost by its `loseLife` readable as `lifeLostThisWay`. Only `mana`
    * and `payLife` costs without X.
+   * D-1111 (CR 119.4, 608.2c; the Hashaton deck, Niv-Mizzet, Ghost Counsel): the life paid may be an `Amount` that reads the game as the instruction
+   * resolves, `triggerDamage` ("Whenever you gain life, you may pay that much life. If you do, draw that many cards."): it is worked out once, when the
+   * player is asked, and the player can pay only when their life total is at least that high (CR 119.4); a payment of 0 life is no question and does nothing.
    */
   | { readonly kind: 'mayPay'; readonly cost: readonly Cost[]; readonly effect: Effect }
   /**
@@ -4119,6 +4129,14 @@ export type StaticEffect =
    * "overrides all effects that would preclude that player from winning the game", so this ability changes nothing the engine does today.
    */
   | { readonly kind: 'opponentsCantWin' }
+  /**
+   * "Your opponents can't gain life." (CR 119.7, 604.1, D-1110; the Hashaton deck, Archfiend of Despair): while the permanent has the ability, no opponent of its
+   * controller can gain life. Every gain of life goes through `rules/life-gain.ts`: a gain by such a player does not happen (no life change, no `lifeGained` event,
+   * nothing for a "whenever you gain life" trigger or the turn log to count), the replacement effects that would change the gain do nothing (CR 119.7), and an
+   * effect that sets a life total does not raise one (`setLifeTotal`). `who` is `opponents`, the only group the engine reads. Read from the abilities of the
+   * permanents on the battlefield after the layers (`rules/player-protection.ts`); a permanent that lost its abilities protects nobody. No condition.
+   */
+  | { readonly kind: 'cantGainLife'; readonly who: 'opponents' }
   /**
    * "If a triggered ability of a Shaman or another Wizard you control triggers, that ability triggers an additional time." and "If a triggered ability of
    * equipped creature triggers, that ability triggers an additional time." (D-220, CR 603.2d): each time a triggered ability of a permanent `subject` names

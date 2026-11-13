@@ -44,6 +44,7 @@ export type AngelStaticEffect = Extract<
       | 'playerHexproof'
       | 'cantLoseGame'
       | 'opponentsCantWin'
+      | 'cantGainLife'
       | 'preventDamageToThis'
       | 'cantCastThis'
       | 'othersEnterWithCounters';
@@ -55,6 +56,7 @@ export function isAngelStatic(effect: IrStaticEffect): effect is AngelStaticEffe
     effect.kind === 'playerHexproof' ||
     effect.kind === 'cantLoseGame' ||
     effect.kind === 'opponentsCantWin' ||
+    effect.kind === 'cantGainLife' ||
     effect.kind === 'preventDamageToThis' ||
     effect.kind === 'cantCastThis' ||
     effect.kind === 'othersEnterWithCounters'
@@ -153,6 +155,14 @@ export function lowerAngelStatic(
         abilities.push({ kind: 'static', static: { kind: effect.kind } });
         break;
       }
+      case 'cantGainLife': {
+        // CR 119.7 (D-1110): "Your opponents can't gain life": the controller of the permanent is "you", and the opponents are said of them.
+        if (subject.det !== 'you') return failure(ability);
+        const blocked = missingFeatures(['ability:static', 'static:cantGainLife']);
+        if (blocked.length > 0) return failure(ability, blocked);
+        abilities.push({ kind: 'static', static: { kind: 'cantGainLife', who: 'opponents' } });
+        break;
+      }
       case 'preventDamageToThis': {
         if (subject.det !== 'self') return failure(ability);
         const blocked = missingFeatures(['ability:static', 'static:preventDamageToThis']);
@@ -193,6 +203,7 @@ export const ANGEL_NEEDS: readonly FeatureRef[] = [
   'static:playerHexproof',
   'static:cantLoseGame',
   'static:opponentsCantWin',
+  'static:cantGainLife',
   'static:preventDamageToThis',
   'static:cantCastThis',
   'condition:ownTurnNumber',

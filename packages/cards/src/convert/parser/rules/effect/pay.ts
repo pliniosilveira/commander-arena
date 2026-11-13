@@ -25,7 +25,14 @@ export const EFFECT_PAY = defineRule<Clauses>({
     'CR 107.4e (Numbers and Symbols)',
     'CR 608.2c (Resolving Spells and Abilities)',
   ],
-  examples: ['pay {4}', 'pay {1}{G}', 'pay {W/B}', 'pay 2 life', 'pay three life'],
+  examples: [
+    'pay {4}',
+    'pay {1}{G}',
+    'pay {W/B}',
+    'pay 2 life',
+    'pay three life',
+    'pay that much life',
+  ],
   rejects: [
     'pay',
     'pay {X}',
@@ -49,7 +56,8 @@ export const EFFECT_PAY = defineRule<Clauses>({
           ),
           ([, cost]) => cost,
         ),
-        family<IrCost>('cost', { only: ['cost.pay-life'] }),
+        // D-1111: "pay that much life", the life that caused the trigger of a life gain.
+        family<IrCost>('cost', { only: ['cost.pay-life', 'cost.pay-life-that-much'] }),
       ),
     ),
     ({ value: cost, span }): Clauses => [

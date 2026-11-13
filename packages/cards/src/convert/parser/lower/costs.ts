@@ -31,6 +31,8 @@ export interface CostOptions {
   readonly mana?: boolean;
   /** The cost an "unless you pay" asks of the player (stage P51, D-209): "{E}{E}" is paid there and nowhere else. */
   readonly unless?: boolean;
+  /** The offer "you may pay that much life" of a life gain trigger (D-1111, CR 119.4): the life gained is paid, and nowhere else. */
+  readonly eventLife?: boolean;
 }
 
 /**
@@ -58,6 +60,14 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         return cost.amount.value >= 1
           ? ok({ kind: 'payLife', amount: cost.amount.value })
           : failure(cost);
+      }
+      // "Pay that much life" (D-1111, CR 119.4): the life that caused the trigger, in the offer of a "you may pay" only.
+      if (cost.amount.kind === 'triggerDamage') {
+        if (options.eventLife !== true) return failure(cost);
+        const blocked = missingFeatures(['amount:triggerDamage']);
+        return blocked.length > 0
+          ? failure(cost, blocked)
+          : ok({ kind: 'payLife', amount: { kind: 'triggerDamage' } });
       }
       // "Pay life equal to the number of colors in your commanders' color identity" (stage P30, D-135, CR 119.4): an amount the
       // engine works out as the ability is activated; only the cost of an ordinary activated ability takes one.
