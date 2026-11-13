@@ -559,6 +559,9 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     'you cast an instant or sorcery spell that targets a creature',
     'you cast a spell that targets a permanent',
     'an opponent casts a creature spell that targets an artifact',
+    // D-400 (Danitha, group 1b): "you control" of the object the spell targets.
+    'you cast a spell that targets a creature you control',
+    'an opponent casts a spell that targets a permanent you control',
   ],
   rejects: [
     'you cast ~',
@@ -576,6 +579,10 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     'you cast a spell that targets a Dragon',
     'you cast a spell that targets you',
     'you cast a spell that targets creatures',
+    'you cast a spell that targets a creature you do not control',
+    "you cast a spell that targets a creature you don't control",
+    'you cast a spell that targets a creature an opponent controls',
+    'you cast a spell that targets a creature you controlled',
   ],
   parse: (ctx, pos) => {
     const r = sequence(
@@ -605,7 +612,7 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       // Stage P49 (D-206, CR 115.1, 601.2c): "an instant or sorcery spell that targets a creature".
       optional(
         pattern(
-          /\s?that targets an? (creature|artifact|enchantment|land|planeswalker|permanent)(?![\p{L}\p{N}])/iu,
+          /\s?that targets an? (creature|artifact|enchantment|land|planeswalker|permanent)( you control)?(?![\p{L}\p{N}])/iu,
         ),
         null,
       ),
@@ -613,12 +620,17 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     if (!r.ok) return r;
     const [actor, spell, aimed] = r.value;
     const what = (aimed?.[1] ?? '').toLowerCase();
+    // D-400 (CR 109.4, 115.1): "that targets a creature you control" says whose the object the spell targets is.
+    const yours = aimed?.[2] === undefined ? {} : { controller: 'you' as const };
     const filter: IrFilter =
       aimed === null
         ? spell.value[1]
         : {
             ...spell.value[1],
-            targets: what === 'permanent' ? { raw: what } : { types: [what], raw: what },
+            targets:
+              what === 'permanent'
+                ? { ...yours, raw: what }
+                : { types: [what], ...yours, raw: what },
           };
     const subject = makeNoun('trigger.cast', spell.span, 'a', filter);
     return {

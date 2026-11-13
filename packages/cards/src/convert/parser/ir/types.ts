@@ -458,6 +458,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'didPrevious' }
     // "If the player doesn't" (stage P52, D-210): the player an earlier "may have you" sentence asked said no
     | { readonly kind: 'declined' }
+    // "If you don't put it onto the battlefield, ..." (Danitha deck group 1b, D-403, CR 608.2c): the card the sentence before it offered to put onto the battlefield did not enter it
+    | { readonly kind: 'notPutOntoBattlefield' }
     // "If a creature card was discarded this way", "if a noncreature card was discarded this way" (stage P52, D-210, CR 608.2c)
     | { readonly kind: 'discardedThisWay'; readonly creature: boolean }
     // "If you discarded an instant or sorcery card this way" (D-358, CR 608.2c, 701.9): what a discard before it in the same text did
@@ -1091,6 +1093,8 @@ export type IrStaticEffect =
       readonly kind: 'grantProtection';
       readonly colors?: readonly string[];
       readonly commanderIdentity?: true;
+      /** "protection from creatures" (Danitha deck group 1b, D-402, CR 702.16a, 205.2a): the card types named, as the engine's card type words (`creature`). */
+      readonly cardTypes?: readonly string[];
       /** "protection from the chosen card type" (Hashaton deck group 6, D-376, CR 702.16a): the card type the source of the ability chose as it entered. */
       readonly chosenCardType?: true;
     }

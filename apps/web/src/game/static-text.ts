@@ -187,6 +187,11 @@ function replacedKind(
   return `${/^[aeiou]/i.test(phrase) ? 'an' : 'a'} ${phrase}`;
 }
 
+/** The card types in the plural, as a card says them: "creatures", "sorceries". */
+function pluralCardType(type: string): string {
+  return type === 'sorcery' ? 'sorceries' : `${type}s`;
+}
+
 /** The sentence of one static effect (no condition, no final period); null for the kinds these words do not cover. */
 export function lordWording(effect: StaticEffect, ctx: StaticContext): string | null {
   switch (effect.kind) {
@@ -201,10 +206,13 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
       const subject = subjectWords(effect.subject, ctx);
       if (subject === null) return null;
       // D-376 (CR 702.16): "Creatures you control have protection from the chosen card type".
+      // D-402 (CR 702.16a): "Enchanted creature has protection from creatures".
       const has =
         effect.keyword.kind === 'protection' && effect.keyword.from === 'chosenCardType'
           ? 'protection from the chosen card type'
-          : keywordWords(effect.keyword.kind);
+          : effect.keyword.kind === 'protection' && effect.keyword.from === 'cardType'
+            ? `protection from ${effect.keyword.types.map(pluralCardType).join(' and from ')}`
+            : keywordWords(effect.keyword.kind);
       return `${subject.text} ${subject.many ? 'have' : 'has'} ${has}`;
     }
     case 'restriction': {

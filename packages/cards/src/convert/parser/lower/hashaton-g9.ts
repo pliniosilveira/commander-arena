@@ -3,6 +3,7 @@
  */
 import type { IrClause, IrNoun } from '../ir/types';
 import { arg, type Effects, failure, operand } from './clauses';
+import { graveyardCardTarget } from './danitha-g1b';
 import { missingFeatures } from './features';
 import { playerSelectorOf } from './nouns';
 import type { Lowering } from './types';
@@ -36,19 +37,22 @@ const EXILE_RANDOM_FROM_HAND: Lowering<IrClause, Effects> = {
 /**
  * "Put it onto the battlefield under your control", with or without "you may" (CR 400.7, 110.2a, 608.2d): the engine's `moveToZone` of the card the instruction before exiled
  * (`moved`) to the battlefield under the control of the player who puts it. With "you may" it is the engine's `may` of that move, asked as it comes up (`acceptsOptional`). "It" is
- * only that card: after any other instruction it names a permanent or nothing, and the clause is not lowered.
+ * only that card, or (D-403, Danitha group 1b, Cosmic Rebirth) a target card of a graveyard that an earlier sentence chose ("Choose target permanent card in your graveyard"): after any
+ * other instruction it names a permanent or nothing, and the clause is not lowered.
  */
 const PUT_MOVED_ONTO_BATTLEFIELD: Lowering<IrClause, Effects> = {
   head: 'putMovedOntoBattlefield',
   id: 'lower.put-moved-onto-battlefield',
-  needs: ['effect:moveToZone', 'selector:moved'],
+  needs: ['effect:moveToZone', 'selector:moved', 'selector:target'],
   acceptsOptional: true,
-  lower(clause) {
+  lower(clause, ctx) {
     const what = operand(clause, 'objects');
-    if (what?.kind !== 'noun' || !isMovedCard(what)) return failure(clause);
+    if (what?.kind !== 'noun') return failure(clause);
+    const target = graveyardCardTarget(what, ctx, false);
+    if (!isMovedCard(what) && target === null) return failure(clause);
     const move: Effects[number] = {
       kind: 'moveToZone',
-      objects: { kind: 'moved' },
+      objects: target === null ? { kind: 'moved' } : { kind: 'target', id: target },
       to: 'battlefield',
       controller: 'you',
     };

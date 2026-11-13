@@ -312,3 +312,11 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The cards put into the graveyard together are not arranged by the owner (CR 404.3): they go in the order of the top of the library. No card of the group depends on it.
 - `revealAll` shows the whole top to the other player through one log line that names the cards; the picker of the player who chooses lists the cards that may be taken first and the others below ("Also revealed (cannot be taken)"), as for a look.
 - The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session); the behaviour rests on CR 701.20a and 701.20b.
+
+## The Danitha deck, group 1b (issue 26, D-400 to D-404)
+
+- "put it onto the battlefield" after "choose target ... card" reads for the sentence's own "you may" only, with no "tapped", "under its owner's control", "attacking" or counters; "put it into your hand" reads only for a card of your own graveyard that a target phrase of the text named. A card of another graveyard (it would go to its owner's hand, CR 400.3) and "that card" or "them" are not read.
+- The pair "you may put it onto the battlefield. If you don't put it onto the battlefield, put it into your hand." is the only "if you don't" sentence that reads; "If you don't" alone, with another second instruction, or with a rider is refused (never guessed).
+- Protection from card types is read in the plural, for a static grant (an attached permanent or a group) only: the keyword line of a card ("Protection from artifacts") still reads colors only, and a modifier ("nonblack creatures"), a creature type and "everything" are not read.
+- The cast trigger reads " you control" after the card type of what a spell targets, not "you don't control" or a creature type.
+- The graveyard permission names subtypes of permanents (Aura, Curse, Equipment, Fortification, Saga, Shrine, Vehicle); the creature types ("cast a Human spell from your graveyard") and the rider "that artifact enters tapped" for a spell that is not a pure artifact filter are not read.

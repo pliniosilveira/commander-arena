@@ -26,6 +26,7 @@ import { ARDEN_CONDITION_RULES } from './arden';
 import { ARTIFACT_CONDITION_RULES } from './artifacts';
 import { BRUNA_CONDITION_RULES } from './bruna';
 import { CHOOSER_CONDITION_RULES } from './choosers';
+import { DANITHA_G1B_CONDITION_RULES } from './danitha-g1b';
 import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
@@ -426,6 +427,8 @@ export const CONDITION_RULES = [
   ...EDHREC_CONDITION_RULES,
   // Stage P68 (D-229): "there are fewer than eight cards in your graveyard".
   ...HOFRI_CONDITION_RULES,
+  // Issue 26 (the Danitha deck, D-403): "you don't put it onto the battlefield".
+  ...DANITHA_G1B_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,

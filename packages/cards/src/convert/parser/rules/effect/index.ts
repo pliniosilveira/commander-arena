@@ -34,6 +34,7 @@ import { CONTROL_EFFECT_RULES } from './control';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
+import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DAWNBREAK_EFFECT_RULES } from './dawnbreak';
 import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
@@ -905,6 +906,7 @@ export const EFFECT_RULES = [
   ...HOFRI_EFFECT_RULES,
   // D-393, D-394 (Hashaton, group 9): the body of Rona, Tolarian Obliterator.
   ...HASHATON_G9_EFFECT_RULES,
+  ...DANITHA_G1B_EFFECT_RULES,
   // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. ..." (three sentences kept together).
   ...PILES_EFFECT_RULES,
   // D-396 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."

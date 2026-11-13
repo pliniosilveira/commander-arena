@@ -12,8 +12,8 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Boar Umbra | 4 | K + P (Umbra armor, modified filter) | waiting |  |
 | Cache Grab | 2 | T + P (choose among the moved cards) | waiting |  |
 | Commune with the Gods | 1a | T + small P (reveal-all flag) | done |  |
-| Cosmic Rebirth | 1b | T | in progress |  |
-| Danitha, New Benalia's Light | 1b | T | in progress |  |
+| Cosmic Rebirth | 1b | T | done |  |
+| Danitha, New Benalia's Light | 1b | T | done |  |
 | Ethereal Armor | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Face of Divinity | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Gift of the Viper | 6 | P (base power, keyword counters) | waiting |  |
@@ -27,14 +27,14 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Restoration Magic | 7 | K (Tiered) | waiting |  |
 | Sage's Reverie | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Satyr Wayfinder | 1a | T + small P (reveal-all flag) | done |  |
-| Season of Growth | 1b | T | in progress |  |
+| Season of Growth | 1b | T | done |  |
 | Shardmage's Rescue | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Shield of the Oversoul | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Shielded by Faith | 5 | P + T (one-offs) | in progress |  |
 | Something Worth Saving | 2 | T + P (choose among the moved cards) | waiting |  |
 | Spider Umbra | 4 | K + P (Umbra armor, modified filter) | waiting |  |
 | Spiral into Solitude | 5 | P + T (one-offs) | in progress |  |
-| Spirit Mantle | 1b | T | in progress |  |
+| Spirit Mantle | 1b | T | done |  |
 | Sterling Grove | 5 | P + T (one-offs) | in progress |  |
 | Strong Back | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Timely Ward | 5 | P + T (one-offs) | in progress |  |

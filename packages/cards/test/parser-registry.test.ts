@@ -575,6 +575,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.discard-filtered': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
   'noun.target-triggered-ability-or-spell': spell((e) => `Counter ${e}.`),
   // Stage P52 (D-210): the players an effect asks, and what the instructions before them did.
+  // Issue 26 (the Danitha deck, D-403): the condition of the second sentence of an offer to put a card onto the battlefield.
+  'condition.you-dont-put-it-onto-battlefield': spell(
+    (e) =>
+      `Choose target permanent card in your graveyard. You may put it onto the battlefield. If ${e}, put it into your hand.`,
+  ),
   'condition.player-declines': permanent(
     (e) => `When ~ enters, target opponent may have you draw a card. If ${e}, you gain 1 life.`,
   ),
