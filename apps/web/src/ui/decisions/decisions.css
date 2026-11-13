@@ -229,6 +229,21 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.dec-subject {
+  margin: 0;
+  text-align: center;
+}
+.dec-card-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
+}
 .dec-source-quote {
   margin: 0;
   max-height: 160px;

@@ -95,11 +95,18 @@ export function clickOutcome(
     // One option that is an alternative cost is still asked about: "Dash {1}{R}" is not "Cast X",
     // and the plain cast it replaces (cannot be paid now) is not what a click should do unasked.
     // A loyalty ability is asked about even when it is the only one (D-203): the menu shows its cost, "+1", "\u22122", "0", and what it does.
-    const loyalty = isLoyaltyItem(index?.get(id), only);
+    const card = index?.get(id);
+    const loyalty = isLoyaltyItem(card, only);
+    // #40: an ability of a card in the hand (cycling) is asked about even when it is the only
+    // thing to do: it costs the card itself, and a stray tap on the opponent's turn, when the
+    // card cannot be cast, must not cycle it. A graveyard card's ability is not: the player
+    // opened that zone to use it.
+    const fromHand = only.action.kind === 'activate' && card?.zone === 'hand';
     return more.length === 0 &&
       !namedAlternativeOnly(decision, id) &&
       !hasSpecialAction(decision, id) &&
-      !loyalty
+      !loyalty &&
+      !fromHand
       ? { kind: 'act', action: only.action }
       : { kind: 'menu', items };
   }
