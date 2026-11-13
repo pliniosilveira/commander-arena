@@ -1,5 +1,5 @@
 {
-  "parserVersion": 96,
+  "parserVersion": 97,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -711,19 +711,10 @@
     "240e85d3-e495-4877-8609-4b4056c402f7": {
       "name": "Victimize",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Choose two target creature cards in your graveyard. Sacrifice a creature. If you do, return the chosen cards to the battlefield tapped.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "a6d33081"
+      "ast": "e00dda18"
     },
     "24310f49-2156-4c0d-b3b1-40ca3182474f": {
       "name": "Sahagin",
@@ -1173,19 +1164,10 @@
     "3a49b518-61c8-4dea-8008-c5edf8384581": {
       "name": "Ob Nixilis, the Ascended",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "At the beginning of each end step, if you gained life this turn, create a 4/4 white Angel creature token with flying.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "condition.life-gained-this-turn"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "4604dbfd"
+      "ast": "15e7102e"
     },
     "3aa83ed2-f48b-4ce6-a614-2c54ddf50538": {
       "name": "The One Ring",
@@ -1327,27 +1309,10 @@
     "4380df08-7be4-48ca-9783-d644fd2ea27d": {
       "name": "Vohar, Vodalian Desecrator",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "{T}: Draw a card, then discard a card. If you discarded an instant or sorcery card this way, each opponent loses 1 life and you gain 1 life.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{2}, Sacrifice ~: You may cast target instant or sorcery card from your graveyard this turn. If that spell would be put into your graveyard, exile it instead. Activate only as a sorcery.",
-          "reason": "unrecognised",
-          "slot": "replacement",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "a5560e72"
+      "ast": "c81b8dec"
     },
     "43b5794a-4ed6-471d-bc45-22fac486895d": {
       "name": "Thunderdrum Soloist",
@@ -1513,19 +1478,10 @@
     "4e552be1-0702-4e18-822f-98611f8a8e70": {
       "name": "Enter the Avatar State",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Until end of turn, target creature you control becomes an Avatar in addition to its other types and gains flying, first strike, lifelink, and hexproof.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "spell.effect"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "0cd7991a"
+      "ast": "dc997d74"
     },
     "4f819ba4-52ef-4fdd-8e4c-5ae3b2f44db5": {
       "name": "Ramunap Excavator",
@@ -1554,19 +1510,10 @@
     "516101be-be39-4d84-8fee-d8a79930dd0a": {
       "name": "Sphinx of the Second Sun",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "At the beginning of each of your postcombat main phases, there is an additional beginning phase after this phase.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.upkeep"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "37b9ddac"
+      "ast": "e826d588"
     },
     "51eae7ff-fed9-4afe-8053-7690379449dd": {
       "name": "Gideon, Ally of Zendikar",
@@ -1620,19 +1567,10 @@
     "535e2af0-7b08-4026-b1bf-87626407dd42": {
       "name": "Archfiend of Ifnir",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever you cycle or discard another card, put a -1/-1 counter on each creature your opponents control.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.cycled"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "7c21e89e"
+      "ast": "dbe3d066"
     },
     "535f405d-94df-4f45-aedc-b331103720b7": {
       "name": "Atsushi, the Blazing Sky",
@@ -3000,26 +2938,10 @@
     "9c36760b-57c5-488b-afc9-ef141942c6ab": {
       "name": "Archfiend of Despair",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Your opponents can't gain life.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "At the beginning of each end step, each opponent loses life equal to the life that player lost this turn.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.player.life"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "9e7eecb6"
+      "ast": "210f0aec"
     },
     "9cc52afb-9788-46f6-9f9b-347513f8a64f": {
       "name": "Dwarven Shortsword",
@@ -3136,19 +3058,10 @@
     "a5350327-e84c-44b6-8359-87882e521048": {
       "name": "Niv-Mizzet, Ghost Counsel",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever you gain life, you may pay that much life. If you do, draw that many cards.",
-          "reason": "unrecognised",
-          "slot": "cost",
-          "closestRule": "effect.pay"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "3dd47f9e"
+      "ast": "f4b129e3"
     },
     "a554aa2c-d947-4fc6-929d-d5891f467615": {
       "name": "Nahiri, the Lithomancer",
@@ -3242,19 +3155,10 @@
     "aa1a6646-c1e6-4bff-9092-43ee3e137914": {
       "name": "Archon of Cruelty",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever ~ enters or attacks, target opponent sacrifices a creature or planeswalker of their choice, discards a card, and loses 3 life. You draw a card and gain 3 life.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.player.sacrifice"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "2eaf3920"
+      "ast": "4604dc38"
     },
     "aa913409-7a7a-4e74-82ff-7ff8195585ad": {
       "name": "Roll-Roll-Roll-Roll",
@@ -3511,19 +3415,10 @@
     "b997a982-09e1-4ae1-a972-3c2e5f101e8c": {
       "name": "Faithful Mending",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "You gain 2 life, draw two cards, then discard two cards.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.player.life"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "78334f49"
+      "ast": "e67ea787"
     },
     "b9cec31a-9891-414f-b528-954612168832": {
       "name": "Tangleweave Armor",
@@ -4298,19 +4193,10 @@
     "e157ad1e-be35-47f3-92db-01799f8fb6a5": {
       "name": "Psychic Frog",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever ~ deals combat damage to a player or planeswalker, draw a card.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.combat-damage"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "26ffda4f"
+      "ast": "90b0e9dd"
     },
     "e286d1aa-bb74-4568-98b5-a693ac7a369d": {
       "name": "Venerable Warsinger",
@@ -4523,8 +4409,8 @@
           "ability": 2,
           "text": "−10: You gain 7 life, draw seven cards, then put up to seven permanent cards from your hand onto the battlefield.",
           "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.player.life"
+          "slot": "noun",
+          "closestRule": "noun.target-permanent"
         }
       ],
       "reasons": [],
@@ -4712,26 +4598,10 @@
     "f7716dff-5de7-4b52-966e-72ee3adc8d9a": {
       "name": "Gleaming Overseer",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "When ~ enters, amass Zombies 1.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Zombie tokens you control have hexproof and menace.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "c5a3b02f"
+      "ast": "1c6f2563"
     },
     "f7f435bc-1716-4412-9505-a1f2f2d83d08": {
       "name": "Dragonhawk, Fate's Tempest",
@@ -5040,7 +4910,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 228,
+      "supported": 240,
       "total": 265
     }
   }
