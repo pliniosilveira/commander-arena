@@ -118,7 +118,7 @@ export const SYNTHETIC_NIV_GROUP_3_C_LIST: readonly CardDefinition[] = [
   }),
   // A permanent that is not an instant or a sorcery: not a legal target of the casters above.
   singleFace({
-    name: 'SYNTHETIC Quiet Bear',
+    name: 'SYNTHETIC Quiet Cub',
     manaCost: ['1', 'G'],
     types: ['creature'],
     subtypes: ['Bear'],
