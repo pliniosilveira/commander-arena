@@ -157,6 +157,34 @@ export function canPlayLand(state: GameState, seat: SeatId, obj: GameObject, fac
 }
 
 /**
+ * "If that spell would be put into your graveyard, exile it instead" (D-359, CR 614.1a): whether the card in `obj`'s graveyard is cast with the rider of the cast
+ * permission an effect gave it. It is so when every `castPermission` that names the card carries the rider and the card has no other way to be cast from the graveyard
+ * (its own "you may cast this card from your graveyard", a permission to play it): a player who has both uses the one with no rider, as they may choose, so the rider
+ * is not forced on them.
+ */
+export function castPermissionExiles(state: GameState, seat: SeatId, obj: GameObject): boolean {
+  if (obj.zone !== 'graveyard' || obj.owner !== seat) return false;
+  const grants = state.continuousEffects.filter(
+    (e) =>
+      e.change.kind === 'castPermission' && e.change.seat === seat && e.objects.includes(obj.id),
+  );
+  if (grants.length === 0) return false;
+  if (!grants.every((e) => e.change.kind === 'castPermission' && e.change.exileInstead === true))
+    return false;
+  if (mayPlayFromGraveyard(state, seat, obj)) return false;
+  const face = faceOf(state, obj);
+  return !(
+    face?.abilities.some(
+      (a) =>
+        a.kind === 'static' &&
+        a.static.kind === 'castFromGraveyard' &&
+        (a.condition === undefined ||
+          evaluateCondition(state, a.condition, { controller: seat, source: obj.id })),
+    ) ?? false
+  );
+}
+
+/**
  * CR 113.6b, 604.2 (D-133): whether the card has the permission "You may cast this card from your graveyard [as long as
  * ...]" and its condition holds now, for its owner `seat` as "you" and the card as "this". The ability is read from the card's
  * front face, which is what it is in the graveyard (CR 712.8a). Or (D-135) an effect gave it a permission for this turn.

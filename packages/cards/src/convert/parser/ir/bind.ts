@@ -114,6 +114,8 @@ function classify(raw: string): Pronoun | null {
   if (word === 'that player' || word === 'they') return { kind: 'player' };
   if (word === 'the other') return { kind: 'other' };
   if (word === 'them' || /^those \w+$/.test(word)) return { kind: 'plural' };
+  // D-362 (Victimize): "the chosen cards" are the cards of the target phrase the text chose before.
+  if (/^the chosen (?:[\p{L}-]+ )?cards$/u.test(word)) return { kind: 'plural' };
   // "that nonland permanent card" (stage P33, D-150): a card an earlier instruction named, whatever the words before "card" say of it.
   if (/^that (?:[\p{L}-]+ )+card$/u.test(word)) return { kind: 'single', type: null };
   if (word === 'it' || word === 'her' || word === 'him') return { kind: 'single', type: null };

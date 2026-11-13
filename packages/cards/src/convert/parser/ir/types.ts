@@ -458,6 +458,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'declined' }
     // "If a creature card was discarded this way", "if a noncreature card was discarded this way" (stage P52, D-210, CR 608.2c)
     | { readonly kind: 'discardedThisWay'; readonly creature: boolean }
+    // "If you discarded an instant or sorcery card this way" (D-358, CR 608.2c, 701.9): what a discard before it in the same text did
+    | { readonly kind: 'discardedSpellThisWay' }
     | { readonly kind: 'unlessPays'; readonly who: IrNoun; readonly cost: readonly IrCost[] }
     // D-258 (the Bruna deck, CR 118.12a): "unless you return an untapped Plains you control to its owner's hand": the `return` clause of one permanent the controller chooses
     | { readonly kind: 'unlessReturn'; readonly clause: IrClause }

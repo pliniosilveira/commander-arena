@@ -150,6 +150,8 @@ function thisWayPhrase(what: ThisWayKind): string {
       return 'the number of creature cards discarded this way';
     case 'discardedNoncreature':
       return 'the number of noncreature cards discarded this way';
+    case 'discardedInstantOrSorcery':
+      return 'the number of instant and sorcery cards discarded this way';
   }
 }
 

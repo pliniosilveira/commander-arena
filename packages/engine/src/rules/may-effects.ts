@@ -135,7 +135,12 @@ export function runMayCast(
       timestamp,
       objects: [id],
       until: 'endOfTurn',
-      change: { kind: 'castPermission', seat: res.controller },
+      change: {
+        kind: 'castPermission',
+        seat: res.controller,
+        // D-359 (CR 614.1a): the rider of "If that spell would be put into your graveyard, exile it instead" goes with the permission.
+        ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
+      },
     });
   }
   return done({ ...next, continuousEffects: [...next.continuousEffects, ...created] });

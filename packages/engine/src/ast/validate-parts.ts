@@ -957,7 +957,11 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   milledValue: 'a mill effect',
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
+  discardedInstantOrSorcery: 'a discard effect',
 };
+
+/** Every `thisWay` count, one source of truth for the validator (the conditions and the amounts both read them from `ThisWayCounts`, D-131, D-210, D-358). */
+const THIS_WAY_KINDS = Object.keys(THIS_WAY_SOURCES);
 
 /** The `thisWay` counts an effect always produces (a `conditional` may not run, so it does not count). */
 function thisWayProduced(e: Effect): ThisWayKind[] {
@@ -968,7 +972,8 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
   if (e?.kind === 'draw') return ['playersDrew'];
   if (e?.kind === 'tap') return ['tapped'];
-  if (e?.kind === 'discard') return ['discarded', 'discardedCreature', 'discardedNoncreature'];
+  if (e?.kind === 'discard')
+    return ['discarded', 'discardedCreature', 'discardedNoncreature', 'discardedInstantOrSorcery'];
   if (e?.kind === 'mill') return ['milledValue'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
   if (e?.kind === 'playersMay') return thisWayProduced(e.effect);
@@ -1225,20 +1230,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'thisWay':
       // D-131: what an earlier effect of this same sequence did.
-      if (
-        !isOneOf(a.what, [
-          'sacrificed',
-          'destroyed',
-          'destroyedOwnNontoken',
-          'exiledNonland',
-          'playersDrew',
-          'tapped',
-          'discarded',
-          'milledValue',
-          'discardedCreature',
-          'discardedNoncreature',
-        ])
-      ) {
+      if (!isOneOf(a.what, THIS_WAY_KINDS)) {
         issue(out, `${path}.what`, `unknown thisWay count ${JSON.stringify(a.what)}`);
       } else if (!(scope.thisWay ?? []).includes(a.what)) {
         issue(
@@ -2648,9 +2640,8 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       break;
     case 'thisWayAtLeast':
       // D-210: "if a creature card was discarded this way": what an earlier effect of this same sequence did.
-      if (
-        !isOneOf(c.what, ['milledValue', 'discardedCreature', 'discardedNoncreature', 'discarded'])
-      ) {
+      // D-358: any count an earlier effect of the sequence makes ("If you do" after a mandatory sacrifice reads `sacrificed`, Victimize).
+      if (!isOneOf(c.what, THIS_WAY_KINDS)) {
         issue(out, `${path}.what`, `unknown thisWay count ${JSON.stringify(c.what)}`);
       } else if (!(scope.thisWay ?? []).includes(c.what)) {
         issue(
@@ -3871,6 +3862,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (e.duration !== 'untilEndOfTurn') {
         issue(out, `${path}.duration`, 'a cast permission lasts until end of turn');
+      }
+      if (e.exileInstead !== undefined && e.exileInstead !== true) {
+        issue(out, `${path}.exileInstead`, 'exileInstead must be true when present');
       }
       break;
     case 'shuffle':

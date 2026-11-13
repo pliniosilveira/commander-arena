@@ -243,6 +243,16 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.player': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.target-spell': spell((e) => `Counter ${e}.`),
   'noun.target-graveyard-card': spell((e) => `Exile ${e}.`),
+  // Group 8 of the Hashaton deck (D-362): the same cards said with "in", the chosen cards, the discard condition and the rider of the cast permission.
+  'noun.target-cards-in-your-graveyard': spell((e) => `Choose ${e}.`),
+  'noun.the-chosen-cards': spell(
+    (e) =>
+      `Choose two target creature cards in your graveyard. Sacrifice a creature. If you do, return ${e} to the battlefield.`,
+  ),
+  'condition.discarded-spell-this-way': permanent(
+    (e) => `{T}: Draw a card, then discard a card. If ${e}, you gain 1 life.`,
+  ),
+  'effect.may-cast': spell((e) => `${cap(e).replace('. if that', '. If that')}.`),
   'noun.player-graveyard': spell((e) => `Exile ${e}.`),
   'noun.all-graveyard-cards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyards': spell((e) => `Exile ${e}.`),

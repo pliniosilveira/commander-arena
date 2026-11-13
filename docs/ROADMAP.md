@@ -250,3 +250,10 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 
 - "Mill a card. You may play that card this turn." is read only for the controller's own mill: "target opponent mills a card. You may play that card" and "each player mills" are not lowered (the permission is given for cards of the controller's graveyard only).
 - The copy rider of a mana ability names one color or none and card types: a creature type ("When that mana is spent to cast a Dragon spell, copy it"), two colors ("a red or blue instant") and the commander are not read.
+
+## The Hashaton deck, group 8 (issue 31, D-358 to D-362, provisional numbers)
+
+- `mayCast` with `exileInstead`: when a card has several permissions to be cast from the graveyard, the rider applies only when every one of them carries it, and the engine does not ask which permission the player uses (the one without the rider is assumed, as it is the player's better choice). A cast from a graveyard by a permission that also changes the cost or the mana is not built.
+- "If you do" after a mandatory sacrifice reads through `didPrevious` (D-360), which counts the instructions since the last `may`: a text with another counted instruction before the sacrifice would be read too wide. `thisWayAtLeast` of `sacrificed` is the exact reading, accepted by the engine, and no rule of the parser lowers to it yet.
+- `thisWayAtLeast` is worded in the web only for one or more of a creature card or a noncreature card discarded, an instant or sorcery card discarded, and a permanent sacrificed.
+- "target ... cards in your graveyard" (with "in") is read only by `effect.choose-graveyard-cards`; the other rules that take a graveyard card say "from".

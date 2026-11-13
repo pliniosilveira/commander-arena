@@ -17,6 +17,7 @@ import {
 import type { IrNoun, IrNounList, IrZoneSpec, Span } from '../../ir/types';
 import { positiveCount } from '../amount/index';
 import { defineRule, family, spanned } from '../registry';
+import { flag } from './dragons';
 import { type Clauses, operands, PERMANENT_OPERANDS, single } from './operands';
 
 const ORDINALS: Readonly<Record<string, number>> = {
@@ -102,6 +103,11 @@ export const EFFECT_PUT_LIBRARY_NTH = defineRule<Clauses>({
 
 const MAY_CAST_RULE = 'effect.may-cast';
 
+/** ". If that spell would be put into your graveyard, exile it instead": the rider of the permission, the next sentence, taken with the clause (D-359, CR 614.1a). */
+const EXILE_INSTEAD_YOUR = pattern(
+  /\. if that spell would be put into your graveyard, exile it instead(?![\p{L}\p{N}'’])(?!,| and\b| then\b)/iu,
+);
+
 /**
  * `effect.may-cast`: "you may cast target Zombie creature card from your graveyard this turn" (CR 601.2: casting a spell from the
  * graveyard when an effect permits it; CR 611.2a: a continuous effect from a resolving ability lasts for the duration it says; CR
@@ -125,8 +131,16 @@ export const EFFECT_MAY_CAST = defineRule<Clauses>({
     'you may cast target instant or sorcery card from your graveyard this turn',
     'you may cast target Goblin card from your graveyard until end of turn',
     'you may cast target Angel creature card from your graveyard this turn',
+    // D-359 (Vohar, Vodalian Desecrator): the rider of the permission, for the spell cast with it.
+    'you may cast target instant or sorcery card from your graveyard this turn. if that spell would be put into your graveyard, exile it instead',
+    'you may cast target creature card from your graveyard until end of turn. if that spell would be put into your graveyard, exile it instead',
   ],
   rejects: [
+    'you may cast target instant or sorcery card from your graveyard this turn. if that spell would be put into a graveyard, exile it instead',
+    'you may cast target instant or sorcery card from your graveyard this turn. if that spell would be put into your graveyard, exile it instead, then draw a card',
+    'you may cast target instant or sorcery card from your graveyard this turn. if that spell would be put into your graveyard, put it on the bottom of your library instead',
+    'you may cast target instant or sorcery card from your graveyard this turn. exile it instead',
+    'you may cast target instant or sorcery card from your graveyard this turn. if it would be put into your graveyard, exile it instead',
     'you may cast target creature card from a graveyard this turn',
     "you may cast target creature card from an opponent's graveyard this turn",
     'you may cast two target creature cards from your graveyard this turn',
@@ -153,8 +167,12 @@ export const EFFECT_MAY_CAST = defineRule<Clauses>({
           !noun.plural,
       ),
       choice(literal(' this turn'), literal(' until end of turn')),
+      optional(spanned(EXILE_INSTEAD_YOUR), null),
     ),
-    ([, , objects]) => ({ verb: 'mayCast', args: { objects } }),
+    ([, , objects, , exileInstead]) => ({
+      verb: 'mayCast',
+      args: { objects, exileInstead: flag(MAY_CAST_RULE, exileInstead !== null, objects.span) },
+    }),
   ),
 });
 

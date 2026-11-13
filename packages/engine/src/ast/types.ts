@@ -229,7 +229,9 @@ export type ThisWayKind =
   // D-210: "the total mana value of those cards" milled this way, and "if a creature card (a noncreature card) was discarded this way".
   | 'milledValue'
   | 'discardedCreature'
-  | 'discardedNoncreature';
+  | 'discardedNoncreature'
+  // D-358: "If you discarded an instant or sorcery card this way" (Vohar, Vodalian Desecrator): the instant and sorcery cards `discard` effects discarded.
+  | 'discardedInstantOrSorcery';
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
@@ -1311,11 +1313,14 @@ export type Effect =
    * this effect from there, at the timing of its type, paying its ordinary cost (no alternative cost, no commander tax) and
    * with no other change (it is not exiled afterwards). The permission names the card as it is now: if it leaves the
    * graveyard it is a new object (CR 400.7) and the permission is gone. `duration` is `untilEndOfTurn`.
+   * `exileInstead` (D-359, CR 614.1a, "If that spell would be put into your graveyard, exile it instead"): the spell cast with this permission is exiled instead
+   * of going to a graveyard when it would leave the stack for one (resolved, countered, fizzled); it is written onto the permission and read as the spell is cast.
    */
   | {
       readonly kind: 'mayCast';
       readonly objects: ObjectSelector;
       readonly duration: 'untilEndOfTurn';
+      readonly exileInstead?: true;
     }
   /**
    * "Exile the top card of your library", "Exile the top two cards of your library", "Exile the top X cards of your library, where X is the
