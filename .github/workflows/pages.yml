@@ -3,7 +3,9 @@ name: Deploy to GitHub Pages
 # SPEC 17.6 A23, D-049: the playable build is deployed by Cloudflare's Git integration
 # (`wrangler.jsonc`). This workflow is the GitHub Pages alternative, now that the repository is
 # public: to use it, switch Settings -> Pages -> Source to "GitHub Actions" and add
-# `push: branches: [main]` under `on:`. Until then it runs only when started by hand.
+# `push: branches: [main]` under `on:`. Until then it runs only when started by hand. A Pages site
+# is one deployment: the weekly `Coverage report` (D-410) already publishes the coverage site
+# there, so deploying the app here would replace it; put the coverage files in this build first.
 
 on:
   workflow_dispatch:

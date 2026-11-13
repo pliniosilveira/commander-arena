@@ -2,6 +2,10 @@
 
 An unofficial, free, in-browser Magic: The Gathering Commander game: one human against an AI opponent, driven by a rules engine that follows the Comprehensive Rules and tells you up front when it cannot run a card correctly.
 
+[![Card coverage: the share of Commander cards the engine fully supports (open the report)](https://pliniosilveira.github.io/commander-arena/coverage.svg)](https://pliniosilveira.github.io/commander-arena/)
+
+The picture above is rebuilt every Monday from Scryfall's card list ([how](docs/CORPUS.md)). If it does not load, the report is at <https://pliniosilveira.github.io/commander-arena/>, and `pnpm coverage:cards` makes the same numbers on your machine.
+
 ## Status
 
 Playable and still growing. You can play a full two-player Commander game against an AI in the browser, from **Quick start** with one of the precons in the menu, whose card data ships with the app so it starts without a connection (card images load from Scryfall). Only decks that follow the Commander rules and use cards the engine fully supports can be played. The decks you save in the browser can be picked for either seat, and the precons can be edited on the "Your decks" page (your version stays in this browser; "Reset to default" brings the shipped list back). The start screen shows the app build, engine and card parser versions at the bottom. You can also import your own Commander list (Moxfield, Archidekt, Arena or MTGO text): cards are looked up on Scryfall (it needs a connection), checked against the Commander rules, and a coverage report says which cards the engine can run and why it cannot run the others.
@@ -57,13 +61,11 @@ The Comprehensive Rules text is Wizards' and is not part of this repository: `pn
 
 ## Requesting card support
 
-The app has no request button. When you import a card the game cannot run, the import screen's "Why unsupported?" shows what blocks it. To get the card supported, tell the owner or open a GitHub issue with the card name. The coding agent then follows `docs/CARD_SUPPORT_PLAYBOOK.md`: it finds the missing capability, adds it in a general form so other cards using the same mechanic work too, and records what it learned.
+When you import a deck with cards the game cannot run, the coverage report says what blocks each one ("Why unsupported?") and has a button, **Ask for support on GitHub**. It opens a GitHub issue with your decklist, what blocks the cards and their card data already filled in: press Submit. A report too long for a link is copied to your clipboard when you press the button, and you paste it into the description.
 
-These are the three things you type to the coding agent:
+A complete request is picked up by the deck support routine (`.claude/skills/deck-support/SKILL.md`, D-251), oldest first and when its budget allows it. It builds the cards the way `docs/CARD_SUPPORT_PLAYBOOK.md` says (the missing capability is added in a general form, so other cards that use the same mechanic work too) and keeps the issue up to date with how far it is. The owner merges the result. A request that is not complete gets a comment that says what is missing.
 
-- `Add support for <card name>.`
-- `Work the backlog: implement the top 3 mechanics in reports/backlog.md.`
-- `Approve the proposal in docs/proposals/<mechanic>.md.`
+The coding agent also takes direct requests from the owner: `Add support for <card name>.`, `Work the backlog.` and `Approve the proposal in docs/proposals/<mechanic>.md.`
 
 ## Known limitations
 

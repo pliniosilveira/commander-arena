@@ -6,6 +6,7 @@ Every limit under "Deferred engine features" and "Deferred grammar" is refused o
 
 ## Owner-run work and tooling
 
+- **Fresh coverage numbers.** Built (D-410): the weekly `Coverage report` workflow publishes them on GitHub Pages and the README draws them from there. The committed `reports/` and the baseline are still from an older parser version and only the `Coverage` check reads them. The routine does not work the backlog by itself (the owner's decision); a card nobody asked for is built when the owner asks.
 - **Blocked hosts.** The cloud sandbox cannot reach Scryfall or Wizards (`AGENTS.md`, "Network"), so the owner runs `pnpm coverage:cards`, the `corpus:*` extracts, `pnpm precon:snapshot` and `pnpm rules:fetch` locally and commits the result.
 - **Refresh `reports/`.** `reports/coverage.md`, `reports/backlog.md`, `reports/templates.json` and `reports/coverage-baseline.json` are from an older parser version; run `pnpm coverage:cards --download --update-baseline` and `pnpm corpus:decks` and commit the result. `reports/template-replay.md` is rebuilt offline by `pnpm corpus:replay`.
 - **CR update.** When Wizards publishes the CR that contains the October 19 bulletin: `pnpm rules:fetch --force`, `pnpm rule --check`, update `tools/rules/cr-real.test.ts` and `docs/rules/RULES_VERSION.md`, confirm the 7xx renumbering (D-035).
