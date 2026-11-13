@@ -294,7 +294,8 @@ describe('"When you cycle this card" (CR 702.29c)', () => {
 
   test.each([
     'Whenever you cycle a card, draw a card.',
-    'Whenever you cycle or discard a card, draw a card.',
+    // D-374: "you cycle or discard a card" is read (parser-hashaton-g1.test.ts); a card of a kind is not.
+    'Whenever you cycle or discard a creature card, draw a card.',
     'When you cycle another card, draw a card.',
     'When an opponent cycles a card, draw a card.',
   ])('"%s" is not read', (text) => {

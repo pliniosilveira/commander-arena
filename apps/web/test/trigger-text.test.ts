@@ -78,6 +78,18 @@ describe('the other new kinds', () => {
       { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'any' },
       'Whenever Pyre Hound deals combat damage',
     ],
+    // D-373: a player, or a planeswalker.
+    [
+      { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'playerOrPlaneswalker' },
+      'Whenever Pyre Hound deals combat damage to a player or planeswalker',
+    ],
+    [
+      { kind: 'dealsCombatDamage', what: CREATURE_YOU, to: 'playerOrPlaneswalker' },
+      'Whenever a creature you control deals combat damage to a player or planeswalker',
+    ],
+    // D-374: cycling is discarding (CR 702.29a); "another" leaves out the card with the ability.
+    [{ kind: 'discarded', who: 'you' }, 'Whenever you discard a card'],
+    [{ kind: 'discarded', who: 'you', another: true }, 'Whenever you discard another card'],
     [
       { kind: 'leavesBattlefield', what: { kind: 'this' } },
       'Whenever Pyre Hound leaves the battlefield',

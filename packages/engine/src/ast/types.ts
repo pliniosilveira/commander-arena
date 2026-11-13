@@ -2633,12 +2633,14 @@ export type Trigger =
    * `opponent`), a creature (`creature`, narrowed by `filter` when present), or anything (`any`: a player, a
    * creature, a planeswalker or a battle). It triggers once for each object or player a source damages, in
    * the step that damage is dealt: a double striker deals damage in two steps and triggers twice, and
-   * damage that is entirely prevented triggers nothing (CR 603.2g). `filter` only goes with `to: 'creature'`.
+   * damage that is entirely prevented triggers nothing (CR 603.2g). `filter` only goes with `to: 'creature'`. `playerOrPlaneswalker` (D-373,
+   * "deals combat damage to a player or planeswalker"): a player, or a permanent that is a planeswalker (as it is, or as it last was if it already
+   * left, CR 113.7a); a creature or a battle is not. It has no "that player": the damaged object may be a planeswalker (`triggerPlayer` is not valid).
    */
   | {
       readonly kind: 'dealsCombatDamage';
       readonly what: TriggerSubject;
-      readonly to: 'player' | 'opponent' | 'creature' | 'any';
+      readonly to: 'player' | 'opponent' | 'creature' | 'any' | 'playerOrPlaneswalker';
       readonly filter?: ObjectFilter;
     }
   /**
@@ -2702,9 +2704,15 @@ export type Trigger =
   /**
    * "Whenever you discard a card" (CR 701.9a, 603.2, D-206): once for each card the player `who` names (relative to the controller of the ability)
    * discards, however it came to be (an effect, a cost, the cleanup step). `triggerSubject` is the card in the graveyard it became (or in exile,
-   * for madness), so "you may exile that card from your graveyard" can name it; `triggerPlayer` is the player who discarded it.
+   * for madness), so "you may exile that card from your graveyard" can name it; `triggerPlayer` is the player who discarded it. A card that is
+   * cycled is discarded to pay the cost of its cycling ability (CR 702.29a), so this also is "Whenever you cycle or discard a card", which
+   * triggers once for a cycled card (CR 702.29d). `another` (D-374, "another card"): not the card with this ability itself.
    */
-  | { readonly kind: 'discarded'; readonly who: 'you' | 'opponent' | 'any' }
+  | {
+      readonly kind: 'discarded';
+      readonly who: 'you' | 'opponent' | 'any';
+      readonly another?: boolean;
+    }
   /**
    * "Whenever one or more other creatures and/or artifacts you control die" (CR 603.10a, 603.2c, 700.4, D-206): a batch trigger. The permanents that
    * die in one event (a state-based action, a destroy effect, combat damage) are one occurrence: the ability triggers once however many `what` names

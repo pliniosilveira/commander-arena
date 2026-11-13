@@ -38,6 +38,13 @@ export const CLAUSE_JOIN = choice(
   literal(' and '),
 );
 
+/**
+ * Between the verbs one player subject shares: "target opponent sacrifices a creature, discards a card, and loses 3 life."
+ * (D-372, CR 608.2c: the instructions are followed in the order written). The clause joins above, and a bare comma: a comma alone only
+ * separates verbs of one subject, where the next words are a verb phrase and not a subject, so only `effect.player` uses it.
+ */
+export const VERB_LIST_JOIN = choice(CLAUSE_JOIN, literal(', '));
+
 /** How a join connects what is before it to what follows (the `connector` of the clause before). */
 export function connectorOf(join: string): 'and' | 'then' {
   return /\bthen\b/i.test(join) ? 'then' : 'and';

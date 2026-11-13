@@ -508,6 +508,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.becomes-untapped': whenever,
   'trigger.dies-batch': whenever,
   'trigger.discarded': whenever,
+  'trigger.cycled-or-discarded': whenever,
   'condition.mana-spent-at-least': permanent(
     (e) => `Whenever you cast a noncreature spell, if ${e}, you gain 1 life.`,
   ),

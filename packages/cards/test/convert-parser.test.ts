@@ -397,6 +397,7 @@ describe('unmatched abilities', () => {
       'trigger.noncombat-damage',
       'trigger.dies-batch',
       'trigger.discarded',
+      'trigger.cycled-or-discarded',
       'trigger.chapter',
       'condition.same-name',
       'condition.had-counters',

@@ -952,9 +952,11 @@ export interface IrTrigger extends IrNode {
   readonly spellOnly?: true;
   /**
    * 'dealsCombatDamage': what the damage went to (stage P18, CR 120.2a); none is "any". 'noncombatDamageDealt' (issue 25, D-333, CR 120.2b): the player
-   * damaged, `player` or `opponent` (never a creature).
+   * damaged, `player` or `opponent` (never a creature). `playerOrPlaneswalker` (D-373): "to a player or planeswalker".
    */
-  readonly damaged?: 'player' | 'opponent' | 'creature';
+  readonly damaged?: 'player' | 'opponent' | 'creature' | 'playerOrPlaneswalker';
+  /** 'discarded': "another card" (D-374), a card other than the one with the ability. */
+  readonly another?: true;
   /** 'dealsCombatDamage' to a player: the player, so that "that player" has an antecedent. */
   readonly recipient?: IrNoun;
   /**

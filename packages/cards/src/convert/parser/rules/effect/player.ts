@@ -24,7 +24,7 @@ import { EQUAL_AMOUNTS, FOR_EACH_TAIL as FOR_EACH, scaled } from '../amount/scal
 import { CARD_TYPES, typeWords } from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family, spanned } from '../registry';
-import { CLAUSE_JOIN, type Clauses, connectorOf, listWithJoins, makeClause } from './operands';
+import { type Clauses, connectorOf, listWithJoins, makeClause, VERB_LIST_JOIN } from './operands';
 import { tokenWithEach } from './token';
 
 const CARDS = pattern(/ cards?(?![\p{L}\p{N}])/iu);
@@ -472,8 +472,16 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you lose the game',
     'that player loses the game',
     'target opponent loses 3 life and loses the game',
+    // D-372 (CR 608.2c): a bare comma between the verbs of one subject.
+    'you gain 2 life, draw two cards, then discard two cards',
+    'target opponent sacrifices a creature or planeswalker of their choice, discards a card, and loses 3 life',
+    'target opponent discards a card, loses 3 life',
   ],
   rejects: [
+    // D-372: after a bare comma the next words are a verb of the same subject, which agrees with it.
+    'you draw a card, discards a card',
+    'you draw a card, you discard a card',
+    'target opponent discards a card, discard a card',
     'you lose the game at the beginning of the next turn',
     'you loses the game',
     'each opponent lose the game',
@@ -565,7 +573,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         alone('effect.player.lose-game', loseGameAction),
       );
       return map(
-        listWithJoins(actions, CLAUSE_JOIN),
+        listWithJoins(actions, VERB_LIST_JOIN),
         ({ items, joins }): Clauses =>
           items.map((c, i) => {
             const join = joins[i];

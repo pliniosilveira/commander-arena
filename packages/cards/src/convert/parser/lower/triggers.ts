@@ -373,7 +373,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       // "Whenever you discard a card" (stage P49, D-206, CR 701.9a): the player is relative to the controller.
       const who = whoOf(t.actor);
       if (who === null) return failure(t);
-      return ok({ kind: 'discarded', who });
+      return ok({ kind: 'discarded', who, ...(t.another === true ? { another: true } : {}) });
     }
     case 'drawn': {
       const who = whoOf(t.actor);
