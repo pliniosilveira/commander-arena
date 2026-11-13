@@ -42,6 +42,7 @@ import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
+import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
@@ -819,6 +820,7 @@ export const EFFECT_RULES = [
   // D-337: "copy it for each time you've cast your commander from the command zone this game".
   ...NIV_GROUP_3_A_EFFECT_RULES,
   ...NIV_GROUP_3_C_EFFECT_RULES,
+  ...HASHATON_G7_EFFECT_RULES,
   ...CONTROL_EFFECT_RULES,
   // Stage P44 (D-195): "starting with you, each player votes for profit or security".
   ...VOTE_EFFECT_RULES,

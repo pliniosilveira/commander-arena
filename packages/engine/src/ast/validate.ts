@@ -1096,6 +1096,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(a.trigger?.kind === 'attackBatch' ? { triggerAttacked: true } : {}),
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
+        ...(a.trigger?.kind === 'step' && a.trigger.step === 'main2'
+          ? { postcombatMainTrigger: true }
+          : {}),
         ...(selfCast ? { selfCast: true } : {}),
         ...(a.trigger?.kind === 'dies' ? { diesTrigger: true } : {}),
         ...HOOKS,

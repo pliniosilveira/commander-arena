@@ -2425,6 +2425,9 @@ export const NIV_GROUP_3_C_NAMES = [
   'SYNTHETIC Quiet Cub',
 ] as const;
 
+/** The additional beginning phase card of the Hashaton deck (D-1130): the extra untap, upkeep and draw steps change the turns of the generic pools, which games-100 expects only from dedicated styles. */
+export const HASHATON_G7_NAMES = ['SYNTHETIC Second Sun Sphinx'] as const;
+
 /** The cast-or-copy trigger doubling cards of the Niv-Mizzet deck (D-339): extra triggers and their questions stay out of the generic pools. */
 export const NIV_GROUP_3_B_NAMES = [
   'SYNTHETIC Twin Mage',
@@ -2869,6 +2872,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(NIV_GROUP_3_B_NAMES as readonly string[]).includes(card.name))
   // The graveyard casters (D-350) ask "you may cast it" as a trigger resolves (a confirmOptional), which games-100 expects only from dedicated styles.
   .filter((card) => !(NIV_GROUP_3_C_NAMES as readonly string[]).includes(card.name))
+  // The additional beginning phase card (D-1130) adds untap, upkeep and draw steps to the turn, which games-100 expects only from dedicated styles.
+  .filter((card) => !(HASHATON_G7_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.

@@ -62,6 +62,8 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
     'the beginning of each draw step',
     'the beginning of your precombat main phase',
     'the beginning of your postcombat main phase',
+    'the beginning of each of your postcombat main phases',
+    'the beginning of each of your draw steps',
     'the beginning of your first main phase',
     'the beginning of your second main phase',
     'the beginning of combat on your turn',
@@ -78,6 +80,10 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
     'the beginning of combat on each opponent’s turn',
     'the beginning of your next draw step',
     'the beginning of your main phase',
+    'the beginning of each of your main phases',
+    'the beginning of each of your postcombat main phase',
+    'the beginning of each of their postcombat main phases',
+    'the beginning of each of your postcombat main phases and',
     "the beginning of each opponent's precombat main phase and",
     'the beginning of the next end of combat step',
     'end of combat on target opponent’s turn',
@@ -95,7 +101,18 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
         ),
       ),
     );
-    const owned = phase(ctx, pos);
+    // "each of your postcombat main phases" (CR 500.1, 505.1; D-1130): the plural of "your postcombat main phase", for the turns of the controller.
+    const plural = sequence(
+      literal('the beginning of each of your '),
+      choice(
+        ...PHASE_WORDS.map(({ words, step }) =>
+          map(pattern(new RegExp(`${words}s${NOT_IN_WORD}`, 'iu')), () => step),
+        ),
+      ),
+    )(ctx, pos);
+    const owned = plural.ok
+      ? ({ ok: true, value: [null, 'you' as const, plural.value[1]], pos: plural.pos } as const)
+      : phase(ctx, pos);
     if (owned.ok) {
       const [, det, step] = owned.value;
       // A main phase is "your" or "each" player's, a turn of "each opponent" too (CR 505.1).
