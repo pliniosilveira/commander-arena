@@ -78,6 +78,7 @@ import { graveyardPlayPermission, markGraveyardPlay, riderOf } from './graveyard
 import {
   canCast,
   canCastDuringResolution,
+  castPermissionExiles,
   castZone,
   faceOf,
   hasKickedTargets,
@@ -204,7 +205,11 @@ export function beginCast(
       ...(suspended ? { suspended: true as const } : {}),
       // D-350: what the effect that let the card be cast says about this spell.
       ...(riders.anyManaType === true ? { anyManaType: true as const } : {}),
-      ...(riders.exileInstead === true ? { exileInstead: true as const } : {}),
+      // D-1141: "You may cast target instant or sorcery card from your graveyard this turn. If that spell would be put into your graveyard, exile it instead."
+      ...(riders.exileInstead === true ||
+      (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj))
+        ? { exileInstead: true as const }
+        : {}),
       // D-151: "If you cast a creature spell this way, it gains haste until end of turn".
       ...(zone === 'library' && libraryCastPermission(state, seat, obj)?.gainsHaste === true
         ? { hasteUntilEnd: true as const }

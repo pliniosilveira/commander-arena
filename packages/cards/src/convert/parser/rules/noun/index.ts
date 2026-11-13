@@ -27,6 +27,7 @@ import { DESTINY_EARLY_NOUN_RULES } from './destiny';
 import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_NOUN_RULES } from './edhrec';
+import { HASHATON_G8_NOUN_RULES } from './hashaton-g8';
 import { HOFRI_NOUN_RULES } from './hofri';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
@@ -251,6 +252,34 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'up to two target land card from your graveyard',
   ],
   parse: targetOf(ID.targetGraveyard, graveyardPhrase),
+});
+
+/**
+ * `noun.target-cards-in-your-graveyard` (D-1144, Victimize): "target creature card in your graveyard", "two target creature cards in your graveyard": the cards of
+ * `noun.target-graveyard-card`, said with "in", and of your own graveyard only (CR 404.1, 115.1). Another noun rule so that the "in" is read only where a rule asks
+ * for this noun by its id.
+ */
+export const NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD = defineRule<IrNoun>({
+  id: 'noun.target-cards-in-your-graveyard',
+  family: 'noun',
+  leading: [],
+  cites: ['CR 404.1 (Graveyard)', 'CR 115.1 (Targets)'],
+  examples: [
+    'target creature card in your graveyard',
+    'two target creature cards in your graveyard',
+    'three target land cards in your graveyard',
+    'target card in your graveyard',
+  ],
+  rejects: [
+    'target creature card in a graveyard',
+    "target creature card in an opponent's graveyard",
+    'target creature card from your graveyard',
+    'target creature in your graveyard',
+    'two target creature card in your graveyard',
+    'target card',
+    'all creature cards in your graveyard',
+  ],
+  parse: targetOf('noun.target-cards-in-your-graveyard', (plural) => graveyardPhrase(plural, 'in')),
 });
 
 /**
@@ -582,6 +611,7 @@ export const NOUN_RULES = [
   // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards".
   ...CROSS_ZONE_NOUN_RULES,
   NOUN_TARGET_GRAVEYARD_CARD,
+  NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
   NOUN_PLAYER_GRAVEYARD,
   NOUN_ALL_GRAVEYARD_CARDS,
   NOUN_ALL_GRAVEYARDS,
@@ -605,6 +635,8 @@ export const NOUN_RULES = [
   ...VRASKA_NOUN_RULES,
   // Stage P33 (D-150): "that nonland permanent card", "this card".
   ...ANGEL_NOUN_RULES,
+  // D-1144 (Hashaton, group 8): "the chosen cards".
+  ...HASHATON_G8_NOUN_RULES,
   NOUN_ITS_CONTROLLER,
   NOUN_ATTACKED_BY_IT,
   ...SUBJECT_NOUN_RULES,

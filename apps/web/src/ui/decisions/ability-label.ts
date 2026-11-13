@@ -846,7 +846,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     }
     case 'mayCast':
       // D-135 (CR 601.2, 611.2a): "You may cast target Zombie creature card from your graveyard this turn".
-      return `You may cast ${object(effect.objects)} this turn`;
+      // D-1141 (CR 614.1a): the rider "If that spell would be put into your graveyard, exile it instead".
+      return `You may cast ${object(effect.objects)} this turn${
+        effect.exileInstead === true
+          ? '. If that spell would be put into your graveyard, exile it instead'
+          : ''
+      }`;
     case 'exile': {
       // D-149 (CR 610.3): "Exile target creature until this enchantment leaves the battlefield", one for each opponent.
       if (effect.until !== undefined) {

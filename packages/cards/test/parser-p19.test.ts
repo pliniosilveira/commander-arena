@@ -90,10 +90,12 @@ describe('the lead line: how many modes are chosen (CR 700.2)', () => {
 
   test('"Choose two target creature cards" is not a modal text: no bullet follows', () => {
     const u = dropped(
-      'Choose two target creature cards in your graveyard. Sacrifice a creature. If you do, return the chosen cards to the battlefield tapped.',
+      'Choose two target creature cards from a graveyard. Sacrifice a creature. If you do, return the chosen cards to the battlefield tapped.',
       'instant',
     );
-    expect(u).toMatchObject({ reason: 'unrecognised', closestRule: 'none' });
+    // Not a modal rule: the closest the reading came is the noun of the "from a graveyard" it does not read (D-1144).
+    expect(u).toMatchObject({ reason: 'unrecognised' });
+    expect(u.closestRule).not.toMatch(/^modal/);
   });
 });
 

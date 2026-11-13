@@ -1559,6 +1559,8 @@ export interface ThisWayCounts {
   /** The creature cards, and the other cards, discarded by `discard` effects (D-210: "if a creature card was discarded this way"). */
   readonly discardedCreature?: number;
   readonly discardedNoncreature?: number;
+  /** The instant and sorcery cards discarded by `discard` effects (D-1140: "if you discarded an instant or sorcery card this way"). */
+  readonly discardedInstantOrSorcery?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
   readonly discardedBy?: readonly SeatId[];
 }
@@ -1603,7 +1605,15 @@ export type ContinuousChange =
    * `objects` names from its owner's graveyard until the effect ends with the turn. No layer: read where casting is decided
    * (`rules/legality.ts`, `mayCastFromGraveyard`).
    */
-  | { readonly kind: 'castPermission'; readonly seat: SeatId }
+  | {
+      readonly kind: 'castPermission';
+      readonly seat: SeatId;
+      /**
+       * "If that spell would be put into your graveyard, exile it instead" (D-1141, CR 614.1a): the spell cast with this permission carries `StackData.exileInstead`
+       * (`rules/cast.ts`, `beginCast`). Absent when the effect has no such rider.
+       */
+      readonly exileInstead?: true;
+    }
   /**
    * "Gain control of target creature" (`gainControl`, D-189, CR 613.1b): `seat` controls each permanent the effect's `objects` names while the effect
    * lasts. Layer 2: `controllerOf` (`rules/control.ts`) reads it, after the stored controller (the player the permanent entered under, CR 110.2) and

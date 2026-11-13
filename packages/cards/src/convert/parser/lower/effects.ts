@@ -377,8 +377,12 @@ const RETURN: Lowering<IrClause, Effects> = {
       };
     }
     // "Return that nonland permanent card to the battlefield" (stage P33, D-150, CR 608.2c): the card an earlier instruction chose from a
-    // graveyard; a pronoun for anything else (a permanent on the battlefield, a player) is not a card to return.
-    if (chosen?.kind === 'noun' && chosen.det === 'anaphor' && /^that /iu.test(chosen.filter.raw)) {
+    // graveyard; a pronoun for anything else (a permanent on the battlefield, a player) is not a card to return. D-1144 (Victimize): "the chosen cards" the same.
+    if (
+      chosen?.kind === 'noun' &&
+      chosen.det === 'anaphor' &&
+      /^(?:that|the chosen) /iu.test(chosen.filter.raw)
+    ) {
       const spec = ctx.targets.find((t) => t.id === chosen.ref);
       if (spec?.what.kind !== 'object' || spec.what.filter.zone !== 'graveyard') {
         return failure(clause);
@@ -576,10 +580,14 @@ const MAY_CAST: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const objects = operand(clause, 'objects');
     if (objects?.kind !== 'noun' || objects.det !== 'target') return failure(clause);
+    // D-1141: "If that spell would be put into your graveyard, exile it instead" is the rider of the permission (`exileInstead`).
+    const exile = arg(clause, 'exileInstead');
+    if (exile !== undefined && exile.kind !== 'flag') return failure(clause);
     return eachObject(clause, ctx, (selected) => ({
       kind: 'mayCast',
       objects: selected,
       duration: 'untilEndOfTurn',
+      ...(exile?.value === true ? { exileInstead: true as const } : {}),
     }));
   },
 };
@@ -1388,7 +1396,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
               ? 'sameNameAtLeast'
               : test === 'attachedTo' || test === 'putThisWay'
                 ? 'objectMatches'
-                : test === 'discardedThisWay'
+                : test === 'discardedThisWay' || test === 'discardedSpellThisWay'
                   ? 'thisWayAtLeast'
                   : test;
     return failure(

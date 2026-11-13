@@ -448,6 +448,12 @@ export function lowerCondition(
         count: 1,
       });
     }
+    case 'discardedSpellThisWay': {
+      // "If you discarded an instant or sorcery card this way" (D-1140, CR 608.2c): what a discard before it in the same text did.
+      const blocked = missingFeatures(['condition:thisWayAtLeast']);
+      if (blocked.length > 0) return failure(c, blocked);
+      return ok({ kind: 'thisWayAtLeast', what: 'discardedInstantOrSorcery', count: 1 });
+    }
     case 'unlessReturn':
       // "... unless you return a land you control to its owner's hand" belongs to the sentence of one instruction, which the lowering of the sentences reads (D-258).
       return failure(c, []);

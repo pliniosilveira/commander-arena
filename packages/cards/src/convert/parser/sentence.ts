@@ -110,6 +110,8 @@ const LEAD_CONDITIONS = [
   ...DIE_CONDITIONS,
   // Stage P52 (D-210): "If a creature card was discarded this way, ..." after a discard.
   'condition.discarded-this-way',
+  // D-1140: "If you discarded an instant or sorcery card this way, ..." after a discard.
+  'condition.discarded-spell-this-way',
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
   ...LIFE_LEAD_CONDITIONS,

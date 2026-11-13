@@ -2425,6 +2425,19 @@ export const NIV_GROUP_3_C_NAMES = [
   'SYNTHETIC Quiet Cub',
 ] as const;
 
+/**
+ * The SYNTHETIC cards of group 8 of the Hashaton deck (D-1140 to D-1143): a sacrifice that is not optional with a return behind it, a loot with a conditional drain and a
+ * cast permission whose spell is exiled instead. They ask their questions (which creature to sacrifice, what to discard) in the middle of resolutions, which games-100 expects
+ * only from dedicated styles, so they stay out of the generic pools.
+ */
+export const HASHATON_G8_NAMES = [
+  'SYNTHETIC Grim Exchange',
+  'SYNTHETIC Spell Looter',
+  'SYNTHETIC Spell Reaver',
+  'SYNTHETIC Spell Borrower',
+  'SYNTHETIC Spell Desecrator',
+] as const;
+
 /** The cast-or-copy trigger doubling cards of the Niv-Mizzet deck (D-339): extra triggers and their questions stay out of the generic pools. */
 export const NIV_GROUP_3_B_NAMES = [
   'SYNTHETIC Twin Mage',
@@ -2869,6 +2882,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(NIV_GROUP_3_B_NAMES as readonly string[]).includes(card.name))
   // The graveyard casters (D-350) ask "you may cast it" as a trigger resolves (a confirmOptional), which games-100 expects only from dedicated styles.
   .filter((card) => !(NIV_GROUP_3_C_NAMES as readonly string[]).includes(card.name))
+  // The Hashaton group 8 cards (D-1140 to D-1143) ask which creature to sacrifice and what to discard, which games-100 expects only from dedicated styles.
+  .filter((card) => !(HASHATON_G8_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
