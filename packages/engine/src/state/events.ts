@@ -529,6 +529,7 @@ export type GameEvent =
       readonly purpose:
         | 'creatureType'
         | 'color'
+        | 'cardType'
         | 'option'
         | 'attackTarget'
         | 'effect'

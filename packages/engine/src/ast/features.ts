@@ -790,6 +790,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'opponentsCantWin',
     // D-363 (CR 119.7): "Your opponents can't gain life."
     'cantGainLife',
+    // D-377 (CR 702.16): "You have protection from the chosen card type."
+    'playerProtection',
     // D-220: "If a triggered ability of ... triggers, that ability triggers an additional time" (`doubleTriggers`).
     'doubleTriggers',
     'cantCastThis',
@@ -1309,6 +1311,8 @@ export const STATIC_KINDS = [
   'opponentsCantWin',
   /** "Your opponents can't gain life" (CR 119.7, D-363): the engine's `cantGainLife`. */
   'cantGainLife',
+  /** "You have protection from the chosen card type" (CR 702.16, D-377): the engine's `playerProtection`. */
+  'playerProtection',
   /** "If a triggered ability of a Wizard you control triggers, that ability triggers an additional time" (CR 603.2d, D-220): `doubleTriggers`. */
   'doubleTriggers',
   /** "You can't cast ~ during your first, second, or third turns of the game" (CR 101.2, D-149): `cantCastThis`. */

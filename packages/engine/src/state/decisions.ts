@@ -712,7 +712,7 @@ export interface ConfirmOptionalDecision extends DecisionBase {
  * permanent that is about to enter chooses one of `options` before it enters. `purpose` says what is
  * chosen. `options` is the full list, in a fixed order that the legal actions follow: for
  * `'creatureType'` every creature type of CR 205.3m (spelled as `CREATURE_TYPES` lists them, "Time
- * Lord" included), for `'color'` the five colors as `W`, `U`, `B`, `R`, `G`. `source` is the object
+ * Lord" included), for `'color'` the five colors as `W`, `U`, `B`, `R`, `G`, for `'cardType'` (D-376, "choose a card type") the card types of `CARD_TYPES`. `source` is the object
  * about to enter: the card in a hand, in a zone an effect moves it from, or the spell on the stack that
  * is resolving; for a token (nothing exists yet) it is the spell or ability that creates it. `sourceName`
  * and `sourceOracleText` name what is entering. The answer is a `chooseOption` action; the question
@@ -723,6 +723,7 @@ export interface ChooseOptionDecision extends DecisionBase {
   readonly purpose:
     | 'creatureType'
     | 'color'
+    | 'cardType'
     | 'option'
     | 'attackTarget'
     | 'effect'

@@ -354,7 +354,8 @@ export function legalTargets(
     seatsInOrder(state, ctx.controller)
       .filter((s) => filter === 'any' || s !== ctx.controller)
       // CR 702.11b (D-149): "You have hexproof": the opponents of that player can't target them.
-      .filter((s) => playerCanBeTargetedBy(state, s, ctx.controller))
+      // CR 702.16b (D-376): "You have protection from the chosen card type": a source of that type can't target them.
+      .filter((s) => playerCanBeTargetedBy(state, s, ctx.controller, ctx.source))
       .map((seat) => ({ kind: 'player' as const, seat, specId }));
 
   if (spec.what.kind === 'player') return playersFor(spec.what.filter);

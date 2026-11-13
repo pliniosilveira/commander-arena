@@ -2971,6 +2971,18 @@ export type Keyword =
    */
   | { readonly kind: 'protection'; readonly from: 'colorsNotInCommanderIdentity' }
   /**
+   * "Protection from artifacts", "protection from the chosen card type" (CR 702.16a, 702.16b to 702.16f; D-376, the Hashaton deck's Serra's Emissary): protection
+   * from a card type. It applies to sources that are permanents with that type and to any source not on the battlefield of that type: a spell (its card types), an
+   * ability's source (a permanent, or last-known information once it left), and a card in any zone. A source with several types (an artifact creature) matches
+   * when any of them is among `types`. `from: 'cardType'` names the types; `from: 'chosenCardType'` is the card type the permanent with the ability chose as it
+   * entered (`asEntersChoose` of `cardType`, linked abilities CR 607.2d, `GameObject.chosen.cardType`): printed on the permanent it is read from the permanent
+   * itself, in a static `grantKeyword` it is the choice of the permanent that gives the keyword and is resolved to `cardType` as the grant is applied
+   * (`rules/derive-statics.ts`); nothing is granted when that permanent chose nothing. Read where protection is read (`rules/protection.ts`): targeting, damage,
+   * attaching and blocking. Only a printed keyword or a static `grantKeyword` may carry it.
+   */
+  | { readonly kind: 'protection'; readonly from: 'cardType'; readonly types: readonly CardType[] }
+  | { readonly kind: 'protection'; readonly from: 'chosenCardType' }
+  /**
    * CR 702.73a (Changeling): a characteristic-defining ability, "This object is every creature type"
    * (CR 604.3), in layer 4 first (CR 613.3), working in every zone, also in a hand or a library. The
    * creature types are the CR 205.3m list (`CREATURE_TYPES`). It is read from the object's printed
@@ -3691,7 +3703,8 @@ export type Replacement =
    */
   | {
       readonly kind: 'asEntersChoose';
-      readonly what: 'creatureType' | 'color' | 'option';
+      /** `cardType` (D-376, CR 205.2a): "As this creature enters, choose a card type", one of the card types in `CARD_TYPES`; read by a `protection` from `chosenCardType`. */
+      readonly what: 'creatureType' | 'color' | 'option' | 'cardType';
       /**
        * For `what: 'option'` (D-151, "As this enchantment enters, choose Khans or Dragons"): the names the controller chooses among, at least two
        * different ones, as the card writes them. The answer is kept on the permanent (`GameObject.chosen.option`) and read by the condition
@@ -4144,6 +4157,19 @@ export type StaticEffect =
    * own spells and abilities can still target them. Read where targets are chosen and again as the spell or ability resolves (CR 608.2b).
    */
   | { readonly kind: 'playerHexproof' }
+  /**
+   * "You have protection from the chosen card type." (CR 702.16a, 702.16b, 702.16e; D-376): while the permanent has the ability, its controller has protection
+   * from a card type: spells and abilities from a source of that type can't target the player (CR 702.16b), and damage that would be dealt to the player by
+   * such a source is prevented (CR 702.16e). `from: 'chosenCardType'` is the type the permanent chose as it entered (needs `asEntersChoose` of `cardType`, nothing
+   * is protected when it chose none); `from: 'cardType'` names the types. Read from the abilities of the permanents on the battlefield after the layers
+   * (`rules/player-protection.ts`), so a permanent that lost its abilities protects nobody. Auras that enchant a player are not modelled (see `docs/ROADMAP.md`).
+   */
+  | { readonly kind: 'playerProtection'; readonly from: 'chosenCardType' }
+  | {
+      readonly kind: 'playerProtection';
+      readonly from: 'cardType';
+      readonly types: readonly CardType[];
+    }
   /**
    * "You can't lose the game" (CR 104.3, 104.3b, D-149): while the permanent has the ability, its controller does not lose the game for having
    * 0 or less life, for drawing from an empty library, for ten poison counters or for 21 combat damage from one commander

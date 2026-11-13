@@ -56,6 +56,7 @@ import { SYNTHETIC_GRAVEYARD_LIST } from './synthetic-graveyard';
 import { SYNTHETIC_GREATEST_LIST } from './synthetic-greatest';
 import { SYNTHETIC_HASHATON_G1_LIST } from './synthetic-hashaton-g1';
 import { SYNTHETIC_HASHATON_G2_LIST } from './synthetic-hashaton-g2';
+import { SYNTHETIC_HASHATON_G6_LIST } from './synthetic-hashaton-g6';
 import { SYNTHETIC_HASHATON_G7_LIST } from './synthetic-hashaton-g7';
 import { SYNTHETIC_HASHATON_G8_LIST } from './synthetic-hashaton-g8';
 import { SYNTHETIC_HASHATON_GROUP_4_LIST } from './synthetic-hashaton-group-4';
@@ -372,6 +373,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_NIV_GROUP_3_A_LIST,
   ...SYNTHETIC_NIV_GROUP_3_B_LIST,
   ...SYNTHETIC_NIV_GROUP_3_C_LIST,
+  ...SYNTHETIC_HASHATON_G6_LIST,
   ...SYNTHETIC_HASHATON_G7_LIST,
   ...SYNTHETIC_HASHATON_G8_LIST,
   ...SYNTHETIC_HASHATON_GROUP_4_LIST,

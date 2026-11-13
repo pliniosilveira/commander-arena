@@ -818,7 +818,8 @@ export interface IrRestrictionArg extends IrNode {
 /** What an "As ~ enters, choose ..." replacement asks (stage P15, D-100): a creature type or a color. */
 export interface IrChoiceArg extends IrNode {
   readonly kind: 'choiceKind';
-  readonly what: 'creatureType' | 'color' | 'option';
+  /** `cardType` (Hashaton deck group 6, D-376, CR 205.2a): "As this creature enters, choose a card type." */
+  readonly what: 'creatureType' | 'color' | 'option' | 'cardType';
   /** `option` (stage P34, D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons", the names the card gives, as it writes them. */
   readonly options?: readonly string[];
 }
@@ -1078,6 +1079,8 @@ export type IrStaticEffect =
       readonly kind: 'grantProtection';
       readonly colors?: readonly string[];
       readonly commanderIdentity?: true;
+      /** "protection from the chosen card type" (Hashaton deck group 6, D-376, CR 702.16a): the card type the source of the ability chose as it entered. */
+      readonly chosenCardType?: true;
     }
   /** `has "{T}: Add {G}."` (stage P14): a quoted mana ability, read as an activated ability. */
   | { readonly kind: 'grantAbility'; readonly ability: IrQuotedAbility }
@@ -1205,6 +1208,11 @@ export type IrStaticEffect =
   | { readonly kind: 'cantLoseGame' }
   /** "your opponents can't win the game" (stage P33, D-150, CR 104.2). The subject is `you`. */
   | { readonly kind: 'opponentsCantWin' }
+  /**
+   * "You have protection from the chosen card type." (Hashaton deck group 6, D-377, CR 702.16a, 702.16b, 702.16e): the controller of the permanent has
+   * protection from the card type it chose as it entered. The subject is `you`; the statement's `also` gives the same to "creatures you control".
+   */
+  | { readonly kind: 'playerProtection'; readonly quality: 'chosenCardType' }
   /** "Your opponents can't gain life." (Hashaton deck group 2, D-363, CR 119.7). The subject is `you`, the controller of the permanent. */
   | { readonly kind: 'cantGainLife'; readonly who: 'opponents' }
   /**

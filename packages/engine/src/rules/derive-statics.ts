@@ -549,6 +549,11 @@ export function staticEffectsOn(
         const colors = colorsNotInCommanderIdentity(state, controllerOf(state, source.object));
         if (colors.length === 0) return true;
         keyword = { kind: 'protection', from: 'color', colors };
+      } else if (keyword.kind === 'protection' && keyword.from === 'chosenCardType') {
+        // CR 702.16a, 607.2d (D-376): "the chosen card type" is the choice of the permanent that gives the keyword; it chose none: nothing to give.
+        const chosen = source.object.chosen?.cardType;
+        if (chosen === undefined) return true;
+        keyword = { kind: 'protection', from: 'cardType', types: [chosen] };
       }
       grants.push({
         ability: { kind: 'keyword', keyword },

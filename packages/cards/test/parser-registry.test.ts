@@ -365,6 +365,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.cant-cast-early': asIs,
   // Hashaton deck, group 2 (D-363 to D-365): the static is a line of its own; the amount follows "loses life"; the cost follows "you may" in a life gain trigger.
   'static.opponents-cant-gain-life': asIs,
+  // Hashaton deck, group 6 (D-377): the statement is a line of its own.
+  'static.you-and-creatures-protection-chosen-type': asIs,
   'amount.life-lost-this-turn': permanent(
     (e) => `At the beginning of each end step, each opponent loses life ${e}.`,
   ),

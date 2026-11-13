@@ -4,6 +4,7 @@
  * know themselves.
  */
 import type { Amount, ObjectFilter, Replacement, StaticEffect, Trigger } from './types';
+import { checkProtectionTypes } from './validate-attach';
 import { isCount, isOneOf, kindOf } from './validate-base';
 import {
   type AstIssue,
@@ -192,6 +193,17 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
     case 'playerHexproof':
     case 'cantLoseGame':
     case 'opponentsCantWin':
+      return true;
+    case 'playerProtection':
+      // CR 702.16 (D-376): the chosen card type (the card must ask the question, `validate-chosen.ts`) or card types it names.
+      if (s.from === 'cardType') checkProtectionTypes(s.types, `${path}.types`, out);
+      else if (s.from !== 'chosenCardType') {
+        issue(
+          out,
+          `${path}.from`,
+          `unknown protection quality ${String((s as { from: unknown }).from)}`,
+        );
+      }
       return true;
     case 'cantGainLife':
       // CR 119.7 (D-363): the opponents of the controller are the only group the engine reads.

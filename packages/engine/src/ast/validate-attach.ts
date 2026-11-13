@@ -90,10 +90,22 @@ export function checkStaticSubject(
   }
 }
 
+/** D-376 (CR 702.16a): the card types a protection or a player's protection names: at least one, each a card type of `CARD_TYPES`. */
+export function checkProtectionTypes(types: unknown, path: string, out: AstIssue[]): void {
+  if (!Array.isArray(types) || types.length === 0) {
+    issue(out, path, 'protection from a card type needs at least one card type');
+    return;
+  }
+  checkEnumList(out, path, types, CARD_TYPES, 'card type');
+}
+
 export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): void {
   // D-259 (CR 702.16): a static ability may give protection from colors; its colors are checked as a printed protection keyword is.
+  // D-376: or from card types, or from the chosen card type.
   if (k?.kind === 'protection') {
-    if (k.from === 'color') {
+    if (k.from === 'cardType') {
+      checkProtectionTypes(k.types, `${path}.types`, out);
+    } else if (k.from === 'color') {
       if (!Array.isArray(k.colors) || k.colors.length === 0) {
         issue(out, `${path}.colors`, 'protection needs at least one color');
       } else {
@@ -101,7 +113,7 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
           if (!isOneOf(c, COLORS)) issue(out, `${path}.colors[${i}]`, `unknown color ${String(c)}`);
         });
       }
-    } else if (k.from !== 'colorsNotInCommanderIdentity') {
+    } else if (k.from !== 'colorsNotInCommanderIdentity' && k.from !== 'chosenCardType') {
       issue(
         out,
         `${path}.from`,

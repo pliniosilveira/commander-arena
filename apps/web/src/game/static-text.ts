@@ -200,7 +200,12 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
     case 'grantKeyword': {
       const subject = subjectWords(effect.subject, ctx);
       if (subject === null) return null;
-      return `${subject.text} ${subject.many ? 'have' : 'has'} ${keywordWords(effect.keyword.kind)}`;
+      // D-376 (CR 702.16): "Creatures you control have protection from the chosen card type".
+      const has =
+        effect.keyword.kind === 'protection' && effect.keyword.from === 'chosenCardType'
+          ? 'protection from the chosen card type'
+          : keywordWords(effect.keyword.kind);
+      return `${subject.text} ${subject.many ? 'have' : 'has'} ${has}`;
     }
     case 'restriction': {
       const subject = subjectWords(effect.subject, ctx);

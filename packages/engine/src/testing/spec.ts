@@ -190,12 +190,19 @@ export function validatePlacement(p: Placement, def: CardDefinition): void {
     }
     if (o.chosen !== undefined) {
       const kind = entersChoice(face.abilities);
-      const { creatureType, color, option } = o.chosen;
+      const { creatureType, color, option, cardType } = o.chosen;
       if (kind === null) {
         throw new ScenarioError(`${where}: ${p.name} does not choose anything as it enters`);
       }
-      const given = kind === 'creatureType' ? creatureType : kind === 'option' ? option : color;
-      const others = [creatureType, color, option].filter((x) => x !== undefined).length;
+      const given =
+        kind === 'creatureType'
+          ? creatureType
+          : kind === 'option'
+            ? option
+            : kind === 'cardType'
+              ? cardType
+              : color;
+      const others = [creatureType, color, option, cardType].filter((x) => x !== undefined).length;
       if (given === undefined || others !== 1) {
         throw new ScenarioError(
           `${where}: ${p.name} chooses a ${kind}, so chosen must give just that`,

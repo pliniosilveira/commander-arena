@@ -758,6 +758,7 @@ describe('unmatched abilities', () => {
       'static.triggers-additional-time-cause',
       'static.graveyard-play-once-each-turn',
       'static.opponents-cant-gain-life',
+      'static.you-and-creatures-protection-chosen-type',
       'modal.choose',
       'modal.choose-commander',
       'modal.choose-widen',

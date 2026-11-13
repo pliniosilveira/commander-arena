@@ -8,6 +8,7 @@
  * library, so (unlike the library) only what the view shows is counted; that is a deliberate limit.
  */
 import type { Action, ChooseOptionDecision, GameView, ObjectView } from '@commander-arena/engine';
+import { chooseCardType } from './casual-card-type';
 import { chooseNamedOption } from './casual-dragons';
 import { chooseRiot } from './casual-keywords';
 import { choosePile } from './casual-piles';
@@ -128,6 +129,8 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   if (d.purpose === 'riot') return chooseRiot(view, d);
   // D-151: a name from a list the card gives, the chapter of a Saga with read ahead (casual-dragons.ts).
   if (d.purpose === 'option') return chooseNamedOption(d);
+  // D-376 (CR 614.12a): "choose a card type", the type the opponents' permanents have most of (casual-card-type.ts).
+  if (d.purpose === 'cardType') return chooseCardType(view, d);
   const spelled = new Map(d.options.map((o) => [o.replaceAll('’', "'"), o] as const));
   const mine = view.battlefield.filter((o) => o.controller === view.viewer);
   const commanders = [...ownCommandZone(view), ...mine].filter((o) => o.isCommander);
