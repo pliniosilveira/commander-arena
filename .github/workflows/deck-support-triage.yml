@@ -7,7 +7,7 @@ name: Deck support triage
 # agent's `deck-support` skill takes the ready issues from there (`.claude/skills/deck-support/SKILL.md`).
 # The description is untrusted input in a public repository: it goes through the environment into a file and is only ever
 # read as data. The comment this workflow writes carries the sha256 of the description it checked, so the agent can tell
-# whether the issue was edited after the check. A person other than the owner may have one request waiting at a time.
+# whether the issue was edited after the check.
 # D-290: what the work needs is the names of the unsupported cards and their card data. When the description has the names but no usable card data
 # (a report pasted without the data block), this runner, which can reach Scryfall (the cloud session of the agent cannot), fetches the cards through the
 # app's own Scryfall client, posts them as one comment of `github-actions[bot]` (marker `<!-- deck-support-card-data -->`, the sha256 of the description
@@ -128,17 +128,8 @@ jobs:
           esac
           digest=$(sha256sum "$RUNNER_TEMP/issue.md" | cut -d' ' -f1)
           marker="$marker<!-- sha256:$digest -->"
-          # Someone other than the owner has one request waiting at a time.
-          other=""
-          if [ "$AUTHOR" != "$GITHUB_REPOSITORY_OWNER" ]; then
-            other=$(gh api "repos/${GITHUB_REPOSITORY}/issues?state=open&labels=deck-support:ready,deck-support:in-progress&per_page=100" \
-              --jq "[.[] | select(.user.login == \"${AUTHOR}\" and .number != ${NUMBER})][0].number // empty" || true)
-          fi
-          if [ "$(jq -r .complete "$RUNNER_TEMP/result.json")" = "true" ] && [ -n "$other" ]; then
-            gh issue edit "$NUMBER" --remove-label deck-support:ready || true
-            body="$marker
-          The request is complete, but #$other of yours is still waiting or being worked on. Only one request per person is queued at a time: edit this issue (any edit) when #$other is done, and it is checked again."
-          elif [ "$(jq -r .complete "$RUNNER_TEMP/result.json")" = "true" ]; then
+          # Every complete request keeps the ready label; the routine decides which one to build next (D-322).
+          if [ "$(jq -r .complete "$RUNNER_TEMP/result.json")" = "true" ]; then
             # The card data this workflow fetched goes into its own comment first, so that a ready issue never lacks it (D-290).
             fetched_note=""
             if [ -s "$RUNNER_TEMP/card-data.md" ] && [ "$(jq -r .ok "$RUNNER_TEMP/fetch.json" 2>/dev/null)" = "true" ]; then

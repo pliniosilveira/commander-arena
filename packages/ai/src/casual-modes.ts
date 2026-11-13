@@ -15,13 +15,14 @@
  * and a bad mode is left out when a set without it exists; the first of equal sets (the fewest modes, then
  * printed order) wins, so the answer does not depend on chance.
  */
-import type {
-  Action,
-  ChooseModesDecision,
-  ChosenTarget,
-  GameView,
-  ObjectView,
-  TargetsDecision,
+import {
+  type Action,
+  baseSpecId,
+  type ChooseModesDecision,
+  type ChosenTarget,
+  type GameView,
+  type ObjectView,
+  type TargetsDecision,
 } from '@commander-arena/engine';
 import { chooseSlot, HARM_BY_DEFAULT, planFor, type SlotPlan } from './casual-triggers';
 import {
@@ -48,7 +49,9 @@ const needed = (o: ObjectView): number => Math.max(1, toughnessOf(o) - o.damage)
 
 /** Whether the text of a spell or ability is modal: "Choose one —" and the bulleted modes that follow. */
 export const isModalText = (text: string): boolean =>
-  /\bchoose (one|two|three|four|up to|one or both|one or more)\b/i.test(text) && text.includes('•');
+  /\bchoose (one|two|three|four|five|six|seven|eight|nine|ten|up to|one or both|one or more)\b/i.test(
+    text,
+  ) && text.includes('•');
 
 /** The mode lines of a modal text, one for each "•". */
 export const modeLines = (text: string): string[] =>
@@ -103,15 +106,50 @@ const GOOD_MODE = 2;
 /** What a mode adds to the set that holds it: its score when it is good or bad, nothing when it is merely mild. */
 const contribution = (score: number): number => (score >= GOOD_MODE || score < 0 ? score : 0);
 
-/** The set of modes with the highest total score; the first of equal ones (fewest modes, then printed order). */
+/**
+ * How many times a mode that names a target is worth choosing: the places its target could go (D-344, CR 700.2d: the same mode more than once
+ * has a target for each time, and the same target again destroys nothing more). Read from the same words the score reads. A mode with no
+ * target, a damage or a drain that can go to a player each time, and anything not read is worth choosing as often as it is offered.
+ */
+function worthRepeating(view: GameView, text: string): number {
+  if (!/\btarget\b/i.test(text)) return Number.POSITIVE_INFINITY;
+  if (DESTROY_CREATURE.test(text)) return opposingCreatures(view).length;
+  const damage = DAMAGE.exec(text);
+  if (damage !== null) {
+    const where = (damage[2] ?? '').toLowerCase();
+    return where === 'target creature' ? opposingCreatures(view).length : Number.POSITIVE_INFINITY;
+  }
+  const other = OTHER_TARGET.exec(text);
+  if (other !== null) {
+    const type = (other[1] ?? '').toLowerCase();
+    return view.battlefield.filter(
+      (o) =>
+        o.controller !== view.viewer && (type === 'permanent' || o.types.some((t) => t === type)),
+    ).length;
+  }
+  return Number.POSITIVE_INFINITY;
+}
+
+/**
+ * The set of modes with the highest total score; the first of equal ones (fewest modes, then printed order). With a mode chosen more than
+ * once (`ChooseModesDecision.repeatable`, D-344) each time it is chosen scores as much as it has targets to go to, so three "destroy
+ * target artifact" are not worth more than the artifacts there are.
+ */
 export function chooseModesAnswer(view: GameView, d: ChooseModesDecision): Action {
   let best: { modes: readonly number[]; total: number } | undefined;
+  const worth = new Map<number, number>();
   for (const modes of d.sets) {
-    const total = modes.reduce(
-      (sum, i) =>
-        sum + contribution(modeScore(view, d.modes.find((m) => m.index === i)?.text ?? '')),
-      0,
-    );
+    const seen = new Map<number, number>();
+    const total = modes.reduce((sum, i) => {
+      const text = d.modes.find((m) => m.index === i)?.text ?? '';
+      const nth = (seen.get(i) ?? 0) + 1;
+      seen.set(i, nth);
+      if (nth > 1) {
+        if (!worth.has(i)) worth.set(i, worthRepeating(view, text));
+        if (nth > (worth.get(i) ?? 0)) return sum;
+      }
+      return sum + contribution(modeScore(view, text));
+    }, 0);
     if (best === undefined || total > best.total) best = { modes, total };
   }
   return { kind: 'chooseModes', modes: [...(best?.modes ?? d.sets[0] ?? [])] };
@@ -140,11 +178,29 @@ export function chooseModalTargets(view: GameView, d: TargetsDecision): ChosenTa
   const effect = source.ability?.modes
     ? ({ kind: 'sequence', effects: source.ability.modes.map((m) => m.effect) } as const)
     : null;
+  // D-344: a mode chosen more than once has a slot for each time (`<id>#2`, ...): its plan is the one of the slot it repeats, and its targets
+  // go to other targets than the earlier times' when there are others (the same target again does nothing more).
+  const earlier = new Map<string, ChosenTarget[]>();
   return d.specs.flatMap((slot) => {
+    const base = baseSpecId(slot.specId);
     const text = slot.mode === undefined ? undefined : source.modeTexts?.[slot.mode];
     const plan =
-      (effect === null ? null : planFor(effect, slot.specId)) ??
+      (effect === null ? null : planFor(effect, base)) ??
       (text === undefined ? HARM_BY_DEFAULT : planFromText(text));
-    return chooseSlot(view, slot, plan);
+    const used = earlier.get(base) ?? [];
+    const fresh = slot.legal.filter((t) => !used.some((u) => sameChosen(u, t)));
+    const open =
+      slot.instance !== undefined && fresh.length >= Math.max(1, slot.min)
+        ? { ...slot, legal: fresh }
+        : slot;
+    const picked = chooseSlot(view, open, plan);
+    earlier.set(base, [...used, ...picked]);
+    return picked;
   });
+}
+
+/** The same object or the same player, whatever the slot it was chosen for. */
+function sameChosen(a: ChosenTarget, b: ChosenTarget): boolean {
+  if (a.kind !== b.kind) return false;
+  return a.kind === 'object' ? a.id === (b as typeof a).id : a.seat === (b as typeof a).seat;
 }

@@ -4,12 +4,13 @@
  * creature can't block this turn", "target creature attacks this turn if able" (CR 509.1b, 508.1d,
  * 611.2a: a rule-changing effect of a resolving spell or ability lasts as long as it says, here "this
  * turn", and ends in the cleanup step, CR 514.2). The restriction is not an ability of the creature,
- * so "loses all abilities" does not remove it (CR 613.11). One target, a creature: the plural, "up to
- * one", an exception ("except by creatures with flying") and a quality of the target the noun
- * rules do not read ("with flying") are other lines and stay unread; "with power 3 or less" is read
- * since stage P18 (D-111).
+ * so "loses all abilities" does not remove it (CR 613.11). Creatures that are targets: one, "up to one", and
+ * since D-295 "one or two" and "up to two" or more (a slot of the engine with a minimum and a maximum of
+ * targets, CR 601.2c; the engine's `restrict` takes the whole slot). An exact count ("two target creatures"), an
+ * exception ("except by creatures with flying") and a quality of the target the noun rules do not read ("with
+ * flying") are other lines and stay unread; "with power 3 or less" is read since stage P18 (D-111).
  */
-import { choice, map, pattern, refuseAt, sequence } from '../../combinators';
+import { chain, map, pattern, refuseAt, sequence } from '../../combinators';
 import type { IrArg, IrDuration, IrNoun, IrRestrictionKind, Span } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, single } from './operands';
@@ -48,10 +49,26 @@ const tail = (plural: boolean) => {
 const TAIL = tail(false);
 const TAIL_ALL = tail(true);
 
+/**
+ * The creatures that are targets of a restriction (CR 115.1): one creature (a spell's "target" is a creature), "up to N" of them (CR 115.2) or "one
+ * or two" (D-295, CR 601.2c). An exact count of two or more is not read, and neither is "up to that many" (a count a sacrifice before it made).
+ */
+const targetCreatures = refuseAt(
+  family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+  (n) =>
+    (!n.plural || n.minTargets !== undefined || n.upTo) &&
+    n.upToThatMany !== true &&
+    n.det === 'target' &&
+    n.filter.anyOf === undefined &&
+    n.filter.types?.length === 1 &&
+    n.filter.types[0] === 'creature',
+  (_n, _ctx, start) => start,
+);
+
 export const EFFECT_RESTRICT = defineRule<Clauses>({
   id: RULE,
   family: 'effect',
-  leading: ['target', 'up'],
+  leading: ['target', 'up', 'one'],
   cites: [
     'CR 509.1b (Declare Blockers Step)',
     'CR 508.1d (Declare Attackers Step)',
@@ -68,6 +85,13 @@ export const EFFECT_RESTRICT = defineRule<Clauses>({
     "target creature with power 3 or less can't be blocked this turn",
     // Stage P49 (D-206): "up to one target creature" (Key to the City).
     "up to one target creature can't be blocked this turn",
+    // D-295 (CR 601.2c): the creatures of a slot of one to two, or of none to N.
+    "one or two target creatures can't block this turn",
+    "one or two target creatures can't be blocked this turn",
+    'one or two target creatures attack this turn if able',
+    "up to two target creatures can't block this turn",
+    'up to two target creatures attack this turn if able',
+    'one or two target creatures must be blocked this turn if able',
   ],
   rejects: [
     "target creature can't be blocked",
@@ -78,6 +102,12 @@ export const EFFECT_RESTRICT = defineRule<Clauses>({
     "target creature can't attack this turn",
     "target creatures can't block this turn",
     "two target creatures can't be blocked this turn",
+    "one or two target creatures can't attack this turn",
+    'one or two target creatures attacks this turn if able',
+    'up to two target creatures attacks this turn if able',
+    'target creature attack this turn if able',
+    "one or two target creatures or planeswalkers can't block this turn",
+    "up to that many target creatures can't block this turn",
     "target creature or planeswalker can't be blocked this turn",
     "target permanent can't block this turn",
     "target creature with power greater than 3 can't be blocked this turn",
@@ -87,21 +117,9 @@ export const EFFECT_RESTRICT = defineRule<Clauses>({
   ],
   parse: single(
     RULE,
-    sequence(
-      // One creature: the engine's `restrict` takes one object, and a spell's "target" is a creature.
-      choice(
-        refuseAt(
-          family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
-          (n) =>
-            !n.plural &&
-            n.det === 'target' &&
-            n.filter.anyOf === undefined &&
-            n.filter.types?.length === 1 &&
-            n.filter.types[0] === 'creature',
-          (_n, _ctx, start) => start,
-        ),
-      ),
-      TAIL,
+    // The verb agrees with the number of creatures: "attacks" for one, "attack" for several (stage P15).
+    chain(targetCreatures, (objects) =>
+      map(objects.plural ? TAIL_ALL : TAIL, (tailed) => [objects, tailed] as const),
     ),
     ([objects, { restriction, span }]) => {
       const kind: IrArg = { kind: 'restrictionKind', restriction, span, rule: RULE };

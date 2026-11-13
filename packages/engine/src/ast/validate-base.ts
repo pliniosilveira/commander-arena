@@ -42,6 +42,7 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'becomesTarget':
     case 'dealtDamage':
     case 'combatDamageBatch':
+    case 'noncombatDamageDealt':
     case 'lifeGained':
     case 'attackBatch':
     case 'tapsForMana':

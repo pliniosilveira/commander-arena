@@ -108,6 +108,13 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'lifeGainedThisTurn', atLeast: test.atLeast });
     }
+    case 'spellsCastThisTurn': {
+      // CR 602.5b, 601.2i (D-318): the spells the controller has cast this turn, read as the ability is activated.
+      const blocked = missingFeatures(['condition:spellsCastThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'spellsCastThisTurn', atLeast: test.atLeast });
+    }
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die the text rolled before this condition, read by a `conditional`. A condition with no roll before it
       // in the text, or a number the die cannot show (the condition would never, or always, hold), is not a condition of the text.
@@ -162,6 +169,13 @@ export function lowerCondition(
       if (blocked.length > 0) return failure(c, blocked);
       const { cmp, value } = test.compare;
       return ok({ kind: 'cardsInGraveyard', compare: { cmp, value } });
+    }
+    case 'cardsInLibrary': {
+      // CR 401.1 (issue 25, D-331): the number of cards in the library of the controller.
+      const blocked = missingFeatures(['condition:cardsInLibrary']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const { cmp, value } = test.compare;
+      return ok({ kind: 'cardsInLibrary', compare: { cmp, value } });
     }
     case 'paired': {
       // "~ is paired with another creature" (D-286, CR 702.95b): the permanent the ability belongs to is paired now; "it" is the source only in an
@@ -356,6 +370,8 @@ export function lowerCondition(
       // CR 601.2h (stage P49, D-206): the mana spent on the spell that caused the trigger.
       const test = c.test;
       if (test.kind !== 'manaSpentAtLeast') return failure(c, []);
+      // Issue 25: "that spell" is the spell that caused the trigger, read from its `triggerSubject`; in any other text no spell is named, so it is not lowered.
+      if (test.ofTriggerSpell === true && ctx?.castTrigger !== true) return failure(c, []);
       const blocked = missingFeatures(['condition:manaSpentAtLeast']);
       return blocked.length > 0
         ? failure(c, blocked)
@@ -451,6 +467,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:controlCommander',
   'condition:lifeTotal',
   'condition:cardsInGraveyard',
+  'condition:cardsInLibrary',
   'condition:subjectControllerHasMore',
   'condition:triggerPlayerHasMore',
   'condition:thisMatches',
@@ -473,6 +490,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:attackersTotalPower',
   'condition:playerDealtDamage',
   'condition:lifeGainedThisTurn',
+  'condition:spellsCastThisTurn',
   'condition:dieResult',
   'condition:thisInYourGraveyard',
   'condition:ownsAndControlsNamed',

@@ -43,7 +43,9 @@ import {
   triggerWords,
   untapChooseText,
 } from '../../game/artifacts-text';
+import { castCardText } from '../../game/cast-card-text';
 import { gameConditionWords } from '../../game/condition-text';
+import { copySpellWords, delayedCastWords } from '../../game/copy-text';
 import { activationCostPart, activationCostText, unlessCostPhrase } from '../../game/cost-text';
 import {
   castFreeText,
@@ -76,7 +78,7 @@ import { ptEffectText } from '../../game/pt-text';
 import { isReflexiveAbility, positionPhrase } from '../../game/recursion-text';
 import { groupPhrase } from '../../game/static-text';
 import { tokenWords } from '../../game/token-text';
-import { keywordWords, withText } from '../../game/trigger-text';
+import { filterPhrase, keywordWords, withText } from '../../game/trigger-text';
 
 /** True for Cycling's expansion: an ability from the hand whose cost discards the card (CR 702.29a). */
 export function isCycling(ability: ActivatedAbility): boolean {
@@ -641,7 +643,8 @@ function sequenceText(
       at += 2;
       continue;
     }
-    if (effect.kind === 'exileTop') several = effect.count !== 1;
+    // D-327: "Mill two cards. You may play those cards this turn." says it the same way after a mill.
+    if (effect.kind === 'exileTop' || effect.kind === 'mill') several = effect.count !== 1;
     const text =
       effect.kind === 'mayPlay'
         ? mayPlayText(effect, several)
@@ -786,6 +789,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'revealUntil':
       // D-145 (CR 701.20).
       return revealUntilText(effect) ?? UNSAID;
+    case 'castCard':
+      // D-350 (CR 608.2g, 609.4b, 614.1a): "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell
+      // would be put into a graveyard, exile it instead".
+      return castCardText(effect, object(effect.object));
     case 'castFree':
       // D-145 (CR 608.2g, 118.9).
       return castFreeText(effect) ?? UNSAID;
@@ -924,7 +931,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       }
       // D-151 (CR 106.1b): "Add two mana in any combination of colors".
       return effect.mana.kind === 'anyCombination'
-        ? `Add ${anyCombinationWords(effect.mana.count)}`
+        ? `Add ${anyCombinationWords(effect.mana.count, effect.mana.distinct === true)}`
         : 'Add mana';
     }
     case 'exileTop':
@@ -978,6 +985,33 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       );
       const pay = payAnyAmountText(effect.symbol);
       return inner === '' ? pay : `${pay}. When you do, ${lower(inner)}`;
+    }
+    case 'copySpell': {
+      // D-337 (CR 707.10, 707.10c, 903.8): "Copy that spell", with new targets, and once for each time the commander was cast from the command zone.
+      const count =
+        effect.count === undefined
+          ? null
+          : effect.count === 1
+            ? null
+            : typeof effect.count === 'object' && effect.count.kind === 'commanderCasts'
+              ? "time you've cast your commander from the command zone this game"
+              : UNSAID;
+      if (count === UNSAID) return UNSAID;
+      const spell = object(effect.spell);
+      return spell === UNSAID ? UNSAID : copySpellWords(spell, effect.newTargets, count);
+    }
+    case 'delayedCast': {
+      // D-336 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell".
+      const spell = filterPhrase(effect.filter, 'spell');
+      const inner = effectText(
+        effect.effect,
+        { ...ability, trigger: { kind: 'castSpell', filter: effect.filter, by: 'you' } },
+        self,
+        defs,
+      );
+      if (spell === null || inner === '' || inner.includes(UNSAID)) return UNSAID;
+      // A choice of types says "an instant or sorcery"; the trigger is about a spell, as the card says.
+      return delayedCastWords(/\bspells?$/.test(spell) ? spell : `${spell} spell`, inner);
     }
     case 'delayedTrigger': {
       // D-151 (CR 603.7): "At the beginning of your next end step, this creature deals 2 damage to each opponent for each of those cards".

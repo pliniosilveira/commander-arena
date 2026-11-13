@@ -12,6 +12,8 @@
  *   actions were impossible, so a scry or surveil of a library with no card still emits its event.
  * - CR 701.25a: a surveil puts the cards it does not keep on top into the graveyard, a real zone
  *   change (`zoneChanged` events: the graveyard is public).
+ * - CR 401.4 (D-324): "put the rest on the bottom of your library in any order" (purpose `bottom`, after
+ *   a `lookTake`): the owner of the cards chooses their order, a second use of the same decision.
  * - CR 401.2: nobody may know the order of a library, so the cards looked at reach only the player
  *   who looks (the decision, shown to that seat alone by `view.ts`); everyone else sees counts.
  */
@@ -30,6 +32,8 @@ const PILES: Readonly<Record<ArrangeInstruction['purpose'], ArrangeCardsDecision
   scry: ['top', 'bottom'],
   surveil: ['top', 'graveyard'],
   reorder: ['top'],
+  // CR 401.4 (D-324): the cards go to the bottom of the library in the order their owner chooses.
+  bottom: ['bottom'],
 };
 
 /**
@@ -42,7 +46,9 @@ export function isArrangement(
   top: readonly ObjectId[],
   other: readonly ObjectId[],
 ): boolean {
-  if (piles.length < 2 && other.length > 0) return false;
+  // A pile the decision lacks takes no card: a reorder has only `top`, the bottom arrangement (D-324) only `other`.
+  if (!piles.includes('top') && top.length > 0) return false;
+  if (!piles.some((p) => p !== 'top') && other.length > 0) return false;
   const placed = [...top, ...other];
   return (
     placed.length === cards.length &&
@@ -62,8 +68,12 @@ export function runArrange(
 ): StepOutcome {
   const { seat, purpose } = instruction;
   const library = getSeat(state, seat).library;
-  const looked = library.slice(0, Math.min(instruction.count, library.length));
-  const rest = library.slice(looked.length);
+  // CR 401.4 (D-324): the cards to put on the bottom are named by the effect (they are not always the top of the library any more).
+  const looked =
+    purpose === 'bottom'
+      ? (instruction.cards ?? []).filter((id) => library.includes(id))
+      : library.slice(0, Math.min(instruction.count, library.length));
+  const rest = library.filter((id) => !looked.includes(id));
   const answer = instruction.arranged;
 
   if (answer === null) {
@@ -71,6 +81,9 @@ export function runArrange(
     if (looked.length === 0) return done(state, noCards(purpose, seat));
     // "Put them back in any order" with one card can only put it back where it is: no question.
     if (purpose === 'reorder' && looked.length === 1) return done(state);
+    // CR 401.4: one card has no order to choose, and no card nothing to do.
+    if (purpose === 'bottom' && looked.length <= 1)
+      return done(...putOnBottom(state, seat, rest, looked));
     const decision: Omit<ArrangeCardsDecision, 'id'> = {
       kind: 'arrangeCards',
       seat,
@@ -86,6 +99,7 @@ export function runArrange(
     throw new Error('The arrangement does not place the cards that were looked at');
   }
   const { top, other } = answer;
+  if (purpose === 'bottom') return done(...putOnBottom(state, seat, rest, other));
   if (purpose === 'scry') {
     // CR 701.22a: the cards for the bottom go there in the order given; the last is the bottom card.
     const next = patchSeat(state, seat, { library: [...top, ...rest, ...other] });
@@ -111,7 +125,24 @@ export function runArrange(
   return done(next, events);
 }
 
-/** The event of a scry or surveil of an empty library (CR 701.22d, 701.25d); none for a reorder. */
+/**
+ * CR 401.4 (D-324): the cards go to the bottom of the library in the order given, the last being the bottom card. They are already in the library, so nothing changes zone
+ * (as for a scry, CR 701.22a): they keep their objects and only the order of the library changes. The owner does not reveal the order: a `cardsBottomed` event tells only how many.
+ */
+function putOnBottom(
+  state: GameState,
+  seat: ArrangeInstruction['seat'],
+  rest: readonly ObjectId[],
+  bottom: readonly ObjectId[],
+): [GameState, GameEvent[]] {
+  const next = patchSeat(state, seat, { library: [...rest, ...bottom] });
+  return [
+    next,
+    bottom.length > 0 ? [{ kind: 'cardsBottomed', seat, count: bottom.length, ordered: true }] : [],
+  ];
+}
+
+/** The event of a scry or surveil of an empty library (CR 701.22d, 701.25d); none for a reorder or the bottom. */
 function noCards(purpose: ArrangeInstruction['purpose'], seat: ArrangeInstruction['seat']) {
   if (purpose === 'scry') return [{ kind: 'scried' as const, seat, top: 0, bottom: 0 }];
   if (purpose === 'surveil') return [{ kind: 'surveiled' as const, seat, top: 0, toGraveyard: 0 }];

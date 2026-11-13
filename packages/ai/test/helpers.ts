@@ -928,6 +928,9 @@ export const LIBRARY_CARD_NAMES = [
   'SYNTHETIC Reorder Three',
   'SYNTHETIC Reorder One',
   'SYNTHETIC Brainstorm Like',
+  // D-324: two cards of the top five into the hand, the rest on the bottom in an order the owner chooses.
+  'SYNTHETIC Stock Up Like',
+  'SYNTHETIC Stock Up Three',
   'SYNTHETIC Put Back One',
   'SYNTHETIC Put Back Two',
   'SYNTHETIC Seer Of The Door',
@@ -2325,6 +2328,154 @@ export const SOULBOND_NAMES = [
 ] as const;
 
 /**
+ * The cards of the piles slice (D-303): the SYNTHETIC spells that reveal the top cards of the library and have a player separate them into two piles. Used by the 'piles' style and
+ * kept out of every other pool: they ask the other player which cards form a pile, and then which pile goes where, in the middle of a resolution.
+ */
+export const PILES_NAMES = [
+  'SYNTHETIC Pile Reading',
+  'SYNTHETIC Pile Offering',
+  'SYNTHETIC Pile Tithe',
+] as const;
+
+/** The piles style: the three pile spells several times (the controller or an opponent separates, the pile goes to the hand or the graveyard), bodies and a little removal. */
+export const PILES_SPELLS = [
+  ...supported(['SYNTHETIC Pile Reading']),
+  ...supported(['SYNTHETIC Pile Reading']),
+  ...supported(['SYNTHETIC Pile Reading']),
+  ...supported(['SYNTHETIC Pile Offering']),
+  ...supported(['SYNTHETIC Pile Offering']),
+  ...supported(['SYNTHETIC Pile Tithe']),
+  ...supported(['SYNTHETIC Pile Tithe']),
+  ...supported([
+    'SYNTHETIC Vanilla 3/3',
+    'SYNTHETIC Vanilla 2/2',
+    'SYNTHETIC Vanilla 5/5',
+    'Grizzly Bears',
+    'Grizzly Bears',
+    'Wall of Stone',
+    'Serra Angel',
+    'Giant Spider',
+  ]),
+  ...supported(['Lightning Bolt', 'Murder', 'Unsummon']),
+];
+
+/** Blue for the pile spells, the others for the bodies and the removal. */
+export const PILES_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Plains',
+  'Forest',
+  'Swamp',
+  'Mountain',
+]);
+
+/**
+ * The SYNTHETIC repeatable-mode cards (D-344, CR 700.2d): "Choose three. You may choose the same mode more than once." on a spell, an enters trigger and an activated
+ * ability, and a choice of up to two. Used by the 'repeatable' style and kept out of every other pool: the generic pools stay as they were, so no seeded game of another style
+ * changes.
+ */
+export const REPEATABLE_NAMES = [
+  'SYNTHETIC Triple Charm',
+  'SYNTHETIC Artifact Charm',
+  'SYNTHETIC Up To Charm',
+  'SYNTHETIC Repeat Greeter',
+  'SYNTHETIC Repeat Totem',
+] as const;
+
+/** The repeatable style: each card of the slice three times, bodies to aim at, the artifacts the destroy mode looks for, and a little removal. */
+export const REPEATABLE_SPELLS = [
+  ...supported(REPEATABLE_NAMES),
+  ...supported(REPEATABLE_NAMES),
+  ...supported(REPEATABLE_NAMES),
+  ...supported(['SYNTHETIC Signet', 'Sol Ring', 'SYNTHETIC Signet']),
+  ...supported(['Grizzly Bears', 'Serra Angel', 'Giant Spider', 'Typhoid Rats']),
+  ...supported(['Lightning Bolt', 'Murder', 'Unsummon']),
+];
+
+/** Red, blue and green for the cards of the slice, a little of the others for the bodies. */
+export const REPEATABLE_LANDS = supported([
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Island',
+  'Island',
+  'Forest',
+  'Forest',
+  'Plains',
+]);
+
+/**
+ * The cards of the Niv-Mizzet draw slice (D-331 to D-333): the SYNTHETIC cards that skip a draw while the library has no cards in it, and the creatures that draw when a source deals
+ * noncombat damage to an opponent. Used by the 'nivDraw' style and kept out of every other pool: a skipped draw changes whether a player loses to an empty library, and the
+ * draw trigger adds triggers to the stack in the middle of other spells.
+ */
+/** The graveyard casters of the Niv-Mizzet deck (D-350): they ask whether to cast a card, so they stay out of the generic pools. */
+export const NIV_GROUP_3_C_NAMES = [
+  'SYNTHETIC Graveyard Caster',
+  'SYNTHETIC Plain Graveyard Caster',
+  'SYNTHETIC Any Mana Caster',
+  'SYNTHETIC Exile Instead Caster',
+  'SYNTHETIC Snowy Study',
+  'SYNTHETIC Colorless Study',
+  'SYNTHETIC Mixed Study',
+  'SYNTHETIC Bloody Study',
+  'SYNTHETIC Quiet Cub',
+] as const;
+
+/** The cast-or-copy trigger doubling cards of the Niv-Mizzet deck (D-339): extra triggers and their questions stay out of the generic pools. */
+export const NIV_GROUP_3_B_NAMES = [
+  'SYNTHETIC Twin Mage',
+  'SYNTHETIC Twin Echo',
+  'SYNTHETIC Cast Watcher',
+  'SYNTHETIC Rival Watcher',
+  'SYNTHETIC Target Watcher',
+  'SYNTHETIC Plain Enterer',
+  'SYNTHETIC Quiet Bear',
+] as const;
+
+/** The delayed "when you next cast" cards of the Niv-Mizzet deck (D-336): they ask for new targets of a copy, so they stay out of the generic pools. */
+export const NIV_GROUP_3_A_NAMES = [
+  'SYNTHETIC Next Echo',
+  'SYNTHETIC Next Exact Echo',
+  'SYNTHETIC Commander Echo Drake',
+] as const;
+
+export const NIV_DRAW_NAMES = [
+  'SYNTHETIC Hollow Warden',
+  'SYNTHETIC Draw Veto',
+  'SYNTHETIC Thin Veto',
+  'SYNTHETIC Spark Scribe',
+  'SYNTHETIC Rival Scribe',
+  'SYNTHETIC Echo Scribe',
+  'SYNTHETIC Spark Pinger',
+  'SYNTHETIC Scorch Wave',
+] as const;
+
+/** The nivDraw style: each card of the slice twice, burn that deals damage by a spell and by an ability, draw spells that empty the library, bodies and a little removal. */
+export const NIV_DRAW_SPELLS = [
+  ...supported(NIV_DRAW_NAMES),
+  ...supported(NIV_DRAW_NAMES),
+  ...supported(['Divination', 'Divination', 'SYNTHETIC Draw Three Gain Five']),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Murder', 'Unsummon']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Grizzly Bears', 'Serra Angel']),
+];
+
+/** Blue and red for the cards of the slice, a little of the others for the bodies. */
+export const NIV_DRAW_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Plains',
+  'Forest',
+]);
+
+/**
  * The soulbond style: the soulbond creatures (the keyword alone, with the Seraph's grant, with +2/+2 and with flying for the pair) several times, the creatures that
  * return when they die, a creature that is paired by another's soulbond, bodies, and removal that ends a pair (death, bounce, a type change, a change of control).
  */
@@ -2367,6 +2518,68 @@ export const SOULBOND_LANDS = supported([
   'Mountain',
   'Island',
   'Island',
+]);
+
+/**
+ * The cards of manifest and face-down permanents (D-316): the SYNTHETIC cards of `synthetic-manifest.ts`. Used by the 'manifest' style and kept out of every other pool:
+ * manifesting puts a card of a library onto the battlefield face down, and the agents may turn it face up, which the seeded games of the other styles do not reach.
+ */
+export const MANIFEST_NAMES = [
+  'SYNTHETIC Manifest Brute',
+  'SYNTHETIC Manifest Flier',
+  'SYNTHETIC Manifest Variable',
+  'SYNTHETIC Manifest Laggard',
+  'SYNTHETIC Manifest Lord',
+  'SYNTHETIC Manifest Costless',
+  'SYNTHETIC Manifest Watcher',
+  'SYNTHETIC Manifest Maker',
+  'SYNTHETIC Manifest Bolt',
+  'SYNTHETIC Manifest Shift',
+  'SYNTHETIC Manifest Self',
+  'SYNTHETIC Manifest Theft',
+  'SYNTHETIC Manifest Everyone',
+] as const;
+
+/**
+ * The manifest style: the cards that manifest (a sorcery, one for each player, the top card of an opponent's library, a creature whose enters trigger manifests, the removal of
+ * Reality Shift's shape), the creature cards a manifested card can be turned up as (a vanilla one, a flier, an {X} cost, one that enters tapped with a counter, a lord, one with
+ * no mana cost), an instant that is not a creature card, a watcher of creatures entering, bodies and removal (also exile, damage and bounce, which reveal a face-down creature).
+ */
+export const MANIFEST_SPELLS = [
+  ...supported(['SYNTHETIC Manifest Self']),
+  ...supported(['SYNTHETIC Manifest Self']),
+  ...supported(['SYNTHETIC Manifest Everyone']),
+  ...supported(['SYNTHETIC Manifest Theft']),
+  ...supported(['SYNTHETIC Manifest Maker']),
+  ...supported(['SYNTHETIC Manifest Maker']),
+  ...supported(['SYNTHETIC Manifest Shift']),
+  ...supported(['SYNTHETIC Manifest Shift']),
+  ...supported(['SYNTHETIC Manifest Brute']),
+  ...supported(['SYNTHETIC Manifest Brute']),
+  ...supported(['SYNTHETIC Manifest Flier']),
+  ...supported(['SYNTHETIC Manifest Variable']),
+  ...supported(['SYNTHETIC Manifest Laggard']),
+  ...supported(['SYNTHETIC Manifest Lord']),
+  ...supported(['SYNTHETIC Manifest Costless']),
+  ...supported(['SYNTHETIC Manifest Watcher']),
+  ...supported(['SYNTHETIC Manifest Bolt']),
+  ...supported(['SYNTHETIC Manifest Bolt']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Grizzly Bears', 'Serra Angel']),
+  ...supported(['Lightning Bolt', 'Murder', 'Unsummon']),
+];
+
+/** Every color, so the manifested cards of every cost can be turned up. */
+export const MANIFEST_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Island',
+  'Island',
+  'Swamp',
+  'Mountain',
+  'Mountain',
 ]);
 
 /** The Saga three times, the Ring's rite five times (the later levels of the Ring need many temptations) and its other cards once, with bodies to carry the designation, a Wall to block it and removal that also takes the designation away. */
@@ -2646,6 +2859,20 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(RING_NAMES as readonly string[]).includes(card.name))
   // The soulbond slices have their own tests: a pairing asks which creature to pair with, and a dies ability asks "you may" and creates a delayed ability.
   .filter((card) => !(SOULBOND_NAMES as readonly string[]).includes(card.name))
+  // The piles slice has its own style: its cards ask the other player to separate revealed cards into two piles, then ask which pile goes where.
+  .filter((card) => !(PILES_NAMES as readonly string[]).includes(card.name))
+  // The Niv-Mizzet draw slice has its own style: its cards skip draws (so a player does not lose to an empty library) and draw when noncombat damage is dealt.
+  .filter((card) => !(NIV_DRAW_NAMES as readonly string[]).includes(card.name))
+  // The delayed next-cast slice asks the questions of a copied spell (new targets), which games-100 expects only from dedicated styles.
+  .filter((card) => !(NIV_GROUP_3_A_NAMES as readonly string[]).includes(card.name))
+  // The trigger doubling cards (D-339) change which triggers ask their questions, which games-100 expects only from dedicated styles.
+  .filter((card) => !(NIV_GROUP_3_B_NAMES as readonly string[]).includes(card.name))
+  // The graveyard casters (D-350) ask "you may cast it" as a trigger resolves (a confirmOptional), which games-100 expects only from dedicated styles.
+  .filter((card) => !(NIV_GROUP_3_C_NAMES as readonly string[]).includes(card.name))
+  // D-344: the repeatable-mode cards have their own style.
+  .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))
+  // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
+  .filter((card) => !(MANIFEST_NAMES as readonly string[]).includes(card.name))
   // The Vraska program has its own style: its cards ask other players questions in the middle of a resolution, and a payment of energy.
   .filter((card) => !(VRASKA_NAMES as readonly string[]).includes(card.name))
   // The Vraska EDHREC program has its own style: its cards ask other players questions in the middle of a resolution and change token creation and triggers.
@@ -2822,6 +3049,10 @@ export type DeckStyle =
   | 'edhrec'
   | 'hofri'
   | 'soulbond'
+  | 'piles'
+  | 'nivDraw'
+  | 'repeatable'
+  | 'manifest'
   | 'combat';
 
 /** The spell slots of a style. A style whose pool is empty falls back to the old spell mix. */
@@ -2829,6 +3060,10 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   // D-229 to D-235: the Hofri Ghostforge mechanics (a style of its own, kept out of every other pool).
   if (style === 'hofri' && HOFRI_SPELLS.length > 0) return HOFRI_SPELLS;
   if (style === 'soulbond' && SOULBOND_SPELLS.length > 0) return SOULBOND_SPELLS;
+  if (style === 'piles' && PILES_SPELLS.length > 0) return PILES_SPELLS;
+  if (style === 'nivDraw' && NIV_DRAW_SPELLS.length > 0) return NIV_DRAW_SPELLS;
+  if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
+  if (style === 'manifest' && MANIFEST_SPELLS.length > 0) return MANIFEST_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
   if (style === 'edhrec') return EDHREC_SPELLS;
   // Only the creatures with a coverage keyword, so every deck of the style draws them (see COVERAGE_KEYWORDS).
@@ -3000,6 +3235,10 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'edhrec' && BASIC_LANDS.length > 0) return EDHREC_LANDS;
   if (style === 'hofri' && BASIC_LANDS.length > 0) return HOFRI_LANDS;
   if (style === 'soulbond' && BASIC_LANDS.length > 0) return SOULBOND_LANDS;
+  if (style === 'piles' && BASIC_LANDS.length > 0) return PILES_LANDS;
+  if (style === 'nivDraw' && BASIC_LANDS.length > 0) return NIV_DRAW_LANDS;
+  if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
+  if (style === 'manifest' && BASIC_LANDS.length > 0) return MANIFEST_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
 }
 
@@ -3405,6 +3644,34 @@ export const SOULBOND_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
   ['soulbond', 'soulbond'],
   ['soulbond', 'spells'],
   ['spells', 'soulbond'],
+];
+
+/** Style pairs of the piles soak test (D-303): a mirror match and both mixed ways. */
+export const PILES_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['piles', 'piles'],
+  ['piles', 'spells'],
+  ['spells', 'piles'],
+];
+
+/** Style pairs of the Niv-Mizzet draw soak test (D-331 to D-333): a mirror match and both mixed ways. */
+export const NIV_DRAW_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['nivDraw', 'nivDraw'],
+  ['nivDraw', 'spells'],
+  ['spells', 'nivDraw'],
+];
+
+/** Style pairs of the repeatable-mode soak test (D-344): a mirror match and both mixed ways. */
+export const REPEATABLE_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['repeatable', 'repeatable'],
+  ['repeatable', 'spells'],
+  ['spells', 'repeatable'],
+];
+
+/** Style pairs of the manifest soak test (D-316): a mirror match and both mixed ways. */
+export const MANIFEST_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['manifest', 'manifest'],
+  ['manifest', 'spells'],
+  ['spells', 'manifest'],
 ];
 
 /** Style pairs of the Hofri soak test (D-229 to D-235): a mirror match and both mixed ways. */

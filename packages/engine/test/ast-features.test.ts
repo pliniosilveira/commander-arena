@@ -92,6 +92,8 @@ describe('the dimensions', () => {
       'subjectControllerHasMore',
       'triggerPlayerHasMore',
       'cardsInGraveyard',
+      // D-331: "as long as there are no cards in your library".
+      'cardsInLibrary',
       'escaped',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',
@@ -125,6 +127,8 @@ describe('the dimensions', () => {
       'playerDealtDamage',
       // D-252: "if you gained 3 or more life this turn".
       'lifeGainedThisTurn',
+      // D-318: "Activate only if you've cast three or more spells this turn".
+      'spellsCastThisTurn',
       'dieResult',
       'thisInYourGraveyard',
       'chosenOption',

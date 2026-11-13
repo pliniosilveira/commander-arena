@@ -35,9 +35,12 @@ import { HOFRI_CONDITION_RULES } from './hofri';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
+import { LIBRARY_CONDITION_RULES } from './library';
 import { MELD_CONDITION_RULES } from './meld';
+import { NIV_CONDITION_RULES } from './niv';
 import { RECURSION_CONDITION_RULES } from './recursion';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
+import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
 import { CONDITION_UNLESS_PAYS } from './unless';
 import { VRASKA_CONDITION_RULES } from './vraska';
 
@@ -411,6 +414,12 @@ export const CONDITION_RULES = [
   ...KORVOLD_CONDITION_RULES,
   // Stage P49 (D-206): "at least four mana was spent to cast it", "a card left your graveyard this turn", "~ was cast from a graveyard".
   ...VRASKA_CONDITION_RULES,
+  // Issue 25 (the Niv-Mizzet deck): "five or more mana was spent to cast that spell".
+  ...NIV_CONDITION_RULES,
+  // Issue 25 (D-318): "you've cast three or more spells this turn".
+  ...SPELLS_CAST_CONDITION_RULES,
+  // Issue 25 (D-331): "there are no cards in your library", "your library has no cards in it".
+  ...LIBRARY_CONDITION_RULES,
   // Stage P52 (D-210): "the player doesn't", "a creature card was discarded this way".
   ...CHOOSER_CONDITION_RULES,
   // Stage P63 (D-216): "you created a token this turn".

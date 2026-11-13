@@ -196,11 +196,15 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   const replacers = replacementSources(state);
   // D-283 (CR 603.10a, 704.3): the permanents put into graveyards in this check leave together, so what each was (and what abilities a neighbour
   // gave it) is recorded now, before the first of them moves.
-  const batch = [...toGraveyard, ...fallenAuras, ...destroyed];
+  // D-323, CR 704.3, 704.5g, 704.5i: a creature that is also a planeswalker can be dealt lethal damage and have 0 loyalty in one check. It leaves the battlefield
+  // once, and as a card put into the graveyard (no destruction for a regeneration shield to replace).
+  const inGraveyardBatch = new Set([...toGraveyard, ...fallenAuras].map((o) => o.id));
+  const destroyedOnce = destroyed.filter((o) => !inGraveyardBatch.has(o.id));
+  const batch = [...toGraveyard, ...fallenAuras, ...destroyedOnce];
   if (batch.length > 1) for (const obj of batch) state = recordLastKnown(state, obj);
   // CR 704.5m: an Aura is put into the graveyard, not destroyed; the creature it enchanted may be
   // dying in the same check, which the next pass of the caller's loop settles.
-  for (const obj of [...toGraveyard, ...fallenAuras, ...destroyed].sort(order)) {
+  for (const obj of [...toGraveyard, ...fallenAuras, ...destroyedOnce].sort(order)) {
     // CR 701.19a, 704.5g (D-120): a regeneration shield replaces the destruction by lethal damage or
     // deathtouch with: remove the damage, tap it, remove it from combat. Only a destruction is replaced,
     // not a creature put into a graveyard for 0 toughness (CR 704.5f) or an Aura (CR 704.5m).

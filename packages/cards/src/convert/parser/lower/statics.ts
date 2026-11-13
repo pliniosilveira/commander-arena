@@ -671,6 +671,26 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     if (!subject.ok) return subject;
     if (subject.value.kind !== 'filter' && subject.value.kind !== 'attached')
       return failure(ability);
+    // Stage P71 (D-339, CR 603.2d): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger,
+    // that ability triggers an additional time." The spell the cast or copy must name.
+    if (first.cause !== undefined) {
+      const spell = lowerFilter(first.cause);
+      if (!spell.ok) return spell;
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'static',
+            static: {
+              kind: 'doubleTriggers',
+              subject: subject.value,
+              cause: { kind: 'castOrCopySpell', spell: spell.value },
+            },
+          },
+        ],
+        rule: ability.rule,
+      };
+    }
     return {
       ok: true,
       value: [{ kind: 'static', static: { kind: 'doubleTriggers', subject: subject.value } }],

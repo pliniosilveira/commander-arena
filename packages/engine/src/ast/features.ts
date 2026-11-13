@@ -105,6 +105,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'doOnlyOnceEachTurn',
     // D-151: "If that mana is spent on a Dragon creature spell, it gains haste" (`ManaAbility.spentRider`).
     'manaSpentRider',
+    // D-319: "Add two mana of different colors." (`anyCombination` with `distinct`, CR 106.1b).
+    'manaDistinctColors',
+    // D-328: "When that mana is spent to cast a red instant or sorcery spell, copy that spell" (`spentRider` with `copySpell`, a color of the spell).
+    'manaSpentRiderCopy',
+    // D-327: "Mill a card. You may play that card this turn." (`mayPlay` of the cards a `mill` put into the graveyard).
+    'mayPlayFromGraveyard',
   ],
   effectKinds: [
     'sequence',
@@ -174,6 +180,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'surveil',
     'lookAndReorder',
     'lookAndSplit',
+    // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (CR 700.3).
+    'revealAndSeparate',
     'putFromHandOnTop',
     'createToken',
     'search',
@@ -206,8 +214,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomeMonarch',
     // D-131: "mill N cards" (CR 701.17).
     'mill',
+    // D-309: "manifest the top card of your library" (CR 701.40), and the face-down permanent it makes.
+    'manifest',
     // D-128: an effect that creates a delayed triggered ability (CR 603.7): "at the beginning of the next turn's upkeep".
     'delayedTrigger',
+    // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
+    'delayedCast',
     // D-128: the engine's own abilities of Suspend (CR 702.62a) and Madness (CR 702.35a), found from exile.
     'removeTimeCounter',
     'castExiled',
@@ -241,6 +253,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dealDividedDamage',
     // D-145: "you may cast a spell ... from your hand without paying its mana cost", "you may play the exiled card" (CR 608.2g).
     'castFree',
+    // D-350: "you may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead" (CR 608.2g, 609.4b).
+    'castCard',
     // D-149: "proliferate" (CR 701.34).
     'proliferate',
     // D-151: "exile the top card of your library. You may play that card this turn" (CR 701.13, 601.2, 305.1).
@@ -282,6 +296,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'drawn',
     'dealsCombatDamage',
     'leavesBattlefield',
+    // D-333: "Whenever a source you control deals noncombat damage to an opponent".
+    'noncombatDamageDealt',
     // D-133: "whenever [a creature] is dealt damage".
     'dealtDamage',
     // D-120: "whenever this blocks / becomes blocked" (Bushido, CR 702.45a).
@@ -436,6 +452,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'entersAsCopy',
     // D-192: "All damage that would be dealt to you and other permanents you control is dealt to this creature instead."
     'redirectDamage',
+    // D-332: "If you would draw a card while your library has no cards in it, skip that draw instead."
+    'skipDraw',
   ],
   // {T}, "Sacrifice this permanent" (a Treasure, CR 111.10a) and mana ({1}, {T}: a Signet). A mana
   // cost is paid from the pool, or by auto-pay from sources that have no mana cost themselves.
@@ -645,6 +663,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerPlayerHasMore',
     // D-229: "as long as there are fewer than eight cards in your graveyard".
     'cardsInGraveyard',
+    // D-331: "as long as there are no cards in your library".
+    'cardsInLibrary',
     // D-124: "if it escaped", "unless it escaped" (as `not`).
     'escaped',
     // D-127: "if this permanent came under your control since the beginning of your last upkeep" (Echo).
@@ -689,6 +709,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerDealtDamage',
     // D-252: "if you gained 3 or more life this turn".
     'lifeGainedThisTurn',
+    // D-318: "Activate only if you've cast three or more spells this turn".
+    'spellsCastThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
     'dieResult',
     'thisInYourGraveyard',
@@ -816,6 +838,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'affected',
     'half',
     'multiple',
+    // D-321: "the number of cards in your hand minus 4".
+    'minus',
     'sum',
     'opponentsWithMore',
     'thisWay',
@@ -951,6 +975,12 @@ export const ABILITY_FEATURES = [
   'doOnlyOnceEachTurn',
   /** "If that mana is spent on a Dragon creature spell, it gains haste until end of turn" (D-151): the engine's `ManaAbility.spentRider`. */
   'manaSpentRider',
+  /** "Add two mana of different colors" (CR 106.1b, D-319): `anyCombination` with `distinct`, the sets of different colors of the five. */
+  'manaDistinctColors',
+  /** "When that mana is spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy" (D-328): `spentRider` with `copySpell`. */
+  'manaSpentRiderCopy',
+  /** "Mill a card. You may play that card this turn" (D-327, CR 601.2, 305.1): the engine's `mayPlay` of a card a `mill` put into its owner's graveyard. */
+  'mayPlayFromGraveyard',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 
@@ -1173,6 +1203,8 @@ export const CONDITION_KINDS = [
   'playerDealtDamage',
   /** "If you gained 3 or more life this turn" (D-252): the engine's `lifeGainedThisTurn`. */
   'lifeGainedThisTurn',
+  /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
+  'spellsCastThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
   'dieResult',
   /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
@@ -1193,6 +1225,8 @@ export const CONDITION_KINDS = [
   'soulbondReady',
   'unlessPays',
   'cardsInGraveyard',
+  /** "As long as there are no cards in your library" (CR 401.1, D-331): the engine's `cardsInLibrary`. */
+  'cardsInLibrary',
   'and',
   'or',
   'not',
@@ -1351,6 +1385,8 @@ export const AMOUNT_KINDS = [
   'half',
   /** "Twice ...", "2 life for each ..." (D-131): the engine's `multiple`. */
   'multiple',
+  /** "... minus 4" (CR 107.1b, D-321): the engine's `minus`, floored at 0. */
+  'minus',
   /** "... plus ..." (D-131): the engine's `sum`. */
   'sum',
   /** "For each creature sacrificed / destroyed this way", "for each opponent who drew a card this way" (D-131): the engine's `thisWay`. */
@@ -1437,6 +1473,9 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,
   manaSpentRider: true,
+  manaDistinctColors: true,
+  manaSpentRiderCopy: true,
+  mayPlayFromGraveyard: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,
@@ -1450,6 +1489,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
 const EFFECT_TABLE: KindTable<Effect['kind']> = {
   sequence: true,
   mill: true,
+  manifest: true,
   dealDamage: true,
   destroy: true,
   exile: true,
@@ -1496,6 +1536,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   surveil: true,
   lookAndReorder: true,
   lookAndSplit: true,
+  revealAndSeparate: true,
   putFromHandOnTop: true,
   createToken: true,
   search: true,
@@ -1518,6 +1559,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   cumulativeUpkeep: true,
   becomeMonarch: true,
   delayedTrigger: true,
+  delayedCast: true,
   removeTimeCounter: true,
   castExiled: true,
   may: true,
@@ -1528,6 +1570,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   dealDividedDamage: true,
   fight: true,
   castFree: true,
+  castCard: true,
   reselectAttack: true,
   chooseOne: true,
   vote: true,
@@ -1567,6 +1610,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   step: true,
   drawn: true,
   dealsCombatDamage: true,
+  noncombatDamageDealt: true,
   dealtDamage: true,
   leavesBattlefield: true,
   blocks: true,
@@ -1679,6 +1723,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   groupEntersUntapped: true,
   entersAsCopy: true,
   redirectDamage: true,
+  skipDraw: true,
 };
 const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   fixed: true,

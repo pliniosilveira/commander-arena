@@ -1157,6 +1157,13 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       checkAmount(a.of, `${path}.of`, scope, out);
       break;
+    case 'minus':
+      // D-321, CR 107.1b: `of` less a whole number of 1 or more, floored at 0.
+      if (!Number.isSafeInteger(a.by) || a.by < 1) {
+        issue(out, `${path}.by`, 'a minus needs a whole number of 1 or more to take away');
+      }
+      checkAmount(a.of, `${path}.of`, scope, out);
+      break;
     case 'multiple':
       if (!Number.isSafeInteger(a.factor) || a.factor < 2) {
         issue(out, `${path}.factor`, 'a multiple needs a whole factor of 2 or more');
@@ -1259,7 +1266,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(
           out,
           path,
-          "'triggerDamage' needs a triggered ability whose trigger is damage being dealt (dealtDamage or dealsCombatDamage) or life being gained (lifeGained)",
+          "'triggerDamage' needs a triggered ability whose trigger is damage being dealt (dealtDamage, dealsCombatDamage or noncombatDamageDealt) or life being gained (lifeGained)",
         );
       }
       break;
@@ -1927,6 +1934,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.token`, 'token must be a boolean when present');
       }
       break;
+    case 'cardsInLibrary': // D-331, CR 401.1: the same shape, for the library
     case 'cardsInGraveyard':
       // D-229, CR 404.1: the number of cards in the controller's graveyard against a whole number.
       if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
@@ -1956,6 +1964,12 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'lifeGainedThisTurn':
       // D-252, CR 119.3: the life the controller has gained this turn.
+      if (!isCount(c.atLeast) || c.atLeast < 1) {
+        issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
+      }
+      break;
+    case 'spellsCastThisTurn':
+      // D-318, CR 601.2i: the spells the controller has cast this turn.
       if (!isCount(c.atLeast) || c.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
@@ -2041,7 +2055,9 @@ function movesObjects(e: Effect): boolean {
     // D-177: the cards a `search` found and put somewhere are "it" and "that land" ("Then if you control four or more lands, untap that land").
     e?.kind === 'search' ||
     // D-216: the card a `lookAndSplit` exiled is "the exiled card" ("You may play the exiled card this turn").
-    (e?.kind === 'lookAndSplit' && e.exile > 0)
+    (e?.kind === 'lookAndSplit' && e.exile > 0) ||
+    // D-327: the cards a `mill` put into a graveyard are "that card" ("Mill a card. You may play that card this turn.").
+    e?.kind === 'mill'
   );
 }
 
@@ -2808,6 +2824,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       checkAmount(e.count, `${path}.count`, scope, out);
       break;
+    case 'manifest':
+      // CR 701.40a (D-309): each player the selector names manifests the top card of a library, theirs or `fromLibraryOf`'s.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.fromLibraryOf !== undefined) {
+        checkPlayerSelector(e.fromLibraryOf, `${path}.fromLibraryOf`, scope, out);
+      }
+      break;
     case 'sacrifice':
       checkSacrificeSelector(e.objects, `${path}.objects`, scope, out);
       if (e.player !== undefined) {
@@ -2991,6 +3014,43 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 603.7 (D-128): an effect that creates a delayed triggered ability.
       checkDelayedTrigger(e, path, out, scope.movedAvailable === true, scope.diesTrigger === true);
       break;
+    case 'delayedCast': {
+      // CR 603.7 (D-336): an effect that creates a delayed triggered ability on the controller's next cast of a spell the filter names.
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.stackKind !== 'spell') {
+        issue(
+          out,
+          `${path}.filter`,
+          'the filter of a delayed cast trigger is one of spells (stackKind "spell")',
+        );
+      }
+      // CR 603.7c: nothing of the spell or ability that created it is left to name, so it does something to the spell cast, and only that.
+      const inner = e.effect;
+      if (inner?.kind !== 'copySpell' || kindOf(inner.spell) !== 'triggerSubject') {
+        issue(
+          out,
+          `${path}.effect`,
+          'a delayed cast trigger copies the spell that was cast (copySpell of triggerSubject)',
+        );
+        break;
+      }
+      checkEffect(
+        inner,
+        `${path}.effect`,
+        {
+          owner: 'ability',
+          targets: new Map(),
+          xAllowed: false,
+          triggerSubject: 'stack',
+          triggerPlayer: true,
+          checkAbility: scope.checkAbility,
+          checkContinuous: scope.checkContinuous,
+          checkEffectExt: scope.checkEffectExt,
+        },
+        out,
+      );
+      break;
+    }
     case 'becomeMonarch':
       // CR 725.3 (D-127): one player becomes the monarch, so the selector names exactly one.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -3055,6 +3115,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (!isOneOf(e.newTargets, ['may', 'no'])) {
         issue(out, `${path}.newTargets`, 'newTargets is "may" or "no"');
       }
+      // D-337 (CR 707.10): how many copies, an amount of the game as the effect resolves (zero makes none).
+      if (e.count !== undefined) checkAmount(e.count, `${path}.count`, scope, out);
       break;
     case 'unearth':
       // CR 702.84a: no operand; it is the effect of an ability that functions from the graveyard and stands nowhere else.
@@ -3341,7 +3403,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
-      if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top'])) {
+      if (e.take?.hidden !== undefined && (e.take.hidden !== true || e.take.to === 'battlefield')) {
+        issue(
+          out,
+          `${path}.take.hidden`,
+          'hidden is true, and only for cards put into the hand (a card put onto the battlefield is public)',
+        );
+      }
+      if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top', 'bottomChosen'])) {
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }
       break;
@@ -3391,6 +3460,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'castCard':
+      // CR 608.2g (D-350): "you may cast target [card] from a graveyard": the card is a target of the ability (a card in a graveyard when the ability resolves).
+      if (kindOf(e.object) !== 'target') {
+        issue(out, `${path}.object`, 'the card to cast is a target');
+      } else {
+        checkRef(e.object as ObjectRef, 'object', `${path}.object`, scope, out);
+      }
+      if (e.anyManaType !== undefined && e.anyManaType !== true) {
+        issue(out, `${path}.anyManaType`, 'anyManaType must be true when present');
+      }
+      if (e.exileInstead !== undefined && e.exileInstead !== true) {
+        issue(out, `${path}.exileInstead`, 'exileInstead must be true when present');
+      }
+      break;
     case 'fight':
       // CR 701.14 (D-145): creatures fight. Without a pairing each side is one creature; with `differentChosen` the group on the
       // other side is a selector the controller pairs the fighters with.
@@ -3833,6 +3916,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.count`,
           'the cards looked at are all placed: count is hand + bottom + exile',
         );
+      }
+      break;
+    case 'revealAndSeparate':
+      // D-303 (CR 700.3): who makes the piles is one of two players, and the two piles go to two different places of the controller.
+      checkAmount(e.count, `${path}.count`, scope, out);
+      if (e.separator !== 'opponent' && e.separator !== 'you') {
+        issue(out, `${path}.separator`, 'the piles are separated by an opponent or by you');
+      }
+      for (const field of ['chosenTo', 'otherTo'] as const) {
+        if (e[field] !== 'hand' && e[field] !== 'graveyard') {
+          issue(out, `${path}.${field}`, 'a pile goes into the hand or the graveyard');
+        }
+      }
+      if (e.chosenTo === e.otherTo) {
+        issue(out, path, 'the two piles go to different places');
       }
       break;
     case 'search':

@@ -33,6 +33,8 @@ const STATIC_CONDITIONS = [
   'condition.attached-to',
   // Stage P68 (D-229): "there are fewer than eight cards in your graveyard".
   'condition.cards-in-graveyard',
+  // Issue 25 (D-331): "there are no cards in your library".
+  'condition.cards-in-library',
   // D-286 (CR 702.95b): "~ is paired with another creature".
   'condition.paired',
 ] as const;

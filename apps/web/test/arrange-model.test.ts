@@ -21,10 +21,12 @@ import {
   defaultArrangement,
   dropCard,
   flipPile,
+  hasOtherPile,
   locate,
   moveToPile,
   moveWithin,
   pileHint,
+  pileTitle,
   placeCard,
 } from '../src/ui/decisions/arrange';
 import {
@@ -59,7 +61,9 @@ function arrange(
         ? ['top', 'bottom']
         : purpose === 'surveil'
           ? ['top', 'graveyard']
-          : ['top'],
+          : purpose === 'bottom'
+            ? ['bottom']
+            : ['top'],
     ...patch,
   };
 }
@@ -67,12 +71,13 @@ function arrange(
 const scry = (count = 3) => arrange('scry', count);
 const surveil = (count = 3) => arrange('surveil', count);
 const reorder = (count = 3) => arrange('reorder', count);
+const bottom = (count = 3) => arrange('bottom', count);
 
 describe('the default and the answer', () => {
   test('everything stays on top in the order it was looked at', () => {
     const d = scry(3);
     expect(defaultArrangement(d)).toEqual({ top: [o(1), o(2), o(3)], other: [] });
-    expect(arrangeAction(defaultArrangement(d))).toEqual({
+    expect(arrangeAction(defaultArrangement(d), d)).toEqual({
       kind: 'arrangeCards',
       top: [o(1), o(2), o(3)],
       other: [],
@@ -217,6 +222,37 @@ describe('words', () => {
       arrangeLabel(d, moveToPile(defaultArrangement(d), d, o(2), 'other'), o(2), 'Island'),
     ).toBe('Island, Bottom pile, 1 of 1');
     expect(arrangeLabel(d, defaultArrangement(d), o(9), 'Island')).toBe('Island');
+  });
+
+  test('the bottom arrangement (D-324, CR 401.4): one pile, titled Bottom, answered in `other` with `top` empty', () => {
+    const d = bottom(3);
+    const a = defaultArrangement(d);
+    expect(hasOtherPile(d)).toBe(false);
+    expect(arrangeAction(a, d)).toEqual({
+      kind: 'arrangeCards',
+      top: [],
+      other: [o(1), o(2), o(3)],
+    });
+    expect(arrangementComplete(d, a)).toBe(true);
+    // A card cannot be sent to a second pile; it can be moved within the one.
+    expect(flipPile(a, d, o(1))).toEqual(a);
+    expect(arrangeAction(moveWithin(a, o(1), 1), d)).toEqual({
+      kind: 'arrangeCards',
+      top: [],
+      other: [o(2), o(1), o(3)],
+    });
+    expect(pileTitle(d, 'top')).toBe('Bottom');
+    expect(pileHint(d, 'top')).toContain('last card is the bottom card');
+    expect(arrangePrompt(d)).toBe(
+      'Put the other 3 cards on the bottom of your library in any order.',
+    );
+    expect(arrangePrompt(bottom(2))).toBe(
+      'Put the other 2 cards on the bottom of your library in any order.',
+    );
+    expect(arrangeDetail(d, a)).toBe('3 on the bottom. The last card ends on the very bottom.');
+    expect(arrangeBadge(d, a, o(3))).toBe('Bottom card');
+    expect(arrangeBadge(d, a, o(1))).toBe('3rd from bottom');
+    expect(arrangeLabel(d, a, o(2), 'Island')).toBe('Island, Bottom pile, 2 of 3');
   });
 
   test('the pile hints say which end is which', () => {
@@ -400,6 +436,9 @@ describe('waiting messages', () => {
     );
     expect(waitingText(waiting('reorder'))).toBe(
       'Opponent is putting the top cards of their library back in an order (SYNTHETIC Seer Of The Door).',
+    );
+    expect(waitingText(waiting('bottom', 'SYNTHETIC Stock Up Like'))).toBe(
+      'Opponent is putting cards on the bottom of their library in an order (SYNTHETIC Stock Up Like).',
     );
     expect(waitingText(waiting('putOnTop', 'SYNTHETIC Brainstorm Like'))).toBe(
       'Opponent is putting cards from their hand on top of their library (SYNTHETIC Brainstorm Like).',

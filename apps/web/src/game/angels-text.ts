@@ -26,6 +26,7 @@ import { productionWords } from './dinosaurs-text';
 import { spendOnDragonWords, spentRiderText } from './dragons-text';
 import { thingsPhrase } from './filter-text';
 import { manaSpentWords } from './mana-spent-text';
+import { COLOR_NAMES } from './words';
 
 type Counted = Extract<Replacement, { kind: 'othersEnterWithCounters' }>['count'];
 
@@ -290,6 +291,14 @@ export type PoolRider = NonNullable<SeatView['manaPool'][number]['rider']>;
 /** "If spent on a Dragon creature spell, it gains haste until end of turn": what mana in a pool does when it is spent (CR 106.6). */
 export function riderWords(rider: PoolRider): string {
   const nouns = [...(rider.subtypes ?? []), ...(rider.types ?? [])];
+  if (rider.kind === 'copy') {
+    // D-328: "When spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy".
+    const colors = (rider.colors ?? []).map((c) => COLOR_NAMES[c] ?? c);
+    const spell = [...colors, ...(rider.types === undefined ? [] : [rider.types.join(' or ')])];
+    const phrase = `${spell.length === 0 ? '' : `${spell.join(' ')} `}spell`;
+    const article = /^[aeiou]/i.test(phrase) ? 'an' : 'a';
+    return `When spent to cast ${article} ${phrase}, copy that spell${rider.newTargets === 'may' ? ' and you may choose new targets for the copy' : ''}`;
+  }
   if (rider.kind === 'scry') {
     // Group 4 of the Vraska deck (CR 603.2, 701.22a): the scry of the mana a Path of Ancestry makes.
     const shares = rider.sharesTypeWithCommander === true;

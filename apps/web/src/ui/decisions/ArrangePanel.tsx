@@ -100,7 +100,9 @@ export function ArrangePanel({
     <Dialog label={model.bar.prompt} className="dec-arrange">
       <h2 className="dec-title">{model.bar.prompt}</h2>
       <p className="dec-sub">
-        Click a card to send it to the other pile, drag it, or use the arrows. Enter confirms.
+        {hasOtherPile(decision)
+          ? 'Click a card to send it to the other pile, drag it, or use the arrows. Enter confirms.'
+          : 'Drag a card, or use the arrows, to put the cards in order. Enter confirms.'}
       </p>
       {names.map((pile) => {
         const cards = pileOf(pile);

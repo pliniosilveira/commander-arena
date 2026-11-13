@@ -328,6 +328,8 @@ export function lowerFilter(noun: IrNoun): LowerResult<ObjectFilter> {
 /** How many targets a noun takes, as the TargetSpec bounds ("two target creatures"). */
 function boundsOf(noun: IrNoun): { min?: number; max?: number } {
   const n = noun.count?.kind === 'number' ? noun.count.value : 1;
+  // "one or two target creatures" (D-295, CR 601.2c): at least one, at most two.
+  if (noun.minTargets !== undefined) return { min: noun.minTargets, max: n };
   if (noun.upTo) return { min: 0, max: n };
   return n > 1 ? { min: n, max: n } : {};
 }

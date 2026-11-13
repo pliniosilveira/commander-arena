@@ -6,6 +6,7 @@
  */
 import type { ConfirmOptionalDecision, Cost, ObjectId } from '@commander-arena/engine';
 import { findEffect } from '../../game/artifacts-text';
+import { castCardOfAbility, castCardPrompt } from '../../game/cast-card-text';
 import {
   additionalWayText,
   costText,
@@ -429,6 +430,17 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       yes: 'Gift',
       no: 'No gift',
       cancellable: true,
+    };
+  }
+  if (d.purpose === 'castCard') {
+    // D-350 (CR 608.2g): "you may cast target instant or sorcery card from a graveyard": the riders are read from the ability on the stack. Declining leaves the
+    // card in its graveyard; nothing is rewound.
+    const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? d.sourceName;
+    return {
+      prompt: castCardPrompt(card, castCardOfAbility(index.get(d.source)?.ability)),
+      yes: 'Cast it',
+      no: "Don't cast it (it stays in the graveyard)",
+      cancellable: false,
     };
   }
   if (d.purpose === 'pairReturn') {

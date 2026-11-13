@@ -18,6 +18,7 @@ import type { ChosenValues, GameState, Instruction, ResolutionContext } from '..
 import { recordActionTaken } from './action-taken';
 import { attachEntered, auraTargetSpec, ENCHANT_TARGET_ID } from './attach';
 import { runCascade } from './cascade';
+import { runCastCard } from './cast-card';
 import { runCastExiled } from './cast-exiled';
 import { runCastFree } from './cast-free';
 import { giftEffectOf } from './cast-gift';
@@ -190,7 +191,9 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                   ? runChangeTarget(state, res, head)
                   : head.kind === 'castFree'
                     ? runCastFree(state, res, head)
-                    : runInstruction(state, res, head, res.legalTargets);
+                    : head.kind === 'castCard'
+                      ? runCastCard(state, res, head)
+                      : runInstruction(state, res, head, res.legalTargets);
     if (out.needs) {
       // A player must answer (CR 903.9b, 608.2d, 603.5); the instruction stays at the head of the
       // queue. What triggered so far is noted now, because these events are not scanned again.
@@ -316,7 +319,9 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
     const moved = moveObject(next, {
       object: res.object,
       to: permanent ? 'battlefield' : adventure ? 'exile' : 'graveyard',
-      toSeat: controllerOf(state, obj),
+      // CR 400.3 (D-353): an instant or sorcery that resolves goes to its OWNER's graveyard, whoever cast it (a card cast from another player's graveyard); a
+      // permanent enters under its controller's control (CR 110.2), and an Adventure is exiled for its caster (CR 715.3d).
+      toSeat: permanent || adventure ? controllerOf(state, obj) : obj.owner,
       entersPaid: res.entersPaid ?? null,
       entersChosen: res.entersChosen ?? null,
       ...(res.entersCopy === undefined ? {} : { entersCopy: res.entersCopy }),
@@ -432,6 +437,7 @@ export function answerResolutionCards(
       head.kind !== 'putOnTop' &&
       head.kind !== 'lookTake' &&
       head.kind !== 'lookSplit' &&
+      head.kind !== 'pileSeparate' &&
       head.kind !== 'castFree' &&
       head.kind !== 'behold' &&
       head.kind !== 'splitExiled' &&
@@ -596,7 +602,8 @@ export function answerResolutionEntersChosen(
     !res ||
     d?.kind !== 'chooseOption' ||
     d.purpose === 'replacement' ||
-    d.purpose === 'meldOrder'
+    d.purpose === 'meldOrder' ||
+    d.purpose === 'pile'
   )
     return null;
   const head = res.queue[0];

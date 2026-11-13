@@ -163,6 +163,11 @@ export interface IrNoun extends IrNode {
    * ability before it, which a target noun without it may share.
    */
   readonly otherTarget?: true;
+  /**
+   * "one or two target creatures", "each of one or two targets" (D-295, CR 115.1, 601.2c): at least this many targets, at most `count`. A target noun
+   * without it takes none (`upTo`) or exactly `count`.
+   */
+  readonly minTargets?: number;
   /** "any number of other permanents" (stage P30, CR 701.21): the player chooses none, some or all of them. */
   readonly anyNumber?: true;
   /** "one or more Treasures" (stage P41, D-188, CR 701.21): with `anyNumber`, the player chooses at least one of them. */
@@ -378,6 +383,8 @@ export type IrAmount =
       readonly of: IrAmount;
       readonly span: Span;
     }
+  // "the number of cards in your hand minus 4" (D-321, CR 107.1b: a negative result counts as 0): a whole number of 1 or more taken away
+  | { readonly kind: 'minus'; readonly of: IrAmount; readonly by: number; readonly span: Span }
   // "the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards"
   | { readonly kind: 'sum'; readonly of: readonly IrAmount[]; readonly span: Span }
   // "for each opponent who has more cards in hand than you"
@@ -465,6 +472,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'lifeTotal'; readonly compare: IrComparison; readonly aboveStarting?: true }
     // D-252 (the Bruna deck): "you gained 3 or more life this turn" (CR 119.3)
     | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
+    // D-318 (the Niv-Mizzet deck): "you've cast three or more spells this turn" (CR 601.2i)
+    | { readonly kind: 'spellsCastThisTurn'; readonly atLeast: number }
     // D-271 (CR 706.2, 706.3a): "the result is 1", "the result is 4 or more": the die the roll before it in the same text rolled
     | { readonly kind: 'dieResult'; readonly compare: IrComparison }
     // D-271 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard
@@ -473,6 +482,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: string }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
     | { readonly kind: 'cardsInGraveyard'; readonly compare: IrComparison }
+    // "there are no cards in your library", "your library has no cards in it" (issue 25, D-331, CR 401.1): the cards in the library of the controller
+    | { readonly kind: 'cardsInLibrary'; readonly compare: IrComparison }
     // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat; with a
     // trigger about a player (a step of an opponent's turn) the lowering reads it of that player instead (`triggerPlayerHasMore`)
     | { readonly kind: 'subjectControllerHasMore'; readonly stat: 'lands' | 'creatures' }
@@ -533,7 +544,8 @@ export interface IrCondition extends IrNode {
     // Stage P49 (D-206): "during your turn" (CR 611.3a)
     | { readonly kind: 'yourTurn' }
     // Stage P49 (D-206): "at least four mana was spent to cast it" (CR 601.2h), "a card left your graveyard this turn" (CR 400.7), "~ was cast from a graveyard" (CR 601.2a)
-    | { readonly kind: 'manaSpentAtLeast'; readonly count: number }
+    // `ofTriggerSpell` (issue 25): said as "that spell" ("five or more mana was spent to cast that spell"); lowered in a trigger about a spell that was cast only.
+    | { readonly kind: 'manaSpentAtLeast'; readonly count: number; readonly ofTriggerSpell?: true }
     | { readonly kind: 'cardLeftYourGraveyard' }
     // Stage P50 (D-207): "it targets a tapped creature" (CR 601.2c, 601.2f)
     | { readonly kind: 'spellTargets'; readonly noun: IrNoun }
@@ -627,7 +639,8 @@ export interface IrManaSpec extends IrNode {
     // "one mana of the chosen color" (stage P33, D-150, CR 106.1b, 607.2d): the color the permanent chose as it entered
     | { readonly kind: 'chosenColor' }
     // "two mana in any combination of colors" (stage P34, D-152, CR 106.1b, 605.3b): `count` mana, each of a color chosen on its own
-    | { readonly kind: 'anyCombination'; readonly count: number }
+    // stage P34; issue 25 (D-319): "two mana of different colors" is `distinct` (no color twice)
+    | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
     // "an amount of mana of that color equal to your devotion to that color" (CR 605.3b, 700.5): the color of the sentence "Choose a color." before it
     | { readonly kind: 'devotionToChosenColor' }
     // "{R}{R}, {R}{W}, or {W}{W}" (stage P14): exactly one of the listed combinations, each a run of
@@ -889,8 +902,13 @@ export interface IrSentence extends IrNode {
      * `thatCombat` (stage P41, D-188, CR 603.7, 500.8): "At the beginning of that combat, untap all creatures you control": the combat phase the
      * sentence before it added, which the lowering folds into the engine's `extraCombat` as what happens at its beginning.
      */
-    readonly step: 'endStep' | 'thatCombat';
+    readonly step: 'endStep' | 'thatCombat' | 'nextCast';
     readonly whose: 'you' | 'each';
+    /**
+     * `nextCast` (D-336, CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell": the spell the delayed trigger waits for,
+     * described by a filter of spells, and the subject (`triggerSubject`) of what the sentence does (the binding pass seeds it as the first antecedent).
+     */
+    readonly spell?: IrNoun;
   };
   /**
    * "When you do, ..." (stage P30, CR 603.12): a reflexive triggered ability, created by the "you may" sentence before it
@@ -928,7 +946,10 @@ export interface IrTrigger extends IrNode {
   readonly alone?: true;
   /** 'becomesTarget' (stage P36, D-178, CR 603.2): "becomes the target of a spell", only a spell triggers it, not an ability. */
   readonly spellOnly?: true;
-  /** 'dealsCombatDamage': what the damage went to (stage P18, CR 120.2a); none is "any". */
+  /**
+   * 'dealsCombatDamage': what the damage went to (stage P18, CR 120.2a); none is "any". 'noncombatDamageDealt' (issue 25, D-333, CR 120.2b): the player
+   * damaged, `player` or `opponent` (never a creature).
+   */
   readonly damaged?: 'player' | 'opponent' | 'creature';
   /** 'dealsCombatDamage' to a player: the player, so that "that player" has an antecedent. */
   readonly recipient?: IrNoun;
@@ -972,6 +993,7 @@ export interface IrTrigger extends IrNode {
   /**
    * 'countersAdded': the kind of counter ("+1/+1", "page"), none for "counters" of any kind (stage P33, D-150, CR 122.6); `by` is who put
    * them: `you` ("Whenever you put one or more +1/+1 counters on ~") or `any` ("Whenever one or more +1/+1 counters are put on ~").
+   * 'noncombatDamageDealt' (issue 25, D-333): whose source dealt the damage, `you` ("a source you control") or `any` ("a source").
    */
   readonly counter?: string;
   readonly by?: 'you' | 'any';
@@ -1111,8 +1133,11 @@ export type IrStaticEffect =
   | { readonly kind: 'attackTax'; readonly cost: IrCost; readonly planeswalkers?: true }
   /** "You may choose not to untap ~ during your untap step." (stage P24, D-125, CR 502.3). The subject is `~`. */
   | { readonly kind: 'optionalUntap' }
-  /** "Untap all creatures you control during each other player's untap step." (stage P68, D-229, CR 502.3). The subject is `you`. */
-  | { readonly kind: 'untapInOthersStep' }
+  /**
+   * "Untap all creatures you control during each other player's untap step." (stage P68, D-229, CR 502.3). The subject is `you`; with `self` (D-320,
+   * "Untap ~ during each other player's untap step.") the permanent itself untaps and the subject is `~`.
+   */
+  | { readonly kind: 'untapInOthersStep'; readonly self?: true }
   /** "You may cast this card from your graveyard." (stage P29, D-133, CR 113.6b). The subject is `~`; a condition makes it "as long as ...". */
   | { readonly kind: 'castFromGraveyard' }
   /** "can't be blocked by Walls", "can't be blocked by creatures with power 2 or less" (stage P31, CR 509.1b): the blockers excluded. */
@@ -1166,8 +1191,8 @@ export type IrStaticEffect =
     }
   /** "~ isn't a creature" (stage P68, D-229, CR 613.1d, 205.1a): the card types the subject loses. */
   | { readonly kind: 'loseTypes'; readonly cardTypes: readonly string[] }
-  /** "If a triggered ability of ... triggers, that ability triggers an additional time." (stage P67, D-220, CR 603.2d). The subject is the permanents named. */
-  | { readonly kind: 'doubleTriggers' }
+  /** "If a triggered ability of ... triggers, that ability triggers an additional time." (stage P67, D-220, CR 603.2d). The subject is the permanents named. `cause` (stage P71, D-339): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, ..." names the spell whose cast or copy must cause the trigger. */
+  | { readonly kind: 'doubleTriggers'; readonly cause?: IrNoun }
   /** "You have hexproof." (stage P33, D-150, CR 702.11b): the controller can't be the target of spells or abilities their opponents control. */
   | { readonly kind: 'playerHexproof' }
   /** "You can't lose the game" (stage P33, D-150, CR 104.3b). The subject is `you`. */
@@ -1306,8 +1331,15 @@ export interface IrModeChoice {
   /** The wording only fits this many modes ("both"): any other number of bullets is not read. */
   readonly exactly?: number;
   readonly widen?: IrCondition;
+  /** "you may choose two instead" (D-297, CR 700.2): the widened maximum, when the wording says a number; without it, every mode ("both"). */
+  readonly widenTo?: number;
   /** "Choose one that hasn't been chosen this turn" (stage P34, D-152, CR 700.2): a mode this permanent chose earlier this turn is not offered. */
   readonly notRepeatedThisTurn?: true;
+  /**
+   * "Choose three. You may choose the same mode more than once." (D-344, CR 700.2d): the same mode may be chosen more than once; `max` may be more than the number
+   * of bullets, and `min` is 0 for "Choose up to three. You may choose the same mode more than once.".
+   */
+  readonly repeatable?: true;
 }
 
 /** The header line of a modal spell or ability ("Choose one —"), read by the `modal` rules. */
@@ -1381,6 +1413,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'commanderCasts',
   'half',
   'multiple',
+  'minus',
   'sum',
   'opponentsWithMore',
   'thisWay',
@@ -1409,6 +1442,7 @@ export function nounsOfAmount(amount: IrAmount): IrNoun[] {
       return [amount.of];
     case 'half':
     case 'multiple':
+    case 'minus':
       return nounsOfAmount(amount.of);
     case 'sum':
       return amount.of.flatMap(nounsOfAmount);

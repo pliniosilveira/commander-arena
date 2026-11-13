@@ -208,9 +208,11 @@ export function regeneratedText(before: GameState, object: ObjectId, name: strin
 }
 
 /** "You put 3 cards on the bottom of your library in a random order." Counts only: the order is hidden. */
-export function bottomedText(seat: SeatId, count: number, viewer: SeatId): string {
+export function bottomedText(seat: SeatId, count: number, viewer: SeatId, ordered = false): string {
   const cards = `${count} card${count === 1 ? '' : 's'}`;
+  // D-324 (CR 401.4): an order the owner chose, which is as hidden as a random one.
+  const how = ordered ? 'in an order they chose' : 'in a random order';
   return seat === viewer
-    ? `You put ${cards} on the bottom of your library in a random order.`
-    : `Opponent puts ${cards} on the bottom of their library in a random order.`;
+    ? `You put ${cards} on the bottom of your library ${ordered ? 'in an order you chose' : how}.`
+    : `Opponent puts ${cards} on the bottom of their library ${how}.`;
 }

@@ -73,6 +73,8 @@ export type PriorityOption =
   | { readonly kind: 'suspend'; readonly object: ObjectId }
   /** Foretell a card from the hand (CR 702.143a, D-128): a special action, see the `foretell` action. */
   | { readonly kind: 'foretell'; readonly object: ObjectId }
+  /** Turn a face-down permanent face up (CR 116.2b, 701.40b, D-310): a special action, see the `turnFaceUp` action. */
+  | { readonly kind: 'turnFaceUp'; readonly object: ObjectId }
   | { readonly kind: 'concede' };
 
 export interface PriorityDecision extends DecisionBase {
@@ -160,6 +162,11 @@ export interface TargetChoiceSpec {
    * Absent for everything that is not modal.
    */
   readonly mode?: number;
+  /**
+   * For a slot of a mode chosen more than once (CR 700.2d, D-344): which instance of the mode it is, 1 for the second, 2 for the third; the slot of the first
+   * instance has no `instance`. Every instance has its own slot and the same target may be chosen for each.
+   */
+  readonly instance?: number;
 }
 
 /** CR 601.2g-h: pay the total cost. `auto` lets the payment planner choose the sources. */
@@ -209,7 +216,8 @@ export interface PayManaDecision extends DecisionBase {
     | 'attackTax'
     | 'blockTax'
     | 'suspend'
-    | 'foretell';
+    | 'foretell'
+    | 'turnFaceUp';
   readonly subject?: ObjectId;
   /**
    * For purpose `'unlessPays'` when the payment is the one of an upkeep keyword (D-127): `'echo'` (CR 702.30a:
@@ -240,6 +248,9 @@ export interface PayManaDecision extends DecisionBase {
  * before the card is exiled. `source` is the card in the hand, `seat` its owner, `totalCost` the cost ({M} of the
  * suspend cost, or {2} for foretell). `payAuto` or `payManual` pays it and takes the action; `cancel` takes
  * nothing and gives priority back (nothing has happened).
+ *
+ * For `'turnFaceUp'` (CR 701.40b, 708.8, D-310): the cost of turning a face-down permanent face up, paid before it is turned. `source` is the permanent, `seat` its
+ * controller (the only seat that gets the decision), `totalCost` the mana cost of its card. Answered like the cost of a special action.
  */
 
 /** Cleanup: discard down to maximum hand size (CR 514.1). */
@@ -473,7 +484,8 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'reveal'
     | 'split'
     | 'copy'
-    | 'pair';
+    | 'pair'
+    | 'separate';
   readonly zone: 'library' | 'hand' | 'graveyard' | 'exile';
   readonly legal: readonly ObjectId[];
   readonly min: number;
@@ -512,6 +524,9 @@ export interface ChooseCardsDecision extends DecisionBase {
    * For `'lookSplit'` (D-216, "Put one of them into your hand, put one of them on the bottom of your library, and exile one of them"): every card looked
    * at is in `looked` (only `seat` sees them), `legal` are those still to place and exactly `min` = `max` of them are chosen for this pile, `to` says which:
    * the hand or the bottom of the library. Absent for every other question.
+   *
+   * For `'separate'` (D-303, CR 700.3, "An opponent separates those cards into two piles"): `seat` is the player who separates, `legal` the revealed cards, still in a library
+   * (`zone`), and the cards chosen (`min` 0, `max` all of them) are pile 1; the cards not chosen are pile 2 (CR 700.3a, 700.3d: either may be empty). All are public (`reveal`).
    */
   readonly to?: 'hand' | 'bottom';
   /**
@@ -533,14 +548,16 @@ export interface ChooseCardsDecision extends DecisionBase {
  * a card may go: `'top'` (put back on top in the order given, the first becomes the top card) and,
  * for a scry, `'bottom'` (the cards in the order given, the last becomes the bottom card), for a
  * surveil `'graveyard'`. `purpose: 'reorder'` is "look at the top N cards, then put them back in any
- * order": every card goes back on top, so `piles` is only `['top']`. The answer is an `arrangeCards`
+ * order": every card goes back on top, so `piles` is only `['top']`. `purpose: 'bottom'` (D-324, CR 401.4, "Put two of them into your hand and the rest on the
+ * bottom of your library in any order"): the cards the effect did not take, which are still in the library, go to the bottom in the order the owner chooses, so `piles` is
+ * only `['bottom']`: the answer has `top` empty and every card in `other`, the last becoming the bottom card (as for a scry). The answer is an `arrangeCards`
  * action that places every card exactly once.
  */
 export interface ArrangeCardsDecision extends DecisionBase {
   readonly kind: 'arrangeCards';
   /** The spell or ability on the stack that is resolving. */
   readonly source: ObjectId;
-  readonly purpose: 'scry' | 'surveil' | 'reorder';
+  readonly purpose: 'scry' | 'surveil' | 'reorder' | 'bottom';
   readonly cards: readonly ObjectId[];
   readonly piles: readonly ('top' | 'bottom' | 'graveyard')[];
 }
@@ -627,6 +644,8 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * `subject` is the card (in the hand, hidden until the answer), `cost` its miracle cost, `source` the same card. Accepting reveals it (public)
    * and its trigger goes on the stack; declining reveals nothing. `'miracle'`: "you may cast it by paying [its miracle cost]": `subject` is
    * the card in the hand, `cost` its miracle cost, `source` the trigger on the stack; declining leaves the card in the hand.
+   * `'castCard'` (D-350, CR 608.2g): "you may cast target instant or sorcery card from a graveyard": `subject` is the card (in a graveyard, public), `source` the ability on
+   * the stack; declining leaves the card in its graveyard.
    */
   readonly purpose?:
     | 'kicker'
@@ -642,7 +661,8 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'miracle'
     | 'gift'
     | 'costChoice'
-    | 'pairReturn';
+    | 'pairReturn'
+    | 'castCard';
   /**
    * For purpose `'pairReturn'` (D-272, "You may return those cards to the battlefield under their owners' control", Dawnbreak Reclaimer): the cards that would return, which are in
    * graveyards and public: `theirs` the card chosen in an opponent's graveyard (it returns under its owner's control, the opponent's), `mine` the card chosen in the graveyard of
@@ -705,7 +725,8 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'riot'
     | 'replacement'
     | 'vote'
-    | 'meldOrder';
+    | 'meldOrder'
+    | 'pile';
   readonly options: readonly string[];
   /**
    * For purpose `'replacement'` (D-191, CR 616.1): several prevention effects apply to one damage event and the order can change the
@@ -754,6 +775,19 @@ export interface ChooseOptionDecision extends DecisionBase {
     readonly first: ObjectId;
     readonly second: ObjectId;
     readonly zone: 'graveyard' | 'library' | 'exile';
+  };
+  /**
+   * For purpose `'pile'` (D-303, CR 700.3, "Put one pile into your hand and the other into your graveyard"): the two piles the separator made, and the player asked (`seat`)
+   * chooses one. `options` are `pile1` and `pile2`, in that order; the pile chosen goes to `chosenTo` and the other to `otherTo`, both of `receiver` (the controller of the
+   * effect, whose library the cards are in). The cards are public and still in the library. `separator` is who made the piles. Absent for the other purposes.
+   */
+  readonly piles?: {
+    readonly first: readonly ObjectId[];
+    readonly second: readonly ObjectId[];
+    readonly chosenTo: 'hand' | 'graveyard';
+    readonly otherTo: 'hand' | 'graveyard';
+    readonly separator: SeatId;
+    readonly receiver: SeatId;
   };
   readonly source: ObjectId;
   readonly sourceName: string;
@@ -909,7 +943,7 @@ export interface ChooseXDecision extends DecisionBase {
  * for one that is in no legal set (its targets cannot all be chosen, CR 700.2a, or the number to choose
  * cannot be reached without it). `min` and `max` are how many to choose (`max` already counts "if you
  * control a commander, choose both instead"); `sets` is every legal choice, each in printed order, fewest
- * modes first: the answer is a `chooseModes` action naming one of them (any order). Asked only when more
+ * modes first: the answer is a `chooseModes` action naming one of them (any order; a repeated mode is listed once for each time it is chosen). Asked only when more
  * than one set is legal; with exactly one the engine chooses it (the `modesChosen` event says so), and
  * with none the spell cannot be cast, the ability cannot be activated, and a triggered ability is
  * removed (CR 603.3c). `purpose` is 'spell', 'ability' (activated) or 'trigger'; `cancel` is legal for
@@ -928,6 +962,11 @@ export interface ChooseModesDecision extends DecisionBase {
   }[];
   readonly min: number;
   readonly max: number;
+  /**
+   * True when the text lets the same mode be chosen more than once (CR 700.2d, D-344): `sets` then holds multisets, a mode index repeated for each
+   * instance, and `max` may be more than the number of modes. Absent otherwise.
+   */
+  readonly repeatable?: true;
   readonly sets: readonly (readonly number[])[];
   /** True for a triggered ability being put on the stack: it is not optional, so there is no `cancel`. */
   readonly forTrigger?: true;

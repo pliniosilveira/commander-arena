@@ -50,6 +50,8 @@ import { GAIN_STATIC_ABILITY } from './granted-static';
 import { HOFRI_LOWERINGS } from './hofri';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { MELD_LOWERINGS } from './meld';
+import { NIV_LOWERINGS } from './niv';
+import { NIV_GROUP_3_C_LOWERINGS } from './niv-group-3-c';
 import {
   attackedByOf,
   colorLetter,
@@ -60,6 +62,7 @@ import {
   playerSelectorOf,
   recipientOf,
 } from './nouns';
+import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { PREVENT_DAMAGE } from './prevent';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
@@ -600,7 +603,9 @@ export function lowerMana(spec: IrManaSpec): ManaProduction {
       // CR 605.3b, 700.5: only after "Choose a color." in a mana ability (`lowerChosenColorDevotion`); the ordinary lowering of an instruction refuses it.
       return { kind: 'anyColorDevotion' };
     case 'anyCombination':
-      return { kind: 'anyCombination', count: spec.what.count };
+      return spec.what.distinct === true
+        ? { kind: 'anyCombination', count: spec.what.count, distinct: true }
+        : { kind: 'anyCombination', count: spec.what.count };
     case 'combination':
       // The engine stores a combination in the order W, U, B, R, G, C (CR 106.4: the pool does not
       // order mana), so {R}{W} is `['W', 'R']`.
@@ -742,6 +747,8 @@ function playerVerb(
           rule: clause.rule,
         };
       }
+      // D-327: "Mill a card. You may play that card this turn.": the cards the controller milled are what "that card" of the sentence after it names.
+      if (verb === 'mill' && player.value.kind === 'you') ctx.exiled = 'milled';
       const effect: Effect =
         verb === 'draw' || verb === 'discard' || verb === 'mill'
           ? { kind: verb, player: player.value, count: amount.value }
@@ -750,6 +757,23 @@ function playerVerb(
     },
   };
 }
+
+/**
+ * "Manifest the top card of your library." and "Its controller manifests the top card of their library." (CR 701.40a, D-314): the player the clause names puts the top card of
+ * their library onto the battlefield face down.
+ */
+const MANIFEST: Lowering<IrClause, Effects> = {
+  head: 'manifest',
+  id: 'lower.manifest',
+  needs: ['effect:manifest'],
+  lower(clause, ctx) {
+    const who = arg(clause, 'player');
+    if (who?.kind !== 'noun') return failure(clause);
+    const player = playerSelectorOf(who, ctx);
+    if (!player.ok) return player;
+    return { ok: true, value: [{ kind: 'manifest', player: player.value }], rule: clause.rule };
+  },
+};
 
 /**
  * "You draw a card at the beginning of the next turn's upkeep." (CR 603.7, stage P26, D-128): the engine's
@@ -928,6 +952,35 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
           // "Look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand."
           // (stage P34, D-152): the card looked at stays on top of the library unless it is taken.
           rest: toGraveyard.value ? 'graveyard' : onTop ? 'top' : 'bottomRandom',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order." (Stock Up, D-324, CR 401.2, 401.4,
+ * 701.20a): the engine's `lookAtTop`, the controller's own library, exactly `taken` cards of any kind put into the hand without being revealed, the rest on the bottom in the order
+ * the controller chooses.
+ */
+const LOOK_TAKE_BOTTOM: Lowering<IrClause, Effects> = {
+  head: 'lookTakeBottom',
+  id: 'lower.look-take-bottom',
+  needs: ['effect:lookAtTop'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    const taken = arg(clause, 'taken');
+    if (!count.ok) return count;
+    if (taken?.kind !== 'number') return failure(clause);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          take: { filter: {}, max: taken.value, min: taken.value, hidden: true },
+          rest: 'bottomChosen',
         },
       ],
       rule: clause.rule,
@@ -1250,6 +1303,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   playerVerb('gainEnergy'),
   playerVerb('loseLife'),
   playerVerb('mill'),
+  MANIFEST,
   playerVerb('shuffle'),
   BECOME_MONARCH,
   DELAYED_DRAW,
@@ -1261,6 +1315,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   LOOK_AND_SPLIT,
   libraryVerb('putFromHandOnTop'),
   LOOK_TAKE,
+  LOOK_TAKE_BOTTOM,
   PUMP,
   GRANT_KEYWORD,
   RESTRICT,
@@ -1278,10 +1333,13 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ARDEN_LOWERINGS,
   ...VRASKA_LOWERINGS,
   ...HOFRI_LOWERINGS,
+  ...PILES_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,
   ...EDHREC_LOWERINGS,
   ...DRAGON_LOWERINGS,
   ...KORVOLD_LOWERINGS,
+  ...NIV_LOWERINGS,
+  ...NIV_GROUP_3_C_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
   ...DESTINY_LOWERINGS,
   ...MELD_LOWERINGS,

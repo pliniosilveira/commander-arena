@@ -18,7 +18,9 @@ import {
 import type { IrAmount, IrClause, IrCondition, IrNoun, IrSentence } from './ir/types';
 import { LEAD_GAME_STATE_CONDITIONS } from './rules/condition/game-state';
 import { CLAUSE_JOIN, connectorOf, listWithJoins } from './rules/effect/operands';
-import { family } from './rules/registry';
+import { spellPhrase, withoutZone } from './rules/noun/phrases';
+import { family, spanned } from './rules/registry';
+import { makeNoun } from './rules/trigger/subjects';
 
 /**
  * The end of a sentence: its period, or, when the sentence ends with an ability in quotes, the period inside the closing quote (stage P35, D-176):
@@ -43,6 +45,8 @@ const CLAUSES: Parser<{ items: (readonly IrClause[])[]; joins: string[] }> = lis
  */
 const RECURSION_LEAD_CONDITIONS = [
   'condition.it-matches',
+  // D-298: "If its mana value was 3 or less, scry 1."
+  'condition.its-mana-value',
   'condition.gift-promised',
   // Stage P37 (D-180): "If you put a Cave onto the battlefield this way, you gain 4 life."
   'condition.put-this-way',
@@ -95,7 +99,14 @@ const LIFE_LEAD_CONDITIONS = ['condition.life-total'] as const;
  */
 const DIE_CONDITIONS = ['condition.die-result'] as const;
 
+/**
+ * "If five or more mana was spent to cast that spell, ~ deals 3 damage to each opponent instead." (issue 25, CR 601.2h, 608.2c): the mana spent on the spell a
+ * cast trigger is about; the lowering reads it in the body of such a trigger only.
+ */
+const MANA_SPENT_CONDITIONS = ['condition.mana-spent-or-more'] as const;
+
 const LEAD_CONDITIONS = [
+  ...MANA_SPENT_CONDITIONS,
   ...DIE_CONDITIONS,
   // Stage P52 (D-210): "If a creature card was discarded this way, ..." after a discard.
   'condition.discarded-this-way',
@@ -211,6 +222,23 @@ interface SentenceOptions {
   readonly delayed?: boolean;
 }
 
+/** "When you next cast an instant or sorcery spell this turn, " (D-336): the spell is the subject of what the sentence does. */
+const NEXT_CAST_LEAD: Parser<NonNullable<IrSentence['delayed']>> = map(
+  spanned(
+    sequence(
+      literal('when you next cast '),
+      pattern(/an? /iu),
+      map(spellPhrase(), withoutZone),
+      literal(' this turn, '),
+    ),
+  ),
+  ({ value, span }) => ({
+    step: 'nextCast' as const,
+    whose: 'you' as const,
+    spell: makeNoun('sentence.delayed-cast', span, 'a', value[2]),
+  }),
+);
+
 /** "At the beginning of your next end step, " and "At the beginning of the next end step, " (stage P34, D-152): the delayed trigger's moment. */
 const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
   choice<NonNullable<IrSentence['delayed']>>(
@@ -227,6 +255,8 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
       step: 'thatCombat' as const,
       whose: 'you' as const,
     })),
+    // D-336 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, ": the next spell of that kind its controller casts.
+    NEXT_CAST_LEAD,
   ),
 );
 

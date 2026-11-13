@@ -15,6 +15,7 @@ import {
   filterSome,
   issue,
 } from './validate-parts';
+import { checkPlainCondition } from './validate-static-condition';
 
 /** The trigger kinds D-149 adds. True when `t` is one of them (it was checked here). */
 export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): boolean {
@@ -133,6 +134,10 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
         issue(out, `${path}.count`, 'counter count must be a positive integer or a countOf');
       }
       return true;
+    case 'skipDraw':
+      // D-332: the draw of the controller; the condition is read as it would happen, for the controller, with nothing else.
+      if (r.while !== undefined) checkPlainCondition(r.while, `${path}.while`, out);
+      return true;
     case 'groupEntersUntapped':
       // D-179: tapped is a state, not something the entering permanent has before it enters; the other fields are read as for the counters.
       checkEnteringFilter(r.what, `${path}.what`, out);
@@ -194,6 +199,16 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
         checkEnteringFilter(s.subject.filter, `${path}.subject.filter`, out);
       } else if (s.subject?.kind !== 'attached') {
         issue(out, `${path}.subject`, 'the permanents are a group or the one this is attached to');
+      }
+      // D-339 (CR 603.2d): the cause is the controller casting or copying a spell the filter names, which is a filter of spells.
+      if (s.cause !== undefined) {
+        if (kindOf(s.cause) !== 'castOrCopySpell') {
+          issue(out, `${path}.cause`, 'the cause of an additional trigger is castOrCopySpell');
+        } else if (s.cause.spell === undefined || s.cause.spell.stackKind !== 'spell') {
+          issue(out, `${path}.cause.spell`, 'the spell is a filter of spells (stackKind "spell")');
+        } else {
+          checkFilter(s.cause.spell, `${path}.cause.spell`, out);
+        }
       }
       return true;
     case 'cantCastThis':

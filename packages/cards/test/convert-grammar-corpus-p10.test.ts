@@ -162,11 +162,8 @@ const REORDER: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Look at the top seven cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order.',
-    expect: no(
-      'cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order.',
-      'effect.look-reorder',
-    ),
-    note: 'replay: 6 cards; choosing cards from among those looked at is not in the AST',
+    expect: OK,
+    note: 'replay: 6 cards; read since D-324 (effect.look-take-bottom: the owner chooses the order, CR 401.4)',
   },
 ];
 

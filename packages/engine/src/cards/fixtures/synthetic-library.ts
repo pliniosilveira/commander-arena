@@ -59,6 +59,33 @@ export const SYNTHETIC_LIBRARY_LIST: readonly CardDefinition[] = [
     'U',
     { kind: 'lookAndReorder', count: 1 },
   ),
+  // D-324 (CR 401.4): look at the top cards, put some into the hand unrevealed, the rest on the bottom in an order the owner chooses.
+  spell(
+    'SYNTHETIC Stock Up Like',
+    'Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order.',
+    ['2', 'U'],
+    'U',
+    {
+      kind: 'lookAtTop',
+      count: 5,
+      take: { filter: {}, max: 2, min: 2, hidden: true },
+      rest: 'bottomChosen',
+    },
+    ['sorcery'],
+  ),
+  spell(
+    'SYNTHETIC Stock Up Three',
+    'Look at the top three cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order.',
+    ['2', 'U'],
+    'U',
+    {
+      kind: 'lookAtTop',
+      count: 3,
+      take: { filter: {}, max: 2, min: 2, hidden: true },
+      rest: 'bottomChosen',
+    },
+    ['sorcery'],
+  ),
   // The shape of Brainstorm: draw three, then put two cards from your hand on top in any order.
   spell(
     'SYNTHETIC Brainstorm Like',

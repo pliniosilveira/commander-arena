@@ -16,6 +16,7 @@ import {
   type Amount,
   CARD_TYPES,
   type CardType,
+  type Color,
   type Condition,
   type Cost,
   type Effect,
@@ -28,6 +29,7 @@ import { lowerCost } from './costs';
 import { lowerClause, lowerMana } from './effects';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
+import { colorLetter } from './nouns';
 import { lowerSentences } from './sentences';
 import { type LowerContext, type LowerFailure, type LowerResult, newContext } from './types';
 
@@ -122,6 +124,24 @@ function spentRiderOf(clause: IrClause): ManaAbility['spentRider'] | null {
   }
   const spells = clause.args.spells;
   if (spells?.kind !== 'noun' || !plainClause(clause)) return null;
+  // "When that mana is spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy." (D-328, CR 707.10, 707.10c):
+  // the spell is of one color (or any) and of a card type, and the rider copies it.
+  const copy = clause.args.copy;
+  if (copy?.kind === 'flag' && copy.value) {
+    const { colors: words, ...rest } = spells.filter;
+    const colors = (words ?? []).map((w) => colorLetter(w));
+    if (colors.some((c) => c === undefined)) return null;
+    const shape = spellKindsOf(rest);
+    if (shape === null) return null;
+    const newTargets = clause.args.newTargets;
+    return {
+      spells: {
+        ...shape,
+        ...(colors.length === 0 ? {} : { colors: colors as Color[] }),
+      },
+      grants: { copySpell: newTargets?.kind === 'flag' && newTargets.value ? 'may' : 'no' },
+    };
+  }
   const kinds = spellKindsOf(spells.filter);
   if (kinds === null) return null;
   // "When that mana is spent to cast a creature spell that shares a creature type with your commander, scry 1." (group 4 of the Vraska deck): the
@@ -224,6 +244,16 @@ function lowerManaAbility(
     ...effects.map((e): FeatureRef => `manaAlso:${e.kind}`),
     ...(spendClause === undefined ? [] : (['ability:manaSpendOnly'] as const)),
     ...(riderClause === undefined ? [] : (['ability:manaSpentRider'] as const)),
+    // D-328: the rider copies the spell the mana is spent on.
+    ...(spentRider !== undefined &&
+    spentRider !== null &&
+    typeof spentRider.grants === 'object' &&
+    'copySpell' in spentRider.grants
+      ? (['ability:manaSpentRiderCopy'] as const)
+      : []),
+    ...(production.kind === 'anyCombination' && production.distinct === true
+      ? (['ability:manaDistinctColors'] as const)
+      : []),
   ];
   const blocked = gate(ability, needs);
   if (blocked !== null) return blocked;
@@ -352,7 +382,13 @@ function lowerManaInstead(
   const condition = lowerCondition(second.condition, false, newContext('ability', faceTypes));
   if (!condition.ok) return condition;
   const production = lowerMana(spec);
-  const blocked = gate(ability, ['ability:manaInstead', `manaProduction:${production.kind}`]);
+  const blocked = gate(ability, [
+    'ability:manaInstead',
+    `manaProduction:${production.kind}`,
+    ...(production.kind === 'anyCombination' && production.distinct === true
+      ? (['ability:manaDistinctColors'] as const)
+      : []),
+  ]);
   if (blocked !== null) return blocked;
   return {
     ok: true,
@@ -682,6 +718,8 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'manaProduction:chosenColor',
   'ability:manaSpendOnly',
   'ability:manaSpentRider',
+  'ability:manaDistinctColors',
+  'ability:manaSpentRiderCopy',
   'manaProduction:anyCombination',
   'manaProduction:anyColorDevotion',
   'ability:activateOnlyIf',

@@ -263,7 +263,10 @@ describe('what stays unread (never half-executed)', () => {
     ['You may choose not to untap ~ during your untap step if you control a Swamp.', 'a condition'],
     ['You may choose not to untap ~ during your untap step and draw a card.', 'two things'],
     ['You may untap ~ during your untap step.', 'another ability'],
-    ["Untap ~ during each other player's untap step.", 'a different ability (4 cards)'],
+    [
+      "Untap target land during each other player's untap step.",
+      'another permanent (the permanent itself is read since D-320)',
+    ],
   ])('"%s" is not read (%s)', (text) => {
     expect(dropped(text, 'enchantment')).toMatchObject({ reason: 'unrecognised' });
   });

@@ -30,6 +30,7 @@ import { EDHREC_NOUN_RULES } from './edhrec';
 import { HOFRI_NOUN_RULES } from './hofri';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
+import { ONE_OR_TWO_NOUN_RULES } from './one-or-two';
 import { PAIR_NOUN_RULES } from './pair';
 import {
   graveyardPhrase,
@@ -62,6 +63,16 @@ function targetOf(id: string, phrase: (plural: boolean) => Parser<IrFilter>): Pa
     ([count, , filter]) =>
       bare('target', filter, {
         count: { kind: 'number', value: count.value, span: count.span },
+        plural: true,
+      }),
+  );
+  // "one or two target creatures" (D-295, CR 115.1, 601.2c): at least one target and at most two. No other pair of numbers is a phrase of the text.
+  const oneOrTwo: Parser<Bare> = map(
+    sequence(spanned(literal('one or two')), literal(' target '), phrase(true)),
+    ([count, , filter]) =>
+      bare('target', filter, {
+        count: { kind: 'number', value: 2, span: count.span },
+        minTargets: 1,
         plural: true,
       }),
   );
@@ -104,7 +115,7 @@ function targetOf(id: string, phrase: (plural: boolean) => Parser<IrFilter>): Pa
   );
   return node<Bare, IrNoun>(
     id,
-    choice(eachOf, upTo, upToThatMany, counted, another, single),
+    choice(eachOf, oneOrTwo, upTo, upToThatMany, counted, another, single),
     (b) => b,
   );
 }
@@ -361,6 +372,9 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'target artifact or enchantment you control',
     'up to one target creature',
     'up to two target creatures',
+    // D-295 (CR 115.1, 601.2c): at least one target and at most two.
+    'one or two target creatures',
+    'one or two target nonland permanents you control',
     'up to one target artifact or enchantment',
     // Stage P41 (D-188, CR 603.12): as many targets as a sacrifice before a reflexive ability made.
     'up to that many target creatures',
@@ -412,6 +426,10 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'target creatures',
     'one target creature',
     'two target creature',
+    'one or two target creature',
+    'one or three target creatures',
+    'one or two creatures',
+    'each of one or two target creatures',
     'target creature with power greater than 3',
     'target creature with power 3 or less and flying',
     'target creature with power 3 or less or greater',
@@ -558,6 +576,8 @@ export const NOUN_RULES = [
   ...DINOSAUR_NOUN_RULES,
   // Stage P34 (D-152): "each other opponent" and "each of up to two other targets".
   ...DRAGON_NOUN_RULES,
+  // D-295: "each of one or two targets".
+  ...ONE_OR_TWO_NOUN_RULES,
   ...KORVOLD_NOUN_RULES,
   // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards".
   ...CROSS_ZONE_NOUN_RULES,

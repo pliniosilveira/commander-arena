@@ -8,6 +8,7 @@ import type { ChosenTarget } from '../state/chosen';
 import type { TargetChoiceSpec, TargetsDecision } from '../state/decisions';
 import type { GameState } from '../state/types';
 import { amountOf } from './amounts';
+import type { SlotMode } from './modes';
 import { legalTargets, type SelectContext, sameTarget, targetBounds } from './select';
 
 /**
@@ -33,16 +34,16 @@ export function slotCanBeFilled(state: GameState, spec: TargetSpec, ctx: SelectC
 
 /**
  * The slots of a `targets` decision for these specs: bounds and every legal target (CR 115, 601.2c).
- * `modeOf` (D-114) says which mode of a modal spell or ability each slot belongs to.
+ * `modeOf` (D-114, D-344) says which mode of a modal spell or ability each slot belongs to, and which instance of it.
  */
 export function targetChoiceSpecs(
   state: GameState,
   specs: readonly TargetSpec[],
   ctx: SelectContext,
-  modeOf?: ReadonlyMap<string, number>,
+  modeOf?: ReadonlyMap<string, SlotMode>,
 ): TargetChoiceSpec[] {
   return specs.map((spec) => {
-    const mode = modeOf?.get(spec.id);
+    const slotMode = modeOf?.get(spec.id);
     const bounds = targetBounds(spec);
     const total = divideTotal(state, spec, ctx);
     // D-149: one target for each opponent still in the game, at most.
@@ -64,7 +65,9 @@ export function targetChoiceSpecs(
       ...(spec.onePerOpponent === true ? { onePerGroup: true as const } : {}),
       ...(spec.differentFrom === undefined ? {} : { differentFrom: spec.differentFrom }),
       legal,
-      ...(mode === undefined ? {} : { mode }),
+      ...(slotMode === undefined ? {} : { mode: slotMode.mode }),
+      // D-344: the slot of a later instance of a mode chosen more than once says which instance (the first says nothing).
+      ...(slotMode === undefined || slotMode.instance === 0 ? {} : { instance: slotMode.instance }),
     };
   });
 }

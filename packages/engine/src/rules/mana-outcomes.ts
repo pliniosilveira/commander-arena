@@ -67,18 +67,35 @@ export function spentRiderOf(ability: ManaAbility, source: ObjectId): ManaRider 
   const rider = ability.spentRider;
   if (rider === undefined) return null;
   const grants = rider.grants;
+  // D-328: "copy that spell": a triggered ability of the permanent that made the mana, which copies the spell the mana is spent on.
+  if (typeof grants === 'object' && 'copySpell' in grants) {
+    return {
+      kind: 'copy',
+      newTargets: grants.copySpell,
+      source,
+      ...riderSpells(rider.spells),
+    };
+  }
   const byCommander = typeof grants === 'object' && 'scryCommanderCasts' in grants;
   const scry = grants === 'haste' || byCommander ? null : (grants as { scry: number }).scry;
   return {
     kind: grants === 'haste' ? 'haste' : 'scry',
     ...(byCommander ? { countCommanderCasts: true as const, source } : {}),
     ...(scry === null ? {} : { count: scry, source }),
-    ...(rider.spells.commander === true ? { commander: true as const } : {}),
-    ...(rider.spells.sharesTypeWithCommander === true
-      ? { sharesTypeWithCommander: true as const }
-      : {}),
-    ...(rider.spells.types === undefined ? {} : { types: [...rider.spells.types] }),
-    ...(rider.spells.subtypes === undefined ? {} : { subtypes: [...rider.spells.subtypes] }),
+    ...riderSpells(rider.spells),
+  };
+}
+
+/** The spells a rider names, as the mana carries them (D-151, D-229, D-328). */
+function riderSpells(
+  spells: NonNullable<ManaAbility['spentRider']>['spells'],
+): Pick<ManaRider, 'commander' | 'sharesTypeWithCommander' | 'types' | 'subtypes' | 'colors'> {
+  return {
+    ...(spells.commander === true ? { commander: true as const } : {}),
+    ...(spells.sharesTypeWithCommander === true ? { sharesTypeWithCommander: true as const } : {}),
+    ...(spells.types === undefined ? {} : { types: [...spells.types] }),
+    ...(spells.subtypes === undefined ? {} : { subtypes: [...spells.subtypes] }),
+    ...(spells.colors === undefined ? {} : { colors: [...spells.colors] }),
   };
 }
 
@@ -87,8 +104,12 @@ export function isCombinationProduction(production: ManaProduction): boolean {
   return production.kind === 'combination' || production.kind === 'anyCombination';
 }
 
-/** Every way to choose `count` mana of the five colors, each as a combination in `TYPE_ORDER` (D-151). */
-function colorMultisets(count: number): ManaColor[][] {
+/**
+ * Every way to choose `count` mana of the five colors, each as a combination in `TYPE_ORDER` (D-151). With `distinct` (D-319, "two mana of different
+ * colors") only the sets of different colors: the next pick starts after the last one, so no color is picked twice; colorless is not one of the five
+ * (CR 105.1, 106.1b).
+ */
+function colorMultisets(count: number, distinct: boolean): ManaColor[][] {
   const colors = COLORS as readonly ManaColor[];
   const out: ManaColor[][] = [];
   const build = (from: number, picked: ManaColor[]): void => {
@@ -98,7 +119,7 @@ function colorMultisets(count: number): ManaColor[][] {
     }
     for (let i = from; i < colors.length; i += 1) {
       picked.push(colors[i] as ManaColor);
-      build(i, picked);
+      build(distinct ? i + 1 : i, picked);
       picked.pop();
     }
   };
@@ -123,7 +144,7 @@ function plainOutcomes(
       return [[...p.mana]];
     case 'anyCombination':
       // D-151: "two mana in any combination of colors": every multiset of `count` of the five colors.
-      return colorMultisets(p.count);
+      return colorMultisets(p.count, p.distinct === true);
     case 'anyColor':
       // D-145: "two mana of any one color": `count` mana of the one color chosen.
       return COLORS.map((c) => Array.from({ length: p.count ?? 1 }, () => c));

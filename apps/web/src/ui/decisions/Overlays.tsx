@@ -11,6 +11,7 @@ import {
   type PendingDecision,
 } from '@commander-arena/engine';
 import type { ReactNode } from 'react';
+import { turnUpPayDetail } from '../../game/face-down-text';
 import { specialPayDetail } from '../../game/later-text';
 import { ManaCost } from '../mana';
 import { ArrangePanel } from './ArrangePanel';
@@ -35,6 +36,7 @@ import { OrderPanel } from './OrderPanel';
 import { PassingDamagePanel } from './PassingDamagePanel';
 import { PayOptionsDialog } from './PayOptionsDialog';
 import { PermanentPanel } from './PermanentPanel';
+import { PilesDialog } from './PilesDialog';
 import { ProliferateDialog } from './ProliferateDialog';
 import { sacrificesWhenTapped } from './payment';
 import { isProliferate } from './permanents-angels';
@@ -200,6 +202,9 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
       // D-139 (CR 508.7): the attack target of a creature has its own dialog, not the creature-type picker.
       d.purpose === 'attackTarget' ? (
         <AttackTargetDialog key={d.id} d={d} view={view} act={act} />
+      ) : d.purpose === 'pile' ? (
+        // D-303 (CR 700.3): the two piles the other player made, with their cards.
+        <PilesDialog key={d.id} d={d} view={view} act={act} />
       ) : d.purpose === 'option' ||
         d.purpose === 'effect' ||
         d.purpose === 'riot' ||
@@ -294,6 +299,11 @@ export function DockPanel(props: OverlayProps): ReactNode {
           {d.purpose === 'blockTax' ? (
             <p className="dec-sub dec-left" data-block-tax>
               {blockTaxDetail(d, index)}
+            </p>
+          ) : null}
+          {d.purpose === 'turnFaceUp' ? (
+            <p className="dec-sub dec-left" data-turn-up-pay>
+              {turnUpPayDetail(nameOf(index, d.source))}
             </p>
           ) : null}
           {d.purpose === 'suspend' || d.purpose === 'foretell' ? (

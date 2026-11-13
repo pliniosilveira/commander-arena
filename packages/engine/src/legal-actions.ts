@@ -162,6 +162,10 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
           }
         }
         acc = acc.flatMap((a) => options.map((o) => [...a, ...o]));
+        // D-344: the instances of a mode chosen more than once each have a slot, which makes the combinations grow with every instance: they are limited as
+        // a choice among many permanents is (any legal answer is accepted all the same).
+        if (d.specs.some((spec) => spec.instance !== undefined))
+          acc = acc.slice(0, MAX_LISTED_CHOICES);
       }
       // CR 115.3 (D-151): "other targets": a slot that must differ from an earlier one lists only the answers that do.
       if (d.specs.some((spec) => spec.differentFrom !== undefined)) {

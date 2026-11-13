@@ -13,6 +13,8 @@
  * saves the mana. Among equally valuable spells the cheaper one goes first, and a permanent that
  * makes the others cheaper goes before them.
  *
+ * A face-down permanent of its own that would be better face up is turned up with the mana left after the spells (`casual-face-down.ts`).
+ *
  * A card with several faces (split, Adventure, double-faced) has one option per face; each option is
  * judged as that face (`asFace`) and the agent plays one face per card (`pickFace`): an Adventure
  * card casts the Adventure first when its text names a target (and a hostile one exists), else the
@@ -32,6 +34,7 @@ import { alternativeSpend, chooseNamedAlternative } from './casual-alt-costs';
 import { auraHasHost, isAura } from './casual-attachments';
 import { copiesTargetSpell, copyWorthCasting, hasStorm } from './casual-copies';
 import { additionalCostsWorthPaying, discountsHand } from './casual-costs';
+import { chooseTurnFaceUp } from './casual-face-down';
 import { isHelpfulSpell } from './casual-helpful';
 import { chooseSpecialAction } from './casual-later';
 import { hasWorthwhileMode, isModalText } from './casual-modes';
@@ -342,6 +345,10 @@ export function choosePriorityAction(
   // 2d. The special actions of Suspend and Foretell (D-128, `casual-later.ts`): once nothing worth casting is left.
   const special = chooseSpecialAction(view, d, worthCasting);
   if (special !== null) return special;
+
+  // 2e. A face-down permanent of ours that is worth turning face up (D-313, `casual-face-down.ts`): with the mana left after the spells.
+  const faceUp = chooseTurnFaceUp(view, d);
+  if (faceUp !== null) return faceUp;
 
   // 3. A land to cycle, or a pump that changes the combat (see casual-activations.ts).
   const activation = chooseActivation(view, d, activations);

@@ -343,6 +343,14 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'optionalUntap':
       break;
     case 'untapInOthersUntapStep':
+      // D-320: the permanent itself (`self`), or (D-229) the permanents a filter names: exactly one of the two.
+      if (s.self !== undefined && s.self !== true) {
+        issue(out, `${path}.self`, 'self is true or absent');
+      }
+      if ((s.self === true) === (s.what !== undefined)) {
+        issue(out, path, 'name the permanents that untap with exactly one of `what` and `self`');
+      }
+      if (s.what === undefined) break;
       // D-229: permanents on the battlefield: no zone, owner, stack kind or combat.
       checkFilter(s.what, `${path}.what`, out);
       if (
@@ -771,6 +779,15 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         }
       }
       break;
+    case 'noncombatDamageDealt':
+      // D-333: whose source it is and which player it damaged; any object can be the source, so there is no subject to check.
+      if (!isOneOf(t.by, ['you', 'any'])) {
+        issue(out, `${path}.by`, `unknown source controller ${String(t.by)}`);
+      }
+      if (!isOneOf(t.to, ['opponent', 'player'])) {
+        issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
+      }
+      break;
     case 'leavesBattlefield':
       checkTriggerSubject(t.what, true, `${path}.what`, out);
       // CR 603.6c: where it went; a permanent leaves the battlefield for any other zone.
@@ -827,7 +844,12 @@ function checkTriggerSubject(
  * gained (D-256, CR 119.9).
  */
 function hasDamage(t: Trigger): boolean {
-  return t?.kind === 'dealtDamage' || t?.kind === 'dealsCombatDamage' || t?.kind === 'lifeGained';
+  return (
+    t?.kind === 'dealtDamage' ||
+    t?.kind === 'dealsCombatDamage' ||
+    t?.kind === 'noncombatDamageDealt' ||
+    t?.kind === 'lifeGained'
+  );
 }
 
 /** Whether the effect, or one of a sequence or a "may" inside it, adds mana (D-189). */
@@ -1081,7 +1103,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       if (a.modes !== undefined || a.chooseModes !== undefined) {
         // CR 603.3c, 700.2b (D-114): a modal triggered ability.
         checkModalAbilityShell(a.effect, a.targets, path, out);
-        checkModes(a.modes, a.chooseModes, path, scopeOf, out);
+        checkModes(a.modes, a.chooseModes, path, scopeOf, out, true);
       } else {
         checkEffect(a.effect, `${path}.effect`, scopeOf(targets), out);
       }

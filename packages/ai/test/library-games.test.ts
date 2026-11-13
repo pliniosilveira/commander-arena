@@ -34,6 +34,7 @@ interface Tally {
   scry: number;
   surveil: number;
   reorder: number;
+  bottom: number;
   putOnTop: number;
   scried: number;
   surveiled: number;
@@ -52,6 +53,7 @@ const newTally = (): Tally => ({
   scry: 0,
   surveil: 0,
   reorder: 0,
+  bottom: 0,
   putOnTop: 0,
   scried: 0,
   surveiled: 0,
@@ -102,6 +104,17 @@ function note(tally: Tally, casual: ReadonlySet<number>, step: StepInfo): void {
     if (d.purpose === 'scry') {
       expect(now).toEqual([...action.top, ...rest, ...action.other]);
       tally.toBottom += action.other.length;
+    } else if (d.purpose === 'bottom') {
+      // D-324 (CR 401.4): the cards the look did not take go below the rest of the library in the order given; the library holds the rest first.
+      expect(action.top).toEqual([]);
+      expect(now).toEqual([...rest, ...action.other]);
+      expect(events.find((x) => x.kind === 'cardsBottomed')).toEqual({
+        kind: 'cardsBottomed',
+        seat,
+        count: action.other.length,
+        ordered: true,
+      });
+      tally.toBottom += action.other.length;
     } else {
       // Surveil moved the others to the graveyard (new objects); a reorder has none.
       expect(now).toEqual([...action.top, ...rest]);
@@ -139,7 +152,7 @@ function note(tally: Tally, casual: ReadonlySet<number>, step: StepInfo): void {
     }
 
     // CasualAgent short of lands keeps a land on top when one is on offer.
-    if (casual.has(seat) && d.purpose !== 'reorder') {
+    if (casual.has(seat) && d.purpose !== 'reorder' && d.purpose !== 'bottom') {
       const lands = before.battlefield.filter(
         (id) => before.objects[id]?.controller === seat && isLandCard(before, id),
       ).length;
@@ -225,7 +238,10 @@ test(
     expectPath(total.surveiled);
     expectPath(total.toGraveyard);
     expectPath(total.toBottom);
-    expect(total.hiddenChecks).toBe(total.scry + total.surveil + total.reorder + total.putOnTop);
+    expect(total.hiddenChecks).toBe(
+      total.scry + total.surveil + total.reorder + total.bottom + total.putOnTop,
+    );
+    expectPath(total.bottom);
     expectPath(total.casualShortOfLands);
     expect(total.casualViolations).toBe(0);
   },

@@ -78,7 +78,16 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
   acceptsOptional: true,
   lower(clause, ctx) {
     const lasts = clause.duration === undefined ? undefined : PLAY_UNTIL[clause.duration.scope];
-    if (lasts === undefined || ctx.exiled !== 'top') return failure(clause);
+    if (lasts === undefined || (ctx.exiled !== 'top' && ctx.exiled !== 'milled')) {
+      return failure(clause);
+    }
+    // D-327 (CR 601.2, 305.1): the cards the controller milled are in their graveyard, face up: the permission lasts this turn or the next, never "while exiled",
+    // and there is nothing to look at.
+    if (ctx.exiled === 'milled') {
+      if (lasts === 'whileExiled' || arg(clause, 'lookAt') !== undefined) return failure(clause);
+      const blocked = missingFeatures(['ability:mayPlayFromGraveyard']);
+      if (blocked.length > 0) return failure(clause, blocked);
+    }
     // "You may look at and play those cards for as long as they remain exiled" (stage P41, D-188, CR 406.3): the cards must have been exiled face down.
     const look = arg(clause, 'lookAt');
     if (look !== undefined && (look.kind !== 'flag' || !ctx.exiledFaceDown)) return failure(clause);
@@ -206,6 +215,7 @@ export const DRAGON_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
 export const DRAGON_NEEDS: readonly FeatureRef[] = [
   'effect:exileTop',
   'effect:mayPlay',
+  'ability:mayPlayFromGraveyard',
   'effect:extraCombat',
   'effect:exileUntilCast',
   'effect:revealTop',

@@ -19,6 +19,8 @@ function viewObjects(view: GameView): readonly ObjectView[] {
 /** The note for one object, or null when its face prints no `*` (or it is a token or an ability). */
 function noteOf(state: GameState, id: ObjectId): DefinedPtNote | null {
   const obj = state.objects[id];
+  // CR 708.2 (D-312): a face-down permanent has no printed power and toughness to word; its card is nobody's to read.
+  if (obj?.faceDown !== undefined) return null;
   const card = obj?.card === null || obj === undefined ? undefined : state.cards[obj.card];
   const face =
     card === undefined ? undefined : state.definitions[card.definition]?.faces?.[obj?.face ?? 0];

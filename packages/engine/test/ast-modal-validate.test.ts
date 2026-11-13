@@ -118,6 +118,66 @@ describe('modal spells', () => {
     }
   });
 
+  test('a repeatable choice may be for more modes than there are, and "up to" may be 0 (CR 700.2d, D-344)', () => {
+    expect(issues(spell(TWO, { min: 3, max: 3, repeatable: true }))).toEqual([]);
+    expect(issues(spell(TWO, { min: 2, max: 2, repeatable: true }))).toEqual([]);
+    expect(issues(spell(TWO, { min: 0, max: 3, repeatable: true }))).toEqual([]);
+    expect(issues(spell([...TWO, HIT('a')], { min: 3, max: 3, repeatable: true }))).toEqual([]);
+  });
+
+  test('a repeatable choice still needs a sane number, no widening and no "not chosen this turn"', () => {
+    const bad = (choose: ModeChoice) => issues(spell(TWO, choose)).join('\n');
+    expect(bad({ min: 0, max: 0, repeatable: true })).toContain('repeatable chooseModes needs');
+    expect(bad({ min: 3, max: 2, repeatable: true })).toContain('repeatable chooseModes needs');
+    expect(bad({ min: -1, max: 2, repeatable: true })).toContain('repeatable chooseModes needs');
+    expect(bad({ min: 1.5, max: 2, repeatable: true })).toContain('repeatable chooseModes needs');
+    expect(
+      bad({
+        min: 2,
+        max: 2,
+        repeatable: true,
+        maxIf: { condition: { kind: 'controlCommander' }, max: 3 },
+      }),
+    ).toContain('no maxIf');
+    expect(bad({ min: 1, max: 1, repeatable: true, notRepeatedThisTurn: true })).toContain(
+      'no maxIf and no notRepeatedThisTurn',
+    );
+    expect(bad({ min: 2, max: 2, repeatable: false as never })).toContain('repeatable is true');
+    // Without the text a choice of 0 is still no choice, and more than the modes is still too many.
+    expect(bad({ min: 0, max: 1 })).toContain('chooseModes needs');
+    expect(bad({ min: 3, max: 3 })).toContain('chooseModes needs');
+  });
+
+  test('a repeatable choice lists every multiset, so the number of them is limited', () => {
+    const eight = Array.from({ length: 8 }, (_, i) => HIT(`t${i}`));
+    // Eight modes, one to five of them: 8 + 36 + 120 + 330 + 792 sets.
+    expect(issues(spell(eight, { min: 1, max: 5, repeatable: true }))).toEqual([]);
+    expect(issues(spell(eight, { min: 1, max: 10, repeatable: true })).join('\n')).toContain(
+      'at most 2000',
+    );
+  });
+
+  test('a target id of a repeatable choice has no "#": it is how the instances of a mode are told apart', () => {
+    expect(
+      issues(spell([HIT('a#2'), TWO[0] as SpellMode], { min: 2, max: 2, repeatable: true })).join(
+        '\n',
+      ),
+    ).toContain('"#"');
+    expect(issues(spell([HIT('a#2'), TWO[0] as SpellMode], ONE))).toEqual([]);
+  });
+
+  test('a repeatable choice on a triggered and an activated ability; "up to" only where an empty choice is run', () => {
+    const choose: ModeChoice = { min: 2, max: 2, repeatable: true };
+    expect(issues(permanent([triggered({ modes: TWO, chooseModes: choose })]))).toEqual([]);
+    expect(issues(permanent([activated({ modes: TWO, chooseModes: choose })]))).toEqual([]);
+    const upTo: ModeChoice = { min: 0, max: 2, repeatable: true };
+    expect(issues(permanent([activated({ modes: TWO, chooseModes: upTo })]))).toEqual([]);
+    // CR 700.2b: a triggered ability with no mode chosen is removed from the stack; the engine does not run that.
+    expect(issues(permanent([triggered({ modes: TWO, chooseModes: upTo })])).join('\n')).toContain(
+      'removed from the stack (CR 700.2b)',
+    );
+  });
+
   test('the commander widening must raise the number, within the modes', () => {
     const widen = (max: number) =>
       spell(TWO, { min: 1, max: 1, maxIf: { condition: { kind: 'controlCommander' }, max } });

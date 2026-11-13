@@ -13,8 +13,10 @@ import type {
   SeatId,
   StepId,
 } from '@commander-arena/engine';
+import { faceDownLabel } from '@commander-arena/engine';
 import { alternativeLogWords, isNamedAlternative } from './alt-cost';
 import { findEffect } from './artifacts-text';
+import { castCardAnswerLine } from './cast-card-text';
 import { optionText } from './chosen';
 import { costText, unlessCostPhrase } from './cost-text';
 import {
@@ -29,9 +31,10 @@ import {
 import { castNowAnswerLine, foretoldLine, isForetellMove } from './describe-later';
 import { mayEffectLine, unlessAnswerLine, unlessCancelLine } from './describe-unless';
 import { counteredByDeclining, unlessPayment, unlessQuestion } from './describe-ward';
+import { manifestedLine, turnedUpLine } from './face-down-text';
 import { riotAnswerText } from './keywords-text';
 import { timeCounters } from './later-text';
-import { modeText } from './mode-text';
+import { modeText, timesNote } from './mode-text';
 import { inherentNameOf } from './monarch-text';
 import type { LogLevel } from './protocol';
 import { giftedText } from './recursion-text';
@@ -108,6 +111,9 @@ function nameIn(state: GameState, id: ObjectId): string | null {
     return lastKnown === undefined || lastKnown === '' ? null : lastKnown;
   }
   if (obj.token !== null) return obj.token.characteristics.name;
+  // CR 708.2, 708.5 (D-312): a face-down permanent has no name, and the log is read by both players: it is "Face-down creature N", never its card.
+  const down = faceDownLabel(obj);
+  if (down !== null) return down;
   // An ability on the stack has no card: it is named after the object it belongs to.
   if (obj.stack?.kind === 'ability') {
     // CR 725.2, 701.54c (D-127, D-196): the abilities of the monarch and of the Ring have no source; they are "The monarch" and "The Ring".
@@ -165,6 +171,11 @@ function withArticle(noun: string): string {
 function joinNames(names: readonly string[]): string {
   if (names.length <= 1) return names[0] ?? 'nothing';
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+/** The cards of a pile for the log ("Giant Spider and Sol Ring"); a pile may be empty (CR 700.3d). */
+function pileText(names: readonly string[]): string {
+  return names.length === 0 ? 'no cards' : joinNames(names);
 }
 
 function cardName(state: GameState, card: CardId | null): string | null {
@@ -277,6 +288,14 @@ export function describeEvent(
       }
       // A foretell moves the card face down: the `foretold` line says it, and this one would name it (D-128).
       if (isForetellMove(after, event)) return null;
+      // CR 701.40a, 708.3 (D-309): a card that entered the battlefield face down is hidden: the `manifested` line says it and names no card.
+      if (
+        event.toZone === 'battlefield' &&
+        event.card === null &&
+        after.objects[event.to]?.faceDown !== undefined
+      ) {
+        return null;
+      }
       // CR 701.42a, 712.14c (D-277): the two cards that were melded enter as one permanent; the `melded` line says it.
       if (
         event.toZone === 'battlefield' &&
@@ -366,6 +385,15 @@ export function describeEvent(
         event.seat,
         [],
         'CR 704.5b',
+      );
+    case 'drawSkipped':
+      // D-332 (CR 614.11, 121.6): a replacement effect skipped the draw; no card was drawn and the library was not attempted.
+      return line(
+        'major',
+        `${name(event.source)} skips ${possessive(event.seat, viewer).toLowerCase()} draw.`,
+        event.seat,
+        [event.source],
+        'CR 614.11',
       );
     case 'dieRolled':
       // CR 706.1, 706.2 (D-271): the natural result of a die, which an ability may read.
@@ -728,10 +756,12 @@ export function describeEvent(
       // CR 700.2: "You choose: Destroy target artifact and Draw a card." The modes are public (they are
       // on the stack). An automatic choice (one legal set) is a detail line that says so.
       const texts = modeTextsOf(after, event.source) ?? modeTextsOf(before, event.source);
+      // D-344 (CR 700.2d): a mode chosen more than once is said once, "Draw a card (x2)".
       const chosen = joinNames(
-        event.modes.map((i) => {
+        [...new Set(event.modes)].map((i) => {
           const text = texts?.[i];
-          return text === undefined ? `mode ${i + 1}` : modeText(text);
+          const times = timesNote(event.modes.filter((m) => m === i).length);
+          return `${text === undefined ? `mode ${i + 1}` : modeText(text)}${times}`;
         }),
       );
       return line(
@@ -853,7 +883,8 @@ export function describeEvent(
     }
     case 'optionalAnswered': {
       // Suspend's "cast it now?", Madness's "cast it for its madness cost?" and Miracle's "cast it for its miracle cost?" (D-128, D-274).
-      const later = castNowAnswerLine(before, event, viewer);
+      const later =
+        castNowAnswerLine(before, event, viewer) ?? castCardAnswerLine(before, event, viewer);
       if (later !== null) return line('major', later.text, later.seat, later.objects, later.rule);
       // Extort's "you may pay {W/B}" and Cascade's "cast it without paying its mana cost" (D-120).
       const keyword = keywordAnswerLine(before, after, event, viewer);
@@ -1149,6 +1180,23 @@ export function describeEvent(
         [],
         'CR 701.20',
       );
+    case 'pilesSeparated':
+      // CR 700.3 (D-303): the piles are public (the cards were revealed and are still in the library).
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'separate', 'separates')} the revealed cards into two piles: ${pileText(event.first)} and ${pileText(event.second)}.`,
+        event.seat,
+        [],
+        'CR 700.3',
+      );
+    case 'pileChosen':
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} pile ${event.pile} (${pileText(event.names)}).`,
+        event.seat,
+        [],
+        'CR 700.3',
+      );
     case 'commanderMovedToCommandZone':
       return line(
         'major',
@@ -1193,13 +1241,13 @@ export function describeEvent(
         'CR 701.19a',
       );
     case 'cardsBottomed':
-      // CR 702.85a (Cascade): only the count is told, the order is random and hidden.
+      // CR 702.85a (Cascade): only the count is told, the order is random and hidden. D-324 (CR 401.4): or chosen by the owner, and as hidden.
       return line(
         'detail',
-        bottomedText(event.seat, event.count, viewer),
+        bottomedText(event.seat, event.count, viewer, event.ordered === true),
         event.seat,
         [],
-        'CR 702.85a',
+        event.ordered === true ? 'CR 401.4' : 'CR 702.85a',
       );
     // D-128: the cast-later family.
     case 'suspended':
@@ -1391,6 +1439,36 @@ export function describeEvent(
         null,
         [event.object, event.copied],
         'CR 707.9',
+      );
+    case 'manifested': {
+      // CR 701.40a (D-309, D-315): the top card of a library was put onto the battlefield face down; no card is named (CR 708.5).
+      const mine = event.seat === viewer;
+      const library =
+        event.from === viewer
+          ? 'your library'
+          : event.from === event.seat
+            ? 'their library'
+            : "the opponent's library";
+      return line(
+        'major',
+        manifestedLine(who(event.seat) as 'You' | 'Opponent', mine, library),
+        event.seat,
+        [event.object],
+        'CR 701.40a',
+      );
+    }
+    case 'turnedFaceUp':
+      // CR 116.2b, 701.40b, 708.8 (D-310, D-315): a special action; the card is public from now on, so it is named.
+      return line(
+        'major',
+        turnedUpLine(
+          who(event.seat) as 'You' | 'Opponent',
+          event.seat === viewer,
+          name(event.object),
+        ),
+        event.seat,
+        [event.object],
+        'CR 701.40b',
       );
     case 'melded':
       // CR 701.42a, 712.14c (D-277): two cards were exiled and became one melded permanent.

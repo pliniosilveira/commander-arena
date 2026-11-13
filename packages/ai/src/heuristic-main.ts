@@ -30,6 +30,7 @@
 import type {
   Action,
   GameView,
+  ObjectId,
   ObjectView,
   PendingDecision,
   PriorityDecision,
@@ -37,6 +38,7 @@ import type {
 import { getView } from '@commander-arena/engine';
 import { hasStorm } from './casual-copies';
 import { discountsHand } from './casual-costs';
+import { turnUpCandidates } from './casual-face-down';
 import { isHelpfulSpell } from './casual-helpful';
 import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey } from './casual-prevention';
@@ -216,14 +218,14 @@ type Answer = (view: GameView, pending: PendingDecision) => Action;
 function scoreCast(
   sample: ReturnType<Think['sample']>,
   me: number,
-  play: Play | null,
+  play: Action | null,
   answer: Answer,
   budget: Think['budget'],
 ): number | null {
   if (sample === undefined) return null;
   let state = sample;
   if (play !== null) {
-    const cast = applyOrNull(state, me, castAction(play));
+    const cast = applyOrNull(state, me, play);
     if (cast === null) return null;
     state = cast;
     for (let i = 0; i < 12; i += 1) {
@@ -250,6 +252,55 @@ function scoreCast(
     200,
   );
   return end === null ? null : evaluate(getView(end, me), me).score;
+}
+
+/**
+ * After blockers (D-313, CR 701.40b, 116.2b): a face-down creature of ours that is in the combat and would be better face up is turned up when playing the combat out
+ * with it turned up scores better than without, by the same margin a trick must beat. The agent reads its own card through `ifFaceUp` (the view of an opponent's has
+ * nothing of it); the sample it plays on is determinized for it, so the cards that are not its own are drawn again.
+ */
+function faceUpWindow(
+  view: GameView,
+  d: PriorityDecision,
+  think: Think,
+  answer: Answer,
+): PriorityChoice | null {
+  if (view.step !== 'declareBlockers' || view.combat === null || view.stack.length > 0) {
+    return null;
+  }
+  const inCombat = new Set<ObjectId>(
+    view.combat.attackers.flatMap((a) => [a.object, ...a.blockedBy]),
+  );
+  const candidates = turnUpCandidates(view, d)
+    .filter((c) => c.gain > 0 && inCombat.has(c.object.id))
+    .slice(0, 2);
+  if (candidates.length === 0) return null;
+  const me = view.viewer;
+  const sample = think.sample();
+  if (sample === undefined || sample.pending?.kind !== 'priority') return null;
+  const base = scoreCast(sample, me, null, answer, think.budget);
+  if (base === null) return null;
+  let best: { object: ObjectId; score: number } | undefined;
+  for (const [i, c] of candidates.entries()) {
+    if (think.budget.expired(i + 1)) break;
+    const score = scoreCast(
+      sample,
+      me,
+      { kind: 'turnFaceUp', object: c.object.id },
+      answer,
+      think.budget,
+    );
+    if (
+      score !== null &&
+      score > base + TRICK_MARGIN &&
+      (best === undefined || score > best.score)
+    ) {
+      best = { object: c.object.id, score };
+    }
+  }
+  return best === undefined
+    ? null
+    : { action: { kind: 'turnFaceUp', object: best.object }, reason: 'face-up' };
 }
 
 /** The window plays: after blocks, the opponent's end step, in response to a spell. */
@@ -295,7 +346,7 @@ function windowPlay(
     let best: { play: Play; score: number } | undefined;
     for (const [i, play] of candidates.entries()) {
       if (think.budget.expired(i + 1)) break;
-      const score = scoreCast(sample, me, play, answer, think.budget);
+      const score = scoreCast(sample, me, castAction(play), answer, think.budget);
       if (
         score !== null &&
         score > base + TRICK_MARGIN &&
@@ -335,6 +386,8 @@ export function choosePriorityHeuristic(
     (view.step === 'precombatMain' || view.step === 'postcombatMain') &&
     view.stack.length === 0;
   if (mainWindow) return mainPhase(view, d, think, activations);
+  const faceUp = faceUpWindow(view, d, think, answer);
+  if (faceUp !== null) return faceUp;
   const play = windowPlay(view, d, think, activations, answer);
   if (play !== null) return play;
   const rest = casualRemainder(view, d, think, activations);

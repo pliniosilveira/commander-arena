@@ -6,6 +6,8 @@ Standing instructions for any coding agent working in this repository. `CLAUDE.m
 
 Commander Arena is an unofficial, free, browser-based Magic: The Gathering Commander game: one human against an AI in v1, driven by a pure TypeScript rules engine that follows the Comprehensive Rules (CR). It runs entirely in the browser and deploys as a static site.
 
+The long-term goal is that the engine supports 100% of the existing cards; a card that costs a lot is built later, not left out (D-317).
+
 Priorities, in order: rules correctness for every card marked supported; honesty (a card the engine does not fully understand is flagged, never guessed); determinism and testability; a legal and competent AI; polish.
 
 Authoritative documents: `docs/SPEC.md` (the short current specification; section 17 is the index of amendments A1 to A31, whose results are in sections 1 to 16) and `docs/DECISIONS.md`. When the SPEC and the CR disagree, the CR wins; record the discrepancy in `docs/DECISIONS.md`.

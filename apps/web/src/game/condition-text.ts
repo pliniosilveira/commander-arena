@@ -257,6 +257,9 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'attackersTotalPower':
       // D-151: "two or more nonland permanents entered the battlefield under your control this turn", "Khans was chosen".
       return dragonsConditionWords(condition, negate);
+    case 'spellsCastThisTurn':
+      // D-318 (CR 601.2i): "you've cast three or more spells this turn".
+      return `you ${negate ? "haven't" : 'have'} cast ${condition.atLeast} or more spells this turn`;
     case 'duringStep':
       // D-139 (CR 506.1): "if it's the declare attackers step".
       return `it's ${negate ? 'not ' : ''}the ${COMBAT_STEP_WORDS[condition.step]}`;
@@ -289,6 +292,19 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
           : cmp === 'atLeast'
             ? `there are ${value} or more cards in your graveyard`
             : `there are exactly ${value} cards in your graveyard`;
+      return negate ? `it's not true that ${text}` : text;
+    }
+    case 'cardsInLibrary': {
+      // D-331 (CR 401.1): "there are no cards in your library".
+      const { cmp, value } = condition.compare;
+      const text =
+        cmp === 'atMost'
+          ? value === 0
+            ? 'there are no cards in your library'
+            : `there are fewer than ${value + 1} cards in your library`
+          : cmp === 'atLeast'
+            ? `there are ${value} or more cards in your library`
+            : `there are exactly ${value} cards in your library`;
       return negate ? `it's not true that ${text}` : text;
     }
     case 'yourTurn':

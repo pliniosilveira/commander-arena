@@ -82,11 +82,14 @@ export function cardNoun(filter: ObjectFilter, many = false): string | null {
 }
 
 /** "Put the rest on the bottom of your library in a random order" / "Put the rest into your graveyard". */
-const REST_WORDS: Readonly<Record<'bottomRandom' | 'graveyard' | 'top', string>> = {
-  bottomRandom: 'Put the rest on the bottom of your library in a random order',
-  graveyard: 'Put the rest into your graveyard',
-  top: 'Leave the rest on top of your library',
-};
+const REST_WORDS: Readonly<Record<'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen', string>> =
+  {
+    bottomRandom: 'Put the rest on the bottom of your library in a random order',
+    // D-324 (CR 401.4): the owner of the cards chooses the order.
+    bottomChosen: 'Put the rest on the bottom of your library in any order',
+    graveyard: 'Put the rest into your graveyard',
+    top: 'Leave the rest on top of your library',
+  };
 
 /**
  * "Look at the top six cards of your library. You may reveal an artifact card from among them and put it into your
@@ -124,6 +127,16 @@ export function lookAtTopText(
   if (take.to === 'exileFaceDown') {
     const which = plain && one ? 'one of them' : `${taken} from among them`;
     return `${look}. Exile ${which} face down. ${REST_WORDS[rest]}`;
+  }
+  // D-324 (CR 701.20a): "Put two of them into your hand", with no reveal.
+  if (take.hidden === true) {
+    const which =
+      plain && one
+        ? 'one of them'
+        : plain
+          ? `${numberWord(take.max)} of them`
+          : `${taken} from among them`;
+    return `${look}. Put ${which} into your hand. ${REST_WORDS[rest]}`;
   }
   // D-151: one card looked at and put back on top ("If it's a creature card of the chosen type, you may reveal it ...").
   if (rest === 'top' && count === 1 && one && (take.min ?? 0) === 0 && take.to !== 'battlefield') {

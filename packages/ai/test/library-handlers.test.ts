@@ -195,3 +195,46 @@ describe('CasualAgent: put cards from the hand on top', () => {
     expect(put).not.toContain('Mountain');
   });
 });
+
+describe('"put two of them into your hand and the rest on the bottom in any order" (D-324, CR 401.4)', () => {
+  const STOCK = 'SYNTHETIC Stock Up Like';
+  const TOP = ['Island', 'Serra Angel', 'Forest', 'Grizzly Bears', 'Plains'];
+
+  test('RandomLegalAgent: 60 seeds, each answer to the take and to the order is accepted, in several orders', async () => {
+    const g = game(STOCK, TOP, { pool: 'UCC' });
+    const takes = new Set<string>();
+    for (let seed = 1; seed <= 60; seed += 1) {
+      const d = g.state.pending;
+      if (d === null) throw new Error('nothing pending');
+      const action = await new RandomLegalAgent({ seed }).decide(g.view(0), d, CTX);
+      expect(applyAction(g.state, 0, action).ok, `take, seed ${seed}`).toBe(true);
+      takes.add(JSON.stringify(action));
+    }
+    expect(takes.size).toBeGreaterThan(3);
+    // Take two, then arrange the three left.
+    g.act(0).chooseCards(...(g.state.seats[0]?.library.slice(0, 2) ?? []));
+    const d = arrangeOf(g);
+    expect(d.purpose).toBe('bottom');
+    const orders = new Set<string>();
+    for (let seed = 1; seed <= 60; seed += 1) {
+      const action = await new RandomLegalAgent({ seed }).decide(g.view(0), d, CTX);
+      expect(applyAction(g.state, 0, action).ok, `order, seed ${seed}`).toBe(true);
+      if (action.kind === 'arrangeCards') expect(action.top).toEqual([]);
+      orders.add(JSON.stringify(action));
+    }
+    expect(orders.size).toBeGreaterThan(2);
+  });
+
+  test('CasualAgent takes the two most expensive cards, then puts all the rest on the bottom, the spell it can cast soon first', async () => {
+    const g = game(STOCK, TOP, { pool: 'UCC', battlefield: ['Island', 'Island'] });
+    const take = await casual(g);
+    if (take.kind !== 'chooseCards') throw new Error('expected chooseCards');
+    expect(named(g, take.objects).sort()).toEqual(['Grizzly Bears', 'Serra Angel']);
+    g.act(0).chooseCards(...take.objects);
+    const action = await casual(g);
+    if (action.kind !== 'arrangeCards') throw new Error('expected arrangeCards');
+    expect(action.top).toEqual([]);
+    expect(action.other).toHaveLength(3);
+    expect(new Set(named(g, action.other))).toEqual(new Set(['Island', 'Forest', 'Plains']));
+  });
+});

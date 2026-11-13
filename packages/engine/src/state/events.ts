@@ -51,6 +51,29 @@ export type GameEvent =
    */
   | { readonly kind: 'meldFailed'; readonly objects: readonly ObjectId[]; readonly reason: string }
   /**
+   * CR 701.40a (Manifest, D-309): `seat` manifested a card: the card was put onto the battlefield face down as a 2/2 creature, `object` is that permanent. The card is
+   * not named (hidden information, CR 708.5): the `zoneChanged` event that comes before it has no card either. `from` is the seat whose library it came from (public: a
+   * library's owner is, its cards are not): `seat` for "manifest the top card of your library", another seat for "of target opponent's library".
+   */
+  | {
+      readonly kind: 'manifested';
+      readonly seat: SeatId;
+      readonly from: SeatId;
+      readonly object: ObjectId;
+    }
+  /**
+   * CR 116.2b, 701.40b, 708.8 (D-310): `seat` turned the face-down permanent `object` face up, a special action that does not use the stack. `card` is the card it
+   * represents, which is public from now on; `object` is the same object (no zone change, so nothing entered: no enters ability triggers, CR 708.8). `cost` is the mana
+   * symbols paid.
+   */
+  | {
+      readonly kind: 'turnedFaceUp';
+      readonly seat: SeatId;
+      readonly object: ObjectId;
+      readonly card: CardId;
+      readonly cost: readonly string[];
+    }
+  /**
    * `seat` drew a card (CR 121.1): `object` is the card in their hand. `nth` is how many cards they have
    * drawn this turn including this one (D-111), which the `drawn` trigger's `nth` compares.
    */
@@ -61,6 +84,11 @@ export type GameEvent =
       readonly nth: number;
     }
   | { readonly kind: 'drewFromEmptyLibrary'; readonly seat: SeatId }
+  /**
+   * A draw of `seat` was skipped by the replacement effect `skipDraw` of `source` (D-332, CR 614.11, 121.6): no card was drawn and none was
+   * attempted from an empty library.
+   */
+  | { readonly kind: 'drawSkipped'; readonly seat: SeatId; readonly source: ObjectId }
   | { readonly kind: 'libraryShuffled'; readonly seat: SeatId }
   /**
    * CR 706.1, 706.2 (D-271): `seat` rolled a die of `sides` sides; `result` is the natural result (the engine has no modifiers of a roll), drawn from the
@@ -196,9 +224,15 @@ export type GameEvent =
   | { readonly kind: 'removedFromCombat'; readonly object: ObjectId }
   /**
    * Cards that were exiled went to the bottom of their owner's library in a random order (CR 702.85a, Cascade,
-   * D-120). Only the number is told: which card went where is hidden, so no zone change is reported.
+   * D-120). Only the number is told: which card went where is hidden, so no zone change is reported. `ordered` (D-324, CR 401.4: "Put two of them into your
+   * hand and the rest on the bottom of your library in any order") says the owner chose the order, not the game's generator; the order is as hidden.
    */
-  | { readonly kind: 'cardsBottomed'; readonly seat: SeatId; readonly count: number }
+  | {
+      readonly kind: 'cardsBottomed';
+      readonly seat: SeatId;
+      readonly count: number;
+      readonly ordered?: true;
+    }
   /**
    * A regeneration shield replaced a destruction (CR 701.19a, D-120): the permanent was not destroyed;
    * its damage was removed, it was tapped (a `tapped` event follows when it was untapped) and, if it was
@@ -446,6 +480,23 @@ export type GameEvent =
       readonly cards: readonly CardId[];
       readonly names: readonly string[];
       readonly from: Zone;
+    }
+  /**
+   * CR 700.3 (D-303): `seat` separated the revealed cards into two piles; `first` and `second` are the names of the cards of each, in library order. Public: the cards were revealed
+   * (`cardsRevealed`) and are still in the library. A pile may be empty (CR 700.3d).
+   */
+  | {
+      readonly kind: 'pilesSeparated';
+      readonly seat: SeatId;
+      readonly first: readonly string[];
+      readonly second: readonly string[];
+    }
+  /** CR 700.3 (D-303): `seat` chose pile `pile` (1 or 2, as `pilesSeparated` lists them); `names` are its cards, which go where the effect says. */
+  | {
+      readonly kind: 'pileChosen';
+      readonly seat: SeatId;
+      readonly pile: 1 | 2;
+      readonly names: readonly string[];
     }
   /** CR 603.5: the controller of an optional ("you may") triggered ability answered. */
   | {

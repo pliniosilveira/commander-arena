@@ -55,6 +55,8 @@ export interface AbilitySkeleton {
 }
 
 const TRIGGER_WORD = /^(?:when|whenever|at)\s/i;
+/** "When you next cast an instant or sorcery spell this turn, " (D-336): the lead of a sentence that creates a delayed triggered ability. */
+const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
 const MODAL_HEADER = /^choose\b/i;
 const REPLACEMENT_ENTERS = /^(?:as )?~ enters\b/i;
@@ -124,6 +126,23 @@ function trimmed(text: string, start: number, end: number): Span {
  * stage P27): it is read with that sentence (`effect.copy-spell`), never alone.
  */
 const NEW_TARGETS_SENTENCE = /^you may choose new targets for the copy\.$/i;
+/**
+ * "You may choose new targets for the copies." (D-337, CR 707.10c): the same sentence for a clause that makes several copies, "copy it for each time you've cast your
+ * commander from the command zone this game"; joined only to a sentence that says it (`effect.copy-spell-for-each`).
+ */
+const NEW_TARGETS_COPIES_SENTENCE = /^you may choose new targets for the copies\.$/i;
+const COPY_FOR_EACH = /(?:^|, )copy (?:it|that spell) for each time [^.]*\.$/i;
+
+/** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-337). */
+function newTargetsOf(text: string, before: Span | undefined, span: Span): boolean {
+  if (before === undefined) return false;
+  const said = text.slice(span.start, span.end);
+  if (NEW_TARGETS_SENTENCE.test(said)) return true;
+  return (
+    NEW_TARGETS_COPIES_SENTENCE.test(said) &&
+    COPY_FOR_EACH.test(text.slice(before.start, before.end))
+  );
+}
 
 /**
  * "Look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on
@@ -144,6 +163,13 @@ const PUT_ANY_TOTAL =
  */
 const SPLIT_THE_TOP =
   /^put \w+ of them into your hand, put \w+ of them on the bottom of your library, and exile \w+ of them\.$/i;
+
+/**
+ * "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order." (Stock Up, D-324, CR 401.4): the second
+ * sentence says what is done with the cards the first one looks at, so the two are read as one instruction (`effect.look-take-bottom`).
+ */
+const PUT_HAND_REST_BOTTOM =
+  /^put \w+ of them into your hand and the rest on the bottom of your library in any order\.$/i;
 
 /**
  * "Reveal cards from the top of your library until you reveal a land card. Put that card onto the battlefield tapped and the rest on the
@@ -223,6 +249,25 @@ const MAY_RETURN_THOSE_CARDS =
 const EXILE_AT_RANDOM = /(?:^|, then )exile a card from your graveyard at random\.$/i;
 const PLAY_THE_EXILED_CARD = /^you may play the exiled card this turn\.$/i;
 
+/**
+ * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it
+ * instead." (D-350 to D-352 and D-354, CR 614.1a): "that spell" is the one cast, so the second sentence is a rider of the first and the two are read as one instruction
+ * (`effect.cast-graveyard-card`; the first may follow the comma of a trigger).
+ */
+const CAST_TARGET_FROM_GRAVEYARD =
+  /(?:^|, )you may cast target [^.,]* cards? from a graveyard(?:, and mana of any type can be spent to cast that spell)?\.$/i;
+const EXILE_THAT_SPELL_INSTEAD =
+  /^if that spell would be put into a graveyard, exile it instead\.$/i;
+
+/**
+ * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (D-303, CR 700.3):
+ * three sentences that are one instruction (what is revealed, who separates it and where each pile goes), kept together so `effect.reveal-separate-piles` reads them as one. Only all
+ * three in a row.
+ */
+const REVEAL_THE_TOP = /^reveal the top [^.]* cards of your library\.$/i;
+const SEPARATES_INTO_PILES = /^an opponent separates those cards into two piles\.$/i;
+const PUT_ONE_PILE = /^put one pile into your hand and the other into your graveyard\.$/i;
+
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
   for (let i = 0; i < spans.length; i++) {
@@ -230,6 +275,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     const said = (span: Span | undefined, re: RegExp) =>
       span !== undefined && re.test(text.slice(span.start, span.end));
     if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, REVEAL_THE_TOP) &&
+      said(b, SEPARATES_INTO_PILES) &&
+      said(c, PUT_ONE_PILE)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
       a !== undefined &&
       c !== undefined &&
       said(a, EXILE_UNTIL_NONLAND) &&
@@ -247,7 +301,9 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
-        (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)))
+        (said(a, LOOK_AT_TOP) && said(b, PUT_HAND_REST_BOTTOM)) ||
+        (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)) ||
+        (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)))
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
@@ -312,7 +368,7 @@ export function splitSentences(text: string, start: number, end: number): Span[]
     } else if (c === '.' && !quote && (i + 1 === end || /\s/.test(text.charAt(i + 1)))) {
       const span = trimmed(text, from, i + 1);
       const before = out[out.length - 1];
-      if (before !== undefined && NEW_TARGETS_SENTENCE.test(text.slice(span.start, span.end))) {
+      if (before !== undefined && newTargetsOf(text, before, span)) {
         out[out.length - 1] = { start: before.start, end: span.end };
       } else if (span.end > span.start) out.push(span);
       from = i + 1;
@@ -320,7 +376,7 @@ export function splitSentences(text: string, start: number, end: number): Span[]
   }
   const rest = trimmed(text, from, end);
   const last = out[out.length - 1];
-  if (last !== undefined && NEW_TARGETS_SENTENCE.test(text.slice(rest.start, rest.end))) {
+  if (last !== undefined && newTargetsOf(text, last, rest)) {
     out[out.length - 1] = { start: last.start, end: rest.end };
   } else if (rest.end > rest.start) out.push(rest);
   return joinLookAtTop(text, out);
@@ -466,7 +522,9 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     };
   }
 
-  if (TRIGGER_WORD.test(text)) {
+  // "When you next cast an instant or sorcery spell this turn, copy that spell." (D-336, CR 603.7): a spell's sentence that creates a delayed triggered ability,
+  // not a triggered ability of a permanent; it is read as the sentences of the body (`sentence.delayed`).
+  if (TRIGGER_WORD.test(text) && !DELAYED_CAST_LEAD.test(text)) {
     const word = /^\S+/.exec(text) ?? [''];
     const wordSpan = { start: 0, end: word[0].length };
     const bodyFrom = word[0].length + 1;

@@ -430,7 +430,15 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Target creature gets +1/+1 until end of turn. ${cap(e)} gains trample until end of turn.`,
   ),
+  // D-295 to D-298 (the Niv-Mizzet deck, group B): the header of a modal spell, the damage to one or two targets and the sentence about what a target was.
+  'modal.choose-widen': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.\n• Scry 1.`),
+  'noun.one-or-two-targets': spell((e) => `~ deals 1 damage to ${e}.`),
+  'condition.its-mana-value': spell(
+    (e) => `Return target creature to its owner's hand. If ${e}, scry 1.`,
+  ),
   'modal.choose-not-repeated': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
+  // D-344 (repeatable modes, CR 700.2d): the header with no dash, its bullets after it.
+  'modal.choose-repeatable': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   // Stage P37 (D-180): the Korvold deck's triggers and small statics. The statics are lines of their own; the trigger follows "When"; the
   // conditions follow "As long as" or "If"; the nouns are operands of damage; the amount follows "gets +1/+1".
   'trigger.cycled': permanent((e) => `When ${e}, you gain 1 life.`),
@@ -485,16 +493,27 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.mana-spent-at-least': permanent(
     (e) => `Whenever you cast a noncreature spell, if ${e}, you gain 1 life.`,
   ),
+  // Issue 25 (the Niv-Mizzet deck): the condition leads the "instead" sentence of a trigger about a spell that was cast.
+  'condition.spells-cast-this-turn': permanent((e) => `{T}: Add {G}. Activate only if ${e}.`),
+  'condition.mana-spent-or-more': permanent(
+    (e) =>
+      `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,
+  ),
   'condition.card-left-graveyard': permanent(
     (e) => `At the beginning of each end step, if ${e}, you gain 1 life.`,
   ),
   // Stage P67 (D-220): trigger doubling is a line of its own, and so is the equip of a creature type.
   'static.triggers-additional-time': asIs,
+  // Issue 25 (D-339): the line of its own, with the card's wording.
+  'static.triggers-additional-time-cause': asIs,
   'keyword.equip-quality': asIs,
   // Stage P70 (D-259): the equip of a commander is a line of its own.
   'keyword.equip-commander': asIs,
   // Stage P66 (D-219): the replacement of the creation of tokens is a line of its own.
   'replacement.tokens-instead': asIs,
+  // Issue 25 (D-332): the line of its own; the trigger follows "Whenever".
+  'replacement.skip-draw': asIs,
+  'trigger.noncombat-damage': whenever,
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
@@ -542,6 +561,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.enters-one-or-more-creatures': whenever,
   'trigger.you-create-tokens': whenever,
   'condition.cards-in-graveyard': permanent((e) => `As long as ${e}, ~ has flying.`),
+  'condition.cards-in-library': permanent((e) => `As long as ${e}, ~ has flying.`),
   'condition.opponents-control-at-least': permanent((e) => `~ enters tapped unless ${e}.`),
   'condition.that-player-more-lands': permanent(
     (e) => `Whenever a land an opponent controls enters, if ${e}, you gain 1 life.`,
@@ -557,6 +577,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.graveyard-play-once-each-turn': asIs,
   // Group 4 (D-208): the rider of the mana a land adds follows the "Add" sentence of its mana ability.
   'effect.mana-rider-scry': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
+  // Group 3-c (D-354): the cast of a card of a graveyard is read in the body of a trigger (a second rider sentence is joined to the first).
+  'effect.cast-graveyard-card': permanent((e) => `When ~ enters, ${e}.`),
+  // Group 2b-b (D-328): the rider that copies the spell the mana is spent on follows the "Add" sentence of its mana ability.
+  'effect.mana-rider-copy': permanent((e) => `{T}: Add {R}. ${cap(e)}.`),
   // Group 2 (D-230).
   'noun.each-permanent-that-is': spell((e) => `Put two +1/+1 counters on ${e}.`),
   // Bruna deck, Ajani (D-268).

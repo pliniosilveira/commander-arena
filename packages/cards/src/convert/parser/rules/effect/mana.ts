@@ -133,6 +133,9 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     // Stage P34 (D-152, CR 106.1b, 605.3b): two mana each of a color chosen on its own; the fixed mana once for each of a count (CR 106.1).
     'add two mana in any combination of colors',
     'add three mana in any combination of colors',
+    // Issue 25 (D-319, CR 106.1b): two mana of different colors, never colorless and never the same color twice.
+    'add two mana of different colors',
+    'add three mana of different colors',
     'add {R} for each tapped land your opponents control',
     'add {G}{G} for each creature you control',
     // CR 605.3b, 700.5: the color of the sentence "Choose a color." before it; the lowering reads it only there.
@@ -159,6 +162,12 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add one mana in any combination of colors',
     'add two mana in any combination of color',
     'add two mana of any combination of colors',
+    'add two mana of different color',
+    'add two mana of different types',
+    'add one mana of different colors',
+    'add four mana of different colors',
+    'add two mana of the same color',
+    'add two mana of different colors for each creature you control',
     'add {R} or {G} for each creature you control',
     'add one mana of any color for each creature you control',
     'add {R} for each',
@@ -210,6 +219,12 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
                 count: (m[1] ?? '').toLowerCase() === 'two' ? 2 : 3,
               }),
             ),
+            // Issue 25 (D-319, CR 106.1b, 605.3b): "two mana of different colors": each a color chosen on its own, no color twice (colorless is not a color).
+            map(pattern(/(two|three) mana of different colors(?![\p{L}\p{N}])/iu), (m) => ({
+              kind: 'anyCombination' as const,
+              count: (m[1] ?? '').toLowerCase() === 'two' ? 2 : 3,
+              distinct: true as const,
+            })),
           ),
         ),
         // "Add {R} for each tapped land your opponents control" (stage P34, D-152): fixed mana, once for each of a count.

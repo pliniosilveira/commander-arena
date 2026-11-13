@@ -188,7 +188,12 @@ function compositions(count: number, options: number): number[][] {
  * Resolve hybrid and Phyrexian symbols into plain demand vectors (CR 107.4e, 107.4f). Identical
  * symbols are grouped so the number of profiles stays small. Sorted by life, then discovery order.
  */
-function buildProfiles(cost: ManaCost, x: number, lifeAvailable: number): Profile[] {
+function buildProfiles(
+  cost: ManaCost,
+  x: number,
+  lifeAvailable: number,
+  anyType = false,
+): Profile[] {
   const base = new Array<number>(DIMS).fill(0);
   for (const color of COLOR_DIMS) base[colorDim(color)] = cost.colored[color];
   base[SNOW_DIM] = cost.snow;
@@ -235,6 +240,20 @@ function buildProfiles(cost: ManaCost, x: number, lifeAvailable: number): Profil
       }
     }
     partial = next;
+  }
+
+  // D-351, CR 609.4b: mana of any type can be spent as though it were mana of any type, so a demand for a color (or for colorless) is met by any mana: it is generic.
+  // (The snow demand is the source's, not the mana's type.)
+  if (anyType) {
+    partial = partial.map((profile) => {
+      const demand = profile.demand.slice();
+      for (const color of COLOR_DIMS) {
+        const dim = colorDim(color);
+        demand[GENERIC_DIM] = (demand[GENERIC_DIM] ?? 0) + (demand[dim] ?? 0);
+        demand[dim] = 0;
+      }
+      return { demand, life: profile.life };
+    });
   }
 
   const seen = new Set<string>();
@@ -515,7 +534,12 @@ export function planPayment(request: PaymentRequest): PaymentPlan | null {
 }
 
 function planOnce(request: PaymentRequest): PaymentPlan | null {
-  const profiles = buildProfiles(request.cost, request.x, request.lifeAvailable);
+  const profiles = buildProfiles(
+    request.cost,
+    request.x,
+    request.lifeAvailable,
+    'anyType' in request.spell && request.spell.anyType === true,
+  );
   let best: { solution: Solution; life: number } | null = null;
   // Each subset of costed abilities is a separate search (the empty one first); see the header.
   for (const selection of selections(costedCandidates(request))) {

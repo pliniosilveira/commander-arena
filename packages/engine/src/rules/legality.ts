@@ -123,13 +123,31 @@ export function mayPlayFromExile(state: GameState, seat: SeatId, obj: GameObject
   );
 }
 
+/**
+ * CR 601.2, 305.1, 611.2a (D-327): whether an effect ("Mill a card. You may play that card this turn.") lets `seat` cast or play the card `obj` in a
+ * graveyard: a `playPermission` of the seat that names this very object (a card that left the graveyard is a new one, CR 400.7) and has not ended.
+ * The effect names only cards the seat owns (`runMayPlay`).
+ */
+export function mayPlayFromGraveyard(state: GameState, seat: SeatId, obj: GameObject): boolean {
+  return (
+    obj.zone === 'graveyard' &&
+    obj.owner === seat &&
+    state.continuousEffects.some(
+      (e) =>
+        e.change.kind === 'playPermission' && e.change.seat === seat && e.objects.includes(obj.id),
+    )
+  );
+}
+
 export function canPlayLand(state: GameState, seat: SeatId, obj: GameObject, face = 0): boolean {
   if (obj.card === null) return false;
   // D-151: a land card in exile an effect lets the player play ("You may play that card this turn").
   const fromExile = obj.zone === 'exile' && mayPlayFromExile(state, seat, obj);
-  // D-232: a land card in the graveyard a permanent lets its controller play once each turn.
+  // D-232: a land card in the graveyard a permanent lets its controller play once each turn; D-327: or an effect let them play this turn.
   const fromGraveyard =
-    obj.zone === 'graveyard' && graveyardPlayPermission(state, seat, obj, true) !== null;
+    obj.zone === 'graveyard' &&
+    (mayPlayFromGraveyard(state, seat, obj) ||
+      graveyardPlayPermission(state, seat, obj, true) !== null);
   if (!fromExile && !fromGraveyard && (obj.zone !== 'hand' || obj.owner !== seat)) return false;
   if (!castableFaces(definitionOf(state, obj.card)).includes(face)) return false;
   if (!derive(state, asFace(obj, face)).types.includes('land')) return false;
@@ -155,6 +173,8 @@ export function mayCastFromGraveyard(state: GameState, seat: SeatId, obj: GameOb
   ) {
     return true;
   }
+  // D-327, CR 601.2: "Mill a card. You may play that card this turn." lets the owner cast the card they milled.
+  if (mayPlayFromGraveyard(state, seat, obj)) return true;
   const face = faceOf(state, obj);
   if (face === null) return false;
   return face.abilities.some(
@@ -476,13 +496,23 @@ export function canCastDuringResolution(
   /**
    * `madness` (CR 702.35a, D-128): the card is cast for its madness cost as its ability resolves, so that cost has to be
    * payable (the card lists one); otherwise it is the free cast of Cascade and Suspend. `miracle` (CR 702.94a, D-274): the same
-   * with the miracle cost, for a card that is in the hand (its X, when it has one, is announced in the cast).
+   * with the miracle cost, for a card that is in the hand (its X, when it has one, is announced in the cast). `normal` (D-350): the card, in a graveyard, is cast
+   * paying its mana cost (an effect named it).
    */
-  alternative: 'free' | 'madness' | 'miracle' = 'free',
+  alternative: 'free' | 'normal' | 'madness' | 'miracle' = 'free',
+  /** D-351 (CR 609.4b): mana of any type can be spent to cast the spell (`normal` only): the cost is read that way. */
+  anyManaType = false,
 ): boolean {
-  // D-145: a card in the hand is cast this way as well ("You may cast a spell with mana value 5 or less from your hand without paying
-  // its mana cost"); Cascade, Suspend and Madness cast cards from exile.
-  if (obj.card === null || (obj.zone !== 'exile' && obj.zone !== 'hand')) return false;
+  if (obj.card === null) return false;
+  if (alternative === 'normal') {
+    // D-350 (CR 608.2g, 601.2): "you may cast target instant or sorcery card from a graveyard", paying its mana cost: the card is in a graveyard, whoever's it is (the
+    // effect names it); the spell is cast from there and its owner stays the card's owner.
+    if (obj.zone !== 'graveyard') return false;
+  } else if (obj.zone !== 'exile' && obj.zone !== 'hand') {
+    // D-145: a card in the hand is cast this way as well ("You may cast a spell with mana value 5 or less from your hand without paying
+    // its mana cost"); Cascade, Suspend and Madness cast cards from exile.
+    return false;
+  }
   // D-149 (CR 702.75a, 608.2g): a card in exile is cast by the player the effect names, whoever owns it (see `canPlayLandByEffect`); a card in a
   // hand is the player's own.
   if (obj.zone === 'hand' && obj.owner !== seat) return false;
@@ -507,11 +537,13 @@ export function canCastDuringResolution(
         seat,
         spell,
         zone: from,
-        alternative,
+        // D-350: a cast that pays the mana cost has no alternative cost.
+        alternative: alternative === 'normal' ? undefined : alternative,
         kicked,
         excluded: obj.id,
         // CR 702.120a, 118.9 (D-145): a free cast still pays the escalate cost of the fewest modes it must choose.
         modes: modalOfSpellText(faceOf(state, spell)?.spell)?.choose.min ?? 0,
+        ...(anyManaType ? { anyType: true as const } : {}),
       }),
   );
 }
@@ -619,7 +651,9 @@ export function flashbackObjects(state: GameState, seat: SeatId): ObjectId[] {
 export function playableLands(state: GameState, seat: SeatId): FaceOption[] {
   const fromExile = state.exile.filter((id) => mayPlayFromExile(state, seat, getObject(state, id)));
   const fromGraveyard = zoneList(state, 'graveyard', seat).filter(
-    (id) => graveyardPlayPermission(state, seat, getObject(state, id), true) !== null,
+    (id) =>
+      mayPlayFromGraveyard(state, seat, getObject(state, id)) ||
+      graveyardPlayPermission(state, seat, getObject(state, id), true) !== null,
   );
   return faceOptions(
     state,

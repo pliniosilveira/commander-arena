@@ -42,6 +42,11 @@ export interface LowerContext {
    */
   selfCast: boolean;
   /**
+   * True in the body of "Whenever you cast an instant or sorcery spell" (issue 25): every event of the trigger is a spell being cast (not a copy, not the
+   * spell itself), so "that spell" is the spell that caused the trigger, which the engine reads as its `triggerSubject` (CR 601.2h).
+   */
+  castTrigger: boolean;
+  /**
    * The ids of targets an earlier instruction of this text sent away from the battlefield (destroy,
    * exile, return, sacrifice): "it" after them is the card in its new zone, which a tap or an untap
    * cannot reach. Filled by `lowerSentences` as each clause is lowered.
@@ -141,9 +146,10 @@ export interface LowerContext {
   /**
    * What an earlier instruction of this text exiled (stage P34, D-152): `top` the cards of the top of the library ("exile the top card of
    * your library", the cards "that card" and "those cards" name), `cast` the card found by exiling until a card is found (Discover, "the
-   * discovered card"). Null before any. The engine's `moved` names them.
+   * discovered card"), `milled` (D-327) the cards the controller milled ("Mill a card. You may play that card this turn."). Null before any. The
+   * engine's `moved` names them.
    */
-  exiled: 'top' | 'cast' | null;
+  exiled: 'top' | 'cast' | 'milled' | null;
   /** True when the cards the last "exile the top ... cards" exiled were exiled face down (stage P41, D-188, CR 406.3): "you may look at and play those cards". */
   exiledFaceDown: boolean;
   /**
@@ -207,6 +213,7 @@ export function newContext(
     staticSubjectIsSelf: false,
     itIsSelf: false,
     selfCast: false,
+    castTrigger: false,
     removed: new Set(),
     madeAToken: false,
     lowered: 0,

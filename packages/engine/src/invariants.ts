@@ -195,20 +195,21 @@ export function checkInvariants(state: GameState): string[] {
         problems.push(`${id} has an announced X of ${x} that it cannot have`);
       }
     }
-    // CR 700.2 (D-114): the modes chosen for a spell or ability on the stack are distinct, in printed order
-    // and within the number its text lets the controller choose; a modal one that is on the stack for good
+    // CR 700.2, 700.2d (D-114, D-344): the modes chosen for a spell or ability on the stack are distinct (a mode only a repeatable
+    // choice may repeat), in printed order and within the number its text lets the controller choose; a modal one that is on the stack for good
     // (not being cast, activated or put on the stack) has them chosen, and nothing else has any.
     const modal = obj.zone === 'stack' ? modalOfObject(obj, face?.spell) : null;
     const modes = obj.stack?.chosenModes ?? [];
     if (modes.length > 0 || modal !== null) {
       const choosing = state.casting?.object === id || state.triggering?.awaiting === id;
       const limit = Math.max(modal?.choose.max ?? 0, modal?.choose.maxIf?.max ?? 0);
+      const repeats = modal?.choose.repeatable === true;
       const inRange = modes.every(
         (m, i) =>
           Number.isInteger(m) &&
           m >= 0 &&
           m < (modal?.modes.length ?? 0) &&
-          (i === 0 || (modes[i - 1] ?? 0) < m),
+          (i === 0 || (repeats ? (modes[i - 1] ?? 0) <= m : (modes[i - 1] ?? 0) < m)),
       );
       const counted =
         modal !== null &&
@@ -232,6 +233,21 @@ export function checkInvariants(state: GameState): string[] {
       ) {
         problems.push(`${id} is a copy of a spell but is not a spell on the stack with no card`);
       }
+    }
+    // CR 708.2, 708.6 (D-308): a face-down object is a card on the battlefield (or phased out), and its label is its own among the face-down permanents.
+    if (obj.faceDown !== undefined) {
+      if (obj.zone !== 'battlefield' && obj.zone !== 'phased') {
+        problems.push(`${id} is face down but is in ${obj.zone}`);
+      }
+      if (obj.card === null || obj.token !== null) {
+        problems.push(`${id} is face down but is not a card`);
+      }
+      if (!(obj.faceDown.n >= 1))
+        problems.push(`${id} is face down with the label ${obj.faceDown.n}`);
+      const same = [...state.battlefield, ...(state.phased ?? [])].filter(
+        (other) => other !== id && state.objects[other]?.faceDown?.n === obj.faceDown?.n,
+      );
+      if (same.length > 0) problems.push(`${id} is face down with the label of ${same.join(', ')}`);
     }
     // A permanent that transformed after entering kicked may show a face without the keyword.
     // A copy of a spell shows the face it copies (D-129).

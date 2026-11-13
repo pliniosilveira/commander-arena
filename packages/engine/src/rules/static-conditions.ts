@@ -14,6 +14,7 @@ import { opponentsOf, seatsInOrder } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import {
   cardsInGraveyardHolds,
+  cardsInLibraryHolds,
   controlsCommander,
   enteredThisTurnHolds,
   lifeGainedThisTurnHolds,
@@ -87,6 +88,8 @@ export function staticConditionHolds(
       return lifeGainedThisTurnHolds(state, controllerOf(state, source), condition);
     case 'cardsInGraveyard': // D-229: the number of cards in a zone, which no layer changes
       return cardsInGraveyardHolds(state, controllerOf(state, source), condition.compare);
+    case 'cardsInLibrary': // D-331: the number of cards in a zone, which no layer changes
+      return cardsInLibraryHolds(state, controllerOf(state, source), condition.compare);
     case 'thisMatches':
       return matchesFilterWith(
         state,

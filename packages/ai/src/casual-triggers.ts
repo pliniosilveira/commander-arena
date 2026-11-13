@@ -14,15 +14,16 @@
  * its own weakest permanent for a harmful ability, the opponent's weakest for a helpful one. A slot
  * that may stay empty ("up to one") is left empty rather than aimed at the wrong side.
  */
-import type {
-  ChosenTarget,
-  Effect,
-  GameView,
-  PtAmount,
-  StackAbility,
-  TargetsDecision,
+import {
+  baseSpecId,
+  type ChosenTarget,
+  type Effect,
+  type GameView,
+  type PtAmount,
+  type StackAbility,
+  type TargetsDecision,
 } from '@commander-arena/engine';
-import { findObject, isCreature, powerOf, toughnessOf } from './casual-view';
+import { findObject, isCreature, manaValueOf, powerOf, toughnessOf } from './casual-view';
 
 type Stance = 'help' | 'harm';
 
@@ -38,6 +39,12 @@ export interface SlotPlan {
    * the opponent had lost for good would not have). Only the permanents of the battlefield are aimed at.
    */
   readonly battlefieldOnly?: true;
+  /**
+   * D-350: the slot is the card a `castCard` effect lets the agent cast ("you may cast target instant or sorcery card from a graveyard"), from any graveyard: the card
+   * with the highest mana value that the agent has the mana to cast is the best one, whoever owns it; a card it could not pay for is the last resort (the engine does not
+   * even ask about it).
+   */
+  readonly cast?: true;
 }
 
 /** The triggered ability on the stack that this targets decision is for, when it is one. */
@@ -122,6 +129,11 @@ export function planFor(effect: Effect, id: string): SlotPlan | null {
       return isTarget(effect.objects, id) ? (effect.to === 'battlefield' ? help() : harm()) : null;
     case 'attach':
       return isTarget(effect.to, id) ? help() : null;
+    case 'castCard':
+      // The mana is read from the view where the slot is scored (`manaAvailable`), as the ability goes on the stack.
+      return isTarget(effect.object, id)
+        ? { stance: 'help', damage: null, untap: false, cast: true }
+        : null;
     default:
       return null;
   }
@@ -129,6 +141,7 @@ export function planFor(effect: Effect, id: string): SlotPlan | null {
 
 /** How much the agent wants to choose `t` for a slot with this plan; below 0 means "avoid". */
 function score(view: GameView, t: ChosenTarget, plan: SlotPlan): number {
+  if (plan.cast !== undefined) return scoreCast(view, t);
   const wantsOpponent = plan.stance === 'harm';
   if (t.kind === 'player') return (t.seat !== view.viewer) === wantsOpponent ? 3 : -1;
   const o = findObject(view, t.id);
@@ -146,6 +159,24 @@ function score(view: GameView, t: ChosenTarget, plan: SlotPlan): number {
     return toughnessOf(o) - o.damage <= plan.damage ? value + 10 : 2;
   }
   return plan.untap && o.tapped ? value + 5 : value;
+}
+
+/** The mana the agent has now: its untapped lands and the mana in its pool (a count, the colors of the card are not read: the engine asks only about a card it could pay for). */
+function manaAvailable(view: GameView): number {
+  const pool = view.seats.find((s) => s.id === view.viewer)?.manaPool.length ?? 0;
+  const lands = view.battlefield.filter(
+    (o) => o.controller === view.viewer && o.types.includes('land') && !o.tapped,
+  ).length;
+  return pool + lands;
+}
+
+/** D-350: the card to cast from a graveyard: the most expensive one that fits the mana at hand scores highest (whoever owns it); one that does not fit scores 0. */
+function scoreCast(view: GameView, t: ChosenTarget): number {
+  if (t.kind !== 'object') return -1;
+  const o = findObject(view, t.id);
+  if (o === undefined) return -1;
+  const value = manaValueOf(o);
+  return value <= manaAvailable(view) ? 1 + value / 100 : 0;
 }
 
 /**
@@ -183,10 +214,11 @@ export function chooseTriggerTargets(
     ? { kind: 'sequence', effects: ability.modes.map((m) => m.effect) }
     : ability.effect;
   return d.specs.flatMap((slot) => {
-    const plan = planFor(effect, slot.specId) ?? HARM_BY_DEFAULT;
+    // D-344: the slot of a later instance of a repeated mode plans as the slot it repeats.
+    const plan = planFor(effect, baseSpecId(slot.specId)) ?? HARM_BY_DEFAULT;
     // D-270: a slot of two zones (the battlefield and graveyards): only the battlefield side is aimed at.
     const crossZone = ability.targets?.some(
-      (t) => t.id === slot.specId && t.what.kind === 'objectOrGraveyardCard',
+      (t) => t.id === baseSpecId(slot.specId) && t.what.kind === 'objectOrGraveyardCard',
     );
     return chooseSlot(view, slot, crossZone === true ? { ...plan, battlefieldOnly: true } : plan);
   });

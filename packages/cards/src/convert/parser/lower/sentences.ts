@@ -23,7 +23,7 @@ import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
 import { lowerClause } from './effects';
 import { type FeatureRef, missingFeatures } from './features';
-import { playerSelectorOf } from './nouns';
+import { lowerFilter, playerSelectorOf } from './nouns';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
 /**
@@ -878,6 +878,7 @@ function thisWaysOf(clause: IrClause): Extract<IrAmount, { kind: 'thisWay' }>[] 
         break;
       case 'half':
       case 'multiple':
+      case 'minus':
         visit(amount.of);
         break;
       case 'sum':
@@ -1034,6 +1035,50 @@ function lowerTrampleExcess(
   return { ok: true, value: [{ ...base, trampleExcess: true }], rule: clause.rule };
 }
 
+/** The engine features of "When you next cast an instant or sorcery spell this turn, copy that spell." (D-336). */
+export const NEXT_CAST_NEEDS: readonly FeatureRef[] = ['effect:delayedCast', 'effect:copySpell'];
+
+/**
+ * "When you next cast an instant or sorcery spell this turn, copy that spell. You may choose new targets for the copy." (D-336, CR 603.7, 603.7a, 603.7b, 514.2):
+ * the sentence is what a delayed triggered ability does, created as the spell or ability resolves, on the next cast by its controller of a spell the lead names; the
+ * engine's `delayedCast`. The only thing it can do is copy the spell that was cast (the engine's own limit, `validateCard`); a test, a "you may" or any other
+ * instruction in the sentence is not read inside it.
+ */
+function lowerNextCast(
+  sentence: IrSentence,
+  i: number,
+  steps: Step[],
+  ctx: LowerContext,
+): StepResult {
+  const stop = (failed: LowerFailure): StepResult => ({ stopped: failed });
+  const blocked = missingFeatures(NEXT_CAST_NEEDS);
+  if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+  const spell = sentence.delayed?.spell;
+  if (
+    spell === undefined ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.instead === true ||
+    sentence.clauses.some((c) => c.optional || c.condition !== undefined)
+  ) {
+    return stop(refuse(sentence));
+  }
+  const filter = lowerFilter(spell);
+  if (!filter.ok) return stop(filter);
+  const inner = lowerClauses(sentence.clauses, ctx);
+  if (!inner.ok) return stop(inner);
+  const effect = oneEffect(inner.value);
+  if (effect.kind !== 'copySpell' || effect.spell.kind !== 'triggerSubject') {
+    return stop(refuse(sentence));
+  }
+  steps.push({
+    effects: [{ kind: 'delayedCast', filter: filter.value, effect }],
+    replaceable: false,
+  });
+  return { last: i };
+}
+
 /**
  * "At the beginning of that combat, untap all creatures you control." (stage P41, D-188, CR 603.7, 500.8): the sentence is what a delayed triggered
  * ability of the combat phase the sentence before it added does. The sentence before it must be that one instruction (the engine's `extraCombat`, with
@@ -1134,6 +1179,8 @@ function lowerStep(
     // "there's an additional combat phase after this phase. At the beginning of that combat, untap all creatures you control." (stage P41, D-188, CR 603.7,
     // 500.8): what happens at the beginning of the combat phase the sentence before it added; it is the engine's `extraCombat` with `atBeginning`.
     if (step === 'thatCombat') return lowerAtThatCombat(sentence, i, steps, ctx);
+    // "When you next cast an instant or sorcery spell this turn, copy that spell." (D-336, CR 603.7, 603.7a): the engine's `delayedCast`.
+    if (step === 'nextCast') return lowerNextCast(sentence, i, steps, ctx);
     const blocked = missingFeatures(['effect:delayedTrigger']);
     if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
     // A test or a "you may" of the sentence is not read inside what a delayed ability does.

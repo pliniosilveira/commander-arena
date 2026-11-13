@@ -203,6 +203,10 @@ export function amountOf(
     const n = amountOf(state, amount.of, ctx, targets);
     return amount.round === 'down' ? Math.floor(n / 2) : Math.ceil(n / 2);
   }
+  // D-321, CR 107.1b: a negative result of a calculation counts as 0.
+  if (amount.kind === 'minus') {
+    return Math.max(0, amountOf(state, amount.of, ctx, targets) - amount.by);
+  }
   if (amount.kind === 'multiple') return amount.factor * amountOf(state, amount.of, ctx, targets);
   if (amount.kind === 'sum') {
     return amount.of.reduce<number>((n, part) => n + amountOf(state, part, ctx, targets), 0);

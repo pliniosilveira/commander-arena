@@ -125,6 +125,12 @@ export function beginCast(
   resolving = false,
   /** The spell is cast as the effect of its suspend ability (CR 702.62a, D-128): a creature spell gains haste. */
   suspended = false,
+  /**
+   * What the effect that lets the card be cast says about that one spell (D-350): `anyManaType` ("mana of any type can be spent to cast that spell", CR 609.4b) and
+   * `exileInstead` ("If that spell would be put into a graveyard, exile it instead", CR 614.1a). With `resolving` and no alternative cost the spell is cast
+   * paying its mana cost, from the graveyard it is in (`castCard`).
+   */
+  riders: { readonly anyManaType?: boolean; readonly exileInstead?: boolean } = {},
 ): Result {
   const obj = getObject(state, objectId);
   // CR 722.3c (D-214): the copy of a prepare spell is cast as its own face.
@@ -135,7 +141,12 @@ export function beginCast(
           state,
           seat,
           obj,
-          alternative === 'madness' || alternative === 'miracle' ? alternative : 'free',
+          alternative === 'madness' || alternative === 'miracle'
+            ? alternative
+            : alternative === undefined
+              ? 'normal' // D-350: cast as an effect allows, paying its mana cost
+              : 'free',
+          riders.anyManaType === true,
         )
       : !canCast(state, seat, obj, alternative, face)
   ) {
@@ -153,14 +164,16 @@ export function beginCast(
   const zone = resolving
     ? obj.zone === 'hand'
       ? 'hand'
-      : 'exile'
+      : obj.zone === 'graveyard'
+        ? 'graveyard' // D-350: "cast target instant or sorcery card from a graveyard"
+        : 'exile'
     : castZone(state, seat, obj, alternative, face);
   if (zone === null) return fail('That card is not in a zone it can be cast from');
 
   // CR 601.2a: move the card to the stack, with the chosen face up (CR 709.3, 712.11b, 715.3);
   // the caster becomes its controller.
   const graveyardUse =
-    zone === 'graveyard' && !mayCastFromGraveyard(state, seat, obj)
+    zone === 'graveyard' && !resolving && !mayCastFromGraveyard(state, seat, obj)
       ? graveyardPlayPermission(state, seat, obj, false)
       : null;
   const moved = moveObject(state, { object: objectId, to: 'stack', face });
@@ -189,6 +202,9 @@ export function beginCast(
         ? { byEffect: true as const }
         : {}),
       ...(suspended ? { suspended: true as const } : {}),
+      // D-350: what the effect that let the card be cast says about this spell.
+      ...(riders.anyManaType === true ? { anyManaType: true as const } : {}),
+      ...(riders.exileInstead === true ? { exileInstead: true as const } : {}),
       // D-151: "If you cast a creature spell this way, it gains haste until end of turn".
       ...(zone === 'library' && libraryCastPermission(state, seat, obj)?.gainsHaste === true
         ? { hasteUntilEnd: true as const }
@@ -960,7 +976,12 @@ export function answerPayment(
   // does not count (CR 106.6, 605.3a), and `finish` goes on to the rest of the cost.
   const spell = activation
     ? abilitySpend(state, activation.source)
-    : { types: derivedSpell.types, subtypes: derivedSpell.subtypes };
+    : {
+        types: derivedSpell.types,
+        subtypes: derivedSpell.subtypes,
+        // D-351 (CR 609.4b): "mana of any type can be spent to cast that spell".
+        ...(spellObject.stack?.anyManaType === true ? { anyType: true as const } : {}),
+      };
   const sacrifice = casting.extra?.sacrifice ?? null;
   const tap = casting.extra?.tap;
   const finish = (s: GameState, events: GameEvent[]): Result => {
@@ -1038,7 +1059,11 @@ function abilitySpend(state: GameState, source: ObjectId) {
 function withSpentRiders(
   state: GameState,
   casting: NonNullable<GameState['casting']>,
-  spell: { readonly types: readonly string[]; readonly subtypes: readonly string[] },
+  spell: {
+    readonly types: readonly string[];
+    readonly subtypes: readonly string[];
+    readonly colors: readonly string[];
+  },
   riders: readonly ManaRider[],
 ): GameState {
   if (casting.activation !== null) return state;
@@ -1047,6 +1072,10 @@ function withSpentRiders(
       return false;
     }
     if (r.subtypes !== undefined && !spell.subtypes.some((t) => r.subtypes?.includes(t) === true)) {
+      return false;
+    }
+    // D-328: "a red instant or sorcery spell": the spell is of one of the colors (CR 105.2: a colorless spell is of none).
+    if (r.colors !== undefined && !spell.colors.some((c) => r.colors?.includes(c) === true)) {
       return false;
     }
     if (r.commander === true) {
@@ -1103,9 +1132,32 @@ function withSpentRiders(
       subject: r.countCommanderCasts === true ? casting.object : null,
     });
   }
-  return scries.length === 0
+  // D-328 (CR 106.6, 603.2, 603.7a, 707.10): "When that mana is spent to cast a red instant or sorcery spell, copy that spell": a triggered ability of the
+  // permanent that made the mana, for each mana spent, which waits to go on the stack above the spell. The spell it copies is its subject (the spell
+  // the mana was spent on, read from last-known information if it has left the stack, CR 113.7a), so the copy is put on the stack above the original.
+  const copies: PendingTrigger[] = [];
+  for (const r of riders) {
+    if (r.kind !== 'copy' || r.source === undefined || !matches(r)) continue;
+    copies.push({
+      source: r.source,
+      controller: casting.seat,
+      abilityIndex: -1,
+      ability: {
+        kind: 'triggered',
+        trigger: { kind: 'step', step: 'endStep', whose: 'you' },
+        effect: {
+          kind: 'copySpell',
+          spell: { kind: 'triggerSubject' },
+          newTargets: r.newTargets ?? 'may',
+        },
+      },
+      subject: casting.object,
+    });
+  }
+  const triggers = [...scries, ...copies];
+  return triggers.length === 0
     ? next
-    : { ...next, pendingTriggers: [...next.pendingTriggers, ...scries] };
+    : { ...next, pendingTriggers: [...next.pendingTriggers, ...triggers] };
 }
 
 /**

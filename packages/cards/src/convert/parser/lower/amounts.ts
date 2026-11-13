@@ -260,6 +260,17 @@ export function lowerAmount(
       if (!of.ok) return of;
       return { ok: true, value: { kind: 'multiple', factor: amount.factor, of: of.value }, rule };
     }
+    case 'minus': {
+      // CR 107.1b (D-321): `of` less a whole number of 1 or more, a negative result counting as 0.
+      const blocked = needs('minus');
+      if (blocked !== null) return blocked;
+      if (!Number.isSafeInteger(amount.by) || amount.by < 1) {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const of = lowerAmount(amount.of, ctx, rule);
+      if (!of.ok) return of;
+      return { ok: true, value: { kind: 'minus', of: of.value, by: amount.by }, rule };
+    }
     case 'sum': {
       const blocked = needs('sum');
       if (blocked !== null) return blocked;
@@ -518,6 +529,7 @@ export const AMOUNT_NEEDS = [
   'amount:colorsAmong',
   'amount:half',
   'amount:multiple',
+  'amount:minus',
   'amount:sum',
   'amount:opponentsWithMore',
   'amount:thisWay',

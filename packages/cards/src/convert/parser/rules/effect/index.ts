@@ -47,6 +47,10 @@ import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
 import { EFFECT_ADD_ADDITIONAL_MANA, EFFECT_ADD_MANA, EFFECT_CHOOSE_COLOR } from './mana';
 import { MELD_EFFECT_RULES } from './meld';
+import { NIV_EFFECT_RULES } from './niv';
+import { NIV_GROUP_2B_B_EFFECT_RULES } from './niv-group-2b-b';
+import { NIV_GROUP_3_A_EFFECT_RULES } from './niv-group-3-a';
+import { NIV_GROUP_3_C_EFFECT_RULES } from './niv-group-3-c';
 import {
   type Clauses,
   DAMAGE_RECIPIENTS,
@@ -58,12 +62,14 @@ import {
   UNDER_CONTROL,
 } from './operands';
 import { EFFECT_PAY } from './pay';
+import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
 import {
   EFFECT_DISCARD,
   EFFECT_DISCARD_HAND,
   EFFECT_DRAW,
   EFFECT_LIFE,
+  EFFECT_MANIFEST,
   EFFECT_MILL,
   EFFECT_PLAYER,
   EFFECT_SHUFFLE,
@@ -807,6 +813,12 @@ export const EFFECT_RULES = [
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
   ...KORVOLD_EFFECT_RULES,
+  // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
+  ...NIV_EFFECT_RULES,
+  ...NIV_GROUP_2B_B_EFFECT_RULES,
+  // D-337: "copy it for each time you've cast your commander from the command zone this game".
+  ...NIV_GROUP_3_A_EFFECT_RULES,
+  ...NIV_GROUP_3_C_EFFECT_RULES,
   ...CONTROL_EFFECT_RULES,
   // Stage P44 (D-195): "starting with you, each player votes for profit or security".
   ...VOTE_EFFECT_RULES,
@@ -845,6 +857,8 @@ export const EFFECT_RULES = [
   ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
+  // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. ..." (three sentences kept together).
+  ...PILES_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.
   ...ARTIFACT_EFFECT_RULES,
   EFFECT_TAP,
@@ -861,6 +875,7 @@ export const EFFECT_RULES = [
   EFFECT_DISCARD_HAND,
   EFFECT_DISCARD,
   EFFECT_LIFE,
+  EFFECT_MANIFEST,
   EFFECT_MILL,
   EFFECT_SHUFFLE,
   ...SACRIFICE_RULES,

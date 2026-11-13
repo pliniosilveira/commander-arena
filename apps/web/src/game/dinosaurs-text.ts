@@ -73,7 +73,7 @@ export function productionWords(production: ManaProduction): string | null {
       return 'one mana of the chosen color';
     case 'anyCombination':
       // D-151 (CR 106.1b): "Add two mana in any combination of colors".
-      return anyCombinationWords(production.count);
+      return anyCombinationWords(production.count, production.distinct === true);
     default:
       return null;
   }

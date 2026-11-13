@@ -59,6 +59,7 @@ import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
 import { loseTheGame } from './lose-game';
 import { manaValueOfCost } from './mana-value';
+import { runManifest } from './manifest';
 import { runMayCast, runPaidReflexive, runReflexive } from './may-effects';
 import { runMeld } from './meld';
 import { successorsOf } from './melded';
@@ -68,6 +69,7 @@ import { becomeMonarch } from './monarch';
 import { isCardZoneChoice, runChooseMove } from './move-choice';
 import { nextMainStep } from './next-main';
 import { phaseOut } from './phasing';
+import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
@@ -110,6 +112,7 @@ export type EffectInstruction = Exclude<
   | { kind: 'copySpell' }
   | { kind: 'changeTarget' }
   | { kind: 'castFree' }
+  | { kind: 'castCard' }
 >;
 
 export function runInstruction(
@@ -166,6 +169,7 @@ export function runInstruction(
   if (instruction.kind === 'drawUpTo') return runDrawUpTo(state, res, instruction);
   if (instruction.kind === 'lookTake') return runLookTake(state, res, instruction);
   if (instruction.kind === 'lookSplit') return runLookSplit(state, res, instruction);
+  if (instruction.kind === 'pileSeparate') return runPileSeparate(state, res, instruction);
   if (instruction.kind === 'behold') return runBehold(state, res, instruction);
   if (instruction.kind === 'putOnTop') return runPutOnTop(state, res, instruction);
   if (instruction.kind === 'confirmOptional') {
@@ -855,13 +859,16 @@ function runEffect(
       const spells = resolveObjects(state, effect.spell, ctx, targets).filter(
         (id) => copiedSpell(state, id) !== null,
       );
+      // D-337 (CR 707.10, 903.8): "copy it for each time you've cast your commander from the command zone this game": the count is read as this resolves; none
+      // when it is zero (copyInstructions makes nothing for it).
+      const copies = effect.count === undefined ? 1 : amountOf(state, effect.count, ctx, targets);
       return {
         ...done(
           state,
           [],
-          spells.flatMap((id) => copyInstructions(id, 1, effect.newTargets)),
+          spells.flatMap((id) => copyInstructions(id, copies, effect.newTargets)),
         ),
-        performed: spells.length,
+        performed: copies > 0 ? spells.length : 0,
       };
     }
 
@@ -970,6 +977,24 @@ function runEffect(
             ability,
             ...(player === undefined ? {} : { player }),
           },
+        ],
+      });
+    }
+
+    case 'delayedCast': {
+      // CR 603.7, 603.7a, 603.7b, 603.7d, 514.2 (D-336): "When you next cast an instant or sorcery spell this turn, copy that spell": a delayed triggered
+      // ability of the controller of the spell or ability as it resolved, on a cast by that player of a spell the filter names. It is found after events that
+      // happen after this (`findDelayedTriggers`: the cast that made it is already past), triggers once and ends with the turn.
+      const ability: TriggeredAbility = {
+        kind: 'triggered',
+        trigger: { kind: 'castSpell', filter: effect.filter, by: 'you' },
+        effect: effect.effect,
+      };
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          { source: res.source, controller: res.controller, ability, untilEndOfTurn: true },
         ],
       });
     }
@@ -1172,12 +1197,19 @@ function runEffect(
             : n,
         0,
       );
+      // D-327 (CR 400.7j): the cards milled are what `moved` names afterwards ("Mill a card. You may play that card this turn."): new objects in the graveyard.
+      const cardsMilled = events.flatMap((e) => (e.kind === 'milled' ? e.objects : []));
       return {
         ...done(next, events),
         performed: milled,
+        lastMoved: cardsMilled,
         ...(value > 0 ? { thisWay: { milledValue: value } } : {}),
       };
     }
+
+    case 'manifest':
+      // CR 701.40a (D-309): the top card of a library goes onto the battlefield face down as a 2/2 creature.
+      return runManifest(state, effect, ctx, targets);
 
     case 'gainLife':
     case 'loseLife': {
@@ -1601,6 +1633,12 @@ function runEffect(
       );
     }
 
+    case 'revealAndSeparate': {
+      // D-303 (CR 700.3, 701.20): "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your
+      // graveyard" (rules/pile-separate.ts).
+      return startPileSeparate(state, res, effect, amountOf(state, effect.count, ctx, targets));
+    }
+
     case 'lookAtTop': {
       // D-139: "look at the top six cards ... You may reveal an artifact card from among them and put it into your hand ... the rest on the
       // bottom in a random order" (rules/look-take.ts).
@@ -1627,8 +1665,29 @@ function runEffect(
             ...(effect.take.totalManaValue === undefined
               ? {}
               : { totalManaValue: effect.take.totalManaValue }),
+            // D-324 (CR 701.20a): "Put two of them into your hand" does not reveal them.
+            ...(effect.take.hidden === true ? { hidden: true as const } : {}),
             rest: effect.rest,
             chosen: null,
+          },
+        ],
+      );
+    }
+
+    case 'castCard': {
+      // CR 608.2g, 608.2b (D-350): "you may cast target [card] from a graveyard": the target, if it is still a legal one (rules/cast-card.ts).
+      const [card] = resolveObjects(state, effect.object, ctx, targets);
+      if (card === undefined) return done(state);
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'castCard',
+            stage: 'start',
+            card,
+            anyManaType: effect.anyManaType === true,
+            exileInstead: effect.exileInstead === true,
           },
         ],
       );

@@ -127,6 +127,15 @@ export interface GameObject {
    */
   readonly ringBearer?: SeatId;
   /**
+   * Present on a face-down permanent (CR 708.2, 701.40a, D-308): it has only the characteristics the rules give a face-down permanent (a 2/2 creature with no name, no
+   * subtypes, no mana cost, no text: layer 1b, `rules/copiable.ts`) until it is turned face up (CR 708.8). `by` is what made it face down (`'manifest'`; the later kinds,
+   * Morph, Megamorph, Disguise, cloak, would be other values) and `n` its label number, the smallest positive integer no other face-down permanent has, which it keeps
+   * for as long as it is face down so that a player can tell their face-down permanents apart (CR 708.6). It is a designation, not a copiable value, and the object's own:
+   * a new object after any zone change (CR 400.7, 708.9) is face up. Read only through `rules/face-down.ts`, never as the field (`test/face-down-reads.test.ts`). Absent
+   * for every face-up object.
+   */
+  readonly faceDown?: { readonly by: FaceDownBy; readonly n: number };
+  /**
    * The pairing designation (CR 702.95b, D-285): present on a creature that is paired with another, naming the other (`with`) and the player who formed the
    * pair (`by`, the controller of the soulbond ability: both are under their control). It is on both objects. It is a designation, not a copiable value (a
    * copy or a token that copies a paired creature is unpaired) and a new object after any zone change (CR 400.7, 702.95e) has none. It ends when either
@@ -238,6 +247,9 @@ export interface GameObject {
    */
   readonly riotHaste?: true;
 }
+
+/** What made a permanent face down (D-308): only `manifest` is built. The face-down proposal's Morph, Megamorph and Disguise, and cloak, would be more values. */
+export type FaceDownBy = 'manifest';
 
 /** The choices made as a permanent entered (D-100). A face asks at most one question, so one field is set. */
 export interface ChosenValues {
@@ -376,6 +388,17 @@ export interface StackData {
    * `free` and `flashback` alternatives (they have their own fields) and for an ability.
    */
   readonly alt?: NamedAlternativeKind;
+  /**
+   * True when an effect lets mana of any type be spent to cast this spell (D-351, CR 609.4b: "mana of any type can be spent to cast that spell"): any mana pays any
+   * mana symbol of its cost, colored or colorless. A spend restriction of the mana itself and the snow of {S} still apply. Absent otherwise, and for an ability.
+   */
+  readonly anyManaType?: true;
+  /**
+   * True when an effect says "If that spell would be put into a graveyard, exile it instead" (D-352, CR 614.1a): when this spell would leave the stack for a graveyard
+   * (it resolved, was countered, fizzled) the card is put into exile instead. It belongs to the spell, not to a permanent: it ends when the card becomes another object
+   * (CR 400.7). Absent otherwise, and for an ability.
+   */
+  readonly exileInstead?: true;
   /**
    * True when the spell was cast as the effect of a resolving ability allows (CR 608.2g, Cascade, D-120), which
    * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own.
@@ -660,6 +683,11 @@ export interface DelayedTrigger {
    * next turn's upkeep" names the player who controlled the countered spell. The effect reads it as `triggerPlayer`.
    */
   readonly player?: SeatId;
+  /**
+   * "When you next cast an instant or sorcery spell this turn" (D-336, CR 603.7, 514.2): the ability ends, unused, in the cleanup step of the turn it was
+   * created in. Absent for the abilities that wait for a step, which may wait for a later turn.
+   */
+  readonly untilEndOfTurn?: true;
 }
 
 /**
@@ -999,6 +1027,24 @@ export type Instruction =
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
+   * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (`revealAndSeparate`,
+   * D-303, CR 700.3): `seat` is the controller, who receives the piles; `separator` makes them and `chooser` picks which goes where; `cards` are the cards revealed, top first, still
+   * in the library. `chosen` is the answer to the question being asked (the cards of pile 1 while the separator is asked); `first` is pile 1 once made; `pick` the pile that was
+   * chosen. See rules/pile-separate.ts.
+   */
+  | {
+      readonly kind: 'pileSeparate';
+      readonly seat: SeatId;
+      readonly separator: SeatId;
+      readonly chooser: SeatId;
+      readonly cards: readonly ObjectId[];
+      readonly chosenTo: 'hand' | 'graveyard';
+      readonly otherTo: 'hand' | 'graveyard';
+      readonly first?: readonly ObjectId[];
+      readonly chosen: readonly ObjectId[] | null;
+      readonly pick?: 1 | 2;
+    }
+  /**
    * "Look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest
    * on the bottom of your library in a random order" (`lookAtTop`, D-139), in two stages: `take` looks, asks which matching cards to take
    * (`chosen` is null until answered; no question when none matches) and moves them to the hand; `rest` puts `left` (the cards looked at
@@ -1020,7 +1066,10 @@ export type Instruction =
       readonly manaValueAtMost?: number;
       /** The most the mana values of the cards taken may add up to (`take.totalManaValue`, D-230). */
       readonly totalManaValue?: number;
-      readonly rest: 'bottomRandom' | 'graveyard' | 'top';
+      /** The cards taken are not revealed (`take.hidden`, D-324): "Put two of them into your hand". */
+      readonly hidden?: true;
+      /** `bottomChosen` (D-324): the rest go on the bottom in the order their owner chooses (an `arrange` instruction of purpose 'bottom'). */
+      readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen';
       readonly chosen: readonly ObjectId[] | null;
       readonly left?: readonly ObjectId[];
     }
@@ -1116,13 +1165,17 @@ export type Instruction =
    * `seat` looks at the top `count` cards of their library (fewer when it holds fewer) and arranges
    * them. `arranged` is null until they have answered the `arrangeCards` decision (nothing is asked
    * for no card, and for one card that can only go back where it is); then the library is reordered
-   * and, for a surveil, the cards put into the graveyard are moved. See rules/arrange.ts.
+   * and, for a surveil, the cards put into the graveyard are moved. Purpose `bottom` (D-324, CR 401.4:
+   * "put the rest on the bottom of your library in any order") arranges `cards`, the cards named by
+   * the effect that are still in the library, which go to the bottom in the order chosen (answered in
+   * `other`); `count` is how many there are. See rules/arrange.ts.
    */
   | {
       readonly kind: 'arrange';
-      readonly purpose: 'scry' | 'surveil' | 'reorder';
+      readonly purpose: 'scry' | 'surveil' | 'reorder' | 'bottom';
       readonly seat: SeatId;
       readonly count: number;
+      readonly cards?: readonly ObjectId[];
       readonly arranged: {
         readonly top: readonly ObjectId[];
         readonly other: readonly ObjectId[];
@@ -1266,6 +1319,19 @@ export type Instruction =
       readonly mode: 'suspend' | 'madness' | 'miracle';
       readonly stage: 'start' | 'ask';
       readonly card: ObjectId | null;
+    }
+  /**
+   * "You may cast target instant or sorcery card from a graveyard" (`castCard`, D-350, CR 608.2g): the resolution of the effect. `start` looks at `card` (the
+   * target as it is now: it must still be in a graveyard, CR 608.2b) and goes on to `ask` when it could be cast, else it ends and the card stays where it is. `ask`
+   * asks the controller (`confirmOptional`, purpose 'castCard', the card as `subject`); accepting begins the cast as CR 608.2g says (no player gets priority) and the
+   * riders the effect carries become part of the spell on the stack (`StackData.anyManaType`, `exileInstead`), declining ends the effect. See rules/cast-card.ts.
+   */
+  | {
+      readonly kind: 'castCard';
+      readonly stage: 'start' | 'ask';
+      readonly card: ObjectId;
+      readonly anyManaType: boolean;
+      readonly exileInstead: boolean;
     }
   /**
    * "You may [effect]" inside an effect (D-111): the controller of the resolving spell or ability is asked

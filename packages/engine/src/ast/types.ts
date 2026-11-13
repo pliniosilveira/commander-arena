@@ -170,6 +170,12 @@ export type Amount =
    * of a power or toughness that may be negative is `times` of a `PtAmount`.)
    */
   | { readonly kind: 'multiple'; readonly factor: number; readonly of: Amount }
+  /**
+   * "The number of cards in your hand minus 4" (CR 107.1b, D-321): `of` less `by`, a negative result counting as 0 (CR 107.1b: "if a calculation or
+   * comparison would use a negative number, it uses 0 instead"). `by` is a whole number of 1 or more. Read as the instruction runs, like the amount it
+   * is made of. Not for a static ability's power or toughness.
+   */
+  | { readonly kind: 'minus'; readonly of: Amount; readonly by: number }
   /** "The number of Zombies on the battlefield plus the number of Zombie cards in all graveyards" (D-131): the sum of two or more amounts. */
   | { readonly kind: 'sum'; readonly of: readonly Amount[] }
   /**
@@ -1199,6 +1205,18 @@ export type Effect =
    */
   | { readonly kind: 'mill'; readonly player: PlayerSelector; readonly count: Amount }
   /**
+   * CR 701.40 (Manifest, D-309): the player `player` names manifests the top card of a library: it is put onto the battlefield face down as a 2/2 creature
+   * (CR 701.40a, 708.2a) under that player's control, and stays one until it is turned face up (the special action `turnFaceUp`, CR 701.40b). The library is
+   * the same player's, or `fromLibraryOf`'s when that is given ("the top card of target opponent's library"). "Its controller manifests the top card of their
+   * library" is `player: controllerOf` the exiled object (last-known information). An empty library manifests nothing (CR 701.40f: the card stays where it
+   * was; milling and manifesting from an empty library lose nothing). Cloak (CR 701.58) and manifest dread (CR 701.62) are other effects, not built.
+   */
+  | {
+      readonly kind: 'manifest';
+      readonly player: PlayerSelector;
+      readonly fromLibraryOf?: PlayerSelector;
+    }
+  /**
    * CR 701.8 (Destroy). `cantBeRegenerated` is "It can't be regenerated" (CR 701.19c, D-120): the
    * regeneration shields of the permanents it destroys are not applied (they stay until they end).
    */
@@ -1515,6 +1533,12 @@ export type Effect =
       readonly kind: 'copySpell';
       readonly spell: ObjectRef;
       readonly newTargets: 'may' | 'no';
+      /**
+       * "Copy it for each time you've cast your commander from the command zone this game" (D-337, CR 707.10, 707.10c, 903.8): how many copies, an amount read as the
+       * effect resolves (a controller, no X and no target: the validator allows what a delayed effect's amount may read). Left out, one copy. Zero is a legal count and
+       * makes none. Each copy may have new targets when `newTargets` is `may` (CR 707.10c).
+       */
+      readonly count?: Amount;
     }
   /**
    * "Change the target of target spell or ability with a single target." (CR 115.7a, 115.7b, D-181): the controller of the resolving spell or
@@ -1585,6 +1609,20 @@ export type Effect =
        * the controller's next turn); `whose` is then `you`.
        */
       readonly at: { readonly step: TriggerStep | 'nextMain'; readonly whose: 'you' | 'each' };
+      readonly effect: Effect;
+    }
+  /**
+   * "When you next cast an instant or sorcery spell this turn, copy that spell" (D-336, CR 603.7, 603.7a, 603.7b, 603.7c, 603.7d, 514.2): the effect creates a delayed
+   * triggered ability of the controller of the spell or ability that creates it (CR 603.7d), whose trigger is `castSpell` by that player of a spell `filter`
+   * names. It waits for an event after it was created (CR 603.7a: the spell that made it is not one it sees), triggers once, at the next such cast (CR 603.7b: a spell
+   * that does not match does not use it up), and ends with the turn if it has not (the cleanup step, CR 514.2: "this turn"). Its source is the source of the
+   * spell or ability that created it, which may be gone (the creature sacrificed to activate it, CR 603.7d, 603.7e), and it does not depend on it. `effect` is what the ability does when it triggers; it is about the spell cast
+   * (`triggerSubject`), the only thing it can name (CR 603.7c: nothing else of the spell or ability is left to name): `copySpell` of the spell cast, with a
+   * count that is an `Amount` of the game as it resolves. `filter` is a filter of spells (`stackKind: 'spell'`, as the `castSpell` trigger's).
+   */
+  | {
+      readonly kind: 'delayedCast';
+      readonly filter: ObjectFilter;
       readonly effect: Effect;
     }
   /**
@@ -2132,12 +2170,20 @@ export type Effect =
          * have this total mana value or less (their mana values added), not each. With `to: 'battlefield'`; `max` is the most cards (the number looked at).
          */
         readonly totalManaValue?: number;
+        /**
+         * "Put two of them into your hand" (Stock Up, D-324): the cards taken are put into the hand without being revealed, so the other players learn nothing of them
+         * (CR 401.5, 701.20a: nothing says reveal). Only with `to: 'hand'` (or left out); every other take reveals (the cards go to the hand or the battlefield) or hides
+         * already (`exileFaceDown`). With `min` equal to `max` and as many cards matching as `min`, nothing is asked: they are all taken.
+         */
+        readonly hidden?: true;
       };
       /**
        * What happens to the cards looked at and not taken: the bottom of the library in a random order, the graveyard, or (D-151, "look at the top card of
-       * your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand") `top`: they stay where they are.
+       * your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand") `top`: they stay where they are. `bottomChosen`
+       * (D-324, "the rest on the bottom of your library in any order", CR 401.4): the bottom of the library in the order the controller (who owns the cards
+       * looked at) chooses, an `arrangeCards` decision of purpose `bottom`; the order stays hidden.
        */
-      readonly rest: 'bottomRandom' | 'graveyard' | 'top';
+      readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen';
     }
   /**
    * "Proliferate" (CR 701.34a, D-149): the controller chooses any number of permanents and/or players that have a counter, and each chosen
@@ -2164,6 +2210,23 @@ export type Effect =
         | Extract<ObjectRef, { readonly kind: 'moved' | 'linkedExile' }>
         | ChooseSelector;
       readonly play?: true;
+    }
+  /**
+   * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it
+   * instead" (D-350, CR 608.2g, 601.2, 609.4b, 614.1a, 400.7): as this resolves the controller may cast the card `object` names (a target, a card in a graveyard of any
+   * player: the effect names it, so the card need not be theirs) paying its mana cost as the cast of CR 608.2g says: the steps of CR 601.2a-i (modes, targets, additional
+   * costs; no timing restriction), no player receives priority and the effect goes on resolving. The card is asked about only when it could be cast now (its targets, its
+   * cost payable: a card that could not be is left where it is). The two riders belong to that one spell, as it is on the stack: `anyManaType` ("mana of any type can be spent to
+   * cast that spell", CR 609.4b: any mana pays any symbol of its cost, colored or colorless, while a restriction of the mana itself and the snow of {S} still apply) and
+   * `exileInstead` ("If that spell would be put into a graveyard, exile it instead": when it leaves the stack for a graveyard, resolved, countered or any other way, it goes
+   * to exile; the card keeps its owner, and exile is not a zone of anyone, CR 400.7). A permanent spell that resolves is not put into a graveyard, so the replacement does nothing
+   * to it until it would be.
+   */
+  | {
+      readonly kind: 'castCard';
+      readonly object: Extract<ObjectRef, { readonly kind: 'target' }>;
+      readonly anyManaType?: true;
+      readonly exileInstead?: true;
     }
   /**
    * CR 701.14 (Fight, D-145): each creature in `fighters` fights a creature in `against`: the two deal damage equal to their own power to
@@ -2215,6 +2278,21 @@ export type Effect =
       readonly hand: number;
       readonly bottom: number;
       readonly exile: number;
+    }
+  /**
+   * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (Fact or Fiction,
+   * D-303, CR 700.3, 701.20): the controller reveals the top `count` cards of their library (fewer when it holds fewer; the cards stay in the library while they are sorted, CR 700.3c).
+   * One player separates them into two piles, either of which may be empty (CR 700.3a, 700.3d), and the other player chooses a pile: the first opponent in turn order still in the
+   * game and the controller. `separator` says who makes the piles: `opponent` ("An opponent separates those cards into two piles", the controller then chooses) or `you` ("separate
+   * them into two piles. An opponent chooses one of those piles"). The pile that is chosen goes to `chosenTo` and the other to `otherTo` (the hand or the graveyard of the
+   * controller; the two differ), the chosen pile first, each from the top of the library down. A library of fewer than two cards has nothing to separate (D-303).
+   */
+  | {
+      readonly kind: 'revealAndSeparate';
+      readonly count: Amount;
+      readonly separator: 'opponent' | 'you';
+      readonly chosenTo: 'hand' | 'graveyard';
+      readonly otherTo: 'hand' | 'graveyard';
     }
   /**
    * "Put N cards from your hand on top of your library in any order" (Brainstorm's second half): the
@@ -2300,9 +2378,10 @@ export type ManaProduction =
   /**
    * "Add two mana in any combination of colors." (D-151, CR 106.1b, 605.3b): `count` mana, each of a color of the five (colorless is not a color), chosen
    * independently as the ability resolves, so the activation names the combination (the same `combination` answer a filter land gets). At
-   * least 2.
+   * least 2. `distinct: true` (D-319, "Add two mana of different colors."): no color is chosen twice, so the combinations are the sets of `count` different
+   * colors of the five (ten pairs for two mana; colorless is not a color, CR 105.1, 106.1b, so never one of them). At most 4 mana still.
    */
-  | { readonly kind: 'anyCombination'; readonly count: number }
+  | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
   | {
       readonly kind: 'anyColor';
       /**
@@ -2531,6 +2610,21 @@ export type Trigger =
       readonly what: TriggerSubject;
       readonly to: 'player' | 'opponent' | 'creature' | 'any';
       readonly filter?: ObjectFilter;
+    }
+  /**
+   * "Whenever a source you control deals noncombat damage to an opponent" (CR 120.2b, 603.2, 603.2c, D-333): once for each source and each player it
+   * damages, as the damage is dealt, however it was dealt (a spell, an ability, a permanent's trigger) except combat damage (CR 120.2a). Any
+   * object can be the source, a spell on the stack and a permanent that has left included (its controller is read as it last was, CR 113.7a), so it is
+   * not a permanent with a filter: `by` names whose source it is (`you`: a source the controller of this ability controls; `any`) and `to` the player
+   * damaged (`opponent`: a player the controller of this ability does not control; `player`: any player). Damage that is prevented entirely, or is 0,
+   * is not dealt (CR 120.8, 603.2g) and triggers nothing; damage that is redirected to a permanent (CR 614.9) is not dealt to a player. Damage that
+   * several sources deal at once, or one source deals to several players, is several events and triggers once for each (CR 603.2c). `triggerDamage` is
+   * the amount that source dealt to that player ("that much") and `triggerPlayer` the player damaged.
+   */
+  | {
+      readonly kind: 'noncombatDamageDealt';
+      readonly by: 'you' | 'any';
+      readonly to: 'opponent' | 'player';
     }
   /**
    * "Whenever [a creature | this] is dealt damage" (CR 120.3, 603.2, D-133): once for each source that deals damage to
@@ -3235,6 +3329,12 @@ export type Condition =
    */
   | { readonly kind: 'cardsInGraveyard'; readonly compare: NumberComparison }
   /**
+   * "As long as there are no cards in your library", "while your library has no cards in it" (D-331, CR 401.1): the number of cards in the library of the
+   * controller of the thing that asks meets the comparison (`atMost` 0 is "no cards"). Like `cardsInGraveyard` it reads no characteristic, so a static
+   * ability that works in layer 4 or 7b may have it; it is also the `while` of a `skipDraw` replacement.
+   */
+  | { readonly kind: 'cardsInLibrary'; readonly compare: NumberComparison }
+  /**
    * "If it escaped", "unless it escaped" (CR 702.138b, D-124): the spell that is resolving, or the permanent (and
    * its last-known information once it has left), was cast from a graveyard with an escape ability.
    * "Unless it escaped" is `not` of this. Only on a face that lists an escape cost.
@@ -3428,6 +3528,13 @@ export type Condition =
    * after replacement, summed; a gain of 0 is no event, CR 119.9). Reads the turn log only, so it is read as the event happens and again as the ability resolves.
    */
   | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
+  /**
+   * "Activate only if you've cast three or more spells this turn" (CR 602.5b, 601.2i, D-318): the controller of the condition has cast at least
+   * `atLeast` spells this turn (`SeatState.spellsCastThisTurn`: a spell counts once it is on the stack with its costs paid, whether or not it
+   * resolved or was countered; a copy is not cast, CR 707.10, and an opponent's spell is not the controller's). Reads a count, so it is read as
+   * the ability is activated. Not for a static ability.
+   */
+  | { readonly kind: 'spellsCastThisTurn'; readonly atLeast: number }
   /**
    * "If the result is 1", "if the result is 10 or more" (CR 706.2, 706.3a, D-271): the result of the latest `rollDie` of this resolution against a whole number.
    * Only in a `conditional` after a `rollDie` of the same sequence (`validateCard` checks it); false if no die was rolled.
@@ -3662,7 +3769,17 @@ export type Replacement =
       readonly you: boolean;
       /** The other permanents among the recipients ("other permanents you control"): no zone, `controller: 'you'`. */
       readonly permanents?: ObjectFilter;
-    };
+    }
+  /**
+   * "If you would draw a card, skip that draw instead." (D-332, CR 614.1a, 614.11, 121.6): a replacement effect of a permanent on the battlefield
+   * for every card its controller would draw, by an effect or by the draw step. The draw simply does not happen: no card moves, nothing was
+   * drawn (no "whenever you draw" ability triggers, CR 121.1) and, as the draw was not attempted, the player does not lose for an empty library
+   * (CR 121.4, 704.5b). It applies even when the library has no cards (CR 614.11, 121.6a). With `while`, "If you would draw a card while your library
+   * has no cards in it, skip that draw instead": it applies only while the condition holds for the controller as the draw would happen (a plain
+   * condition: `PLAIN_CONDITIONS` of `validate-static-condition.ts`). It is the ability of the permanent (lost with "loses all abilities"). When
+   * the other cards of a sequence of draws are not skipped they are still drawn (CR 614.11a, 121.6b): each draw is replaced on its own.
+   */
+  | { readonly kind: 'skipDraw'; readonly while?: Condition };
 
 // ---- Static abilities (CR 604)
 
@@ -3772,8 +3889,14 @@ export type StaticEffect =
    * controller of the permanent begins, the permanents the filter names that the controller controls untap together with that player's own (the
    * controller of the ability is "you" in the filter). A stun counter is removed instead (CR 122.1d), and "doesn't untap" does not stop it: that is said
    * of the controller's own untap step. Read from the permanent's abilities, so a permanent that lost them does nothing.
+   * `self: true` instead of `what` (D-320, "Untap this artifact during each other player's untap step."): the permanent itself is the one that untaps, in the
+   * untap step of every player but its controller as it is then (a stolen one has its new controller). Exactly one of `what` and `self`.
    */
-  | { readonly kind: 'untapInOthersUntapStep'; readonly what: ObjectFilter }
+  | {
+      readonly kind: 'untapInOthersUntapStep';
+      readonly what?: ObjectFilter;
+      readonly self?: true;
+    }
   /**
    * "You may cast this card from your graveyard [as long as you control a Zombie]." (D-133, CR 113.6b, 601.2a): the ability of
    * a card, working while that card is in its owner's graveyard: its owner may cast it from there, at the timing its type
@@ -4003,8 +4126,17 @@ export type StaticEffect =
    * and resolves on its own). Each permanent with the ability adds one, so two of them make three. It applies to the triggered abilities of permanents on the
    * battlefield (not to delayed triggered abilities or to those of an emblem or the monarch), as they trigger, whatever the effect of the ability. `subject`
    * is a group of permanents (`controller: 'you'` the controller of the permanent with this ability, `other` leaves it out) or `attached`.
+   * `cause` (D-339, group 3-b of the Niv-Mizzet deck): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you
+   * control to trigger, that ability triggers an additional time." Only a trigger whose event is the cause counts: the controller of this ability casting a
+   * spell (`castSpell`) or copying one (`castSpell` with `orCopy`) that `spell` names (the spell as it is on the stack, or as it last was). The abilities
+   * that trigger on that cast event are doubled (a `castSpell` trigger, a magecraft one too); one that merely follows from the spell (it entering, or a
+   * permanent becoming its target) is another event and is not doubled. Without `cause` every trigger of the permanents `subject` names is doubled.
    */
-  | { readonly kind: 'doubleTriggers'; readonly subject: StaticSubject }
+  | {
+      readonly kind: 'doubleTriggers';
+      readonly subject: StaticSubject;
+      readonly cause?: { readonly kind: 'castOrCopySpell'; readonly spell: ObjectFilter };
+    }
   /**
    * "You can't cast ~ during your first, second, or third turns of the game." (CR 101.2, 601.2, 113.6, D-149): the ability of a card that works
    * where the card could be cast from (the hand, the command zone, a graveyard or exile): the card can't be cast, by any means (an alternative cost
@@ -4261,6 +4393,11 @@ export interface ManaAbility {
    * type with your commander, scry 1." (group 4 of the Vraska deck, CR 106.6, 603.2, 701.22): `grants` is `{ scry: 1 }` and `sharesTypeWithCommander`
    * narrows the spells; when the mana is spent on a spell that matches, the controller of the permanent scries (a triggered ability of the permanent
    * that made the mana, put on the stack above the spell).
+   *
+   * "{T}: Add {R}. When that mana is spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy."
+   * (D-328, CR 106.6, 603.2, 603.7a, 707.10, 707.10c): `grants` is `{ copySpell: 'may' }` ('no': "copy that spell", the copy keeps the targets of the
+   * original) and `spells` may have `colors`; when the mana is spent on a spell that matches, a triggered ability of the permanent that made the
+   * mana goes on the stack above the spell and puts a copy of it on the stack, so the copy resolves first. Each mana spent is its own trigger.
    */
   readonly spentRider?: {
     readonly spells: {
@@ -4269,12 +4406,21 @@ export interface ManaAbility {
       readonly sharesTypeWithCommander?: true;
       /** "When you spend this mana to cast your commander" (D-229, CR 903.3): the spell is a card its caster owns that is designated a commander. */
       readonly commander?: true;
+      /**
+       * "... to cast a red instant or sorcery spell" (D-328, CR 105.2): the spell is of at least one of these colors, as it is on the stack as the mana is
+       * spent (a spell with no color is none of them). With `types` it is "a red instant or sorcery spell": of a color and of a type.
+       */
+      readonly colors?: readonly Color[];
     };
     /**
      * `{ scryCommanderCasts: true }` (D-229): "scry X, where X is the number of times it's been cast from the command zone this game": X is the number of
      * times the commander cast with this mana has been cast from the command zone (this cast included; CR 903.8), read as the scry resolves.
      */
-    readonly grants: 'haste' | { readonly scry: number } | { readonly scryCommanderCasts: true };
+    readonly grants:
+      | 'haste'
+      | { readonly scry: number }
+      | { readonly scryCommanderCasts: true }
+      | { readonly copySpell: 'may' | 'no' };
   };
   /**
    * "{T}: Add one mana of any color. If you control a creature with power 4 or greater, add two mana of any one color instead." (D-145,
@@ -4308,7 +4454,7 @@ export interface SpellText {
  * How many modes a modal spell or ability has its controller choose (CR 700.2, D-114): "choose one" is
  * `{ min: 1, max: 1 }`, "choose two" `{ min: 2, max: 2 }`, "choose one or both" `{ min: 1, max: 2 }`,
  * "choose one or more" `{ min: 1, max: <number of modes> }`. The same mode is never chosen twice (CR
- * 700.2d).
+ * 700.2d) unless `repeatable` says it may be.
  */
 export interface ModeChoice {
   readonly min: number;
@@ -4325,6 +4471,14 @@ export interface ModeChoice {
    * be chosen again; with every mode chosen the ability is removed from the stack as it would be with no legal mode (CR 603.3c). Only a triggered ability.
    */
   readonly notRepeatedThisTurn?: true;
+  /**
+   * "Choose three. You may choose the same mode more than once." (CR 700.2d, D-344): the same mode may be chosen more than once, so the modes chosen are a
+   * multiset of between `min` and `max` of them (`max` may be more than the number of modes). Every instance of a mode is a mode of its own: a targeted
+   * mode gets a target slot for each instance (the slot of the first instance keeps the slot's id, the later ones are `<id>#2`, `<id>#3`, ...), and the same
+   * target may be chosen for each. `min` may be 0 here ("Choose up to three. You may choose the same mode more than once."), except on a triggered ability (no mode chosen removes it from the stack, CR 700.2b). Not with `maxIf`
+   * or `notRepeatedThisTurn`.
+   */
+  readonly repeatable?: true;
 }
 
 export interface SpellMode {

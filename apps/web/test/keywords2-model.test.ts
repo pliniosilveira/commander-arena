@@ -474,6 +474,15 @@ describe('the log', () => {
     ]);
   });
 
+  test('the cards a look put on the bottom in an order their owner chose are a count only (D-324, CR 401.4)', () => {
+    expect(
+      lines([{ kind: 'cardsBottomed', seat: 0, count: 3, ordered: true }], stateWith(names)),
+    ).toEqual(['You put 3 cards on the bottom of your library in an order you chose.']);
+    expect(
+      lines([{ kind: 'cardsBottomed', seat: 1, count: 1, ordered: true }], stateWith(names)),
+    ).toEqual(['Opponent puts 1 card on the bottom of their library in an order they chose.']);
+  });
+
   describe('extort and cascade answers', () => {
     const extortOnStack = (cost: unknown) =>
       ({
