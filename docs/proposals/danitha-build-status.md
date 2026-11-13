@@ -1,6 +1,6 @@
 # Danitha deck: build status (issue 26)
 
-Issue 26 "Deck Support - Danitha" (author `leandrogaluzzi`), 35 unsupported cards, decklist `decks/danitha.txt`, branch `support-danitha` (from `support-hashaton`, which is built on `support-niv-mizzet`; its pull request opens after those are merged, or stacked on them). The goal is every card (D-317): a costly card is built later, never left out.
+Issue 26 "Deck Support - Danitha" (author `leandrogaluzzi`), 35 unsupported cards, decklist `decks/danitha.txt`, branch `support-danitha` (from `main` after the merge of the Niv-Mizzet (PR 33) and Hashaton (PR 34) programs). The goal is every card (D-317): a costly card is built later, never left out.
 
 Status values: waiting, in progress, done. The surveys found no S-class gap: every card extends existing machinery, so no owner decision is needed (no card is left out for its cost, D-317). Umbra armor with a regeneration shield or a second Umbra Aura uses the existing replacement-order question (no new decision kind). Groups 1a, 1b and 5 are built first; 2, 3, 4, 6 and 7 follow (the weekly budget decides when).
 
