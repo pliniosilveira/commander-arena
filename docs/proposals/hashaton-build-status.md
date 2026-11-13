@@ -9,9 +9,9 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Archfiend of Despair | 2 | P (+T) | done | "Your opponents can't gain life"; "each opponent loses life equal to the life that player lost this turn" at each end step |
 | Archfiend of Ifnir | 1 | T (+ tiny P) | done | "Whenever you cycle or discard another card, put a -1/-1 counter on each creature your opponents control" |
 | Archon of Cruelty | 1 | T | done | "target opponent sacrifices a creature or planeswalker of their choice, discards a card, and loses 3 life. You draw a card and gain 3 life" |
-| Bard, King of Dale | 3 | P x2 (+T x2) | waiting | two replacements: draw two instead (except the first draw of the draw step); twice as many tokens |
+| Bard, King of Dale | 3 | P x2 (+T x2) | done | two replacements: draw two instead (except the first draw of the draw step); twice as many tokens |
 | Champion of Wits | 5 | K + P | waiting | Eternalize |
-| Darksteel Angel | 3 | P + T (many sites) | waiting | "Creatures you control can't have -1/-1 counters put on them" |
+| Darksteel Angel | 3 | P + T (many sites) | done | "Creatures you control can't have -1/-1 counters put on them" |
 | Enter the Avatar State | 4 | T | done | becomes an Avatar in addition to its other types and gains four keywords |
 | Faithful Mending | 1 | T | done | "gain 2 life, draw two cards, then discard two cards" (plus flashback if printed) |
 | Gleaming Overseer | 4 | P + T | done | amass Zombies; "Zombie tokens you control have hexproof and menace" |

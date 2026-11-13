@@ -1216,6 +1216,11 @@ export type IrStaticEffect =
   /** "Your opponents can't gain life." (Hashaton deck group 2, D-363, CR 119.7). The subject is `you`, the controller of the permanent. */
   | { readonly kind: 'cantGainLife'; readonly who: 'opponents' }
   /**
+   * "Creatures you control can't have -1/-1 counters put on them." (Hashaton deck group 3, D-380, CR 122.6, 101.2): no counter of the kind named (a power and
+   * toughness counter, "+1/+1" or "-1/-1") is put on the permanents the subject names. The subject is a group, `~` or the attached permanent.
+   */
+  | { readonly kind: 'cantHaveCounters'; readonly counter: string }
+  /**
    * "Prevent all combat damage that would be dealt to ~." (stage P33, D-150, CR 615.1): the damage of the kind named that would be dealt to
    * the permanent is prevented. The subject is `~`.
    */

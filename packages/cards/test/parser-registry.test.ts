@@ -534,6 +534,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-instead': asIs,
   // Issue 25 (D-332): the line of its own; the trigger follows "Whenever".
   'replacement.skip-draw': asIs,
+  // Hashaton deck, group 3 (D-378 to D-380): the two replacements of Bard and the static of Darksteel Angel are lines of their own.
+  'replacement.draw-instead': asIs,
+  'replacement.tokens-double': asIs,
+  'static.cant-have-counters': asIs,
   'trigger.noncombat-damage': whenever,
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,

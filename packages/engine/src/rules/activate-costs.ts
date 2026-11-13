@@ -24,6 +24,7 @@ import { getSeat, loseLifeBy, patchObject } from '../state/ops';
 import type { ActivationContext, GameObject, GameState } from '../state/types';
 import { exileCostCandidates } from './activation-exile';
 import { controllerOf } from './control';
+import { counterBlocked } from './counter-prevention';
 import { crewRefusal } from './crew';
 import { derive } from './derive';
 import { discardCandidates } from './discard-cost';
@@ -286,7 +287,8 @@ export function payImmediateCosts(
   // CR 606.4, 606.5 (D-200): the loyalty symbol puts counters on the permanent or removes them; [0] does neither.
   if (costs.loyalty !== null && costs.loyalty !== 0) {
     const obj = state.objects[source];
-    if (obj !== undefined) {
+    // D-380 (CR 122.6, 101.2): a [+N] puts no counters on a permanent that can't have loyalty counters; the cost is paid all the same (the ability is still activated).
+    if (obj !== undefined && (costs.loyalty < 0 || !counterBlocked(state, obj, 'loyalty'))) {
       const count = Math.abs(costs.loyalty);
       state = patchObject(state, source, {
         counters: { ...obj.counters, loyalty: (obj.counters.loyalty ?? 0) + costs.loyalty },
@@ -302,7 +304,8 @@ export function payImmediateCosts(
   // anything triggers from it (a state trigger reads the counters, CR 603.8).
   for (const { counter, count } of costs.putCounters) {
     const obj = state.objects[source];
-    if (obj === undefined) continue;
+    // D-380 (CR 122.6, 101.2): a permanent that can't have counters of the kind gets none, and the cost is paid all the same.
+    if (obj === undefined || counterBlocked(state, obj, counter)) continue;
     state = patchObject(state, source, {
       counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + count },
     });

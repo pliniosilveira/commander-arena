@@ -20,6 +20,7 @@ import { DRAGON_STATIC_RULES } from './dragons';
 import { EDHREC_STATIC_RULES } from './edhrec';
 import { GRANT_STATIC_RULES } from './grants';
 import { HASHATON_G2_STATIC_RULES } from './hashaton-group-2';
+import { HASHATON_G3_STATIC_RULES } from './hashaton-group-3';
 import { HASHATON_G6_STATIC_RULES } from './hashaton-group-6';
 import { HOFRI_STATIC_RULES } from './hofri';
 import { KORVOLD_STATIC_RULES } from './korvold';
@@ -109,4 +110,6 @@ export const STATIC_RULES = [
   ...HASHATON_G2_STATIC_RULES,
   // Hashaton deck, group 6 (D-377): "You and creatures you control have protection from the chosen card type."
   ...HASHATON_G6_STATIC_RULES,
+  // Hashaton deck, group 3 (D-380): "Creatures you control can't have -1/-1 counters put on them."
+  ...HASHATON_G3_STATIC_RULES,
 ];

@@ -33,6 +33,7 @@ import { runGainControl } from './control-effects';
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
+import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
 import { asking, runDealDamage, runDealDividedDamage } from './damage-effects';
 import { askingFlow, type OrderFlow, quietFlow } from './damage-order';
 import { derive } from './derive';
@@ -826,9 +827,16 @@ function runEffect(
       const source = state.objects[res.source];
       if (source?.zone !== 'battlefield' || controllerOf(state, source) !== res.controller)
         return done(state);
-      const age = (source.counters[AGE_COUNTER] ?? 0) + 1;
-      next = patchObject(next, source.id, { counters: { ...source.counters, [AGE_COUNTER]: age } });
-      events.push({ kind: 'counterAdded', object: source.id, counter: AGE_COUNTER, count: 1 });
+      // CR 122.6, 101.2 (D-380): a permanent that can't have age counters gets none; the cost is then for the age counters it already has (none: nothing to pay).
+      const noAge = counterBlocked(state, source, AGE_COUNTER);
+      const age = (source.counters[AGE_COUNTER] ?? 0) + (noAge ? 0 : 1);
+      if (!noAge) {
+        next = patchObject(next, source.id, {
+          counters: { ...source.counters, [AGE_COUNTER]: age },
+        });
+        events.push({ kind: 'counterAdded', object: source.id, counter: AGE_COUNTER, count: 1 });
+      }
+      if (age === 0) return done(next, events);
       return done(next, events, [
         {
           kind: 'unlessPays' as const,
@@ -1401,9 +1409,12 @@ function runEffect(
     case 'addCounters': {
       const count = amountOf(state, effect.count, ctx, targets);
       if (count <= 0) return done(state);
+      // CR 122.6, 101.2 (D-380): a permanent that can't have counters of the kind gets none, and nothing happens to it.
+      const blockers = counterBlockers(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
         const obj = next.objects[id];
         if (!obj) continue;
+        if (blocks(state, blockers, obj, effect.counter)) continue;
         next = patchObject(next, id, {
           counters: {
             ...obj.counters,

@@ -36,7 +36,7 @@ import {
   entersOptionText,
   unspentManaText,
 } from './dragons-text';
-import { skipDrawWording } from './draw-skip-text';
+import { drawInsteadWording, skipDrawWording } from './draw-skip-text';
 import { pluralSubtype, thingsPhrase } from './filter-text';
 import { ptChangeText } from './pt-text';
 import { keepsDamageWording, redirectDamageWording } from './redirect-text';
@@ -213,6 +213,12 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
       const words = RESTRICTION_WORDS[effect.restriction];
       return `${subject.text} ${subject.many ? words.many : words.one}`;
     }
+    case 'cantHaveCounters': {
+      // D-380 (CR 122.6, 101.2): "Creatures you control can't have -1/-1 counters put on them".
+      const subject = subjectWords(effect.subject, ctx);
+      if (subject === null) return null;
+      return `${subject.text} can't have ${effect.counter} counters put on ${subject.many ? 'them' : 'it'}`;
+    }
     case 'castFromGraveyard':
       return 'You may cast this card from your graveyard';
     case 'setPt': {
@@ -371,6 +377,12 @@ export function replacementWording(replacement: Replacement, noun = 'permanent')
   }
   // D-332 (CR 614.11): "If you would draw a card while your library has no cards in it, skip that draw instead".
   if (replacement.kind === 'skipDraw') return skipDrawWording(replacement);
+  // D-379 (CR 614.11, 504.1): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead".
+  if (replacement.kind === 'drawInstead') return drawInsteadWording(replacement);
+  // D-378 (CR 614.1a, 614.5): "If one or more tokens would be created under your control, twice that many of those tokens are created instead".
+  if (replacement.kind === 'tokensInstead' && replacement.mode === 'double') {
+    return 'If one or more tokens would be created under your control, twice that many of those tokens are created instead';
+  }
   // D-192 (CR 614.9): "All damage that would be dealt to you and other permanents you control is dealt to this creature instead".
   if (replacement.kind === 'redirectDamage') return redirectDamageWording(replacement, noun);
   if (replacement.kind !== 'wouldDie') return null;

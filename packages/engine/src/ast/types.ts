@@ -3743,6 +3743,10 @@ export type Replacement =
    * and the replacements of several permanents apply in timestamp order, the oldest first, the tokens it made being looked at by the next (CR 616.1: the
    * affected player's choice of order is not offered, `docs/ROADMAP.md`). The tokens it makes enter untapped and with none of the choices of the original.
    * It is the ability of a permanent on the battlefield, lost with "loses all abilities". `what` names no zone, owner, X, combat or stack kind.
+   * `double` (D-378; the Hashaton deck, Bard, King of Dale): "If one or more tokens would be created under your control, twice that many of those tokens are
+   * created instead." The tokens `what` matches stay what they are (the same definition and what the instruction said about them, tapped for one) and are
+   * made twice over: there is no `token`. It is applied once to one event (CR 614.5), so two of them make four; it does not change which tokens, so the order
+   * of it and of the other effects never changes the result of a `thatMany` (the same number of the other token) and is only asked when it can.
    */
   | {
       readonly kind: 'tokensInstead';
@@ -3750,6 +3754,7 @@ export type Replacement =
       readonly mode: 'thatMany' | 'plus';
       readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
     }
+  | { readonly kind: 'tokensInstead'; readonly what: ObjectFilter; readonly mode: 'double' }
   /**
    * "As this artifact enters, you may have it become a copy of any creature on the battlefield until end of turn, except it has haste." (CR 707.9,
    * 614.1c, 614.12, 707.2, D-151): as the permanent enters, its controller may choose a permanent on the battlefield that `what` matches (`optional`:
@@ -3830,7 +3835,23 @@ export type Replacement =
    * condition: `PLAIN_CONDITIONS` of `validate-static-condition.ts`). It is the ability of the permanent (lost with "loses all abilities"). When
    * the other cards of a sequence of draws are not skipped they are still drawn (CR 614.11a, 121.6b): each draw is replaced on its own.
    */
-  | { readonly kind: 'skipDraw'; readonly while?: Condition };
+  | { readonly kind: 'skipDraw'; readonly while?: Condition }
+  /**
+   * "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead." (D-379, CR 614.1a, 614.11, 614.11a,
+   * 614.5, 504.1; the Hashaton deck, Bard, King of Dale): a replacement effect of a permanent on the battlefield for the cards its controller would
+   * draw. Each draw it applies to is replaced by `count` draws; they are separate draws (a "whenever you draw" ability triggers for each card, the commander
+   * question of CR 903.9b is asked for each) and all of them are made before the sequence the replaced draw belonged to goes on (CR 614.11a). It is applied
+   * even when the library has no cards (CR 614.11): each of the new draws then draws from an empty library. Every such effect applies once to one draw
+   * (CR 614.5: it does not replace the draws it made), so two of them make four draws, and a draw that a `skipDraw` replaces is skipped first (CR 616.1:
+   * the engine chooses that order; the player is not asked). `exceptFirstInDrawStep` is required (always `true`): the first draw of each of the controller's
+   * draw steps (CR 504.1) is not replaced; a replacement of every draw with no such exception is not built (`docs/ROADMAP.md`). It is the ability of the
+   * permanent: lost with "loses all abilities".
+   */
+  | {
+      readonly kind: 'drawInstead';
+      readonly count: number;
+      readonly exceptFirstInDrawStep: true;
+    };
 
 // ---- Static abilities (CR 604)
 
@@ -4191,6 +4212,18 @@ export type StaticEffect =
    * permanents on the battlefield after the layers (`rules/player-protection.ts`); a permanent that lost its abilities protects nobody. No condition.
    */
   | { readonly kind: 'cantGainLife'; readonly who: 'opponents' }
+  /**
+   * "Creatures you control can't have -1/-1 counters put on them." (D-380, CR 122.6, 101.2, 604.1; the Hashaton deck, Darksteel Angel): while the permanent has the
+   * ability, no counter of the kind `counter` is put on a permanent `subject` names (a group, `this`, or `attached`), by any means: an effect that puts counters
+   * on it, proliferate, wither and infect damage, a connive or a loyalty cost, a counter it would enter with (CR 122.6: counters put on an object as it enters the
+   * battlefield are put on it too, so a creature that returns with a +1/+1 counter or an Angel that would enter with one enters without it), a Saga's lore counter.
+   * Nothing is put on it, so there is no `counterAdded` event and nothing for a "whenever one or more counters are put on" ability to see; the rest of what the
+   * effect did still happens (CR 101.2: a "can't" effect makes the instruction do nothing, it does not undo the rest). Counters it already has stay, and the
+   * ability does not stop them being removed. The subject is read as the permanent is on the battlefield (as it would be, for one that enters), from the
+   * permanents on the battlefield as the new one enters; a permanent never stops itself getting a counter as it enters. Counters in other zones (a suspended card's
+   * time counters) are not read. `counter` is the name of the kind (`-1/-1`, `+1/+1`, `loyalty`...). The ability of the permanent: lost with "loses all abilities".
+   */
+  | { readonly kind: 'cantHaveCounters'; readonly subject: StaticSubject; readonly counter: string }
   /**
    * "If a triggered ability of a Shaman or another Wizard you control triggers, that ability triggers an additional time." and "If a triggered ability of
    * equipped creature triggers, that ability triggers an additional time." (D-220, CR 603.2d): each time a triggered ability of a permanent `subject` names

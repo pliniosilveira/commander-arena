@@ -256,6 +256,11 @@ function effectOf(
       const granted = lowerGrantedAbility(quoted, subject, at, ctx);
       return granted.ok ? ok({ kind: 'grantAbility', subject, ability: granted.value }) : granted;
     }
+    case 'cantHaveCounters':
+      // CR 122.6, 101.2 (Hashaton deck group 3, D-380): the permanents the subject names can't have counters of the kind put on them: a group, `~` or the attached permanent.
+      return subject.kind === 'filter' || subject.kind === 'this' || subject.kind === 'attached'
+        ? ok({ kind: 'cantHaveCounters', subject, counter: effect.counter })
+        : failure(at);
     case 'castFromGraveyard':
       // CR 113.6b (stage P29, D-133): the ability of a card in its owner's graveyard, so its subject is `~`.
       return subject.kind === 'this' ? ok({ kind: 'castFromGraveyard' }) : failure(at);
@@ -456,6 +461,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:opponentsCantWin'];
     case 'cantGainLife':
       return ['static:cantGainLife'];
+    case 'cantHaveCounters':
+      return ['static:cantHaveCounters'];
     case 'preventDamageToThis':
       return ['static:preventDamageToThis'];
     case 'cantCastThis':
@@ -925,6 +932,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:playFromGraveyardOnceEachTurn',
   // Hashaton deck group 6 (D-377, CR 702.16): "You have protection from the chosen card type."
   'static:playerProtection',
+  'static:cantHaveCounters',
   'ability:functionsInGraveyard',
   'ability:staticCondition',
   'staticSubject:this',

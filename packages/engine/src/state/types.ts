@@ -547,6 +547,11 @@ export interface TurnState {
    * the phase after that one, and an effect that adds a phase "after this phase" in the added one adds it after the added one.
    */
   readonly addedAfter?: PhaseId;
+  /**
+   * Present, and `true`, once the active player has drawn a card (or tried to, from an empty library) in the draw step that is going on (D-379, CR 504.1): "except
+   * the first one you draw in each of your draw steps" reads it. Every step that begins clears it; a draw that was skipped or replaced is not a draw.
+   */
+  readonly drewInDrawStep?: true;
 }
 
 /**
@@ -1402,6 +1407,11 @@ export type Instruction =
       readonly commanderChoice: boolean | null;
       /** An earlier card of this instruction was already counted for `thisWay` `playersDrew` (D-131). */
       readonly counted?: true;
+      /**
+       * The next `replacedLeft` draws of this instruction are the ones a `drawInstead` replacement made in place of a draw (D-379, CR 614.5, 614.11a): the
+       * effects that made them do not replace them again, and they go before the draws the replaced one was followed by. Absent when none are waiting.
+       */
+      readonly replacedLeft?: number;
     }
   /** Move one object. `commanderChoice` records the owner's answer to CR 903.9b when asked. */
   | {
