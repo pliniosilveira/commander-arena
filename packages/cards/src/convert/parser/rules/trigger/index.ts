@@ -33,6 +33,7 @@ import { DINOSAUR_TRIGGER_RULES } from './dinosaurs';
 import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
 import { EVENT_TRIGGER_RULES } from './events';
+import { HASHATON_G1_TRIGGER_RULES } from './hashaton';
 import { HOFRI_TRIGGER_RULES } from './hofri';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
@@ -1034,5 +1035,7 @@ export const TRIGGER_RULES = [
   ...NONCOMBAT_DAMAGE_TRIGGER_RULES,
   // Stage P49 (D-206): "one or more other creatures and/or artifacts you control die", "you discard a card".
   ...VRASKA_TRIGGER_RULES,
+  // Hashaton deck, group 1 (D-1102): "you cycle or discard another card".
+  ...HASHATON_G1_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];

@@ -364,7 +364,8 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       // D-206 (CR 701.9a): "Whenever you discard a card".
       const who =
         trigger.who === 'you' ? 'you' : trigger.who === 'opponent' ? 'an opponent' : 'a player';
-      return `Whenever ${who} discard${trigger.who === 'you' ? '' : 's'} a card`;
+      // D-1102 (CR 702.29a: cycling is discarding): "another card" leaves out the card with the ability.
+      return `Whenever ${who} discard${trigger.who === 'you' ? '' : 's'} ${trigger.another === true ? 'another' : 'a'} card`;
     }
     case 'diesBatch': {
       // D-206 (CR 603.2c): "Whenever one or more other creatures and/or artifacts you control die".
@@ -426,6 +427,8 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       if (trigger.to === 'any') return head;
       if (trigger.to === 'player') return `${head} to a player`;
       if (trigger.to === 'opponent') return `${head} to an opponent`;
+      // D-1101 (CR 120.2a): a player, or a planeswalker.
+      if (trigger.to === 'playerOrPlaneswalker') return `${head} to a player or planeswalker`;
       const victim =
         trigger.filter === undefined ? 'a creature' : filterPhrase(trigger.filter, 'creature');
       return victim === null ? null : `${head} to ${victim}`;

@@ -524,6 +524,8 @@ function matches(
     case 'discarded':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      // D-1102: "another card" is any card but the one with this ability (the Oracle word excludes the object itself; no CR number says it).
+      if (trigger.another === true && subject !== null && subject.id === candidate.id) return false;
       return true;
     case 'dies':
     case 'dealtDamage':
@@ -596,6 +598,12 @@ function matches(
       if (to === undefined) return false;
       if (trigger.to === 'any') return true;
       if (trigger.to === 'player') return to.kind === 'player';
+      if (trigger.to === 'playerOrPlaneswalker') {
+        // D-1101: a player, or a planeswalker (a creature or a battle is not), read as it is or as it last was.
+        if (to.kind === 'player') return true;
+        const hit = objectOrLki(state, to.id);
+        return hit !== null && derive(state, hit).types.includes('planeswalker');
+      }
       if (trigger.to === 'opponent')
         return to.kind === 'player' && to.seat !== candidate.controller;
       // A creature: the filter, when there is one, narrows it. It has not left yet (state-based

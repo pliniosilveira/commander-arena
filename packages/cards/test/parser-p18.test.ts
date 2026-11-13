@@ -221,8 +221,9 @@ describe('combat damage dealt (CR 120.2a, 510.2, 603.2)', () => {
       'Whenever ~ deals damage to a player, you gain 1 life.',
       'deals damage to a player, you gain 1 life.',
     ],
+    // D-1101: "to a player or planeswalker" is read (parser-hashaton-g1.test.ts); a creature in its place is not.
     [
-      'Whenever ~ deals combat damage to a player or planeswalker, you gain 1 life.',
+      'Whenever ~ deals combat damage to a creature or planeswalker, you gain 1 life.',
       'or planeswalker, you gain 1 life.',
     ],
     ['Whenever ~ deals combat damage to you, you gain 1 life.', 'to you, you gain 1 life.'],

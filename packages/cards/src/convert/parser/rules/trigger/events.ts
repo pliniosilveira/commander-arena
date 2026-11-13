@@ -262,7 +262,7 @@ function damagedWords(damaged: IrTrigger['damaged'], to: string): Parser<Damaged
  * combat damage to a creature", "~ deals combat damage" (CR 120.2a combat damage, CR 510.2 it is
  * dealt simultaneously; CR 603.2 it triggers for each source and recipient). "One or more creatures
  * deal combat damage" is one trigger for a group and is not read, nor is damage that is not combat
- * damage or damage to a planeswalker only.
+ * damage or damage to a planeswalker only ("to a player or planeswalker" is read, D-1101).
  */
 export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
   id: 'trigger.combat-damage',
@@ -277,6 +277,8 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
     '~ deals combat damage to a player',
     '~ deals combat damage to an opponent',
     '~ deals combat damage to a creature',
+    '~ deals combat damage to a player or planeswalker',
+    'a creature you control deals combat damage to a player or planeswalker',
     '~ deals combat damage',
     'a creature you control deals combat damage to a player',
     'another creature you control deals combat damage to an opponent',
@@ -286,7 +288,10 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
   ],
   rejects: [
     '~ deals damage to a player',
-    '~ deals combat damage to a player or planeswalker',
+    '~ deals combat damage to a player or a planeswalker',
+    '~ deals combat damage to a player or planeswalkers',
+    '~ deals combat damage to an opponent or planeswalker',
+    '~ deals combat damage to a creature or planeswalker',
     '~ deals combat damage to you',
     '~ deals combat damage to a planeswalker',
     '~ deal combat damage to a player',
@@ -299,6 +304,8 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
     const dealt = sequence(
       permanentOrAttachedSubject('trigger.combat-damage'),
       choice(
+        // D-1101: "to a player or planeswalker" before "to a player", of which it is an extension.
+        damagedWords('playerOrPlaneswalker', ' to a player or planeswalker'),
         damagedWords('player', ' to a player'),
         damagedWords('opponent', ' to an opponent'),
         damagedWords('creature', ' to a creature'),

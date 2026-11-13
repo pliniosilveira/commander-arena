@@ -696,6 +696,10 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${JSON.stringify(t.who)}`);
       }
+      // D-1102: "another card".
+      if (t.another !== undefined && typeof t.another !== 'boolean') {
+        issue(out, `${path}.another`, 'another must be a boolean');
+      }
       break;
     case 'entersBatch':
       // D-218: one or more permanents that `what` names enter together: a filter of battlefield permanents, as they enter.
@@ -769,7 +773,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'dealsCombatDamage':
       checkTriggerSubject(t.what, true, `${path}.what`, out);
-      if (!isOneOf(t.to, ['player', 'opponent', 'creature', 'any'])) {
+      if (!isOneOf(t.to, ['player', 'opponent', 'creature', 'any', 'playerOrPlaneswalker'])) {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
       }
       if (t.filter !== undefined) {
