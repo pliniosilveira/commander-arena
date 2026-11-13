@@ -474,6 +474,17 @@ function activationCostIssues(
         'a creature-tapping cost combined with another creature-tapping, mana, sacrifice or discard cost is not implemented by the engine yet',
     });
   }
+  if (
+    costs.filter((c) => c.kind === 'blight').length > 1 ||
+    (costs.some((c) => c.kind === 'blight') && costs.some((c) => c.kind === 'tapCreatures'))
+  ) {
+    // D-1252: `breakDown` pays one blight cost, of N counters, and not with a crew cost (the creatures are chosen after the other costs).
+    out.push({
+      path,
+      message:
+        'more than one blight cost, or one with a creature-tapping cost, is not implemented by the engine yet',
+    });
+  }
   if (sacrifices > 1) {
     // `breakDown` (rules/activate-costs.ts) pays one sacrifice; an ability with two is never offered.
     out.push({

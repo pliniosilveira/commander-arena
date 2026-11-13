@@ -185,6 +185,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
     case 'tapPermanents':
       // D-133: "Tap two untapped artifacts you control".
       return `Tap ${tappedWhat(cost.filter, cost.count)}`;
+    case 'blight':
+      // D-1252 (CR 701.68a): "Blight 1".
+      return `Blight ${cost.count}`;
     case 'mill':
       // D-208 (CR 701.17): "Mill a card".
       return `Mill ${countText(cost.count, 'card', 'cards')}`;

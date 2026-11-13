@@ -45,6 +45,9 @@ export const EFFECT_ATTACH = defineRule<Clauses>({
     'attach ~ to target legendary creature you control',
     'attach ~ to target creature',
     'attach ~ to it',
+    // D-1251 (CR 303.4j): the permanent a trigger is about.
+    'attach ~ to that creature',
+    'attach ~ to that permanent',
   ],
   rejects: [
     'attach ~ to ~',
@@ -57,6 +60,9 @@ export const EFFECT_ATTACH = defineRule<Clauses>({
     'attach ~ to its',
     'attach ~ to them',
     'attach ~ to itself',
+    'attach ~ to that creature card',
+    'attach ~ to that creatures',
+    'attach ~ to those creatures',
   ],
   parse: single(
     'effect.attach',
@@ -71,6 +77,8 @@ export const EFFECT_ATTACH = defineRule<Clauses>({
           (n) => !n.plural,
           (_n, _ctx, start) => start,
         ),
+        // D-1251: "attach ~ to that creature": the object an earlier part of the text named, which the binding pass makes the permanent the trigger is about.
+        family<IrNoun>('noun', { only: ['noun.that-object'] }),
         IT_AS_TOKEN,
       ),
     ),

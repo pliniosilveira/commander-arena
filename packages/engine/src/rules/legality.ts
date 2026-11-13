@@ -4,7 +4,7 @@
  */
 
 import { overloadedText } from '../ast/overload';
-import type { AlternativeCost, TargetSpec } from '../ast/types';
+import type { AlternativeCost, ObjectFilter, TargetSpec } from '../ast/types';
 import type { CardFace } from '../cards/definition';
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, getSeat, opponentsOf, printedCard, zoneList } from '../state/ops';
@@ -36,7 +36,7 @@ import { preparedPermanentOf } from './prepare';
 import { matchesFilter } from './select';
 import { splitSecondOnStack } from './split-second';
 import { landPlaysAllowed } from './statics';
-import { slotCanBeFilled } from './target-choice';
+import { flashSlotOf, slotCanBeFilled } from './target-choice';
 import { hasX, spellXCost } from './x-value';
 
 export type { CastAlternative, CastFrom };
@@ -65,11 +65,56 @@ export function hasSorceryTiming(state: GameState, seat: SeatId): boolean {
  * from the card's derived abilities in the zone it is cast from (hand or command zone).
  */
 export function timingAllows(state: GameState, seat: SeatId, obj: GameObject): boolean {
+  return castTiming(state, seat, obj).allowed;
+}
+
+/**
+ * When the spell `obj` may be cast (`allowed`), and what that costs the choice of targets: with `onlyTargets` the spell may be cast now only because of its own
+ * conditional flash ("You may cast this spell as though it had flash if it targets a commander", D-1253, CR 601.3b, 601.3d), so its targets must be objects that
+ * filter matches (the first slot that needs a target offers only those, `flashSlotOf`). Null when the timing needs nothing of the targets.
+ */
+export function castTiming(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+): { readonly allowed: boolean; readonly onlyTargets: ObjectFilter | null } {
   const types = derive(state, obj).types;
-  if (types.includes('instant') || hasKeyword(state, obj, 'flash')) return true;
+  const free = { allowed: true, onlyTargets: null } as const;
+  if (types.includes('instant') || hasKeyword(state, obj, 'flash')) return free;
   // CR 601.3b (D-139): "You may cast artifact spells as though they had flash": a permanent of the caster's gives the permission.
-  if (flashPermitted(state, seat, obj)) return true;
-  return hasSorceryTiming(state, seat);
+  if (flashPermitted(state, seat, obj)) return free;
+  if (hasSorceryTiming(state, seat)) return free;
+  return ownFlashPermission(state, seat, obj) ?? { allowed: false, onlyTargets: null };
+}
+
+/**
+ * CR 601.3b, 601.3d, 113.6d (D-1253): the spell's own permission to be cast as though it had flash (`castAsThoughFlash` with `spells: this`, on the face being
+ * cast). With no condition, or one that holds as the spell is cast, it is plain permission. A `spellTargets` condition is read as CR 601.3b and 601.3d say: the
+ * caster may begin to cast the spell as though it had flash when the targets they choose could meet it, so the permission is there and the targets are
+ * restricted to what the condition's filter matches. Null when the face has no such ability that applies.
+ */
+function ownFlashPermission(
+  state: GameState,
+  seat: SeatId,
+  spell: GameObject,
+): { readonly allowed: true; readonly onlyTargets: ObjectFilter | null } | null {
+  let restricted: ObjectFilter | null = null;
+  for (const a of faceOf(state, spell)?.abilities ?? []) {
+    if (
+      a.kind !== 'static' ||
+      a.static.kind !== 'castAsThoughFlash' ||
+      !('kind' in a.static.spells)
+    ) {
+      continue;
+    }
+    if (a.condition === undefined) return { allowed: true, onlyTargets: null };
+    if (a.condition.kind === 'spellTargets') {
+      restricted ??= a.condition.filter;
+    } else if (evaluateCondition(state, a.condition, { controller: seat, source: spell.id })) {
+      return { allowed: true, onlyTargets: null };
+    }
+  }
+  return restricted === null ? null : { allowed: true, onlyTargets: restricted };
 }
 
 /**
@@ -383,14 +428,20 @@ export function targetsPossible(
   overloaded = false,
   /** D-181: the spell would be cast kicked (the slots that depend on the kicker). */
   kicked = obj.stack?.kicked === true,
+  /** D-1253: the spell is cast only by its own conditional flash ("if it targets a commander"): its targets must be objects this filter matches. */
+  only: ObjectFilter | null = null,
 ): boolean {
   // CR 702.96b: an overloaded spell needs no target (the "each" of its text affects what matches).
   if (overloaded) return true;
   const ctx = { controller: seat, source: obj.id };
   const modal = modalOfSpellText(faceOf(state, obj)?.spell);
   if (modal !== null && legalModeSets(state, modal, ctx).length === 0) return false;
-  return targetSpecsOf(state, obj, false, kicked).every((spec) =>
-    slotCanBeFilled(state, spec, ctx),
+  const specs = targetSpecsOf(state, obj, false, kicked);
+  // D-1253: a spell with nothing it must target cannot meet "if it targets a commander".
+  const restricted = only === null ? -1 : flashSlotOf(specs);
+  if (only !== null && restricted < 0) return false;
+  return specs.every((spec, i) =>
+    slotCanBeFilled(state, spec, ctx, i === restricted ? only : null),
   );
 }
 
@@ -490,12 +541,13 @@ export function canCast(
     hasX(spellXCost(faceOf(state, spell), alternative)),
   );
   if (least === null) return false;
-  if (!timingAllows(state, seat, spell)) return false;
+  const timing = castTiming(state, seat, spell);
+  if (!timing.allowed) return false;
   // CR 702.33g, 601.2c (D-181): a spell whose targets depend on the kicker can be cast either way; it is castable if one way has its targets and its cost.
   const kickedWays = hasKickedTargets(faceOf(state, spell)) ? [false, true] : [false];
   return kickedWays.some(
     (kicked) =>
-      targetsPossible(state, seat, spell, alternative === 'overload', kicked) &&
+      targetsPossible(state, seat, spell, alternative === 'overload', kicked, timing.onlyTargets) &&
       canPayRequest(state, seat, spell, {
         seat,
         spell,

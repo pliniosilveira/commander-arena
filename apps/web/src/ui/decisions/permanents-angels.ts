@@ -15,6 +15,7 @@ import { PROLIFERATE_REMINDER } from '../../game/angels-text';
 import { type Index, nameOf, plural, seatLabel, stackName } from './lookup';
 import { legalNoun } from './permanents';
 import { AMASS_BADGE, amassPrompt, isAmass } from './permanents-amass';
+import { BLIGHT_BADGE, blightPrompt, isBlight } from './permanents-blight';
 import { conniveOrderPrompt, isConniveOrder } from './permanents-connive';
 import { entersCopyPrompt, isEntersCopy } from './permanents-dragons';
 import { isRingBearer, RING_BEARER_BADGE, ringBearerPrompt } from './permanents-ring';
@@ -195,6 +196,8 @@ export function angelsPermanentPrompt(
   if (isRingBearer(decision)) return ringBearerPrompt(decision, index);
   // D-370 (CR 701.47a): "Choose an Army creature you control".
   if (isAmass(decision)) return amassPrompt(decision, index);
+  // D-1252 (CR 701.68a): "Blight 1", a cost that puts -1/-1 counters on a creature you control.
+  if (isBlight(decision)) return blightPrompt(decision, index);
   // D-286 (CR 702.95a): "you may pair this creature with another unpaired creature you control".
   if (isSoulbond(decision)) return soulbondPrompt(decision, index);
   // D-216 (CR 701.26a): "Untap up to three lands."
@@ -214,6 +217,7 @@ export function angelsBadge(
   if (isEntersCopy(decision)) return 'Copy';
   if (isRingBearer(decision)) return RING_BEARER_BADGE;
   if (isAmass(decision)) return AMASS_BADGE;
+  if (isBlight(decision)) return BLIGHT_BADGE;
   if (isSoulbond(decision)) return SOULBOND_BADGE;
   if (isUntapChoice(decision)) return UNTAP_CHOICE_BADGE;
   if (isConniveOrder(decision)) return 'Connives';

@@ -8,6 +8,7 @@ import type { ObjectId, SeatId } from './ids';
 import { legalActionsForDecision } from './legal-actions';
 import type { ManaColor } from './mana/types';
 import {
+  answerBlight,
   answerCrewCost,
   answerDiscardCost,
   answerExileCost,
@@ -870,6 +871,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           ? answerCastTap(state, action.objects)
           : answerTapCost(state, action.objects);
       }
+      // D-1252 (CR 701.68a): the creature that gets the -1/-1 counters of a blight cost.
+      if (d.purpose === 'blight') return answerBlight(state, action.objects);
       // D-139: the permanents returned to their owners' hands to pay "Return an artifact you control to its owner's hand".
       if (d.purpose === 'bounce') return answerReturnCost(state, action.objects);
       if (d.forCost) {

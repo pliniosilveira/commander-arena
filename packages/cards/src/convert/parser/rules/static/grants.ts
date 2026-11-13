@@ -26,7 +26,7 @@ import { PROTECTION_COLORS, PROTECTION_OUTSIDE_COMMANDER_IDENTITY } from '../key
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family } from '../registry';
 import { QUOTED_ABILITY } from './quoted';
-import { AND_RESTRICTION, type RestrictionSubject, restrictionPhrase } from './restriction-words';
+import { AND_RESTRICTION, type RestrictionSubject, restrictionEffects } from './restriction-words';
 
 type Effects = readonly IrStaticEffect[];
 
@@ -155,7 +155,7 @@ function predicate(mode: RestrictionSubject): Parser<Effects> {
   const plural = mode === 'plural';
   const gets = plural ? 'get ' : 'gets ';
   const has = plural ? 'have ' : 'has ';
-  const restriction = map(restrictionPhrase(mode), (effect): Effects => [effect]);
+  const restriction = map(restrictionEffects(mode), (effects): Effects => [...effects]);
   // ", has flying and first strike, and is an Angel ...": the things a subject gets and has are joined by "and" or by commas.
   const andHas = map(
     sequence(pattern(new RegExp(`(?: and |, and |, )${has}`, 'i')), HAS_WHAT),

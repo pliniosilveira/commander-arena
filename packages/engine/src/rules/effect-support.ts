@@ -59,14 +59,23 @@ export function ptAmountOf(
   return amountOf(state, amount, ctx, targets);
 }
 
-/** CR 701.24 (Shuffle): `seat`'s library is put in a random order from the game's seeded generator. */
+/**
+ * CR 701.24 (Shuffle): `seat`'s library is put in a random order from the game's seeded generator. The cards of `keep` are not part of
+ * the shuffle (CR 701.24b, D-1250): they stay on top, in the order given, and every other card is shuffled below them.
+ */
 export function shuffleLibrary(
   state: GameState,
   seat: SeatId,
+  keep: readonly ObjectId[] = [],
 ): { state: GameState; events: GameEvent[] } {
-  const [shuffled, rng] = shuffle(zoneList(state, 'library', seat), state.rng);
+  const library = zoneList(state, 'library', seat);
+  const kept = keep.filter((id) => library.includes(id));
+  const [shuffled, rng] = shuffle(
+    library.filter((id) => !kept.includes(id)),
+    state.rng,
+  );
   return {
-    state: patchSeat({ ...state, rng }, seat, { library: shuffled }),
+    state: patchSeat({ ...state, rng }, seat, { library: [...kept, ...shuffled] }),
     events: [{ kind: 'libraryShuffled', seat }],
   };
 }

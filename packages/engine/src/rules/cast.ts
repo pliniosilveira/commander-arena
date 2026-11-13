@@ -79,6 +79,7 @@ import {
   canCast,
   canCastDuringResolution,
   castPermissionExiles,
+  castTiming,
   castZone,
   faceOf,
   hasKickedTargets,
@@ -220,6 +221,11 @@ export function beginCast(
     },
   });
   if (graveyardUse !== null) next = markGraveyardPlay(next, graveyardUse.object.id);
+  // D-1253 (CR 601.3b, 601.3d): a spell cast now only because of its own conditional flash ("if it targets a commander") chooses its targets from what meets it.
+  // Read before the spell moves: the timing is that of the state it is cast in.
+  const flashTargets = resolving
+    ? null
+    : castTiming(state, seat, castAs(obj, seat, face)).onlyTargets;
   // The cost, the kicker and the legality look at the face being cast only (CR 709.3a, 712.11c).
   const { tax } = spellCost(state, {
     seat,
@@ -242,6 +248,7 @@ export function beginCast(
       activation: null,
       snapshot: state,
       ...(resolving ? { duringResolution: true as const } : {}),
+      ...(flashTargets === null ? {} : { flashTargets }),
     },
   };
   return toModes(next, [...moved.events]);
@@ -366,9 +373,10 @@ function toKicker(state: GameState, events: GameEvent[]): Result {
   // targets and its total cost, the unkicked way its own targets. With both possible the caster is asked; with one the cast goes that way.
   if (kickerCost !== null && hasKickedTargets(faceOf(before, spell))) {
     const overloaded = alternative === 'overload';
-    const kickedOk = asksKicker && targetsPossible(before, seat, spell, overloaded, true);
+    const only = casting.flashTargets ?? null;
+    const kickedOk = asksKicker && targetsPossible(before, seat, spell, overloaded, true, only);
     const unkickedOk =
-      targetsPossible(before, seat, spell, overloaded, false) &&
+      targetsPossible(before, seat, spell, overloaded, false, only) &&
       canPayRequest(before, seat, spell, { ...request, kicked: false });
     if (kickedOk && !unkickedOk) {
       return toReplicate(
@@ -652,6 +660,8 @@ function toTargets(state: GameState, events: GameEvent[]): Result {
           ctx,
           modal === null ? undefined : specModes(modal, object.stack?.chosenModes ?? []),
           x,
+          // D-1253: cast only by its own conditional flash ("if it targets a commander"): the targets are chosen from what meets it.
+          casting.flashTargets ?? null,
         ),
       },
     ),

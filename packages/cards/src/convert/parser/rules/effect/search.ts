@@ -12,6 +12,7 @@ import {
   fail,
   literal,
   map,
+  optional,
   type Parser,
   pattern,
   satisfy,
@@ -25,7 +26,7 @@ const NOUN = 'noun.library-card';
 
 type Place = Pick<IrZoneSpec, 'zone' | 'whose' | 'tapped'>;
 
-/** Where a found card goes: the battlefield, your hand or your graveyard (CR 701.23). */
+/** Where a found card goes: the battlefield, your hand or your graveyard (CR 701.23; the top of the library is read in `tailFor`). */
 const PLACE: Parser<Place> = choice<Place>(
   map(literal('onto the battlefield tapped'), () => ({ zone: 'battlefield', tapped: true })),
   map(literal('onto the battlefield'), () => ({ zone: 'battlefield' })),
@@ -97,6 +98,36 @@ function tailFor(cards: IrNoun, yours = true): Parser<Tail> {
       : fail(ctx, pos);
     const afterReveal = reveal.ok ? reveal.pos : pos;
     const revealFlag = reveal.ok ? reveal.value : flag(false, { start: pos, end: pos });
+    // D-1250 (CR 701.24b): "then shuffle and put that card on top" is the put and the shuffle in one: the card found is left out of the shuffle and put on top of
+    // the library afterwards. One card only ("put them on top" would need an order).
+    const onTop =
+      yours && !plural
+        ? spanned(
+            sequence(
+              pattern(/,? then shuffle and put /i),
+              choice(referTo(false), literal('the card')),
+              literal(' on top'),
+              optional(literal(' of your library'), ''),
+            ),
+          )(ctx, afterReveal)
+        : fail(ctx, afterReveal);
+    if (onTop.ok) {
+      const { span } = onTop.value;
+      return {
+        ok: true,
+        value: {
+          reveal: revealFlag,
+          destinations: {
+            kind: 'destinations',
+            items: [{ ...zone({ zone: 'library', whose: 'you' }, span, max), position: 'top' }],
+            span,
+            rule: RULE,
+          },
+          shuffle: flag(true, span),
+        },
+        pos: onTop.pos,
+      };
+    }
     const placed = spanned(sequence(literal(', put '), put))(ctx, afterReveal);
     if (!placed.ok) return placed;
     const items = placed.value.value[1];
@@ -135,10 +166,19 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for a card, put that card into your graveyard, then shuffle',
     'search your library for an artifact card, reveal that card, put it into your hand, then shuffle',
     'search your library for a basic land card, put it into your hand',
+    // D-1250 (CR 701.24b): the found card is left out of the shuffle and put on top.
+    'search your library for an enchantment card, reveal it, then shuffle and put that card on top',
+    'search your library for an instant or sorcery card, reveal it, then shuffle and put it on top of your library',
+    'search your library for a card, then shuffle and put that card on top',
+    'search your library for an artifact card, reveal that card, then shuffle and put the card on top',
   ],
   rejects: [
     'search your library for a basic land card, put them onto the battlefield tapped, then shuffle',
     'search your library for a card, put it on top of your library, then shuffle',
+    'search your library for up to two cards, reveal them, then shuffle and put them on top',
+    'search your library for a card, reveal it, then shuffle and put it on the bottom',
+    'search your library for a card, reveal it, then shuffle and put those cards on top',
+    'search your library for a card, reveal it, then shuffle it and put that card on top',
     'search your library for a basic land card, put it onto the battlefield tapped, then shuffle it',
     'search your library for a card, put it into your hand, discard a card at random, then shuffle',
     'search your library for up to three basic land cards, put one onto the battlefield and the other into your hand, then shuffle',

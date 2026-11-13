@@ -3,13 +3,20 @@
  * ability all ask, and how the answer is checked. The three paths differ in what comes next (the
  * cost, or the stack), not in the choice, so the decision and its check live here.
  */
-import type { TargetSpec } from '../ast/types';
+import type { ObjectFilter, TargetSpec } from '../ast/types';
 import type { ChosenTarget } from '../state/chosen';
 import type { TargetChoiceSpec, TargetsDecision } from '../state/decisions';
 import type { GameState } from '../state/types';
 import { amountOf } from './amounts';
 import type { SlotMode } from './modes';
-import { legalTargets, type SelectContext, sameTarget, targetBounds } from './select';
+import {
+  legalTargets,
+  matchesFilter,
+  type SelectContext,
+  sameTarget,
+  targetBounds,
+} from './select';
+import { objectOrLki } from './source-info';
 
 /**
  * What the caster divides among the targets of this slot, read now, as the spell is cast (CR 601.2d, D-145), or null when the slot divides
@@ -22,12 +29,45 @@ export function divideTotal(state: GameState, spec: TargetSpec, ctx: SelectConte
 }
 
 /**
+ * D-1253 (CR 601.3b, 601.3d): the legal targets of a slot that the spell's conditional flash lets through: objects `only` matches ("it targets a commander").
+ * `only` null leaves the legal targets as they are.
+ */
+function matchingOnly(
+  state: GameState,
+  legal: ChosenTarget[],
+  only: ObjectFilter | null,
+  ctx: SelectContext,
+): ChosenTarget[] {
+  if (only === null) return legal;
+  return legal.filter((t) => {
+    if (t.kind !== 'object') return false;
+    const obj = objectOrLki(state, t.id);
+    return obj !== null && matchesFilter(state, obj, only, ctx);
+  });
+}
+
+/**
+ * D-1253 (CR 601.3b, 601.3d): the index of the slot the targets of a spell cast with its own conditional flash ("if it targets a commander") are
+ * restricted in: the first slot that must have a target. A spell with no such slot cannot meet the condition, so -1. Restricting that one slot never
+ * offers a choice the condition rejects (a spell whose second slot could meet it instead is offered fewer choices than the rule allows, `docs/ROADMAP.md`).
+ */
+export function flashSlotOf(specs: readonly TargetSpec[]): number {
+  return specs.findIndex((spec) => targetBounds(spec).min >= 1);
+}
+
+/**
  * Whether the slot can be filled as the spell is cast: enough legal targets for its minimum and, when it divides something, a total with at
  * least 1 for each of them (CR 601.2c, 601.2d).
  */
-export function slotCanBeFilled(state: GameState, spec: TargetSpec, ctx: SelectContext): boolean {
+export function slotCanBeFilled(
+  state: GameState,
+  spec: TargetSpec,
+  ctx: SelectContext,
+  /** D-1253: the targets must be objects this filter matches (the slot of a spell cast with its own conditional flash). */
+  only: ObjectFilter | null = null,
+): boolean {
   const { min } = targetBounds(spec);
-  if (legalTargets(state, spec, ctx).length < min) return false;
+  if (matchingOnly(state, legalTargets(state, spec, ctx), only, ctx).length < min) return false;
   const total = divideTotal(state, spec, ctx);
   return total === null || total >= min;
 }
@@ -59,8 +99,11 @@ export function targetChoiceSpecs(
   modeOf?: ReadonlyMap<string, SlotMode>,
   /** D-386: the X announced for the spell, the number of targets of a `countX` slot (CR 601.2b). */
   x = 0,
+  /** D-1253: the spell is cast with its own conditional flash ("if it targets a commander"): its first mandatory slot offers only the objects this filter matches. */
+  only: ObjectFilter | null = null,
 ): TargetChoiceSpec[] {
-  return specs.map((spec) => {
+  const restricted = only === null ? -1 : flashSlotOf(specs);
+  return specs.map((spec, index) => {
     const slotMode = modeOf?.get(spec.id);
     const bounds = targetBounds(spec);
     const total = divideTotal(state, spec, ctx);
@@ -69,7 +112,12 @@ export function targetChoiceSpecs(
       spec.onePerOpponent === true
         ? state.seats.filter((s) => s.id !== ctx.controller && !s.hasLost).length
         : Number.MAX_SAFE_INTEGER;
-    const legal = legalTargets(state, spec, ctx);
+    const legal = matchingOnly(
+      state,
+      legalTargets(state, spec, ctx),
+      index === restricted ? only : null,
+      ctx,
+    );
     // D-386: "X target creature cards": exactly X (the announcement offered no X larger than the legal targets, `maxTargetCountX`).
     if (spec.countX === true) {
       const n = Math.min(x, legal.length);

@@ -219,7 +219,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('searchDestination:battlefield')).toBe(true);
     expect(isFeatureSupported('searchDestination:hand')).toBe(true);
     expect(isFeatureSupported('searchDestination:graveyard')).toBe(true);
-    expect(isFeatureSupported('searchDestination:library')).toBe(false);
+    expect(isFeatureSupported('searchDestination:library')).toBe(true);
     expect(isFeatureSupported('searchDestination:exile')).toBe(false);
     expect(isFeatureSupported('effect:modifyPt')).toBe(true);
     expect(isFeatureSupported('duration:untilEndOfTurn')).toBe(true);

@@ -910,6 +910,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         ? `Exile ${object(effect.objects)}. It's exiled with this ${self}`
         : `Exile ${object(effect.objects)}`;
     }
+    case 'attach': {
+      // D-1251 (CR 701.3): "Attach this Aura to that creature": the creature a trigger is about is "that creature" here, not "it".
+      const onto = effect.to.kind === 'triggerSubject' ? 'that creature' : object(effect.to);
+      return `Attach ${object(effect.object)} to ${onto}`;
+    }
     case 'tap':
       // D-139 (CR 701.26a): "You may tap any number of untapped Myr you control".
       return effect.objects.kind === 'choose'

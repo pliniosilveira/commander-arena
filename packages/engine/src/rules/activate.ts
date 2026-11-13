@@ -30,6 +30,7 @@ import { patchObject } from '../state/ops';
 import type { ActivationContext, CastingContext, GameState, StackAbility } from '../state/types';
 import { pushAbilityObject } from './ability-object';
 import { adjustedAbility } from './activate-adjust';
+import { answerBlightCost, payBlight } from './activate-blight';
 import { answerBounceCommander, answerBounceCost, payBounce } from './activate-bounce';
 import { breakDown, type CostBreakdown, costRefusal, payImmediateCosts } from './activate-costs';
 import { activatedAbilitiesOf, activationRefusal } from './activate-legality';
@@ -271,7 +272,7 @@ function payRest(state: GameState, events: GameEvent[]): Result {
   const { costs } = going;
   if (costs.tapCreatures !== null) return payCrew(state, events, costs.tapCreatures);
   if (costs.tapPermanents !== null) return payTap(state, events, costs.tapPermanents);
-  return paySacrifice(state, events);
+  return payBlight(state, events, paySacrifice);
 }
 
 /**
@@ -324,7 +325,7 @@ function tapChosen(
     next = patchObject(next, id, { tapped: true });
     events.push({ kind: 'tapped', object: id });
   }
-  return paySacrifice(next, events);
+  return payBlight(next, events, paySacrifice);
 }
 
 /** The answer to the tap question of a cost; the caller checked it against the decision's candidates and count. */
@@ -577,6 +578,11 @@ export function answerSacrificeCost(state: GameState, chosen: readonly ObjectId[
     return fail('No sacrifice is being chosen for a cost');
   }
   return sacrificeChosen({ ...state, pending: null }, [], chosen, false);
+}
+
+/** The answer to the question of a blight cost (D-1252, CR 701.68a): the creature gets the counters, then the sacrifice comes next. */
+export function answerBlight(state: GameState, chosen: readonly ObjectId[]): Result {
+  return answerBlightCost(state, chosen, paySacrifice);
 }
 
 /** The answer to the question of a cost that returns permanents to their owners' hands (D-139); the discard comes next. */

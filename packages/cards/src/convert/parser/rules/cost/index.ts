@@ -9,6 +9,7 @@ import type { IrAmount, IrCost, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, node, spanned } from '../registry';
+import { DANITHA_G5_COST_RULES } from './danitha-group-5';
 import { HASHATON_G2_COST_RULES } from './hashaton-group-2';
 import { HASHATON_G9_COST_RULES } from './hashaton-group-9';
 import { HASHATON_G10_COST_RULES } from './hashaton-group-10';
@@ -828,6 +829,8 @@ export const COST_RULES = [
   ...HASHATON_G2_COST_RULES,
   // Hashaton deck, group 10 (D-386): "discard X cards", read by `static.additional-cost` only.
   ...HASHATON_G10_COST_RULES,
+  // Danitha deck, group 5 (D-1252): Blight 1, a cost of an activated ability.
+  ...DANITHA_G5_COST_RULES,
   COST_PAY_X_LIFE,
   COST_REMOVE_COUNTERS,
   COST_PUT_COUNTERS,

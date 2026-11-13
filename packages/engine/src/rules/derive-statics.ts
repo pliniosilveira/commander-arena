@@ -250,7 +250,12 @@ function costReductionsOf(
 function flashesOf(object: GameObject, abilities: readonly Ability[]): FlashPermissionSource[] {
   const out: FlashPermissionSource[] = [];
   for (const a of abilities) {
-    if (a.kind === 'static' && a.static.kind === 'castAsThoughFlash') {
+    // D-1253: `spells: this` is the spell's own permission (`rules/flash-targets.ts`), not a permanent's.
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'castAsThoughFlash' &&
+      !('kind' in a.static.spells)
+    ) {
       out.push({ object, spells: a.static.spells });
     }
   }

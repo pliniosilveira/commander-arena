@@ -63,6 +63,8 @@ const BLOCKED_BY: Parser<IrStaticEffect> = map(
 
 export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticEffect> {
   const common = [
+    // D-1252 (CR 508.1a): "can't attack", said of the permanent an Aura or Equipment is attached to ("can't attack or block" is `restrictionEffects`).
+    ...(subject === 'attached' ? [phrase("can['’]t attack", 'cantAttack')] : []),
     // Before the plain "can't be blocked", whose words are a prefix of these (stage P29, D-133, CR 509.1b).
     phrase("can['’]t be blocked by more than one creature", 'cantBeBlockedByMoreThanOne'),
     BLOCKED_BY,
@@ -89,6 +91,23 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
   // "Each creature you control can't be blocked ...": singular verbs, no untap step of its own.
   if (subject === 'each') return choice(...common);
   return choice(...common);
+}
+
+/**
+ * The restrictions one phrase states: the one of `restrictionPhrase`, or both of "can't attack or block" (D-1252, CR 508.1a, 509.1a: two restrictions, each its
+ * own static ability of the engine). Said only of the permanent an Aura or Equipment is attached to.
+ */
+export function restrictionEffects(subject: RestrictionSubject): Parser<readonly IrStaticEffect[]> {
+  const single = map(restrictionPhrase(subject), (effect): readonly IrStaticEffect[] => [effect]);
+  if (subject !== 'attached') return single;
+  const both = map(
+    pattern(new RegExp(`can['’]t attack or block${END}`, 'iu')),
+    (): readonly IrStaticEffect[] => [
+      { kind: 'restriction', restriction: 'cantAttack' },
+      { kind: 'restriction', restriction: 'cantBlock' },
+    ],
+  );
+  return choice(both, single);
 }
 
 /** What can follow " and " to start another restriction: a lookahead, so a failure stays at " and". */

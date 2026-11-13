@@ -68,7 +68,7 @@ function landTypesOf(state: GameState, id: ObjectId): string[] {
 
 function moveInstruction(
   object: ObjectId,
-  to: 'battlefield' | 'hand' | 'graveyard',
+  to: 'battlefield' | 'hand' | 'graveyard' | 'library',
   tapped: boolean,
 ): Instruction {
   return { kind: 'move', object, to, position: 'top', tapped, commanderChoice: null };
@@ -76,22 +76,26 @@ function moveInstruction(
 
 /**
  * The cards found, assigned to the destinations in the order the player chose them (the first
- * `count` to the first destination, and so on; `'rest'` takes what is left).
+ * `count` to the first destination, and so on; `'rest'` takes what is left). The cards for the top
+ * of the library (D-1250) are separate: they stay in the library, out of the shuffle, and are put
+ * on top once it is done (CR 701.24b), the first one found ending on top.
  */
 function placeFound(
   search: SearchInstruction['search'],
   found: readonly ObjectId[],
-): Instruction[] {
-  const out: Instruction[] = [];
+): { now: Instruction[]; onTop: ObjectId[] } {
+  const now: Instruction[] = [];
+  const onTop: ObjectId[] = [];
   let next = 0;
   for (const d of search.destinations) {
     const n = d.count === 'rest' ? found.length - next : d.count;
     for (const id of found.slice(next, next + n)) {
-      out.push(moveInstruction(id, d.zone, d.tapped === true));
+      if (d.zone === 'library') onTop.push(id);
+      else now.push(moveInstruction(id, d.zone, d.tapped === true));
     }
     next += n;
   }
-  return out;
+  return { now, onTop };
 }
 
 /**
@@ -165,7 +169,14 @@ export function runSearch(
       from: 'library',
     });
   }
-  return done(state, events, [...placeFound(search, found), ...shuffle]);
+  // CR 701.24b (D-1250): "then shuffle and put that card on top": the shuffle leaves the found cards out, then they go on top (the last one first,
+  // so the first found ends on top).
+  const placed = placeFound(search, found);
+  const shuffled: Instruction[] = search.shuffle
+    ? [{ kind: 'shuffle', seat, ...(placed.onTop.length > 0 ? { keep: placed.onTop } : {}) }]
+    : [];
+  const top = [...placed.onTop].reverse().map((id) => moveInstruction(id, 'library', false));
+  return done(state, events, [...placed.now, ...shuffled, ...top]);
 }
 
 /** CR 701.9: the player chooses (unless the whole hand goes), then the cards go to the graveyard. */

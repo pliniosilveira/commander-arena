@@ -23,6 +23,7 @@ import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy, patchObject } from '../state/ops';
 import type { ActivationContext, GameObject, GameState } from '../state/types';
 import { exileCostCandidates } from './activation-exile';
+import { blightCandidates } from './blight-candidates';
 import { controllerOf } from './control';
 import { counterBlocked } from './counter-prevention';
 import { crewRefusal } from './crew';
@@ -71,6 +72,8 @@ export interface CostBreakdown {
   readonly tapPermanents: { readonly filter: ObjectFilter; readonly count: number } | null;
   /** The total power of the untapped creatures to tap (CR 702.122a, Crew), or null. */
   readonly tapCreatures: number | null;
+  /** "Blight 1" (D-1252, CR 701.68): the -1/-1 counters put on a creature the player controls, none when 0. */
+  readonly blight: number;
 }
 
 /**
@@ -102,6 +105,8 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let tapPermanentsCosts = 0;
   let tapCreatures: number | null = null;
   let tapCreaturesCosts = 0;
+  let blight = 0;
+  let blightCosts = 0;
   let loyalty: number | null = null;
   let loyaltyCosts = 0;
   const mana: string[] = [];
@@ -175,6 +180,10 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         tapCreaturesCosts += 1;
         tapCreatures = cost.totalPower;
         break;
+      case 'blight':
+        blightCosts += 1;
+        blight = cost.count;
+        break;
       default:
         return null;
     }
@@ -186,11 +195,14 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     tapPermanentsCosts > 1 ||
     bounces > 1 ||
     exileCardsCosts > 1 ||
-    loyaltyCosts > 1
+    loyaltyCosts > 1 ||
+    blightCosts > 1
   ) {
     return null;
   }
   if (tapCreatures !== null && (mana.length > 0 || sacrifice !== null || discard > 0)) return null;
+  // D-1252: the creature to blight is chosen after the permanents to tap and before the sacrifice, which a crew cost (its creatures are chosen last, alone) has no place for.
+  if (blight > 0 && tapCreatures !== null) return null;
   // D-133: the permanents to tap are chosen before the sacrifice and the discard, and could have been tapped for mana first,
   // so a tap cost is not combined with mana (or with a crew cost).
   if (tapPermanents !== null && (mana.length > 0 || tapCreatures !== null)) return null;
@@ -214,6 +226,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     exileCards,
     tapPermanents,
     tapCreatures,
+    blight,
   };
 }
 
@@ -429,6 +442,10 @@ export function costRefusal(
         ? "you control nothing to return to its owner's hand"
         : `you control fewer than ${parts.bounceCount} permanents to return to their owners' hands`;
     }
+  }
+  if (parts.blight > 0 && blightCandidates(paid, seat).length === 0) {
+    // CR 701.68b (D-1252): a player with no creature that can take the counters can't choose to blight.
+    return 'you control no creature to put -1/-1 counters on';
   }
   if (parts.tapPermanents !== null) {
     // CR 118.3 (D-133): enough untapped permanents. The source's own {T} has been paid on `paid`, so it is not one of them.
