@@ -33,7 +33,7 @@ import { chooseActivation, chooseRegenerateActivation } from './casual-activatio
 import { alternativeSpend, chooseNamedAlternative } from './casual-alt-costs';
 import { auraHasHost, isAura } from './casual-attachments';
 import { copiesTargetSpell, copyWorthCasting, hasStorm } from './casual-copies';
-import { additionalCostsWorthPaying, discountsHand } from './casual-costs';
+import { additionalCostsWorthPaying, discountsHand, ownGraveyardCreatures } from './casual-costs';
 import { chooseTurnFaceUp } from './casual-face-down';
 import { isHelpfulSpell } from './casual-helpful';
 import { chooseSpecialAction } from './casual-later';
@@ -58,6 +58,8 @@ import { multikickerHasRoom, needsPaidX, xSpellHasRoom } from './casual-x';
  */
 const TARGETS_SPELL = /target (activated or triggered ability|(\w+ )?spell)/i;
 const TARGETS_CREATURE = /target creature/i;
+/** "Return X target creature cards from your graveyard": as many of its own creature cards as X (D-1190). */
+const RETURNS_X_CREATURE_CARDS = /\bX target creature cards? from your graveyard/i;
 const TARGETS_PERMANENT = /target (artifact|enchantment|planeswalker|battle|permanent)/i;
 
 /** Mass removal: only worth it when the opponent loses more creatures than we do. */
@@ -86,6 +88,10 @@ export function worthCasting(view: GameView, spell: ObjectView): boolean {
   // A modal spell (D-114): worth casting when some mode is worth choosing now; the other modes' targets
   // do not matter (the engine offers it only when a legal set of modes exists).
   if (isModalText(spell.oracleText)) return hasWorthwhileMode(view, spell.oracleText);
+  // D-1190: "Return X target creature cards from your graveyard to your hand" has no hostile target: it is worth casting when a creature card of its own graveyard can be returned
+  // (what it discards is judged with the additional cost, `additionalCostsWorthPaying`).
+  if (RETURNS_X_CREATURE_CARDS.test(spell.oracleText))
+    return ownGraveyardCreatures(view).length > 0;
   if (SWEEPER.test(spell.oracleText)) {
     return opposingCreatures(view).length > ownCreatureCount(view);
   }

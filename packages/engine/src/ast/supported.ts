@@ -484,6 +484,8 @@ function activationCostIssues(
     if (
       !SUPPORTED_FEATURES.costKinds.includes(c.kind) ||
       allowed?.includes(c.kind) === false ||
+      // D-1190: "discard X cards" is an additional cost of a spell; an activated ability does not announce one.
+      c.kind === 'discardX' ||
       // D-209: an energy cost is paid only where an `unlessPays` names it.
       (c.kind === 'energy' && allowed?.includes('energy') !== true)
     ) {

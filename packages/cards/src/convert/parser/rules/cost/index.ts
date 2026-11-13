@@ -10,6 +10,7 @@ import { quantity } from '../amount/index';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, node, spanned } from '../registry';
 import { HASHATON_G2_COST_RULES } from './hashaton-group-2';
+import { HASHATON_G10_COST_RULES } from './hashaton-group-10';
 import { HOFRI_COST_RULES } from './hofri';
 
 /** `cost.tap`: "{T}" (CR 107.5 the tap symbol, 602.5a: tapping as a cost). */
@@ -822,6 +823,8 @@ export const COST_RULES = [
   COST_PAY_LIFE_AMOUNT,
   // Hashaton deck, group 2 (D-364): "pay that much life", read by `effect.pay` only.
   ...HASHATON_G2_COST_RULES,
+  // Hashaton deck, group 10 (D-1190): "discard X cards", read by `static.additional-cost` only.
+  ...HASHATON_G10_COST_RULES,
   COST_PAY_X_LIFE,
   COST_REMOVE_COUNTERS,
   COST_PUT_COUNTERS,

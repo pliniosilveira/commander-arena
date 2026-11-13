@@ -39,7 +39,7 @@ function additional(cost: IrCost): LowerResult<Cost> {
   }
   // An {X} in an additional mana cost is not run (the engine's `checkAdditionalCosts`).
   if (cost.kind === 'mana' && cost.symbols.includes('X')) return failure(cost);
-  return lowerCost(cost, { x: true });
+  return lowerCost(cost, { x: true, discardX: true });
 }
 
 /**
@@ -65,7 +65,7 @@ function lowerChoice(
   const [one, other] = options;
   if (one === undefined || other === undefined) return failure(ability);
   const costs = [...one, ...other];
-  if (costs.some((c) => c.kind === 'payXLife')) return failure(ability);
+  if (costs.some((c) => c.kind === 'payXLife' || c.kind === 'discardX')) return failure(ability);
   const missing = missingFeatures([
     ...costs.map((c): FeatureRef => `cost:${c.kind}`),
     'ability:additionalCostChoice',
@@ -97,6 +97,8 @@ function lowerAdditional(
   const needs = lowered.map((c): FeatureRef => `cost:${c.kind}`);
   // "Pay X life": the caster announces X as the spell is cast (CR 107.3a, D-103).
   if (lowered.some((c) => c.kind === 'payXLife')) needs.push('ability:xCost');
+  // "Discard X cards" (D-1190): X is announced the same way, and the engine pays it as the one discard cost of the spell.
+  if (lowered.some((c) => c.kind === 'discardX')) needs.push('ability:xCost');
   const missing = missingFeatures(needs);
   if (missing.length > 0) return failure(ability, missing);
   // The engine allows one "pay X life" (`checkAdditionalCosts`).
@@ -104,6 +106,12 @@ function lowerAdditional(
   for (const kind of ['sacrifice', 'discard'] as const) {
     // The engine pays one sacrifice and one discard as additional costs (`checkAdditionalCosts`).
     if (lowered.filter((c) => c.kind === kind).length > 1) return failure(ability);
+  }
+  // The one discard cost is "discard X cards" or a discard of N cards, not both (`checkAdditionalCosts`, D-1190).
+  if (lowered.some((c) => c.kind === 'discardX')) {
+    if (lowered.filter((c) => c.kind === 'discardX' || c.kind === 'discard').length > 1) {
+      return failure(ability);
+    }
   }
   return { ok: true, value: { ...NONE, additionalCosts: lowered }, rule: ability.rule };
 }

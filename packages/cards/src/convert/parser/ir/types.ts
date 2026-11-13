@@ -591,6 +591,8 @@ export type IrCost = IrNode &
     | { readonly kind: 'payLife'; readonly amount: IrAmount }
     // "Pay X life" (stage P16): the amount is announced as X (CR 107.3a), not a number
     | { readonly kind: 'payXLife' }
+    // "Discard X cards" (Hashaton group 10, D-1190, CR 107.3a, 701.9): as many cards as the X announced; an additional cost of a spell
+    | { readonly kind: 'discardX' }
     // "Discard a card", "Discard two cards" (stage P13): the player chooses, so only a count
     // `filter` and `named` (stage P50, D-207): "Discard a legendary card", "Discard another card named ~": the cards the cost may discard, by a supertype or a card
     // type, or by the name of the permanent with the ability

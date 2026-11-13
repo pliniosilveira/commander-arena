@@ -70,7 +70,19 @@ export function perXText(d: Pick<ChooseXDecision, 'perX'>): string {
   if (d.perX.life > 0) parts.push(`${d.perX.life} life`);
   // D-200 (CR 606.5): the X of "[-X]" removes that many loyalty counters.
   if ((d.perX.loyalty ?? 0) > 0) parts.push(`${d.perX.loyalty} loyalty`);
-  return parts.length === 0 ? 'X costs nothing extra' : `Each X costs ${parts.join(' and ')}`;
+  const discard = discardXText(d);
+  if (parts.length === 0) return discard === '' ? 'X costs nothing extra' : discard;
+  return `Each X costs ${parts.join(' and ')}${discard === '' ? '' : `, and you ${discard.replace(/^D/, 'd')}`}`;
+}
+
+/**
+ * "Discard X cards" for the additional cost of that name (D-1190, CR 701.9: "discard X cards" costs X cards of the hand for each point of X), "Discard 2X cards" when
+ * each point costs two; "" when X discards nothing.
+ */
+export function discardXText(d: Pick<ChooseXDecision, 'perX'>): string {
+  const n = d.perX.discard ?? 0;
+  if (n <= 0) return '';
+  return `Discard ${n === 1 ? 'X' : `${n}X`} cards`;
 }
 
 /** "Choose X for SYNTHETIC Fireball." or, for an activated ability, "... for Name's ability." */
@@ -92,6 +104,11 @@ export function xPrompt(
   if (isReplicate(d)) return replicatePrompt(d);
   if (isPayAnyAmount(d)) return payAmountPrompt(d);
   if (isDrawUpTo(d)) return drawUpToPrompt(d);
+  // D-1190: a cost that is only cards to discard says what it discards and the most X the hand and the targets allow.
+  const onlyDiscard = (d.perX.discard ?? 0) > 0 && d.perX.mana + d.perX.life === 0;
+  if (onlyDiscard && (d.perX.loyalty ?? 0) === 0) {
+    return `${xHeading(d)} ${discardXText(d)}; you can choose up to X = ${d.max}.`;
+  }
   return `${xHeading(d)} ${perXText(d)}; you can afford up to X = ${d.max}.`;
 }
 
@@ -101,6 +118,8 @@ export function xCostAt(d: Pick<ChooseXDecision, 'perX'>, x: number): string {
   if (d.perX.mana > 0) parts.push(`{${d.perX.mana * x}}`);
   if (d.perX.life > 0) parts.push(`${d.perX.life * x} life`);
   if ((d.perX.loyalty ?? 0) > 0) parts.push(`${(d.perX.loyalty ?? 0) * x} loyalty`);
+  const discard = (d.perX.discard ?? 0) * x;
+  if (discard > 0) parts.push(`discard ${discard} ${discard === 1 ? 'card' : 'cards'}`);
   return parts.join(' and ');
 }
 

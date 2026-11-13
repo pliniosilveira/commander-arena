@@ -271,6 +271,9 @@ function PreviewDetails({ object }: { object: ObjectView }) {
             {object.additionalCosts?.some((c) => c.kind === 'payXLife')
               ? `, ${object.x} life paid`
               : ''}
+            {object.additionalCosts?.some((c) => c.kind === 'discardX')
+              ? `, ${object.x} ${object.x === 1 ? 'card' : 'cards'} discarded`
+              : ''}
           </dd>
         </>
       )}

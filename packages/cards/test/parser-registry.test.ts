@@ -173,6 +173,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P16: X in the cost of an activated ability, read with an X in its effect.
   'cost.mana-x': permanent((e) => `${e}, {T}: Draw X cards.`),
   'cost.pay-x-life': permanent((e) => `${e}: Draw X cards.`),
+  // Group 10 of the Hashaton deck (D-1190): "discard X cards" is an additional cost of a spell, and "X target creature cards" the targets that read the X it announces.
+  'cost.discard-x': permanent((e) => `${e}: Draw X cards.`),
+  'noun.x-target-graveyard-cards': spell((e) => `Return ${e} to your hand.`),
   'cost.remove-counters': permanent((e) => `${e}: Draw a card.`),
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   'duration.until-end-of-turn': permanent((e) => `{1}: ~ gets +1/+1 ${e}.`),

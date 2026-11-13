@@ -327,6 +327,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     else if (c.kind === 'discard') discard += c.count;
   }
   const life = lifeOf(additional) + (kicker === null ? 0 : lifeOf(kicker) * kicks) + perX.life * x;
+  // D-1190 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
+  discard += (perX.discard ?? 0) * x;
   const reduced = reduceGeneric(
     symbols,
     reductionFor(

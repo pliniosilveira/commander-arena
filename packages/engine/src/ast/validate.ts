@@ -925,6 +925,7 @@ function hasXCost(
   return costs.some(
     (c) =>
       c.kind === 'payXLife' ||
+      c.kind === 'discardX' ||
       (c.kind === 'mana' && (c.symbols ?? []).includes('X')) ||
       // D-200: the X of "[-X]".
       (c.kind === 'loyalty' && c.change === 'x'),
@@ -1431,7 +1432,11 @@ function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
   if (s.chooseModes !== undefined) {
     issue(out, `${path}.chooseModes`, 'chooseModes without modes');
   }
-  const targets = declareTargets(s.targets, `${path}.targets`, out, true);
+  const targets = declareTargets(s.targets, `${path}.targets`, out, true, false, false, true);
+  // D-1190: X targets read the X announced for the spell: the text must say it has one.
+  if (!xAllowed && (s.targets ?? []).some((t) => t.countX === true)) {
+    issue(out, `${path}.x`, 'X targets need x: true (the spell announces an X)');
+  }
   if (s.effect !== undefined) {
     checkEffect(s.effect, `${path}.effect`, { owner: 'spell', targets, xAllowed, ...HOOKS }, out);
   } else if (targets.size > 0) {

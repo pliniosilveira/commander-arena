@@ -258,3 +258,11 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - "If you do" after a mandatory sacrifice reads through `didPrevious` (D-360), which counts the instructions since the last `may`: a text with another counted instruction before the sacrifice would be read too wide. `thisWayAtLeast` of `sacrificed` is the exact reading, accepted by the engine, and no rule of the parser lowers to it yet.
 - `thisWayAtLeast` is worded in the web only for one or more of a creature card or a noncreature card discarded, an instant or sorcery card discarded, and a permanent sacrificed.
 - "target ... cards in your graveyard" (with "in") is read only by `effect.choose-graveyard-cards`; the other rules that take a graveyard card say "from".
+
+## The Hashaton deck, group 10 (issue 31, D-1190 to D-1193, provisional numbers)
+
+- "Discard X cards" is an additional cost of a spell only (`Cost.discardX`): not the cost of an activated ability (an activation announces X for `{X}`, "pay X life" and "[-X]" only), not "discard X cards at random", not "discard X creature cards". One discard cost for a spell: `discardX` and `discard` together are refused.
+- "X target ..." (`TargetSpec.countX`) is read for objects (cards of your graveyard or permanents) in the text of a spell: not "up to X", not a target of an ability or a trigger, not players, not a slot with a kicker or gift condition, not a mode of a modal spell. The grammar reads "X target creature cards from your graveyard" only (`noun.x-target-graveyard-cards`).
+- The CasualAgent picks the first X legal graveyard cards for "return X target creature cards" (any legal answer) and discards by `chooseCostDiscard`; `worthCasting` of a recursion spell with a single "target creature card from your graveyard" ("Raise Dead") still asks for an opposing creature (the text matches "target creature"), which is a known weakness of the agent, not touched here.
+- The rulings of Restless Dreams on Scryfall were not fetched (blocked in a cloud session): the order of the announcement (X, then the targets, then the discard) follows CR 601.2b, 601.2c and 601.2h.
+

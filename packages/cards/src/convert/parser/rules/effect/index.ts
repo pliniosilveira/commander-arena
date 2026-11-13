@@ -589,7 +589,12 @@ const RETURN_FROM_GRAVEYARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSp
   const toBattlefield = TO_BATTLEFIELD_AHEAD.test(ctx.text.slice(pos));
   const r = sequence(
     literal('return '),
-    operands(GRAVEYARD_OPERANDS, 'effect.return', toBattlefield ? undefined : YOUR_GRAVEYARD_ONLY),
+    // D-1190: "return X target creature cards from your graveyard to your hand" (as many targets as the X announced) is read here and by no other verb.
+    operands(
+      [...GRAVEYARD_OPERANDS, 'noun.x-target-graveyard-cards'],
+      'effect.return',
+      toBattlefield ? undefined : YOUR_GRAVEYARD_ONLY,
+    ),
     toBattlefield ? TO_THE_BATTLEFIELD : TO_YOUR_HAND,
   )(ctx, pos);
   return r.ok ? { ok: true, value: { objects: r.value[1], to: r.value[2] }, pos: r.pos } : r;
@@ -615,6 +620,8 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return all creatures to their owners' hands",
     'return target creature card from your graveyard to your hand',
     'return target creature card from your graveyard to the battlefield',
+    // D-1190 (Hashaton, group 10): as many targets as the X announced for the spell.
+    'return X target creature cards from your graveyard to your hand',
     'return all land cards from your graveyard to the battlefield tapped',
     'return target creature card from a graveyard to the battlefield',
     'return target creature card from a graveyard to the battlefield under your control',
@@ -657,6 +664,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return target creature card from an opponent's graveyard to your hand",
     'return target creature card from a graveyard to your hand',
     'return target creature card from your graveyard to your hand under your control',
+    'return X target creature cards from a graveyard to your hand',
+    'return X target creature cards from your graveyard to your library',
+    'return X target creature cards to your hand',
     'return target creature to the battlefield',
     'return target creature card from a graveyard to the battlefield under his control',
     'return target creature card from a graveyard to the battlefield under your control tapped',

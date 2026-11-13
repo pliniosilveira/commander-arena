@@ -147,6 +147,8 @@ function copyDecision(
     specs,
     copyContext(res, copy),
     modal === null ? undefined : specModes(modal, copy.stack?.chosenModes ?? []),
+    // D-1190 (CR 707.10): a copy has the X of the spell it copies, so a slot of "X target ..." keeps its number of targets.
+    copy.stack?.x ?? 0,
   ).map((slot) => {
     const legal = [
       ...slot.legal,

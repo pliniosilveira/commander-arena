@@ -10,6 +10,7 @@
  *    with nothing it can kill, all of it at the opponent's face when the text allows a player;
  *  - "draw X cards": all of it, but one card fewer than its library holds, so it never draws itself out;
  *  - "pay X life": no more X than leaves it above `PAY_LIFE_ABOVE`, as for any life it pays;
+ *  - "discard X cards" (D-1190): no more X than the cards it is glad to lose (`expendableCount`);
  *  - anything else ("X +1/+1 counters", "gain X life", "enters with X counters"): all of it;
  *  - a creature that "enters with X +1/+1 counters" (issue 131, D-237): all of it, and never less than the X
  *    that keeps it alive (`minXToSurvive`): a 0/0 that enters with no counter dies at once (CR 704.5f).
@@ -23,6 +24,7 @@ import type {
   ObjectView,
   TargetsDecision,
 } from '@commander-arena/engine';
+import { expendableCount } from './casual-costs';
 import { PAY_LIFE_ABOVE } from './casual-permanents';
 import {
   effectiveCost,
@@ -30,6 +32,7 @@ import {
   fixedLifeOf,
   opponentLife,
   opposingCreatures,
+  ownHand,
   ownLife,
   powerOf,
   toughnessOf,
@@ -107,6 +110,13 @@ export function chooseXAnswer(view: GameView, d: ChooseXDecision): Action {
   if (d.perX.life > 0) {
     const spare = Math.max(0, ownLife(view) - PAY_LIFE_ABOVE - 1);
     want = Math.min(want, Math.floor(spare / d.perX.life));
+  }
+  // D-1190: "discard X cards": no more cards than it is glad to lose (surplus lands, cards it cannot cast); the engine offered no X above the cards in
+  // hand and the legal targets, so the answer is legal, and one card is the least that does something when it has one to spare.
+  const perDiscard = d.perX.discard ?? 0;
+  if (perDiscard > 0) {
+    const hand = ownHand(view).filter((o) => o.id !== d.source);
+    want = Math.min(want, Math.floor(expendableCount(view, hand) / perDiscard));
   }
   // A creature that X sizes is never announced at an X that kills it on arrival, when any larger X is on offer.
   const alive = source === undefined ? 0 : minXToSurvive(source);

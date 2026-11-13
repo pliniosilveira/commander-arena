@@ -2441,6 +2441,41 @@ export const HASHATON_G8_NAMES = [
   'SYNTHETIC Spell Desecrator',
 ] as const;
 
+/**
+ * The SYNTHETIC cards of group 10 of the Hashaton deck (D-1190 to D-1193, provisional): "As an additional cost to cast this spell, discard X cards", with "Return X target
+ * creature cards from your graveyard to your hand" (a target slot of as many targets as X), X damage, "Draw X cards" or flashback, and a creature that triggers on a
+ * discard. They ask X before the targets and a discard in the middle of a cast, which games-100 expects only from dedicated styles, so they stay out of the generic pools.
+ */
+export const HASHATON_G10_NAMES = [
+  'SYNTHETIC Dream Recall',
+  'SYNTHETIC Dream Replay',
+  'SYNTHETIC Dream Burn',
+  'SYNTHETIC Dream Rummage',
+  'SYNTHETIC Dream Mourner',
+] as const;
+
+/** The hashatonDiscardX style: each spell of the group, the recursion twice (the card of the issue), bodies to put in the graveyard, removal and burn to fill it. */
+export const HASHATON_G10_SPELLS = [
+  ...supported(HASHATON_G10_NAMES),
+  ...supported(['SYNTHETIC Dream Recall', 'SYNTHETIC Dream Recall', 'SYNTHETIC Dream Replay']),
+  ...supported(['Lightning Bolt', 'Murder', 'Divination']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Black for the recursion, red for the burn and blue for the rummage, a little green for the bodies. */
+export const HASHATON_G10_LANDS = supported([
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Mountain',
+  'Island',
+  'Island',
+  'Forest',
+]);
+
 /** The cast-or-copy trigger doubling cards of the Niv-Mizzet deck (D-339): extra triggers and their questions stay out of the generic pools. */
 export const NIV_GROUP_3_B_NAMES = [
   'SYNTHETIC Twin Mage',
@@ -2927,6 +2962,8 @@ const FIXTURES: readonly CardDefinition[] = [
 
   // The Hashaton group 8 cards (D-358 to D-361) ask which creature to sacrifice and what to discard, which games-100 expects only from dedicated styles.
   .filter((card) => !(HASHATON_G8_NAMES as readonly string[]).includes(card.name))
+  // The discard X cards of the Hashaton deck (D-1190 to D-1193) ask X, then the targets, then a discard, while a spell is cast: a style of their own.
+  .filter((card) => !(HASHATON_G10_NAMES as readonly string[]).includes(card.name))
 
   // The life cards of the Hashaton deck (D-363 to D-365) have their own style: a life gain that does not happen, an end step loss and a payment question.
   .filter((card) => !(HASHATON_G2_NAMES as readonly string[]).includes(card.name))
@@ -3113,6 +3150,7 @@ export type DeckStyle =
   | 'piles'
   | 'nivDraw'
   | 'hashatonLife'
+  | 'hashatonDiscardX'
   | 'repeatable'
   | 'manifest'
   | 'combat';
@@ -3125,6 +3163,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'piles' && PILES_SPELLS.length > 0) return PILES_SPELLS;
   if (style === 'nivDraw' && NIV_DRAW_SPELLS.length > 0) return NIV_DRAW_SPELLS;
   if (style === 'hashatonLife' && HASHATON_G2_SPELLS.length > 0) return HASHATON_G2_SPELLS;
+  if (style === 'hashatonDiscardX' && HASHATON_G10_SPELLS.length > 0) return HASHATON_G10_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
   if (style === 'manifest' && MANIFEST_SPELLS.length > 0) return MANIFEST_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
@@ -3301,6 +3340,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'piles' && BASIC_LANDS.length > 0) return PILES_LANDS;
   if (style === 'nivDraw' && BASIC_LANDS.length > 0) return NIV_DRAW_LANDS;
   if (style === 'hashatonLife' && BASIC_LANDS.length > 0) return HASHATON_G2_LANDS;
+  if (style === 'hashatonDiscardX' && BASIC_LANDS.length > 0) return HASHATON_G10_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
   if (style === 'manifest' && BASIC_LANDS.length > 0) return MANIFEST_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
@@ -3729,6 +3769,13 @@ export const HASHATON_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])
   ['hashatonLife', 'hashatonLife'],
   ['hashatonLife', 'spells'],
   ['spells', 'hashatonLife'],
+];
+
+/** Style pairs of the discard X cards soak test (D-1190 to D-1193): a mirror match and both mixed ways. */
+export const HASHATON_G10_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hashatonDiscardX', 'hashatonDiscardX'],
+  ['hashatonDiscardX', 'spells'],
+  ['spells', 'hashatonDiscardX'],
 ];
 
 /** Style pairs of the repeatable-mode soak test (D-344): a mirror match and both mixed ways. */
