@@ -330,3 +330,12 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The spell's own flash (`castAsThoughFlash` with `this`): a spell with several mandatory target slots restricts only the first to the objects the condition's filter matches, so a legal cast whose second slot meets "it targets a commander" is not offered; a modal spell's modes are not restricted. The grammar reads only the condition "it targets <a kind of permanent or a commander>"; "if you control a Dragon" and the like are run by the engine (SYNTHETIC `Crowd Aura`) but not read.
 - The attach to "that creature" needs a trigger that names a creature; "it" is the token of the same sentence only. The AI reads the entering creature as the newest creature on the battlefield (the view has no trigger subject), which is wrong when several creatures enter at once.
 - The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited above.
+
+## The Danitha deck, group 2 (issue 26, D-1220 to D-1224, provisional)
+
+- `ChooseSelector.fromMoved` puts the card taken into the hand only: "You may put a creature card from among them onto the battlefield" after a mill is not built (the choice of a card from the graveyard onto the battlefield exists, D-139, but not restricted to the cards moved), and `effect.put-from-among` does not read it.
+- A mill of another player ("target player mills four cards. You may put a land card from among them into your hand") is not lowered: the card would come from a graveyard the controller does not own. "Them" is read only right after one mill of the controller's own library.
+- The cards milled are the new objects the mill put into the graveyard; a card that a replacement effect sent elsewhere is not among them (CR 701.17c finds a milled card in the zone it moved to; the engine's `moved` names the graveyard objects only).
+- "If you don't" is read only after this choice; after other offers it stays unread, as before.
+- `objectMatches.inZone` knows `hand` only.
+- The rulings of the seven cards on Scryfall were not fetched (blocked in a cloud session); the behaviour rests on the CR rules listed in `docs/MECHANICS.md`.

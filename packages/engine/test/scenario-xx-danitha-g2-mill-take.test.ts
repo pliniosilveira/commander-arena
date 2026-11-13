@@ -315,6 +315,57 @@ describe('a rider after the choice', () => {
   });
 });
 
+describe('"into your hand this way" reads the zone the card is in (objectMatches inZone, CR 608.2c)', () => {
+  // A spell with no choice at all: mill one card, then "if the card is a Town card in your hand, gain 2 life". The card milled is in the graveyard, so the zone test fails;
+  // without the zone test (inZone absent) the same condition would hold, because the card is a Town card.
+  const spell = (inZone: boolean): CardDefinition => {
+    const base = SYNTHETIC_DANITHA_G2_LIST.find((c) => c.name === TILLING) as CardDefinition;
+    const effect: Effect = {
+      kind: 'sequence',
+      effects: [
+        { kind: 'mill', player: { kind: 'you' }, count: 1 },
+        {
+          kind: 'conditional',
+          condition: {
+            kind: 'objectMatches',
+            of: { kind: 'moved' },
+            filter: { subtypes: ['Town'] },
+            ...(inZone ? { inZone: 'hand' as const } : {}),
+          },
+          effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 2 },
+        },
+      ],
+    };
+    return {
+      ...base,
+      name: base.name,
+      faces: base.faces.map((f) => ({ ...f, spell: { effect } })),
+    };
+  };
+  const run = (def: CardDefinition): ScenarioGame => {
+    const g = scenario()
+      .define(def)
+      .seat(0)
+      .hand(def.name)
+      .pool('GWC')
+      .library(TOWN)
+      .library('Island')
+      .seat(1)
+      .library('Llanowar Elves')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(def.name, { pay: true });
+    g.passAll();
+    return g;
+  };
+
+  test('without the zone the Town card milled satisfies the condition, with it the card in the graveyard does not', () => {
+    expect(validateCard(spell(true))).toEqual([]);
+    run(spell(false)).expect.life(0, 42);
+    run(spell(true)).expect.life(0, 40);
+  });
+});
+
 describe('the fixtures', () => {
   test('every card of the slice is a valid card definition', () => {
     expect(SYNTHETIC_DANITHA_G2_LIST).toHaveLength(8);
