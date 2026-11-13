@@ -1264,6 +1264,14 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'lifeLostThisTurn':
+      // D-365: only as the whole amount of a `loseLife` (checked with the effect), where it is read for each player the effect affects.
+      issue(
+        out,
+        path,
+        'lifeLostThisTurn is the whole amount of a loseLife effect, not part of another amount',
+      );
+      break;
     case 'lifeLostThisWay':
       // D-120: the total of the life lost by an earlier `loseLife` of the same sequence.
       if (scope.lossAvailable !== true) {
@@ -2978,7 +2986,26 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'mayPay':
       // CR 702.101a: "you may pay [cost]. If you do, [effect]".
-      checkCosts(e.cost, `${path}.cost`, out);
+      // D-364 (CR 119.4): the life paid may be the life that caused the trigger (`triggerDamage`, "pay that much life"), which the amount checks against
+      // the trigger of the ability; any other amount is held to what a payment of life reads (`checkCost`).
+      if (Array.isArray(e.cost)) {
+        e.cost.forEach((c, i) => {
+          if (c?.kind === 'payLife' && kindOf(c.amount) === 'triggerDamage') {
+            checkAmount(c.amount, `${path}.cost[${i}].amount`, scope, out);
+          }
+        });
+      }
+      checkCosts(
+        Array.isArray(e.cost)
+          ? e.cost.map((c) =>
+              c?.kind === 'payLife' && kindOf(c.amount) === 'triggerDamage'
+                ? { ...c, amount: 1 }
+                : c,
+            )
+          : e.cost,
+        `${path}.cost`,
+        out,
+      );
       checkEffect(e.effect, `${path}.effect`, scope, out);
       break;
     case 'cumulativeUpkeep':
@@ -3651,7 +3678,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'loseLife':
     case 'gainEnergy':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
-      checkAmount(e.amount, `${path}.amount`, scope, out);
+      // D-365: "the life that player lost this turn" is the whole amount of a `loseLife`, read for each player it affects (`rules/life-amounts.ts`).
+      if (kindOf(e.amount) === 'lifeLostThisTurn') {
+        if (e.kind !== 'loseLife') {
+          issue(out, `${path}.amount`, 'lifeLostThisTurn is the amount of a loseLife effect');
+        }
+      } else {
+        checkAmount(e.amount, `${path}.amount`, scope, out);
+      }
       break;
     case 'meld':
       // CR 701.42a (D-278): the creature named `partner` and the name of the combined face the two become; `validateCard` checks them against the card.

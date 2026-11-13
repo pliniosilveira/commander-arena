@@ -193,6 +193,12 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
     case 'cantLoseGame':
     case 'opponentsCantWin':
       return true;
+    case 'cantGainLife':
+      // CR 119.7 (D-363): the opponents of the controller are the only group the engine reads.
+      if (s.who !== 'opponents') {
+        issue(out, `${path}.who`, 'cantGainLife is said of the opponents of the controller');
+      }
+      return true;
     case 'doubleTriggers':
       // D-220 (CR 603.2d): the permanents whose triggered abilities trigger again: a group on the battlefield, or the permanent this is attached to.
       if (s.subject?.kind === 'filter') {

@@ -198,7 +198,8 @@ const lifeAction: Action = (subject, you, rule) => {
                   base === 'gain'
                     ? // CR 702.101a: only a gain can be the life lost by the instruction before it.
                       [...EQUAL_AMOUNTS, 'amount.life-lost-this-way']
-                    : EQUAL_AMOUNTS,
+                    : // D-365: "loses life equal to the life that player lost this turn" (a loss only; the lowering reads it for another player than "you").
+                      [...EQUAL_AMOUNTS, 'amount.life-lost-this-turn'],
               }),
             ),
             ([, , amount]) => amount,

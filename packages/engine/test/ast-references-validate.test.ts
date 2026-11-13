@@ -76,6 +76,7 @@ describe('amounts that read an object', () => {
       'manaSpent',
       'times',
       'lifeLostThisWay',
+      'lifeLostThisTurn',
       // D-131.
       'toughnessOf',
       'countersOn',

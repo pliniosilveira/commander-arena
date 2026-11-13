@@ -739,6 +739,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       ) {
         return `${playerVerb(effect.player, ability, 'draw')} that many cards`;
       }
+      // D-364: "If you do, draw that many cards" after "you may pay that much life": the life that caused the trigger.
+      if (typeof effect.count === 'object' && effect.count.kind === 'triggerDamage') {
+        return `${playerVerb(effect.player, ability, 'draw')} that many cards`;
+      }
       // D-217 (CR 121.1): "Its controller may draw up to two cards": the player is the one the ability named as it was created.
       if (effect.upTo === true) {
         const who = effect.player.kind === 'triggerPlayer' ? 'That player' : 'You';
@@ -771,6 +775,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         ? `${playerVerb(effect.player, ability, 'gain')} that much life`
         : `${playerVerb(effect.player, ability, 'gain')} ${quantity(effect.amount, defs, LIFE)}`;
     case 'loseLife':
+      // D-365: "Each opponent loses life equal to the life that player lost this turn", not "loses the life ... life".
+      if (typeof effect.amount === 'object' && effect.amount.kind === 'lifeLostThisTurn') {
+        return `${playerVerb(effect.player, ability, 'lose')} life equal to ${amountPhrase(effect.amount)}`;
+      }
       return typeof effect.amount === 'object' && effect.amount.kind === 'triggerDamage'
         ? `${playerVerb(effect.player, ability, 'lose')} that much life`
         : `${playerVerb(effect.player, ability, 'lose')} ${quantity(effect.amount, defs, LIFE)}`;

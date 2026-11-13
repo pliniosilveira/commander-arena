@@ -6,7 +6,7 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 
 | Card | Group | Class | Status | What it needs |
 | --- | --- | --- | --- | --- |
-| Archfiend of Despair | 2 | P (+T) | in progress | "Your opponents can't gain life"; "each opponent loses life equal to the life that player lost this turn" at each end step |
+| Archfiend of Despair | 2 | P (+T) | done | "Your opponents can't gain life"; "each opponent loses life equal to the life that player lost this turn" at each end step |
 | Archfiend of Ifnir | 1 | T (+ tiny P) | in progress | "Whenever you cycle or discard another card, put a -1/-1 counter on each creature your opponents control" |
 | Archon of Cruelty | 1 | T | in progress | "target opponent sacrifices a creature or planeswalker of their choice, discards a card, and loses 3 life. You draw a card and gain 3 life" |
 | Bard, King of Dale | 3 | P x2 (+T x2) | waiting | two replacements: draw two instead (except the first draw of the draw step); twice as many tokens |
@@ -16,8 +16,8 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Faithful Mending | 1 | T | in progress | "gain 2 life, draw two cards, then discard two cards" (plus flashback if printed) |
 | Gleaming Overseer | 4 | P + T | in progress | amass Zombies; "Zombie tokens you control have hexproof and menace" |
 | Hashaton, Scarab's Fist | 5 | P x3 (+T) | waiting | discard a creature card: may pay, create a tapped copy token that is a 4/4 black Zombie |
-| Niv-Mizzet, Ghost Counsel | 2 | P + T | in progress | "Whenever you gain life, you may pay that much life. If you do, draw that many cards" |
-| Ob Nixilis, the Ascended | 2 | T | in progress | at each end step, if you gained life this turn, create a 4/4 Angel token |
+| Niv-Mizzet, Ghost Counsel | 2 | P + T | done | "Whenever you gain life, you may pay that much life. If you do, draw that many cards" |
+| Ob Nixilis, the Ascended | 2 | T | done | at each end step, if you gained life this turn, create a 4/4 Angel token |
 | Psychic Frog | 1 | P (+T) | in progress | combat damage to a player or planeswalker: draw a card |
 | Renewed Solidarity | 5 | T (+ small P) | waiting | choose a type as it enters; at your end step copy each token of that type that entered this turn |
 | Restless Dreams | 10 | P x2 (casting) | waiting | additional cost: discard X cards; return X target creature cards from the graveyard |

@@ -54,6 +54,7 @@ import { SYNTHETIC_FREE_CAST_LIST } from './synthetic-free-cast';
 import { SYNTHETIC_GIFT_LIST } from './synthetic-gift';
 import { SYNTHETIC_GRAVEYARD_LIST } from './synthetic-graveyard';
 import { SYNTHETIC_GREATEST_LIST } from './synthetic-greatest';
+import { SYNTHETIC_HASHATON_G2_LIST } from './synthetic-hashaton-g2';
 import { SYNTHETIC_HASHATON_G7_LIST } from './synthetic-hashaton-g7';
 import { SYNTHETIC_HASHATON_G8_LIST } from './synthetic-hashaton-g8';
 import { SYNTHETIC_HOFRI_LIST } from './synthetic-hofri';
@@ -434,6 +435,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_ATTACK_LIMIT_LIST,
   ...SYNTHETIC_DRAGONS_LIST,
   ...SYNTHETIC_PILES_LIST,
+  ...SYNTHETIC_HASHATON_G2_LIST,
 ];
 
 export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.fromEntries(

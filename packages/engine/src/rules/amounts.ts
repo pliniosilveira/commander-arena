@@ -177,6 +177,9 @@ export function amountOf(
   if (amount.kind === 'countOf') return countMatching(state, amount.filter, ctx);
   // D-120: "the total life lost this way": what the earlier `loseLife` of this resolution made players lose.
   if (amount.kind === 'lifeLostThisWay') return ctx.lifeLost ?? 0;
+  // D-365: "the life that player lost this turn" is read for each player the `loseLife` effect affects (`lifeAmountFor`), never here: `validateCard` allows it
+  // only as the whole amount of that effect, so this is not reached for a card.
+  if (amount.kind === 'lifeLostThisTurn') return 0;
   // D-194: "the number of profit votes": the players who voted for that option in the vote of this resolution (CR 701.38a).
   if (amount.kind === 'votesFor') return ctx.votes?.[amount.option] ?? 0;
   // D-133: "that much" for the damage that caused the trigger (CR 120.3).

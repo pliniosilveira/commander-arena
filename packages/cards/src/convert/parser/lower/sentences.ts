@@ -435,7 +435,8 @@ function lowerMayPay(
   if (next.clauses.some((c) => c.optional)) return refuse(next);
   const cost: Cost[] = [];
   for (const item of offer.costs) {
-    const lowered = lowerCost(item, { hybrid: true });
+    // D-364 (CR 119.4): "you may pay that much life" is the life of a life gain trigger, which only the ability of such a trigger can offer.
+    const lowered = lowerCost(item, { hybrid: true, eventLife: ctx.lifeGainTrigger === true });
     if (!lowered.ok) return lowered;
     cost.push(lowered.value);
   }

@@ -786,6 +786,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerHexproof',
     'cantLoseGame',
     'opponentsCantWin',
+    // D-363 (CR 119.7): "Your opponents can't gain life."
+    'cantGainLife',
     // D-220: "If a triggered ability of ... triggers, that ability triggers an additional time" (`doubleTriggers`).
     'doubleTriggers',
     'cantCastThis',
@@ -823,6 +825,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'times',
     // D-120: "the total life lost this way" (Extort).
     'lifeLostThisWay',
+    // D-365: "the life that player lost this turn" (CR 119.3), read for each player a `loseLife` affects.
+    'lifeLostThisTurn',
     // D-131: counts, aggregates and arithmetic.
     'toughnessOf',
     'countersOn',
@@ -1301,6 +1305,8 @@ export const STATIC_KINDS = [
   /** "You can't lose the game" and "your opponents can't win the game" (CR 104.2, 104.3, D-149): `cantLoseGame` and `opponentsCantWin`. */
   'cantLoseGame',
   'opponentsCantWin',
+  /** "Your opponents can't gain life" (CR 119.7, D-363): the engine's `cantGainLife`. */
+  'cantGainLife',
   /** "If a triggered ability of a Wizard you control triggers, that ability triggers an additional time" (CR 603.2d, D-220): `doubleTriggers`. */
   'doubleTriggers',
   /** "You can't cast ~ during your first, second, or third turns of the game" (CR 101.2, D-149): `cantCastThis`. */
@@ -1361,6 +1367,8 @@ export const AMOUNT_KINDS = [
   'manaSpent',
   /** "The total life lost this way" (CR 702.101a, D-120): the engine's `lifeLostThisWay`. */
   'lifeLostThisWay',
+  /** "The life that player lost this turn" (CR 119.3, D-365): the engine's `lifeLostThisTurn`, the whole amount of a `loseLife`. */
+  'lifeLostThisTurn',
   /** "-X/-X", "+2/+2 for each ..." (D-115): a multiple of an amount, only as a power or toughness. */
   'times',
   /** "That creature's toughness" (D-131): the engine's `toughnessOf`. */

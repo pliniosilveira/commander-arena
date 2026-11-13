@@ -635,12 +635,24 @@ function takeOncePerTurn(
   };
 }
 
+/** Whether the clause is the offer "pay that much life" (D-364): a `pay` whose only cost is the life of the event. */
+function paysThatMuchLife(clause: IrClause): boolean {
+  const cost = clause.args.cost;
+  return (
+    clause.verb === 'pay' &&
+    cost?.kind === 'costList' &&
+    cost.costs.length === 1 &&
+    cost.costs.every((c) => c.kind === 'payLife' && c.amount.kind === 'triggerDamage')
+  );
+}
+
 /**
  * "Whenever you gain life, you may put that many +1/+1 counters on each creature you control." (D-256, CR 119.9) and "Whenever a source you control deals noncombat
  * damage to an opponent, you draw that many cards." (D-333, CR 120.2b): in the ability of a life gain or noncombat damage
  * trigger, "that many" in the first instruction of the body is the life that was gained or the damage that was dealt, which the engine reads as `triggerDamage` (the amount of the
  * event that caused the trigger). One that follows any other instruction (mill two cards, then draw that many; discard a card, then draw that many) may count what
  * that instruction did and is not changed, so the lowering refuses it. The engine's `validateCard` allows `triggerDamage` for this trigger.
+ * D-364: the offer "you may pay that much life" is the event's own amount, so "If you do, draw that many cards" after it is the event's amount too.
  */
 function eventAmountThatMany(ability: Triggered): Triggered {
   const events = [ability.trigger, ...(ability.trigger.alternatives ?? [])];
@@ -682,7 +694,9 @@ function eventAmountThatMany(ability: Triggered): Triggered {
       );
       // Only the first instruction of the body can name the life gained: after any clause a later "that many" may count what that clause did
       // (cards milled, a card discarded, life gained by a second instruction), which this does not know, so it is left for the lowering to refuse.
-      counted = true;
+      // D-364: but the payment of "that much life" counts nothing of its own: it is the life gained itself, so "If you do, draw that many cards" after it
+      // still means the event's amount. Any other payment ("pay 2 life. If you do, draw that many cards") leaves "that many" unclear, so it is refused.
+      if (!paysThatMuchLife(clause)) counted = true;
       return { ...clause, args };
     }),
   }));

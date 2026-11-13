@@ -722,6 +722,11 @@ function playerVerb(
       }
       const amount = amountArg(clause, 'amount', ctx);
       if (!amount.ok) return amount;
+      // "Each opponent loses life equal to the life that player lost this turn" (D-365, CR 119.3): the amount of another player than "you" (who is "that
+      // player"), of a loss of life; each affected player's own number.
+      if (typeof amount.value === 'object' && amount.value.kind === 'lifeLostThisTurn') {
+        if (verb !== 'loseLife' || player.value.kind === 'you') return failure(clause);
+      }
       // "Discard any number of cards" (stage P34, D-152, CR 701.9): the player chooses none, some or all of the hand; what was discarded
       // is what "that many" counts afterwards.
       if (verb === 'discard' && arg(clause, 'anyNumber') !== undefined) {
