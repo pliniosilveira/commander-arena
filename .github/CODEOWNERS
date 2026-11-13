@@ -1,0 +1,25 @@
+# Who must review a change to what runs the checks and what steers the coding agents (see CONTRIBUTING.md).
+# A pull request is checked by the workflow, scripts and configuration of its own branch, so a change to any of
+# these could make the required check `check` pass without testing anything, or change what an agent does with the
+# owner's credentials. Turn on "Require review from Code Owners" in the ruleset `protect-main` to enforce it.
+
+/.github/ @pliniosilveira
+/.claude/ @pliniosilveira
+/AGENTS.md @pliniosilveira
+/CLAUDE.md @pliniosilveira
+/SECURITY.md @pliniosilveira
+/CONTRIBUTING.md @pliniosilveira
+/wrangler.jsonc @pliniosilveira
+/docs/SPEC.md @pliniosilveira
+
+# What `pnpm typecheck`, `pnpm lint` and `pnpm test` (the job `check`) run.
+/package.json @pliniosilveira
+/pnpm-workspace.yaml @pliniosilveira
+/.npmrc @pliniosilveira
+/tsconfig.base.json @pliniosilveira
+/vitest.config.ts @pliniosilveira
+/biome.json @pliniosilveira
+/.dependency-cruiser.cjs @pliniosilveira
+/tools/boundaries/ @pliniosilveira
+/tools/lint/ @pliniosilveira
+/tools/public/ @pliniosilveira
