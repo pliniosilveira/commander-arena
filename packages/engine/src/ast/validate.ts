@@ -696,6 +696,22 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${JSON.stringify(t.who)}`);
       }
+      // D-1161: "a creature card": read against the card where it went (a graveyard, or exile for madness), so no zone, controller or owner.
+      if (t.filter !== undefined) {
+        checkFilter(t.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            t.filter,
+            (f) => f.zone !== undefined || f.controller !== undefined || f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the card discarded is read where it went: the filter names no zone, controller or owner',
+          );
+        }
+      }
       break;
     case 'entersBatch':
       // D-218: one or more permanents that `what` names enter together: a filter of battlefield permanents, as they enter.

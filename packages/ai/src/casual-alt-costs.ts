@@ -102,10 +102,10 @@ export function alternativeSpend(card: ObjectView, kind: NamedAlternativeKind): 
 /**
  * What it costs the agent to lose a card from its graveyard to an escape cost (CR 702.138a): the higher, the more
  * it wants to keep it. Lands and instants and sorceries first, then permanents by mana value; a card that can
- * come back from the graveyard (flashback, escape, unearth) is kept longest, since exiling it ends that.
+ * come back from the graveyard (flashback, escape, unearth, eternalize) is kept longest, since exiling it ends that.
  */
 function graveyardKeepValue(o: ObjectView): number {
-  if (/\b(flashback|escape|unearth)\b/i.test(o.oracleText)) return 20 + manaValueOf(o);
+  if (/\b(flashback|escape|unearth|eternalize)\b/i.test(o.oracleText)) return 20 + manaValueOf(o);
   if (isLand(o)) return 0;
   if (o.types.includes('instant') || o.types.includes('sorcery')) return 1;
   return 2 + manaValueOf(o) / 10;
@@ -179,4 +179,15 @@ export function wantsUnearth(view: GameView, card: ObjectView): boolean {
   if (powerOf(card) >= opponentLife(view)) return true;
   const blockers = opposingCreatures(view).filter((o) => !o.tapped);
   return blockers.every((b) => powerOf(b) < toughnessOf(card));
+}
+
+/**
+ * Whether the agent eternalizes this creature card from its graveyard now (CR 702.129a, D-1162): in a main phase of its own turn (the engine lists it only at sorcery
+ * speed). The token is a 4/4 black Zombie that stays, with the abilities of the card, so it is worth the mana whenever the card is a creature card that could not be cast
+ * for less: the option is listed only when the cost can be paid, and the exile ends nothing the card could still do from the graveyard.
+ */
+export function wantsEternalize(view: GameView, card: ObjectView): boolean {
+  if (view.activeSeat !== view.viewer) return false;
+  if (view.step !== 'precombatMain' && view.step !== 'postcombatMain') return false;
+  return isCreature(card) && card.owner === view.viewer;
 }

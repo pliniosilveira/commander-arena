@@ -1023,6 +1023,17 @@ export type TokenSpec =
        * the token's copiable values (a copy of it has them).
        */
       readonly addSubtypes?: readonly Subtype[];
+      /**
+       * "..., except it's a 4/4 black Zombie" (D-1160, CR 707.9b, 707.9d): the copy is exactly these creature types, instead of the ones it copies (the other subtypes of the
+       * original stay: they belong to card types the copy keeps). A characteristic-defining ability that defines creature types (changeling) is not copied. Not with `addSubtypes`.
+       */
+      readonly setCreatureTypes?: readonly Subtype[];
+      /** "..., except it's black" (D-1160, CR 707.9b, 707.9d): the copy is exactly these colors; a color-defining ability (devoid) is not copied. */
+      readonly setColors?: readonly Color[];
+      /** "..., except it's 4/4" (D-1160, CR 707.9b, 707.9d): the copy has this power and toughness; a characteristic-defining ability that defines either is not copied. */
+      readonly setPt?: { readonly power: number; readonly toughness: number };
+      /** "..., except it has no mana cost" (D-1160, CR 707.9b, 202.1b): the copy's mana cost is nothing, so its mana value is 0. */
+      readonly noManaCost?: true;
       /** "... and it has \"When this token leaves the battlefield, return the exiled card to its owner's graveyard\"" (D-230, CR 707.9b): the abilities the token has besides the ones it copies. */
       readonly abilities?: readonly Ability[];
       /**
@@ -2694,9 +2705,14 @@ export type Trigger =
   /**
    * "Whenever you discard a card" (CR 701.9a, 603.2, D-206): once for each card the player `who` names (relative to the controller of the ability)
    * discards, however it came to be (an effect, a cost, the cleanup step). `triggerSubject` is the card in the graveyard it became (or in exile,
-   * for madness), so "you may exile that card from your graveyard" can name it; `triggerPlayer` is the player who discarded it.
+   * for madness), so "you may exile that card from your graveyard" can name it; `triggerPlayer` is the player who discarded it. `filter` (D-1161, "whenever you discard
+   * a creature card"): the card must match it, read against the card where it went (the graveyard, or exile for madness; so the filter has no zone, controller or owner).
    */
-  | { readonly kind: 'discarded'; readonly who: 'you' | 'opponent' | 'any' }
+  | {
+      readonly kind: 'discarded';
+      readonly who: 'you' | 'opponent' | 'any';
+      readonly filter?: ObjectFilter;
+    }
   /**
    * "Whenever one or more other creatures and/or artifacts you control die" (CR 603.10a, 603.2c, 700.4, D-206): a batch trigger. The permanents that
    * die in one event (a state-based action, a destroy effect, combat damage) are one occurrence: the ability triggers once however many `what` names
@@ -3156,6 +3172,13 @@ export type Keyword =
    * permanent card.
    */
   | { readonly kind: 'encore'; readonly cost: readonly Cost[] }
+  /**
+   * CR 702.129a (Eternalize, D-1162): "Eternalize [cost]" means "[Cost], Exile this card from your graveyard: Create a token that's a copy of this card, except it's black, it's 4/4,
+   * it has no mana cost, and it's a Zombie in addition to its other types. Activate only as a sorcery." An activated ability that functions from the graveyard; the engine expands
+   * the keyword (`rules/derive-keywords.ts`) into that ability: the `exileThis` cost and a `createToken` of a `copyOf` `this` with the exceptions `setColors`, `setPt`,
+   * `noManaCost` and `addSubtypes`. Mana only, no X; one eternalize ability on a permanent card.
+   */
+  | { readonly kind: 'eternalize'; readonly cost: readonly Cost[] }
   /**
    * CR 702.82a (Devour, D-185): "Devour N" means "As this object enters, you may sacrifice any number of creatures. This permanent enters with N
    * +1/+1 counters on it for each creature sacrificed this way." A static ability, applied as the permanent enters (CR 614.12): its controller

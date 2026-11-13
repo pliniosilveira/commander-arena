@@ -175,6 +175,19 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
         });
       }
       return true;
+    case 'eternalize':
+      // CR 702.129a (D-1162): the eternalize cost is paid like an activation cost from the graveyard: mana, no X.
+      checkCosts(k.cost, `${path}.cost`, out);
+      if (Array.isArray(k.cost)) {
+        k.cost.forEach((c, i) => {
+          if (c?.kind !== 'mana') {
+            issue(out, `${path}.cost[${i}]`, 'an eternalize cost may be mana only in this engine');
+          } else if (c.symbols?.includes('X')) {
+            issue(out, `${path}.cost[${i}]`, 'X in an eternalize cost is not supported');
+          }
+        });
+      }
+      return true;
     case 'devour':
       // CR 702.82a (D-185): N is a positive whole number.
       if (!isCount(k.count) || k.count < 1) {

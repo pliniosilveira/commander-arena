@@ -41,6 +41,8 @@ function mightMatchAura(f: ObjectFilter): boolean {
   if (f.types !== undefined && !f.types.includes('enchantment')) return false;
   if (f.notTypes?.includes('enchantment')) return false;
   if (f.subtypes !== undefined && !f.subtypes.includes('Aura')) return false;
+  // D-1163: "of the chosen type" is a creature type, which an Aura has no more than one that names a subtype does (CR 205.3d).
+  if (f.chosenType === true) return false;
   if (f.supertypes?.includes('basic')) return false;
   return true;
 }
@@ -335,6 +337,17 @@ function walkEffect(
       if (token.kind === 'copyOf') {
         if (!SUPPORTED_FEATURES.tokenKinds.includes('copyOf')) {
           out.push({ path: `${path}.token`, message: 'a token copy is not implemented yet' });
+        } else if (
+          (token.setPt !== undefined ||
+            token.setColors !== undefined ||
+            token.setCreatureTypes !== undefined ||
+            token.noManaCost !== undefined) &&
+          !SUPPORTED_FEATURES.tokenKinds.includes('copyExceptions')
+        ) {
+          out.push({
+            path: `${path}.token`,
+            message: 'a token copy with exceptions of characteristics is not implemented yet',
+          });
         } else if (token.object.kind === 'target') {
           copySourceIssues(selectedFilter(token.object, targets), `${path}.token.object`, out);
         } else if (token.object.kind === 'triggerSubject') {
@@ -534,6 +547,9 @@ function triggerSubjectFilter(t: Trigger): ObjectFilter | null {
     case 'landfall':
       return { types: ['land'] };
     case 'permanentSacrificed':
+      return t.filter ?? {};
+    case 'discarded':
+      // D-1161: the card discarded, as the filter of the trigger says ("a creature card"); with none it could be anything, an Aura card included.
       return t.filter ?? {};
     case 'tapsForMana':
       return t.what;
@@ -784,6 +800,9 @@ function walkAbility(
       } else if (a.keyword.kind === 'encore') {
         // CR 702.141a: paid like any activation cost from the graveyard; mana only (D-185).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
+      } else if (a.keyword.kind === 'eternalize') {
+        // CR 702.129a: paid like any activation cost from the graveyard; mana only (D-1162).
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
       } else if (a.keyword.kind === 'unearth') {
         // CR 702.84a: paid like any activation cost from the graveyard; mana only (D-124).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
@@ -848,7 +867,10 @@ function copiesThis(effect: Effect): boolean {
  */
 function copiesThisIssues(face: CardFace, base: string, out: AstIssue[]): void {
   const copies = face.abilities.some(
-    (a) => (a.kind === 'triggered' || a.kind === 'activated') && copiesThis(a.effect),
+    (a) =>
+      ((a.kind === 'triggered' || a.kind === 'activated') && copiesThis(a.effect)) ||
+      // D-1162: Eternalize (CR 702.129a) makes a token copy of this card.
+      (a.kind === 'keyword' && a.keyword.kind === 'eternalize'),
   );
   const asks =
     face.types.includes('land') ||

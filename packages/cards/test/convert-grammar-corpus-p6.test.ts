@@ -118,17 +118,14 @@ const COPIES: readonly Line[] = [
   {
     kind: 'sorcery',
     text: "Create a token that's a copy of target creature, except it's a 1/1.",
-    expect: no(", except it's a 1/1.", 'noun.target-permanent'),
-    note: 'SYNTHETIC; "except" (CR 707.9) is not read',
+    expect: no(", except it's a 1/1.", 'token.copy-except'),
+    note: 'SYNTHETIC; "except" (CR 707.9) is not read unless it says the whole of the copy (a 1/1 with no color or type is not that); since Hashaton group 5 (D-1160) the rule that gets furthest is `token.copy-except`',
   },
   {
     kind: 'sorcery',
     text: "Create a token that's a copy of target creature, except it's an artifact in addition to its other types.",
-    expect: no(
-      ", except it's an artifact in addition to its other types.",
-      'noun.target-permanent',
-    ),
-    note: 'SYNTHETIC; "except" is not read',
+    expect: no(", except it's an artifact in addition to its other types.", 'token.copy-except'),
+    note: 'SYNTHETIC; "except" is not read (the rule that gets furthest is `token.copy-except` since Hashaton group 5, D-1160)',
   },
   {
     kind: 'creature',
@@ -144,9 +141,9 @@ const COPIES: readonly Line[] = [
     text: "At the beginning of combat on your turn, create a token that's a copy of equipped creature, except the token isn't legendary. That token gains haste.",
     expect: no(
       "equipped creature, except the token isn't legendary. That token gains haste.",
-      'token.copy',
+      'token.copy-except',
     ),
-    note: 'backlog: 1 card (Helm of the Host); "except" and a rider are not read',
+    note: 'backlog: 1 card (Helm of the Host); "except" and a rider are not read (the rule that gets furthest is `token.copy-except` since Hashaton group 5, D-1160)',
   },
 ];
 

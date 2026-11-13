@@ -4,7 +4,7 @@
  * (CR 702.21a), Crew (CR 702.122a), and (D-110) typecycling (CR 702.29e), Exalted (CR 702.83a),
  * Annihilator (CR 702.86a), Persist (CR 702.79a) and Undying (CR 702.93a); and (D-120) Battle cry
  * (CR 702.91a), Mentor (CR 702.134a), Evolve (CR 702.100a), Bushido (CR 702.45a), Extort (CR 702.101a),
- * Cascade (CR 702.85a) and Affinity (CR 702.41a); and (D-124) Unearth (CR 702.84a); and (D-129) Storm (CR 702.40a) and Replicate (CR 702.56a); and (D-185) Encore (CR 702.141a).
+ * Cascade (CR 702.85a) and Affinity (CR 702.41a); and (D-124) Unearth (CR 702.84a); and (D-129) Storm (CR 702.40a) and Replicate (CR 702.56a); and (D-185) Encore (CR 702.141a); and (D-1162) Eternalize (CR 702.129a).
  *
  * The expansions are abilities added after the printed ones, in the order of their keywords, so the
  * printed abilities' indexes do not move (triggers and activations refer to indexes). The keyword
@@ -377,6 +377,33 @@ function encoreAbility(cost: readonly Cost[]): Ability {
 }
 
 /**
+ * CR 702.129a: "Eternalize [cost]" means "[Cost], Exile this card from your graveyard: Create a token that's a copy of this card, except it's black, it's 4/4, it has no mana
+ * cost, and it's a Zombie in addition to its other types. Activate only as a sorcery." It functions only from the graveyard; the card is exiled as a cost and the copy is made
+ * from its last-known information (CR 608.2h, `tokenDefinitionOf`). The exceptions are part of the copiable values (CR 707.9b), and a characteristic-defining power or toughness
+ * of the card is not copied (CR 707.9d). D-1162.
+ */
+function eternalizeAbility(cost: readonly Cost[]): Ability {
+  return {
+    kind: 'activated',
+    cost: [...cost, { kind: 'exileThis' }],
+    effect: {
+      kind: 'createToken',
+      token: {
+        kind: 'copyOf',
+        object: { kind: 'this' },
+        setColors: ['B'],
+        setPt: { power: 4, toughness: 4 },
+        noManaCost: true,
+        addSubtypes: ['Zombie'],
+      },
+      count: 1,
+    },
+    timing: 'sorcery',
+    functionsIn: 'graveyard',
+  };
+}
+
+/**
  * CR 702.30a: "Echo [cost]" means "At the beginning of your upkeep, if this permanent came under your control since
  * the beginning of your last upkeep, sacrifice it unless you pay [cost]." The condition is checked as the ability
  * triggers and again as it resolves (CR 603.4); the payment is the question of "unless you pay" (CR 118.12a,
@@ -560,6 +587,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [unearthAbility(ability.keyword.cost)];
     case 'encore':
       return [encoreAbility(ability.keyword.cost)];
+    case 'eternalize':
+      return [eternalizeAbility(ability.keyword.cost)];
     case 'affinity':
       return [affinityAbility(ability.keyword.filter)];
     case 'echo':

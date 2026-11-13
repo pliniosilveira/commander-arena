@@ -53,6 +53,7 @@ const KEYWORD_RULE = {
   flashback: 'keyword.flashback',
   unearth: 'keyword.unearth',
   encore: 'keyword.encore',
+  eternalize: 'keyword.eternalize',
   echo: 'keyword.echo',
   cumulativeUpkeep: 'keyword.cumulative-upkeep',
   ward: 'keyword.ward',
@@ -68,6 +69,7 @@ type CostedKeyword =
   | 'flashback'
   | 'unearth'
   | 'encore'
+  | 'eternalize'
   | 'echo'
   | 'cumulativeUpkeep'
   | 'ward'
@@ -132,6 +134,7 @@ function lowerCostedKeyword(
     name === 'multikicker' ||
     name === 'unearth' ||
     name === 'encore' ||
+    name === 'eternalize' ||
     name === 'echo' ||
     name === 'cumulativeUpkeep' ||
     name === 'replicate' ||
@@ -402,6 +405,7 @@ export function lowerKeyword(
     ability.name === 'flashback' ||
     ability.name === 'unearth' ||
     ability.name === 'encore' ||
+    ability.name === 'eternalize' ||
     ability.name === 'echo' ||
     ability.name === 'cumulativeUpkeep' ||
     ability.name === 'replicate' ||
@@ -761,6 +765,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:flashback',
   'keyword:unearth',
   'keyword:encore',
+  'keyword:eternalize',
   'keyword:devour',
   'keyword:riot',
   'keyword:suspend',

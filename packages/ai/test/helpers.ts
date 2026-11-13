@@ -2496,6 +2496,46 @@ export const HASHATON_G2_LANDS = supported([
   'Island',
 ]);
 
+/**
+ * The SYNTHETIC cards of group 5 of the Hashaton deck (D-1160 to D-1163, provisional): Eternalize from the graveyard, the discard trigger that copies the card discarded as a 4/4
+ * black Zombie (a "may pay" question), the discard spells that feed it, and the enchantment that copies the tokens of the chosen type at the end step (a creature type to
+ * choose, a token maker). They ask questions in the middle of resolutions (what to discard, whether to pay, which type), which games-100 expects only from dedicated
+ * styles, so they stay out of the generic pools.
+ */
+export const HASHATON_G5_NAMES = [
+  'SYNTHETIC Wit Champion',
+  'SYNTHETIC Wit Rummager',
+  'SYNTHETIC Lurker Eternal',
+  'SYNTHETIC Void Eternal',
+  'SYNTHETIC Shifting Brute',
+  'SYNTHETIC Eternal Automaton',
+  'SYNTHETIC Scarab Fist',
+  'SYNTHETIC Scarab Watcher',
+  'SYNTHETIC Tidy Discard',
+  'SYNTHETIC Pair Discard',
+  'SYNTHETIC Goblin Sower',
+  'SYNTHETIC Solidarity Echo',
+] as const;
+
+/** The hashatonCopies style: each card of the group twice, a few bodies and removal. */
+export const HASHATON_G5_SPELLS = [
+  ...supported(HASHATON_G5_NAMES),
+  ...supported(HASHATON_G5_NAMES),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Grizzly Bears', 'Serra Angel']),
+  ...supported(['Lightning Bolt', 'Murder']),
+];
+
+/** White, blue, black and red for the cards of the group, green for the rest. */
+export const HASHATON_G5_LANDS = supported([
+  'Plains',
+  'Island',
+  'Island',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Forest',
+]);
+
 export const NIV_DRAW_NAMES = [
   'SYNTHETIC Hollow Warden',
   'SYNTHETIC Draw Veto',
@@ -2930,6 +2970,8 @@ const FIXTURES: readonly CardDefinition[] = [
 
   // The life cards of the Hashaton deck (D-363 to D-365) have their own style: a life gain that does not happen, an end step loss and a payment question.
   .filter((card) => !(HASHATON_G2_NAMES as readonly string[]).includes(card.name))
+  // The copy cards of the Hashaton deck (D-1160 to D-1163, provisional) ask what to discard, whether to pay and which type; they have their own style.
+  .filter((card) => !(HASHATON_G5_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
@@ -3113,6 +3155,7 @@ export type DeckStyle =
   | 'piles'
   | 'nivDraw'
   | 'hashatonLife'
+  | 'hashatonCopies'
   | 'repeatable'
   | 'manifest'
   | 'combat';
@@ -3125,6 +3168,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'piles' && PILES_SPELLS.length > 0) return PILES_SPELLS;
   if (style === 'nivDraw' && NIV_DRAW_SPELLS.length > 0) return NIV_DRAW_SPELLS;
   if (style === 'hashatonLife' && HASHATON_G2_SPELLS.length > 0) return HASHATON_G2_SPELLS;
+  if (style === 'hashatonCopies' && HASHATON_G5_SPELLS.length > 0) return HASHATON_G5_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
   if (style === 'manifest' && MANIFEST_SPELLS.length > 0) return MANIFEST_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
@@ -3301,6 +3345,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'piles' && BASIC_LANDS.length > 0) return PILES_LANDS;
   if (style === 'nivDraw' && BASIC_LANDS.length > 0) return NIV_DRAW_LANDS;
   if (style === 'hashatonLife' && BASIC_LANDS.length > 0) return HASHATON_G2_LANDS;
+  if (style === 'hashatonCopies' && BASIC_LANDS.length > 0) return HASHATON_G5_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
   if (style === 'manifest' && BASIC_LANDS.length > 0) return MANIFEST_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
@@ -3729,6 +3774,13 @@ export const HASHATON_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])
   ['hashatonLife', 'hashatonLife'],
   ['hashatonLife', 'spells'],
   ['spells', 'hashatonLife'],
+];
+
+/** Style pairs of the Hashaton copies soak test (D-1160 to D-1163, provisional): a mirror match and both mixed ways. */
+export const HASHATON_G5_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hashatonCopies', 'hashatonCopies'],
+  ['hashatonCopies', 'spells'],
+  ['spells', 'hashatonCopies'],
 ];
 
 /** Style pairs of the repeatable-mode soak test (D-344): a mirror match and both mixed ways. */

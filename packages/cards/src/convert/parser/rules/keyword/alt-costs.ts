@@ -199,6 +199,33 @@ export const KEYWORD_ENCORE = defineRule<readonly IrKeyword[]>({
   parse: altCostKeyword('keyword.encore', 'encore'),
 });
 
+/**
+ * `keyword.eternalize`: "Eternalize {5}{U}{U}" (CR 702.129a: "[Cost], Exile this card from your graveyard: Create a token that's a copy of this card, except it's black, it's 4/4, it has no
+ * mana cost, and it's a Zombie in addition to its other types. Activate only as a sorcery"). Like Encore it lowers to the keyword of the engine, which expands it into the activated
+ * ability that works from the graveyard (D-1162, provisional number). The cost is a plain mana cost; a line is read on its own, never in a keyword list. The reminder text of the real
+ * cards is dropped before the line is read. The card the Hashaton deck brings: Champion of Wits.
+ */
+export const KEYWORD_ETERNALIZE = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.eternalize',
+  family: 'keyword',
+  leading: ['eternalize'],
+  cites: ['CR 702.129a (Eternalize)', 'CR 602.2 (Activating Activated Abilities)'],
+  examples: ['Eternalize {5}{U}{U}', 'Eternalize {4}{B}', 'Eternalize {2}', 'eternalize {1}{W}'],
+  rejects: [
+    'Eternalize',
+    'Eternalize {X}',
+    'Eternalize {B/R}',
+    'Eternalize—Pay 2 life.',
+    'Eternalize {5}{U}{U}.',
+    'Eternalize {5}{U}{U}, haste',
+    'Eternalize {5}{U}{U} {1}',
+    'Eternalized {5}{U}{U}',
+    'Flying, eternalize {5}{U}{U}',
+    'Encore {5}{U}{U}',
+  ],
+  parse: altCostKeyword('keyword.eternalize', 'eternalize'),
+});
+
 const ESCAPE_COUNTS = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
 
 /** "one other card" or "three other cards": the cards of the graveyard an escape cost exiles (one to nine). */
@@ -271,5 +298,6 @@ export const ALT_COST_KEYWORD_RULES = [
   KEYWORD_SPECTACLE,
   KEYWORD_UNEARTH,
   KEYWORD_ENCORE,
+  KEYWORD_ETERNALIZE,
   KEYWORD_ESCAPE,
 ];

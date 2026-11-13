@@ -18,7 +18,7 @@ import { legalTargets, targetBounds } from './select';
 import { splitSecondOnStack } from './split-second';
 
 /**
- * Whether the card in a graveyard has a printed ability that functions there (Unearth, D-124; Encore, D-185). Derived abilities
+ * Whether the card in a graveyard has a printed ability that functions there (Unearth, D-124; Encore, D-185; Eternalize, D-1162). Derived abilities
  * are not computed for every card of a graveyard, which can hold dozens, at every priority: only a card whose
  * face lists the keyword is looked at. (An unearth ability a spell grants to a graveyard card is not supported.)
  */
@@ -30,7 +30,10 @@ function hasGraveyardAbility(state: GameState, id: ObjectId): boolean {
   return (
     face?.abilities.some(
       (a) =>
-        (a.kind === 'keyword' && (a.keyword.kind === 'unearth' || a.keyword.kind === 'encore')) ||
+        (a.kind === 'keyword' &&
+          (a.keyword.kind === 'unearth' ||
+            a.keyword.kind === 'encore' ||
+            a.keyword.kind === 'eternalize')) ||
         (a.kind === 'activated' && a.functionsIn === 'graveyard'),
     ) === true
   );

@@ -524,7 +524,12 @@ function matches(
     case 'discarded':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
-      return true;
+      // D-1161 (CR 701.9a): "a creature card": the card as it is where it went (its graveyard, or exile for madness), or as it last was.
+      return (
+        trigger.filter === undefined ||
+        (subject !== null &&
+          matchesFilter(state, subject, { ...trigger.filter, zone: subject.zone }, ctx))
+      );
     case 'dies':
     case 'dealtDamage':
     case 'becomesTapped':

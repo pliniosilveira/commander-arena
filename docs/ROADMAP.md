@@ -258,3 +258,12 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - "If you do" after a mandatory sacrifice reads through `didPrevious` (D-360), which counts the instructions since the last `may`: a text with another counted instruction before the sacrifice would be read too wide. `thisWayAtLeast` of `sacrificed` is the exact reading, accepted by the engine, and no rule of the parser lowers to it yet.
 - `thisWayAtLeast` is worded in the web only for one or more of a creature card or a noncreature card discarded, an instant or sorcery card discarded, and a permanent sacrificed.
 - "target ... cards in your graveyard" (with "in") is read only by `effect.choose-graveyard-cards`; the other rules that take a graveyard card say "from".
+
+## The Hashaton deck, group 5 (issue 31, D-1160 to D-1163, provisional numbers)
+
+- Copy exceptions that retain the copier's own values (CR 707.9c) and exceptions to the supertypes, loyalty or defense of a copy are not built; `token.copy-except` reads one shape ("except it's a P/T <colors> <creature types>"), not "it has no mana cost", "in addition to its other types" or a list of separate exceptions as the grammar of a card line (Eternalize has them in its keyword).
+- `setCreatureTypes` keeps the original's other subtypes (an artifact type, a land type) and its other card types: a copy of an artifact creature card is an artifact creature Zombie. The rulings of Hashaton could not be read, so this is the reading of the CR text alone (CR 205.3d, 707.9b) and is unverified.
+- `trigger.discarded` reads one card kind ("a creature card", "a nonland card"), not "a creature or land card", a creature type or a color; the filter is read against the card where it went and not against the hand it left.
+- A copy of a card discarded with madness is made from the object in exile (tested); when the card is cast with madness before the ability resolves, the copy is made from its last-known information.
+- Eternalize is mana only, no X, on a permanent card that is not a land or an Aura; "Embalm" and other graveyard copy keywords are the same expansion with other exceptions (not built).
+- `effect.copy-each-token` reads "for each token you control[ of the chosen type][ that entered this turn], create a token that's a copy of it" only; other groups ("each creature token", "each nonland permanent") are not read. A token group with no creature type and no card kind is refused because it could be an Aura token (a Role).

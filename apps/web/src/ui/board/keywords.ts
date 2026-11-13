@@ -6,6 +6,7 @@ import type { ObjectView, Restriction } from '@commander-arena/engine';
 import { JOB_SELECT_REMINDER, LIVING_WEAPON_REMINDER } from '../../game/artifacts-text';
 import { ESCALATE_REMINDER, hideawayReminder } from '../../game/dinosaurs-text';
 import { DETHRONE_REMINDER, MYRIAD_REMINDER, READ_AHEAD_REMINDER } from '../../game/dragons-text';
+import { ETERNALIZE_REMINDER } from '../../game/hashaton-g5-text';
 import { devourReminder, ENCORE_REMINDER, RIOT_REMINDER } from '../../game/keywords-text';
 
 const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> = {
@@ -82,6 +83,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   myriad: ['Myr', `Myriad (${MYRIAD_REMINDER})`],
   // The Korvold slice 6 (D-185): the reminder text (CR 702.141a, 702.82a, 702.136a) rides in the tooltip; Devour's number is in `PARAMETERIZED`.
   encore: ['Enc', `Encore (${ENCORE_REMINDER})`],
+  // Hashaton deck group 5 (D-1162): Eternalize (CR 702.129a).
+  eternalize: ['Et', `Eternalize (${ETERNALIZE_REMINDER})`],
   devour: ['Dev', 'Devour'],
   riot: ['Riot', `Riot (${RIOT_REMINDER})`],
 };
@@ -134,6 +137,11 @@ const PARAMETERIZED: Readonly<
   encore: (text) =>
     [...text.matchAll(/\bencore\s*((?:\{[^}]+\})+)/gi)].map(
       (m) => ['Enc', `${withCost('Encore', m[1] ?? '')} (${ENCORE_REMINDER})`] as const,
+    ),
+  // "Eternalize {5}{U}{U}": one chip per instance (CR 702.129a).
+  eternalize: (text) =>
+    [...text.matchAll(/\beternalize\s*((?:\{[^}]+\})+)/gi)].map(
+      (m) => ['Et', `${withCost('Eternalize', m[1] ?? '')} (${ETERNALIZE_REMINDER})`] as const,
     ),
   // "Hideaway 4": the number of cards looked at (CR 702.75a).
   hideaway: (text) =>

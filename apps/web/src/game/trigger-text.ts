@@ -15,6 +15,7 @@ import {
   type TriggerSubject,
   type Zone,
 } from '@commander-arena/engine';
+import { discardedCardWords } from './hashaton-g5-text';
 import { romanNumeral } from './saga';
 import { COLOR_NAMES, SMALL_COUNT_WORDS } from './words';
 
@@ -364,7 +365,10 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       // D-206 (CR 701.9a): "Whenever you discard a card".
       const who =
         trigger.who === 'you' ? 'you' : trigger.who === 'opponent' ? 'an opponent' : 'a player';
-      return `Whenever ${who} discard${trigger.who === 'you' ? '' : 's'} a card`;
+      // D-1161: "Whenever you discard a creature card"; a filter the words do not cover leaves the trigger unsaid.
+      const card = discardedCardWords(trigger.filter);
+      if (card === null) return null;
+      return `Whenever ${who} discard${trigger.who === 'you' ? '' : 's'} ${card}`;
     }
     case 'diesBatch': {
       // D-206 (CR 603.2c): "Whenever one or more other creatures and/or artifacts you control die".

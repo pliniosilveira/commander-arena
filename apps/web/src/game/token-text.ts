@@ -4,6 +4,7 @@
  * creature". Read from the definition, never from a card name. Pure.
  */
 import type { Ability, ObjectRef, TokenSpec } from '@commander-arena/engine';
+import { copyExceptionsText } from './hashaton-g5-text';
 import { COLOR_NAMES } from './words';
 
 /** What a token is called with one and with several: "tapped 2/2 black Zombie creature token(s)". */
@@ -42,9 +43,11 @@ export function tokenWords(
       return { one: `${lead}${token.preset} token`, many: `${lead}${token.preset} tokens` };
     case 'copyOf': {
       const of = named(token.object);
+      // D-1160 (CR 707.9b): "..., except it's a 4/4 black Zombie".
+      const except = copyExceptionsText(token);
       return {
-        one: `${lead}token that's a copy of ${of}`,
-        many: `${lead}tokens that are copies of ${of}`,
+        one: `${lead}token that's a copy of ${of}${except}`,
+        many: `${lead}tokens that are copies of ${of}${except}`,
       };
     }
     case 'custom': {

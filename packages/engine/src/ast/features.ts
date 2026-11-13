@@ -407,6 +407,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'unearth',
     // D-185: Encore (CR 702.141a), Devour (CR 702.82a) and Riot (CR 702.136a).
     'encore',
+    // D-1162: Eternalize (CR 702.129a).
+    'eternalize',
     'devour',
     'riot',
     // D-127: Echo (CR 702.30a) and Cumulative upkeep (CR 702.24a).
@@ -810,7 +812,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   ],
   // D-286: `pair`, "each of those creatures" of a soulbond card, for a modification of power and toughness, a granted keyword or a granted ability only.
   staticSubjectKinds: ['this', 'attached', 'filter', 'pair'],
-  tokenKinds: ['Treasure', 'Food', 'Clue', 'custom', 'copyOf', 'tapped'],
+  tokenKinds: ['Treasure', 'Food', 'Clue', 'custom', 'copyOf', 'tapped', 'copyExceptions'],
   amountKinds: [
     'number',
     'x',
@@ -1350,6 +1352,8 @@ export const TOKEN_KINDS = [
   'copyOf',
   /** "Create two tapped Treasure tokens" (CR 110.5b, D-131): the engine's `createToken.tapped`. */
   'tapped',
+  /** "A token that's a copy of that card, except it's a 4/4 black Zombie" (CR 707.9b, D-1160): the engine's `copyOf` with `setPt`, `setColors`, `setCreatureTypes`, `noManaCost`. */
+  'copyExceptions',
 ] as const;
 export type TokenKind = (typeof TOKEN_KINDS)[number];
 
@@ -1704,6 +1708,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   cascade: true,
   unearth: true,
   encore: true,
+  eternalize: true,
   devour: true,
   riot: true,
   echo: true,

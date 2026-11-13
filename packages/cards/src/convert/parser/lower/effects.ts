@@ -47,6 +47,7 @@ import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { missingFeatures } from './features';
 import { GAIN_STATIC_ABILITY } from './granted-static';
+import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
 import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
 import { HOFRI_LOWERINGS } from './hofri';
 import { KORVOLD_LOWERINGS } from './korvold';
@@ -1346,6 +1347,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ANGEL_LOWERINGS,
   ...ARDEN_LOWERINGS,
   ...VRASKA_LOWERINGS,
+  ...HASHATON_G5_LOWERINGS,
   ...HOFRI_LOWERINGS,
   ...PILES_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,
