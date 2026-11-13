@@ -2525,6 +2525,7 @@ export const DANITHA_G5_NAMES = [
   'SYNTHETIC Blight Scholar',
   'SYNTHETIC Warding Aura',
   'SYNTHETIC Crowd Aura',
+  'SYNTHETIC Idle Flash Spell',
 ] as const;
 
 /** The danithaG5 style: every card of the group, creatures to enchant, to blight and to enter, and removal that the commander-flash Aura answers. */

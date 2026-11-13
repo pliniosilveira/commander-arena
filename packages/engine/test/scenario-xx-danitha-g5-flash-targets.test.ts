@@ -12,7 +12,9 @@ import { targetsDecision } from './pending-helpers';
 
 const WARD = 'SYNTHETIC Warding Aura';
 const CROWD = 'SYNTHETIC Crowd Aura';
+const IDLE = 'SYNTHETIC Idle Flash Spell';
 const BEARS = 'Grizzly Bears';
+const ELVES = 'Llanowar Elves';
 const COMMANDER = 'Isamaru, Hound of Konda';
 const LIBRARY = Array.from({ length: 8 }, () => 'Plains');
 
@@ -35,7 +37,7 @@ function board(options: { readonly active: 0 | 1; readonly step?: 'precombatMain
 }
 
 describe('the cards are valid', () => {
-  test.each([WARD, CROWD])('%s', (name) => {
+  test.each([WARD, CROWD, IDLE])('%s', (name) => {
     expect(validateCard(syntheticCard(name))).toEqual([]);
     expect(isFeatureSupported('static:castAsThoughFlash')).toBe(true);
   });
@@ -177,5 +179,41 @@ describe('a condition of the permission that is not about the targets (SYNTHETIC
       .at('precombatMain', { active: 1, priority: 0 })
       .build();
     g.expect.illegal(0, { cast: CROWD });
+  });
+});
+
+describe('what the permission is not', () => {
+  test('a spell with nothing it must target cannot meet "if it targets a commander": cast at sorcery timing only', () => {
+    const build = (active: 0 | 1) =>
+      scenario()
+        .define(syntheticCard(IDLE))
+        .seat(0)
+        .library(...LIBRARY)
+        .hand(IDLE)
+        .battlefield('Island', { count: 2 })
+        .seat(1)
+        .library(...LIBRARY)
+        .battlefield(COMMANDER, { commander: true })
+        .at('precombatMain', { active, priority: 0 })
+        .build();
+    build(0).expect.legal(0, { cast: IDLE });
+    build(1).expect.illegal(0, { cast: IDLE });
+  });
+
+  test('the Aura on the battlefield gives no permission to other spells: it is the spell\u2019s own ability', () => {
+    const g = scenario()
+      .define(syntheticCard(WARD))
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(BEARS)
+      .battlefield('Plains', { count: 2 })
+      .battlefield(ELVES, { label: 'elves' })
+      .battlefield(WARD, { attachedTo: 'elves' })
+      .battlefield('Forest')
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 1, priority: 0 })
+      .build();
+    g.expect.illegal(0, { cast: BEARS });
   });
 });

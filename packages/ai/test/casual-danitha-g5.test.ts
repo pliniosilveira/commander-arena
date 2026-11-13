@@ -46,14 +46,14 @@ describe('which creature takes the -1/-1 counter of a blight cost', () => {
     g.expect.counters(SPIDER, { '-1/-1': 1 });
   });
 
-  test('among creatures that all survive, the one it wants least: a token, not a creature card', async () => {
+  test('among creatures that all survive, the one it wants least: the cheaper card', async () => {
     const g = scenario()
       .define(syntheticCard(BLIGHT))
       .seat(0)
       .library(...LIBRARY)
       .battlefield('Plains', { count: 2 })
       .battlefield(SPIDER, { label: 'spider' })
-      .battlefield(BEARS, { label: 'bears', token: true })
+      .battlefield(BEARS, { label: 'bears' })
       .battlefield(BLIGHT, { attachedTo: 'theirBears' })
       .seat(1)
       .library(...LIBRARY)

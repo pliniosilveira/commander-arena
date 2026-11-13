@@ -16,6 +16,7 @@ import {
   type GameState,
   getLegalActions,
   getView,
+  type ObjectId,
   stateHash,
 } from '@commander-arena/engine';
 import { expect, test } from 'vitest';
@@ -45,6 +46,8 @@ const BLIGHT_COUNTS = new Map([
 ]);
 const MOVERS = new Set(['SYNTHETIC Wandering Aura', 'SYNTHETIC Loyal Wanderer']);
 const FLASH_AURAS = new Set(['SYNTHETIC Warding Aura']);
+/** A spell with the permission but no target: the condition can never hold, so it is only ever cast at its controller's sorcery timing. */
+const IDLE_FLASH = 'SYNTHETIC Idle Flash Spell';
 
 interface Tally {
   blights: number;
@@ -78,16 +81,24 @@ function sorceryTiming(state: GameState, seat: number): boolean {
   );
 }
 
-function controllerOf(state: GameState, id: string): number | undefined {
+function controllerOf(state: GameState, id: ObjectId): number | undefined {
   return state.objects[id]?.controller;
 }
 
 function checkRules(t: Tally, step: StepInfo): void {
   const { before, after, events } = step;
   // The timing of a cast is that of the step that began it, with the spell still in the hand.
-  if (step.action.kind === 'castSpell' && FLASH_AURAS.has(cardNameOf(before, step.action.object))) {
-    if (sorceryTiming(before, step.seat)) t.flashing.delete(step.seat);
-    else t.flashing.add(step.seat);
+  if (step.action.kind === 'castSpell') {
+    const cast = cardNameOf(before, step.action.object);
+    if (FLASH_AURAS.has(cast)) {
+      if (sorceryTiming(before, step.seat)) t.flashing.delete(step.seat);
+      else t.flashing.add(step.seat);
+    }
+    if (cast === IDLE_FLASH) {
+      expect(sorceryTiming(before, step.seat), `${IDLE_FLASH} is cast at sorcery timing only`).toBe(
+        true,
+      );
+    }
   }
   // The question of a blight cost: only the creatures of the player, none that can't have -1/-1 counters.
   const pending = after.pending;
@@ -237,7 +248,7 @@ test(
     expectPath(total.searches);
     // Every card of the slice was cast or activated at least once somewhere in the games, except the one only a commander on the board and a removal can bring about.
     for (const name of DANITHA_G5_NAMES) {
-      if (FLASH_AURAS.has(name) || name === 'SYNTHETIC Crowd Aura') continue;
+      if (FLASH_AURAS.has(name) || name === 'SYNTHETIC Crowd Aura' || name === IDLE_FLASH) continue;
       expectPath(total.byCard.get(name) ?? 0, name);
     }
   },

@@ -234,4 +234,23 @@ export const SYNTHETIC_DANITHA_G5_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "You may cast this spell as though it had flash if it targets a commander. Draw a card." (a spell with no target at all: the condition can never hold, so it is cast
+  // only at sorcery timing)
+  singleFace({
+    name: 'SYNTHETIC Idle Flash Spell',
+    manaCost: ['1', 'U'],
+    types: ['sorcery'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText:
+      'You may cast this spell as though it had flash if it targets a commander.\nDraw a card.',
+    abilities: [
+      {
+        kind: 'static',
+        static: { kind: 'castAsThoughFlash', spells: { kind: 'this' } },
+        condition: { kind: 'spellTargets', filter: { commander: true } },
+      },
+    ],
+    spell: { effect: { kind: 'draw', player: { kind: 'you' }, count: 1 } },
+  }),
 ];
