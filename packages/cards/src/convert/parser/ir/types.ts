@@ -322,6 +322,8 @@ export interface IrFilter {
   readonly notCastFromHand?: true;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
+  /** "with power greater than its base power" (D-1261, CR 208.4b): the engine's `powerAboveBase`. */
+  readonly powerAboveBase?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
   readonly anyTarget?: boolean;
   /** The words the filter was read from, for diagnostics and templateOf. */
@@ -1387,6 +1389,11 @@ export interface IrModeChoice {
 export interface IrModeHeader extends IrNode {
   readonly kind: 'modeHeader';
   readonly choose: IrModeChoice;
+  /**
+   * "Tiered" (D-1270, CR 702.183a, 700.2h): every bullet starts with a name and the cost of the mode, "Cure — {0} — Target permanent gains ...": the
+   * cost is paid as an additional cost when the mode is chosen. The modal reading takes the name and the cost off each bullet (`IrModes.costs`).
+   */
+  readonly costed?: true;
 }
 
 /**
@@ -1398,6 +1405,8 @@ export interface IrModes extends IrNode {
   readonly choose: IrModeChoice;
   readonly modes: readonly IrBody[];
   readonly texts: readonly string[];
+  /** Tiered (D-1270, CR 702.183a): the mana symbols of each mode's cost, in the order of the bullets, from "Cure — {0} — ...". Absent for a modal text without costs. */
+  readonly costs?: readonly (readonly string[])[];
 }
 
 export type IrAbility =

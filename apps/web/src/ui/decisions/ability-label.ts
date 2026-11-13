@@ -297,6 +297,8 @@ const FALLBACK_SAYS: ReadonlySet<string> = new Set([
   'keywords',
   'notKeywords',
   'powerLessThanSource',
+  // D-1261: "creatures with power greater than its base power".
+  'powerAboveBase',
   'controllerDealtDamageBySource',
 ]);
 

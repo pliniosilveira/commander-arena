@@ -111,6 +111,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpentRiderCopy',
     // D-327: "Mill a card. You may play that card this turn." (`mayPlay` of the cards a `mill` put into the graveyard).
     'mayPlayFromGraveyard',
+    // D-1270: "Tiered", a mode with a cost listed before its effect (`SpellMode.cost`, CR 700.2h, 702.183a).
+    'modeCost',
   ],
   effectKinds: [
     'sequence',
@@ -612,6 +614,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-120: `ObjectFilter.attacking` and `powerLessThanSource`.
     'attacking',
     'powerLessThanSource',
+    // D-1261: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
+    'powerAboveBase',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
     // opponent", `all`) and a creature that deals the damage (`dealDamage.from`, a "bite").
     'attackingYou',
@@ -1006,6 +1010,8 @@ export const ABILITY_FEATURES = [
   'manaSpentRiderCopy',
   /** "Mill a card. You may play that card this turn" (D-327, CR 601.2, 305.1): the engine's `mayPlay` of a card a `mill` put into its owner's graveyard. */
   'mayPlayFromGraveyard',
+  /** "Tiered" (D-1270, CR 700.2h, 702.183a): a mode of a modal spell with a cost listed before its effect, paid as an additional cost when the mode is chosen (`SpellMode.cost`). */
+  'modeCost',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 
@@ -1101,6 +1107,8 @@ export const SELECTOR_KINDS = [
   'attacking',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
+  /** "With power greater than its base power" (CR 208.4b, D-1261): the engine's `ObjectFilter.powerAboveBase`. */
+  'powerAboveBase',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */
   'attackingYou',
   /** "Creatures attacking your opponents and/or planeswalkers they control" (D-218): the engine's `ObjectFilter.attackingOpponents`. */
@@ -1513,6 +1521,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaDistinctColors: true,
   manaSpentRiderCopy: true,
   mayPlayFromGraveyard: true,
+  modeCost: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,

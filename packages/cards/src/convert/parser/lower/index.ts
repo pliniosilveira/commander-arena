@@ -28,7 +28,7 @@ import type { FeatureRef } from './features';
 import { KORVOLD_NEEDS } from './korvold';
 import { registerLateLowerers } from './late';
 import { MELD_NEEDS } from './meld';
-import { MODAL_NEEDS } from './modal';
+import { MODAL_NEEDS, MODE_COST_NEEDS } from './modal';
 import { NOUN_EXTRA_NEEDS, SELECTOR_NEEDS } from './nouns';
 import { PLANESWALKER_NEEDS } from './planeswalker';
 import { NEXT_CAST_NEEDS, SENTENCE_NEEDS } from './sentences';
@@ -135,6 +135,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...ABILITY_NEEDS,
     ...ALTERNATIVE_COST_NEEDS,
     ...MODAL_NEEDS,
+    ...MODE_COST_NEEDS,
     ...ACTIVATED_NEEDS,
     ...COST_NEEDS,
     ...SEARCH_NEEDS,

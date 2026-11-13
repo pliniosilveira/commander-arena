@@ -592,6 +592,7 @@ describe('unmatched abilities', () => {
       'effect.sacrifice',
       'effect.add-counters',
       'effect.add-counters-number-of',
+      'effect.add-counters-kinds',
       'effect.create-token',
       'effect.investigate',
       'effect.pump',
@@ -783,6 +784,7 @@ describe('unmatched abilities', () => {
       'modal.choose-widen',
       'modal.choose-not-repeated',
       'modal.choose-repeatable',
+      'modal.tiered',
     ]);
   });
 

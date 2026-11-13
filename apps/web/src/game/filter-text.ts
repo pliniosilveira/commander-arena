@@ -63,6 +63,8 @@ const COUNTABLE: ReadonlySet<string> = new Set([
   'colorCount',
   'manaValueX',
   'controllerDealtDamageBySource',
+  // D-1261: said by `withText`.
+  'powerAboveBase',
   // D-145: "commanders you control", "creatures you control with a counter on it"; `withText` says the counter.
   'commander',
   'hasCounter',

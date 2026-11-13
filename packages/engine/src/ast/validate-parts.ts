@@ -267,6 +267,7 @@ export function checkFilter(
     'attackingOpponents',
     'attackingOrBlocking',
     'powerLessThanSource',
+    'powerAboveBase',
     'putFromBattlefieldThisTurn',
     'notCastFromHand',
     'enteredThisTurn',
@@ -424,6 +425,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.attackingOpponents !== undefined ||
   f.attackingOrBlocking !== undefined ||
   f.powerLessThanSource === true ||
+  f.powerAboveBase === true ||
   f.manaValueX !== undefined ||
   f.controllerDealtDamageBySource !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||

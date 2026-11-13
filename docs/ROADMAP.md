@@ -330,3 +330,16 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The spell's own flash (`castAsThoughFlash` with `this`): a spell with several mandatory target slots restricts only the first to the objects the condition's filter matches, so a legal cast whose second slot meets "it targets a commander" is not offered; a modal spell's modes are not restricted. The grammar reads only the condition "it targets <a kind of permanent or a commander>"; "if you control a Dragon" and the like are run by the engine (SYNTHETIC `Crowd Aura`) but not read.
 - The attach to "that creature" needs a trigger that names a creature; "it" is the token of the same sentence only. The AI reads the entering creature as the newest creature on the battlefield (the view has no trigger subject), which is wrong when several creatures enter at once.
 - The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited above.
+
+## The Danitha deck, group 6 (issue 26, D-1260 to D-1262, provisional)
+
+- Keyword counters (CR 122.1b) apply before every other layer 6 step: the engine keeps no timestamp for a counter (CR 613.7c), so a "loses all abilities" effect that began before a keyword counter was put on removes it too, where the rules would let the later counter stand. A counter named decayed (listed by CR 122.1b) is not run (the engine has no decayed keyword): the grammar drops a line that puts one. The variants of the keywords the rule mentions ("variants of those keywords": protection-like or parameter forms) are not read as keyword counters.
+- `effect.add-counters-kinds` reads counters of "a" or "an" only and one object that is a target, "~" or "it": "two +1/+1 counters and a reach counter", a list of objects and "each creature you control" are not read.
+- `powerAboveBase` is a test of the filter, not of a static ability's subject (it would read the layers it is part of, CR 613.8): "creatures you control with power greater than its base power get +1/+1" is refused. The batch trigger reads the wording "each with power greater than its base power deals"; the base toughness has a value (`Derived.baseToughness`) and no filter.
+- The rulings of Kutzil and Gift of the Viper on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited above.
+
+## The Danitha deck, group 7 (issue 26, D-1270 to D-1272, provisional)
+
+- A mode cost is mana only, no X, on a spell only, and not with a repeatable choice (`validateCard`); a mode whose cost is another kind of cost (tap, sacrifice, life) is not read. Spree (CR 702.172: "+ {cost} — effect" bullets and a "choose one or more" lead) needs only another header and bullet syntax on the same `SpellMode.cost`; it is not read yet.
+- The hand shows the card's mana cost alone (`castCostOf`), as it does for escalate and kicker; the cost of each tier is in the text of the mode, which the modes decision shows.
+- The rulings of Restoration Magic on Scryfall were not fetched (blocked in a cloud session): the behaviour follows CR 702.183a and 700.2h.

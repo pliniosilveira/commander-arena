@@ -48,7 +48,13 @@ import {
   toActivationX,
 } from './activate';
 import { planForActivation } from './activate-costs';
-import { escalateCostOf, kickerCostOf, multikickerCostOf, replicateCostOf } from './alt-costs';
+import {
+  escalateCostOf,
+  hasModeCosts,
+  kickerCostOf,
+  multikickerCostOf,
+  replicateCostOf,
+} from './alt-costs';
 import { becameTargetEvents } from './becomes-target';
 import {
   answerDiscard,
@@ -266,7 +272,7 @@ function toModes(state: GameState, events: GameEvent[]): Result {
   const modal = modalOfSpellText(faceOf(state, spell)?.spell);
   if (modal === null) return toKicker(state, events);
   const ctx = { controller: casting.seat, source: casting.object };
-  const sets = escalateAffordable(state, casting, legalModeSets(state, modal, ctx));
+  const sets = affordableModeSets(state, casting, legalModeSets(state, modal, ctx));
   const only = sets[0];
   if (only === undefined) return fail('That spell has no legal choice of modes');
   if (sets.length === 1) {
@@ -289,18 +295,19 @@ function toModes(state: GameState, events: GameEvent[]): Result {
 }
 
 /**
- * CR 702.120a (D-145): with an escalate cost a set of modes is legal only if the caster could pay the total with its escalate cost (one
+ * CR 702.120a (D-145), 700.2h (D-1270): with an escalate cost, or modes that have a cost of their own, a set of modes is legal only if the caster could pay the total with them (one
  * additional cost for each mode beyond the first); costs are read from the state before the cast began, as the kicker's are. Spells
  * without escalate keep every set.
  */
-function escalateAffordable(
+function affordableModeSets(
   state: GameState,
   casting: NonNullable<GameState['casting']>,
   sets: readonly (readonly number[])[],
 ): readonly (readonly number[])[] {
   const before = casting.snapshot;
   const face = faceOf(before, getObject(state, casting.object));
-  if (escalateCostOf(face) === null) return sets;
+  // CR 700.2h (D-1270): the costs of the modes are additional costs too, so a set whose modes cost more than the caster has is not offered.
+  if (escalateCostOf(face) === null && !hasModeCosts(face)) return sets;
   const spell = castAs(
     getObject(before, casting.from),
     casting.seat,
@@ -315,6 +322,7 @@ function escalateAffordable(
       excluded: casting.from,
       kicked: false,
       modes: set.length,
+      modeSet: set,
     }),
   );
 }
@@ -365,6 +373,7 @@ function toKicker(state: GameState, events: GameEvent[]): Result {
     alternative,
     excluded: obj.id,
     modes: stack.chosenModes.length,
+    modeSet: stack.chosenModes,
   } as const;
   const kickerCost = kickerCostOf(faceOf(before, spell));
   let asksKicker =
@@ -458,6 +467,7 @@ function toReplicate(state: GameState, events: GameEvent[]): Result {
     excluded: card.id,
     kicked: stack.kicked,
     modes: stack.chosenModes.length,
+    modeSet: stack.chosenModes,
     ...(stack.kicks === undefined ? {} : { kicks: stack.kicks }),
   } as const;
   const max = largestPayableX((n) =>
@@ -508,6 +518,7 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
     excluded: card.id,
     kicked: stack.kicked,
     modes: stack.chosenModes.length,
+    modeSet: stack.chosenModes,
     ...(stack.kicks === undefined ? {} : { kicks: stack.kicks }),
     ...(stack.replicated === undefined ? {} : { replicas: stack.replicated }),
   } as const;

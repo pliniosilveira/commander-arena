@@ -37,9 +37,10 @@ import { copiableValues } from './copiable';
 import { alternativeAbilitiesOf } from './derive-alt';
 import { characteristicPtOf } from './derive-count';
 import { expandKeywords, keywordKindsOf } from './derive-keywords';
-import { applyAbilityLayer, applyPtLayers, effectsOn } from './derive-layers';
+import { applyAbilityLayer, applyPtLayers, basePtOf, effectsOn } from './derive-layers';
 import { type BlockLimit, type StaticSet, staticEffectsOn } from './derive-statics';
 import { manaCostOf, typeLayersOf } from './derive-view';
+import { keywordCounterAbilities } from './keyword-counters';
 import { hasLostAbilities } from './lost-abilities';
 import { manaValueOfCost } from './mana-value';
 import { isRingBearerOf } from './ring-bearer';
@@ -66,6 +67,12 @@ export interface Derived extends DerivedBase {
   readonly restrictions: readonly Restriction[];
   /** The creatures this one can't be blocked by, from static abilities (CR 509.1b, D-139). Read where blockers are declared. */
   readonly blockLimits: readonly BlockLimit[];
+  /**
+   * The base power and toughness (CR 208.4b, D-1261): the values after characteristic-defining abilities and the effects that set them (layer 7b), ignoring counters and
+   * the effects that only modify them (layer 7c). Null for an object with no power or toughness.
+   */
+  readonly basePower: number | null;
+  readonly baseToughness: number | null;
   /** Auras and Equipment on the battlefield attached to this permanent (CR 301.5a, 303.4b). */
   readonly attachments: readonly ObjectId[];
   /** The permanent this Aura or Equipment is attached to, while that is still on the battlefield. */
@@ -196,7 +203,11 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
   // The abilities of an evoked permanent (D-121) are appended too, and "loses all abilities" removes them.
   const printed = expandKeywords(input.abilities);
   const own = alternativeAbilitiesOf(state, obj);
-  const start = own.length === 0 ? printed : [...printed, ...own];
+  // CR 122.1b (D-1260): the keywords of the object's keyword counters, after everything it has printed.
+  const start = keywordCounterAbilities(
+    obj.counters,
+    own.length === 0 ? printed : [...printed, ...own],
+  );
   const fx = staticEffectsOn(state, obj, {
     ...input,
     types: line.types,
@@ -211,8 +222,12 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
     ptWith,
   });
   const abilities = applyAbilityLayer(start, fx.grants, effects);
+  // CR 208.4b (D-1261): the base power and toughness are what layer 7b leaves, before any counter or "+N/+N" effect of layer 7c.
+  const baseValues = basePtOf(ptBase, withStaticSets(obj, effects, fx.sets));
   const typed: Derived = {
     ...input,
+    basePower: baseValues.power,
+    baseToughness: baseValues.toughness,
     types: line.types,
     subtypes: line.subtypes,
     colors,
