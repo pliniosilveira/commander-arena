@@ -1160,11 +1160,12 @@ function lowerStep(
       sentence.instead === true ||
       sentence.where !== undefined ||
       sentence.delayed !== undefined ||
-      sentence.reflexive === true ||
-      sentence.clauses.some((c) => c.optional)
+      sentence.reflexive === true
     ) {
       return stop(refuse(sentence));
     }
+    // "Otherwise, you may cast it without paying its mana cost." (D-394, CR 608.2c): a clause the text made optional is lowered only by an instruction that asks the question
+    // itself (`acceptsOptional`: the engine's `castFree`); any other optional clause makes `lowerClauses` fail, so it is never run as if it were not a choice.
     const other = lowerClauses(sentence.clauses, ctx);
     if (!other.ok) return stop(other);
     steps.pop();

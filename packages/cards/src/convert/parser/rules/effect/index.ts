@@ -45,6 +45,7 @@ import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
+import { HASHATON_G9_EFFECT_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_EFFECT_RULES } from './hashaton-group-4';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
@@ -901,6 +902,8 @@ export const EFFECT_RULES = [
   ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
+  // D-393, D-394 (Hashaton, group 9): the body of Rona, Tolarian Obliterator.
+  ...HASHATON_G9_EFFECT_RULES,
   // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. ..." (three sentences kept together).
   ...PILES_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.

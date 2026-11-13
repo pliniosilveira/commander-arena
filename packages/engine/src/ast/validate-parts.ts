@@ -2086,6 +2086,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'exileTop' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
     e?.kind === 'exileRandomFromGraveyard' ||
+    // D-393: the card `exileRandomFromHand` exiled is "it" ("If it's a land card, you may put it onto the battlefield").
+    e?.kind === 'exileRandomFromHand' ||
     e?.kind === 'exileUntilCast' ||
     // D-177: the cards a `search` found and put somewhere are "it" and "that land" ("Then if you control four or more lands, untap that land").
     e?.kind === 'search' ||
@@ -2097,6 +2099,16 @@ function movesObjects(e: Effect): boolean {
 }
 
 const TOKEN_PRESET_NAMES: readonly TokenPreset[] = ['Treasure', 'Food', 'Clue'];
+
+/** The player selectors that name one player: what an effect with a single "it" (`exileRandomFromHand`) takes. */
+const SINGLE_PLAYER_KINDS: readonly (string | undefined)[] = [
+  'you',
+  'controllerOf',
+  'ownerOf',
+  'target',
+  'defendingPlayer',
+  'triggerPlayer',
+];
 
 function checkSacrificeSelector(
   sel: SacrificeSelector,
@@ -3658,6 +3670,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'exileRandomFromGraveyard':
       // CR 701.13 (D-235): no fields.
+      break;
+    case 'exileRandomFromHand':
+      // CR 701.13 (D-393): one player exiles one card of their own hand at random, and `moved` names it, so the selector names one player.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (!SINGLE_PLAYER_KINDS.includes(e.player?.kind)) {
+        issue(
+          out,
+          `${path}.player`,
+          'exileRandomFromHand names one player (you, a target, the controller or owner of an object, the trigger player or the defending player): "moved" is the one card',
+        );
+      }
       break;
     case 'phaseOut':
       // CR 702.26 (D-234): the permanents an object selector names phase out.

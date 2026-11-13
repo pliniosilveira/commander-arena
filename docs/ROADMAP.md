@@ -298,3 +298,10 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The CasualAgent picks the first X legal graveyard cards for "return X target creature cards" (any legal answer) and discards by `chooseCostDiscard`; `worthCasting` of a recursion spell with a single "target creature card from your graveyard" ("Raise Dead") still asks for an opposing creature (the text matches "target creature"), which is a known weakness of the agent, not touched here.
 - The rulings of Restless Dreams on Scryfall were not fetched (blocked in a cloud session): the order of the announcement (X, then the targets, then the discard) follows CR 601.2b, 601.2c and 601.2h.
 
+
+## The Hashaton deck, group 9 (issue 31, D-390 to D-395)
+
+- The Phyrexian symbol is read in the cost of an ordinary activated ability only, and only the single-color form (`{B/P}`): the hybrid Phyrexian symbol (`{W/U/P}`), a Phyrexian symbol beside a hybrid, X or snow symbol, `{P}`, and a Phyrexian symbol in a mana ability's cost, a keyword's cost or an additional cost stay unread. Automatic payment keeps 1 life, so a player at 2 life is not offered a cost paid with 2 life (CR 119.4 allows it); the pre-existing choice is unchanged.
+- The trigger "a source deals damage to ~" reads no filter on the source ("a creature deals damage to ~", "a source you control deals damage to ~"): the engine's `dealtDamage` has none.
+- `exileRandomFromHand` names one player; "each opponent exiles a card from their hand at random" (several players, several cards, no single "it") is not built. "You exile a card from your hand at random" and "target player exiles ..." run in the engine but the grammar reads only the subjects "that source's controller" and "that player".
+- "put it onto the battlefield" and "cast it without paying its mana cost" are read only for "it" of the card `exile-random-from-hand` exiled (tapped, attacking, with counters, "under its owner's control" and another card are not read). The web words the question of the land offer as every `may` ("name: text — do it?").

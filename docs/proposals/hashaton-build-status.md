@@ -21,7 +21,7 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Psychic Frog | 1 | P (+T) | done | combat damage to a player or planeswalker: draw a card |
 | Renewed Solidarity | 5 | T (+ small P) | done | choose a type as it enters; at your end step copy each token of that type that entered this turn |
 | Restless Dreams | 10 | P x2 (casting) | done | additional cost: discard X cards; return X target creature cards from the graveyard |
-| Rona, Herald of Invasion // Rona, Tolarian Obliterator | 9 | P + T | waiting | transform on a mana ability; damage trigger exiling a random card from the damager's controller's hand and playing it |
+| Rona, Herald of Invasion // Rona, Tolarian Obliterator | 9 | P + T | done | transform on a mana ability; damage trigger exiling a random card from the damager's controller's hand and playing it |
 | Serra's Emissary | 6 | P + T (large) | done | choose a card type as it enters; protection from the chosen card type for you and your creatures |
 | Sphinx of the Second Sun | 7 | P (turn structure) | done | an additional beginning phase after the postcombat main phase |
 | Victimize | 8 | T + small P | done | choose two target creature cards, sacrifice a creature, return the cards tapped |

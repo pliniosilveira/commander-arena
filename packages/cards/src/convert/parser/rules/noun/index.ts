@@ -28,6 +28,7 @@ import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_NOUN_RULES } from './edhrec';
 import { HASHATON_G8_NOUN_RULES } from './hashaton-g8';
+import { HASHATON_G9_NOUN_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_NOUN_RULES } from './hashaton-group-4';
 import { HASHATON_G10_NOUN_RULES } from './hashaton-group-10';
 import { HOFRI_NOUN_RULES } from './hofri';
@@ -643,6 +644,8 @@ export const NOUN_RULES = [
   ...ANGEL_NOUN_RULES,
   // D-362 (Hashaton, group 8): "the chosen cards".
   ...HASHATON_G8_NOUN_RULES,
+  // D-392 (Hashaton, group 9): "that source's controller".
+  ...HASHATON_G9_NOUN_RULES,
   NOUN_ITS_CONTROLLER,
   NOUN_ATTACKED_BY_IT,
   ...SUBJECT_NOUN_RULES,

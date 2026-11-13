@@ -514,7 +514,10 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
   // Stage P29 (D-133): the engine's `triggerPlayer` is the player the event is about: the player who drew, who was dealt
   // combat damage, whose spell or ability targeted, who sacrificed. A step, a death and an entering have none.
   const aboutPlayer =
-    (['drawn', 'sacrifice', 'becomesTarget', 'lifeGained', 'attackBatch'].includes(only.event) &&
+    // D-391 (CR 120.3, 113.7a): "a source deals damage to ~" is about the controller of the source (the engine's `dealtDamage` has it as the trigger player).
+    (['drawn', 'sacrifice', 'becomesTarget', 'lifeGained', 'attackBatch', 'dealtDamage'].includes(
+      only.event,
+    ) &&
       only.actor !== undefined) ||
     ((only.event === 'dealsCombatDamage' ||
       only.event === 'combatDamageBatch' ||
@@ -935,8 +938,12 @@ export function lowerTriggered(
   // "You may play that card this turn." (stage P34): a permission, which no question of the ability answers.
   // "You may cast target instant or sorcery card from a graveyard" (D-354): the engine's `castCard` asks the question itself, so the sentence's "you may" is no
   // question of the ability's; a cast with no "you may" is not read, and stays a sentence of the ability's own (`castCard` lowers only an optional clause).
-  const permission = (s: Sentence) =>
-    s.clauses.every((c) => c.verb === 'mayPlay' || (c.verb === 'castCard' && c.optional));
+  // D-394 (group 9): "you may put it onto the battlefield" and "you may cast it without paying its mana cost" of the card an instruction before exiled: the engine's `may`
+  // of that move and its `castFree` ask the question themselves, so the same holds.
+  const asksItself = (c: Sentence['clauses'][number]) =>
+    c.optional &&
+    (c.verb === 'castCard' || c.verb === 'castMovedFree' || c.verb === 'putMovedOntoBattlefield');
+  const permission = (s: Sentence) => s.clauses.every((c) => c.verb === 'mayPlay' || asksItself(c));
   const ownMay = (s: Sentence, i: number) =>
     !permission(s) &&
     !unlessSentence(s) &&
@@ -962,8 +969,8 @@ export function lowerTriggered(
         ...c,
         // The sentences of an offer keep their "you may": `lowerSentences` reads it, and refuses a "you
         // may" inside what a payment buys.
-        // `castCard` keeps its "you may": its lowering reads it (a cast that is not the player's choice is not run).
-        optional: ownMay(s, i) || (permission(s) && c.verb !== 'castCard') ? false : c.optional,
+        // `castCard` keeps its "you may": its lowering reads it (a cast that is not the player's choice is not run). So do the two instructions of D-394.
+        optional: ownMay(s, i) || (permission(s) && !asksItself(c)) ? false : c.optional,
       })),
     })),
     ctx,

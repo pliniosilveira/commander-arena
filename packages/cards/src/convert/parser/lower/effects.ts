@@ -49,6 +49,7 @@ import { missingFeatures } from './features';
 import { GAIN_STATIC_ABILITY } from './granted-static';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
 import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
+import { HASHATON_G9_LOWERINGS } from './hashaton-g9';
 import { HASHATON_GROUP_4_LOWERINGS } from './hashaton-group-4';
 import { HOFRI_LOWERINGS } from './hofri';
 import { KORVOLD_LOWERINGS } from './korvold';
@@ -1350,6 +1351,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...VRASKA_LOWERINGS,
   ...HASHATON_G5_LOWERINGS,
   ...HOFRI_LOWERINGS,
+  // D-393, D-394 (Hashaton, group 9): the exile of a random card from a hand, then "put it onto the battlefield" and "cast it without paying its mana cost".
+  ...HASHATON_G9_LOWERINGS,
   ...PILES_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,
   ...EDHREC_LOWERINGS,

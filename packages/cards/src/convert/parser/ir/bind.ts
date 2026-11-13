@@ -112,6 +112,8 @@ type Pronoun =
 function classify(raw: string): Pronoun | null {
   const word = raw.trim().toLowerCase();
   if (word === 'that player' || word === 'they') return { kind: 'player' };
+  // D-392 (Hashaton, group 9): "that source's controller", the player a trigger about a source names.
+  if (/^that source['’]s controller$/u.test(word)) return { kind: 'player' };
   if (word === 'the other') return { kind: 'other' };
   if (word === 'them' || /^those \w+$/.test(word)) return { kind: 'plural' };
   // D-362 (Victimize): "the chosen cards" are the cards of the target phrase the text chose before.
@@ -456,6 +458,24 @@ class Binder {
           span: clause.span,
           rule: clause.rule,
           ref,
+        },
+      });
+    }
+    // "... exiles a card from their hand at random. If it's a land card, you may put it onto the battlefield" (D-393, group 9): "it" is the card the instruction exiled,
+    // which the engine names `moved`. Pushed after the clause's own nouns, so that it is the most recent object of the text.
+    if (clause.verb === 'exileRandomFromHand') {
+      this.antecedents.push({
+        kind: 'object',
+        noun: {
+          kind: 'noun',
+          det: 'a',
+          filter: { raw: 'card' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: clause.span,
+          rule: clause.rule,
+          ref: 'moved',
         },
       });
     }
