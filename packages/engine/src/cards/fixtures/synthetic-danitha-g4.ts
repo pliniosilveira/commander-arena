@@ -76,8 +76,8 @@ export const SYNTHETIC_DANITHA_G4_LIST: readonly CardDefinition[] = [
     manaCost: ['1', 'G', 'W'],
     types: ['creature'],
     subtypes: ['Fox', 'Samurai'],
-    colors: ['G', 'W'],
-    colorIdentity: ['G', 'W'],
+    colors: ['W', 'G'],
+    colorIdentity: ['W', 'G'],
     power: 1,
     toughness: 3,
     oracleText:

@@ -108,7 +108,7 @@ describe('the question of the order of a regeneration shield and Umbra armor (CR
   test('it is the question of replacement effects, titled for the destruction', () => {
     expect(isReplacementChoice(decision())).toBe(true);
     expect(replacementTitle(decision())).toBe('Destruction replacement');
-    expect(replacementTitle({ replacement: undefined })).toBe('Damage replacement');
+    expect(replacementTitle({})).toBe('Damage replacement');
   });
 
   test('the prompt names the creature that would be destroyed', () => {
