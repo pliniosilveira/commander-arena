@@ -1357,7 +1357,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // D-393, D-394 (Hashaton, group 9): the exile of a random card from a hand, then "put it onto the battlefield" and "cast it without paying its mana cost".
   ...HASHATON_G9_LOWERINGS,
   ...DANITHA_G1B_LOWERINGS,
-  // D-1220: "you may put a land card from among them into your hand" after a mill.
+  // D-411: "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_LOWERINGS,
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,

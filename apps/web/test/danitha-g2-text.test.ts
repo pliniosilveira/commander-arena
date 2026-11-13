@@ -1,5 +1,5 @@
 /**
- * The words of group 2 of the Danitha deck (D-1220, D-1221 provisional): "Mill four cards. You may put a land card from among them into your hand." and its riders, read from
+ * The words of group 2 of the Danitha deck (D-411, D-412): "Mill four cards. You may put a land card from among them into your hand." and its riders, read from
  * the engine's SYNTHETIC cards (so a wording that drifts from the AST fails here), and the question of the cards put into the graveyard. No DOM.
  */
 import {

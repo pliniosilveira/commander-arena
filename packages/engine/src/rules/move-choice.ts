@@ -74,7 +74,7 @@ export function runChooseMove(
 ): StepOutcome {
   // D-231: "each player exiles a card from their graveyard": the player the instruction names chooses among their own cards.
   const chooser = instruction.seat ?? res.controller;
-  // D-1220 (CR 608.2c): "You may put a land card from among them into your hand" is the offer itself, so what "if you do" and "if you don't" read starts again
+  // D-411 (CR 608.2c): "You may put a land card from among them into your hand" is the offer itself, so what "if you do" and "if you don't" read starts again
   // at 0 as it is made, as a `may` effect does (D-135); the card moved, if one is, is what it counts.
   const restart = instruction.among === undefined ? {} : { resetPerformed: true as const };
   const run = (objects: readonly ObjectId[], automatic: boolean): StepOutcome => {
@@ -108,7 +108,7 @@ export function runChooseMove(
   const fromCards = isCardZoneChoice(instruction.filter);
   const legal = fromCards
     ? cardCandidates(state, chooser, res.source, instruction.filter).filter(
-        // D-1220: only the cards the effect before it moved.
+        // D-411: only the cards the effect before it moved.
         (id) => instruction.among === undefined || instruction.among.includes(id),
       )
     : controlledCandidates(state, chooser, res.source, instruction.filter);

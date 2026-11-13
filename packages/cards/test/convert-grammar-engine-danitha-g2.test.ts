@@ -1,4 +1,4 @@
-// The Danitha deck program (issue 26), group 2 (D-1220, D-1221 provisional): the REAL cards of the owner's golden corpus (real Oracle text, `fixtures/corpus/golden.jsonl`) read
+// The Danitha deck program (issue 26), group 2 (D-411, D-412): the REAL cards of the owner's golden corpus (real Oracle text, `fixtures/corpus/golden.jsonl`) read
 // through the grammar only, defined in an engine scenario and played through applyAction: Ainok Wayfarer, Blanchwood Prowler, Airlift Chaplain, Cache Grab, Something Worth
 // Saving, Town Greeter and Midnight Tilling all "mill N cards, you may put a card of a kind from among them into your hand" with a rider. The cards that stand in for the library
 // are real engine fixtures, and two SYNTHETIC cards (a Squirrel creature card and a Town land card, which no engine fixture is).

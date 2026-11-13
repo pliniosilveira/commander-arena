@@ -1,4 +1,4 @@
-// Slice soak (D-1220, D-1221 provisional): whole games with the 'danithaMill' deck style (SYNTHETIC cards of the engine fixtures `synthetic-danitha-g2.ts`: creatures with an enters
+// Slice soak (D-411, D-412): whole games with the 'danithaMill' deck style (SYNTHETIC cards of the engine fixtures `synthetic-danitha-g2.ts`: creatures with an enters
 // trigger and instants that mill cards and ask which card of a kind from among the cards milled to put into the hand, with a counter, life or a Food token as the rider, with bodies
 // and removal) between random agents, with CasualAgent and HeuristicAgent in some seats. Every game finishes with a result, no fallback, no rejected action and consistent state
 // after every action; the action log replays to the same final state; and, with the rules read again here from the cards' texts (not from the engine's own code), at every step:

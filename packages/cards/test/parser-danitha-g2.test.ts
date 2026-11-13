@@ -1,4 +1,4 @@
-// The Danitha deck program (issue 26), group 2 (D-1220, D-1221 provisional): "Mill four cards. You may put a land card from among them into your hand." and its riders (Ainok
+// The Danitha deck program (issue 26), group 2 (D-411, D-412): "Mill four cards. You may put a land card from among them into your hand." and its riders (Ainok
 // Wayfarer, Blanchwood Prowler, Airlift Chaplain, Cache Grab, Something Worth Saving, Town Greeter, Midnight Tilling). The lines are the real Oracle text of the acceptance cards of
 // the golden corpus, read through the whole pipeline; the other lines are SYNTHETIC siblings and the near misses the grammar must not read. The engine runs what is lowered in
 // convert-grammar-engine-danitha-g2.test.ts.

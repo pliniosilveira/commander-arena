@@ -396,7 +396,7 @@ export const CONDITION_RULES = [
   ...MELD_CONDITION_RULES,
   // Stage P69 (D-271): "the result is 1" after a die roll, "~ is in your graveyard".
   ...ARDEN_CONDITION_RULES,
-  // Issue 26 (the Danitha deck, D-1221): "you control a Squirrel or returned a Squirrel card to your hand this way", before the plain count whose phrase is a prefix of it.
+  // Issue 26 (the Danitha deck, D-412): "you control a Squirrel or returned a Squirrel card to your hand this way", before the plain count whose phrase is a prefix of it.
   ...DANITHA_G2_CONDITION_RULES,
   CONDITION_CONTROL_AT_LEAST,
   CONDITION_CONTROL_A,
@@ -432,7 +432,7 @@ export const CONDITION_RULES = [
   ...HOFRI_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-403): "you don't put it onto the battlefield".
   ...DANITHA_G1B_CONDITION_RULES,
-  // Issue 26 (the Danitha deck, D-1220): "you don't", after "you don't put it onto the battlefield", whose phrase it is a prefix of.
+  // Issue 26 (the Danitha deck, D-411): "you don't", after "you don't put it onto the battlefield", whose phrase it is a prefix of.
   ...DANITHA_G2_LATE_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_UNLESS_PAYS,

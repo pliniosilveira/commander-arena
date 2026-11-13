@@ -250,7 +250,7 @@ export function untapChooseText(selector: ChooseSelector): string | null {
 }
 
 /**
- * The card of "You may put a land card from among them into your hand" (D-1220): "a permanent card", a list of types, or two kinds with limits of their own, "a Plains card or a
+ * The card of "You may put a land card from among them into your hand" (D-411): "a permanent card", a list of types, or two kinds with limits of their own, "a Plains card or a
  * creature card with mana value 3 or less" (each member of the choice is said whole, so a limit is never dropped). Null when the filter cannot be said.
  */
 function fromAmongNoun(kind: ObjectFilter): string | null {
@@ -274,7 +274,7 @@ function fromAmongNoun(kind: ObjectFilter): string | null {
  */
 export function chosenCardMoveText(effect: Extract<Effect, { kind: 'moveToZone' }>): string | null {
   const { objects } = effect;
-  // D-1220 (CR 608.2d): "You may put a land card from among them into your hand": a choice among the cards the mill before it put into the graveyard.
+  // D-411 (CR 608.2d): "You may put a land card from among them into your hand": a choice among the cards the mill before it put into the graveyard.
   if (objects.kind === 'choose' && objects.fromMoved === true && effect.to === 'hand') {
     const { zone: _zone, controller: _owner, ...kind } = objects.filter;
     const noun = fromAmongNoun(kind);

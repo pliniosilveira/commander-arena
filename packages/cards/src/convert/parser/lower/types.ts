@@ -170,12 +170,12 @@ export interface LowerContext {
    */
   madeToken: string | null;
   /**
-   * True right after a clause that was one mill of the controller's own library (D-1220, CR 701.17a): "them" and "the cards milled this way" of "you may put a land card from
+   * True right after a clause that was one mill of the controller's own library (D-411, CR 701.17a): "them" and "the cards milled this way" of "you may put a land card from
    * among them into your hand" are the cards that mill put into the graveyard. Any other clause lowered after it makes it false again.
    */
   milled: boolean;
   /**
-   * True right after a clause that was one `moveToZone` to the hand (D-1221, CR 400.7j): "If you put a Town card into your hand this way" asks about the card that move put there,
+   * True right after a clause that was one `moveToZone` to the hand (D-412, CR 400.7j): "If you put a Town card into your hand this way" asks about the card that move put there,
    * and "onto the battlefield this way" about a card put there; the condition is read only after the move it says (a card put into the hand is not "put onto the battlefield").
    */
   movedToHand: boolean;

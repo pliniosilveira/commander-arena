@@ -4666,7 +4666,7 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Tests: engine `scenario-xx-danitha-g5-*.test.ts`; cards `parser-danitha-g5.test.ts` and `convert-grammar-engine-danitha-g5.test.ts`; AI `casual-danitha-g5.test.ts` and the soak `danitha-g5-games.test.ts`; web `danitha-g5-text.test.ts` and `danitha-g5-blight-ui.test.ts`.
 - Limits: see `docs/ROADMAP.md`.
 
-## The Danitha deck (issue 26), group 2: Ainok Wayfarer, Blanchwood Prowler, Airlift Chaplain, Cache Grab, Something Worth Saving, Town Greeter and Midnight Tilling, "Mill four cards. You may put a land card from among them into your hand." (D-1220 to D-1224, provisional)
+## The Danitha deck (issue 26), group 2: Ainok Wayfarer, Blanchwood Prowler, Airlift Chaplain, Cache Grab, Something Worth Saving, Town Greeter and Midnight Tilling, "Mill four cards. You may put a land card from among them into your hand." (D-411 to D-415,)
 
 - CR: 701.17a (mill), 701.17c (an effect that refers to a milled card finds it in the public zone it moved to), 400.7j (the cards milled are new objects in the graveyard), 608.2c (a later instruction reads what an earlier one did), 608.2d (the player chooses as the instruction comes up; an option that cannot be chosen is not done), 205.3i (Town is a land type), 121.4 (milling is not drawing)
 - Gap class: P (a flag of the `choose` selector, a zone test of `objectMatches`) and T (three rules, a lowering and a card phrase); no new decision kind, no new event kind
@@ -4675,5 +4675,5 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Decision and action: the existing `chooseCards` of purpose `move` (`zone: 'graveyard'`, `legal` the cards milled that match, `min` 0, `max` 1), answered with `chooseCards`; asked only when a card matches.
 - Tests: engine `scenario-xx-danitha-g2-mill-take.test.ts`; cards `parser-danitha-g2.test.ts`, `convert-grammar-engine-danitha-g2.test.ts` (the seven REAL cards played in a game); web `danitha-g2-text.test.ts`; ai `danitha-g2-agents.test.ts`, `danitha-g2-games.test.ts` (`danithaMill`).
 - Parser: `effect.put-from-among` (`parser/rules/effect/danitha-g2.ts`), `condition.if-you-dont` and `condition.control-or-returned` (`parser/rules/condition/danitha-g2.ts`), `condition.put-this-way` also reads "into your hand this way" (`korvold.ts`), lowering `PUT_FROM_AMONG` (`parser/lower/danitha-g2.ts`), `lowerYouDont` (`parser/lower/sentences.ts`), `asksItself` (`parser/lower/triggers.ts`). Not read: the card anywhere but the hand, more than one card, "up to", another place to look, "them" after anything but a mill of your own library, "If you don't" after another offer.
-- Added in: D-1220 to D-1224 (provisional)
+- Added in: D-411 to D-415
 - Limits (also `docs/ROADMAP.md`): see there.

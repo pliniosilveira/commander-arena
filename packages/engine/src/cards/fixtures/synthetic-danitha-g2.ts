@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 2 OF THE DANITHA DECK (issue 26, D-1220 and D-1221, provisional numbers). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 2 OF THE DANITHA DECK (issue 26, D-411 and D-412 numbers). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of "Mill four cards. You may put a land card from among them into your hand." (`ChooseSelector.fromMoved` of a `moveToZone`, CR 701.17, 608.2c,
  * 608.2d): the cards a mill put into the graveyard are the only candidates, and the riders the real texts add: "If you don't, put a +1/+1 counter on this creature" (the choice

@@ -913,7 +913,7 @@ export const EFFECT_RULES = [
   // D-393, D-394 (Hashaton, group 9): the body of Rona, Tolarian Obliterator.
   ...HASHATON_G9_EFFECT_RULES,
   ...DANITHA_G1B_EFFECT_RULES,
-  // Issue 26 (D-1220): "you may put a land card from among them into your hand" after a mill.
+  // Issue 26 (D-411): "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_EFFECT_RULES,
   // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. ..." (three sentences kept together).
   ...PILES_EFFECT_RULES,

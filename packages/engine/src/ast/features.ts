@@ -111,7 +111,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpentRiderCopy',
     // D-327: "Mill a card. You may play that card this turn." (`mayPlay` of the cards a `mill` put into the graveyard).
     'mayPlayFromGraveyard',
-    // D-1220: "Mill four cards. You may put a land card from among them into your hand." (`ChooseSelector.fromMoved`: the choice among the cards `moved` names).
+    // D-411: "Mill four cards. You may put a land card from among them into your hand." (`ChooseSelector.fromMoved`: the choice among the cards `moved` names).
     'chooseAmongMoved',
   ],
   effectKinds: [
@@ -1008,7 +1008,7 @@ export const ABILITY_FEATURES = [
   'manaSpentRiderCopy',
   /** "Mill a card. You may play that card this turn" (D-327, CR 601.2, 305.1): the engine's `mayPlay` of a card a `mill` put into its owner's graveyard. */
   'mayPlayFromGraveyard',
-  /** "Mill four cards. You may put a land card from among them into your hand" (D-1220, CR 608.2c, 608.2d): the engine's `ChooseSelector.fromMoved` of a `moveToZone`. */
+  /** "Mill four cards. You may put a land card from among them into your hand" (D-411, CR 608.2c, 608.2d): the engine's `ChooseSelector.fromMoved` of a `moveToZone`. */
   'chooseAmongMoved',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];

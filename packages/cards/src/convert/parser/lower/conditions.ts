@@ -294,7 +294,7 @@ export function lowerCondition(
       // (`moved`); `validateCard` refuses it where no instruction before it moves a card.
       const blocked = missingFeatures(['condition:objectMatches']);
       if (blocked.length > 0) return failure(c, blocked);
-      // D-1221 (CR 608.2c): "into your hand this way" follows a move to the hand and "onto the battlefield this way" does not: the words must say what the move before did.
+      // D-412 (CR 608.2c): "into your hand this way" follows a move to the hand and "onto the battlefield this way" does not: the words must say what the move before did.
       if ((test.zone === 'hand') !== (ctx?.movedToHand === true)) return failure(c, []);
       const filter = lowerFilter({
         kind: 'noun',
@@ -306,7 +306,7 @@ export function lowerCondition(
         span: c.span,
         rule: c.rule,
       });
-      // D-1221 (Danitha deck group 2): "If you put a Town card into your hand this way": the card is in the hand it was put into.
+      // D-412 (Danitha deck group 2): "If you put a Town card into your hand this way": the card is in the hand it was put into.
       return filter.ok
         ? ok({
             kind: 'objectMatches',
@@ -469,7 +469,7 @@ export function lowerCondition(
       // "If you don't put it onto the battlefield, put it into your hand" belongs to the pair of sentences of an offer to put a card onto the battlefield, which the lowering of the sentences reads (D-403).
       return failure(c, []);
     case 'youDont':
-      // "If you don't, put a +1/+1 counter on ~" belongs to the pair of sentences of a choice from among the cards a mill moved, which the lowering of the sentences reads (D-1220).
+      // "If you don't, put a +1/+1 counter on ~" belongs to the pair of sentences of a choice from among the cards a mill moved, which the lowering of the sentences reads (D-411).
       return failure(c, []);
     case 'declined':
       // "If the player doesn't" belongs to a "may have you" sentence, which the lowering of the sentences reads; anywhere else it is not run.

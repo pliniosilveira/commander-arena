@@ -646,13 +646,13 @@ Rule numbers and titles were read with `pnpm rule` from the CR copy of the owner
 | 508.1a, 509.1a, 113.7a, 608.2h | "Enchanted creature can't attack or block." and "Exile enchanted creature." after the Aura was sacrificed | Implemented (Danitha deck, D-407): two restrictions of the enchanted creature; the exile reads the enchanted creature as it was (last-known information) |
 | 601.3b, 601.3d, 113.6d, 601.2c, 903.3 | "You may cast this spell as though it had flash if it targets a commander." | Implemented (Danitha deck, D-408): the spell's own permission; the cast may begin when the targets could meet the condition and the targets are then chosen from the commanders; only the first mandatory target slot is restricted, no modal spells |
 
-## Added by the Danitha deck, group 2 (provisional D-1220 to D-1224)
+## Added by the Danitha deck, group 2 (D-411 to D-415)
 
 Rule numbers and titles were read with `pnpm rule` from the CR copy of the owner's private rules repository (CR 701.17, 608.2c, 608.2d, 400.7, 205.3i).
 
 | CR | Title | Status | Notes |
 | --- | --- | --- | --- |
-| 701.17a, 701.17c | Mill; an effect that refers to a milled card finds it where it moved | Implemented (D-1220) | `ChooseSelector.fromMoved`: the cards of the mill are the only candidates of the choice that follows. `test/scenario-xx-danitha-g2-mill-take.test.ts`. |
-| 608.2d | The player chooses as the instruction comes up; an option that cannot be chosen is not done | Implemented (D-1220, D-1222) | With no card that matches the player is not asked and "If you don't" applies (the counter is put). |
-| 608.2c | A later instruction reads what an earlier one did | Implemented (D-1220, D-1221) | The choice starts what `didPrevious` reads again; `objectMatches` with `inZone` reads the card put into the hand. |
-| 205.3i | Land types (Town) | Used (D-1221) | "If you put a Town card into your hand this way" is a subtype test on the card moved. |
+| 701.17a, 701.17c | Mill; an effect that refers to a milled card finds it where it moved | Implemented (D-411) | `ChooseSelector.fromMoved`: the cards of the mill are the only candidates of the choice that follows. `test/scenario-xx-danitha-g2-mill-take.test.ts`. |
+| 608.2d | The player chooses as the instruction comes up; an option that cannot be chosen is not done | Implemented (D-411, D-413) | With no card that matches the player is not asked and "If you don't" applies (the counter is put). |
+| 608.2c | A later instruction reads what an earlier one did | Implemented (D-411, D-412) | The choice starts what `didPrevious` reads again; `objectMatches` with `inZone` reads the card put into the hand. |
+| 205.3i | Land types (Town) | Used (D-412) | "If you put a Town card into your hand this way" is a subtype test on the card moved. |

@@ -945,7 +945,7 @@ export function lowerTriggered(
     (c.verb === 'castCard' ||
       c.verb === 'castMovedFree' ||
       c.verb === 'putMovedOntoBattlefield' ||
-      // D-1220: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
+      // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong');
   const permission = (s: Sentence) => s.clauses.every((c) => c.verb === 'mayPlay' || asksItself(c));
   const ownMay = (s: Sentence, i: number) =>

@@ -50,7 +50,7 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.gift-promised',
   // Stage P37 (D-180): "If you put a Cave onto the battlefield this way, you gain 4 life."
   'condition.put-this-way',
-  // D-1221 (Danitha deck group 2): "If you control a Squirrel or returned a Squirrel card to your hand this way, create a Food token."
+  // D-412 (Danitha deck group 2): "If you control a Squirrel or returned a Squirrel card to your hand this way, create a Food token."
   'condition.control-or-returned',
   // Stage P49 (D-206): "Then if this spell was cast from a graveyard, put two +1/+1 counters on that token."
   'condition.cast-from-graveyard',
@@ -144,7 +144,7 @@ function leadCondition(ifYouDo: boolean): Parser<IrCondition> {
                 'condition.player-declines',
                 // D-403 (Danitha deck, Cosmic Rebirth): "If you don't put it onto the battlefield, put it into your hand."
                 'condition.you-dont-put-it-onto-battlefield',
-                // D-1220 (Danitha deck group 2): "If you don't, put a +1/+1 counter on this creature." after "You may put a land card from among them into your hand."
+                // D-411 (Danitha deck group 2): "If you don't, put a +1/+1 counter on this creature." after "You may put a land card from among them into your hand."
                 'condition.if-you-dont',
                 ...LEAD_CONDITIONS,
               ]

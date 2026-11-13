@@ -180,12 +180,12 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     noteMoved(lowered.value, ctx);
     noteCreated(lowered.value, ctx);
     noteMadeToken(clause, lowered.value, ctx);
-    // D-1220: "them" of a choice from among the cards milled: the clause before it was one mill of the controller's own library.
+    // D-411: "them" of a choice from among the cards milled: the clause before it was one mill of the controller's own library.
     ctx.milled =
       lowered.value.length === 1 &&
       lowered.value[0]?.kind === 'mill' &&
       lowered.value[0].player.kind === 'you';
-    // D-1221: "If you put a Town card into your hand this way": the clause before it moved cards to the hand.
+    // D-412: "If you put a Town card into your hand this way": the clause before it moved cards to the hand.
     ctx.movedToHand =
       lowered.value.length === 1 &&
       lowered.value[0]?.kind === 'moveToZone' &&
@@ -839,7 +839,7 @@ function lowerMayElse(
 }
 
 /**
- * "You may put a land card from among them into your hand. If you don't, put a +1/+1 counter on this creature." (Ainok Wayfarer, Blanchwood Prowler, Airlift Chaplain; D-1220, CR 608.2c,
+ * "You may put a land card from among them into your hand. If you don't, put a +1/+1 counter on this creature." (Ainok Wayfarer, Blanchwood Prowler, Airlift Chaplain; D-411, CR 608.2c,
  * 608.2d): the sentence after a choice from among the cards a mill moved says what is done when no card was put into the hand: the player declined, no card matched or nothing was
  * milled. The choice is the offer itself (it starts what "if you do" reads again, `rules/move-choice.ts`), so the second sentence is a `conditional` on "not `didPrevious`". Null
  * when the sentence is not "If you don't"; one that does not follow such a choice is refused, never guessed.
@@ -1386,7 +1386,7 @@ function lowerStep(
     steps.push({ effects: putOrElse.value, replaceable: false });
     return { last: i + 1 };
   }
-  // "You may put a land card from among them into your hand. If you don't, put a +1/+1 counter on this creature." (D-1220, CR 608.2c).
+  // "You may put a land card from among them into your hand. If you don't, put a +1/+1 counter on this creature." (D-411, CR 608.2c).
   const notTaken = lowerYouDont(sentence, steps[steps.length - 1], ctx);
   if (notTaken !== null) {
     if (!notTaken.ok) return stop(notTaken);

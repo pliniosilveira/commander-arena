@@ -1,5 +1,5 @@
 /**
- * Lowering of group 2 of the Danitha deck (issue 26, D-1220 provisional): "Mill four cards. You may put a land card from among them into your hand." (Ainok Wayfarer,
+ * Lowering of group 2 of the Danitha deck (issue 26, D-411): "Mill four cards. You may put a land card from among them into your hand." (Ainok Wayfarer,
  * Blanchwood Prowler, Airlift Chaplain, Cache Grab, Something Worth Saving, Town Greeter, Midnight Tilling): the engine's `moveToZone` to the hand of a `choose` selector over
  * the controller's graveyard, `fromMoved` (only the cards the mill before it put there) and `optional` ("you may"). The kind describes a card in a graveyard: the filter carries
  * the zone and the controller the selector needs.

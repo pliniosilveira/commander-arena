@@ -27,7 +27,7 @@ export const CONDITION_PUT_THIS_WAY = defineRule<IrCondition>({
     'you put an Island onto the battlefield this way',
     'you put a land onto the battlefield this way',
     'you put a creature onto the battlefield this way',
-    // D-1221 (Danitha deck group 2, Town Greeter): the card went to the hand.
+    // D-412 (Danitha deck group 2, Town Greeter): the card went to the hand.
     'you put a Town card into your hand this way',
     'you put a land card into your hand this way',
   ],
@@ -50,7 +50,7 @@ export const CONDITION_PUT_THIS_WAY = defineRule<IrCondition>({
       sequence(
         pattern(/you put (?:a|an) /iu),
         WHAT_IT_IS,
-        // D-1221: "into your hand this way" says where the card went (the lowering reads the card there, `objectMatches` with `inZone`).
+        // D-412: "into your hand this way" says where the card went (the lowering reads the card there, `objectMatches` with `inZone`).
         pattern(/ (onto the battlefield|into your hand) this way(?![\p{L}\p{N}])/iu),
       ),
     )(ctx, pos);

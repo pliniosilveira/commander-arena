@@ -2843,7 +2843,7 @@ export const DANITHA_G1A_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])
 ];
 
 /**
- * The SYNTHETIC cards of group 2 of the Danitha deck (D-1220, D-1221 provisional): a creature with an enters trigger and a spell each mill cards and ask which card of a kind
+ * The SYNTHETIC cards of group 2 of the Danitha deck (D-411, D-412): a creature with an enters trigger and a spell each mill cards and ask which card of a kind
  * from among the cards milled to put into the hand (a `chooseCards` of purpose `move`, `fromMoved`), with the riders of the real cards (a counter, life, a Food token). The
  * graveyard fills from the library and the question is asked of a mill, so games-100 (which expects only dedicated styles to ask this) leaves them to the 'danithaMill' style.
  * The Squirrel creature card and the Town land card are the cards the riders look for.
@@ -3367,7 +3367,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(HASHATON_G5_NAMES as readonly string[]).includes(card.name))
   // The reveal-and-take cards of the Danitha deck (D-396, D-397) have their own style: they reveal the top of the library and ask which card to take.
   .filter((card) => !(DANITHA_G1A_NAMES as readonly string[]).includes(card.name))
-  // The mill-and-take cards of the Danitha deck (D-1220, D-1221) have their own style: they mill and ask which card of the cards milled to take.
+  // The mill-and-take cards of the Danitha deck (D-411, D-412) have their own style: they mill and ask which card of the cards milled to take.
   .filter((card) => !(DANITHA_G2_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))

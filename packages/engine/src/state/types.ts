@@ -1023,7 +1023,7 @@ export type Instruction =
       readonly controller?: 'owner' | 'you';
       readonly withCounters?: { readonly counter: string; readonly count: number };
       /**
-       * "You may put a land card from among them into your hand" (`ChooseSelector.fromMoved`, D-1220): the only cards that can be chosen, the new objects the effect
+       * "You may put a land card from among them into your hand" (`ChooseSelector.fromMoved`, D-411): the only cards that can be chosen, the new objects the effect
        * before it moved (`ResolutionContext.lastMoved`), when the choice was made; the instruction also starts `performed` again, as a "you may" does (D-135).
        */
       readonly among?: readonly ObjectId[];

@@ -331,7 +331,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The attach to "that creature" needs a trigger that names a creature; "it" is the token of the same sentence only. The AI reads the entering creature as the newest creature on the battlefield (the view has no trigger subject), which is wrong when several creatures enter at once.
 - The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited above.
 
-## The Danitha deck, group 2 (issue 26, D-1220 to D-1224, provisional)
+## The Danitha deck, group 2 (issue 26, D-411 to D-415,)
 
 - `ChooseSelector.fromMoved` puts the card taken into the hand only: "You may put a creature card from among them onto the battlefield" after a mill is not built (the choice of a card from the graveyard onto the battlefield exists, D-139, but not restricted to the cards moved), and `effect.put-from-among` does not read it.
 - A mill of another player ("target player mills four cards. You may put a land card from among them into your hand") is not lowered: the card would come from a graveyard the controller does not own. "Them" is read only right after one mill of the controller's own library.

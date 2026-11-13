@@ -1,5 +1,5 @@
 /**
- * Effect rules of group 2 of the Danitha deck (issue 26, D-1220 provisional): "Mill four cards. You may put a land card from among them into your hand." (Ainok Wayfarer,
+ * Effect rules of group 2 of the Danitha deck (issue 26, D-411): "Mill four cards. You may put a land card from among them into your hand." (Ainok Wayfarer,
  * Blanchwood Prowler, Airlift Chaplain, Cache Grab, Something Worth Saving, Town Greeter, Midnight Tilling). The mill is `effect.mill`; the choice among the cards it moved is the
  * rule here; the riders ("If you don't, put a +1/+1 counter on this creature", "You gain 1 life", "If you put a Town card into your hand this way, ...") are sentences of their own
  * (`condition.if-you-dont`, `condition.put-this-way`, `condition.control-or-returned`). The lowering is in `lower/danitha-g2.ts`.

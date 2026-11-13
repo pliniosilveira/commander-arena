@@ -110,7 +110,7 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
     case 'objectMatches': {
       // D-179: "as long as this Equipment is attached to a creature": the permanent this one is attached to matches the filter.
       if (c.inZone !== undefined) {
-        issue(out, `${path}.inZone`, "a static ability's condition does not read inZone (D-1221)");
+        issue(out, `${path}.inZone`, "a static ability's condition does not read inZone (D-412)");
       }
       if (kindOf(c.of) !== 'attached') {
         issue(

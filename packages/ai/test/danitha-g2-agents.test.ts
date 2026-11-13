@@ -1,4 +1,4 @@
-// The agents and group 2 of the Danitha deck (D-1220, D-1221 provisional; SYNTHETIC cards of the engine fixtures `synthetic-danitha-g2.ts`): "Mill four cards. You may put a land card
+// The agents and group 2 of the Danitha deck (D-411, D-412; SYNTHETIC cards of the engine fixtures `synthetic-danitha-g2.ts`): "Mill four cards. You may put a land card
 // from among them into your hand." asks the question that already exists, a `chooseCards` of purpose `move` (no new decision kind), among the cards the mill put into the
 // graveyard. Each agent is checked on real engine states: every answer is one the engine lists and accepts, and the casual agent takes the most expensive card it may.
 import { getLegalActions } from '@commander-arena/engine';

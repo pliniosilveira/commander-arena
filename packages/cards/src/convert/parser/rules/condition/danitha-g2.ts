@@ -1,5 +1,5 @@
 /**
- * Conditions of group 2 of the Danitha deck (issue 26, D-1220 and D-1221 provisional): "If you don't, put a +1/+1 counter on this creature." (Ainok Wayfarer, Blanchwood
+ * Conditions of group 2 of the Danitha deck (issue 26, D-411 and D-412): "If you don't, put a +1/+1 counter on this creature." (Ainok Wayfarer, Blanchwood
  * Prowler, Airlift Chaplain) and "If you control a Squirrel or returned a Squirrel card to your hand this way, create a Food token." (Cache Grab). "If you put a Town card into
  * your hand this way" is `condition.put-this-way` (`korvold.ts`).
  */

@@ -1,4 +1,4 @@
-// "Mill four cards. You may put a land card from among them into your hand." and its riders (Danitha deck group 2, D-1220 and D-1221 provisional): the cards a mill puts into the
+// "Mill four cards. You may put a land card from among them into your hand." and its riders (Danitha deck group 2, D-411 and D-412): the cards a mill puts into the
 // graveyard are the only candidates of a later choice (`ChooseSelector.fromMoved`); the choice is the offer itself, so `didPrevious` ("If you don't, put a +1/+1 counter on this
 // creature") reads whether a card was put into the hand and not what the mill did; "If you put a Town card into your hand this way" reads the card in the hand
 // (`objectMatches` with `inZone`).

@@ -583,7 +583,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Choose target permanent card in your graveyard. You may put it onto the battlefield. If ${e}, put it into your hand.`,
   ),
-  // Issue 26 (the Danitha deck, D-1220, D-1221): the riders of a choice among the cards a mill moved.
+  // Issue 26 (the Danitha deck, D-411, D-412): the riders of a choice among the cards a mill moved.
   'condition.if-you-dont': permanent(
     (e) =>
       `When ~ enters, mill three cards. You may put a land card from among them into your hand. If ${e}, put a +1/+1 counter on ~.`,
