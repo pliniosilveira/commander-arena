@@ -106,6 +106,26 @@ function expendable(view: GameView, hand: readonly ObjectView[], count: number):
 }
 
 /**
+ * How many of the cards of `hand` the agent is glad to lose (D-386, "discard X cards"): those it wants least, counted while each is a surplus land or a card
+ * it cannot cast (the two tests of `expendable`). The most X it would announce for a spell that discards X cards.
+ */
+export function expendableCount(view: GameView, hand: readonly ObjectView[]): number {
+  let n = 0;
+  for (const l of leastWanted(view, hand, hand.length)) {
+    if (l.value > 1) break;
+    n += 1;
+  }
+  return n;
+}
+
+/** The creature cards of the agent's own graveyard (what "return X target creature cards from your graveyard" can take). */
+export function ownGraveyardCreatures(view: GameView): readonly ObjectView[] {
+  return (view.seats.find((s) => s.id === view.viewer)?.graveyard ?? []).filter((o) =>
+    o.types.includes('creature'),
+  );
+}
+
+/**
  * The cards to discard for a cost (`chooseCards` with `forCost`, or the cost of Ward the agent has
  * accepted): the ones it wants least, in the order the engine lists the choices.
  */
@@ -201,6 +221,13 @@ function costsWorthPaying(
       // The spell itself is on the stack when the cost is paid: the hand without it.
       const hand = ownHand(view).filter((o) => o.id !== spell.id);
       if (!expendable(view, hand, cost.count) && manaValueOf(spell) < 3) return false;
+    } else if (cost.kind === 'discardX') {
+      // D-386: "discard X cards" is worth it for a card the agent wants to lose anyway, and a spell that returns cards from the graveyard only when it has one to return.
+      const hand = ownHand(view).filter((o) => o.id !== spell.id);
+      if (expendableCount(view, hand) < 1) return false;
+      if (/target creature cards? from your graveyard/i.test(spell.oracleText)) {
+        if (ownGraveyardCreatures(view).length < 1) return false;
+      }
     } else if (cost.kind === 'payLife') {
       if (ownLife(view) - fixedLifeOf(cost) <= PAY_LIFE_ABOVE) return false;
     }

@@ -33,6 +33,8 @@ export interface CostOptions {
   readonly unless?: boolean;
   /** The offer "you may pay that much life" of a life gain trigger (D-364, CR 119.4): the life gained is paid, and nowhere else. */
   readonly eventLife?: boolean;
+  /** "Discard X cards" (Hashaton group 10, D-386, provisional, CR 107.3a, 701.9): an additional cost of a spell, where X is announced; nowhere else. */
+  readonly discardX?: boolean;
 }
 
 /**
@@ -77,6 +79,9 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     }
     case 'payXLife':
       return options.x === true ? ok({ kind: 'payXLife' }) : failure(cost);
+    case 'discardX':
+      // CR 107.3a, 601.2b (D-386): "discard X cards" is announced as the spell is cast; the engine runs it as an additional cost of a spell only.
+      return options.discardX === true ? ok({ kind: 'discardX' }) : failure(cost);
     case 'removeCounters':
       return cost.amount.kind === 'number' && cost.amount.value >= 1
         ? ok({ kind: 'removeCounters', counter: cost.counter, count: cost.amount.value })
@@ -192,6 +197,7 @@ export const COST_NEEDS: readonly FeatureRef[] = [
   'cost:tapPermanents',
   'cost:payLife',
   'cost:payXLife',
+  'cost:discardX',
   'cost:discard',
   'cost:exileFromGraveyard',
   'cost:removeCounters',

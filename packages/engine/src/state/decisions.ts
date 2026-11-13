@@ -914,7 +914,8 @@ export type ReplacementQuestion = DamageReplacementQuestion | TokenReplacementQu
  * what it is. Every value from `min` (0) to `max` is legal: `max` is the largest X the controller could
  * pay for the whole cost, from every mana source and the pool, with commander tax, the kicker if paid,
  * additional costs and cost reductions counted. `perX` is what each point of X costs: `mana` generic mana
- * (one for each {X} of the mana cost, so {X}{X} is 2) and `life` ("pay X life"). Asked only when `max`
+ * (one for each {X} of the mana cost, so {X}{X} is 2), `life` ("pay X life") and `discard` ("discard X cards", D-386: `max` is then
+ * also at most the cards in the hand besides the spell, and at most the legal targets of a slot of "X target ..."). Asked only when `max`
  * is at least 1; a spell that can pay no X at all, or has none to announce (cast without paying its mana
  * cost, CR 107.3b), has X = 0 and is not asked. The answer is a `chooseX` action; `cancel` is a legal
  * answer and rewinds the cast or activation (CR 733).
@@ -935,7 +936,13 @@ export interface ChooseXDecision extends DecisionBase {
   readonly purpose: 'spell' | 'ability' | 'multikicker' | 'replicate' | 'payAnyAmount' | 'drawUpTo';
   readonly min: number;
   readonly max: number;
-  readonly perX: { readonly mana: number; readonly life: number; readonly loyalty?: number };
+  readonly perX: {
+    readonly mana: number;
+    readonly life: number;
+    readonly loyalty?: number;
+    /** Cards of the hand discarded for each point of X ("discard X cards", D-386); absent for none. */
+    readonly discard?: number;
+  };
   /** For `multikicker` and `replicate`: the cost paid each time. Absent for X. */
   readonly cost?: readonly Cost[];
 }

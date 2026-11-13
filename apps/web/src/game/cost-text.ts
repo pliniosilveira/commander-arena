@@ -177,6 +177,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
       return `Pay ${costPart(cost)}`;
     case 'payXLife':
       return 'Pay X life';
+    case 'discardX':
+      // D-386: the additional cost of a spell, "Discard X cards".
+      return 'Discard X cards';
     case 'sacrifice':
       return `Sacrifice ${sacrificeWhat(cost.what, cost.count)}`;
     case 'tapPermanents':

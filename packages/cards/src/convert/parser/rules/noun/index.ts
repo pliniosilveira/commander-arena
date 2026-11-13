@@ -29,6 +29,7 @@ import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_NOUN_RULES } from './edhrec';
 import { HASHATON_G8_NOUN_RULES } from './hashaton-g8';
 import { HASHATON_GROUP_4_NOUN_RULES } from './hashaton-group-4';
+import { HASHATON_G10_NOUN_RULES } from './hashaton-group-10';
 import { HOFRI_NOUN_RULES } from './hofri';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
@@ -613,6 +614,8 @@ export const NOUN_RULES = [
   ...CROSS_ZONE_NOUN_RULES,
   NOUN_TARGET_GRAVEYARD_CARD,
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
+  // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.
+  ...HASHATON_G10_NOUN_RULES,
   NOUN_PLAYER_GRAVEYARD,
   NOUN_ALL_GRAVEYARD_CARDS,
   NOUN_ALL_GRAVEYARDS,

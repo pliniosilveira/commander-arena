@@ -152,8 +152,13 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
             // D-149: at most one target for each opponent.
             const groupsOf = (picks: readonly ChosenTarget[]) =>
               picks.map((t) => (t.kind === 'object' ? t.group : undefined));
+            // D-386: "X target creature cards" from a long graveyard has more choices than can be listed: they are limited as a choice among many
+            // permanents is (any legal answer is accepted all the same).
             options.push(
-              ...combinations(spec.legal, n).filter(
+              ...firstCombinations(
+                spec.legal,
+                n,
+                MAX_LISTED_CHOICES,
                 (picks) =>
                   spec.onePerGroup !== true ||
                   groupsOf(picks).every((g, i, all) => g === undefined || all.indexOf(g) === i),

@@ -20,13 +20,14 @@ export const ADDITIONAL_COST_KINDS: readonly Cost['kind'][] = [
   'discard',
   'payLife',
   'payXLife',
+  'discardX',
   'mana',
 ];
 
 /**
  * CR 118.8, 601.2b: the additional costs of a face. The caster chooses what to sacrifice and discard
  * as the cost is paid, so one of each is allowed. "Pay X life" (`payXLife`, D-103) is allowed once: X is
- * announced as the spell is cast (CR 107.3a, 601.2b). An {X} in an additional mana cost is not (the
+ * announced as the spell is cast (CR 107.3a, 601.2b); so is "discard X cards" (`discardX`, D-386), alone in its kind. An {X} in an additional mana cost is not (the
  * announcement and the cost would need the same symbol counted twice).
  */
 export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: Out): void {
@@ -37,6 +38,7 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
   let sacrifices = 0;
   let discards = 0;
   let xLife = 0;
+  let xDiscard = 0;
   costs.forEach((cost, i) => {
     const p = `${path}[${i}]`;
     checkCost(cost, p, out);
@@ -74,6 +76,9 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
       case 'payXLife':
         xLife += 1;
         break;
+      case 'discardX':
+        xDiscard += 1;
+        break;
       case 'mana':
         if (Array.isArray(cost.symbols) && cost.symbols.includes('X')) {
           issue(
@@ -90,6 +95,10 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
   if (sacrifices > 1) issue(out, path, 'more than one sacrifice cost is not supported');
   if (discards > 1) issue(out, path, 'more than one discard cost is not supported');
   if (xLife > 1) issue(out, path, 'more than one "pay X life" cost is not supported');
+  // D-386: "discard X cards" is the one discard cost of the spell (the discard of N cards pays into the same cards).
+  if (xDiscard > 1 || (xDiscard === 1 && discards > 0)) {
+    issue(out, path, 'discard X cards is the only discard cost of a spell (D-386)');
+  }
 }
 
 /**
@@ -115,8 +124,8 @@ export function checkAdditionalCostChoice(
     }
     // With the fixed additional costs, as they are paid together: one sacrifice and one discard at most.
     checkAdditionalCosts([...fixed, ...way], p, out);
-    if (way.some((c) => c?.kind === 'payXLife')) {
-      issue(out, p, 'a choice of additional costs has no "pay X life"');
+    if (way.some((c) => c?.kind === 'payXLife' || c?.kind === 'discardX')) {
+      issue(out, p, 'a choice of additional costs has no "pay X life" and no "discard X cards"');
     }
   });
   if (JSON.stringify(choice[0]) === JSON.stringify(choice[1])) {

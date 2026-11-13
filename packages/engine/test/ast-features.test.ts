@@ -53,6 +53,8 @@ describe('the dimensions', () => {
       'mana',
       'payLife',
       'payXLife',
+      // D-386: "Discard X cards" as an additional cost to cast a spell.
+      'discardX',
       'sacrifice',
       'removeCounters',
       'discardThis',

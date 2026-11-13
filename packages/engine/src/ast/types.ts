@@ -747,6 +747,14 @@ export interface TargetSpec {
    * `sacrifice`, with `min` and `max` left out.
    */
   readonly upToThatMany?: true;
+  /**
+   * "Return X target creature cards from your graveyard to your hand" (CR 107.3a, 601.2b, 601.2c, D-386): the slot takes exactly as many
+   * targets as the X the caster announced for the spell. X is announced before the targets (CR 601.2b), so `chooseX` offers no X larger than the
+   * number of legal targets, and with X = 0 the slot has no target (the spell is cast and does nothing for it). Only a slot of a spell's own text (not an
+   * ability, a trigger or a mode), of a face whose costs have an X; `min`, `max`, `anyNumber`, `divide`, `onePerOpponent` and `upToThatMany` are left out.
+   * A copy of the spell keeps the X (CR 707.10) and so the count.
+   */
+  readonly countX?: true;
 }
 
 // ---- Costs (CR 118)
@@ -769,6 +777,13 @@ export type Cost =
    * announces X as it is cast (`chooseX`), so X is offered only up to the life they can pay.
    */
   | { readonly kind: 'payXLife' }
+  /**
+   * "Discard X cards" (CR 107.3a, 701.9, 118.8, D-386): as an additional cost to cast a spell (`CardFace.additionalCosts`), the X announced
+   * for the spell (`chooseX`), as many cards of the caster's hand as that, the caster's choice (all of the hand when it holds exactly that many). X is
+   * offered only up to the number of cards in the hand besides the spell (CR 601.2b, 118.3). The cards are discarded when the other costs are paid
+   * (CR 601.2h), after the targets were chosen, so a discarded card is no target of the spell. Not in the cost of an ability.
+   */
+  | { readonly kind: 'discardX' }
   | {
       readonly kind: 'sacrifice';
       readonly what: { readonly kind: 'this' } | ObjectFilter;

@@ -455,6 +455,8 @@ export function declareTargets(
   thatManyAllowed = false,
   /** D-270: only the slot of a triggered ability can name objects of two zones (the one place the engine reads it). */
   crossZoneAllowed = false,
+  /** D-386: only the targets of a spell's own text can take as many targets as the X announced (CR 601.2b, 601.2c). */
+  countXAllowed = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
@@ -590,6 +592,36 @@ export function declareTargets(
         issue(out, p, 'up to that many targets has no min, max or divide');
       } else if (spec.onePerOpponent !== undefined) {
         issue(out, p, 'up to that many targets is not one for each opponent');
+      }
+    }
+    if (spec.countX !== undefined) {
+      // D-386, CR 107.3a, 601.2b, 601.2c: "X target creature cards": exactly as many targets as the X announced for the spell.
+      if (spec.countX !== true) {
+        issue(out, `${p}.countX`, 'countX must be true when present');
+      } else if (!countXAllowed) {
+        issue(
+          out,
+          `${p}.countX`,
+          "only a slot of a spell's own text (not an ability or a mode) takes as many targets as the X announced",
+        );
+      } else if (
+        spec.min !== undefined ||
+        spec.max !== undefined ||
+        spec.divide !== undefined ||
+        spec.onePerOpponent !== undefined ||
+        spec.upToThatMany !== undefined ||
+        spec.anyNumber !== undefined ||
+        spec.ifKicked !== undefined ||
+        spec.unlessKicked !== undefined ||
+        spec.ifGiftPromised !== undefined
+      ) {
+        issue(
+          out,
+          p,
+          'X targets have no min, max, divide, onePerOpponent, upToThatMany, anyNumber or kicker or gift condition',
+        );
+      } else if (what?.kind !== 'object') {
+        issue(out, `${p}.what`, 'X targets are objects (cards or permanents), not players');
       }
     }
     if (spec.anyNumber !== undefined) {
@@ -1469,6 +1501,7 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
     case 'tap':
     case 'untap':
     case 'payXLife':
+    case 'discardX':
       break;
     case 'payLife':
       // D-135: a number, or an amount that reads the game as the ability is activated (only an activated ability's cost

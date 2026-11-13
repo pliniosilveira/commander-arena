@@ -526,6 +526,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mana',
     'payLife',
     'payXLife',
+    // D-386 (provisional): "Discard X cards" as an additional cost to cast a spell (an activated ability's cost refuses it).
+    'discardX',
     'sacrifice',
     'removeCounters',
     'discardThis',
@@ -637,6 +639,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-187: "you may sacrifice one or more Treasures" (`ChooseSelector.atLeastOne`) and "up to that many target creatures" (`TargetSpec.upToThatMany`).
     'atLeastOne',
     'upToThatMany',
+    // D-386 (provisional): "Return X target creature cards from your graveyard to your hand" (`TargetSpec.countX`).
+    'countX',
     'greatest',
     'giftRecipient',
     // D-210: "each player who discarded a card this way" (`PlayerSelector` `discardedThisWay`).
@@ -1127,6 +1131,8 @@ export const SELECTOR_KINDS = [
   'atLeastOne',
   /** "Up to that many target creatures" after a sacrifice (CR 603.12, D-187): the engine's `TargetSpec.upToThatMany`. */
   'upToThatMany',
+  /** "X target creature cards" (CR 601.2b, 601.2c, D-386): the engine's `TargetSpec.countX`, as many targets as the X announced. */
+  'countX',
   /** "A creature with the greatest power among creatures they control" (D-135): the engine's `ChooseSelector.greatest`. */
   'greatest',
   /** "The chosen player" of a gift (CR 702.174a, D-135): the engine's `PlayerSelector` `giftRecipient`. */
@@ -1772,6 +1778,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   untap: true,
   payLife: true,
   payXLife: true,
+  discardX: true,
   sacrifice: true,
   discard: true,
   discardThis: true,

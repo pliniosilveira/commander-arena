@@ -480,7 +480,7 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
 /** One cost of an additional cost: a sacrifice, a discard, life, or mana after "pay". */
 const ADDITIONAL_COST: Parser<IrCost> = choice(
   family<IrCost>('cost', {
-    only: ['cost.sacrifice', 'cost.discard', 'cost.pay-life', 'cost.pay-x-life'],
+    only: ['cost.sacrifice', 'cost.discard', 'cost.discard-x', 'cost.pay-life', 'cost.pay-x-life'],
   }),
   map(
     sequence(literal('pay '), family<IrCost>('cost', { only: ['cost.mana'] })),
@@ -491,7 +491,7 @@ const ADDITIONAL_COST: Parser<IrCost> = choice(
 /**
  * `static.additional-cost`: "As an additional cost to cast ~, sacrifice a creature.", "... discard a
  * card.", "... sacrifice an artifact or creature.", "... sacrifice a land.", "... pay 3 life.", "...
- * pay {1}.", "... pay X life." (stage P16, D-103: X is announced as the spell is cast, CR 107.3a)
+ * pay {1}.", "... pay X life." (stage P16, D-103: X is announced as the spell is cast, CR 107.3a), "... discard X cards." (D-386)
  * and costs joined with "and" ("sacrifice a creature and discard a card"). Since stage P38 (D-182) also a choice
  * of two ways, one cost each ("sacrifice an artifact or creature or pay {4}", "discard a card or pay 3 life"): the
  * caster pays one of them (CR 118.8, 601.2b). CR 118.8: an
@@ -524,6 +524,8 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, sacrifice a creature and discard a card.',
     'As an additional cost to cast ~, pay X life.',
     'As an additional cost to cast ~, pay X life and discard a card.',
+    // Hashaton group 10 (D-386): "discard X cards", announced like "pay X life".
+    'As an additional cost to cast ~, discard X cards.',
     // Stage P38 (D-182): a choice of two ways.
     'As an additional cost to cast ~, sacrifice an artifact or creature or pay {4}.',
     'As an additional cost to cast ~, pay 5 life or pay {2}.',
@@ -542,6 +544,8 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, sacrifice an artifact or creature or.',
     'As an additional cost to cast ~, sacrifice a creature or.',
     'As an additional cost to cast ~, discard a creature card.',
+    'As an additional cost to cast ~, discard X cards at random.',
+    'As an additional cost to cast ~, discard Y cards.',
     'As an additional cost to cast ~, exile a card from your graveyard.',
     'As an additional cost to cast ~, tap an untapped creature you control.',
     'As an additional cost to cast spells, sacrifice a creature.',

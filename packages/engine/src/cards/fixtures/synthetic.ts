@@ -61,6 +61,7 @@ import { SYNTHETIC_HASHATON_G5_LIST } from './synthetic-hashaton-g5';
 import { SYNTHETIC_HASHATON_G6_LIST } from './synthetic-hashaton-g6';
 import { SYNTHETIC_HASHATON_G7_LIST } from './synthetic-hashaton-g7';
 import { SYNTHETIC_HASHATON_G8_LIST } from './synthetic-hashaton-g8';
+import { SYNTHETIC_HASHATON_G10_LIST } from './synthetic-hashaton-g10';
 import { SYNTHETIC_HASHATON_GROUP_4_LIST } from './synthetic-hashaton-group-4';
 import { SYNTHETIC_HOFRI_LIST } from './synthetic-hofri';
 import { SYNTHETIC_KEYWORD_LIST } from './synthetic-keywords';
@@ -381,6 +382,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_HASHATON_G3_LIST,
   ...SYNTHETIC_HASHATON_G8_LIST,
   ...SYNTHETIC_HASHATON_GROUP_4_LIST,
+  ...SYNTHETIC_HASHATON_G10_LIST,
   ...SYNTHETIC_UNTIL_LEAVES_LIST,
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
   ...SYNTHETIC_HOFRI_LIST,
