@@ -2,6 +2,10 @@
 
 An unofficial, free, in-browser Magic: The Gathering Commander game: one human against an AI opponent, driven by a rules engine that follows the Comprehensive Rules and tells you up front when it cannot run a card correctly.
 
+[![Card coverage: the share of Commander cards the engine fully supports (open the report)](https://pliniosilveira.github.io/commander-arena/coverage.svg)](https://pliniosilveira.github.io/commander-arena/)
+
+The picture above is rebuilt every Monday from Scryfall's card list ([how](docs/CORPUS.md)). If it does not load, the report is at <https://pliniosilveira.github.io/commander-arena/>, and `pnpm coverage:cards` makes the same numbers on your machine.
+
 ## Status
 
 Playable and still growing. You can play a full two-player Commander game against an AI in the browser, from **Quick start** with one of the precons in the menu, whose card data ships with the app so it starts without a connection (card images load from Scryfall). Only decks that follow the Commander rules and use cards the engine fully supports can be played. The decks you save in the browser can be picked for either seat, and the precons can be edited on the "Your decks" page (your version stays in this browser; "Reset to default" brings the shipped list back). The start screen shows the app build, engine and card parser versions at the bottom. You can also import your own Commander list (Moxfield, Archidekt, Arena or MTGO text): cards are looked up on Scryfall (it needs a connection), checked against the Commander rules, and a coverage report says which cards the engine can run and why it cannot run the others.
