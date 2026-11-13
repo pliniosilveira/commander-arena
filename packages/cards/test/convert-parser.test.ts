@@ -491,6 +491,7 @@ describe('unmatched abilities', () => {
       'effect.mana-rider-copy',
       'effect.copy-spell-for-each',
       'effect.cast-graveyard-card',
+      'effect.extra-beginning-phase',
       'effect.gain-control',
       'effect.vote',
       'effect.ring-tempts',

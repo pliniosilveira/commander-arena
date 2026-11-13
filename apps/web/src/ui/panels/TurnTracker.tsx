@@ -1,5 +1,5 @@
 /** The top bar of the game screen: turn, whose turn, the step row with stops, and priority. */
-import type { GameView, StepId } from '@commander-arena/engine';
+import type { GameView, PhaseId, StepId } from '@commander-arena/engine';
 import { roundOf, turnLabel } from '../../game/turn-label';
 import { STOP_STEPS, type StopSettings } from '../../policy/should-stop';
 import { STEP_LABELS } from '../format';
@@ -23,6 +23,11 @@ export const STEP_ORDER: readonly StepId[] = [
   'end',
   'cleanup',
 ];
+
+/** The chip's words for a phase an effect added to the turn (CR 500.8, D-1130): "Extra beginning phase", "Extra combat phase". */
+export function addedPhaseLabel(phase: PhaseId): string {
+  return `Extra ${phase === 'precombatMain' || phase === 'postcombatMain' ? 'main' : phase} phase`;
+}
 
 /** Which settings row a click on a step edits: the active player's side (A18). */
 export function stopSide(view: GameView): 'mine' | 'opponent' {
@@ -58,6 +63,15 @@ export function TurnTracker() {
         <span className="pnl-priority">
           Priority: <strong>{priority ?? '—'}</strong>
         </span>
+        {view.addedPhase === true && view.phase !== 'ending' && (
+          <span
+            className="pnl-chip"
+            title="An effect added this phase to the turn (CR 500.8). The turn goes on after it."
+            data-added-phase={view.phase}
+          >
+            {addedPhaseLabel(view.phase)}
+          </span>
+        )}
         {view.monarch !== null && (
           <span
             className="pnl-chip pnl-chip-monarch"

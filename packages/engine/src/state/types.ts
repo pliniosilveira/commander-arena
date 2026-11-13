@@ -547,9 +547,12 @@ export interface TurnState {
   readonly addedAfter?: PhaseId;
 }
 
-/** A phase an effect added to the turn (CR 500.8): only a combat phase today ("there's an additional combat phase after this phase"). */
+/**
+ * A phase an effect added to the turn (CR 500.8): a combat phase ("there's an additional combat phase after this phase") or a beginning phase
+ * ("there is an additional beginning phase after this phase", D-1130: untap, upkeep and draw steps, CR 500.1).
+ */
 export interface AddedPhase {
-  readonly phase: 'combat';
+  readonly phase: 'combat' | 'beginning';
   /** The phase of the turn's own sequence it follows (what `TurnState.addedAfter` becomes as it begins). */
   readonly after: PhaseId;
   /**

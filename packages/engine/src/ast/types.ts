@@ -1415,6 +1415,13 @@ export type Effect =
    */
   | { readonly kind: 'extraCombat'; readonly atBeginning?: Effect }
   /**
+   * "There is an additional beginning phase after this phase" (CR 500.8, 500.10, 502-504; Sphinx of the Second Sun, D-1130): when the phase that is now going
+   * on is over, a whole beginning phase follows it (untap, upkeep and draw steps, in which the active player untaps, triggers and draws again), then the turn
+   * goes on as it would have. Several of them add up (CR 500.8), the phase is added to the turn state (`TurnState.addedPhases`). Only in a triggered
+   * ability of "the beginning of your postcombat main phase" (`main2`), the place the phase that is going on is known and a beginning phase can not recur on its own.
+   */
+  | { readonly kind: 'extraBeginningPhase' }
+  /**
    * "You may pay any amount of {R}. When you do, it deals that much damage to any target" (D-151, CR 603.12 reflexive triggers, 118.1): the controller
    * chooses how many times to pay one `symbol` of mana, from 0 to as many as they could pay now (a `chooseX` decision of purpose 'payAnyAmount',
    * not asked when none could be paid), and pays that much like any cost (`payMana`, `cancel` means not paying). When they have paid at least one,

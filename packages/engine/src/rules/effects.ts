@@ -1111,6 +1111,19 @@ function runEffect(
           ],
         },
       });
+    case 'extraBeginningPhase':
+      // CR 500.8 (D-1130): a whole beginning phase directly after the phase that is going on; the most recently created one occurs first, so a second
+      // one added in the same step goes before the first (both happen before the end step they were added in front of).
+      return done({
+        ...state,
+        turn: {
+          ...state.turn,
+          addedPhases: [
+            { phase: 'beginning', after: state.turn.addedAfter ?? state.turn.phase },
+            ...(state.turn.addedPhases ?? []),
+          ],
+        },
+      });
     case 'enterAttacking':
       // CR 508.4 (D-151): creatures put onto the battlefield attacking (rules/enter-attacking.ts).
       return runEnterAttacking(state, res, effect, ctx, targets);
