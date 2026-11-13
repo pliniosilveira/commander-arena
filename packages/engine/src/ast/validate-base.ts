@@ -54,7 +54,8 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'endStep':
       return true;
     case 'dealsCombatDamage':
-      return t.to !== 'creature';
+      // D-373: a planeswalker that is damaged is not a player, so "that player" would have no meaning.
+      return t.to !== 'creature' && t.to !== 'playerOrPlaneswalker';
     default:
       return false;
   }

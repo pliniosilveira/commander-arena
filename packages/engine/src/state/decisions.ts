@@ -385,6 +385,7 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'devour'
     | 'ringBearer'
     | 'empowerJace'
+    | 'amass'
     | 'untapChoice'
     | 'conniveOrder'
     | 'spare'
@@ -402,6 +403,9 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * or, for a token, the spell or ability creating it. The sacrifice is not a cost and cannot be taken back.
    * For `'empowerJace'` (D-201, CR 701.71a: "Choose a Jace planeswalker token you control"): `seat`, the player who empowers, chooses which Jace token of
    * `legal` (all they control) gets the loyalty counters; exactly one. Asked only with two or more.
+   * For `'amass'` (D-367, CR 701.47a: "Choose an Army creature you control"): `seat`, the player who amasses, chooses which Army creature of `legal` (all they
+   * control, as `derive` types them now, a token the effect just made among them) gets the +1/+1 counters; exactly one. Asked only with two or more. `source` is the
+   * spell or ability.
    * For `'ringBearer'` (D-196, CR 701.54a: "Each time the Ring tempts you, choose a creature you control"): `seat`, the player the Ring is tempting,
    * chooses which creature of `legal` (all the creatures they control, as `derive` types them now) becomes their Ring-bearer; exactly one
    * (`min` = `max` = 1), and only asked when there are two or more. `source` is the spell or ability that tempts.
@@ -708,7 +712,7 @@ export interface ConfirmOptionalDecision extends DecisionBase {
  * permanent that is about to enter chooses one of `options` before it enters. `purpose` says what is
  * chosen. `options` is the full list, in a fixed order that the legal actions follow: for
  * `'creatureType'` every creature type of CR 205.3m (spelled as `CREATURE_TYPES` lists them, "Time
- * Lord" included), for `'color'` the five colors as `W`, `U`, `B`, `R`, `G`. `source` is the object
+ * Lord" included), for `'color'` the five colors as `W`, `U`, `B`, `R`, `G`, for `'cardType'` (D-376, "choose a card type") the card types of `CARD_TYPES`. `source` is the object
  * about to enter: the card in a hand, in a zone an effect moves it from, or the spell on the stack that
  * is resolving; for a token (nothing exists yet) it is the spell or ability that creates it. `sourceName`
  * and `sourceOracleText` name what is entering. The answer is a `chooseOption` action; the question
@@ -719,6 +723,7 @@ export interface ChooseOptionDecision extends DecisionBase {
   readonly purpose:
     | 'creatureType'
     | 'color'
+    | 'cardType'
     | 'option'
     | 'attackTarget'
     | 'effect'
@@ -909,7 +914,8 @@ export type ReplacementQuestion = DamageReplacementQuestion | TokenReplacementQu
  * what it is. Every value from `min` (0) to `max` is legal: `max` is the largest X the controller could
  * pay for the whole cost, from every mana source and the pool, with commander tax, the kicker if paid,
  * additional costs and cost reductions counted. `perX` is what each point of X costs: `mana` generic mana
- * (one for each {X} of the mana cost, so {X}{X} is 2) and `life` ("pay X life"). Asked only when `max`
+ * (one for each {X} of the mana cost, so {X}{X} is 2), `life` ("pay X life") and `discard` ("discard X cards", D-386: `max` is then
+ * also at most the cards in the hand besides the spell, and at most the legal targets of a slot of "X target ..."). Asked only when `max`
  * is at least 1; a spell that can pay no X at all, or has none to announce (cast without paying its mana
  * cost, CR 107.3b), has X = 0 and is not asked. The answer is a `chooseX` action; `cancel` is a legal
  * answer and rewinds the cast or activation (CR 733).
@@ -930,7 +936,13 @@ export interface ChooseXDecision extends DecisionBase {
   readonly purpose: 'spell' | 'ability' | 'multikicker' | 'replicate' | 'payAnyAmount' | 'drawUpTo';
   readonly min: number;
   readonly max: number;
-  readonly perX: { readonly mana: number; readonly life: number; readonly loyalty?: number };
+  readonly perX: {
+    readonly mana: number;
+    readonly life: number;
+    readonly loyalty?: number;
+    /** Cards of the hand discarded for each point of X ("discard X cards", D-386); absent for none. */
+    readonly discard?: number;
+  };
   /** For `multikicker` and `replicate`: the cost paid each time. Absent for X. */
   readonly cost?: readonly Cost[];
 }

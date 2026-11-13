@@ -6,12 +6,12 @@
  * text says; the engine's `validateCard` refuses a source that could be an Aura or a land (CR
  * 303.4f, 614.12) and a trigger subject it cannot type, and that reason reaches the player.
  */
-import type { ObjectRef } from '@commander-arena/engine';
+import type { Color, ObjectRef } from '@commander-arena/engine';
 import type { IrClause, IrNoun, IrToken } from '../ir/types';
 import { lowerAmount } from './amounts';
 import type { Effects } from './clauses';
 import { missingFeatures } from './features';
-import { objectRefOf } from './nouns';
+import { colorLetter, objectRefOf } from './nouns';
 import type { LowerContext, LowerResult } from './types';
 
 /** What a copy is made from; the same readings as any pronoun, plus the triggering permanent. */
@@ -38,10 +38,37 @@ export function lowerCopyToken(
   if (!count.ok) return count;
   const object = copySourceOf(copyOf, ctx);
   if (!object.ok) return object;
+  // "..., except it's a 4/4 black Zombie" (D-382, CR 707.9b): the characteristics the copy has instead of the ones it copies.
+  let exceptions: Record<string, unknown> = {};
+  if (token.copyExcept !== undefined) {
+    const missing = missingFeatures(['token:copyExceptions']);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    const colors: Color[] = [];
+    for (const word of token.copyExcept.colors) {
+      const letter = colorLetter(word);
+      if (letter === undefined) return { ok: false, needs: [], ...at };
+      colors.push(letter);
+    }
+    exceptions = {
+      setPt: { power: token.copyExcept.power, toughness: token.copyExcept.toughness },
+      setColors: colors,
+      setCreatureTypes: [...token.copyExcept.subtypes],
+    };
+  }
+  // "Create a tapped token that's a copy of ...": the token enters tapped (CR 110.5b).
+  if (token.tapped === true) {
+    const missing = missingFeatures(['token:tapped']);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+  }
   return {
     ok: true,
     value: [
-      { kind: 'createToken', token: { kind: 'copyOf', object: object.value }, count: count.value },
+      {
+        kind: 'createToken',
+        token: { kind: 'copyOf', object: object.value, ...exceptions },
+        count: count.value,
+        ...(token.tapped === true ? { tapped: true as const } : {}),
+      },
     ],
     rule: clause.rule,
   };

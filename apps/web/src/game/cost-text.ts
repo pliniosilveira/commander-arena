@@ -11,6 +11,8 @@ import { COLOR_NAMES } from './words';
 export function costPart(cost: Cost): string {
   if (cost.kind !== 'payLife') return cost.kind;
   if (typeof cost.amount === 'number') return `${cost.amount} life`;
+  // D-364 (CR 119.4): "pay that much life", the life that caused the trigger.
+  if (cost.amount.kind === 'triggerDamage') return 'that much life';
   // D-135: life equal to a count, worked out as the ability is activated.
   return `life equal to ${amountPhrase(cost.amount)}`;
 }
@@ -175,6 +177,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
       return `Pay ${costPart(cost)}`;
     case 'payXLife':
       return 'Pay X life';
+    case 'discardX':
+      // D-386: the additional cost of a spell, "Discard X cards".
+      return 'Discard X cards';
     case 'sacrifice':
       return `Sacrifice ${sacrificeWhat(cost.what, cost.count)}`;
     case 'tapPermanents':

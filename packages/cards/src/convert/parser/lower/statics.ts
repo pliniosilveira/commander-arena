@@ -216,6 +216,14 @@ function effectOf(
     case 'grantProtection': {
       // CR 702.16, 903.4 (stage P70, D-259): the engine's `grantKeyword` with a protection, from the named colors or from those outside the
       // commander's color identity.
+      // CR 702.16a, 607.2d (Hashaton deck group 6, D-376): or from the card type the permanent that gives it chose as it entered.
+      if (effect.chosenCardType === true) {
+        return ok({
+          kind: 'grantKeyword',
+          subject,
+          keyword: { kind: 'protection', from: 'chosenCardType' },
+        });
+      }
       if (effect.commanderIdentity === true) {
         return ok({
           kind: 'grantKeyword',
@@ -248,6 +256,11 @@ function effectOf(
       const granted = lowerGrantedAbility(quoted, subject, at, ctx);
       return granted.ok ? ok({ kind: 'grantAbility', subject, ability: granted.value }) : granted;
     }
+    case 'cantHaveCounters':
+      // CR 122.6, 101.2 (Hashaton deck group 3, D-380): the permanents the subject names can't have counters of the kind put on them: a group, `~` or the attached permanent.
+      return subject.kind === 'filter' || subject.kind === 'this' || subject.kind === 'attached'
+        ? ok({ kind: 'cantHaveCounters', subject, counter: effect.counter })
+        : failure(at);
     case 'castFromGraveyard':
       // CR 113.6b (stage P29, D-133): the ability of a card in its owner's graveyard, so its subject is `~`.
       return subject.kind === 'this' ? ok({ kind: 'castFromGraveyard' }) : failure(at);
@@ -438,12 +451,18 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return [];
     case 'playerHexproof':
       return ['static:playerHexproof'];
+    case 'playerProtection':
+      return ['static:playerProtection'];
     case 'doubleTriggers':
       return ['static:doubleTriggers'];
     case 'cantLoseGame':
       return ['static:cantLoseGame'];
     case 'opponentsCantWin':
       return ['static:opponentsCantWin'];
+    case 'cantGainLife':
+      return ['static:cantGainLife'];
+    case 'cantHaveCounters':
+      return ['static:cantHaveCounters'];
     case 'preventDamageToThis':
       return ['static:preventDamageToThis'];
     case 'cantCastThis':
@@ -623,6 +642,36 @@ function lowerPart(
 }
 
 /**
+ * "You and creatures you control have protection from the chosen card type." (Hashaton deck group 6, D-377, CR 702.16): the controller of the permanent has
+ * protection (the engine's `playerProtection`) and each other subject of the statement (`also`) has the keyword. The controller is "you"; the statement has no
+ * condition and the effect is the player's alone, so a statement of another shape is not lowered.
+ */
+function lowerPlayerProtection(
+  ability: Static,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const { statement } = ability;
+  if (
+    statement.effects.length !== 1 ||
+    statement.subject.det !== 'you' ||
+    statement.condition !== undefined
+  ) {
+    return failure(ability);
+  }
+  const blocked = missingFeatures(['ability:static', 'static:playerProtection']);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const abilities: Ability[] = [
+    { kind: 'static', static: { kind: 'playerProtection', from: 'chosenCardType' } },
+  ];
+  for (const part of statement.also ?? []) {
+    const done = lowerPart(part, ability, undefined, ctx);
+    if (!done.ok) return done;
+    abilities.push(...done.value);
+  }
+  return { ok: true, value: abilities, rule: ability.rule };
+}
+
+/**
  * A static ability statement. It lowers only when the engine runs every effect and the subject:
  * the effects the grammar reads but the engine lacks (a granted ability in quotes) fail naming the
  * missing `static:` feature, and the statement is dropped whole. A statement that applies "as long as" a condition
@@ -697,6 +746,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       rule: ability.rule,
     };
   }
+  // Hashaton deck group 6 (D-377, CR 702.16): "You and creatures you control have protection from the chosen card type."
+  if (first.kind === 'playerProtection') return lowerPlayerProtection(ability, ctx);
   // Stage P33 (D-150): the protections of a player, damage prevented to ~, a card that can't be cast early, permanents that enter with counters.
   if (isAngelStatic(first)) return lowerAngelStatic(ability, ctx);
   // "~ costs {3} less to cast if you control a creature with power 4 or greater." (stage P38, D-182, CR 601.2f): the spell's own reduction, with
@@ -879,6 +930,9 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:unspentManaStays',
   'static:castFromTopOfLibrary',
   'static:playFromGraveyardOnceEachTurn',
+  // Hashaton deck group 6 (D-377, CR 702.16): "You have protection from the chosen card type."
+  'static:playerProtection',
+  'static:cantHaveCounters',
   'ability:functionsInGraveyard',
   'ability:staticCondition',
   'staticSubject:this',

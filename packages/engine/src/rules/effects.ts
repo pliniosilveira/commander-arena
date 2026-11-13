@@ -18,6 +18,7 @@ import type {
   TriggeredAbility,
 } from '../state/types';
 import { runSplitExiled, startSplit } from './activation-exile';
+import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
 import { attachEntered, attachObject } from './attach';
 import { runAuraEntry, withAuraEntries } from './aura-entry';
@@ -32,6 +33,7 @@ import { runGainControl } from './control-effects';
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
+import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
 import { asking, runDealDamage, runDealDividedDamage } from './damage-effects';
 import { askingFlow, type OrderFlow, quietFlow } from './damage-order';
 import { derive } from './derive';
@@ -52,9 +54,11 @@ import { createEmblem } from './emblem';
 import { runEmpowerJace } from './empower';
 import { runEnterAttacking } from './enter-attacking';
 import { runEnterToken } from './enter-token';
+import { runExileRandomFromHand } from './exile-random-hand';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
+import { lifeAmountFor, resolveMayPayCost } from './life-amounts';
 import { runLookSplit } from './look-split';
 import { runLookTake } from './look-take';
 import { loseTheGame } from './lose-game';
@@ -154,6 +158,7 @@ export function runInstruction(
   if (instruction.kind === 'ringTempts') return runRingTempts(state, res, instruction);
   if (instruction.kind === 'pair') return runPair(state, res, instruction);
   if (instruction.kind === 'empowerJace') return runEmpowerJace(state, res, instruction);
+  if (instruction.kind === 'amass') return runAmass(state, res, instruction, flow);
   if (instruction.kind === 'conniveNext') return runConniveNext(state, res, instruction);
   if (instruction.kind === 'spare') return runSpare(state, res, instruction);
   if (instruction.kind === 'splitExiled') return runSplitExiled(state, res, instruction);
@@ -823,9 +828,16 @@ function runEffect(
       const source = state.objects[res.source];
       if (source?.zone !== 'battlefield' || controllerOf(state, source) !== res.controller)
         return done(state);
-      const age = (source.counters[AGE_COUNTER] ?? 0) + 1;
-      next = patchObject(next, source.id, { counters: { ...source.counters, [AGE_COUNTER]: age } });
-      events.push({ kind: 'counterAdded', object: source.id, counter: AGE_COUNTER, count: 1 });
+      // CR 122.6, 101.2 (D-380): a permanent that can't have age counters gets none; the cost is then for the age counters it already has (none: nothing to pay).
+      const noAge = counterBlocked(state, source, AGE_COUNTER);
+      const age = (source.counters[AGE_COUNTER] ?? 0) + (noAge ? 0 : 1);
+      if (!noAge) {
+        next = patchObject(next, source.id, {
+          counters: { ...source.counters, [AGE_COUNTER]: age },
+        });
+        events.push({ kind: 'counterAdded', object: source.id, counter: AGE_COUNTER, count: 1 });
+      }
+      if (age === 0) return done(next, events);
       return done(next, events, [
         {
           kind: 'unlessPays' as const,
@@ -1009,6 +1021,21 @@ function runEffect(
       // CR 701.71a (D-201): the token, the choice and the counters come up as the instruction runs (rules/empower.ts).
       return done(state, [], [{ kind: 'empowerJace', amount: effect.amount, chosen: null }]);
 
+    case 'amass':
+      // CR 701.47a (D-367): N is read now (CR 608.2h); the token, the choice of the Army and the counters come up as the instruction runs (rules/amass.ts).
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'amass',
+            subtype: effect.subtype,
+            amount: Math.max(0, amountOf(state, effect.count, ctx, targets)),
+            chosen: null,
+          },
+        ],
+      );
+
     case 'pair':
       // CR 702.95a, 702.95c (D-286): the creature to pair with is chosen as this comes up (rules/soulbond.ts).
       return done(state, [], [{ kind: 'pair', partner: effect.partner, chosen: null }]);
@@ -1111,6 +1138,19 @@ function runEffect(
           ],
         },
       });
+    case 'extraBeginningPhase':
+      // CR 500.8 (D-356): a whole beginning phase directly after the phase that is going on; the most recently created one occurs first, so a second
+      // one added in the same step goes before the first (both happen before the end step they were added in front of).
+      return done({
+        ...state,
+        turn: {
+          ...state.turn,
+          addedPhases: [
+            { phase: 'beginning', after: state.turn.addedAfter ?? state.turn.phase },
+            ...(state.turn.addedPhases ?? []),
+          ],
+        },
+      });
     case 'enterAttacking':
       // CR 508.4 (D-151): creatures put onto the battlefield attacking (rules/enter-attacking.ts).
       return runEnterAttacking(state, res, effect, ctx, targets);
@@ -1121,8 +1161,11 @@ function runEffect(
       // CR 601.2, 611.2a (D-135): "You may cast target [card] from your graveyard this turn" (rules/may-effects.ts).
       return runMayCast(state, res, effect, ctx, targets);
 
-    case 'mayPay':
+    case 'mayPay': {
       // CR 702.101a (D-120): the controller may pay; the effect runs only if they do (rules/pay-unless.ts).
+      // D-364 (CR 119.4, 608.2c): a payment of life by an amount ("pay that much life") is worked out now; one of 0 life is no offer.
+      const cost = resolveMayPayCost(state, effect.cost, ctx);
+      if (cost === null) return done(state);
       return done(
         state,
         [],
@@ -1130,7 +1173,7 @@ function runEffect(
           {
             kind: 'unlessPays' as const,
             seat: res.controller,
-            cost: effect.cost,
+            cost,
             stage: 'ask' as const,
             effect: effect.effect,
             optional: false,
@@ -1138,6 +1181,7 @@ function runEffect(
           },
         ],
       );
+    }
 
     case 'draw': {
       const count = amountOf(state, effect.count, ctx, targets);
@@ -1213,9 +1257,11 @@ function runEffect(
 
     case 'gainLife':
     case 'loseLife': {
-      const amount = amountOf(state, effect.amount, ctx, targets);
+      const everyone = amountOf(state, effect.amount, ctx, targets);
       let lost = 0;
       for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
+        // D-365: "the life that player lost this turn" is each player's own number, read before they lose any more.
+        const amount = lifeAmountFor(next, effect.amount, seat, () => everyone);
         const r =
           effect.kind === 'gainLife'
             ? gainLifeOf(next, seat, amount)
@@ -1364,9 +1410,12 @@ function runEffect(
     case 'addCounters': {
       const count = amountOf(state, effect.count, ctx, targets);
       if (count <= 0) return done(state);
+      // CR 122.6, 101.2 (D-380): a permanent that can't have counters of the kind gets none, and nothing happens to it.
+      const blockers = counterBlockers(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
         const obj = next.objects[id];
         if (!obj) continue;
+        if (blocks(state, blockers, obj, effect.counter)) continue;
         next = patchObject(next, id, {
           counters: {
             ...obj.counters,
@@ -1550,6 +1599,10 @@ function runEffect(
       if (picked === undefined) return done(state);
       return moving({ ...state, rng }, moveInstructions([picked], 'exile'));
     }
+
+    case 'exileRandomFromHand':
+      // CR 701.13 (D-393): one card of the hand of the player named, chosen by the game's random number generator (rules/exile-random-hand.ts).
+      return runExileRandomFromHand(state, effect, ctx, targets);
 
     case 'phaseOut': {
       // CR 702.26a-g (D-234): the permanents phase out, with what is attached to them (rules/phasing.ts).

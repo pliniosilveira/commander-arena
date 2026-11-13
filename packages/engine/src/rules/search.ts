@@ -19,6 +19,7 @@ import type { ChooseCardsDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import { getSeat, patchObject } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
 import { discardPrompt } from './discard-cost';
 import { discardOne } from './madness';
@@ -233,10 +234,20 @@ export function runDiscard(
   const events: GameEvent[] = [];
   let discardedCards = 0;
   let discardedCreatures = 0;
+  let discardedSpells = 0;
   const wasCreature = new Set(
     chosen.filter((id) => {
       const card = state.objects[id];
       return card?.zone === 'hand' && derive(state, card).types.includes('creature');
+    }),
+  );
+  // D-358: "If you discarded an instant or sorcery card this way", read before the card leaves the hand.
+  const wasSpell = new Set(
+    chosen.filter((id) => {
+      const card = state.objects[id];
+      if (card?.zone !== 'hand') return false;
+      const types = derive(state, card).types;
+      return types.includes('instant') || types.includes('sorcery');
     }),
   );
   // CR 701.50a (D-209): "if a nonland card is discarded this way", read before the card leaves the hand.
@@ -254,11 +265,13 @@ export function runDiscard(
     events.push(...discarded.events);
     discardedCards += 1;
     if (wasCreature.has(id)) discardedCreatures += 1;
+    if (wasSpell.has(id)) discardedSpells += 1;
   }
   // CR 701.50a (D-209): the creature that connives gets a +1/+1 counter for a nonland card discarded, if it is still there.
   if (instruction.conniver !== undefined && nonland && discardedCards > 0) {
     const conniver = next.objects[instruction.conniver];
-    if (conniver?.zone === 'battlefield') {
+    // D-380 (CR 122.6, 101.2): a creature that can't have +1/+1 counters gets none.
+    if (conniver?.zone === 'battlefield' && !counterBlocked(next, conniver, '+1/+1')) {
       next = patchObject(next, conniver.id, {
         counters: { ...conniver.counters, '+1/+1': (conniver.counters['+1/+1'] ?? 0) + 1 },
       });
@@ -280,6 +293,7 @@ export function runDiscard(
       // D-210: "if a creature card was discarded this way", "each player who discarded a card this way".
       discardedCreature: discardedCreatures,
       discardedNoncreature: discardedCards - discardedCreatures,
+      discardedInstantOrSorcery: discardedSpells,
       ...(discardedCards > 0 ? { discardedBy: [seat] } : {}),
     },
   };

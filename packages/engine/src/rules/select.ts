@@ -354,7 +354,8 @@ export function legalTargets(
     seatsInOrder(state, ctx.controller)
       .filter((s) => filter === 'any' || s !== ctx.controller)
       // CR 702.11b (D-149): "You have hexproof": the opponents of that player can't target them.
-      .filter((s) => playerCanBeTargetedBy(state, s, ctx.controller))
+      // CR 702.16b (D-376): "You have protection from the chosen card type": a source of that type can't target them.
+      .filter((s) => playerCanBeTargetedBy(state, s, ctx.controller, ctx.source))
       .map((seat) => ({ kind: 'player' as const, seat, specId }));
 
   if (spec.what.kind === 'player') return playersFor(spec.what.filter);
@@ -434,6 +435,9 @@ export function targetBounds(spec: TargetSpec): { min: number; max: number } {
   if (spec.onePerOpponent === true) {
     return { min: spec.min ?? 0, max: spec.max ?? Number.MAX_SAFE_INTEGER };
   }
+  // D-386: "X target creature cards": as many as the announced X, which is 0 until it is (a spell is castable with X = 0, so the slot is no obstacle to
+  // casting it); `targetChoiceSpecs` fixes the number once X is known.
+  if (spec.countX === true) return { min: 0, max: Number.MAX_SAFE_INTEGER };
   // D-234: "any number of target creatures": none at least; as many as there are legal targets at most (the decision narrows `max`, `targetChoiceSpecs`).
   if (spec.anyNumber === true) return { min: 0, max: Number.MAX_SAFE_INTEGER };
   // D-145: "any number of target creatures" with a division: none at least, and as many as the total allows (CR 601.2d).

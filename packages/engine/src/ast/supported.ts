@@ -41,6 +41,8 @@ function mightMatchAura(f: ObjectFilter): boolean {
   if (f.types !== undefined && !f.types.includes('enchantment')) return false;
   if (f.notTypes?.includes('enchantment')) return false;
   if (f.subtypes !== undefined && !f.subtypes.includes('Aura')) return false;
+  // D-385: "of the chosen type" is a creature type, which an Aura has no more than one that names a subtype does (CR 205.3d).
+  if (f.chosenType === true) return false;
   if (f.supertypes?.includes('basic')) return false;
   return true;
 }
@@ -240,7 +242,8 @@ function walkEffect(
       return;
     case 'mayPay':
       // CR 702.101a (D-120): paid as Ward's cost is (rules/pay-unless.ts): mana and life, no X.
-      activationCostIssues(effect.cost, `${path}.cost`, out, ['mana', 'payLife']);
+      // D-364: the life may be an amount, worked out as the instruction resolves (`rules/life-amounts.ts`).
+      activationCostIssues(effect.cost, `${path}.cost`, out, ['mana', 'payLife'], false, true);
       walkEffect(effect.effect, `${path}.effect`, out, targets, moved, subject);
       return;
     case 'regenerate':
@@ -334,6 +337,17 @@ function walkEffect(
       if (token.kind === 'copyOf') {
         if (!SUPPORTED_FEATURES.tokenKinds.includes('copyOf')) {
           out.push({ path: `${path}.token`, message: 'a token copy is not implemented yet' });
+        } else if (
+          (token.setPt !== undefined ||
+            token.setColors !== undefined ||
+            token.setCreatureTypes !== undefined ||
+            token.noManaCost !== undefined) &&
+          !SUPPORTED_FEATURES.tokenKinds.includes('copyExceptions')
+        ) {
+          out.push({
+            path: `${path}.token`,
+            message: 'a token copy with exceptions of characteristics is not implemented yet',
+          });
         } else if (token.object.kind === 'target') {
           copySourceIssues(selectedFilter(token.object, targets), `${path}.token.object`, out);
         } else if (token.object.kind === 'triggerSubject') {
@@ -483,6 +497,8 @@ function activationCostIssues(
     if (
       !SUPPORTED_FEATURES.costKinds.includes(c.kind) ||
       allowed?.includes(c.kind) === false ||
+      // D-386: "discard X cards" is an additional cost of a spell; an activated ability does not announce one.
+      c.kind === 'discardX' ||
       // D-209: an energy cost is paid only where an `unlessPays` names it.
       (c.kind === 'energy' && allowed?.includes('energy') !== true)
     ) {
@@ -533,6 +549,9 @@ function triggerSubjectFilter(t: Trigger): ObjectFilter | null {
     case 'landfall':
       return { types: ['land'] };
     case 'permanentSacrificed':
+      return t.filter ?? {};
+    case 'discarded':
+      // D-383: the card discarded, as the filter of the trigger says ("a creature card"); with none it could be anything, an Aura card included.
       return t.filter ?? {};
     case 'tapsForMana':
       return t.what;
@@ -783,6 +802,9 @@ function walkAbility(
       } else if (a.keyword.kind === 'encore') {
         // CR 702.141a: paid like any activation cost from the graveyard; mana only (D-185).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
+      } else if (a.keyword.kind === 'eternalize') {
+        // CR 702.129a: paid like any activation cost from the graveyard; mana only (D-384).
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
       } else if (a.keyword.kind === 'unearth') {
         // CR 702.84a: paid like any activation cost from the graveyard; mana only (D-124).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
@@ -847,7 +869,10 @@ function copiesThis(effect: Effect): boolean {
  */
 function copiesThisIssues(face: CardFace, base: string, out: AstIssue[]): void {
   const copies = face.abilities.some(
-    (a) => (a.kind === 'triggered' || a.kind === 'activated') && copiesThis(a.effect),
+    (a) =>
+      ((a.kind === 'triggered' || a.kind === 'activated') && copiesThis(a.effect)) ||
+      // D-384: Eternalize (CR 702.129a) makes a token copy of this card.
+      (a.kind === 'keyword' && a.keyword.kind === 'eternalize'),
   );
   const asks =
     face.types.includes('land') ||

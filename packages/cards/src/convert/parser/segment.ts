@@ -68,6 +68,12 @@ const COST_WORDS = /^(?:sacrifice|discard|pay|remove|exile|tap)\b/i;
  * en dash too), "0", "−X", each with or without the square brackets of the rules text. The colon follows at once.
  */
 const LOYALTY_PREFIX = /^\[?(?:[+]\d+|[\u2212\u2013-](?:\d+|X)|0)\]?\s*:/;
+/**
+ * "{2}, Sacrifice ~: You may cast target instant or sorcery card from your graveyard this turn. If that spell would be put into your graveyard, exile it instead." (D-359,
+ * Vohar, Vodalian Desecrator): an activated ability, or a spell, whose permission carries the rider, read before the replacement test below, which "would ... instead" would take.
+ */
+const ACTIVATED_MAY_CAST_RIDER =
+  /^(?:[^:.]+: )?you may cast target [^.,]* cards? from your graveyard (?:this turn|until end of turn)\. if that spell would be put into your graveyard, exile it instead\./i;
 
 function isOpenQuote(c: string): boolean {
   return c === '"' || c === '“';
@@ -260,6 +266,15 @@ const EXILE_THAT_SPELL_INSTEAD =
   /^if that spell would be put into a graveyard, exile it instead\.$/i;
 
 /**
+ * "You may cast target instant or sorcery card from your graveyard this turn. If that spell would be put into your graveyard, exile it instead." (D-359, CR 614.1a, Vohar,
+ * Vodalian Desecrator): the same rider on the permission to cast a card of your own graveyard (`effect.may-cast`), so the two sentences are one instruction.
+ */
+const MAY_CAST_FROM_YOUR_GRAVEYARD =
+  /(?:^|, )you may cast target [^.,]* cards? from your graveyard (?:this turn|until end of turn)\.$/i;
+const EXILE_THAT_SPELL_INSTEAD_YOUR =
+  /^if that spell would be put into your graveyard, exile it instead\.$/i;
+
+/**
  * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (D-303, CR 700.3):
  * three sentences that are one instruction (what is revealed, who separates it and where each pile goes), kept together so `effect.reveal-separate-piles` reads them as one. Only all
  * three in a row.
@@ -303,7 +318,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
         (said(a, LOOK_AT_TOP) && said(b, PUT_HAND_REST_BOTTOM)) ||
         (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)) ||
-        (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)))
+        (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)) ||
+        (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)))
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
@@ -570,6 +586,13 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
   const modal = modalBody(text, 0);
   if (modal !== null) {
     return { ...base, head: 'modal', modalHeader: modal.header, modes: modal.modes };
+  }
+
+  if (ACTIVATED_MAY_CAST_RIDER.test(text)) {
+    const colon = costColon(text);
+    if (colon > 0) return activatedSkeleton(text, colon, base);
+    // A spell of the same two sentences: the rider belongs to the permission, not to a replacement effect of a permanent.
+    return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
   }
 
   if (

@@ -31,6 +31,10 @@ export interface CostOptions {
   readonly mana?: boolean;
   /** The cost an "unless you pay" asks of the player (stage P51, D-209): "{E}{E}" is paid there and nowhere else. */
   readonly unless?: boolean;
+  /** The offer "you may pay that much life" of a life gain trigger (D-364, CR 119.4): the life gained is paid, and nowhere else. */
+  readonly eventLife?: boolean;
+  /** "Discard X cards" (Hashaton group 10, D-386, provisional, CR 107.3a, 701.9): an additional cost of a spell, where X is announced; nowhere else. */
+  readonly discardX?: boolean;
 }
 
 /**
@@ -48,6 +52,11 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         return failure(cost);
       }
       if (options.x !== true && cost.symbols.includes('X')) return failure(cost);
+      // CR 107.4f (D-390): a Phyrexian symbol ({B/P}) is paid with the mana or 2 life by the planner of an ordinary activation (and of a tax paid by the attackers,
+      // `lowerPlayRule`), never in the cost of a mana ability: the engine's `manaAbilityCostKinds` takes generic, colored and hybrid mana only.
+      if (options.mana === true && cost.symbols.some((symbol) => symbol.endsWith('/P'))) {
+        return failure(cost);
+      }
       return ok({ kind: 'mana', symbols: [...cost.symbols] });
     case 'tap':
       return ok({ kind: 'tap' });
@@ -59,6 +68,14 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
           ? ok({ kind: 'payLife', amount: cost.amount.value })
           : failure(cost);
       }
+      // "Pay that much life" (D-364, CR 119.4): the life that caused the trigger, in the offer of a "you may pay" only.
+      if (cost.amount.kind === 'triggerDamage') {
+        if (options.eventLife !== true) return failure(cost);
+        const blocked = missingFeatures(['amount:triggerDamage']);
+        return blocked.length > 0
+          ? failure(cost, blocked)
+          : ok({ kind: 'payLife', amount: { kind: 'triggerDamage' } });
+      }
       // "Pay life equal to the number of colors in your commanders' color identity" (stage P30, D-135, CR 119.4): an amount the
       // engine works out as the ability is activated; only the cost of an ordinary activated ability takes one.
       if (options.ordinary !== true) return failure(cost);
@@ -67,6 +84,9 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     }
     case 'payXLife':
       return options.x === true ? ok({ kind: 'payXLife' }) : failure(cost);
+    case 'discardX':
+      // CR 107.3a, 601.2b (D-386): "discard X cards" is announced as the spell is cast; the engine runs it as an additional cost of a spell only.
+      return options.discardX === true ? ok({ kind: 'discardX' }) : failure(cost);
     case 'removeCounters':
       return cost.amount.kind === 'number' && cost.amount.value >= 1
         ? ok({ kind: 'removeCounters', counter: cost.counter, count: cost.amount.value })
@@ -182,6 +202,7 @@ export const COST_NEEDS: readonly FeatureRef[] = [
   'cost:tapPermanents',
   'cost:payLife',
   'cost:payXLife',
+  'cost:discardX',
   'cost:discard',
   'cost:exileFromGraveyard',
   'cost:removeCounters',

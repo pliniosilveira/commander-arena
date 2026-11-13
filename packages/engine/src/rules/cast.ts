@@ -78,6 +78,7 @@ import { graveyardPlayPermission, markGraveyardPlay, riderOf } from './graveyard
 import {
   canCast,
   canCastDuringResolution,
+  castPermissionExiles,
   castZone,
   faceOf,
   hasKickedTargets,
@@ -107,7 +108,7 @@ import { fail, ok, type Result } from './result';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { setPending } from './set-pending';
 import { sourceInfo } from './source-info';
-import { targetAnswerError, targetChoiceSpecs } from './target-choice';
+import { maxTargetCountX, targetAnswerError, targetChoiceSpecs } from './target-choice';
 import { collectTriggers } from './triggers';
 import { hasX, largestPayableX } from './x-value';
 import { moveObject } from './zones';
@@ -204,7 +205,11 @@ export function beginCast(
       ...(suspended ? { suspended: true as const } : {}),
       // D-350: what the effect that let the card be cast says about this spell.
       ...(riders.anyManaType === true ? { anyManaType: true as const } : {}),
-      ...(riders.exileInstead === true ? { exileInstead: true as const } : {}),
+      // D-359: "You may cast target instant or sorcery card from your graveyard this turn. If that spell would be put into your graveyard, exile it instead."
+      ...(riders.exileInstead === true ||
+      (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj))
+        ? { exileInstead: true as const }
+        : {}),
       // D-151: "If you cast a creature spell this way, it gains haste until end of turn".
       ...(zone === 'library' && libraryCastPermission(state, seat, obj)?.gainsHaste === true
         ? { hasteUntilEnd: true as const }
@@ -565,15 +570,23 @@ function toX(state: GameState, events: GameEvent[]): Result {
   const alternative = alternativeOfStack(stack);
   const perX = spellXCostOf(state, spell, alternative);
   if (!hasX(perX)) return toTargets(state, events);
-  const max = largestSpellX(state, {
-    seat: casting.seat,
-    spell,
-    zone: casting.fromZone as CastFrom,
-    alternative,
-    kicked: stack.kicked,
-    ...(stack.kicks === undefined ? {} : { kicks: stack.kicks }),
-    ...(stack.replicated === undefined ? {} : { replicas: stack.replicated }),
+  // D-386 (CR 601.2b-c): X is announced before the targets, so a slot of "X target ..." offers no X larger than the legal targets it has.
+  const targetCap = maxTargetCountX(state, targetSpecsOf(state, spell), {
+    controller: casting.seat,
+    source: casting.object,
   });
+  const max = Math.min(
+    targetCap,
+    largestSpellX(state, {
+      seat: casting.seat,
+      spell,
+      zone: casting.fromZone as CastFrom,
+      alternative,
+      kicked: stack.kicked,
+      ...(stack.kicks === undefined ? {} : { kicks: stack.kicks }),
+      ...(stack.replicated === undefined ? {} : { replicas: stack.replicated }),
+    }),
+  );
   if (max === 0) {
     const zero = patchObject(state, casting.object, { stack: { ...stack, x: 0 } });
     return toTargets(zero, events);
@@ -620,7 +633,9 @@ function toTargets(state: GameState, events: GameEvent[]): Result {
   if (!casting) return fail('No cast in progress');
   const seat = casting.seat;
   const object = getObject(state, casting.object);
-  const specs = targetSpecsOf(state, object);
+  const x = object.stack?.x ?? 0;
+  // D-386: a slot of "X target ..." with X = 0 has no target to choose; the spell is cast with none for it.
+  const specs = targetSpecsOf(state, object).filter((spec) => spec.countX !== true || x > 0);
   if (specs.length === 0) return toPayment(state, events);
   const ctx = { controller: seat, source: casting.object };
   const modal = modalOfSpellText(faceOf(state, object)?.spell);
@@ -636,6 +651,7 @@ function toTargets(state: GameState, events: GameEvent[]): Result {
           specs,
           ctx,
           modal === null ? undefined : specModes(modal, object.stack?.chosenModes ?? []),
+          x,
         ),
       },
     ),

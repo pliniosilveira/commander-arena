@@ -107,6 +107,13 @@ export type Amount =
    */
   | { readonly kind: 'lifeLostThisWay' }
   /**
+   * "The life that player lost this turn" (CR 119.3, D-365; the Hashaton deck, Archfiend of Despair): the life the player an effect affects has lost
+   * this turn (`SeatState.lifeLostThisTurn`, from damage, life loss and life paid), read for each of them as the effect applies to them, before that
+   * player loses any more. It is the whole `amount` of a `loseLife` effect and nothing else (a `loseLife` of "each opponent" reads each opponent's own
+   * number: two opponents who lost 3 and 5 lose 3 and 5), so it is not valid inside another amount or in any other effect.
+   */
+  | { readonly kind: 'lifeLostThisTurn' }
+  /**
    * The toughness of an object a reference names, read as `powerOf` is (D-131): "you gain life equal to that
    * creature's toughness". From last-known information when the object left (CR 608.2h, 113.7a). `of` may be the
    * `triggerSubject` permanent of a trigger.
@@ -229,7 +236,9 @@ export type ThisWayKind =
   // D-210: "the total mana value of those cards" milled this way, and "if a creature card (a noncreature card) was discarded this way".
   | 'milledValue'
   | 'discardedCreature'
-  | 'discardedNoncreature';
+  | 'discardedNoncreature'
+  // D-358: "If you discarded an instant or sorcery card this way" (Vohar, Vodalian Desecrator): the instant and sorcery cards `discard` effects discarded.
+  | 'discardedInstantOrSorcery';
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
@@ -738,6 +747,14 @@ export interface TargetSpec {
    * `sacrifice`, with `min` and `max` left out.
    */
   readonly upToThatMany?: true;
+  /**
+   * "Return X target creature cards from your graveyard to your hand" (CR 107.3a, 601.2b, 601.2c, D-386): the slot takes exactly as many
+   * targets as the X the caster announced for the spell. X is announced before the targets (CR 601.2b), so `chooseX` offers no X larger than the
+   * number of legal targets, and with X = 0 the slot has no target (the spell is cast and does nothing for it). Only a slot of a spell's own text (not an
+   * ability, a trigger or a mode), of a face whose costs have an X; `min`, `max`, `anyNumber`, `divide`, `onePerOpponent` and `upToThatMany` are left out.
+   * A copy of the spell keeps the X (CR 707.10) and so the count.
+   */
+  readonly countX?: true;
 }
 
 // ---- Costs (CR 118)
@@ -760,6 +777,13 @@ export type Cost =
    * announces X as it is cast (`chooseX`), so X is offered only up to the life they can pay.
    */
   | { readonly kind: 'payXLife' }
+  /**
+   * "Discard X cards" (CR 107.3a, 701.9, 118.8, D-386): as an additional cost to cast a spell (`CardFace.additionalCosts`), the X announced
+   * for the spell (`chooseX`), as many cards of the caster's hand as that, the caster's choice (all of the hand when it holds exactly that many). X is
+   * offered only up to the number of cards in the hand besides the spell (CR 601.2b, 118.3). The cards are discarded when the other costs are paid
+   * (CR 601.2h), after the targets were chosen, so a discarded card is no target of the spell. Not in the cost of an ability.
+   */
+  | { readonly kind: 'discardX' }
   | {
       readonly kind: 'sacrifice';
       readonly what: { readonly kind: 'this' } | ObjectFilter;
@@ -1014,6 +1038,17 @@ export type TokenSpec =
        * the token's copiable values (a copy of it has them).
        */
       readonly addSubtypes?: readonly Subtype[];
+      /**
+       * "..., except it's a 4/4 black Zombie" (D-382, CR 707.9b, 707.9d): the copy is exactly these creature types, instead of the ones it copies (the other subtypes of the
+       * original stay: they belong to card types the copy keeps). A characteristic-defining ability that defines creature types (changeling) is not copied. Not with `addSubtypes`.
+       */
+      readonly setCreatureTypes?: readonly Subtype[];
+      /** "..., except it's black" (D-382, CR 707.9b, 707.9d): the copy is exactly these colors; a color-defining ability (devoid) is not copied. */
+      readonly setColors?: readonly Color[];
+      /** "..., except it's 4/4" (D-382, CR 707.9b, 707.9d): the copy has this power and toughness; a characteristic-defining ability that defines either is not copied. */
+      readonly setPt?: { readonly power: number; readonly toughness: number };
+      /** "..., except it has no mana cost" (D-382, CR 707.9b, 202.1b): the copy's mana cost is nothing, so its mana value is 0. */
+      readonly noManaCost?: true;
       /** "... and it has \"When this token leaves the battlefield, return the exiled card to its owner's graveyard\"" (D-230, CR 707.9b): the abilities the token has besides the ones it copies. */
       readonly abilities?: readonly Ability[];
       /**
@@ -1246,6 +1281,9 @@ export type Effect =
    * 'mayPay'); a player who cannot pay the whole cost is not asked and does nothing (CR 118.3). When they pay,
    * `effect` runs next, with the life lost by its `loseLife` readable as `lifeLostThisWay`. Only `mana`
    * and `payLife` costs without X.
+   * D-364 (CR 119.4, 608.2c; the Hashaton deck, Niv-Mizzet, Ghost Counsel): the life paid may be an `Amount` that reads the game as the instruction
+   * resolves, `triggerDamage` ("Whenever you gain life, you may pay that much life. If you do, draw that many cards."): it is worked out once, when the
+   * player is asked, and the player can pay only when their life total is at least that high (CR 119.4); a payment of 0 life is no question and does nothing.
    */
   | { readonly kind: 'mayPay'; readonly cost: readonly Cost[]; readonly effect: Effect }
   /**
@@ -1311,11 +1349,14 @@ export type Effect =
    * this effect from there, at the timing of its type, paying its ordinary cost (no alternative cost, no commander tax) and
    * with no other change (it is not exiled afterwards). The permission names the card as it is now: if it leaves the
    * graveyard it is a new object (CR 400.7) and the permission is gone. `duration` is `untilEndOfTurn`.
+   * `exileInstead` (D-359, CR 614.1a, "If that spell would be put into your graveyard, exile it instead"): the spell cast with this permission is exiled instead
+   * of going to a graveyard when it would leave the stack for one (resolved, countered, fizzled); it is written onto the permission and read as the spell is cast.
    */
   | {
       readonly kind: 'mayCast';
       readonly objects: ObjectSelector;
       readonly duration: 'untilEndOfTurn';
+      readonly exileInstead?: true;
     }
   /**
    * "Exile the top card of your library", "Exile the top two cards of your library", "Exile the top X cards of your library, where X is the
@@ -1362,6 +1403,13 @@ export type Effect =
    * it is what `moved` names afterwards ("You may play the exiled card this turn", `mayPlay`).
    */
   | { readonly kind: 'exileRandomFromGraveyard' }
+  /**
+   * "That source's controller exiles a card from their hand at random" (CR 701.13, 406.3, 400.7, D-393 provisional): the player `player` names exiles one card of their own hand chosen at
+   * random by the game's generator (none when the hand is empty, and nobody is asked), face up and public: the card is named by the exile, and nothing is revealed before it. It is what
+   * `moved` names afterwards ("If it's a land card, you may put it onto the battlefield under your control. Otherwise, you may cast it without paying its mana cost"). `moved` is empty
+   * when the hand was empty. One player, never several: with `eachOpponent` the cards of the players would have no single "it".
+   */
+  | { readonly kind: 'exileRandomFromHand'; readonly player: PlayerSelector }
   /**
    * "Any number of other target creatures you control phase out." (Guardian of Faith; CR 702.26a-p, D-234): each permanent `objects` names on the battlefield phases out,
    * and so do the Auras, Equipment and Fortifications attached to it (CR 702.26g: indirectly). A phased-out permanent is treated as though it does not exist (CR 702.26b):
@@ -1414,6 +1462,13 @@ export type Effect =
    * controller runs as the beginning of combat step of that added phase begins (CR 603.7); it names no target.
    */
   | { readonly kind: 'extraCombat'; readonly atBeginning?: Effect }
+  /**
+   * "There is an additional beginning phase after this phase" (CR 500.8, 500.10, 502-504; Sphinx of the Second Sun, D-356): when the phase that is now going
+   * on is over, a whole beginning phase follows it (untap, upkeep and draw steps, in which the active player untaps, triggers and draws again), then the turn
+   * goes on as it would have. Several of them add up (CR 500.8), the phase is added to the turn state (`TurnState.addedPhases`). Only in a triggered
+   * ability of "the beginning of your postcombat main phase" (`main2`), the place the phase that is going on is known and a beginning phase can not recur on its own.
+   */
+  | { readonly kind: 'extraBeginningPhase' }
   /**
    * "You may pay any amount of {R}. When you do, it deals that much damage to any target" (D-151, CR 603.12 reflexive triggers, 118.1): the controller
    * chooses how many times to pay one `symbol` of mana, from 0 to as many as they could pay now (a `chooseX` decision of purpose 'payAnyAmount',
@@ -2035,6 +2090,14 @@ export type Effect =
    */
   | { readonly kind: 'empowerJace'; readonly amount: number }
   /**
+   * "Amass Zombies 1" (CR 701.47a, D-367): "If you don't control an Army creature, create a 0/0 black Zombie Army creature token. Choose an Army creature you
+   * control. Put N +1/+1 counters on that creature. If it isn't a Zombie, it becomes a Zombie in addition to its other types." The controller of the effect is
+   * the player. The token is made as any token is (`makeSettled`: the replacement effects of its creation apply, so a doubler makes more Armies); with two or more
+   * Armies the controller is asked which one (a `choosePermanent` decision of purpose 'amass', not asked with one); the type it becomes lasts for good (CR 611.2a,
+   * 205.1b: a permanent continuous effect of layer 4). `subtype` is the creature type of the token and of the change; `count` is N, read as the effect runs.
+   */
+  | { readonly kind: 'amass'; readonly subtype: Subtype; readonly count: Amount }
+  /**
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
    * triggered this one (`triggerSubject`), that sacrifices it, by its controller, as the next combat ends. Only the effect of an inherent ability
@@ -2603,12 +2666,14 @@ export type Trigger =
    * `opponent`), a creature (`creature`, narrowed by `filter` when present), or anything (`any`: a player, a
    * creature, a planeswalker or a battle). It triggers once for each object or player a source damages, in
    * the step that damage is dealt: a double striker deals damage in two steps and triggers twice, and
-   * damage that is entirely prevented triggers nothing (CR 603.2g). `filter` only goes with `to: 'creature'`.
+   * damage that is entirely prevented triggers nothing (CR 603.2g). `filter` only goes with `to: 'creature'`. `playerOrPlaneswalker` (D-373,
+   * "deals combat damage to a player or planeswalker"): a player, or a permanent that is a planeswalker (as it is, or as it last was if it already
+   * left, CR 113.7a); a creature or a battle is not. It has no "that player": the damaged object may be a planeswalker (`triggerPlayer` is not valid).
    */
   | {
       readonly kind: 'dealsCombatDamage';
       readonly what: TriggerSubject;
-      readonly to: 'player' | 'opponent' | 'creature' | 'any';
+      readonly to: 'player' | 'opponent' | 'creature' | 'any' | 'playerOrPlaneswalker';
       readonly filter?: ObjectFilter;
     }
   /**
@@ -2672,9 +2737,18 @@ export type Trigger =
   /**
    * "Whenever you discard a card" (CR 701.9a, 603.2, D-206): once for each card the player `who` names (relative to the controller of the ability)
    * discards, however it came to be (an effect, a cost, the cleanup step). `triggerSubject` is the card in the graveyard it became (or in exile,
-   * for madness), so "you may exile that card from your graveyard" can name it; `triggerPlayer` is the player who discarded it.
+   * for madness), so "you may exile that card from your graveyard" can name it; `triggerPlayer` is the player who discarded it. A card that is
+   * cycled is discarded to pay the cost of its cycling ability (CR 702.29a), so this also is "Whenever you cycle or discard a card", which
+   * triggers once for a cycled card (CR 702.29d). `another` (D-374, "another card"): not the card with this ability itself.
+   * for madness), so "you may exile that card from your graveyard" can name it; `triggerPlayer` is the player who discarded it. `filter` (D-383, "whenever you discard
+   * a creature card"): the card must match it, read against the card where it went (the graveyard, or exile for madness; so the filter has no zone, controller or owner).
    */
-  | { readonly kind: 'discarded'; readonly who: 'you' | 'opponent' | 'any' }
+  | {
+      readonly kind: 'discarded';
+      readonly who: 'you' | 'opponent' | 'any';
+      readonly another?: boolean;
+      readonly filter?: ObjectFilter;
+    }
   /**
    * "Whenever one or more other creatures and/or artifacts you control die" (CR 603.10a, 603.2c, 700.4, D-206): a batch trigger. The permanents that
    * die in one event (a state-based action, a destroy effect, combat damage) are one occurrence: the ability triggers once however many `what` names
@@ -2933,6 +3007,18 @@ export type Keyword =
    */
   | { readonly kind: 'protection'; readonly from: 'colorsNotInCommanderIdentity' }
   /**
+   * "Protection from artifacts", "protection from the chosen card type" (CR 702.16a, 702.16b to 702.16f; D-376, the Hashaton deck's Serra's Emissary): protection
+   * from a card type. It applies to sources that are permanents with that type and to any source not on the battlefield of that type: a spell (its card types), an
+   * ability's source (a permanent, or last-known information once it left), and a card in any zone. A source with several types (an artifact creature) matches
+   * when any of them is among `types`. `from: 'cardType'` names the types; `from: 'chosenCardType'` is the card type the permanent with the ability chose as it
+   * entered (`asEntersChoose` of `cardType`, linked abilities CR 607.2d, `GameObject.chosen.cardType`): printed on the permanent it is read from the permanent
+   * itself, in a static `grantKeyword` it is the choice of the permanent that gives the keyword and is resolved to `cardType` as the grant is applied
+   * (`rules/derive-statics.ts`); nothing is granted when that permanent chose nothing. Read where protection is read (`rules/protection.ts`): targeting, damage,
+   * attaching and blocking. Only a printed keyword or a static `grantKeyword` may carry it.
+   */
+  | { readonly kind: 'protection'; readonly from: 'cardType'; readonly types: readonly CardType[] }
+  | { readonly kind: 'protection'; readonly from: 'chosenCardType' }
+  /**
    * CR 702.73a (Changeling): a characteristic-defining ability, "This object is every creature type"
    * (CR 604.3), in layer 4 first (CR 613.3), working in every zone, also in a hand or a library. The
    * creature types are the CR 205.3m list (`CREATURE_TYPES`). It is read from the object's printed
@@ -3134,6 +3220,13 @@ export type Keyword =
    * permanent card.
    */
   | { readonly kind: 'encore'; readonly cost: readonly Cost[] }
+  /**
+   * CR 702.129a (Eternalize, D-384): "Eternalize [cost]" means "[Cost], Exile this card from your graveyard: Create a token that's a copy of this card, except it's black, it's 4/4,
+   * it has no mana cost, and it's a Zombie in addition to its other types. Activate only as a sorcery." An activated ability that functions from the graveyard; the engine expands
+   * the keyword (`rules/derive-keywords.ts`) into that ability: the `exileThis` cost and a `createToken` of a `copyOf` `this` with the exceptions `setColors`, `setPt`,
+   * `noManaCost` and `addSubtypes`. Mana only, no X; one eternalize ability on a permanent card.
+   */
+  | { readonly kind: 'eternalize'; readonly cost: readonly Cost[] }
   /**
    * CR 702.82a (Devour, D-185): "Devour N" means "As this object enters, you may sacrifice any number of creatures. This permanent enters with N
    * +1/+1 counters on it for each creature sacrificed this way." A static ability, applied as the permanent enters (CR 614.12): its controller
@@ -3653,7 +3746,8 @@ export type Replacement =
    */
   | {
       readonly kind: 'asEntersChoose';
-      readonly what: 'creatureType' | 'color' | 'option';
+      /** `cardType` (D-376, CR 205.2a): "As this creature enters, choose a card type", one of the card types in `CARD_TYPES`; read by a `protection` from `chosenCardType`. */
+      readonly what: 'creatureType' | 'color' | 'option' | 'cardType';
       /**
        * For `what: 'option'` (D-151, "As this enchantment enters, choose Khans or Dragons"): the names the controller chooses among, at least two
        * different ones, as the card writes them. The answer is kept on the permanent (`GameObject.chosen.option`) and read by the condition
@@ -3692,6 +3786,10 @@ export type Replacement =
    * and the replacements of several permanents apply in timestamp order, the oldest first, the tokens it made being looked at by the next (CR 616.1: the
    * affected player's choice of order is not offered, `docs/ROADMAP.md`). The tokens it makes enter untapped and with none of the choices of the original.
    * It is the ability of a permanent on the battlefield, lost with "loses all abilities". `what` names no zone, owner, X, combat or stack kind.
+   * `double` (D-378; the Hashaton deck, Bard, King of Dale): "If one or more tokens would be created under your control, twice that many of those tokens are
+   * created instead." The tokens `what` matches stay what they are (the same definition and what the instruction said about them, tapped for one) and are
+   * made twice over: there is no `token`. It is applied once to one event (CR 614.5), so two of them make four; it does not change which tokens, so the order
+   * of it and of the other effects never changes the result of a `thatMany` (the same number of the other token) and is only asked when it can.
    */
   | {
       readonly kind: 'tokensInstead';
@@ -3699,6 +3797,7 @@ export type Replacement =
       readonly mode: 'thatMany' | 'plus';
       readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
     }
+  | { readonly kind: 'tokensInstead'; readonly what: ObjectFilter; readonly mode: 'double' }
   /**
    * "As this artifact enters, you may have it become a copy of any creature on the battlefield until end of turn, except it has haste." (CR 707.9,
    * 614.1c, 614.12, 707.2, D-151): as the permanent enters, its controller may choose a permanent on the battlefield that `what` matches (`optional`:
@@ -3779,7 +3878,23 @@ export type Replacement =
    * condition: `PLAIN_CONDITIONS` of `validate-static-condition.ts`). It is the ability of the permanent (lost with "loses all abilities"). When
    * the other cards of a sequence of draws are not skipped they are still drawn (CR 614.11a, 121.6b): each draw is replaced on its own.
    */
-  | { readonly kind: 'skipDraw'; readonly while?: Condition };
+  | { readonly kind: 'skipDraw'; readonly while?: Condition }
+  /**
+   * "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead." (D-379, CR 614.1a, 614.11, 614.11a,
+   * 614.5, 504.1; the Hashaton deck, Bard, King of Dale): a replacement effect of a permanent on the battlefield for the cards its controller would
+   * draw. Each draw it applies to is replaced by `count` draws; they are separate draws (a "whenever you draw" ability triggers for each card, the commander
+   * question of CR 903.9b is asked for each) and all of them are made before the sequence the replaced draw belonged to goes on (CR 614.11a). It is applied
+   * even when the library has no cards (CR 614.11): each of the new draws then draws from an empty library. Every such effect applies once to one draw
+   * (CR 614.5: it does not replace the draws it made), so two of them make four draws, and a draw that a `skipDraw` replaces is skipped first (CR 616.1:
+   * the engine chooses that order; the player is not asked). `exceptFirstInDrawStep` is required (always `true`): the first draw of each of the controller's
+   * draw steps (CR 504.1) is not replaced; a replacement of every draw with no such exception is not built (`docs/ROADMAP.md`). It is the ability of the
+   * permanent: lost with "loses all abilities".
+   */
+  | {
+      readonly kind: 'drawInstead';
+      readonly count: number;
+      readonly exceptFirstInDrawStep: true;
+    };
 
 // ---- Static abilities (CR 604)
 
@@ -4107,6 +4222,19 @@ export type StaticEffect =
    */
   | { readonly kind: 'playerHexproof' }
   /**
+   * "You have protection from the chosen card type." (CR 702.16a, 702.16b, 702.16e; D-376): while the permanent has the ability, its controller has protection
+   * from a card type: spells and abilities from a source of that type can't target the player (CR 702.16b), and damage that would be dealt to the player by
+   * such a source is prevented (CR 702.16e). `from: 'chosenCardType'` is the type the permanent chose as it entered (needs `asEntersChoose` of `cardType`, nothing
+   * is protected when it chose none); `from: 'cardType'` names the types. Read from the abilities of the permanents on the battlefield after the layers
+   * (`rules/player-protection.ts`), so a permanent that lost its abilities protects nobody. Auras that enchant a player are not modelled (see `docs/ROADMAP.md`).
+   */
+  | { readonly kind: 'playerProtection'; readonly from: 'chosenCardType' }
+  | {
+      readonly kind: 'playerProtection';
+      readonly from: 'cardType';
+      readonly types: readonly CardType[];
+    }
+  /**
    * "You can't lose the game" (CR 104.3, 104.3b, D-149): while the permanent has the ability, its controller does not lose the game for having
    * 0 or less life, for drawing from an empty library, for ten poison counters or for 21 combat damage from one commander
    * (state-based actions, CR 704.5a-c, 704.6c); the numbers stay what they are, and the player loses when the ability is gone and a
@@ -4119,6 +4247,26 @@ export type StaticEffect =
    * "overrides all effects that would preclude that player from winning the game", so this ability changes nothing the engine does today.
    */
   | { readonly kind: 'opponentsCantWin' }
+  /**
+   * "Your opponents can't gain life." (CR 119.7, 604.1, D-363; the Hashaton deck, Archfiend of Despair): while the permanent has the ability, no opponent of its
+   * controller can gain life. Every gain of life goes through `rules/life-gain.ts`: a gain by such a player does not happen (no life change, no `lifeGained` event,
+   * nothing for a "whenever you gain life" trigger or the turn log to count), the replacement effects that would change the gain do nothing (CR 119.7), and an
+   * effect that sets a life total does not raise one (`setLifeTotal`). `who` is `opponents`, the only group the engine reads. Read from the abilities of the
+   * permanents on the battlefield after the layers (`rules/player-protection.ts`); a permanent that lost its abilities protects nobody. No condition.
+   */
+  | { readonly kind: 'cantGainLife'; readonly who: 'opponents' }
+  /**
+   * "Creatures you control can't have -1/-1 counters put on them." (D-380, CR 122.6, 101.2, 604.1; the Hashaton deck, Darksteel Angel): while the permanent has the
+   * ability, no counter of the kind `counter` is put on a permanent `subject` names (a group, `this`, or `attached`), by any means: an effect that puts counters
+   * on it, proliferate, wither and infect damage, a connive or a loyalty cost, a counter it would enter with (CR 122.6: counters put on an object as it enters the
+   * battlefield are put on it too, so a creature that returns with a +1/+1 counter or an Angel that would enter with one enters without it), a Saga's lore counter.
+   * Nothing is put on it, so there is no `counterAdded` event and nothing for a "whenever one or more counters are put on" ability to see; the rest of what the
+   * effect did still happens (CR 101.2: a "can't" effect makes the instruction do nothing, it does not undo the rest). Counters it already has stay, and the
+   * ability does not stop them being removed. The subject is read as the permanent is on the battlefield (as it would be, for one that enters), from the
+   * permanents on the battlefield as the new one enters; a permanent never stops itself getting a counter as it enters. Counters in other zones (a suspended card's
+   * time counters) are not read. `counter` is the name of the kind (`-1/-1`, `+1/+1`, `loyalty`...). The ability of the permanent: lost with "loses all abilities".
+   */
+  | { readonly kind: 'cantHaveCounters'; readonly subject: StaticSubject; readonly counter: string }
   /**
    * "If a triggered ability of a Shaman or another Wizard you control triggers, that ability triggers an additional time." and "If a triggered ability of
    * equipped creature triggers, that ability triggers an additional time." (D-220, CR 603.2d): each time a triggered ability of a permanent `subject` names

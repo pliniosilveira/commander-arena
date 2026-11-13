@@ -1,5 +1,5 @@
 {
-  "parserVersion": 96,
+  "parserVersion": 98,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -41,14 +41,6 @@
       "unparsed": [
         {
           "face": 0,
-          "ability": 0,
-          "text": "If an effect would create one or more tokens under your control, it creates twice that many of those tokens instead.",
-          "reason": "unrecognised",
-          "slot": "replacement",
-          "closestRule": "replacement.would-die"
-        },
-        {
-          "face": 0,
           "ability": 1,
           "text": "If an effect would put one or more counters on a permanent you control, it puts twice that many of those counters on that permanent instead.",
           "reason": "unrecognised",
@@ -57,7 +49,7 @@
         }
       ],
       "reasons": [],
-      "ast": "5e5124e5"
+      "ast": "e7704bfc"
     },
     "02090581-61aa-4348-ad57-451be8ee91c2": {
       "name": "Ponder",
@@ -708,6 +700,14 @@
       "reasons": [],
       "ast": "07cdeecd"
     },
+    "240e85d3-e495-4877-8609-4b4056c402f7": {
+      "name": "Victimize",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e00dda18"
+    },
     "24310f49-2156-4c0d-b3b1-40ca3182474f": {
       "name": "Sahagin",
       "group": "acceptance",
@@ -1153,6 +1153,14 @@
       "reasons": [],
       "ast": "4d098038"
     },
+    "3a49b518-61c8-4dea-8008-c5edf8384581": {
+      "name": "Ob Nixilis, the Ascended",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "15e7102e"
+    },
     "3aa83ed2-f48b-4ce6-a614-2c54ddf50538": {
       "name": "The One Ring",
       "group": "training",
@@ -1242,6 +1250,14 @@
       "reasons": [],
       "ast": "b916a4d2"
     },
+    "3fd8ba0c-75ec-43ea-8706-f71e6cf1d236": {
+      "name": "Champion of Wits",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5456ad62"
+    },
     "4080f7e3-06d3-4d3d-9929-4e826cb66713": {
       "name": "Herald of Eternal Dawn",
       "group": "training",
@@ -1273,6 +1289,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "18cece80"
+    },
+    "4380df08-7be4-48ca-9783-d644fd2ea27d": {
+      "name": "Vohar, Vodalian Desecrator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c81b8dec"
     },
     "43b5794a-4ed6-471d-bc45-22fac486895d": {
       "name": "Thunderdrum Soloist",
@@ -1435,6 +1459,14 @@
       "reasons": [],
       "ast": "957736af"
     },
+    "4e552be1-0702-4e18-822f-98611f8a8e70": {
+      "name": "Enter the Avatar State",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "dc997d74"
+    },
     "4f819ba4-52ef-4fdd-8e4c-5ae3b2f44db5": {
       "name": "Ramunap Excavator",
       "group": "training",
@@ -1458,6 +1490,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "511a0fc4"
+    },
+    "516101be-be39-4d84-8fee-d8a79930dd0a": {
+      "name": "Sphinx of the Second Sun",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e826d588"
     },
     "51eae7ff-fed9-4afe-8053-7690379449dd": {
       "name": "Gideon, Ally of Zendikar",
@@ -1507,6 +1547,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f5ee9ab1"
+    },
+    "535e2af0-7b08-4026-b1bf-87626407dd42": {
+      "name": "Archfiend of Ifnir",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "dbe3d066"
     },
     "535f405d-94df-4f45-aedc-b331103720b7": {
       "name": "Atsushi, the Blazing Sky",
@@ -1849,6 +1897,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "dadc1005"
+    },
+    "65f1dd09-0640-47f8-8bfd-7aceaa5646a6": {
+      "name": "Restless Dreams",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a8195a43"
     },
     "663d451b-f848-41cc-b541-0c6fe37d3d54": {
       "name": "Hofri Ghostforge",
@@ -2270,6 +2326,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "40033eda"
+    },
+    "7a56c6e1-0509-4783-9b29-cf3163977166": {
+      "name": "Serra's Emissary",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f632ebc5"
     },
     "7c3a8766-e440-48c5-a561-197490efdba5": {
       "name": "Heirloom Blade",
@@ -2822,6 +2886,14 @@
       "reasons": [],
       "ast": "8b9bfe78"
     },
+    "9c36760b-57c5-488b-afc9-ef141942c6ab": {
+      "name": "Archfiend of Despair",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "210f0aec"
+    },
     "9cc52afb-9788-46f6-9f9b-347513f8a64f": {
       "name": "Dwarven Shortsword",
       "group": "acceptance",
@@ -2934,6 +3006,14 @@
       "reasons": [],
       "ast": "5c259800"
     },
+    "a5350327-e84c-44b6-8359-87882e521048": {
+      "name": "Niv-Mizzet, Ghost Counsel",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f4b129e3"
+    },
     "a554aa2c-d947-4fc6-929d-d5891f467615": {
       "name": "Nahiri, the Lithomancer",
       "group": "acceptance",
@@ -3022,6 +3102,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4113ccd2"
+    },
+    "aa1a6646-c1e6-4bff-9092-43ee3e137914": {
+      "name": "Archon of Cruelty",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4604dc38"
     },
     "aa913409-7a7a-4e74-82ff-7ff8195585ad": {
       "name": "Roll-Roll-Roll-Roll",
@@ -3275,6 +3363,14 @@
       "reasons": [],
       "ast": "5cb0396e"
     },
+    "b997a982-09e1-4ae1-a972-3c2e5f101e8c": {
+      "name": "Faithful Mending",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e67ea787"
+    },
     "b9cec31a-9891-414f-b528-954612168832": {
       "name": "Tangleweave Armor",
       "group": "training",
@@ -3330,6 +3426,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8f8b16fe"
+    },
+    "bea3ff6e-7649-4e51-b2ad-763f9ac2d4b8": {
+      "name": "Renewed Solidarity",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bd51f054"
     },
     "befb211f-37ca-4083-98d4-9ff1f28be3f2": {
       "name": "Goreclaw, Terror of Qal Sisma",
@@ -3623,6 +3727,14 @@
       "reasons": [],
       "ast": "67880500"
     },
+    "cf5bd3a4-3899-4c25-ad1f-f1778c1d9c60": {
+      "name": "Rona, Herald of Invasion // Rona, Tolarian Obliterator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "76d86017"
+    },
     "cfdd5dc6-593e-495a-8cfe-3a56b3c4c7df": {
       "name": "Temple of the False God",
       "group": "holdout",
@@ -3630,6 +3742,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8c6a61ad"
+    },
+    "d0259f7d-9bd7-4722-8fb9-439768308516": {
+      "name": "Darksteel Angel",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fd322409"
+    },
+    "d05db2c1-a19a-4803-8e8a-fa2f9b798181": {
+      "name": "Bard, King of Dale",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0d7d0724"
     },
     "d0dd425b-fdba-41b4-b9e6-f5161610bd7e": {
       "name": "Ezuri's Predation",
@@ -3847,6 +3975,14 @@
       "reasons": [],
       "ast": "fd9f8577"
     },
+    "db266661-f783-4907-9e52-6963eec05431": {
+      "name": "Hashaton, Scarab's Fist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "01b1f433"
+    },
     "db444f9d-4dde-4308-b0f2-7acfe6de871a": {
       "name": "Turbulent Steppe",
       "group": "acceptance",
@@ -3943,6 +4079,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6d2a78bd"
+    },
+    "e157ad1e-be35-47f3-92db-01799f8fb6a5": {
+      "name": "Psychic Frog",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "90b0e9dd"
     },
     "e286d1aa-bb74-4568-98b5-a693ac7a369d": {
       "name": "Venerable Warsinger",
@@ -4155,8 +4299,8 @@
           "ability": 2,
           "text": "−10: You gain 7 life, draw seven cards, then put up to seven permanent cards from your hand onto the battlefield.",
           "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.player.life"
+          "slot": "noun",
+          "closestRule": "noun.target-permanent"
         }
       ],
       "reasons": [],
@@ -4340,6 +4484,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7f0a01bc"
+    },
+    "f7716dff-5de7-4b52-966e-72ee3adc8d9a": {
+      "name": "Gleaming Overseer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1c6f2563"
     },
     "f7f435bc-1716-4412-9505-a1f2f2d83d08": {
       "name": "Dragonhawk, Fate's Tempest",
@@ -4648,8 +4800,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 228,
-      "total": 245
+      "supported": 248,
+      "total": 265
     }
   }
 }

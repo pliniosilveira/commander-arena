@@ -30,6 +30,7 @@ import {
   checkAttachmentFace,
   checkBattlefieldFilter,
   checkGrantedKeyword,
+  checkProtectionTypes,
   checkStaticSubject,
 } from './validate-attach';
 import { kindOf, triggerHasPlayer } from './validate-base';
@@ -163,6 +164,12 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
     case 'protection':
       // D-259 (CR 903.4f): "each color that's not in your commander's color identity" names no color: the engine works them out.
       if (k.from === 'colorsNotInCommanderIdentity') break;
+      // D-376 (CR 702.16a): "the chosen card type" is read from the permanent's own choice (the card must ask it, `validate-chosen.ts`); named card types are checked.
+      if (k.from === 'chosenCardType') break;
+      if (k.from === 'cardType') {
+        checkProtectionTypes(k.types, `${path}.types`, out);
+        break;
+      }
       if (k.from !== 'color') {
         issue(
           out,
@@ -278,8 +285,8 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       }
       break;
     case 'asEntersChoose':
-      // CR 614.12a (D-100): what is chosen is a creature type or a color; D-151: or a name from a list the card gives.
-      if (!isOneOf(r.what, ['creatureType', 'color', 'option'])) {
+      // CR 614.12a (D-100): what is chosen is a creature type or a color; D-151: or a name from a list the card gives; D-376: or a card type.
+      if (!isOneOf(r.what, ['creatureType', 'color', 'option', 'cardType'])) {
         issue(out, `${path}.what`, `unknown choice ${JSON.stringify(r.what)}`);
       }
       break;
@@ -696,6 +703,26 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${JSON.stringify(t.who)}`);
       }
+      // D-374: "another card".
+      if (t.another !== undefined && typeof t.another !== 'boolean') {
+        issue(out, `${path}.another`, 'another must be a boolean');
+      }
+      // D-383: "a creature card": read against the card where it went (a graveyard, or exile for madness), so no zone, controller or owner.
+      if (t.filter !== undefined) {
+        checkFilter(t.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            t.filter,
+            (f) => f.zone !== undefined || f.controller !== undefined || f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the card discarded is read where it went: the filter names no zone, controller or owner',
+          );
+        }
+      }
       break;
     case 'entersBatch':
       // D-218: one or more permanents that `what` names enter together: a filter of battlefield permanents, as they enter.
@@ -769,7 +796,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'dealsCombatDamage':
       checkTriggerSubject(t.what, true, `${path}.what`, out);
-      if (!isOneOf(t.to, ['player', 'opponent', 'creature', 'any'])) {
+      if (!isOneOf(t.to, ['player', 'opponent', 'creature', 'any', 'playerOrPlaneswalker'])) {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
       }
       if (t.filter !== undefined) {
@@ -925,6 +952,7 @@ function hasXCost(
   return costs.some(
     (c) =>
       c.kind === 'payXLife' ||
+      c.kind === 'discardX' ||
       (c.kind === 'mana' && (c.symbols ?? []).includes('X')) ||
       // D-200: the X of "[-X]".
       (c.kind === 'loyalty' && c.change === 'x'),
@@ -1096,6 +1124,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(a.trigger?.kind === 'attackBatch' ? { triggerAttacked: true } : {}),
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
+        ...(a.trigger?.kind === 'step' && a.trigger.step === 'main2'
+          ? { postcombatMainTrigger: true }
+          : {}),
         ...(selfCast ? { selfCast: true } : {}),
         ...(a.trigger?.kind === 'dies' ? { diesTrigger: true } : {}),
         ...HOOKS,
@@ -1428,7 +1459,11 @@ function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
   if (s.chooseModes !== undefined) {
     issue(out, `${path}.chooseModes`, 'chooseModes without modes');
   }
-  const targets = declareTargets(s.targets, `${path}.targets`, out, true);
+  const targets = declareTargets(s.targets, `${path}.targets`, out, true, false, false, true);
+  // D-386: X targets read the X announced for the spell: the text must say it has one.
+  if (!xAllowed && (s.targets ?? []).some((t) => t.countX === true)) {
+    issue(out, `${path}.x`, 'X targets need x: true (the spell announces an X)');
+  }
   if (s.effect !== undefined) {
     checkEffect(s.effect, `${path}.effect`, { owner: 'spell', targets, xAllowed, ...HOOKS }, out);
   } else if (targets.size > 0) {

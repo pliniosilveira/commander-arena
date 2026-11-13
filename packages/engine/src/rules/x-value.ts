@@ -6,7 +6,8 @@
  * additional cost or activation cost, and the text does not define X, its controller announces X as
  * the spell is cast or the ability activated (CR 601.2b, 602.2b). While it is on the stack every X in
  * its costs equals the announced value. So the total cost (CR 601.2f) holds X generic mana for each
- * {X} of the mana cost, and X life for each "pay X life". Cost reductions apply to the total, which
+ * {X} of the mana cost, X life for each "pay X life" and X cards of the hand to discard for each "discard X cards"
+ * (D-386). Cost reductions apply to the total, which
  * already has X in it (`rules/cast-cost.ts`).
  */
 import type { CastAlternativeKind } from '../ast/features';
@@ -20,6 +21,8 @@ export interface XCost {
   readonly life: number;
   /** Loyalty counters for each point of X ("[-X]", CR 606.5, D-200); absent for none. */
   readonly loyalty?: number;
+  /** Cards of the hand for each point of X ("discard X cards", CR 701.9, D-386); absent for none. */
+  readonly discard?: number;
 }
 
 export const NO_X: XCost = { mana: 0, life: 0 };
@@ -72,20 +75,24 @@ export function spellXCost(
 ): XCost {
   if (face === null) return NO_X;
   const life = (face.additionalCosts ?? []).filter((c) => c.kind === 'payXLife').length;
+  // D-386 (CR 107.3a): "discard X cards" is an additional cost, announced like "pay X life" and paid whatever way the spell is cast.
+  const discard = (face.additionalCosts ?? []).filter((c) => c.kind === 'discardX').length;
+  const extra = discard > 0 ? { discard } : {};
   if (alternative === 'miracle') {
     return {
       mana: xSymbolCount(manaSymbolsOf(namedAlternativeCostOf(face, 'miracle') ?? [])),
       life,
+      ...extra,
     };
   }
   const printed = xSymbolCount(face.manaCost ?? []);
   if (alternative !== undefined && printed > 0) return NO_X;
-  return { mana: printed, life };
+  return { mana: printed, life, ...extra };
 }
 
 /** Whether announcing X means anything: the cost has an {X} or a "pay X life". */
 export function hasX(cost: XCost): boolean {
-  return cost.mana + cost.life + (cost.loyalty ?? 0) > 0;
+  return cost.mana + cost.life + (cost.loyalty ?? 0) + (cost.discard ?? 0) > 0;
 }
 
 /**

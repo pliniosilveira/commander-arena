@@ -53,6 +53,7 @@ import type {
 import { optionsFor } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
+import { withoutBlockedCounters } from './counter-prevention';
 import { derive, oracleTextOf } from './derive';
 import { permanentAlternative } from './derive-alt';
 import { dieReplacementFor } from './die-replacement';
@@ -724,16 +725,17 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   if (to === 'battlefield') {
     // CR 614.1c, 614.12, 122.6 (D-149): "each other Angel you control enters with an additional +1/+1 counter": the replacement
     // effects of the permanents already on the battlefield, read against the permanent as it would be there.
-    counters = addCounterMaps(
-      counters,
-      groupEntryCounters(nextBefore, {
-        ...old,
-        ...downEntry,
-        zone: 'battlefield',
-        controller,
-        token: becomesToken ? copiableValues(state, old) : old.token,
-      }),
-    );
+    const entering: GameObject = {
+      ...old,
+      ...downEntry,
+      zone: 'battlefield',
+      controller,
+      token: becomesToken ? copiableValues(state, old) : old.token,
+    };
+    counters = addCounterMaps(counters, groupEntryCounters(nextBefore, entering));
+    // D-380 (CR 122.6, 101.2): "Creatures you control can't have -1/-1 counters put on them" keeps them off a permanent as it enters too, whatever it would have
+    // entered with (a persist return, an "enters with", riot, devour, a counter another permanent gives it, a planeswalker's loyalty).
+    counters = withoutBlockedCounters(nextBefore, { ...entering, counters }, counters);
   }
   // CR 702.62a (D-128): "If you cast a creature spell this way, it gains haste until you lose control of the spell
   // or the permanent it becomes": the permanent remembers it came from a suspended creature spell.

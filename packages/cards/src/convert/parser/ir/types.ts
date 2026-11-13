@@ -342,6 +342,8 @@ export type IrAmount =
   | { readonly kind: 'timesKicked'; readonly who: 'self' | 'it'; readonly span: Span }
   // "equal to the total life lost this way" (CR 702.101a), stage P21: what an earlier loss of life in the same text lost
   | { readonly kind: 'lifeLostThisWay'; readonly span: Span }
+  // "equal to the life that player lost this turn" (Hashaton deck group 2, D-365, CR 119.3): the life the player the instruction affects lost this turn
+  | { readonly kind: 'lifeLostThisTurn'; readonly span: Span }
   // Stage P28 (D-131): "equal to that creature's toughness", "for each +1/+1 counter on ~"
   | { readonly kind: 'toughnessOf'; readonly of: IrNoun; readonly span: Span }
   | {
@@ -458,6 +460,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'declined' }
     // "If a creature card was discarded this way", "if a noncreature card was discarded this way" (stage P52, D-210, CR 608.2c)
     | { readonly kind: 'discardedThisWay'; readonly creature: boolean }
+    // "If you discarded an instant or sorcery card this way" (D-358, CR 608.2c, 701.9): what a discard before it in the same text did
+    | { readonly kind: 'discardedSpellThisWay' }
     | { readonly kind: 'unlessPays'; readonly who: IrNoun; readonly cost: readonly IrCost[] }
     // D-258 (the Bruna deck, CR 118.12a): "unless you return an untapped Plains you control to its owner's hand": the `return` clause of one permanent the controller chooses
     | { readonly kind: 'unlessReturn'; readonly clause: IrClause }
@@ -587,6 +591,8 @@ export type IrCost = IrNode &
     | { readonly kind: 'payLife'; readonly amount: IrAmount }
     // "Pay X life" (stage P16): the amount is announced as X (CR 107.3a), not a number
     | { readonly kind: 'payXLife' }
+    // "Discard X cards" (Hashaton group 10, D-386, CR 107.3a, 701.9): as many cards as the X announced; an additional cost of a spell
+    | { readonly kind: 'discardX' }
     // "Discard a card", "Discard two cards" (stage P13): the player chooses, so only a count
     // `filter` and `named` (stage P50, D-207): "Discard a legendary card", "Discard another card named ~": the cards the cost may discard, by a supertype or a card
     // type, or by the name of the permanent with the ability
@@ -789,6 +795,16 @@ export interface IrToken extends IrNode {
   readonly legendary?: true;
   /** "a token that's a copy of target creature" (CR 707.2): the permanent copied. */
   readonly copyOf?: IrNoun;
+  /**
+   * "..., except it's a 4/4 black Zombie" (Hashaton deck group 5, D-382, CR 707.9b): what the copy is instead of what it copies, with `copyOf`: its power and toughness, its colors
+   * (as color words; empty for colorless) and its creature types (instead of its own, CR 205.3d).
+   */
+  readonly copyExcept?: {
+    readonly power: number;
+    readonly toughness: number;
+    readonly colors: readonly string[];
+    readonly subtypes: readonly string[];
+  };
   /** "create two tapped Treasure tokens" (stage P28, CR 110.5b): the tokens enter tapped. */
   readonly tapped?: true;
   readonly count: IrAmount;
@@ -814,7 +830,8 @@ export interface IrRestrictionArg extends IrNode {
 /** What an "As ~ enters, choose ..." replacement asks (stage P15, D-100): a creature type or a color. */
 export interface IrChoiceArg extends IrNode {
   readonly kind: 'choiceKind';
-  readonly what: 'creatureType' | 'color' | 'option';
+  /** `cardType` (Hashaton deck group 6, D-376, CR 205.2a): "As this creature enters, choose a card type." */
+  readonly what: 'creatureType' | 'color' | 'option' | 'cardType';
   /** `option` (stage P34, D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons", the names the card gives, as it writes them. */
   readonly options?: readonly string[];
 }
@@ -948,9 +965,11 @@ export interface IrTrigger extends IrNode {
   readonly spellOnly?: true;
   /**
    * 'dealsCombatDamage': what the damage went to (stage P18, CR 120.2a); none is "any". 'noncombatDamageDealt' (issue 25, D-333, CR 120.2b): the player
-   * damaged, `player` or `opponent` (never a creature).
+   * damaged, `player` or `opponent` (never a creature). `playerOrPlaneswalker` (D-373): "to a player or planeswalker".
    */
-  readonly damaged?: 'player' | 'opponent' | 'creature';
+  readonly damaged?: 'player' | 'opponent' | 'creature' | 'playerOrPlaneswalker';
+  /** 'discarded': "another card" (D-374), a card other than the one with the ability. */
+  readonly another?: true;
   /** 'dealsCombatDamage' to a player: the player, so that "that player" has an antecedent. */
   readonly recipient?: IrNoun;
   /**
@@ -1072,6 +1091,8 @@ export type IrStaticEffect =
       readonly kind: 'grantProtection';
       readonly colors?: readonly string[];
       readonly commanderIdentity?: true;
+      /** "protection from the chosen card type" (Hashaton deck group 6, D-376, CR 702.16a): the card type the source of the ability chose as it entered. */
+      readonly chosenCardType?: true;
     }
   /** `has "{T}: Add {G}."` (stage P14): a quoted mana ability, read as an activated ability. */
   | { readonly kind: 'grantAbility'; readonly ability: IrQuotedAbility }
@@ -1199,6 +1220,18 @@ export type IrStaticEffect =
   | { readonly kind: 'cantLoseGame' }
   /** "your opponents can't win the game" (stage P33, D-150, CR 104.2). The subject is `you`. */
   | { readonly kind: 'opponentsCantWin' }
+  /**
+   * "You have protection from the chosen card type." (Hashaton deck group 6, D-377, CR 702.16a, 702.16b, 702.16e): the controller of the permanent has
+   * protection from the card type it chose as it entered. The subject is `you`; the statement's `also` gives the same to "creatures you control".
+   */
+  | { readonly kind: 'playerProtection'; readonly quality: 'chosenCardType' }
+  /** "Your opponents can't gain life." (Hashaton deck group 2, D-363, CR 119.7). The subject is `you`, the controller of the permanent. */
+  | { readonly kind: 'cantGainLife'; readonly who: 'opponents' }
+  /**
+   * "Creatures you control can't have -1/-1 counters put on them." (Hashaton deck group 3, D-380, CR 122.6, 101.2): no counter of the kind named (a power and
+   * toughness counter, "+1/+1" or "-1/-1") is put on the permanents the subject names. The subject is a group, `~` or the attached permanent.
+   */
+  | { readonly kind: 'cantHaveCounters'; readonly counter: string }
   /**
    * "Prevent all combat damage that would be dealt to ~." (stage P33, D-150, CR 615.1): the damage of the kind named that would be dealt to
    * the permanent is prevented. The subject is `~`.
@@ -1404,6 +1437,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'manaValueOf',
   'timesKicked',
   'lifeLostThisWay',
+  'lifeLostThisTurn',
   'toughnessOf',
   'countersOn',
   'aggregate',

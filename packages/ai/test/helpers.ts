@@ -2425,6 +2425,106 @@ export const NIV_GROUP_3_C_NAMES = [
   'SYNTHETIC Quiet Cub',
 ] as const;
 
+/** The additional beginning phase card of the Hashaton deck (D-356): the extra untap, upkeep and draw steps change the turns of the generic pools, which games-100 expects only from dedicated styles. */
+export const HASHATON_G7_NAMES = ['SYNTHETIC Second Sun Sphinx'] as const;
+
+/**
+ * The SYNTHETIC cards of group 8 of the Hashaton deck (D-358 to D-361): a sacrifice that is not optional with a return behind it, a loot with a conditional drain and a
+ * cast permission whose spell is exiled instead. They ask their questions (which creature to sacrifice, what to discard) in the middle of resolutions, which games-100 expects
+ * only from dedicated styles, so they stay out of the generic pools.
+ */
+export const HASHATON_G8_NAMES = [
+  'SYNTHETIC Grim Exchange',
+  'SYNTHETIC Spell Looter',
+  'SYNTHETIC Spell Reaver',
+  'SYNTHETIC Spell Borrower',
+  'SYNTHETIC Spell Desecrator',
+] as const;
+
+/**
+ * The cards of group 4 of the Hashaton deck (D-367 to D-371): amass (it asks which Army gets the counters and makes tokens a replacement effect may change), the static
+ * that gives Zombie tokens hexproof and menace, the token replacement cards, and the spell that gives a creature four keywords until end of turn. They stay out of every
+ * generic pool: the question of the Army is asked only by the dedicated tests, and a token replacement changes how many tokens other cards make.
+ */
+export const HASHATON_G4_NAMES = [
+  'SYNTHETIC Amass Rite',
+  'SYNTHETIC Amass Orcs Rite',
+  'SYNTHETIC Amass X Rite',
+  'SYNTHETIC Amass Watcher',
+  'SYNTHETIC Orc Army Veteran',
+  'SYNTHETIC Soldier Army Recruit',
+  'SYNTHETIC Army Recruiter',
+  'SYNTHETIC Soldier Maker',
+  'SYNTHETIC Avatar Surge',
+  'SYNTHETIC Winged Bear',
+] as const;
+
+/**
+ * The SYNTHETIC cards of group 1 of the Hashaton deck (D-372 to D-374): the sacrifice-discard-lose-life trigger asks the opponent what to sacrifice and what to discard (a
+ * choosePermanent and a chooseCards in the middle of a resolution), the cycle-or-discard trigger puts counters on every creature of the opponents each time a card is discarded,
+ * and the combat damage and draw-discard cards change which decisions the generic pools see. They stay out of every pool: games-100 expects those decisions only from dedicated styles.
+ */
+export const HASHATON_G1_NAMES = [
+  'SYNTHETIC Bog Frog',
+  'SYNTHETIC Walker Hit Watcher',
+  'SYNTHETIC Cycle Fiend',
+  'SYNTHETIC Discard Tithe',
+  'SYNTHETIC Grave Tither',
+  'SYNTHETIC Grave Other Tither',
+  'SYNTHETIC Cruel Archon',
+  'SYNTHETIC Mending Rite',
+] as const;
+
+/**
+ * The SYNTHETIC cards of group 10 of the Hashaton deck (D-386 to D-389): "As an additional cost to cast this spell, discard X cards", with "Return X target
+ * creature cards from your graveyard to your hand" (a target slot of as many targets as X), X damage, "Draw X cards" or flashback, and a creature that triggers on a
+ * discard. They ask X before the targets and a discard in the middle of a cast, which games-100 expects only from dedicated styles, so they stay out of the generic pools.
+ */
+export const HASHATON_G10_NAMES = [
+  'SYNTHETIC Dream Recall',
+  'SYNTHETIC Dream Replay',
+  'SYNTHETIC Dream Burn',
+  'SYNTHETIC Dream Rummage',
+  'SYNTHETIC Dream Mourner',
+] as const;
+
+/** The hashatonDiscardX style: each spell of the group, the recursion twice (the card of the issue), bodies to put in the graveyard, removal and burn to fill it. */
+export const HASHATON_G10_SPELLS = [
+  ...supported(HASHATON_G10_NAMES),
+  ...supported(['SYNTHETIC Dream Recall', 'SYNTHETIC Dream Recall', 'SYNTHETIC Dream Replay']),
+  ...supported(['Lightning Bolt', 'Murder', 'Divination']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Black for the recursion, red for the burn and blue for the rummage, a little green for the bodies. */
+export const HASHATON_G10_LANDS = supported([
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Mountain',
+  'Island',
+  'Island',
+  'Forest',
+]);
+
+/**
+ * The SYNTHETIC cards of group 9 of the Hashaton deck (D-390 to D-395): an activated ability with a Phyrexian symbol in its cost (paid with mana or 2 life), the
+ * transforming double-faced creature that has it, the exile of a random card from a hand, and the 5/5 whose damage trigger exiles a card from the hand of the controller of the source
+ * and then asks "you may put it onto the battlefield" or "you may cast it without paying its mana cost" (a `confirmOptional` or a `chooseCards` of purpose `cast`, in the middle of a
+ * resolution). A payment of life, a transformation and those questions change which answers the generic pools ask for, which games-100 expects only from dedicated styles.
+ */
+export const HASHATON_G9_NAMES = [
+  'SYNTHETIC Phyrexian Scribe',
+  'SYNTHETIC Phyrexian Seer // Phyrexian Colossus',
+  'SYNTHETIC Chaos Pointer',
+  'SYNTHETIC Chaos Twice',
+  'SYNTHETIC Chaos Obelisk',
+  'SYNTHETIC Chaos Obliterator',
+] as const;
+
 /** The cast-or-copy trigger doubling cards of the Niv-Mizzet deck (D-339): extra triggers and their questions stay out of the generic pools. */
 export const NIV_GROUP_3_B_NAMES = [
   'SYNTHETIC Twin Mage',
@@ -2442,6 +2542,210 @@ export const NIV_GROUP_3_A_NAMES = [
   'SYNTHETIC Next Exact Echo',
   'SYNTHETIC Commander Echo Drake',
 ] as const;
+
+/**
+ * The cards of group 2 of the Hashaton deck program (D-363 to D-365, provisional): an artifact and creatures that stop the opponents' life gain, the demon that
+ * makes opponents lose the life they lost this turn again, the angel that makes a token at each end step after a life gain, and the dragon (and the well) that ask
+ * "you may pay that much life. If you do, draw that many cards" (a `confirmOptional` of purpose `mayPay`). The style 'hashatonLife' plays them; every other pool
+ * leaves them out: a life gain that does not happen, an extra loss at every end step and a payment question change how many games end in a result and which
+ * questions the agents are asked.
+ */
+export const HASHATON_G2_NAMES = [
+  'SYNTHETIC Joyless Idol',
+  'SYNTHETIC Grudge Demon',
+  'SYNTHETIC Hollow Demon',
+  'SYNTHETIC Dusk Seraph',
+  'SYNTHETIC Ghostly Dragon',
+  'SYNTHETIC Paid Well',
+] as const;
+
+/** The hashatonLife style: each card of the group twice, spells and a lifelinker that gain life, burn that makes life lost, bodies and a little removal. */
+export const HASHATON_G2_SPELLS = [
+  ...supported(HASHATON_G2_NAMES),
+  ...supported(HASHATON_G2_NAMES),
+  ...supported(['SYNTHETIC Mend', 'SYNTHETIC Mend', 'SYNTHETIC Mend Twice', 'SYNTHETIC Mend Them']),
+  ...supported(["Healer's Hawk", "Healer's Hawk", 'Lightning Bolt', 'Lightning Bolt', 'Murder']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Grizzly Bears', 'Serra Angel']),
+];
+
+/** White, black and red for the cards of the group, a little of the others for the bodies. */
+export const HASHATON_G2_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Island',
+]);
+
+/**
+ * The SYNTHETIC cards of group 6 of the Hashaton deck program (D-376, D-377, provisional): the angel that asks "choose a card type" as it enters (a chooseOption of
+ * purpose `cardType`, which games-100 expects only from dedicated styles) and gives its controller and their creatures protection from it, with sources of several card
+ * types to run it against (creatures and an artifact that ping, a creature that pings as it dies, an artifact creature, a sorcery). The style 'hashatonProtect' plays
+ * them; every other pool leaves them out: protection stops targets, damage and blocks, which changes how many games end in a result and which questions the agents are asked.
+ */
+export const HASHATON_G6_NAMES = [
+  'SYNTHETIC Warding Seraph',
+  'SYNTHETIC Needle Imp',
+  'SYNTHETIC Spite Imp',
+  'SYNTHETIC Brass Golem',
+  'SYNTHETIC Brass Pinger',
+  'SYNTHETIC Slow Burn',
+] as const;
+
+/** The hashatonProtect style: the angel three times (the choice is the point), the other cards of the group twice, burn, an Aura and Equipment to fall off, bodies. */
+export const HASHATON_G6_SPELLS = [
+  ...supported([
+    'SYNTHETIC Warding Seraph',
+    'SYNTHETIC Warding Seraph',
+    'SYNTHETIC Warding Seraph',
+  ]),
+  ...supported(HASHATON_G6_NAMES.filter((name) => name !== 'SYNTHETIC Warding Seraph')),
+  ...supported(HASHATON_G6_NAMES.filter((name) => name !== 'SYNTHETIC Warding Seraph')),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Murder', 'SYNTHETIC Might Aura']),
+  ...supported([
+    'SYNTHETIC Blade',
+    'SYNTHETIC Vanilla 3/3',
+    'SYNTHETIC Vanilla 2/2',
+    'Grizzly Bears',
+  ]),
+];
+
+/** White for the angel, black and red for the rest. */
+export const HASHATON_G6_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Mountain',
+]);
+
+/**
+ * The SYNTHETIC cards of group 3 of the Hashaton deck program (D-378 to D-380): permanents that say counters "can't be put on" creatures, planeswalkers,
+ * Sagas, artifacts and permanents of their controller (one kind of counter each), the Aura and the artifact copy that go with them, and the cards that replace a draw with two
+ * draws and a creation of tokens with twice as many, with the spells that make tokens and draw cards. They change what the generic pools do (tokens twice over, counters
+ * that are not put on, a draw that is made twice, an order of replacements to answer), which games-100 expects only from dedicated styles: the style 'hashatonG3' plays them
+ * and every other pool leaves them out.
+ */
+export const HASHATON_G3_NAMES = [
+  'SYNTHETIC Counter Ward',
+  'SYNTHETIC Growth Ward',
+  'SYNTHETIC Loyalty Ward',
+  'SYNTHETIC Lore Ward',
+  'SYNTHETIC Age Ward',
+  'SYNTHETIC Page Ward',
+  'SYNTHETIC Lone Ward',
+  'SYNTHETIC Ward Aura',
+  'SYNTHETIC Walker Mirror',
+  'SYNTHETIC Muster Call',
+  'SYNTHETIC Angel Caller',
+  'SYNTHETIC Quick Study',
+  'SYNTHETIC Careful Study',
+  'SYNTHETIC Twin Reign',
+  'SYNTHETIC Draw Reign',
+  'SYNTHETIC Token Reign',
+] as const;
+
+/**
+ * The hashatonG3 style: the creatures that protect from -1/-1 and +1/+1 counters and the two that replace draws and tokens (each twice), the spells that make tokens and draw
+ * cards (each twice), the effects that put counters on creatures and the creatures that put them there (wither, persist, proliferate), the Dragon and Thopter effects of the
+ * Vraska deck that order the replacements of tokens with the doubling, a watcher of draws, a life gain for the end step angel, bodies and a little removal.
+ */
+export const HASHATON_G3_SPELLS = [
+  ...supported([
+    'SYNTHETIC Counter Ward',
+    'SYNTHETIC Growth Ward',
+    'SYNTHETIC Lone Ward',
+    'SYNTHETIC Ward Aura',
+    'SYNTHETIC Twin Reign',
+    'SYNTHETIC Draw Reign',
+    'SYNTHETIC Token Reign',
+    'SYNTHETIC Muster Call',
+    'SYNTHETIC Angel Caller',
+    'SYNTHETIC Quick Study',
+    'SYNTHETIC Careful Study',
+  ]),
+  ...supported([
+    'SYNTHETIC Twin Reign',
+    'SYNTHETIC Draw Reign',
+    'SYNTHETIC Token Reign',
+    'SYNTHETIC Muster Call',
+    'SYNTHETIC Angel Caller',
+    'SYNTHETIC Quick Study',
+    'SYNTHETIC Counter Ward',
+  ]),
+  ...supported([
+    'SYNTHETIC Rot Boon',
+    'SYNTHETIC Counter Boon',
+    'SYNTHETIC Spreading Growth',
+    'SYNTHETIC Wither Imp',
+    'SYNTHETIC Persist Bear',
+    'SYNTHETIC Draw Watcher',
+    'SYNTHETIC Dragon Maker',
+    'SYNTHETIC Thopter Automaton',
+    'SYNTHETIC Treasure Pair',
+    'SYNTHETIC Mend',
+  ]),
+  ...supported(['Lightning Bolt', 'Murder', 'Grizzly Bears', 'Giant Spider', 'Serra Angel']),
+];
+
+/** Blue, white and black for the cards of the group (the reigns are blue and white), a little red and green for the rest. */
+export const HASHATON_G3_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Swamp',
+  'Mountain',
+  'Forest',
+]);
+
+/**
+ * The SYNTHETIC cards of group 5 of the Hashaton deck (D-382 to D-385): Eternalize from the graveyard, the discard trigger that copies the card discarded as a 4/4
+ * black Zombie (a "may pay" question), the discard spells that feed it, and the enchantment that copies the tokens of the chosen type at the end step (a creature type to
+ * choose, a token maker). They ask questions in the middle of resolutions (what to discard, whether to pay, which type), which games-100 expects only from dedicated
+ * styles, so they stay out of the generic pools.
+ */
+export const HASHATON_G5_NAMES = [
+  'SYNTHETIC Wit Champion',
+  'SYNTHETIC Wit Rummager',
+  'SYNTHETIC Lurker Eternal',
+  'SYNTHETIC Void Eternal',
+  'SYNTHETIC Shifting Brute',
+  'SYNTHETIC Eternal Automaton',
+  'SYNTHETIC Scarab Fist',
+  'SYNTHETIC Scarab Watcher',
+  'SYNTHETIC Tidy Discard',
+  'SYNTHETIC Pair Discard',
+  'SYNTHETIC Goblin Sower',
+  'SYNTHETIC Solidarity Echo',
+] as const;
+
+/** The hashatonCopies style: each card of the group twice, a few bodies and removal. */
+export const HASHATON_G5_SPELLS = [
+  ...supported(HASHATON_G5_NAMES),
+  ...supported(HASHATON_G5_NAMES),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Grizzly Bears', 'Serra Angel']),
+  ...supported(['Lightning Bolt', 'Murder']),
+];
+
+/** White, blue, black and red for the cards of the group, green for the rest. */
+export const HASHATON_G5_LANDS = supported([
+  'Plains',
+  'Island',
+  'Island',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Forest',
+]);
 
 export const NIV_DRAW_NAMES = [
   'SYNTHETIC Hollow Warden',
@@ -2471,6 +2775,33 @@ export const NIV_DRAW_LANDS = supported([
   'Mountain',
   'Mountain',
   'Mountain',
+  'Plains',
+  'Forest',
+]);
+
+/**
+ * The hashatonG1 style (D-372 to D-374): each card of group 1 of the Hashaton deck, the spells that put cards in the graveyard (discard and cycling) around the cycle-or-discard
+ * creature, planeswalkers for the combat damage trigger to hit, and bodies and removal. Black, blue and white, with the rest for the bodies.
+ */
+export const HASHATON_G1_SPELLS = [
+  ...supported(HASHATON_G1_NAMES),
+  ...supported(HASHATON_G1_NAMES),
+  ...supported([
+    'SYNTHETIC Cycling Bear',
+    'SYNTHETIC Cycling Bear',
+    'SYNTHETIC Vanilla Planeswalker',
+  ]),
+  ...supported(['Lightning Bolt', 'Murder', 'Divination']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Grizzly Bears', 'Serra Angel']),
+];
+
+export const HASHATON_G1_LANDS = supported([
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Island',
+  'Island',
+  'Plains',
   'Plains',
   'Forest',
 ]);
@@ -2869,6 +3200,27 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(NIV_GROUP_3_B_NAMES as readonly string[]).includes(card.name))
   // The graveyard casters (D-350) ask "you may cast it" as a trigger resolves (a confirmOptional), which games-100 expects only from dedicated styles.
   .filter((card) => !(NIV_GROUP_3_C_NAMES as readonly string[]).includes(card.name))
+  // The additional beginning phase card (D-356) adds untap, upkeep and draw steps to the turn, which games-100 expects only from dedicated styles.
+  .filter((card) => !(HASHATON_G7_NAMES as readonly string[]).includes(card.name))
+  // The Hashaton group 8 cards (D-358 to D-361) ask which creature to sacrifice and what to discard, which games-100 expects only from dedicated styles.
+  .filter((card) => !(HASHATON_G8_NAMES as readonly string[]).includes(card.name))
+  // The discard X cards of the Hashaton deck (D-386 to D-389) ask X, then the targets, then a discard, while a spell is cast: a style of their own.
+  .filter((card) => !(HASHATON_G10_NAMES as readonly string[]).includes(card.name))
+
+  // The Hashaton group 9 cards (D-390 to D-395) pay life for a Phyrexian symbol, transform and exile a random card from a hand with two offers behind it, which games-100 expects only from dedicated styles.
+  .filter((card) => !(HASHATON_G9_NAMES as readonly string[]).includes(card.name))
+  // The life cards of the Hashaton deck (D-363 to D-365) have their own style: a life gain that does not happen, an end step loss and a payment question.
+  .filter((card) => !(HASHATON_G2_NAMES as readonly string[]).includes(card.name))
+  // Group 4 of the Hashaton deck (D-367): amass asks which Army gets the counters, and the token replacements change what other cards make.
+  .filter((card) => !(HASHATON_G4_NAMES as readonly string[]).includes(card.name))
+  // The Hashaton group 1 cards (D-372 to D-374) ask the opponent what to sacrifice and discard in the middle of a resolution, which games-100 expects only from dedicated styles.
+  .filter((card) => !(HASHATON_G1_NAMES as readonly string[]).includes(card.name))
+  // The card type choice cards of the Hashaton deck (D-376, D-377) ask "choose a card type" and change targets, damage and blocks: their own style.
+  .filter((card) => !(HASHATON_G6_NAMES as readonly string[]).includes(card.name))
+  // The Hashaton group 3 cards (D-378 to D-380) double tokens and draws, keep counters off creatures and ask the order of replacements: a style of their own.
+  .filter((card) => !(HASHATON_G3_NAMES as readonly string[]).includes(card.name))
+  // The copy cards of the Hashaton deck (D-382 to D-385) ask what to discard, whether to pay and which type; they have their own style.
+  .filter((card) => !(HASHATON_G5_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
@@ -3051,6 +3403,12 @@ export type DeckStyle =
   | 'soulbond'
   | 'piles'
   | 'nivDraw'
+  | 'hashatonLife'
+  | 'hashatonG1'
+  | 'hashatonProtect'
+  | 'hashatonG3'
+  | 'hashatonCopies'
+  | 'hashatonDiscardX'
   | 'repeatable'
   | 'manifest'
   | 'combat';
@@ -3062,6 +3420,12 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'soulbond' && SOULBOND_SPELLS.length > 0) return SOULBOND_SPELLS;
   if (style === 'piles' && PILES_SPELLS.length > 0) return PILES_SPELLS;
   if (style === 'nivDraw' && NIV_DRAW_SPELLS.length > 0) return NIV_DRAW_SPELLS;
+  if (style === 'hashatonLife' && HASHATON_G2_SPELLS.length > 0) return HASHATON_G2_SPELLS;
+  if (style === 'hashatonG1' && HASHATON_G1_SPELLS.length > 0) return HASHATON_G1_SPELLS;
+  if (style === 'hashatonProtect' && HASHATON_G6_SPELLS.length > 0) return HASHATON_G6_SPELLS;
+  if (style === 'hashatonG3' && HASHATON_G3_SPELLS.length > 0) return HASHATON_G3_SPELLS;
+  if (style === 'hashatonCopies' && HASHATON_G5_SPELLS.length > 0) return HASHATON_G5_SPELLS;
+  if (style === 'hashatonDiscardX' && HASHATON_G10_SPELLS.length > 0) return HASHATON_G10_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
   if (style === 'manifest' && MANIFEST_SPELLS.length > 0) return MANIFEST_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
@@ -3237,6 +3601,12 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'soulbond' && BASIC_LANDS.length > 0) return SOULBOND_LANDS;
   if (style === 'piles' && BASIC_LANDS.length > 0) return PILES_LANDS;
   if (style === 'nivDraw' && BASIC_LANDS.length > 0) return NIV_DRAW_LANDS;
+  if (style === 'hashatonLife' && BASIC_LANDS.length > 0) return HASHATON_G2_LANDS;
+  if (style === 'hashatonG1' && BASIC_LANDS.length > 0) return HASHATON_G1_LANDS;
+  if (style === 'hashatonProtect' && BASIC_LANDS.length > 0) return HASHATON_G6_LANDS;
+  if (style === 'hashatonG3' && BASIC_LANDS.length > 0) return HASHATON_G3_LANDS;
+  if (style === 'hashatonCopies' && BASIC_LANDS.length > 0) return HASHATON_G5_LANDS;
+  if (style === 'hashatonDiscardX' && BASIC_LANDS.length > 0) return HASHATON_G10_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
   if (style === 'manifest' && BASIC_LANDS.length > 0) return MANIFEST_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
@@ -3658,6 +4028,48 @@ export const NIV_DRAW_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
   ['nivDraw', 'nivDraw'],
   ['nivDraw', 'spells'],
   ['spells', 'nivDraw'],
+];
+
+/** Style pairs of the Hashaton life soak test (D-363 to D-365): a mirror match and both mixed ways. */
+export const HASHATON_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hashatonLife', 'hashatonLife'],
+  ['hashatonLife', 'spells'],
+  ['spells', 'hashatonLife'],
+];
+
+/** Style pairs of the Hashaton group 1 soak test (D-372 to D-374): a mirror match and both mixed ways. */
+export const HASHATON_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hashatonG1', 'hashatonG1'],
+  ['hashatonG1', 'spells'],
+  ['spells', 'hashatonG1'],
+];
+
+/** Style pairs of the Hashaton card type protection soak test (D-376, D-377): a mirror match and both mixed ways. */
+export const HASHATON_G6_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hashatonProtect', 'hashatonProtect'],
+  ['hashatonProtect', 'spells'],
+  ['spells', 'hashatonProtect'],
+];
+
+/** Style pairs of the Hashaton group 3 soak test (D-378 to D-380): a mirror match and both mixed ways. */
+export const HASHATON_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hashatonG3', 'hashatonG3'],
+  ['hashatonG3', 'spells'],
+  ['spells', 'hashatonG3'],
+];
+
+/** Style pairs of the Hashaton copies soak test (D-382 to D-385): a mirror match and both mixed ways. */
+export const HASHATON_G5_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hashatonCopies', 'hashatonCopies'],
+  ['hashatonCopies', 'spells'],
+  ['spells', 'hashatonCopies'],
+];
+
+/** Style pairs of the discard X cards soak test (D-386 to D-389): a mirror match and both mixed ways. */
+export const HASHATON_G10_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hashatonDiscardX', 'hashatonDiscardX'],
+  ['hashatonDiscardX', 'spells'],
+  ['spells', 'hashatonDiscardX'],
 ];
 
 /** Style pairs of the repeatable-mode soak test (D-344): a mirror match and both mixed ways. */

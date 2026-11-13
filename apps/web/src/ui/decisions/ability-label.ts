@@ -60,6 +60,7 @@ import {
   anyCombinationWords,
   beholdText,
   delayedWords,
+  EXTRA_BEGINNING_PHASE_TEXT,
   exileTopText,
   exileUntilCastText,
   extraCombatText,
@@ -69,7 +70,8 @@ import {
   revealTopTail,
   revealTopText,
 } from '../../game/dragons-text';
-import { thingsPhrase } from '../../game/filter-text';
+import { pluralSubtype, thingsPhrase } from '../../game/filter-text';
+import { copiesOfTokensText } from '../../game/hashaton-g5-text';
 import { ENCORE_EFFECT_TEXT } from '../../game/keywords-text';
 import { controlDurationText, requireAttackText } from '../../game/korvold-text';
 import { playRuleWordings, staticWording } from '../../game/play-rule-text';
@@ -114,6 +116,25 @@ function costKeyword(word: string, cost: ActivatedAbility['cost']): string {
 /** True for Encore's expansion: an ability from the graveyard whose effect is `encore` (CR 702.141a, D-185). */
 export function isEncore(ability: ActivatedAbility): boolean {
   return ability.effect.kind === 'encore';
+}
+
+/**
+ * True for Eternalize's expansion (CR 702.129a, D-384): an ability from the graveyard that exiles the card as a cost and creates a token that is a copy of it, black, 4/4, with no mana cost
+ * and a Zombie in addition.
+ */
+export function isEternalize(ability: ActivatedAbility): boolean {
+  const { effect } = ability;
+  if (ability.functionsIn !== 'graveyard' || effect.kind !== 'createToken') return false;
+  const { token } = effect;
+  return (
+    token.kind === 'copyOf' &&
+    token.object.kind === 'this' &&
+    token.noManaCost === true &&
+    token.setPt?.power === 4 &&
+    token.setPt.toughness === 4 &&
+    token.setColors?.join() === 'B' &&
+    token.addSubtypes?.join() === 'Zombie'
+  );
 }
 
 /** True for Unearth's expansion: an ability from the graveyard whose effect is `unearth` (CR 702.84a, D-124). */
@@ -583,6 +604,10 @@ function moveText(
   if (objects.kind === 'this' && self === 'card' && effect.to === 'hand') {
     return 'Return this card from your graveyard to your hand';
   }
+  // D-394 (CR 110.2a, 400.7): the card an earlier instruction exiled ("it") put onto the battlefield under the control of the player who puts it: it is not returning anywhere.
+  if (objects.kind === 'moved' && effect.to === 'battlefield' && effect.controller === 'you') {
+    return `Put it onto the battlefield${effect.tapped === true ? ' tapped' : ''} under your control`;
+  }
   // A target in your own graveyard goes to "your" hand or library, any other card to "its owner's".
   const spec =
     objects.kind === 'target' ? ability.targets?.find((t) => t.id === objects.id) : undefined;
@@ -707,6 +732,14 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'gainLevel':
       // CR 716.2a (D-235): the effect of a class level bar, "Level 2".
       return `Level ${effect.level}`;
+    case 'transform':
+      // CR 701.27a (D-395 provisional): "Transform this creature".
+      return `Transform ${object(effect.objects)}`;
+    case 'exileRandomFromHand':
+      // CR 701.13 (D-393 provisional): "That player exiles a card from their hand at random"; the player is the one the selector names.
+      return `${playerVerb(effect.player, ability, 'exile')} a card from ${
+        effect.player.kind === 'you' ? 'your' : 'their'
+      } hand at random`;
     case 'phaseOut':
       // CR 702.26 (D-234): "any number of other target creatures you control phase out".
       return `Phase out ${object(effect.objects)}`;
@@ -736,6 +769,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
           effect.count.what === 'destroyed' ||
           effect.count.what === 'discarded')
       ) {
+        return `${playerVerb(effect.player, ability, 'draw')} that many cards`;
+      }
+      // D-364: "If you do, draw that many cards" after "you may pay that much life": the life that caused the trigger.
+      if (typeof effect.count === 'object' && effect.count.kind === 'triggerDamage') {
         return `${playerVerb(effect.player, ability, 'draw')} that many cards`;
       }
       // D-217 (CR 121.1): "Its controller may draw up to two cards": the player is the one the ability named as it was created.
@@ -770,6 +807,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         ? `${playerVerb(effect.player, ability, 'gain')} that much life`
         : `${playerVerb(effect.player, ability, 'gain')} ${quantity(effect.amount, defs, LIFE)}`;
     case 'loseLife':
+      // D-365: "Each opponent loses life equal to the life that player lost this turn", not "loses the life ... life".
+      if (typeof effect.amount === 'object' && effect.amount.kind === 'lifeLostThisTurn') {
+        return `${playerVerb(effect.player, ability, 'lose')} life equal to ${amountPhrase(effect.amount)}`;
+      }
       return typeof effect.amount === 'object' && effect.amount.kind === 'triggerDamage'
         ? `${playerVerb(effect.player, ability, 'lose')} that much life`
         : `${playerVerb(effect.player, ability, 'lose')} ${quantity(effect.amount, defs, LIFE)}`;
@@ -846,7 +887,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     }
     case 'mayCast':
       // D-135 (CR 601.2, 611.2a): "You may cast target Zombie creature card from your graveyard this turn".
-      return `You may cast ${object(effect.objects)} this turn`;
+      // D-359 (CR 614.1a): the rider "If that spell would be put into your graveyard, exile it instead".
+      return `You may cast ${object(effect.objects)} this turn${
+        effect.exileInstead === true
+          ? '. If that spell would be put into your graveyard, exile it instead'
+          : ''
+      }`;
     case 'exile': {
       // D-149 (CR 610.3): "Exile target creature until this enchantment leaves the battlefield", one for each opponent.
       if (effect.until !== undefined) {
@@ -883,6 +929,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'empowerJace':
       // D-201 (CR 701.71a): the keyword action, as the cards write it.
       return `Empower Jace ${effect.amount}`;
+    case 'amass':
+      // D-367 (CR 701.47a): the keyword action, as the cards write it (older cards: "amass Zombies 1").
+      return `Amass ${pluralSubtype(effect.subtype)} ${amountPhrase(effect.count)}`;
     case 'createEmblem':
       // D-201 (CR 114.1): "You get an emblem with "...", the text the emblem shows.
       return `You get an emblem with "${effect.text}"`;
@@ -905,6 +954,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         : `Untap ${object(effect.objects)}`;
     case 'removeAllCounters':
       return `Remove all counters from ${object(effect.objects)}`;
+    case 'createCopies':
+      // D-385: "For each token you control of the chosen type that entered this turn, create a token that's a copy of it".
+      return copiesOfTokensText(effect) ?? UNSAID;
     case 'counter':
       return `Counter ${object(effect.objects)}`;
     case 'addCounters':
@@ -953,6 +1005,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
           ? null
           : effectText(effect.atBeginning, ability, self, defs),
       );
+    case 'extraBeginningPhase':
+      // D-356 (CR 500.8): "After this phase, there is an additional beginning phase".
+      return EXTRA_BEGINNING_PHASE_TEXT;
     case 'enterAttacking':
       // D-151 (CR 508.4): said with the move that put the creature onto the battlefield (`sequenceText`).
       return UNSAID;
@@ -1116,6 +1171,13 @@ export function activationLabel(
   }
   if (isEquip(ability)) return costKeyword('Equip', ability.cost);
   if (isUnearth(ability)) return costKeyword('Unearth', ability.cost);
+  // D-384: "Eternalize {5}{U}{U}": the exile of the card is part of the keyword, not of the price.
+  if (isEternalize(ability)) {
+    return costKeyword(
+      'Eternalize',
+      ability.cost.filter((c) => c.kind !== 'exileThis'),
+    );
+  }
   // D-185: "Encore {3}{R}": the exile of the card is part of the keyword, not of the price.
   if (isEncore(ability)) {
     return costKeyword(

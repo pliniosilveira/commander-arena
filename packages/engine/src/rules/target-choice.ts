@@ -33,6 +33,22 @@ export function slotCanBeFilled(state: GameState, spec: TargetSpec, ctx: SelectC
 }
 
 /**
+ * D-386 (CR 601.2b, 601.2c): the most X a spell with an "X target ..." slot can announce: every such slot needs X legal targets, and the targets are chosen
+ * after X is announced, from the state the spell is cast in (what the cost discards or pays is not there to be a target yet). Unlimited when it has none.
+ */
+export function maxTargetCountX(
+  state: GameState,
+  specs: readonly TargetSpec[],
+  ctx: SelectContext,
+): number {
+  let most = Number.MAX_SAFE_INTEGER;
+  for (const spec of specs) {
+    if (spec.countX === true) most = Math.min(most, legalTargets(state, spec, ctx).length);
+  }
+  return most;
+}
+
+/**
  * The slots of a `targets` decision for these specs: bounds and every legal target (CR 115, 601.2c).
  * `modeOf` (D-114, D-344) says which mode of a modal spell or ability each slot belongs to, and which instance of it.
  */
@@ -41,6 +57,8 @@ export function targetChoiceSpecs(
   specs: readonly TargetSpec[],
   ctx: SelectContext,
   modeOf?: ReadonlyMap<string, SlotMode>,
+  /** D-386: the X announced for the spell, the number of targets of a `countX` slot (CR 601.2b). */
+  x = 0,
 ): TargetChoiceSpec[] {
   return specs.map((spec) => {
     const slotMode = modeOf?.get(spec.id);
@@ -52,6 +70,17 @@ export function targetChoiceSpecs(
         ? state.seats.filter((s) => s.id !== ctx.controller && !s.hasLost).length
         : Number.MAX_SAFE_INTEGER;
     const legal = legalTargets(state, spec, ctx);
+    // D-386: "X target creature cards": exactly X (the announcement offered no X larger than the legal targets, `maxTargetCountX`).
+    if (spec.countX === true) {
+      const n = Math.min(x, legal.length);
+      return {
+        specId: spec.id,
+        min: n,
+        max: n,
+        legal,
+        ...(slotMode === undefined ? {} : { mode: slotMode.mode }),
+      };
+    }
     return {
       specId: spec.id,
       min: Math.min(bounds.min, opponents),

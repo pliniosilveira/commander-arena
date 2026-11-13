@@ -3,7 +3,7 @@
  * selectors, amounts, costs and effects. `validate.ts` composes these for abilities, spells and
  * cards. Nothing here mutates its input; every function appends to an issue list.
  */
-import { CARD_TYPES, COLORS, SUPERTYPES } from '../characteristics';
+import { CARD_TYPES, COLORS, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
 import type {
   Ability,
@@ -125,6 +125,8 @@ export interface Scope {
   readonly attackTrigger?: boolean;
   /** True in the effect of a triggered ability whose intervening "if" is `yourMainPhase`: an `extraCombat` follows a main phase (D-187). */
   readonly mainPhaseTrigger?: boolean;
+  /** True in the effect of a triggered ability of "the beginning of your postcombat main phase" (`step: 'main2'`): an `extraBeginningPhase` follows that phase (D-356). */
+  readonly postcombatMainTrigger?: boolean;
   /** True after a `may` effect in the same sequence: `didPrevious` and `reflexive` have something to read (D-135). */
   readonly mayAvailable?: boolean;
   /** The number of sides of the latest `rollDie` earlier in the same sequence: the condition `dieResult` reads its result (CR 706.2, D-271). */
@@ -453,6 +455,8 @@ export function declareTargets(
   thatManyAllowed = false,
   /** D-270: only the slot of a triggered ability can name objects of two zones (the one place the engine reads it). */
   crossZoneAllowed = false,
+  /** D-386: only the targets of a spell's own text can take as many targets as the X announced (CR 601.2b, 601.2c). */
+  countXAllowed = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
@@ -588,6 +592,36 @@ export function declareTargets(
         issue(out, p, 'up to that many targets has no min, max or divide');
       } else if (spec.onePerOpponent !== undefined) {
         issue(out, p, 'up to that many targets is not one for each opponent');
+      }
+    }
+    if (spec.countX !== undefined) {
+      // D-386, CR 107.3a, 601.2b, 601.2c: "X target creature cards": exactly as many targets as the X announced for the spell.
+      if (spec.countX !== true) {
+        issue(out, `${p}.countX`, 'countX must be true when present');
+      } else if (!countXAllowed) {
+        issue(
+          out,
+          `${p}.countX`,
+          "only a slot of a spell's own text (not an ability or a mode) takes as many targets as the X announced",
+        );
+      } else if (
+        spec.min !== undefined ||
+        spec.max !== undefined ||
+        spec.divide !== undefined ||
+        spec.onePerOpponent !== undefined ||
+        spec.upToThatMany !== undefined ||
+        spec.anyNumber !== undefined ||
+        spec.ifKicked !== undefined ||
+        spec.unlessKicked !== undefined ||
+        spec.ifGiftPromised !== undefined
+      ) {
+        issue(
+          out,
+          p,
+          'X targets have no min, max, divide, onePerOpponent, upToThatMany, anyNumber or kicker or gift condition',
+        );
+      } else if (what?.kind !== 'object') {
+        issue(out, `${p}.what`, 'X targets are objects (cards or permanents), not players');
       }
     }
     if (spec.anyNumber !== undefined) {
@@ -955,7 +989,11 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   milledValue: 'a mill effect',
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
+  discardedInstantOrSorcery: 'a discard effect',
 };
+
+/** Every `thisWay` count, one source of truth for the validator (the conditions and the amounts both read them from `ThisWayCounts`, D-131, D-210, D-358). */
+const THIS_WAY_KINDS = Object.keys(THIS_WAY_SOURCES);
 
 /** The `thisWay` counts an effect always produces (a `conditional` may not run, so it does not count). */
 function thisWayProduced(e: Effect): ThisWayKind[] {
@@ -966,7 +1004,8 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
   if (e?.kind === 'draw') return ['playersDrew'];
   if (e?.kind === 'tap') return ['tapped'];
-  if (e?.kind === 'discard') return ['discarded', 'discardedCreature', 'discardedNoncreature'];
+  if (e?.kind === 'discard')
+    return ['discarded', 'discardedCreature', 'discardedNoncreature', 'discardedInstantOrSorcery'];
   if (e?.kind === 'mill') return ['milledValue'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
   if (e?.kind === 'playersMay') return thisWayProduced(e.effect);
@@ -1223,20 +1262,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'thisWay':
       // D-131: what an earlier effect of this same sequence did.
-      if (
-        !isOneOf(a.what, [
-          'sacrificed',
-          'destroyed',
-          'destroyedOwnNontoken',
-          'exiledNonland',
-          'playersDrew',
-          'tapped',
-          'discarded',
-          'milledValue',
-          'discardedCreature',
-          'discardedNoncreature',
-        ])
-      ) {
+      if (!isOneOf(a.what, THIS_WAY_KINDS)) {
         issue(out, `${path}.what`, `unknown thisWay count ${JSON.stringify(a.what)}`);
       } else if (!(scope.thisWay ?? []).includes(a.what)) {
         issue(
@@ -1269,6 +1295,14 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           "'triggerDamage' needs a triggered ability whose trigger is damage being dealt (dealtDamage, dealsCombatDamage or noncombatDamageDealt) or life being gained (lifeGained)",
         );
       }
+      break;
+    case 'lifeLostThisTurn':
+      // D-365: only as the whole amount of a `loseLife` (checked with the effect), where it is read for each player the effect affects.
+      issue(
+        out,
+        path,
+        'lifeLostThisTurn is the whole amount of a loseLife effect, not part of another amount',
+      );
       break;
     case 'lifeLostThisWay':
       // D-120: the total of the life lost by an earlier `loseLife` of the same sequence.
@@ -1467,6 +1501,7 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
     case 'tap':
     case 'untap':
     case 'payXLife':
+    case 'discardX':
       break;
     case 'payLife':
       // D-135: a number, or an amount that reads the game as the ability is activated (only an activated ability's cost
@@ -2051,6 +2086,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'exileTop' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
     e?.kind === 'exileRandomFromGraveyard' ||
+    // D-393: the card `exileRandomFromHand` exiled is "it" ("If it's a land card, you may put it onto the battlefield").
+    e?.kind === 'exileRandomFromHand' ||
     e?.kind === 'exileUntilCast' ||
     // D-177: the cards a `search` found and put somewhere are "it" and "that land" ("Then if you control four or more lands, untap that land").
     e?.kind === 'search' ||
@@ -2062,6 +2099,16 @@ function movesObjects(e: Effect): boolean {
 }
 
 const TOKEN_PRESET_NAMES: readonly TokenPreset[] = ['Treasure', 'Food', 'Clue'];
+
+/** The player selectors that name one player: what an effect with a single "it" (`exileRandomFromHand`) takes. */
+const SINGLE_PLAYER_KINDS: readonly (string | undefined)[] = [
+  'you',
+  'controllerOf',
+  'ownerOf',
+  'target',
+  'defendingPlayer',
+  'triggerPlayer',
+];
 
 function checkSacrificeSelector(
   sel: SacrificeSelector,
@@ -2398,6 +2445,50 @@ function checkCopySource(ref: ObjectRef, path: string, scope: Scope, out: Out): 
   }
 }
 
+/** The exceptions of a copy that change a characteristic (D-382, CR 707.9b, 707.9d): creature types, colors, power and toughness, no mana cost. */
+function checkCopyExceptions(
+  spec: Extract<Extract<Effect, { kind: 'createToken' }>['token'], { kind: 'copyOf' }>,
+  path: string,
+  out: Out,
+): void {
+  if (spec.setCreatureTypes !== undefined) {
+    if (!Array.isArray(spec.setCreatureTypes) || spec.setCreatureTypes.length === 0) {
+      issue(
+        out,
+        `${path}.setCreatureTypes`,
+        'setCreatureTypes is a non-empty list of creature types',
+      );
+    } else if (
+      spec.setCreatureTypes.some((t) => typeof t !== 'string' || isNonCreatureSubtype(t))
+    ) {
+      issue(out, `${path}.setCreatureTypes`, 'setCreatureTypes names creature types only');
+    }
+    if (spec.addSubtypes !== undefined) {
+      issue(
+        out,
+        path,
+        'a copy is given creature types instead of its own (setCreatureTypes) or in addition to them (addSubtypes), not both',
+      );
+    }
+  }
+  if (spec.setColors !== undefined) {
+    if (!Array.isArray(spec.setColors) || spec.setColors.some((c) => !isOneOf(c, COLORS))) {
+      issue(out, `${path}.setColors`, 'setColors is a list of colors');
+    } else if (new Set(spec.setColors).size !== spec.setColors.length) {
+      issue(out, `${path}.setColors`, 'duplicate color');
+    }
+  }
+  if (spec.setPt !== undefined) {
+    const { power, toughness } = spec.setPt;
+    if (!Number.isSafeInteger(power) || !Number.isSafeInteger(toughness)) {
+      issue(out, `${path}.setPt`, 'setPt is a whole power and a whole toughness');
+    }
+  }
+  if (spec.noManaCost !== undefined && spec.noManaCost !== true) {
+    issue(out, `${path}.noManaCost`, 'noManaCost must be true when present');
+  }
+}
+
 function checkTokenSpec(
   spec: Extract<Effect, { kind: 'createToken' }>['token'],
   path: string,
@@ -2423,6 +2514,7 @@ function checkTokenSpec(
       ) {
         issue(out, `${path}.addSubtypes`, 'addSubtypes is a non-empty list of creature types');
       }
+      checkCopyExceptions(spec, path, out);
       if (spec.abilities !== undefined) {
         if (!Array.isArray(spec.abilities))
           issue(out, `${path}.abilities`, 'abilities must be a list');
@@ -2646,9 +2738,8 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       break;
     case 'thisWayAtLeast':
       // D-210: "if a creature card was discarded this way": what an earlier effect of this same sequence did.
-      if (
-        !isOneOf(c.what, ['milledValue', 'discardedCreature', 'discardedNoncreature', 'discarded'])
-      ) {
+      // D-358: any count an earlier effect of the sequence makes ("If you do" after a mandatory sacrifice reads `sacrificed`, Victimize).
+      if (!isOneOf(c.what, THIS_WAY_KINDS)) {
         issue(out, `${path}.what`, `unknown thisWay count ${JSON.stringify(c.what)}`);
       } else if (!(scope.thisWay ?? []).includes(c.what)) {
         issue(
@@ -2985,7 +3076,26 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'mayPay':
       // CR 702.101a: "you may pay [cost]. If you do, [effect]".
-      checkCosts(e.cost, `${path}.cost`, out);
+      // D-364 (CR 119.4): the life paid may be the life that caused the trigger (`triggerDamage`, "pay that much life"), which the amount checks against
+      // the trigger of the ability; any other amount is held to what a payment of life reads (`checkCost`).
+      if (Array.isArray(e.cost)) {
+        e.cost.forEach((c, i) => {
+          if (c?.kind === 'payLife' && kindOf(c.amount) === 'triggerDamage') {
+            checkAmount(c.amount, `${path}.cost[${i}].amount`, scope, out);
+          }
+        });
+      }
+      checkCosts(
+        Array.isArray(e.cost)
+          ? e.cost.map((c) =>
+              c?.kind === 'payLife' && kindOf(c.amount) === 'triggerDamage'
+                ? { ...c, amount: 1 }
+                : c,
+            )
+          : e.cost,
+        `${path}.cost`,
+        out,
+      );
       checkEffect(e.effect, `${path}.effect`, scope, out);
       break;
     case 'cumulativeUpkeep':
@@ -3157,6 +3267,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           out,
           `${path}.amount`,
           'Empower Jace puts a positive whole number of loyalty counters',
+        );
+      }
+      break;
+    case 'amass':
+      // CR 701.47a (D-367): N +1/+1 counters and the creature type of the token and of the change; the type is a creature type (an Army is a creature).
+      checkAmount(e.count, `${path}.count`, scope, out);
+      if (typeof e.subtype !== 'string' || e.subtype === '') {
+        issue(out, `${path}.subtype`, 'amass names a creature type');
+      } else if (isNonCreatureSubtype(e.subtype)) {
+        issue(
+          out,
+          `${path}.subtype`,
+          `${e.subtype} is not a creature type, which is all an Army can be`,
         );
       }
       break;
@@ -3548,6 +3671,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'exileRandomFromGraveyard':
       // CR 701.13 (D-235): no fields.
       break;
+    case 'exileRandomFromHand':
+      // CR 701.13 (D-393): one player exiles one card of their own hand at random, and `moved` names it, so the selector names one player.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (!SINGLE_PLAYER_KINDS.includes(e.player?.kind)) {
+        issue(
+          out,
+          `${path}.player`,
+          'exileRandomFromHand names one player (you, a target, the controller or owner of an object, the trigger player or the defending player): "moved" is the one card',
+        );
+      }
+      break;
     case 'phaseOut':
       // CR 702.26 (D-234): the permanents an object selector names phase out.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
@@ -3658,7 +3792,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'loseLife':
     case 'gainEnergy':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
-      checkAmount(e.amount, `${path}.amount`, scope, out);
+      // D-365: "the life that player lost this turn" is the whole amount of a `loseLife`, read for each player it affects (`rules/life-amounts.ts`).
+      if (kindOf(e.amount) === 'lifeLostThisTurn') {
+        if (e.kind !== 'loseLife') {
+          issue(out, `${path}.amount`, 'lifeLostThisTurn is the amount of a loseLife effect');
+        }
+      } else {
+        checkAmount(e.amount, `${path}.amount`, scope, out);
+      }
       break;
     case 'meld':
       // CR 701.42a (D-278): the creature named `partner` and the name of the combined face the two become; `validateCard` checks them against the card.
@@ -3869,6 +4010,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (e.duration !== 'untilEndOfTurn') {
         issue(out, `${path}.duration`, 'a cast permission lasts until end of turn');
+      }
+      if (e.exileInstead !== undefined && e.exileInstead !== true) {
+        issue(out, `${path}.exileInstead`, 'exileInstead must be true when present');
       }
       break;
     case 'shuffle':

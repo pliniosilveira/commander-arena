@@ -435,7 +435,8 @@ function lowerMayPay(
   if (next.clauses.some((c) => c.optional)) return refuse(next);
   const cost: Cost[] = [];
   for (const item of offer.costs) {
-    const lowered = lowerCost(item, { hybrid: true });
+    // D-364 (CR 119.4): "you may pay that much life" is the life of a life gain trigger, which only the ability of such a trigger can offer.
+    const lowered = lowerCost(item, { hybrid: true, eventLife: ctx.lifeGainTrigger === true });
     if (!lowered.ok) return lowered;
     cost.push(lowered.value);
   }
@@ -1159,11 +1160,12 @@ function lowerStep(
       sentence.instead === true ||
       sentence.where !== undefined ||
       sentence.delayed !== undefined ||
-      sentence.reflexive === true ||
-      sentence.clauses.some((c) => c.optional)
+      sentence.reflexive === true
     ) {
       return stop(refuse(sentence));
     }
+    // "Otherwise, you may cast it without paying its mana cost." (D-394, CR 608.2c): a clause the text made optional is lowered only by an instruction that asks the question
+    // itself (`acceptsOptional`: the engine's `castFree`); any other optional clause makes `lowerClauses` fail, so it is never run as if it were not a choice.
     const other = lowerClauses(sentence.clauses, ctx);
     if (!other.ok) return stop(other);
     steps.pop();

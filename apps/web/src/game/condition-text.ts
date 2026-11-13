@@ -203,6 +203,26 @@ function greatestWords(
   return `you ${negate ? "don't control" : 'control'} the ${noun} with the greatest ${stat} or tied for the greatest ${stat}`;
 }
 
+/** The words of "one or more" of what a `thisWay` count counts (D-358): "if you discarded an instant or sorcery card this way". */
+const THIS_WAY_WORDS: Readonly<Record<string, { readonly yes: string; readonly not: string }>> = {
+  discardedInstantOrSorcery: {
+    yes: 'you discarded an instant or sorcery card this way',
+    not: "you didn't discard an instant or sorcery card this way",
+  },
+  discardedCreature: {
+    yes: 'a creature card was discarded this way',
+    not: 'no creature card was discarded this way',
+  },
+  discardedNoncreature: {
+    yes: 'a noncreature card was discarded this way',
+    not: 'no noncreature card was discarded this way',
+  },
+  sacrificed: {
+    yes: 'a permanent was sacrificed this way',
+    not: 'no permanent was sacrificed this way',
+  },
+};
+
 function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): string | null {
   switch (condition.kind) {
     case 'controlsAtLeast':
@@ -222,6 +242,13 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'didPrevious':
       // CR 608.2c (D-135): "you may discard a card. If you do, draw a card."
       return negate ? "you don't" : 'you do';
+    case 'thisWayAtLeast': {
+      // CR 608.2c (D-210, D-358): what the instructions before this one did. Only one or more of the kinds the cards say are worded; any other count is left out.
+      if (condition.count !== 1) return null;
+      const words = THIS_WAY_WORDS[condition.what];
+      if (words === undefined) return null;
+      return negate ? words.not : words.yes;
+    }
     case 'giftPromised':
       // CR 702.174k (D-135): "if the gift was promised".
       return negate ? "the gift wasn't promised" : 'the gift was promised';
@@ -260,6 +287,12 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'spellsCastThisTurn':
       // D-318 (CR 601.2i): "you've cast three or more spells this turn".
       return `you ${negate ? "haven't" : 'have'} cast ${condition.atLeast} or more spells this turn`;
+    case 'lifeGainedThisTurn':
+      // D-252, D-363 (CR 119.3, 603.4): "if you gained life this turn" (at least 1), "if you gained 3 or more life this turn".
+      if (condition.atLeast <= 1) return `you ${negate ? "didn't gain" : 'gained'} life this turn`;
+      return negate
+        ? `you haven't gained ${condition.atLeast} or more life this turn`
+        : `you gained ${condition.atLeast} or more life this turn`;
     case 'duringStep':
       // D-139 (CR 506.1): "if it's the declare attackers step".
       return `it's ${negate ? 'not ' : ''}the ${COMBAT_STEP_WORDS[condition.step]}`;

@@ -92,6 +92,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:anyNumber',
   'selector:atLeastOne',
   'selector:upToThatMany',
+  // D-386: "X target creature cards from your graveyard" (`TargetSpec.countX`).
+  'selector:countX',
   'selector:greatest',
   'selector:giftRecipient',
   'selector:attacking',
@@ -371,6 +373,25 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
   // targets (stage P74, D-234: "any number of other target creatures you control phase out") has the slot `anyNumber`.
   const anyNumberTarget = noun.anyNumber === true && noun.det === 'target';
   if (anyNumberTarget && noun.filter.player !== undefined) return failure(noun, []);
+  // "Return X target creature cards from your graveyard to your hand" (Hashaton group 10, D-386, CR 601.2b-c): as many targets as the X announced, of a spell's own
+  // text and of objects (cards or permanents); the one place the engine's `countX` is read. Anything else about the noun that sets a count refuses it.
+  const countX = noun.det === 'target' && noun.count?.kind === 'x';
+  if (countX) {
+    if (
+      ctx.owner !== 'spell' ||
+      noun.filter.player !== undefined ||
+      noun.filter.anyTarget === true ||
+      noun.orCard !== undefined ||
+      noun.upTo ||
+      noun.minTargets !== undefined ||
+      anyNumberTarget ||
+      noun.perOpponent === true ||
+      noun.otherTarget === true ||
+      noun.upToThatMany === true
+    ) {
+      return failure(noun, []);
+    }
+  }
   if (!ctx.targets.some((t) => t.id === id)) {
     let spec: TargetSpec;
     if (noun.filter.anyTarget === true) {
@@ -467,18 +488,26 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         const blocked = missingFeatures(['selector:anyNumber']);
         if (blocked.length > 0) return failure(noun, blocked);
       }
-      spec = anyNumberTarget
-        ? { id, what: { kind: 'object', filter: filter.value }, anyNumber: true }
-        : noun.perOpponent === true
-          ? { id, what: { kind: 'object', filter: filter.value }, onePerOpponent: true }
-          : noun.upToThatMany === true
-            ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }
-            : {
-                id,
-                what: { kind: 'object', filter: filter.value },
-                ...boundsOf(noun),
-                ...(apart === undefined ? {} : { differentFrom: apart }),
-              };
+      if (countX) {
+        const blocked = missingFeatures(['selector:countX']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        // The X is read by the spell: the face announces it (`SpellText.x`).
+        ctx.usesX = true;
+      }
+      spec = countX
+        ? { id, what: { kind: 'object', filter: filter.value }, countX: true }
+        : anyNumberTarget
+          ? { id, what: { kind: 'object', filter: filter.value }, anyNumber: true }
+          : noun.perOpponent === true
+            ? { id, what: { kind: 'object', filter: filter.value }, onePerOpponent: true }
+            : noun.upToThatMany === true
+              ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }
+              : {
+                  id,
+                  what: { kind: 'object', filter: filter.value },
+                  ...boundsOf(noun),
+                  ...(apart === undefined ? {} : { differentFrom: apart }),
+                };
     }
     ctx.targets.push(spec);
   }

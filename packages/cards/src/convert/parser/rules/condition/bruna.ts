@@ -21,10 +21,14 @@ export const CONDITION_LIFE_GAINED_THIS_TURN = defineRule<IrCondition>({
     'you gained 3 or more life this turn',
     'you gained 4 or more life this turn',
     'you gained five or more life this turn',
+    // D-363 (the Hashaton deck, Ob Nixilis): "you gained life this turn" is at least 1 life gained (CR 119.9: a gain of 0 life is no event).
+    'you gained life this turn',
   ],
   rejects: [
     'you gained 3 or more life',
-    'you gained life this turn',
+    'you gained life this turn and',
+    'you gained life',
+    'you gained life this turn, create',
     'you gained 3 life this turn',
     'you gained 3 or less life this turn',
     'you gained 0 or more life this turn',
@@ -34,18 +38,23 @@ export const CONDITION_LIFE_GAINED_THIS_TURN = defineRule<IrCondition>({
     'you gain 3 or more life this turn',
   ],
   parse: (ctx, pos) => {
-    const r = sequence(
-      pattern(/you gained /iu),
-      spanned(satisfy(quantity, (n) => n >= 1)),
-      pattern(new RegExp(` or more life this turn${BOUNDARY}`, 'iu')),
-    )(ctx, pos);
+    const bare = pattern(new RegExp(`you gained life this turn${BOUNDARY}`, 'iu'))(ctx, pos);
+    const r = bare.ok
+      ? { ...bare, value: 1 }
+      : (() => {
+          const counted = sequence(
+            pattern(/you gained /iu),
+            spanned(satisfy(quantity, (n) => n >= 1)),
+            pattern(new RegExp(` or more life this turn${BOUNDARY}`, 'iu')),
+          )(ctx, pos);
+          return counted.ok ? { ...counted, value: counted.value[1].value } : counted;
+        })();
     if (!r.ok) return r;
-    const [, count] = r.value;
     return {
       ok: true,
       value: {
         kind: 'condition',
-        test: { kind: 'lifeGainedThisTurn', atLeast: count.value },
+        test: { kind: 'lifeGainedThisTurn', atLeast: r.value },
         span: { start: pos, end: r.pos },
         rule: 'condition.life-gained-this-turn',
       },

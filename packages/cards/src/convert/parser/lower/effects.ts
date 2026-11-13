@@ -47,6 +47,10 @@ import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { missingFeatures } from './features';
 import { GAIN_STATIC_ABILITY } from './granted-static';
+import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
+import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
+import { HASHATON_G9_LOWERINGS } from './hashaton-g9';
+import { HASHATON_GROUP_4_LOWERINGS } from './hashaton-group-4';
 import { HOFRI_LOWERINGS } from './hofri';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { MELD_LOWERINGS } from './meld';
@@ -377,8 +381,12 @@ const RETURN: Lowering<IrClause, Effects> = {
       };
     }
     // "Return that nonland permanent card to the battlefield" (stage P33, D-150, CR 608.2c): the card an earlier instruction chose from a
-    // graveyard; a pronoun for anything else (a permanent on the battlefield, a player) is not a card to return.
-    if (chosen?.kind === 'noun' && chosen.det === 'anaphor' && /^that /iu.test(chosen.filter.raw)) {
+    // graveyard; a pronoun for anything else (a permanent on the battlefield, a player) is not a card to return. D-362 (Victimize): "the chosen cards" the same.
+    if (
+      chosen?.kind === 'noun' &&
+      chosen.det === 'anaphor' &&
+      /^(?:that|the chosen) /iu.test(chosen.filter.raw)
+    ) {
       const spec = ctx.targets.find((t) => t.id === chosen.ref);
       if (spec?.what.kind !== 'object' || spec.what.filter.zone !== 'graveyard') {
         return failure(clause);
@@ -576,10 +584,14 @@ const MAY_CAST: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const objects = operand(clause, 'objects');
     if (objects?.kind !== 'noun' || objects.det !== 'target') return failure(clause);
+    // D-359: "If that spell would be put into your graveyard, exile it instead" is the rider of the permission (`exileInstead`).
+    const exile = arg(clause, 'exileInstead');
+    if (exile !== undefined && exile.kind !== 'flag') return failure(clause);
     return eachObject(clause, ctx, (selected) => ({
       kind: 'mayCast',
       objects: selected,
       duration: 'untilEndOfTurn',
+      ...(exile?.value === true ? { exileInstead: true as const } : {}),
     }));
   },
 };
@@ -713,6 +725,11 @@ function playerVerb(
       }
       const amount = amountArg(clause, 'amount', ctx);
       if (!amount.ok) return amount;
+      // "Each opponent loses life equal to the life that player lost this turn" (D-365, CR 119.3): the amount of another player than "you" (who is "that
+      // player"), of a loss of life; each affected player's own number.
+      if (typeof amount.value === 'object' && amount.value.kind === 'lifeLostThisTurn') {
+        if (verb !== 'loseLife' || player.value.kind === 'you') return failure(clause);
+      }
       // "Discard any number of cards" (stage P34, D-152, CR 701.9): the player chooses none, some or all of the hand; what was discarded
       // is what "that many" counts afterwards.
       if (verb === 'discard' && arg(clause, 'anyNumber') !== undefined) {
@@ -1332,7 +1349,10 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ANGEL_LOWERINGS,
   ...ARDEN_LOWERINGS,
   ...VRASKA_LOWERINGS,
+  ...HASHATON_G5_LOWERINGS,
   ...HOFRI_LOWERINGS,
+  // D-393, D-394 (Hashaton, group 9): the exile of a random card from a hand, then "put it onto the battlefield" and "cast it without paying its mana cost".
+  ...HASHATON_G9_LOWERINGS,
   ...PILES_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,
   ...EDHREC_LOWERINGS,
@@ -1340,6 +1360,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...KORVOLD_LOWERINGS,
   ...NIV_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
+  ...HASHATON_G7_LOWERINGS,
+  ...HASHATON_GROUP_4_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
   ...DESTINY_LOWERINGS,
   ...MELD_LOWERINGS,
@@ -1388,7 +1410,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
               ? 'sameNameAtLeast'
               : test === 'attachedTo' || test === 'putThisWay'
                 ? 'objectMatches'
-                : test === 'discardedThisWay'
+                : test === 'discardedThisWay' || test === 'discardedSpellThisWay'
                   ? 'thisWayAtLeast'
                   : test;
     return failure(

@@ -54,6 +54,16 @@ import { SYNTHETIC_FREE_CAST_LIST } from './synthetic-free-cast';
 import { SYNTHETIC_GIFT_LIST } from './synthetic-gift';
 import { SYNTHETIC_GRAVEYARD_LIST } from './synthetic-graveyard';
 import { SYNTHETIC_GREATEST_LIST } from './synthetic-greatest';
+import { SYNTHETIC_HASHATON_G1_LIST } from './synthetic-hashaton-g1';
+import { SYNTHETIC_HASHATON_G2_LIST } from './synthetic-hashaton-g2';
+import { SYNTHETIC_HASHATON_G3_LIST } from './synthetic-hashaton-g3';
+import { SYNTHETIC_HASHATON_G5_LIST } from './synthetic-hashaton-g5';
+import { SYNTHETIC_HASHATON_G6_LIST } from './synthetic-hashaton-g6';
+import { SYNTHETIC_HASHATON_G7_LIST } from './synthetic-hashaton-g7';
+import { SYNTHETIC_HASHATON_G8_LIST } from './synthetic-hashaton-g8';
+import { SYNTHETIC_HASHATON_G9_LIST } from './synthetic-hashaton-g9';
+import { SYNTHETIC_HASHATON_G10_LIST } from './synthetic-hashaton-g10';
+import { SYNTHETIC_HASHATON_GROUP_4_LIST } from './synthetic-hashaton-group-4';
 import { SYNTHETIC_HOFRI_LIST } from './synthetic-hofri';
 import { SYNTHETIC_KEYWORD_LIST } from './synthetic-keywords';
 import { SYNTHETIC_KEYWORD2_LIST } from './synthetic-keywords-2';
@@ -363,9 +373,18 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_COMMANDER_TRIGGER_LIST,
   ...SYNTHETIC_MANA_RESTRICTED_LIST,
   ...SYNTHETIC_NIV_GROUP_2B_B_LIST,
+  ...SYNTHETIC_HASHATON_G1_LIST,
   ...SYNTHETIC_NIV_GROUP_3_A_LIST,
   ...SYNTHETIC_NIV_GROUP_3_B_LIST,
   ...SYNTHETIC_NIV_GROUP_3_C_LIST,
+  ...SYNTHETIC_HASHATON_G6_LIST,
+  ...SYNTHETIC_HASHATON_G5_LIST,
+  ...SYNTHETIC_HASHATON_G7_LIST,
+  ...SYNTHETIC_HASHATON_G3_LIST,
+  ...SYNTHETIC_HASHATON_G8_LIST,
+  ...SYNTHETIC_HASHATON_GROUP_4_LIST,
+  ...SYNTHETIC_HASHATON_G10_LIST,
+  ...SYNTHETIC_HASHATON_G9_LIST,
   ...SYNTHETIC_UNTIL_LEAVES_LIST,
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
   ...SYNTHETIC_HOFRI_LIST,
@@ -430,6 +449,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_ATTACK_LIMIT_LIST,
   ...SYNTHETIC_DRAGONS_LIST,
   ...SYNTHETIC_PILES_LIST,
+  ...SYNTHETIC_HASHATON_G2_LIST,
 ];
 
 export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.fromEntries(

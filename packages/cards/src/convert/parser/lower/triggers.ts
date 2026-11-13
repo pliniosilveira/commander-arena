@@ -373,7 +373,16 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       // "Whenever you discard a card" (stage P49, D-206, CR 701.9a): the player is relative to the controller.
       const who = whoOf(t.actor);
       if (who === null) return failure(t);
-      return ok({ kind: 'discarded', who });
+      const another = t.another === true ? { another: true as const } : {};
+      // "Whenever you discard a creature card" (D-383, CR 701.9a): the kind of card is a filter on the card discarded; "a card" has none.
+      const kind = t.subject?.filter;
+      if (kind === undefined || (kind.types === undefined && kind.notTypes === undefined)) {
+        return ok({ kind: 'discarded', who, ...another });
+      }
+      if (t.subject === undefined) return failure(t);
+      const filter = lowerFilter(t.subject);
+      if (!filter.ok) return filter;
+      return ok({ kind: 'discarded', who, ...another, filter: filter.value });
     }
     case 'drawn': {
       const who = whoOf(t.actor);
@@ -505,7 +514,10 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
   // Stage P29 (D-133): the engine's `triggerPlayer` is the player the event is about: the player who drew, who was dealt
   // combat damage, whose spell or ability targeted, who sacrificed. A step, a death and an entering have none.
   const aboutPlayer =
-    (['drawn', 'sacrifice', 'becomesTarget', 'lifeGained', 'attackBatch'].includes(only.event) &&
+    // D-391 (CR 120.3, 113.7a): "a source deals damage to ~" is about the controller of the source (the engine's `dealtDamage` has it as the trigger player).
+    (['drawn', 'sacrifice', 'becomesTarget', 'lifeGained', 'attackBatch', 'dealtDamage'].includes(
+      only.event,
+    ) &&
       only.actor !== undefined) ||
     ((only.event === 'dealsCombatDamage' ||
       only.event === 'combatDamageBatch' ||
@@ -635,12 +647,24 @@ function takeOncePerTurn(
   };
 }
 
+/** Whether the clause is the offer "pay that much life" (D-364): a `pay` whose only cost is the life of the event. */
+function paysThatMuchLife(clause: IrClause): boolean {
+  const cost = clause.args.cost;
+  return (
+    clause.verb === 'pay' &&
+    cost?.kind === 'costList' &&
+    cost.costs.length === 1 &&
+    cost.costs.every((c) => c.kind === 'payLife' && c.amount.kind === 'triggerDamage')
+  );
+}
+
 /**
  * "Whenever you gain life, you may put that many +1/+1 counters on each creature you control." (D-256, CR 119.9) and "Whenever a source you control deals noncombat
  * damage to an opponent, you draw that many cards." (D-333, CR 120.2b): in the ability of a life gain or noncombat damage
  * trigger, "that many" in the first instruction of the body is the life that was gained or the damage that was dealt, which the engine reads as `triggerDamage` (the amount of the
  * event that caused the trigger). One that follows any other instruction (mill two cards, then draw that many; discard a card, then draw that many) may count what
  * that instruction did and is not changed, so the lowering refuses it. The engine's `validateCard` allows `triggerDamage` for this trigger.
+ * D-364: the offer "you may pay that much life" is the event's own amount, so "If you do, draw that many cards" after it is the event's amount too.
  */
 function eventAmountThatMany(ability: Triggered): Triggered {
   const events = [ability.trigger, ...(ability.trigger.alternatives ?? [])];
@@ -682,7 +706,9 @@ function eventAmountThatMany(ability: Triggered): Triggered {
       );
       // Only the first instruction of the body can name the life gained: after any clause a later "that many" may count what that clause did
       // (cards milled, a card discarded, life gained by a second instruction), which this does not know, so it is left for the lowering to refuse.
-      counted = true;
+      // D-364: but the payment of "that much life" counts nothing of its own: it is the life gained itself, so "If you do, draw that many cards" after it
+      // still means the event's amount. Any other payment ("pay 2 life. If you do, draw that many cards") leaves "that many" unclear, so it is refused.
+      if (!paysThatMuchLife(clause)) counted = true;
       return { ...clause, args };
     }),
   }));
@@ -912,8 +938,12 @@ export function lowerTriggered(
   // "You may play that card this turn." (stage P34): a permission, which no question of the ability answers.
   // "You may cast target instant or sorcery card from a graveyard" (D-354): the engine's `castCard` asks the question itself, so the sentence's "you may" is no
   // question of the ability's; a cast with no "you may" is not read, and stays a sentence of the ability's own (`castCard` lowers only an optional clause).
-  const permission = (s: Sentence) =>
-    s.clauses.every((c) => c.verb === 'mayPlay' || (c.verb === 'castCard' && c.optional));
+  // D-394 (group 9): "you may put it onto the battlefield" and "you may cast it without paying its mana cost" of the card an instruction before exiled: the engine's `may`
+  // of that move and its `castFree` ask the question themselves, so the same holds.
+  const asksItself = (c: Sentence['clauses'][number]) =>
+    c.optional &&
+    (c.verb === 'castCard' || c.verb === 'castMovedFree' || c.verb === 'putMovedOntoBattlefield');
+  const permission = (s: Sentence) => s.clauses.every((c) => c.verb === 'mayPlay' || asksItself(c));
   const ownMay = (s: Sentence, i: number) =>
     !permission(s) &&
     !unlessSentence(s) &&
@@ -939,8 +969,8 @@ export function lowerTriggered(
         ...c,
         // The sentences of an offer keep their "you may": `lowerSentences` reads it, and refuses a "you
         // may" inside what a payment buys.
-        // `castCard` keeps its "you may": its lowering reads it (a cast that is not the player's choice is not run).
-        optional: ownMay(s, i) || (permission(s) && c.verb !== 'castCard') ? false : c.optional,
+        // `castCard` keeps its "you may": its lowering reads it (a cast that is not the player's choice is not run). So do the two instructions of D-394.
+        optional: ownMay(s, i) || (permission(s) && !asksItself(c)) ? false : c.optional,
       })),
     })),
     ctx,

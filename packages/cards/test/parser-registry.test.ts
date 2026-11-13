@@ -125,6 +125,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.unearth': asIs,
   // Stage P40: Encore is a line of its own, like Unearth.
   'keyword.encore': asIs,
+  // Hashaton deck group 5 (D-384): Eternalize is a line of its own, like Encore.
+  'keyword.eternalize': asIs,
   'keyword.escape': asIs,
   // Stage P25: Echo and Cumulative upkeep are lines of their own.
   'keyword.echo': asIs,
@@ -140,6 +142,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.ward': asIs,
   'keyword.crew': asIs,
   'token.copy': spell((e) => `Create ${e}.`),
+  // Hashaton deck group 5 (D-382): a copy with exceptions of characteristics.
+  'token.copy-except': permanent((e) => `Whenever you discard a creature card, create ${e}.`),
   'replacement.enters-with-counters-kicked': asIs,
   'replacement.as-enters-choose': asIs,
   'static.self-chosen-type': asIs,
@@ -173,6 +177,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P16: X in the cost of an activated ability, read with an X in its effect.
   'cost.mana-x': permanent((e) => `${e}, {T}: Draw X cards.`),
   'cost.pay-x-life': permanent((e) => `${e}: Draw X cards.`),
+  // Group 10 of the Hashaton deck (D-386): "discard X cards" is an additional cost of a spell, and "X target creature cards" the targets that read the X it announces.
+  'cost.discard-x': permanent((e) => `${e}: Draw X cards.`),
+  'noun.x-target-graveyard-cards': spell((e) => `Return ${e} to your hand.`),
   'cost.remove-counters': permanent((e) => `${e}: Draw a card.`),
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   'duration.until-end-of-turn': permanent((e) => `{1}: ~ gets +1/+1 ${e}.`),
@@ -243,6 +250,16 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.player': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.target-spell': spell((e) => `Counter ${e}.`),
   'noun.target-graveyard-card': spell((e) => `Exile ${e}.`),
+  // Group 8 of the Hashaton deck (D-362): the same cards said with "in", the chosen cards, the discard condition and the rider of the cast permission.
+  'noun.target-cards-in-your-graveyard': spell((e) => `Choose ${e}.`),
+  'noun.the-chosen-cards': spell(
+    (e) =>
+      `Choose two target creature cards in your graveyard. Sacrifice a creature. If you do, return ${e} to the battlefield.`,
+  ),
+  'condition.discarded-spell-this-way': permanent(
+    (e) => `{T}: Draw a card, then discard a card. If ${e}, you gain 1 life.`,
+  ),
+  'effect.may-cast': spell((e) => `${cap(e).replace('. if that', '. If that')}.`),
   'noun.player-graveyard': spell((e) => `Exile ${e}.`),
   'noun.all-graveyard-cards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyards': spell((e) => `Exile ${e}.`),
@@ -353,6 +370,16 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.cant-lose-win': asIs,
   'static.prevent-damage-to-self': asIs,
   'static.cant-cast-early': asIs,
+  // Hashaton deck, group 2 (D-363 to D-365): the static is a line of its own; the amount follows "loses life"; the cost follows "you may" in a life gain trigger.
+  'static.opponents-cant-gain-life': asIs,
+  // Hashaton deck, group 6 (D-377): the statement is a line of its own.
+  'static.you-and-creatures-protection-chosen-type': asIs,
+  'amount.life-lost-this-turn': permanent(
+    (e) => `At the beginning of each end step, each opponent loses life ${e}.`,
+  ),
+  'cost.pay-life-that-much': permanent(
+    (e) => `Whenever you gain life, you may ${e.toLowerCase()}. If you do, draw that many cards.`,
+  ),
   'static.block-tax': asIs,
   'static.others-enter-with-counters': asIs,
   'static.tap-alt-cost': asIs,
@@ -490,6 +517,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.becomes-untapped': whenever,
   'trigger.dies-batch': whenever,
   'trigger.discarded': whenever,
+  'trigger.cycled-or-discarded': whenever,
   'condition.mana-spent-at-least': permanent(
     (e) => `Whenever you cast a noncreature spell, if ${e}, you gain 1 life.`,
   ),
@@ -513,7 +541,17 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-instead': asIs,
   // Issue 25 (D-332): the line of its own; the trigger follows "Whenever".
   'replacement.skip-draw': asIs,
+  // Hashaton deck, group 3 (D-378 to D-380): the two replacements of Bard and the static of Darksteel Angel are lines of their own.
+  'replacement.draw-instead': asIs,
+  'replacement.tokens-double': asIs,
+  'static.cant-have-counters': asIs,
   'trigger.noncombat-damage': whenever,
+  // Group 9 of the Hashaton deck (D-390 to D-395): the Phyrexian cost of an ordinary activation, the trigger about a source, its controller and the exile of a random card.
+  'cost.mana-phyrexian': permanent((e) => `${e}: Draw a card.`),
+  'trigger.source-deals-damage': whenever,
+  'noun.that-sources-controller': permanent(
+    (e) => `Whenever a source deals damage to ~, ${e} exiles a card from their hand at random.`,
+  ),
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
@@ -521,6 +559,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.attacking-opponents': permanent((e) => `When ~ enters, ${e} get +1/+0 until end of turn.`),
   // Stage P64 (D-217): the nouns, effects and conditions of the Vraska EDHREC deck's second group.
   'noun.token-permanents': permanent((e) => `${cap(e)} have haste.`),
+  // D-369: "Zombie tokens you control".
+  'noun.subtype-token-permanents': permanent((e) => `${cap(e)} have haste.`),
   // Stage P63 (D-216): the Vraska EDHREC deck.
   'condition.created-token': permanent(
     (e) => `At the beginning of each end step, if ${e}, you gain 1 life.`,
@@ -579,6 +619,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.mana-rider-scry': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
   // Group 3-c (D-354): the cast of a card of a graveyard is read in the body of a trigger (a second rider sentence is joined to the first).
   'effect.cast-graveyard-card': permanent((e) => `When ~ enters, ${e}.`),
+  // Group 7 (D-356): the additional beginning phase is said in the body of a trigger of the postcombat main phase.
+  'effect.extra-beginning-phase': permanent(
+    (e) => `At the beginning of each of your postcombat main phases, ${e}.`,
+  ),
   // Group 2b-b (D-328): the rider that copies the spell the mana is spent on follows the "Add" sentence of its mana ability.
   'effect.mana-rider-copy': permanent((e) => `{T}: Add {R}. ${cap(e)}.`),
   // Group 2 (D-230).
@@ -590,6 +634,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-own-nontoken-destroyed': spell(
     (e) => `Destroy all creatures. Then create a 3/2 red and white Spirit creature token ${e}.`,
   ),
+  // Hashaton deck group 5 (D-385): copies of the tokens of the chosen type that entered this turn.
+  'effect.copy-each-token': permanent((e) => `At the beginning of your end step, ${e}.`),
   'effect.create-copy-spirit': permanent(
     (e) => `Whenever another nontoken creature you control dies, exile it. If you do, ${e}`,
   ),

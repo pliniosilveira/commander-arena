@@ -174,9 +174,20 @@ function combatHasFirstStrike(view: Pick<GameView, 'combat' | 'battlefield'>): b
  * only when a creature in combat has first strike or double strike (CR 510.4).
  */
 export function nextStepLabel(
-  view: Pick<GameView, 'viewer' | 'activeSeat' | 'step' | 'battlefield' | 'combat'>,
+  view: Pick<GameView, 'viewer' | 'activeSeat' | 'step' | 'battlefield' | 'combat'> &
+    Pick<GameView, 'addedPhase' | 'nextAddedPhase'>,
 ): string {
   const mine = view.activeSeat === view.viewer;
+  // CR 500.8 (D-356): the last step of a phase leads to the phase an effect added after it, when one waits.
+  const ends =
+    view.step === 'draw' ||
+    view.step === 'precombatMain' ||
+    view.step === 'endOfCombat' ||
+    view.step === 'postcombatMain';
+  if (ends && view.nextAddedPhase === 'beginning') return 'To Extra Beginning Phase';
+  if (ends && view.nextAddedPhase === 'combat') return 'To Extra Combat';
+  // The draw step of an additional beginning phase is followed by what follows the phase it was added after, the end step.
+  if (view.step === 'draw' && view.addedPhase === true) return 'To End Step';
   switch (view.step) {
     case 'untap':
       return 'To Upkeep';

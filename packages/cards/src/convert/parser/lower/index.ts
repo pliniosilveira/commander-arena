@@ -161,6 +161,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     'token:Blood',
     'token:custom',
     'token:copyOf',
+    'token:copyExceptions',
     'token:tapped',
     ...NOUN_EXTRA_NEEDS,
     'selector:colorChoice',

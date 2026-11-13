@@ -236,6 +236,9 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 discardedNoncreature:
                   (res.thisWay?.discardedNoncreature ?? 0) +
                   (out.thisWay.discardedNoncreature ?? 0),
+                discardedInstantOrSorcery:
+                  (res.thisWay?.discardedInstantOrSorcery ?? 0) +
+                  (out.thisWay.discardedInstantOrSorcery ?? 0),
                 discardedBy: [
                   ...new Set([
                     ...(res.thisWay?.discardedBy ?? []),
@@ -394,6 +397,7 @@ export function answerResolutionChoice(
     head.kind !== 'ringTempts' &&
     head.kind !== 'pair' &&
     head.kind !== 'empowerJace' &&
+    head.kind !== 'amass' &&
     head.kind !== 'conniveNext' &&
     head.kind !== 'spare'
   ) {

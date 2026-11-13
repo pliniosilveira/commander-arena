@@ -42,6 +42,11 @@ import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
+import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
+import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
+import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
+import { HASHATON_G9_EFFECT_RULES } from './hashaton-g9';
+import { HASHATON_GROUP_4_EFFECT_RULES } from './hashaton-group-4';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
@@ -541,6 +546,21 @@ const RETURN_THAT_CARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }>
 );
 
 /**
+ * "return the chosen cards to the battlefield tapped" (D-362, Victimize, CR 608.2c, 110.2a): the cards an earlier sentence chose as targets from a graveyard, which the
+ * lowering checks they are. Only to the battlefield: "the chosen cards" to a hand is another sentence.
+ */
+const RETURN_THE_CHOSEN_CARDS: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }> = quiet(
+  map(
+    sequence(
+      literal('return '),
+      operands(['noun.the-chosen-cards'], 'effect.return'),
+      TO_THE_BATTLEFIELD,
+    ),
+    ([, objects, to]) => ({ objects, to }),
+  ),
+);
+
+/**
  * "return this card to its owner's hand" (stage P33, D-150, CR 400.7): the card of the source of the ability, wherever it is now (an Aura in
  * its owner's graveyard when "When enchanted creature dies" resolves).
  */
@@ -572,7 +592,12 @@ const RETURN_FROM_GRAVEYARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSp
   const toBattlefield = TO_BATTLEFIELD_AHEAD.test(ctx.text.slice(pos));
   const r = sequence(
     literal('return '),
-    operands(GRAVEYARD_OPERANDS, 'effect.return', toBattlefield ? undefined : YOUR_GRAVEYARD_ONLY),
+    // D-386: "return X target creature cards from your graveyard to your hand" (as many targets as the X announced) is read here and by no other verb.
+    operands(
+      [...GRAVEYARD_OPERANDS, 'noun.x-target-graveyard-cards'],
+      'effect.return',
+      toBattlefield ? undefined : YOUR_GRAVEYARD_ONLY,
+    ),
     toBattlefield ? TO_THE_BATTLEFIELD : TO_YOUR_HAND,
   )(ctx, pos);
   return r.ok ? { ok: true, value: { objects: r.value[1], to: r.value[2] }, pos: r.pos } : r;
@@ -598,6 +623,8 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return all creatures to their owners' hands",
     'return target creature card from your graveyard to your hand',
     'return target creature card from your graveyard to the battlefield',
+    // D-386 (Hashaton, group 10): as many targets as the X announced for the spell.
+    'return X target creature cards from your graveyard to your hand',
     'return all land cards from your graveyard to the battlefield tapped',
     'return target creature card from a graveyard to the battlefield',
     'return target creature card from a graveyard to the battlefield under your control',
@@ -616,6 +643,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return that nonland permanent card to the battlefield',
     'return that card to your hand',
     "return this card to its owner's hand",
+    // D-362 (Victimize): the cards an earlier sentence chose as targets.
+    'return the chosen cards to the battlefield',
+    'return the chosen cards to the battlefield tapped',
   ],
   rejects: [
     "return that card to its owner's hand",
@@ -637,11 +667,18 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return target creature card from an opponent's graveyard to your hand",
     'return target creature card from a graveyard to your hand',
     'return target creature card from your graveyard to your hand under your control',
+    'return X target creature cards from a graveyard to your hand',
+    'return X target creature cards from your graveyard to your library',
+    'return X target creature cards to your hand',
     'return target creature to the battlefield',
     'return target creature card from a graveyard to the battlefield under his control',
     'return target creature card from a graveyard to the battlefield under your control tapped',
     'return target creature card from a graveyard to the battlefield under your command',
     'return target creature card from a graveyard to the battlefield at the beginning of the next end step',
+    'return the chosen cards to your hand',
+    "return the chosen cards to their owners' hands",
+    'return the chosen card to the battlefield',
+    'return the chosen cards to the battlefield under their owners control',
   ],
   parse: single(
     'effect.return',
@@ -651,6 +688,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
       RETURN_CHOSEN,
       RETURN_FROM_GRAVEYARD,
       RETURN_THAT_CARD,
+      RETURN_THE_CHOSEN_CARDS,
       RETURN_THIS_CARD,
     ),
     ({ objects, to }) => ({ verb: 'return', args: { objects, to } }),
@@ -819,6 +857,9 @@ export const EFFECT_RULES = [
   // D-337: "copy it for each time you've cast your commander from the command zone this game".
   ...NIV_GROUP_3_A_EFFECT_RULES,
   ...NIV_GROUP_3_C_EFFECT_RULES,
+  ...HASHATON_G7_EFFECT_RULES,
+  // D-367: "amass Zombies 1".
+  ...HASHATON_GROUP_4_EFFECT_RULES,
   ...CONTROL_EFFECT_RULES,
   // Stage P44 (D-195): "starting with you, each player votes for profit or security".
   ...VOTE_EFFECT_RULES,
@@ -843,6 +884,10 @@ export const EFFECT_RULES = [
   EFFECT_CHANGE_TARGET,
   // Stage P33 (D-150): proliferate, an exile for each opponent, and the sentences about the ability before them.
   ...ANGEL_EFFECT_RULES,
+  // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
+  ...HASHATON_G8_EFFECT_RULES,
+  // D-385 (Hashaton, group 5): "for each token you control of the chosen type that entered this turn, create a token that's a copy of it", before the "for each" rules of the Vraska rules.
+  ...HASHATON_G5_EFFECT_RULES,
   // Stage P50 (D-207): "remove all counters from it".
   ...VRASKA_EFFECT_RULES,
   // Stage P69 (D-256, D-257): the Bruna deck, "Do this only once each turn" and "pay {X}, where X is less than or equal to the amount of life you gained".
@@ -857,6 +902,8 @@ export const EFFECT_RULES = [
   ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
+  // D-393, D-394 (Hashaton, group 9): the body of Rona, Tolarian Obliterator.
+  ...HASHATON_G9_EFFECT_RULES,
   // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. ..." (three sentences kept together).
   ...PILES_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.

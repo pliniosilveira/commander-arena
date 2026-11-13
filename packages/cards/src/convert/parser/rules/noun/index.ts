@@ -27,6 +27,10 @@ import { DESTINY_EARLY_NOUN_RULES } from './destiny';
 import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_NOUN_RULES } from './edhrec';
+import { HASHATON_G8_NOUN_RULES } from './hashaton-g8';
+import { HASHATON_G9_NOUN_RULES } from './hashaton-g9';
+import { HASHATON_GROUP_4_NOUN_RULES } from './hashaton-group-4';
+import { HASHATON_G10_NOUN_RULES } from './hashaton-group-10';
 import { HOFRI_NOUN_RULES } from './hofri';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
@@ -251,6 +255,34 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'up to two target land card from your graveyard',
   ],
   parse: targetOf(ID.targetGraveyard, graveyardPhrase),
+});
+
+/**
+ * `noun.target-cards-in-your-graveyard` (D-362, Victimize): "target creature card in your graveyard", "two target creature cards in your graveyard": the cards of
+ * `noun.target-graveyard-card`, said with "in", and of your own graveyard only (CR 404.1, 115.1). Another noun rule so that the "in" is read only where a rule asks
+ * for this noun by its id.
+ */
+export const NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD = defineRule<IrNoun>({
+  id: 'noun.target-cards-in-your-graveyard',
+  family: 'noun',
+  leading: [],
+  cites: ['CR 404.1 (Graveyard)', 'CR 115.1 (Targets)'],
+  examples: [
+    'target creature card in your graveyard',
+    'two target creature cards in your graveyard',
+    'three target land cards in your graveyard',
+    'target card in your graveyard',
+  ],
+  rejects: [
+    'target creature card in a graveyard',
+    "target creature card in an opponent's graveyard",
+    'target creature card from your graveyard',
+    'target creature in your graveyard',
+    'two target creature card in your graveyard',
+    'target card',
+    'all creature cards in your graveyard',
+  ],
+  parse: targetOf('noun.target-cards-in-your-graveyard', (plural) => graveyardPhrase(plural, 'in')),
 });
 
 /**
@@ -582,6 +614,9 @@ export const NOUN_RULES = [
   // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards".
   ...CROSS_ZONE_NOUN_RULES,
   NOUN_TARGET_GRAVEYARD_CARD,
+  NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
+  // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.
+  ...HASHATON_G10_NOUN_RULES,
   NOUN_PLAYER_GRAVEYARD,
   NOUN_ALL_GRAVEYARD_CARDS,
   NOUN_ALL_GRAVEYARDS,
@@ -595,6 +630,8 @@ export const NOUN_RULES = [
   // Stage P64 and P65 (D-217, D-218): "creature tokens you control" and "creatures attacking your opponents and/or planeswalkers they control", whose first words are
   // those of `noun.plain-permanents`.
   ...EDHREC_NOUN_RULES,
+  // D-369: "Zombie tokens you control", which `noun.plain-permanents` would stop in the middle of.
+  ...HASHATON_GROUP_4_NOUN_RULES,
   // Before `noun.plain-permanents`, which reads the first group of "A you control and other B you control" alone.
   NOUN_SUBTYPE_UNION,
   NOUN_PLAIN_PERMANENTS,
@@ -605,6 +642,10 @@ export const NOUN_RULES = [
   ...VRASKA_NOUN_RULES,
   // Stage P33 (D-150): "that nonland permanent card", "this card".
   ...ANGEL_NOUN_RULES,
+  // D-362 (Hashaton, group 8): "the chosen cards".
+  ...HASHATON_G8_NOUN_RULES,
+  // D-392 (Hashaton, group 9): "that source's controller".
+  ...HASHATON_G9_NOUN_RULES,
   NOUN_ITS_CONTROLLER,
   NOUN_ATTACKED_BY_IT,
   ...SUBJECT_NOUN_RULES,

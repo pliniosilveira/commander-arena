@@ -4,6 +4,7 @@
  * know themselves.
  */
 import type { Amount, ObjectFilter, Replacement, StaticEffect, Trigger } from './types';
+import { checkProtectionTypes } from './validate-attach';
 import { isCount, isOneOf, kindOf } from './validate-base';
 import {
   type AstIssue,
@@ -103,10 +104,17 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
     case 'tokensInstead':
       // D-219: the tokens that would be created, as they would be on the battlefield; and the token that is created instead or as well.
       checkEnteringFilter(r.what, `${path}.what`, out);
-      if (!isOneOf(r.mode, ['thatMany', 'plus'])) {
+      if (!isOneOf(r.mode, ['thatMany', 'plus', 'double'])) {
         issue(out, `${path}.mode`, `unknown way ${JSON.stringify(r.mode)}`);
       }
-      checkReplacementToken(r.token, `${path}.token`, out);
+      if (r.mode === 'double') {
+        // D-378 (CR 614.1a): "twice that many of those tokens" makes more of the tokens `what` names, not a token of its own.
+        if ((r as { token?: unknown }).token !== undefined) {
+          issue(out, `${path}.token`, 'a doubling of tokens makes no token of its own');
+        }
+      } else {
+        checkReplacementToken(r.token, `${path}.token`, out);
+      }
       return true;
     case 'othersEnterWithCounters':
       checkEnteringFilter(r.what, `${path}.what`, out);
@@ -137,6 +145,19 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
     case 'skipDraw':
       // D-332: the draw of the controller; the condition is read as it would happen, for the controller, with nothing else.
       if (r.while !== undefined) checkPlainCondition(r.while, `${path}.while`, out);
+      return true;
+    case 'drawInstead':
+      // D-379 (CR 614.1a, 614.11): the draws of the controller are replaced by more draws, all but the first of each draw step (the only form the engine runs).
+      if (!Number.isInteger(r.count) || r.count < 2) {
+        issue(out, `${path}.count`, 'the draws made instead are a whole number of two or more');
+      }
+      if (r.exceptFirstInDrawStep !== true) {
+        issue(
+          out,
+          `${path}.exceptFirstInDrawStep`,
+          'only a replacement of every draw but the first of the draw step is run',
+        );
+      }
       return true;
     case 'groupEntersUntapped':
       // D-179: tapped is a state, not something the entering permanent has before it enters; the other fields are read as for the counters.
@@ -192,6 +213,38 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
     case 'playerHexproof':
     case 'cantLoseGame':
     case 'opponentsCantWin':
+      return true;
+    case 'playerProtection':
+      // CR 702.16 (D-376): the chosen card type (the card must ask the question, `validate-chosen.ts`) or card types it names.
+      if (s.from === 'cardType') checkProtectionTypes(s.types, `${path}.types`, out);
+      else if (s.from !== 'chosenCardType') {
+        issue(
+          out,
+          `${path}.from`,
+          `unknown protection quality ${String((s as { from: unknown }).from)}`,
+        );
+      }
+      return true;
+    case 'cantGainLife':
+      // CR 119.7 (D-363): the opponents of the controller are the only group the engine reads.
+      if (s.who !== 'opponents') {
+        issue(out, `${path}.who`, 'cantGainLife is said of the opponents of the controller');
+      }
+      return true;
+    case 'cantHaveCounters':
+      // D-380 (CR 122.6): the permanents that can't have the counter: this one, the one this is attached to, or a group on the battlefield.
+      if (s.subject?.kind === 'filter') {
+        checkEnteringFilter(s.subject.filter, `${path}.subject.filter`, out);
+      } else if (s.subject?.kind !== 'attached' && s.subject?.kind !== 'this') {
+        issue(
+          out,
+          `${path}.subject`,
+          'the permanents are a group, this one or the one this is attached to',
+        );
+      }
+      if (typeof s.counter !== 'string' || s.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
       return true;
     case 'doubleTriggers':
       // D-220 (CR 603.2d): the permanents whose triggered abilities trigger again: a group on the battlefield, or the permanent this is attached to.

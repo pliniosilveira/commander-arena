@@ -256,6 +256,8 @@ export interface ChosenValues {
   /** A creature type of CR 205.3m, spelled as `CREATURE_TYPES` lists it. */
   readonly creatureType?: Subtype;
   readonly color?: Color;
+  /** A card type of CR 205.2a that the engine models (`CARD_TYPES`): "choose a card type" (D-376, Serra's Emissary). */
+  readonly cardType?: CardType;
   /** A name chosen from a list the card gives (D-151: "choose Khans or Dragons"). */
   readonly option?: string;
 }
@@ -545,11 +547,19 @@ export interface TurnState {
    * the phase after that one, and an effect that adds a phase "after this phase" in the added one adds it after the added one.
    */
   readonly addedAfter?: PhaseId;
+  /**
+   * Present, and `true`, once the active player has drawn a card (or tried to, from an empty library) in the draw step that is going on (D-379, CR 504.1): "except
+   * the first one you draw in each of your draw steps" reads it. Every step that begins clears it; a draw that was skipped or replaced is not a draw.
+   */
+  readonly drewInDrawStep?: true;
 }
 
-/** A phase an effect added to the turn (CR 500.8): only a combat phase today ("there's an additional combat phase after this phase"). */
+/**
+ * A phase an effect added to the turn (CR 500.8): a combat phase ("there's an additional combat phase after this phase") or a beginning phase
+ * ("there is an additional beginning phase after this phase", D-356: untap, upkeep and draw steps, CR 500.1).
+ */
 export interface AddedPhase {
-  readonly phase: 'combat';
+  readonly phase: 'combat' | 'beginning';
   /** The phase of the turn's own sequence it follows (what `TurnState.addedAfter` becomes as it begins). */
   readonly after: PhaseId;
   /**
@@ -906,6 +916,19 @@ export type Instruction =
   | {
       readonly kind: 'empowerJace';
       readonly amount: number;
+      readonly chosen: readonly ObjectId[] | null;
+    }
+  /**
+   * "Amass Zombies N" (`amass`, CR 701.47a, D-367): the controller creates a 0/0 black `subtype` Army creature token if they control no Army creature, chooses an
+   * Army creature they control (a `choosePermanent` decision of purpose 'amass', asked only with two or more), puts `amount` +1/+1 counters on it and, if it is not
+   * a `subtype`, it becomes one in addition to its other types for good. `chosen` is the answer, null until then. See rules/amass.ts.
+   */
+  | {
+      readonly kind: 'amass';
+      readonly subtype: Subtype;
+      readonly amount: number;
+      /** The token (if one was to be made) has been made: the instruction is at the choice of the Army. */
+      readonly made?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -1384,6 +1407,11 @@ export type Instruction =
       readonly commanderChoice: boolean | null;
       /** An earlier card of this instruction was already counted for `thisWay` `playersDrew` (D-131). */
       readonly counted?: true;
+      /**
+       * The next `replacedLeft` draws of this instruction are the ones a `drawInstead` replacement made in place of a draw (D-379, CR 614.5, 614.11a): the
+       * effects that made them do not replace them again, and they go before the draws the replaced one was followed by. Absent when none are waiting.
+       */
+      readonly replacedLeft?: number;
     }
   /** Move one object. `commanderChoice` records the owner's answer to CR 903.9b when asked. */
   | {
@@ -1559,6 +1587,8 @@ export interface ThisWayCounts {
   /** The creature cards, and the other cards, discarded by `discard` effects (D-210: "if a creature card was discarded this way"). */
   readonly discardedCreature?: number;
   readonly discardedNoncreature?: number;
+  /** The instant and sorcery cards discarded by `discard` effects (D-358: "if you discarded an instant or sorcery card this way"). */
+  readonly discardedInstantOrSorcery?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
   readonly discardedBy?: readonly SeatId[];
 }
@@ -1603,7 +1633,15 @@ export type ContinuousChange =
    * `objects` names from its owner's graveyard until the effect ends with the turn. No layer: read where casting is decided
    * (`rules/legality.ts`, `mayCastFromGraveyard`).
    */
-  | { readonly kind: 'castPermission'; readonly seat: SeatId }
+  | {
+      readonly kind: 'castPermission';
+      readonly seat: SeatId;
+      /**
+       * "If that spell would be put into your graveyard, exile it instead" (D-359, CR 614.1a): the spell cast with this permission carries `StackData.exileInstead`
+       * (`rules/cast.ts`, `beginCast`). Absent when the effect has no such rider.
+       */
+      readonly exileInstead?: true;
+    }
   /**
    * "Gain control of target creature" (`gainControl`, D-189, CR 613.1b): `seat` controls each permanent the effect's `objects` names while the effect
    * lasts. Layer 2: `controllerOf` (`rules/control.ts`) reads it, after the stored controller (the player the permanent entered under, CR 110.2) and

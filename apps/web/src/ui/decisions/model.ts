@@ -87,6 +87,7 @@ import {
   permanentsReady,
   togglePermanent,
 } from './permanents';
+import { amassDetail, isAmass } from './permanents-amass';
 import {
   angelsBadge,
   angelsPermanentPrompt,
@@ -508,9 +509,11 @@ function handlers(
               ? entersCopyDetail(ui.permanents, d, index)
               : isRingBearer(d)
                 ? ringBearerDetail(ui.permanents, index)
-                : isSoulbond(d)
-                  ? soulbondDetail(ui.permanents, index)
-                  : permanentsDetail(ui.permanents, d),
+                : isAmass(d)
+                  ? amassDetail(ui.permanents, index)
+                  : isSoulbond(d)
+                    ? soulbondDetail(ui.permanents, index)
+                    : permanentsDetail(ui.permanents, d),
             // A sacrifice or a crew that is a cost of an ability being activated can be taken back:
             // Cancel rewinds the whole activation (CR 602.2b, 733), like cancelling a cast.
             cancel: d.forCost ? button('cancel', 'Cancel', () => act({ kind: 'cancel' })) : null,

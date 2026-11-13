@@ -62,6 +62,8 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
     'the beginning of each draw step',
     'the beginning of your precombat main phase',
     'the beginning of your postcombat main phase',
+    'the beginning of each of your postcombat main phases',
+    'the beginning of each of your draw steps',
     'the beginning of your first main phase',
     'the beginning of your second main phase',
     'the beginning of combat on your turn',
@@ -78,6 +80,10 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
     'the beginning of combat on each opponent’s turn',
     'the beginning of your next draw step',
     'the beginning of your main phase',
+    'the beginning of each of your main phases',
+    'the beginning of each of your postcombat main phase',
+    'the beginning of each of their postcombat main phases',
+    'the beginning of each of your postcombat main phases and',
     "the beginning of each opponent's precombat main phase and",
     'the beginning of the next end of combat step',
     'end of combat on target opponent’s turn',
@@ -95,7 +101,18 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
         ),
       ),
     );
-    const owned = phase(ctx, pos);
+    // "each of your postcombat main phases" (CR 500.1, 505.1; D-356): the plural of "your postcombat main phase", for the turns of the controller.
+    const plural = sequence(
+      literal('the beginning of each of your '),
+      choice(
+        ...PHASE_WORDS.map(({ words, step }) =>
+          map(pattern(new RegExp(`${words}s${NOT_IN_WORD}`, 'iu')), () => step),
+        ),
+      ),
+    )(ctx, pos);
+    const owned = plural.ok
+      ? ({ ok: true, value: [null, 'you' as const, plural.value[1]], pos: plural.pos } as const)
+      : phase(ctx, pos);
     if (owned.ok) {
       const [, det, step] = owned.value;
       // A main phase is "your" or "each" player's, a turn of "each opponent" too (CR 505.1).
@@ -262,7 +279,7 @@ function damagedWords(damaged: IrTrigger['damaged'], to: string): Parser<Damaged
  * combat damage to a creature", "~ deals combat damage" (CR 120.2a combat damage, CR 510.2 it is
  * dealt simultaneously; CR 603.2 it triggers for each source and recipient). "One or more creatures
  * deal combat damage" is one trigger for a group and is not read, nor is damage that is not combat
- * damage or damage to a planeswalker only.
+ * damage or damage to a planeswalker only ("to a player or planeswalker" is read, D-373).
  */
 export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
   id: 'trigger.combat-damage',
@@ -277,6 +294,8 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
     '~ deals combat damage to a player',
     '~ deals combat damage to an opponent',
     '~ deals combat damage to a creature',
+    '~ deals combat damage to a player or planeswalker',
+    'a creature you control deals combat damage to a player or planeswalker',
     '~ deals combat damage',
     'a creature you control deals combat damage to a player',
     'another creature you control deals combat damage to an opponent',
@@ -286,7 +305,10 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
   ],
   rejects: [
     '~ deals damage to a player',
-    '~ deals combat damage to a player or planeswalker',
+    '~ deals combat damage to a player or a planeswalker',
+    '~ deals combat damage to a player or planeswalkers',
+    '~ deals combat damage to an opponent or planeswalker',
+    '~ deals combat damage to a creature or planeswalker',
     '~ deals combat damage to you',
     '~ deals combat damage to a planeswalker',
     '~ deal combat damage to a player',
@@ -299,6 +321,8 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
     const dealt = sequence(
       permanentOrAttachedSubject('trigger.combat-damage'),
       choice(
+        // D-373: "to a player or planeswalker" before "to a player", of which it is an extension.
+        damagedWords('playerOrPlaneswalker', ' to a player or planeswalker'),
         damagedWords('player', ' to a player'),
         damagedWords('opponent', ' to an opponent'),
         damagedWords('creature', ' to a creature'),

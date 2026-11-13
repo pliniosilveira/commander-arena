@@ -77,4 +77,51 @@ export const CONDITION_DISCARDED_THIS_WAY = defineRule<IrCondition>({
   },
 });
 
-export const CHOOSER_CONDITION_RULES = [CONDITION_PLAYER_DECLINES, CONDITION_DISCARDED_THIS_WAY];
+/**
+ * `condition.discarded-spell-this-way`: "you discarded an instant or sorcery card this way" (D-358, Vohar, Vodalian Desecrator; CR 608.2c: what the instruction before it
+ * did, CR 701.9: the cards were discarded). The engine's `thisWayAtLeast` of `discardedInstantOrSorcery`. Only after a discard of the same text, which the lowering checks.
+ */
+export const CONDITION_DISCARDED_SPELL_THIS_WAY = defineRule<IrCondition>({
+  id: 'condition.discarded-spell-this-way',
+  family: 'condition',
+  leading: ['you'],
+  cites: ['CR 608.2c (Resolving Spells and Abilities)', 'CR 701.9 (Discard)'],
+  examples: [
+    'you discarded an instant or sorcery card this way',
+    'You discarded an instant or sorcery card this way',
+  ],
+  rejects: [
+    'you discarded an instant card this way',
+    'you discarded an instant or sorcery card',
+    'you discarded an instant or sorcery card this turn',
+    'you discarded a sorcery or instant card this way',
+    'you discarded two instant or sorcery cards this way',
+    'you discarded a creature card this way',
+    'a creature card was discarded this way',
+    'you discarded an instant or sorcery card this way and',
+    'an opponent discarded an instant or sorcery card this way',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/you discarded an instant or sorcery card this way(?![\p{L}\p{N}])/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'discardedSpellThisWay' },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.discarded-spell-this-way',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const CHOOSER_CONDITION_RULES = [
+  CONDITION_PLAYER_DECLINES,
+  CONDITION_DISCARDED_THIS_WAY,
+  CONDITION_DISCARDED_SPELL_THIS_WAY,
+];

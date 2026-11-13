@@ -18,11 +18,13 @@ import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
+import { counterBlocked } from './counter-prevention';
 import { type Asked, type OrderFlow, quietFlow, settleDamage } from './damage-order';
 import { derive } from './derive';
 import { abilitiesHaveKeyword } from './keywords';
 import { gainLife } from './life-gain';
 import { commanderCardOf } from './melded';
+import { playerHasProtectionFrom } from './player-protection';
 import { hasProtectionFrom } from './protection';
 import { commanderDamageKey } from './sba';
 
@@ -154,13 +156,16 @@ export function dealDamageAsking(
   flow: OrderFlow,
 ): Dealt | Asked {
   if (wouldDeal <= 0) return { kind: 'dealt', state: input, events: [] };
-  // CR 702.16e (D-229): damage that would be dealt to a permanent with protection from a color of the source is prevented. It is applied before the
+  // CR 702.16e (D-229): damage that would be dealt to a permanent with protection from a color (D-376: or a card type) of the source is prevented. It is applied before the
   // other prevention effects (CR 616.1: the affected player chooses the order; taking protection first keeps a shield for later and never costs them).
   if (wouldDealTo.kind === 'object') {
     const target = input.objects[wouldDealTo.id];
     if (target !== undefined && hasProtectionFrom(input, target, source)) {
       return { kind: 'dealt', state: input, events: [] };
     }
+  } else if (playerHasProtectionFrom(input, wouldDealTo.seat, source)) {
+    // CR 702.16e (D-376): the same for a player with protection from a card type of the source.
+    return { kind: 'dealt', state: input, events: [] };
   }
   // CR 615.1, 615.6: prevention shields apply as the damage would be dealt; what they prevent never
   // happens, so none of the results below (life, marked damage, lifelink, commander damage) follow.
@@ -238,8 +243,11 @@ export function dealDamageAsking(
         if (info?.infect === true || info?.wither === true) {
           // CR 120.3d, 702.80a, 702.90c: -1/-1 counters, not marked damage. They are put on at once and
           // are not damage, so lethal damage (CR 704.5g) does not count them; toughness does.
-          counters['-1/-1'] = (counters['-1/-1'] ?? 0) + amount;
-          events.push({ kind: 'counterAdded', object: to.id, counter: '-1/-1', count: amount });
+          // D-380 (CR 122.6, 101.2): a creature that can't have -1/-1 counters gets none; the damage is still dealt (lifelink still gains), it just marks nothing.
+          if (!counterBlocked(state, obj, '-1/-1')) {
+            counters['-1/-1'] = (counters['-1/-1'] ?? 0) + amount;
+            events.push({ kind: 'counterAdded', object: to.id, counter: '-1/-1', count: amount });
+          }
         } else {
           // CR 120.3e: damage is marked on a creature.
           damage += amount;

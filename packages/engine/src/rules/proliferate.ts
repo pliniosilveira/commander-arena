@@ -10,6 +10,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getSeat, patchObject, patchSeat } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { blocks, counterBlockers } from './counter-prevention';
 import { done, type StepOutcome } from './step-outcome';
 
 type ProliferateInstruction = Extract<Instruction, { kind: 'proliferate' }>;
@@ -60,6 +61,7 @@ export function runProliferate(
   let next = state;
   const events: GameEvent[] = [];
   const given: ObjectId[] = [];
+  const blockers = counterBlockers(state);
   for (const id of instruction.chosen) {
     const obj = next.objects[id];
     // A permanent that left the battlefield or lost its counters while the choice was made is not given any (CR 701.34a).
@@ -67,6 +69,8 @@ export function runProliferate(
     const counters = { ...obj.counters };
     for (const [counter, n] of Object.entries(obj.counters)) {
       if (n <= 0) continue;
+      // D-380 (CR 122.6, 101.2): a permanent that can't have counters of a kind is not given one of it.
+      if (blocks(next, blockers, obj, counter)) continue;
       counters[counter] = n + 1;
       events.push({ kind: 'counterAdded', object: id, counter, count: 1, by: res.controller });
     }

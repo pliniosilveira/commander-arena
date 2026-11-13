@@ -24,6 +24,7 @@ import { EQUAL_AMOUNTS } from '../amount/scaled';
 import { KEYWORD_WORD, KEYWORD_WORDS } from '../keyword/list';
 import { defineRule, family, node, spanned } from '../registry';
 import { namedTokenQuotedAbility, TOKEN_QUOTED_ABILITY } from '../static/quoted';
+import { TOKEN_COPY_EXCEPT } from './copy-except';
 
 export type Bare = Omit<IrToken, 'span' | 'rule'>;
 
@@ -550,5 +551,7 @@ export const TOKEN_RULES = [
   TOKEN_CUSTOM,
   TOKEN_NAMED_LEGENDARY,
   TOKEN_NUMBER_OF,
+  // Before `token.copy`: a family takes the first rule that reads, and the plain copy would stop short of ", except it's ...".
+  TOKEN_COPY_EXCEPT,
   TOKEN_COPY,
 ];

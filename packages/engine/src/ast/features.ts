@@ -135,6 +135,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-235: the level bar of a Class (CR 716) and "exile a card from your graveyard at random".
     'gainLevel',
     'exileRandomFromGraveyard',
+    // D-393 (provisional): "that source's controller exiles a card from their hand at random" (CR 701.13).
+    'exileRandomFromHand',
     // D-232: Spirit of Resilience's "become a copy of an artifact or creature card from among those cards".
     'becomeCopyOfCard',
     'gainLife',
@@ -241,6 +243,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'pair',
     // D-201: "Empower Jace N" (CR 701.71a).
     'empowerJace',
+    // D-367: "amass Zombies 1" (CR 701.47a).
+    'amass',
     // D-201: "You get an emblem with ..." (CR 114).
     'createEmblem',
     'delayedSacrifice',
@@ -262,6 +266,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayPlay',
     // D-151: "After this phase, there is an additional combat phase" (CR 500.8).
     'extraCombat',
+    // D-356: "there is an additional beginning phase after this phase" (CR 500.8).
+    'extraBeginningPhase',
     'enterAttacking',
     // D-151: "exile cards until you exile a nonland card. You may cast it ... If you don't, put it into your hand", Discover (CR 701.57).
     'exileUntilCast',
@@ -405,6 +411,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'unearth',
     // D-185: Encore (CR 702.141a), Devour (CR 702.82a) and Riot (CR 702.136a).
     'encore',
+    // D-384: Eternalize (CR 702.129a).
+    'eternalize',
     'devour',
     'riot',
     // D-127: Echo (CR 702.30a) and Cumulative upkeep (CR 702.24a).
@@ -454,6 +462,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'redirectDamage',
     // D-332: "If you would draw a card while your library has no cards in it, skip that draw instead."
     'skipDraw',
+    // D-379 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
+    'drawInstead',
   ],
   // {T}, "Sacrifice this permanent" (a Treasure, CR 111.10a) and mana ({1}, {T}: a Signet). A mana
   // cost is paid from the pool, or by auto-pay from sources that have no mana cost themselves.
@@ -518,6 +528,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mana',
     'payLife',
     'payXLife',
+    // D-386 (provisional): "Discard X cards" as an additional cost to cast a spell (an activated ability's cost refuses it).
+    'discardX',
     'sacrifice',
     'removeCounters',
     'discardThis',
@@ -629,6 +641,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-187: "you may sacrifice one or more Treasures" (`ChooseSelector.atLeastOne`) and "up to that many target creatures" (`TargetSpec.upToThatMany`).
     'atLeastOne',
     'upToThatMany',
+    // D-386 (provisional): "Return X target creature cards from your graveyard to your hand" (`TargetSpec.countX`).
+    'countX',
     'greatest',
     'giftRecipient',
     // D-210: "each player who discarded a card this way" (`PlayerSelector` `discardedThisWay`).
@@ -784,6 +798,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerHexproof',
     'cantLoseGame',
     'opponentsCantWin',
+    // D-363 (CR 119.7): "Your opponents can't gain life."
+    'cantGainLife',
+    // D-377 (CR 702.16): "You have protection from the chosen card type."
+    'playerProtection',
+    // D-380 (CR 122.6, 101.2): "Creatures you control can't have -1/-1 counters put on them."
+    'cantHaveCounters',
     // D-220: "If a triggered ability of ... triggers, that ability triggers an additional time" (`doubleTriggers`).
     'doubleTriggers',
     'cantCastThis',
@@ -806,7 +826,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   ],
   // D-286: `pair`, "each of those creatures" of a soulbond card, for a modification of power and toughness, a granted keyword or a granted ability only.
   staticSubjectKinds: ['this', 'attached', 'filter', 'pair'],
-  tokenKinds: ['Treasure', 'Food', 'Clue', 'custom', 'copyOf', 'tapped'],
+  tokenKinds: ['Treasure', 'Food', 'Clue', 'custom', 'copyOf', 'tapped', 'copyExceptions'],
   amountKinds: [
     'number',
     'x',
@@ -821,6 +841,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'times',
     // D-120: "the total life lost this way" (Extort).
     'lifeLostThisWay',
+    // D-365: "the life that player lost this turn" (CR 119.3), read for each player a `loseLife` affects.
+    'lifeLostThisTurn',
     // D-131: counts, aggregates and arithmetic.
     'toughnessOf',
     'countersOn',
@@ -1111,6 +1133,8 @@ export const SELECTOR_KINDS = [
   'atLeastOne',
   /** "Up to that many target creatures" after a sacrifice (CR 603.12, D-187): the engine's `TargetSpec.upToThatMany`. */
   'upToThatMany',
+  /** "X target creature cards" (CR 601.2b, 601.2c, D-386): the engine's `TargetSpec.countX`, as many targets as the X announced. */
+  'countX',
   /** "A creature with the greatest power among creatures they control" (D-135): the engine's `ChooseSelector.greatest`. */
   'greatest',
   /** "The chosen player" of a gift (CR 702.174a, D-135): the engine's `PlayerSelector` `giftRecipient`. */
@@ -1299,6 +1323,12 @@ export const STATIC_KINDS = [
   /** "You can't lose the game" and "your opponents can't win the game" (CR 104.2, 104.3, D-149): `cantLoseGame` and `opponentsCantWin`. */
   'cantLoseGame',
   'opponentsCantWin',
+  /** "Your opponents can't gain life" (CR 119.7, D-363): the engine's `cantGainLife`. */
+  'cantGainLife',
+  /** "You have protection from the chosen card type" (CR 702.16, D-377): the engine's `playerProtection`. */
+  'playerProtection',
+  /** "Creatures you control can't have -1/-1 counters put on them" (CR 122.6, 101.2, D-380): the engine's `cantHaveCounters`. */
+  'cantHaveCounters',
   /** "If a triggered ability of a Wizard you control triggers, that ability triggers an additional time" (CR 603.2d, D-220): `doubleTriggers`. */
   'doubleTriggers',
   /** "You can't cast ~ during your first, second, or third turns of the game" (CR 101.2, D-149): `cantCastThis`. */
@@ -1342,6 +1372,8 @@ export const TOKEN_KINDS = [
   'copyOf',
   /** "Create two tapped Treasure tokens" (CR 110.5b, D-131): the engine's `createToken.tapped`. */
   'tapped',
+  /** "A token that's a copy of that card, except it's a 4/4 black Zombie" (CR 707.9b, D-382): the engine's `copyOf` with `setPt`, `setColors`, `setCreatureTypes`, `noManaCost`. */
+  'copyExceptions',
 ] as const;
 export type TokenKind = (typeof TOKEN_KINDS)[number];
 
@@ -1359,6 +1391,8 @@ export const AMOUNT_KINDS = [
   'manaSpent',
   /** "The total life lost this way" (CR 702.101a, D-120): the engine's `lifeLostThisWay`. */
   'lifeLostThisWay',
+  /** "The life that player lost this turn" (CR 119.3, D-365): the engine's `lifeLostThisTurn`, the whole amount of a `loseLife`. */
+  'lifeLostThisTurn',
   /** "-X/-X", "+2/+2 for each ..." (D-115): a multiple of an amount, only as a power or toughness. */
   'times',
   /** "That creature's toughness" (D-131): the engine's `toughnessOf`. */
@@ -1505,6 +1539,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   phaseOut: true,
   gainLevel: true,
   exileRandomFromGraveyard: true,
+  exileRandomFromHand: true,
   becomeCopyOfCard: true,
   gainLife: true,
   setLifeTotal: true,
@@ -1577,12 +1612,14 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   ringTempts: true,
   pair: true,
   empowerJace: true,
+  amass: true,
   createEmblem: true,
   delayedSacrifice: true,
   proliferate: true,
   exileTop: true,
   mayPlay: true,
   extraCombat: true,
+  extraBeginningPhase: true,
   enterAttacking: true,
   exileUntilCast: true,
   revealTop: true,
@@ -1693,6 +1730,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   cascade: true,
   unearth: true,
   encore: true,
+  eternalize: true,
   devour: true,
   riot: true,
   echo: true,
@@ -1724,6 +1762,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   entersAsCopy: true,
   redirectDamage: true,
   skipDraw: true,
+  drawInstead: true,
 };
 const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   fixed: true,
@@ -1742,6 +1781,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   untap: true,
   payLife: true,
   payXLife: true,
+  discardX: true,
   sacrifice: true,
   discard: true,
   discardThis: true,

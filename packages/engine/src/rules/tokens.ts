@@ -10,6 +10,7 @@ import type { SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { addToZone, allocateObjectId, allocateTimestamp, setObject } from '../state/ops';
 import type { ChosenValues, GameObject, GameState } from '../state/types';
+import { withoutBlockedCounters } from './counter-prevention';
 import { quietFlow } from './damage-order';
 import { entersAsSaga, entersTapped, entersWithCounters } from './enters';
 import { addCounterMaps, groupEntryCounters } from './enters-group';
@@ -141,9 +142,15 @@ export function makeTokens(
       ...(entry?.haste === true ? { riotHaste: true as const } : {}),
     };
     // CR 614.1c, 122.6 (D-149): "each other Angel you control enters with an additional +1/+1 counter", read as the token enters.
-    const counters = addCounterMaps(
-      addCounterMaps(intrinsic, entry?.counters ?? {}),
-      groupEntryCounters(state, token),
+    // D-380 (CR 122.6, 101.2): the counters a permanent on the battlefield says can't be put on it are not (a persist, riot or devour counter, an "enters with", a
+    // loyalty counter, the +1/+1 counter another permanent gives it), whichever of them it would have entered with.
+    const counters = withoutBlockedCounters(
+      state,
+      token,
+      addCounterMaps(
+        addCounterMaps(intrinsic, entry?.counters ?? {}),
+        groupEntryCounters(state, token),
+      ),
     );
     state = addToZone(setObject(s2, { ...token, counters }), 'battlefield', null, id);
     // D-151: a permanent that entered this turn (Celebration), as it entered.

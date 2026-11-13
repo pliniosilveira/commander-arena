@@ -19,6 +19,9 @@ import { DINOSAUR_STATIC_RULES } from './dinosaurs';
 import { DRAGON_STATIC_RULES } from './dragons';
 import { EDHREC_STATIC_RULES } from './edhrec';
 import { GRANT_STATIC_RULES } from './grants';
+import { HASHATON_G2_STATIC_RULES } from './hashaton-group-2';
+import { HASHATON_G3_STATIC_RULES } from './hashaton-group-3';
+import { HASHATON_G6_STATIC_RULES } from './hashaton-group-6';
 import { HOFRI_STATIC_RULES } from './hofri';
 import { KORVOLD_STATIC_RULES } from './korvold';
 import { MELD_STATIC_RULES } from './meld';
@@ -103,4 +106,10 @@ export const STATIC_RULES = [
   ...EDHREC_STATIC_RULES,
   // Stage P70 (D-232): "Once during each of your turns, you may play a land from your graveyard or cast ... from your graveyard."
   ...HOFRI_STATIC_RULES,
+  // Hashaton deck, group 2 (D-363): "Your opponents can't gain life."
+  ...HASHATON_G2_STATIC_RULES,
+  // Hashaton deck, group 6 (D-377): "You and creatures you control have protection from the chosen card type."
+  ...HASHATON_G6_STATIC_RULES,
+  // Hashaton deck, group 3 (D-380): "Creatures you control can't have -1/-1 counters put on them."
+  ...HASHATON_G3_STATIC_RULES,
 ];

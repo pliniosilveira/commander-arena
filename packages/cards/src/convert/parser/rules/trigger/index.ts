@@ -33,6 +33,8 @@ import { DINOSAUR_TRIGGER_RULES } from './dinosaurs';
 import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
 import { EVENT_TRIGGER_RULES } from './events';
+import { HASHATON_G1_TRIGGER_RULES } from './hashaton';
+import { HASHATON_G9_TRIGGER_RULES } from './hashaton-g9';
 import { HOFRI_TRIGGER_RULES } from './hofri';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
@@ -1032,7 +1034,11 @@ export const TRIGGER_RULES = [
   ...EVENT_TRIGGER_RULES,
   // Issue 25 (D-333): "a source you control deals noncombat damage to an opponent".
   ...NONCOMBAT_DAMAGE_TRIGGER_RULES,
+  // D-391 (Hashaton, group 9): "a source deals damage to ~".
+  ...HASHATON_G9_TRIGGER_RULES,
   // Stage P49 (D-206): "one or more other creatures and/or artifacts you control die", "you discard a card".
   ...VRASKA_TRIGGER_RULES,
+  // Hashaton deck, group 1 (D-374): "you cycle or discard another card".
+  ...HASHATON_G1_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];
