@@ -18,7 +18,7 @@ Authoritative documents: `docs/SPEC.md` (the short current specification; sectio
 2. Read `docs/STATUS.md`: current milestone, what is done, blockers, next steps.
 3. Read the SPEC sections your task touches: engine 4 and 5, cards 6 to 8, AI 9, UI 10, tests 12, milestones 15; section 17 only to resolve an amendment number cited in the code.
 4. Skim `docs/DECISIONS.md` for entries in the area you will change. Check `docs/ARCHITECTURE.md` to see what exists and what is only planned.
-5. Run `git status` and `git branch --show-current`. Work on the milestone branch, never on `main`.
+5. Run `git status` and `git branch --show-current`. Work on a branch of its own for the task (`support-<deck>`, `fix-<topic>`, `feat-<topic>`), never on `main`.
 6. Run the checks once to learn the baseline (commands below).
 
 ## Setup and commands
@@ -31,9 +31,9 @@ Needs Node 22 (`.nvmrc`) and the pnpm version pinned in `packageManager` in `pac
 | `pnpm dev` | Start the Vite dev server for `apps/web`. |
 | `pnpm typecheck` | Run `tsc` in every package, in `apps/web` and in `tools`. |
 | `pnpm lint` | Biome check, then the dependency-cruiser boundary rules (`pnpm lint:boundaries` runs only the latter). |
-| `pnpm test` | Vitest across all projects. One area: `pnpm exec vitest run packages/engine`. AI soak tests play 20 games (D-126). The nightly routine runs everything (D-132). |
+| `pnpm test` | Vitest across all projects. One area: `pnpm exec vitest run packages/engine`. AI soak tests play 20 games (D-126). The nightly `Full` workflow on GitHub runs everything (D-250). |
 | `pnpm test:soak` | The AI soak tests with 100 games each. The manual `Soak` workflow plays 500 on demand (D-132). |
-| `pnpm e2e` | The Playwright browser tests of `apps/web` (needs Chromium; see `docs/STATUS.md`). The nightly routine runs them (D-132). |
+| `pnpm e2e` | The Playwright browser tests of `apps/web` (needs Chromium; see `docs/STATUS.md`). The nightly `Full` workflow runs them (D-250). |
 | `pnpm build` | Build packages and apps. Packages are consumed from source, so today only `apps/web` really builds. |
 | `pnpm format` | `biome check --write .`: format and apply safe fixes. |
 | `pnpm rule <number>` | Print a CR rule and its subrules from `docs/rules/comprehensive-rules.txt`. The file is Wizards' text and is not committed (D-246): fetch it with `pnpm rules:fetch`, or use a copy elsewhere with `pnpm rule --file <path>` or `COMMANDER_ARENA_CR_FILE`. |
@@ -78,7 +78,7 @@ Scripts under `tools/` are TypeScript run with `node file.ts` (Node type strippi
 | `tools/perf` | The derive benchmark and the precon fingerprint (D-173): `node tools/perf/derive-bench.ts` times `getView`, `getLegalActions` and `applyAction` on late precon boards, `node tools/perf/precon-digest.ts` fingerprints whole precon games to compare two engine versions. Not part of any test run. |
 | `tools/public` | `preflight.ts`: the check of the tracked files for what must not be in a public repository (run it before every push). |
 | `tools/precon` | `pnpm precon:snapshot`: the card-data snapshot of a precon, from the bulk file and a decklist of `decks/` (D-137). |
-| `.claude/skills/deck-support` | The routine that builds a complete "deck support" issue of the owner when the token budget allows (D-251); `tools/corpus/check-issue.ts` and `.github/workflows/deck-support-triage.yml` decide whether the issue is complete. |
+| `.claude/skills/deck-support` | The routine that builds a complete "deck support" issue from anyone, oldest first, when the token budget allows (D-251); `tools/corpus/check-issue.ts` and `.github/workflows/deck-support-triage.yml` decide whether the issue is complete. |
 | `decks/` | Real decklists the owner supplies, one `.txt` per deck, for `pnpm corpus:decks`; `README.md` says how. |
 | `docs/` | `SPEC.md`, `DECISIONS.md`, `STATUS.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `progress/`, `rules/` (CR text, version record, bulletins). `RULES_COVERAGE.md`. `MECHANICS.md`, `CARD_SUPPORT_PLAYBOOK.md`, `design/` (implemented design proposals), `proposals/` (proposals awaiting work). |
 
@@ -130,14 +130,15 @@ Do not write a test count into any document; it goes stale. Say how to run the c
 
 ## Git workflow
 
-- One branch and one pull request per milestone (`m<n>-<slug>`, for example `m0-foundations`). Merge to `main` only after all checks pass. `main` is always deployable.
+- One branch and one pull request per task (a deck, a fix, a feature), named for it (`support-niv-mizzet`, `fix-auto-mana`). A branch that needs the changes of a pull request that is not merged yet is cut from that pull request's branch, and the pull request says "stacked on #N". Merge to `main` only after all checks pass. `main` is always deployable.
 - Never push to `main` directly.
 - Commit messages: a short imperative subject, then a body that says why. Attribution trailers are added by the harness; do not hardcode a model name.
-- Do not rewrite history that others may have pulled.
+- Do not rewrite history that others may have pulled. A conflict is resolved by merging `main` in; a conflict in a generated file (the golden snapshot, the version constants, the derive digests) by merging and regenerating it with the repository's command, never by hand.
+- The GitHub tool that opens a pull request appends a footer with a link to the private session to its description, and this repository is public: edit the description right after creating the pull request, to remove that line (the edit stays removed), and keep session links out of commits and comments.
 
 ## Card support
 
-The procedure for adding support for a card is `docs/CARD_SUPPORT_PLAYBOOK.md`. In short: research the card and its rulings, classify the gap (T template, P primitive, K keyword, S subsystem, O one-off override), write tests first, implement the general fix, run the full suite, then record it in `docs/MECHANICS.md`. An S-class gap needs a proposal in `docs/proposals/` and the human's approval first.
+The procedure for adding support for a card is `docs/CARD_SUPPORT_PLAYBOOK.md`. In short: research the card and its rulings, classify the gap (T template, P primitive, K keyword, S subsystem, O one-off override), write tests first, implement the general fix, run the checks of your change (the full suite runs every night on GitHub), then record it in `docs/MECHANICS.md`. An S-class gap needs a proposal in `docs/proposals/` and the human's approval first.
 
 ## Network
 

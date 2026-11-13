@@ -1,15 +1,15 @@
 # Card support playbook
 
-The procedure for teaching the game a card it cannot run yet (SPEC 8.3, D-089 and later). Follow it whenever the owner says something like "add support for <card>" or "work the backlog", or points at a GitHub issue that asks for a card. There is no request pipeline (D-166): the cards to work on come from the owner or from issues. The SPEC's rules for the loop are at the end; the lessons learned so far are after them.
+The procedure for teaching the game a card it cannot run yet (SPEC 8.3, D-089 and later). Follow it whenever the owner says something like "add support for <card>" or "work the backlog", or points at a GitHub issue that asks for a card. There is no request pipeline (D-166): the cards to work on come from the owner or from issues. The deck support routine (`.claude/skills/deck-support/SKILL.md`, D-251) builds a whole deck request with this procedure, and adds its own rules for the budget, the order of the requests and the progress comments. The SPEC's rules for the loop are at the end; the lessons learned so far are after them.
 
 ## Where the inputs come from
 
 | Input | Made by | Notes |
 | --- | --- | --- |
-| Card names | The owner, or a GitHub issue | The card's Oracle text and rulings come from Scryfall (owner-side when the sandbox blocks it). What blocks it (`stoppedAt`, `closestRule`, `reason`, `needs` of every unparsed ability) is shown by "Why unsupported?" on the import screen and grouped in `reports/backlog.md`. |
+| Card names | The owner, or a GitHub issue | The card's Oracle text comes with the issue (the card data of its description or the comment the workflow fetched, D-245, D-290); a ruling or a card page comes from the `Scryfall lookup` workflow (D-294), which a runner can run when this sandbox cannot reach Scryfall. What blocks it (`stoppedAt`, `closestRule`, `reason`, `needs` of every unparsed ability) is shown by "Why unsupported?" on the import screen and grouped in `reports/backlog.md`. |
 | `reports/coverage.md`, `reports/backlog.md`, `reports/templates.json` | `pnpm coverage:cards --download` | Real numbers. Needs Scryfall's bulk file: the owner runs it on a local machine (the cloud sandbox blocks Scryfall, `docs/CORPUS.md`). |
 | `reports/template-replay.md` | `pnpm corpus:replay` | Runs offline: replays the real example line of each of the 1,000 heaviest templates in `templates.json` through today's parser. An ability-level estimate, never a coverage number. Use it to choose the next grammar work between two owner runs. |
-| `packages/cards/test/fixtures/corpus/golden.jsonl` | `pnpm corpus:extract --names <file>` (owner) | Real Oracle text of the curated cards; the AST snapshot is `golden.expected.json`. |
+| `packages/cards/test/fixtures/corpus/golden.jsonl` | `pnpm corpus:extract --names <file>` (owner), or `pnpm corpus:from-issue` | Real Oracle text of the curated cards; the AST snapshot is `golden.expected.json`. An issue's cards are added with `pnpm corpus:from-issue` (D-245, D-290; `--no-replace` for an issue of someone else). |
 
 Never invent card text, rulings or numbers. A card whose text you could not fetch is researched by the owner's run or left for later, and the docs say so.
 
@@ -17,7 +17,7 @@ Never invent card text, rulings or numbers. A card whose text you could not fetc
 
 1. **Intake.** Read the owner's message or the GitHub issue and list the cards. Get each card's Oracle text and what blocks it (see the table above; never invent either). Group the cards by missing capability (`closestRule`, `needs`, the shape of `stoppedAt`) so one change resolves several. A card already supported by the current `PARSER_VERSION` goes straight to step 9.
 2. **Research.**
-   - The card and its rulings: from the owner or the issue (text) and Scryfall (rulings; owner-side when the sandbox blocks it).
+   - The card and its rulings: from the owner or the issue (text) and Scryfall (rulings, through the `Scryfall lookup` workflow of D-294 or the owner). A ruling you could not fetch is marked unverified.
    - Every relevant CR rule: `pnpm rule <number>` and `pnpm rule --search <words>`. Never cite a rule from memory (see the lessons).
    - `docs/MECHANICS.md` (what exists: one section per engine slice with its AST nodes and "What the parser must produce", and an index of the parser stages), `docs/RULES_COVERAGE.md`, `docs/ROADMAP.md` (known limitations: the gap may already be described there).
    - The applied Update Bulletins in `docs/rules/RULES_VERSION.md`.
@@ -26,7 +26,7 @@ Never invent card text, rulings or numbers. A card whose text you could not fetc
    - **P, primitive.** A new effect, selector, condition, cost or duration in the engine's AST (`packages/engine/src/ast/`), run in `rules/`, listed in `SUPPORTED_FEATURES`, with scenario tests. `reason: 'notRunnable'` with `needs` names it.
    - **K, keyword.** A keyword ability or action implemented once, generically, after its CR rule (keyword abilities expand in `derive`, `rules/derive-keywords.ts`; actions are effects).
    - **S, subsystem.** New engine machinery: a layout, face-down permanents, phasing, day and night, the monarch, voting, extra turns, control of another player, a new `PendingDecision` kind that changes existing flows.
-   - **O, one-off.** Text no general rule would reuse. There is no per-card route (the community definitions were removed, D-167): the card stays unsupported, and the reason goes in the report of step 10. Do not write card-specific code or data; if the text looks like a shape other cards share, it is T or P after all.
+   - **O, one-off.** Text no general rule would reuse. There is no per-card route (the community definitions were removed, D-167): the card stays unsupported for now, and the reason goes in the report of step 10. The goal is every card (D-317): a card is never left out because it is costly, so look for the primitive that would generalise it, or write the S proposal, and give the cost and the order. Do not write card-specific code or data; if the text looks like a shape other cards share, it is T or P after all.
 4. **Approval gate for S.** Write `docs/proposals/<mechanic>.md` (the rules, the engine changes, the risks, the planned tests, the cards it unlocks by the backlog's counts) and ask the owner before building it. Go on with the other cards meanwhile. A slice that reuses an existing machinery for a new case (D-089 reused the target decision for triggers) is P, not S; record it as a `D-` entry.
 5. **Measure the impact.** With the planned change, run `pnpm corpus:replay` (offline) and, owner-side, `pnpm coverage:cards --file <bulk>`: which cards become supported, which supported cards change AST. Prefer the general solution that unlocks the most cards correctly.
 6. **Write the tests first.**
@@ -35,14 +35,16 @@ Never invent card text, rulings or numbers. A card whose text you could not fetc
    - The golden corpus snapshot for the requested card once the owner has extracted it, and a sample of newly unlocked ones.
    - A test that plays the requested card in a game (scenario, or a soak deck style in `packages/ai/test/helpers.ts`).
 7. **Implement** at the level chosen. Update the AI: every new decision kind needs a `CasualAgent` handler (the compiler enforces the decision switch), and a heuristic so the AI uses the mechanic sensibly. The web needs a UI for a new decision kind and a log line for a new event (exhaustive switches in `apps/web/src/game/describe.ts` and the decision overlays).
-8. **Verify.** `pnpm format`, `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`, and `pnpm e2e` when the web changed (`CHROMIUM_PATH=/opt/pw-browsers/chromium` in the cloud sandbox). For engine changes, the soak tests run in `pnpm test`; mutation-check the key behaviour (break it on purpose and see the tests fail). Coverage must not drop: the `Coverage` workflow (D-090) checks it on the pull request. Review every diff of `golden.expected.json` (`UPDATE_GOLDEN=1 pnpm exec vitest run packages/cards/test/golden.test.ts`): an unexpected change to a supported card is a regression.
+8. **Verify.** `pnpm format`, `pnpm typecheck`, `pnpm lint` and the tests of what you changed and of what it affects (`pnpm exec vitest run packages/<name>`, or `vitest related <files>`; a heavy test can pass the 5 s default only on a quiet machine, so give a loaded run `--testTimeout=120000`), `pnpm build` and the browser tests you added or changed when the web changed (`CHROMIUM_PATH=/opt/pw-browsers/chromium` in the cloud sandbox). The full suite, the soak and every browser test run each night on GitHub (`Full`, D-250): fix what it finds on the next branch. For engine changes, mutation-check the key behaviour (break it on purpose, on a scratch copy, and see the tests fail). Coverage must not drop: the `Coverage` workflow (D-090) checks it on the pull request. Review every diff of `golden.expected.json` (`UPDATE_GOLDEN=1 pnpm exec vitest run packages/cards/test/golden.test.ts`): an unexpected change to a supported card is a regression.
 9. **Record.**
    - `docs/MECHANICS.md`: a section per engine slice (the grammar rules themselves are documented in their rule files, `examples`, `rejects` and `cites`).
    - `docs/RULES_COVERAGE.md` for rules support; `docs/ROADMAP.md` for what is still missing.
    - A `D-` entry in `docs/DECISIONS.md` for any choice.
+   - A checklist of the request, `docs/proposals/<slug>-build-status.md`, kept as the groups are done.
+   - Regenerate the generated files the change moves: the golden snapshot (`UPDATE_GOLDEN=1`, above) and, when `ENGINE_VERSION` changes, the derive digests (`UPDATE_DERIVE_DIGESTS=1 pnpm exec vitest run packages/engine/test/derive-differential.test.ts`).
    - Bump `PARSER_VERSION` (`packages/cards/src/version.ts`) whenever any card changes status or AST, and `ENGINE_VERSION` (`packages/engine/src/version.ts`) when the state shape or behaviour of existing cards changes. Both invalidate cached support reports.
    - A card that is still blocked is reported with what is missing, or the proposal that waits for approval; if it came from an issue, say so there.
-10. **Report** for each card: supported or not, why, the gap class, what else it unlocked, anything waiting for approval, and what the owner must run (coverage, extract).
+10. **Report** for each card: supported or not, why, the gap class, what else it unlocked, and anything waiting for approval. For a request from an issue the report is the progress comment of the issue, kept up to date (D-293). The coverage numbers come only from a real run of `pnpm coverage:cards` and are never written by hand.
 
 ## Rules for the loop (SPEC 8.3)
 
@@ -60,4 +62,5 @@ Never invent card text, rulings or numbers. A card whose text you could not fetc
 - **Check the layer and timestamp of every continuous effect** against CR 613 before trusting a test that happens to pass: a set P/T effect and a counter look the same until both apply to one creature.
 - **Engine features change test fixtures.** A test that used "an unsupported card" breaks when the engine learns that feature. Pick a feature that is still out of reach and say why in the test.
 - **The golden corpus needs the owner's run.** The extractor must skip prints that are not Commander-legal (art series cards share names with real cards); `pnpm corpus:extract` keeps the Commander-legal print.
+- **A pull request description gets a session link.** The GitHub tool that opens a pull request appends a footer that links to the private session; this repository is public, so edit the description right after creating the pull request to remove it.
 - **Seed searches and soaks are slow under load.** Give them an explicit timeout rather than shrinking them; a flaky timeout is not a flaky rule.
