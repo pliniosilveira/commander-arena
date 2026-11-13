@@ -16,7 +16,11 @@ Other issues are welcome too: a wrong rules result (say the cards, the steps and
 4. Write the failing test first for any rules change (the scenario tests in `packages/engine`). Run `pnpm format`, `pnpm typecheck`, `pnpm lint` and the tests of what you changed before you open the pull request.
 5. Never add card-specific code to the engine, never add Wizards' text (the Comprehensive Rules file is not in this repository), and never invent card data.
 
-The maintainer reviews and merges every pull request. Pull requests from forks run the checks with a read-only token and no secrets.
+Work on a branch of its own for the task (`fix-<topic>`, `feat-<topic>`): in this repository if you have write access, from a fork otherwise. Never push to `main`: it requires a pull request and a green `check`.
+
+`.github/CODEOWNERS` lists what the owner must review before it is merged: the workflows, the scripts and configuration that the check runs, the instructions of the coding agents (`AGENTS.md`, `.claude/`) and the specification. A pull request is checked by the files of its own branch, so a change to any of those could make the check pass without testing anything, or change what an agent does. Everything else merges when `check` is green.
+
+Pull requests from forks run the checks with a read-only token and no secrets.
 
 ## Card data and rules text
 
