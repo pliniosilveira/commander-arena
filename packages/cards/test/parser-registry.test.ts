@@ -532,6 +532,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 25 (D-332): the line of its own; the trigger follows "Whenever".
   'replacement.skip-draw': asIs,
   'trigger.noncombat-damage': whenever,
+  // Group 9 of the Hashaton deck (D-1180 to D-1185, provisional): the Phyrexian cost of an ordinary activation, the trigger about a source, its controller and the exile of a random card.
+  'cost.mana-phyrexian': permanent((e) => `${e}: Draw a card.`),
+  'trigger.source-deals-damage': whenever,
+  'noun.that-sources-controller': permanent(
+    (e) => `Whenever a source deals damage to ~, ${e} exiles a card from their hand at random.`,
+  ),
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,

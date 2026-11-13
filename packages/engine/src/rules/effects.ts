@@ -52,6 +52,7 @@ import { createEmblem } from './emblem';
 import { runEmpowerJace } from './empower';
 import { runEnterAttacking } from './enter-attacking';
 import { runEnterToken } from './enter-token';
+import { runExileRandomFromHand } from './exile-random-hand';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
@@ -1570,6 +1571,10 @@ function runEffect(
       if (picked === undefined) return done(state);
       return moving({ ...state, rng }, moveInstructions([picked], 'exile'));
     }
+
+    case 'exileRandomFromHand':
+      // CR 701.13 (D-1183): one card of the hand of the player named, chosen by the game's random number generator (rules/exile-random-hand.ts).
+      return runExileRandomFromHand(state, effect, ctx, targets);
 
     case 'phaseOut': {
       // CR 702.26a-g (D-234): the permanents phase out, with what is attached to them (rules/phasing.ts).

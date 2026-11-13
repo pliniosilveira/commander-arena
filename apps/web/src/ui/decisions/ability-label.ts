@@ -584,6 +584,10 @@ function moveText(
   if (objects.kind === 'this' && self === 'card' && effect.to === 'hand') {
     return 'Return this card from your graveyard to your hand';
   }
+  // D-1184 (CR 110.2a, 400.7): the card an earlier instruction exiled ("it") put onto the battlefield under the control of the player who puts it: it is not returning anywhere.
+  if (objects.kind === 'moved' && effect.to === 'battlefield' && effect.controller === 'you') {
+    return `Put it onto the battlefield${effect.tapped === true ? ' tapped' : ''} under your control`;
+  }
   // A target in your own graveyard goes to "your" hand or library, any other card to "its owner's".
   const spec =
     objects.kind === 'target' ? ability.targets?.find((t) => t.id === objects.id) : undefined;
@@ -708,6 +712,14 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'gainLevel':
       // CR 716.2a (D-235): the effect of a class level bar, "Level 2".
       return `Level ${effect.level}`;
+    case 'transform':
+      // CR 701.27a (D-1185 provisional): "Transform this creature".
+      return `Transform ${object(effect.objects)}`;
+    case 'exileRandomFromHand':
+      // CR 701.13 (D-1183 provisional): "That player exiles a card from their hand at random"; the player is the one the selector names.
+      return `${playerVerb(effect.player, ability, 'exile')} a card from ${
+        effect.player.kind === 'you' ? 'your' : 'their'
+      } hand at random`;
     case 'phaseOut':
       // CR 702.26 (D-234): "any number of other target creatures you control phase out".
       return `Phase out ${object(effect.objects)}`;

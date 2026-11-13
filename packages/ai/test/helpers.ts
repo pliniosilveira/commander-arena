@@ -2441,6 +2441,21 @@ export const HASHATON_G8_NAMES = [
   'SYNTHETIC Spell Desecrator',
 ] as const;
 
+/**
+ * The SYNTHETIC cards of group 9 of the Hashaton deck (D-1180 to D-1185, provisional): an activated ability with a Phyrexian symbol in its cost (paid with mana or 2 life), the
+ * transforming double-faced creature that has it, the exile of a random card from a hand, and the 5/5 whose damage trigger exiles a card from the hand of the controller of the source
+ * and then asks "you may put it onto the battlefield" or "you may cast it without paying its mana cost" (a `confirmOptional` or a `chooseCards` of purpose `cast`, in the middle of a
+ * resolution). A payment of life, a transformation and those questions change which answers the generic pools ask for, which games-100 expects only from dedicated styles.
+ */
+export const HASHATON_G9_NAMES = [
+  'SYNTHETIC Phyrexian Scribe',
+  'SYNTHETIC Phyrexian Seer // Phyrexian Colossus',
+  'SYNTHETIC Chaos Pointer',
+  'SYNTHETIC Chaos Twice',
+  'SYNTHETIC Chaos Obelisk',
+  'SYNTHETIC Chaos Obliterator',
+] as const;
+
 /** The cast-or-copy trigger doubling cards of the Niv-Mizzet deck (D-339): extra triggers and their questions stay out of the generic pools. */
 export const NIV_GROUP_3_B_NAMES = [
   'SYNTHETIC Twin Mage',
@@ -2928,6 +2943,8 @@ const FIXTURES: readonly CardDefinition[] = [
   // The Hashaton group 8 cards (D-358 to D-361) ask which creature to sacrifice and what to discard, which games-100 expects only from dedicated styles.
   .filter((card) => !(HASHATON_G8_NAMES as readonly string[]).includes(card.name))
 
+  // The Hashaton group 9 cards (D-1180 to D-1185) pay life for a Phyrexian symbol, transform and exile a random card from a hand with two offers behind it, which games-100 expects only from dedicated styles.
+  .filter((card) => !(HASHATON_G9_NAMES as readonly string[]).includes(card.name))
   // The life cards of the Hashaton deck (D-363 to D-365) have their own style: a life gain that does not happen, an end step loss and a payment question.
   .filter((card) => !(HASHATON_G2_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.

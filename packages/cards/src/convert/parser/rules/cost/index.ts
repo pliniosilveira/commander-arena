@@ -10,6 +10,7 @@ import { quantity } from '../amount/index';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, node, spanned } from '../registry';
 import { HASHATON_G2_COST_RULES } from './hashaton-group-2';
+import { HASHATON_G9_COST_RULES } from './hashaton-group-9';
 import { HOFRI_COST_RULES } from './hofri';
 
 /** `cost.tap`: "{T}" (CR 107.5 the tap symbol, 602.5a: tapping as a cost). */
@@ -810,6 +811,8 @@ export const COST_RULES = [
   // Before the plain mana cost, which would take the plain prefix of "{1}{R/W}" and stop there.
   COST_MANA_HYBRID,
   COST_MANA_X,
+  // Hashaton deck, group 9 (D-1180): a Phyrexian symbol ({5}{B/P}), also before the plain mana cost.
+  ...HASHATON_G9_COST_RULES,
   COST_MANA,
   COST_SACRIFICE,
   COST_DISCARD,

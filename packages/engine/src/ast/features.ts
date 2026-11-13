@@ -135,6 +135,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-235: the level bar of a Class (CR 716) and "exile a card from your graveyard at random".
     'gainLevel',
     'exileRandomFromGraveyard',
+    // D-1183 (provisional): "that source's controller exiles a card from their hand at random" (CR 701.13).
+    'exileRandomFromHand',
     // D-232: Spirit of Resilience's "become a copy of an artifact or creature card from among those cards".
     'becomeCopyOfCard',
     'gainLife',
@@ -1515,6 +1517,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   phaseOut: true,
   gainLevel: true,
   exileRandomFromGraveyard: true,
+  exileRandomFromHand: true,
   becomeCopyOfCard: true,
   gainLife: true,
   setLifeTotal: true,

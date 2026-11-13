@@ -258,3 +258,10 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - "If you do" after a mandatory sacrifice reads through `didPrevious` (D-360), which counts the instructions since the last `may`: a text with another counted instruction before the sacrifice would be read too wide. `thisWayAtLeast` of `sacrificed` is the exact reading, accepted by the engine, and no rule of the parser lowers to it yet.
 - `thisWayAtLeast` is worded in the web only for one or more of a creature card or a noncreature card discarded, an instant or sorcery card discarded, and a permanent sacrificed.
 - "target ... cards in your graveyard" (with "in") is read only by `effect.choose-graveyard-cards`; the other rules that take a graveyard card say "from".
+
+## The Hashaton deck, group 9 (issue 31, D-1180 to D-1185, provisional numbers)
+
+- The Phyrexian symbol is read in the cost of an ordinary activated ability only, and only the single-color form (`{B/P}`): the hybrid Phyrexian symbol (`{W/U/P}`), a Phyrexian symbol beside a hybrid, X or snow symbol, `{P}`, and a Phyrexian symbol in a mana ability's cost, a keyword's cost or an additional cost stay unread. Automatic payment keeps 1 life, so a player at 2 life is not offered a cost paid with 2 life (CR 119.4 allows it); the pre-existing choice is unchanged.
+- The trigger "a source deals damage to ~" reads no filter on the source ("a creature deals damage to ~", "a source you control deals damage to ~"): the engine's `dealtDamage` has none.
+- `exileRandomFromHand` names one player; "each opponent exiles a card from their hand at random" (several players, several cards, no single "it") is not built. "You exile a card from your hand at random" and "target player exiles ..." run in the engine but the grammar reads only the subjects "that source's controller" and "that player".
+- "put it onto the battlefield" and "cast it without paying its mana cost" are read only for "it" of the card `exile-random-from-hand` exiled (tapped, attacking, with counters, "under its owner's control" and another card are not read). The web words the question of the land offer as every `may` ("name: text — do it?").

@@ -1378,6 +1378,13 @@ export type Effect =
    */
   | { readonly kind: 'exileRandomFromGraveyard' }
   /**
+   * "That source's controller exiles a card from their hand at random" (CR 701.13, 406.3, 400.7, D-1183 provisional): the player `player` names exiles one card of their own hand chosen at
+   * random by the game's generator (none when the hand is empty, and nobody is asked), face up and public: the card is named by the exile, and nothing is revealed before it. It is what
+   * `moved` names afterwards ("If it's a land card, you may put it onto the battlefield under your control. Otherwise, you may cast it without paying its mana cost"). `moved` is empty
+   * when the hand was empty. One player, never several: with `eachOpponent` the cards of the players would have no single "it".
+   */
+  | { readonly kind: 'exileRandomFromHand'; readonly player: PlayerSelector }
+  /**
    * "Any number of other target creatures you control phase out." (Guardian of Faith; CR 702.26a-p, D-234): each permanent `objects` names on the battlefield phases out,
    * and so do the Auras, Equipment and Fortifications attached to it (CR 702.26g: indirectly). A phased-out permanent is treated as though it does not exist (CR 702.26b):
    * it is taken out of combat, it is not a legal target, nothing sees it, and it triggers nothing (no zone change, CR 702.26d); it keeps its counters, damage, tapped

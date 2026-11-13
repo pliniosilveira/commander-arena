@@ -50,6 +50,11 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         return failure(cost);
       }
       if (options.x !== true && cost.symbols.includes('X')) return failure(cost);
+      // CR 107.4f (D-1180): a Phyrexian symbol ({B/P}) is paid with the mana or 2 life by the planner of an ordinary activation (and of a tax paid by the attackers,
+      // `lowerPlayRule`), never in the cost of a mana ability: the engine's `manaAbilityCostKinds` takes generic, colored and hybrid mana only.
+      if (options.mana === true && cost.symbols.some((symbol) => symbol.endsWith('/P'))) {
+        return failure(cost);
+      }
       return ok({ kind: 'mana', symbols: [...cost.symbols] });
     case 'tap':
       return ok({ kind: 'tap' });

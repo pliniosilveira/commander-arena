@@ -408,8 +408,8 @@ const P1_MANA_AND_LANDS: readonly Line[] = [
   {
     kind: 'land',
     text: '{G/P}, {T}: Add {G}{G}.',
-    expect: no('{G/P}, {T}: Add {G}{G}.', NONE),
-    note: 'still unread: a Phyrexian symbol in a mana ability cost (the planner pays hybrid, not that)',
+    expect: no('{G/P}, {T}: Add {G}{G}.', 'cost.mana-phyrexian', { reason: 'notRunnable' }),
+    note: 'still unsupported: a Phyrexian symbol in a mana ability cost (the planner of a mana ability pays hybrid, not that). Since D-1180 the cost reads and the lowering refuses it there',
   },
   {
     kind: 'land',
