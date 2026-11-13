@@ -354,7 +354,7 @@ describe('Strong Back: Equip abilities and Aura spells that target the enchanted
     const g = scenario()
       .define(back)
       .seat(0)
-      .battlefield(COSTLY, 'Forest', BEARS, VANILLA)
+      .battlefield(COSTLY, 'Forest', 'Forest', 'Forest', 'Forest', BEARS, VANILLA)
       .battlefield(BACK, { attachedTo: BEARS })
       .seat(1)
       .build();

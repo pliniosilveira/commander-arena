@@ -4,6 +4,7 @@
  * cost, or the stack), not in the choice, so the decision and its check live here.
  */
 import type { ObjectFilter, TargetSpec } from '../ast/types';
+import type { ObjectId } from '../ids';
 import type { ChosenTarget } from '../state/chosen';
 import type { TargetChoiceSpec, TargetsDecision } from '../state/decisions';
 import type { GameState } from '../state/types';
@@ -101,8 +102,10 @@ export function targetChoiceSpecs(
   x = 0,
   /** D-408: the spell is cast with its own conditional flash ("if it targets a commander"): its first mandatory slot offers only the objects this filter matches. */
   only: ObjectFilter | null = null,
+  /** D-1232, D-1233: the first mandatory slot offers only these objects: the targets after which the cost can be paid (`rules/target-payable.ts`). Null leaves it alone. */
+  payable: readonly ObjectId[] | null = null,
 ): TargetChoiceSpec[] {
-  const restricted = only === null ? -1 : flashSlotOf(specs);
+  const restricted = only === null && payable === null ? -1 : flashSlotOf(specs);
   return specs.map((spec, index) => {
     const slotMode = modeOf?.get(spec.id);
     const bounds = targetBounds(spec);
@@ -112,12 +115,16 @@ export function targetChoiceSpecs(
       spec.onePerOpponent === true
         ? state.seats.filter((s) => s.id !== ctx.controller && !s.hasLost).length
         : Number.MAX_SAFE_INTEGER;
-    const legal = matchingOnly(
+    const flashLegal = matchingOnly(
       state,
       legalTargets(state, spec, ctx),
       index === restricted ? only : null,
       ctx,
     );
+    const legal =
+      index === restricted && payable !== null
+        ? flashLegal.filter((t) => t.kind === 'object' && payable.includes(t.id))
+        : flashLegal;
     // D-386: "X target creature cards": exactly X (the announcement offered no X larger than the legal targets, `maxTargetCountX`).
     if (spec.countX === true) {
       const n = Math.min(x, legal.length);

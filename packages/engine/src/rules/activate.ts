@@ -49,6 +49,7 @@ import { setPending } from './set-pending';
 import { recordObjectsTogether } from './simultaneous';
 import { sourceInfo } from './source-info';
 import { targetChoiceSpecs } from './target-choice';
+import { payableEquipTargets } from './target-payable';
 import { collectTriggers } from './triggers';
 import { abilityXCost, hasX, largestPayableX } from './x-value';
 
@@ -228,6 +229,13 @@ export function toActivationTargets(state: GameState, events: GameEvent[] = []):
           specs,
           ctx,
           modal === null ? undefined : specModes(modal, object.stack?.chosenModes ?? []),
+          0,
+          null,
+          // D-1233: an Equip ability that is cheaper for some targets is payable only with them: only those are offered.
+          payableEquipTargets(casting.snapshot, casting, specs, {
+            controller: casting.seat,
+            source: activation.source,
+          }),
         ),
       },
     ),

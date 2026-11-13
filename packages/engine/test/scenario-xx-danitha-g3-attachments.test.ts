@@ -409,7 +409,12 @@ describe('abilityCostReduction and costReduction with targetsObject: "target enc
   });
 
   test('the same Equip that targets another creature still costs {4}', () => {
-    const g = equipGame();
+    const g = scenario()
+      .seat(0)
+      .battlefield(COSTLY, 'Forest', 'Forest', 'Forest', 'Forest', BEARS, VANILLA)
+      .battlefield(SPINE, { attachedTo: BEARS })
+      .seat(1)
+      .build();
     g.act(0).activate(COSTLY, { targets: [VANILLA] });
     expect(owed(g)).toEqual(['4']);
   });
@@ -448,6 +453,55 @@ describe('abilityCostReduction and costReduction with targetsObject: "target enc
     expect(owed(g)).toEqual(['1']);
     g.act(0).cancel();
     g.expect.attached(COSTLY, null);
+  });
+
+  /** The creatures the targets decision offers in its first slot, by card name. */
+  const offered = (g: ScenarioGame): string[] => {
+    const d = g.state.pending;
+    if (d?.kind !== 'targets') throw new Error(`expected targets, got ${d?.kind}`);
+    return (d.specs[0]?.legal ?? []).flatMap((t) => {
+      if (t.kind !== 'object') return [];
+      const card = g.object(t.id).card;
+      return card === null ? [] : [g.state.definitions[g.state.cards[card]?.definition ?? -1]?.name ?? '?'];
+    });
+  };
+
+  test('an Equip that only the reduction makes payable is offered only the targets that give it (CR 601.2c, 601.2f)', () => {
+    const g = equipGame(); // one Forest: {4} unreduced, {1} for the Bears
+    g.act(0).activate(COSTLY);
+    expect(offered(g)).toEqual([BEARS]);
+  });
+
+  test('with the mana to pay in full every legal target is offered', () => {
+    const g = scenario()
+      .seat(0)
+      .battlefield(COSTLY, 'Forest', 'Forest', 'Forest', 'Forest', BEARS, VANILLA)
+      .battlefield(SPINE, { attachedTo: BEARS })
+      .seat(1)
+      .build();
+    g.act(0).activate(COSTLY);
+    expect(offered(g).sort()).toEqual([BEARS, VANILLA].sort());
+  });
+
+  test('an Aura spell that only the reduction makes payable is offered only the enchanted creature', () => {
+    const g = scenario()
+      .seat(0)
+      .hand(MIGHT)
+      .battlefield('Forest', BEARS, VANILLA)
+      .battlefield(SPINE, { attachedTo: BEARS })
+      .seat(1)
+      .build();
+    g.act(0).cast(MIGHT);
+    expect(offered(g)).toEqual([BEARS]);
+    const rich = scenario()
+      .seat(0)
+      .hand(MIGHT)
+      .battlefield('Forest', 'Forest', BEARS, VANILLA)
+      .battlefield(SPINE, { attachedTo: BEARS })
+      .seat(1)
+      .build();
+    rich.act(0).cast(MIGHT);
+    expect(offered(rich).sort()).toEqual([BEARS, VANILLA].sort());
   });
 
   test('an Aura spell that targets the enchanted creature costs {3} less (the generic part only)', () => {

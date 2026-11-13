@@ -551,4 +551,6 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:spellTargets',
   'condition:controlsRingBearer',
   'condition:paired',
+  // D-1235 (Danitha group 3): "as long as ~ entered this turn".
+  'condition:thisEnteredThisTurn',
 ];
