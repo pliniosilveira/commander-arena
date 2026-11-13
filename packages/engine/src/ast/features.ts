@@ -262,7 +262,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayPlay',
     // D-151: "After this phase, there is an additional combat phase" (CR 500.8).
     'extraCombat',
-    // D-1130: "there is an additional beginning phase after this phase" (CR 500.8).
+    // D-356: "there is an additional beginning phase after this phase" (CR 500.8).
     'extraBeginningPhase',
     'enterAttacking',
     // D-151: "exile cards until you exile a nonland card. You may cast it ... If you don't, put it into your hand", Discover (CR 701.57).

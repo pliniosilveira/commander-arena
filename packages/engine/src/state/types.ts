@@ -549,7 +549,7 @@ export interface TurnState {
 
 /**
  * A phase an effect added to the turn (CR 500.8): a combat phase ("there's an additional combat phase after this phase") or a beginning phase
- * ("there is an additional beginning phase after this phase", D-1130: untap, upkeep and draw steps, CR 500.1).
+ * ("there is an additional beginning phase after this phase", D-356: untap, upkeep and draw steps, CR 500.1).
  */
 export interface AddedPhase {
   readonly phase: 'combat' | 'beginning';

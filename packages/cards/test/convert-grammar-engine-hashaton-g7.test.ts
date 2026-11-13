@@ -1,4 +1,4 @@
-// The Hashaton deck (issue 31), group 7 (D-1130): the REAL Oracle text of Sphinx of the Second Sun (the corpus's golden.jsonl, taken from the issue) goes through the grammar
+// The Hashaton deck (issue 31), group 7 (D-356): the REAL Oracle text of Sphinx of the Second Sun (the corpus's golden.jsonl, taken from the issue) goes through the grammar
 // as a card with no override, is defined in an engine scenario and is played through applyAction, so the nodes the parser writes for the real text are what the engine
 // runs. Pins: CR 500.8 and 500.10 (the beginning phase is added directly after the postcombat main phase), CR 502 to 504 (untap, upkeep and draw steps), CR 505.1 (no
 // second postcombat main phase, so the trigger does not recur), CR 603.2b (the step triggers fire again).

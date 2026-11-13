@@ -24,7 +24,7 @@ export const STEP_ORDER: readonly StepId[] = [
   'cleanup',
 ];
 
-/** The chip's words for a phase an effect added to the turn (CR 500.8, D-1130): "Extra beginning phase", "Extra combat phase". */
+/** The chip's words for a phase an effect added to the turn (CR 500.8, D-356): "Extra beginning phase", "Extra combat phase". */
 export function addedPhaseLabel(phase: PhaseId): string {
   return `Extra ${phase === 'precombatMain' || phase === 'postcombatMain' ? 'main' : phase} phase`;
 }

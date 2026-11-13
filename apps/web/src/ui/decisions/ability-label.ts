@@ -955,7 +955,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
           : effectText(effect.atBeginning, ability, self, defs),
       );
     case 'extraBeginningPhase':
-      // D-1130 (CR 500.8): "After this phase, there is an additional beginning phase".
+      // D-356 (CR 500.8): "After this phase, there is an additional beginning phase".
       return EXTRA_BEGINNING_PHASE_TEXT;
     case 'enterAttacking':
       // D-151 (CR 508.4): said with the move that put the creature onto the battlefield (`sequenceText`).

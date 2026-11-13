@@ -23,7 +23,7 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Restless Dreams | 10 | P x2 (casting) | waiting | additional cost: discard X cards; return X target creature cards from the graveyard |
 | Rona, Herald of Invasion // Rona, Tolarian Obliterator | 9 | P + T | waiting | transform on a mana ability; damage trigger exiling a random card from the damager's controller's hand and playing it |
 | Serra's Emissary | 6 | P + T (large) | waiting | choose a card type as it enters; protection from the chosen card type for you and your creatures |
-| Sphinx of the Second Sun | 7 | P (turn structure) | in progress | an additional beginning phase after the postcombat main phase |
+| Sphinx of the Second Sun | 7 | P (turn structure) | done | an additional beginning phase after the postcombat main phase |
 | Victimize | 8 | T + small P | in progress | choose two target creature cards, sacrifice a creature, return the cards tapped |
 | Vohar, Vodalian Desecrator | 8 | P | in progress | loot with a conditional drain; sacrifice: cast an instant or sorcery from the graveyard this turn with exile instead |
 

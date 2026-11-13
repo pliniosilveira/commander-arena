@@ -204,7 +204,7 @@ export function beginStep(input: GameState, step: StepId): Outcome {
       return join({ state, events }, endStep(state));
     }
     case 'draw': {
-      // CR 504.1; CR 103.8a: in a two-player game the starting player skips the draw step of their first turn. D-1130: an additional beginning phase
+      // CR 504.1; CR 103.8a: in a two-player game the starting player skips the draw step of their first turn. D-356: an additional beginning phase
       // (`addedAfter` is set while an added phase goes on) has a draw step that is not the first one of that turn, so it does draw.
       const skip =
         state.seats.length === 2 && state.turn.number === 1 && state.turn.addedAfter === undefined;
@@ -363,7 +363,7 @@ export function endStep(input: GameState): Outcome {
                 },
               ],
       };
-      // CR 500.8, 500.10 (D-1130): an added beginning phase has all of its steps, from the untap step; an added combat phase begins with its first step.
+      // CR 500.8, 500.10 (D-356): an added beginning phase has all of its steps, from the untap step; an added combat phase begins with its first step.
       return join(
         { state, events },
         beginStep(state, next.phase === 'beginning' ? 'untap' : 'beginningOfCombat'),

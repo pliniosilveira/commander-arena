@@ -1,4 +1,4 @@
-// The Hashaton deck (issue 31), group 7 (D-1130): "At the beginning of each of your postcombat main phases, there is an additional beginning phase after this phase."
+// The Hashaton deck (issue 31), group 7 (D-356): "At the beginning of each of your postcombat main phases, there is an additional beginning phase after this phase."
 // (Sphinx of the Second Sun). The first line is the real Oracle text of the acceptance card of the golden corpus (with its reminder text) read through the whole
 // pipeline; the other lines are SYNTHETIC siblings and the near misses the grammar must not read. The engine runs what is lowered in
 // convert-grammar-engine-hashaton-g7.test.ts.

@@ -454,11 +454,11 @@ export interface GameView {
   readonly phase: PhaseId;
   readonly step: StepId;
   /**
-   * Present (true) while a phase an effect added to the turn is going on (CR 500.8, D-1130): `phase` says which kind it is, so the screen can tell an
+   * Present (true) while a phase an effect added to the turn is going on (CR 500.8, D-356): `phase` says which kind it is, so the screen can tell an
    * additional beginning phase from the turn's own one. Absent in the turn's own phases.
    */
   readonly addedPhase?: true;
-  /** The kind of the next phase an effect added to the turn that has not begun yet, when one waits (CR 500.8, D-1130): what a pass at the end of this phase leads to. */
+  /** The kind of the next phase an effect added to the turn that has not begun yet, when one waits (CR 500.8, D-356): what a pass at the end of this phase leads to. */
   readonly nextAddedPhase?: 'beginning' | 'combat';
   readonly prioritySeat: SeatId | null;
   readonly seats: readonly SeatView[];

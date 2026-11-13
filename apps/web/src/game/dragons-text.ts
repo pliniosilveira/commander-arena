@@ -69,7 +69,7 @@ export function mayPlayText(effect: Extract<Effect, { kind: 'mayPlay' }>, many: 
 /** "After this phase, there is an additional combat phase" (CR 500.8, 500.10). */
 export const EXTRA_COMBAT_TEXT = 'After this phase, there is an additional combat phase';
 
-/** "After this phase, there is an additional beginning phase" (CR 500.8, D-1130): its untap, upkeep and draw steps. */
+/** "After this phase, there is an additional beginning phase" (CR 500.8, D-356): its untap, upkeep and draw steps. */
 export const EXTRA_BEGINNING_PHASE_TEXT =
   'After this phase, there is an additional beginning phase (untap, upkeep and draw steps)';
 

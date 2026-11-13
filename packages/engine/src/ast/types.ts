@@ -1415,7 +1415,7 @@ export type Effect =
    */
   | { readonly kind: 'extraCombat'; readonly atBeginning?: Effect }
   /**
-   * "There is an additional beginning phase after this phase" (CR 500.8, 500.10, 502-504; Sphinx of the Second Sun, D-1130): when the phase that is now going
+   * "There is an additional beginning phase after this phase" (CR 500.8, 500.10, 502-504; Sphinx of the Second Sun, D-356): when the phase that is now going
    * on is over, a whole beginning phase follows it (untap, upkeep and draw steps, in which the active player untaps, triggers and draws again), then the turn
    * goes on as it would have. Several of them add up (CR 500.8), the phase is added to the turn state (`TurnState.addedPhases`). Only in a triggered
    * ability of "the beginning of your postcombat main phase" (`main2`), the place the phase that is going on is known and a beginning phase can not recur on its own.

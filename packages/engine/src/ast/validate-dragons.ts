@@ -183,7 +183,7 @@ export function checkDragonsEffect(
       }
       return true;
     case 'extraBeginningPhase':
-      // CR 500.8 (D-1130): "after this phase": the postcombat main phase the trigger is about; the phase added is a beginning phase, which ends in the draw step.
+      // CR 500.8 (D-356): "after this phase": the postcombat main phase the trigger is about; the phase added is a beginning phase, which ends in the draw step.
       if (scope.postcombatMainTrigger !== true) {
         issue(
           out,

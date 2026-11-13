@@ -1,4 +1,4 @@
-// "At the beginning of each of your postcombat main phases, there is an additional beginning phase after this phase" (D-1130, Hashaton deck group 7): the effect
+// "At the beginning of each of your postcombat main phases, there is an additional beginning phase after this phase" (D-356, Hashaton deck group 7): the effect
 // `extraBeginningPhase`, a whole beginning phase added after the postcombat main phase.
 // Pins: CR 500.8 and 500.10 (the phase is added directly after the specified phase and the turn goes on with the phase after it, the ending phase; the most recently
 // created one occurs first), CR 502.1 and 502.3 (the untap step: phased-out permanents of the active player phase in, the active player untaps, no priority), CR 503

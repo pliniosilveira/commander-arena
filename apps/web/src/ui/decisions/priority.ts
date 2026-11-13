@@ -178,7 +178,7 @@ export function nextStepLabel(
     Pick<GameView, 'addedPhase' | 'nextAddedPhase'>,
 ): string {
   const mine = view.activeSeat === view.viewer;
-  // CR 500.8 (D-1130): the last step of a phase leads to the phase an effect added after it, when one waits.
+  // CR 500.8 (D-356): the last step of a phase leads to the phase an effect added after it, when one waits.
   const ends =
     view.step === 'draw' ||
     view.step === 'precombatMain' ||

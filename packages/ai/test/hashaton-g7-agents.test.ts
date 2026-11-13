@@ -1,4 +1,4 @@
-// The agents and group 7 of the Hashaton deck (D-1130, SYNTHETIC card `SYNTHETIC Second Sun Sphinx` of the engine fixtures `synthetic-hashaton-g7.ts`): "At the
+// The agents and group 7 of the Hashaton deck (D-356, SYNTHETIC card `SYNTHETIC Second Sun Sphinx` of the engine fixtures `synthetic-hashaton-g7.ts`): "At the
 // beginning of each of your postcombat main phases, there is an additional beginning phase after this phase" adds steps to the turn (untap, upkeep, draw) but asks no
 // new kind of question. Each agent plays whole games' worth of turns with the Sphinx (alone, and two of them) and with a deck of real fixtures against it: every answer is
 // one the engine lists, the added beginning phase happens in each turn of the Sphinx's controller and the turn counter never stalls.

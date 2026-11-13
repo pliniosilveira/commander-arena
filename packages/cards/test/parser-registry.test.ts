@@ -579,7 +579,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.mana-rider-scry': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
   // Group 3-c (D-354): the cast of a card of a graveyard is read in the body of a trigger (a second rider sentence is joined to the first).
   'effect.cast-graveyard-card': permanent((e) => `When ~ enters, ${e}.`),
-  // Group 7 (D-1130): the additional beginning phase is said in the body of a trigger of the postcombat main phase.
+  // Group 7 (D-356): the additional beginning phase is said in the body of a trigger of the postcombat main phase.
   'effect.extra-beginning-phase': permanent(
     (e) => `At the beginning of each of your postcombat main phases, ${e}.`,
   ),

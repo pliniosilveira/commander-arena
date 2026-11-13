@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC CARDS FOR "ADDITIONAL BEGINNING PHASE". NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of D-1130 to D-1139 (group 7 of the Hashaton deck): the effect `extraBeginningPhase` that adds a whole beginning phase (untap, upkeep and
+ * Invented for the tests of D-356 to D-1139 (group 7 of the Hashaton deck): the effect `extraBeginningPhase` that adds a whole beginning phase (untap, upkeep and
  * draw steps) directly after the postcombat main phase it is said in (CR 500.8, 500.10). Names start with "SYNTHETIC "; oracleId is null. The text describes what the
  * AST does; it is not Oracle text, and none of these is the definition of a real card (the real card, Sphinx of the Second Sun, is read from its Oracle text by
  * the grammar in the tests of the cards package).

@@ -1,5 +1,5 @@
 /**
- * Lowering of group 7 of the Hashaton deck (issue 31, D-1130 to D-1139): "there is an additional beginning phase after this phase".
+ * Lowering of group 7 of the Hashaton deck (issue 31, D-356 to D-1139): "there is an additional beginning phase after this phase".
  */
 import type { IrClause } from '../ir/types';
 import type { Effects } from './clauses';

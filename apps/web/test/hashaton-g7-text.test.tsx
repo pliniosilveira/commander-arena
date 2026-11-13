@@ -1,5 +1,5 @@
 /**
- * Hashaton deck group 7 (D-1130): the additional beginning phase of Sphinx of the Second Sun in the screen. The ability in the words of the card, the chip that
+ * Hashaton deck group 7 (D-356): the additional beginning phase of Sphinx of the Second Sun in the screen. The ability in the words of the card, the chip that
  * names the added phase in the top bar (the step row shows the untap, upkeep and draw steps as they happen), and what the pass button says before and during it
  * (CR 500.8, 500.10).
  */

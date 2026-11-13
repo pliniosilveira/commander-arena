@@ -101,7 +101,7 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
         ),
       ),
     );
-    // "each of your postcombat main phases" (CR 500.1, 505.1; D-1130): the plural of "your postcombat main phase", for the turns of the controller.
+    // "each of your postcombat main phases" (CR 500.1, 505.1; D-356): the plural of "your postcombat main phase", for the turns of the controller.
     const plural = sequence(
       literal('the beginning of each of your '),
       choice(

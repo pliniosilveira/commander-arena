@@ -1112,7 +1112,7 @@ function runEffect(
         },
       });
     case 'extraBeginningPhase':
-      // CR 500.8 (D-1130): a whole beginning phase directly after the phase that is going on; the most recently created one occurs first, so a second
+      // CR 500.8 (D-356): a whole beginning phase directly after the phase that is going on; the most recently created one occurs first, so a second
       // one added in the same step goes before the first (both happen before the end step they were added in front of).
       return done({
         ...state,

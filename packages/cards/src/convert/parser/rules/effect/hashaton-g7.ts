@@ -1,12 +1,12 @@
 /**
- * Effect rules of group 7 of the Hashaton deck (issue 31, D-1130 to D-1139): "there is an additional beginning phase after this phase" (Sphinx of the Second Sun).
+ * Effect rules of group 7 of the Hashaton deck (issue 31, D-356 to D-1139): "there is an additional beginning phase after this phase" (Sphinx of the Second Sun).
  */
 import { pattern } from '../../combinators';
 import { defineRule, quietly, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
 
 /**
- * `effect.extra-beginning-phase`: "there is an additional beginning phase after this phase" (CR 500.8, 500.10, 500.1, 502-504; D-1130): when the phase that is going on
+ * `effect.extra-beginning-phase`: "there is an additional beginning phase after this phase" (CR 500.8, 500.10, 500.1, 502-504; D-356): when the phase that is going on
  * is over, a whole beginning phase follows it, with its untap, upkeep and draw steps (the parenthesis of the card, "The beginning phase includes the untap, upkeep, and
  * draw steps", is reminder text). The same words as `effect.extra-combat-after` for another kind of phase. The engine only runs it where it knows which phase that is
  * (`validateCard`: an ability of the beginning of the postcombat main phase). Only one phase, after "this phase", with nothing joined to it.
