@@ -359,6 +359,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     to = 'exile';
     toSeat = null;
   }
+  // CR 614.1a, 614.6 (D-352): "If that spell would be put into a graveyard, exile it instead": a spell an effect let be cast with that rider goes to exile, not to a
+  // graveyard, whatever puts it there (resolving, being countered, fizzling). It belongs to the spell, not to an ability of the card (CR 614.6), so it holds
+  // whatever the card says; it comes before the commander replacement below, whose zones (hand, library) it does not touch.
+  if (old.zone === 'stack' && old.stack?.exileInstead === true && to === 'graveyard') {
+    to = 'exile';
+    toSeat = null;
+  }
   // CR 702.84a (Unearth, D-124): "If it would leave the battlefield, exile it instead of putting it anywhere
   // else." It belongs to the unearthed object, not to its abilities, so it holds when it lost them (CR 614.6).
   // It comes before the commander replacement below, whose zones (hand, library) it removes.

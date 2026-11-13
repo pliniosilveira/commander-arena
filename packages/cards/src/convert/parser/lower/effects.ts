@@ -51,6 +51,7 @@ import { HOFRI_LOWERINGS } from './hofri';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { MELD_LOWERINGS } from './meld';
 import { NIV_LOWERINGS } from './niv';
+import { NIV_GROUP_3_C_LOWERINGS } from './niv-group-3-c';
 import {
   attackedByOf,
   colorLetter,
@@ -1338,6 +1339,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DRAGON_LOWERINGS,
   ...KORVOLD_LOWERINGS,
   ...NIV_LOWERINGS,
+  ...NIV_GROUP_3_C_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
   ...DESTINY_LOWERINGS,
   ...MELD_LOWERINGS,

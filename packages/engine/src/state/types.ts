@@ -389,6 +389,17 @@ export interface StackData {
    */
   readonly alt?: NamedAlternativeKind;
   /**
+   * True when an effect lets mana of any type be spent to cast this spell (D-351, CR 609.4b: "mana of any type can be spent to cast that spell"): any mana pays any
+   * mana symbol of its cost, colored or colorless. A spend restriction of the mana itself and the snow of {S} still apply. Absent otherwise, and for an ability.
+   */
+  readonly anyManaType?: true;
+  /**
+   * True when an effect says "If that spell would be put into a graveyard, exile it instead" (D-352, CR 614.1a): when this spell would leave the stack for a graveyard
+   * (it resolved, was countered, fizzled) the card is put into exile instead. It belongs to the spell, not to a permanent: it ends when the card becomes another object
+   * (CR 400.7). Absent otherwise, and for an ability.
+   */
+  readonly exileInstead?: true;
+  /**
    * True when the spell was cast as the effect of a resolving ability allows (CR 608.2g, Cascade, D-120), which
    * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own.
    * Absent otherwise, and for an ability.
@@ -1308,6 +1319,19 @@ export type Instruction =
       readonly mode: 'suspend' | 'madness' | 'miracle';
       readonly stage: 'start' | 'ask';
       readonly card: ObjectId | null;
+    }
+  /**
+   * "You may cast target instant or sorcery card from a graveyard" (`castCard`, D-350, CR 608.2g): the resolution of the effect. `start` looks at `card` (the
+   * target as it is now: it must still be in a graveyard, CR 608.2b) and goes on to `ask` when it could be cast, else it ends and the card stays where it is. `ask`
+   * asks the controller (`confirmOptional`, purpose 'castCard', the card as `subject`); accepting begins the cast as CR 608.2g says (no player gets priority) and the
+   * riders the effect carries become part of the spell on the stack (`StackData.anyManaType`, `exileInstead`), declining ends the effect. See rules/cast-card.ts.
+   */
+  | {
+      readonly kind: 'castCard';
+      readonly stage: 'start' | 'ask';
+      readonly card: ObjectId;
+      readonly anyManaType: boolean;
+      readonly exileInstead: boolean;
     }
   /**
    * "You may [effect]" inside an effect (D-111): the controller of the resolving spell or ability is asked

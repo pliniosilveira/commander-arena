@@ -38,6 +38,7 @@ import {
   beginCast,
   cancelCast,
 } from './rules/cast';
+import { acceptCastCard, declineCastCard } from './rules/cast-card-answer';
 import { acceptCastExiled, declineCastExiled } from './rules/cast-exiled-answer';
 import { isLandCard } from './rules/cast-free';
 import { acceptCastFree, declineCastFree } from './rules/cast-free-answer';
@@ -387,6 +388,12 @@ function answerConfirm(
     if (!accept) return finishResolutionAnswer(declineCastExiled(state));
     const begun = acceptCastExiled(state);
     return begun.ok ? begun : finishResolutionAnswer(declineCastExiled(state));
+  }
+  // CR 608.2g (D-350): "you may cast target instant or sorcery card from a graveyard", asked while the ability resolves.
+  if (d.purpose === 'castCard') {
+    if (!accept) return finishResolutionAnswer(declineCastCard(state));
+    const begun = acceptCastCard(state);
+    return begun.ok ? begun : finishResolutionAnswer(declineCastCard(state));
   }
   // CR 608.2d, 701.23: "may search" is answered by the player who would search.
   if (d.purpose === 'search')

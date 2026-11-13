@@ -253,6 +253,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dealDividedDamage',
     // D-145: "you may cast a spell ... from your hand without paying its mana cost", "you may play the exiled card" (CR 608.2g).
     'castFree',
+    // D-350: "you may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead" (CR 608.2g, 609.4b).
+    'castCard',
     // D-149: "proliferate" (CR 701.34).
     'proliferate',
     // D-151: "exile the top card of your library. You may play that card this turn" (CR 701.13, 601.2, 305.1).
@@ -1568,6 +1570,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   dealDividedDamage: true,
   fight: true,
   castFree: true,
+  castCard: true,
   reselectAttack: true,
   chooseOne: true,
   vote: true,

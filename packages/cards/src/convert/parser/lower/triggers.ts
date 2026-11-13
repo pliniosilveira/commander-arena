@@ -910,7 +910,10 @@ export function lowerTriggered(
     );
   };
   // "You may play that card this turn." (stage P34): a permission, which no question of the ability answers.
-  const permission = (s: Sentence) => s.clauses.every((c) => c.verb === 'mayPlay');
+  // "You may cast target instant or sorcery card from a graveyard" (D-354): the engine's `castCard` asks the question itself, so the sentence's "you may" is no
+  // question of the ability's; a cast with no "you may" is not read, and stays a sentence of the ability's own (`castCard` lowers only an optional clause).
+  const permission = (s: Sentence) =>
+    s.clauses.every((c) => c.verb === 'mayPlay' || (c.verb === 'castCard' && c.optional));
   const ownMay = (s: Sentence, i: number) =>
     !permission(s) &&
     !unlessSentence(s) &&
@@ -936,7 +939,8 @@ export function lowerTriggered(
         ...c,
         // The sentences of an offer keep their "you may": `lowerSentences` reads it, and refuses a "you
         // may" inside what a payment buys.
-        optional: ownMay(s, i) || permission(s) ? false : c.optional,
+        // `castCard` keeps its "you may": its lowering reads it (a cast that is not the player's choice is not run).
+        optional: ownMay(s, i) || (permission(s) && c.verb !== 'castCard') ? false : c.optional,
       })),
     })),
     ctx,

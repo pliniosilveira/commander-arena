@@ -78,7 +78,10 @@ function coversMiracleCost(view: GameView, d: ConfirmOptionalDecision, card: Obj
   return free.length + (seat?.manaPool.length ?? 0) >= generic;
 }
 
-/** The answer to the question of a suspend, madness or miracle ability, or null for any other question. */
+/**
+ * The answer to the question of a suspend, madness or miracle ability, or of "you may cast target instant or sorcery card from a graveyard" (D-350: cast it when it is a spell
+ * worth casting now, `worth`), or null for any other question.
+ */
 export function laterAnswer(
   view: GameView,
   d: ConfirmOptionalDecision,
@@ -88,7 +91,8 @@ export function laterAnswer(
     d.purpose !== 'suspend' &&
     d.purpose !== 'madness' &&
     d.purpose !== 'miracle' &&
-    d.purpose !== 'miracleReveal'
+    d.purpose !== 'miracleReveal' &&
+    d.purpose !== 'castCard'
   ) {
     return null;
   }

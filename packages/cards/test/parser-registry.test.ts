@@ -577,6 +577,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.graveyard-play-once-each-turn': asIs,
   // Group 4 (D-208): the rider of the mana a land adds follows the "Add" sentence of its mana ability.
   'effect.mana-rider-scry': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
+  // Group 3-c (D-354): the cast of a card of a graveyard is read in the body of a trigger (a second rider sentence is joined to the first).
+  'effect.cast-graveyard-card': permanent((e) => `When ~ enters, ${e}.`),
   // Group 2b-b (D-328): the rider that copies the spell the mana is spent on follows the "Add" sentence of its mana ability.
   'effect.mana-rider-copy': permanent((e) => `{T}: Add {R}. ${cap(e)}.`),
   // Group 2 (D-230).

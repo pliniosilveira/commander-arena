@@ -1,5 +1,5 @@
 {
-  "parserVersion": 95,
+  "parserVersion": 96,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -2423,19 +2423,10 @@
     "821e8648-222c-4b33-a8bd-e8bfff7dcd9e": {
       "name": "Quistis Trepe",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Blue Magic — When ~ enters, you may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f0a1466e"
+      "ast": "10f94d5f"
     },
     "82bdf9cb-61fe-4eaf-8762-c32002403d96": {
       "name": "Magnificent End",
@@ -4657,7 +4648,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 227,
+      "supported": 228,
       "total": 245
     }
   }

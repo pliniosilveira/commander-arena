@@ -490,6 +490,7 @@ describe('unmatched abilities', () => {
       'effect.shuffle-self-and-graveyard',
       'effect.mana-rider-copy',
       'effect.copy-spell-for-each',
+      'effect.cast-graveyard-card',
       'effect.gain-control',
       'effect.vote',
       'effect.ring-tempts',

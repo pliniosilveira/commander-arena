@@ -644,6 +644,8 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * `subject` is the card (in the hand, hidden until the answer), `cost` its miracle cost, `source` the same card. Accepting reveals it (public)
    * and its trigger goes on the stack; declining reveals nothing. `'miracle'`: "you may cast it by paying [its miracle cost]": `subject` is
    * the card in the hand, `cost` its miracle cost, `source` the trigger on the stack; declining leaves the card in the hand.
+   * `'castCard'` (D-350, CR 608.2g): "you may cast target instant or sorcery card from a graveyard": `subject` is the card (in a graveyard, public), `source` the ability on
+   * the stack; declining leaves the card in its graveyard.
    */
   readonly purpose?:
     | 'kicker'
@@ -659,7 +661,8 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'miracle'
     | 'gift'
     | 'costChoice'
-    | 'pairReturn';
+    | 'pairReturn'
+    | 'castCard';
   /**
    * For purpose `'pairReturn'` (D-272, "You may return those cards to the battlefield under their owners' control", Dawnbreak Reclaimer): the cards that would return, which are in
    * graveyards and public: `theirs` the card chosen in an opponent's graveyard (it returns under its owner's control, the opponent's), `mine` the card chosen in the graveyard of
