@@ -27,3 +27,13 @@ export function skipDrawWording(
   const when = libraryWhile(replacement.while);
   return when === null ? null : `If you would draw a card while ${when}, skip that draw instead`;
 }
+
+const COUNT_WORDS: Readonly<Record<number, string>> = { 2: 'two', 3: 'three', 4: 'four' };
+
+/** "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead" (D-1151, CR 614.11, 504.1). */
+export function drawInsteadWording(
+  replacement: Extract<Replacement, { kind: 'drawInstead' }>,
+): string {
+  const count = COUNT_WORDS[replacement.count] ?? String(replacement.count);
+  return `If you would draw a card except the first one you draw in each of your draw steps, draw ${count} cards instead`;
+}

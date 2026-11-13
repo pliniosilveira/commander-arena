@@ -2496,6 +2496,88 @@ export const HASHATON_G2_LANDS = supported([
   'Island',
 ]);
 
+/**
+ * The SYNTHETIC cards of group 3 of the Hashaton deck program (D-1150 to D-1152, provisional): permanents that say counters "can't be put on" creatures, planeswalkers,
+ * Sagas, artifacts and permanents of their controller (one kind of counter each), the Aura and the artifact copy that go with them, and the cards that replace a draw with two
+ * draws and a creation of tokens with twice as many, with the spells that make tokens and draw cards. They change what the generic pools do (tokens twice over, counters
+ * that are not put on, a draw that is made twice, an order of replacements to answer), which games-100 expects only from dedicated styles: the style 'hashatonG3' plays them
+ * and every other pool leaves them out.
+ */
+export const HASHATON_G3_NAMES = [
+  'SYNTHETIC Counter Ward',
+  'SYNTHETIC Growth Ward',
+  'SYNTHETIC Loyalty Ward',
+  'SYNTHETIC Lore Ward',
+  'SYNTHETIC Age Ward',
+  'SYNTHETIC Page Ward',
+  'SYNTHETIC Lone Ward',
+  'SYNTHETIC Ward Aura',
+  'SYNTHETIC Walker Mirror',
+  'SYNTHETIC Muster Call',
+  'SYNTHETIC Angel Caller',
+  'SYNTHETIC Quick Study',
+  'SYNTHETIC Careful Study',
+  'SYNTHETIC Twin Reign',
+  'SYNTHETIC Draw Reign',
+  'SYNTHETIC Token Reign',
+] as const;
+
+/**
+ * The hashatonG3 style: the creatures that protect from -1/-1 and +1/+1 counters and the two that replace draws and tokens (each twice), the spells that make tokens and draw
+ * cards (each twice), the effects that put counters on creatures and the creatures that put them there (wither, persist, proliferate), the Dragon and Thopter effects of the
+ * Vraska deck that order the replacements of tokens with the doubling, a watcher of draws, a life gain for the end step angel, bodies and a little removal.
+ */
+export const HASHATON_G3_SPELLS = [
+  ...supported([
+    'SYNTHETIC Counter Ward',
+    'SYNTHETIC Growth Ward',
+    'SYNTHETIC Lone Ward',
+    'SYNTHETIC Ward Aura',
+    'SYNTHETIC Twin Reign',
+    'SYNTHETIC Draw Reign',
+    'SYNTHETIC Token Reign',
+    'SYNTHETIC Muster Call',
+    'SYNTHETIC Angel Caller',
+    'SYNTHETIC Quick Study',
+    'SYNTHETIC Careful Study',
+  ]),
+  ...supported([
+    'SYNTHETIC Twin Reign',
+    'SYNTHETIC Draw Reign',
+    'SYNTHETIC Token Reign',
+    'SYNTHETIC Muster Call',
+    'SYNTHETIC Angel Caller',
+    'SYNTHETIC Quick Study',
+    'SYNTHETIC Counter Ward',
+  ]),
+  ...supported([
+    'SYNTHETIC Rot Boon',
+    'SYNTHETIC Counter Boon',
+    'SYNTHETIC Spreading Growth',
+    'SYNTHETIC Wither Imp',
+    'SYNTHETIC Persist Bear',
+    'SYNTHETIC Draw Watcher',
+    'SYNTHETIC Dragon Maker',
+    'SYNTHETIC Thopter Automaton',
+    'SYNTHETIC Treasure Pair',
+    'SYNTHETIC Mend',
+  ]),
+  ...supported(['Lightning Bolt', 'Murder', 'Grizzly Bears', 'Giant Spider', 'Serra Angel']),
+];
+
+/** Blue, white and black for the cards of the group (the reigns are blue and white), a little red and green for the rest. */
+export const HASHATON_G3_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Swamp',
+  'Mountain',
+  'Forest',
+]);
+
 export const NIV_DRAW_NAMES = [
   'SYNTHETIC Hollow Warden',
   'SYNTHETIC Draw Veto',
@@ -2930,6 +3012,8 @@ const FIXTURES: readonly CardDefinition[] = [
 
   // The life cards of the Hashaton deck (D-363 to D-365) have their own style: a life gain that does not happen, an end step loss and a payment question.
   .filter((card) => !(HASHATON_G2_NAMES as readonly string[]).includes(card.name))
+  // The Hashaton group 3 cards (D-1150 to D-1152) double tokens and draws, keep counters off creatures and ask the order of replacements: a style of their own.
+  .filter((card) => !(HASHATON_G3_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
@@ -3113,6 +3197,7 @@ export type DeckStyle =
   | 'piles'
   | 'nivDraw'
   | 'hashatonLife'
+  | 'hashatonG3'
   | 'repeatable'
   | 'manifest'
   | 'combat';
@@ -3125,6 +3210,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'piles' && PILES_SPELLS.length > 0) return PILES_SPELLS;
   if (style === 'nivDraw' && NIV_DRAW_SPELLS.length > 0) return NIV_DRAW_SPELLS;
   if (style === 'hashatonLife' && HASHATON_G2_SPELLS.length > 0) return HASHATON_G2_SPELLS;
+  if (style === 'hashatonG3' && HASHATON_G3_SPELLS.length > 0) return HASHATON_G3_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
   if (style === 'manifest' && MANIFEST_SPELLS.length > 0) return MANIFEST_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
@@ -3301,6 +3387,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'piles' && BASIC_LANDS.length > 0) return PILES_LANDS;
   if (style === 'nivDraw' && BASIC_LANDS.length > 0) return NIV_DRAW_LANDS;
   if (style === 'hashatonLife' && BASIC_LANDS.length > 0) return HASHATON_G2_LANDS;
+  if (style === 'hashatonG3' && BASIC_LANDS.length > 0) return HASHATON_G3_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
   if (style === 'manifest' && BASIC_LANDS.length > 0) return MANIFEST_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
@@ -3729,6 +3816,13 @@ export const HASHATON_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])
   ['hashatonLife', 'hashatonLife'],
   ['hashatonLife', 'spells'],
   ['spells', 'hashatonLife'],
+];
+
+/** Style pairs of the Hashaton group 3 soak test (D-1150 to D-1152, provisional): a mirror match and both mixed ways. */
+export const HASHATON_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hashatonG3', 'hashatonG3'],
+  ['hashatonG3', 'spells'],
+  ['spells', 'hashatonG3'],
 ];
 
 /** Style pairs of the repeatable-mode soak test (D-344): a mirror match and both mixed ways. */

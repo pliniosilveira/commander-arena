@@ -584,6 +584,30 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       ...(gains.length > 0 ? { gains } : {}),
     });
   }
+  if (event.verb === 'drawInstead') {
+    // "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead." (Hashaton deck group 3, D-1151, CR 614.1a, 614.11,
+    // 504.1): the engine's `drawInstead` of the permanent, with the number of cards the text says.
+    const amount = event.args.amount;
+    if (amount?.kind !== 'number' || amount.value < 2 || event.condition !== undefined) {
+      return failure(ability);
+    }
+    const blocked = gate(ability, ['ability:replacement', 'replacement:drawInstead']);
+    if (blocked !== null) return blocked;
+    return built({ kind: 'drawInstead', count: amount.value, exceptFirstInDrawStep: true });
+  }
+  if (event.verb === 'tokensInstead' && event.args.double !== undefined) {
+    // "If one or more tokens would be created under your control, twice that many of those tokens are created instead." (Hashaton deck group 3, D-1150, CR 614.1a,
+    // 614.5): the engine's `tokensInstead` in `double` mode of the permanent, which names the tokens and makes no token of its own.
+    const objects = event.args.what;
+    if (objects?.kind !== 'noun') return failure(ability);
+    const blocked = gate(ability, ['ability:replacement', 'replacement:tokensInstead']);
+    if (blocked !== null) return blocked;
+    const what = lowerFilter(objects);
+    if (!what.ok) return what;
+    const { zone, ...filter } = what.value;
+    void zone;
+    return built({ kind: 'tokensInstead', what: filter, mode: 'double' });
+  }
   if (event.verb === 'tokensInstead') {
     // "If one or more artifact tokens would be created under your control, that many ... are created instead" (stage P66, D-219, CR 614.1a, 616.1): the engine's
     // `tokensInstead` of the permanent; the token is the one the text describes, its count is the rule's (`thatMany` or one more, `plus`).
@@ -788,4 +812,6 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:asEntersChoose',
   'replacement:entersAsCopy',
   'replacement:skipDraw',
+  'replacement:tokensInstead',
+  'replacement:drawInstead',
 ];

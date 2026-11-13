@@ -9,6 +9,7 @@ import type { GameEvent } from '../state/events';
 import { allocateTimestamp, patchObject } from '../state/ops';
 import type { GameState } from '../state/types';
 import { copiableValues } from './copiable';
+import { counterBlocked } from './counter-prevention';
 import { matchesFilter } from './select';
 
 type CopyRule = Extract<Replacement, { kind: 'entersAsCopy' }>;
@@ -78,7 +79,8 @@ export function becomeCopyAsItEnters(
   const copiedLoyalty = values.characteristics.loyalty;
   if (values.characteristics.types.includes('planeswalker') && copiedLoyalty !== null) {
     const obj = next.objects[entering];
-    if (obj !== undefined) {
+    // D-1152 (CR 122.6, 101.2): a planeswalker that can't have loyalty counters enters without them.
+    if (obj !== undefined && !counterBlocked(next, obj, 'loyalty')) {
       next = patchObject(next, entering, {
         counters: { ...obj.counters, loyalty: (obj.counters.loyalty ?? 0) + copiedLoyalty },
       });

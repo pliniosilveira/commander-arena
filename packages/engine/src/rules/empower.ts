@@ -14,6 +14,7 @@ import type { GameEvent } from '../state/events';
 import { patchObject } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { controllerOf } from './control';
+import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
 import { done, type StepOutcome } from './step-outcome';
 import { createTokens } from './tokens';
@@ -68,7 +69,8 @@ export function runEmpowerJace(
     };
   }
   const obj = next.objects[picked];
-  if (obj === undefined) return done(next, events);
+  // D-1152 (CR 122.6, 101.2): a permanent that can't have loyalty counters is given none.
+  if (obj === undefined || counterBlocked(next, obj, 'loyalty')) return done(next, events);
   next = patchObject(next, picked, {
     counters: { ...obj.counters, loyalty: (obj.counters.loyalty ?? 0) + ins.amount },
   });

@@ -395,6 +395,18 @@ export function describeEvent(
         [event.source],
         'CR 614.11',
       );
+    case 'drawReplaced': {
+      // D-1151 (CR 614.1a, 614.11): replacement effects made the draw several; the cards drawn follow in the log.
+      const sources = event.sources.map(name);
+      const by = sources.length === 0 ? 'A replacement effect' : sources.join(' and ');
+      return line(
+        'major',
+        `${by} replaces ${possessive(event.seat, viewer).toLowerCase()} draw: ${who(event.seat)} ${verb(event.seat, 'draw', 'draws')} ${event.count} cards instead.`,
+        event.seat,
+        [...event.sources],
+        'CR 614.11',
+      );
+    }
     case 'dieRolled':
       // CR 706.1, 706.2 (D-271): the natural result of a die, which an ability may read.
       return line(

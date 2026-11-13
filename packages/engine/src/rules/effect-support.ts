@@ -96,6 +96,10 @@ export function drawCard(
   if (skippedBy !== null) {
     return { kind: 'done', state, events: [{ kind: 'drawSkipped', seat, source: skippedBy }] };
   }
+  // CR 504.1 (D-1151): a draw of the active player in their own draw step; "the first one you draw in each of your draw steps" reads that it was made.
+  if (state.turn.step === 'draw' && state.turn.activeSeat === seat) {
+    state = { ...state, turn: { ...state.turn, drewInDrawStep: true } };
+  }
   const library = getSeat(state, seat).library;
   const top = library[0];
   if (top === undefined) {

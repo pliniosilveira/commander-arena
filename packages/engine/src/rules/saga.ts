@@ -25,6 +25,7 @@ import type { GameEvent } from '../state/events';
 import { patchObject } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
+import { blocks, counterBlockers } from './counter-prevention';
 import { objectOrLki } from './source-info';
 
 /** The name of the counters a Saga uses (CR 714.3). */
@@ -67,9 +68,12 @@ export function addLoreCounters(
       (o): o is GameObject => o !== undefined && controllerOf(state, o) === input.turn.activeSeat,
     )
     .sort((a, b) => a.timestamp - b.timestamp);
+  const blockers = counterBlockers(input);
   for (const obj of sagas) {
     const d = abilitiesOf(obj);
     if (!isSaga(d.subtypes) || finalChapterOf(d.abilities) === 0) continue;
+    // D-1152 (CR 122.6, 101.2): a Saga that can't have lore counters gets none, so no chapter ability triggers.
+    if (blocks(input, blockers, obj, LORE)) continue;
     state = patchObject(state, obj.id, {
       counters: { ...obj.counters, [LORE]: (obj.counters[LORE] ?? 0) + 1 },
     });

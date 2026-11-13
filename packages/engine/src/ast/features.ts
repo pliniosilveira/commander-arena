@@ -456,6 +456,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'redirectDamage',
     // D-332: "If you would draw a card while your library has no cards in it, skip that draw instead."
     'skipDraw',
+    // D-1151 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
+    'drawInstead',
   ],
   // {T}, "Sacrifice this permanent" (a Treasure, CR 111.10a) and mana ({1}, {T}: a Signet). A mana
   // cost is paid from the pool, or by auto-pay from sources that have no mana cost themselves.
@@ -788,6 +790,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'opponentsCantWin',
     // D-363 (CR 119.7): "Your opponents can't gain life."
     'cantGainLife',
+    // D-1152 (CR 122.6, 101.2): "Creatures you control can't have -1/-1 counters put on them."
+    'cantHaveCounters',
     // D-220: "If a triggered ability of ... triggers, that ability triggers an additional time" (`doubleTriggers`).
     'doubleTriggers',
     'cantCastThis',
@@ -1307,6 +1311,8 @@ export const STATIC_KINDS = [
   'opponentsCantWin',
   /** "Your opponents can't gain life" (CR 119.7, D-363): the engine's `cantGainLife`. */
   'cantGainLife',
+  /** "Creatures you control can't have -1/-1 counters put on them" (CR 122.6, 101.2, D-1152): the engine's `cantHaveCounters`. */
+  'cantHaveCounters',
   /** "If a triggered ability of a Wizard you control triggers, that ability triggers an additional time" (CR 603.2d, D-220): `doubleTriggers`. */
   'doubleTriggers',
   /** "You can't cast ~ during your first, second, or third turns of the game" (CR 101.2, D-149): `cantCastThis`. */
@@ -1735,6 +1741,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   entersAsCopy: true,
   redirectDamage: true,
   skipDraw: true,
+  drawInstead: true,
 };
 const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   fixed: true,

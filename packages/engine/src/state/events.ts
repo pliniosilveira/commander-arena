@@ -89,6 +89,16 @@ export type GameEvent =
    * attempted from an empty library.
    */
   | { readonly kind: 'drawSkipped'; readonly seat: SeatId; readonly source: ObjectId }
+  /**
+   * A draw of `seat` was replaced by `count` draws (D-1151, CR 614.1a, 614.11, 614.11a): the permanents in `sources` each applied their `drawInstead` once, so
+   * `count` is the number of cards `seat` now draws in its place, which the events that follow show. Not emitted for a draw nothing replaced.
+   */
+  | {
+      readonly kind: 'drawReplaced';
+      readonly seat: SeatId;
+      readonly sources: readonly ObjectId[];
+      readonly count: number;
+    }
   | { readonly kind: 'libraryShuffled'; readonly seat: SeatId }
   /**
    * CR 706.1, 706.2 (D-271): `seat` rolled a die of `sides` sides; `result` is the natural result (the engine has no modifiers of a roll), drawn from the

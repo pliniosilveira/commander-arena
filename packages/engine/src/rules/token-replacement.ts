@@ -102,7 +102,9 @@ function tokenEffects(state: GameState, seat: SeatId): readonly TokenEffect[] {
   return found.sort((a, b) => a.timestamp - b.timestamp).map((f) => f.effect);
 }
 
-const madeBy = (effect: TokenEffect): TokenDefinition => {
+/** The token a `thatMany` or `plus` effect makes; a `double` effect makes none of its own (it makes more of the tokens it names). */
+const madeBy = (effect: TokenEffect): TokenDefinition | null => {
+  if (effect.replacement.mode === 'double') return null;
   const token = effect.replacement.token;
   return token.kind === 'preset' ? TOKEN_PRESETS[token.preset] : token.definition;
 };
@@ -144,7 +146,12 @@ function applyEffect(
   effect: TokenEffect,
 ): readonly TokenBatch[] {
   const hit = matching(state, seat, batch, effect);
+  // D-1150 (CR 614.1a, 614.5): "twice that many of those tokens are created instead": each matching part is made twice over, as it was described.
+  if (effect.replacement.mode === 'double') {
+    return batch.map((part) => (hit.includes(part) ? { ...part, count: part.count * 2 } : part));
+  }
   const made = madeBy(effect);
+  if (made === null) return batch;
   if (effect.replacement.mode === 'thatMany') {
     const total = hit.reduce((n, part) => n + part.count, 0);
     return [
@@ -280,7 +287,9 @@ export function describeBatch(batch: readonly TokenBatch[]): readonly string[] {
 }
 
 const effectText = (effect: TokenEffect): string => {
-  const name = madeBy(effect).name;
+  const made = madeBy(effect);
+  if (made === null) return 'Create twice that many of those tokens instead';
+  const name = made.name;
   return effect.replacement.mode === 'thatMany'
     ? `Create that many ${name} tokens instead`
     : `Create those tokens plus an additional ${name} token instead`;

@@ -11,6 +11,7 @@ import { ANGEL_REPLACEMENT_RULES } from './angels';
 import { DIE_REPLACEMENT_RULES } from './die';
 import { DRAGON_REPLACEMENT_RULES } from './dragons';
 import { EDHREC_REPLACEMENT_RULES } from './edhrec';
+import { HASHATON_G3_REPLACEMENT_RULES } from './hashaton-group-3';
 import { KICKED_REPLACEMENT_RULES } from './kicked';
 import { REVEAL_REPLACEMENT_RULES } from './reveal';
 import { countersTail, ENTERS, replacement } from './shared';
@@ -231,4 +232,6 @@ export const REPLACEMENT_RULES = [
   ...EDHREC_REPLACEMENT_RULES,
   // Issue 25 (D-332): "If you would draw a card while your library has no cards in it, skip that draw instead."
   ...SKIP_DRAW_REPLACEMENT_RULES,
+  // Hashaton deck, group 3 (D-1150, D-1151): the two replacement effects of Bard, King of Dale.
+  ...HASHATON_G3_REPLACEMENT_RULES,
 ];

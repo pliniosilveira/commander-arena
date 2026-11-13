@@ -140,10 +140,12 @@ export function startTurn(state: GameState, seat: SeatId): Outcome {
 /** Starts a step: its turn-based actions, then priority if the step gives it (CR 500.2). */
 export function beginStep(input: GameState, step: StepId): Outcome {
   const active = input.turn.activeSeat;
+  // D-1151 (CR 504.1): the draws made in the step that ends are not the draws of the one that begins.
+  const { drewInDrawStep: _drewInDrawStep, ...turnBefore } = input.turn;
   let state: GameState = {
     ...input,
     turn: {
-      ...input.turn,
+      ...turnBefore,
       step,
       phase: PHASE_OF[step],
       passedInSuccession: [],
