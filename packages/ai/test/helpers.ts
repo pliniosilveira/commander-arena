@@ -2552,6 +2552,49 @@ export const DANITHA_G5_LANDS = supported([
 ]);
 
 /**
+ * The SYNTHETIC cards of group 4 of the Danitha deck (D-1240 to D-1245): three Auras with Umbra armor (one of them enchants only a modified creature) and the creature that
+ * pumps the other modified creatures and makes Auras and Equipment cheaper. Umbra armor replaces a destruction, and with a regeneration shield or a second Umbra Aura on the
+ * same creature the controller is asked in what order (a `chooseOption` of purpose `replacement`, in the middle of a resolution or of the state-based actions). That question
+ * changes which answers the generic pools ask for, which games-100 expects only from dedicated styles.
+ */
+export const DANITHA_G4_NAMES = [
+  'SYNTHETIC Umbra Hide',
+  'SYNTHETIC Umbra Veil',
+  'SYNTHETIC Umbra Mantle',
+  'SYNTHETIC Modified Rallier',
+] as const;
+
+/** The danithaG4 style: every card of the group twice, creatures with and without regeneration, the removal that destroys them, and Auras, Equipment and counters that make a creature modified. */
+export const DANITHA_G4_SPELLS = [
+  ...supported(DANITHA_G4_NAMES),
+  ...supported(DANITHA_G4_NAMES),
+  ...supported(['SYNTHETIC Regenerating Troll', 'SYNTHETIC Regrowth Charm']),
+  ...supported(['Lightning Bolt', 'Murder', 'SYNTHETIC Final Smite', 'SYNTHETIC Wrath']),
+  ...supported(['SYNTHETIC Might Aura', 'SYNTHETIC Blade']),
+  ...supported([
+    'Grizzly Bears',
+    'Grizzly Bears',
+    'Giant Spider',
+    'Llanowar Elves',
+    'Typhoid Rats',
+  ]),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Green for the Auras, black for the regeneration and the removal, a little red and white for the rest. */
+export const DANITHA_G4_LANDS = supported([
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Swamp',
+  'Swamp',
+  'Plains',
+  'Plains',
+  'Mountain',
+]);
+
+/**
  * The SYNTHETIC cards of group 9 of the Hashaton deck (D-390 to D-395): an activated ability with a Phyrexian symbol in its cost (paid with mana or 2 life), the
  * transforming double-faced creature that has it, the exile of a random card from a hand, and the 5/5 whose damage trigger exiles a card from the hand of the controller of the source
  * and then asks "you may put it onto the battlefield" or "you may cast it without paying its mana cost" (a `confirmOptional` or a `chooseCards` of purpose `cast`, in the middle of a
@@ -3304,6 +3347,8 @@ const FIXTURES: readonly CardDefinition[] = [
 
   // The Danitha group 5 cards (D-405 to D-408) search with a card on top, move an Aura onto each creature that enters, blight a creature as a cost and cast an Aura at flash timing: a style of their own.
   .filter((card) => !(DANITHA_G5_NAMES as readonly string[]).includes(card.name))
+  // The Danitha group 4 cards (D-1240 to D-1245) have Umbra armor, which asks the order of a regeneration shield and a second Umbra Aura in the middle of a resolution: a style of their own.
+  .filter((card) => !(DANITHA_G4_NAMES as readonly string[]).includes(card.name))
   // The Hashaton group 9 cards (D-390 to D-395) pay life for a Phyrexian symbol, transform and exile a random card from a hand with two offers behind it, which games-100 expects only from dedicated styles.
   .filter((card) => !(HASHATON_G9_NAMES as readonly string[]).includes(card.name))
   // The Danitha group 1b cards (D-400 to D-404) ask "you may put it onto the battlefield" and an Aura's host in the middle of a resolution, and cast Auras from the graveyard: dedicated tests.
@@ -3512,6 +3557,7 @@ export type DeckStyle =
   | 'hashatonDiscardX'
   | 'danithaReveal'
   | 'danithaG5'
+  | 'danithaG4'
   | 'repeatable'
   | 'manifest'
   | 'combat';
@@ -3531,6 +3577,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'hashatonDiscardX' && HASHATON_G10_SPELLS.length > 0) return HASHATON_G10_SPELLS;
   if (style === 'danithaReveal' && DANITHA_G1A_SPELLS.length > 0) return DANITHA_G1A_SPELLS;
   if (style === 'danithaG5' && DANITHA_G5_SPELLS.length > 0) return DANITHA_G5_SPELLS;
+  if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
   if (style === 'manifest' && MANIFEST_SPELLS.length > 0) return MANIFEST_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
@@ -3714,6 +3761,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'hashatonDiscardX' && BASIC_LANDS.length > 0) return HASHATON_G10_LANDS;
   if (style === 'danithaReveal' && BASIC_LANDS.length > 0) return DANITHA_G1A_LANDS;
   if (style === 'danithaG5' && BASIC_LANDS.length > 0) return DANITHA_G5_LANDS;
+  if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
   if (style === 'manifest' && BASIC_LANDS.length > 0) return MANIFEST_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
@@ -4184,6 +4232,13 @@ export const DANITHA_G5_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
   ['danithaG5', 'danithaG5'],
   ['danithaG5', 'spells'],
   ['spells', 'danithaG5'],
+];
+
+/** Style pairs of the Danitha group 4 soak test (D-1240 to D-1245): a mirror match and both mixed ways. */
+export const DANITHA_G4_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['danithaG4', 'danithaG4'],
+  ['danithaG4', 'spells'],
+  ['spells', 'danithaG4'],
 ];
 
 /** Style pairs of the repeatable-mode soak test (D-344): a mirror match and both mixed ways. */

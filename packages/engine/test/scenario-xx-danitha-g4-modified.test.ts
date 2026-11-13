@@ -152,6 +152,44 @@ describe('"Enchant modified creature" (CR 303.4a, 704.5m)', () => {
   });
 });
 
+describe("Aura and Equipment spells you cast cost {X} less to cast, where X is this creature's power (CR 601.2f, 208.1)", () => {
+  function castBoard(
+    creatures: readonly (readonly [string, object?])[],
+    lands: readonly string[],
+    hand: readonly string[],
+  ) {
+    const s = scenario().seat(0);
+    for (const [name, options] of creatures) s.battlefield(name, options);
+    return s
+      .battlefield(...lands)
+      .hand(...hand)
+      .library(...LIBRARY)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+  }
+
+  test('an Aura costs {1} less with a power of 1: {1}{G} is paid with one Forest; without the creature it cannot be', () => {
+    const g = castBoard([[RALLIER]], ['Forest'], [MIGHT]);
+    expect(g.act(0).try.cast(MIGHT).ok).toBe(true);
+    const without = castBoard([[BEARS]], ['Forest'], [MIGHT]);
+    expect(without.act(0).try.cast(MIGHT).ok).toBe(false);
+  });
+
+  test('it follows the power as it is when the spell is cast: two +1/+1 counters make an Equipment of {1} free, never below zero', () => {
+    const g = castBoard([[RALLIER, { counters: { '+1/+1': 2 } }]], [], [BLADE]);
+    g.expect.pt(RALLIER, 3, 5);
+    expect(g.act(0).try.cast(BLADE).ok).toBe(true);
+  });
+
+  test('only Aura and Equipment spells are reduced: a creature spell costs what it costs', () => {
+    const g = castBoard([[RALLIER]], ['Forest'], [BEARS]);
+    // Grizzly Bears costs {1}{G}: one Forest is not enough.
+    expect(g.act(0).try.cast(BEARS).ok).toBe(false);
+  });
+});
+
 describe('the AST: where "modified" may stand (validateCard)', () => {
   const card = (subjectFilter: object) =>
     singleFace({

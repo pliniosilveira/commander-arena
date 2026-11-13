@@ -70,7 +70,7 @@ export const SYNTHETIC_DANITHA_G4_LIST: readonly CardDefinition[] = [
       UMBRA,
     ],
   }),
-  // "Whenever this creature attacks, other modified creatures you control get +X/+X until end of turn, where X is this creature's power."
+  // "Aura and Equipment spells you cast cost {X} less to cast, where X is this creature's power. Whenever this creature attacks, other modified creatures you control get +X/+X until end of turn, where X is this creature's power."
   singleFace({
     name: 'SYNTHETIC Modified Rallier',
     manaCost: ['1', 'G', 'W'],
@@ -81,8 +81,19 @@ export const SYNTHETIC_DANITHA_G4_LIST: readonly CardDefinition[] = [
     power: 1,
     toughness: 3,
     oracleText:
-      "Whenever this creature attacks, other modified creatures you control get +X/+X until end of turn, where X is this creature's power.",
+      "Aura and Equipment spells you cast cost {X} less to cast, where X is this creature's power.\nWhenever this creature attacks, other modified creatures you control get +X/+X until end of turn, where X is this creature's power.",
     abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'costReduction',
+          spells: {
+            controller: 'you',
+            anyOf: [{ subtypes: ['Aura'] }, { subtypes: ['Equipment'] }],
+          },
+          amount: { kind: 'powerOf', of: { kind: 'this' } },
+        },
+      },
       {
         kind: 'triggered',
         trigger: { kind: 'attacks', what: { kind: 'this' } },

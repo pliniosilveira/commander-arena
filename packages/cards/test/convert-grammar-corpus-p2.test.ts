@@ -431,8 +431,14 @@ const CHOICES: readonly Line[] = [
   {
     kind: 'instant',
     text: 'Other creatures you control get +1/+1 until end of turn.',
-    expect: no('Other creatures you control get +1/+1 until end of turn.', NONE),
-    note: '"other" is not read',
+    expect: OK,
+    note: 'read since the Danitha deck, group 4 (D-1243, `effect.pump-others`: the group of "other ..." with the change and its duration)',
+  },
+  {
+    kind: 'instant',
+    text: 'Other creatures you control get +1/+1 and gain trample until end of turn.',
+    expect: no('Other creatures you control get +1/+1 and gain trample until end of turn.', NONE),
+    note: '"other" with a second change is not read (the rule reads one change and its duration)',
   },
   {
     kind: 'instant',
