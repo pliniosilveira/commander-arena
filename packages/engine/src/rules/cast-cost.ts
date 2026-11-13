@@ -81,6 +81,8 @@ export interface SpellCost {
   readonly exile: number;
   /** The permanents tapped as part of the cost, or null (the `tapPermanents` alternative cost, D-149). */
   readonly tap: TapRequirement | null;
+  /** D-991 (CR 609.4b): mana of any type can be spent on the spell, so any mana pays any symbol of `symbols`. */
+  readonly anyType?: true;
 }
 
 /** "Tap four untapped creatures you control with flying" (D-149): how many permanents matching the filter are tapped. */
@@ -234,6 +236,11 @@ export interface CostRequest {
   readonly costOption?: 0 | 1;
   /** Whether a reduction that depends on the spell's targets is counted although none is chosen yet (D-207): the check that a spell may be cast at all. */
   readonly optimistic?: boolean;
+  /**
+   * Mana of any type can be spent to cast the spell (D-991, CR 609.4b): left out, what the spell on the stack says (`StackData.anyManaType`); true for a card that is not
+   * on the stack yet (the check that an effect lets it be cast).
+   */
+  readonly anyType?: true;
 }
 
 /** The ways the caster could pay the additional cost choice of the face: both, or `undefined` once for a face with no choice (D-181). */
@@ -337,7 +344,17 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   // D-149: a `tapPermanents` alternative cost also taps that many untapped permanents the caster controls.
   const tapAlt = alternative === 'tapPermanents' ? alternativeOf(face, 'tapPermanents') : null;
   const tap = tapAlt === null ? null : { filter: tapAlt.filter, count: tapAlt.count };
-  return { symbols: reduced, tax, life, sacrifice, discard, exile, tap };
+  const anyType = request.anyType === true || spell.stack?.anyManaType === true;
+  return {
+    symbols: reduced,
+    tax,
+    life,
+    sacrifice,
+    discard,
+    exile,
+    tap,
+    ...(anyType ? { anyType: true as const } : {}),
+  };
 }
 
 /** What one point of X costs for this spell cast as `alternative` (see `spellXCost`). */
@@ -391,10 +408,16 @@ export function castManaPlan(
   extraSources?: readonly PaymentSource[],
   /** The permanents the cost taps afterwards (D-149): the plan leaves enough of them untapped. */
   tap?: TapRequirement | null,
+  /** D-991 (CR 609.4b): mana of any type can be spent on the spell: left out, what the spell on the stack says. */
+  anyType: boolean = spell.stack?.anyManaType === true,
 ): PaymentPlan | null {
   const derived = derive(state, spell);
   // D-149: mana that may be spent only on a spell of a type and creature type ("only to cast an Angel spell") reads the subtypes.
-  const target = { types: derived.types, subtypes: derived.subtypes };
+  const target = {
+    types: derived.types,
+    subtypes: derived.subtypes,
+    ...(anyType ? { anyType: true as const } : {}),
+  };
   const options = extraSources === undefined ? {} : { extraSources };
   const reserve = handReserve(state, seat, spell);
   const plan = planFor(state, seat, symbols, target, reserve, options);
@@ -475,7 +498,18 @@ export function canPaySpellCost(
   // cards, so they count as sources of the payment here (the caster chooses them as the cost is paid).
   const mechanisms = payMechanismsOf(faceOfSpell(state, spell));
   const extra = mechanisms.length === 0 ? undefined : payOptionSources(state, seat, mechanisms);
-  return castManaPlan(paid, seat, spell, cost.symbols, cost.sacrifice, extra, cost.tap) !== null;
+  return (
+    castManaPlan(
+      paid,
+      seat,
+      spell,
+      cost.symbols,
+      cost.sacrifice,
+      extra,
+      cost.tap,
+      cost.anyType === true,
+    ) !== null
+  );
 }
 
 /**

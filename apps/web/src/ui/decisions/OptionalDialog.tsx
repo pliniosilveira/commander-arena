@@ -30,6 +30,7 @@ const DIALOG_LABELS: Readonly<
   gift: 'Gift',
   costChoice: 'Additional cost',
   pairReturn: 'Return the cards',
+  castCard: 'Cast from a graveyard',
 };
 
 /**

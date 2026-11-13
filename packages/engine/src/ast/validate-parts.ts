@@ -3460,6 +3460,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'castCard':
+      // CR 608.2g (D-990): "you may cast target [card] from a graveyard": the card is a target of the ability (a card in a graveyard when the ability resolves).
+      if (kindOf(e.object) !== 'target') {
+        issue(out, `${path}.object`, 'the card to cast is a target');
+      } else {
+        checkRef(e.object as ObjectRef, 'object', `${path}.object`, scope, out);
+      }
+      if (e.anyManaType !== undefined && e.anyManaType !== true) {
+        issue(out, `${path}.anyManaType`, 'anyManaType must be true when present');
+      }
+      if (e.exileInstead !== undefined && e.exileInstead !== true) {
+        issue(out, `${path}.exileInstead`, 'exileInstead must be true when present');
+      }
+      break;
     case 'fight':
       // CR 701.14 (D-145): creatures fight. Without a pairing each side is one creature; with `differentChosen` the group on the
       // other side is a selector the controller pairs the fighters with.

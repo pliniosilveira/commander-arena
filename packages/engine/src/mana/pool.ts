@@ -6,7 +6,15 @@ import type { ManaColor, ManaObject, ManaRestriction } from './types';
 
 /** What the mana is about to be spent on: a spell with these types, or an ability. */
 export type SpendTarget =
-  | { readonly types: readonly string[]; readonly subtypes?: readonly string[] }
+  | {
+      readonly types: readonly string[];
+      readonly subtypes?: readonly string[];
+      /**
+       * D-991 (CR 609.4b): "mana of any type can be spent to cast that spell": any mana pays any mana symbol of the spell's cost, colored or colorless. The restriction
+       * of the mana itself and the snow of {S} are not about its type and still apply.
+       */
+      readonly anyType?: true;
+    }
   /** An activated ability; with `source` (D-151) the card types and subtypes of the permanent it belongs to. */
   | {
       readonly ability: true;

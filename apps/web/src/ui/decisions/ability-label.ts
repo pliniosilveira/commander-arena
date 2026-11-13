@@ -43,6 +43,7 @@ import {
   triggerWords,
   untapChooseText,
 } from '../../game/artifacts-text';
+import { castCardText } from '../../game/cast-card-text';
 import { gameConditionWords } from '../../game/condition-text';
 import { copySpellWords, delayedCastWords } from '../../game/copy-text';
 import { activationCostPart, activationCostText, unlessCostPhrase } from '../../game/cost-text';
@@ -788,6 +789,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'revealUntil':
       // D-145 (CR 701.20).
       return revealUntilText(effect) ?? UNSAID;
+    case 'castCard':
+      // D-990 (CR 608.2g, 609.4b, 614.1a): "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell
+      // would be put into a graveyard, exile it instead".
+      return castCardText(effect, object(effect.object));
     case 'castFree':
       // D-145 (CR 608.2g, 118.9).
       return castFreeText(effect) ?? UNSAID;

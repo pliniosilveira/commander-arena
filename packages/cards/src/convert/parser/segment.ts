@@ -250,6 +250,16 @@ const EXILE_AT_RANDOM = /(?:^|, then )exile a card from your graveyard at random
 const PLAY_THE_EXILED_CARD = /^you may play the exiled card this turn\.$/i;
 
 /**
+ * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it
+ * instead." (D-990 to D-992 and D-994, CR 614.1a): "that spell" is the one cast, so the second sentence is a rider of the first and the two are read as one instruction
+ * (`effect.cast-graveyard-card`; the first may follow the comma of a trigger).
+ */
+const CAST_TARGET_FROM_GRAVEYARD =
+  /(?:^|, )you may cast target [^.,]* cards? from a graveyard(?:, and mana of any type can be spent to cast that spell)?\.$/i;
+const EXILE_THAT_SPELL_INSTEAD =
+  /^if that spell would be put into a graveyard, exile it instead\.$/i;
+
+/**
  * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (D-303, CR 700.3):
  * three sentences that are one instruction (what is revealed, who separates it and where each pile goes), kept together so `effect.reveal-separate-piles` reads them as one. Only all
  * three in a row.
@@ -292,7 +302,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
         (said(a, LOOK_AT_TOP) && said(b, PUT_HAND_REST_BOTTOM)) ||
-        (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)))
+        (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)) ||
+        (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)))
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

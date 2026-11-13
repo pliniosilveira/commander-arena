@@ -16,6 +16,7 @@ import type {
 import { faceDownLabel } from '@commander-arena/engine';
 import { alternativeLogWords, isNamedAlternative } from './alt-cost';
 import { findEffect } from './artifacts-text';
+import { castCardAnswerLine } from './cast-card-text';
 import { optionText } from './chosen';
 import { costText, unlessCostPhrase } from './cost-text';
 import {
@@ -880,7 +881,8 @@ export function describeEvent(
     }
     case 'optionalAnswered': {
       // Suspend's "cast it now?", Madness's "cast it for its madness cost?" and Miracle's "cast it for its miracle cost?" (D-128, D-274).
-      const later = castNowAnswerLine(before, event, viewer);
+      const later =
+        castNowAnswerLine(before, event, viewer) ?? castCardAnswerLine(before, event, viewer);
       if (later !== null) return line('major', later.text, later.seat, later.objects, later.rule);
       // Extort's "you may pay {W/B}" and Cascade's "cast it without paying its mana cost" (D-120).
       const keyword = keywordAnswerLine(before, after, event, viewer);

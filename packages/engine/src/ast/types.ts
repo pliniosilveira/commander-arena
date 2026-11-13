@@ -2212,6 +2212,23 @@ export type Effect =
       readonly play?: true;
     }
   /**
+   * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it
+   * instead" (D-990, CR 608.2g, 601.2, 609.4b, 614.1a, 400.7): as this resolves the controller may cast the card `object` names (a target, a card in a graveyard of any
+   * player: the effect names it, so the card need not be theirs) paying its mana cost as the cast of CR 608.2g says: the steps of CR 601.2a-i (modes, targets, additional
+   * costs; no timing restriction), no player receives priority and the effect goes on resolving. The card is asked about only when it could be cast now (its targets, its
+   * cost payable: a card that could not be is left where it is). The two riders belong to that one spell, as it is on the stack: `anyManaType` ("mana of any type can be spent to
+   * cast that spell", CR 609.4b: any mana pays any symbol of its cost, colored or colorless, while a restriction of the mana itself and the snow of {S} still apply) and
+   * `exileInstead` ("If that spell would be put into a graveyard, exile it instead": when it leaves the stack for a graveyard, resolved, countered or any other way, it goes
+   * to exile; the card keeps its owner, and exile is not a zone of anyone, CR 400.7). A permanent spell that resolves is not put into a graveyard, so the replacement does nothing
+   * to it until it would be.
+   */
+  | {
+      readonly kind: 'castCard';
+      readonly object: Extract<ObjectRef, { readonly kind: 'target' }>;
+      readonly anyManaType?: true;
+      readonly exileInstead?: true;
+    }
+  /**
    * CR 701.14 (Fight, D-145): each creature in `fighters` fights a creature in `against`: the two deal damage equal to their own power to
    * each other at the same time, noncombat damage dealt by the creatures themselves (lifelink, deathtouch, a prevention effect and the
    * rest apply, CR 120.3); if either is no longer a creature on the battlefield, no damage is dealt (CR 701.14b). Without `pairing` both name

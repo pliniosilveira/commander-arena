@@ -112,6 +112,7 @@ export type EffectInstruction = Exclude<
   | { kind: 'copySpell' }
   | { kind: 'changeTarget' }
   | { kind: 'castFree' }
+  | { kind: 'castCard' }
 >;
 
 export function runInstruction(
@@ -1668,6 +1669,25 @@ function runEffect(
             ...(effect.take.hidden === true ? { hidden: true as const } : {}),
             rest: effect.rest,
             chosen: null,
+          },
+        ],
+      );
+    }
+
+    case 'castCard': {
+      // CR 608.2g, 608.2b (D-990): "you may cast target [card] from a graveyard": the target, if it is still a legal one (rules/cast-card.ts).
+      const [card] = resolveObjects(state, effect.object, ctx, targets);
+      if (card === undefined) return done(state);
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'castCard',
+            stage: 'start',
+            card,
+            anyManaType: effect.anyManaType === true,
+            exileInstead: effect.exileInstead === true,
           },
         ],
       );
