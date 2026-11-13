@@ -2747,6 +2747,47 @@ export const HASHATON_G5_LANDS = supported([
   'Forest',
 ]);
 
+/**
+ * The SYNTHETIC cards of group 1A of the Danitha deck (D-1200, D-1201): a sorcery, an enters trigger, an enchantment sacrificed for its ability and a sorcery with a token, all of
+ * which reveal the top cards of the library to everyone (`cardsRevealed`), ask which card of a kind to take into the hand (a `chooseCards` of purpose `lookTake`) and put the rest
+ * into the graveyard. The graveyard fills from the library, so games-100 (which expects only dedicated styles to ask `lookTake` of a revealed top) leaves them to the
+ * 'danithaReveal' style.
+ */
+export const DANITHA_G1A_NAMES = [
+  'SYNTHETIC Reveal Five Sorcery',
+  'SYNTHETIC Reveal Four Scout',
+  'SYNTHETIC Reveal Four Vessel',
+  'SYNTHETIC Reveal Four Permanent Spawn',
+  'SYNTHETIC Reveal Three Spells',
+  'SYNTHETIC Look Five Sorcery',
+] as const;
+
+/** The danithaReveal style: each card of the group twice, bodies of every permanent kind to find, burn and removal. */
+export const DANITHA_G1A_SPELLS = [
+  ...supported(DANITHA_G1A_NAMES),
+  ...supported(DANITHA_G1A_NAMES),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Grizzly Bears', 'Serra Angel']),
+  ...supported(['Lightning Bolt', 'Murder', 'Divination']),
+];
+
+/** Green for the cards of the group, a little of the rest for the cards they find. */
+export const DANITHA_G1A_LANDS = supported([
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Plains',
+  'Mountain',
+  'Swamp',
+]);
+
+/** Style pairs of the Danitha reveal soak test: a mirror match and both mixed ways. */
+export const DANITHA_G1A_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['danithaReveal', 'danithaReveal'],
+  ['danithaReveal', 'spells'],
+  ['spells', 'danithaReveal'],
+];
+
 export const NIV_DRAW_NAMES = [
   'SYNTHETIC Hollow Warden',
   'SYNTHETIC Draw Veto',
@@ -3221,6 +3262,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(HASHATON_G3_NAMES as readonly string[]).includes(card.name))
   // The copy cards of the Hashaton deck (D-382 to D-385) ask what to discard, whether to pay and which type; they have their own style.
   .filter((card) => !(HASHATON_G5_NAMES as readonly string[]).includes(card.name))
+  // The reveal-and-take cards of the Danitha deck (D-1200, D-1201) have their own style: they reveal the top of the library and ask which card to take.
+  .filter((card) => !(DANITHA_G1A_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
@@ -3409,6 +3452,7 @@ export type DeckStyle =
   | 'hashatonG3'
   | 'hashatonCopies'
   | 'hashatonDiscardX'
+  | 'danithaReveal'
   | 'repeatable'
   | 'manifest'
   | 'combat';
@@ -3426,6 +3470,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'hashatonG3' && HASHATON_G3_SPELLS.length > 0) return HASHATON_G3_SPELLS;
   if (style === 'hashatonCopies' && HASHATON_G5_SPELLS.length > 0) return HASHATON_G5_SPELLS;
   if (style === 'hashatonDiscardX' && HASHATON_G10_SPELLS.length > 0) return HASHATON_G10_SPELLS;
+  if (style === 'danithaReveal' && DANITHA_G1A_SPELLS.length > 0) return DANITHA_G1A_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
   if (style === 'manifest' && MANIFEST_SPELLS.length > 0) return MANIFEST_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
@@ -3607,6 +3652,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'hashatonG3' && BASIC_LANDS.length > 0) return HASHATON_G3_LANDS;
   if (style === 'hashatonCopies' && BASIC_LANDS.length > 0) return HASHATON_G5_LANDS;
   if (style === 'hashatonDiscardX' && BASIC_LANDS.length > 0) return HASHATON_G10_LANDS;
+  if (style === 'danithaReveal' && BASIC_LANDS.length > 0) return DANITHA_G1A_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
   if (style === 'manifest' && BASIC_LANDS.length > 0) return MANIFEST_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;

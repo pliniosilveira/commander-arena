@@ -305,3 +305,10 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The trigger "a source deals damage to ~" reads no filter on the source ("a creature deals damage to ~", "a source you control deals damage to ~"): the engine's `dealtDamage` has none.
 - `exileRandomFromHand` names one player; "each opponent exiles a card from their hand at random" (several players, several cards, no single "it") is not built. "You exile a card from your hand at random" and "target player exiles ..." run in the engine but the grammar reads only the subjects "that source's controller" and "that player".
 - "put it onto the battlefield" and "cast it without paying its mana cost" are read only for "it" of the card `exile-random-from-hand` exiled (tapped, attacking, with counters, "under its owner's control" and another card are not read). The web words the question of the land offer as every `may` ("name: text — do it?").
+
+## The Danitha deck, group 1A (issue 26, D-1200 to D-1203, provisional)
+
+- `effect.reveal-take` reads the take into the hand with the rest into the graveyard only: "Put the rest on the bottom of your library in a random order" after "Reveal the top N cards ... you may put" (the wording of other cards of the corpus) is not read, nor a card put onto the battlefield, more than one card, a count of one card, X or a library that is not the controller's. The engine runs `revealAll` with every `rest` and with `to: 'battlefield'`; the grammar does not read those wordings, because no card of the owner's decks says them.
+- The cards put into the graveyard together are not arranged by the owner (CR 404.3): they go in the order of the top of the library. No card of the group depends on it.
+- `revealAll` shows the whole top to the other player through one log line that names the cards; the picker of the player who chooses lists the cards that may be taken first and the others below ("Also revealed (cannot be taken)"), as for a look.
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session); the behaviour rests on CR 701.20a and 701.20b.

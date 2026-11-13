@@ -564,6 +564,7 @@ describe('unmatched abilities', () => {
       'effect.put-it-onto-battlefield',
       'effect.cast-it-free',
       'effect.reveal-separate-piles',
+      'effect.reveal-take',
       'effect.tap-chosen',
       'effect.untap-chosen',
       'effect.untap-those',

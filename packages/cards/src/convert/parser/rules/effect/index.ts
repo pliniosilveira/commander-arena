@@ -85,6 +85,7 @@ import { PUT_RULES } from './put';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
+import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
@@ -906,6 +907,8 @@ export const EFFECT_RULES = [
   ...HASHATON_G9_EFFECT_RULES,
   // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. ..." (three sentences kept together).
   ...PILES_EFFECT_RULES,
+  // D-1200 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."
+  ...REVEAL_TAKE_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.
   ...ARTIFACT_EFFECT_RULES,
   EFFECT_TAP,

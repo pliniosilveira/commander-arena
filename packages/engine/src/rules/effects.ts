@@ -1720,6 +1720,8 @@ function runEffect(
               : { totalManaValue: effect.take.totalManaValue }),
             // D-324 (CR 701.20a): "Put two of them into your hand" does not reveal them.
             ...(effect.take.hidden === true ? { hidden: true as const } : {}),
+            // CR 701.20a (D-1200): "Reveal the top five cards of your library" shows every one of them.
+            ...(effect.revealAll === true ? { revealAll: true as const } : {}),
             rest: effect.rest,
             chosen: null,
           },

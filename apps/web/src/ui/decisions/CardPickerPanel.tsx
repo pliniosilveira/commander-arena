@@ -14,6 +14,7 @@ import {
   foundCount,
   groupCards,
   lookTakeDestination,
+  lookTakeRevealed,
   ordinal,
   pickerCards,
   pickOrderLabel,
@@ -62,6 +63,8 @@ export function CardPickerPanel({
   const exile = decision.purpose === 'exile';
   const move = decision.purpose === 'move';
   const lookTake = decision.purpose === 'lookTake';
+  // D-1200 (CR 701.20a): a reveal shows the cards to everyone, a look to this player only.
+  const revealedToAll = lookTakeRevealed(decision);
   // D-303 (CR 700.3): the cards to separate into two piles; the cards clicked are pile 1.
   const separate = decision.purpose === 'separate';
   const piles = separate ? pilesPreview(pickerCards(view, decision), ui.found) : null;
@@ -129,7 +132,9 @@ export function CardPickerPanel({
               : move
                 ? 'Cards to put onto the battlefield'
                 : lookTake
-                  ? 'Cards looked at'
+                  ? revealedToAll
+                    ? 'Cards revealed'
+                    : 'Cards looked at'
                   : cast
                     ? 'Cards to cast for free'
                     : separate
@@ -159,7 +164,12 @@ export function CardPickerPanel({
                 ? `Choose ${cardsRange(decision.min, decision.max)}`
                 : `Choose ${cardsRange(decision.max, decision.max)}, or one card marked “${ALONE}”`}
         {exile ? ' from your graveyard' : ''}
-        {lookTake ? LOOK_TAKE_WORDS[takeTo] : ''}.{lookTake ? ' Only you see these cards.' : ''}
+        {lookTake ? LOOK_TAKE_WORDS[takeTo] : ''}.
+        {lookTake
+          ? revealedToAll
+            ? ' Everyone sees these cards.'
+            : ' Only you see these cards.'
+          : ''}
         {decision.reveal && search ? ' The cards you find are revealed.' : ''}
         {putOnTop && ordered ? ' The first you pick ends on top.' : ''}
       </p>
@@ -187,7 +197,11 @@ export function CardPickerPanel({
       )}
       {lookTake && others.length > 0 ? (
         <>
-          <p className="dec-sub dec-left">Also looked at (cannot be taken):</p>
+          <p className="dec-sub dec-left">
+            {revealedToAll
+              ? 'Also revealed (cannot be taken):'
+              : 'Also looked at (cannot be taken):'}
+          </p>
           <ul className="dec-pick-list" aria-label="Other cards looked at">
             {others.map((card) => (
               <li key={card.id}>
