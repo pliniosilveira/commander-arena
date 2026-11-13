@@ -197,6 +197,23 @@
       "reasons": [],
       "ast": "d8a653a4"
     },
+    "06ccec61-27d2-4079-80b5-29ebd3a980ee": {
+      "name": "Cache Grab",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Mill four cards. You may put a permanent card from among the cards milled this way into your hand. If you control a Squirrel or returned a Squirrel card to your hand this way, create a Food token.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "984f82b9"
+    },
     "07617648-6490-4719-acec-7705671f7e01": {
       "name": "Protege's Awakening",
       "group": "acceptance",
@@ -261,6 +278,38 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3942760a"
+    },
+    "097992a9-7b88-4c3f-8191-1ff10a4a735d": {
+      "name": "Strong Back",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Equip abilities you activate that target enchanted creature cost {3} less to activate.",
+          "reason": "unrecognised",
+          "slot": "cost",
+          "closestRule": "keyword.equip"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Aura spells you cast that target enchanted creature cost {3} less to cast.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        },
+        {
+          "face": 0,
+          "ability": 3,
+          "text": "Enchanted creature gets +2/+2 for each Aura and Equipment attached to it.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "amount.for-each"
+        }
+      ],
+      "reasons": [],
+      "ast": "d12ec6db"
     },
     "09dd85aa-47bc-4713-a9b9-8b52ff2285ed": {
       "name": "Misty Rainforest",
@@ -836,6 +885,40 @@
       "reasons": [],
       "ast": "0cddcf4b"
     },
+    "2bfc7467-1316-43d3-9ca6-ff36cc2de607": {
+      "name": "Kor Spiritdancer",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "~ gets +2/+2 for each Aura attached to it.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "amount.for-each"
+        }
+      ],
+      "reasons": [],
+      "ast": "25591d52"
+    },
+    "2c275a85-5a15-46cd-a6e7-add63f9b853d": {
+      "name": "Sterling Grove",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{1}, Sacrifice ~: Search your library for an enchantment card, reveal it, then shuffle and put that card on top.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.search"
+        }
+      ],
+      "reasons": [],
+      "ast": "03ce6236"
+    },
     "2c49d24a-98a4-43c2-bb59-1ef13d4214c2": {
       "name": "Untimely Malfunction",
       "group": "acceptance",
@@ -949,6 +1032,23 @@
       "reasons": [],
       "ast": "ef4d7b6b"
     },
+    "3233af43-7826-4895-b67e-03c6102c2cd5": {
+      "name": "Kutzil, Malamet Exemplar",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever one or more creatures you control each with power greater than its base power deals combat damage to a player, draw a card.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "864909da"
+    },
     "3250466f-82a4-45e1-9722-ff247ddf8c15": {
       "name": "Vanguard Seraph",
       "group": "training",
@@ -1004,6 +1104,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2a5c6a70"
+    },
+    "354affb3-1be7-4a9e-91da-2989eb54f62d": {
+      "name": "Hyena Umbra",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Umbra armor",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "6a4bcea8"
     },
     "35754a21-9fba-4370-a254-292918a777ba": {
       "name": "Nissa, Vastwood Seer // Nissa, Sage Animist",
@@ -1250,6 +1366,23 @@
       "reasons": [],
       "ast": "b916a4d2"
     },
+    "3f4e300a-ec5c-42f3-a97b-d58e62abe22b": {
+      "name": "Season of Growth",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever you cast a spell that targets a creature you control, draw a card.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.cast"
+        }
+      ],
+      "reasons": [],
+      "ast": "b0045a48"
+    },
     "3fd8ba0c-75ec-43ea-8706-f71e6cf1d236": {
       "name": "Champion of Wits",
       "group": "acceptance",
@@ -1257,6 +1390,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5456ad62"
+    },
+    "406247ee-2b86-4068-b5fa-65cdc83a82f4": {
+      "name": "Shardmage's Rescue",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "As long as ~ entered this turn, enchanted creature has hexproof.",
+          "reason": "unrecognised",
+          "slot": "static",
+          "closestRule": "static.conditional-prefix"
+        }
+      ],
+      "reasons": [],
+      "ast": "78c22f47"
     },
     "4080f7e3-06d3-4d3d-9929-4e826cb66713": {
       "name": "Herald of Eternal Dawn",
@@ -1329,6 +1479,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "181f9f5e"
+    },
+    "46cf0e3e-3c3e-4eb8-a71a-4b4b87744ced": {
+      "name": "Something Worth Saving",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Mill four cards. You may put a permanent card from among them into your hand. You gain 1 life.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "7ac840ab"
     },
     "473da1b6-232b-4428-a66d-30262246b47a": {
       "name": "Emeria Shepherd",
@@ -1777,6 +1944,23 @@
       "reasons": [],
       "ast": "d4fa6622"
     },
+    "6042a806-6e6a-4f1d-9563-5932a17f32f9": {
+      "name": "Commune with the Gods",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.reveal-separate-piles"
+        }
+      ],
+      "reasons": [],
+      "ast": "c4f4b2ad"
+    },
     "610af0f7-b5e3-43fb-9d02-7c59bd99034c": {
       "name": "Tear Asunder",
       "group": "holdout",
@@ -2141,6 +2325,23 @@
       "reasons": [],
       "ast": "f69cef91"
     },
+    "719aeb50-c8cf-4cd8-b74c-d2cef408b52e": {
+      "name": "Airlift Chaplain",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "When ~ enters, mill three cards. You may put a Plains card or a creature card with mana value 3 or less from among the cards milled this way into your hand. If you don't, put a +1/+1 counter on ~.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.add-counters"
+        }
+      ],
+      "reasons": [],
+      "ast": "b9c1ffae"
+    },
     "71a80491-eea2-4661-9446-26a87efbf4a8": {
       "name": "Kykar, Wind's Fury",
       "group": "acceptance",
@@ -2263,6 +2464,22 @@
       "reasons": [],
       "ast": "6359e759"
     },
+    "75e4448b-5bd7-4ed4-8db8-820cd6d04c12": {
+      "name": "Boar Umbra",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Umbra armor",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "60aa353e"
+    },
     "761021ce-4559-464e-aa03-85c2fe78e267": {
       "name": "Rishkar, Peema Renegade",
       "group": "training",
@@ -2311,6 +2528,40 @@
       "reasons": [],
       "ast": "4a6635c5"
     },
+    "79085dea-8daa-41c0-a975-61e3e6da2e26": {
+      "name": "Shielded by Faith",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Whenever a creature enters, you may attach ~ to that creature.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.attach"
+        }
+      ],
+      "reasons": [],
+      "ast": "e4cf3b76"
+    },
+    "79bc2c6d-b03d-4ceb-b468-293378ec73ae": {
+      "name": "Midnight Tilling",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Mill four cards, then you may return a permanent card from among them to your hand.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "e5e49f50"
+    },
     "79f94050-d850-41ca-b1db-5ae0cf743f0a": {
       "name": "Temple of Epiphany",
       "group": "training",
@@ -2334,6 +2585,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f632ebc5"
+    },
+    "7b1a59db-0ffc-490b-a881-c8192f3747db": {
+      "name": "Gift of the Viper",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Put a +1/+1 counter, a reach counter, and a deathtouch counter on target creature. Untap it.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.add-counters"
+        }
+      ],
+      "reasons": [],
+      "ast": "af1aee68"
     },
     "7c3a8766-e440-48c5-a561-197490efdba5": {
       "name": "Heirloom Blade",
@@ -2475,6 +2743,40 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8752681e"
+    },
+    "8134f3fd-197a-4b44-a370-311cc955dea3": {
+      "name": "Ainok Wayfarer",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When ~ enters, mill three cards. You may put a land card from among them into your hand. If you don't, put a +1/+1 counter on ~.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.add-counters"
+        }
+      ],
+      "reasons": [],
+      "ast": "648ee1f5"
+    },
+    "81a51328-b995-4f3b-90bc-a20ae21dd254": {
+      "name": "Spirit Mantle",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Enchanted creature gets +1/+1 and has protection from creatures.",
+          "reason": "unrecognised",
+          "slot": "static",
+          "closestRule": "static.attached"
+        }
+      ],
+      "reasons": [],
+      "ast": "159161ae"
     },
     "82004860-e589-4e38-8d61-8c0210e4ea39": {
       "name": "Demonic Tutor",
@@ -2725,6 +3027,23 @@
       "reasons": [],
       "ast": "4fb06d1b"
     },
+    "8d1a367a-542e-4b94-b466-c922c5fb717b": {
+      "name": "Blanchwood Prowler",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When ~ enters, mill three cards. You may put a land card from among the cards milled this way into your hand. If you don't, put a +1/+1 counter on ~.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.add-counters"
+        }
+      ],
+      "reasons": [],
+      "ast": "745f9bd2"
+    },
     "8d2b2675-19df-4f40-9e8e-196ec097b91c": {
       "name": "Sunscorched Divide",
       "group": "acceptance",
@@ -2766,6 +3085,22 @@
       "reasons": [],
       "ast": "33efe5d6"
     },
+    "8e589dca-d31e-4d2f-81b1-18e5f9198795": {
+      "name": "Timely Ward",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "You may cast ~ as though it had flash if it targets a commander.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "95ffa2c2"
+    },
     "8e7641e1-e814-4d5a-9cb3-71ad2f4ceee8": {
       "name": "Rugged Prairie",
       "group": "training",
@@ -2789,6 +3124,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "728d3964"
+    },
+    "90b5ed05-7a67-4bd3-a8c4-2a4565d084fc": {
+      "name": "Face of Divinity",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "As long as another Aura is attached to enchanted creature, it has first strike and lifelink.",
+          "reason": "unrecognised",
+          "slot": "static",
+          "closestRule": "static.conditional-prefix"
+        }
+      ],
+      "reasons": [],
+      "ast": "c71ba866"
     },
     "92d95e12-fa51-4360-88e4-9078ccc5d8d3": {
       "name": "Cindervines",
@@ -2822,6 +3174,30 @@
       "reasons": [],
       "ast": "3b3fdbdf"
     },
+    "95e8e6bb-d83b-46fd-bfdf-fc042d8edd4a": {
+      "name": "Lion Umbra",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Enchant modified creature",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "keyword.enchant"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Umbra armor",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "e0c12e5d"
+    },
     "96230edf-568a-47dd-b877-9d92aa58fac8": {
       "name": "Nevinyrral's Disk",
       "group": "training",
@@ -2829,6 +3205,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1b84d472"
+    },
+    "971b30a8-4ab4-4e96-9d50-597da4d52994": {
+      "name": "Danitha, New Benalia's Light",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Once during each of your turns, you may cast an Aura or Equipment spell from your graveyard.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "fb637b86"
     },
     "97407cd0-2bd2-4074-94d3-4ec3d243fa78": {
       "name": "Rishkar's Expertise",
@@ -2886,6 +3278,31 @@
       "reasons": [],
       "ast": "8b9bfe78"
     },
+    "9b598025-80a3-4144-be9a-863165161594": {
+      "name": "Shield of the Oversoul",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "As long as enchanted creature is green, it gets +1/+1 and has indestructible.",
+          "reason": "unrecognised",
+          "slot": "static",
+          "closestRule": "static.conditional-prefix"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "As long as enchanted creature is white, it gets +1/+1 and has flying.",
+          "reason": "unrecognised",
+          "slot": "static",
+          "closestRule": "static.conditional-prefix"
+        }
+      ],
+      "reasons": [],
+      "ast": "613a1d3a"
+    },
     "9c36760b-57c5-488b-afc9-ef141942c6ab": {
       "name": "Archfiend of Despair",
       "group": "acceptance",
@@ -2917,6 +3334,42 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c0001f52"
+    },
+    "9dc61ef6-da22-42a8-b348-dfd5722deadf": {
+      "name": "Town Greeter",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When ~ enters, mill four cards. You may put a land card from among them into your hand. If you put a Town card into your hand this way, you gain 2 life.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.add-counters"
+        }
+      ],
+      "reasons": [],
+      "ast": "02d76504"
+    },
+    "9e0461e7-ccc4-413b-be80-83311be46861": {
+      "name": "Golden-Tail Trainer",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever ~ attacks, other modified creatures you control get +X/+X until end of turn, where X is ~'s power.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [
+        "faces[0].abilities[0].static.amount: a cost reduction reads what the game says now (a count, a greatest or total, devotion, ...), not powerOf"
+      ],
+      "ast": "2be2b2d8"
     },
     "9e96d12b-8381-4706-8089-3521aa2b5422": {
       "name": "Gau, Feral Youth",
@@ -3062,6 +3515,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a92e282b"
+    },
+    "a6fd90dc-0ec3-4dce-a77a-4d04f5e254bf": {
+      "name": "Winds of Rath",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Destroy all creatures that aren't enchanted. They can't be regenerated.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.all-permanents"
+        }
+      ],
+      "reasons": [],
+      "ast": "c6e82d90"
     },
     "a75445d3-1303-4bb5-89ad-26ea93fecd48": {
       "name": "Evolving Wilds",
@@ -3222,6 +3692,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4d49c504"
+    },
+    "add60aad-2532-4f59-bfb9-f0168c2adda6": {
+      "name": "Cosmic Rebirth",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose target permanent card in your graveyard. If it has mana value 3 or less, you may put it onto the battlefield. If you don't put it onto the battlefield, put it into your hand.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "spell.effect"
+        }
+      ],
+      "reasons": [],
+      "ast": "9187f09c"
     },
     "ae120613-97d6-4393-b39d-c3e6c076f5d6": {
       "name": "Deflecting Swat",
@@ -3426,6 +3913,31 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8f8b16fe"
+    },
+    "bd92cacd-c7d8-43a2-a261-ea4754fefdc5": {
+      "name": "Sage's Reverie",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "When ~ enters, draw a card for each Aura you control that's attached to a creature.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "amount.for-each"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Enchanted creature gets +1/+1 for each Aura you control that's attached to a creature.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "static.pt-count"
+        }
+      ],
+      "reasons": [],
+      "ast": "d0d6b497"
     },
     "bea3ff6e-7649-4e51-b2ad-763f9ac2d4b8": {
       "name": "Renewed Solidarity",
@@ -3783,6 +4295,23 @@
       "reasons": [],
       "ast": "6d0089b6"
     },
+    "d30d8968-ec24-4155-97e2-28efd52c8810": {
+      "name": "Malevolent Rumble",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Reveal the top four cards of your library. You may put a permanent card from among them into your hand. Put the rest into your graveyard. Create a 0/1 colorless Eldrazi Spawn creature token with \"Sacrifice ~: Add {C}.\"",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.reveal-separate-piles"
+        }
+      ],
+      "reasons": [],
+      "ast": "d4fea0c1"
+    },
     "d3576617-7867-4c3d-aa31-d6742483465b": {
       "name": "Chandra's Emberling",
       "group": "acceptance",
@@ -3903,6 +4432,31 @@
       "reasons": [],
       "ast": "4d69ece5"
     },
+    "d8599f06-f030-4575-8497-307a4d7ec182": {
+      "name": "Spiral into Solitude",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Enchanted creature can't attack or block.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "static.attached"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{1}{W}, Blight 1, Sacrifice ~: Exile enchanted creature.",
+          "reason": "unrecognised",
+          "slot": "cost",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "a0df5185"
+    },
     "d8afd7b0-7cd0-4caf-ac43-a0e24a93ca09": {
       "name": "Firemind Vessel",
       "group": "acceptance",
@@ -4008,6 +4562,23 @@
       "reasons": [],
       "ast": "8820c0a1"
     },
+    "dbba75f5-2404-4bd5-982b-f6c4effa5316": {
+      "name": "Ethereal Armor",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Enchanted creature gets +1/+1 for each enchantment you control and has first strike.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "static.pt-count"
+        }
+      ],
+      "reasons": [],
+      "ast": "e71a6cfa"
+    },
     "dc36f81e-d1b0-44a4-bf82-4cd276bc0812": {
       "name": "Thancred Waters",
       "group": "acceptance",
@@ -4039,6 +4610,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d79d39a0"
+    },
+    "ddbe0d17-5cac-417c-afc0-e4aebae83205": {
+      "name": "Restoration Magic",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Tiered\n• Cure — {0} — Target permanent gains hexproof and indestructible until end of turn.\n• Cura — {1} — Target permanent gains hexproof and indestructible until end of turn. You gain 3 life.\n• Curaga — {3}{W} — Permanents you control gain hexproof and indestructible until end of turn. You gain 6 life.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "267d56eb"
     },
     "ddc85b23-113a-46e9-ab09-fae9312c72fa": {
       "name": "Spirit of Resilience",
@@ -4103,6 +4691,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "65970ffc"
+    },
+    "e33dec01-c114-436a-befc-dab4e806c10b": {
+      "name": "Vessel of Nascency",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "{1}{G}, Sacrifice ~: Reveal the top four cards of your library. You may put an artifact, creature, enchantment, land, or planeswalker card from among them into your hand. Put the rest into your graveyard.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.reveal-separate-piles"
+        }
+      ],
+      "reasons": [],
+      "ast": "f2b7813f"
     },
     "e3afc704-220f-498f-9eaa-0821b17dc24c": {
       "name": "Sakura-Tribe Elder",
@@ -4191,6 +4796,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f9c9a0d3"
+    },
+    "ead4c01a-e2ae-49c9-95d9-651d81005907": {
+      "name": "Satyr Wayfinder",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When ~ enters, reveal the top four cards of your library. You may put a land card from among them into your hand. Put the rest into your graveyard.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.reveal-separate-piles"
+        }
+      ],
+      "reasons": [],
+      "ast": "20b76d12"
     },
     "eaffdf95-8e20-408d-99fa-3adc9e19523d": {
       "name": "Misleading Signpost",
@@ -4388,6 +5010,22 @@
         "faces[0].abilities[0].effect.effects[1].effect: a delayed trigger may draw, gain life, lose life or deal damage only (or return what the effect before it exiled), not untap"
       ],
       "ast": "b1faf333"
+    },
+    "f32aaa81-96bd-4213-b0b8-8c021f3cea57": {
+      "name": "Spider Umbra",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Umbra armor",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "cd73c0e6"
     },
     "f39f33ac-074d-442d-ae4c-1d694ee315f3": {
       "name": "Jund Panorama",
@@ -4801,7 +5439,7 @@
     },
     "acceptance": {
       "supported": 248,
-      "total": 265
+      "total": 300
     }
   }
 }
