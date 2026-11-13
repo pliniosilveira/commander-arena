@@ -269,8 +269,8 @@ export function statement(
  * 303.4b, 301.5a): "Enchanted creature gets +2/+2.", "Equipped creature has hexproof and haste.",
  * "Enchanted creature gets +1/+1 and has vigilance.", "Equipped creature has "{T}: Add {G}."" (a
  * granted mana ability, stage P14; any other quoted ability is read as text and dropped whole by the
- * lowering) and "Equipped creature can't be blocked.". Not read: "can't attack or
- * block", "loses flying", "gets +X/+X", "for each", "as long as", ward and landwalk. Protection from colors, or from each color outside the commander's color identity
+ * lowering), "Equipped creature can't be blocked." and, since the Danitha deck (D-1252), "Enchanted creature can't attack or block." (CR 508.1a, 509.1a: two restrictions,
+ * each its own static ability). Not read: "can't attack or block alone", "loses flying", "gets +X/+X", "for each", "as long as", ward and landwalk. Protection from colors, or from each color outside the commander's color identity
  * (stage P70, D-259), is read after "has".
  */
 export const STATIC_ATTACHED = defineRule<IrStatic>({
@@ -294,6 +294,10 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted permanent gets +1/+1.',
     'Equipped creature has "{T}: Add {G}."',
     "Equipped creature can't be blocked.",
+    // Danitha deck (D-1252, CR 508.1a, 509.1a): two restrictions at once, and one alone.
+    "Enchanted creature can't attack or block.",
+    "Enchanted creature can't attack.",
+    "Equipped creature has flying and can't attack.",
     // Stage P33 (D-150): a creature type the permanent is in addition to its own.
     'Enchanted creature is an Angel in addition to its other types.',
     // Stage P70 (D-259, CR 702.16, 903.4): protection a static ability gives.
@@ -326,7 +330,8 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature is an Angel in addition to its other types and gets +1/+1.',
     'Enchanted creature has flying, first strike and vigilance.',
     'Enchanted creature loses flying.',
-    "Enchanted creature can't attack or block.",
+    "Enchanted creature can't attack or block alone.",
+    "Equipped creature can't attack you or planeswalkers you control.",
     'Enchanted creature gets +1/+1 and loses flying.',
     'Equipped land has hexproof.',
     'Equipped creature has "{T}: Add {G}.".',

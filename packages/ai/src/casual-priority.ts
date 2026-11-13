@@ -31,7 +31,12 @@ import type {
 } from '@commander-arena/engine';
 import { chooseActivation, chooseRegenerateActivation } from './casual-activations';
 import { alternativeSpend, chooseNamedAlternative } from './casual-alt-costs';
-import { auraHasHost, isAura } from './casual-attachments';
+import {
+  auraHasHost,
+  commanderAuraWorthCasting,
+  flashesForCommander,
+  isAura,
+} from './casual-attachments';
 import { copiesTargetSpell, copyWorthCasting, hasStorm } from './casual-copies';
 import { additionalCostsWorthPaying, discountsHand, ownGraveyardCreatures } from './casual-costs';
 import { chooseTurnFaceUp } from './casual-face-down';
@@ -82,7 +87,12 @@ const isNonPermanentSpell = (o: ObjectView): boolean =>
  */
 export function worthCasting(view: GameView, spell: ObjectView): boolean {
   // An Aura needs a host on the right side: the cast cannot be cancelled once it has started.
-  if (isAura(spell)) return auraHasHost(view, spell);
+  // D-1253: one that has flash only if it targets a commander is held up for a response that saves the agent's commander (outside its sorcery timing).
+  if (isAura(spell)) {
+    return (
+      auraHasHost(view, spell) && (!flashesForCommander(spell) || commanderAuraWorthCasting(view))
+    );
+  }
   if (!isNonPermanentSpell(spell)) return true;
   if (isPreventionSpell(spell)) return worthCastingPrevention(view, spell);
   // A modal spell (D-114): worth casting when some mode is worth choosing now; the other modes' targets

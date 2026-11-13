@@ -13,6 +13,7 @@ import {
   type ObjectView,
   type OrderTriggersDecision,
 } from '@commander-arena/engine';
+import { answerAttachToEntered } from './casual-attachments';
 import { LAND_TARGET } from './casual-choices';
 import { answerPairReturn } from './casual-pair';
 import { answerDelayedMay } from './casual-soulbond';
@@ -26,6 +27,7 @@ import {
   ownHand,
   ownLife,
   powerOf,
+  toughnessOf,
 } from './casual-view';
 
 /**
@@ -68,6 +70,33 @@ export function choosePermanentToSacrifice(view: GameView, d: ChoosePermanentDec
     kind: 'choosePermanents',
     objects: d.legal.filter((id) => chosen.includes(id)),
   };
+}
+
+/**
+ * "Blight 1" as a cost (a `choosePermanent` with `purpose: 'blight'`, D-1252, CR 701.68a): a -1/-1 counter is a permanent loss of power and toughness on a
+ * creature the agent controls, so it goes where it costs least: a creature that survives it (toughness above the counters, which the view shows as it stands
+ * now) before one that dies, and among those the one the agent wants least (`permanentValue`, so a token before a commander), then the first in the engine's order.
+ * `counters` is how many the cost puts on it (the decision does not say, so one: the usual cost, and a safe lower bound).
+ */
+export function chooseBlightCreature(
+  view: GameView,
+  d: ChoosePermanentDecision,
+  counters = 1,
+): Action {
+  const ranked = d.legal
+    .map((id, index) => {
+      const o = findObject(view, id);
+      return {
+        id,
+        index,
+        // A creature that would die loses everything it is worth; one that lives loses only some power.
+        dies: o === undefined || toughnessOf(o) <= counters ? 1 : 0,
+        value: o === undefined ? Number.POSITIVE_INFINITY : permanentValue(view, o),
+      };
+    })
+    .sort((a, b) => a.dies - b.dies || a.value - b.value || a.index - b.index);
+  const chosen = ranked.slice(0, d.min).map((r) => r.id);
+  return { kind: 'choosePermanents', objects: d.legal.filter((id) => chosen.includes(id)) };
 }
 
 /**
@@ -314,6 +343,9 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
       ? { kind: 'acceptOptional' }
       : { kind: 'declineOptional' };
   }
+  // D-1251: "Whenever a creature enters, you may attach this Aura to that creature": onto the agent's own new creature, not an opponent's.
+  const attach = answerAttachToEntered(view, d);
+  if (attach !== null) return attach;
   // D-284: read the ability on the stack, not the text of the creature it belongs to (a granted ability is not in that text).
   const delayed = answerDelayedMay(view, d);
   if (delayed !== null) return delayed;

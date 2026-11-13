@@ -106,8 +106,14 @@ const AURAS: readonly Line[] = [
   {
     kind: 'aura',
     text: "Enchant creature\nEnchanted creature can't attack or block.",
-    expect: no("can't attack or block.", 'static.attached'),
-    note: 'no engine primitive for it',
+    expect: OK,
+    note: 'read since D-1252 (CR 508.1a, 509.1a): two restrictions of the enchanted creature, each its own static ability of the engine',
+  },
+  {
+    kind: 'aura',
+    text: "Enchant creature\nEnchanted creature can't attack or block alone.",
+    expect: no('alone.', 'static.attached'),
+    note: "SYNTHETIC; still not read (D-1252): the engine has no 'alone' restriction",
   },
   {
     kind: 'aura',

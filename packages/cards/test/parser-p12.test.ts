@@ -334,10 +334,10 @@ describe('what stays unread, and where it stops', () => {
       'static.attached',
     ],
     [
-      "Enchanted creature can't attack or block.",
+      "Enchanted creature can't attack or block alone.",
       'enchantment',
       ['Aura'],
-      "can't attack or block.",
+      'alone.',
       'static.attached',
     ],
     // Stage P40 (D-186): "Spells you control can't be countered." and "Creature spells you control can't be countered." are read by

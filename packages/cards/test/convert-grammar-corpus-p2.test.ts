@@ -282,8 +282,14 @@ const SEARCH: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Search your library for a card, then shuffle and put that card on top.',
-    expect: no(', then shuffle and put that card on top.', 'effect.search'),
-    note: 'backlog: 3 cards; the library is not a destination',
+    expect: OK,
+    note: 'backlog: 3 cards; read since D-1250 (CR 701.24b): the found card is left out of the shuffle and put on top, the engine\'s search destination library',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Search your library for up to two cards, then shuffle and put them on top.',
+    expect: no(', then shuffle and put them on top.', 'effect.search'),
+    note: 'SYNTHETIC; still not read (D-1250): several cards put on top need an order the engine does not ask for',
   },
   {
     kind: 'sorcery',

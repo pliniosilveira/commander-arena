@@ -546,6 +546,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
   'trigger.noncombat-damage': whenever,
+  // Danitha deck, group 5 (D-1252, D-1253): the blight cost of an ordinary ability, and the spell's own permission to be cast as though it had flash (a line of its own).
+  'cost.blight': permanent((e) => `{1}, ${e}: Draw a card.`),
+  'static.cast-self-as-though-flash': asIs,
   // Group 9 of the Hashaton deck (D-390 to D-395): the Phyrexian cost of an ordinary activation, the trigger about a source, its controller and the exile of a random card.
   'cost.mana-phyrexian': permanent((e) => `${e}: Draw a card.`),
   'trigger.source-deals-damage': whenever,
