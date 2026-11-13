@@ -708,6 +708,23 @@
       "reasons": [],
       "ast": "07cdeecd"
     },
+    "240e85d3-e495-4877-8609-4b4056c402f7": {
+      "name": "Victimize",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose two target creature cards in your graveyard. Sacrifice a creature. If you do, return the chosen cards to the battlefield tapped.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "a6d33081"
+    },
     "24310f49-2156-4c0d-b3b1-40ca3182474f": {
       "name": "Sahagin",
       "group": "acceptance",
@@ -1153,6 +1170,23 @@
       "reasons": [],
       "ast": "4d098038"
     },
+    "3a49b518-61c8-4dea-8008-c5edf8384581": {
+      "name": "Ob Nixilis, the Ascended",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "At the beginning of each end step, if you gained life this turn, create a 4/4 white Angel creature token with flying.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "condition.life-gained-this-turn"
+        }
+      ],
+      "reasons": [],
+      "ast": "4604dbfd"
+    },
     "3aa83ed2-f48b-4ce6-a614-2c54ddf50538": {
       "name": "The One Ring",
       "group": "training",
@@ -1242,6 +1276,22 @@
       "reasons": [],
       "ast": "b916a4d2"
     },
+    "3fd8ba0c-75ec-43ea-8706-f71e6cf1d236": {
+      "name": "Champion of Wits",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Eternalize {5}{U}{U}",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "1af8cfc9"
+    },
     "4080f7e3-06d3-4d3d-9929-4e826cb66713": {
       "name": "Herald of Eternal Dawn",
       "group": "training",
@@ -1273,6 +1323,31 @@
       "unparsed": [],
       "reasons": [],
       "ast": "18cece80"
+    },
+    "4380df08-7be4-48ca-9783-d644fd2ea27d": {
+      "name": "Vohar, Vodalian Desecrator",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "{T}: Draw a card, then discard a card. If you discarded an instant or sorcery card this way, each opponent loses 1 life and you gain 1 life.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{2}, Sacrifice ~: You may cast target instant or sorcery card from your graveyard this turn. If that spell would be put into your graveyard, exile it instead. Activate only as a sorcery.",
+          "reason": "unrecognised",
+          "slot": "replacement",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "a5560e72"
     },
     "43b5794a-4ed6-471d-bc45-22fac486895d": {
       "name": "Thunderdrum Soloist",
@@ -1435,6 +1510,23 @@
       "reasons": [],
       "ast": "957736af"
     },
+    "4e552be1-0702-4e18-822f-98611f8a8e70": {
+      "name": "Enter the Avatar State",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Until end of turn, target creature you control becomes an Avatar in addition to its other types and gains flying, first strike, lifelink, and hexproof.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "spell.effect"
+        }
+      ],
+      "reasons": [],
+      "ast": "0cd7991a"
+    },
     "4f819ba4-52ef-4fdd-8e4c-5ae3b2f44db5": {
       "name": "Ramunap Excavator",
       "group": "training",
@@ -1458,6 +1550,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "511a0fc4"
+    },
+    "516101be-be39-4d84-8fee-d8a79930dd0a": {
+      "name": "Sphinx of the Second Sun",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "At the beginning of each of your postcombat main phases, there is an additional beginning phase after this phase.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.upkeep"
+        }
+      ],
+      "reasons": [],
+      "ast": "37b9ddac"
     },
     "51eae7ff-fed9-4afe-8053-7690379449dd": {
       "name": "Gideon, Ally of Zendikar",
@@ -1507,6 +1616,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f5ee9ab1"
+    },
+    "535e2af0-7b08-4026-b1bf-87626407dd42": {
+      "name": "Archfiend of Ifnir",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever you cycle or discard another card, put a -1/-1 counter on each creature your opponents control.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.cycled"
+        }
+      ],
+      "reasons": [],
+      "ast": "7c21e89e"
     },
     "535f405d-94df-4f45-aedc-b331103720b7": {
       "name": "Atsushi, the Blazing Sky",
@@ -1849,6 +1975,31 @@
       "unparsed": [],
       "reasons": [],
       "ast": "dadc1005"
+    },
+    "65f1dd09-0640-47f8-8bfd-7aceaa5646a6": {
+      "name": "Restless Dreams",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "As an additional cost to cast ~, discard X cards.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "cost.discard"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Return X target creature cards from your graveyard to your hand.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.return"
+        }
+      ],
+      "reasons": [],
+      "ast": "7e45c489"
     },
     "663d451b-f848-41cc-b541-0c6fe37d3d54": {
       "name": "Hofri Ghostforge",
@@ -2270,6 +2421,30 @@
       "unparsed": [],
       "reasons": [],
       "ast": "40033eda"
+    },
+    "7a56c6e1-0509-4783-9b29-cf3163977166": {
+      "name": "Serra's Emissary",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "As ~ enters, choose a card type.",
+          "reason": "unrecognised",
+          "slot": "replacement",
+          "closestRule": "replacement.as-enters-choose"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "You and creatures you control have protection from the chosen card type.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "8183d399"
     },
     "7c3a8766-e440-48c5-a561-197490efdba5": {
       "name": "Heirloom Blade",
@@ -2822,6 +2997,30 @@
       "reasons": [],
       "ast": "8b9bfe78"
     },
+    "9c36760b-57c5-488b-afc9-ef141942c6ab": {
+      "name": "Archfiend of Despair",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Your opponents can't gain life.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "At the beginning of each end step, each opponent loses life equal to the life that player lost this turn.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.player.life"
+        }
+      ],
+      "reasons": [],
+      "ast": "9e7eecb6"
+    },
     "9cc52afb-9788-46f6-9f9b-347513f8a64f": {
       "name": "Dwarven Shortsword",
       "group": "acceptance",
@@ -2934,6 +3133,23 @@
       "reasons": [],
       "ast": "5c259800"
     },
+    "a5350327-e84c-44b6-8359-87882e521048": {
+      "name": "Niv-Mizzet, Ghost Counsel",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever you gain life, you may pay that much life. If you do, draw that many cards.",
+          "reason": "unrecognised",
+          "slot": "cost",
+          "closestRule": "effect.pay"
+        }
+      ],
+      "reasons": [],
+      "ast": "3dd47f9e"
+    },
     "a554aa2c-d947-4fc6-929d-d5891f467615": {
       "name": "Nahiri, the Lithomancer",
       "group": "acceptance",
@@ -3022,6 +3238,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4113ccd2"
+    },
+    "aa1a6646-c1e6-4bff-9092-43ee3e137914": {
+      "name": "Archon of Cruelty",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever ~ enters or attacks, target opponent sacrifices a creature or planeswalker of their choice, discards a card, and loses 3 life. You draw a card and gain 3 life.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.player.sacrifice"
+        }
+      ],
+      "reasons": [],
+      "ast": "2eaf3920"
     },
     "aa913409-7a7a-4e74-82ff-7ff8195585ad": {
       "name": "Roll-Roll-Roll-Roll",
@@ -3275,6 +3508,23 @@
       "reasons": [],
       "ast": "5cb0396e"
     },
+    "b997a982-09e1-4ae1-a972-3c2e5f101e8c": {
+      "name": "Faithful Mending",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "You gain 2 life, draw two cards, then discard two cards.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.player.life"
+        }
+      ],
+      "reasons": [],
+      "ast": "78334f49"
+    },
     "b9cec31a-9891-414f-b528-954612168832": {
       "name": "Tangleweave Armor",
       "group": "training",
@@ -3330,6 +3580,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8f8b16fe"
+    },
+    "bea3ff6e-7649-4e51-b2ad-763f9ac2d4b8": {
+      "name": "Renewed Solidarity",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "At the beginning of your end step, for each token you control of the chosen type that entered this turn, create a token that's a copy of it.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "a6e2ba86"
     },
     "befb211f-37ca-4083-98d4-9ff1f28be3f2": {
       "name": "Goreclaw, Terror of Qal Sisma",
@@ -3623,6 +3890,31 @@
       "reasons": [],
       "ast": "67880500"
     },
+    "cf5bd3a4-3899-4c25-ad1f-f1778c1d9c60": {
+      "name": "Rona, Herald of Invasion // Rona, Tolarian Obliterator",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{5}{B/P}: Transform ~. Activate only as a sorcery.",
+          "reason": "unrecognised",
+          "slot": "cost",
+          "closestRule": "cost.mana"
+        },
+        {
+          "face": 1,
+          "ability": 1,
+          "text": "Whenever a source deals damage to ~, that source's controller exiles a card from their hand at random. If it's a land card, you may put it onto the battlefield under your control. Otherwise, you may cast it without paying its mana cost.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.or"
+        }
+      ],
+      "reasons": [],
+      "ast": "bd33a466"
+    },
     "cfdd5dc6-593e-495a-8cfe-3a56b3c4c7df": {
       "name": "Temple of the False God",
       "group": "holdout",
@@ -3630,6 +3922,48 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8c6a61ad"
+    },
+    "d0259f7d-9bd7-4722-8fb9-439768308516": {
+      "name": "Darksteel Angel",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Creatures you control can't have -1/-1 counters put on them.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "static.permanents"
+        }
+      ],
+      "reasons": [],
+      "ast": "dedf3608"
+    },
+    "d05db2c1-a19a-4803-8e8a-fa2f9b798181": {
+      "name": "Bard, King of Dale",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "replacement.enters-with-counters-kicked"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "If one or more tokens would be created under your control, twice that many of those tokens are created instead.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "replacement.enters-with-counters-kicked"
+        }
+      ],
+      "reasons": [],
+      "ast": "f7415350"
     },
     "d0dd425b-fdba-41b4-b9e6-f5161610bd7e": {
       "name": "Ezuri's Predation",
@@ -3847,6 +4181,23 @@
       "reasons": [],
       "ast": "fd9f8577"
     },
+    "db266661-f783-4907-9e52-6963eec05431": {
+      "name": "Hashaton, Scarab's Fist",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever you discard a creature card, you may pay {2}{U}. If you do, create a tapped token that's a copy of that card, except it's a 4/4 black Zombie.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.discarded"
+        }
+      ],
+      "reasons": [],
+      "ast": "3344a9e3"
+    },
     "db444f9d-4dde-4308-b0f2-7acfe6de871a": {
       "name": "Turbulent Steppe",
       "group": "acceptance",
@@ -3943,6 +4294,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6d2a78bd"
+    },
+    "e157ad1e-be35-47f3-92db-01799f8fb6a5": {
+      "name": "Psychic Frog",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever ~ deals combat damage to a player or planeswalker, draw a card.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.combat-damage"
+        }
+      ],
+      "reasons": [],
+      "ast": "26ffda4f"
     },
     "e286d1aa-bb74-4568-98b5-a693ac7a369d": {
       "name": "Venerable Warsinger",
@@ -4341,6 +4709,30 @@
       "reasons": [],
       "ast": "7f0a01bc"
     },
+    "f7716dff-5de7-4b52-966e-72ee3adc8d9a": {
+      "name": "Gleaming Overseer",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When ~ enters, amass Zombies 1.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.triggered"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Zombie tokens you control have hexproof and menace.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "c5a3b02f"
+    },
     "f7f435bc-1716-4412-9505-a1f2f2d83d08": {
       "name": "Dragonhawk, Fate's Tempest",
       "group": "training",
@@ -4649,7 +5041,7 @@
     },
     "acceptance": {
       "supported": 228,
-      "total": 245
+      "total": 265
     }
   }
 }
