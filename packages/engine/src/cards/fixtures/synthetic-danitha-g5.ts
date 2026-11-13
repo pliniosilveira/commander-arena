@@ -16,8 +16,8 @@ export const SYNTHETIC_DANITHA_G5_LIST: readonly CardDefinition[] = [
     name: 'SYNTHETIC Grove Warden',
     manaCost: ['G', 'W'],
     types: ['enchantment'],
-    colors: ['G', 'W'],
-    colorIdentity: ['G', 'W'],
+    colors: ['W', 'G'],
+    colorIdentity: ['W', 'G'],
     oracleText:
       'Other enchantments you control have shroud.\n{1}, Sacrifice this enchantment: Search your library for an enchantment card, reveal it, then shuffle and put that card on top.',
     abilities: [

@@ -283,7 +283,7 @@ const SEARCH: readonly Line[] = [
     kind: 'sorcery',
     text: 'Search your library for a card, then shuffle and put that card on top.',
     expect: OK,
-    note: 'backlog: 3 cards; read since D-1250 (CR 701.24b): the found card is left out of the shuffle and put on top, the engine\'s search destination library',
+    note: 'backlog: 3 cards; read since D-1250 (CR 701.24b): the found card is left out of the shuffle and put on top (the search destination library)',
   },
   {
     kind: 'sorcery',
