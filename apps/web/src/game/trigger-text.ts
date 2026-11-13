@@ -232,6 +232,13 @@ function onlyCreatureTypes(filter: ObjectFilter): boolean {
  * names no type ("permanent", or "spell" for a cast trigger). Null when a field cannot be said.
  */
 export function filterPhrase(given: ObjectFilter, base = 'permanent'): string | null {
+  // D-206, D-1210 (CR 115.1, 601.2c): "a spell that targets a creature you control": what the spell targets is a phrase of its own.
+  if (given.targetsObject !== undefined) {
+    const { targetsObject, ...rest } = given;
+    const spell = filterPhrase(rest, base);
+    const aimed = filterPhrase(targetsObject);
+    return spell === null || aimed === null ? null : `${spell} that targets ${aimed}`;
+  }
   // D-151: "a Dragon you control enters": a creature type and no card type names creatures, not "Dragon permanents".
   const filter =
     base === 'permanent' && onlyCreatureTypes(given)

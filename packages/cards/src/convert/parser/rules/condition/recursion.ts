@@ -183,12 +183,13 @@ export const CONDITION_IT_MATCHES = defineRule<IrCondition>({
  * `condition.its-mana-value`: "its mana value was 3 or less", "its mana value is 4 or greater", "its mana value was 2" (D-298, CR 202.3, 608.2c, 113.7a: an
  * instruction later in the text asks the mana value of an object an earlier one named, as it is or, once it has left, as it last was). "It" is an object
  * the binding pass finds (a target of the text; the lowering refuses what it cannot find); the number is a digit string and the direction "or less" or "or
- * greater". The engine's `objectMatches` with a mana value comparison, in a `conditional` effect.
+ * greater". The engine's `objectMatches` with a mana value comparison, in a `conditional` effect. D-1213 (Danitha group 1b, Cosmic Rebirth): "it has mana value 3 or less" says
+ * the same, the present of "have" for a card an earlier sentence chose (CR 202.3).
  */
 export const CONDITION_ITS_MANA_VALUE = defineRule<IrCondition>({
   id: 'condition.its-mana-value',
   family: 'condition',
-  leading: ['its', 'it’s'],
+  leading: ['its', 'it’s', 'it'],
   cites: [
     'CR 202.3 (Mana Cost and Color)',
     'CR 608.2c (Resolving Spells and Abilities)',
@@ -198,8 +199,19 @@ export const CONDITION_ITS_MANA_VALUE = defineRule<IrCondition>({
     'its mana value was 3 or less',
     'its mana value is 4 or greater',
     'its mana value was 0',
+    // D-1213: the present of "have".
+    'it has mana value 3 or less',
+    'it has mana value 4 or greater',
+    'it has mana value 0',
   ],
   rejects: [
+    'it has mana value',
+    'it has mana value three or less',
+    'it has mana value X or less',
+    'it has a mana value of 3 or less',
+    'it had mana value 3 or less',
+    'it has mana value 3 or more',
+    'they have mana value 3 or less',
     'its mana value was',
     'its mana value was three or less',
     'its mana value was X or less',
@@ -213,14 +225,15 @@ export const CONDITION_ITS_MANA_VALUE = defineRule<IrCondition>({
     'it was a land',
   ],
   parse: (ctx, pos) => {
-    const r = pattern(/its mana value (?:was|is) (\d+)(?: or (less|greater))?(?![\p{L}\p{N}])/iu)(
-      ctx,
-      pos,
-    );
+    const r = pattern(
+      /(?:its mana value (?:was|is)|it has mana value) (\d+)(?: or (less|greater))?(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
     if (!r.ok) return r;
     const value = Number(r.value[1]);
     if (!Number.isSafeInteger(value)) return fail(ctx, pos);
     const cmp = (r.value[2] ?? '').toLowerCase();
+    // The words that name the object: "its" (the span of the old reading) or "it" of "it has".
+    const named = r.value[0].toLowerCase().startsWith('its') ? 3 : 2;
     const it: IrNoun = {
       kind: 'noun',
       det: 'anaphor',
@@ -228,7 +241,7 @@ export const CONDITION_ITS_MANA_VALUE = defineRule<IrCondition>({
       upTo: false,
       plural: false,
       other: false,
-      span: { start: pos, end: pos + 3 },
+      span: { start: pos, end: pos + named },
       rule: 'condition.its-mana-value',
     };
     const filter: IrFilter = {

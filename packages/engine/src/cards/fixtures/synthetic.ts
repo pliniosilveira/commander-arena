@@ -35,6 +35,7 @@ import { SYNTHETIC_COPY_LIST } from './synthetic-copies';
 import { SYNTHETIC_COST_LIST } from './synthetic-costs';
 import { SYNTHETIC_CROSS_ZONE_LIST } from './synthetic-cross-zone';
 import { SYNTHETIC_DAMAGE_ORDER_LIST } from './synthetic-damage-order';
+import { SYNTHETIC_DANITHA_G1B_LIST } from './synthetic-danitha-g1b';
 import { SYNTHETIC_DAWNBREAK_LIST } from './synthetic-dawnbreak';
 import { SYNTHETIC_DELAYED_RETURN_LIST } from './synthetic-delayed-return';
 import { SYNTHETIC_DESTROY_PER_OPPONENT_LIST } from './synthetic-destroy-per-opponent';
@@ -385,6 +386,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_HASHATON_GROUP_4_LIST,
   ...SYNTHETIC_HASHATON_G10_LIST,
   ...SYNTHETIC_HASHATON_G9_LIST,
+  ...SYNTHETIC_DANITHA_G1B_LIST,
   ...SYNTHETIC_UNTIL_LEAVES_LIST,
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
   ...SYNTHETIC_HOFRI_LIST,

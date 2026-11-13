@@ -231,6 +231,18 @@ function effectOf(
           keyword: { kind: 'protection', from: 'colorsNotInCommanderIdentity' },
         });
       }
+      // CR 702.16a, 205.2a (Danitha deck group 1b, D-1212): "protection from creatures", from the card types the text names.
+      if (effect.cardTypes !== undefined) {
+        const types = effect.cardTypes.filter((t): t is CardType =>
+          (CARD_TYPES as readonly string[]).includes(t),
+        );
+        if (types.length === 0 || types.length !== effect.cardTypes.length) return failure(at);
+        return ok({
+          kind: 'grantKeyword',
+          subject,
+          keyword: { kind: 'protection', from: 'cardType', types },
+        });
+      }
       const colors = (effect.colors ?? []).map((w) => colorLetter(w));
       if (colors.length === 0 || colors.some((c) => c === undefined)) return failure(at);
       return ok({

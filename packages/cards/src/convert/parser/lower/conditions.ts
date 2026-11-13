@@ -457,6 +457,9 @@ export function lowerCondition(
     case 'unlessReturn':
       // "... unless you return a land you control to its owner's hand" belongs to the sentence of one instruction, which the lowering of the sentences reads (D-258).
       return failure(c, []);
+    case 'notPutOntoBattlefield':
+      // "If you don't put it onto the battlefield, put it into your hand" belongs to the pair of sentences of an offer to put a card onto the battlefield, which the lowering of the sentences reads (D-1213).
+      return failure(c, []);
     case 'declined':
       // "If the player doesn't" belongs to a "may have you" sentence, which the lowering of the sentences reads; anywhere else it is not run.
       return failure(c, []);

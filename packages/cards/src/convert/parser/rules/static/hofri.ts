@@ -14,7 +14,14 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrFilter, IrNoun, IrQuotedAbility, IrStatic } from '../../ir/types';
-import { CARD_TYPES, comparisonSuffix, typeWords, withComparison } from '../noun/phrases';
+import {
+  CARD_TYPES,
+  comparisonSuffix,
+  SUBTYPE_WORD,
+  typeChoice,
+  typeWords,
+  withComparison,
+} from '../noun/phrases';
 import { defineRule, family, quietly } from '../registry';
 import type { StaticUnit } from './grants';
 import { readQuotedAbility } from './quoted';
@@ -40,15 +47,49 @@ export const SELF_ISNT_CREATURE_UNIT: Parser<StaticUnit> = (ctx, pos) => {
 };
 
 /**
- * The spells a graveyard permission names, "an artifact spell", "a permanent spell with mana value 3 or less": an article, the card types or "permanent" (a card type of a
- * permanent: not an instant, a sorcery or a land), "spell", and a comparison of the card.
+ * The subtypes only a permanent that is not a land can have (CR 205.3g artifact types, 205.3h enchantment types): "an Aura or Equipment spell" (D-1211, Danitha). A subtype of
+ * an instant or a sorcery (CR 205.3k) or of a land is not one, as the spell has to be something the permission can cast.
+ */
+const PERMANENT_SPELL_SUBTYPES: ReadonlySet<string> = new Set([
+  'Aura',
+  'Curse',
+  'Equipment',
+  'Fortification',
+  'Saga',
+  'Shrine',
+  'Vehicle',
+]);
+
+/** "Aura", "Aura or Equipment", "Aura, Equipment, or Vehicle": one or more subtypes of `PERMANENT_SPELL_SUBTYPES`, each once. */
+const SPELL_SUBTYPES: Parser<string[]> = (ctx, pos) => {
+  const several = typeChoice(SUBTYPE_WORD, true)(ctx, pos);
+  const words = several.ok
+    ? several
+    : map(pattern(new RegExp(`${SUBTYPE_WORD}(?![\\p{L}\\p{N}])`, 'u')), (m): string[] => [m[0]])(
+        ctx,
+        pos,
+      );
+  if (!words.ok) return words;
+  return words.value.every((w) => PERMANENT_SPELL_SUBTYPES.has(w)) ? words : fail(ctx, pos);
+};
+
+/** What a graveyard permission's spell words name: card types (or "permanent"), or subtypes of permanents. */
+interface Named {
+  readonly types: string[];
+  readonly subtypes?: string[];
+}
+
+/**
+ * The spells a graveyard permission names, "an artifact spell", "a permanent spell with mana value 3 or less", "an Aura or Equipment spell": an article, the card types or
+ * "permanent" (a card type of a permanent: not an instant, a sorcery or a land) or subtypes of permanents (D-1211), "spell", and a comparison of the card.
  */
 const GRAVEYARD_SPELL: Parser<IrFilter> = (ctx, pos) => {
   const r = sequence(
     pattern(/an? /iu),
     choice(
-      map(literal('permanent'), () => ['permanent'] as string[]),
-      typeWords(CARD_TYPES, false),
+      map(literal('permanent'), (): Named => ({ types: ['permanent'] })),
+      map(typeWords(CARD_TYPES, false), (types): Named => ({ types })),
+      map(SPELL_SUBTYPES, (subtypes): Named => ({ types: [], subtypes })),
     ),
     literal(' spell'),
     optional(
@@ -57,21 +98,29 @@ const GRAVEYARD_SPELL: Parser<IrFilter> = (ctx, pos) => {
     ),
   )(ctx, pos);
   if (!r.ok) return r;
-  const [, types, , compared] = r.value;
+  const [, what, , compared] = r.value;
+  const { types } = what;
   const permanent = types.length === 1 && types[0] === 'permanent';
   if (!permanent && types.some((t) => t === 'land' || t === 'instant' || t === 'sorcery')) {
     return fail(ctx, pos);
   }
-  const base: IrFilter = {
-    ...(permanent
-      ? {
-          anyOf: ['artifact', 'creature', 'enchantment', 'planeswalker', 'battle'].map(
-            (t): IrFilter => ({ types: [t], raw: t }),
-          ),
-        }
-      : { types }),
-    raw: ctx.text.slice(pos, r.pos),
-  };
+  const raw = ctx.text.slice(pos, r.pos);
+  const base: IrFilter = what.subtypes
+    ? {
+        // The spell is an Aura or an Equipment (each member one subtype), as a spell of any of the card types is (CR 205.3).
+        anyOf: what.subtypes.map((w): IrFilter => ({ subtypes: [w], raw: w })),
+        raw,
+      }
+    : {
+        ...(permanent
+          ? {
+              anyOf: ['artifact', 'creature', 'enchantment', 'planeswalker', 'battle'].map(
+                (t): IrFilter => ({ types: [t], raw: t }),
+              ),
+            }
+          : { types }),
+        raw,
+      };
   return { ok: true, value: withComparison(base, compared), pos: r.pos };
 };
 
@@ -98,6 +147,10 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
     'Once during each of your turns, you may play a land from your graveyard or cast a permanent spell with mana value 3 or less from your graveyard. If you do, it gains "When ~ is put into a graveyard from the battlefield, exile it and you gain 2 life."',
     'Once during each of your turns, you may cast a creature spell from your graveyard.',
     'Once during each of your turns, you may play a land from your graveyard.',
+    // D-1211 (Danitha, group 1b): subtypes of permanents.
+    'Once during each of your turns, you may cast an Aura or Equipment spell from your graveyard.',
+    'Once during each of your turns, you may cast an Aura spell from your graveyard.',
+    'Once during each of your turns, you may cast an Aura, Equipment, or Vehicle spell from your graveyard.',
   ],
   rejects: [
     'Once during each of your turns, you may cast an artifact spell from your graveyard',
@@ -111,6 +164,15 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
     'Once each turn, you may cast an artifact spell from your graveyard.',
     'Once during each of your turns, you may play lands from your graveyard.',
     'Once during each of your turns, you may cast artifact spells from your graveyard.',
+    'Once during each of your turns, you may cast an Aura or Equipment spell from your hand.',
+    'Once during each of your turns, you may cast an Aura or Equipment spell from an opponent’s graveyard.',
+    'Once during each of your turns, you may cast an Aura or Equipment spell from your graveyard. If you cast a spell this way, that artifact enters tapped.',
+    'Once during each of your turns, you may cast an Aura or Arcane spell from your graveyard.',
+    'Once during each of your turns, you may cast an Aura or Forest spell from your graveyard.',
+    'Once during each of your turns, you may cast an Aura or Banana spell from your graveyard.',
+    'Once during each of your turns, you may cast an Aura or Aura spell from your graveyard.',
+    'Once during each of your turns, you may cast Aura or Equipment spells from your graveyard.',
+    'Once during each of your turns, you may cast an Aura and Equipment spell from your graveyard.',
   ],
   parse: (ctx, pos) => {
     const id = 'static.graveyard-play-once-each-turn';

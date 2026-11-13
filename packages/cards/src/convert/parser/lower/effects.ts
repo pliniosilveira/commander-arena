@@ -39,6 +39,7 @@ import { GAIN_CONTROL } from './control';
 import { lowerCopyToken } from './copies';
 import { COPY_SPELL } from './copy-spell';
 import { lowerCost } from './costs';
+import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
 import { DAWNBREAK_LOWERINGS } from './dawnbreak';
 import { DESTINY_LOWERINGS } from './destiny';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
@@ -1353,6 +1354,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HOFRI_LOWERINGS,
   // D-393, D-394 (Hashaton, group 9): the exile of a random card from a hand, then "put it onto the battlefield" and "cast it without paying its mana cost".
   ...HASHATON_G9_LOWERINGS,
+  ...DANITHA_G1B_LOWERINGS,
   ...PILES_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,
   ...EDHREC_LOWERINGS,
@@ -1415,7 +1417,11 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                   : test;
     return failure(
       clause,
-      kind === 'raw' || kind === 'hadCounters' || kind === 'declined' || kind === 'unlessReturn'
+      kind === 'raw' ||
+        kind === 'hadCounters' ||
+        kind === 'declined' ||
+        kind === 'notPutOntoBattlefield' ||
+        kind === 'unlessReturn'
         ? []
         : missingFeatures([`condition:${kind}`]),
     );

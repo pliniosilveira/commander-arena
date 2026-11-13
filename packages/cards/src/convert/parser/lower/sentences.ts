@@ -740,6 +740,95 @@ function lowerMay(
 }
 
 /**
+ * "If it has mana value 3 or less, you may put it onto the battlefield. If you don't put it onto the battlefield, put it into your hand." (Cosmic Rebirth, D-1213, CR 608.2c,
+ * 608.2d, 400.3): two sentences, the first an offer to put a card a target phrase of the text named onto the battlefield (with a test before it, or without), the second what is done
+ * when that did not happen: the player declined, the test failed (the offer was never made) or the card could not enter. So the effect is the engine's `may` of the move and a
+ * `conditional` on "not `didPrevious`" for the other instruction; with a test the whole is `conditional(test, [may(A), conditional(not didPrevious, B)], else B)`, so that when the
+ * test fails the second sentence is done without anything of the offer to read (`didPrevious` after an offer that was not made would read what an earlier instruction did).
+ * Null when the sentence after is not "If you don't put it onto the battlefield, ..."; a pair of another shape is refused, never guessed.
+ */
+function lowerMayElse(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const next = sentences[i + 1];
+  if (next?.condition?.test.kind !== 'notPutOntoBattlefield') return null;
+  const [offer, ...more] = sentence.clauses;
+  const [other, ...moreOther] = next.clauses;
+  if (
+    offer === undefined ||
+    other === undefined ||
+    more.length > 0 ||
+    moreOther.length > 0 ||
+    !offer.optional ||
+    other.optional ||
+    offer.verb !== 'putMovedOntoBattlefield' ||
+    other.verb !== 'putItIntoHand' ||
+    offer.condition !== undefined ||
+    offer.duration !== undefined ||
+    sentence.instead === true ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    next.instead === true ||
+    next.where !== undefined ||
+    next.reflexive === true ||
+    next.delayed !== undefined ||
+    next.mayBy !== undefined
+  ) {
+    return refuse(next);
+  }
+  const blocked = missingFeatures([
+    'effect:may',
+    'effect:conditional',
+    'condition:didPrevious',
+    'condition:not',
+  ]);
+  if (blocked.length > 0) return { ...refuse(next), needs: blocked };
+  const test =
+    sentence.condition === undefined ? undefined : lowerCondition(sentence.condition, false, ctx);
+  if (test !== undefined && !test.ok) return test;
+  const offered = lowerClauses([{ ...offer, optional: false }], ctx);
+  if (!offered.ok) return offered;
+  const instead = lowerClauses([other], ctx);
+  if (!instead.ok) return instead;
+  const [move, ...rest] = offered.value;
+  const [otherwise, ...restOther] = instead.value;
+  if (
+    move === undefined ||
+    otherwise === undefined ||
+    rest.length > 0 ||
+    restOther.length > 0 ||
+    !MAY_KINDS.has(move.kind)
+  ) {
+    return refuse(sentence);
+  }
+  const offerThenOther: Effect[] = [
+    { kind: 'may', effect: move },
+    {
+      kind: 'conditional',
+      condition: { kind: 'not', term: { kind: 'didPrevious' } },
+      effect: otherwise,
+    },
+  ];
+  const value: Effect[] =
+    test === undefined
+      ? offerThenOther
+      : [
+          {
+            kind: 'conditional',
+            condition: test.value,
+            effect: { kind: 'sequence', effects: offerThenOther },
+            else: otherwise,
+          },
+        ];
+  return { ok: true, value, rule: offer.rule };
+}
+
+/**
  * The reflexive triggered ability of a sentence that starts with "When you do," (CR 603.12): its targets are its own, it knows nothing of the targets of
  * the ability that created it.
  */
@@ -1233,6 +1322,13 @@ function lowerStep(
     return { last: asking.last };
   }
   if (sentence.condition?.test.kind === 'declined') return stop(refuse(sentence));
+  // "If it has mana value 3 or less, you may put it onto the battlefield. If you don't put it onto the battlefield, put it into your hand." (D-1213, CR 608.2c, 608.2d).
+  const putOrElse = lowerMayElse(sentence, sentences, i, ctx);
+  if (putOrElse !== null) {
+    if (!putOrElse.ok) return stop(putOrElse);
+    steps.push({ effects: putOrElse.value, replaceable: false });
+    return { last: i + 1 };
+  }
   const offered = lowerMayPay(sentence, sentences[i + 1], ctx);
   if (offered !== null) {
     if (!offered.ok) return stop(offered);

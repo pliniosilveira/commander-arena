@@ -2525,6 +2525,19 @@ export const HASHATON_G9_NAMES = [
   'SYNTHETIC Chaos Obliterator',
 ] as const;
 
+/**
+ * The SYNTHETIC cards of group 1b of the Danitha deck (D-1210 to D-1214, provisional): an instant that chooses a card of the graveyard and asks "you may put it onto the battlefield"
+ * (a `confirmOptional` in the middle of a resolution, then the Aura's `choosePermanent` of purpose `auraHost`), a creature that lets its controller cast Auras and Equipment from the
+ * graveyard, an Aura with protection from creatures, and an enchantment that scries and draws. The questions change which answers the generic pools ask for, which games-100 expects
+ * only from dedicated styles.
+ */
+export const DANITHA_G1B_NAMES = [
+  'SYNTHETIC Rebirth Rite',
+  'SYNTHETIC Aura Recaller',
+  'SYNTHETIC Creature Ward Aura',
+  'SYNTHETIC Growth Watcher',
+] as const;
+
 /** The cast-or-copy trigger doubling cards of the Niv-Mizzet deck (D-339): extra triggers and their questions stay out of the generic pools. */
 export const NIV_GROUP_3_B_NAMES = [
   'SYNTHETIC Twin Mage',
@@ -3209,6 +3222,8 @@ const FIXTURES: readonly CardDefinition[] = [
 
   // The Hashaton group 9 cards (D-390 to D-395) pay life for a Phyrexian symbol, transform and exile a random card from a hand with two offers behind it, which games-100 expects only from dedicated styles.
   .filter((card) => !(HASHATON_G9_NAMES as readonly string[]).includes(card.name))
+  // The Danitha group 1b cards (D-1210 to D-1214) ask "you may put it onto the battlefield" and an Aura's host in the middle of a resolution, and cast Auras from the graveyard: dedicated tests.
+  .filter((card) => !(DANITHA_G1B_NAMES as readonly string[]).includes(card.name))
   // The life cards of the Hashaton deck (D-363 to D-365) have their own style: a life gain that does not happen, an end step loss and a payment question.
   .filter((card) => !(HASHATON_G2_NAMES as readonly string[]).includes(card.name))
   // Group 4 of the Hashaton deck (D-367): amass asks which Army gets the counters, and the token replacements change what other cards make.

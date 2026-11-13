@@ -140,6 +140,8 @@ function leadCondition(ifYouDo: boolean): Parser<IrCondition> {
                 'condition.if-you-do',
                 // Stage P52 (D-210): "If the player doesn't," after "target opponent may have you ...".
                 'condition.player-declines',
+                // D-1213 (Danitha deck, Cosmic Rebirth): "If you don't put it onto the battlefield, put it into your hand."
+                'condition.you-dont-put-it-onto-battlefield',
                 ...LEAD_CONDITIONS,
               ]
             : ['condition.kicked', ...LEAD_CONDITIONS],
@@ -191,7 +193,8 @@ interface SentenceOptions {
   /**
    * "You may ..." is read and every clause of the sentence is optional (CR 603.5). `'discard'` (stage P56, D-214, P63 D-216): only "You may discard ..." and
    * "You may shuffle." are read, the offers of a spell ("You may discard a card. If you do, draw a card.", Ponder's "You may shuffle."); a "may" of a spell the
-   * engine does not run stays unread.
+   * engine does not run stays unread. D-1213 (Danitha deck, Cosmic Rebirth): "You may put it onto the battlefield." too, the offer
+   * of a card a target phrase of the spell named, which only the pair of sentences of `lowerMayElse` runs.
    */
   readonly may: boolean | 'discard';
   /**
@@ -383,7 +386,9 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
         ? optional(
             map(
               (c, p) => {
-                const ahead = pattern(/(?=you may (?:discard |shuffle\.))/iu)(c, p);
+                const ahead = pattern(
+                  /(?=you may (?:discard |shuffle\.|put it onto the battlefield))/iu,
+                )(c, p);
                 return ahead.ok ? literal('you may ')(c, p) : ahead;
               },
               () => 'you' as const,

@@ -22,7 +22,11 @@ import {
 } from '../../combinators';
 import type { IrClause, IrCost, IrNoun, IrStatic, IrStaticEffect } from '../../ir/types';
 import { KEYWORD_WORDS } from '../keyword/list';
-import { PROTECTION_COLORS, PROTECTION_OUTSIDE_COMMANDER_IDENTITY } from '../keyword/protection';
+import {
+  PROTECTION_CARD_TYPES,
+  PROTECTION_COLORS,
+  PROTECTION_OUTSIDE_COMMANDER_IDENTITY,
+} from '../keyword/protection';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family } from '../registry';
 import { QUOTED_ABILITY } from './quoted';
@@ -102,6 +106,11 @@ const PROTECTION: Parser<Effects> = choice(
   map(
     (ctx, pos) => PROTECTION_COLORS(ctx, pos),
     (colors): Effects => [{ kind: 'grantProtection', colors }],
+  ),
+  // D-1212 (Danitha group 1b, CR 702.16a): "protection from creatures".
+  map(
+    (ctx, pos) => PROTECTION_CARD_TYPES(ctx, pos),
+    (cardTypes): Effects => [{ kind: 'grantProtection', cardTypes }],
   ),
 );
 
