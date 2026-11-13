@@ -1,5 +1,5 @@
 {
-  "parserVersion": 97,
+  "parserVersion": 98,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -41,14 +41,6 @@
       "unparsed": [
         {
           "face": 0,
-          "ability": 0,
-          "text": "If an effect would create one or more tokens under your control, it creates twice that many of those tokens instead.",
-          "reason": "unrecognised",
-          "slot": "replacement",
-          "closestRule": "replacement.would-die"
-        },
-        {
-          "face": 0,
           "ability": 1,
           "text": "If an effect would put one or more counters on a permanent you control, it puts twice that many of those counters on that permanent instead.",
           "reason": "unrecognised",
@@ -57,7 +49,7 @@
         }
       ],
       "reasons": [],
-      "ast": "5e5124e5"
+      "ast": "e7704bfc"
     },
     "02090581-61aa-4348-ad57-451be8ee91c2": {
       "name": "Ponder",
@@ -1261,18 +1253,10 @@
     "3fd8ba0c-75ec-43ea-8706-f71e6cf1d236": {
       "name": "Champion of Wits",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Eternalize {5}{U}{U}",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "1af8cfc9"
+      "ast": "5456ad62"
     },
     "4080f7e3-06d3-4d3d-9929-4e826cb66713": {
       "name": "Herald of Eternal Dawn",
@@ -1917,27 +1901,10 @@
     "65f1dd09-0640-47f8-8bfd-7aceaa5646a6": {
       "name": "Restless Dreams",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "As an additional cost to cast ~, discard X cards.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "cost.discard"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Return X target creature cards from your graveyard to your hand.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.return"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "7e45c489"
+      "ast": "a8195a43"
     },
     "663d451b-f848-41cc-b541-0c6fe37d3d54": {
       "name": "Hofri Ghostforge",
@@ -2363,26 +2330,10 @@
     "7a56c6e1-0509-4783-9b29-cf3163977166": {
       "name": "Serra's Emissary",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "As ~ enters, choose a card type.",
-          "reason": "unrecognised",
-          "slot": "replacement",
-          "closestRule": "replacement.as-enters-choose"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "You and creatures you control have protection from the chosen card type.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "8183d399"
+      "ast": "f632ebc5"
     },
     "7c3a8766-e440-48c5-a561-197490efdba5": {
       "name": "Heirloom Blade",
@@ -3479,19 +3430,10 @@
     "bea3ff6e-7649-4e51-b2ad-763f9ac2d4b8": {
       "name": "Renewed Solidarity",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "At the beginning of your end step, for each token you control of the chosen type that entered this turn, create a token that's a copy of it.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "a6e2ba86"
+      "ast": "bd51f054"
     },
     "befb211f-37ca-4083-98d4-9ff1f28be3f2": {
       "name": "Goreclaw, Terror of Qal Sisma",
@@ -3788,27 +3730,10 @@
     "cf5bd3a4-3899-4c25-ad1f-f1778c1d9c60": {
       "name": "Rona, Herald of Invasion // Rona, Tolarian Obliterator",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{5}{B/P}: Transform ~. Activate only as a sorcery.",
-          "reason": "unrecognised",
-          "slot": "cost",
-          "closestRule": "cost.mana"
-        },
-        {
-          "face": 1,
-          "ability": 1,
-          "text": "Whenever a source deals damage to ~, that source's controller exiles a card from their hand at random. If it's a land card, you may put it onto the battlefield under your control. Otherwise, you may cast it without paying its mana cost.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.or"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "bd33a466"
+      "ast": "76d86017"
     },
     "cfdd5dc6-593e-495a-8cfe-3a56b3c4c7df": {
       "name": "Temple of the False God",
@@ -3821,44 +3746,18 @@
     "d0259f7d-9bd7-4722-8fb9-439768308516": {
       "name": "Darksteel Angel",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Creatures you control can't have -1/-1 counters put on them.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "static.permanents"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "dedf3608"
+      "ast": "fd322409"
     },
     "d05db2c1-a19a-4803-8e8a-fa2f9b798181": {
       "name": "Bard, King of Dale",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "replacement.enters-with-counters-kicked"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "If one or more tokens would be created under your control, twice that many of those tokens are created instead.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "replacement.enters-with-counters-kicked"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f7415350"
+      "ast": "0d7d0724"
     },
     "d0dd425b-fdba-41b4-b9e6-f5161610bd7e": {
       "name": "Ezuri's Predation",
@@ -4079,19 +3978,10 @@
     "db266661-f783-4907-9e52-6963eec05431": {
       "name": "Hashaton, Scarab's Fist",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever you discard a creature card, you may pay {2}{U}. If you do, create a tapped token that's a copy of that card, except it's a 4/4 black Zombie.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.discarded"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "3344a9e3"
+      "ast": "01b1f433"
     },
     "db444f9d-4dde-4308-b0f2-7acfe6de871a": {
       "name": "Turbulent Steppe",
@@ -4910,7 +4800,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 240,
+      "supported": 248,
       "total": 265
     }
   }
