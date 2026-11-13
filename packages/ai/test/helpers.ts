@@ -2441,6 +2441,24 @@ export const HASHATON_G8_NAMES = [
   'SYNTHETIC Spell Desecrator',
 ] as const;
 
+/**
+ * The cards of group 4 of the Hashaton deck (D-367 to D-371): amass (it asks which Army gets the counters and makes tokens a replacement effect may change), the static
+ * that gives Zombie tokens hexproof and menace, the token replacement cards, and the spell that gives a creature four keywords until end of turn. They stay out of every
+ * generic pool: the question of the Army is asked only by the dedicated tests, and a token replacement changes how many tokens other cards make.
+ */
+export const HASHATON_G4_NAMES = [
+  'SYNTHETIC Amass Rite',
+  'SYNTHETIC Amass Orcs Rite',
+  'SYNTHETIC Amass X Rite',
+  'SYNTHETIC Amass Watcher',
+  'SYNTHETIC Orc Army Veteran',
+  'SYNTHETIC Soldier Army Recruit',
+  'SYNTHETIC Army Recruiter',
+  'SYNTHETIC Soldier Maker',
+  'SYNTHETIC Avatar Surge',
+  'SYNTHETIC Winged Bear',
+] as const;
+
 /** The cast-or-copy trigger doubling cards of the Niv-Mizzet deck (D-339): extra triggers and their questions stay out of the generic pools. */
 export const NIV_GROUP_3_B_NAMES = [
   'SYNTHETIC Twin Mage',
@@ -2924,12 +2942,12 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(NIV_GROUP_3_C_NAMES as readonly string[]).includes(card.name))
   // The additional beginning phase card (D-356) adds untap, upkeep and draw steps to the turn, which games-100 expects only from dedicated styles.
   .filter((card) => !(HASHATON_G7_NAMES as readonly string[]).includes(card.name))
-
   // The Hashaton group 8 cards (D-358 to D-361) ask which creature to sacrifice and what to discard, which games-100 expects only from dedicated styles.
   .filter((card) => !(HASHATON_G8_NAMES as readonly string[]).includes(card.name))
-
   // The life cards of the Hashaton deck (D-363 to D-365) have their own style: a life gain that does not happen, an end step loss and a payment question.
   .filter((card) => !(HASHATON_G2_NAMES as readonly string[]).includes(card.name))
+  // Group 4 of the Hashaton deck (D-367): amass asks which Army gets the counters, and the token replacements change what other cards make.
+  .filter((card) => !(HASHATON_G4_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.

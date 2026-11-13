@@ -70,7 +70,7 @@ import {
   revealTopTail,
   revealTopText,
 } from '../../game/dragons-text';
-import { thingsPhrase } from '../../game/filter-text';
+import { pluralSubtype, thingsPhrase } from '../../game/filter-text';
 import { ENCORE_EFFECT_TEXT } from '../../game/keywords-text';
 import { controlDurationText, requireAttackText } from '../../game/korvold-text';
 import { playRuleWordings, staticWording } from '../../game/play-rule-text';
@@ -897,6 +897,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'empowerJace':
       // D-201 (CR 701.71a): the keyword action, as the cards write it.
       return `Empower Jace ${effect.amount}`;
+    case 'amass':
+      // D-367 (CR 701.47a): the keyword action, as the cards write it (older cards: "amass Zombies 1").
+      return `Amass ${pluralSubtype(effect.subtype)} ${amountPhrase(effect.count)}`;
     case 'createEmblem':
       // D-201 (CR 114.1): "You get an emblem with "...", the text the emblem shows.
       return `You get an emblem with "${effect.text}"`;

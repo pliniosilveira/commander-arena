@@ -18,6 +18,7 @@ import type {
   TriggeredAbility,
 } from '../state/types';
 import { runSplitExiled, startSplit } from './activation-exile';
+import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
 import { attachEntered, attachObject } from './attach';
 import { runAuraEntry, withAuraEntries } from './aura-entry';
@@ -155,6 +156,7 @@ export function runInstruction(
   if (instruction.kind === 'ringTempts') return runRingTempts(state, res, instruction);
   if (instruction.kind === 'pair') return runPair(state, res, instruction);
   if (instruction.kind === 'empowerJace') return runEmpowerJace(state, res, instruction);
+  if (instruction.kind === 'amass') return runAmass(state, res, instruction, flow);
   if (instruction.kind === 'conniveNext') return runConniveNext(state, res, instruction);
   if (instruction.kind === 'spare') return runSpare(state, res, instruction);
   if (instruction.kind === 'splitExiled') return runSplitExiled(state, res, instruction);
@@ -1009,6 +1011,21 @@ function runEffect(
     case 'empowerJace':
       // CR 701.71a (D-201): the token, the choice and the counters come up as the instruction runs (rules/empower.ts).
       return done(state, [], [{ kind: 'empowerJace', amount: effect.amount, chosen: null }]);
+
+    case 'amass':
+      // CR 701.47a (D-367): N is read now (CR 608.2h); the token, the choice of the Army and the counters come up as the instruction runs (rules/amass.ts).
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'amass',
+            subtype: effect.subtype,
+            amount: Math.max(0, amountOf(state, effect.count, ctx, targets)),
+            chosen: null,
+          },
+        ],
+      );
 
     case 'pair':
       // CR 702.95a, 702.95c (D-286): the creature to pair with is chosen as this comes up (rules/soulbond.ts).

@@ -3,7 +3,7 @@
  * selectors, amounts, costs and effects. `validate.ts` composes these for abilities, spells and
  * cards. Nothing here mutates its input; every function appends to an issue list.
  */
-import { CARD_TYPES, COLORS, SUPERTYPES } from '../characteristics';
+import { CARD_TYPES, COLORS, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
 import type {
   Ability,
@@ -3177,6 +3177,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           out,
           `${path}.amount`,
           'Empower Jace puts a positive whole number of loyalty counters',
+        );
+      }
+      break;
+    case 'amass':
+      // CR 701.47a (D-367): N +1/+1 counters and the creature type of the token and of the change; the type is a creature type (an Army is a creature).
+      checkAmount(e.count, `${path}.count`, scope, out);
+      if (typeof e.subtype !== 'string' || e.subtype === '') {
+        issue(out, `${path}.subtype`, 'amass names a creature type');
+      } else if (isNonCreatureSubtype(e.subtype)) {
+        issue(
+          out,
+          `${path}.subtype`,
+          `${e.subtype} is not a creature type, which is all an Army can be`,
         );
       }
       break;

@@ -48,6 +48,7 @@ import { PUMP, SEARCH } from './effects-more';
 import { missingFeatures } from './features';
 import { GAIN_STATIC_ABILITY } from './granted-static';
 import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
+import { HASHATON_GROUP_4_LOWERINGS } from './hashaton-group-4';
 import { HOFRI_LOWERINGS } from './hofri';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { MELD_LOWERINGS } from './meld';
@@ -1355,6 +1356,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...NIV_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,
+  ...HASHATON_GROUP_4_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
   ...DESTINY_LOWERINGS,
   ...MELD_LOWERINGS,

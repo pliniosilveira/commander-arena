@@ -28,6 +28,7 @@ import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_NOUN_RULES } from './edhrec';
 import { HASHATON_G8_NOUN_RULES } from './hashaton-g8';
+import { HASHATON_GROUP_4_NOUN_RULES } from './hashaton-group-4';
 import { HOFRI_NOUN_RULES } from './hofri';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
@@ -625,6 +626,8 @@ export const NOUN_RULES = [
   // Stage P64 and P65 (D-217, D-218): "creature tokens you control" and "creatures attacking your opponents and/or planeswalkers they control", whose first words are
   // those of `noun.plain-permanents`.
   ...EDHREC_NOUN_RULES,
+  // D-369: "Zombie tokens you control", which `noun.plain-permanents` would stop in the middle of.
+  ...HASHATON_GROUP_4_NOUN_RULES,
   // Before `noun.plain-permanents`, which reads the first group of "A you control and other B you control" alone.
   NOUN_SUBTYPE_UNION,
   NOUN_PLAIN_PERMANENTS,

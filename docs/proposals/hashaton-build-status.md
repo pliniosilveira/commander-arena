@@ -12,9 +12,9 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Bard, King of Dale | 3 | P x2 (+T x2) | waiting | two replacements: draw two instead (except the first draw of the draw step); twice as many tokens |
 | Champion of Wits | 5 | K + P | waiting | Eternalize |
 | Darksteel Angel | 3 | P + T (many sites) | waiting | "Creatures you control can't have -1/-1 counters put on them" |
-| Enter the Avatar State | 4 | T | in progress | becomes an Avatar in addition to its other types and gains four keywords |
+| Enter the Avatar State | 4 | T | done | becomes an Avatar in addition to its other types and gains four keywords |
 | Faithful Mending | 1 | T | in progress | "gain 2 life, draw two cards, then discard two cards" (plus flashback if printed) |
-| Gleaming Overseer | 4 | P + T | in progress | amass Zombies; "Zombie tokens you control have hexproof and menace" |
+| Gleaming Overseer | 4 | P + T | done | amass Zombies; "Zombie tokens you control have hexproof and menace" |
 | Hashaton, Scarab's Fist | 5 | P x3 (+T) | waiting | discard a creature card: may pay, create a tapped copy token that is a 4/4 black Zombie |
 | Niv-Mizzet, Ghost Counsel | 2 | P + T | done | "Whenever you gain life, you may pay that much life. If you do, draw that many cards" |
 | Ob Nixilis, the Ascended | 2 | T | done | at each end step, if you gained life this turn, create a 4/4 Angel token |

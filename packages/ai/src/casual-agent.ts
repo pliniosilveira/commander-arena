@@ -18,6 +18,7 @@ import {
   type RngState,
 } from '@commander-arena/engine';
 import type { Agent, DecideContext, FallbackRecord } from './agent';
+import { chooseAmassArmy } from './casual-amass';
 import { chooseCardsToLose, chooseMulligan, chooseTargets } from './casual-choices';
 import { chooseAttackers, chooseBlockers } from './casual-combat';
 import { upkeepAnswer, wardDiscardAnswer } from './casual-costs';
@@ -101,35 +102,37 @@ export function createCasualHandlers(
         ? chooseFightOpponent(view, d) // CR 701.14, D-145: the creature the subject fights
         : d.purpose === 'ringBearer'
           ? chooseRingBearer(view, d) // CR 701.54a, D-196: the creature with the most power becomes the Ring-bearer
-          : d.purpose === 'untap'
-            ? { kind: 'choosePermanents', objects: [...d.legal] } // CR 502.3, D-125: untap everything
-            : d.purpose === 'legendRule'
-              ? chooseLegendToKeep(view, d)
-              : d.purpose === 'conniveOrder'
-                ? { kind: 'choosePermanents', objects: d.legal.slice(0, 1) } // CR 701.50c, D-223: every permanent connives; the first listed goes first
-                : d.purpose === 'entersCopy'
-                  ? chooseEntersCopy(view, d) // CR 707.9, D-151: the creature an artifact enters as a copy of
-                  : d.purpose === 'devour'
-                    ? chooseDevourSacrifice(view, d) // CR 702.82a, D-185: the tokens given up for counters, often none
-                    : d.purpose === 'crew'
-                      ? chooseCrewCreatures(view, d)
-                      : d.purpose === 'untapChoice'
-                        ? chooseUntap(view, d) // CR 701.26a, D-216: "Untap up to three lands", the agent's own
-                        : d.purpose === 'spare'
-                          ? chooseSparedPermanent(view, d) // D-231: the permanents Tragic Arrogance keeps
-                          : d.purpose === 'effect'
-                            ? choosePermanentToReturn(view, d)
-                            : d.purpose === 'tap'
-                              ? choosePermanentToTap(view, d) // D-133: the permanents tapped for a cost
-                              : d.purpose === 'proliferate'
-                                ? chooseProliferate(view, d) // CR 701.34a, D-149: the permanents and players that get another counter
-                                : d.purpose === 'auraHost'
-                                  ? chooseAuraHost(view, d) // CR 303.4f, D-149: what an Aura that enters by an effect enchants
-                                  : d.purpose === 'soulbond'
-                                    ? chooseSoulbondPartner(view, d) // CR 702.95a, D-286: always pair, with the strongest creature
-                                    : d.min === 0
-                                      ? chooseAnyNumberToSacrifice(view, d) // D-135: "sacrifice any number of other permanents"
-                                      : choosePermanentToSacrifice(view, d),
+          : d.purpose === 'amass'
+            ? chooseAmassArmy(view, d) // CR 701.47a, D-367: the Army with the most power gets the counters
+            : d.purpose === 'untap'
+              ? { kind: 'choosePermanents', objects: [...d.legal] } // CR 502.3, D-125: untap everything
+              : d.purpose === 'legendRule'
+                ? chooseLegendToKeep(view, d)
+                : d.purpose === 'conniveOrder'
+                  ? { kind: 'choosePermanents', objects: d.legal.slice(0, 1) } // CR 701.50c, D-223: every permanent connives; the first listed goes first
+                  : d.purpose === 'entersCopy'
+                    ? chooseEntersCopy(view, d) // CR 707.9, D-151: the creature an artifact enters as a copy of
+                    : d.purpose === 'devour'
+                      ? chooseDevourSacrifice(view, d) // CR 702.82a, D-185: the tokens given up for counters, often none
+                      : d.purpose === 'crew'
+                        ? chooseCrewCreatures(view, d)
+                        : d.purpose === 'untapChoice'
+                          ? chooseUntap(view, d) // CR 701.26a, D-216: "Untap up to three lands", the agent's own
+                          : d.purpose === 'spare'
+                            ? chooseSparedPermanent(view, d) // D-231: the permanents Tragic Arrogance keeps
+                            : d.purpose === 'effect'
+                              ? choosePermanentToReturn(view, d)
+                              : d.purpose === 'tap'
+                                ? choosePermanentToTap(view, d) // D-133: the permanents tapped for a cost
+                                : d.purpose === 'proliferate'
+                                  ? chooseProliferate(view, d) // CR 701.34a, D-149: the permanents and players that get another counter
+                                  : d.purpose === 'auraHost'
+                                    ? chooseAuraHost(view, d) // CR 303.4f, D-149: what an Aura that enters by an effect enchants
+                                    : d.purpose === 'soulbond'
+                                      ? chooseSoulbondPartner(view, d) // CR 702.95a, D-286: always pair, with the strongest creature
+                                      : d.min === 0
+                                        ? chooseAnyNumberToSacrifice(view, d) // D-135: "sacrifice any number of other permanents"
+                                        : choosePermanentToSacrifice(view, d),
     chooseCards: (d) => chooseCardsFromZone(view, d),
     arrangeCards: (d) => chooseArrangement(view, d),
     orderTriggers: (d) => orderTriggersAsListed(d),

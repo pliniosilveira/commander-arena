@@ -44,6 +44,7 @@ import { GAIN_RULES } from './gain';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
+import { HASHATON_GROUP_4_EFFECT_RULES } from './hashaton-group-4';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
@@ -845,6 +846,8 @@ export const EFFECT_RULES = [
   ...NIV_GROUP_3_A_EFFECT_RULES,
   ...NIV_GROUP_3_C_EFFECT_RULES,
   ...HASHATON_G7_EFFECT_RULES,
+  // D-367: "amass Zombies 1".
+  ...HASHATON_GROUP_4_EFFECT_RULES,
   ...CONTROL_EFFECT_RULES,
   // Stage P44 (D-195): "starting with you, each player votes for profit or security".
   ...VOTE_EFFECT_RULES,

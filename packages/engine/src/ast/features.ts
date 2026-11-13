@@ -241,6 +241,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'pair',
     // D-201: "Empower Jace N" (CR 701.71a).
     'empowerJace',
+    // D-367: "amass Zombies 1" (CR 701.47a).
+    'amass',
     // D-201: "You get an emblem with ..." (CR 114).
     'createEmblem',
     'delayedSacrifice',
@@ -1587,6 +1589,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   ringTempts: true,
   pair: true,
   empowerJace: true,
+  amass: true,
   createEmblem: true,
   delayedSacrifice: true,
   proliferate: true,

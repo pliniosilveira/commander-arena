@@ -385,6 +385,7 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'devour'
     | 'ringBearer'
     | 'empowerJace'
+    | 'amass'
     | 'untapChoice'
     | 'conniveOrder'
     | 'spare'
@@ -402,6 +403,9 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * or, for a token, the spell or ability creating it. The sacrifice is not a cost and cannot be taken back.
    * For `'empowerJace'` (D-201, CR 701.71a: "Choose a Jace planeswalker token you control"): `seat`, the player who empowers, chooses which Jace token of
    * `legal` (all they control) gets the loyalty counters; exactly one. Asked only with two or more.
+   * For `'amass'` (D-367, CR 701.47a: "Choose an Army creature you control"): `seat`, the player who amasses, chooses which Army creature of `legal` (all they
+   * control, as `derive` types them now, a token the effect just made among them) gets the +1/+1 counters; exactly one. Asked only with two or more. `source` is the
+   * spell or ability.
    * For `'ringBearer'` (D-196, CR 701.54a: "Each time the Ring tempts you, choose a creature you control"): `seat`, the player the Ring is tempting,
    * chooses which creature of `legal` (all the creatures they control, as `derive` types them now) becomes their Ring-bearer; exactly one
    * (`min` = `max` = 1), and only asked when there are two or more. `source` is the spell or ability that tempts.

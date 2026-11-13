@@ -1,7 +1,7 @@
 /**
  * SYNTHETIC CARDS FOR LIFE THAT CAN'T BE GAINED, LIFE LOST THIS TURN AND LIFE PAID. NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of the Hashaton deck program, group 2 (D-363 to D-365, provisional numbers): "Your opponents can't gain life." (`cantGainLife`),
+ * Invented for the tests of the Hashaton deck program, group 2 (D-363 to D-365,): "Your opponents can't gain life." (`cantGainLife`),
  * "each opponent loses life equal to the life that player lost this turn" (`lifeLostThisTurn`), "if you gained life this turn" at each end step, and "you may
  * pay that much life. If you do, draw that many cards" (a `mayPay` whose life is the life gained). Names start with "SYNTHETIC "; oracleId is null. The text
  * describes what the AST does; it is not Oracle text, and none of these is the definition of a real card.
