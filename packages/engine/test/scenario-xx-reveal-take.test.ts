@@ -1,4 +1,4 @@
-// "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (D-1200)
+// "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (D-396)
 // Pins: CR 701.20a (to reveal a card is to show it to all players, so every card of the top is public, unlike a look, CR 701.20e), CR 701.20b (revealing does not move a card:
 // all of them are still in the library while the player chooses), CR 401.5 / 401.2 (the cards below the revealed ones stay hidden), CR 404.1 (the rest go into the
 // graveyard). The `lookAtTop` effect with `revealAll`, in a sorcery, an enters trigger, an activated ability with a sacrifice cost and a sorcery that also creates a token.
@@ -312,7 +312,7 @@ describe('hidden information: a reveal is public, a look is not (CR 701.20a, 701
   });
 });
 
-describe('validation (D-1200)', () => {
+describe('validation (D-396)', () => {
   const effectOf = (def: CardDefinition): Effect => {
     const effect = def.faces[0]?.spell?.effect;
     if (effect === undefined) throw new Error('no spell effect');

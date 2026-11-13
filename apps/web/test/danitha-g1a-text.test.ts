@@ -1,5 +1,5 @@
 /**
- * The words of group 1A of the Danitha deck (D-1200, D-1201, CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among
+ * The words of group 1A of the Danitha deck (D-396, D-397, CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among
  * them into your hand. Put the rest into your graveyard." The effect is read from the engine's SYNTHETIC cards (so a wording that drifts from the AST fails here), the question
  * of the cards revealed (a title, a prompt, the buttons, who sees the cards) and the log line of the reveal. No DOM.
  */

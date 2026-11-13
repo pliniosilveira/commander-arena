@@ -240,7 +240,7 @@ const MIXED_TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
 };
 
 /**
- * "a permanent card" (D-1201, CR 110.4a (Permanents): a card that could be put onto the battlefield, so an instant or a sorcery card is not): the choice of the six permanent card
+ * "a permanent card" (D-397, CR 110.4a (Permanents): a card that could be put onto the battlefield, so an instant or a sorcery card is not): the choice of the six permanent card
  * types, as `noun.permanent-card` reads it for a phrase of cards in a zone.
  */
 const PERMANENT_TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {

@@ -1,4 +1,4 @@
-// Slice soak (D-1200, D-1201): whole games with the 'danithaReveal' deck style (SYNTHETIC cards of the engine fixtures `synthetic-danitha-g1a.ts`: a sorcery, a creature with an enters
+// Slice soak (D-396, D-397): whole games with the 'danithaReveal' deck style (SYNTHETIC cards of the engine fixtures `synthetic-danitha-g1a.ts`: a sorcery, a creature with an enters
 // trigger, an enchantment sacrificed for its ability and a sorcery with a token, all of which reveal the top cards of the library, ask which card of a kind to take into the hand and
 // put the rest into the graveyard, and a sorcery that only looks, with bodies and removal) between random agents, with CasualAgent in some seats. Every game finishes with a
 // result, no fallback, no rejected action and consistent state after every action; the action log replays to the same final state; and two rules of the slice are restated from the

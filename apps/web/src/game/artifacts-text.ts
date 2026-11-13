@@ -84,7 +84,7 @@ export function isPermanentCard(filter: ObjectFilter): boolean {
 }
 
 /**
- * "an artifact, creature, enchantment, land, or planeswalker card" (D-1201): a list of three or more card types, joined as English joins a list. `cardNoun` of the same
+ * "an artifact, creature, enchantment, land, or planeswalker card" (D-397): a list of three or more card types, joined as English joins a list. `cardNoun` of the same
  * filter says "an artifact or creature or enchantment ... card", which is no wording a card prints. Null for any other filter.
  */
 function typeListNoun(filter: ObjectFilter): string | null {
@@ -139,7 +139,7 @@ export function lookAtTopText(
       : `the top ${typeof count === 'number' ? numberWord(count) : say(count)} cards`;
   const one = take.max === 1;
   const plain = Object.keys(take.filter).length === 0;
-  // D-1201: "a permanent card" and "an artifact, creature, enchantment, land, or planeswalker card" are worded as the cards print them (one card only).
+  // D-397: "a permanent card" and "an artifact, creature, enchantment, land, or planeswalker card" are worded as the cards print them (one card only).
   const special = one
     ? isPermanentCard(take.filter)
       ? 'a permanent card'
@@ -160,7 +160,7 @@ export function lookAtTopText(
   }
   const taken = one ? what : `up to ${numberWord(take.max)} ${what}`;
   const them = one ? 'it' : 'them';
-  // D-1200 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand."
+  // D-396 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand."
   if (effect.revealAll === true && take.to === undefined && take.hidden !== true) {
     return `Reveal ${top} of your library. You may put ${taken} from among them into your hand. ${REST_WORDS[rest]}`;
   }

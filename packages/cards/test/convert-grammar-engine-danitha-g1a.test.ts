@@ -1,4 +1,4 @@
-// The Danitha deck program (issue 26), group 1A (D-1200, D-1201, CR 701.20a): the REAL cards of the owner's golden corpus (real Oracle text, `fixtures/corpus/golden.jsonl`) read
+// The Danitha deck program (issue 26), group 1A (D-396, D-397, CR 701.20a): the REAL cards of the owner's golden corpus (real Oracle text, `fixtures/corpus/golden.jsonl`) read
 // through the grammar only, defined in an engine scenario and played through applyAction: Commune with the Gods, Satyr Wayfinder, Vessel of Nascency and Malevolent Rumble all
 // "reveal the top N cards of your library, you may put <a kind of> card from among them into your hand, put the rest into your graveyard". The cards that stand in for the
 // library are real engine fixtures.

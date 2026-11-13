@@ -1,6 +1,6 @@
 /**
  * Lowering of "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."
- * (Commune with the Gods, Satyr Wayfinder, Vessel of Nascency, Malevolent Rumble; D-1200, CR 701.20a): the engine's `lookAtTop` with `revealAll`, the controller's own library,
+ * (Commune with the Gods, Satyr Wayfinder, Vessel of Nascency, Malevolent Rumble; D-396, CR 701.20a): the engine's `lookAtTop` with `revealAll`, the controller's own library,
  * one card of the kind at most, put into the hand, the rest into the graveyard. The kind describes a card in a library: no zone or controller.
  */
 import type { IrClause } from '../ir/types';

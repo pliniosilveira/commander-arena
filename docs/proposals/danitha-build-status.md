@@ -11,7 +11,7 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Blanchwood Prowler | 2 | T + P (choose among the moved cards) | waiting |  |
 | Boar Umbra | 4 | K + P (Umbra armor, modified filter) | waiting |  |
 | Cache Grab | 2 | T + P (choose among the moved cards) | waiting |  |
-| Commune with the Gods | 1a | T + small P (reveal-all flag) | in progress |  |
+| Commune with the Gods | 1a | T + small P (reveal-all flag) | done |  |
 | Cosmic Rebirth | 1b | T | in progress |  |
 | Danitha, New Benalia's Light | 1b | T | in progress |  |
 | Ethereal Armor | 3 | T + P (attachment filters, host subject) | waiting |  |
@@ -22,11 +22,11 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Kor Spiritdancer | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Kutzil, Malamet Exemplar | 6 | P (base power, keyword counters) | waiting |  |
 | Lion Umbra | 4 | K + P (Umbra armor, modified filter) | waiting |  |
-| Malevolent Rumble | 1a | T + small P (reveal-all flag) | in progress |  |
+| Malevolent Rumble | 1a | T + small P (reveal-all flag) | done |  |
 | Midnight Tilling | 2 | T + P (choose among the moved cards) | waiting |  |
 | Restoration Magic | 7 | K (Tiered) | waiting |  |
 | Sage's Reverie | 3 | T + P (attachment filters, host subject) | waiting |  |
-| Satyr Wayfinder | 1a | T + small P (reveal-all flag) | in progress |  |
+| Satyr Wayfinder | 1a | T + small P (reveal-all flag) | done |  |
 | Season of Growth | 1b | T | in progress |  |
 | Shardmage's Rescue | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Shield of the Oversoul | 3 | T + P (attachment filters, host subject) | waiting |  |
@@ -39,7 +39,7 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Strong Back | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Timely Ward | 5 | P + T (one-offs) | in progress |  |
 | Town Greeter | 2 | T + P (choose among the moved cards) | waiting |  |
-| Vessel of Nascency | 1a | T + small P (reveal-all flag) | in progress |  |
+| Vessel of Nascency | 1a | T + small P (reveal-all flag) | done |  |
 | Winds of Rath | 3 | T + P (attachment filters, host subject) | waiting |  |
 
 Owner decisions asked: none.

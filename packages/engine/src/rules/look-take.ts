@@ -8,7 +8,7 @@
  * library in a random order from the game's seeded generator (CR 401.4, 701.24: only the number is told, which card went where is hidden)
  * or into the graveyard. A commander among the cards that go to the library or the hand asks its owner (CR 903.9b) like any card.
  *
- * `revealAll` (D-1200, D-1202, "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your
+ * `revealAll` (D-396, D-398, "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your
  * graveyard."): the cards are revealed, not looked at (CR 701.20a: shown to all players; 701.20e: looking shows them to one player only). One `cardsRevealed` event for all
  * of the cards, public, comes out as the effect starts (before the question, or alone when nothing can be taken: the instruction runs twice, the first time with `revealed`
  * unset); the cards taken are not shown again and `topCardsLooked` is not emitted. The cards stay in the library while they are revealed (CR 701.20b).
@@ -53,7 +53,7 @@ function revealedEvent(
   };
 }
 
-/** "You may reveal a card that matches and put it into your hand", or, when the cards are revealed already (D-1200), "You may put a card that matches into your hand". */
+/** "You may reveal a card that matches and put it into your hand", or, when the cards are revealed already (D-396), "You may put a card that matches into your hand". */
 function mayTakeWords(ins: LookTake, to: 'hand' | 'battlefield' | 'exileFaceDown'): string {
   const cards = ins.max === 1 ? 'a card that matches' : `up to ${ins.max} cards that match`;
   const them = ins.max === 1 ? 'it' : 'them';
@@ -68,7 +68,7 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
   const { seat } = ins;
   const looked = topCards(state, seat, ins.count);
   if (looked.length === 0) return done(state);
-  // CR 701.20a (D-1200): the cards are shown when the effect starts, before anyone chooses. The event comes out as an instruction of its own, because a
+  // CR 701.20a (D-396): the cards are shown when the effect starts, before anyone chooses. The event comes out as an instruction of its own, because a
   // question (`needs`) carries no events; the same instruction then runs again, marked `revealed`, and asks.
   if (ins.revealAll === true && ins.revealed !== true) {
     return done(state, [revealedEvent(state, seat, looked)], [{ ...ins, revealed: true }]);
@@ -143,7 +143,7 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
     return { state, events: [], front: [], needs: decision };
   }
   const chosen = chosenNow ?? [];
-  // CR 701.20a (D-1200): with `revealAll` the whole top was shown already and nothing is said of the cards looked at.
+  // CR 701.20a (D-396): with `revealAll` the whole top was shown already and nothing is said of the cards looked at.
   const events: GameEvent[] =
     ins.revealAll === true ? [] : [{ kind: 'topCardsLooked', seat, count: looked.length }];
   // CR 701.20: a card put into the hand or onto the battlefield is revealed; one exiled face down by Hideaway is not (CR 702.75a), and nor

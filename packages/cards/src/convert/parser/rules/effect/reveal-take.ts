@@ -1,6 +1,6 @@
 /**
  * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (Commune with the
- * Gods, Satyr Wayfinder, Vessel of Nascency, Malevolent Rumble; D-1200, CR 701.20a): the engine's `lookAtTop` with `revealAll`. The three sentences are one instruction (the
+ * Gods, Satyr Wayfinder, Vessel of Nascency, Malevolent Rumble; D-396, CR 701.20a): the engine's `lookAtTop` with `revealAll`. The three sentences are one instruction (the
  * second and third only make sense with the cards the first reveals), so `splitSentences` keeps them together (`segment.ts`) and one rule reads the whole.
  */
 import { literal, satisfy, sequence } from '../../combinators';

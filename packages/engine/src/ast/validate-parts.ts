@@ -3533,7 +3533,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'hidden is true, and only for cards put into the hand (a card put onto the battlefield is public)',
         );
       }
-      // D-1200 (CR 701.20a): "Reveal the top five cards": every card is shown, so nothing about the take can be hidden from anyone.
+      // D-396 (CR 701.20a): "Reveal the top five cards": every card is shown, so nothing about the take can be hidden from anyone.
       if (
         e.revealAll !== undefined &&
         (e.revealAll !== true || e.take?.hidden === true || e.take?.to === 'exileFaceDown')

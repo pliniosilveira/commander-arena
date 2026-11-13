@@ -2748,7 +2748,7 @@ export const HASHATON_G5_LANDS = supported([
 ]);
 
 /**
- * The SYNTHETIC cards of group 1A of the Danitha deck (D-1200, D-1201): a sorcery, an enters trigger, an enchantment sacrificed for its ability and a sorcery with a token, all of
+ * The SYNTHETIC cards of group 1A of the Danitha deck (D-396, D-397): a sorcery, an enters trigger, an enchantment sacrificed for its ability and a sorcery with a token, all of
  * which reveal the top cards of the library to everyone (`cardsRevealed`), ask which card of a kind to take into the hand (a `chooseCards` of purpose `lookTake`) and put the rest
  * into the graveyard. The graveyard fills from the library, so games-100 (which expects only dedicated styles to ask `lookTake` of a revealed top) leaves them to the
  * 'danithaReveal' style.
@@ -3262,7 +3262,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(HASHATON_G3_NAMES as readonly string[]).includes(card.name))
   // The copy cards of the Hashaton deck (D-382 to D-385) ask what to discard, whether to pay and which type; they have their own style.
   .filter((card) => !(HASHATON_G5_NAMES as readonly string[]).includes(card.name))
-  // The reveal-and-take cards of the Danitha deck (D-1200, D-1201) have their own style: they reveal the top of the library and ask which card to take.
+  // The reveal-and-take cards of the Danitha deck (D-396, D-397) have their own style: they reveal the top of the library and ask which card to take.
   .filter((card) => !(DANITHA_G1A_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))

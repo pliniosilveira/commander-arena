@@ -1,4 +1,4 @@
-// The agents and group 1A of the Danitha deck (D-1200, D-1201; SYNTHETIC cards of the engine fixtures `synthetic-danitha-g1a.ts`): "Reveal the top five cards of your library. You
+// The agents and group 1A of the Danitha deck (D-396, D-397; SYNTHETIC cards of the engine fixtures `synthetic-danitha-g1a.ts`): "Reveal the top five cards of your library. You
 // may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." asks the question that already exists, a `chooseCards` of purpose
 // `lookTake` (no new decision kind): the cards revealed are public, the card taken is the player's choice. Each agent is checked on real engine states: every answer is one the
 // engine lists and accepts; the casual agent takes the most expensive card it may, and the question is the same whether the top is revealed or only looked at.

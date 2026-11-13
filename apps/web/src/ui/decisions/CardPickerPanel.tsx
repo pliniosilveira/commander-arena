@@ -63,7 +63,7 @@ export function CardPickerPanel({
   const exile = decision.purpose === 'exile';
   const move = decision.purpose === 'move';
   const lookTake = decision.purpose === 'lookTake';
-  // D-1200 (CR 701.20a): a reveal shows the cards to everyone, a look to this player only.
+  // D-396 (CR 701.20a): a reveal shows the cards to everyone, a look to this player only.
   const revealedToAll = lookTakeRevealed(decision);
   // D-303 (CR 700.3): the cards to separate into two piles; the cards clicked are pile 1.
   const separate = decision.purpose === 'separate';

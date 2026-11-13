@@ -283,7 +283,7 @@ const REVEAL_THE_TOP = /^reveal the top [^.]* cards of your library\.$/i;
 const SEPARATES_INTO_PILES = /^an opponent separates those cards into two piles\.$/i;
 const PUT_ONE_PILE = /^put one pile into your hand and the other into your graveyard\.$/i;
 /**
- * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (D-1200, CR 701.20a):
+ * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (D-396, CR 701.20a):
  * the second sentence of the same instruction after `REVEAL_THE_TOP` (the cards are revealed, so "reveal" is not said again), kept together with the rest for `effect.reveal-take`.
  */
 const PUT_FROM_AMONG_REVEALED = /^you may put [^.]* from among them into your hand\.$/i;

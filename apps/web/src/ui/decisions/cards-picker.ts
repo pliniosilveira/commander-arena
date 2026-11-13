@@ -92,7 +92,7 @@ export function ordinal(n: number): string {
 }
 
 /**
- * True when the cards of a `lookTake` question were revealed to everyone ("Reveal the top five cards of your library", D-1200, CR 701.20a), not only looked at:
+ * True when the cards of a `lookTake` question were revealed to everyone ("Reveal the top five cards of your library", D-396, CR 701.20a), not only looked at:
  * the engine's own words say so (the effect of a spell is not in the view).
  */
 export function lookTakeRevealed(

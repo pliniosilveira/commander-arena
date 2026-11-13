@@ -1,4 +1,4 @@
-// The Danitha deck program (issue 26), group 1A (D-1200, D-1201): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into
+// The Danitha deck program (issue 26), group 1A (D-396, D-397): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into
 // your hand. Put the rest into your graveyard." (Commune with the Gods, Satyr Wayfinder, Vessel of Nascency, Malevolent Rumble). The lines are the real Oracle text of the
 // acceptance cards of the golden corpus, read through the whole pipeline; the other lines are SYNTHETIC siblings and the near misses the grammar must not read. The engine runs
 // what is lowered in convert-grammar-engine-danitha-g1a.test.ts.

@@ -1091,9 +1091,9 @@ export type Instruction =
       readonly totalManaValue?: number;
       /** The cards taken are not revealed (`take.hidden`, D-324): "Put two of them into your hand". */
       readonly hidden?: true;
-      /** Every card of the top is revealed to everyone (`revealAll`, D-1200, CR 701.20a): "Reveal the top five cards of your library". */
+      /** Every card of the top is revealed to everyone (`revealAll`, D-396, CR 701.20a): "Reveal the top five cards of your library". */
       readonly revealAll?: true;
-      /** With `revealAll`: the cards have been revealed (the event came out), so the instruction asks the question now (D-1200). */
+      /** With `revealAll`: the cards have been revealed (the event came out), so the instruction asks the question now (D-396). */
       readonly revealed?: true;
       /** `bottomChosen` (D-324): the rest go on the bottom in the order their owner chooses (an `arrange` instruction of purpose 'bottom'). */
       readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen';

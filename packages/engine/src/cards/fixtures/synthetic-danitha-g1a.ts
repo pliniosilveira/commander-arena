@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 1A OF THE DANITHA DECK (issue 26, D-1200 and D-1201). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 1A OF THE DANITHA DECK (issue 26, D-396 and D-397). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your
  * graveyard." (`lookAtTop` with `revealAll`, CR 701.20a): every one of the cards is shown to all players, one card of a kind may be taken into the hand, the rest go into the
