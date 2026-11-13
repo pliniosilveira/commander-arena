@@ -44,11 +44,11 @@ import {
 import { chosenIssues } from './validate-chosen';
 import { checkContinuousEffect } from './validate-continuous';
 import {
+  checkAbilityCostReduction,
   checkAdditionalCostChoice,
   checkAdditionalCosts,
   checkAlternativeCosts,
   checkAttackTax,
-  checkAbilityCostReduction,
   checkCostReduction,
 } from './validate-cost';
 import { checkCrossZoneSlots } from './validate-cross-zone';
@@ -1346,7 +1346,11 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       checkLoyaltyAbility(a, path, out);
       // D-1233: the engine writes it as it expands an Equip keyword; card data says "equip {N}" with the keyword.
       if (a.equip !== undefined) {
-        issue(out, `${path}.equip`, 'equip is written by the engine for the Equip keyword: a card writes the keyword');
+        issue(
+          out,
+          `${path}.equip`,
+          'equip is written by the engine for the Equip keyword: a card writes the keyword',
+        );
       }
       if (a.activateOnlyIf !== undefined) {
         checkCondition(a.activateOnlyIf, `${path}.activateOnlyIf`, out);

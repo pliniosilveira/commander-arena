@@ -23,9 +23,9 @@ import { lowerActivated, lowerGrantedMana } from './activated';
 import { isKeepsDamage, lowerKeepsDamage } from './adamantoise';
 import { lowerAmount, lowerDefinedPt, lowerStaticAmount, lowerStaticPtStep } from './amounts';
 import { isAngelStatic, lowerAngelStatic } from './angels';
-import { bindAttachedIt, lowerAbilityCostReduction } from './danitha-g3';
 import { withoutZone } from './attachments';
 import { lowerCondition } from './conditions';
+import { bindAttachedIt, lowerAbilityCostReduction } from './danitha-g3';
 import { isDragonStatic, lowerDragonStatic } from './dragons';
 import { type FeatureRef, missingFeatures } from './features';
 import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
@@ -847,7 +847,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     return lowerCostReduction(ability, first.amount, ctx);
   }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (Danitha group 3, D-1236, CR 601.2f, 602.2b, 702.6a).
-  if (first.kind === 'abilityCostReduction') return lowerAbilityCostReduction(ability, first, more.length, ctx);
+  if (first.kind === 'abilityCostReduction')
+    return lowerAbilityCostReduction(ability, first, more.length, ctx);
   if (first.kind === 'additionalCost' || first.kind === 'freeCast') return failure(ability);
   if (
     first.kind === 'castAsThoughFlash' ||

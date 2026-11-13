@@ -279,7 +279,11 @@ export function checkFilter(
   // D-1230: attachments: "attached to it", "that isn't enchanted", "enchanted creature" (of the source).
   if (f.attachedTo !== undefined) checkAttachedTo(f.attachedTo, `${path}.attachedTo`, out);
   if (f.enchanted !== undefined && typeof f.enchanted !== 'boolean') {
-    issue(out, `${path}.enchanted`, 'enchanted must be a boolean (true: has an Aura, false: has none)');
+    issue(
+      out,
+      `${path}.enchanted`,
+      'enchanted must be a boolean (true: has an Aura, false: has none)',
+    );
   }
   if (f.hostOfSource !== undefined && f.hostOfSource !== true) {
     issue(out, `${path}.hostOfSource`, 'hostOfSource must be true');
@@ -473,7 +477,7 @@ function checkAttachedTo(a: AttachedTo, path: string, out: Out): void {
         inner.controller !== 'opponent' &&
         inner.controller !== 'any'
       ) {
-        issue(out, `${path}.filter.controller`, 'the host\'s controller is you, opponent or any');
+        issue(out, `${path}.filter.controller`, "the host's controller is you, opponent or any");
       }
       return;
     }

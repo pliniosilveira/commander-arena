@@ -61,7 +61,11 @@ export const SYNTHETIC_DANITHA_G3_LIST: readonly CardDefinition[] = [
       },
       {
         kind: 'triggered',
-        trigger: { kind: 'castSpell', filter: { stackKind: 'spell', subtypes: ['Aura'] }, by: 'you' },
+        trigger: {
+          kind: 'castSpell',
+          filter: { stackKind: 'spell', subtypes: ['Aura'] },
+          by: 'you',
+        },
         effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
         optional: true,
       },
@@ -202,22 +206,38 @@ export const SYNTHETIC_DANITHA_G3_LIST: readonly CardDefinition[] = [
       {
         kind: 'static',
         static: { kind: 'modifyPt', subject: ATTACHED, power: 1, toughness: 1 },
-        condition: { kind: 'objectMatches', of: { kind: 'attached' }, filter: { types: ['creature'], colors: ['G'] } },
+        condition: {
+          kind: 'objectMatches',
+          of: { kind: 'attached' },
+          filter: { types: ['creature'], colors: ['G'] },
+        },
       },
       {
         kind: 'static',
         static: { kind: 'grantKeyword', subject: ATTACHED, keyword: { kind: 'indestructible' } },
-        condition: { kind: 'objectMatches', of: { kind: 'attached' }, filter: { types: ['creature'], colors: ['G'] } },
+        condition: {
+          kind: 'objectMatches',
+          of: { kind: 'attached' },
+          filter: { types: ['creature'], colors: ['G'] },
+        },
       },
       {
         kind: 'static',
         static: { kind: 'modifyPt', subject: ATTACHED, power: 1, toughness: 1 },
-        condition: { kind: 'objectMatches', of: { kind: 'attached' }, filter: { types: ['creature'], colors: ['W'] } },
+        condition: {
+          kind: 'objectMatches',
+          of: { kind: 'attached' },
+          filter: { types: ['creature'], colors: ['W'] },
+        },
       },
       {
         kind: 'static',
         static: { kind: 'grantKeyword', subject: ATTACHED, keyword: { kind: 'flying' } },
-        condition: { kind: 'objectMatches', of: { kind: 'attached' }, filter: { types: ['creature'], colors: ['W'] } },
+        condition: {
+          kind: 'objectMatches',
+          of: { kind: 'attached' },
+          filter: { types: ['creature'], colors: ['W'] },
+        },
       },
     ],
   }),
@@ -322,7 +342,12 @@ export const SYNTHETIC_DANITHA_G3_LIST: readonly CardDefinition[] = [
     abilities: [
       {
         kind: 'static',
-        static: { kind: 'modifyPt', subject: { kind: 'attached', types: ['creature'] }, power: 1, toughness: 1 },
+        static: {
+          kind: 'modifyPt',
+          subject: { kind: 'attached', types: ['creature'] },
+          power: 1,
+          toughness: 1,
+        },
       },
       {
         kind: 'keyword',

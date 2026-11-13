@@ -22,7 +22,11 @@ const LIBRARY = Array.from({ length: 6 }, () => 'Plains');
 
 describe('"Destroy all creatures that aren\'t enchanted. They can\'t be regenerated."', () => {
   /** Seat 0 holds the sorcery with five Plains; `mine` and `theirs` are creatures, each with an Aura when its name is in `enchanted`. */
-  const game = (mine: readonly string[], theirs: readonly string[], enchanted: readonly string[]) => {
+  const game = (
+    mine: readonly string[],
+    theirs: readonly string[],
+    enchanted: readonly string[],
+  ) => {
     let b = scenario()
       .define(syntheticCard(PURGE))
       .seat(0)

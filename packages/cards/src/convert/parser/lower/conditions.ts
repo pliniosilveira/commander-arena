@@ -229,7 +229,11 @@ export function lowerCondition(
     case 'otherAttachedToHost': {
       // "As long as another Aura is attached to enchanted creature" (D-1235, CR 303.4, 301.5, 701.3): the number of other permanents of the kind attached to the
       // permanent the source is attached to is at least one. The word of the condition says the kind of attachment the source is, which the face must be.
-      const blocked = missingFeatures(['condition:amountIs', 'amount:countOf', 'selector:attachedTo']);
+      const blocked = missingFeatures([
+        'condition:amountIs',
+        'amount:countOf',
+        'selector:attachedTo',
+      ]);
       if (blocked.length > 0) return failure(c, blocked);
       if (!(ctx?.faceSubtypes ?? []).includes(HOST_KIND[test.via])) return failure(c, []);
       const noun: IrNoun = {

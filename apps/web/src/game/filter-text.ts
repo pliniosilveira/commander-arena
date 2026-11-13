@@ -264,7 +264,8 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
   const attached = attachedToWords(filter);
   if (attached === null) return null;
   const enchanted = enchantedWords(filter, plural);
-  const where = (attached !== '' || enchanted !== '') && place === ' on the battlefield' ? '' : place;
+  const where =
+    (attached !== '' || enchanted !== '') && place === ' on the battlefield' ? '' : place;
   return `${[...adjectives, noun].join(' ')}${where}${attackers}${withText(filter)}${attached}${enchanted}`;
 }
 
@@ -273,13 +274,24 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
  * names by their subtype, with who controls them and what they are attached to. Null for any other field of the filter.
  */
 function attachedThings(filter: ObjectFilter, plural: boolean): string | null {
-  const { anyOf: _anyOf, subtypes: _subtypes, controller, other, attachedTo: _to, ...rest } = filter;
+  const {
+    anyOf: _anyOf,
+    subtypes: _subtypes,
+    controller,
+    other,
+    attachedTo: _to,
+    ...rest
+  } = filter;
   if (Object.keys(rest).some((k) => k !== 'zone' || filter.zone !== 'battlefield')) return null;
   const noun = attachableNouns(filter, plural);
   const to = attachedToWords(filter);
   if (noun === null || to === null) return null;
   const control =
-    controller === 'you' ? ' you control' : controller === 'opponent' ? ' an opponent controls' : '';
+    controller === 'you'
+      ? ' you control'
+      : controller === 'opponent'
+        ? ' an opponent controls'
+        : '';
   if (controller !== undefined && controller !== 'you' && controller !== 'opponent') return null;
   // "that's attached to a creature" says "that are" of a plural group.
   const tail = plural ? to.replace(" that's attached", ' that are attached') : to;

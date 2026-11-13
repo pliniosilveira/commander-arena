@@ -15,13 +15,13 @@ import { costRefusal } from './activate-costs';
 import {
   alternativeOfStack,
   type CastFrom,
-  canPaySpellCost,
   type CostRequest,
+  canPaySpellCost,
   spellCost,
 } from './cast-cost';
 import { abilityReductionSources, costReductionSources } from './derive-statics';
-import { flashSlotOf } from './target-choice';
 import { legalTargets, type SelectContext } from './select';
+import { flashSlotOf } from './target-choice';
 
 /** The object ids a slot may offer, or null for "all of its legal targets". */
 export type PayableOnly = readonly ObjectId[] | null;
@@ -67,7 +67,14 @@ export function payableSpellTargets(
     });
     const withTarget = aimed.objects[casting.object];
     if (withTarget === undefined) continue;
-    if (canPaySpellCost(aimed, casting.seat, withTarget, spellCost(aimed, { ...request, spell: withTarget }))) {
+    if (
+      canPaySpellCost(
+        aimed,
+        casting.seat,
+        withTarget,
+        spellCost(aimed, { ...request, spell: withTarget }),
+      )
+    ) {
       ids.push(target.id);
     }
   }

@@ -274,7 +274,11 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     }
     // D-1235: after a condition about the host of an attachment, "it" is that permanent.
     const via = hostWordOf(condition);
-    const read = units(ctx, at, via === undefined ? ANY_UNIT : choice(hostPronounUnit(via), ANY_UNIT));
+    const read = units(
+      ctx,
+      at,
+      via === undefined ? ANY_UNIT : choice(hostPronounUnit(via), ANY_UNIT),
+    );
     if (!read.ok) return read;
     const last = read.value[read.value.length - 1];
     const end =

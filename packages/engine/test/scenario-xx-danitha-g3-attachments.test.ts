@@ -70,7 +70,7 @@ describe('ObjectFilter.attachedTo "source": "+2/+2 for each Aura attached to it"
     two.expect.invariants();
   });
 
-  test("an Aura of an opponent counts (it is attached to it), an Aura on another creature or an Equipment does not", () => {
+  test('an Aura of an opponent counts (it is attached to it), an Aura on another creature or an Equipment does not', () => {
     const g = scenario()
       .seat(0)
       .battlefield(WEAVER, BEARS, BLADE)
@@ -292,19 +292,34 @@ describe('static condition "amountIs": "As long as another Aura is attached to e
 
 describe('"As long as enchanted creature is green / white": the host is read through layers 4 and 5', () => {
   test('a green creature gets +1/+1 and indestructible', () => {
-    const g = scenario().seat(0).battlefield(BEARS).battlefield(HUE, { attachedTo: BEARS }).seat(1).build();
+    const g = scenario()
+      .seat(0)
+      .battlefield(BEARS)
+      .battlefield(HUE, { attachedTo: BEARS })
+      .seat(1)
+      .build();
     g.expect.pt(BEARS, 3, 3);
     g.expect.derived(BEARS, { keywords: ['indestructible'] });
   });
 
   test('a white creature gets +1/+1 and flying', () => {
-    const g = scenario().seat(0).battlefield(ANGEL).battlefield(HUE, { attachedTo: ANGEL }).seat(1).build();
+    const g = scenario()
+      .seat(0)
+      .battlefield(ANGEL)
+      .battlefield(HUE, { attachedTo: ANGEL })
+      .seat(1)
+      .build();
     g.expect.pt(ANGEL, 5, 5);
     g.expect.derived(ANGEL, { keywords: ['flying', 'vigilance'] });
   });
 
   test('a creature of neither color gets nothing', () => {
-    const g = scenario().seat(0).battlefield(VANILLA).battlefield(HUE, { attachedTo: VANILLA }).seat(1).build();
+    const g = scenario()
+      .seat(0)
+      .battlefield(VANILLA)
+      .battlefield(HUE, { attachedTo: VANILLA })
+      .seat(1)
+      .build();
     g.expect.pt(VANILLA, 3, 3);
     g.expect.derived(VANILLA, { keywords: [] });
   });
@@ -375,28 +390,14 @@ describe('abilityCostReduction and costReduction with targetsObject: "target enc
     return [...d.totalCost];
   };
 
+  /** Seat 0 has the Equipment, one Forest and two creatures; the Strong Spine Aura is on the Bears of seat 0 ('mine'), on the Bears of seat 0 but controlled by seat 1 ('theirs'), or absent. */
   const equipGame = (spine: 'mine' | 'theirs' | 'none' = 'mine') => {
-    const b = scenario()
-      .seat(0)
-      .battlefield(COSTLY, 'Forest', BEARS, VANILLA)
-      .seat(1);
-    return (
-      spine === 'mine'
-        ? scenario()
-            .seat(0)
-            .battlefield(COSTLY, 'Forest', BEARS, VANILLA)
-            .battlefield(SPINE, { attachedTo: BEARS })
-            .seat(1)
-            .build()
-        : spine === 'theirs'
-          ? scenario()
-              .seat(0)
-              .battlefield(COSTLY, 'Forest', BEARS, VANILLA)
-              .seat(1)
-              .battlefield(SPINE, { attachedTo: BEARS })
-              .build()
-          : b.build()
-    );
+    const b = scenario().seat(0).battlefield(COSTLY, 'Forest', BEARS, VANILLA);
+    if (spine === 'mine') return b.battlefield(SPINE, { attachedTo: BEARS }).seat(1).build();
+    const opponent = b.seat(1);
+    return spine === 'theirs'
+      ? opponent.battlefield(SPINE, { attachedTo: BEARS }).build()
+      : opponent.build();
   };
 
   test('an Equip {4} that targets the enchanted creature costs {1}: one land is enough', () => {
@@ -462,7 +463,9 @@ describe('abilityCostReduction and costReduction with targetsObject: "target enc
     return (d.specs[0]?.legal ?? []).flatMap((t) => {
       if (t.kind !== 'object') return [];
       const card = g.object(t.id).card;
-      return card === null ? [] : [g.state.definitions[g.state.cards[card]?.definition ?? -1]?.name ?? '?'];
+      return card === null
+        ? []
+        : [g.state.definitions[g.state.cards[card]?.definition ?? -1]?.name ?? '?'];
     });
   };
 

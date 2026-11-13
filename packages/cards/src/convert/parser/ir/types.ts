@@ -513,7 +513,11 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'paired'; readonly who: 'self' | 'it' }
     // "~ is attached to a creature" (stage P37, D-180, CR 301.5, 303.4): the permanent this one is attached to, against a filter (`creature`); D-1235 (Danitha group 3):
     // "enchanted creature is green" says the same of the permanent an Aura enchants (`via`: the word, "enchanted" for an Aura, "equipped" for an Equipment)
-    | { readonly kind: 'attachedTo'; readonly filter: IrFilter; readonly via?: 'enchanted' | 'equipped' }
+    | {
+        readonly kind: 'attachedTo';
+        readonly filter: IrFilter;
+        readonly via?: 'enchanted' | 'equipped';
+      }
     // "another Aura is attached to enchanted creature" (D-1235, CR 303.4, 301.5): at least one other permanent of the kind is attached to the permanent the source is attached to
     | {
         readonly kind: 'otherAttachedToHost';

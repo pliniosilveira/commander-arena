@@ -121,7 +121,7 @@ describe("Sage's Reverie: draws and gives +1/+1 for each Aura you control that's
   });
 });
 
-describe("Winds of Rath: \"Destroy all creatures that aren't enchanted. They can't be regenerated.\"", () => {
+describe('Winds of Rath: "Destroy all creatures that aren\'t enchanted. They can\'t be regenerated."', () => {
   const winds = real('Winds of Rath');
   const WINDS = winds.name;
   const TROLL = 'SYNTHETIC Regenerating Troll';

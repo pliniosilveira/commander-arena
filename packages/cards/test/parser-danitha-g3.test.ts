@@ -19,7 +19,10 @@ const AURA = ['Aura'];
 const ENCHANT = 'Enchant creature';
 const HOST = { kind: 'attached', types: ['creature'] } as const;
 const PLAIN_HOST = { kind: 'attached' } as const;
-const SOURCE_AURAS = { kind: 'countOf', filter: { subtypes: ['Aura'], attachedTo: { kind: 'source' } } };
+const SOURCE_AURAS = {
+  kind: 'countOf',
+  filter: { subtypes: ['Aura'], attachedTo: { kind: 'source' } },
+};
 const ON_CREATURES = {
   subtypes: ['Aura'],
   controller: 'you',
@@ -73,7 +76,10 @@ describe('Kor Spiritdancer: "This creature gets +2/+2 for each Aura attached to 
     expect(creature('~ gets +1/+0 for each Equipment attached to it.')).toMatchObject([
       {
         static: {
-          power: { kind: 'countOf', filter: { subtypes: ['Equipment'], attachedTo: { kind: 'source' } } },
+          power: {
+            kind: 'countOf',
+            filter: { subtypes: ['Equipment'], attachedTo: { kind: 'source' } },
+          },
           toughness: 0,
         },
       },
@@ -152,7 +158,7 @@ describe('Kor Spiritdancer: "This creature gets +2/+2 for each Aura attached to 
   });
 });
 
-describe("Sage's Reverie: \"draw a card for each Aura you control that's attached to a creature\" (CR 303.4, 608.2c)", () => {
+describe('Sage\'s Reverie: "draw a card for each Aura you control that\'s attached to a creature" (CR 303.4, 608.2c)', () => {
   const COUNT = { kind: 'countOf', filter: ON_CREATURES };
 
   test('the real lines: the draw as the Aura enters, and the bonus of the creature', () => {
@@ -172,13 +178,16 @@ describe("Sage's Reverie: \"draw a card for each Aura you control that's attache
 
   test('the curly apostrophe of Oracle text reads the same (SYNTHETIC)', () => {
     expect(
-      aura('When ~ enters, draw a card for each Aura you control that’s attached to a creature.')[0],
+      aura(
+        'When ~ enters, draw a card for each Aura you control that’s attached to a creature.',
+      )[0],
     ).toMatchObject({ effect: { count: COUNT } });
   });
 
   test('an instant draws the same count (SYNTHETIC)', () => {
     expect(
-      readAll("Draw a card for each Aura you control that's attached to a creature.", 'instant').spell,
+      readAll("Draw a card for each Aura you control that's attached to a creature.", 'instant')
+        .spell,
     ).toEqual({ effect: { kind: 'draw', player: YOU, count: COUNT } });
   });
 
@@ -188,8 +197,10 @@ describe("Sage's Reverie: \"draw a card for each Aura you control that's attache
       readAll("Draw a card for each Aura that's attached to a creature.", 'instant').spell,
     ).toMatchObject(count({ subtypes: ['Aura'], attachedTo: { kind: 'matching' } }));
     expect(
-      readAll("Draw a card for each Aura your opponents control that's attached to a creature.", 'instant')
-        .spell,
+      readAll(
+        "Draw a card for each Aura your opponents control that's attached to a creature.",
+        'instant',
+      ).spell,
     ).toMatchObject(count({ subtypes: ['Aura'], controller: 'opponent' }));
   });
 
@@ -213,7 +224,10 @@ describe('Winds of Rath: "Destroy all creatures that aren\'t enchanted. They can
     targets: undefined,
     effect: {
       kind: 'destroy',
-      objects: { kind: 'each', filter: { zone: 'battlefield', types: ['creature'], enchanted: false } },
+      objects: {
+        kind: 'each',
+        filter: { zone: 'battlefield', types: ['creature'], enchanted: false },
+      },
       ...(regenerated ? { cantBeRegenerated: true } : {}),
     },
     text,
@@ -233,7 +247,10 @@ describe('Winds of Rath: "Destroy all creatures that aren\'t enchanted. They can
     ).toEqual(destroy('', false).effect);
     expect(readAll('Destroy all creatures that are enchanted.', 'sorcery').spell?.effect).toEqual({
       kind: 'destroy',
-      objects: { kind: 'each', filter: { zone: 'battlefield', types: ['creature'], enchanted: true } },
+      objects: {
+        kind: 'each',
+        filter: { zone: 'battlefield', types: ['creature'], enchanted: true },
+      },
     });
   });
 
@@ -325,7 +342,9 @@ describe('Face of Divinity: "As long as another Aura is attached to enchanted cr
 
   test('the real line: each keyword is its own static ability with the condition, for the enchanted creature', () => {
     expect(
-      aura('As long as another Aura is attached to enchanted creature, it has first strike and lifelink.'),
+      aura(
+        'As long as another Aura is attached to enchanted creature, it has first strike and lifelink.',
+      ),
     ).toEqual([
       {
         kind: 'static',
@@ -341,7 +360,9 @@ describe('Face of Divinity: "As long as another Aura is attached to enchanted cr
   });
 
   test('"it" may get a bonus too, and the enchanted creature may be named again (SYNTHETIC)', () => {
-    expect(aura('As long as another Aura is attached to enchanted creature, it gets +1/+1.')).toEqual([
+    expect(
+      aura('As long as another Aura is attached to enchanted creature, it gets +1/+1.'),
+    ).toEqual([
       {
         kind: 'static',
         static: { kind: 'modifyPt', subject: PLAIN_HOST, power: 1, toughness: 1 },
@@ -349,8 +370,12 @@ describe('Face of Divinity: "As long as another Aura is attached to enchanted cr
       },
     ]);
     expect(
-      aura('As long as another Aura is attached to enchanted creature, enchanted creature has flying.'),
-    ).toMatchObject([{ static: { subject: HOST, keyword: { kind: 'flying' } }, condition: OTHER_AURAS }]);
+      aura(
+        'As long as another Aura is attached to enchanted creature, enchanted creature has flying.',
+      ),
+    ).toMatchObject([
+      { static: { subject: HOST, keyword: { kind: 'flying' } }, condition: OTHER_AURAS },
+    ]);
   });
 
   test('an Equipment says it with "equipped" (SYNTHETIC)', () => {
@@ -363,7 +388,10 @@ describe('Face of Divinity: "As long as another Aura is attached to enchanted cr
     ).toMatchObject([
       {
         static: { kind: 'grantKeyword', subject: PLAIN_HOST, keyword: { kind: 'trample' } },
-        condition: { kind: 'amountIs', amount: { filter: { subtypes: ['Equipment'], other: true } } },
+        condition: {
+          kind: 'amountIs',
+          amount: { filter: { subtypes: ['Equipment'], other: true } },
+        },
       },
     ]);
   });
@@ -459,11 +487,13 @@ describe('Shield of the Oversoul: "As long as enchanted creature is green, it ge
   });
 });
 
-describe("Shardmage's Rescue: \"As long as this Aura entered this turn, enchanted creature has hexproof.\" (CR 400.7, 611.3a, 702.11)", () => {
+describe('Shardmage\'s Rescue: "As long as this Aura entered this turn, enchanted creature has hexproof." (CR 400.7, 611.3a, 702.11)', () => {
   const ENTERED = { kind: 'thisEnteredThisTurn' };
 
   test('the real line: the grant of the enchanted creature while the Aura itself entered this turn', () => {
-    expect(aura('As long as this Aura entered this turn, enchanted creature has hexproof.')).toEqual([
+    expect(
+      aura('As long as this Aura entered this turn, enchanted creature has hexproof.'),
+    ).toEqual([
       {
         kind: 'static',
         static: { kind: 'grantKeyword', subject: HOST, keyword: { kind: 'hexproof' } },
@@ -474,7 +504,9 @@ describe("Shardmage's Rescue: \"As long as this Aura entered this turn, enchante
 
   test('"entered the battlefield this turn" and a bonus read the same (SYNTHETIC)', () => {
     expect(
-      aura('As long as this Aura entered the battlefield this turn, enchanted creature gets +2/+2.'),
+      aura(
+        'As long as this Aura entered the battlefield this turn, enchanted creature gets +2/+2.',
+      ),
     ).toMatchObject([
       { static: { kind: 'modifyPt', subject: HOST, power: 2, toughness: 2 }, condition: ENTERED },
     ]);
@@ -539,7 +571,9 @@ describe('Strong Back: Equip abilities and Aura spells that target enchanted cre
 
   test('another amount, and Aura or Equipment spells (SYNTHETIC siblings)', () => {
     expect(
-      aura('Equip abilities you activate that target enchanted creature cost {1} less to activate.'),
+      aura(
+        'Equip abilities you activate that target enchanted creature cost {1} less to activate.',
+      ),
     ).toMatchObject([{ static: { amount: 1 } }]);
     expect(
       aura(

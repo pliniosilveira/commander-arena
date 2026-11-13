@@ -150,8 +150,8 @@ export function matchesFilter(
     const aimed =
       (ctx.spellTargetsMayHold === true && unchosen) ||
       (obj.stack?.chosenTargets ?? []).some((t) => {
-      if (t.kind !== 'object') return false;
-      const target = objectOrLki(state, t.id);
+        if (t.kind !== 'object') return false;
+        const target = objectOrLki(state, t.id);
         return target !== null && matchesFilter(state, target, targetsObject, ctx);
       });
     return aimed && matchesFilter(state, obj, rest, ctx);

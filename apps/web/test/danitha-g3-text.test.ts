@@ -5,9 +5,9 @@
  */
 import { type Ability, type ObjectFilter, syntheticCard } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
+import { gameConditionWords } from '../src/game/condition-text';
 import { thingsPhrase } from '../src/game/filter-text';
 import { lordWordings } from '../src/game/static-text';
-import { gameConditionWords } from '../src/game/condition-text';
 import { triggerGist } from '../src/ui/decisions/ability-label';
 
 const abilitiesOf = (name: string): readonly Ability[] => {
@@ -16,7 +16,8 @@ const abilitiesOf = (name: string): readonly Ability[] => {
   return face.abilities;
 };
 
-const aura = (name: string) => lordWordings(abilitiesOf(name), { noun: 'enchantment', subtypes: ['Aura'] });
+const aura = (name: string) =>
+  lordWordings(abilitiesOf(name), { noun: 'enchantment', subtypes: ['Aura'] });
 
 describe('the static abilities of the group', () => {
   test('"This creature gets +2/+2 for each Aura attached to it" (Kor Spiritdancer)', () => {
@@ -25,7 +26,7 @@ describe('the static abilities of the group', () => {
     ).toEqual(['This creature gets +2/+2 for each Aura attached to it.']);
   });
 
-  test('the bonus per Aura of yours on a creature (Sage\'s Reverie)', () => {
+  test("the bonus per Aura of yours on a creature (Sage's Reverie)", () => {
     expect(aura('SYNTHETIC Aura Scholar')).toEqual([
       "Enchanted creature gets +1/+1 for each Aura you control that's attached to a creature.",
     ]);
@@ -146,7 +147,7 @@ describe('a group named by what is attached to it', () => {
         },
         true,
       ),
-    ).toBe("Auras you control that are attached to a creature");
+    ).toBe('Auras you control that are attached to a creature');
     expect(thingsPhrase({ subtypes: ['Equipment'], attachedTo: { kind: 'source' } }, true)).toBe(
       'Equipment attached to it',
     );
@@ -175,9 +176,9 @@ describe('a group named by what is attached to it', () => {
     expect(
       thingsPhrase({ subtypes: ['Aura'], tapped: true, attachedTo: { kind: 'source' } }, false),
     ).toBeNull();
-    expect(
-      thingsPhrase({ subtypes: ['Vehicle'], attachedTo: { kind: 'source' } }, false),
-    ).not.toBe('Vehicle attached to it');
+    expect(thingsPhrase({ subtypes: ['Vehicle'], attachedTo: { kind: 'source' } }, false)).not.toBe(
+      'Vehicle attached to it',
+    );
   });
 
   test('"Destroy each creature that isn\'t enchanted. It can\'t be regenerated" (Winds of Rath)', () => {
