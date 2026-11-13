@@ -764,7 +764,13 @@ export interface CastingContext {
     | 'exile'
     | 'crew'
     | 'tap'
-    | 'bounce';
+    | 'bounce'
+    | 'blight';
+  /**
+   * The spell is being cast only because of its own conditional flash ("You may cast this spell as though it had flash if it targets a commander", D-408,
+   * CR 601.3b, 601.3d): its targets are chosen from the objects this filter matches. Absent for every other cast.
+   */
+  readonly flashTargets?: ObjectFilter;
   /** Mana symbols of the total cost, locked in at CR 601.2f. Empty until the payment stage. */
   readonly totalCost: readonly string[];
   readonly commanderTax: number;
@@ -1168,7 +1174,12 @@ export type Instruction =
       readonly players: readonly SeatId[];
     }
   /** CR 701.24 (Shuffle): `seat` shuffles their library with the game's random number generator. */
-  | { readonly kind: 'shuffle'; readonly seat: SeatId }
+  | {
+      readonly kind: 'shuffle';
+      readonly seat: SeatId;
+      /** Cards of the library left out of the shuffle and kept where they are (CR 701.24b, D-405: the card a search found and is to put on top). */
+      readonly keep?: readonly ObjectId[];
+    }
   /**
    * CR 701.9 (Discard): `seat` discards `count` cards of their choice (all of their hand if it has
    * fewer). `chosen` is null until they have chosen.

@@ -779,6 +779,26 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       rule: reduction.rule,
     };
   }
+  // "You may cast ~ as though it had flash if it targets a commander." (Danitha deck, D-408, CR 601.3b, 601.3d): the spell's own permission, with the condition
+  // the engine reads as the spell is cast.
+  if (first.kind === 'castAsThoughFlash' && statement.subject.det === 'self') {
+    if (more.length > 0 || statement.condition === undefined) return failure(ability);
+    const lowered = lowerCondition(statement.condition, false, ctx);
+    if (!lowered.ok) return lowered;
+    const missing = missingFeatures(['ability:static', 'static:castAsThoughFlash']);
+    if (missing.length > 0) return failure(ability, missing);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: { kind: 'castAsThoughFlash', spells: { kind: 'this' } },
+          condition: lowered.value,
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
   if (statement.condition === undefined) {
     if (parts.length > 1) return failure(ability);
   } else {

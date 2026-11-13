@@ -221,6 +221,20 @@ export function checkStaticCondition(
     checkCondition(condition, `${path}.condition`, out);
     return;
   }
+  // D-408, CR 601.3b, 601.3d: "You may cast this spell as though it had flash if it targets a commander": the spell's own permission, read as the spell is cast
+  // (`rules/flash-targets.ts`), not by `derive`. A permanent's own `castAsThoughFlash` takes no condition.
+  if (s?.kind === 'castAsThoughFlash') {
+    if (kindOf(s.spells) !== 'this') {
+      issue(
+        out,
+        `${path}.condition`,
+        'only the spell\'s own permission ("You may cast this spell as though it had flash if ...") takes a condition',
+      );
+      return;
+    }
+    checkCondition(condition, `${path}.condition`, out);
+    return;
+  }
   if (!CONDITIONAL_STATICS.includes(s?.kind)) {
     issue(
       out,

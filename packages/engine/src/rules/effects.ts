@@ -166,7 +166,7 @@ export function runInstruction(
   if (instruction.kind === 'copyFromCards') return runCopyFromCards(state, res, instruction);
   if (instruction.kind === 'search') return runSearch(state, res, instruction);
   if (instruction.kind === 'shuffle') {
-    const r = shuffleLibrary(state, instruction.seat);
+    const r = shuffleLibrary(state, instruction.seat, instruction.keep);
     return done(r.state, r.events);
   }
   if (instruction.kind === 'discard') return runDiscard(state, res, instruction);

@@ -405,7 +405,7 @@ export type GameEvent =
       readonly seat: SeatId;
       readonly source: ObjectId;
       readonly objects: readonly ObjectId[];
-      readonly purpose: 'sacrifice' | 'crew' | 'effect' | 'tap' | 'bounce' | 'fight';
+      readonly purpose: 'sacrifice' | 'crew' | 'effect' | 'tap' | 'bounce' | 'fight' | 'blight';
       readonly automatic: boolean;
       /** For purpose `'fight'` (D-145): the creature the chosen one is paired with; for the choice of what an Aura enters enchanting (D-149): the Aura. */
       readonly subject?: ObjectId;

@@ -87,6 +87,9 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     case 'discardX':
       // CR 107.3a, 601.2b (D-386): "discard X cards" is announced as the spell is cast; the engine runs it as an additional cost of a spell only.
       return options.discardX === true ? ok({ kind: 'discardX' }) : failure(cost);
+    case 'blight':
+      // CR 701.68a (D-407): Blight 1 is paid as the cost of an ordinary activated ability: the player chooses the creature as it is activated.
+      return options.ordinary === true ? ok({ kind: 'blight', count: cost.count }) : failure(cost);
     case 'removeCounters':
       return cost.amount.kind === 'number' && cost.amount.value >= 1
         ? ok({ kind: 'removeCounters', counter: cost.counter, count: cost.amount.value })
@@ -200,6 +203,7 @@ export const COST_NEEDS: readonly FeatureRef[] = [
   'cost:untap',
   'cost:sacrifice',
   'cost:tapPermanents',
+  'cost:blight',
   'cost:payLife',
   'cost:payXLife',
   'cost:discardX',

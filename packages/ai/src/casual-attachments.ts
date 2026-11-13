@@ -13,8 +13,10 @@
  *   the agent could not tell a better host from a worse one.
  */
 import type {
+  Action,
   ActivatedAbility,
   ChosenTarget,
+  ConfirmOptionalDecision,
   GameView,
   ObjectView,
   TargetsDecision,
@@ -27,6 +29,71 @@ const HOSTILE_AURA = /gets? -\d|can't attack|can't block|doesn't untap|loses /i;
 export const isAura = (o: ObjectView): boolean => o.subtypes.includes('Aura');
 export const isEquipment = (o: ObjectView): boolean => o.subtypes.includes('Equipment');
 export const auraIsHostile = (o: ObjectView): boolean => HOSTILE_AURA.test(o.oracleText);
+
+/** "You may cast this spell as though it had flash if it targets a commander." (D-408, CR 601.3b, 601.3d): an Aura that can be cast at instant speed only on a commander. */
+const FLASH_FOR_COMMANDER = /cast this spell as though it had flash if it targets a commander/i;
+
+/** What an opposing spell or ability says that an indestructible commander survives: it destroys, or it deals damage. */
+const KILLS_BY_DAMAGE_OR_DESTROY = /\bdestroy|\bdeals? (?:\d+|x|that much|damage)|\bdamage\b/i;
+
+/** Whether the Aura is cast at instant speed only on a commander (D-408). */
+export const flashesForCommander = (o: ObjectView): boolean =>
+  FLASH_FOR_COMMANDER.test(o.oracleText);
+
+/**
+ * Whether the agent is in its own main phase with an empty stack: the timing of a sorcery (CR 307.1), where an Aura is cast as any other Aura.
+ */
+function hasSorceryTiming(view: GameView): boolean {
+  return (
+    view.activeSeat === view.viewer &&
+    (view.step === 'precombatMain' || view.step === 'postcombatMain') &&
+    view.stack.length === 0
+  );
+}
+
+/**
+ * "Held up for a commander" (D-408): an Aura that has flash only if it targets a commander is cast at its controller's sorcery timing like any Aura, and otherwise
+ * only as a response that saves a commander of the agent's own: the top object of the stack is the opponent's, it targets that commander and its text destroys or
+ * deals damage (indestructible saves it from both). At flash timing only commanders are legal targets, so one of the agent's own must be there for the cast to
+ * be a choice it can make (the cast, once begun, is never cancelled).
+ */
+export function commanderAuraWorthCasting(view: GameView): boolean {
+  if (hasSorceryTiming(view)) return true;
+  const top = view.stack[view.stack.length - 1];
+  if (top === undefined || top.controller === view.viewer) return false;
+  if (!KILLS_BY_DAMAGE_OR_DESTROY.test(top.oracleText)) return false;
+  const mine = view.battlefield.filter(
+    (o) => o.controller === view.viewer && o.isCommander && targetable(view, o),
+  );
+  return mine.some((o) => top.targets.some((t) => t.kind === 'object' && t.id === o.id));
+}
+
+/**
+ * "Whenever a creature enters, you may attach this Aura to that creature" (D-406, CR 701.3, 303.4j): the decision does not say which creature entered, but the view lists the
+ * battlefield in the order permanents entered it, so the newest creature there is the one (when several enter together the last of them stands for the rest). A benefit
+ * moves onto a creature of the agent's own that does not carry it already, a hurt (`auraIsHostile`) onto an opponent's. Null when the question is not that one.
+ */
+export function answerAttachToEntered(view: GameView, d: ConfirmOptionalDecision): Action | null {
+  const source = findObject(view, d.source);
+  const ability = source?.ability;
+  if (
+    ability?.kind !== 'triggered' ||
+    ability.effect.kind !== 'attach' ||
+    ability.effect.to.kind !== 'triggerSubject'
+  ) {
+    return null;
+  }
+  const aura =
+    source !== undefined && source.abilitySource !== undefined
+      ? findObject(view, source.abilitySource)
+      : undefined;
+  const entered = [...view.battlefield].reverse().find((o) => isCreature(o) && o.id !== aura?.id);
+  if (aura === undefined || entered === undefined) return { kind: 'declineOptional' };
+  const mine = entered.controller === view.viewer;
+  const already = aura.attachedTo === entered.id;
+  const wanted = auraIsHostile(aura) ? !mine : mine;
+  return wanted && !already ? { kind: 'acceptOptional' } : { kind: 'declineOptional' };
+}
 
 /** The kind of permanent an Aura enchants, from "Enchant creature (you control)" in its text. */
 function enchantedNoun(aura: ObjectView): string | null {

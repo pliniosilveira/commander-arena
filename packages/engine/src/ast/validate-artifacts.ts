@@ -6,7 +6,7 @@
 
 import type { CardFace } from '../cards/definition';
 import { CARD_TYPES } from '../characteristics';
-import type { StaticEffect } from './types';
+import type { ObjectFilter, StaticEffect } from './types';
 import { checkStaticSubject } from './validate-attach';
 import { isOneOf, kindOf } from './validate-base';
 import { type AstIssue, checkFilter, filterSome, issue } from './validate-parts';
@@ -203,9 +203,10 @@ export function checkArtifactsStatic(s: StaticEffect, path: string, out: AstIssu
       return true;
     case 'castAsThoughFlash':
       if (s.spells === undefined || s.spells === null || typeof s.spells !== 'object') {
-        issue(out, `${path}.spells`, 'castAsThoughFlash needs a filter of the spells');
-      } else {
-        checkDescribing(s.spells, `${path}.spells`, out);
+        issue(out, `${path}.spells`, 'castAsThoughFlash needs a filter of the spells, or `this`');
+      } else if ((s.spells as { kind?: unknown }).kind !== 'this') {
+        // D-408: `{ kind: 'this' }` is the spell's own ability; anything else is the filter of a permanent's.
+        checkDescribing(s.spells as ObjectFilter, `${path}.spells`, out);
       }
       return true;
     case 'setTypes':

@@ -432,7 +432,13 @@ class Binder {
       });
     }
     const before = this.antecedents.length;
-    for (const [name, value] of entries) args[name] = this.arg(value);
+    for (const [name, value] of entries) {
+      const seen = this.antecedents.length;
+      args[name] = this.arg(value);
+      // D-406: "Whenever a creature enters, you may attach ~ to that creature": the Aura or Equipment an attach moves is no antecedent of the pronoun after
+      // it, which names the other permanent (the trigger's).
+      if (clause.verb === 'attach' && name === 'object') this.antecedents.length = seen;
+    }
     // "unless that player pays {1}" (stage P18): the player who pays follows the clause's own nouns.
     const test = clause.condition?.test;
     const condition =

@@ -839,6 +839,19 @@ export function describeEvent(
           'CR 602.2b',
         );
       }
+      // D-407 (CR 701.68a, 602.2b): "Blight 1" as a cost; the counter's own line follows.
+      if (event.purpose === 'blight') {
+        const blighted = joinNames(event.objects.map(name));
+        return line(
+          'major',
+          event.automatic
+            ? `${who(event.seat)} must blight ${blighted} to pay for ${label(event.source)}: no other choice.`
+            : `${who(event.seat)} ${verb(event.seat, 'blight', 'blights')} ${blighted} to pay for ${label(event.source)}.`,
+          event.seat,
+          event.objects,
+          'CR 701.68a',
+        );
+      }
       // An effect that moves a permanent you choose ("return a land you control to its owner's
       // hand", D-096): the event does not say where it goes, the move's own line does.
       // D-139 (CR 701.26a): "you may tap any number of untapped Myr you control": the choice is what is tapped.

@@ -537,6 +537,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapCreatures',
     // D-133: "Tap three untapped Zombies you control".
     'tapPermanents',
+    // D-407 (CR 701.68): "Blight 1" as the cost of an activated ability.
+    'blight',
     // D-139: "Put a page counter on this artifact" and "Return an artifact you control to its owner's hand" as costs.
     'putCounters',
     'returnToHand',
@@ -870,7 +872,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-194: "the number of profit votes" (CR 701.38a).
     'votesFor',
   ],
-  searchDestinationKinds: ['battlefield', 'hand', 'graveyard'],
+  // D-405: 'library' is "then shuffle and put that card on top".
+  searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library'],
   // D-121, D-124: the named alternative costs (Overload, Evoke, Dash, Spectacle, Escape).
   castAlternatives: [
     'flashback',
@@ -1788,6 +1791,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   exileThis: true,
   tapCreatures: true,
   tapPermanents: true,
+  blight: true,
   exileFromGraveyard: true,
   removeCounters: true,
   loyalty: true,

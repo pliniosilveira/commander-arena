@@ -61,6 +61,8 @@ describe('the dimensions', () => {
       'discard',
       'tapCreatures',
       'tapPermanents',
+      // D-407: "Blight 1" as the cost of an activated ability.
+      'blight',
       // D-139: "Put a page counter on this artifact", "Return an artifact you control to its owner's hand".
       'putCounters',
       'returnToHand',
@@ -219,7 +221,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('searchDestination:battlefield')).toBe(true);
     expect(isFeatureSupported('searchDestination:hand')).toBe(true);
     expect(isFeatureSupported('searchDestination:graveyard')).toBe(true);
-    expect(isFeatureSupported('searchDestination:library')).toBe(false);
+    expect(isFeatureSupported('searchDestination:library')).toBe(true);
     expect(isFeatureSupported('searchDestination:exile')).toBe(false);
     expect(isFeatureSupported('effect:modifyPt')).toBe(true);
     expect(isFeatureSupported('duration:untilEndOfTurn')).toBe(true);

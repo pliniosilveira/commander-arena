@@ -10,6 +10,7 @@
  */
 import type {
   Ability,
+  Condition,
   ObjectFilter,
   Replacement,
   Restriction,
@@ -274,6 +275,8 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
       return spells === null ? null : `Your opponents can't cast ${spells}`;
     }
     case 'castAsThoughFlash': {
+      // D-408 (CR 601.3b, 113.6d): the spell's own permission, "You may cast this spell as though it had flash" (its condition is worded by `conditionalWording`).
+      if ('kind' in effect.spells) return 'You may cast this spell as though it had flash';
       // D-139 (CR 601.3b, 702.8a): "You may cast artifact spells as though they had flash".
       const spells = spellsPhrase(effect.spells);
       return spells === null ? null : `You may cast ${spells} as though they had flash`;
@@ -340,10 +343,28 @@ export function conditionalWording(
   const text = lordWording(ability.static, ctx);
   if (text === null) return null;
   if (ability.condition === undefined) return text;
+  // D-408: "You may cast this spell as though it had flash if it targets a commander": an "if" of the spell, not an "as long as".
+  if (ability.static.kind === 'castAsThoughFlash' && 'kind' in ability.static.spells) {
+    const when = flashCondition(ability.condition);
+    return when === null ? null : `${text} if ${when}`;
+  }
   const when = gameConditionWords(ability.condition);
   if (when === null) return null;
   // "You may cast this card from your graveyard as long as you control a Zombie."
   return `${text} as long as ${when}`;
+}
+
+/**
+ * The condition of a spell's own permission to be cast as though it had flash, in words (D-408): "it targets a commander", "it targets a creature", or any condition
+ * the game words know ("you control two or more creatures"). Null when it cannot be said.
+ */
+function flashCondition(condition: Condition): string | null {
+  if (condition.kind !== 'spellTargets') return gameConditionWords(condition);
+  const { types, commander, ...rest } = condition.filter;
+  if (Object.keys(rest).length > 0 || (types ?? []).length > 1) return null;
+  const noun = [...(types ?? []), ...(commander === true ? ['commander'] : [])].join(' ');
+  if (noun === '') return null;
+  return `it targets ${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`;
 }
 
 /**

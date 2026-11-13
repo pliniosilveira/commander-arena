@@ -368,7 +368,9 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * returns permanents to their owners' hands ("Return an artifact you control to its owner's hand"), always `forCost`: `legal` are
    * the permanents the player controls that match, `min` and `max` the number to return. `'fight'` (D-145): see `subject`.
    * `'untapChoice'` (D-216, CR 701.26a: "Untap up to three lands"): an effect untaps permanents the controller chooses; `legal` are the tapped
-   * permanents on the battlefield that match, of any player, `min` is 0 and `max` the most that may be untapped.
+   * permanents on the battlefield that match, of any player, `min` is 0 and `max` the most that may be untapped. `'blight'` (D-407, CR 701.68a): the cost of
+   * an activated ability that puts -1/-1 counters on a creature the player controls ("Blight 1"), always `forCost`: `legal` are the creatures they control that can
+   * have the counters put on them, `min` and `max` are 1.
    */
   readonly purpose:
     | 'sacrifice'
@@ -389,7 +391,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'untapChoice'
     | 'conniveOrder'
     | 'spare'
-    | 'soulbond';
+    | 'soulbond'
+    | 'blight';
   /**
    * For `'fight'` (D-145, CR 701.14: "Each of those tokens fights a different one of those creatures"): `seat` (the controller of the effect)
    * chooses which creature of `legal` the creature `subject` fights; exactly one (`min` = `max` = 1). For `'auraHost'` (D-149, CR 303.4f):

@@ -1545,6 +1545,16 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         );
       }
       break;
+    case 'blight':
+      // D-407 (CR 701.68a): "Blight 1": a positive number of -1/-1 counters.
+      if (!isCount(cost.count) || cost.count < 1) {
+        issue(
+          out,
+          `${path}.count`,
+          'the number of -1/-1 counters of a blight must be a positive integer',
+        );
+      }
+      break;
     case 'sacrifice':
       if (cost.count !== undefined) {
         // D-133: "Sacrifice two artifacts": 2 or more, of permanents chosen among those that match.
@@ -2560,7 +2570,7 @@ export function checkReplacementToken(spec: unknown, path: string, out: Out): vo
   }
 }
 
-const SEARCH_ZONES = ['battlefield', 'hand', 'graveyard'];
+const SEARCH_ZONES = ['battlefield', 'hand', 'graveyard', 'library'];
 
 /** CR 701.23 (Search): the filter, the number of cards and where the cards found go. */
 function checkSearch(
@@ -3907,7 +3917,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'attach':
       // CR 701.3: both are single objects named by reference ("this", a target, "this spell").
       checkRef(e.object, 'object', `${path}.object`, scope, out);
-      checkRef(e.to, 'object', `${path}.to`, scope, out);
+      // D-406: "Whenever a creature enters, you may attach this Aura to that creature": the permanent the trigger is about.
+      if (kindOf(e.to) === 'triggerSubject')
+        checkSubjectRef(e.to, 'permanent', `${path}.to`, scope, out);
+      else checkRef(e.to, 'object', `${path}.to`, scope, out);
       break;
     case 'conditional':
       // CR 608.2c: "If [condition], [effect]. Otherwise, [else]." Both branches see the same

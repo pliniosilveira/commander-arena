@@ -8,7 +8,7 @@ import { fail, literal, optional, pattern, quiet, satisfy, sequence } from '../.
 import type { IrCondition, IrFilter, IrNoun, IrStatic, Span } from '../../ir/types';
 import { CARD_TYPES, spellPhrase, typeWords } from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
-import { defineRule } from '../registry';
+import { defineRule, family } from '../registry';
 import { unit } from './grants';
 
 function subjectNoun(det: IrNoun['det'], raw: string, span: Span, rule: string): IrNoun {
@@ -210,8 +210,65 @@ export const STATIC_ATTACHED_UNLESS_MONARCH = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.cast-self-as-though-flash`: "You may cast this spell as though it had flash if it targets a commander." (Danitha deck, D-408; CR 601.3b, 601.3d,
+ * 113.6d). The spell's own permission, with a condition that is about its targets: the engine's `castAsThoughFlash` on `this` with a `spellTargets` condition. The
+ * subject is `~` ("this spell" after normalization). Not read: another condition ("if you control a Dragon" has no rule yet), the permission of another card, a
+ * line that does not end in a period.
+ */
+export const STATIC_CAST_SELF_AS_THOUGH_FLASH = defineRule<IrStatic>({
+  id: 'static.cast-self-as-though-flash',
+  family: 'static',
+  leading: ['you'],
+  cites: [
+    'CR 601.3b (Casting Spells)',
+    'CR 601.3d (Casting Spells)',
+    'CR 113.6d (Abilities That Function in Zones Other Than the Battlefield)',
+    'CR 702.8a (Flash)',
+  ],
+  examples: [
+    'You may cast ~ as though it had flash if it targets a commander.',
+    'You may cast ~ as though it had flash if it targets a creature.',
+    'You may cast ~ as though it had flash if it targets a creature commander.',
+  ],
+  rejects: [
+    'You may cast ~ as though it had flash if it targets a commander',
+    'You may cast ~ as though it had flash.',
+    'You may cast ~ as though it had flash if it targets commanders.',
+    'You may cast ~ as though it had flash if it targets a player.',
+    'You may cast ~ as though it had flash if you control a Dragon.',
+    'You may cast ~ as though it had haste if it targets a commander.',
+    'You may cast ~ from your graveyard as though it had flash if it targets a commander.',
+    'You may cast artifact spells as though they had flash if they target a commander.',
+  ],
+  parse: (ctx, pos) => {
+    const head = quiet(literal('you may cast ~ as though it had flash'))(ctx, pos);
+    if (!head.ok) return head;
+    const cond = sequence(
+      literal(' if '),
+      family<IrCondition>('condition', { only: ['condition.it-targets'] }),
+      literal('.'),
+    )(ctx, head.pos);
+    if (!cond.ok) return cond;
+    const id = 'static.cast-self-as-though-flash';
+    return {
+      ok: true,
+      value: {
+        kind: 'static',
+        subject: subjectNoun('self', '~', { start: pos + 13, end: pos + 14 }, id),
+        effects: [{ kind: 'castAsThoughFlash', spells: { raw: '~' } }],
+        condition: cond.value[1],
+        span: { start: pos, end: cond.pos },
+        rule: id,
+      },
+      pos: cond.pos,
+    };
+  },
+});
+
 export const ARTIFACT_STATIC_RULES = [
   STATIC_CAST_AS_THOUGH_FLASH,
+  STATIC_CAST_SELF_AS_THOUGH_FLASH,
   STATIC_LINKED_EXILE,
   STATIC_ATTACHED_UNLESS_MONARCH,
 ];

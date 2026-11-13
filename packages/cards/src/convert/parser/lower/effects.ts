@@ -1093,7 +1093,7 @@ const ATTACH: Lowering<IrClause, Effects> = {
     const what = objectRefOf(object, ctx);
     if (!what.ok) return what;
     if (what.value.kind !== 'this') return failure(clause);
-    const onto = objectRefOf(to, ctx, { token: true });
+    const onto = objectRefOf(to, ctx, { token: true, triggerSubject: true });
     if (!onto.ok) return onto;
     return {
       ok: true,

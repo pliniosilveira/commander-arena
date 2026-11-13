@@ -591,6 +591,8 @@ export type IrCost = IrNode &
         readonly count: number;
       }
     | { readonly kind: 'payLife'; readonly amount: IrAmount }
+    // Blight 1 (Danitha deck, D-407, CR 701.68a): `count` -1/-1 counters on a creature the player controls
+    | { readonly kind: 'blight'; readonly count: number }
     // "Pay X life" (stage P16): the amount is announced as X (CR 107.3a), not a number
     | { readonly kind: 'payXLife' }
     // "Discard X cards" (Hashaton group 10, D-386, CR 107.3a, 701.9): as many cards as the X announced; an additional cost of a spell
@@ -1048,6 +1050,8 @@ export interface IrRestriction extends IrNode {
 /** What a static ability or a `restrict` clause says its subject can't or must do (D-094). */
 export type IrRestrictionKind =
   | 'cantBlock'
+  // "Enchanted creature can't attack or block" (Danitha deck, D-407, CR 508.1a): only of the permanent an Aura or Equipment is attached to.
+  | 'cantAttack'
   | 'cantBeBlocked'
   | 'attacksEachCombat'
   | 'doesntUntap'

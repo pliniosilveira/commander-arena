@@ -36,6 +36,7 @@ import type {
   PriorityDecision,
 } from '@commander-arena/engine';
 import { getView } from '@commander-arena/engine';
+import { flashesForCommander, isAura } from './casual-attachments';
 import { hasStorm } from './casual-copies';
 import { discountsHand } from './casual-costs';
 import { turnUpCandidates } from './casual-face-down';
@@ -315,6 +316,12 @@ function windowPlay(
   const plays = spellPlays(view, d, activations);
   if (plays.length === 0) return null;
   const top = view.stack[view.stack.length - 1];
+  // D-408: an Aura that has flash only if it targets a commander is held up for the opponent's spell or ability that would destroy or damage the agent's
+  // commander (`spellPlays` lists it only then, `commanderAuraWorthCasting`): indestructible saves it.
+  if (top !== undefined && top.controller !== me) {
+    const ward = plays.find((p) => isAura(p.obj) && flashesForCommander(p.obj));
+    if (ward !== undefined) return { action: castAction(ward), reason: 'protect-commander' };
+  }
   // In response to an opponent's spell: a counterspell for a spell worth it.
   if (top !== undefined && top.controller !== me && !top.abilitySource) {
     const counter = plays

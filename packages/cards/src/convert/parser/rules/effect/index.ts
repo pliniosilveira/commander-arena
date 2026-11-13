@@ -343,6 +343,9 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile that card',
     'exile that card from your graveyard',
     'exile that creature',
+    // D-407: the permanent an Aura or Equipment is attached to.
+    'exile enchanted creature',
+    'exile equipped creature',
     "exile each opponent's graveyard",
     // Stage P33 (D-150, CR 610.3): until the permanent with the ability leaves the battlefield.
     'exile target nonland permanent an opponent controls until ~ leaves the battlefield',
@@ -390,6 +393,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.that-card',
             // Stage P63 (D-216): "If you control three or more artifacts, exile that creature." (the target of the sentence before, CR 608.2c).
             'noun.that-object',
+            // D-407 (Danitha deck): "Exile enchanted creature." (the permanent the Aura is attached to, which the engine's `attached` names).
+            'noun.attached-permanent',
           ],
           'effect.exile',
         ),

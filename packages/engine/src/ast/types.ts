@@ -809,6 +809,14 @@ export type Cost =
    */
   | { readonly kind: 'tapPermanents'; readonly filter: ObjectFilter; readonly count: number }
   /**
+   * "Blight 1" (D-407, CR 701.68): the player puts `count` -1/-1 counters on a creature they control, as part of the cost of an activated ability. The
+   * player chooses the creature with a `choosePermanent` decision of purpose `blight` and `forCost` (the engine chooses when only one creature can take the
+   * counters, and says so). A creature that can't have -1/-1 counters put on it (`cantHaveCounters`) is not a choice, and a player with no creature that can take
+   * them can't pay (CR 701.68b). The source itself may be the creature, as it may be sacrificed after it was blighted. Paid with the sacrifice, after the permanents
+   * to tap and before the sacrifice; refused with a crew cost (`tapCreatures`), another blight cost or in a mana ability, a spell's additional cost or an alternative cost.
+   */
+  | { readonly kind: 'blight'; readonly count: number }
+  /**
    * "Discard a card", "discard two cards" (CR 701.9, 118.8): the paying player chooses `count` cards
    * from their hand (the whole hand when it holds exactly that many), with a `chooseCards` decision
    * of purpose `discard` and `forCost` set. A player with fewer cards than `count` cannot pay (CR
@@ -1141,10 +1149,12 @@ export interface AttackedBySelector {
 /**
  * Where some of the cards a `search` effect found go (CR 701.23). The first `count` cards the
  * player found go to the first destination, the next `count` to the second, and `'rest'` (last
- * entry only) takes whatever is left. `tapped` applies to the battlefield only.
+ * entry only) takes whatever is left. `tapped` applies to the battlefield only. `library` is "shuffle and put that card on top"
+ * (D-405, CR 701.24b): the card found stays in the library, is left out of the shuffle and is put on top of it afterwards; the search's
+ * `shuffle` is then true.
  */
 export interface SearchDestination {
-  readonly zone: 'battlefield' | 'hand' | 'graveyard';
+  readonly zone: 'battlefield' | 'hand' | 'graveyard' | 'library';
   readonly tapped?: boolean;
   readonly count: number | 'rest';
 }
@@ -2417,7 +2427,8 @@ export type Effect =
    * CR 701.3 (Attach): `object` (an Aura or Equipment) becomes attached to `to`. If it cannot be
    * attached there (CR 701.3b) it does not move: an Aura only to what its enchant ability allows
    * (CR 303.4a), an Equipment only to a creature other than itself (CR 301.5). Moving it from
-   * another permanent unattaches it first.
+   * another permanent unattaches it first. `to` may be the permanent the trigger is about (`triggerSubject`, D-406, CR 303.4j): "Whenever a creature
+   * enters, you may attach this Aura to that creature". An Aura is attached only if it could legally enchant that permanent; otherwise it stays where it is.
    */
   | { readonly kind: 'attach'; readonly object: ObjectRef; readonly to: ObjectRef }
   /**
@@ -4351,8 +4362,16 @@ export type StaticEffect =
    * the timing of an instant. `spells` describes the spell as it is cast (its card types, colors, mana value, ...; `controller` relative
    * to the controller of the permanent: "you" is usual, and a spell of another player never gets it, as the permission is the
    * controller's). The permission is only about when the spell may be cast: it gives the spell no flash keyword.
+   *
+   * `spells: { kind: 'this' }` (D-408, CR 601.3b, 601.3d, 113.6d): the spell's own ability, "You may cast this spell as though it had flash if it targets a
+   * commander." It works on the card being cast, in the hand or any zone it is cast from, not on the battlefield, and takes the ability's `condition`
+   * (none: always). A `spellTargets` condition is read as CR 601.3b and 601.3d say: the caster may begin to cast the spell as though it had flash if the choice
+   * of targets could meet it, and the targets are then chosen from what meets it (`CastingContext.flashTargets`). Another condition is read as the spell is cast.
    */
-  | { readonly kind: 'castAsThoughFlash'; readonly spells: ObjectFilter }
+  | {
+      readonly kind: 'castAsThoughFlash';
+      readonly spells: { readonly kind: 'this' } | ObjectFilter;
+    }
   /**
    * "Your opponents can't cast spells during your turn." (CR 101.2, 601.2, 604.1, D-179): while the permanent has the ability (and its `condition`
    * holds, read for the permanent with `staticConditionHolds`), no opponent of its controller can cast a spell during a turn of that controller, by any

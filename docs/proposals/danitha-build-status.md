@@ -30,14 +30,14 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Season of Growth | 1b | T | done |  |
 | Shardmage's Rescue | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Shield of the Oversoul | 3 | T + P (attachment filters, host subject) | waiting |  |
-| Shielded by Faith | 5 | P + T (one-offs) | in progress |  |
+| Shielded by Faith | 5 | P + T (one-offs) | done |  |
 | Something Worth Saving | 2 | T + P (choose among the moved cards) | waiting |  |
 | Spider Umbra | 4 | K + P (Umbra armor, modified filter) | waiting |  |
-| Spiral into Solitude | 5 | P + T (one-offs) | in progress |  |
+| Spiral into Solitude | 5 | P + T (one-offs) | done |  |
 | Spirit Mantle | 1b | T | done |  |
-| Sterling Grove | 5 | P + T (one-offs) | in progress |  |
+| Sterling Grove | 5 | P + T (one-offs) | done |  |
 | Strong Back | 3 | T + P (attachment filters, host subject) | waiting |  |
-| Timely Ward | 5 | P + T (one-offs) | in progress |  |
+| Timely Ward | 5 | P + T (one-offs) | done |  |
 | Town Greeter | 2 | T + P (choose among the moved cards) | waiting |  |
 | Vessel of Nascency | 1a | T + small P (reveal-all flag) | done |  |
 | Winds of Rath | 3 | T + P (attachment filters, host subject) | waiting |  |

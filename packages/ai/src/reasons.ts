@@ -64,6 +64,8 @@ export const REASONS = [
   'end-step',
   /** A counterspell cast in response to the opponent's spell. */
   'counter',
+  /** An Aura with flash for a commander (D-408) was cast in response to a removal that targets the agent's commander. */
+  'protect-commander',
   /** A play was held back for a better window. */
   'hold',
   /** The target of a removal spell is the opposing commander. */
