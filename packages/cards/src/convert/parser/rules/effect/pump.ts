@@ -75,7 +75,7 @@ export const GAIN_SUBJECTS: readonly string[] = [
  * The change, its duration and, since stage P28 (D-131), the count it is for: "-1/-1 until end of turn for each Swamp
  * you control" (CR 611.2c: counted once, as the effect resolves, and it stays).
  */
-const PUMP_TAIL = satisfy(
+export const PUMP_TAIL = satisfy(
   sequence(PT_CHANGE, literal(' '), family<IrDuration>('duration'), optional(FOR_EACH_TAIL, null)),
   // An X as the step of a count would multiply two numbers nobody has chosen together.
   ([pt, , , count]) =>
@@ -83,7 +83,11 @@ const PUMP_TAIL = satisfy(
 );
 
 /** The arguments of a pump: the objects, the change and the count when the text has one. */
-function pumpArgs(objects: IrNoun, pt: IrPtChange, count: IrAmount | null): Record<string, IrArg> {
+export function pumpArgs(
+  objects: IrNoun,
+  pt: IrPtChange,
+  count: IrAmount | null,
+): Record<string, IrArg> {
   return count === null ? { objects, pt } : { objects, pt, count };
 }
 

@@ -5,6 +5,7 @@
  * (`OptionNamesDialog.tsx`) draws what these return, so the words are unit tested without a DOM.
  */
 import type { ChooseOptionDecision } from '@commander-arena/engine';
+import { destroyReplacementPrompt, destroyReplacementThen } from '../../game/danitha-g4-text';
 import { RIOT_ROWS, riotPrompt } from '../../game/keywords-text';
 import { romanNumeral } from '../../game/saga';
 
@@ -122,6 +123,11 @@ export function votePrompt(
   return `${question} ${cast.map((c) => `${who(c.seat)} voted for ${c.option}.`).join(' ')}`;
 }
 
+/** The title of the dialog of the order of replacement effects: "Damage replacement", or "Destruction replacement" for the destruction of a permanent (D-1242). */
+export function replacementTitle(d: Pick<ChooseOptionDecision, 'replacement'>): string {
+  return d.replacement?.destroy === undefined ? 'Damage replacement' : 'Destruction replacement';
+}
+
 /**
  * "3 damage from Goblin Chainwhirler would be dealt to you. Several effects apply. Choose which to apply first." (CR 616.1, D-191): the
  * damage event as it is now (what is left of it after the effects already applied), its source and its recipient: "you" (the question goes to
@@ -129,6 +135,10 @@ export function votePrompt(
  */
 export function replacementPrompt(replacement: ChooseOptionDecision['replacement']): string {
   if (replacement === undefined) return 'Several effects apply. Choose which to apply first.';
+  if (replacement.destroy !== undefined) {
+    // D-1242 (CR 616.1): the permanent that would be destroyed, and the effects that replace it.
+    return destroyReplacementPrompt(replacement.destroy.objectName);
+  }
   if (replacement.event === undefined) {
     // D-221 (CR 616.1): the tokens the player would create, and the effects that replace their creation.
     const would = replacement.tokens.would.join(' and ');
@@ -213,7 +223,15 @@ export function namedOptionRows(
       const choice = d.replacement?.choices.find((c) => c.option === option);
       const question = d.replacement;
       let detail: string | null = null;
-      if (choice !== undefined && question?.event !== undefined && choice.kind !== 'tokens') {
+      if (choice !== undefined && 'aura' in choice.outcome) {
+        // D-1242: the Aura destroyed in place of the permanent, or the regeneration (tapped, removed from combat).
+        detail = destroyReplacementThen(choice.outcome);
+      } else if (
+        choice !== undefined &&
+        question?.event !== undefined &&
+        choice.kind !== 'tokens' &&
+        'amount' in choice.outcome
+      ) {
         detail = replacementThen(
           choice.outcome.amount,
           newRecipient(question.event.to, choice.outcome),

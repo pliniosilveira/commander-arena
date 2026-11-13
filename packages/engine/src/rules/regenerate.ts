@@ -32,6 +32,11 @@ function shieldOn(state: GameState, id: ObjectId): ContinuousEffect | undefined 
   return state.continuousEffects.find((e) => e.change.kind === 'regenerate' && e.objects[0] === id);
 }
 
+/** Whether an unused regeneration shield protects the permanent (CR 701.19a): the destruction can be replaced by it. */
+export function hasRegenerationShield(state: GameState, id: ObjectId): boolean {
+  return shieldOn(state, id) !== undefined;
+}
+
 /** How many unused regeneration shields protect the permanent (for the view). */
 export function regenerationShieldsOn(state: GameState, id: ObjectId): number {
   return state.continuousEffects.filter(

@@ -276,6 +276,8 @@ export interface IrFilter {
   readonly manaValueAtMostX?: true;
   /** "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga. */
   readonly historic?: true;
+  /** "modified" (D-1240, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls (the engine's `modified`). */
+  readonly modified?: true;
   /**
    * "that shares a creature type with it" (D-261, CR 205.3m, 603.10a): the card has a creature type the creature of the trigger had (the one that died), as it last was
    * (CR 113.7a). Read in the filter of a library search `revealUntil` only; the engine's `sharesCreatureTypeWith`.

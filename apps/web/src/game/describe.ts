@@ -19,6 +19,7 @@ import { findEffect } from './artifacts-text';
 import { castCardAnswerLine } from './cast-card-text';
 import { optionText } from './chosen';
 import { costText, unlessCostPhrase } from './cost-text';
+import { umbraArmorUsedText } from './danitha-g4-text';
 import {
   bottomedText,
   isPayOptionsEvent,
@@ -1264,6 +1265,15 @@ export function describeEvent(
         null,
         [event.object],
         'CR 701.19a',
+      );
+    case 'umbraArmorUsed':
+      // CR 702.89a (D-1241): Umbra armor replaced a destruction.
+      return line(
+        'major',
+        umbraArmorUsedText(name(event.object), name(event.aura)),
+        null,
+        [event.object, event.aura],
+        'CR 702.89a',
       );
     case 'cardsBottomed':
       // CR 702.85a (Cascade): only the count is told, the order is random and hidden. D-324 (CR 401.4): or chosen by the owner, and as hidden.

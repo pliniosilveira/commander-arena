@@ -90,6 +90,7 @@ import {
   redirectFaceIssues,
 } from './validate-redirect';
 import { checkStaticCondition } from './validate-static-condition';
+import { checkUmbraReplacement, umbraFaceIssues } from './validate-umbra';
 
 export type { AstIssue } from './validate-parts';
 
@@ -335,7 +336,8 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       if (
         !checkAngelsReplacement(r, path, out) &&
         !checkDragonsReplacement(r, path, out) &&
-        !checkRedirectReplacement(r, path, out)
+        !checkRedirectReplacement(r, path, out) &&
+        !checkUmbraReplacement(r, path, out)
       ) {
         issue(out, path, `unknown replacement ${kindOf(r)}`);
       }
@@ -1655,6 +1657,8 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
 
   // CR 614.9 (D-192): a redirection deals the damage to the permanent that has it.
   redirectFaceIssues(face, path, out);
+  // CR 702.89a (D-1241): Umbra armor is the ability of an Aura.
+  umbraFaceIssues(face, path, out);
 
   // CR 702.29c (D-179): "When you cycle this card" triggers only when the card is discarded to pay a cycling cost, so the face needs Cycling or typecycling.
   face.abilities.forEach((a, i) => {

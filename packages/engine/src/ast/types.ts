@@ -434,6 +434,14 @@ export interface ObjectFilter {
    */
   readonly hasCounter?: true | string;
   /**
+   * "Modified creature", "enchant modified creature", "other modified creatures you control" (CR 700.9, D-1240): the permanent has a counter on it, is
+   * equipped (an Equipment is attached to it), or is enchanted by an Aura that its controller controls (an Aura an opponent controls is no modification).
+   * Read where the filter is matched against the game with the permanent's attachments (`select.ts`: a target slot, an `each` selector, an enchant
+   * ability, a trigger's subject); refused in a static ability's subject and in a count a static ability reads, as `attacking` is, because `derive`
+   * matches those before the attachments are known.
+   */
+  readonly modified?: true;
+  /**
    * "Target commander", "your commanders" (D-145, CR 903.3): the object is a card a player designated as their commander (a token or a
    * permanent that copies one is not). Whose commander it is does not matter; `controller` says whose it must be to control. `'yours'`
    * (D-149, "your commander", "whenever your commander enters or attacks") is a commander its owner designated and that owner is the
@@ -3912,7 +3920,17 @@ export type Replacement =
       readonly kind: 'drawInstead';
       readonly count: number;
       readonly exceptFirstInDrawStep: true;
-    };
+    }
+  /**
+   * "Umbra armor" (CR 702.89a, D-1241): "If enchanted permanent would be destroyed, instead remove all damage marked on it and destroy this Aura." A
+   * replacement effect of an Aura on the battlefield for the destruction of the permanent it is attached to: by the effect `destroy`, or by the
+   * state-based actions for lethal damage or damage from a deathtouch source (CR 704.5g, 704.5h). The destruction does not happen (the permanent stays, with
+   * its damage removed, and is neither tapped nor removed from combat), and the Aura is destroyed. Nothing replaces the destruction of an indestructible
+   * permanent (it is not destroyed at all), a sacrifice, zero toughness or the legend rule (CR 701.8, 704.5f, 704.5j: they are no destruction). It is the
+   * ability of the Aura (lost with "loses all abilities"); a regeneration shield and a second Umbra armor on the same permanent apply to the same
+   * destruction, and the affected player chooses which applies (CR 616.1: the question of `rules/destroy-replacement.ts`). Only on an Aura face.
+   */
+  | { readonly kind: 'umbraArmor' };
 
 // ---- Static abilities (CR 604)
 

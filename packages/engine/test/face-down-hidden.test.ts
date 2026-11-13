@@ -377,6 +377,7 @@ const EVENT_CARD_FIELDS: Readonly<Record<GameEvent['kind'], readonly string[]>> 
   removedFromCombat: [],
   cardsBottomed: [],
   regenerated: [],
+  umbraArmorUsed: [],
   resolved: [],
   fizzled: [],
   countered: [],
