@@ -69,6 +69,7 @@ import {
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { PREVENT_DAMAGE } from './prevent';
+import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { VRASKA_LOWERINGS } from './vraska';
@@ -1354,6 +1355,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // D-393, D-394 (Hashaton, group 9): the exile of a random card from a hand, then "put it onto the battlefield" and "cast it without paying its mana cost".
   ...HASHATON_G9_LOWERINGS,
   ...PILES_LOWERINGS,
+  ...REVEAL_TAKE_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,
   ...EDHREC_LOWERINGS,
   ...DRAGON_LOWERINGS,

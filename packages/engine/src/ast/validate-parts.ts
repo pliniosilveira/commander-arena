@@ -3533,6 +3533,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'hidden is true, and only for cards put into the hand (a card put onto the battlefield is public)',
         );
       }
+      // D-1200 (CR 701.20a): "Reveal the top five cards": every card is shown, so nothing about the take can be hidden from anyone.
+      if (
+        e.revealAll !== undefined &&
+        (e.revealAll !== true || e.take?.hidden === true || e.take?.to === 'exileFaceDown')
+      ) {
+        issue(
+          out,
+          `${path}.revealAll`,
+          'revealAll is true, and not with cards taken unrevealed (take.hidden) or exiled face down',
+        );
+      }
       if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top', 'bottomChosen'])) {
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }

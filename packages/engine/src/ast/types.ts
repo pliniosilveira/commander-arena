@@ -2206,6 +2206,13 @@ export type Effect =
   | {
       readonly kind: 'lookAtTop';
       readonly count: Amount;
+      /**
+       * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."
+       * (D-1200, CR 701.20a): the cards are revealed, not looked at: all of the cards (the top `count`, fewer when the library holds fewer) are shown to every
+       * player (one `cardsRevealed` event, public, before anything is taken) and the cards taken are not revealed again; no `topCardsLooked`. They stay in the library
+       * while the player chooses (CR 701.20b). Not with `take.hidden` or `take.to: 'exileFaceDown'` (those are about cards nobody sees).
+       */
+      readonly revealAll?: true;
       readonly take: {
         readonly filter: ObjectFilter;
         readonly max: number;
