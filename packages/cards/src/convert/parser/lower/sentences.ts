@@ -180,6 +180,16 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     noteMoved(lowered.value, ctx);
     noteCreated(lowered.value, ctx);
     noteMadeToken(clause, lowered.value, ctx);
+    // D-1220: "them" of a choice from among the cards milled: the clause before it was one mill of the controller's own library.
+    ctx.milled =
+      lowered.value.length === 1 &&
+      lowered.value[0]?.kind === 'mill' &&
+      lowered.value[0].player.kind === 'you';
+    // D-1221: "If you put a Town card into your hand this way": the clause before it moved cards to the hand.
+    ctx.movedToHand =
+      lowered.value.length === 1 &&
+      lowered.value[0]?.kind === 'moveToZone' &&
+      lowered.value[0].to === 'hand';
   }
   return { ok: true, value: effects, rule: clauses[0]?.rule ?? 'body.sentence' };
 }
@@ -829,6 +839,53 @@ function lowerMayElse(
 }
 
 /**
+ * "You may put a land card from among them into your hand. If you don't, put a +1/+1 counter on this creature." (Ainok Wayfarer, Blanchwood Prowler, Airlift Chaplain; D-1220, CR 608.2c,
+ * 608.2d): the sentence after a choice from among the cards a mill moved says what is done when no card was put into the hand: the player declined, no card matched or nothing was
+ * milled. The choice is the offer itself (it starts what "if you do" reads again, `rules/move-choice.ts`), so the second sentence is a `conditional` on "not `didPrevious`". Null
+ * when the sentence is not "If you don't"; one that does not follow such a choice is refused, never guessed.
+ */
+function lowerYouDont(
+  sentence: IrSentence,
+  previous: Step | undefined,
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  if (sentence.condition?.test.kind !== 'youDont') return null;
+  const last = previous?.effects[previous.effects.length - 1];
+  const afterChoice =
+    previous?.effects.length === 1 &&
+    last?.kind === 'moveToZone' &&
+    last.objects.kind === 'choose' &&
+    last.objects.fromMoved === true &&
+    last.objects.optional === true;
+  if (
+    !afterChoice ||
+    sentence.instead === true ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    sentence.clauses.some((c) => c.optional)
+  ) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures(['condition:didPrevious', 'effect:conditional', 'condition:not']);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const after = lowerClauses(sentence.clauses, ctx);
+  if (!after.ok) return after;
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'conditional',
+        condition: { kind: 'not', term: { kind: 'didPrevious' } },
+        effect: oneEffect(after.value),
+      },
+    ],
+    rule: sentence.clauses[0]?.rule ?? sentence.rule,
+  };
+}
+
+/**
  * The reflexive triggered ability of a sentence that starts with "When you do," (CR 603.12): its targets are its own, it knows nothing of the targets of
  * the ability that created it.
  */
@@ -1328,6 +1385,13 @@ function lowerStep(
     if (!putOrElse.ok) return stop(putOrElse);
     steps.push({ effects: putOrElse.value, replaceable: false });
     return { last: i + 1 };
+  }
+  // "You may put a land card from among them into your hand. If you don't, put a +1/+1 counter on this creature." (D-1220, CR 608.2c).
+  const notTaken = lowerYouDont(sentence, steps[steps.length - 1], ctx);
+  if (notTaken !== null) {
+    if (!notTaken.ok) return stop(notTaken);
+    steps.push({ effects: notTaken.value, replaceable: false });
+    return { last: i };
   }
   const offered = lowerMayPay(sentence, sentences[i + 1], ctx);
   if (offered !== null) {

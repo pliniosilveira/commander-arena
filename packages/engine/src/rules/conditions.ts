@@ -219,6 +219,8 @@ export function evaluateCondition(
       const named = id === undefined ? null : objectOrLki(state, id);
       return (
         named !== null &&
+        // D-1221: "If you put a Town card into your hand this way": the card is in the hand it was put into.
+        (condition.inZone === undefined || named.zone === condition.inZone) &&
         matchesFilter(
           state,
           named,

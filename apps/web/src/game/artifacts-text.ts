@@ -250,12 +250,37 @@ export function untapChooseText(selector: ChooseSelector): string | null {
 }
 
 /**
+ * The card of "You may put a land card from among them into your hand" (D-1220): "a permanent card", a list of types, or two kinds with limits of their own, "a Plains card or a
+ * creature card with mana value 3 or less" (each member of the choice is said whole, so a limit is never dropped). Null when the filter cannot be said.
+ */
+function fromAmongNoun(kind: ObjectFilter): string | null {
+  if (isPermanentCard(kind)) return 'a permanent card';
+  const members = kind.anyOf;
+  if (
+    members !== undefined &&
+    Object.keys(kind).length === 1 &&
+    members.some((m) => m.manaValue !== undefined)
+  ) {
+    const parts = members.map((m) => cardNoun(m));
+    return parts.every((p): p is string => p !== null) ? parts.join(' or ') : null;
+  }
+  return typeListNoun(kind) ?? cardNoun(kind);
+}
+
+/**
  * "You may put an artifact card from your hand onto the battlefield", "Put a creature card from your graveyard onto the
  * battlefield tapped" (D-139): a `moveToZone` of a card the controller chooses in their hand or graveyard. Null for any
  * other choice, or a filter that cannot be said.
  */
 export function chosenCardMoveText(effect: Extract<Effect, { kind: 'moveToZone' }>): string | null {
   const { objects } = effect;
+  // D-1220 (CR 608.2d): "You may put a land card from among them into your hand": a choice among the cards the mill before it put into the graveyard.
+  if (objects.kind === 'choose' && objects.fromMoved === true && effect.to === 'hand') {
+    const { zone: _zone, controller: _owner, ...kind } = objects.filter;
+    const noun = fromAmongNoun(kind);
+    if (noun === null) return null;
+    return `${objects.optional === true ? 'You may put' : 'Put'} ${noun} from among them into your hand`;
+  }
   if (objects.kind !== 'choose' || effect.to !== 'battlefield') return null;
   const { zone, controller: _controller, ...rest } = objects.filter;
   if (zone !== 'hand' && zone !== 'graveyard') return null;

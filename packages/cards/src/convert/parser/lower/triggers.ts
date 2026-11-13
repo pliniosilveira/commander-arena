@@ -942,7 +942,11 @@ export function lowerTriggered(
   // of that move and its `castFree` ask the question themselves, so the same holds.
   const asksItself = (c: Sentence['clauses'][number]) =>
     c.optional &&
-    (c.verb === 'castCard' || c.verb === 'castMovedFree' || c.verb === 'putMovedOntoBattlefield');
+    (c.verb === 'castCard' ||
+      c.verb === 'castMovedFree' ||
+      c.verb === 'putMovedOntoBattlefield' ||
+      // D-1220: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
+      c.verb === 'putFromAmong');
   const permission = (s: Sentence) => s.clauses.every((c) => c.verb === 'mayPlay' || asksItself(c));
   const ownMay = (s: Sentence, i: number) =>
     !permission(s) &&

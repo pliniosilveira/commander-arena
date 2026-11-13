@@ -2295,6 +2295,25 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   if (sel.optional !== undefined && sel.optional !== true) {
     issue(out, `${path}.optional`, 'optional must be true when present');
   }
+  // D-1220: "You may put a land card from among them into your hand": only the cards the effect before it moved (`moved`) are the candidates.
+  if (sel.fromMoved !== undefined) {
+    if (sel.fromMoved !== true)
+      issue(out, `${path}.fromMoved`, 'fromMoved must be true when present');
+    if (sel.filter?.zone !== 'graveyard') {
+      issue(
+        out,
+        `${path}.filter.zone`,
+        "a choice among the cards an earlier effect moved is among cards in your graveyard (D-1220): set zone to 'graveyard'",
+      );
+    }
+    if (scope.movedAvailable !== true) {
+      issue(
+        out,
+        `${path}.fromMoved`,
+        'fromMoved ("from among them") needs an effect before it in the sequence that moved cards (a mill)',
+      );
+    }
+  }
   if (sel.count !== undefined) {
     if (typeof sel.count === 'number' && (!isCount(sel.count) || sel.count < 1)) {
       issue(out, `${path}.count`, 'count must be a positive integer');
@@ -2734,6 +2753,10 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
           `${path}.filter`,
           'objectMatches describes the object (type, subtype, color, ...): no zone, controller, owner or stackKind',
         );
+      }
+      // D-1221: "If you put a Town card into your hand this way": the card is where the earlier instruction put it.
+      if (c.inZone !== undefined && c.inZone !== 'hand') {
+        issue(out, `${path}.inZone`, "inZone is only 'hand' (D-1221)");
       }
       break;
     }
@@ -3403,6 +3426,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
         if (fromCards && e.to === zone) {
           issue(out, `${path}.to`, `the cards chosen are already in the ${zone}`);
+        }
+        // D-1220: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand).
+        if ((e.objects as ChooseSelector).fromMoved === true && e.to !== 'hand') {
+          issue(
+            out,
+            `${path}.to`,
+            'a choice among the cards an earlier effect moved is put into the hand (D-1220)',
+          );
         }
       } else {
         checkObjectSelector(e.objects as ObjectSelector, `${path}.objects`, scope, out);

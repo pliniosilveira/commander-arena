@@ -141,6 +141,10 @@ function matchesWords(
     const named = filterPhrase(filter, 'permanent')?.replace(/ permanent$/, '') ?? null;
     return named === null ? null : `that permanent ${negate ? "isn't" : 'is'} ${named}`;
   }
+  // D-1221 (CR 608.2c): "If you put a Town card into your hand this way": the card an earlier instruction put into the hand.
+  if (condition.inZone === 'hand') {
+    return `you ${negate ? "don't put" : 'put'} ${card} into your hand this way`;
+  }
   return `it ${negate ? "isn't" : 'is'} ${card}`.replace(/^it is /, "it's ");
 }
 

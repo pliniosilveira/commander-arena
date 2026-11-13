@@ -27,6 +27,9 @@ export const CONDITION_PUT_THIS_WAY = defineRule<IrCondition>({
     'you put an Island onto the battlefield this way',
     'you put a land onto the battlefield this way',
     'you put a creature onto the battlefield this way',
+    // D-1221 (Danitha deck group 2, Town Greeter): the card went to the hand.
+    'you put a Town card into your hand this way',
+    'you put a land card into your hand this way',
   ],
   rejects: [
     'you put a Cave onto the battlefield',
@@ -34,7 +37,10 @@ export const CONDITION_PUT_THIS_WAY = defineRule<IrCondition>({
     'you put a card onto the battlefield this way',
     'you put a Banana onto the battlefield this way',
     'you put Caves onto the battlefield this way',
-    'you put a Cave into your hand this way',
+    'you put a Cave into your graveyard this way',
+    'you put a Cave into your hand',
+    'you put a Cave into your hand this way.',
+    'you put a Cave into their hand this way',
     "you don't put a Cave onto the battlefield this way",
     'you put a Cave onto the battlefield this way or',
     'an opponent puts a Cave onto the battlefield this way',
@@ -44,16 +50,18 @@ export const CONDITION_PUT_THIS_WAY = defineRule<IrCondition>({
       sequence(
         pattern(/you put (?:a|an) /iu),
         WHAT_IT_IS,
-        pattern(/ onto the battlefield this way(?![\p{L}\p{N}])/iu),
+        // D-1221: "into your hand this way" says where the card went (the lowering reads the card there, `objectMatches` with `inZone`).
+        pattern(/ (onto the battlefield|into your hand) this way(?![\p{L}\p{N}])/iu),
       ),
     )(ctx, pos);
     if (!r.ok) return r;
     const what = r.value.value[1];
+    const toHand = r.value.value[2][1]?.toLowerCase() === 'into your hand';
     return {
       ok: true,
       value: {
         kind: 'condition',
-        test: { kind: 'putThisWay', filter: what },
+        test: { kind: 'putThisWay', filter: what, ...(toHand ? { zone: 'hand' as const } : {}) },
         span: { start: pos, end: r.pos },
         rule: 'condition.put-this-way',
       },

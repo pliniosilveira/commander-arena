@@ -506,7 +506,10 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'objectMatches'; readonly who: IrNoun; readonly filter: IrFilter }
     // "you put a Cave onto the battlefield this way" (stage P37, D-180, CR 608.2c): what the instruction before it put onto the battlefield is, against
     // a filter that says what it is (no zone, controller or owner)
-    | { readonly kind: 'putThisWay'; readonly filter: IrFilter }
+    // `zone` 'hand' (Danitha deck group 2, D-1221): "you put a Town card into your hand this way" says where the card went; absent for the battlefield.
+    | { readonly kind: 'putThisWay'; readonly filter: IrFilter; readonly zone?: 'hand' }
+    // "If you don't, put a +1/+1 counter on ~" (Danitha deck group 2, D-1220, CR 608.2c): the player did not put a card from among the cards the sentence before it milled into their hand
+    | { readonly kind: 'youDont' }
     // "if the gift was promised" (CR 702.174k, stage P30)
     | { readonly kind: 'giftPromised' }
     // "an opponent controls four or more nonbasic lands" (stage P30): some one opponent controls that many

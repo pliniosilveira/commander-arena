@@ -1134,6 +1134,14 @@ export interface ChooseSelector {
    * candidates instead of exactly `count` (a question is asked whenever there is a candidate). Only for `moveToZone`.
    */
   readonly optional?: true;
+  /**
+   * "Mill four cards. You may put a land card from among them into your hand" (D-1220, CR 608.2c, 608.2d, 400.7j): the candidates are only the cards the effect
+   * before it moved (`moved`: the new objects of the cards a `mill` put into the graveyard) that are still in the graveyard and that the filter matches, not
+   * every card the controller has there. Only for `moveToZone` to the hand, with `filter.zone` `graveyard`, after an effect that moved cards (`validateCard`).
+   * Like every choice it starts "what the player did" again: `didPrevious` ("If you don't, put a +1/+1 counter on this creature") then reads only whether a
+   * card was put into the hand, not the cards the mill moved.
+   */
+  readonly fromMoved?: true;
 }
 
 /**
@@ -3494,8 +3502,15 @@ export type Condition =
    * reads the card whatever zone it is in now. Only in a `conditional` effect (`validateCard`), with a `target` or `moved`
    * reference, or (D-149, "If that land is a Plains") the `triggerSubject` of a trigger whose subject is a permanent; the filter names no zone,
    * controller or owner (it describes the object).
+   * `inZone` (D-1221, "If you put a Town card into your hand this way", CR 608.2c, 400.7j): the object must also be in that zone as it is now (or was, once it has
+   * left): the card an earlier instruction put into the hand, not one that went anywhere else. Only `hand`, only in a `conditional` effect (a static ability does not read it).
    */
-  | { readonly kind: 'objectMatches'; readonly of: ObjectRef; readonly filter: ObjectFilter }
+  | {
+      readonly kind: 'objectMatches';
+      readonly of: ObjectRef;
+      readonly filter: ObjectFilter;
+      readonly inZone?: 'hand';
+    }
   /**
    * "During your first, second, or third turn of the game" (CR 500.1, D-149): it is the turn of the player the condition is read for and
    * the number of turns they have had, this one included, satisfies the comparison (`atMost` 3 is the first three).

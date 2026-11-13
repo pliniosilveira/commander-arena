@@ -74,6 +74,9 @@ export function runChooseMove(
 ): StepOutcome {
   // D-231: "each player exiles a card from their graveyard": the player the instruction names chooses among their own cards.
   const chooser = instruction.seat ?? res.controller;
+  // D-1220 (CR 608.2c): "You may put a land card from among them into your hand" is the offer itself, so what "if you do" and "if you don't" read starts again
+  // at 0 as it is made, as a `may` effect does (D-135); the card moved, if one is, is what it counts.
+  const restart = instruction.among === undefined ? {} : { resetPerformed: true as const };
   const run = (objects: readonly ObjectId[], automatic: boolean): StepOutcome => {
     const event: GameEvent = {
       kind: 'permanentsChosen',
@@ -99,14 +102,17 @@ export function runChooseMove(
           : i,
       ),
     );
-    return { ...done(together.state, [event], together.instructions), lastMoved: [] };
+    return { ...done(together.state, [event], together.instructions), lastMoved: [], ...restart };
   };
   if (instruction.chosen !== null) return run(instruction.chosen, false);
   const fromCards = isCardZoneChoice(instruction.filter);
   const legal = fromCards
-    ? cardCandidates(state, chooser, res.source, instruction.filter)
+    ? cardCandidates(state, chooser, res.source, instruction.filter).filter(
+        // D-1220: only the cards the effect before it moved.
+        (id) => instruction.among === undefined || instruction.among.includes(id),
+      )
     : controlledCandidates(state, chooser, res.source, instruction.filter);
-  if (legal.length === 0) return { ...done(state), lastMoved: [] };
+  if (legal.length === 0) return { ...done(state), lastMoved: [], ...restart };
   const optional = instruction.optional === true;
   if (!optional && legal.length <= instruction.count) return run(legal, true);
   const max = Math.min(instruction.count, legal.length);
@@ -132,7 +138,13 @@ export function runChooseMove(
         min,
         max,
         reveal: zone !== 'hand',
-        prompt: `Choose ${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'} ${zone === 'exile' ? 'exiled with this permanent' : `from your ${zone}`} to put ${WHERE[instruction.to]}`,
+        prompt: `Choose ${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'} ${
+          instruction.among !== undefined
+            ? 'from among the cards put into your graveyard'
+            : zone === 'exile'
+              ? 'exiled with this permanent'
+              : `from your ${zone}`
+        } to put ${WHERE[instruction.to]}`,
       },
     };
   }

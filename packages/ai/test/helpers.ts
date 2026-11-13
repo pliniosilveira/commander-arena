@@ -2842,6 +2842,51 @@ export const DANITHA_G1A_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])
   ['spells', 'danithaReveal'],
 ];
 
+/**
+ * The SYNTHETIC cards of group 2 of the Danitha deck (D-1220, D-1221 provisional): a creature with an enters trigger and a spell each mill cards and ask which card of a kind
+ * from among the cards milled to put into the hand (a `chooseCards` of purpose `move`, `fromMoved`), with the riders of the real cards (a counter, life, a Food token). The
+ * graveyard fills from the library and the question is asked of a mill, so games-100 (which expects only dedicated styles to ask this) leaves them to the 'danithaMill' style.
+ * The Squirrel creature card and the Town land card are the cards the riders look for.
+ */
+export const DANITHA_G2_NAMES = [
+  'SYNTHETIC Mill Three Scout',
+  'SYNTHETIC Mill Three Chaplain',
+  'SYNTHETIC Mill Four Grab',
+  'SYNTHETIC Mill Four Saving',
+  'SYNTHETIC Mill Four Greeter',
+  'SYNTHETIC Mill Four Tilling',
+  'SYNTHETIC Squirrel Card',
+  'SYNTHETIC Town Land',
+] as const;
+
+/** The danithaMill style: each card of the group twice, bodies of every permanent kind to find, burn and removal. */
+export const DANITHA_G2_SPELLS = [
+  ...supported(DANITHA_G2_NAMES.filter((n) => n !== 'SYNTHETIC Town Land')),
+  ...supported(DANITHA_G2_NAMES.filter((n) => n !== 'SYNTHETIC Town Land')),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Grizzly Bears', 'Serra Angel']),
+  ...supported(['Lightning Bolt', 'Murder', 'Divination']),
+];
+
+/** Green and white for the cards of the group, and one Town land card for the rider that looks for it. */
+export const DANITHA_G2_LANDS = supported([
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Swamp',
+  'SYNTHETIC Town Land',
+]);
+
+/** Style pairs of the Danitha mill soak test: a mirror match and both mixed ways. */
+export const DANITHA_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['danithaMill', 'danithaMill'],
+  ['danithaMill', 'spells'],
+  ['spells', 'danithaMill'],
+];
+
 export const NIV_DRAW_NAMES = [
   'SYNTHETIC Hollow Warden',
   'SYNTHETIC Draw Veto',
@@ -3322,6 +3367,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(HASHATON_G5_NAMES as readonly string[]).includes(card.name))
   // The reveal-and-take cards of the Danitha deck (D-396, D-397) have their own style: they reveal the top of the library and ask which card to take.
   .filter((card) => !(DANITHA_G1A_NAMES as readonly string[]).includes(card.name))
+  // The mill-and-take cards of the Danitha deck (D-1220, D-1221) have their own style: they mill and ask which card of the cards milled to take.
+  .filter((card) => !(DANITHA_G2_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
@@ -3511,6 +3558,7 @@ export type DeckStyle =
   | 'hashatonCopies'
   | 'hashatonDiscardX'
   | 'danithaReveal'
+  | 'danithaMill'
   | 'danithaG5'
   | 'repeatable'
   | 'manifest'
@@ -3530,6 +3578,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'hashatonCopies' && HASHATON_G5_SPELLS.length > 0) return HASHATON_G5_SPELLS;
   if (style === 'hashatonDiscardX' && HASHATON_G10_SPELLS.length > 0) return HASHATON_G10_SPELLS;
   if (style === 'danithaReveal' && DANITHA_G1A_SPELLS.length > 0) return DANITHA_G1A_SPELLS;
+  if (style === 'danithaMill' && DANITHA_G2_SPELLS.length > 0) return DANITHA_G2_SPELLS;
   if (style === 'danithaG5' && DANITHA_G5_SPELLS.length > 0) return DANITHA_G5_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
   if (style === 'manifest' && MANIFEST_SPELLS.length > 0) return MANIFEST_SPELLS;
@@ -3713,6 +3762,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'hashatonCopies' && BASIC_LANDS.length > 0) return HASHATON_G5_LANDS;
   if (style === 'hashatonDiscardX' && BASIC_LANDS.length > 0) return HASHATON_G10_LANDS;
   if (style === 'danithaReveal' && BASIC_LANDS.length > 0) return DANITHA_G1A_LANDS;
+  if (style === 'danithaMill' && BASIC_LANDS.length > 0) return DANITHA_G2_LANDS;
   if (style === 'danithaG5' && BASIC_LANDS.length > 0) return DANITHA_G5_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
   if (style === 'manifest' && BASIC_LANDS.length > 0) return MANIFEST_LANDS;
