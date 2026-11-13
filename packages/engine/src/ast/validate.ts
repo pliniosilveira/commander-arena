@@ -30,6 +30,7 @@ import {
   checkAttachmentFace,
   checkBattlefieldFilter,
   checkGrantedKeyword,
+  checkProtectionTypes,
   checkStaticSubject,
 } from './validate-attach';
 import { kindOf, triggerHasPlayer } from './validate-base';
@@ -163,6 +164,12 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
     case 'protection':
       // D-259 (CR 903.4f): "each color that's not in your commander's color identity" names no color: the engine works them out.
       if (k.from === 'colorsNotInCommanderIdentity') break;
+      // D-1170 (CR 702.16a): "the chosen card type" is read from the permanent's own choice (the card must ask it, `validate-chosen.ts`); named card types are checked.
+      if (k.from === 'chosenCardType') break;
+      if (k.from === 'cardType') {
+        checkProtectionTypes(k.types, `${path}.types`, out);
+        break;
+      }
       if (k.from !== 'color') {
         issue(
           out,
@@ -278,8 +285,8 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       }
       break;
     case 'asEntersChoose':
-      // CR 614.12a (D-100): what is chosen is a creature type or a color; D-151: or a name from a list the card gives.
-      if (!isOneOf(r.what, ['creatureType', 'color', 'option'])) {
+      // CR 614.12a (D-100): what is chosen is a creature type or a color; D-151: or a name from a list the card gives; D-1170: or a card type.
+      if (!isOneOf(r.what, ['creatureType', 'color', 'option', 'cardType'])) {
         issue(out, `${path}.what`, `unknown choice ${JSON.stringify(r.what)}`);
       }
       break;

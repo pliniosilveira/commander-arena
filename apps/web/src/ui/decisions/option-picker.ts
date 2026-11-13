@@ -20,6 +20,7 @@ export function optionPrompt(
   // D-151: a choice among names the card gives, or the chapter a Saga with read ahead starts with.
   if (
     (d.purpose === 'option' ||
+      d.purpose === 'cardType' ||
       d.purpose === 'effect' ||
       d.purpose === 'riot' ||
       d.purpose === 'replacement' ||

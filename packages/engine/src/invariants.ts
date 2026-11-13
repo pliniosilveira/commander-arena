@@ -3,7 +3,7 @@
  * list of violations; an empty list means the state is consistent. Not used by the engine itself.
  */
 
-import { COLORS } from './characteristics';
+import { CARD_TYPES, COLORS } from './characteristics';
 import { CREATURE_TYPES } from './data/creature-types';
 import type { ObjectId } from './ids';
 import {
@@ -332,7 +332,7 @@ export function checkInvariants(state: GameState): string[] {
     // CR 614.12a, 400.7 (D-100): a choice made as a permanent entered belongs to a permanent whose card
     // or token asks that question, and is one of its options; it is gone when the permanent leaves.
     if (obj.chosen !== undefined) {
-      const { creatureType, color } = obj.chosen;
+      const { creatureType, color, cardType } = obj.chosen;
       const kinds = new Set(
         (obj.token === null ? faces.map((f) => f.abilities) : [obj.token.abilities]).map(
           entersChoice,
@@ -349,6 +349,10 @@ export function checkInvariants(state: GameState): string[] {
       }
       if (color !== undefined && (!COLORS.includes(color) || !kinds.has('color'))) {
         problems.push(`${id} chose color ${color}, which it cannot have`);
+      }
+      // D-1170: a chosen card type is one of `CARD_TYPES` that its card asks for.
+      if (cardType !== undefined && (!CARD_TYPES.includes(cardType) || !kinds.has('cardType'))) {
+        problems.push(`${id} chose card type ${cardType}, which it cannot have`);
       }
       // D-151: a named option is one of those its card offers.
       const { option } = obj.chosen;

@@ -206,12 +206,13 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
         // D-303 (CR 700.3): the two piles the other player made, with their cards.
         <PilesDialog key={d.id} d={d} view={view} act={act} />
       ) : d.purpose === 'option' ||
+        d.purpose === 'cardType' ||
         d.purpose === 'effect' ||
         d.purpose === 'riot' ||
         d.purpose === 'replacement' ||
         d.purpose === 'meldOrder' ||
         d.purpose === 'vote' ? (
-        // D-151 (CR 614.12a, 702.155b): a name the card gives, or the chapter a Saga with read ahead starts with; D-175 (CR 608.2d): the
+        // D-1170 (CR 614.12a): "choose a card type" is a short list of buttons. D-151 (CR 614.12a, 702.155b): a name the card gives, or the chapter a Saga with read ahead starts with; D-175 (CR 608.2d): the
         // instruction an effect offers; D-191 (CR 616.1): which of several prevention effects to apply first to a damage event; D-194 (CR 701.38a): a vote.
         <NamedOptionDialog key={d.id} d={d} act={act} />
       ) : (

@@ -2496,6 +2496,51 @@ export const HASHATON_G2_LANDS = supported([
   'Island',
 ]);
 
+/**
+ * The SYNTHETIC cards of group 6 of the Hashaton deck program (D-1170, D-1171, provisional): the angel that asks "choose a card type" as it enters (a chooseOption of
+ * purpose `cardType`, which games-100 expects only from dedicated styles) and gives its controller and their creatures protection from it, with sources of several card
+ * types to run it against (creatures and an artifact that ping, a creature that pings as it dies, an artifact creature, a sorcery). The style 'hashatonProtect' plays
+ * them; every other pool leaves them out: protection stops targets, damage and blocks, which changes how many games end in a result and which questions the agents are asked.
+ */
+export const HASHATON_G6_NAMES = [
+  'SYNTHETIC Warding Seraph',
+  'SYNTHETIC Needle Imp',
+  'SYNTHETIC Spite Imp',
+  'SYNTHETIC Brass Golem',
+  'SYNTHETIC Brass Pinger',
+  'SYNTHETIC Slow Burn',
+] as const;
+
+/** The hashatonProtect style: the angel three times (the choice is the point), the other cards of the group twice, burn, an Aura and Equipment to fall off, bodies. */
+export const HASHATON_G6_SPELLS = [
+  ...supported([
+    'SYNTHETIC Warding Seraph',
+    'SYNTHETIC Warding Seraph',
+    'SYNTHETIC Warding Seraph',
+  ]),
+  ...supported(HASHATON_G6_NAMES.filter((name) => name !== 'SYNTHETIC Warding Seraph')),
+  ...supported(HASHATON_G6_NAMES.filter((name) => name !== 'SYNTHETIC Warding Seraph')),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Murder', 'SYNTHETIC Might Aura']),
+  ...supported([
+    'SYNTHETIC Blade',
+    'SYNTHETIC Vanilla 3/3',
+    'SYNTHETIC Vanilla 2/2',
+    'Grizzly Bears',
+  ]),
+];
+
+/** White for the angel, black and red for the rest. */
+export const HASHATON_G6_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Mountain',
+]);
+
 export const NIV_DRAW_NAMES = [
   'SYNTHETIC Hollow Warden',
   'SYNTHETIC Draw Veto',
@@ -2930,6 +2975,8 @@ const FIXTURES: readonly CardDefinition[] = [
 
   // The life cards of the Hashaton deck (D-363 to D-365) have their own style: a life gain that does not happen, an end step loss and a payment question.
   .filter((card) => !(HASHATON_G2_NAMES as readonly string[]).includes(card.name))
+  // The card type choice cards of the Hashaton deck (D-1170, D-1171) ask "choose a card type" and change targets, damage and blocks: their own style.
+  .filter((card) => !(HASHATON_G6_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
@@ -3113,6 +3160,7 @@ export type DeckStyle =
   | 'piles'
   | 'nivDraw'
   | 'hashatonLife'
+  | 'hashatonProtect'
   | 'repeatable'
   | 'manifest'
   | 'combat';
@@ -3125,6 +3173,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'piles' && PILES_SPELLS.length > 0) return PILES_SPELLS;
   if (style === 'nivDraw' && NIV_DRAW_SPELLS.length > 0) return NIV_DRAW_SPELLS;
   if (style === 'hashatonLife' && HASHATON_G2_SPELLS.length > 0) return HASHATON_G2_SPELLS;
+  if (style === 'hashatonProtect' && HASHATON_G6_SPELLS.length > 0) return HASHATON_G6_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
   if (style === 'manifest' && MANIFEST_SPELLS.length > 0) return MANIFEST_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
@@ -3301,6 +3350,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'piles' && BASIC_LANDS.length > 0) return PILES_LANDS;
   if (style === 'nivDraw' && BASIC_LANDS.length > 0) return NIV_DRAW_LANDS;
   if (style === 'hashatonLife' && BASIC_LANDS.length > 0) return HASHATON_G2_LANDS;
+  if (style === 'hashatonProtect' && BASIC_LANDS.length > 0) return HASHATON_G6_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
   if (style === 'manifest' && BASIC_LANDS.length > 0) return MANIFEST_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
@@ -3729,6 +3779,13 @@ export const HASHATON_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])
   ['hashatonLife', 'hashatonLife'],
   ['hashatonLife', 'spells'],
   ['spells', 'hashatonLife'],
+];
+
+/** Style pairs of the Hashaton card type protection soak test (D-1170, D-1171): a mirror match and both mixed ways. */
+export const HASHATON_G6_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hashatonProtect', 'hashatonProtect'],
+  ['hashatonProtect', 'spells'],
+  ['spells', 'hashatonProtect'],
 ];
 
 /** Style pairs of the repeatable-mode soak test (D-344): a mirror match and both mixed ways. */

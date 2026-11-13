@@ -23,6 +23,7 @@ import { derive } from './derive';
 import { abilitiesHaveKeyword } from './keywords';
 import { gainLife } from './life-gain';
 import { commanderCardOf } from './melded';
+import { playerHasProtectionFrom } from './player-protection';
 import { hasProtectionFrom } from './protection';
 import { commanderDamageKey } from './sba';
 
@@ -154,13 +155,16 @@ export function dealDamageAsking(
   flow: OrderFlow,
 ): Dealt | Asked {
   if (wouldDeal <= 0) return { kind: 'dealt', state: input, events: [] };
-  // CR 702.16e (D-229): damage that would be dealt to a permanent with protection from a color of the source is prevented. It is applied before the
+  // CR 702.16e (D-229): damage that would be dealt to a permanent with protection from a color (D-1170: or a card type) of the source is prevented. It is applied before the
   // other prevention effects (CR 616.1: the affected player chooses the order; taking protection first keeps a shield for later and never costs them).
   if (wouldDealTo.kind === 'object') {
     const target = input.objects[wouldDealTo.id];
     if (target !== undefined && hasProtectionFrom(input, target, source)) {
       return { kind: 'dealt', state: input, events: [] };
     }
+  } else if (playerHasProtectionFrom(input, wouldDealTo.seat, source)) {
+    // CR 702.16e (D-1170): the same for a player with protection from a card type of the source.
+    return { kind: 'dealt', state: input, events: [] };
   }
   // CR 615.1, 615.6: prevention shields apply as the damage would be dealt; what they prevent never
   // happens, so none of the results below (life, marked damage, lifelink, commander damage) follow.

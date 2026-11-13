@@ -256,6 +256,8 @@ export interface ChosenValues {
   /** A creature type of CR 205.3m, spelled as `CREATURE_TYPES` lists it. */
   readonly creatureType?: Subtype;
   readonly color?: Color;
+  /** A card type of CR 205.2a that the engine models (`CARD_TYPES`): "choose a card type" (D-1170, Serra's Emissary). */
+  readonly cardType?: CardType;
   /** A name chosen from a list the card gives (D-151: "choose Khans or Dragons"). */
   readonly option?: string;
 }

@@ -53,6 +53,11 @@ export function isChapterChoice(d: Asked): boolean {
   return d.purpose === 'option' && d.options.length > 0 && d.options.every((o) => /^\d+$/.test(o));
 }
 
+/** True for "As this creature enters, choose a card type" (CR 614.12a, 205.2a, D-1170): the options are the card types of the engine. */
+export function isCardTypeChoice(d: Asked): boolean {
+  return d.purpose === 'cardType';
+}
+
 /** True for the choice of a name the card gives ("Khans or Dragons"). */
 export function isNamedChoice(d: Asked): boolean {
   return d.purpose === 'option' && !isChapterChoice(d);
@@ -94,6 +99,7 @@ export function namedOptionPrompt(
   if (isRiotChoice(d)) return riotPrompt(d.sourceName, d.riotSoFar ?? []);
   if (isReplacementChoice(d)) return replacementPrompt(d.replacement);
   if (isEffectChoice(d)) return `Choose one for ${d.sourceName}: ${optionList(d.options)}.`;
+  if (isCardTypeChoice(d)) return `As ${d.sourceName} enters, choose a card type.`;
   return isChapterChoice(d)
     ? `Choose a chapter to start with for ${d.sourceName}.`
     : `As ${d.sourceName} enters, choose ${optionList(d.options)}.`;
@@ -219,7 +225,7 @@ export function namedOptionRows(
       return { option, label: choice?.text ?? option, detail };
     });
   }
-  if (isEffectChoice(d) || isVoteChoice(d)) {
+  if (isEffectChoice(d) || isVoteChoice(d) || isCardTypeChoice(d)) {
     return d.options.map((option) => ({ option, label: capitalised(option), detail: null }));
   }
   if (isRiotChoice(d)) {

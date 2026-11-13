@@ -4,14 +4,18 @@
  * - `playerHexproof` ("You have hexproof", CR 702.11b): opponents' spells and abilities can't target the player;
  * - `cantLoseGame` ("You can't lose the game", CR 104.3): the state-based actions that make a player lose do not (`rules/sba.ts`).
  * `opponentsCantWin` needs no read: no effect makes a player win but CR 104.2a, which overrides it.
+ * - `playerProtection` ("You have protection from the chosen card type", CR 702.16, D-1170): spells and abilities from a source of the type can't target
+ *   the player (CR 702.16b) and damage from such a source to the player is prevented (CR 702.16e).
  * - `cantGainLife` ("Your opponents can't gain life", CR 119.7, D-363): the opponents of the controller gain no life (`rules/life-gain.ts`).
  */
 import type { StaticEffect } from '../ast/types';
-import type { SeatId } from '../ids';
+import type { CardType } from '../characteristics';
+import type { ObjectId, SeatId } from '../ids';
 import type { GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { mayHaveStatic } from './printed-statics';
+import { sourceTypes } from './protection';
 
 /** Whether the player has a permanent on the battlefield with a static ability of the kind. */
 function hasStaticOf(state: GameState, seat: SeatId, kind: StaticEffect['kind']): boolean {
@@ -26,8 +30,50 @@ function hasStaticOf(state: GameState, seat: SeatId, kind: StaticEffect['kind'])
   return false;
 }
 
-/** CR 702.11b: whether a spell or ability controlled by `by` may target the player `seat`. */
-export function playerCanBeTargetedBy(state: GameState, seat: SeatId, by: SeatId): boolean {
+/**
+ * The card types the player `seat` has protection from (CR 702.16, D-1170): the `playerProtection` static abilities of the permanents they control, read
+ * after the layers. "The chosen card type" is the type the permanent with the ability chose as it entered; it chose none: the ability protects from nothing.
+ */
+export function playerProtectedTypes(state: GameState, seat: SeatId): readonly CardType[] {
+  const types: CardType[] = [];
+  for (const id of state.battlefield) {
+    const obj = state.objects[id];
+    if (obj === undefined || controllerOf(state, obj) !== seat) continue;
+    if (!mayHaveStatic(state, obj, 'playerProtection')) continue;
+    for (const a of derive(state, obj).abilities) {
+      if (a.kind !== 'static' || a.static.kind !== 'playerProtection') continue;
+      if (a.static.from === 'cardType') types.push(...a.static.types);
+      else if (obj.chosen?.cardType !== undefined) types.push(obj.chosen.cardType);
+    }
+  }
+  return types;
+}
+
+/**
+ * CR 702.16a, 702.16b, 702.16e (D-1170): whether the player `seat` has protection from a card type the source has, so that a spell or ability from the
+ * source can't target them and damage it would deal to them is prevented. The source is read as it is, or as it last was (`sourceTypes`).
+ */
+export function playerHasProtectionFrom(
+  state: GameState,
+  seat: SeatId,
+  source: ObjectId | null,
+): boolean {
+  const mine = playerProtectedTypes(state, seat);
+  if (mine.length === 0) return false;
+  return sourceTypes(state, source).some((t) => mine.includes(t));
+}
+
+/**
+ * CR 702.11b: whether a spell or ability controlled by `by` may target the player `seat`. `source` is the spell or ability's source: the player's
+ * protection from a card type (CR 702.16b, D-1170) stops a source of that type, even one the player controls.
+ */
+export function playerCanBeTargetedBy(
+  state: GameState,
+  seat: SeatId,
+  by: SeatId,
+  source: ObjectId | null = null,
+): boolean {
+  if (playerHasProtectionFrom(state, seat, source)) return false;
   return seat === by || !hasStaticOf(state, seat, 'playerHexproof');
 }
 

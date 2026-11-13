@@ -176,6 +176,7 @@ describe('the dimensions', () => {
       'cantLoseGame',
       'opponentsCantWin',
       'cantGainLife',
+      'playerProtection',
       'doubleTriggers',
       'cantCastThis',
       'blockTax',

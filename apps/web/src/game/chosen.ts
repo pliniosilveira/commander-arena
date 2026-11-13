@@ -21,7 +21,15 @@ export function colorName(letter: string): string {
 
 /** What `option` of a `chooseOption` answer reads as: a creature type as it is, a color by name. */
 export function optionText(
-  purpose: 'creatureType' | 'color' | 'attackTarget' | 'option' | 'effect' | 'riot' | 'vote',
+  purpose:
+    | 'creatureType'
+    | 'color'
+    | 'cardType'
+    | 'attackTarget'
+    | 'option'
+    | 'effect'
+    | 'riot'
+    | 'vote',
   option: string,
 ): string {
   if (purpose === 'color') return colorName(option);
@@ -39,6 +47,7 @@ export function purposeNoun(
   purpose:
     | 'creatureType'
     | 'color'
+    | 'cardType'
     | 'attackTarget'
     | 'option'
     | 'effect'
@@ -53,6 +62,7 @@ export function purposeNoun(
   if (purpose === 'replacement') return 'effect to apply first';
   if (purpose === 'attackTarget') return 'player or permanent to attack';
   if (purpose === 'option' || purpose === 'effect') return 'option';
+  if (purpose === 'cardType') return 'card type';
   return purpose === 'color' ? 'color' : 'creature type';
 }
 
@@ -79,6 +89,14 @@ export function chosenLabel(object: Pick<ObjectView, 'chosen'>): ChosenLabel | n
   if (chosen.color !== undefined) {
     const name = colorName(chosen.color);
     return { short: name, title: `Chosen color: ${name}`, heading: 'Chosen color' };
+  }
+  // D-1170 (CR 205.2a): "choose a card type" (Serra's Emissary).
+  if (chosen.cardType !== undefined) {
+    return {
+      short: chosen.cardType,
+      title: `Chosen card type: ${chosen.cardType}`,
+      heading: 'Chosen card type',
+    };
   }
   // D-151: a name from the list the card gives, as "choose Khans or Dragons" (the noun is the one `purposeNoun` uses).
   if (chosen.option !== undefined) {

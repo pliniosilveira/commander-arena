@@ -92,6 +92,9 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     // Stage P34 (D-152): a choice among names the card gives.
     'As ~ enters, choose Khans or Dragons.',
     'As ~ enters, choose Khans, Dragons, or Wolves.',
+    // Hashaton deck group 6 (D-1170): a card type.
+    'As ~ enters, choose a card type.',
+    'As ~ enters the battlefield, choose a card type.',
   ],
   rejects: [
     'As ~ enters, choose Khans, Dragons or Wolves.',
@@ -110,6 +113,11 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters, choose an opponent.',
     'As ~ enters, you may choose a color.',
     'As ~ enters, choose a creature type and a color.',
+    'As ~ enters, choose a card type',
+    'As ~ enters, choose a card type other than creature.',
+    'As ~ enters, choose two card types.',
+    'As ~ enters, you may choose a card type.',
+    'As ~ enters, choose a supertype.',
     'As ~ enters, choose a creature type. ~ enters with a fellowship counter on it.',
     '~ enters, choose a color.',
     'As ~ attacks, choose a color.',
@@ -122,7 +130,8 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       pattern(/as /i),
       choice(ENTERS, literal('it enters the battlefield'), literal('it enters')),
       choice(
-        pattern(/, choose a (creature type|color)\./i),
+        // Hashaton deck group 6 (D-1170, CR 205.2a): "choose a card type".
+        pattern(/, choose a (creature type|color|card type)\./i),
         // Stage P34 (D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons." The names are the card's own, capitalized.
         pattern(/, choose (\p{Lu}[^.,—•\n]*(?:(?:, or | or |, )\p{Lu}[^.,—•\n]*)+)\./u),
       ),
@@ -132,11 +141,17 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     const span = { start: pos, end: r.pos };
     const id = 'replacement.as-enters-choose';
     const kind = (tail[1] ?? '').toLowerCase();
-    const names = kind === 'color' || kind === 'creature type' ? null : optionNames(tail[1] ?? '');
-    if (kind !== 'color' && kind !== 'creature type' && names === null) return fail(ctx, pos);
+    const plain = kind === 'color' || kind === 'creature type' || kind === 'card type';
+    const names = plain ? null : optionNames(tail[1] ?? '');
+    if (!plain && names === null) return fail(ctx, pos);
     const what: IrChoiceArg =
       names === null
-        ? { kind: 'choiceKind', what: kind === 'color' ? 'color' : 'creatureType', span, rule: id }
+        ? {
+            kind: 'choiceKind',
+            what: kind === 'color' ? 'color' : kind === 'card type' ? 'cardType' : 'creatureType',
+            span,
+            rule: id,
+          }
         : { kind: 'choiceKind', what: 'option', options: names, span, rule: id };
     const event: IrClause = {
       kind: 'clause',

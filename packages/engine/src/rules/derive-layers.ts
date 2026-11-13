@@ -134,11 +134,18 @@ export interface StaticGrant {
 
 /**
  * Whether the list already has what a grant would add: the same keyword (only keywords without
- * parameters are granted, so the kind identifies them), or a mana ability written the same way
- * (a land given "{T}: Add one mana of any color" twice has it once, which changes nothing in play).
+ * parameters are granted, so the kind identifies them; protection is the exception, D-1170, below),
+ * or a mana ability written the same way (a land given "{T}: Add one mana of any color" twice has it
+ * once, which changes nothing in play).
  */
 function hasAbility(list: readonly Ability[], grant: Ability): boolean {
   if (grant.kind === 'keyword') {
+    // CR 702.16g, 702.16m (D-1170): protection from different qualities are separate abilities ("protection from red" and "protection from artifacts"
+    // are two), and only the same quality twice is redundant: a protection is the same as another when it names the same thing.
+    if (grant.keyword.kind === 'protection') {
+      const written = JSON.stringify(grant.keyword);
+      return list.some((a) => a.kind === 'keyword' && JSON.stringify(a.keyword) === written);
+    }
     return list.some((a) => a.kind === 'keyword' && a.keyword.kind === grant.keyword.kind);
   }
   // D-151: an activated or a triggered ability is given by each source that grants it (two sources, two instances).

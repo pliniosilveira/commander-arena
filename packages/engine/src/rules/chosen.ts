@@ -1,18 +1,19 @@
 /**
- * Choices made as a permanent enters (D-100): "As this enters, choose a creature type" and "choose a
- * color" (CR 614.12, 614.12a), and what reads them ("of the chosen type", CR 607.2d). The options of
+ * Choices made as a permanent enters (D-100): "As this enters, choose a creature type", "choose a
+ * color" and (D-1170) "choose a card type" (CR 614.12, 614.12a), and what reads them ("of the chosen type", CR 607.2d). The options of
  * each question, the check of an answer, and where the answer is found afterwards. The answer lives on
  * the permanent (`GameObject.chosen`) and is gone when it leaves the battlefield (CR 400.7).
  */
-import { COLORS } from '../characteristics';
+import { CARD_TYPES, COLORS } from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId } from '../ids';
 import type { ChosenValues, GameState } from '../state/types';
 
-export type ChoiceKind = 'creatureType' | 'color' | 'option';
+export type ChoiceKind = 'creatureType' | 'color' | 'option' | 'cardType';
 
 /** The options of a question, in the fixed order its legal actions follow. */
 export function optionsFor(what: ChoiceKind, named: readonly string[] = []): readonly string[] {
+  if (what === 'cardType') return CARD_TYPES;
   return what === 'creatureType' ? CREATURE_TYPES : what === 'option' ? named : COLORS;
 }
 
@@ -33,6 +34,11 @@ export function chosenFromOption(
   if (what === 'option') return named.includes(option) ? { option } : null;
   if (what === 'creatureType')
     return CREATURE_TYPES.includes(option) ? { creatureType: option } : null;
+  // D-1170 (CR 205.2a): "choose a card type" is one of the card types the engine models (`CARD_TYPES`).
+  if (what === 'cardType') {
+    const cardType = CARD_TYPES.find((t) => t === option);
+    return cardType === undefined ? null : { cardType };
+  }
   const color = COLORS.find((c) => c === option);
   return color === undefined ? null : { color };
 }
