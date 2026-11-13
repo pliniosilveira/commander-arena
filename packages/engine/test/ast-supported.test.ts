@@ -69,6 +69,7 @@ const EXECUTABLE_KEYWORDS = [
   'cascade', // scenario-xx-cascade
   'unearth', // scenario-xx-unearth
   'encore', // scenario-xx-encore
+  'eternalize', // scenario-xx-hashaton-g5
   'devour', // scenario-xx-devour-riot
   'riot', // scenario-xx-devour-riot
   'echo', // scenario-xx-echo
@@ -161,6 +162,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   cascade: { kind: 'cascade' },
   unearth: { kind: 'unearth', cost: [{ kind: 'mana', symbols: ['R'] }] },
   encore: { kind: 'encore', cost: [{ kind: 'mana', symbols: ['3', 'R'] }] },
+  eternalize: { kind: 'eternalize', cost: [{ kind: 'mana', symbols: ['5', 'U', 'U'] }] },
   devour: { kind: 'devour', count: 2 },
   riot: { kind: 'riot' },
   echo: { kind: 'echo', cost: [{ kind: 'mana', symbols: ['1', 'R'] }] },

@@ -125,6 +125,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.unearth': asIs,
   // Stage P40: Encore is a line of its own, like Unearth.
   'keyword.encore': asIs,
+  // Hashaton deck group 5 (D-384): Eternalize is a line of its own, like Encore.
+  'keyword.eternalize': asIs,
   'keyword.escape': asIs,
   // Stage P25: Echo and Cumulative upkeep are lines of their own.
   'keyword.echo': asIs,
@@ -140,6 +142,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.ward': asIs,
   'keyword.crew': asIs,
   'token.copy': spell((e) => `Create ${e}.`),
+  // Hashaton deck group 5 (D-382): a copy with exceptions of characteristics.
+  'token.copy-except': permanent((e) => `Whenever you discard a creature card, create ${e}.`),
   'replacement.enters-with-counters-kicked': asIs,
   'replacement.as-enters-choose': asIs,
   'static.self-chosen-type': asIs,
@@ -621,6 +625,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.for-each-own-nontoken-destroyed': spell(
     (e) => `Destroy all creatures. Then create a 3/2 red and white Spirit creature token ${e}.`,
   ),
+  // Hashaton deck group 5 (D-385): copies of the tokens of the chosen type that entered this turn.
+  'effect.copy-each-token': permanent((e) => `At the beginning of your end step, ${e}.`),
   'effect.create-copy-spirit': permanent(
     (e) => `Whenever another nontoken creature you control dies, exile it. If you do, ${e}`,
   ),

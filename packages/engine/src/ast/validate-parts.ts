@@ -2400,6 +2400,50 @@ function checkCopySource(ref: ObjectRef, path: string, scope: Scope, out: Out): 
   }
 }
 
+/** The exceptions of a copy that change a characteristic (D-382, CR 707.9b, 707.9d): creature types, colors, power and toughness, no mana cost. */
+function checkCopyExceptions(
+  spec: Extract<Extract<Effect, { kind: 'createToken' }>['token'], { kind: 'copyOf' }>,
+  path: string,
+  out: Out,
+): void {
+  if (spec.setCreatureTypes !== undefined) {
+    if (!Array.isArray(spec.setCreatureTypes) || spec.setCreatureTypes.length === 0) {
+      issue(
+        out,
+        `${path}.setCreatureTypes`,
+        'setCreatureTypes is a non-empty list of creature types',
+      );
+    } else if (
+      spec.setCreatureTypes.some((t) => typeof t !== 'string' || isNonCreatureSubtype(t))
+    ) {
+      issue(out, `${path}.setCreatureTypes`, 'setCreatureTypes names creature types only');
+    }
+    if (spec.addSubtypes !== undefined) {
+      issue(
+        out,
+        path,
+        'a copy is given creature types instead of its own (setCreatureTypes) or in addition to them (addSubtypes), not both',
+      );
+    }
+  }
+  if (spec.setColors !== undefined) {
+    if (!Array.isArray(spec.setColors) || spec.setColors.some((c) => !isOneOf(c, COLORS))) {
+      issue(out, `${path}.setColors`, 'setColors is a list of colors');
+    } else if (new Set(spec.setColors).size !== spec.setColors.length) {
+      issue(out, `${path}.setColors`, 'duplicate color');
+    }
+  }
+  if (spec.setPt !== undefined) {
+    const { power, toughness } = spec.setPt;
+    if (!Number.isSafeInteger(power) || !Number.isSafeInteger(toughness)) {
+      issue(out, `${path}.setPt`, 'setPt is a whole power and a whole toughness');
+    }
+  }
+  if (spec.noManaCost !== undefined && spec.noManaCost !== true) {
+    issue(out, `${path}.noManaCost`, 'noManaCost must be true when present');
+  }
+}
+
 function checkTokenSpec(
   spec: Extract<Effect, { kind: 'createToken' }>['token'],
   path: string,
@@ -2425,6 +2469,7 @@ function checkTokenSpec(
       ) {
         issue(out, `${path}.addSubtypes`, 'addSubtypes is a non-empty list of creature types');
       }
+      checkCopyExceptions(spec, path, out);
       if (spec.abilities !== undefined) {
         if (!Array.isArray(spec.abilities))
           issue(out, `${path}.abilities`, 'abilities must be a list');

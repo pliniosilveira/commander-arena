@@ -373,7 +373,16 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       // "Whenever you discard a card" (stage P49, D-206, CR 701.9a): the player is relative to the controller.
       const who = whoOf(t.actor);
       if (who === null) return failure(t);
-      return ok({ kind: 'discarded', who, ...(t.another === true ? { another: true } : {}) });
+      const another = t.another === true ? { another: true as const } : {};
+      // "Whenever you discard a creature card" (D-383, CR 701.9a): the kind of card is a filter on the card discarded; "a card" has none.
+      const kind = t.subject?.filter;
+      if (kind === undefined || (kind.types === undefined && kind.notTypes === undefined)) {
+        return ok({ kind: 'discarded', who, ...another });
+      }
+      if (t.subject === undefined) return failure(t);
+      const filter = lowerFilter(t.subject);
+      if (!filter.ok) return filter;
+      return ok({ kind: 'discarded', who, ...another, filter: filter.value });
     }
     case 'drawn': {
       const who = whoOf(t.actor);

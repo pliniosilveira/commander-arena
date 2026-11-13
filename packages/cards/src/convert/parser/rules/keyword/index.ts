@@ -246,6 +246,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Madness {1}{R}',
     'Unearth {2}{B}',
     'Encore {3}{R}',
+    'Eternalize {5}{U}{U}',
     'Riot.',
     'Riot {1}',
     'Riots',

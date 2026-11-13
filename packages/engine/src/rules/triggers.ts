@@ -524,9 +524,14 @@ function matches(
     case 'discarded':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
-      // D-374: "another card" is any card but the one with this ability (the Oracle word excludes the object itself; no CR number says it).
+      // D-374: "another card" is any card but the one with this ability (the Oracle word excludes the object itself).
       if (trigger.another === true && subject !== null && subject.id === candidate.id) return false;
-      return true;
+      // D-383 (CR 701.9a): "a creature card": the card as it is where it went (its graveyard, or exile for madness), or as it last was.
+      return (
+        trigger.filter === undefined ||
+        (subject !== null &&
+          matchesFilter(state, subject, { ...trigger.filter, zone: subject.zone }, ctx))
+      );
     case 'dies':
     case 'dealtDamage':
     case 'becomesTapped':

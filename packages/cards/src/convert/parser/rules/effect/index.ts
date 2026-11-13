@@ -42,6 +42,7 @@ import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
+import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
 import { HASHATON_GROUP_4_EFFECT_RULES } from './hashaton-group-4';
@@ -874,6 +875,8 @@ export const EFFECT_RULES = [
   ...ANGEL_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
   ...HASHATON_G8_EFFECT_RULES,
+  // D-385 (Hashaton, group 5): "for each token you control of the chosen type that entered this turn, create a token that's a copy of it", before the "for each" rules of the Vraska rules.
+  ...HASHATON_G5_EFFECT_RULES,
   // Stage P50 (D-207): "remove all counters from it".
   ...VRASKA_EFFECT_RULES,
   // Stage P69 (D-256, D-257): the Bruna deck, "Do this only once each turn" and "pay {X}, where X is less than or equal to the amount of life you gained".

@@ -10,16 +10,16 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Archfiend of Ifnir | 1 | T (+ tiny P) | done | "Whenever you cycle or discard another card, put a -1/-1 counter on each creature your opponents control" |
 | Archon of Cruelty | 1 | T | done | "target opponent sacrifices a creature or planeswalker of their choice, discards a card, and loses 3 life. You draw a card and gain 3 life" |
 | Bard, King of Dale | 3 | P x2 (+T x2) | done | two replacements: draw two instead (except the first draw of the draw step); twice as many tokens |
-| Champion of Wits | 5 | K + P | waiting | Eternalize |
+| Champion of Wits | 5 | K + P | done | Eternalize |
 | Darksteel Angel | 3 | P + T (many sites) | done | "Creatures you control can't have -1/-1 counters put on them" |
 | Enter the Avatar State | 4 | T | done | becomes an Avatar in addition to its other types and gains four keywords |
 | Faithful Mending | 1 | T | done | "gain 2 life, draw two cards, then discard two cards" (plus flashback if printed) |
 | Gleaming Overseer | 4 | P + T | done | amass Zombies; "Zombie tokens you control have hexproof and menace" |
-| Hashaton, Scarab's Fist | 5 | P x3 (+T) | waiting | discard a creature card: may pay, create a tapped copy token that is a 4/4 black Zombie |
+| Hashaton, Scarab's Fist | 5 | P x3 (+T) | done | discard a creature card: may pay, create a tapped copy token that is a 4/4 black Zombie |
 | Niv-Mizzet, Ghost Counsel | 2 | P + T | done | "Whenever you gain life, you may pay that much life. If you do, draw that many cards" |
 | Ob Nixilis, the Ascended | 2 | T | done | at each end step, if you gained life this turn, create a 4/4 Angel token |
 | Psychic Frog | 1 | P (+T) | done | combat damage to a player or planeswalker: draw a card |
-| Renewed Solidarity | 5 | T (+ small P) | waiting | choose a type as it enters; at your end step copy each token of that type that entered this turn |
+| Renewed Solidarity | 5 | T (+ small P) | done | choose a type as it enters; at your end step copy each token of that type that entered this turn |
 | Restless Dreams | 10 | P x2 (casting) | waiting | additional cost: discard X cards; return X target creature cards from the graveyard |
 | Rona, Herald of Invasion // Rona, Tolarian Obliterator | 9 | P + T | waiting | transform on a mana ability; damage trigger exiling a random card from the damager's controller's hand and playing it |
 | Serra's Emissary | 6 | P + T (large) | done | choose a card type as it enters; protection from the chosen card type for you and your creatures |

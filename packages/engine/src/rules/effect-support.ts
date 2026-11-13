@@ -12,6 +12,7 @@ import { getSeat, loseLifeBy, patchSeat, zoneList } from '../state/ops';
 import type { ChosenTarget, GameState, Instruction } from '../state/types';
 import { amountOf } from './amounts';
 import { copiableValues } from './copiable';
+import { withCopyExceptions } from './copy-exceptions';
 import { replacementSources } from './die-replacement';
 import { drawSkippedBy } from './draw-skip';
 import { gainLife } from './life-gain';
@@ -205,16 +206,13 @@ export function tokenDefinitionOf(
   const id = resolveObjects(state, token.object, ctx, targets)[0];
   const original = id === undefined ? undefined : (state.objects[id] ?? state.lki[id]?.object);
   if (original === undefined) return null;
-  const values = copiableValues(state, original);
+  // CR 707.9b, 707.9d (D-230, D-382): the exceptions ("a Spirit in addition to its other types", "a 4/4 black Zombie with no mana cost", "it has ...") are part of the copiable values.
+  const values = withCopyExceptions(copiableValues(state, original), token);
   // CR 722.2b (D-225): the prepare spell of a preparation card is part of its copiable values.
   const prepareOf = prepareCardOf(state, original);
   return {
     ...values.characteristics,
-    // D-230 (CR 707.9b): "except it's a Spirit in addition to its other types and it has ...": part of the copiable values of the token.
-    ...(token.addSubtypes === undefined
-      ? {}
-      : { subtypes: [...new Set([...values.characteristics.subtypes, ...token.addSubtypes])] }),
-    abilities: [...values.abilities, ...(token.abilities ?? [])],
+    abilities: [...values.abilities],
     ...(prepareOf === null ? {} : { prepareOf }),
   };
 }

@@ -71,6 +71,7 @@ import {
   revealTopText,
 } from '../../game/dragons-text';
 import { pluralSubtype, thingsPhrase } from '../../game/filter-text';
+import { copiesOfTokensText } from '../../game/hashaton-g5-text';
 import { ENCORE_EFFECT_TEXT } from '../../game/keywords-text';
 import { controlDurationText, requireAttackText } from '../../game/korvold-text';
 import { playRuleWordings, staticWording } from '../../game/play-rule-text';
@@ -115,6 +116,25 @@ function costKeyword(word: string, cost: ActivatedAbility['cost']): string {
 /** True for Encore's expansion: an ability from the graveyard whose effect is `encore` (CR 702.141a, D-185). */
 export function isEncore(ability: ActivatedAbility): boolean {
   return ability.effect.kind === 'encore';
+}
+
+/**
+ * True for Eternalize's expansion (CR 702.129a, D-384): an ability from the graveyard that exiles the card as a cost and creates a token that is a copy of it, black, 4/4, with no mana cost
+ * and a Zombie in addition.
+ */
+export function isEternalize(ability: ActivatedAbility): boolean {
+  const { effect } = ability;
+  if (ability.functionsIn !== 'graveyard' || effect.kind !== 'createToken') return false;
+  const { token } = effect;
+  return (
+    token.kind === 'copyOf' &&
+    token.object.kind === 'this' &&
+    token.noManaCost === true &&
+    token.setPt?.power === 4 &&
+    token.setPt.toughness === 4 &&
+    token.setColors?.join() === 'B' &&
+    token.addSubtypes?.join() === 'Zombie'
+  );
 }
 
 /** True for Unearth's expansion: an ability from the graveyard whose effect is `unearth` (CR 702.84a, D-124). */
@@ -922,6 +942,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         : `Untap ${object(effect.objects)}`;
     case 'removeAllCounters':
       return `Remove all counters from ${object(effect.objects)}`;
+    case 'createCopies':
+      // D-385: "For each token you control of the chosen type that entered this turn, create a token that's a copy of it".
+      return copiesOfTokensText(effect) ?? UNSAID;
     case 'counter':
       return `Counter ${object(effect.objects)}`;
     case 'addCounters':
@@ -1136,6 +1159,13 @@ export function activationLabel(
   }
   if (isEquip(ability)) return costKeyword('Equip', ability.cost);
   if (isUnearth(ability)) return costKeyword('Unearth', ability.cost);
+  // D-384: "Eternalize {5}{U}{U}": the exile of the card is part of the keyword, not of the price.
+  if (isEternalize(ability)) {
+    return costKeyword(
+      'Eternalize',
+      ability.cost.filter((c) => c.kind !== 'exileThis'),
+    );
+  }
   // D-185: "Encore {3}{R}": the exile of the card is part of the keyword, not of the price.
   if (isEncore(ability)) {
     return costKeyword(

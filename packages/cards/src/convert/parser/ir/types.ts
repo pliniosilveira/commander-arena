@@ -793,6 +793,16 @@ export interface IrToken extends IrNode {
   readonly legendary?: true;
   /** "a token that's a copy of target creature" (CR 707.2): the permanent copied. */
   readonly copyOf?: IrNoun;
+  /**
+   * "..., except it's a 4/4 black Zombie" (Hashaton deck group 5, D-382, CR 707.9b): what the copy is instead of what it copies, with `copyOf`: its power and toughness, its colors
+   * (as color words; empty for colorless) and its creature types (instead of its own, CR 205.3d).
+   */
+  readonly copyExcept?: {
+    readonly power: number;
+    readonly toughness: number;
+    readonly colors: readonly string[];
+    readonly subtypes: readonly string[];
+  };
   /** "create two tapped Treasure tokens" (stage P28, CR 110.5b): the tokens enter tapped. */
   readonly tapped?: true;
   readonly count: IrAmount;

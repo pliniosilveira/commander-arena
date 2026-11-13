@@ -52,7 +52,7 @@ import type {
   PriorityDecision,
   PriorityOption,
 } from '@commander-arena/engine';
-import { wantsUnearth } from './casual-alt-costs';
+import { wantsEternalize, wantsUnearth } from './casual-alt-costs';
 import { isEquipAbility } from './casual-attachments';
 import { isUnblockableAbility, wantsUnblockable } from './casual-evasion';
 import { wantsPlayExiled } from './casual-free';
@@ -232,6 +232,18 @@ export function chooseActivation(
     );
   });
   if (unearth !== undefined) return act(unearth);
+
+  // Eternalize (CR 702.129a, D-384): a creature card of ours in the graveyard becomes a 4/4 black Zombie token that stays (casual-alt-costs.ts).
+  const eternalize = fresh.find((o) => {
+    const obj = findObject(view, o.object);
+    return (
+      obj !== undefined &&
+      obj.zone === 'graveyard' &&
+      obj.keywords.includes('eternalize') &&
+      wantsEternalize(view, obj)
+    );
+  });
+  if (eternalize !== undefined) return act(eternalize);
 
   // D-135: a card of ours in the graveyard that returns itself, and a permission to cast a creature card from it
   // (casual-recursion.ts).
