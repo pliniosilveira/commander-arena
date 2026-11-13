@@ -57,13 +57,11 @@ The Comprehensive Rules text is Wizards' and is not part of this repository: `pn
 
 ## Requesting card support
 
-The app has no request button. When you import a card the game cannot run, the import screen's "Why unsupported?" shows what blocks it. To get the card supported, tell the owner or open a GitHub issue with the card name. The coding agent then follows `docs/CARD_SUPPORT_PLAYBOOK.md`: it finds the missing capability, adds it in a general form so other cards using the same mechanic work too, and records what it learned.
+When you import a deck with cards the game cannot run, the coverage report says what blocks each one ("Why unsupported?") and has a button, **Ask for support on GitHub**. It opens a GitHub issue with your decklist, what blocks the cards and their card data already filled in: press Submit. A report too long for a link is copied to your clipboard when you press the button, and you paste it into the description.
 
-These are the three things you type to the coding agent:
+A complete request is picked up by the deck support routine (`.claude/skills/deck-support/SKILL.md`, D-251), oldest first and when its budget allows it. It builds the cards the way `docs/CARD_SUPPORT_PLAYBOOK.md` says (the missing capability is added in a general form, so other cards that use the same mechanic work too) and keeps the issue up to date with how far it is. The owner merges the result. A request that is not complete gets a comment that says what is missing.
 
-- `Add support for <card name>.`
-- `Work the backlog: implement the top 3 mechanics in reports/backlog.md.`
-- `Approve the proposal in docs/proposals/<mechanic>.md.`
+The coding agent also takes direct requests from the owner: `Add support for <card name>.`, `Work the backlog.` and `Approve the proposal in docs/proposals/<mechanic>.md.`
 
 ## Known limitations
 
