@@ -4,7 +4,7 @@
  * prompt, the button labels and whether Cancel is offered. Six questions share the decision and are
  * told apart by `cost` and `purpose`, so their words live here, away from `model.ts`.
  */
-import type { ConfirmOptionalDecision, Cost, ObjectId } from '@commander-arena/engine';
+import type { ConfirmOptionalDecision, Cost, ObjectId, ObjectView } from '@commander-arena/engine';
 import { findEffect } from '../../game/artifacts-text';
 import { castCardOfAbility, castCardPrompt } from '../../game/cast-card-text';
 import {
@@ -292,6 +292,18 @@ export function optionalSource(
   return face === undefined
     ? { name: d.sourceName, text: d.sourceOracleText }
     : { name: face.name, text: face.oracleText };
+}
+
+/**
+ * #44: the card a "you may" trigger is about when it reads "that card" ("Whenever you discard a
+ * creature card, you may pay {2}{U}. If you do, create a copy of that card"). Several of the same
+ * trigger can wait at once, and the source and its text alone do not say which card each is for.
+ * Null when the ability does not read one, or the card is not in view.
+ */
+export function optionalSubject(d: ConfirmOptionalDecision, index: Index): ObjectView | null {
+  if (d.purpose !== undefined && d.purpose !== 'mayPay') return null;
+  const id = index.get(d.source)?.triggerSubject;
+  return id === undefined ? null : (index.get(id) ?? null);
 }
 
 export interface OptionalAsk {

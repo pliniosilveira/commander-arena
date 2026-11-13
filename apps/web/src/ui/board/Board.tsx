@@ -1,6 +1,6 @@
 /** The battlefield, both players' strips, the command zones and the human's hand (SPEC 10, A19). */
 import type { GameView, ObjectView } from '@commander-arena/engine';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDropZone } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { useApp } from '../store-context';
@@ -16,6 +16,7 @@ import { PlayerStrip, type ZoneRef } from './PlayerStrip';
 import { PairFocusProvider } from './pair-focus';
 import { BattlefieldRow } from './Row';
 import { combatRoles, type RowKind, rowKindOf, seatLabel } from './resolve';
+import { targetZoneToOpen } from './target-zone';
 import { useCloseOnDecision } from './useCloseOnDecision';
 import { ZoneViewer } from './ZoneViewer';
 
@@ -89,6 +90,20 @@ export function Board() {
   const view = useApp((s) => s.snapshot?.view ?? null);
   const [zone, setZone] = useState<ZoneRef | null>(null);
   useCloseOnDecision(view, () => setZone(null));
+  // #23: a question whose legal targets are all in one graveyard opens it, and closing it again
+  // when the question is answered is the board's doing too, not the player's chore.
+  const toOpen = view === null ? null : targetZoneToOpen(view);
+  const seatToOpen = toOpen?.kind === 'graveyard' ? toOpen.seat : null;
+  const autoOpened = useRef(false);
+  useEffect(() => {
+    if (seatToOpen !== null) {
+      setZone({ kind: 'graveyard', seat: seatToOpen });
+      autoOpened.current = true;
+    } else if (autoOpened.current) {
+      setZone(null);
+      autoOpened.current = false;
+    }
+  }, [seatToOpen]);
   const pendingBlocks = useInteraction().pendingBlocks;
   const roles = useMemo(
     () => (view === null ? new Map() : combatRoles(view, pendingBlocks)),

@@ -1,6 +1,9 @@
 import type { ObjectId } from '@commander-arena/engine';
 import { useCallback, useEffect, useRef } from 'react';
-import { useActions } from '../store-context';
+import { useActionsIfPresent } from '../store-context';
+
+const noHover = (_id: ObjectId | null): void => {};
+const noPin = (_id: ObjectId | null): void => {};
 
 /** The delay before a hover reaches the preview panel (brief: about 150 ms). */
 const HOVER_DELAY_MS = 150;
@@ -16,7 +19,10 @@ export function useHoverProps(): (id: ObjectId) => {
   onBlur: () => void;
   onContextMenu: (event: { preventDefault: () => void }) => void;
 } {
-  const { hover, pin } = useActions();
+  // Outside a StoreProvider (a panel drawn on its own) there is no preview to drive: hovering does nothing.
+  const actions = useActionsIfPresent();
+  const hover = actions?.hover ?? noHover;
+  const pin = actions?.pin ?? noPin;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shown = useRef(false);
 

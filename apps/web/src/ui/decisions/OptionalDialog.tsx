@@ -1,6 +1,7 @@
 import type { ConfirmOptionalDecision } from '@commander-arena/engine';
 import { BarButtons } from './BarButtons';
 import { Dialog } from './Dialog';
+import { useHoverProps } from './hover';
 import type { Index } from './lookup';
 import type { DecisionModel } from './model';
 import {
@@ -9,6 +10,7 @@ import {
   mayDelayedPrompt,
   mayEffectPrompt,
   optionalSource,
+  optionalSubject,
 } from './optional';
 
 /** The accessible name of the dialog for each question. */
@@ -50,6 +52,8 @@ export function OptionalDialog({
   index: Index;
 }) {
   const source = optionalSource(d, index);
+  const subject = optionalSubject(d, index);
+  const hoverProps = useHoverProps();
   // D-151: Discover and its kin ask the Cascade question and put the card into the hand when it is not cast.
   const label =
     d.purpose === 'cascade' && cascadeKind(d, index).kind !== 'cascade'
@@ -67,6 +71,14 @@ export function OptionalDialog({
   return (
     <Dialog label={label} className="dec-small">
       <h2 className="dec-title">{source.name}</h2>
+      {subject === null ? null : (
+        <p className="dec-sub dec-subject">
+          For {/* Hovering or focusing the name shows the card in the preview panel (#44). */}
+          <button type="button" className="dec-card-link" {...hoverProps(subject.id)}>
+            {subject.name}
+          </button>
+        </p>
+      )}
       {source.text === '' || delayed ? null : <p className="dec-source-quote">{source.text}</p>}
       {prompted ? (
         <p className="dec-sub">{model.bar.prompt}</p>
