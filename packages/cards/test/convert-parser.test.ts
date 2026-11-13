@@ -744,6 +744,7 @@ describe('unmatched abilities', () => {
       'static.opponents-cant-cast-spells',
       'static.keeps-damage',
       'static.triggers-additional-time',
+      'static.triggers-additional-time-cause',
       'static.graveyard-play-once-each-turn',
       'modal.choose',
       'modal.choose-commander',

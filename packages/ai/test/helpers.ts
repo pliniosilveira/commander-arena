@@ -2412,6 +2412,17 @@ export const REPEATABLE_LANDS = supported([
  * noncombat damage to an opponent. Used by the 'nivDraw' style and kept out of every other pool: a skipped draw changes whether a player loses to an empty library, and the
  * draw trigger adds triggers to the stack in the middle of other spells.
  */
+/** The cast-or-copy trigger doubling cards of the Niv-Mizzet deck (D-339): extra triggers and their questions stay out of the generic pools. */
+export const NIV_GROUP_3_B_NAMES = [
+  'SYNTHETIC Twin Mage',
+  'SYNTHETIC Twin Echo',
+  'SYNTHETIC Cast Watcher',
+  'SYNTHETIC Rival Watcher',
+  'SYNTHETIC Target Watcher',
+  'SYNTHETIC Plain Enterer',
+  'SYNTHETIC Quiet Bear',
+] as const;
+
 /** The delayed "when you next cast" cards of the Niv-Mizzet deck (D-336): they ask for new targets of a copy, so they stay out of the generic pools. */
 export const NIV_GROUP_3_A_NAMES = [
   'SYNTHETIC Next Echo',
@@ -2841,6 +2852,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(NIV_DRAW_NAMES as readonly string[]).includes(card.name))
   // The delayed next-cast slice asks the questions of a copied spell (new targets), which games-100 expects only from dedicated styles.
   .filter((card) => !(NIV_GROUP_3_A_NAMES as readonly string[]).includes(card.name))
+  // The trigger doubling cards (D-339) change which triggers ask their questions, which games-100 expects only from dedicated styles.
+  .filter((card) => !(NIV_GROUP_3_B_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
