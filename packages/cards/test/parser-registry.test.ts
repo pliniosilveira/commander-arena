@@ -521,6 +521,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.attacking-opponents': permanent((e) => `When ~ enters, ${e} get +1/+0 until end of turn.`),
   // Stage P64 (D-217): the nouns, effects and conditions of the Vraska EDHREC deck's second group.
   'noun.token-permanents': permanent((e) => `${cap(e)} have haste.`),
+  // D-1122: "Zombie tokens you control".
+  'noun.subtype-token-permanents': permanent((e) => `${cap(e)} have haste.`),
   // Stage P63 (D-216): the Vraska EDHREC deck.
   'condition.created-token': permanent(
     (e) => `At the beginning of each end step, if ${e}, you gain 1 life.`,

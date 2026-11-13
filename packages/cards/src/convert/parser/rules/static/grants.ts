@@ -370,8 +370,13 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     "Juggernauts you control can't be blocked by Walls.",
     'Creatures you control are Zombies in addition to their other creature types.',
     'Creature tokens you control have haste.',
+    'Zombie tokens you control have hexproof and menace.',
+    'Zombie tokens you control get +1/+1.',
   ],
   rejects: [
+    'Zombie tokens you control have flash.',
+    'Zombie token you control has haste.',
+    'Treasure tokens you control have haste.',
     'Creatures you control gets +1/+1.',
     'Creatures you control get +1/+1',
     'Creatures you control get +1/+1 until end of turn.',
@@ -396,6 +401,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
       'noun.all-permanents',
       // Stage P64 (D-217): "Creature tokens you control have haste."
       'noun.token-permanents',
+      // D-1122: "Zombie tokens you control have hexproof and menace."
+      'noun.subtype-token-permanents',
     ],
     'plural',
   ),

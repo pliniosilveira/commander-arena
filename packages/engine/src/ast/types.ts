@@ -2035,6 +2035,14 @@ export type Effect =
    */
   | { readonly kind: 'empowerJace'; readonly amount: number }
   /**
+   * "Amass Zombies 1" (CR 701.47a, D-1120): "If you don't control an Army creature, create a 0/0 black Zombie Army creature token. Choose an Army creature you
+   * control. Put N +1/+1 counters on that creature. If it isn't a Zombie, it becomes a Zombie in addition to its other types." The controller of the effect is
+   * the player. The token is made as any token is (`makeSettled`: the replacement effects of its creation apply, so a doubler makes more Armies); with two or more
+   * Armies the controller is asked which one (a `choosePermanent` decision of purpose 'amass', not asked with one); the type it becomes lasts for good (CR 611.2a,
+   * 205.1b: a permanent continuous effect of layer 4). `subtype` is the creature type of the token and of the change; `count` is N, read as the effect runs.
+   */
+  | { readonly kind: 'amass'; readonly subtype: Subtype; readonly count: Amount }
+  /**
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
    * triggered this one (`triggerSubject`), that sacrifices it, by its controller, as the next combat ends. Only the effect of an inherent ability

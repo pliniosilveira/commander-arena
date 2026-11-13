@@ -28,6 +28,7 @@ import type {
   IrClause,
   IrColorSpec,
   IrDuration,
+  IrKeywordArg,
   IrNoun,
   IrTypeList,
   Span,
@@ -478,6 +479,11 @@ export const EFFECT_LEAD_BECOMES = defineRule<Clauses>({
  * (stage P48, D-205, CR 611.2a, 613.1d, 613.4b, 205.1b): the duration first, then what `effect.becomes` reads of a target. "An artifact creature"
  * keeps every type the permanent had (CR 205.1b), so an artifact that is no creature becomes one and a creature that is no artifact becomes both.
  * The same continuous effects as `effect.becomes`, said in the other order of words.
+ *
+ * D-1124 (CR 205.1b, 613.1d, 613.1f, 611.2a): "Until end of turn, target creature you control becomes an Avatar in addition to its other types and gains flying,
+ * first strike, lifelink, and hexproof." The creature types it becomes, in addition to the others, and then the keywords it gains: the same target for every part
+ * (one noun, one chosen target, CR 115.1), the same duration. Only after creature types said "in addition to its other types": "becomes an artifact creature and
+ * gains flying" and a replacing "becomes a Frog and gains flying" stay unread.
  */
 export const EFFECT_LEAD_BECOMES_TARGET = defineRule<Clauses>({
   id: 'effect.lead-becomes-target',
@@ -494,8 +500,17 @@ export const EFFECT_LEAD_BECOMES_TARGET = defineRule<Clauses>({
     'Until end of turn, target creature becomes an artifact creature',
     'Until end of turn, target creature becomes a blue Frog with base power and toughness 1/1',
     'Until end of turn, target creature becomes red',
+    'Until end of turn, target creature you control becomes an Avatar in addition to its other types and gains flying, first strike, lifelink, and hexproof',
+    'Until end of turn, target creature becomes a Wizard in addition to its other types and gains flying',
   ],
   rejects: [
+    'Until end of turn, target creature you control becomes an Avatar in addition to its other types and gains flying, first strike, lifelink, and hexproof until end of turn',
+    'Until end of turn, target creature you control becomes an Avatar and gains flying',
+    'Until end of turn, target creature you control becomes an Avatar in addition to its other types and gains',
+    'Until end of turn, target creature you control becomes an Avatar in addition to its other types and gains flying and draws a card',
+    'Until end of turn, target creature you control becomes an Avatar in addition to its other types and has flying',
+    'Until end of turn, target creature you control becomes an artifact creature in addition to its other types and gains flying',
+    'Until end of turn, target creature you control becomes red and gains flying',
     'Until end of turn, target artifact or creature becomes an artifact creature with base power and toughness 4/5 until end of turn',
     'Until end of turn target creature becomes an artifact creature',
     'Until your next turn, target creature becomes an artifact creature',
@@ -516,7 +531,25 @@ export const EFFECT_LEAD_BECOMES_TARGET = defineRule<Clauses>({
     )(ctx, pos);
     if (!r.ok) return r;
     const [duration, , subject, , what] = r.value;
-    return { ok: true, value: [{ ...becomesClause(rule, subject, what), duration }], pos: r.pos };
+    const becomes = becomesClause(rule, subject, what);
+    // D-1124: "... in addition to its other types and gains flying, first strike, lifelink, and hexproof": a grant of each keyword to the same subject.
+    const gains =
+      what.types !== null && what.types.additive === true && what.types.subtypes.length > 0
+        ? optional(
+            spanned(map(sequence(literal(' and gains '), KEYWORD_WORDS), ([, words]) => words)),
+            null,
+          )(ctx, r.pos)
+        : ({ ok: true, value: null, pos: r.pos } as const);
+    if (!gains.ok) return gains;
+    if (gains.value === null) return { ok: true, value: [{ ...becomes, duration }], pos: r.pos };
+    const span = gains.value.span;
+    const clauses: IrClause[] = [{ ...becomes, duration, connector: 'and' }];
+    gains.value.value.forEach((name, i, all) => {
+      const keyword: IrKeywordArg = { kind: 'keywordName', name, span, rule };
+      const grant = makeClause(rule, 'grantKeyword', { objects: subject, keyword }, span);
+      clauses.push({ ...grant, duration, ...(i < all.length - 1 ? { connector: 'and' } : {}) });
+    });
+    return { ok: true, value: clauses, pos: gains.pos };
   },
 });
 

@@ -140,6 +140,23 @@ export function pluralSubtype(subtype: string): string {
   return kept(`${word}s`);
 }
 
+/**
+ * "Zombie tokens you control", "creature tokens you control", "tokens you control" (D-1122, CR 111.1, 205.3m): a plural group of the tokens of one player, with at most one
+ * creature type or the card type creature and nothing else. Null for any other filter of tokens, which is not worded.
+ */
+function tokenGroup(filter: ObjectFilter, plural: boolean): string | null {
+  const { token: _token, zone, controller, types, subtypes, ...rest } = filter;
+  if (!plural || Object.keys(rest).length > 0 || (zone ?? 'battlefield') !== 'battlefield') {
+    return null;
+  }
+  if (controller !== 'you' && controller !== 'opponent') return null;
+  if (types !== undefined && subtypes !== undefined) return null;
+  if ((types?.length ?? 0) > 1 || (types !== undefined && types[0] !== 'creature')) return null;
+  if ((subtypes?.length ?? 0) > 1) return null;
+  const kind = subtypes?.[0] ?? types?.[0] ?? '';
+  return `${kind === '' ? '' : `${kind} `}tokens${controller === 'you' ? ' you control' : ' an opponent controls'}`;
+}
+
 /** The things a filter counts, "artifacts you control" (plural) or "artifact you control" (each). */
 export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | null {
   // D-139: "artifacts or enchantments you control", a union of card types and nothing else per member.
@@ -152,8 +169,8 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
     return thingsPhrase({ ...rest, types: anyOf.flatMap((m) => m.types ?? []) }, plural);
   }
   if (Object.keys(filter).some((k) => !COUNTABLE.has(k))) return null;
-  // "Tokens" as a counted noun is not worded yet (D-133): "nontoken" is.
-  if (filter.token === true) return null;
+  // "Tokens" as a counted noun is worded for one shape only (D-1122): "Zombie tokens you control", "creature tokens you control"; "nontoken" is worded below (D-133).
+  if (filter.token === true) return tokenGroup(filter, plural);
   const zone = filter.zone ?? 'battlefield';
   // D-145: a commander is worded on the battlefield only; a card of a commander in a graveyard or hand is not said.
   if (filter.commander === true && zone !== 'battlefield') return null;

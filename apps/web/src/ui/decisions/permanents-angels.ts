@@ -14,6 +14,7 @@ import type {
 import { PROLIFERATE_REMINDER } from '../../game/angels-text';
 import { type Index, nameOf, plural, seatLabel, stackName } from './lookup';
 import { legalNoun } from './permanents';
+import { AMASS_BADGE, amassPrompt, isAmass } from './permanents-amass';
 import { conniveOrderPrompt, isConniveOrder } from './permanents-connive';
 import { entersCopyPrompt, isEntersCopy } from './permanents-dragons';
 import { isRingBearer, RING_BEARER_BADGE, ringBearerPrompt } from './permanents-ring';
@@ -192,6 +193,8 @@ export function angelsPermanentPrompt(
     return entersCopyPrompt(decision, index, legalNoun(decision.legal, index));
   // D-196 (CR 701.54a): "Each time the Ring tempts you, choose a creature you control".
   if (isRingBearer(decision)) return ringBearerPrompt(decision, index);
+  // D-1123 (CR 701.47a): "Choose an Army creature you control".
+  if (isAmass(decision)) return amassPrompt(decision, index);
   // D-286 (CR 702.95a): "you may pair this creature with another unpaired creature you control".
   if (isSoulbond(decision)) return soulbondPrompt(decision, index);
   // D-216 (CR 701.26a): "Untap up to three lands."
@@ -210,6 +213,7 @@ export function angelsBadge(
   if (isAuraHost(decision)) return 'Enchant';
   if (isEntersCopy(decision)) return 'Copy';
   if (isRingBearer(decision)) return RING_BEARER_BADGE;
+  if (isAmass(decision)) return AMASS_BADGE;
   if (isSoulbond(decision)) return SOULBOND_BADGE;
   if (isUntapChoice(decision)) return UNTAP_CHOICE_BADGE;
   if (isConniveOrder(decision)) return 'Connives';

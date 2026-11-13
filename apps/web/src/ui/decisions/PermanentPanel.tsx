@@ -24,6 +24,7 @@ import {
   tapEffectOf,
   togglePermanent,
 } from './permanents';
+import { AMASS_TITLE, isAmass } from './permanents-amass';
 import { auraHostTitle, isAuraHost, isSpellTap, spellTapTitle } from './permanents-angels';
 import { entersCopyTitle, isEntersCopy } from './permanents-dragons';
 import { isRingBearer, RING_BEARER_TITLE } from './permanents-ring';
@@ -74,37 +75,41 @@ export function PermanentPanel({
   const soulbond = isSoulbond(decision);
   // D-216 (CR 701.26a): the permanents an effect untaps.
   const untapChoice = isUntapChoice(decision);
+  // D-1123 (CR 701.47a): the Army an amass puts its counters on.
+  const amass = isAmass(decision);
   const title = ring
     ? RING_BEARER_TITLE
-    : soulbond
-      ? SOULBOND_TITLE
-      : untapChoice
-        ? UNTAP_CHOICE_TITLE
-        : copy
-          ? entersCopyTitle(legalNoun(decision.legal, index))
-          : auraHost
-            ? auraHostTitle(decision, index)
-            : spellTap
-              ? spellTapTitle(decision, index)
-              : legend
-                ? 'Legend rule'
-                : fight
-                  ? fightTitle(decision, index)
-                  : crew
-                    ? `Crew ${vehicle}`
-                    : tap
-                      ? `Tap to pay for ${vehicle}`
-                      : bounce
-                        ? `Return to pay for ${vehicle}`
-                        : tapEffect
-                          ? `Tap for ${vehicle}`
-                          : effect
-                            ? `Choose for ${vehicle}`
-                            : isSpellCost(decision, index)
-                              ? `Sacrifice to cast ${vehicle}`
-                              : isDefendingSacrifice(decision, index)
-                                ? `Defending player sacrifices for ${vehicle}`
-                                : `Sacrifice ${decision.forCost === true ? 'to pay for' : 'for'} ${vehicle}`;
+    : amass
+      ? AMASS_TITLE
+      : soulbond
+        ? SOULBOND_TITLE
+        : untapChoice
+          ? UNTAP_CHOICE_TITLE
+          : copy
+            ? entersCopyTitle(legalNoun(decision.legal, index))
+            : auraHost
+              ? auraHostTitle(decision, index)
+              : spellTap
+                ? spellTapTitle(decision, index)
+                : legend
+                  ? 'Legend rule'
+                  : fight
+                    ? fightTitle(decision, index)
+                    : crew
+                      ? `Crew ${vehicle}`
+                      : tap
+                        ? `Tap to pay for ${vehicle}`
+                        : bounce
+                          ? `Return to pay for ${vehicle}`
+                          : tapEffect
+                            ? `Tap for ${vehicle}`
+                            : effect
+                              ? `Choose for ${vehicle}`
+                              : isSpellCost(decision, index)
+                                ? `Sacrifice to cast ${vehicle}`
+                                : isDefendingSacrifice(decision, index)
+                                  ? `Defending player sacrifices for ${vehicle}`
+                                  : `Sacrifice ${decision.forCost === true ? 'to pay for' : 'for'} ${vehicle}`;
   const cause = sacrificeCause(decision, index, view.viewer);
   return (
     <section
@@ -112,27 +117,29 @@ export function PermanentPanel({
       aria-label={
         ring
           ? 'Creatures to be the Ring-bearer'
-          : soulbond
-            ? 'Creatures to pair'
-            : untapChoice
-              ? 'Permanents to untap'
-              : copy
-                ? 'Permanents to copy'
-                : auraHost
-                  ? 'Permanents to enchant'
-                  : legend
-                    ? 'Legend rule'
-                    : fight
-                      ? 'Creatures to fight'
-                      : crew
-                        ? title
-                        : tap || tapEffect
-                          ? 'Permanents to tap'
-                          : bounce
-                            ? 'Permanents to return'
-                            : effect
-                              ? 'Permanents to choose'
-                              : 'Permanents to sacrifice'
+          : amass
+            ? 'Armies to amass on'
+            : soulbond
+              ? 'Creatures to pair'
+              : untapChoice
+                ? 'Permanents to untap'
+                : copy
+                  ? 'Permanents to copy'
+                  : auraHost
+                    ? 'Permanents to enchant'
+                    : legend
+                      ? 'Legend rule'
+                      : fight
+                        ? 'Creatures to fight'
+                        : crew
+                          ? title
+                          : tap || tapEffect
+                            ? 'Permanents to tap'
+                            : bounce
+                              ? 'Permanents to return'
+                              : effect
+                                ? 'Permanents to choose'
+                                : 'Permanents to sacrifice'
       }
     >
       <h3 className="dec-panel-title">{title}</h3>

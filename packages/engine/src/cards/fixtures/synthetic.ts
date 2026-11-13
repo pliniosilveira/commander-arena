@@ -54,6 +54,7 @@ import { SYNTHETIC_FREE_CAST_LIST } from './synthetic-free-cast';
 import { SYNTHETIC_GIFT_LIST } from './synthetic-gift';
 import { SYNTHETIC_GRAVEYARD_LIST } from './synthetic-graveyard';
 import { SYNTHETIC_GREATEST_LIST } from './synthetic-greatest';
+import { SYNTHETIC_HASHATON_GROUP_4_LIST } from './synthetic-hashaton-group-4';
 import { SYNTHETIC_HOFRI_LIST } from './synthetic-hofri';
 import { SYNTHETIC_KEYWORD_LIST } from './synthetic-keywords';
 import { SYNTHETIC_KEYWORD2_LIST } from './synthetic-keywords-2';
@@ -366,6 +367,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_NIV_GROUP_3_A_LIST,
   ...SYNTHETIC_NIV_GROUP_3_B_LIST,
   ...SYNTHETIC_NIV_GROUP_3_C_LIST,
+  ...SYNTHETIC_HASHATON_GROUP_4_LIST,
   ...SYNTHETIC_UNTIL_LEAVES_LIST,
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
   ...SYNTHETIC_HOFRI_LIST,

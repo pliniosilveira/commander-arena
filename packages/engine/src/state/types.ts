@@ -909,6 +909,19 @@ export type Instruction =
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
+   * "Amass Zombies N" (`amass`, CR 701.47a, D-1120): the controller creates a 0/0 black `subtype` Army creature token if they control no Army creature, chooses an
+   * Army creature they control (a `choosePermanent` decision of purpose 'amass', asked only with two or more), puts `amount` +1/+1 counters on it and, if it is not
+   * a `subtype`, it becomes one in addition to its other types for good. `chosen` is the answer, null until then. See rules/amass.ts.
+   */
+  | {
+      readonly kind: 'amass';
+      readonly subtype: Subtype;
+      readonly amount: number;
+      /** The token (if one was to be made) has been made: the instruction is at the choice of the Army. */
+      readonly made?: true;
+      readonly chosen: readonly ObjectId[] | null;
+    }
+  /**
    * Permanents instructed to connive at the same time (`connive`, CR 701.50c, D-223): `pending` are the ones still to connive, each with the player who
    * controls it (or last controlled it, if it is no longer on the battlefield: CR 701.50b). The first player in APNAP order who controls one or more of them
    * chooses one of them (a `choosePermanent` decision of purpose 'conniveOrder', asked only when that player has more than one) and it connives: its controller
