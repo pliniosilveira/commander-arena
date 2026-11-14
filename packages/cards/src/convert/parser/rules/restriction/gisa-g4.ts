@@ -1,5 +1,5 @@
 /**
- * Restriction rules of group 4 of the Gisa deck (issue 41, D-1433): "Activate only during your turn." (Tetzimoc, Primal Death). The other restrictions are `restriction.sorcery`,
+ * Restriction rules of group 4 of the Gisa deck (issue 41, D-462): "Activate only during your turn." (Tetzimoc, Primal Death). The other restrictions are `restriction.sorcery`,
  * `restriction.if` and `restriction.once-each-turn`.
  */
 import { literal } from '../../combinators';

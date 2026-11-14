@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 4: Whip of Erebos' reanimation (D-1430): "{2}{B}{B}, {T}: Return target creature card from your graveyard to the battlefield. It gains haste.
+// The Gisa deck (issue 41), group 4: Whip of Erebos' reanimation (D-459): "{2}{B}{B}, {T}: Return target creature card from your graveyard to the battlefield. It gains haste.
 // Exile it at the beginning of the next end step. If it would leave the battlefield, exile it instead of putting it anywhere else. Activate only as a sorcery."
 // Pins: CR 602.2 and 113.6b (an activated ability uses the stack), CR 602.5d (sorcery speed), CR 400.7 and 400.7j (the card returns as a new object, which "it" names), CR 611.2a and
 // 613.1f (an effect with no duration: haste for good), CR 603.7 and 603.7c (a delayed triggered ability about that object only), CR 614.1a and 614.6 (the "exile instead" replacement of
@@ -417,7 +417,7 @@ describe('"If it would leave the battlefield, exile it instead of putting it any
   });
 });
 
-describe('what the validation refuses (D-1430)', () => {
+describe('what the validation refuses (D-459)', () => {
   test('exileIfLeaves needs an effect before it that moved the objects, and only names them', () => {
     const base = syntheticCard(WHIP);
     const face = base.faces[0];

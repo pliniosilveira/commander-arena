@@ -857,7 +857,7 @@ export const EFFECT_UNTAP = tapRule('untap');
 export const EFFECT_RULES = [
   // D-438, D-439 (Feather, group 3): the copies for each other creature and the exile as a spell resolves start like a plain copy, a plain exile and "that player ...", and are tried first.
   ...FEATHER_G3_EFFECT_RULES,
-  // Gisa deck, group 4 (issue 41, D-1430, D-1431): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
+  // Gisa deck, group 4 (issue 41, D-459, D-460): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
   // exile and a plain put, and "It gains haste." like a gain: tried first.
   ...GISA_G4_EFFECT_RULES,
   EFFECT_DAMAGE,

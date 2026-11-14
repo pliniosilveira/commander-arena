@@ -655,7 +655,7 @@ export type IrCost = IrNode &
     | { readonly kind: 'exile'; readonly what: IrNoun }
     // "Discard this card" (stage P68, D-229, CR 701.9, 113.6b): the card itself, from the hand; "Exile ~" (CR 118.1): the permanent itself
     | { readonly kind: 'discardThis' }
-    // "Reveal this card from your hand" (Gisa deck, group 4, D-1433, CR 701.20a, 113.6b): the card itself is shown, from the hand
+    // "Reveal this card from your hand" (Gisa deck, group 4, D-462, CR 701.20a, 113.6b): the card itself is shown, from the hand
     | { readonly kind: 'revealThis' }
     | { readonly kind: 'exileThis' }
     // "Mill a card" (stage P51, D-208, CR 701.17): the cost of a mana ability
@@ -1178,7 +1178,7 @@ export type IrStaticEffect =
   | { readonly kind: 'costReduction'; readonly amount: IrAmount }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off
   | { readonly kind: 'abilityCostReduction'; readonly amount: number }
-  // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa deck, group 4, D-1432, CR 601.2f, 118.7, 113.6b): the generic mana taken off
+  // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa deck, group 4, D-461, CR 601.2f, 118.7, 113.6b): the generic mana taken off
   // the abilities of the cards of these card types in the graveyard of the controller
   | {
       readonly kind: 'graveyardAbilityCostReduction';

@@ -1375,7 +1375,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DANITHA_G2_LOWERINGS,
   // D-445: "Monstrosity 5".
   ...FEATHER_G2_LOWERINGS,
-  // D-1430, D-1431: "It gains haste.", "Exile it at the beginning of the next end step.", "If it would leave the battlefield, exile it instead ...", "Put each creature card exiled with ~ onto the battlefield ...".
+  // D-459, D-460: "It gains haste.", "Exile it at the beginning of the next end step.", "If it would leave the battlefield, exile it instead ...", "Put each creature card exiled with ~ onto the battlefield ...".
   ...GISA_G4_LOWERINGS,
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,

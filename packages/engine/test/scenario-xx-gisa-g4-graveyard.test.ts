@@ -1,9 +1,9 @@
 // The Gisa deck (issue 41), group 4: the abilities of cards outside the battlefield and the exile "with" a permanent.
-//  - Embalmer's Tools (D-1432): "Activated abilities of creature cards in your graveyard cost {1} less to activate." CR 601.2f, 118.7 (a reduction takes generic mana off the total
+//  - Embalmer's Tools (D-461): "Activated abilities of creature cards in your graveyard cost {1} less to activate." CR 601.2f, 118.7 (a reduction takes generic mana off the total
 //    cost), 113.6b (an ability of a card in a graveyard works only if it says so: Unearth), 602.2b (an ability is activated as a spell is cast).
-//  - Tetzimoc, Primal Death (D-1433): "{B}, Reveal this card from your hand: Put a prey counter on target creature. Activate only during your turn." CR 701.20a (reveal), 113.6b,
+//  - Tetzimoc, Primal Death (D-462): "{B}, Reveal this card from your hand: Put a prey counter on target creature. Activate only during your turn." CR 701.20a (reveal), 113.6b,
 //    602.2, 602.5b (a restriction on activating, here the turn); "When this creature enters, destroy each creature your opponents control with a prey counter on it."
-//  - Ghost Vacuum (D-1431): "{T}: Exile target card from a graveyard." and "{6}, {T}, Sacrifice this artifact: Put each creature card exiled with this artifact onto the battlefield under
+//  - Ghost Vacuum (D-460): "{T}: Exile target card from a graveyard." and "{6}, {T}, Sacrifice this artifact: Put each creature card exiled with this artifact onto the battlefield under
 //    your control with a flying counter on it. Each of them is a 1/1 Spirit in addition to its other types. Activate only as a sorcery." CR 607.2a (linked abilities), 113.7a (the
 //    permanent that was sacrificed as a cost is read from its last-known information), 122.1b (flying counter), 613.1d and 613.4b (the Spirit and the 1/1), 205.1b.
 // The cards are the SYNTHETIC siblings of the real ones (src/cards/fixtures/synthetic-gisa-g4.ts), which have the same abilities as the real cards; the real cards are read by the
@@ -389,7 +389,7 @@ describe('Ghost Vacuum: the creature cards exiled with it come back as 1/1 Spiri
   });
 });
 
-describe('what the validation refuses (D-1431 to D-1433)', () => {
+describe('what the validation refuses (D-460 to D-462)', () => {
   const faceOf = (name: string) => {
     const face = syntheticCard(name).faces[0];
     if (face === undefined) throw new Error('no face');

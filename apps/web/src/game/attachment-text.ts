@@ -95,7 +95,7 @@ export const thisEnteredWords = (negate: boolean): string =>
   `this permanent ${negate ? "didn't enter" : 'entered'} this turn`;
 
 /**
- * "Activated abilities of creature cards in your graveyard cost {1} less to activate" (D-1432, CR 601.2f, 113.6b): the reduction of the abilities of the cards of a kind in the
+ * "Activated abilities of creature cards in your graveyard cost {1} less to activate" (D-461, CR 601.2f, 113.6b): the reduction of the abilities of the cards of a kind in the
  * graveyard of the controller. Null for a filter the words do not say (another zone, another controller, another field).
  */
 function graveyardReductionWording(

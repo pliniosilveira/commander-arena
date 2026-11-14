@@ -190,7 +190,7 @@ function targetText(spec: TargetSpec | undefined): string {
         const { controller } = spec.what.filter;
         const whose =
           controller === 'you' ? 'your' : controller === 'opponent' ? "an opponent's" : 'a';
-        // D-1431: a card of any kind ("Exile target card from a graveyard", Ghost Vacuum) is "card", not "permanent card".
+        // D-460: a card of any kind ("Exile target card from a graveyard", Ghost Vacuum) is "card", not "permanent card".
         const { types, subtypes, anyOf, commander } = spec.what.filter;
         const any =
           types === undefined &&
@@ -614,7 +614,7 @@ function moveText(
   if (objects.kind === 'this' && self === 'card' && effect.to === 'hand') {
     return 'Return this card from your graveyard to your hand';
   }
-  // D-1431 (CR 607.2a, 110.2a, 122.6): "Put each creature card exiled with this artifact onto the battlefield under your control with a flying counter on it".
+  // D-460 (CR 607.2a, 110.2a, 122.6): "Put each creature card exiled with this artifact onto the battlefield under your control with a flying counter on it".
   if (
     objects.kind === 'linkedExile' &&
     objects.filter !== undefined &&
@@ -1122,7 +1122,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return delayedCastWords(/\bspells?$/.test(spell) ? spell : `${spell} spell`, inner);
     }
     case 'exileIfLeaves':
-      // D-1430 (CR 614.1a): the replacement of the permanent an earlier instruction put onto the battlefield (Whip of Erebos).
+      // D-459 (CR 614.1a): the replacement of the permanent an earlier instruction put onto the battlefield (Whip of Erebos).
       return `If ${object(effect.objects)} would leave the battlefield, exile it instead of putting it anywhere else`;
     case 'delayedTrigger': {
       // D-151 (CR 603.7): "At the beginning of your next end step, this creature deals 2 damage to each opponent for each of those cards".
@@ -1135,7 +1135,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       const kinds = [...(effect.subtypes ?? []), ...(effect.types ?? [])];
       if (effect.additive !== true || kinds.length === 0) return UNSAID;
       const noun = kinds.join(' ');
-      // D-1431 (CR 613.1d, 613.4b, 611.2a): "Each of them is a 1/1 Spirit in addition to its other types", for good: the base power and toughness are said too.
+      // D-460 (CR 613.1d, 613.4b, 611.2a): "Each of them is a 1/1 Spirit in addition to its other types", for good: the base power and toughness are said too.
       if (effect.basePt !== undefined && effect.duration === 'permanent') {
         const size = `${effect.basePt.power}/${effect.basePt.toughness}`;
         return `${capital(object(effect.objects))} is a ${size} ${noun} in addition to its other types`;

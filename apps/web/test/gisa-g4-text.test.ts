@@ -1,5 +1,5 @@
 /**
- * The words of group 4 of the Gisa deck (D-1430 to D-1433) as pure models: the reanimation with a delayed exile and the replacement (Whip of Erebos), the reduction of the
+ * The words of group 4 of the Gisa deck (D-459 to D-462) as pure models: the reanimation with a delayed exile and the replacement (Whip of Erebos), the reduction of the
  * abilities of the creature cards in your graveyard (Embalmer's Tools), the ability that works from the hand with a reveal cost (Tetzimoc) and the linked exile that comes back as
  * Spirits (Ghost Vacuum). Read from the engine's SYNTHETIC cards, so a wording that drifts from the AST fails here. No DOM.
  */

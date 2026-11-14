@@ -1,4 +1,4 @@
-// Slice soak (D-1430 to D-1433): whole games with the 'gisaG4' deck style (SYNTHETIC cards of the engine fixtures `synthetic-gisa-g4.ts`: a Whip that returns a creature card from the
+// Slice soak (D-459 to D-462): whole games with the 'gisaG4' deck style (SYNTHETIC cards of the engine fixtures `synthetic-gisa-g4.ts`: a Whip that returns a creature card from the
 // graveyard with haste and a delayed exile, the Tools that make the abilities of creature cards in your graveyard cost {1} less, a creature with an ability that works from the hand with
 // a reveal cost, and a Vacuum with a linked exile that is sacrificed to put the creature cards back as 1/1 Spirits) between random agents, with CasualAgent and HeuristicAgent in some
 // seats. Every game finishes with a result, no fallback, no rejected action and consistent state after every action; the action log replays to the same final state; and, with the

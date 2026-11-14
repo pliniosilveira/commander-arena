@@ -80,7 +80,7 @@ const ACTIVATED_MAY_CAST_RIDER =
 
 /**
  * "{2}{B}{B}, {T}: Return target creature card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step. If it would leave the battlefield,
- * exile it instead of putting it anywhere else. Activate only as a sorcery." (Gisa deck, group 4, D-1430, Whip of Erebos): an activated ability whose last sentence says a replacement
+ * exile it instead of putting it anywhere else. Activate only as a sorcery." (Gisa deck, group 4, D-459, Whip of Erebos): an activated ability whose last sentence says a replacement
  * effect of the permanent its first sentence put onto the battlefield; read before the replacement test below, which "would ... instead" would take.
  */
 const LEAVE_EXILE_RIDER =

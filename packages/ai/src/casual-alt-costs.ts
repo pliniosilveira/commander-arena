@@ -183,7 +183,7 @@ export function wantsUnearth(view: GameView, card: ObjectView): boolean {
 }
 
 /**
- * Whether an ability is a one-turn reanimation (D-1430, Whip of Erebos): it returns a creature card from a graveyard to the battlefield, which is exiled at the end step and if it
+ * Whether an ability is a one-turn reanimation (D-459, Whip of Erebos): it returns a creature card from a graveyard to the battlefield, which is exiled at the end step and if it
  * would leave the battlefield (a sequence with the move, `exileIfLeaves` and the delayed exile), as Unearth does for the card itself.
  */
 export function isOneTurnReanimation(ability: ActivatedAbility): boolean {
@@ -196,7 +196,7 @@ export function isOneTurnReanimation(ability: ActivatedAbility): boolean {
 }
 
 /**
- * Whether the agent reanimates for one turn now (D-1430): a creature card of its own graveyard would attack safely (`wantsUnearth`: the same test, the same first main phase),
+ * Whether the agent reanimates for one turn now (D-459): a creature card of its own graveyard would attack safely (`wantsUnearth`: the same test, the same first main phase),
  * since the creature goes away at the end step, so it is worth the mana only as an attacker.
  */
 export function wantsOneTurnReanimation(view: GameView): boolean {

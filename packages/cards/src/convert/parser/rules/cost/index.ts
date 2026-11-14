@@ -822,7 +822,7 @@ export const COST_RULES = [
   COST_DISCARD_FILTERED,
   // Stage P68 (D-229): "Discard this card", "Exile ~".
   ...HOFRI_COST_RULES,
-  // Gisa deck, group 4 (D-1433): "Reveal this card from your hand".
+  // Gisa deck, group 4 (D-462): "Reveal this card from your hand".
   ...GISA_G4_COST_RULES,
   COST_MILL,
   COST_ENERGY,

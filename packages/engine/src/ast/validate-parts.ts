@@ -901,7 +901,7 @@ export function checkRef(
           "'linkedExile' is only valid in abilities of a permanent with a linked exile",
         );
       }
-      // D-1431: "each creature card exiled with this artifact": the cards of the link a filter of cards in exile describes.
+      // D-460: "each creature card exiled with this artifact": the cards of the link a filter of cards in exile describes.
       if (ref.filter !== undefined) {
         checkFilter(ref.filter, `${path}.filter`, out);
         if (
@@ -1720,7 +1720,7 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       // D-185: no operand; where it may stand is checked with the ability (`checkActivationCosts`).
       break;
     case 'revealThis':
-      // D-1433 (CR 701.20a): no operand; paid from the hand (`checkActivationCosts`).
+      // D-462 (CR 701.20a): no operand; paid from the hand (`checkActivationCosts`).
       break;
     case 'discardThis':
       // D-179: the engine marks the cost of a cycling ability itself; a card does not say that its own discard is a cycling.
@@ -3515,7 +3515,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'exileIfLeaves':
-      // CR 614.1a (D-1430): the object is what the effect before it put onto the battlefield.
+      // CR 614.1a (D-459): the object is what the effect before it put onto the battlefield.
       if (kindOf(e.objects) !== 'moved') {
         issue(
           out,

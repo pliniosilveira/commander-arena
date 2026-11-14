@@ -35,7 +35,7 @@ export function adjustedAbility(
   ability: ActivatedAbility,
 ): ActivatedAbility {
   const worked = ability.cost.some((c) => c.kind === 'payLife' && typeof c.amount !== 'number');
-  // D-1432: the reduction of a permanent's static ability for the activated abilities of cards in a graveyard.
+  // D-461: the reduction of a permanent's static ability for the activated abilities of cards in a graveyard.
   const byStatics = objectsReductionFor(state, source);
   if (
     !worked &&
@@ -65,7 +65,7 @@ export function adjustedAbility(
 }
 
 /**
- * "Activated abilities of creature cards in your graveyard cost {1} less to activate" (D-1432, CR 601.2f, 118.7): how much the generic mana of an ability of `source`, a card
+ * "Activated abilities of creature cards in your graveyard cost {1} less to activate" (D-461, CR 601.2f, 118.7): how much the generic mana of an ability of `source`, a card
  * in a graveyard, goes down, from the permanents with an `abilityCostReduction` of `ofObjects` whose filter matches the card (the permanent that has the static ability is the
  * source and its controller is "you", so `controller: 'you'` is its controller's graveyard). The reductions of several permanents add up. 0 for anything on the battlefield.
  */

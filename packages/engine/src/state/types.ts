@@ -159,7 +159,7 @@ export interface GameObject {
    */
   readonly monstrous?: true;
   /**
-   * "If it would leave the battlefield, exile it instead of putting it anywhere else" (CR 614.1a, 614.6, D-1430), set by the effect `exileIfLeaves` on the permanent an earlier
+   * "If it would leave the battlefield, exile it instead of putting it anywhere else" (CR 614.1a, 614.6, D-459), set by the effect `exileIfLeaves` on the permanent an earlier
    * effect put onto the battlefield (Whip of Erebos): it is exiled instead of going to any other zone, whatever its abilities. Not a copiable value; a new object after any
    * zone change (CR 400.7) has none.
    */

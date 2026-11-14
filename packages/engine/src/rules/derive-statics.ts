@@ -140,7 +140,7 @@ export interface AbilityReductionSource {
   readonly object: GameObject;
   /** The Equip abilities that target an object this matches (D-425); absent for a reduction of the abilities of some objects. */
   readonly targeting?: ObjectFilter;
-  /** The objects whose activated abilities cost less, cards in a graveyard (D-1432); absent for an Equip reduction. */
+  /** The objects whose activated abilities cost less, cards in a graveyard (D-461); absent for an Equip reduction. */
   readonly objects?: ObjectFilter;
   readonly amount: Amount;
 }

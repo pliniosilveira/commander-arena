@@ -39,7 +39,7 @@
  * - "{4}, {T}: Target creature can't be blocked this turn" (casual-evasion.ts) in the precombat main
  *   phase when a creature of ours could attack and the opponent has something that could block it.
  *
- * - A one-turn reanimation (D-1430, "Return target creature card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step. ...",
+ * - A one-turn reanimation (D-459, "Return target creature card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step. ...",
  *   Whip of Erebos): in the first main phase, when a creature card of our graveyard would attack safely (`wantsUnearth`'s test), casual-alt-costs.ts.
  *
  * - A loyalty ability of a planeswalker of ours (D-203, CR 606), once a turn, by a small rule (casual-loyalty.ts).
@@ -241,7 +241,7 @@ export function chooseActivation(
   });
   if (unearth !== undefined) return act(unearth);
 
-  // A one-turn reanimation of a permanent of ours (D-1430, Whip of Erebos): the same test as Unearth's, for a creature card that waits in the graveyard.
+  // A one-turn reanimation of a permanent of ours (D-459, Whip of Erebos): the same test as Unearth's, for a creature card that waits in the graveyard.
   const whip = fresh.find((o) => {
     const obj = findObject(view, o.object);
     const ability = obj?.activated?.find((a) => a.abilityIndex === o.abilityIndex)?.ability;

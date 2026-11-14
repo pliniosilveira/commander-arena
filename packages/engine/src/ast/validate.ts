@@ -983,7 +983,7 @@ function checkActivationCosts(
     if (kind === 'discardThis' && !fromHand) {
       issue(out, `${path}.cost[${i}]`, "discardThis needs functionsIn: 'hand'");
     }
-    // D-1433 (CR 701.20a): "Reveal this card from your hand" is paid from the hand.
+    // D-462 (CR 701.20a): "Reveal this card from your hand" is paid from the hand.
     if (kind === 'revealThis' && !fromHand) {
       issue(out, `${path}.cost[${i}]`, "revealThis needs functionsIn: 'hand'");
     }

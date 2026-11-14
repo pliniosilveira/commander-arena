@@ -127,7 +127,7 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       // CR 701.9, 113.6b (stage P68, D-229): the card itself, from the hand: the cost of an ordinary activated ability, which then works from the hand.
       return options.ordinary === true ? ok({ kind: 'discardThis' }) : failure(cost);
     case 'revealThis':
-      // CR 701.20a, 113.6b (Gisa deck, group 4, D-1433): the card itself is shown from the hand: the cost of an ordinary activated ability, which then works from the hand.
+      // CR 701.20a, 113.6b (Gisa deck, group 4, D-462): the card itself is shown from the hand: the cost of an ordinary activated ability, which then works from the hand.
       return options.ordinary === true ? ok({ kind: 'revealThis' }) : failure(cost);
     case 'exileThis':
       // CR 118.1, 406.1 (stage P68, D-229): the permanent with the ability exiles itself, a cost of an ordinary activated ability.

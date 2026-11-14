@@ -563,7 +563,7 @@ export function resolveObjects(
         ctx.source === null
           ? undefined
           : (state.objects[ctx.source] ?? state.lki[ctx.source]?.object);
-      // D-1431: "each creature card exiled with this artifact": the cards a filter of cards describes, among those.
+      // D-460: "each creature card exiled with this artifact": the cards a filter of cards describes, among those.
       const filter = selector.filter;
       return (source?.linkedExile ?? []).filter((id) => {
         const card = state.objects[id];

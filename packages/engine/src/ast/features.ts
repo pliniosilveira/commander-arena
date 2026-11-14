@@ -256,7 +256,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-201: "You get an emblem with ..." (CR 114).
     'createEmblem',
     'delayedSacrifice',
-    // D-1430: "If it would leave the battlefield, exile it instead of putting it anywhere else" (CR 614.1a).
+    // D-459: "If it would leave the battlefield, exile it instead of putting it anywhere else" (CR 614.1a).
     'exileIfLeaves',
     // D-145: "reveal cards from the top of your library until you reveal a land card. Put it onto the battlefield tapped and the rest
     // on the bottom in a random order" (CR 701.20).
@@ -545,7 +545,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrifice',
     'removeCounters',
     'discardThis',
-    // D-1433: "Reveal this card from your hand" as the cost of an ability that functions from the hand (CR 701.20a).
+    // D-462: "Reveal this card from your hand" as the cost of an ability that functions from the hand (CR 701.20a).
     'revealThis',
     'discard',
     'tapCreatures',

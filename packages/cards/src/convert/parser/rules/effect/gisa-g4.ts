@@ -1,5 +1,5 @@
 /**
- * Effect rules of group 4 of the Gisa deck (issue 41, D-1430, D-1431): the sentences after "Return target creature card from your graveyard to the battlefield." of Whip of
+ * Effect rules of group 4 of the Gisa deck (issue 41, D-459, D-460): the sentences after "Return target creature card from your graveyard to the battlefield." of Whip of
  * Erebos ("It gains haste. Exile it at the beginning of the next end step. If it would leave the battlefield, exile it instead of putting it anywhere else.") and the effect of
  * Ghost Vacuum ("Put each creature card exiled with ~ onto the battlefield under your control with a flying counter on it."; its next sentence, "Each of them is a 1/1 Spirit in
  * addition to its other types.", is `effect.becomes-in-addition` of the Hofri deck). Every sentence is about the objects the instruction before it put onto the battlefield, which the

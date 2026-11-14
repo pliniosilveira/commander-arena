@@ -2822,7 +2822,7 @@ export const FEATHER_G3_LANDS = supported([
 ]);
 
 /**
- * The SYNTHETIC cards of group 4 of the Gisa deck (D-1430 to D-1433): a Whip that returns a creature card from the graveyard with haste, exiles it at the end step and exiles it
+ * The SYNTHETIC cards of group 4 of the Gisa deck (D-459 to D-462): a Whip that returns a creature card from the graveyard with haste, exiles it at the end step and exiles it
  * instead of letting it leave (a target in the graveyard, a delayed trigger and a replacement), an artifact that makes the activated abilities of creature cards in your graveyard cost
  * {1} less, a creature whose ability works from the hand (a reveal cost, only in its controller's turn) and whose enters trigger destroys the creatures with its counter, and a Vacuum
  * that exiles a card with a linked ability and is sacrificed to put the creature cards it exiled onto the battlefield as 1/1 Spirits with flying counters. They put abilities from the
@@ -2862,7 +2862,7 @@ export const GISA_G4_LANDS = supported([
   'Forest',
 ]);
 
-/** Style pairs of the Gisa group 4 soak test (D-1430 to D-1433): a mirror match and both mixed ways. */
+/** Style pairs of the Gisa group 4 soak test (D-459 to D-462): a mirror match and both mixed ways. */
 export const GISA_G4_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['gisaG4', 'gisaG4'],
   ['gisaG4', 'spells'],
@@ -3639,7 +3639,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
   // The Feather group 1 cards (D-451) ask which color to protect from as a spell resolves: a style of their own.
   .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
-  // The Gisa group 4 cards (D-1430 to D-1433) have abilities that work from the hand and from graveyards, targets in graveyards and delayed exiles: a style of their own.
+  // The Gisa group 4 cards (D-459 to D-462) have abilities that work from the hand and from graveyards, targets in graveyards and delayed exiles: a style of their own.
   .filter((card) => !(GISA_G4_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))

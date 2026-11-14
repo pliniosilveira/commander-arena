@@ -655,7 +655,7 @@ export type ObjectRef =
   | {
       readonly kind: 'linkedExile';
       /**
-       * "Put each creature card exiled with this artifact onto the battlefield" (D-1431, CR 607.2a): only the linked cards a filter of cards in exile matches
+       * "Put each creature card exiled with this artifact onto the battlefield" (D-460, CR 607.2a): only the linked cards a filter of cards in exile matches
        * (card types, subtypes, colors, mana value; no zone, controller or owner). Left out: all of them.
        */
       readonly filter?: ObjectFilter;
@@ -917,7 +917,7 @@ export type Cost =
    */
   | { readonly kind: 'discardThis'; readonly cycling?: true }
   /**
-   * "Reveal this card from your hand" (CR 701.20a, 118.1, D-1433): the source card is shown to every player as the cost is paid and stays in the hand, so
+   * "Reveal this card from your hand" (CR 701.20a, 118.1, D-462): the source card is shown to every player as the cost is paid and stays in the hand, so
    * the ability can be activated again. Only valid on an ability that functions in the hand (Tetzimoc, Primal Death). The event `cardsRevealed` tells the table what the
    * card is.
    */
@@ -2232,7 +2232,7 @@ export type Effect =
    */
   | { readonly kind: 'delayedSacrifice' }
   /**
-   * "If it would leave the battlefield, exile it instead of putting it anywhere else." (CR 614.1a, 614.6, D-1430): the second half of a reanimation like
+   * "If it would leave the battlefield, exile it instead of putting it anywhere else." (CR 614.1a, 614.6, D-459): the second half of a reanimation like
    * Whip of Erebos', after the effect of the same sequence that put the permanents onto the battlefield (`moveToZone`, `objects` is `moved`): each permanent it names that is
    * on the battlefield is marked (`GameObject.exileIfLeaves`), and from then on, whatever would move it from the battlefield to another zone moves it to exile instead
    * (destroyed, sacrificed, bounced, dying in combat: it never dies). It belongs to the object, not to an ability, so it holds when the permanent lost its abilities
@@ -4300,7 +4300,7 @@ export type StaticEffect =
       readonly amount: Amount;
     }
   /**
-   * "Activated abilities of creature cards in your graveyard cost {1} less to activate." (D-1432, CR 601.2f, 602.2b, 118.7, 113.6b): a static ability of a permanent on the
+   * "Activated abilities of creature cards in your graveyard cost {1} less to activate." (D-461, CR 601.2f, 602.2b, 118.7, 113.6b): a static ability of a permanent on the
    * battlefield that takes `amount` generic mana off the generic part of the first mana cost of every activated ability (not a mana ability) of an object `objects` describes, whoever
    * activates it. The object is a card in the graveyard (`zone` is `graveyard`, `controller: 'you'` is "your graveyard", relative to the controller of the permanent with this ability)
    * whose ability works there (Unearth, Encore, Eternalize, an ability that says it functions from the graveyard). Worked out as the ability is activated, with the other

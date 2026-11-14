@@ -116,6 +116,6 @@ export const STATIC_RULES = [
   ...HASHATON_G3_STATIC_RULES,
   // Issue 26 (the Danitha deck, D-428): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
   ...DANITHA_G3_STATIC_RULES,
-  // Issue 41 (the Gisa deck, D-1432): "Activated abilities of creature cards in your graveyard cost {1} less to activate."
+  // Issue 41 (the Gisa deck, D-461): "Activated abilities of creature cards in your graveyard cost {1} less to activate."
   ...GISA_G4_STATIC_RULES,
 ];

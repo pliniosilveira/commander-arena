@@ -325,7 +325,7 @@ export function checkAbilityCostReduction(
 }
 
 /**
- * D-1432, CR 601.2f, 118.7, 113.6b: "Activated abilities of creature cards in your graveyard cost {1} less to activate." `objects` describes the object with the ability, a card in
+ * D-461, CR 601.2f, 118.7, 113.6b: "Activated abilities of creature cards in your graveyard cost {1} less to activate." `objects` describes the object with the ability, a card in
  * the graveyard (the zone is named, the only one besides the battlefield where an ability works; `controller` is relative to the permanent with this ability); `amount` is read as
  * `costReduction`'s is.
  */

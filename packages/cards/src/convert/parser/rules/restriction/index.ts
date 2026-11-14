@@ -239,6 +239,6 @@ export const RESTRICTION_RULES = [
   RESTRICTION_COST_REDUCTION,
   RESTRICTION_COST_REDUCED_BY,
   ...FEATHER_G2_RESTRICTION_RULES,
-  // Gisa deck, group 4 (D-1433): "Activate only during your turn."
+  // Gisa deck, group 4 (D-462): "Activate only during your turn."
   ...GISA_G4_RESTRICTION_RULES,
 ];

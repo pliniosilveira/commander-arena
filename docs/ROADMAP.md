@@ -393,7 +393,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `effect.becomes` takes keywords after a color alone only ("becomes red and gains haste"); a creature type or a card type with keywords is read by the lead rules (`effect.lead-becomes`, `effect.lead-becomes-target`) in their own words. `effect.lead-double-pt` takes a target (not `~`'s power or a group) and the keywords of "it".
 - The rulings of the seven cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
 
-## The Gisa deck, group 4 (issue 41, D-1430 to D-1434, provisional numbers)
+## The Gisa deck, group 4 (issue 41, D-459 to D-463)
 
 - The delayed exile is "at the beginning of the next end step" only: "your next end step", another step and "Sacrifice it at the beginning of the next end step" are not read; "If it would leave the battlefield, exile it instead of putting it anywhere else" is read after an instruction that put the object onto the battlefield (not "would die", not "this turn", not a spell). The delayed ability of Whip of Erebos has the returned permanent as its source, so the stack shows it under the creature's name.
 - "It gains haste." with no duration is read for "it" after a move onto the battlefield only; "target creature gains flying" with no duration is not read.

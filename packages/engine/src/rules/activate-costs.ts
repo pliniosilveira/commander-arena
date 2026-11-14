@@ -46,7 +46,7 @@ export interface CostBreakdown {
   /** The counters put on the source as a cost (D-139, "Put a page counter on this artifact"). */
   readonly putCounters: readonly { readonly counter: string; readonly count: number }[];
   readonly discardThis: boolean;
-  /** "Reveal this card from your hand" (D-1433, CR 701.20a): the card is shown to every player as the cost is paid and stays in the hand. */
+  /** "Reveal this card from your hand" (D-462, CR 701.20a): the card is shown to every player as the cost is paid and stays in the hand. */
   readonly revealThis: boolean;
   /** The card itself is exiled from the graveyard (D-185, CR 702.141a: the cost of Encore) or, since D-229, the permanent from the battlefield ("Exile this artifact"). */
   readonly exileThis: boolean;
@@ -264,7 +264,7 @@ function immediateRefusal(
     }
   }
   if (costs.discardThis && source.zone !== 'hand') return 'the card is not in your hand';
-  // D-1433 (CR 701.20a): only a card in the hand can be revealed from it.
+  // D-462 (CR 701.20a): only a card in the hand can be revealed from it.
   if (costs.revealThis && source.zone !== 'hand') return 'the card is not in your hand';
   // D-185: "Exile this card from your graveyard" is paid from the graveyard; D-229: "Exile this artifact" from the battlefield.
   if (costs.exileThis && source.zone !== 'graveyard' && source.zone !== 'battlefield') {
@@ -350,7 +350,7 @@ export function payImmediateCosts(
     }
   }
   if (costs.revealThis) {
-    // CR 701.20a (D-1433): "Reveal this card from your hand": the card is shown to every player (the event is public) and stays where it is.
+    // CR 701.20a (D-462): "Reveal this card from your hand": the card is shown to every player (the event is public) and stays where it is.
     const card = state.objects[source];
     if (card?.card != null) {
       events.push({

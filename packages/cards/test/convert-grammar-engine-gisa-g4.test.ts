@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 4 (D-1430 to D-1433): the REAL Oracle text of Whip of Erebos, Embalmer's Tools, Tetzimoc, Primal Death and Ghost Vacuum (the corpus's golden.jsonl, taken
+// The Gisa deck (issue 41), group 4 (D-459 to D-462): the REAL Oracle text of Whip of Erebos, Embalmer's Tools, Tetzimoc, Primal Death and Ghost Vacuum (the corpus's golden.jsonl, taken
 // from the issue) goes through the grammar as a card with no override, is defined in an engine scenario and is played through applyAction, so the nodes the parser writes for the real
 // text are what the engine runs. The abilities of each real card are also the ones of its SYNTHETIC sibling of the engine fixtures (`synthetic-gisa-g4.ts`), which the engine tests and the
 // AI soak play. Pins: CR 603.7c (a delayed ability about the object), CR 614.1a (the exile instead), CR 601.2f and 113.6b (the reduction of the abilities of cards in a graveyard),

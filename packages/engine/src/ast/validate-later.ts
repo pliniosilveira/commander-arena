@@ -39,7 +39,7 @@ export function checkDelayedTrigger(
   // earlier effect of the same sequence exiled (`moved`), as it is when the ability is created. Only onto the battlefield and only that object.
   // D-284 (CR 603.7c, 400.7, 603.10a): in a "dies" trigger, "return it to the battlefield ... at the beginning of your next upkeep" is about the card
   // the creature became in the graveyard (`triggerCard`), as it is when the ability is created and only if it is still there when it triggers.
-  // D-1430 (CR 603.7c, 400.7j): "Exile it at the beginning of the next end step", about the permanents an earlier effect of the same sequence put onto the
+  // D-459 (CR 603.7c, 400.7j): "Exile it at the beginning of the next end step", about the permanents an earlier effect of the same sequence put onto the
   // battlefield (`moved`), as they are when the ability is created.
   if (kind === 'exile') {
     const exile = inner as Extract<Effect, { kind: 'exile' }>;

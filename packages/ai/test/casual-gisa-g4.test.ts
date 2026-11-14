@@ -1,4 +1,4 @@
-// CasualAgent and the one-turn reanimation of the Gisa deck (D-1430, Whip of Erebos), on real engine states built with the scenario DSL. The Whip returns a creature card from the
+// CasualAgent and the one-turn reanimation of the Gisa deck (D-459, Whip of Erebos), on real engine states built with the scenario DSL. The Whip returns a creature card from the
 // graveyard with haste and exiles it at the end step, so it is activated as Unearth is (`wantsUnearth`): in the first main phase, when the creature would attack safely or for the win,
 // and never otherwise. Every action the agent sends is one the engine lists.
 import type { Action } from '@commander-arena/engine';

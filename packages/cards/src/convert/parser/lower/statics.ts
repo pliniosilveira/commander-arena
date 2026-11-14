@@ -853,7 +853,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (Danitha group 3, D-428, CR 601.2f, 602.2b, 702.6a).
   if (first.kind === 'abilityCostReduction')
     return lowerAbilityCostReduction(ability, first, more.length, ctx);
-  // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa group 4, D-1432, CR 601.2f, 118.7, 113.6b).
+  // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa group 4, D-461, CR 601.2f, 118.7, 113.6b).
   if (first.kind === 'graveyardAbilityCostReduction')
     return lowerGraveyardAbilityCostReduction(ability, first, more.length);
   if (first.kind === 'additionalCost' || first.kind === 'freeCast') return failure(ability);

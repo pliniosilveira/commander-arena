@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 4 OF THE GISA DECK (ISSUE 41, D-1430 TO D-1433). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 4 OF THE GISA DECK (ISSUE 41, D-459 TO D-462). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the group added to the engine: a return from the graveyard with haste, a delayed exile and "If it would leave the battlefield, exile it instead"
  * (`delayedTrigger` of an `exile` of `moved`, `exileIfLeaves`, CR 603.7c, 614.1a), a static ability that reduces the cost of the activated abilities of the creature cards in a graveyard

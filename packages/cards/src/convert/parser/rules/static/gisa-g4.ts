@@ -1,5 +1,5 @@
 /**
- * Static statements of group 4 of the Gisa deck (issue 41, D-1432): "Activated abilities of creature cards in your graveyard cost {1} less to activate." (CR 601.2f, 118.7,
+ * Static statements of group 4 of the Gisa deck (issue 41, D-461): "Activated abilities of creature cards in your graveyard cost {1} less to activate." (CR 601.2f, 118.7,
  * 113.6b). The cost of an ability is reduced like the cost of a spell: only the generic mana, never below zero.
  */
 import { literal, pattern, sequence } from '../../combinators';

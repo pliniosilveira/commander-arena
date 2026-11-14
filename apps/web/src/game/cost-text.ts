@@ -201,7 +201,7 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
     case 'discardThis':
       return 'Discard this card';
     case 'revealThis':
-      // D-1433 (CR 701.20a): Tetzimoc's cost; the card stays in the hand.
+      // D-462 (CR 701.20a): Tetzimoc's cost; the card stays in the hand.
       return 'Reveal this card from your hand';
     case 'exileThis':
       // D-185 (CR 702.141a): the cost of Encore.

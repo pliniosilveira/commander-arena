@@ -1,5 +1,5 @@
 /**
- * Lowerings of group 4 of the Gisa deck (issue 41, D-1430 to D-1432): the sentences about "it" after a return from the graveyard (Whip of Erebos), the cards exiled with a
+ * Lowerings of group 4 of the Gisa deck (issue 41, D-459 to D-461): the sentences about "it" after a return from the graveyard (Whip of Erebos), the cards exiled with a
  * permanent put onto the battlefield (Ghost Vacuum) and the reduction of the cost of the abilities of cards in a graveyard (Embalmer's Tools). "It" is read only as the object the
  * instruction before it put onto the battlefield (`ctx.movedOnto`, the engine's `moved`); after anything else the sentence is not lowered (never guessed).
  */
@@ -134,7 +134,7 @@ function staticFailure(ability: Static, needs: LowerFailure['needs'] = []): Lowe
 }
 
 /**
- * "Activated abilities of creature cards in your graveyard cost {1} less to activate." (D-1432, CR 601.2f, 118.7, 113.6b): the engine's `abilityCostReduction` of the
+ * "Activated abilities of creature cards in your graveyard cost {1} less to activate." (D-461, CR 601.2f, 118.7, 113.6b): the engine's `abilityCostReduction` of the
  * abilities of the cards of the kind in the graveyard of the controller of the permanent. A statement with a condition, a second effect or a second subject is not this one.
  */
 export function lowerGraveyardAbilityCostReduction(

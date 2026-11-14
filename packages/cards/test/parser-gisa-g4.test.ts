@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 4 (D-1430 to D-1433): the lines of Whip of Erebos, Embalmer's Tools, Tetzimoc, Primal Death and Ghost Vacuum. The first lines of each block are the
+// The Gisa deck (issue 41), group 4 (D-459 to D-462): the lines of Whip of Erebos, Embalmer's Tools, Tetzimoc, Primal Death and Ghost Vacuum. The first lines of each block are the
 // real Oracle text of the acceptance cards of the golden corpus read through the whole pipeline; the other lines are SYNTHETIC siblings and the near misses the grammar must not read.
 // The engine runs what is lowered in convert-grammar-engine-gisa-g4.test.ts.
 import { describe, expect, test, vi } from 'vitest';
@@ -45,7 +45,7 @@ const GRAVEYARD_CREATURE = {
   },
 } as const;
 
-describe('Whip of Erebos: the sentences about "it" after the return (D-1430, CR 603.7c, 614.1a, 611.2a)', () => {
+describe('Whip of Erebos: the sentences about "it" after the return (D-459, CR 603.7c, 614.1a, 611.2a)', () => {
   const REAL = `${RETURN} It gains haste. Exile it at the beginning of the next end step. If it would leave the battlefield, exile it instead of putting it anywhere else. Activate only as a sorcery.`;
 
   test('the real line: the return, the haste for good, the delayed exile, the replacement, at sorcery speed', () => {
@@ -197,7 +197,7 @@ describe('Whip of Erebos: the sentences about "it" after the return (D-1430, CR 
   });
 });
 
-describe('Embalmer\'s Tools: "Activated abilities of creature cards in your graveyard cost {1} less to activate." (D-1432, CR 601.2f, 113.6b, 118.7)', () => {
+describe('Embalmer\'s Tools: "Activated abilities of creature cards in your graveyard cost {1} less to activate." (D-461, CR 601.2f, 113.6b, 118.7)', () => {
   const LINE = 'Activated abilities of creature cards in your graveyard cost {1} less to activate.';
 
   test('the real line: a static ability that reduces the abilities of your graveyard creature cards', () => {
@@ -255,7 +255,7 @@ describe('Embalmer\'s Tools: "Activated abilities of creature cards in your grav
   });
 });
 
-describe('Tetzimoc: "{B}, Reveal this card from your hand: ... Activate only during your turn." (D-1433, CR 701.20a, 113.6b, 602.5b)', () => {
+describe('Tetzimoc: "{B}, Reveal this card from your hand: ... Activate only during your turn." (D-462, CR 701.20a, 113.6b, 602.5b)', () => {
   const LINE =
     '{B}, Reveal this card from your hand: Put a prey counter on target creature. Activate only during your turn.';
 
@@ -325,7 +325,7 @@ describe('Tetzimoc: "{B}, Reveal this card from your hand: ... Activate only dur
   });
 });
 
-describe('Ghost Vacuum: the cards exiled with ~ put onto the battlefield (D-1431, CR 607.2a, 113.7a, 122.6, 613.1d, 613.4b)', () => {
+describe('Ghost Vacuum: the cards exiled with ~ put onto the battlefield (D-460, CR 607.2a, 113.7a, 122.6, 613.1d, 613.4b)', () => {
   const EXILE = '{T}: Exile target card from a graveyard.';
   const PUT =
     '{6}, {T}, Sacrifice ~: Put each creature card exiled with ~ onto the battlefield under your control with a flying counter on it. Each of them is a 1/1 Spirit in addition to its other types. Activate only as a sorcery.';

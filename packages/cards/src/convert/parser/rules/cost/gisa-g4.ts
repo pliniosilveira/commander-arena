@@ -1,5 +1,5 @@
 /**
- * Costs of group 4 of the Gisa deck (issue 41, D-1433): "Reveal this card from your hand" (CR 701.20a, 118.1, 113.6b), the cost of an ability that works from the hand
+ * Costs of group 4 of the Gisa deck (issue 41, D-462): "Reveal this card from your hand" (CR 701.20a, 118.1, 113.6b), the cost of an ability that works from the hand
  * (Tetzimoc, Primal Death). The card is shown to every player and stays in the hand.
  */
 import { pattern } from '../../combinators';
