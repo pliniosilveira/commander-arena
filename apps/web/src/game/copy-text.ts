@@ -54,6 +54,17 @@ export function copySpellWords(
 }
 
 /**
+ * "Copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." and "That player copies that spell for each other
+ * creature they control that the spell could target. ..." (CR 707.10, 707.10e; D-1321): the effect `copySpell` with `forEach`. `spell` is how the spell is named ("that spell"), `theirs`
+ * whether the player the trigger is about copies it.
+ */
+export function copyForEachWords(spell: string, theirs: boolean): string {
+  const copier = theirs ? 'That player copies' : 'Copy';
+  const control = theirs ? 'they' : 'you';
+  return `${copier} ${spell} for each other creature ${control} control that the spell could target. Each copy targets a different one of those creatures`;
+}
+
+/**
  * "When you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7, 603.7a; D-336): the delayed triggered ability a spell or ability
  * creates. `spell` is the spell the filter names ("an instant or sorcery spell"), `does` what the ability does.
  */

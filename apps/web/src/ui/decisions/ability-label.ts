@@ -45,7 +45,7 @@ import {
 } from '../../game/artifacts-text';
 import { castCardText } from '../../game/cast-card-text';
 import { gameConditionWords } from '../../game/condition-text';
-import { copySpellWords, delayedCastWords } from '../../game/copy-text';
+import { copyForEachWords, copySpellWords, delayedCastWords } from '../../game/copy-text';
 import { activationCostPart, activationCostText, unlessCostPhrase } from '../../game/cost-text';
 import {
   castFreeText,
@@ -1049,6 +1049,21 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return inner === '' ? pay : `${pay}. When you do, ${lower(inner)}`;
     }
     case 'copySpell': {
+      // D-1321 (CR 707.10, 707.10e): a copy for each other creature, each aimed at one of them; only the shape the engine's cards have is said.
+      if (effect.forEach !== undefined) {
+        const f = effect.forEach;
+        const theirs = effect.copier === 'triggerPlayer';
+        const shape =
+          f.types?.length === 1 &&
+          f.types[0] === 'creature' &&
+          f.other === true &&
+          f.controller === (theirs ? 'triggerPlayer' : 'you') &&
+          effect.newTargets === 'no' &&
+          effect.count === undefined &&
+          Object.keys(f).every((k) => ['types', 'other', 'controller', 'zone'].includes(k));
+        const named = object(effect.spell);
+        return shape && named !== UNSAID ? copyForEachWords(named, theirs) : UNSAID;
+      }
       // D-337 (CR 707.10, 707.10c, 903.8): "Copy that spell", with new targets, and once for each time the commander was cast from the command zone.
       const count =
         effect.count === undefined
@@ -1061,6 +1076,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       if (count === UNSAID) return UNSAID;
       const spell = object(effect.spell);
       return spell === UNSAID ? UNSAID : copySpellWords(spell, effect.newTargets, count);
+    }
+    case 'exileOnResolve': {
+      // D-1322 (CR 614.1a, 608.2m, 603.7): the spell whose casting caused the trigger is exiled as it resolves, and comes back to the hand at the next end step.
+      return object(effect.spell) === UNSAID
+        ? UNSAID
+        : 'Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step';
     }
     case 'delayedCast': {
       // D-336 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell".

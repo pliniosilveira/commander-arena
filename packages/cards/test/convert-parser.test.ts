@@ -470,6 +470,8 @@ describe('unmatched abilities', () => {
       'condition.unless-pays',
       'condition.unless-escaped',
       'condition.if-you-do',
+      'effect.copy-spell-each',
+      'effect.exile-on-resolve',
       'effect.damage',
       'effect.damage-count',
       'effect.bite',
