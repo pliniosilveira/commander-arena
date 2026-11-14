@@ -16,7 +16,7 @@ const articleOf = (word: string): string => (/^[aeiou]/iu.test(word) ? 'an' : 'a
 
 /**
  * `condition.spells-cast-this-turn`: "you've cast three or more spells this turn", "you have cast two or more spells this turn" (CR 602.5b, 601.2i: the spells
- * the controller has cast this turn, from every zone, a copy never counted, CR 707.10) and, since the Feather deck (D-1311), "you've cast an instant or sorcery spell this
+ * the controller has cast this turn, from every zone, a copy never counted, CR 707.10) and, since the Feather deck (D-444), "you've cast an instant or sorcery spell this
  * turn", "you've cast a creature spell this turn": one spell of one of the card types named (`ofTypes`), read from the types the spell was cast with. The engine's
  * `spellsCastThisTurn`, read as the ability is activated. Not read: "or fewer", "an opponent has cast", a kind of spell with a count ("two or more creature spells"), a color or
  * a subtype ("a red spell", "a Dragon spell"), a noncreature spell, zero, a variable count, "a spell" with no kind.
@@ -38,7 +38,7 @@ export const CONDITION_SPELLS_CAST_THIS_TURN = defineRule<IrCondition>({
     "you've cast 3 or more spells this turn",
     "you've cast five or more spells this turn",
     "you've cast one or more spells this turn",
-    // D-1311: one spell of a kind.
+    // D-444: one spell of a kind.
     "you've cast an instant or sorcery spell this turn",
     'you’ve cast an instant or sorcery spell this turn',
     'you have cast an instant or sorcery spell this turn',
@@ -59,7 +59,7 @@ export const CONDITION_SPELLS_CAST_THIS_TURN = defineRule<IrCondition>({
     "you've cast three or more spells this game",
     'you cast three or more spells this turn',
     "you've cast three or more spells this turn and",
-    // D-1311: the article, the number of the noun, the words after it.
+    // D-444: the article, the number of the noun, the words after it.
     "you've cast a instant or sorcery spell this turn",
     "you've cast an creature spell this turn",
     "you've cast an instant or sorcery spells this turn",
@@ -76,7 +76,7 @@ export const CONDITION_SPELLS_CAST_THIS_TURN = defineRule<IrCondition>({
     const head = pattern(/you(?:'ve|’ve| have) cast /iu)(ctx, pos);
     if (!head.ok) return head;
     const span = (end: number) => ({ start: pos, end });
-    // D-1311: "an instant or sorcery spell this turn": one spell with one of the types.
+    // D-444: "an instant or sorcery spell this turn": one spell with one of the types.
     const kind = sequence(
       pattern(/(an?) /iu),
       // One type, or two or more joined by "or" (`typeChoice` reads the lists).

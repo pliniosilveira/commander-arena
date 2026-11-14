@@ -375,7 +375,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `exileOnResolve` is for an instant or sorcery card cast as a spell (a copy is no card); an Adventure, a flashback spell and a spell with "exile it instead" (D-352) are not changed, so no return is made for them. The mark names the end step and the hand, as the card says; another destination or time is another effect. Rebound (CR 702.88) is still unbuilt.
 - The rulings of Phalanx Leader, Tenth District Legionnaire, Danitha, Sword of Hope, Feather, the Redeemed, Zada, Hedron Grinder and Mirrorwing Dragon on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
 
-## The Feather deck, group 2 (issue 27, D-1310 to D-1316, provisional numbers)
+## The Feather deck, group 2 (issue 27, D-443 to D-449)
 
 - "Commander" is read before a type in the permanent phrases only ("commander creatures you control"); "target commander creature" is still taken by the older `noun.target-commander` and left unread, "commander" in the spell, cost and condition phrases is not read, and a count in a static ability (`countOf`, `colorsAmong`) still refuses it (the objects are counted before `derive` knows the attachments; a commander has no such dependency, so this can be opened when a card needs it).
 - Monstrosity: "Monstrosity X" (CR 701.37c, X read by other abilities of the permanent), the trigger "When ~ becomes monstrous" (the event `becameMonstrous` exists), the condition and filter "if ~ is monstrous" and "monstrous creatures" are not read.

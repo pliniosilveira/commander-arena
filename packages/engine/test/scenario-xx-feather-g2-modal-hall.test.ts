@@ -1,6 +1,6 @@
 // Two cards of group 2 of the Feather deck. "Choose one — Put a +1/+1 counter on target creature or Vehicle. Untap it. / Return target permanent you control to its owner's hand."
-// (D-1314: a target slot whose filter is a choice of a card type and a subtype, `anyOf`). "{T}: Put a +1/+1 counter on target creature. Activate only as a sorcery and only if you've
-// cast an instant or sorcery spell this turn." (D-1311: `spellsCastThisTurn` with `ofTypes`, read from `TurnLog.castSpells`, the card types of each spell as it was cast.)
+// (D-447: a target slot whose filter is a choice of a card type and a subtype, `anyOf`). "{T}: Put a +1/+1 counter on target creature. Activate only as a sorcery and only if you've
+// cast an instant or sorcery spell this turn." (D-444: `spellsCastThisTurn` with `ofTypes`, read from `TurnLog.castSpells`, the card types of each spell as it was cast.)
 // Pins: CR 700.2 (modal spells: the modes are chosen as the spell is cast, only the targets of the chosen mode are chosen), CR 301.7 (a Vehicle is an artifact until crewed; it is a
 // creature only while crewed), CR 602.5b (a restriction on activating an ability), CR 602.5d (as a sorcery), CR 601.2i (a spell is cast once it is on the stack with its costs
 // paid), CR 707.10 (a copy is not cast), CR 500.4 (the log of the turn is emptied as the next one begins).

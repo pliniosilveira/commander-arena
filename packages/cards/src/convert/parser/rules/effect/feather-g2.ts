@@ -1,5 +1,5 @@
 /**
- * Effect rules of group 2 of the Feather deck (issue 27, D-1313, D-1312): the second damage of "~ deals 4 damage to target creature you don't control and 2 damage to target
+ * Effect rules of group 2 of the Feather deck (issue 27, D-446, D-445): the second damage of "~ deals 4 damage to target creature you don't control and 2 damage to target
  * creature you control" (Reckless Rage) and "Monstrosity 5" (Giggling Skitterspike). The bite with "another target creature" (Fall of the Hammer) is `effect.bite`, whose
  * lowering learned to read it.
  */

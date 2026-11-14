@@ -1,4 +1,4 @@
-// The Feather deck (issue 27), group 2 (D-1310 to D-1315): the REAL Oracle text of Bastion Protector, Fall of the Hammer, Reckless Rage, Giggling Skitterspike, Light the Way and Hall of
+// The Feather deck (issue 27), group 2 (D-443 to D-448): the REAL Oracle text of Bastion Protector, Fall of the Hammer, Reckless Rage, Giggling Skitterspike, Light the Way and Hall of
 // Oracles (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is defined in an engine scenario and is played through applyAction, so the
 // nodes the parser writes for the real text are what the engine runs. The abilities and the spell of each real card are also the ones of its SYNTHETIC sibling of the engine fixtures
 // (`synthetic-feather-g2.ts`), which the engine tests and the AI soak play. Pins: CR 903.3 (commanders), CR 115.3 (another target), CR 120.3 (damage by a creature), CR 701.37

@@ -1248,7 +1248,7 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
     next = patchSeat(next, casting.seat, {
       spellsCastThisTurn: getSeat(next, casting.seat).spellsCastThisTurn + 1,
     });
-    // D-1311 (CR 601.2i): the card types it was cast with, for "you've cast an instant or sorcery spell this turn".
+    // D-444 (CR 601.2i): the card types it was cast with, for "you've cast an instant or sorcery spell this turn".
     next = {
       ...next,
       turnLog: {

@@ -1,4 +1,4 @@
-// The Feather deck (issue 27), group 2 (D-1310 to D-1315): the lines of Bastion Protector, Fall of the Hammer, Reckless Rage, Giggling Skitterspike, Light the Way and Hall of Oracles.
+// The Feather deck (issue 27), group 2 (D-443 to D-448): the lines of Bastion Protector, Fall of the Hammer, Reckless Rage, Giggling Skitterspike, Light the Way and Hall of Oracles.
 // The first lines of each block are the real Oracle text of the acceptance cards of the golden corpus read through the whole pipeline; the other lines are SYNTHETIC siblings and
 // the near misses the grammar must not read. The engine runs what is lowered in convert-grammar-engine-feather-g2.test.ts.
 import { describe, expect, test, vi } from 'vitest';
@@ -21,7 +21,7 @@ const NOT_READ = (text: string, type: Parameters<typeof read>[1] = 'instant') =>
 
 const COMMANDER_CREATURES = { types: ['creature'], controller: 'you', commander: true };
 
-describe('Bastion Protector: "Commander creatures you control get +2/+2 and have indestructible" (D-1310, CR 903.3)', () => {
+describe('Bastion Protector: "Commander creatures you control get +2/+2 and have indestructible" (D-443, CR 903.3)', () => {
   test('the real line: two static abilities of the group of the commanders you control', () => {
     const parsed = readAll(
       'Commander creatures you control get +2/+2 and have indestructible.',
@@ -92,7 +92,7 @@ describe('Bastion Protector: "Commander creatures you control get +2/+2 and have
   });
 });
 
-describe('Fall of the Hammer: "another target creature" after the target that deals the damage (D-1313, CR 115.3)', () => {
+describe('Fall of the Hammer: "another target creature" after the target that deals the damage (D-446, CR 115.3)', () => {
   test('the real line: the second target differs from the first, which deals the damage', () => {
     const parsed = readAll(
       'Target creature you control deals damage equal to its power to another target creature.',
@@ -149,7 +149,7 @@ describe('Fall of the Hammer: "another target creature" after the target that de
   });
 });
 
-describe('Reckless Rage: "~ deals 4 damage to target creature you don\'t control and 2 damage to target creature you control" (D-1313)', () => {
+describe('Reckless Rage: "~ deals 4 damage to target creature you don\'t control and 2 damage to target creature you control" (D-446)', () => {
   const LINE =
     "~ deals 4 damage to target creature you don't control and 2 damage to target creature you control.";
 
@@ -218,7 +218,7 @@ describe('Reckless Rage: "~ deals 4 damage to target creature you don\'t control
   });
 });
 
-describe('Giggling Skitterspike: "Whenever ~ attacks, blocks, or becomes the target of a spell, it deals damage equal to its power to each opponent" (D-1315, CR 603.2c)', () => {
+describe('Giggling Skitterspike: "Whenever ~ attacks, blocks, or becomes the target of a spell, it deals damage equal to its power to each opponent" (D-448, CR 603.2c)', () => {
   const LINE =
     'Whenever ~ attacks, blocks, or becomes the target of a spell, it deals damage equal to its power to each opponent.';
   const DAMAGE = {
@@ -289,7 +289,7 @@ describe('Giggling Skitterspike: "Whenever ~ attacks, blocks, or becomes the tar
   });
 });
 
-describe('Giggling Skitterspike: "{5}: Monstrosity 5" (D-1312, CR 701.37)', () => {
+describe('Giggling Skitterspike: "{5}: Monstrosity 5" (D-445, CR 701.37)', () => {
   test("the real line: the activated ability of the engine's monstrosity effect", () => {
     const parsed = readAll('{5}: Monstrosity 5.', 'creature');
     expect(parsed.abilities).toEqual([
@@ -328,7 +328,7 @@ describe('Giggling Skitterspike: "{5}: Monstrosity 5" (D-1312, CR 701.37)', () =
   });
 });
 
-describe('Light the Way: "target creature or Vehicle" (D-1314, CR 205.2a, 205.3g)', () => {
+describe('Light the Way: "target creature or Vehicle" (D-447, CR 205.2a, 205.3g)', () => {
   const MODAL =
     "Choose one —\n• Put a +1/+1 counter on target creature or Vehicle. Untap it.\n• Return target permanent you control to its owner's hand.";
 
@@ -405,7 +405,7 @@ describe('Light the Way: "target creature or Vehicle" (D-1314, CR 205.2a, 205.3g
   });
 });
 
-describe('Hall of Oracles: "Activate only as a sorcery and only if you\'ve cast an instant or sorcery spell this turn" (D-1311, CR 602.5b, 602.5d)', () => {
+describe('Hall of Oracles: "Activate only as a sorcery and only if you\'ve cast an instant or sorcery spell this turn" (D-444, CR 602.5b, 602.5d)', () => {
   const ABILITY =
     "{T}: Put a +1/+1 counter on target creature. Activate only as a sorcery and only if you've cast an instant or sorcery spell this turn.";
 

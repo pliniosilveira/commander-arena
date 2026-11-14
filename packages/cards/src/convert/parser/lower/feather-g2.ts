@@ -1,5 +1,5 @@
 /**
- * Lowering of group 2 of the Feather deck (issue 27, D-1312): "Monstrosity 5" (CR 701.37a), the engine's `monstrosity` on the permanent the ability belongs to. The second damage
+ * Lowering of group 2 of the Feather deck (issue 27, D-445): "Monstrosity 5" (CR 701.37a), the engine's `monstrosity` on the permanent the ability belongs to. The second damage
  * of "~ deals 4 damage to X and 2 damage to Y" is the ordinary `lower.damage` (the clause only has no subject of its own).
  */
 import type { IrClause } from '../ir/types';

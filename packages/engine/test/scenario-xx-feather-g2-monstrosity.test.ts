@@ -1,4 +1,4 @@
-// "Whenever this creature attacks, blocks, or becomes the target of a spell, it deals damage equal to its power to each opponent. {5}: Monstrosity 5." (D-1312, D-1315): the effect
+// "Whenever this creature attacks, blocks, or becomes the target of a spell, it deals damage equal to its power to each opponent. {5}: Monstrosity 5." (D-445, D-448): the effect
 // `monstrosity` (CR 701.37a: "If this permanent isn't monstrous, put N +1/+1 counters on it and it becomes monstrous"), the designation `GameObject.monstrous` (CR 701.37b: it stays
 // until the permanent leaves the battlefield and is not copiable), and a trigger with three events, one of them for spells only.
 // Pins: CR 701.37a-b (Monstrosity, the designation), CR 603.2c (one ability per event), CR 601.2c (a permanent becomes the target as the spell's targets are chosen), CR 400.7 (a

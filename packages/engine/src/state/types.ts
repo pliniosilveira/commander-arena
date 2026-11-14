@@ -154,7 +154,7 @@ export interface GameObject {
    */
   readonly level?: number;
   /**
-   * The monstrous designation (CR 701.37b, D-1312): set by the monstrosity action, kept until the permanent leaves the battlefield. It has no rules meaning but to be a marker, is not an
+   * The monstrous designation (CR 701.37b, D-445): set by the monstrosity action, kept until the permanent leaves the battlefield. It has no rules meaning but to be a marker, is not an
    * ability and is not a copiable value; a new object after any zone change (CR 400.7) is not monstrous.
    */
   readonly monstrous?: true;
@@ -1907,7 +1907,7 @@ export interface TurnLog {
   /** The modes a triggered ability chose this turn, by the permanent it belongs to (D-151, "choose one that hasn't been chosen this turn"). */
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];
   /**
-   * Each spell cast this turn (D-1311, CR 601.2i), in order: who cast it and its card types as it was cast. A copy is not cast (CR 707.10) and is not here.
+   * Each spell cast this turn (D-444, CR 601.2i), in order: who cast it and its card types as it was cast. A copy is not cast (CR 707.10) and is not here.
    * "Activate only if you've cast an instant or sorcery spell this turn" reads it.
    */
   readonly castSpells: readonly { readonly seat: SeatId; readonly types: readonly CardType[] }[];

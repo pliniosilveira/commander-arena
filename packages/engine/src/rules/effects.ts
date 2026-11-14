@@ -1633,7 +1633,7 @@ function runEffect(
     }
 
     case 'monstrosity': {
-      // CR 701.37a (D-1312): "If this permanent isn't monstrous, put N +1/+1 counters on it and it becomes monstrous": the permanent the ability belongs to, if it is still on the
+      // CR 701.37a (D-445): "If this permanent isn't monstrous, put N +1/+1 counters on it and it becomes monstrous": the permanent the ability belongs to, if it is still on the
       // battlefield. A permanent that can't have the counters (D-380) still becomes monstrous.
       const source = res.source === null ? undefined : state.objects[res.source];
       if (source?.zone !== 'battlefield' || source.monstrous === true) return done(state);

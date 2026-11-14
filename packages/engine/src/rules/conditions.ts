@@ -408,7 +408,7 @@ export function evaluateCondition(
       if (condition.ofTypes === undefined) {
         return getSeat(state, ctx.controller).spellsCastThisTurn >= condition.atLeast;
       }
-      // D-1311: only the spells with one of the card types they were cast with.
+      // D-444: only the spells with one of the card types they were cast with.
       return (
         state.turnLog.castSpells.filter(
           (s) =>

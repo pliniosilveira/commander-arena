@@ -1,5 +1,5 @@
 /**
- * Restriction rules of group 2 of the Feather deck (issue 27, D-1311): "Activate only as a sorcery and only if you've cast an instant or sorcery spell this turn." (Hall of
+ * Restriction rules of group 2 of the Feather deck (issue 27, D-444): "Activate only as a sorcery and only if you've cast an instant or sorcery spell this turn." (Hall of
  * Oracles). The other order, "Activate only if <condition> and only as a sorcery.", is `restriction.if`.
  */
 import { literal, sequence } from '../../combinators';

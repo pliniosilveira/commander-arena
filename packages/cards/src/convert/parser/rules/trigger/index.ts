@@ -424,7 +424,7 @@ export const TRIGGER_BECOMES_BLOCKED = singleEvent('trigger.becomes-blocked', 'b
 /**
  * `trigger.or`: one subject with two or more events joined by "or": "~ enters or attacks",
  * "~ attacks or dies". Each event is an ability of its own once lowered (CR 603.2c); a repeated
- * event is not read. A comma list ("enters, attacks, or dies", D-1315) is read too: the segmenter keeps the commas between two events in the trigger (`insideEventList`), and the
+ * event is not read. A comma list ("enters, attacks, or dies", D-448) is read too: the segmenter keeps the commas between two events in the trigger (`insideEventList`), and the
  * list is "A, B, or C" with the Oxford comma.
  */
 export const TRIGGER_OR = defineRule<IrTrigger>({
@@ -447,7 +447,7 @@ export const TRIGGER_OR = defineRule<IrTrigger>({
     // Stage P36 (D-178, CR 603.2): an event that is for spells only.
     '~ attacks or becomes the target of a spell',
     '~ becomes the target of a spell or attacks',
-    // D-1315 (CR 603.2c): a list of events with commas.
+    // D-448 (CR 603.2c): a list of events with commas.
     '~ attacks, blocks, or becomes the target of a spell',
     '~ enters, attacks, or dies',
     'another creature you control attacks, blocks, or dies',
@@ -470,7 +470,7 @@ export const TRIGGER_OR = defineRule<IrTrigger>({
     '~ blocks or becomes blocked by a creature',
   ],
   parse: (ctx, pos) => {
-    // "A or B [or C]", and (D-1315, CR 603.2c) the list of a comma: "A, B, or C", the last joined by ", or".
+    // "A or B [or C]", and (D-448, CR 603.2c) the list of a comma: "A, B, or C", the last joined by ", or".
     const events = satisfy(
       sequence(
         OR_EVENT,

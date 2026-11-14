@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 2 OF THE FEATHER DECK (ISSUE 27, D-1310 TO D-1316 NUMBERS). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 2 OF THE FEATHER DECK (ISSUE 27, D-443 TO D-449 NUMBERS). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the group added to the engine: a static ability whose subject is "commander creatures you control" (`ObjectFilter.commander` in a static subject,
  * CR 903.3), a damage spell with two targets that must differ ("another target creature", `TargetSpec.differentFrom`, CR 115.3), two damage amounts to two targets, a creature

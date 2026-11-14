@@ -1,4 +1,4 @@
-// Slice soak (D-1310 to D-1315): whole games with the 'featherG2' deck style (SYNTHETIC cards of the engine fixtures `synthetic-feather-g2.ts`: the creature that gives commander
+// Slice soak (D-443 to D-448): whole games with the 'featherG2' deck style (SYNTHETIC cards of the engine fixtures `synthetic-feather-g2.ts`: the creature that gives commander
 // creatures +2/+2 and indestructible, the bite with "another target creature", the damage spell with two amounts to two targets, the creature with the trigger of three events and
 // "Monstrosity 5", the modal counter-and-untap spell and the land that is for sorcery timing after an instant or sorcery) between random agents, with CasualAgent and HeuristicAgent in
 // some seats. Every game finishes with a result, no fallback, no rejected action and consistent state after every action; the action log replays to the same final state; and, with the

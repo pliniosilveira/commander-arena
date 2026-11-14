@@ -1,5 +1,5 @@
 /**
- * The words of group 2 of the Feather deck (D-1310 to D-1315) as pure models: the static ability of commander creatures, the condition of the spells cast this turn by
+ * The words of group 2 of the Feather deck (D-443 to D-448) as pure models: the static ability of commander creatures, the condition of the spells cast this turn by
  * card type and the activation that uses it, "Monstrosity 5" (the ability and the log line of the permanent that became monstrous), the trigger with three events and the
  * modal spell. Read from the engine's SYNTHETIC cards, so a wording that drifts from the AST fails here. No DOM.
  */
@@ -31,7 +31,7 @@ describe('commander creatures you control', () => {
   });
 });
 
-describe('the condition of the spells cast this turn, by card type (D-1311)', () => {
+describe('the condition of the spells cast this turn, by card type (D-444)', () => {
   test('one spell of one or two types', () => {
     expect(
       gameConditionWords({

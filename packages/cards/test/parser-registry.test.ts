@@ -184,7 +184,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.x-target-graveyard-cards': spell((e) => `Return ${e} to your hand.`),
   'cost.remove-counters': permanent((e) => `${e}: Draw a card.`),
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
-  // Feather deck, group 2 (D-1311): the two restrictions in the order of Hall of Oracles.
+  // Feather deck, group 2 (D-444): the two restrictions in the order of Hall of Oracles.
   'restriction.sorcery-and-if': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   'duration.until-end-of-turn': permanent((e) => `{1}: ~ gets +1/+1 ${e}.`),
   'keyword.cycling': asIs,

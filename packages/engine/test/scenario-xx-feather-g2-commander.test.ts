@@ -1,5 +1,5 @@
-// "Commander creatures you control get +2/+2 and have indestructible." (D-1310): a static ability whose subject is a group named by `ObjectFilter.commander`. A commander is a card
-// its owner designated (CR 903.3), a fact no layer changes, so `derive` reads it from the permanent itself; before D-1310 `validateCard` refused it in a static subject.
+// "Commander creatures you control get +2/+2 and have indestructible." (D-443): a static ability whose subject is a group named by `ObjectFilter.commander`. A commander is a card
+// its owner designated (CR 903.3), a fact no layer changes, so `derive` reads it from the permanent itself; before D-443 `validateCard` refused it in a static subject.
 // Pins: CR 903.3 (a commander is a card; a token or a copy is not), CR 613.4c (+N/+N in layer 7c), CR 702.12b (indestructible: lethal damage and destroy effects do nothing),
 // CR 611.3 (a static ability affects whatever matches at any moment).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-feather-g2.ts) or real fixtures.

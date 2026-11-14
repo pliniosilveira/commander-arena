@@ -42,8 +42,8 @@ import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
-import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
+import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
@@ -921,7 +921,7 @@ export const EFFECT_RULES = [
   // Issue 26 (D-411): "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_EFFECT_RULES,
   ...DANITHA_G4_EFFECT_RULES,
-  // Issue 27 (D-1312, D-1313): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
+  // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
   ...FEATHER_G2_EFFECT_RULES,
   // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. ..." (three sentences kept together).
   ...PILES_EFFECT_RULES,

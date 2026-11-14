@@ -446,7 +446,7 @@ export interface ObjectFilter {
    * permanent that copies one is not). Whose commander it is does not matter; `controller` says whose it must be to control. `'yours'`
    * (D-149, "your commander", "whenever your commander enters or attacks") is a commander its owner designated and that owner is the
    * controller of the ability that reads the filter (a commander card the player owns, whoever controls it now). Read where
-   * the filter is matched against the game (a target slot, an `each` selector, a trigger subject, a condition) and, since D-1310
+   * the filter is matched against the game (a target slot, an `each` selector, a trigger subject, a condition) and, since D-443
    * (CR 903.3: no layer changes it), in a static ability's subject ("Commander creatures you control get +2/+2"); refused in a
    * count a static ability reads, as `attacking` is.
    */
@@ -1474,7 +1474,7 @@ export type Effect =
    */
   | { readonly kind: 'gainLevel'; readonly level: number }
   /**
-   * "Monstrosity 5" (CR 701.37a, 701.37b, D-1312): "If this permanent isn't monstrous, put N +1/+1 counters on it and it becomes monstrous." `count` is N, an amount read as the effect
+   * "Monstrosity 5" (CR 701.37a, 701.37b, D-445): "If this permanent isn't monstrous, put N +1/+1 counters on it and it becomes monstrous." `count` is N, an amount read as the effect
    * resolves. The permanent is the one the ability belongs to; nothing happens when it has left the battlefield or is monstrous already. Monstrous is a designation (`GameObject.monstrous`) that
    * stays until the permanent leaves the battlefield and is not copiable. A permanent that can't have +1/+1 counters (D-380) still becomes monstrous. Only in an ability of a permanent.
    */
@@ -3749,7 +3749,7 @@ export type Condition =
    * "Activate only if you've cast three or more spells this turn" (CR 602.5b, 601.2i, D-318): the controller of the condition has cast at least
    * `atLeast` spells this turn (`SeatState.spellsCastThisTurn`: a spell counts once it is on the stack with its costs paid, whether or not it
    * resolved or was countered; a copy is not cast, CR 707.10, and an opponent's spell is not the controller's). Reads a count, so it is read as
-   * the ability is activated. Not for a static ability. `ofTypes` (D-1311, "Activate only if you've cast an instant or sorcery spell this turn"): only the
+   * the ability is activated. Not for a static ability. `ofTypes` (D-444, "Activate only if you've cast an instant or sorcery spell this turn"): only the
    * spells that have at least one of those card types, as they were cast, count (`TurnLog.castSpells`); left out, every spell counts.
    */
   | {

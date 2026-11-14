@@ -2706,7 +2706,7 @@ export const DANITHA_G7_LANDS = supported([
 ]);
 
 /**
- * The SYNTHETIC cards of group 2 of the Feather deck (D-1310 to D-1315): a creature that gives commander creatures +2/+2 and indestructible (the commander of the deck is the one it
+ * The SYNTHETIC cards of group 2 of the Feather deck (D-443 to D-448): a creature that gives commander creatures +2/+2 and indestructible (the commander of the deck is the one it
  * reads), a bite with "another target creature" and a damage spell with two amounts to two targets (two target questions in one cast, with a differ rule), a creature with a trigger of
  * three events and "Monstrosity 5", a modal spell with a counter-and-untap mode and a bounce mode (a `chooseModes` question), and a land whose counter ability is only for sorcery timing
  * after an instant or sorcery spell was cast this turn. The modal question and the targets of each cast change which answers the generic pools ask for, which games-100 expects
@@ -3501,8 +3501,6 @@ export const KORVOLD_SINGLE_LANDS = supported([
   'Swamp',
   'Forest',
   'Island',
-  // The Feather group 2 cards (D-1310 to D-1315) ask the modes of a spell and two targets in one cast, and the land is for sorcery timing after a spell: a style of their own.
-  .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
 ]);
 
 /** Mountains and Forests (the cards cost red and green), a Swamp and an Island for the removal, and the land creature. */
@@ -3555,6 +3553,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(DANITHA_G7_NAMES as readonly string[]).includes(card.name))
   // The Feather group 3 cards (D-437 to D-439) copy spells for each creature they could target, exile spells as they resolve and bring them back at the end step: a style of their own.
   .filter((card) => !(FEATHER_G3_NAMES as readonly string[]).includes(card.name))
+  // The Feather group 2 cards (D-443 to D-448) ask the modes of a spell and two targets in one cast, and the land is for sorcery timing after a spell: a style of their own.
+  .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ANGEL_NAMES as readonly string[]).includes(card.name))
@@ -3713,7 +3713,6 @@ export const KEYWORD_CREATURES = FIXTURES.filter(
 export const COVERAGE_KEYWORDS = ['trample', 'menace', 'firstStrike', 'doubleStrike'] as const;
 
 /** The non-legendary creatures that have at least one of `COVERAGE_KEYWORDS`, read from the fixtures. */
-  | 'featherG2'
 export const COVERAGE_CREATURES = FIXTURES.filter(
   (card) =>
     CREATURES.includes(card.name) &&
@@ -3767,6 +3766,7 @@ export type DeckStyle =
   | 'danithaG6'
   | 'danithaG7'
   | 'featherG3'
+  | 'featherG2'
   | 'vehicles'
   | 'prevention'
   | 'layouts'
@@ -3790,7 +3790,6 @@ export type DeckStyle =
   | 'later'
   | 'miracle'
   | 'copies'
-  if (style === 'featherG2' && FEATHER_G2_SPELLS.length > 0) return FEATHER_G2_SPELLS;
   | 'amounts'
   | 'subjects'
   | 'recursion'
@@ -3845,6 +3844,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG6' && DANITHA_G6_SPELLS.length > 0) return DANITHA_G6_SPELLS;
   if (style === 'danithaG7' && DANITHA_G7_SPELLS.length > 0) return DANITHA_G7_SPELLS;
   if (style === 'featherG3' && FEATHER_G3_SPELLS.length > 0) return FEATHER_G3_SPELLS;
+  if (style === 'featherG2' && FEATHER_G2_SPELLS.length > 0) return FEATHER_G2_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
@@ -3979,7 +3979,6 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'food' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'layers' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'ward' && BASIC_LANDS.length > 0) return BASIC_LANDS;
-  if (style === 'featherG2' && BASIC_LANDS.length > 0) return FEATHER_G2_LANDS;
   if (style === 'vehicles' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'prevention' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'layouts' && BASIC_LANDS.length > 0) return BASIC_LANDS;
@@ -4035,6 +4034,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG6' && BASIC_LANDS.length > 0) return DANITHA_G6_LANDS;
   if (style === 'danithaG7' && BASIC_LANDS.length > 0) return DANITHA_G7_LANDS;
   if (style === 'featherG3' && BASIC_LANDS.length > 0) return FEATHER_G3_LANDS;
+  if (style === 'featherG2' && BASIC_LANDS.length > 0) return FEATHER_G2_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
@@ -4537,7 +4537,7 @@ export const DANITHA_G7_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
   ['spells', 'danithaG7'],
 ];
 
-/** Style pairs of the Feather group 2 soak test (D-1310 to D-1315): a mirror match and both mixed ways. */
+/** Style pairs of the Feather group 2 soak test (D-443 to D-448): a mirror match and both mixed ways. */
 export const FEATHER_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['featherG2', 'featherG2'],
   ['featherG2', 'spells'],

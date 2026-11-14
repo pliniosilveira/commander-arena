@@ -2130,7 +2130,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isCount(c.atLeast) || c.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
-      // D-1311: only the spells of these card types count; at least one, each a card type.
+      // D-444: only the spells of these card types count; at least one, each a card type.
       if (c.ofTypes !== undefined) {
         if (!Array.isArray(c.ofTypes) || c.ofTypes.length === 0) {
           issue(out, `${path}.ofTypes`, 'ofTypes names at least one card type');
@@ -3893,7 +3893,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'monstrosity':
-      // CR 701.37a (D-1312): N counters on the permanent the ability belongs to; an amount that is a whole number of one or more, or a count the game reads.
+      // CR 701.37a (D-445): N counters on the permanent the ability belongs to; an amount that is a whole number of one or more, or a count the game reads.
       checkAmount(e.count, `${path}.count`, scope, out);
       if (typeof e.count === 'number' && !(Number.isSafeInteger(e.count) && e.count >= 1)) {
         issue(out, `${path}.count`, 'monstrosity puts one or more counters');

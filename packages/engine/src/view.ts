@@ -70,7 +70,7 @@ export interface ObjectView {
   readonly counters: Readonly<Record<string, number>>;
   /** The level of a Class on the battlefield (CR 716.2, D-235): shown for a permanent that has a Class subtype or a level; 1 until a level is gained. Absent otherwise. */
   readonly level?: number;
-  /** The monstrous designation of a permanent on the battlefield (CR 701.37b, D-1312). Absent otherwise. */
+  /** The monstrous designation of a permanent on the battlefield (CR 701.37b, D-445). Absent otherwise. */
   readonly monstrous?: true;
   readonly isCommander: boolean;
   readonly summoningSick: boolean;

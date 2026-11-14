@@ -38,7 +38,7 @@ export interface FilterSubject {
   readonly keywords?: readonly Keyword['kind'][];
   /**
    * Whether the object is a commander card (`commander`, D-145). Left out where the caller does not know it: the test then reads it from the object (CR 903.3: a card its owner
-   * designated, which no layer changes, D-1310), so a static ability's subject ("commander creatures you control") finds it without the view a caller built for the layers.
+   * designated, which no layer changes, D-443), so a static ability's subject ("commander creatures you control") finds it without the view a caller built for the layers.
    */
   readonly commander?: boolean;
   /** Whether the permanent is modified (`modified`, D-416, CR 700.9); left out where the caller does not know, which fails the test closed. */

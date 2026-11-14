@@ -502,7 +502,7 @@ export interface IrCondition extends IrNode {
     // D-252 (the Bruna deck): "you gained 3 or more life this turn" (CR 119.3)
     | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
     // D-318 (the Niv-Mizzet deck): "you've cast three or more spells this turn" (CR 601.2i)
-    // D-1311 (Feather): "you've cast an instant or sorcery spell this turn": only the spells of these card types count.
+    // D-444 (Feather): "you've cast an instant or sorcery spell this turn": only the spells of these card types count.
     | {
         readonly kind: 'spellsCastThisTurn';
         readonly atLeast: number;

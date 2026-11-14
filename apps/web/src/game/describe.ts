@@ -646,7 +646,7 @@ export function describeEvent(
         'CR 722.3',
       );
     case 'becameMonstrous':
-      // CR 701.37a, 701.37b (D-1312): the monstrosity action finished; the permanent is monstrous until it leaves the battlefield.
+      // CR 701.37a, 701.37b (D-445): the monstrosity action finished; the permanent is monstrous until it leaves the battlefield.
       return line(
         'major',
         `${label(event.object)} became monstrous.`,

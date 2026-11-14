@@ -1,4 +1,4 @@
-// The damage spells of group 2 of the Feather deck (D-1313): "Target creature you control deals damage equal to its power to another target creature" (a bite whose second target must
+// The damage spells of group 2 of the Feather deck (D-446): "Target creature you control deals damage equal to its power to another target creature" (a bite whose second target must
 // be a different object, `TargetSpec.differentFrom`) and "~ deals 4 damage to target creature you don't control and 2 damage to target creature you control" (two damage
 // instructions of one spell, each to its own target).
 // Pins: CR 120.3 (damage is dealt by the source; the creature that bites takes none), CR 115.3 (the same object can't be chosen for two targets that must differ), CR 608.2b (a

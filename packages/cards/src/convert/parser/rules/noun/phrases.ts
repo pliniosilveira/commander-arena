@@ -50,7 +50,7 @@ export interface FilterParts {
   readonly historic: boolean;
   /** "modified" (D-416, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls. */
   readonly modified: boolean;
-  /** "commander" before a type (D-1310, CR 903.3): "commander creatures you control", a card a player designated as a commander. Only `permanentPhrase` reads it. */
+  /** "commander" before a type (D-443, CR 903.3): "commander creatures you control", a card a player designated as a commander. Only `permanentPhrase` reads it. */
   readonly commander: boolean;
   /** "monocolored", "multicolored" (CR 105.2a, 105.2b): the number of colors; stage P31. */
   readonly colorCount: IrComparison | undefined;
@@ -134,7 +134,7 @@ export const MODIFIER: Parser<Modifier> = choice(
   ...SUPERTYPE_WORDS.map((s) => word(s, (p) => ({ ...p, supertypes: [...p.supertypes, s] }))),
 );
 
-/** "commander creature" (D-1310, CR 903.3): a modifier of the permanent phrases only, not of the spell and card phrases that share `MODIFIER` (a commander spell is another reading). */
+/** "commander creature" (D-443, CR 903.3): a modifier of the permanent phrases only, not of the spell and card phrases that share `MODIFIER` (a commander spell is another reading). */
 const COMMANDER_MODIFIER: Parser<Modifier> = word('commander', (p) => ({ ...p, commander: true }));
 
 export const PERMANENT_TYPES = 'artifact|battle|creature|enchantment|land|planeswalker';
@@ -659,7 +659,7 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
     const anyOf = words.map((w): IrFilter => ({ subtypes: [w], raw: w }));
     return { ok: true, value: { ...base, anyOf }, pos: r.pos };
   };
-  // "creature or Vehicle" (D-1314, CR 205.2a, 205.3g): one card type and one subtype joined by " or ", in either order; a permanent with the type or with the subtype matches.
+  // "creature or Vehicle" (D-447, CR 205.2a, 205.3g): one card type and one subtype joined by " or ", in either order; a permanent with the type or with the subtype matches.
   const typeOrSubtype: Parser<IrFilter> = (ctx, pos) => {
     if (subtypes === false) return fail(ctx, pos);
     const type: Parser<string> = map(
