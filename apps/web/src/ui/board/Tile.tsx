@@ -179,6 +179,7 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
             name={art.name}
             back={art.back}
             isToken={o.isToken}
+            {...(o.tokenDefinition === undefined ? {} : { tokenDefinition: o.tokenDefinition })}
             version="art_crop"
             className="board-tile-art"
           />

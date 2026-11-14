@@ -330,6 +330,9 @@ export function CardFace({
             name={art.name}
             back={art.back}
             isToken={object.isToken || object.emblem === true}
+            {...(object.tokenDefinition === undefined
+              ? {}
+              : { tokenDefinition: object.tokenDefinition })}
             version="normal"
             className="board-card-image"
           />
@@ -346,6 +349,9 @@ export function CardFace({
             name={art.name}
             back={art.back}
             isToken={object.isToken || object.emblem === true}
+            {...(object.tokenDefinition === undefined
+              ? {}
+              : { tokenDefinition: object.tokenDefinition })}
             version="art_crop"
             className="board-card-art-img"
           />

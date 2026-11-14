@@ -3,12 +3,15 @@
  * documented image redirect
  * (`/cards/named?exact=<name>&format=image&version=<v>`). The browser caches the redirect target,
  * and a failed load (offline, blocked, unknown name, SYNTHETIC card) leaves the drawn frame as is.
+ * Tokens use a cached exact search of their original definition instead (`token-art.ts`).
  */
-import type { ObjectView } from '@commander-arena/engine';
+import type { ObjectView, TokenDefinition } from '@commander-arena/engine';
 import { type CSSProperties, useState } from 'react';
 import { isSyntheticFace } from '../../game/synthetic-names';
+import type { ArtVersion } from './image-uris';
+import { useTokenArt } from './token-art';
 
-export type ArtVersion = 'art_crop' | 'normal' | 'small';
+export type { ArtVersion } from './image-uris';
 
 const failed = new Set<string>();
 
@@ -19,8 +22,8 @@ export function imageUrl(
   version: ArtVersion,
   back = false,
 ): string | null {
-  // SYNTHETIC test cards and tokens are not real cards; there is nothing to look up. A face of a
-  // multi-face SYNTHETIC card is named without the prefix, so the invented faces are listed too.
+  // Token names are ambiguous; only token-art's characteristic search may look them up. A face
+  // of a multi-face SYNTHETIC card has no prefix, so the invented faces are listed too.
   if (isToken || name === '' || name.startsWith('SYNTHETIC') || isSyntheticFace(name)) return null;
   // Scryfall matches a double-faced card by its front face name only (D-048).
   const front = name.split(' // ')[0] ?? name;
@@ -52,15 +55,38 @@ interface ArtProps {
   readonly back?: boolean;
   readonly className: string;
   readonly style?: CSSProperties;
+  readonly tokenDefinition?: TokenDefinition;
 }
 
 /** An image that stays invisible until it has loaded and removes itself if it cannot. */
-export function Art({ name, isToken, version, back = false, className, style }: ArtProps) {
-  const url = imageUrl(name, isToken, version, back);
+export function Art({
+  name,
+  isToken,
+  version,
+  back = false,
+  className,
+  style,
+  tokenDefinition,
+}: ArtProps) {
+  const tokenUrl = useTokenArt(tokenDefinition, version);
+  const url = tokenDefinition === undefined ? imageUrl(name, isToken, version, back) : tokenUrl;
+  if (url === null) return null;
+  return <LoadedArt key={url} url={url} className={className} style={style} />;
+}
+
+function LoadedArt({
+  url,
+  className,
+  style,
+}: {
+  readonly url: string;
+  readonly className: string;
+  readonly style?: CSSProperties | undefined;
+}) {
   const [state, setState] = useState<'loading' | 'loaded' | 'failed'>(
-    url !== null && failed.has(url) ? 'failed' : 'loading',
+    failed.has(url) ? 'failed' : 'loading',
   );
-  if (url === null || state === 'failed') return null;
+  if (state === 'failed') return null;
   return (
     <img
       className={`${className}${state === 'loaded' ? ' is-loaded' : ''}`}
