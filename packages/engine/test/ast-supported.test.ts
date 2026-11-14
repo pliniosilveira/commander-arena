@@ -84,6 +84,7 @@ const EXECUTABLE_KEYWORDS = [
   'readAhead', // scenario-xx-read-ahead
   'dethrone', // scenario-xx-extra-combat
   'myriad', // scenario-xx-extra-combat
+  'decayed', // scenario-xx-gisa-g5-decayed (D-1440)
 ];
 
 /** Keyword abilities that exist in the AST but that the engine does not execute yet. */
@@ -180,6 +181,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   dethrone: { kind: 'dethrone' },
   readAhead: { kind: 'readAhead' },
   myriad: { kind: 'myriad' },
+  decayed: { kind: 'decayed' },
   protection: { kind: 'protection', from: 'color', colors: ['R'] },
 };
 

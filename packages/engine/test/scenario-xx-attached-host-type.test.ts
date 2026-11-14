@@ -176,6 +176,8 @@ describe('GRANTABLE_KEYWORDS is exported for the parser', () => {
         // D-472, D-473: afflict and landwalk carry a number or a land type, checked by `checkGrantedParameter`.
         'afflict',
         'landwalk',
+        // D-1440: decayed, the keyword of a token and of a counter, with the trigger it stands for added when it is granted.
+        'decayed',
       ].sort(),
     );
     for (const excluded of ['flash', 'ward', 'protection', 'cycling', 'enchant', 'equip']) {

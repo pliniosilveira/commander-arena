@@ -288,8 +288,10 @@ describe('what stays unread (never half-executed)', () => {
     ).toMatchObject({ reason: 'unrecognised' });
   });
 
-  test('"escapes with" is not read: the repository holds no real line of it (SYNTHETIC wording)', () => {
-    expect(dropped('~ escapes with a +1/+1 counter on it.', 'creature')).toMatchObject({
+  test('"escapes with" counted by "for each" is not read: the repository holds no real line of it (SYNTHETIC wording, D-1444 reads a number of counters)', () => {
+    expect(
+      dropped('~ escapes with a +1/+1 counter on it for each creature you control.', 'creature'),
+    ).toMatchObject({
       reason: 'unrecognised',
     });
   });

@@ -7,9 +7,8 @@ import type { Ability, Keyword } from '../ast/types';
 import { expansionOf } from './derive-keywords';
 
 /**
- * The keywords CR 122.1b lets a counter be, as the engine writes them, by the name a counter of that kind has. The rule also lists decayed
- * (and "variants of those keywords"), which the engine has no keyword for: a counter named so is not run, and the parser refuses to read one
- * (`lower.add-counters`).
+ * The keywords CR 122.1b lets a counter be, as the engine writes them, by the name a counter of that kind has: every one the rule lists (D-1440 added
+ * decayed). The rule also says "and any variants of those keywords", which no card has.
  */
 export const KEYWORD_COUNTERS: Readonly<Record<string, Keyword>> = {
   flying: { kind: 'flying' },
@@ -26,10 +25,8 @@ export const KEYWORD_COUNTERS: Readonly<Record<string, Keyword>> = {
   shadow: { kind: 'shadow' },
   trample: { kind: 'trample' },
   vigilance: { kind: 'vigilance' },
+  decayed: { kind: 'decayed' },
 };
-
-/** The kind of counter CR 122.1b lists that the engine does not run (a counter of it would do nothing). */
-export const UNSUPPORTED_KEYWORD_COUNTERS: readonly string[] = ['decayed'];
 
 /**
  * The keyword abilities the counters of an object give (CR 122.1b), to be added to the abilities it has: a keyword it already has is not added twice
@@ -55,7 +52,9 @@ export function keywordCounterAbilities(
       const grant: Ability = { kind: 'keyword', keyword };
       for (let i = 0; i < count; i += 1) out = [...out, grant, ...expansionOf(grant)];
     } else if (!out.some((a) => a.kind === 'keyword' && a.keyword.kind === keyword.kind)) {
-      out = [...out, { kind: 'keyword', keyword }];
+      // D-1440: decayed stands for a static and a triggered ability (CR 702.147a), added once with the keyword.
+      const grant: Ability = { kind: 'keyword', keyword };
+      out = [...out, grant, ...expansionOf(grant)];
     }
   }
   return out;

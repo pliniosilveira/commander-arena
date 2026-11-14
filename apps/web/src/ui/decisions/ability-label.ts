@@ -71,6 +71,7 @@ import {
   revealTopText,
 } from '../../game/dragons-text';
 import { pluralSubtype, thingsPhrase } from '../../game/filter-text';
+import { delayedSacrificeText } from '../../game/gisa-g5-text';
 import { copiesOfTokensText } from '../../game/hashaton-g5-text';
 import { ENCORE_EFFECT_TEXT } from '../../game/keywords-text';
 import { controlDurationText, requireAttackText } from '../../game/korvold-text';
@@ -967,6 +968,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'ringTempts':
       // D-196 (CR 701.54a): the Ring tempts the controller.
       return 'The Ring tempts you';
+    case 'delayedSacrifice':
+      // D-1440 (CR 702.147a, 701.54c): the sacrifice at end of combat of the ability of Decayed, and of the third level of the Ring.
+      return delayedSacrificeText(effect.of);
     case 'empowerJace':
       // D-201 (CR 701.71a): the keyword action, as the cards write it.
       return `Empower Jace ${effect.amount}`;

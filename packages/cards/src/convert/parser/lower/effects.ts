@@ -17,7 +17,6 @@ import type {
   PlayerSelector,
   TokenDefinition,
 } from '@commander-arena/engine';
-import { UNSUPPORTED_KEYWORD_COUNTERS } from '@commander-arena/engine';
 import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
 import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
 import { lowerAmount } from './amounts';
@@ -1126,8 +1125,6 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     if (!count.ok) return count;
     const counter = arg(clause, 'counter');
     if (counter?.kind !== 'counterSpec') return failure(clause);
-    // D-430 (CR 122.1b): a keyword counter the engine has no keyword for (decayed) would do nothing: the line is not read, never run without its effect.
-    if (UNSUPPORTED_KEYWORD_COUNTERS.includes(counter.name)) return failure(clause);
     return eachObject(
       clause,
       ctx,

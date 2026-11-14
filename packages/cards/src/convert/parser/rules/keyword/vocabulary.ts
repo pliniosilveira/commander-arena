@@ -48,6 +48,7 @@ export type SimpleKeyword = Extract<
   | 'readAhead'
   | 'dethrone'
   | 'myriad'
+  | 'decayed'
   | 'riot'
   | 'ascend'
   | 'soulbond'
@@ -119,6 +120,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['read ahead', 'readAhead'],
   ['dethrone', 'dethrone'],
   ['myriad', 'myriad'],
+  // D-1440 (CR 702.147a): Decayed is a printed ability ("Decayed" on a card with the reminder text), the keyword of a token ("with decayed"), a keyword counter and a grant.
+  ['decayed', 'decayed'],
   // Stage P40 (D-186, CR 702.136a): Riot is a printed ability and, as a static ability's grant to a group, "Nontoken creatures you control have riot" (the engine lists it in its GRANTABLE_KEYWORDS; its validators refuse every other way of giving it).
   ['riot', 'riot'],
   // D-264 (CR 702.131b): Ascend on a permanent is a printed static ability that gives the city's blessing; the engine does not let it be granted.

@@ -451,6 +451,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'readAhead',
     'dethrone',
     'myriad',
+    // D-1440: Decayed (CR 702.147).
+    'decayed',
   ],
   // D-100: `asEntersChoose` ("As this enters, choose a creature type / a color").
   replacementKinds: [
@@ -964,6 +966,8 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'wither',
   // D-120: read straight from the derived abilities by the blocker check.
   'skulk',
+  // D-1440: Decayed is the keyword of a token ("a 2/2 black Zombie creature token with decayed") and a keyword counter; `derive` expands a granted one (CR 702.147a).
+  'decayed',
   // D-185: Riot is read from the permanents on the battlefield as a permanent enters (`rules/enters-keywords.ts`), so only a static ability that
   // names a group can give it ("Nontoken creatures you control have riot"): an effect, an attached subject and an "enters as a copy" are refused.
   'riot',
@@ -1829,6 +1833,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   readAhead: true,
   dethrone: true,
   myriad: true,
+  decayed: true,
 };
 const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   entersTapped: true,

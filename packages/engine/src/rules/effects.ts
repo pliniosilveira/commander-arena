@@ -1116,7 +1116,8 @@ function runEffect(
     case 'delayedSacrifice': {
       // CR 603.7, 701.54c (D-196): about the creature whose event triggered the ability (the blocker): at the end of combat its controller
       // sacrifices it. The delayed ability belongs to the controller of the Ring's ability and names that creature (CR 603.7c).
-      const blocker = res.triggerSubject;
+      // D-1440 (CR 702.147a): `of: 'this'` is the creature with the ability (Decayed): the one that attacked.
+      const blocker = effect.of === 'this' ? res.source : res.triggerSubject;
       if (blocker === undefined) return done(state);
       const ability: TriggeredAbility = {
         kind: 'triggered',

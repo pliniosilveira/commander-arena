@@ -237,7 +237,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
     subtypes: line.subtypes,
     colors,
     abilities,
-    restrictions: restrictionsOf(state, obj, input.abilities, fx.restrictions, effects),
+    restrictions: restrictionsOf(state, obj, input.abilities, fx.restrictions, effects, abilities),
     blockLimits: fx.blockLimits,
     attachments: fx.attachments,
     attachedTo: fx.attachedTo,
@@ -261,8 +261,17 @@ function restrictionsOf(
   printed: readonly Ability[],
   fromStatics: readonly Restriction[],
   effects: readonly ContinuousEffect[],
+  abilities: readonly Ability[],
 ): readonly Restriction[] {
   let own = fromStatics;
+  // CR 702.147a (D-1440): the static ability of Decayed, "This creature can't block", is part of the keyword: it comes with the keyword from wherever the object has it (printed,
+  // granted in layer 6, or a decayed counter) and goes with it when the object loses its abilities, so it is read from the abilities the layers leave.
+  if (
+    abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'decayed') &&
+    !own.includes('cantBlock')
+  ) {
+    own = [...own, 'cantBlock'];
+  }
   if (
     obj.zone === 'stack' &&
     (obj.card !== null || obj.copyOf !== undefined) &&

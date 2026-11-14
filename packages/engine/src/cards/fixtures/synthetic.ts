@@ -66,6 +66,7 @@ import { SYNTHETIC_GIFT_LIST } from './synthetic-gift';
 import { SYNTHETIC_GISA_G1_LIST } from './synthetic-gisa-g1';
 import { SYNTHETIC_GISA_G2_LIST } from './synthetic-gisa-g2';
 import { SYNTHETIC_GISA_G4_LIST } from './synthetic-gisa-g4';
+import { SYNTHETIC_GISA_G5_LIST } from './synthetic-gisa-g5';
 import { SYNTHETIC_GRAVEYARD_LIST } from './synthetic-graveyard';
 import { SYNTHETIC_GREATEST_LIST } from './synthetic-greatest';
 import { SYNTHETIC_HASHATON_G1_LIST } from './synthetic-hashaton-g1';
@@ -402,6 +403,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_DANITHA_G6_LIST,
   ...SYNTHETIC_DANITHA_G7_LIST,
   ...SYNTHETIC_FEATHER_G2_LIST,
+  ...SYNTHETIC_GISA_G5_LIST,
   ...SYNTHETIC_HASHATON_G10_LIST,
   ...SYNTHETIC_HASHATON_G9_LIST,
   ...SYNTHETIC_DANITHA_G1A_LIST,

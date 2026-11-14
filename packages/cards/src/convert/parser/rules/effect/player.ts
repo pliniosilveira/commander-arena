@@ -76,7 +76,7 @@ const cardsAmount = (verb: Parser<unknown>): Parser<IrAmount> =>
 const drawAmount = cardsAmount;
 
 /** A player verb phrase, given the subject it is said of. Returns one clause. */
-type Action = (subject: IrNoun, you: boolean, rule: string) => Parser<IrClause>;
+export type Action = (subject: IrNoun, you: boolean, rule: string) => Parser<IrClause>;
 
 function actionClause(
   rule: string,
@@ -174,7 +174,7 @@ const discardAction: Action = (subject, you, rule) =>
  * amount family ("gain life equal to that creature's toughness", "lose X life, where X is your devotion to black")
  * and a quantity above one for each ("gain 2 life for each creature you control").
  */
-const lifeAction: Action = (subject, you, rule) => {
+export const lifeAction: Action = (subject, you, rule) => {
   const life = (base: 'gain' | 'lose', verb: 'gainLife' | 'loseLife') =>
     map(
       spanned(
@@ -348,7 +348,7 @@ const createAction: Action = (subject, you, rule) =>
   );
 
 /** The nouns that can be the subject of a player verb: a player or players, or the controller of an earlier object. */
-const PLAYER_SUBJECTS = [
+export const PLAYER_SUBJECTS = [
   // Stage P52 (D-210): "each player who discarded a card this way draws a card".
   'noun.each-player-discarded',
   // D-269: "each player ~ attacked this turn loses the game".
