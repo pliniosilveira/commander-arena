@@ -802,7 +802,7 @@ export function answerResolutionChooseOne(state: GameState, option: string): Res
 }
 
 /**
- * Records the answer to "gains protection from the color of your choice" (CR 702.16, 608.2d, D-1301) on the instruction that asked: the color chosen. Then continues.
+ * Records the answer to "gains protection from the color of your choice" (CR 702.16, 608.2d, D-451) on the instruction that asked: the color chosen. Then continues.
  * Null when no such question is waiting or the answer is not one of the five colors.
  */
 export function answerResolutionProtectionColor(

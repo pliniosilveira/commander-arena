@@ -311,7 +311,7 @@ export const EFFECT_GAIN_KEYWORD_EACH = defineRule<Clauses>({
 interface LeadTail {
   readonly pt: IrPtChange | null;
   readonly gains: { readonly value: readonly string[]; readonly span: Span } | null;
-  /** "... gets +1/+0 for each card you've drawn this turn" (Feather deck group 1, D-1300): the count the pump is for, when the pump ends the sentence. */
+  /** "... gets +1/+0 for each card you've drawn this turn" (Feather deck group 1, D-450): the count the pump is for, when the pump ends the sentence. */
   readonly count?: IrAmount;
 }
 
@@ -425,7 +425,7 @@ export const EFFECT_LEAD_GAIN = defineRule<Clauses>({
     'Until end of turn, target creature gets +2/+2 and gains first strike',
     'Until end of turn, target creature gains trample and gets +X/+X',
     'Until end of turn, ~ gets +1/+1',
-    // Feather deck group 1 (D-1300): the pump counts something, and ends the sentence.
+    // Feather deck group 1 (D-450): the pump counts something, and ends the sentence.
     "Until end of turn, target creature gains trample and gets +1/+0 for each card you've drawn this turn",
     "Until end of turn, target creature gets +1/+0 for each card you've drawn this turn",
   ],

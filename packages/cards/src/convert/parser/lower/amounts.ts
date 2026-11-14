@@ -199,7 +199,7 @@ export function lowerAmount(
       return { ok: true, value: { kind: 'lifeLostThisTurn' }, rule };
     }
     case 'cardsDrawnThisTurn': {
-      // CR 121.1 (D-1300): the cards the controller has drawn so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
+      // CR 121.1 (D-450): the cards the controller has drawn so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
       const blocked = needs('cardsDrawnThisTurn');
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'cardsDrawnThisTurn' }, rule };

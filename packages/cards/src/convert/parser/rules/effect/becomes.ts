@@ -9,7 +9,7 @@
  * power and toughness. Since stage P6, `effect.becomes` also reads "an artifact creature" (with or
  * without "in addition to its other types") and "an artifact in addition to its other types", which
  * add to the types the object has (CR 205.1b). "A [creature type] artifact creature", "an artifact"
- * alone, "becomes a copy" and a duration other than "until end of turn" are not read. Since the Feather deck (D-1304) a color alone may be followed by
+ * alone, "becomes a copy" and a duration other than "until end of turn" are not read. Since the Feather deck (D-454) a color alone may be followed by
  * "and gains [keywords]" ("becomes red and gains haste until end of turn", Crimson Wisps).
  */
 import {
@@ -331,7 +331,7 @@ export const EFFECT_BECOMES = defineRule<Clauses>({
     '~ becomes an artifact creature until end of turn',
     'target artifact or creature becomes an artifact creature with base power and toughness 4/5 until end of turn',
     'target creature becomes an artifact creature with base power and toughness 2/2 until end of turn',
-    // D-1304 (Crimson Wisps): a color and keywords the same object gains.
+    // D-454 (Crimson Wisps): a color and keywords the same object gains.
     'target creature becomes red and gains haste until end of turn',
     'target creature becomes blue and gains flying and first strike until end of turn',
     'it becomes colorless and gains haste until end of turn',
@@ -370,7 +370,7 @@ export const EFFECT_BECOMES = defineRule<Clauses>({
       family<IrNoun>('noun', { only: SINGLE_SUBJECTS }),
       literal(' becomes '),
       becoming(rule, true),
-      // D-1304 (Crimson Wisps, CR 613.1e, 613.1f): "becomes red and gains haste until end of turn": the keywords the same object gains for the same duration.
+      // D-454 (Crimson Wisps, CR 613.1e, 613.1f): "becomes red and gains haste until end of turn": the keywords the same object gains for the same duration.
       optional(
         spanned(map(sequence(literal(' and gains '), KEYWORD_WORDS), ([, words]) => words)),
         null,

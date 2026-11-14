@@ -1,5 +1,5 @@
 /**
- * The web side of the Feather deck's first group (D-1300, D-1301): the question of the color of "gains protection from the color of your choice" (a `chooseOption` decision of
+ * The web side of the Feather deck's first group (D-450, D-451): the question of the color of "gains protection from the color of your choice" (a `chooseOption` decision of
  * purpose 'protectionColor', which goes through the dialog of the named options, no new dialog kind), its log line (the choice is public, so the other player reads the color), and the
  * words of the amount "for each card you've drawn this turn".
  */

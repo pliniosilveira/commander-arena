@@ -738,7 +738,7 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'protectionColor';
   readonly options: readonly string[];
   /**
-   * For purpose `'protectionColor'` (D-1301, CR 702.16, 608.2d, "gains protection from the color of your choice"): the controller of the resolving spell or
+   * For purpose `'protectionColor'` (D-451, CR 702.16, 608.2d, "gains protection from the color of your choice"): the controller of the resolving spell or
    * ability chooses one of the five colors (`options` are `W`, `U`, `B`, `R`, `G`, in that order) and the permanents in `protects` gain protection from it
    * until end of turn. `source` is the spell or ability that resolves. Absent for the other purposes.
    */

@@ -2706,7 +2706,7 @@ export const DANITHA_G7_LANDS = supported([
 ]);
 
 /**
- * The SYNTHETIC cards of group 1 of the Feather deck (D-1300 to D-1302): "gains protection from the color of your choice until end of turn" (a `chooseOption` of purpose
+ * The SYNTHETIC cards of group 1 of the Feather deck (D-450 to D-452): "gains protection from the color of your choice until end of turn" (a `chooseOption` of purpose
  * `protectionColor` in the middle of a resolution, for one creature and for a group), "gains protection from red until end of turn" and "draw a card, then +1/+0 for each card you've
  * drawn this turn". The color question is a decision kind that games-100 expects only from dedicated styles, so the group is kept out of every generic pool.
  */
@@ -3589,7 +3589,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(FEATHER_G3_NAMES as readonly string[]).includes(card.name))
   // The Feather group 2 cards (D-443 to D-448) ask the modes of a spell and two targets in one cast, and the land is for sorcery timing after a spell: a style of their own.
   .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
-  // The Feather group 1 cards (D-1301) ask which color to protect from as a spell resolves: a style of their own.
+  // The Feather group 1 cards (D-451) ask which color to protect from as a spell resolves: a style of their own.
   .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
@@ -4583,7 +4583,7 @@ export const FEATHER_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
   ['spells', 'featherG2'],
 ];
 
-/** Style pairs of the Feather group 1 soak test (D-1301): a mirror match and both mixed ways. */
+/** Style pairs of the Feather group 1 soak test (D-451): a mirror match and both mixed ways. */
 export const FEATHER_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['featherG1', 'featherG1'],
   ['featherG1', 'spells'],

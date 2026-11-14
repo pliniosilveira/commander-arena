@@ -1,4 +1,4 @@
-// "Draw a card. Until end of turn, target creature gets +1/+0 for each card you've drawn this turn." (the Feather deck, issue 27, group 1: D-1300, the amount
+// "Draw a card. Until end of turn, target creature gets +1/+0 for each card you've drawn this turn." (the Feather deck, issue 27, group 1: D-450, the amount
 // `cardsDrawnThisTurn`).
 // Pins: CR 121.1 (drawing a card), CR 611.2a (a continuous effect of a resolving spell lasts until end of turn), CR 608.2h (the amount is worked out once, as the effect is applied,
 // so cards drawn afterwards do not change it), CR 608.2c (the instructions are followed in order: the card the spell draws counts), CR 903.9b (a draw replaced by the commander

@@ -60,7 +60,7 @@ export function isCardTypeChoice(d: Asked): boolean {
   return d.purpose === 'cardType';
 }
 
-/** True for "gains protection from the color of your choice" (CR 702.16, 608.2d, D-1301): the options are the five color letters, chosen as the effect resolves. */
+/** True for "gains protection from the color of your choice" (CR 702.16, 608.2d, D-451): the options are the five color letters, chosen as the effect resolves. */
 export function isProtectionColorChoice(d: Asked): boolean {
   return d.purpose === 'protectionColor';
 }
@@ -107,7 +107,7 @@ export function namedOptionPrompt(
   if (isReplacementChoice(d)) return replacementPrompt(d.replacement);
   if (isEffectChoice(d)) return `Choose one for ${d.sourceName}: ${optionList(d.options)}.`;
   if (isCardTypeChoice(d)) return `As ${d.sourceName} enters, choose a card type.`;
-  // D-1301 (CR 702.16, 608.2d): asked as the spell resolves, so there is no "enters".
+  // D-451 (CR 702.16, 608.2d): asked as the spell resolves, so there is no "enters".
   if (isProtectionColorChoice(d)) {
     return `Choose a color for ${d.sourceName}: protection from it until end of turn.`;
   }

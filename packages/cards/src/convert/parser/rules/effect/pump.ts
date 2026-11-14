@@ -140,7 +140,7 @@ export const EFFECT_PUMP = defineRule<Clauses>({
   ],
   parse: single(
     'effect.pump',
-    // D-1306 (Might of the Meek): "It also gets +1/+0 until end of turn if you control a Mouse": "also" says only that it is in addition to what the sentence before gave the same
+    // D-456 (Might of the Meek): "It also gets +1/+0 until end of turn if you control a Mouse": "also" says only that it is in addition to what the sentence before gave the same
     // creature (as `effect.gain-keyword` reads it, D-176); the "if" is the clause's condition, read by the sentence rule.
     sequence(
       family<IrNoun>('noun', { only: GAIN_SUBJECTS }),

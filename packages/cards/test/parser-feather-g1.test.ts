@@ -1,4 +1,4 @@
-// The Feather deck (issue 27), group 1 (D-1300 to D-1307): the real Oracle lines of Crimson Wisps, Gods Willing, Shelter, Might of the Meek, Legion Leadership, Fleeting Flight and Fists
+// The Feather deck (issue 27), group 1 (D-450 to D-457): the real Oracle lines of Crimson Wisps, Gods Willing, Shelter, Might of the Meek, Legion Leadership, Fleeting Flight and Fists
 // of Flame read through the whole pipeline, the nodes they lower to, SYNTHETIC siblings, the near misses the grammar must not read and the features the engine lacks (D-068). The
 // engine runs what is lowered in convert-grammar-engine-feather-g1.test.ts.
 import { describe, expect, test, vi } from 'vitest';

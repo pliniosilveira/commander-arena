@@ -17,7 +17,7 @@ const HELPS = new RegExp(
     // D-103: "Put X +1/+1 counters on target creature" (a number of counters stays hostile, as before).
     String.raw`put X \+\d+/\+\d+ counters? on target creature`,
     `gains? (flying|first strike|double strike|deathtouch|haste|hexproof|indestructible|lifelink|menace|reach|shroud|trample|vigilance)`,
-    // D-1301: "gains protection from the color of your choice", "gains protection from red".
+    // D-451: "gains protection from the color of your choice", "gains protection from red".
     String.raw`gains? protection from`,
   ].join('|'),
   'i',
@@ -25,7 +25,7 @@ const HELPS = new RegExp(
 const HURTS = /loses |becomes |gets? [+-]\d+\/-|gets? -|can't|damage|destroy|exile|return|\btap/i;
 
 /**
- * Wording that carries a word of HURTS and is not hurting (D-1303, the Feather deck): "Prevent all combat damage that would be dealt to it" protects the creature the
+ * Wording that carries a word of HURTS and is not hurting (D-453, the Feather deck): "Prevent all combat damage that would be dealt to it" protects the creature the
  * spell gave a counter or a keyword, and "becomes red and gains haste" changes a color and gives haste (the color is no harm to the creature).
  */
 const NOT_HURTING: readonly RegExp[] = [

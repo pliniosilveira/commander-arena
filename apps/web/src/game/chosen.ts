@@ -33,7 +33,7 @@ export function optionText(
     | 'protectionColor',
   option: string,
 ): string {
-  // D-1301: "gains protection from the color of your choice", answered with a color letter.
+  // D-451: "gains protection from the color of your choice", answered with a color letter.
   if (purpose === 'color' || purpose === 'protectionColor') return colorName(option);
   if (purpose === 'riot') return riotAnswerText(option);
   // D-139 (CR 508.7): "player:1" is a player (seats count from 0), "permanent:o17" a planeswalker or battle.

@@ -1300,7 +1300,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'commanderCasts':
       break;
     case 'cardsDrawnThisTurn':
-      // D-1300 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
+      // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
     case 'half':
       if (!isOneOf(a.round, ['down', 'up'])) {

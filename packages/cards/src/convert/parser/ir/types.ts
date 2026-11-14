@@ -367,7 +367,7 @@ export type IrAmount =
   | { readonly kind: 'lifeLostThisWay'; readonly span: Span }
   // "equal to the life that player lost this turn" (Hashaton deck group 2, D-365, CR 119.3): the life the player the instruction affects lost this turn
   | { readonly kind: 'lifeLostThisTurn'; readonly span: Span }
-  // "for each card you've drawn this turn" (Feather deck group 1, D-1300, CR 121.1): the cards the controller has drawn so far this turn
+  // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
   | { readonly kind: 'cardsDrawnThisTurn'; readonly span: Span }
   // Stage P28 (D-131): "equal to that creature's toughness", "for each +1/+1 counter on ~"
   | { readonly kind: 'toughnessOf'; readonly of: IrNoun; readonly span: Span }
@@ -770,7 +770,7 @@ export interface IrKeywordArg extends IrNode {
   readonly kind: 'keywordName';
   readonly name: string;
   /**
-   * Feather deck group 1 (D-1301, D-1302, CR 702.16): the quality of a protection the clause grants ("gains protection from red", "gains protection from the color
+   * Feather deck group 1 (D-451, D-452, CR 702.16): the quality of a protection the clause grants ("gains protection from red", "gains protection from the color
    * of your choice"): the color words, lowercase, or `choice` for the color the controller chooses as the effect resolves. `name` is then `protection`.
    */
   readonly protection?: { readonly colors: readonly string[] } | { readonly choice: 'color' };

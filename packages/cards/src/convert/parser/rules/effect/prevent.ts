@@ -82,7 +82,7 @@ const ALL_RECIPIENTS = [
   'noun.target-permanent',
   'noun.each-permanent',
   'noun.plain-permanents',
-  // D-1305 (Fleeting Flight): "Prevent all combat damage that would be dealt to it this turn", the creature an earlier sentence named.
+  // D-455 (Fleeting Flight): "Prevent all combat damage that would be dealt to it this turn", the creature an earlier sentence named.
   'noun.it',
 ] as const;
 

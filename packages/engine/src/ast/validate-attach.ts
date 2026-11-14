@@ -126,7 +126,7 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
         });
       }
     } else if (k.from === 'colorOfChoice') {
-      // D-1301: asked as an effect resolves; a static ability or a printed keyword has nothing to ask.
+      // D-451: asked as an effect resolves; a static ability or a printed keyword has nothing to ask.
       issue(
         out,
         `${path}.from`,

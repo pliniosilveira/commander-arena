@@ -227,7 +227,7 @@ export function checkContinuousEffect(
       break;
     case 'grantKeyword':
       if (e.keyword?.kind === 'protection') {
-        // D-1301 (CR 702.16): an effect gives protection from named colors or card types, or from the color of the controller's choice (asked as it resolves).
+        // D-451 (CR 702.16): an effect gives protection from named colors or card types, or from the color of the controller's choice (asked as it resolves).
         // The qualities that read a permanent's choice or a commander (`chosenCardType`, `colorsNotInCommanderIdentity`) need a static ability.
         if (e.keyword.from === 'cardType') {
           checkProtectionTypes(e.keyword.types, `${path}.keyword.types`, out);

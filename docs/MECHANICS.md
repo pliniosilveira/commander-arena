@@ -4743,7 +4743,7 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Tests: engine `scenario-xx-feather-g2-commander.test.ts`, `-damage.test.ts`, `-monstrosity.test.ts`, `-modal-hall.test.ts`; cards `parser-feather-g2.test.ts` and `convert-grammar-engine-feather-g2.test.ts`; web `feather-g2-text.test.ts`; AI soak `feather-g2-games.test.ts`.
 - Limits: see `docs/ROADMAP.md`.
 
-## The Feather deck (issue 27), group 1: Crimson Wisps, Gods Willing, Shelter, Might of the Meek, Legion Leadership, Fleeting Flight, Fists of Flame (D-1300 to D-1308)
+## The Feather deck (issue 27), group 1: Crimson Wisps, Gods Willing, Shelter, Might of the Meek, Legion Leadership, Fleeting Flight, Fists of Flame (D-450 to D-458)
 
 - CR: 702.16 (Protection: 702.16b targeting, 702.16e damage, 702.16f blocking, 702.16g two qualities are two protections, 702.16m the same twice is redundant), 608.2d (a choice an effect gives is made as the effect is applied), 608.2h (an amount from the game is worked out once), 121.1 (drawing a card), 613.1e and 613.1f (color and ability layers), 701.10 (Double: +X/+0 where X is the power as the effect resolves), 615 (prevention), 608.2c (instructions in order).
 - Gap class: P (the amount `cardsDrawnThisTurn`; protection granted by an effect, with the color chosen as it resolves) and T (the sentences); one new decision purpose.

@@ -1,5 +1,5 @@
 /**
- * CasualAgent's answer to "gains protection from the color of your choice until end of turn" (`purpose` 'protectionColor', D-1301, CR 702.16, 608.2d): the color
+ * CasualAgent's answer to "gains protection from the color of your choice until end of turn" (`purpose` 'protectionColor', D-451, CR 702.16, 608.2d): the color
  * that hurts the opponents most. It reads only what the view shows (the stack and the battlefield are public):
  *   1. the colors of the spells and abilities on the stack that an opponent controls and that target one of the permanents about to gain the protection (the Bolt
  *      this spell was cast in response to): 100 for each;

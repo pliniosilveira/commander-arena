@@ -1,5 +1,5 @@
 /**
- * The amounts of the Feather deck's first group (issue 27, D-1300): "for each card you've drawn this turn" (CR 121.1: drawing a card; the engine counts the cards a
+ * The amounts of the Feather deck's first group (issue 27, D-450): "for each card you've drawn this turn" (CR 121.1: drawing a card; the engine counts the cards a
  * player has drawn this turn, `SeatState.cardsDrawnThisTurn`). The engine's `cardsDrawnThisTurn`.
  */
 import { pattern } from '../../combinators';

@@ -1419,7 +1419,7 @@ export type Instruction =
       readonly chooser?: SeatId;
     }
   /**
-   * "Target creature gains protection from the color of your choice until end of turn" (CR 702.16, 608.2d; D-1301): the controller chooses one of the five colors
+   * "Target creature gains protection from the color of your choice until end of turn" (CR 702.16, 608.2d; D-451): the controller chooses one of the five colors
    * with a `chooseOption` decision (`purpose` 'protectionColor'), then `effect` (a `grantKeyword` whose keyword is `protection` from `colorOfChoice`) runs with
    * that color in its place. `chosen` is the color answered, null until then. Not asked when no permanent is left for the effect to affect (CR 608.2b).
    */

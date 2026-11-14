@@ -1044,7 +1044,7 @@ export function describeEvent(
           'CR 701.38a',
         );
       }
-      // CR 702.16, 608.2d (D-1301): "You choose Red for Gods Willing (protection from that color)." The choice is public: the player who did not choose needs the color.
+      // CR 702.16, 608.2d (D-451): "You choose Red for Gods Willing (protection from that color)." The choice is public: the player who did not choose needs the color.
       if (event.purpose === 'protectionColor') {
         return line(
           'major',

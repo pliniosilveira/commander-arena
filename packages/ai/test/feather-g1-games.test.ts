@@ -1,4 +1,4 @@
-// Slice soak (D-1301, D-1300): whole games with the 'featherG1' deck style (SYNTHETIC cards of the engine fixtures `synthetic-feather-g1.ts`: protection from the color of your
+// Slice soak (D-451, D-450): whole games with the 'featherG1' deck style (SYNTHETIC cards of the engine fixtures `synthetic-feather-g1.ts`: protection from the color of your
 // choice for one creature and for a group, protection from red, and "draw a card, then +1/+0 for each card you've drawn this turn", with bodies, burn and removal) between random
 // agents, with CasualAgent and HeuristicAgent in some seats. Every game finishes with a result, no fallback, no rejected action and consistent state after every action; the action
 // log replays to the same final state; and, with the rules read again here from the cards' texts (not from the engine's own code), at every step:

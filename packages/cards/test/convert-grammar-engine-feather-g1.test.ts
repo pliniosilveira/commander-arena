@@ -1,4 +1,4 @@
-// The Feather deck (issue 27), group 1 (D-1300 to D-1307): the REAL Oracle text of Crimson Wisps, Gods Willing, Shelter, Might of the Meek, Legion Leadership // Legion
+// The Feather deck (issue 27), group 1 (D-450 to D-457): the REAL Oracle text of Crimson Wisps, Gods Willing, Shelter, Might of the Meek, Legion Leadership // Legion
 // Stronghold, Fleeting Flight and Fists of Flame (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is defined in an engine
 // scenario and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs. Pins: CR 613.1e (a color-changing effect replaces
 // the colors), CR 613.1f (keywords granted in layer 6), CR 702.16 (protection), CR 608.2d (the color is chosen as the spell resolves), CR 701.10 (double: +X/+0 where X is the

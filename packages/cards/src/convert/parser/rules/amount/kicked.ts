@@ -70,6 +70,6 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-mana-spent',
   // Stage P68 (D-230): the nontoken creatures of the controller that an earlier destroy destroyed.
   'amount.for-each-own-nontoken-destroyed',
-  // Feather deck group 1 (D-1300): the cards the controller has drawn this turn.
+  // Feather deck group 1 (D-450): the cards the controller has drawn this turn.
   'amount.for-each-card-drawn',
 ] as const;

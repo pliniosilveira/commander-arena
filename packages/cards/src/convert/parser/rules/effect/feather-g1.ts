@@ -1,6 +1,6 @@
 /**
- * Effect rules of the Feather deck's first group (issue 27): protection a spell gives for the turn (D-1301, D-1302) and "Until end of turn, double target creature's power
- * and it gains first strike." (D-1307). The effects themselves are the engine's `grantKeyword` of a protection (`rules/protection-choice.ts` asks the color) and `modifyPt`
+ * Effect rules of the Feather deck's first group (issue 27): protection a spell gives for the turn (D-451, D-452) and "Until end of turn, double target creature's power
+ * and it gains first strike." (D-457). The effects themselves are the engine's `grantKeyword` of a protection (`rules/protection-choice.ts` asks the color) and `modifyPt`
  * with the `affected` amount (D-145); only the words are new.
  */
 import {

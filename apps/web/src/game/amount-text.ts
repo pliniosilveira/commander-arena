@@ -236,7 +236,7 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       // D-194 (CR 701.38a): "twice the number of profit votes".
       return `the number of ${amount.option} votes`;
     case 'cardsDrawnThisTurn':
-      // D-1300 (CR 121.1): "for each card you've drawn this turn".
+      // D-450 (CR 121.1): "for each card you've drawn this turn".
       return "the number of cards you've drawn this turn";
     case 'exiledStillThere':
     case 'cardsStillExiled':

@@ -1,5 +1,5 @@
 /**
- * "Target creature you control gains protection from the color of your choice until end of turn" (CR 702.16 Protection, CR 608.2d; D-1301): a `grantKeyword` effect whose
+ * "Target creature you control gains protection from the color of your choice until end of turn" (CR 702.16 Protection, CR 608.2d; D-451): a `grantKeyword` effect whose
  * keyword is `protection` from `colorOfChoice`. The controller of the resolving spell or ability chooses one of the five colors as the effect is applied, with a
  * `chooseOption` decision (purpose `protectionColor`); nothing is chosen when the spell is cast, so nobody can respond knowing the color. The grant then runs as an ordinary
  * `grantKeyword` of protection from that color, so targeting, damage, blocking and attaching read it where they read any protection (`rules/protection.ts`).

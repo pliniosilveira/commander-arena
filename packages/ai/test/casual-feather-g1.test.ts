@@ -1,4 +1,4 @@
-// CasualAgent and the Feather deck's group 1 (D-1301, D-1303): the color it chooses for "gains protection from the color of your choice until end of turn" (src/casual-protection.ts), and
+// CasualAgent and the Feather deck's group 1 (D-451, D-453): the color it chooses for "gains protection from the color of your choice until end of turn" (src/casual-protection.ts), and
 // the spells of the group it reads as helping their target (src/casual-helpful.ts), so a pump or a protection goes on its own creature. The cards are the SYNTHETIC ones of
 // src/cards/fixtures/synthetic-feather-g1.ts, in states built with the scenario DSL and answered through the same decision handling the agent uses in a game; the texts of the real cards
 // are the ones of the issue.

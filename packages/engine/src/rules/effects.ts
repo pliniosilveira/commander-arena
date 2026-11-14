@@ -2070,7 +2070,7 @@ function runEffect(
     case 'grantAbility':
     case 'grantKeyword':
     case 'restrict':
-      // D-1301 (CR 702.16, 608.2d): "gains protection from the color of your choice": the controller chooses the color first (rules/protection-choice.ts).
+      // D-451 (CR 702.16, 608.2d): "gains protection from the color of your choice": the controller chooses the color first (rules/protection-choice.ts).
       if (givesProtectionOfChoice(effect)) {
         return done(state, [], [{ kind: 'protectionColor', effect, chosen: null }]);
       }

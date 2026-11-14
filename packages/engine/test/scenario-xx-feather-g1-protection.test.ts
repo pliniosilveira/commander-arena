@@ -1,5 +1,5 @@
 // "Target creature you control gains protection from the color of your choice until end of turn." and "Target creature gains protection from red until end of turn."
-// (the Feather deck, issue 27, group 1: D-1301 the color chosen as the effect resolves, D-1302 an effect that gives protection).
+// (the Feather deck, issue 27, group 1: D-451 the color chosen as the effect resolves, D-452 an effect that gives protection).
 // Pins: CR 702.16a-b (a creature with protection from a color can't be targeted by spells or abilities of that color), CR 702.16e (damage from sources of the color is
 // prevented), CR 608.2d (the choice an effect gives is made as the effect is applied, not when the spell is cast), CR 608.2b (a spell whose targets are all illegal does not
 // resolve, so asks nothing), CR 611.2a, 611.2c (a continuous effect of a resolving spell lasts until end of turn and affects what the group named when it began), CR 613.1f

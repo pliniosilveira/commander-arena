@@ -468,7 +468,7 @@ function answerChooseOption(
     return finishResolutionAnswer(answerResolutionChooseOne(state, option));
   }
   if (d.purpose === 'protectionColor') {
-    // CR 702.16, 608.2d (D-1301): the color the controller chose for "gains protection from the color of your choice".
+    // CR 702.16, 608.2d (D-451): the color the controller chose for "gains protection from the color of your choice".
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionProtectionColor(state, option));
   }

@@ -48,7 +48,7 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
       if (blocked.length > 0)
         return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
     }
-    // D-1301, D-1302 (CR 702.16): "gains protection from red", "gains protection from the color of your choice" until end of turn: the engine's `grantKeyword` of a
+    // D-451, D-452 (CR 702.16): "gains protection from red", "gains protection from the color of your choice" until end of turn: the engine's `grantKeyword` of a
     // protection, whose color is asked as the effect resolves when the text leaves it to the controller. Only for the turn (the engine asks nothing for a longer duration).
     if (word.protection !== undefined) {
       if (!endsWithTurn(clause)) return failure(clause);

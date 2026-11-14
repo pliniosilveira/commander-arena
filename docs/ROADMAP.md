@@ -385,7 +385,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The list of events of a trigger: "A, B, or C" with the Oxford comma and one subject; "A, B or C", a list with "or ability" and lists of two subjects are not read.
 - The rulings of the six cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited above.
 
-## The Feather deck, group 1 (issue 27, D-1300 to D-1308)
+## The Feather deck, group 1 (issue 27, D-450 to D-458)
 
 - The view tells that a creature has protection (the chip "Pro"), not from what: the player of the other seat reads the color in the log line of the choice ("Opponent chooses Red for Gods Willing ..."), as for the protection of the commander's plate (D-259). A tooltip with the qualities of a protection would need the derived keyword with its quality in `ObjectView`.
 - `effect.gain-protection` reads one object and, for the quality, colors or "the color of your choice": a group ("Creatures you control gain protection from the color of your choice until end of turn", which the engine runs), a card type in an effect ("gains protection from artifacts", which `validateCard` accepts), "from the player of your choice", "from everything", another duration and protection together with other keywords in one gain are not read. The cards that say them stay unsupported.
