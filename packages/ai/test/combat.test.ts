@@ -70,7 +70,7 @@ async function playCombatGames(
   return { answered, tally };
 }
 
-describe('RandomLegalAgent combat answers in real games', () => {
+describe.skipIf(process.env.TEST_TIER === 'pr')('RandomLegalAgent combat answers in real games', () => {
   test('attack, block and damage answers follow the rules and the engine accepted them all', async () => {
     const { answered, tally } = await playCombatGames(60);
     console.log(`combat answers in 60 games: ${JSON.stringify(tally)}`);

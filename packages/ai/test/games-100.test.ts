@@ -66,7 +66,9 @@ function recording(inner: RandomLegalAgent, kinds: Set<DecisionKind>, tally: Com
   };
 }
 
-test('100 random-vs-random games all finish with a result and no faults', async () => {
+test.skipIf(process.env.TEST_TIER === 'pr')(
+  '100 random-vs-random games all finish with a result and no faults',
+  async () => {
   const wins = [0, 0];
   let draws = 0;
   let byLife = 0;
@@ -94,7 +96,8 @@ test('100 random-vs-random games all finish with a result and no faults', async 
     const run = await runGame(smallGameConfig(g, styles), agents, {
       maxTurns: MAX_TURNS,
       maxActions: MAX_ACTIONS,
-    });
+      },
+    );
     // Failures name the game so it can be rerun alone.
     const tag = `game ${g}`;
     expect(run.reason, tag).toBe('result');

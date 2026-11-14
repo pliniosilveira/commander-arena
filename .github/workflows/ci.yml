@@ -1,8 +1,8 @@
 name: CI
 
-# The quick CI (D-132): typecheck, lint, build, and the unit tests of the engine, cards, web app and
-# tools, on every pull request and every push to `main`. It leaves out the AI soak tests and the
-# browser tests, which take most of the time: the `Full` workflow runs them every night when `main`
+# The quick CI (D-132): typecheck, lint, build and the explicit PR unit tier on every pull request and
+# every push to `main`. It leaves out the listed AI game suites and browser tests; `Full` runs the
+# exhaustive unit suite and browser tests every night when `main`
 # has a new commit (D-250), and by hand. The final job keeps the name `check`, so a branch
 # protection rule that requires it keeps working.
 
@@ -47,7 +47,19 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec vitest run packages/engine packages/cards apps/web tools
+      - name: Run PR-tier tests and record timings
+        env:
+          VITEST_RESULTS_DIR: .test-results
+        run: |
+          mkdir -p "$VITEST_RESULTS_DIR"
+          pnpm test:pr 2>&1 | tee "$VITEST_RESULTS_DIR/vitest.log"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: pr-test-results
+          path: .test-results/
+          if-no-files-found: warn
+          retention-days: 30
 
   check:
     name: check

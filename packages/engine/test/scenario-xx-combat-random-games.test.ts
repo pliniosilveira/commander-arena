@@ -6,17 +6,20 @@ import { describe, expect, test } from 'vitest';
 import { checkInvariants, createGame, stateHash } from '../src/index';
 import { combatDecks, playCombatGame } from './random-games';
 
-const GAMES = 200;
+const PR_SEEDS = [1, 25] as const;
+const EXHAUSTIVE_GAMES = 200;
 const MAX_ACTIONS = 30_000;
 
 describe('random combat games', () => {
-  test(`${GAMES} seeded games finish with consistent states after every action`, () => {
+  test.skipIf(process.env.TEST_TIER === 'pr')(
+    `${EXHAUSTIVE_GAMES} seeded games finish with consistent states after every action`,
+    () => {
     let combats = 0;
     let doubleBlocks = 0;
     let tramples = 0;
     let permanentAttacks = 0;
     const kinds = new Set<string>();
-    for (let seed = 1; seed <= GAMES; seed += 1) {
+    for (let seed = 1; seed <= EXHAUSTIVE_GAMES; seed += 1) {
       const start = createGame({
         seed,
         decks: combatDecks(),
@@ -53,14 +56,40 @@ describe('random combat games', () => {
     }
     // The games really exercised combat: attacks, double blocks, trample splits, attacks on
     // planeswalkers and battles.
-    expect(combats).toBeGreaterThan(GAMES);
+    expect(combats).toBeGreaterThan(EXHAUSTIVE_GAMES);
     expect(doubleBlocks).toBeGreaterThan(0);
     expect(tramples).toBeGreaterThan(0);
     expect(permanentAttacks).toBeGreaterThan(0);
     expect(kinds.has('declareAttackers')).toBe(true);
     expect(kinds.has('declareBlockers')).toBe(true);
     expect(kinds.has('assignDamage')).toBe(true);
-  }, 300_000);
+    },
+    300_000,
+  );
+
+  test.skipIf(process.env.TEST_TIER !== 'pr')(
+    'fixed seeds finish cleanly with combat decisions and invariants after every action',
+    () => {
+      const kinds = new Set<string>();
+      for (const seed of PR_SEEDS) {
+        const start = createGame({
+          seed,
+          decks: combatDecks(),
+          settings: { startingLife: 20 },
+        }).state;
+        const { state, log } = playCombatGame(start, seed * 31 + 7, MAX_ACTIONS, (s) => {
+          const problems = checkInvariants(s);
+          if (problems.length > 0) throw new Error(`seed ${seed}: ${problems.join('; ')}`);
+        });
+        expect(state.result, `seed ${seed} did not finish in ${MAX_ACTIONS} actions`).not.toBeNull();
+        for (const entry of log) kinds.add(entry.action.kind);
+      }
+      expect(kinds.has('declareAttackers')).toBe(true);
+      expect(kinds.has('declareBlockers')).toBe(true);
+      expect(kinds.has('assignDamage')).toBe(true);
+    },
+    60_000,
+  );
 
   test('the same seed and the same answers give the same final state', () => {
     const run = () => {

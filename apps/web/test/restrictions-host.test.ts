@@ -2,6 +2,7 @@
  * Restrictions and evasion (D-094, D-098) in real games of the hidden SYNTHETIC deck
  * `synthetic-restrictions`: the engine's refusal of an attack that leaves out a creature that must
  * attack, the model's starting attack, and the explanation of a block the engine does not offer.
+ * Each integration case pins a verified seed and fails instead of searching if its checkpoint moves.
  */
 
 import { describe, expect, test, vi } from 'vitest';
@@ -18,9 +19,12 @@ import {
 
 vi.setConfig({ testTimeout: 60_000 });
 
-async function reach(accept: Parameters<typeof searchRestrictions>[1]): Promise<Session> {
-  const reached = await searchRestrictions(startHost, accept);
-  if (reached === null) throw new Error('no seed reaches the situation');
+async function reach(
+  accept: Parameters<typeof searchRestrictions>[1],
+  seed: number,
+): Promise<Session> {
+  const reached = await searchRestrictions(startHost, accept, { seed });
+  if (reached === null) throw new Error(`seed ${seed} missed the situation`);
   return reached.session;
 }
 
@@ -40,7 +44,7 @@ function modelOf(snap: Snapshot, edit = (u: ReturnType<typeof initialUi>) => u) 
 
 describe('a creature that attacks each combat if able', () => {
   test('the engine refuses a declaration without it; the page starts with it chosen', async () => {
-    const session = await reach(mustAttackAsk);
+    const session = await reach(mustAttackAsk, 3);
     const snap = session.snapshot();
     const asked = snap.view.pending;
     if (asked?.kind !== 'declareAttackers') throw new Error('wrong decision');
@@ -58,7 +62,7 @@ describe('a creature that attacks each combat if able', () => {
   });
 
   test('the starting attack is accepted as it stands', async () => {
-    const session = await reach(mustAttackAsk);
+    const session = await reach(mustAttackAsk, 3);
     const snap = session.snapshot();
     const { model, acts } = modelOf(snap);
     model.bar.buttons[1]?.run();
@@ -72,7 +76,7 @@ describe('a creature that attacks each combat if able', () => {
 
 describe('a block the engine does not offer', () => {
   test("the bar explains it with the engine's own evasion rule while the blocker is picked up", async () => {
-    const session = await reach(evasionAsk);
+    const session = await reach(evasionAsk, 1);
     const snap = session.snapshot();
     const asked = snap.view.pending;
     if (asked?.kind !== 'declareBlockers') throw new Error('wrong decision');

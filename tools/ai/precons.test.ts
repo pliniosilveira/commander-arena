@@ -35,7 +35,7 @@ describe('the precon decks of the AI tools', () => {
   }, 120_000);
 });
 
-describe('the HeuristicAgent on the real precons', () => {
+describe.skipIf(process.env.TEST_TIER === 'pr')('the HeuristicAgent on the real precons soak', () => {
   test(
     'plays whole games between two precons with no fallback, no rejected action and a result',
     async () => {
