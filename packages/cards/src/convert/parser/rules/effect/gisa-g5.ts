@@ -1,5 +1,5 @@
 /**
- * Effect rules of group 5 of the Gisa deck (issue 41, D-1440 to D-1449): "have target player lose life equal to ..." (Gempalm Polluter), the words after "you may" of
+ * Effect rules of group 5 of the Gisa deck (issue 41, D-478 to D-483): "have target player lose life equal to ..." (Gempalm Polluter), the words after "you may" of
  * "you may have target player lose life equal to the number of Zombies on the battlefield".
  */
 import { chain, literal, map, satisfy, sequence } from '../../combinators';

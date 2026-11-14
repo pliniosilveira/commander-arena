@@ -197,7 +197,7 @@ describe('Gift of the Viper: "Put a +1/+1 counter, a reach counter, and a deatht
     expect(parsed.spell ?? null).toBeNull();
   });
 
-  test('decayed is a keyword counter the engine runs since D-1440 (CR 122.1b, 702.147a): one counter, alone or in a list', () => {
+  test('decayed is a keyword counter the engine runs since D-478 (CR 122.1b, 702.147a): one counter, alone or in a list', () => {
     expect(readAll('Put a decayed counter on target creature.').spell?.effect).toEqual(
       counter('decayed'),
     );

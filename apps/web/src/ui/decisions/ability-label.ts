@@ -969,7 +969,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // D-196 (CR 701.54a): the Ring tempts the controller.
       return 'The Ring tempts you';
     case 'delayedSacrifice':
-      // D-1440 (CR 702.147a, 701.54c): the sacrifice at end of combat of the ability of Decayed, and of the third level of the Ring.
+      // D-478 (CR 702.147a, 701.54c): the sacrifice at end of combat of the ability of Decayed, and of the third level of the Ring.
       return delayedSacrificeText(effect.of);
     case 'empowerJace':
       // D-201 (CR 701.71a): the keyword action, as the cards write it.

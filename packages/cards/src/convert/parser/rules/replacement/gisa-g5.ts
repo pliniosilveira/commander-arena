@@ -1,5 +1,5 @@
 /**
- * Replacement rules of the Gisa deck (issue 41), group 5 (D-1444): "~ escapes with two +1/+1 counters on it." (Woe Strider, CR 702.138c).
+ * Replacement rules of the Gisa deck (issue 41), group 5 (D-482): "~ escapes with two +1/+1 counters on it." (Woe Strider, CR 702.138c).
  */
 import { literal, sequence } from '../../combinators';
 import type { IrAbility, IrClause } from '../../ir/types';

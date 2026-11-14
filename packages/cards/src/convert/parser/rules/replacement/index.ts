@@ -253,6 +253,6 @@ export const REPLACEMENT_RULES = [
   ...HASHATON_G3_REPLACEMENT_RULES,
   // Danitha deck, group 4 (D-417): "Umbra armor".
   ...DANITHA_G4_REPLACEMENT_RULES,
-  // Gisa deck, group 5 (D-1444): "~ escapes with two +1/+1 counters on it."
+  // Gisa deck, group 5 (D-482): "~ escapes with two +1/+1 counters on it."
   ...GISA_G5_REPLACEMENT_RULES,
 ];

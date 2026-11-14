@@ -2815,7 +2815,7 @@ export const FEATHER_G2_LANDS = supported([
 ]);
 
 /**
- * The SYNTHETIC cards of group 5 of the Gisa deck (D-1440 to D-1444): a creature with decayed, a sorcery that gives decayed until end of turn and one that puts a decayed counter, an
+ * The SYNTHETIC cards of group 5 of the Gisa deck (D-478 to D-482): a creature with decayed, a sorcery that gives decayed until end of turn and one that puts a decayed counter, an
  * artifact that grows corpse counters and is sacrificed for that many decayed Zombies, a creature with an end step trigger that has an intervening "if you control no creatures with
  * decayed", a Zombie with cycling and "you may have target player lose life equal to the number of Zombies on the battlefield", and a creature that escapes with two +1/+1 counters.
  * They put the sacrifice of decayed creatures at end of combat, an optional trigger with a target player and an escape cost question into games, which games-100 expects only from
@@ -3757,7 +3757,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(DANITHA_G7_NAMES as readonly string[]).includes(card.name))
   // The Feather group 3 cards (D-437 to D-439) copy spells for each creature they could target, exile spells as they resolve and bring them back at the end step: a style of their own.
   .filter((card) => !(FEATHER_G3_NAMES as readonly string[]).includes(card.name))
-  // The Gisa group 5 cards (D-1440 to D-1444) sacrifice decayed creatures at end of combat, ask a "you may" with a target player when cycled and ask the cards to exile for an escape: a style of their own.
+  // The Gisa group 5 cards (D-478 to D-482) sacrifice decayed creatures at end of combat, ask a "you may" with a target player when cycled and ask the cards to exile for an escape: a style of their own.
   .filter((card) => !(GISA_G5_NAMES as readonly string[]).includes(card.name))
   // The Feather group 2 cards (D-443 to D-448) ask the modes of a spell and two targets in one cast, and the land is for sorcery timing after a spell: a style of their own.
   .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
@@ -4766,7 +4766,7 @@ export const DANITHA_G7_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
   ['spells', 'danithaG7'],
 ];
 
-/** Style pairs of the Gisa group 5 soak test (D-1440 to D-1444): a mirror match and both mixed ways. */
+/** Style pairs of the Gisa group 5 soak test (D-478 to D-482): a mirror match and both mixed ways. */
 export const GISA_G5_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['gisaG5', 'gisaG5'],
   ['gisaG5', 'spells'],

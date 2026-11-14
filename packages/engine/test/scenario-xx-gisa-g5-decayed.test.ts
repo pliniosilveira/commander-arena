@@ -1,4 +1,4 @@
-// Decayed (D-1440): "This creature can't block" and "When this creature attacks, sacrifice it at end of combat." (CR 702.147a), a keyword the engine runs as a static restriction
+// Decayed (D-478): "This creature can't block" and "When this creature attacks, sacrifice it at end of combat." (CR 702.147a), a keyword the engine runs as a static restriction
 // and a triggered ability that creates a delayed triggered ability (CR 603.7), as a printed keyword, a granted keyword (CR 613.1f) and a keyword counter (CR 122.1b).
 // Pins: CR 702.147a (Decayed), CR 509.1b (a creature that can't block), CR 603.7 (a delayed triggered ability), CR 122.1b (a keyword counter gives the keyword),
 // CR 613.1f (an ability granted in layer 6), CR 400.7 (a permanent that left is a new object), CR 701.21a (sacrifice).

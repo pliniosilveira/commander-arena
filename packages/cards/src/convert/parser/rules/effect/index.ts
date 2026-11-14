@@ -929,7 +929,7 @@ export const EFFECT_RULES = [
   ...DANITHA_G4_EFFECT_RULES,
   // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
   ...FEATHER_G2_EFFECT_RULES,
-  // Issue 41 (D-1443): "you may have target player lose life equal to the number of Zombies on the battlefield".
+  // Issue 41 (D-481): "you may have target player lose life equal to the number of Zombies on the battlefield".
   ...GISA_G5_EFFECT_RULES,
   // Feather deck, group 1 (issue 27, D-451, D-457): protection for the turn (before `effect.gain-keyword`, which refuses it) and "Until end of turn, double target creature's power and it gains first strike.".
   ...FEATHER_G1_EFFECT_RULES,

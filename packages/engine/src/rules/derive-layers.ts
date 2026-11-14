@@ -175,7 +175,7 @@ function hasAbility(list: readonly Ability[], grant: Ability): boolean {
 /** The keywords whose instances each count (CR 702.83b: exalted, CR 702.108b: prowess, CR 702.130b: afflict) and so are not added once only. */
 const INSTANCE_KEYWORDS: readonly (string | null)[] = ['exalted', 'prowess', 'afflict'];
 
-/** The keywords a grant gives together with the abilities they stand for, once (D-1440: Decayed, a static and a triggered ability). */
+/** The keywords a grant gives together with the abilities they stand for, once (D-478: Decayed, a static and a triggered ability). */
 const EXPANDED_WHEN_GRANTED: readonly (string | null)[] = ['decayed'];
 
 function keywordKindOf(ability: Ability): string | null {
@@ -220,7 +220,7 @@ export function applyAbilityLayer(
       // whatever the object already has, and the triggered ability the keyword stands for with it.
       abilities = [...abilities, step.grant, ...expansionOf(step.grant)];
     } else if (!hasAbility(abilities, step.grant)) {
-      // D-1440 (CR 702.147a): a granted decayed has the static and the triggered ability it stands for, once.
+      // D-478 (CR 702.147a): a granted decayed has the static and the triggered ability it stands for, once.
       abilities = EXPANDED_WHEN_GRANTED.includes(keywordKindOf(step.grant))
         ? [...abilities, step.grant, ...expansionOf(step.grant)]
         : [...abilities, step.grant];

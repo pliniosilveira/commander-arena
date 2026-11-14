@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 5 (D-1440 to D-1444): the lines of Crowded Crypt, Jadar, Gempalm Polluter and Woe Strider, and decayed as a keyword. The first lines of each block are
+// The Gisa deck (issue 41), group 5 (D-478 to D-482): the lines of Crowded Crypt, Jadar, Gempalm Polluter and Woe Strider, and decayed as a keyword. The first lines of each block are
 // the real Oracle text of the acceptance cards of the golden corpus read through the whole pipeline; the other lines are SYNTHETIC siblings and the near misses the grammar must not
 // read. The engine runs what is lowered in convert-grammar-engine-gisa-g5.test.ts.
 import { describe, expect, test } from 'vitest';

@@ -1,4 +1,4 @@
-// Slice soak (D-1440 to D-1444): whole games with the 'gisaG5' deck style (SYNTHETIC cards of the engine fixtures `synthetic-gisa-g5.ts`: a creature with decayed, the sorceries that give
+// Slice soak (D-478 to D-482): whole games with the 'gisaG5' deck style (SYNTHETIC cards of the engine fixtures `synthetic-gisa-g5.ts`: a creature with decayed, the sorceries that give
 // decayed until end of turn and put a decayed counter, the artifact that grows corpse counters and is sacrificed for that many decayed Zombies, the creature with the end step trigger
 // that has an intervening "if you control no creatures with decayed", the Zombie with cycling and the life loss counted on the Zombies of the battlefield, and the creature that escapes
 // with two +1/+1 counters) between random agents, with CasualAgent and HeuristicAgent in some seats. Every game finishes with a result, no fallback, no rejected action and consistent

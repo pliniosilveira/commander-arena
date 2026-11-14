@@ -264,7 +264,7 @@ function restrictionsOf(
   abilities: readonly Ability[],
 ): readonly Restriction[] {
   let own = fromStatics;
-  // CR 702.147a (D-1440): the static ability of Decayed, "This creature can't block", is part of the keyword: it comes with the keyword from wherever the object has it (printed,
+  // CR 702.147a (D-478): the static ability of Decayed, "This creature can't block", is part of the keyword: it comes with the keyword from wherever the object has it (printed,
   // granted in layer 6, or a decayed counter) and goes with it when the object loses its abilities, so it is read from the abilities the layers leave.
   if (
     abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'decayed') &&

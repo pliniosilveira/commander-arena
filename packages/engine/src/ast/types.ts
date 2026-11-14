@@ -2228,7 +2228,7 @@ export type Effect =
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
    * triggered this one (`triggerSubject`), that sacrifices it, by its controller, as the next combat ends. Only the effect of an inherent ability
-   * of the Ring (`validateCard` refuses it anywhere else). `of: 'this'` (D-1440, CR 702.147a Decayed): the creature the ability belongs to ("When this creature
+   * of the Ring (`validateCard` refuses it anywhere else). `of: 'this'` (D-478, CR 702.147a Decayed): the creature the ability belongs to ("When this creature
    * attacks, sacrifice it at end of combat") and not the creature whose event triggered it; the same delayed triggered ability, the same end of combat.
    */
   | { readonly kind: 'delayedSacrifice'; readonly of?: 'this' }
@@ -3470,7 +3470,7 @@ export type Keyword =
    */
   | { readonly kind: 'dethrone' }
   /**
-   * CR 702.147a (Decayed, D-1440): "This creature can't block" and "When this creature attacks, sacrifice it at end of combat." `derive` expands it into a static
+   * CR 702.147a (Decayed, D-478): "This creature can't block" and "When this creature attacks, sacrifice it at end of combat." `derive` expands it into a static
    * `restriction` `cantBlock` of the creature and a triggered ability (`rules/derive-keywords.ts`). Grantable, and a decayed counter gives it (CR 122.1b).
    */
   | { readonly kind: 'decayed' }

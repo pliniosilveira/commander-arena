@@ -224,7 +224,7 @@ const UNREAD: readonly Line[] = [
     kind: 'creature',
     text: '~ escapes with a +1/+1 counter on it for each creature you control.',
     expect: no('for each creature you control.', 'replacement.escapes-with-counters'),
-    note: 'SYNTHETIC wording: "escapes with" counted by "for each" (CR 702.138c) is not read (D-1444 reads a number of counters, as the real line of Woe Strider has); no real line of it is in the repository',
+    note: 'SYNTHETIC wording: "escapes with" counted by "for each" (CR 702.138c) is not read (D-482 reads a number of counters, as the real line of Woe Strider has); no real line of it is in the repository',
   },
   {
     kind: 'creature',

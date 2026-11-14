@@ -7,7 +7,7 @@ import type { Ability, Keyword } from '../ast/types';
 import { expansionOf } from './derive-keywords';
 
 /**
- * The keywords CR 122.1b lets a counter be, as the engine writes them, by the name a counter of that kind has: every one the rule lists (D-1440 added
+ * The keywords CR 122.1b lets a counter be, as the engine writes them, by the name a counter of that kind has: every one the rule lists (D-478 added
  * decayed). The rule also says "and any variants of those keywords", which no card has.
  */
 export const KEYWORD_COUNTERS: Readonly<Record<string, Keyword>> = {
@@ -52,7 +52,7 @@ export function keywordCounterAbilities(
       const grant: Ability = { kind: 'keyword', keyword };
       for (let i = 0; i < count; i += 1) out = [...out, grant, ...expansionOf(grant)];
     } else if (!out.some((a) => a.kind === 'keyword' && a.keyword.kind === keyword.kind)) {
-      // D-1440: decayed stands for a static and a triggered ability (CR 702.147a), added once with the keyword.
+      // D-478: decayed stands for a static and a triggered ability (CR 702.147a), added once with the keyword.
       const grant: Ability = { kind: 'keyword', keyword };
       out = [...out, grant, ...expansionOf(grant)];
     }

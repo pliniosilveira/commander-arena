@@ -708,7 +708,7 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const count = event.args.count;
     const counter = event.args.counter;
     if (counter?.kind !== 'counterSpec') return failure(ability);
-    // "~ escapes with two +1/+1 counters on it" (D-1444, CR 702.138c): the counters of a permanent that escaped, a fixed number of them.
+    // "~ escapes with two +1/+1 counters on it" (D-482, CR 702.138c): the counters of a permanent that escaped, a fixed number of them.
     if (event.args.escapes?.kind === 'flag') {
       if (count?.kind !== 'number') return failure(ability);
       const blocked = gate(ability, ['ability:replacement', 'replacement:entersWithCounters']);

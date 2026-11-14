@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 5 OF THE GISA DECK (ISSUE 41, D-1440 TO D-1449 NUMBERS). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 5 OF THE GISA DECK (ISSUE 41, D-478 TO D-483). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the group added to the engine: Decayed (CR 702.147: "can't block" and "when this creature attacks, sacrifice it at end of combat"), as a printed
  * keyword, as a keyword of a token, as a granted keyword and as a keyword counter (CR 122.1b), a token for each counter on the permanent that was sacrificed to pay the cost

@@ -106,7 +106,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-prepared': asIs,
   // Danitha deck, group 4 (D-417): the keyword line of an Aura.
   'replacement.umbra-armor': asIs,
-  // Gisa deck, group 5 (D-1444).
+  // Gisa deck, group 5 (D-482).
   'replacement.escapes-with-counters': asIs,
   'static.no-maximum-hand-size': asIs,
   // Stage P24: the play rules are lines of their own.

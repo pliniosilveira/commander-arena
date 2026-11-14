@@ -421,9 +421,9 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - Snow, legendary and artifact landwalk and the landwalks of other land types are not read (`LANDWALKS` lists the five basic land types and "nonbasic landwalk").
 - The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
 
-## The Gisa deck, group 5 (issue 41, D-1440 to D-1445, provisional)
+## The Gisa deck, group 5 (issue 41, D-478 to D-483)
 
-- Decayed is a keyword with its own reading of "can't block": `derive` adds the restriction `cantBlock` from the keyword among the final abilities (D-1440). The trigger of the keyword is appended after the printed abilities of the creature, and a granted decayed brings it once (a list `EXPANDED_WHEN_GRANTED`); other keywords whose expansion is a static ability (not a trigger) would need the same kind of reading, because the index of static abilities (`derive-statics.ts`) is built from printed abilities only.
+- Decayed is a keyword with its own reading of "can't block": `derive` adds the restriction `cantBlock` from the keyword among the final abilities (D-478). The trigger of the keyword is appended after the printed abilities of the creature, and a granted decayed brings it once (a list `EXPANDED_WHEN_GRANTED`); other keywords whose expansion is a static ability (not a trigger) would need the same kind of reading, because the index of static abilities (`derive-statics.ts`) is built from printed abilities only.
 - `effect.have-player-life` reads "have [target player or opponent, each opponent] lose or gain life": another verb after "have" ("have target player draw a card", "have target player discard ...") is not read.
 - `replacement.escapes-with-counters` reads a number of counters only (the real line of Woe Strider); "escapes with X counters" and "escapes with a counter for each ..." are not read, and "escapes with [ability]" (CR 702.138d) is not either.
 - The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.

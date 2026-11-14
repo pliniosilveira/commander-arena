@@ -84,7 +84,7 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   readAhead: ['RA', `Read ahead (${READ_AHEAD_REMINDER})`],
   dethrone: ['Dth', `Dethrone (${DETHRONE_REMINDER})`],
   myriad: ['Myr', `Myriad (${MYRIAD_REMINDER})`],
-  // Gisa deck group 5 (D-1440): the reminder text (CR 702.147a) rides in the tooltip.
+  // Gisa deck group 5 (D-478): the reminder text (CR 702.147a) rides in the tooltip.
   decayed: ['Dec', `Decayed (${DECAYED_REMINDER})`],
   // The Korvold slice 6 (D-185): the reminder text (CR 702.141a, 702.82a, 702.136a) rides in the tooltip; Devour's number is in `PARAMETERIZED`.
   encore: ['Enc', `Encore (${ENCORE_REMINDER})`],

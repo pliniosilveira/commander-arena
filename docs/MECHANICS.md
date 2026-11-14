@@ -4789,7 +4789,7 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Tests: engine `scenario-xx-gisa-g1-afflict.test.ts`, `scenario-xx-gisa-g1-walk.test.ts`, `scenario-xx-gisa-g1-damage.test.ts`, `ast-gisa-g1-validate.test.ts`; cards `parser-gisa-g1.test.ts` and `convert-grammar-engine-gisa-g1.test.ts`; AI `gisa-g1-games.test.ts`; web `gisa-g1-text.test.ts`.
 - Limits: see `docs/ROADMAP.md`.
 
-## The Gisa deck (issue 41), group 5: Crowded Crypt, Jadar, Ghoulcaller of Nephalia, Gempalm Polluter and Woe Strider (D-1440 to D-1445, provisional)
+## The Gisa deck (issue 41), group 5: Crowded Crypt, Jadar, Ghoulcaller of Nephalia, Gempalm Polluter and Woe Strider (D-478 to D-483)
 
 - CR: 702.147a (Decayed: "This creature can't block" and "When this creature attacks, sacrifice it at end of combat"), 122.1b (a keyword counter gives the keyword: decayed is one), 613.1f (an ability granted in layer 6), 613.11 (a restriction is applied after the layers), 603.7 (the delayed triggered ability of the sacrifice), 113.7a (a sacrificed source: last-known information), 603.4 (an intervening "if"), 702.29c (when you cycle this card), 119.3 (life), 608.2d ("you may"), 702.138b-c (escape and "escapes with").
 - Gap class: K (decayed) + T for Crowded Crypt and Jadar; T for Gempalm Polluter and Woe Strider; no S proposal and no new decision kind.

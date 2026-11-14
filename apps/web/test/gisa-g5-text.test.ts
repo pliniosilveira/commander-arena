@@ -1,5 +1,5 @@
 /**
- * The words of group 5 of the Gisa deck (D-1440 to D-1444) as pure models: the keyword chip of Decayed, the gist of the abilities of the fixtures (a token with decayed for each
+ * The words of group 5 of the Gisa deck (D-478 to D-482) as pure models: the keyword chip of Decayed, the gist of the abilities of the fixtures (a token with decayed for each
  * counter, the sacrifice at end of combat of the keyword's ability, the intervening "if", the life loss of a cycled card, the escaped permanent). Read from the engine's SYNTHETIC
  * cards, so a wording that drifts from the AST fails here. No DOM.
  */

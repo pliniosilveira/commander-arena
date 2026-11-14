@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 5 (D-1440 to D-1444): the REAL Oracle text of Crowded Crypt, Jadar, Ghoulcaller of Nephalia, Gempalm Polluter and Woe Strider (the corpus's
+// The Gisa deck (issue 41), group 5 (D-478 to D-482): the REAL Oracle text of Crowded Crypt, Jadar, Ghoulcaller of Nephalia, Gempalm Polluter and Woe Strider (the corpus's
 // golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is defined in an engine scenario and is played through applyAction, so the nodes the
 // parser writes for the real text are what the engine runs. The abilities of each real card are also the ones of its SYNTHETIC sibling of the engine fixtures
 // (`synthetic-gisa-g5.ts`), which the engine tests and the AI soak play (the costs of the fixtures are smaller, so they are put equal before the comparison).

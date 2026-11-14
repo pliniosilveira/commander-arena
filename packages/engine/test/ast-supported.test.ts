@@ -84,7 +84,7 @@ const EXECUTABLE_KEYWORDS = [
   'readAhead', // scenario-xx-read-ahead
   'dethrone', // scenario-xx-extra-combat
   'myriad', // scenario-xx-extra-combat
-  'decayed', // scenario-xx-gisa-g5-decayed (D-1440)
+  'decayed', // scenario-xx-gisa-g5-decayed (D-478)
 ];
 
 /** Keyword abilities that exist in the AST but that the engine does not execute yet. */

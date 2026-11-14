@@ -1,4 +1,4 @@
-// Group 5 of the Gisa deck (D-1440 to D-1444): what the engine runs for a token for each counter on a permanent that was sacrificed to pay the cost, an intervening "if you control no
+// Group 5 of the Gisa deck (D-478 to D-482): what the engine runs for a token for each counter on a permanent that was sacrificed to pay the cost, an intervening "if you control no
 // creatures with decayed", "When you cycle this card, you may have target player lose life equal to the number of Zombies on the battlefield" and "escapes with two +1/+1 counters".
 // Pins: CR 113.7a (an ability exists independently of its source; the last known information of a source that left is used), CR 122.1 (counters), CR 603.4 (an intervening "if"
 // is checked when the ability would trigger and again as it resolves), CR 702.29c (when you cycle this card), CR 608.2d ("you may"), CR 702.138b-c (escape, escapes with).

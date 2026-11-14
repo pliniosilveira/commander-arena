@@ -1,5 +1,5 @@
 /**
- * The words of group 5 of the Gisa deck (issue 41, D-1440): the reminder of Decayed (CR 702.147a) and the instruction its triggered ability gives, "sacrifice it at end of combat". Pure.
+ * The words of group 5 of the Gisa deck (issue 41, D-478): the reminder of Decayed (CR 702.147a) and the instruction its triggered ability gives, "sacrifice it at end of combat". Pure.
  */
 
 /** The reminder of Decayed (CR 702.147a): the static ability and the triggered ability the keyword stands for. */

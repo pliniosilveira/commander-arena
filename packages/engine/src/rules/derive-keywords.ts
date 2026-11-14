@@ -135,7 +135,7 @@ const DETHRONE_ABILITY: Ability = {
 };
 
 /**
- * CR 702.147a (D-1440): "Decayed" represents a static ability and a triggered ability: "This creature can't block" and "When this creature attacks, sacrifice it at end of
+ * CR 702.147a (D-478): "Decayed" represents a static ability and a triggered ability: "This creature can't block" and "When this creature attacks, sacrifice it at end of
  * combat." The static ability is read from the keyword itself where the restrictions of an object are worked out (`derive`: `restrictionsOf`); the sacrifice is a delayed
  * triggered ability (CR 603.7) that the trigger creates about the attacking creature, as the Ring's sacrifice of a blocker is.
  */

@@ -61,7 +61,7 @@ const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** "Tiered" (D-433, CR 702.183a) is the lead line of a modal text whose modes have costs, as "Choose one —" is of the others. */
 const MODAL_HEADER = /^(?:choose\b|tiered(?:\n|$))/i;
 const REPLACEMENT_ENTERS = /^(?:as )?~ enters\b/i;
-/** "~ escapes with two +1/+1 counters on it." (D-1444, CR 702.138c): the replacement effect of a permanent that escaped. */
+/** "~ escapes with two +1/+1 counters on it." (D-482, CR 702.138c): the replacement effect of a permanent that escaped. */
 const REPLACEMENT_ESCAPES = /^~ escapes with\b/i;
 /** "Umbra armor" (CR 702.89a, D-417): the keyword line of an Aura, which is a replacement effect of the permanent it enchants. */
 const REPLACEMENT_UMBRA_ARMOR = /^umbra armor$/i;
