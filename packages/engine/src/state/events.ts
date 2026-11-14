@@ -549,7 +549,8 @@ export type GameEvent =
         | 'attackTarget'
         | 'effect'
         | 'riot'
-        | 'vote';
+        | 'vote'
+        | 'protectionColor';
       readonly option: string;
     }
   /**

@@ -1396,6 +1396,16 @@ export type Instruction =
       readonly chooser?: SeatId;
     }
   /**
+   * "Target creature gains protection from the color of your choice until end of turn" (CR 702.16, 608.2d; D-1301): the controller chooses one of the five colors
+   * with a `chooseOption` decision (`purpose` 'protectionColor'), then `effect` (a `grantKeyword` whose keyword is `protection` from `colorOfChoice`) runs with
+   * that color in its place. `chosen` is the color answered, null until then. Not asked when no permanent is left for the effect to affect (CR 608.2b).
+   */
+  | {
+      readonly kind: 'protectionColor';
+      readonly effect: Extract<Effect, { readonly kind: 'grantKeyword' }>;
+      readonly chosen: Color | null;
+    }
+  /**
    * "Starting with you, each player votes for profit or security" (`vote`, CR 701.38a, D-194): `cast` is the votes so far, in the order they were
    * cast. The next voter is the first player still in the game, in turn order from the controller of the effect, who is not in `cast`; a
    * `chooseOption` decision (`purpose` 'vote', the words as options) asks them. When everyone has voted the tally goes to `ResolutionContext.votes`.

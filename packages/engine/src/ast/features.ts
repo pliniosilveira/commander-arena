@@ -889,6 +889,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerDamage',
     // D-194: "the number of profit votes" (CR 701.38a).
     'votesFor',
+    // D-1300: "for each card you've drawn this turn" (CR 121.1).
+    'cardsDrawnThisTurn',
   ],
   // D-405: 'library' is "then shuffle and put that card on top".
   searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library'],
@@ -1470,6 +1472,8 @@ export const AMOUNT_KINDS = [
   'triggerDamage',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
   'votesFor',
+  /** "For each card you've drawn this turn" (CR 121.1, D-1300): the engine's `cardsDrawnThisTurn`. */
+  'cardsDrawnThisTurn',
   'bound',
 ] as const;
 export type AmountKind = (typeof AMOUNT_KINDS)[number];

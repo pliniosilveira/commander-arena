@@ -1035,6 +1035,16 @@ export function describeEvent(
           'CR 701.38a',
         );
       }
+      // CR 702.16, 608.2d (D-1301): "You choose Red for Gods Willing (protection from that color)." The choice is public: the player who did not choose needs the color.
+      if (event.purpose === 'protectionColor') {
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${optionText(event.purpose, event.option)} for ${label(event.source)} (protection from that color until end of turn).`,
+          event.seat,
+          [],
+          'CR 702.16a',
+        );
+      }
       // CR 702.136a (D-185): "You choose a +1/+1 counter for Riot Goblin (riot)." or "... haste ...".
       if (event.purpose === 'riot') {
         const subject =

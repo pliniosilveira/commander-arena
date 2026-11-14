@@ -734,8 +734,15 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'replacement'
     | 'vote'
     | 'meldOrder'
-    | 'pile';
+    | 'pile'
+    | 'protectionColor';
   readonly options: readonly string[];
+  /**
+   * For purpose `'protectionColor'` (D-1301, CR 702.16, 608.2d, "gains protection from the color of your choice"): the controller of the resolving spell or
+   * ability chooses one of the five colors (`options` are `W`, `U`, `B`, `R`, `G`, in that order) and the permanents in `protects` gain protection from it
+   * until end of turn. `source` is the spell or ability that resolves. Absent for the other purposes.
+   */
+  readonly protects?: readonly ObjectId[];
   /**
    * For purpose `'replacement'` (D-191, CR 616.1): several prevention effects apply to one damage event and the order can change the
    * result, so the affected player (`seat`: the damaged player, or the controller of the damaged permanent) chooses which to apply

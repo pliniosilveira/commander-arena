@@ -42,6 +42,7 @@ import {
   runCounterUnlessPays,
   type UnlessAnswer,
 } from './pay-unless';
+import { colorOfAnswer } from './protection-choice';
 import { stillLegalTargets } from './select';
 import { setPending } from './set-pending';
 import { collectTriggers } from './triggers';
@@ -784,6 +785,26 @@ export function answerResolutionChooseOne(state: GameState, option: string): Res
   const index = head.options.findIndex((o) => o.label === option);
   if (index < 0) return null;
   const updated: Instruction = { ...head, chosen: index };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/**
+ * Records the answer to "gains protection from the color of your choice" (CR 702.16, 608.2d, D-1301) on the instruction that asked: the color chosen. Then continues.
+ * Null when no such question is waiting or the answer is not one of the five colors.
+ */
+export function answerResolutionProtectionColor(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'protectionColor') return null;
+  const color = colorOfAnswer(option);
+  if (color === null) return null;
+  const updated: Instruction = { ...head, chosen: color };
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
     [],

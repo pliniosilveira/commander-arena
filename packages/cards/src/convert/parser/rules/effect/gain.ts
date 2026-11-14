@@ -20,6 +20,7 @@ import {
   sequence,
 } from '../../combinators';
 import type {
+  IrAmount,
   IrArg,
   IrClause,
   IrDuration,
@@ -30,6 +31,7 @@ import type {
   IrRestrictionKind,
   Span,
 } from '../../ir/types';
+import { FOR_EACH_TAIL } from '../amount/scaled';
 import { KEYWORD_WORDS } from '../keyword/list';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
@@ -309,6 +311,17 @@ export const EFFECT_GAIN_KEYWORD_EACH = defineRule<Clauses>({
 interface LeadTail {
   readonly pt: IrPtChange | null;
   readonly gains: { readonly value: readonly string[]; readonly span: Span } | null;
+  /** "... gets +1/+0 for each card you've drawn this turn" (Feather deck group 1, D-1300): the count the pump is for, when the pump ends the sentence. */
+  readonly count?: IrAmount;
+}
+
+/** A pump and, when the text has one, the count it is for ("+1/+0 for each card you've drawn this turn"); an X as the step of a count is not read (PUMP_TAIL's rule). */
+function counted(pt: Parser<IrPtChange>): Parser<[IrPtChange, IrAmount | null]> {
+  return satisfy(
+    sequence(pt, optional(FOR_EACH_TAIL, null)),
+    ([change, count]) =>
+      count === null || (typeof change.power === 'number' && typeof change.toughness === 'number'),
+  );
 }
 
 function leadParser(rule: string, subjects: readonly string[], plural: boolean): Parser<Clauses> {
@@ -324,13 +337,20 @@ function leadParser(rule: string, subjects: readonly string[], plural: boolean):
       sequence(pattern(gets), ptChange(rule), keywords(andGains)),
       ([, pt, g]): LeadTail => ({ pt, gains: g }),
     ),
-    // "gain trample and get +X/+X"
+    // "gain trample and get +X/+X", "gains trample and gets +1/+0 for each card you've drawn this turn"
     map(
-      sequence(keywords(gains), pattern(andGets), ptChange(rule)),
-      ([g, , pt]): LeadTail => ({ pt, gains: g }),
+      sequence(keywords(gains), pattern(andGets), counted(ptChange(rule))),
+      ([g, , [pt, count]]): LeadTail => ({ pt, gains: g, ...(count === null ? {} : { count }) }),
     ),
     map(keywords(gains), (g): LeadTail => ({ pt: null, gains: g })),
-    map(sequence(pattern(gets), ptChange(rule)), ([, pt]): LeadTail => ({ pt, gains: null })),
+    map(
+      sequence(pattern(gets), counted(ptChange(rule))),
+      ([, [pt, count]]): LeadTail => ({
+        pt,
+        gains: null,
+        ...(count === null ? {} : { count }),
+      }),
+    ),
   );
   return map(
     sequence(
@@ -339,13 +359,18 @@ function leadParser(rule: string, subjects: readonly string[], plural: boolean):
       family<IrNoun>('noun', { only: subjects }),
       tail,
     ),
-    ([duration, , subject, { pt, gains: grants }]): Clauses => {
+    ([duration, , subject, { pt, gains: grants, count }]): Clauses => {
       const out: IrClause[] = [];
       // The clauses are in the order of the words: the keywords first when the text says "gain ... and get ...".
       const grantsFirst = grants !== null && pt !== null && grants.span.start < pt.span.start;
       const pump = (more: boolean): void => {
         if (pt === null) return;
-        const clause = makeClause(rule, 'modifyPt', { objects: subject, pt }, pt.span);
+        const clause = makeClause(
+          rule,
+          'modifyPt',
+          count === undefined ? { objects: subject, pt } : { objects: subject, pt, count },
+          pt.span,
+        );
         out.push({ ...clause, duration, ...(more ? { connector: 'and' as const } : {}) });
       };
       const grant = (more: boolean): void => {
@@ -400,8 +425,14 @@ export const EFFECT_LEAD_GAIN = defineRule<Clauses>({
     'Until end of turn, target creature gets +2/+2 and gains first strike',
     'Until end of turn, target creature gains trample and gets +X/+X',
     'Until end of turn, ~ gets +1/+1',
+    // Feather deck group 1 (D-1300): the pump counts something, and ends the sentence.
+    "Until end of turn, target creature gains trample and gets +1/+0 for each card you've drawn this turn",
+    "Until end of turn, target creature gets +1/+0 for each card you've drawn this turn",
   ],
   rejects: [
+    "Until end of turn, target creature gets +X/+0 for each card you've drawn this turn",
+    'Until end of turn, target creature gets +1/+0 and gains trample for each creature you control',
+    'Until end of turn, target creature gains trample and gets +1/+0 for each',
     'Until end of turn, target creature gains flying until end of turn',
     'Until your next turn, target creature gains flying',
     'Until end of turn target creature gains flying',

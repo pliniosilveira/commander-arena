@@ -42,6 +42,7 @@ import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
+import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
@@ -917,6 +918,8 @@ export const EFFECT_RULES = [
   // Issue 26 (D-411): "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_EFFECT_RULES,
   ...DANITHA_G4_EFFECT_RULES,
+  // Feather deck, group 1 (issue 27, D-1301, D-1307): protection for the turn (before `effect.gain-keyword`, which refuses it) and "Until end of turn, double target creature's power and it gains first strike.".
+  ...FEATHER_G1_EFFECT_RULES,
   // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. ..." (three sentences kept together).
   ...PILES_EFFECT_RULES,
   // D-396 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."

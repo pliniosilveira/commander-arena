@@ -220,7 +220,14 @@ export type Amount =
    * has run before this amount is read ("twice the number of profit votes" is a `multiple` of it). `option` is one of the options of that `vote`
    * (the words of the card, as it wrote them). 0 when nobody voted for it. Valid only after a `vote` effect in the same sequence that offers `option`.
    */
-  | { readonly kind: 'votesFor'; readonly option: string };
+  | { readonly kind: 'votesFor'; readonly option: string }
+  /**
+   * "For each card you've drawn this turn" (CR 121.1, 611.2c; D-1300, the Feather deck's Fists of Flame): the number of cards the controller of the spell or
+   * ability has drawn this turn (`SeatState.cardsDrawnThisTurn`), counted as the instruction runs, so a card drawn by an earlier instruction of the same
+   * resolution counts. A draw that was replaced (the commander going to the command zone instead, CR 903.9b) is not a card drawn. Not valid in a static
+   * ability, a trigger's subject or a characteristic-defining ability: nothing refreshes a layer effect when a card is drawn.
+   */
+  | { readonly kind: 'cardsDrawnThisTurn' };
 
 /** What a `thisWay` amount counts (D-131). */
 export type ThisWayKind =
@@ -2091,7 +2098,11 @@ export type Effect =
       readonly abilities: readonly Ability[];
       readonly duration: 'untilEndOfTurn' | 'permanent';
     }
-  /** "Target creature gains flying until end of turn": layer 6 (CR 613.1f), a keyword without parameters. */
+  /**
+   * "Target creature gains flying until end of turn": layer 6 (CR 613.1f), a keyword without parameters. D-1301 (CR 702.16): or a protection, from named colors
+   * (`from: 'color'`) or card types (`from: 'cardType'`), or from the color of the controller's choice (`from: 'colorOfChoice'`, asked as the effect resolves, see
+   * `Keyword`); the other protection qualities need a permanent that chose or a commander, so only a static ability gives them.
+   */
   | {
       readonly kind: 'grantKeyword';
       readonly objects: ObjectSelector;
@@ -3089,6 +3100,14 @@ export type Keyword =
    */
   | { readonly kind: 'protection'; readonly from: 'cardType'; readonly types: readonly CardType[] }
   | { readonly kind: 'protection'; readonly from: 'chosenCardType' }
+  /**
+   * "Target creature you control gains protection from the color of your choice until end of turn" (CR 702.16, 608.2d; D-1301, the Feather deck's Gods Willing
+   * and Shelter): the controller of the spell or ability chooses one of the five colors as the effect resolves (a `chooseOption` decision of purpose
+   * `protectionColor`, not when it is put on the stack, so nobody can respond knowing it), and the creature gains protection from that color. Only a `grantKeyword`
+   * effect may carry it (it is replaced by `{ protection, from: 'color', colors: [the color] }` before the continuous effect is made, so no derived ability has it);
+   * a printed keyword or a static `grantKeyword` cannot, since nothing there asks.
+   */
+  | { readonly kind: 'protection'; readonly from: 'colorOfChoice' }
   /**
    * CR 702.73a (Changeling): a characteristic-defining ability, "This object is every creature type"
    * (CR 604.3), in layer 4 first (CR 613.3), working in every zone, also in a hand or a library. The

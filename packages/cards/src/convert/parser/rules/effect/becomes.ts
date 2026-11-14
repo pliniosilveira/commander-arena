@@ -9,7 +9,8 @@
  * power and toughness. Since stage P6, `effect.becomes` also reads "an artifact creature" (with or
  * without "in addition to its other types") and "an artifact in addition to its other types", which
  * add to the types the object has (CR 205.1b). "A [creature type] artifact creature", "an artifact"
- * alone, "becomes a copy" and a duration other than "until end of turn" are not read.
+ * alone, "becomes a copy" and a duration other than "until end of turn" are not read. Since the Feather deck (D-1304) a color alone may be followed by
+ * "and gains [keywords]" ("becomes red and gains haste until end of turn", Crimson Wisps).
  */
 import {
   choice,
@@ -330,8 +331,21 @@ export const EFFECT_BECOMES = defineRule<Clauses>({
     '~ becomes an artifact creature until end of turn',
     'target artifact or creature becomes an artifact creature with base power and toughness 4/5 until end of turn',
     'target creature becomes an artifact creature with base power and toughness 2/2 until end of turn',
+    // D-1304 (Crimson Wisps): a color and keywords the same object gains.
+    'target creature becomes red and gains haste until end of turn',
+    'target creature becomes blue and gains flying and first strike until end of turn',
+    'it becomes colorless and gains haste until end of turn',
   ],
   rejects: [
+    'target creature becomes red and gains haste',
+    'target creature becomes red and gains until end of turn',
+    'target creature becomes red and gains flash until end of turn',
+    'target creature becomes red and has haste until end of turn',
+    'target creature becomes red and gains haste until your next turn',
+    'target creature becomes a Frog and gains haste until end of turn',
+    'target creature becomes an artifact creature and gains haste until end of turn',
+    'target creature becomes red and gains haste until end of turn and draw a card',
+    'target creature becomes red and gain haste until end of turn',
     'target creature becomes an artifact creature with base power and toughness 4/5',
     'target creature becomes an artifact creature with base power and toughness +4/+5 until end of turn',
     'target creature becomes an artifact creature with base power 4 until end of turn',
@@ -356,12 +370,27 @@ export const EFFECT_BECOMES = defineRule<Clauses>({
       family<IrNoun>('noun', { only: SINGLE_SUBJECTS }),
       literal(' becomes '),
       becoming(rule, true),
+      // D-1304 (Crimson Wisps, CR 613.1e, 613.1f): "becomes red and gains haste until end of turn": the keywords the same object gains for the same duration.
+      optional(
+        spanned(map(sequence(literal(' and gains '), KEYWORD_WORDS), ([, words]) => words)),
+        null,
+      ),
       literal(' '),
       family<IrDuration>('duration'),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [subject, , what, , duration] = r.value;
-    return { ok: true, value: [{ ...becomesClause(rule, subject, what), duration }], pos: r.pos };
+    const [subject, , what, gains, , duration] = r.value;
+    const becomes = becomesClause(rule, subject, what);
+    if (gains === null) return { ok: true, value: [{ ...becomes, duration }], pos: r.pos };
+    // Only after a color alone: a creature type or a card type that goes with keywords is read by `effect.lead-becomes` and `effect.lead-becomes-target` in the words they have.
+    if (what.colors === null || what.types !== null || what.basePt !== null) return fail(ctx, pos);
+    const clauses: IrClause[] = [{ ...becomes, duration, connector: 'and' }];
+    gains.value.forEach((name, i, all) => {
+      const keyword: IrKeywordArg = { kind: 'keywordName', name, span: gains.span, rule };
+      const grant = makeClause(rule, 'grantKeyword', { objects: subject, keyword }, gains.span);
+      clauses.push({ ...grant, duration, ...(i < all.length - 1 ? { connector: 'and' } : {}) });
+    });
+    return { ok: true, value: clauses, pos: r.pos };
   },
 });
 
