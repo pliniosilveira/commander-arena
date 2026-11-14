@@ -7,14 +7,14 @@ import type { IrAmount } from '../../ir/types';
 import { defineRule } from '../registry';
 
 /**
- * `amount.for-each-card-drawn`: "for each card you've drawn this turn" and "for each card you have drawn this turn" (CR 121.1, 611.2c: counted as the effect
+ * `amount.for-each-card-drawn`: "for each card you've drawn this turn" and "for each card you have drawn this turn" (CR 121.1, 608.2h: counted as the effect
  * resolves, once). Not read: another player's draws, the whole game, the past tense "drew", a plural "cards", a card with a quality.
  */
 export const AMOUNT_FOR_EACH_CARD_DRAWN = defineRule<IrAmount>({
   id: 'amount.for-each-card-drawn',
   family: 'amount',
   leading: ['for'],
-  cites: ['CR 121.1 (Drawing a Card)', 'CR 611.2c (Continuous Effects)'],
+  cites: ['CR 121.1 (Drawing a Card)', 'CR 608.2h (Resolving Spells and Abilities)'],
   examples: [
     "for each card you've drawn this turn",
     'for each card you have drawn this turn',

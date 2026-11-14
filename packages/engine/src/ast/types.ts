@@ -222,7 +222,7 @@ export type Amount =
    */
   | { readonly kind: 'votesFor'; readonly option: string }
   /**
-   * "For each card you've drawn this turn" (CR 121.1, 611.2c; D-1300, the Feather deck's Fists of Flame): the number of cards the controller of the spell or
+   * "For each card you've drawn this turn" (CR 121.1, 608.2h; D-1300, the Feather deck's Fists of Flame): the number of cards the controller of the spell or
    * ability has drawn this turn (`SeatState.cardsDrawnThisTurn`), counted as the instruction runs, so a card drawn by an earlier instruction of the same
    * resolution counts. A draw that was replaced (the commander going to the command zone instead, CR 903.9b) is not a card drawn. Not valid in a static
    * ability, a trigger's subject or a characteristic-defining ability: nothing refreshes a layer effect when a card is drawn.

@@ -1,6 +1,6 @@
 // "Draw a card. Until end of turn, target creature gets +1/+0 for each card you've drawn this turn." (the Feather deck, issue 27, group 1: D-1300, the amount
 // `cardsDrawnThisTurn`).
-// Pins: CR 121.1 (drawing a card), CR 611.2a, 611.2c (a continuous effect of a resolving spell lasts until end of turn and the amount is worked out as the effect resolves,
+// Pins: CR 121.1 (drawing a card), CR 611.2a (a continuous effect of a resolving spell lasts until end of turn), CR 608.2h (the amount is worked out once, as the effect is applied,
 // so cards drawn afterwards do not change it), CR 608.2c (the instructions are followed in order: the card the spell draws counts), CR 903.9b (a draw replaced by the commander
 // going to the command zone is not a card drawn), CR 613.4c (a +N/+0 effect is layer 7c).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-feather-g1.ts) or real fixtures.
@@ -45,7 +45,7 @@ describe('the card is valid', () => {
   });
 });
 
-describe('"+1/+0 for each card you\'ve drawn this turn" (CR 121.1, 611.2c)', () => {
+describe('"+1/+0 for each card you\'ve drawn this turn" (CR 121.1, 608.2h)', () => {
   const start = (hand: readonly string[], opponentHand: readonly string[] = []) =>
     scenario()
       .seat(0)
@@ -89,7 +89,7 @@ describe('"+1/+0 for each card you\'ve drawn this turn" (CR 121.1, 611.2c)', () 
     g.expect.pt('mine', 2 + 3, 2);
   });
 
-  test('the amount is worked out as the spell resolves and stays: cards drawn afterwards do not change it (CR 611.2c)', () => {
+  test('the amount is worked out as the spell resolves and stays: cards drawn afterwards do not change it (CR 608.2h)', () => {
     const g = start([FIST, DIVINATION]);
     g.act(0).cast(FIST, { targets: ['mine'], pay: true });
     g.passAll();

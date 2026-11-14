@@ -2,7 +2,7 @@
 // Stronghold, Fleeting Flight and Fists of Flame (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is defined in an engine
 // scenario and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs. Pins: CR 613.1e (a color-changing effect replaces
 // the colors), CR 613.1f (keywords granted in layer 6), CR 702.16 (protection), CR 608.2d (the color is chosen as the spell resolves), CR 701.10 (double: +X/+0 where X is the
-// power as the effect resolves), CR 615 (prevention: a shield for the turn on the creature the spell names), CR 121.1 (cards drawn this turn), CR 611.2a, 611.2c.
+// power as the effect resolves), CR 615 (prevention: a shield for the turn on the creature the spell names), CR 121.1 (cards drawn this turn), CR 608.2h (an amount is worked out once), CR 611.2a.
 import { readFileSync } from 'node:fs';
 import { type CardDefinition, validateCard } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';

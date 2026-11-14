@@ -3,7 +3,7 @@
 // Pins: CR 702.16a-b (a creature with protection from a color can't be targeted by spells or abilities of that color), CR 702.16e (damage from sources of the color is
 // prevented), CR 608.2d (the choice an effect gives is made as the effect is applied, not when the spell is cast), CR 608.2b (a spell whose targets are all illegal does not
 // resolve, so asks nothing), CR 611.2a, 611.2c (a continuous effect of a resolving spell lasts until end of turn and affects what the group named when it began), CR 613.1f
-// (the grant is a layer 6 ability), CR 702.16j (protection from different qualities are separate abilities).
+// (the grant is a layer 6 ability), CR 702.16g (protection from different qualities are separate abilities), CR 702.16m (the same quality twice is redundant).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-feather-g1.ts) or real fixtures.
 import { describe, expect, test } from 'vitest';
 import type { ObjectId } from '../src/ids';
@@ -269,7 +269,7 @@ describe('protection from the color of your choice (CR 702.16, 608.2d)', () => {
     g.expect.pending('priority', 0);
   });
 
-  test('two spells with different colors give two protections: the creature has both (CR 702.16j)', () => {
+  test('two spells with different colors give two protections: the creature has both (CR 702.16g)', () => {
     const g = board((b) => b.hand(WARD).battlefield('Plains'));
     g.act(0).cast(`${WARD}[1]`, { targets: ['mine'], pay: true });
     g.passAll();

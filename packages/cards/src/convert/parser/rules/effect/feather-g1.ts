@@ -16,7 +16,7 @@ import {
 import type { IrClause, IrDuration, IrFlag, IrKeywordArg, IrNoun, Span } from '../../ir/types';
 import { KEYWORD_WORDS } from '../keyword/list';
 import { PROTECTION_COLORS } from '../keyword/protection';
-import { defineRule, family, spanned } from '../registry';
+import { defineRule, family, quietly, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
 import { GAIN_SUBJECTS } from './pump';
 
@@ -35,7 +35,7 @@ const PROTECTION_QUALITY: Parser<NonNullable<IrKeywordArg['protection']>> = choi
  * `effect.gain-protection`: "target creature you control gains protection from the color of your choice until end of turn", "target creature gains protection from red
  * until end of turn" (CR 702.16 Protection, 611.2a: a continuous effect of a resolving spell or ability, 613.1f: a layer 6 ability; CR 608.2d: the color of the controller's
  * choice is chosen as the effect resolves, not as the spell is cast). One object, one protection: "gains protection from red and from blue" is a protection of two colors
- * (CR 702.16m reads it as two). Not read: a group ("creatures you control gain ..."), a quality that is not a color ("from artifacts", "from the player of your choice",
+ * (CR 702.16g reads it as two). Not read: a group ("creatures you control gain ..."), a quality that is not a color ("from artifacts", "from the player of your choice",
  * "from everything"), another duration, and protection together with other keywords ("gains flying and protection from red").
  */
 export const EFFECT_GAIN_PROTECTION = defineRule<Clauses>({
@@ -204,4 +204,8 @@ export const EFFECT_LEAD_DOUBLE_PT = defineRule<Clauses>({
   },
 });
 
-export const FEATHER_G1_EFFECT_RULES = [EFFECT_GAIN_PROTECTION, EFFECT_LEAD_DOUBLE_PT];
+/** Quiet: a line these rules do not read ("gains storm until end of turn", "Until end of turn, target creature gets +1/+1") stops where it always did. */
+export const FEATHER_G1_EFFECT_RULES = [
+  quietly(EFFECT_GAIN_PROTECTION),
+  quietly(EFFECT_LEAD_DOUBLE_PT),
+];
