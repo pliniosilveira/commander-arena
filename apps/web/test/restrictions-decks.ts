@@ -34,15 +34,17 @@ export function restrictionBot(view: GameView, decision: PendingDecision): Actio
 export async function searchRestrictions(
   start: (seed: number) => Promise<Session>,
   accept: (view: GameView) => boolean,
-  opts: { seeds?: number; maxClicks?: number; from?: number } = {},
+  opts: { seed?: number; seeds?: number; maxClicks?: number; from?: number } = {},
 ): Promise<{ session: Session; seed: number } | null> {
-  const { seeds = 60, maxClicks = 700, from = 1 } = opts;
-  for (let seed = from; seed < from + seeds; seed += 1) {
-    const session = await start(seed);
+  const { seed, seeds = 60, maxClicks = 700, from = 1 } = opts;
+  const candidates =
+    seed === undefined ? Array.from({ length: seeds }, (_, i) => from + i) : [seed];
+  for (const candidate of candidates) {
+    const session = await start(candidate);
     for (let clicks = 0; clicks < maxClicks; clicks += 1) {
       const view = session.snapshot().view;
       if (view.result !== null || view.pending === null) break;
-      if (view.pending.seat === view.viewer && accept(view)) return { session, seed };
+      if (view.pending.seat === view.viewer && accept(view)) return { session, seed: candidate };
       if ((await session.act(restrictionBot(view, view.pending))) === null) break;
     }
   }

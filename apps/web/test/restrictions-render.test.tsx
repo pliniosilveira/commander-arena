@@ -1,50 +1,44 @@
-/**
- * Restrictions on the board, in the preview and in the attack declaration, rendered from a real
- * game of the hidden SYNTHETIC deck `synthetic-restrictions`.
- */
+/** Restriction rendering from small typed views; engine-produced decision shapes are tested in the host suite. */
+import type { DeclareAttackersDecision } from '@commander-arena/engine';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { expect, test, vi } from 'vitest';
-import { Board } from '../src/ui/board/Board';
+import { expect, test } from 'vitest';
 import { PreviewPanel } from '../src/ui/board/PreviewPanel';
+import { Tile } from '../src/ui/board/Tile';
 import { DecisionLayer } from '../src/ui/decisions/DecisionLayer';
 import { StoreProvider } from '../src/ui/store-context';
-import {
-  mustAttackAsk,
-  type RestrictionStore,
-  searchRestrictions,
-  startStore,
-} from './restrictions-decks';
+import { gameView, liveStore, objectView, storeFor } from './render-fixtures';
 
-vi.setConfig({ testTimeout: 60_000 });
+const berserker = objectView('o1', {
+  name: 'SYNTHETIC Berserker',
+  manaCost: ['1', 'R'],
+  oracleText: 'This creature attacks each combat if able.',
+  restrictions: ['attacksEachCombat'],
+});
 
-const live = (store: RestrictionStore) => ({ ...store, getInitialState: () => store.getState() });
+const declaration: DeclareAttackersDecision = {
+  kind: 'declareAttackers',
+  id: 'd1',
+  seat: 0,
+  candidates: [{ attacker: berserker.id, targets: [{ kind: 'player', seat: 1 }] }],
+  mustAttack: [berserker.id],
+};
 
-async function attackGame(): Promise<RestrictionStore> {
-  const reached = await searchRestrictions(startStore, mustAttackAsk);
-  if (reached === null) throw new Error('no seed reaches the situation');
-  return (reached.session as typeof reached.session & { store: RestrictionStore }).store;
-}
-
-test('the tile of a creature that must attack carries a restriction chip with its full name', async () => {
-  const store = await attackGame();
+test('the tile carries the must-attack restriction chip', () => {
+  const store = storeFor(gameView([berserker]));
   const html = renderToStaticMarkup(
-    <StoreProvider store={live(store)}>
-      <Board />
+    <StoreProvider store={liveStore(store)}>
+      <Tile object={berserker} w={90} h={120} />
     </StoreProvider>,
   );
   expect(html).toContain('class="board-kw board-kw-restrict" title="Attacks each combat"');
   expect(html).toContain('>Atk!<');
 });
 
-test('the preview lists the restriction under its own heading', async () => {
-  const store = await attackGame();
-  const berserker = store
-    .getState()
-    .snapshot?.view.battlefield.find((o) => o.restrictions?.includes('attacksEachCombat'));
-  if (berserker === undefined) throw new Error('no Berserker');
+test('the preview lists the restriction under its own heading', () => {
+  const store = storeFor(gameView([berserker]));
   store.getState().hover(berserker.id);
   const html = renderToStaticMarkup(
-    <StoreProvider store={live(store)}>
+    <StoreProvider store={liveStore(store)}>
       <PreviewPanel />
     </StoreProvider>,
   );
@@ -54,12 +48,12 @@ test('the preview lists the restriction under its own heading', async () => {
   store.getState().hover(null);
 });
 
-test('the attack declaration shows the creature chosen, with its badge and the explanation', async () => {
-  const store = await attackGame();
+test('the attack declaration shows the required creature, badge and explanation', () => {
+  const store = storeFor(gameView([berserker], declaration));
   const html = renderToStaticMarkup(
-    <StoreProvider store={live(store)}>
+    <StoreProvider store={liveStore(store)}>
       <DecisionLayer>
-        <Board />
+        <Tile object={berserker} w={90} h={120} />
       </DecisionLayer>
     </StoreProvider>,
   );

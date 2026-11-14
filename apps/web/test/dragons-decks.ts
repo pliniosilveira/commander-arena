@@ -44,6 +44,7 @@ export async function reachDragonsStore(
   accept: (view: GameView) => boolean,
   want: RegExp,
   opts: {
+    seed?: number;
     seeds?: number;
     maxClicks?: number;
     human?: string;
@@ -55,16 +56,25 @@ export async function reachDragonsStore(
     manual?: boolean;
   } = {},
 ): Promise<{ store: DragonsStore; seed: number } | null> {
-  const { seeds = 60, maxClicks = 600, human = DRAGONS_EARLY, ai = DRAGONS_EARLY, from = 1 } = opts;
+  const {
+    seed,
+    seeds = 60,
+    maxClicks = 600,
+    human = DRAGONS_EARLY,
+    ai = DRAGONS_EARLY,
+    from = 1,
+  } = opts;
   const choose = scripted(want, opts.filler, opts.others);
-  for (let seed = from; seed < from + seeds; seed += 1) {
+  const candidates =
+    seed === undefined ? Array.from({ length: seeds }, (_, i) => from + i) : [seed];
+  for (const candidate of candidates) {
     const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
     store.getState().setManualPay(opts.manual === true);
-    await store.getState().startGame({ seed, humanDeck: human, aiDeck: ai });
+    await store.getState().startGame({ seed: candidate, humanDeck: human, aiDeck: ai });
     for (let clicks = 0; clicks < maxClicks; clicks += 1) {
       const view = store.getState().snapshot?.view;
       if (view === undefined || view.result !== null || view.pending === null) break;
-      if (accept(view)) return { store, seed };
+      if (accept(view)) return { store, seed: candidate };
       const before = store.getState().snapshot?.revision;
       await store.getState().act(choose(view, view.pending));
       if (store.getState().snapshot?.revision === before) break;

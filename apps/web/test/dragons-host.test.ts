@@ -2,8 +2,8 @@
  * The questions of the Dragons slice (D-151) end to end through the page's store, in real games of the hidden SYNTHETIC decks
  * `synthetic-dragons` and `synthetic-dragons-early`: the chapter a Saga with read ahead starts with and the discard of any number of
  * cards it leads to, a Behold over cards of the hand and permanents, a card exiled to be played, the top card of the library cast,
- * paying any amount of a symbol and the Khans or Dragons choice. The seeds are found by the search of `dragons-decks.ts`; the checks
- * fail loudly when a seed no longer reaches the situation.
+ * paying any amount of a symbol and the Khans or Dragons choice. Each integration case pins a verified seed and fails clearly if
+ * its checkpoint moves.
  */
 import type {
   ChooseCardsDecision,
@@ -45,8 +45,8 @@ const viewOf = (found: { store: { getState: () => { snapshot: { view: GameView }
   found.store.getState().snapshot?.view as GameView;
 
 test('a Saga with read ahead asks for the chapter, with the words of each chapter; the discard it leads to takes any number', async () => {
-  const found = await reachDragonsStore(asksChapter, /Reading Rite/, { seeds: 30 });
-  if (found === null) throw new Error('no seed reaches the chapter choice');
+  const found = await reachDragonsStore(asksChapter, /Reading Rite/, { seed: 2 });
+  if (found === null) throw new Error('seed 2 missed the chapter choice');
   const { store } = found;
   const view = viewOf(found);
   const d = view.pending as ChooseOptionDecision;
@@ -89,10 +89,10 @@ test('a Saga with read ahead asks for the chapter, with the words of each chapte
 
 test('Behold lists the cards of the hand and the permanents you control, and the answer is one of them', async () => {
   const found = await reachDragonsStore(asksBeholdBoth, /Dragon Scout/, {
-    seeds: 30,
+    seed: 2,
     filler: /Plain Drake/,
   });
-  if (found === null) throw new Error('no seed reaches a Behold with both');
+  if (found === null) throw new Error('seed 2 missed a Behold with both');
   const { store } = found;
   const view = viewOf(found);
   const d = view.pending as ChooseCardsDecision;
@@ -121,8 +121,8 @@ test('Behold lists the cards of the hand and the permanents you control, and the
 }, 300_000);
 
 test('a card exiled to be played is castable from exile, and its labels say so', async () => {
-  const found = await reachDragonsStore(mayPlayFromExile, /Impulse Rite/, { seeds: 30 });
-  if (found === null) throw new Error('no seed reaches a card to play from exile');
+  const found = await reachDragonsStore(mayPlayFromExile, /Impulse Rite/, { seed: 3 });
+  if (found === null) throw new Error('seed 3 missed a card to play from exile');
   const view = viewOf(found);
   const d = view.pending as PriorityDecision;
   const index = objectIndex(view);
@@ -147,8 +147,8 @@ test('a card exiled to be played is castable from exile, and its labels say so',
 }, 300_000);
 
 test('the top card of the library, when a permanent lets you cast it, is castable from there', async () => {
-  const found = await reachDragonsStore(mayCastFromTop, /Seer Drake/, { seeds: 30 });
-  if (found === null) throw new Error('no seed reaches a cast from the top of the library');
+  const found = await reachDragonsStore(mayCastFromTop, /Seer Drake/, { seed: 5 });
+  if (found === null) throw new Error('seed 5 missed a cast from the top of the library');
   const { store } = found;
   const view = viewOf(found);
   const d = view.pending as PriorityDecision;
@@ -168,8 +168,8 @@ test('the top card of the library, when a permanent lets you cast it, is castabl
 }, 300_000);
 
 test('paying any amount asks a number from 0, with the symbol, and the payment follows', async () => {
-  const found = await reachDragonsStore(asksPayAny, /Ember Tyrant/, { seeds: 30, manual: true });
-  if (found === null) throw new Error('no seed reaches paying any amount');
+  const found = await reachDragonsStore(asksPayAny, /Ember Tyrant/, { seed: 5, manual: true });
+  if (found === null) throw new Error('seed 5 missed paying any amount');
   const { store } = found;
   const view = viewOf(found);
   const d = view.pending as ChooseXDecision;
@@ -198,11 +198,11 @@ test('paying any amount asks a number from 0, with the symbol, and the payment f
 
 test('Khans or Dragons: the options are the names the card gives', async () => {
   const found = await reachDragonsStore(asksNamedOption, /Siege of Choices/, {
-    seeds: 40,
+    seed: 40,
     human: DRAGONS_DECK,
     ai: DRAGONS_DECK,
   });
-  if (found === null) throw new Error('no seed reaches the choice of a name');
+  if (found === null) throw new Error('seed 40 missed the choice of a name');
   const view = viewOf(found);
   const d = view.pending as ChooseOptionDecision;
   expect(d.options).toEqual(['Khans', 'Dragons']);

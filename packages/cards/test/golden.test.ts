@@ -211,12 +211,16 @@ describe('training and hold-out coverage (D-066)', () => {
 describe('budget', () => {
   // Per card and after one warm-up pass, so the guard does not tighten as the corpus grows and a
   // cold start does not count; still loose enough to catch only a pathological rule.
-  test('after a warm-up pass, the corpus parses 20 times in under 1.5 ms per card on average', () => {
-    for (const card of cards) analyse(card);
-    const start = performance.now();
-    for (let i = 0; i < 20; i++) for (const card of cards) analyse(card);
-    const perCard = (performance.now() - start) / (20 * cards.length);
-    expect(perCard).toBeLessThan(1.5);
-    // The 20 passes over a corpus that grows with every stage outgrew the 5 s default of a test; the guard is the average per card.
-  }, 60_000);
+  test.skipIf(process.env.TEST_TIER === 'pr')(
+    'after a warm-up pass, the corpus parses 20 times in under 1.5 ms per card on average',
+    () => {
+      for (const card of cards) analyse(card);
+      const start = performance.now();
+      for (let i = 0; i < 20; i++) for (const card of cards) analyse(card);
+      const perCard = (performance.now() - start) / (20 * cards.length);
+      expect(perCard).toBeLessThan(1.5);
+      // The 20 passes outgrew the default timeout; the guard is the average per card.
+    },
+    60_000,
+  );
 });

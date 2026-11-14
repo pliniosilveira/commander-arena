@@ -23,7 +23,7 @@
 // generic decks rarely draw and attack with a trampler or a menace creature, so 30 more games on the
 // 'combat' deck style carry the keyword assertions (see COVERAGE_GAMES).
 import { DECISION_KINDS, type DecisionKind } from '@commander-arena/engine';
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { type Agent, RandomLegalAgent, runGame } from '../src/index';
 import {
   addTally,
@@ -49,6 +49,8 @@ const GAMES = 100;
 // on the deck construction instead. They count only toward the keyword assertions: the distribution
 // of the 100 games and its decision kinds stay exactly those of the generic styles.
 const COVERAGE_GAMES = 30;
+const t = process.env.TEST_TIER === 'pr' ? test.skip : test;
+vi.setConfig({ testTimeout: 180_000 });
 
 /** Delegates to `inner` and notes which decision kinds it was handed. */
 function recording(inner: RandomLegalAgent, kinds: Set<DecisionKind>, tally: CombatTally): Agent {
@@ -66,7 +68,7 @@ function recording(inner: RandomLegalAgent, kinds: Set<DecisionKind>, tally: Com
   };
 }
 
-test('100 random-vs-random games all finish with a result and no faults', async () => {
+t('100 random-vs-random games all finish with a result and no faults', async () => {
   const wins = [0, 0];
   let draws = 0;
   let byLife = 0;
@@ -180,4 +182,4 @@ test('100 random-vs-random games all finish with a result and no faults', async 
   console.log(`100-game distribution: ${JSON.stringify(summary)}`);
   expect(byLife + byDecking).toBe(GAMES);
   expect((wins[0] ?? 0) + (wins[1] ?? 0) + draws).toBe(GAMES);
-}, 180_000);
+});

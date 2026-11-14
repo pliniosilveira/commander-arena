@@ -2,7 +2,8 @@
  * Keyword batch 2 (D-116, D-120) through the game host with the hidden SYNTHETIC deck `synthetic-keywords-2`:
  * the cost-payment question of Convoke, Improvise and Delve (the decision, the model's bar, the answer, the
  * log line, Cancel rewinding the cast), Extort's and Cascade's questions, a regeneration shield on the view and
- * in the log, and that the autopilot never answers the cost-payment question. Seeds are searched, not fixed.
+ * in the log, and that the autopilot never answers the cost-payment question. Each integration case
+ * pins a verified seed and fails instead of searching if its checkpoint moves.
  */
 import type { GameView } from '@commander-arena/engine';
 import { describe, expect, test, vi } from 'vitest';
@@ -29,10 +30,15 @@ const texts = (snap: Snapshot) => snap.log.map((l) => l.text);
 
 async function must(
   accept: (view: GameView) => boolean,
-  opts: { prefer?: readonly string[]; seeds?: number } = {},
+  opts: { seed?: number; prefer?: readonly string[]; seeds?: number } = {},
 ) {
   const reached = await reachKeywords2(accept, opts);
-  if (reached === null) throw new Error('no seed reaches the situation');
+  if (reached === null)
+    throw new Error(
+      opts.seed === undefined
+        ? 'no seed reaches the situation'
+        : `seed ${opts.seed} missed the situation`,
+    );
   return reached;
 }
 
@@ -48,7 +54,7 @@ const model = (view: GameView) => {
 
 describe('Convoke', () => {
   test('the question names the spell and its cost, preselects the engine suggestion and its Confirm is enabled', async () => {
-    const { snap } = await must(asksPayOptions('convoke', { nonEmpty: true }));
+    const { snap } = await must(asksPayOptions('convoke', { nonEmpty: true }), { seed: 2 });
     const d = payOptionsOf(snap.view);
     if (d === null) throw new Error('wrong decision');
     const spell = snap.view.stack.find((o) => o.id === d.source);
@@ -66,7 +72,7 @@ describe('Convoke', () => {
   });
 
   test('Confirm taps the creatures, the log says so in one line, and the spell goes on to the payment', async () => {
-    const { host, snap } = await must(asksPayOptions('convoke', { nonEmpty: true }));
+    const { host, snap } = await must(asksPayOptions('convoke', { nonEmpty: true }), { seed: 2 });
     const d = payOptionsOf(snap.view);
     if (d === null) throw new Error('wrong decision');
     const spell = snap.view.stack.find((o) => o.id === d.source)?.name ?? '';
@@ -93,7 +99,7 @@ describe('Convoke', () => {
   });
 
   test('Cancel rewinds the cast: the spell is back in the hand and the creatures are untapped', async () => {
-    const { host, snap } = await must(asksPayOptions('convoke', { nonEmpty: true }));
+    const { host, snap } = await must(asksPayOptions('convoke', { nonEmpty: true }), { seed: 2 });
     const d = payOptionsOf(snap.view);
     if (d === null) throw new Error('wrong decision');
     const spell = snap.view.stack.find((o) => o.id === d.source)?.name ?? '';
@@ -108,7 +114,7 @@ describe('Convoke', () => {
   });
 
   test('an answer that is not a candidate is refused by the engine and the question stays', async () => {
-    const { host, snap } = await must(asksPayOptions('convoke'));
+    const { host, snap } = await must(asksPayOptions('convoke'), { seed: 2 });
     const next = await host.act({ kind: 'choosePayOptions', objects: ['o999999'] });
     expect(next.error).not.toBeNull();
     expect(next.view.pending?.kind).toBe('choosePayOptions');
@@ -118,7 +124,7 @@ describe('Convoke', () => {
 
 describe('Delve', () => {
   test('the exiled cards are one count in the log and the graveyard is smaller', async () => {
-    const { host, snap } = await must(asksPayOptions('delve', { nonEmpty: true }));
+    const { host, snap } = await must(asksPayOptions('delve', { nonEmpty: true }), { seed: 1 });
     const d = payOptionsOf(snap.view);
     if (d === null) throw new Error('wrong decision');
     const spell = snap.view.stack.find((o) => o.id === d.source)?.name ?? '';
@@ -142,7 +148,7 @@ describe('Improvise', () => {
   test('the artifacts to tap are listed, and the log says "improvise"', async () => {
     const reached = await reachKeywords2(asksPayOptions('improvise'), {
       prefer: ['SYNTHETIC Trinket', 'SYNTHETIC Resourceful Hulk'],
-      seeds: 40,
+      seed: 26,
     });
     if (reached === null) throw new Error('no seed reaches the situation');
     const { host, snap } = reached;
@@ -164,7 +170,7 @@ describe('Improvise', () => {
 
 describe('the autopilot', () => {
   test('never answers the cost-payment question: it stays pending and the stop policy says stop', async () => {
-    const store = await reachKeywords2Store(asksPayOptions('convoke'));
+    const store = await reachKeywords2Store(asksPayOptions('convoke'), { seed: 2 });
     if (store === null) throw new Error('no seed reaches the situation');
     const view = store.getState().snapshot?.view;
     if (view === undefined) throw new Error('no view');
@@ -179,7 +185,7 @@ describe('the autopilot', () => {
   });
 
   test('the scripted human answers it with the engine suggestion', async () => {
-    const { snap } = await must(asksPayOptions('convoke'));
+    const { snap } = await must(asksPayOptions('convoke'), { seed: 2 });
     const d = payOptionsOf(snap.view);
     if (d === null || snap.view.pending === null) throw new Error('wrong decision');
     expect(chooseAction(snap.view, snap.view.pending)).toEqual({
@@ -191,7 +197,7 @@ describe('the autopilot', () => {
 
 describe('Extort', () => {
   test('"Pay {W/B} for extort?", the payment, and what declining and backing out say', async () => {
-    const { host, snap } = await must(asksConfirm('mayPay'));
+    const { host, snap } = await must(asksConfirm('mayPay'), { seed: 11 });
     const q = snap.view.pending;
     if (q?.kind !== 'confirmOptional') throw new Error('wrong decision');
     const m = model(snap.view);
@@ -216,7 +222,7 @@ describe('Extort', () => {
   });
 
   test('declining is a line of its own', async () => {
-    const { host } = await must(asksConfirm('mayPay'));
+    const { host } = await must(asksConfirm('mayPay'), { seed: 11 });
     const declined = await host.act({ kind: 'declineOptional' });
     expect(declined.error).toBeNull();
     expect(texts(declined)).toContain("You don't pay {W/B} for extort.");
@@ -225,7 +231,7 @@ describe('Extort', () => {
 
 describe('Cascade', () => {
   test('the question names the exiled card; accepting casts it and declining puts the cards on the bottom', async () => {
-    const { host, snap } = await must(asksConfirm('cascade'), { prefer: CASCADE });
+    const { host, snap } = await must(asksConfirm('cascade'), { prefer: CASCADE, seed: 28 });
     const q = snap.view.pending;
     if (q?.kind !== 'confirmOptional' || q.subject === undefined) throw new Error('wrong decision');
     const card = snap.view.exile.find((o) => o.id === q.subject)?.name;
@@ -247,7 +253,7 @@ describe('Cascade', () => {
   });
 
   test('accepting casts the card without paying', async () => {
-    const { host, snap } = await must(asksConfirm('cascade'), { prefer: CASCADE });
+    const { host, snap } = await must(asksConfirm('cascade'), { prefer: CASCADE, seed: 28 });
     const q = snap.view.pending;
     if (q?.kind !== 'confirmOptional' || q.subject === undefined) throw new Error('wrong decision');
     const card = snap.view.exile.find((o) => o.id === q.subject)?.name;
@@ -259,8 +265,9 @@ describe('Cascade', () => {
 
 describe('a regeneration shield', () => {
   test('is in the view of the permanent and shows as a chip', async () => {
-    const { snap } = await must((view) =>
-      view.battlefield.some((o) => (o.regenerationShields ?? 0) > 0),
+    const { snap } = await must(
+      (view) => view.battlefield.some((o) => (o.regenerationShields ?? 0) > 0),
+      { seed: 3 },
     );
     const shielded = snap.view.battlefield.find((o) => (o.regenerationShields ?? 0) > 0);
     if (shielded === undefined) throw new Error('no shield');

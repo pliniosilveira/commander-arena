@@ -32,6 +32,7 @@ import {
 
 const LIMITS = { maxTurns: 150, maxActions: 5000 };
 const COMBAT_KINDS = ['declareAttackers', 'declareBlockers', 'assignDamage'];
+const fullTierDescribe = process.env.TEST_TIER === 'pr' ? describe.skip : describe;
 
 const creatureConfig = (game: number): GameConfig =>
   smallGameConfig(game, game % 3 === 0 ? ['creatures', 'creatures'] : ['brawl', 'brawl']);
@@ -70,7 +71,7 @@ async function playCombatGames(
   return { answered, tally };
 }
 
-describe('RandomLegalAgent combat answers in real games', () => {
+fullTierDescribe('RandomLegalAgent combat answers in real games', () => {
   test('attack, block and damage answers follow the rules and the engine accepted them all', async () => {
     const { answered, tally } = await playCombatGames(60);
     console.log(`combat answers in 60 games: ${JSON.stringify(tally)}`);

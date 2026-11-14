@@ -8,6 +8,7 @@ coverage/
 .cache/
 *.log
 test-results/
+.test-results/
 playwright-report/
 .wrangler/
 # Wizards' text, not redistributed (D-246): the Comprehensive Rules and the Update Bulletins are fetched by the owner with `pnpm rules:fetch`

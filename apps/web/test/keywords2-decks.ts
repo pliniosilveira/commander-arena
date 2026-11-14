@@ -45,6 +45,7 @@ export const asksConfirm =
     view.pending.seat === view.viewer;
 
 interface SearchOptions {
+  readonly seed?: number;
   readonly seeds?: number;
   readonly maxClicks?: number;
   /** Cards to cast ahead of the scripted human's own choice (after it has played a land). */
@@ -75,7 +76,9 @@ export async function reachKeywords2(
 ): Promise<{ host: GameHost; snap: Snapshot; seed: number } | null> {
   const { seeds = 120, maxClicks = 600, prefer = [] } = opts;
   const answer = answerer(prefer);
-  for (let seed = 1; seed <= seeds; seed += 1) {
+  const candidates =
+    opts.seed === undefined ? Array.from({ length: seeds }, (_, i) => i + 1) : [opts.seed];
+  for (const seed of candidates) {
     const host = new GameHost({ clock: () => 0 });
     let snap = (await host.newGame({ seed, humanDeck: KEYWORDS2_DECK, aiDeck: 'swamp-forest' }))
       .snapshot;
@@ -100,7 +103,9 @@ export async function reachKeywords2Store(
 ): Promise<Keywords2Store | null> {
   const { seeds = 120, maxClicks = 600, prefer = [] } = opts;
   const answer = answerer(prefer);
-  for (let seed = 1; seed <= seeds; seed += 1) {
+  const candidates =
+    opts.seed === undefined ? Array.from({ length: seeds }, (_, i) => i + 1) : [opts.seed];
+  for (const seed of candidates) {
     const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
     await store.getState().startGame({ seed, humanDeck: KEYWORDS2_DECK, aiDeck: 'swamp-forest' });
     for (let clicks = 0; clicks < maxClicks; clicks += 1) {

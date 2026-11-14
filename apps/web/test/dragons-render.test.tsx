@@ -2,7 +2,7 @@
  * The questions of the Dragons slice rendered (D-151): the chapter and the name dialogs, Behold in the dock with its two places, the
  * stepper of "pay any amount" with no Cancel, the discard of any number of cards, a mode that may not repeat, a permanent that copies, the
  * Cascade question of Discover, the chips of the cards castable from exile and from the top of the library, and the marked mana in a pool.
- * Most are drawn from real games of the hidden SYNTHETIC decks; the others from their own shapes over a small view.
+ * Some are drawn from fixed-seed games of the hidden SYNTHETIC decks; the others from their own shapes over a small view.
  */
 import type {
   ChooseModesDecision,
@@ -40,7 +40,7 @@ import {
   reachDragonsStore,
 } from './dragons-decks';
 
-// The games are searched for a seed that reaches each situation: a few seconds each.
+// The host-backed cases pin their verified seeds and fail if a checkpoint moves.
 vi.setConfig({ testTimeout: 300_000 });
 
 const none = () => {};
@@ -53,8 +53,13 @@ async function must(
   want: RegExp,
   opts: Parameters<typeof reachDragonsStore>[2] = {},
 ): Promise<DragonsStore> {
-  const found = await reachDragonsStore(accept, want, { seeds: 30, ...opts });
-  if (found === null) throw new Error('no seed reaches the situation');
+  const found = await reachDragonsStore(accept, want, opts);
+  if (found === null)
+    throw new Error(
+      opts.seed === undefined
+        ? 'no seed reaches the situation'
+        : `seed ${opts.seed} missed the situation`,
+    );
   return found.store;
 }
 
@@ -67,7 +72,7 @@ const layer = (store: DragonsStore, children: React.ReactNode = <div />) =>
 
 describe('the dialogs of a name and of a chapter', () => {
   test('read ahead: the chapters with their words, no way out', async () => {
-    const store = await must(asksChapter, /Reading Rite/);
+    const store = await must(asksChapter, /Reading Rite/, { seed: 2 });
     const html = layer(store);
     expect(html).toContain('aria-label="Choose a chapter"');
     expect(html).toContain('>SYNTHETIC Reading Rite</h2>');
@@ -84,6 +89,7 @@ describe('the dialogs of a name and of a chapter', () => {
 
   test('Khans or Dragons: one button for each name', async () => {
     const store = await must(asksNamedOption, /Siege of Choices/, {
+      seed: 40,
       human: DRAGONS_DECK,
       ai: DRAGONS_DECK,
       seeds: 40,
@@ -99,7 +105,7 @@ describe('the dialogs of a name and of a chapter', () => {
 
 describe('Behold in the dock', () => {
   test('the cards of the hand and the permanents you control, each under its own words', async () => {
-    const store = await must(asksBeholdBoth, /Dragon Scout/);
+    const store = await must(asksBeholdBoth, /Dragon Scout/, { seed: 2 });
     const html = layer(store);
     expect(html).toContain('aria-label="Cards to behold"');
     expect(html).toContain('>Behold a Dragon</h3>');
@@ -119,7 +125,7 @@ describe('Behold in the dock', () => {
 describe('any number of cards, and any amount of mana', () => {
   test('the discard says that none is an answer, and Confirm says what it does', async () => {
     // The plain bot starts the Saga at chapter I; chapter II comes with the lore counter of the next turn.
-    const store = await must(asksAnyDiscard, /Reading Rite/);
+    const store = await must(asksAnyDiscard, /Reading Rite/, { seed: 2 });
     const html = layer(store);
     expect(html).toContain('Discard any number of cards');
     expect(html).toContain('Discard none');
@@ -127,7 +133,7 @@ describe('any number of cards, and any amount of mana', () => {
   });
 
   test('pay any amount: a stepper from 0, the symbol, no Cancel', async () => {
-    const store = await must(asksPayAny, /Ember Tyrant/, { manual: true });
+    const store = await must(asksPayAny, /Ember Tyrant/, { seed: 5, manual: true });
     const html = layer(store);
     expect(html).toContain('aria-label="Pay any amount"');
     expect(html).toContain(
@@ -144,7 +150,7 @@ describe('any number of cards, and any amount of mana', () => {
 
 describe('cast from exile and from the top of the library', () => {
   test('a card exiled to be played is a chip above the hand', async () => {
-    const store = await must(mayPlayFromExile, /Impulse Rite/);
+    const store = await must(mayPlayFromExile, /Impulse Rite/, { seed: 3 });
     const view = store.getState().snapshot?.view as GameView;
     const html = layer(store, <OtherZonesStrip view={view} />);
     expect(html).toContain('aria-label="Cast from exile"');
@@ -152,7 +158,7 @@ describe('cast from exile and from the top of the library', () => {
   });
 
   test('the top card of the library: its own chip, and the card beside the library count can be clicked', async () => {
-    const store = await must(mayCastFromTop, /Seer Drake/);
+    const store = await must(mayCastFromTop, /Seer Drake/, { seed: 5 });
     const view = store.getState().snapshot?.view as GameView;
     const seat = view.seats[view.viewer] as SeatView;
     const top = seat.libraryTop as ObjectView;

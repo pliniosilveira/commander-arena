@@ -83,7 +83,24 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec vitest run --shard=${{ matrix.shard }}/4
+      - name: Run exhaustive tests and record timings
+        env:
+          VITEST_RESULTS_DIR: .test-results
+        run: |
+          mkdir -p "$VITEST_RESULTS_DIR"
+          pnpm exec vitest run \
+            --shard=${{ matrix.shard }}/4 \
+            --reporter=default \
+            --reporter=json \
+            --outputFile.json="$VITEST_RESULTS_DIR/vitest-results.json" \
+            2>&1 | tee "$VITEST_RESULTS_DIR/vitest.log"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: full-test-results-${{ matrix.shard }}
+          path: .test-results/
+          if-no-files-found: warn
+          retention-days: 30
 
   e2e:
     needs: gate
