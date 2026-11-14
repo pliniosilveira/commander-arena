@@ -252,8 +252,10 @@ describe('what a gain does not read', () => {
     expect(dropped(text)).toMatchObject({ reason: 'unrecognised', stoppedAt });
   });
 
-  test('a keyword with a parameter is unread: protection, ward, landwalk', () => {
-    expect(dropped('Target creature gains protection from red until end of turn.')).toMatchObject({
+  test('a keyword with a parameter is unread: protection from a quality that is not a color (colors are read since D-1302), ward, landwalk', () => {
+    expect(
+      dropped('Target creature gains protection from artifacts until end of turn.'),
+    ).toMatchObject({
       reason: 'unrecognised',
     });
     expect(dropped('Target creature gains ward {2} until end of turn.')).toMatchObject({

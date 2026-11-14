@@ -8,6 +8,7 @@
 import { CARD_TYPES, COLORS, isNonCreatureSubtype } from '../characteristics';
 import { GRANTABLE_KEYWORDS, RESTRICTABLE_BY_EFFECT } from './features';
 import type { Effect } from './types';
+import { checkProtectionTypes } from './validate-attach';
 import {
   type AstIssue,
   checkAffectedObjects,
@@ -225,7 +226,25 @@ export function checkContinuousEffect(
       checkGrantAbility(e, path, out);
       break;
     case 'grantKeyword':
-      if (!GRANTABLE_KEYWORDS.includes(e.keyword?.kind)) {
+      if (e.keyword?.kind === 'protection') {
+        // D-1301 (CR 702.16): an effect gives protection from named colors or card types, or from the color of the controller's choice (asked as it resolves).
+        // The qualities that read a permanent's choice or a commander (`chosenCardType`, `colorsNotInCommanderIdentity`) need a static ability.
+        if (e.keyword.from === 'cardType') {
+          checkProtectionTypes(e.keyword.types, `${path}.keyword.types`, out);
+        } else if (e.keyword.from === 'color') {
+          if (!Array.isArray(e.keyword.colors) || e.keyword.colors.length === 0) {
+            issue(out, `${path}.keyword.colors`, 'protection needs at least one color');
+          } else {
+            checkEnumList(out, `${path}.keyword.colors`, e.keyword.colors, COLORS, 'color');
+          }
+        } else if (e.keyword.from !== 'colorOfChoice') {
+          issue(
+            out,
+            `${path}.keyword`,
+            `an effect cannot give protection from ${String((e.keyword as { from: unknown }).from)}: only a static ability can`,
+          );
+        }
+      } else if (!GRANTABLE_KEYWORDS.includes(e.keyword?.kind)) {
         issue(out, `${path}.keyword`, 'only keywords without parameters can be granted');
       } else if (e.keyword?.kind === 'riot') {
         // D-185: riot is applied as a permanent enters; an effect that gives it later would have no choice left to make.

@@ -125,6 +125,13 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
           if (!isOneOf(c, COLORS)) issue(out, `${path}.colors[${i}]`, `unknown color ${String(c)}`);
         });
       }
+    } else if (k.from === 'colorOfChoice') {
+      // D-1301: asked as an effect resolves; a static ability or a printed keyword has nothing to ask.
+      issue(
+        out,
+        `${path}.from`,
+        'protection from the color of your choice is chosen as an effect resolves: only a grantKeyword effect gives it',
+      );
     } else if (k.from !== 'colorsNotInCommanderIdentity' && k.from !== 'chosenCardType') {
       issue(
         out,

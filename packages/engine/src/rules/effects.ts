@@ -79,6 +79,7 @@ import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
+import { givesProtectionOfChoice, runProtectionColor } from './protection-choice';
 import { runRegenerate } from './regenerate';
 import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
@@ -156,6 +157,9 @@ export function runInstruction(
   if (instruction.kind === 'auraEntry') return runAuraEntry(state, res, instruction);
   if (instruction.kind === 'reselectAttack') return runReselectAttack(state, res, instruction);
   if (instruction.kind === 'chooseOne') return runChooseOne(state, res, instruction);
+  if (instruction.kind === 'protectionColor') {
+    return runProtectionColor(state, res, instruction, contextOf(state, res), targets);
+  }
   if (instruction.kind === 'vote') return runVote(state, res, instruction);
   if (instruction.kind === 'ringTempts') return runRingTempts(state, res, instruction);
   if (instruction.kind === 'pair') return runPair(state, res, instruction);
@@ -479,15 +483,9 @@ function graveyardSuccessors(state: GameState, id: ObjectId): readonly ObjectId[
   return found.length > 0 ? found : [id];
 }
 
-function runEffect(
-  state: GameState,
-  res: ResolutionContext,
-  effect: Effect,
-  targets: readonly ChosenTarget[],
-  flow: OrderFlow,
-): StepOutcome {
-  // "This" is the spell, or for an ability the permanent it belongs to (which may be gone).
-  const ctx: SelectContext = {
+/** The context the selectors and amounts of a resolving spell or ability read: "this" is the spell, or for an ability the permanent it belongs to (which may be gone). */
+function contextOf(state: GameState, res: ResolutionContext): SelectContext {
+  return {
     controller: res.controller,
     source: res.source,
     // CR 107.3a: the X announced for the spell or ability that is resolving.
@@ -503,6 +501,16 @@ function runEffect(
     ...(res.thisWay === undefined ? {} : { thisWay: res.thisWay }),
     ...(res.votes === undefined ? {} : { votes: res.votes }),
   };
+}
+
+function runEffect(
+  state: GameState,
+  res: ResolutionContext,
+  effect: Effect,
+  targets: readonly ChosenTarget[],
+  flow: OrderFlow,
+): StepOutcome {
+  const ctx = contextOf(state, res);
   const events: GameEvent[] = [];
   let next = state;
 
@@ -2062,6 +2070,10 @@ function runEffect(
     case 'grantAbility':
     case 'grantKeyword':
     case 'restrict':
+      // D-1301 (CR 702.16, 608.2d): "gains protection from the color of your choice": the controller chooses the color first (rules/protection-choice.ts).
+      if (givesProtectionOfChoice(effect)) {
+        return done(state, [], [{ kind: 'protectionColor', effect, chosen: null }]);
+      }
       // CR 611.2, 613: "gets +N/+N until end of turn", "loses all abilities", "becomes a Frog" and
       // the rest are continuous effects in the game state, applied by `derive` in their layers.
       return runContinuous(state, effect, ctx, targets);

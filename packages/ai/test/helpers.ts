@@ -2706,6 +2706,40 @@ export const DANITHA_G7_LANDS = supported([
 ]);
 
 /**
+ * The SYNTHETIC cards of group 1 of the Feather deck (D-1300 to D-1302): "gains protection from the color of your choice until end of turn" (a `chooseOption` of purpose
+ * `protectionColor` in the middle of a resolution, for one creature and for a group), "gains protection from red until end of turn" and "draw a card, then +1/+0 for each card you've
+ * drawn this turn". The color question is a decision kind that games-100 expects only from dedicated styles, so the group is kept out of every generic pool.
+ */
+export const FEATHER_G1_NAMES = [
+  'SYNTHETIC Feather Ward',
+  'SYNTHETIC Feather Rally',
+  'SYNTHETIC Feather Veil',
+  'SYNTHETIC Feather Fist',
+] as const;
+
+/** The featherG1 style: every card of the group three times, bodies to protect, burn and removal to respond to, and a card-draw spell. */
+export const FEATHER_G1_SPELLS = [
+  ...supported(FEATHER_G1_NAMES),
+  ...supported(FEATHER_G1_NAMES),
+  ...supported(FEATHER_G1_NAMES),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Murder', 'Divination']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Raging Goblin']),
+];
+
+/** White for the protection, red for the burn and the pump, blue for the card draw, a little black for the removal. */
+export const FEATHER_G1_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Mountain',
+  'Island',
+  'Island',
+  'Swamp',
+]);
+
+/**
  * The SYNTHETIC cards of group 2 of the Feather deck (D-443 to D-448): a creature that gives commander creatures +2/+2 and indestructible (the commander of the deck is the one it
  * reads), a bite with "another target creature" and a damage spell with two amounts to two targets (two target questions in one cast, with a differ rule), a creature with a trigger of
  * three events and "Monstrosity 5", a modal spell with a counter-and-untap mode and a bounce mode (a `chooseModes` question), and a land whose counter ability is only for sorcery timing
@@ -3555,6 +3589,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(FEATHER_G3_NAMES as readonly string[]).includes(card.name))
   // The Feather group 2 cards (D-443 to D-448) ask the modes of a spell and two targets in one cast, and the land is for sorcery timing after a spell: a style of their own.
   .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
+  // The Feather group 1 cards (D-1301) ask which color to protect from as a spell resolves: a style of their own.
+  .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ANGEL_NAMES as readonly string[]).includes(card.name))
@@ -3767,6 +3803,7 @@ export type DeckStyle =
   | 'danithaG7'
   | 'featherG3'
   | 'featherG2'
+  | 'featherG1'
   | 'vehicles'
   | 'prevention'
   | 'layouts'
@@ -3845,6 +3882,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG7' && DANITHA_G7_SPELLS.length > 0) return DANITHA_G7_SPELLS;
   if (style === 'featherG3' && FEATHER_G3_SPELLS.length > 0) return FEATHER_G3_SPELLS;
   if (style === 'featherG2' && FEATHER_G2_SPELLS.length > 0) return FEATHER_G2_SPELLS;
+  if (style === 'featherG1' && FEATHER_G1_SPELLS.length > 0) return FEATHER_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
@@ -4035,6 +4073,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG7' && BASIC_LANDS.length > 0) return DANITHA_G7_LANDS;
   if (style === 'featherG3' && BASIC_LANDS.length > 0) return FEATHER_G3_LANDS;
   if (style === 'featherG2' && BASIC_LANDS.length > 0) return FEATHER_G2_LANDS;
+  if (style === 'featherG1' && BASIC_LANDS.length > 0) return FEATHER_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
@@ -4542,6 +4581,13 @@ export const FEATHER_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
   ['featherG2', 'featherG2'],
   ['featherG2', 'spells'],
   ['spells', 'featherG2'],
+];
+
+/** Style pairs of the Feather group 1 soak test (D-1301): a mirror match and both mixed ways. */
+export const FEATHER_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['featherG1', 'featherG1'],
+  ['featherG1', 'spells'],
+  ['spells', 'featherG1'],
 ];
 
 /** Style pairs of the repeatable-mode soak test (D-344): a mirror match and both mixed ways. */

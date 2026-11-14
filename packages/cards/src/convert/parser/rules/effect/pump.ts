@@ -116,6 +116,8 @@ export const EFFECT_PUMP = defineRule<Clauses>({
     'enchanted creature gets +2/+2 until end of turn',
     '~ gets +1/+1 until end of turn for each creature you control',
     'target creature gets -2/-2 until end of turn for each Swamp you control',
+    'it also gets +1/+0 until end of turn',
+    'that creature also gets +2/+2 until end of turn',
   ],
   rejects: [
     '~ gets +X/+X until end of turn for each creature you control',
@@ -128,6 +130,9 @@ export const EFFECT_PUMP = defineRule<Clauses>({
     '~ gets X/X until end of turn',
     '~ gets +1/+1 and gains flying until end of turn',
     'its gets +1/+1 until end of turn',
+    'it also get +1/+0 until end of turn',
+    'it gets also +1/+0 until end of turn',
+    'it also gets +1/+0',
     'target creatures get +1/+1 until end of turn',
     'target creature gets 1/1 until end of turn',
     '~ gets +1/+1 until end of turn and draw a card',
@@ -135,7 +140,13 @@ export const EFFECT_PUMP = defineRule<Clauses>({
   ],
   parse: single(
     'effect.pump',
-    sequence(family<IrNoun>('noun', { only: GAIN_SUBJECTS }), literal(' gets '), PUMP_TAIL),
+    // D-1306 (Might of the Meek): "It also gets +1/+0 until end of turn if you control a Mouse": "also" says only that it is in addition to what the sentence before gave the same
+    // creature (as `effect.gain-keyword` reads it, D-176); the "if" is the clause's condition, read by the sentence rule.
+    sequence(
+      family<IrNoun>('noun', { only: GAIN_SUBJECTS }),
+      pattern(/ (?:also )?gets /),
+      PUMP_TAIL,
+    ),
     ([objects, , [pt, , duration, count]]) => ({
       verb: 'modifyPt',
       args: pumpArgs(objects, pt, count),

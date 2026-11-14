@@ -37,7 +37,8 @@ type StateAmount = Extract<
       | 'commanderCasts'
       | 'thisWay'
       | 'opponentsWithMore'
-      | 'cardsStillExiled';
+      | 'cardsStillExiled'
+      | 'cardsDrawnThisTurn';
   }
 >;
 
@@ -53,7 +54,8 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'commanderCasts' ||
     amount.kind === 'thisWay' ||
     amount.kind === 'opponentsWithMore' ||
-    amount.kind === 'cardsStillExiled'
+    amount.kind === 'cardsStillExiled' ||
+    amount.kind === 'cardsDrawnThisTurn'
   );
 }
 
@@ -285,6 +287,9 @@ export function stateAmountOf(
     case 'cardsStillExiled':
       // CR 400.7: a card that left exile is a new object, so only the very objects still there count.
       return amount.objects.filter((id) => state.objects[id]?.zone === 'exile').length;
+    case 'cardsDrawnThisTurn':
+      // CR 121.1 (D-1300): "for each card you've drawn this turn": the cards the controller of the effect has drawn so far this turn (`SeatState.cardsDrawnThisTurn`).
+      return getSeat(state, ctx.controller).cardsDrawnThisTurn;
     default: {
       const unreachable: never = amount;
       return unreachable;
