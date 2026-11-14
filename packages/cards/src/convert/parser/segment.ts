@@ -78,6 +78,14 @@ const LOYALTY_PREFIX = /^\[?(?:[+]\d+|[\u2212\u2013-](?:\d+|X)|0)\]?\s*:/;
 const ACTIVATED_MAY_CAST_RIDER =
   /^(?:[^:.]+: )?you may cast target [^.,]* cards? from your graveyard (?:this turn|until end of turn)\. if that spell would be put into your graveyard, exile it instead\./i;
 
+/**
+ * "{2}{B}{B}, {T}: Return target creature card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step. If it would leave the battlefield,
+ * exile it instead of putting it anywhere else. Activate only as a sorcery." (Gisa deck, group 4, D-1430, Whip of Erebos): an activated ability whose last sentence says a replacement
+ * effect of the permanent its first sentence put onto the battlefield; read before the replacement test below, which "would ... instead" would take.
+ */
+const LEAVE_EXILE_RIDER =
+  /\. if it would leave the battlefield, exile it instead of putting it anywhere else\./i;
+
 function isOpenQuote(c: string): boolean {
   return c === '"' || c === '“';
 }
@@ -636,6 +644,11 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     if (colon > 0) return activatedSkeleton(text, colon, base);
     // A spell of the same two sentences: the rider belongs to the permission, not to a replacement effect of a permanent.
     return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
+  }
+
+  if (LEAVE_EXILE_RIDER.test(text)) {
+    const colon = costColon(text);
+    if (colon > 0 && text.slice(0, colon).includes('{')) return activatedSkeleton(text, colon, base);
   }
 
   if (

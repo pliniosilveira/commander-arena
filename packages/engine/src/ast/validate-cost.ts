@@ -287,8 +287,16 @@ export function checkAbilityCostReduction(
   path: string,
   out: Out,
 ): void {
+  if (s.abilities === 'ofObjects') {
+    checkObjectsAbilityReduction(s, path, out);
+    return;
+  }
   if (s.abilities !== 'equip') {
-    issue(out, `${path}.abilities`, 'only Equip abilities are named (abilities: "equip")');
+    issue(
+      out,
+      `${path}.abilities`,
+      'only Equip abilities or the abilities of some objects are named (abilities: "equip" or "ofObjects")',
+    );
   }
   if (s.targeting === undefined || s.targeting === null || typeof s.targeting !== 'object') {
     issue(out, `${path}.targeting`, 'an ability cost reduction needs a filter of what it targets');
@@ -304,6 +312,50 @@ export function checkAbilityCostReduction(
         out,
         `${path}.targeting`,
         'the object an ability targets is a permanent on the battlefield: no zone, stackKind or targetsObject',
+      );
+    }
+  }
+  if (typeof s.amount === 'number') {
+    if (!isCount(s.amount) || s.amount < 1) {
+      issue(out, `${path}.amount`, 'a cost reduction must be a positive integer');
+    }
+  } else {
+    checkStateAmount(s.amount, `${path}.amount`, out, 'a cost reduction');
+  }
+}
+
+/**
+ * D-1432, CR 601.2f, 118.7, 113.6b: "Activated abilities of creature cards in your graveyard cost {1} less to activate." `objects` describes the object with the ability, a card in
+ * the graveyard (the zone is named, the only one besides the battlefield where an ability works; `controller` is relative to the permanent with this ability); `amount` is read as
+ * `costReduction`'s is.
+ */
+function checkObjectsAbilityReduction(
+  s: Extract<StaticEffect, { kind: 'abilityCostReduction'; abilities: 'ofObjects' }>,
+  path: string,
+  out: Out,
+): void {
+  if (s.objects === undefined || s.objects === null || typeof s.objects !== 'object') {
+    issue(out, `${path}.objects`, 'an ability cost reduction needs a filter of the objects');
+  } else {
+    checkFilter(s.objects, `${path}.objects`, out);
+    if (s.objects.zone !== 'graveyard') {
+      issue(
+        out,
+        `${path}.objects.zone`,
+        'the abilities of cards in a graveyard are the ones named (zone: "graveyard")',
+      );
+    }
+    if (
+      filterSome(
+        s.objects,
+        (f) =>
+          f.stackKind !== undefined || f.targetsObject !== undefined || f.attachedTo !== undefined,
+      )
+    ) {
+      issue(
+        out,
+        `${path}.objects`,
+        'the object with the ability is a card in a graveyard: no stackKind, targetsObject or attachedTo',
       );
     }
   }

@@ -563,7 +563,15 @@ export function resolveObjects(
         ctx.source === null
           ? undefined
           : (state.objects[ctx.source] ?? state.lki[ctx.source]?.object);
-      return (source?.linkedExile ?? []).filter((id) => state.objects[id]?.zone === 'exile');
+      // D-1431: "each creature card exiled with this artifact": the cards a filter of cards describes, among those.
+      const filter = selector.filter;
+      return (source?.linkedExile ?? []).filter((id) => {
+        const card = state.objects[id];
+        return (
+          card?.zone === 'exile' &&
+          (filter === undefined || matchesFilter(state, card, { ...filter, zone: 'exile' }, ctx))
+        );
+      });
     }
     case 'triggerCard': {
       // CR 400.7, 603.10a (D-230): the card the permanent the event is about became in the graveyard, if it is still there.

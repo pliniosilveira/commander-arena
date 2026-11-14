@@ -35,7 +35,14 @@ export function adjustedAbility(
   ability: ActivatedAbility,
 ): ActivatedAbility {
   const worked = ability.cost.some((c) => c.kind === 'payLife' && typeof c.amount !== 'number');
-  if (!worked && ability.costReducedIf === undefined && ability.costReducedBy === undefined) {
+  // D-1432: the reduction of a permanent's static ability for the activated abilities of cards in a graveyard.
+  const byStatics = objectsReductionFor(state, source);
+  if (
+    !worked &&
+    ability.costReducedIf === undefined &&
+    ability.costReducedBy === undefined &&
+    byStatics === 0
+  ) {
     return ability;
   }
   const ctx = { controller: seat, source: source.id };
@@ -53,7 +60,24 @@ export function adjustedAbility(
     const by = amountOf(state, costReducedBy.amount, ctx, []);
     if (by > 0) cost = reducedCosts(cost, by);
   }
+  if (byStatics > 0) cost = reducedCosts(cost, byStatics);
   return { ...rest, cost };
+}
+
+/**
+ * "Activated abilities of creature cards in your graveyard cost {1} less to activate" (D-1432, CR 601.2f, 118.7): how much the generic mana of an ability of `source`, a card
+ * in a graveyard, goes down, from the permanents with an `abilityCostReduction` of `ofObjects` whose filter matches the card (the permanent that has the static ability is the
+ * source and its controller is "you", so `controller: 'you'` is its controller's graveyard). The reductions of several permanents add up. 0 for anything on the battlefield.
+ */
+function objectsReductionFor(state: GameState, source: GameObject): number {
+  if (source.zone !== 'graveyard') return 0;
+  let total = 0;
+  for (const s of abilityReductionSources(state)) {
+    if (s.objects === undefined) continue;
+    const ctx = { controller: controllerOf(state, s.object), source: s.object.id };
+    if (matchesFilter(state, source, s.objects, ctx)) total += amountOf(state, s.amount, ctx, []);
+  }
+  return total;
 }
 
 /**
@@ -70,7 +94,7 @@ export function equipReductionFor(
   if (ability.equip !== true || targets.length === 0) return 0;
   let total = 0;
   for (const source of abilityReductionSources(state)) {
-    if (controllerOf(state, source.object) !== seat) continue;
+    if (source.targeting === undefined || controllerOf(state, source.object) !== seat) continue;
     const ctx = { controller: seat, source: source.object.id };
     const aimed = targets.some((id) => {
       const target = state.objects[id];

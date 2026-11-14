@@ -58,6 +58,7 @@ import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
 import { SYNTHETIC_FEATHER_G2_LIST } from './synthetic-feather-g2';
 import { SYNTHETIC_FEATHER_G3_LIST } from './synthetic-feather-g3';
+import { SYNTHETIC_GISA_G4_LIST } from './synthetic-gisa-g4';
 import { SYNTHETIC_FETCH_GRANTS_LIST } from './synthetic-fetch-grants';
 import { SYNTHETIC_FIGHT_LIST } from './synthetic-fight';
 import { SYNTHETIC_FOLLOWUP_LIST } from './synthetic-followups';
@@ -407,6 +408,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_DANITHA_G3_LIST,
   ...SYNTHETIC_FEATHER_G3_LIST,
   ...SYNTHETIC_FEATHER_G1_LIST,
+  ...SYNTHETIC_GISA_G4_LIST,
   ...SYNTHETIC_UNTIL_LEAVES_LIST,
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
   ...SYNTHETIC_HOFRI_LIST,

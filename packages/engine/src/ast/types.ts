@@ -652,7 +652,14 @@ export type ObjectRef =
    * permanent has left the battlefield (the link is the permanent's own, CR 400.7) or exiled nothing. Valid only on a face that has such a
    * linked ability (`validateCard`).
    */
-  | { readonly kind: 'linkedExile' };
+  | {
+      readonly kind: 'linkedExile';
+      /**
+       * "Put each creature card exiled with this artifact onto the battlefield" (D-1431, CR 607.2a): only the linked cards a filter of cards in exile matches
+       * (card types, subtypes, colors, mana value; no zone, controller or owner). Left out: all of them.
+       */
+      readonly filter?: ObjectFilter;
+    };
 
 export type ObjectSelector =
   | ObjectRef
@@ -909,6 +916,12 @@ export type Cost =
    * "when you cycle this card". A card cannot write it (`validateCard`).
    */
   | { readonly kind: 'discardThis'; readonly cycling?: true }
+  /**
+   * "Reveal this card from your hand" (CR 701.20a, 118.1, D-1433): the source card is shown to every player as the cost is paid and stays in the hand, so
+   * the ability can be activated again. Only valid on an ability that functions in the hand (Tetzimoc, Primal Death). The event `cardsRevealed` tells the table what the
+   * card is.
+   */
+  | { readonly kind: 'revealThis' }
   /**
    * "Exile this card from your graveyard" (CR 118.1, 400.7, D-185): the source itself goes from its owner's graveyard to exile, so there is no
    * choice to make; paid with the rest of the cost that needs no mana and no choice. Only the cost of an activated ability that functions from
@@ -2218,6 +2231,15 @@ export type Effect =
    * of the Ring (`validateCard` refuses it anywhere else).
    */
   | { readonly kind: 'delayedSacrifice' }
+  /**
+   * "If it would leave the battlefield, exile it instead of putting it anywhere else." (CR 614.1a, 614.6, D-1430): the second half of a reanimation like
+   * Whip of Erebos', after the effect of the same sequence that put the permanents onto the battlefield (`moveToZone`, `objects` is `moved`): each permanent it names that is
+   * on the battlefield is marked (`GameObject.exileIfLeaves`), and from then on, whatever would move it from the battlefield to another zone moves it to exile instead
+   * (destroyed, sacrificed, bounced, dying in combat: it never dies). It belongs to the object, not to an ability, so it holds when the permanent lost its abilities
+   * (CR 614.6); a new object after any zone change (CR 400.7) is not marked. A commander so exiled is offered the command zone (CR 903.9a). Unearth does the same through
+   * `GameObject.alt`.
+   */
+  | { readonly kind: 'exileIfLeaves'; readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }> }
   /**
    * "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able" and "Creatures your
    * opponents control attack this turn if able" (CR 508.1d, 611.2a, 611.2c, D-179): a requirement on a group of creatures. It changes the rules of the
@@ -4272,6 +4294,19 @@ export type StaticEffect =
       readonly kind: 'abilityCostReduction';
       readonly abilities: 'equip';
       readonly targeting: ObjectFilter;
+      readonly amount: Amount;
+    }
+  /**
+   * "Activated abilities of creature cards in your graveyard cost {1} less to activate." (D-1432, CR 601.2f, 602.2b, 118.7, 113.6b): a static ability of a permanent on the
+   * battlefield that takes `amount` generic mana off the generic part of the first mana cost of every activated ability (not a mana ability) of an object `objects` describes, whoever
+   * activates it. The object is a card in the graveyard (`zone` is `graveyard`, `controller: 'you'` is "your graveyard", relative to the controller of the permanent with this ability)
+   * whose ability works there (Unearth, Encore, Eternalize, an ability that says it functions from the graveyard). Worked out as the ability is activated, with the other
+   * reductions (`costReducedIf`, `costReducedBy`); never below zero, only the generic part, so a cost with no generic mana is not changed.
+   */
+  | {
+      readonly kind: 'abilityCostReduction';
+      readonly abilities: 'ofObjects';
+      readonly objects: ObjectFilter;
       readonly amount: Amount;
     }
   /**

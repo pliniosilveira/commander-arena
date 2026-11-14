@@ -159,6 +159,12 @@ export interface GameObject {
    */
   readonly monstrous?: true;
   /**
+   * "If it would leave the battlefield, exile it instead of putting it anywhere else" (CR 614.1a, 614.6, D-1430), set by the effect `exileIfLeaves` on the permanent an earlier
+   * effect put onto the battlefield (Whip of Erebos): it is exiled instead of going to any other zone, whatever its abilities. Not a copiable value; a new object after any
+   * zone change (CR 400.7) has none.
+   */
+  readonly exileIfLeaves?: true;
+  /**
    * Present (true) on an emblem (CR 114, D-201): an object in the command zone of the player who got it (`owner` and `controller`), with no characteristics but
    * the abilities its `token` record gives it, which work from there (CR 114.4): `derive` reads its static abilities and `findTriggers` its triggered ones.
    * It is not a card and not a permanent, never leaves the command zone (CR 114.5) and is not a token that ceases to exist there (CR 704.5d is about the

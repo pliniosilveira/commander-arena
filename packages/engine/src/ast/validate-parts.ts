@@ -901,6 +901,26 @@ export function checkRef(
           "'linkedExile' is only valid in abilities of a permanent with a linked exile",
         );
       }
+      // D-1431: "each creature card exiled with this artifact": the cards of the link a filter of cards in exile describes.
+      if (ref.filter !== undefined) {
+        checkFilter(ref.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            ref.filter,
+            (f) =>
+              f.zone !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the cards exiled with a permanent are described by what they are: no zone, controller, owner or stackKind',
+          );
+        }
+      }
       break;
     default:
       issue(out, path, `unknown object reference ${kindOf(ref)}`);
@@ -1698,6 +1718,9 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       break;
     case 'exileThis':
       // D-185: no operand; where it may stand is checked with the ability (`checkActivationCosts`).
+      break;
+    case 'revealThis':
+      // D-1433 (CR 701.20a): no operand; paid from the hand (`checkActivationCosts`).
       break;
     case 'discardThis':
       // D-179: the engine marks the cost of a cycling ability itself; a card does not say that its own discard is a cycling.
@@ -3489,6 +3512,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.subtype`,
           `${e.subtype} is not a creature type, which is all an Army can be`,
         );
+      }
+      break;
+    case 'exileIfLeaves':
+      // CR 614.1a (D-1430): the object is what the effect before it put onto the battlefield.
+      if (kindOf(e.objects) !== 'moved') {
+        issue(out, `${path}.objects`, "exileIfLeaves names the objects an earlier effect moved ('moved')");
+      } else {
+        checkRef(e.objects, 'object', `${path}.objects`, scope, out);
       }
       break;
     case 'delayedSacrifice':

@@ -988,6 +988,25 @@ function runEffect(
       // next upkeep": the card is the one the dying creature became, found now (in the graveyard, where it is expected, as `triggerCard` reads it); one that
       // is gone from there when the ability triggers is a new object and is not found. A commander that went to the command zone (CR 903.9a) is not in the
       // graveyard, and a token that died has ceased to exist (CR 111.8): nothing is created for them.
+      // D-1430 (CR 603.7c, 400.7j): "Exile it at the beginning of the next end step", about the permanents the effect before it put onto the battlefield (`moved`): one
+      // delayed ability for each, named by the permanent as it is now (the ability is about that object: once it has changed zones it is a new object and nothing happens,
+      // CR 603.7c, 400.7), as Unearth's is.
+      if (effect.effect.kind === 'exile' && effect.effect.objects.kind === 'moved') {
+        const ability: TriggeredAbility = {
+          kind: 'triggered',
+          trigger,
+          effect: { kind: 'exile', objects: { kind: 'this' } },
+        };
+        return done({
+          ...state,
+          delayedTriggers: [
+            ...state.delayedTriggers,
+            ...(res.lastMoved ?? [])
+              .filter((id) => state.objects[id]?.zone === 'battlefield')
+              .map((id) => ({ source: id, controller: res.controller, ability })),
+          ],
+        });
+      }
       if (effect.effect.kind === 'moveToZone') {
         const back: Effect = { ...effect.effect, objects: { kind: 'triggerSubject' } };
         const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: back };
@@ -1111,6 +1130,18 @@ function runEffect(
           { source: blocker, controller: res.controller, ability },
         ],
       });
+    }
+
+    case 'exileIfLeaves': {
+      // CR 614.1a, 614.6 (D-1430): "If it would leave the battlefield, exile it instead of putting it anywhere else": each permanent the effect before it put onto the
+      // battlefield is marked; `moveObject` exiles it when it would go anywhere else. A token the effect named is marked too (it ceases to exist in exile, CR 111.8).
+      let next = state;
+      for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
+        if (next.objects[id]?.zone === 'battlefield') {
+          next = patchObject(next, id, { exileIfLeaves: true });
+        }
+      }
+      return done(next);
     }
 
     case 'becomeMonarch': {

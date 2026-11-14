@@ -138,7 +138,10 @@ export interface CostReductionSource {
  */
 export interface AbilityReductionSource {
   readonly object: GameObject;
-  readonly targeting: ObjectFilter;
+  /** The Equip abilities that target an object this matches (D-425); absent for a reduction of the abilities of some objects. */
+  readonly targeting?: ObjectFilter;
+  /** The objects whose activated abilities cost less, cards in a graveyard (D-1432); absent for an Equip reduction. */
+  readonly objects?: ObjectFilter;
   readonly amount: Amount;
 }
 
@@ -266,7 +269,11 @@ function abilityReductionsOf(
   const out: AbilityReductionSource[] = [];
   for (const a of abilities) {
     if (a.kind === 'static' && a.static.kind === 'abilityCostReduction') {
-      out.push({ object, targeting: a.static.targeting, amount: a.static.amount });
+      out.push(
+        a.static.abilities === 'ofObjects'
+          ? { object, objects: a.static.objects, amount: a.static.amount }
+          : { object, targeting: a.static.targeting, amount: a.static.amount },
+      );
     }
   }
   return out;

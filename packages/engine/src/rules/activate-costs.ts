@@ -46,6 +46,8 @@ export interface CostBreakdown {
   /** The counters put on the source as a cost (D-139, "Put a page counter on this artifact"). */
   readonly putCounters: readonly { readonly counter: string; readonly count: number }[];
   readonly discardThis: boolean;
+  /** "Reveal this card from your hand" (D-1433, CR 701.20a): the card is shown to every player as the cost is paid and stays in the hand. */
+  readonly revealThis: boolean;
   /** The card itself is exiled from the graveyard (D-185, CR 702.141a: the cost of Encore) or, since D-229, the permanent from the battlefield ("Exile this artifact"). */
   readonly exileThis: boolean;
   /** "Mill a card" as the cost of an ordinary ability (D-229, CR 701.17, 118.3): the top cards of the library, none when 0. */
@@ -87,6 +89,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let tap = false;
   let life = 0;
   let discardThis = false;
+  let revealThis = false;
   let exileThis = false;
   let mill = 0;
   let cycling = false;
@@ -143,6 +146,9 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
       case 'discardThis':
         discardThis = true;
         if (cost.cycling === true) cycling = true;
+        break;
+      case 'revealThis':
+        revealThis = true;
         break;
       case 'exileThis':
         exileThis = true;
@@ -213,6 +219,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     putCounters: [...put].map(([counter, count]) => ({ counter, count })),
     loyalty,
     discardThis,
+    revealThis,
     exileThis,
     mill,
     cycling,
@@ -257,6 +264,8 @@ function immediateRefusal(
     }
   }
   if (costs.discardThis && source.zone !== 'hand') return 'the card is not in your hand';
+  // D-1433 (CR 701.20a): only a card in the hand can be revealed from it.
+  if (costs.revealThis && source.zone !== 'hand') return 'the card is not in your hand';
   // D-185: "Exile this card from your graveyard" is paid from the graveyard; D-229: "Exile this artifact" from the battlefield.
   if (costs.exileThis && source.zone !== 'graveyard' && source.zone !== 'battlefield') {
     return 'it is not in a zone it can be exiled from';
@@ -338,6 +347,19 @@ export function payImmediateCosts(
         if (landed?.kind === 'zoneChanged')
           events.push({ kind: 'cycled', seat, object: landed.to });
       }
+    }
+  }
+  if (costs.revealThis) {
+    // CR 701.20a (D-1433): "Reveal this card from your hand": the card is shown to every player (the event is public) and stays where it is.
+    const card = state.objects[source];
+    if (card?.card != null) {
+      events.push({
+        kind: 'cardsRevealed',
+        seat,
+        cards: [card.card],
+        names: [derive(state, card).name],
+        from: 'hand',
+      });
     }
   }
   if (costs.mill > 0) {

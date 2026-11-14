@@ -26,6 +26,7 @@ import { isAngelStatic, lowerAngelStatic } from './angels';
 import { withoutZone } from './attachments';
 import { lowerCondition } from './conditions';
 import { bindAttachedIt, lowerAbilityCostReduction } from './danitha-g3';
+import { lowerGraveyardAbilityCostReduction } from './gisa-g4';
 import { isDragonStatic, lowerDragonStatic } from './dragons';
 import { type FeatureRef, missingFeatures } from './features';
 import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
@@ -441,6 +442,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'costReduction':
       return ['static:costReduction'];
     case 'abilityCostReduction':
+    case 'graveyardAbilityCostReduction':
       return ['static:abilityCostReduction'];
     case 'restrictUnless':
       return ['static:restrictionUnless'];
@@ -851,6 +853,9 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (Danitha group 3, D-428, CR 601.2f, 602.2b, 702.6a).
   if (first.kind === 'abilityCostReduction')
     return lowerAbilityCostReduction(ability, first, more.length, ctx);
+  // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa group 4, D-1432, CR 601.2f, 118.7, 113.6b).
+  if (first.kind === 'graveyardAbilityCostReduction')
+    return lowerGraveyardAbilityCostReduction(ability, first, more.length);
   if (first.kind === 'additionalCost' || first.kind === 'freeCast') return failure(ability);
   if (
     first.kind === 'castAsThoughFlash' ||

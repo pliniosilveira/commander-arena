@@ -49,6 +49,7 @@ import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
+import { GISA_G4_LOWERINGS } from './gisa-g4';
 import { missingFeatures } from './features';
 import { GAIN_STATIC_ABILITY } from './granted-static';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
@@ -1374,6 +1375,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DANITHA_G2_LOWERINGS,
   // D-445: "Monstrosity 5".
   ...FEATHER_G2_LOWERINGS,
+  // D-1430, D-1431: "It gains haste.", "Exile it at the beginning of the next end step.", "If it would leave the battlefield, exile it instead ...", "Put each creature card exiled with ~ onto the battlefield ...".
+  ...GISA_G4_LOWERINGS,
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,

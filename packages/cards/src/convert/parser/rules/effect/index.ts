@@ -44,6 +44,7 @@ import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
+import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
@@ -856,6 +857,9 @@ export const EFFECT_UNTAP = tapRule('untap');
 export const EFFECT_RULES = [
   // D-438, D-439 (Feather, group 3): the copies for each other creature and the exile as a spell resolves start like a plain copy, a plain exile and "that player ...", and are tried first.
   ...FEATHER_G3_EFFECT_RULES,
+  // Gisa deck, group 4 (issue 41, D-1430, D-1431): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
+  // exile and a plain put, and "It gains haste." like a gain: tried first.
+  ...GISA_G4_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,

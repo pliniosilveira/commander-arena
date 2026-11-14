@@ -190,6 +190,12 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
       lowered.value.length === 1 &&
       lowered.value[0]?.kind === 'moveToZone' &&
       lowered.value[0].to === 'hand';
+    // D-1431: "Each of them is a 1/1 Spirit in addition to its other types": the clause before it put the cards exiled with the permanent onto the battlefield.
+    ctx.putLinked =
+      lowered.value.length === 1 &&
+      lowered.value[0]?.kind === 'moveToZone' &&
+      lowered.value[0].objects.kind === 'linkedExile' &&
+      lowered.value[0].to === 'battlefield';
   }
   return { ok: true, value: effects, rule: clauses[0]?.rule ?? 'body.sentence' };
 }

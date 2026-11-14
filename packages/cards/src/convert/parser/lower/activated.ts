@@ -640,7 +640,7 @@ function lowerOrdinary(ability: Activated, ctx: LowerContext): LowerResult<reado
     ...(ctx.usedGraveyardSource
       ? { functionsIn: 'graveyard' as const }
       : // CR 113.6b (stage P68, D-229): "Discard this card" is paid from the hand, so the ability works from there.
-        costs.some((c) => c.kind === 'discardThis')
+        costs.some((c) => c.kind === 'discardThis' || c.kind === 'revealThis')
         ? { functionsIn: 'hand' as const }
         : {}),
     ...restrictionFields(restrictions),
