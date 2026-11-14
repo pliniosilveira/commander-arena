@@ -550,6 +550,17 @@ export interface ObjectFilter {
    */
   readonly targetsObject?: ObjectFilter;
   /**
+   * "A spell that targets only this creature" (CR 115.9c, D-1320 provisional): a spell or ability on the stack whose chosen targets are one object, whatever
+   * the number of times it was chosen (an object chosen for two instances of the word "target" is still one), and that object is one this filter matches
+   * (a player target is none, and a spell with a second different target does not match). Read where `targetsObject` is, with the same limits.
+   */
+  readonly targetsOnly?: ObjectFilter;
+  /**
+   * "This creature" as the object a filter describes (D-1320 provisional): the object is the source of the ability that reads the filter. It is the inner
+   * filter of `targetsObject` or `targetsOnly` ("a spell that targets this creature"), and nothing else (`validateCard`).
+   */
+  readonly isSource?: true;
+  /**
    * A disjunction: the object must match every field above AND at least one of these filters
    * ("artifact or enchantment" is `{ anyOf: [{ types: ['artifact'] }, { types: ['enchantment'] }] }`).
    * `zone` and `stackKind` belong to the outer filter, because they say where to look (CR 115.1,
@@ -1657,7 +1668,29 @@ export type Effect =
        * makes none. Each copy may have new targets when `newTargets` is `may` (CR 707.10c).
        */
       readonly count?: Amount;
+      /**
+       * "Copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." (CR 707.10, 707.10e, 115.3,
+       * D-1321 provisional): instead of one copy there is one for each permanent this filter names (read for the controller of the copy, with the source of the ability as
+       * the source: "other" leaves it out) that is a legal target for each instance of the word "target" that the spell's targets stand for (CR 707.10e: otherwise the copy is
+       * not created). Each copy has that one permanent as the target of every instance, and nobody chooses (`newTargets` is `no`, and there is no `count`). The copies are put onto the
+       * stack in the order the permanents are in on the battlefield. The spell is the one the trigger is about (`triggerSubject`) or a target; its targets must be one object
+       * (a spell that targets something else more is changed in none of its instances, which the card's trigger leaves out with `targetsOnly`).
+       */
+      readonly forEach?: ObjectFilter;
+      /**
+       * "That player copies that spell" (D-1321 provisional, CR 707.10): the copy is put onto the stack under the control of the player the event of the trigger is about
+       * (`triggerPlayer`: the player who cast the spell), not the controller of the ability. Without it the controller of the ability copies.
+       */
+      readonly copier?: 'triggerPlayer';
     }
+  /**
+   * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (CR 614.1a, 608.2m,
+   * 603.7, 603.7c, D-1322 provisional): a replacement effect the spell `spell` names (the spell whose casting caused the trigger: `triggerSubject`) carries from now on: when it resolves
+   * as an instant or sorcery and would be put into its owner's graveyard, it is exiled instead (a spell that is countered, or fizzles, or is not a card, or is put into exile
+   * by another effect is not changed: the "if you do" is false for it) and its controller's delayed triggered ability returns the card to its owner's hand at the beginning of the next
+   * end step (the one that is exiled; one that left exile since is a new object, CR 400.7). Does nothing when the spell has left the stack as this resolves.
+   */
+  | { readonly kind: 'exileOnResolve'; readonly spell: ObjectRef }
   /**
    * "Change the target of target spell or ability with a single target." (CR 115.7a, 115.7b, D-181): the controller of the resolving spell or
    * ability changes the one target of the spell or ability `object` names (a `target` slot, as `copySpell`'s `spell`, whose filter says "with a single

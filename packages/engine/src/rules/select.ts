@@ -163,6 +163,36 @@ export function matchesFilter(
       });
     return aimed && matchesFilter(state, obj, rest, ctx);
   }
+  // CR 115.9c (D-1320): "that targets only this creature": the targets chosen are one object (chosen once or more), and the inner filter matches it.
+  if (filter.targetsOnly !== undefined) {
+    const { targetsOnly, ...rest } = filter;
+    const unchosen = (obj.stack?.chosenTargets.length ?? 0) === 0;
+    let aimed = ctx.spellTargetsMayHold === true && unchosen;
+    if (!aimed) {
+      const targets = obj.stack?.chosenTargets ?? [];
+      const first = targets[0];
+      const one =
+        first !== undefined &&
+        first.kind === 'object' &&
+        targets.every((t) => t.kind === 'object' && t.id === first.id);
+      const target = one ? objectOrLki(state, first.id) : null;
+      aimed = target !== null && matchesFilter(state, target, targetsOnly, ctx);
+    }
+    return aimed && matchesFilter(state, obj, rest, ctx);
+  }
+  // D-1320: a disjunction one of whose members reads what a spell targets ("an Equipment spell or a spell that targets a creature you control"): the outer filter
+  // says where to look, each member is matched as a filter of its own with that.
+  if (filter.anyOf?.some((m) => m.targetsObject !== undefined || m.targetsOnly !== undefined)) {
+    const { anyOf, ...outer } = filter;
+    const scoped = {
+      ...(filter.zone === undefined ? {} : { zone: filter.zone }),
+      ...(filter.stackKind === undefined ? {} : { stackKind: filter.stackKind }),
+    };
+    return (
+      matchesFilter(state, obj, outer, ctx) &&
+      anyOf.some((member) => matchesFilter(state, obj, { ...member, ...scoped }, ctx))
+    );
+  }
   // D-100: "of the chosen type" reads what the source chose as it entered, which only the state knows.
   const chosen = chosenOf(state, ctx.source);
   const withChoice = {

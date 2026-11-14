@@ -23,6 +23,7 @@
  * Both stages are one instruction (`Instruction` `copySpell`) so that a decision can be asked in the middle of a resolution
  * (CR 903.9b, 608.2d) and the resolution go on with the answer.
  */
+import type { ObjectFilter } from '../ast/types';
 import type { ObjectId } from '../ids';
 import type { TargetsDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
@@ -38,7 +39,7 @@ import { becameTargetEvents } from './becomes-target';
 import { type CopySpellInstruction, copiedSpell } from './copy-source';
 import { faceOf, targetSpecsOf } from './legality';
 import { modalOfSpellText, specModes } from './modes';
-import { type SelectContext, sameTarget } from './select';
+import { legalTargets, matchesFilter, type SelectContext, sameTarget } from './select';
 import { done, type StepOutcome } from './step-outcome';
 import { targetChoiceSpecs } from './target-choice';
 
@@ -48,7 +49,62 @@ export function runCopySpell(
   res: ResolutionContext,
   ins: CopySpellInstruction,
 ): StepOutcome {
+  if (ins.stage === 'each') return expandEach(state, res, ins);
   return ins.stage === 'make' ? makeCopy(state, res, ins) : askTargets(state, res, ins);
+}
+
+/**
+ * CR 707.10, 707.10e, 115.3 (D-1321): "copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures."
+ * The permanents the effect's filter names are looked at in the order of the battlefield; each that is a legal target for every instance of the word "target" the spell's targets stand for
+ * (read for the player the copies belong to, with the spell as the source, so that hexproof, shroud, protection and the wording of the slot count) gets a copy that has it, and
+ * only it, as the target of each of those instances. One that is not a legal target for one of them gets none (CR 707.10e: the copy is not created). Nothing is asked.
+ */
+function expandEach(
+  state: GameState,
+  res: ResolutionContext,
+  ins: CopySpellInstruction,
+): StepOutcome {
+  const original = copiedSpell(state, ins.spell);
+  if (original === null || ins.forEach === undefined) return done(state);
+  const copier = ins.controller ?? res.controller;
+  const chosen = original.stack?.chosenTargets ?? [];
+  const used = new Set(chosen.map((t) => t.specId));
+  const specs = targetSpecsOf(state, original).filter((spec) => used.has(spec.id));
+  const aiming: SelectContext = {
+    controller: copier,
+    source: original.id,
+    stackObject: original.id,
+  };
+  const legal = specs.map((spec) => legalTargets(state, spec, aiming));
+  const finding: SelectContext = {
+    controller: res.controller,
+    source: res.source,
+    ...(res.triggerPlayer === undefined ? {} : { triggerPlayer: res.triggerPlayer }),
+  };
+  const candidates = state.battlefield.filter((id) => {
+    const obj = state.objects[id];
+    return (
+      obj !== undefined &&
+      matchesFilter(state, obj, ins.forEach as ObjectFilter, finding) &&
+      legal.every((list) => list.some((t) => t.kind === 'object' && t.id === id))
+    );
+  });
+  return done(
+    state,
+    [],
+    candidates.map(
+      (id): CopySpellInstruction => ({
+        kind: 'copySpell',
+        spell: ins.spell,
+        count: 1,
+        newTargets: 'no',
+        stage: 'make',
+        copy: null,
+        retarget: id,
+        ...(ins.controller === undefined ? {} : { controller: ins.controller }),
+      }),
+    ),
+  );
 }
 
 /** CR 707.10: the copy, a spell on the stack with the original's choices, controlled by `controller`. */
@@ -57,6 +113,7 @@ function copyObject(
   id: ObjectId,
   timestamp: number,
   controller: GameObject['controller'],
+  retarget?: ObjectId,
 ): GameObject | null {
   const card = printedCard(original);
   const stack = original.stack;
@@ -83,7 +140,11 @@ function copyObject(
       source: null,
       abilityIndex: null,
       ability: null,
-      chosenTargets: stack.chosenTargets,
+      // D-1321 (CR 707.10e): a copy for each object has that object as the target of every instance of the word "target".
+      chosenTargets:
+        retarget === undefined
+          ? stack.chosenTargets
+          : stack.chosenTargets.map((t) => (t.kind === 'object' ? { ...t, id: retarget } : t)),
       x: stack.x,
       chosenModes: stack.chosenModes,
       castFromCommandZone: false,
@@ -111,11 +172,13 @@ function makeCopy(
   if (ins.count <= 0 || original === null) return done(state);
   const [id, s1] = allocateObjectId(state);
   const [timestamp, s2] = allocateTimestamp(s1);
-  const copy = copyObject(original, id, timestamp, res.controller);
+  // D-1321 (CR 707.10): "that player copies that spell": the copy belongs to the player who has it put onto the stack.
+  const copier = ins.controller ?? res.controller;
+  const copy = copyObject(original, id, timestamp, copier, ins.retarget);
   if (copy === null) return done(state);
   const next = addToZone(setObject(s2, copy), 'stack', null, id);
   const events: GameEvent[] = [
-    { kind: 'spellCopied', seat: res.controller, original: ins.spell, copy: id },
+    { kind: 'spellCopied', seat: copier, original: ins.spell, copy: id },
   ];
   const after = { ...ins, count: ins.count - 1, stage: 'make' as const, copy: null };
   if (ins.newTargets === 'may' && hasChoice(next, res, copy)) {
@@ -123,7 +186,7 @@ function makeCopy(
     return done(next, events, [{ ...ins, stage: 'targets', copy: id }]);
   }
   // The copy keeps the targets of the original (CR 707.10), and it becomes a spell that targets them.
-  events.push(...becameTargetEvents(next, id, res.controller));
+  events.push(...becameTargetEvents(next, id, copier));
   return done(next, events, [after]);
 }
 

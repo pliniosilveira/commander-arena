@@ -5,7 +5,7 @@
  * It implements exactly the effect kinds in SUPPORTED_FEATURES. There is no "not implemented"
  * path: a card using any other kind is rejected by validateCard before it can be supported.
  */
-import type { Effect, ObjectSelector } from '../ast/types';
+import type { Effect, ObjectFilter, ObjectSelector } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
 import type { GameEvent } from '../state/events';
@@ -55,6 +55,7 @@ import { createEmblem } from './emblem';
 import { runEmpowerJace } from './empower';
 import { runEnterAttacking } from './enter-attacking';
 import { runEnterToken } from './enter-token';
+import { markExileOnResolve } from './exile-on-resolve';
 import { runExileRandomFromHand } from './exile-random-hand';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
@@ -886,6 +887,29 @@ function runEffect(
       // D-337 (CR 707.10, 903.8): "copy it for each time you've cast your commander from the command zone this game": the count is read as this resolves; none
       // when it is zero (copyInstructions makes nothing for it).
       const copies = effect.count === undefined ? 1 : amountOf(state, effect.count, ctx, targets);
+      // D-1321 (CR 707.10, 707.10e): "copy that spell for each other creature you control that the spell could target": the stack finds the permanents and makes a copy for each
+      // (`rules/copy-spell.ts`, which reads the legal targets of the spell); "that player copies" is the copy of the player the event is about.
+      if (effect.forEach !== undefined) {
+        const copier = effect.copier === 'triggerPlayer' ? ctx.triggerPlayer : undefined;
+        if (effect.copier === 'triggerPlayer' && copier === undefined) return done(state);
+        return {
+          ...done(
+            state,
+            [],
+            spells.map((id) => ({
+              kind: 'copySpell' as const,
+              spell: id,
+              count: 0,
+              newTargets: 'no' as const,
+              stage: 'each' as const,
+              copy: null,
+              forEach: effect.forEach as ObjectFilter,
+              ...(copier === undefined ? {} : { controller: copier }),
+            })),
+          ),
+          performed: spells.length,
+        };
+      }
       return {
         ...done(
           state,
@@ -894,6 +918,12 @@ function runEffect(
         ),
         performed: copies > 0 ? spells.length : 0,
       };
+    }
+
+    case 'exileOnResolve': {
+      // D-1322 (CR 614.1a, 608.2m): the spell whose casting caused the trigger carries the replacement from now on (`rules/exile-on-resolve.ts`).
+      const spells = resolveObjects(state, effect.spell, ctx, targets);
+      return done(markExileOnResolve(state, spells, res.controller, res.source));
     }
 
     case 'changeTarget': {
