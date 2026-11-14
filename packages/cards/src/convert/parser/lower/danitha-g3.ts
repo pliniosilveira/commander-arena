@@ -1,5 +1,5 @@
 /**
- * Lowerings of group 3 of the Danitha deck (issue 26, D-1234 to D-1236 provisional): the attachments of a permanent. "for each Aura attached to it" says "it" of the permanent a
+ * Lowerings of group 3 of the Danitha deck (issue 26, D-426 to D-428): the attachments of a permanent. "for each Aura attached to it" says "it" of the permanent a
  * static ability is about (the source or the permanent it is attached to), and "Equip abilities you activate that target enchanted creature cost {3} less to activate" is the
  * engine's `abilityCostReduction`.
  */
@@ -35,7 +35,7 @@ function failure(node: { span: { start: number; end: number }; rule: string }): 
 }
 
 /**
- * "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-1236, CR 601.2f, 602.2b, 702.6a, 118.7a): the Aura's static ability, which the
+ * "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a, 118.7a): the Aura's static ability, which the
  * engine reads as an Equip ability of its controller is activated and its targets are chosen: when one of them is the permanent the Aura is attached to, the generic mana of its
  * cost goes down. Only an Aura has "enchanted creature"; a statement with a condition, a second effect or a second subject is not this one.
  */

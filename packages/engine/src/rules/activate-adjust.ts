@@ -57,7 +57,7 @@ export function adjustedAbility(
 }
 
 /**
- * "Equip abilities you activate that target enchanted creature cost {3} less to activate" (D-1233, CR 601.2f, 602.2b): how much the generic mana of this ability
+ * "Equip abilities you activate that target enchanted creature cost {3} less to activate" (D-425, CR 601.2f, 602.2b): how much the generic mana of this ability
  * (an Equip ability, `equip: true`) goes down for `seat` activating it with these targets, from the permanents of `seat` with an `abilityCostReduction` whose
  * `targeting` filter matches one of the targets (with that permanent as "this", so `hostOfSource` is the one it is attached to). The reductions of several permanents add up.
  */

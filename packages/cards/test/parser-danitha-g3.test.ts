@@ -1,4 +1,4 @@
-// The Danitha deck (issue 26), group 3 (D-1230 to D-1236 provisional): Kor Spiritdancer, Sage's Reverie, Winds of Rath, Ethereal Armor, Face of Divinity, Shield of the Oversoul,
+// The Danitha deck (issue 26), group 3 (D-422 to D-428): Kor Spiritdancer, Sage's Reverie, Winds of Rath, Ethereal Armor, Face of Divinity, Shield of the Oversoul,
 // Shardmage's Rescue and Strong Back, the Auras and creatures whose text counts or checks the attachments of a permanent. The first test of each describe is the real Oracle text of the
 // acceptance card of the golden corpus read through the whole pipeline; the other lines are SYNTHETIC siblings and the near misses the grammar must not read. The engine runs what is
 // lowered in convert-grammar-engine-danitha-g3.test.ts.

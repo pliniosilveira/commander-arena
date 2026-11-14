@@ -105,7 +105,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:commander',
   'selector:enteredThisTurn',
   'selector:modified',
-  // D-1234 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
+  // D-426 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
   'selector:attachedTo',
   'selector:enchanted',
   'selector:hostOfSource',
@@ -253,7 +253,7 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
   }
-  // D-1234 (CR 303.4, 301.5, 701.3): the permanent something is attached to, and "enchanted": a permanent on the battlefield, so no member of a choice and no other zone.
+  // D-426 (CR 303.4, 301.5, 701.3): the permanent something is attached to, and "enchanted": a permanent on the battlefield, so no member of a choice and no other zone.
   let attachedTo: ObjectFilter['attachedTo'];
   if (filter.attachedTo !== undefined) {
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
@@ -272,7 +272,7 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
     parts.push('selector:enchanted');
   }
-  // D-1234 (CR 601.2c, 303.4): "that target enchanted creature", the objects a spell targets are the permanent its source is attached to. Only a spell's filter says it
+  // D-426 (CR 601.2c, 303.4): "that target enchanted creature", the objects a spell targets are the permanent its source is attached to. Only a spell's filter says it
   // (a cost reduction), as `targets`: not a member of a choice, and not together with it.
   if (filter.targetsHost === true) {
     if (inner || targetsObject !== undefined) return bad([]);

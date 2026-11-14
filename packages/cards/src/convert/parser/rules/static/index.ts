@@ -113,6 +113,6 @@ export const STATIC_RULES = [
   ...HASHATON_G6_STATIC_RULES,
   // Hashaton deck, group 3 (D-380): "Creatures you control can't have -1/-1 counters put on them."
   ...HASHATON_G3_STATIC_RULES,
-  // Issue 26 (the Danitha deck, D-1236): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
+  // Issue 26 (the Danitha deck, D-428): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
   ...DANITHA_G3_STATIC_RULES,
 ];

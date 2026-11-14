@@ -352,7 +352,7 @@ const CAST_HEAD: Parser<{
     compared: undefined,
     anyCaster: true as const,
   })),
-  // D-1234 (Danitha group 3, CR 601.2c, 601.2f, 303.4): "Aura spells you cast that target enchanted creature cost {3} less to cast": the targets are chosen before the cost.
+  // D-426 (Danitha group 3, CR 601.2c, 601.2f, 303.4): "Aura spells you cast that target enchanted creature cost {3} less to cast": the targets are chosen before the cost.
   map(literal(' you cast that target enchanted creature cost '), () => ({
     chosen: undefined,
     compared: undefined,
@@ -422,7 +422,7 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells you cast from anywhere other than your hand cost {2} less to cast.',
     'Spells you cast with mana value 5 or greater cost {1} less to cast.',
     'Creature spells you cast with toughness 3 or less cost {1} less to cast.',
-    // D-1234 (Danitha group 3): the spells that target the permanent the Aura is attached to.
+    // D-426 (Danitha group 3): the spells that target the permanent the Aura is attached to.
     'Aura spells you cast that target enchanted creature cost {3} less to cast.',
     'Aura and Equipment spells you cast that target enchanted creature cost {1} less to cast.',
   ],

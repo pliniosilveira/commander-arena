@@ -74,7 +74,7 @@ export interface SelectContext {
   /** The tally of the latest vote of this resolution, for `votesFor` amounts (D-194). */
   readonly votes?: Readonly<Record<string, number>>;
   /**
-   * Whether `targetsObject` assumes a target the spell has not chosen yet could match (D-1232): the question "may this spell be cast at all?" asks it before any target is chosen
+   * Whether `targetsObject` assumes a target the spell has not chosen yet could match (D-424): the question "may this spell be cast at all?" asks it before any target is chosen
    * (the cost reduction of a permanent that names the spells that target a kind of permanent).
    */
   readonly spellTargetsMayHold?: boolean;
@@ -150,7 +150,7 @@ export function matchesFilter(
   // CR 115.1, 601.2c (D-206): "that targets a creature": one of the spell's chosen targets is an object the inner filter matches.
   if (filter.targetsObject !== undefined) {
     const { targetsObject, ...rest } = filter;
-    // D-1232: the question "may this spell be cast at all?" asks before any target is chosen, and assumes the most favourable one (as `spellTargets` does, D-207).
+    // D-424: the question "may this spell be cast at all?" asks before any target is chosen, and assumes the most favourable one (as `spellTargets` does, D-207).
     const unchosen = (obj.stack?.chosenTargets.length ?? 0) === 0;
     const aimed =
       (ctx.spellTargetsMayHold === true && unchosen) ||
@@ -166,7 +166,7 @@ export function matchesFilter(
   const withChoice = {
     ...ctx,
     ...(chosen === undefined ? {} : { sourceChosen: chosen }),
-    // D-1230: what the objects attached to this one, or the one it is attached to, are.
+    // D-422: what the objects attached to this one, or the one it is attached to, are.
     describeOther: (other: GameObject) => describeObject(state, other),
   };
   if (!readsGame(filter))

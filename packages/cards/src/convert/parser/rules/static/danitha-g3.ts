@@ -1,5 +1,5 @@
 /**
- * Static statements of group 3 of the Danitha deck (issue 26, D-1236 provisional): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
+ * Static statements of group 3 of the Danitha deck (issue 26, D-428): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
  * (CR 601.2f, 602.2b, 702.6a, 118.7a). The cost of an ability is reduced like the cost of a spell: only the generic mana, never below zero, and the targets are chosen before the
  * total cost is determined.
  */

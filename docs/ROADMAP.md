@@ -340,10 +340,17 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `objectMatches.inZone` knows `hand` only.
 - The rulings of the seven cards on Scryfall were not fetched (blocked in a cloud session); the behaviour rests on the CR rules listed in `docs/MECHANICS.md`.
 
-## The Danitha deck, group 3 (issue 26, D-1230 to D-1237, provisional numbers)
+## The Danitha deck, group 3 (issue 26, D-422 to D-429)
 
 - "for each Aura attached to it" binds "it" for a static ability whose subject is `~` or "enchanted creature"; for a group ("Creatures you control get +1/+1 for each Aura attached to it") and for an effect it stays unbound and is not read. "attached to" reads only "it" and "a creature" (not "attached to target creature", "attached to a land", "attached to a creature you control"), in the singular.
 - `enchanted` is read as "has an Aura attached" for a group ("all creatures that aren't enchanted"); "equipped", "that aren't enchanted or tapped" and the singular "each creature that isn't enchanted" are not read.
 - "enchanted creature is <one color>" is the only host condition by quality; a creature type, "is red or white", "isn't green" and a keyword or power of the host are not read (the last two would read layers 6 and 7, CR 613.8).
 - `abilityCostReduction` names Equip abilities only and a filter on the target; Crew, Cycling and "abilities you activate" are not read. A reduction that depends on the targets restricts only the first mandatory target slot of the spell or ability (as the conditional flash of D-408): a spell whose second slot could be the cheap target is offered fewer choices than the rules allow.
 - The Comprehensive Rules text and the Scryfall rulings of the eight cards were not available in the cloud session: the behaviour follows the rules lines cited in `docs/MECHANICS.md`; the exact subrule that defines "enchanted" is unverified.
+
+## The Danitha deck, group 4 (issue 26, D-416 to D-421)
+
+- "Modified" is not read in the subject of a static ability, nor as the subject of a "dies" trigger (last-known information of the attachments).
+- `noun.other-subtype-permanents` ("other Elves you control") is not read by `effect.pump-others`.
+- The destruction of the Aura by Umbra armor takes the Aura's own shield or indestructible and asks no question.
+- Two creatures that each need an answer in one state-based-action check are asked one per check.

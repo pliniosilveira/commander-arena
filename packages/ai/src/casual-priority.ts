@@ -72,7 +72,7 @@ const TARGETS_PERMANENT = /target (artifact|enchantment|planeswalker|battle|perm
 /** Mass removal: only worth it when the opponent loses more creatures than we do. */
 const SWEEPER = /destroy all creatures|each creature|all creatures/i;
 
-/** Mass removal that spares the enchanted creatures (D-1237, CR 303.4): "Destroy all creatures that aren't enchanted": only the creatures with no Aura attached are lost. */
+/** Mass removal that spares the enchanted creatures (D-429, CR 303.4): "Destroy all creatures that aren't enchanted": only the creatures with no Aura attached are lost. */
 const SWEEPER_SPARING_ENCHANTED = /destroy all creatures that aren['’]t enchanted/i;
 
 const isNonPermanentSpell = (o: ObjectView): boolean =>
@@ -107,7 +107,7 @@ export function worthCasting(view: GameView, spell: ObjectView): boolean {
   // (what it discards is judged with the additional cost, `additionalCostsWorthPaying`).
   if (RETURNS_X_CREATURE_CARDS.test(spell.oracleText))
     return ownGraveyardCreatures(view).length > 0;
-  // D-1237: the creatures that are lost are those with no Aura attached to them, on both sides.
+  // D-429: the creatures that are lost are those with no Aura attached to them, on both sides.
   if (SWEEPER_SPARING_ENCHANTED.test(spell.oracleText)) {
     const lost = (own: boolean) =>
       view.battlefield.filter(

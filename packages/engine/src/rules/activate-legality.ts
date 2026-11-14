@@ -118,13 +118,13 @@ export function activationRefusal(
   const adjusted = adjustedAbility(state, seat, obj, ability);
   const stuck = costRefusal(state, seat, obj, adjusted.cost);
   if (stuck === null) return null;
-  // D-1233 (CR 602.2b): an Equip ability whose cost a static ability reduces for some targets may be activated if the cost of one legal target can be paid (the targets
+  // D-425 (CR 602.2b): an Equip ability whose cost a static ability reduces for some targets may be activated if the cost of one legal target can be paid (the targets
   // are chosen before the total cost is determined).
   if (reducibleForSomeTarget(state, seat, obj, adjusted, ctx)) return null;
   return `You cannot pay for that ability: ${stuck}`;
 }
 
-/** D-1233: whether some legal target of the first slot of an Equip ability makes its reduced cost payable. */
+/** D-425: whether some legal target of the first slot of an Equip ability makes its reduced cost payable. */
 function reducibleForSomeTarget(
   state: GameState,
   seat: SeatId,

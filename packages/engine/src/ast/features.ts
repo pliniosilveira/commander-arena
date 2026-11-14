@@ -588,7 +588,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notCastFromHand',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
-    // D-1230: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
+    // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
     'attachedTo',
     'enchanted',
     'hostOfSource',
@@ -732,7 +732,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sameNameAtLeast',
     // D-151: "two or more nonland permanents entered the battlefield under your control this turn", "an opponent was dealt 7 or more damage".
     'enteredThisTurn',
-    // D-1231: "as long as this Aura entered this turn".
+    // D-423: "as long as this Aura entered this turn".
     'thisEnteredThisTurn',
     'playerDealtDamage',
     // D-252: "if you gained 3 or more life this turn".
@@ -790,7 +790,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantAbility',
     'restriction',
     'costReduction',
-    // D-1233: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
+    // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
     'abilityCostReduction',
     'setTypes',
     // D-133: "You may cast this card from your graveyard as long as you control a Zombie."
@@ -1083,11 +1083,11 @@ export const SELECTOR_KINDS = [
   'putFromBattlefieldThisTurn',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
-  /** "Aura attached to it", "attached to enchanted creature", "attached to a creature" (CR 303.4, 301.5, 701.3, D-1230): the engine's `ObjectFilter.attachedTo`. */
+  /** "Aura attached to it", "attached to enchanted creature", "attached to a creature" (CR 303.4, 301.5, 701.3, D-422): the engine's `ObjectFilter.attachedTo`. */
   'attachedTo',
-  /** "Creatures that aren't enchanted" (CR 303.4, D-1230): the engine's `ObjectFilter.enchanted`. */
+  /** "Creatures that aren't enchanted" (CR 303.4, D-422): the engine's `ObjectFilter.enchanted`. */
   'enchanted',
-  /** "Enchanted creature" as the object another filter describes (CR 303.4b, D-1230): the engine's `ObjectFilter.hostOfSource`. */
+  /** "Enchanted creature" as the object another filter describes (CR 303.4b, D-422): the engine's `ObjectFilter.hostOfSource`. */
   'hostOfSource',
   /** "That shares a creature type with it" (CR 205.3m, 603.10a, D-261): the engine's `ObjectFilter.sharesCreatureTypeWith`. */
   'sharesCreatureTypeWith',
@@ -1250,7 +1250,7 @@ export const CONDITION_KINDS = [
   'sameNameAtLeast',
   /** "Two or more nonland permanents entered the battlefield under your control this turn" (D-151): the engine's `enteredThisTurn`. */
   'enteredThisTurn',
-  /** "As long as this Aura entered this turn" (CR 400.7, D-1231): the engine's `thisEnteredThisTurn`. */
+  /** "As long as this Aura entered this turn" (CR 400.7, D-423): the engine's `thisEnteredThisTurn`. */
   'thisEnteredThisTurn',
   /** "An opponent was dealt 7 or more damage this turn" (D-151): the engine's `playerDealtDamage`. */
   'playerDealtDamage',
@@ -1323,7 +1323,7 @@ export const STATIC_KINDS = [
   'untapInOthersUntapStep',
   /** "~ costs {1} less to cast for each ...", "Artifact spells you cast cost {1} less" (D-095): the engine's `costReduction`. */
   'costReduction',
-  /** "Equip abilities you activate that target enchanted creature cost {3} less to activate." (CR 601.2f, 602.2b, 702.6a, D-1233): the engine's `abilityCostReduction`. */
+  /** "Equip abilities you activate that target enchanted creature cost {3} less to activate." (CR 601.2f, 602.2b, 702.6a, D-425): the engine's `abilityCostReduction`. */
   'abilityCostReduction',
   /** "~ is the chosen type in addition to its other types." (D-100): the engine's `setTypes` static, layer 4. */
   'setTypes',

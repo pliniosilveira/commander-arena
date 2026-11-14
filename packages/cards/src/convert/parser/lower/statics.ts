@@ -189,7 +189,7 @@ function effectOf(
       return ok({ kind: 'modifyPt', subject, power: effect.power, toughness: effect.toughness });
     case 'ptCount': {
       // D-115, CR 611.3a: a bonus per object counted, worked out each time the subject is derived.
-      // D-1234 (Danitha group 3): "for each Aura attached to it": "it" is the permanent the statement is about.
+      // D-426 (Danitha group 3): "for each Aura attached to it": "it" is the permanent the statement is about.
       const counted = bindAttachedIt(effect.count, subject);
       const power = lowerStaticPtStep(effect.power, counted, ctx, at.rule);
       if (!power.ok) return power;
@@ -559,7 +559,7 @@ function lowerCostReduction(
   if (subject.det === 'self') {
     spells = { kind: 'this' };
   } else if (subject.det === 'each') {
-    // D-1234: "that target enchanted creature" is the permanent the Aura is attached to (CR 303.4b): only an Aura has one.
+    // D-426: "that target enchanted creature" is the permanent the Aura is attached to (CR 303.4b): only an Aura has one.
     if (subject.filter.targetsHost === true && !ctx.faceSubtypes.includes('Aura')) {
       return failure(subject);
     }
@@ -848,7 +848,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     if (more.length > 0) return failure(ability);
     return lowerCostReduction(ability, first.amount, ctx);
   }
-  // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (Danitha group 3, D-1236, CR 601.2f, 602.2b, 702.6a).
+  // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (Danitha group 3, D-428, CR 601.2f, 602.2b, 702.6a).
   if (first.kind === 'abilityCostReduction')
     return lowerAbilityCostReduction(ability, first, more.length, ctx);
   if (first.kind === 'additionalCost' || first.kind === 'freeCast') return failure(ability);
@@ -962,7 +962,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:grantAbility',
   'static:restriction',
   'static:costReduction',
-  // D-1236 (Danitha group 3): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
+  // D-428 (Danitha group 3): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
   'static:abilityCostReduction',
   'static:setTypes',
   'static:loseTypes',

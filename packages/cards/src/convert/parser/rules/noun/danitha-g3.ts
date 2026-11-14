@@ -1,5 +1,5 @@
 /**
- * Noun words of group 3 of the Danitha deck (issue 26, D-1234 provisional): the attachments of a permanent, in a count ("for each Aura attached to it", "for each Aura you
+ * Noun words of group 3 of the Danitha deck (issue 26, D-426): the attachments of a permanent, in a count ("for each Aura attached to it", "for each Aura you
  * control that's attached to a creature") and in a group ("all creatures that aren't enchanted"). CR 303.4: an Aura is attached to the permanent it enchants, and "enchanted" is
  * said of a permanent with an Aura attached to it; CR 301.5: an Equipment is attached to the creature it equips; CR 701.3: attaching.
  */
@@ -12,7 +12,7 @@ import { BOUNDARY, PLURAL_TYPE_UNION, permanentPhrase } from './phrases';
 export type AttachedToWhat = NonNullable<IrFilter['attachedTo']>;
 
 /**
- * " attached to it" and " that's attached to a creature", after the permanent a count names (D-1234): "for each Aura attached to it" (the permanent the statement is about:
+ * " attached to it" and " that's attached to a creature", after the permanent a count names (D-426): "for each Aura attached to it" (the permanent the statement is about:
  * `it`), "for each Aura you control that's attached to a creature" (a creature, any: `type`). Nothing else is read: "attached to target creature", "attached to enchanted
  * creature" and "attached to a land" are other statements.
  */

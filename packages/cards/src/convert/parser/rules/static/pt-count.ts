@@ -57,7 +57,7 @@ function countStatement(id: string): Parser<IrStatic> {
   // The space is read with a look-ahead for "for each", so a statement that goes on in another way stops
   // where the older static rules stop and keeps their `closestRule`.
   const head = sequence(STEP, pattern(/ (?=for each )/), FOR_EACH);
-  // D-1234 (Danitha group 3, Ethereal Armor): "... for each enchantment you control and has first strike": the keywords the subject has besides, in the verb of its number.
+  // D-426 (Danitha group 3, Ethereal Armor): "... for each enchantment you control and has first strike": the keywords the subject has besides, in the verb of its number.
   const andHas = (plural: boolean): Parser<readonly IrStaticEffect[]> =>
     optional(
       map(
@@ -122,7 +122,7 @@ export const STATIC_PT_COUNT = defineRule<IrStatic>({
     'Creatures you control get +1/+0 for each artifact you control.',
     // Stage P37 (D-180): the colors the permanents have between them.
     'Equipped creature gets +1/+1 for each color among permanents you control.',
-    // D-1234 (Danitha group 3, CR 303.4, 702.7): Auras attached to the permanent, Auras of yours on creatures, and keywords besides.
+    // D-426 (Danitha group 3, CR 303.4, 702.7): Auras attached to the permanent, Auras of yours on creatures, and keywords besides.
     '~ gets +2/+2 for each Aura attached to it.',
     'Enchanted creature gets +2/+2 for each Aura and Equipment attached to it.',
     "Enchanted creature gets +1/+1 for each Aura you control that's attached to a creature.",

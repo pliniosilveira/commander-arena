@@ -664,7 +664,7 @@ function toTargets(state: GameState, events: GameEvent[]): Result {
           x,
           // D-408: cast only by its own conditional flash ("if it targets a commander"): the targets are chosen from what meets it.
           casting.flashTargets ?? null,
-          // D-1232: a cost that is cheaper for some targets is payable only with them: only those are offered.
+          // D-424: a cost that is cheaper for some targets is payable only with them: only those are offered.
           payableSpellTargets(state, casting, specs, ctx),
         ),
       },

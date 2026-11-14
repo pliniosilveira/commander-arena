@@ -102,7 +102,7 @@ export function targetChoiceSpecs(
   x = 0,
   /** D-408: the spell is cast with its own conditional flash ("if it targets a commander"): its first mandatory slot offers only the objects this filter matches. */
   only: ObjectFilter | null = null,
-  /** D-1232, D-1233: the first mandatory slot offers only these objects: the targets after which the cost can be paid (`rules/target-payable.ts`). Null leaves it alone. */
+  /** D-424, D-425: the first mandatory slot offers only these objects: the targets after which the cost can be paid (`rules/target-payable.ts`). Null leaves it alone. */
   payable: readonly ObjectId[] | null = null,
 ): TargetChoiceSpec[] {
   const restricted = only === null && payable === null ? -1 : flashSlotOf(specs);

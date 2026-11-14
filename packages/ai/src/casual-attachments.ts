@@ -31,7 +31,7 @@ export const isEquipment = (o: ObjectView): boolean => o.subtypes.includes('Equi
 export const auraIsHostile = (o: ObjectView): boolean => HOSTILE_AURA.test(o.oracleText);
 
 /**
- * "Enchanted" (D-1237, CR 303.4): a permanent with an Aura attached to it, whoever controls the Aura. The view lists what is attached to a permanent
+ * "Enchanted" (D-429, CR 303.4): a permanent with an Aura attached to it, whoever controls the Aura. The view lists what is attached to a permanent
  * (`attachments`); an Equipment attached is no Aura.
  */
 export function isEnchanted(view: GameView, o: ObjectView): boolean {

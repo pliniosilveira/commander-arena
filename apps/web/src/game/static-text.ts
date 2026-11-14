@@ -326,7 +326,7 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
       return keepsDamageWording(ctx.noun);
     case 'abilityCostReduction':
     case 'costReduction': {
-      // D-1232, D-1233 (CR 601.2f, 602.2b): "Equip abilities you activate that target enchanted creature cost {3} less to activate", "Aura spells you cast that target ... cost {3} less to cast".
+      // D-424, D-425 (CR 601.2f, 602.2b): "Equip abilities you activate that target enchanted creature cost {3} less to activate", "Aura spells you cast that target ... cost {3} less to cast".
       const host = attachedSubject({ kind: 'attached' }, ctx)?.text;
       return targetedReductionWording(effect, host === undefined ? null : host.toLowerCase());
     }

@@ -112,13 +112,13 @@ export interface FilterContext {
    */
   readonly subjectSubtypes?: readonly Subtype[];
   /**
-   * What another object is, for the filters that read objects attached to this one or the one this is attached to (`attachedTo`, `enchanted`, D-1230): the caller says how
+   * What another object is, for the filters that read objects attached to this one or the one this is attached to (`attachedTo`, `enchanted`, D-422): the caller says how
    * (`derive` for a rule that reads the game, the view after layers 1, 4 and 5 for `derive` itself). Absent fails those filters closed.
    */
   readonly describeOther?: (obj: GameObject) => FilterSubject;
 }
 
-/** Whether `obj` is attached to what `attached` names (CR 303.4, 301.5, 701.3, D-1230). */
+/** Whether `obj` is attached to what `attached` names (CR 303.4, 301.5, 701.3, D-422). */
 function attachedToHolds(
   state: GameState,
   obj: GameObject,
@@ -190,7 +190,7 @@ export function matchesFilterWith(
     return false;
   }
   if (filter.tapped !== undefined && obj.tapped !== filter.tapped) return false;
-  // CR 303.4, 301.5, 701.3 (D-1230): "Aura attached to it", "attached to a creature", "creatures that aren't enchanted", "enchanted creature".
+  // CR 303.4, 301.5, 701.3 (D-422): "Aura attached to it", "attached to a creature", "creatures that aren't enchanted", "enchanted creature".
   if (filter.attachedTo !== undefined && !attachedToHolds(state, obj, filter.attachedTo, ctx)) {
     return false;
   }

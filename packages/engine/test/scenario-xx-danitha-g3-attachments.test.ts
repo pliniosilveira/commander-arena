@@ -1,4 +1,4 @@
-// Group 3 of the Danitha deck (issue 26, D-1230 to D-1233 provisional): what the real cards Kor Spiritdancer, Sage's Reverie, Winds of Rath, Ethereal Armor, Face of Divinity, Shield
+// Group 3 of the Danitha deck (issue 26, D-422 to D-425): what the real cards Kor Spiritdancer, Sage's Reverie, Winds of Rath, Ethereal Armor, Face of Divinity, Shield
 // of the Oversoul, Shardmage's Rescue and Strong Back ask of the engine, as the SYNTHETIC cards of `src/cards/fixtures/synthetic-danitha-g3.ts` (the cards package checks that the
 // grammar lowers the real text to the same nodes).
 // Pins: CR 303.4 and 301.5 (an Aura or Equipment attached to a permanent; "enchanted" is having an Aura attached, an Equipment is no Aura), CR 611.3a (a static ability follows the

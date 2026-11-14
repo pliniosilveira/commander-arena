@@ -1,4 +1,4 @@
-// The Danitha deck (issue 26), group 3 (D-1230 to D-1236 provisional): the REAL Oracle text of Kor Spiritdancer, Sage's Reverie, Winds of Rath, Ethereal Armor, Face of Divinity,
+// The Danitha deck (issue 26), group 3 (D-422 to D-428): the REAL Oracle text of Kor Spiritdancer, Sage's Reverie, Winds of Rath, Ethereal Armor, Face of Divinity,
 // Shield of the Oversoul, Shardmage's Rescue and Strong Back (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is defined in an
 // engine scenario and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs. The abilities are also compared with the SYNTHETIC
 // cards of `synthetic-danitha-g3.ts`, which the engine's own tests play. Pins: CR 303.4 and 301.5 (attachments; "enchanted" is having an Aura attached), CR 611.3a and 613.8 (a

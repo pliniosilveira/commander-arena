@@ -1,5 +1,5 @@
 /**
- * The words of the attachments of a permanent (the Danitha deck, group 3, D-1230 to D-1236 provisional): "Aura attached to it", "Aura you control that's attached to a creature",
+ * The words of the attachments of a permanent (the Danitha deck, group 3, D-422 to D-428): "Aura attached to it", "Aura you control that's attached to a creature",
  * "creatures that aren't enchanted" (the engine's `ObjectFilter.attachedTo` and `enchanted`), "another Aura is attached to the permanent this is attached to" (an `amountIs` over
  * them), "this permanent entered this turn", and the reductions of Equip abilities and Aura spells that target the enchanted creature (`abilityCostReduction`, `costReduction`
  * with `targetsObject`). A shape the words do not cover gives `null`, and the card's Oracle text stays the only description (AGENTS.md "Honesty"). Pure.
@@ -64,7 +64,7 @@ const mana = (amount: Amount): string | null =>
   typeof amount === 'number' && Number.isInteger(amount) && amount > 0 ? `{${amount}}` : null;
 
 /**
- * "another Aura is attached to the permanent this is attached to" (D-1235): at least one other attachment of a kind on the host of the source, the `amountIs` of Face of
+ * "another Aura is attached to the permanent this is attached to" (D-427): at least one other attachment of a kind on the host of the source, the `amountIs` of Face of
  * Divinity. Null for any other count.
  */
 export function otherAttachedWords(
@@ -90,13 +90,13 @@ export function otherAttachedWords(
     : `another ${noun} is attached to the permanent this is attached to`;
 }
 
-/** "this permanent entered this turn" (D-1235, CR 400.7). */
+/** "this permanent entered this turn" (D-427, CR 400.7). */
 export const thisEnteredWords = (negate: boolean): string =>
   `this permanent ${negate ? "didn't enter" : 'entered'} this turn`;
 
 /**
  * "Equip abilities you activate that target enchanted creature cost {3} less to activate" and "Aura spells you cast that target enchanted creature cost {3} less to cast"
- * (D-1233, D-1232, CR 601.2f, 602.2b): the reductions that read what the cost's object targets. `host` is the permanent an Aura or Equipment is attached to, as the card names it
+ * (D-425, D-424, CR 601.2f, 602.2b): the reductions that read what the cost's object targets. `host` is the permanent an Aura or Equipment is attached to, as the card names it
  * ("enchanted creature"). Null for any other reduction, which these words do not say.
  */
 export function targetedReductionWording(effect: StaticEffect, host: string | null): string | null {

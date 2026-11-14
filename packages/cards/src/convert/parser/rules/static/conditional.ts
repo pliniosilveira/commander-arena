@@ -37,7 +37,7 @@ const STATIC_CONDITIONS = [
   'condition.cards-in-library',
   // D-286 (CR 702.95b): "~ is paired with another creature".
   'condition.paired',
-  // D-1235 (Danitha group 3): "enchanted creature is green", "another Aura is attached to enchanted creature", "~ entered this turn".
+  // D-427 (Danitha group 3): "enchanted creature is green", "another Aura is attached to enchanted creature", "~ entered this turn".
   'condition.host-is-color',
   'condition.other-attached-to-host',
   'condition.this-entered-this-turn',
@@ -63,7 +63,7 @@ const EACH_UNIT = unit(['noun.each-permanent'], 'each');
 // D-286 (CR 702.95b): "each of those creatures has ..." of a soulbond card; the verb is singular, as the one of "each".
 const PAIR_UNIT = unit(['noun.paired-creatures'], 'each');
 
-// D-1235 (Danitha group 3, CR 303.4b, 301.5a): "enchanted creature has hexproof", what an Aura gives while a condition holds.
+// D-427 (Danitha group 3, CR 303.4b, 301.5a): "enchanted creature has hexproof", what an Aura gives while a condition holds.
 const ATTACHED_UNIT = unit(['noun.attached-permanent'], 'attached');
 
 const ANY_UNIT: Parser<StaticUnit> = choice(
@@ -81,7 +81,7 @@ const ANY_UNIT: Parser<StaticUnit> = choice(
 
 /**
  * "it" after a condition about the permanent an Aura or an Equipment is attached to ("As long as enchanted creature is green, it gets +1/+1 and has indestructible."): the
- * same permanent as the condition names, the host (D-1235). `via` is the word of the condition ("enchanted" for an Aura, "equipped" for an Equipment): it makes the noun the
+ * same permanent as the condition names, the host (D-427). `via` is the word of the condition ("enchanted" for an Aura, "equipped" for an Equipment): it makes the noun the
  * one `noun.attached-permanent` makes, so the lowering needs the same kind of attachment on the face. A pronoun with no such condition before it is not read.
  */
 function hostPronounUnit(via: 'enchanted' | 'equipped'): Parser<StaticUnit> {
@@ -207,7 +207,7 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     'As long as this card is in your graveyard, creatures you control get +1/+0.',
     'As long as two or more nonland permanents entered the battlefield under your control this turn, ~ is a Dragon with base power and toughness 4/4, flying, and "{R}: Dragons you control get +1/+0 until end of turn."',
     'As long as a creature entered the battlefield under your control this turn, ~ is an Elf with base power and toughness 2/2.',
-    // D-1235 (Danitha group 3): what an Aura gives while the creature is of a color, while another Aura is on it, or the turn it entered.
+    // D-427 (Danitha group 3): what an Aura gives while the creature is of a color, while another Aura is on it, or the turn it entered.
     'As long as enchanted creature is green, it gets +1/+1 and has indestructible.',
     'As long as enchanted creature is white, it gets +1/+1 and has flying.',
     'As long as another Aura is attached to enchanted creature, it has first strike and lifelink.',
@@ -228,7 +228,7 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     'As long as you control your commander, you draw a card.',
     'As long as you control your commander and you have 30 or more life, ~ gets +2/+2.',
     'As long as ~ is untapped, ~ gets +2/+2 as long as you have 30 or more life.',
-    // D-1235: "it" names the creature only after a condition about the creature an attachment is on.
+    // D-427: "it" names the creature only after a condition about the creature an attachment is on.
     'As long as you control your commander, it gets +2/+2.',
     'As long as enchanted creature is green, it gets +1/+1',
     'As long as enchanted creature is green or white, it gets +1/+1.',
@@ -272,7 +272,7 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
         pos: tax.pos,
       };
     }
-    // D-1235: after a condition about the host of an attachment, "it" is that permanent.
+    // D-427: after a condition about the host of an attachment, "it" is that permanent.
     const via = hostWordOf(condition);
     const read = units(
       ctx,

@@ -622,7 +622,7 @@ export const NOUN_RULES = [
   NOUN_ALL_GRAVEYARD_CARDS,
   NOUN_ALL_GRAVEYARDS,
   NOUN_TARGET_PERMANENT,
-  // D-1234 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
+  // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.

@@ -258,10 +258,10 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       // CR 702.174k (D-135): "if the gift was promised".
       return negate ? "the gift wasn't promised" : 'the gift was promised';
     case 'thisEnteredThisTurn':
-      // D-1235 (CR 400.7): "as long as this permanent entered this turn".
+      // D-427 (CR 400.7): "as long as this permanent entered this turn".
       return thisEnteredWords(negate);
     case 'amountIs': {
-      // D-1235 (CR 303.4, 301.5): "another Aura is attached to the permanent this is attached to".
+      // D-427 (CR 303.4, 301.5): "another Aura is attached to the permanent this is attached to".
       const other = otherAttachedWords(condition, negate);
       if (other !== null) return other;
       // "if an opponent has more life than you": at least one opponent is ahead (D-131).

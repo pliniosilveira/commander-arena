@@ -1,5 +1,5 @@
 /**
- * Conditions of group 3 of the Danitha deck (issue 26, D-1235 provisional): what the permanent an Aura enchants is ("enchanted creature is green", Shield of the Oversoul),
+ * Conditions of group 3 of the Danitha deck (issue 26, D-427): what the permanent an Aura enchants is ("enchanted creature is green", Shield of the Oversoul),
  * whether another Aura is on it ("another Aura is attached to enchanted creature", Face of Divinity) and whether the Aura itself just came ("~ entered this turn", Shardmage's
  * Rescue). They are read after "as long as" of a static ability (CR 611.3a), where the engine reads them through layers 1, 4 and 5 and the turn log and nothing of layer 7
  * (CR 613.8), and, like every condition, after the "if" of an intervening "if".

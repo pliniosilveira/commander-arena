@@ -1,5 +1,5 @@
 /**
- * Targets that leave the cost payable (CR 601.2c, 601.2f, 602.2b, D-1232, D-1233): a cost reduction that reads what the spell or the ability targets ("Aura spells you cast that
+ * Targets that leave the cost payable (CR 601.2c, 601.2f, 602.2b, D-424, D-425): a cost reduction that reads what the spell or the ability targets ("Aura spells you cast that
  * target enchanted creature cost {3} less", "Equip abilities you activate that target enchanted creature cost {3} less") is known only once the targets are chosen, and the targets
  * are chosen before the total cost is determined. The question "may this be cast or activated at all?" assumes the most favourable target, so a player who can pay only with the
  * reduction would otherwise be able to choose a target that does not give it and then be unable to pay. The first slot offers, in that case, only the targets after which the cost can

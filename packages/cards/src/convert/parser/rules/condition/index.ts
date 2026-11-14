@@ -435,7 +435,7 @@ export const CONDITION_RULES = [
   ...DANITHA_G1B_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-411): "you don't", after "you don't put it onto the battlefield", whose phrase it is a prefix of.
   ...DANITHA_G2_LATE_CONDITION_RULES,
-  // Issue 26 (the Danitha deck, D-1235): "enchanted creature is green", "another Aura is attached to enchanted creature", "~ entered this turn".
+  // Issue 26 (the Danitha deck, D-427): "enchanted creature is green", "another Aura is attached to enchanted creature", "~ entered this turn".
   ...DANITHA_G3_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_UNLESS_PAYS,

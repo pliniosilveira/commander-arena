@@ -1346,7 +1346,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       checkActivationCosts(a, path, out);
       checkLoyaltyAbility(a, path, out);
-      // D-1233: the engine writes it as it expands an Equip keyword; card data says "equip {N}" with the keyword.
+      // D-425: the engine writes it as it expands an Equip keyword; card data says "equip {N}" with the keyword.
       if (a.equip !== undefined) {
         issue(
           out,

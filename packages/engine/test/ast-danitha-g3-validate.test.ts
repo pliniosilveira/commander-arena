@@ -1,4 +1,4 @@
-// validateCard for what group 3 of the Danitha deck adds to the AST (D-1230 to D-1233, provisional): the attachment fields of `ObjectFilter`, the conditions `thisEnteredThisTurn` and a
+// validateCard for what group 3 of the Danitha deck adds to the AST (D-422 to D-425): the attachment fields of `ObjectFilter`, the conditions `thisEnteredThisTurn` and a
 // static `amountIs`, `targetsObject` in the spell filter of `costReduction`, the static `abilityCostReduction` and the engine-only `equip` marker. Every valid shape the cards use is
 // accepted (the SYNTHETIC cards of `synthetic-danitha-g3.ts` are validated in the scenario test); the shapes the engine does not run are refused.
 import { describe, expect, test } from 'vitest';
@@ -145,7 +145,7 @@ describe('the attachment fields of a filter', () => {
       },
     });
     expect(messages(creature(group({ types: ['creature'], enchanted: false })))).toContain(
-      'a static ability\'s group cannot be named by "enchanted" or by the kind of permanent something is attached to (D-1230)',
+      'a static ability\'s group cannot be named by "enchanted" or by the kind of permanent something is attached to (D-422)',
     );
     expect(
       messages(

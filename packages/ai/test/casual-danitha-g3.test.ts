@@ -1,4 +1,4 @@
-// CasualAgent and HeuristicAgent on the cards of group 3 of the Danitha deck (D-1230 to D-1237, provisional), on real engine states built with the scenario DSL:
+// CasualAgent and HeuristicAgent on the cards of group 3 of the Danitha deck (D-422 to D-429), on real engine states built with the scenario DSL:
 //   - "Destroy all creatures that aren't enchanted": cast only when the opponent loses more creatures than the agent (the enchanted creatures of both sides are spared);
 //   - a cost that is cheaper for the enchanted creature ("Aura spells you cast that target enchanted creature cost {3} less", "Equip abilities ... cost {3} less"): when the agent can pay
 //     only with the reduction the engine offers only the enchanted creature as a target, so the answer it gives is one the engine lists and can complete.

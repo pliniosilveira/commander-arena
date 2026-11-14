@@ -207,7 +207,7 @@ export function lowerCondition(
       // filter; "it" is the permanent of an ability about itself, as for `thisMatches`.
       const blocked = missingFeatures(['condition:objectMatches', 'selector:attached']);
       if (blocked.length > 0) return failure(c, blocked);
-      // "As long as enchanted creature is green" (D-1235, CR 303.4b, 301.5a): the word says the kind of attachment the source is, which the face must be.
+      // "As long as enchanted creature is green" (D-427, CR 303.4b, 301.5a): the word says the kind of attachment the source is, which the face must be.
       if (test.via !== undefined && !(ctx?.faceSubtypes ?? []).includes(HOST_KIND[test.via])) {
         return failure(c, []);
       }
@@ -227,7 +227,7 @@ export function lowerCondition(
         : filter;
     }
     case 'otherAttachedToHost': {
-      // "As long as another Aura is attached to enchanted creature" (D-1235, CR 303.4, 301.5, 701.3): the number of other permanents of the kind attached to the
+      // "As long as another Aura is attached to enchanted creature" (D-427, CR 303.4, 301.5, 701.3): the number of other permanents of the kind attached to the
       // permanent the source is attached to is at least one. The word of the condition says the kind of attachment the source is, which the face must be.
       const blocked = missingFeatures([
         'condition:amountIs',
@@ -258,7 +258,7 @@ export function lowerCondition(
       });
     }
     case 'thisEnteredThisTurn': {
-      // "As long as ~ entered this turn" (D-1235, CR 400.7): the permanent itself entered the battlefield during this turn, read from the turn log.
+      // "As long as ~ entered this turn" (D-427, CR 400.7): the permanent itself entered the battlefield during this turn, read from the turn log.
       const blocked = missingFeatures(['condition:thisEnteredThisTurn']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'thisEnteredThisTurn' });
     }
@@ -566,6 +566,6 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:spellTargets',
   'condition:controlsRingBearer',
   'condition:paired',
-  // D-1235 (Danitha group 3): "as long as ~ entered this turn".
+  // D-427 (Danitha group 3): "as long as ~ entered this turn".
   'condition:thisEnteredThisTurn',
 ];

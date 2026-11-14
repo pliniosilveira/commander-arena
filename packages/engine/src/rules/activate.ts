@@ -231,7 +231,7 @@ export function toActivationTargets(state: GameState, events: GameEvent[] = []):
           modal === null ? undefined : specModes(modal, object.stack?.chosenModes ?? []),
           0,
           null,
-          // D-1233: an Equip ability that is cheaper for some targets is payable only with them: only those are offered.
+          // D-425: an Equip ability that is cheaper for some targets is payable only with them: only those are offered.
           payableEquipTargets(casting.snapshot, casting, specs, {
             controller: casting.seat,
             source: activation.source,
@@ -244,7 +244,7 @@ export function toActivationTargets(state: GameState, events: GameEvent[] = []):
 }
 
 /**
- * CR 601.2f, 602.2b (D-1233): the targets are chosen before the total cost is determined, so a reduction that depends on them ("Equip abilities you activate that target
+ * CR 601.2f, 602.2b (D-425): the targets are chosen before the total cost is determined, so a reduction that depends on them ("Equip abilities you activate that target
  * enchanted creature cost {3} less") is applied once they are: the ability on the stack and in the activation takes the reduced cost.
  */
 export function reduceForChosenTargets(state: GameState): GameState {

@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 3 OF THE DANITHA DECK (issue 26, D-1230 to D-1233 provisional). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 3 OF THE DANITHA DECK (issue 26, D-422 to D-425). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the real cards of the group need from the engine, written out by hand (the cards package checks that the grammar lowers the real Oracle text to
  * these same nodes): a creature that counts the Auras attached to it, an Aura that counts the Auras its controller has on creatures (and draws that many cards as it enters), a

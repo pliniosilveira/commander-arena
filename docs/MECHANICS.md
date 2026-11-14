@@ -4678,7 +4678,7 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Added in: D-411 to D-415
 - Limits (also `docs/ROADMAP.md`): see there.
 
-## The Danitha deck (issue 26), group 3: Kor Spiritdancer, Sage's Reverie, Winds of Rath, Ethereal Armor, Face of Divinity, Shield of the Oversoul, Shardmage's Rescue and Strong Back (D-1230 to D-1237, provisional numbers)
+## The Danitha deck (issue 26), group 3: Kor Spiritdancer, Sage's Reverie, Winds of Rath, Ethereal Armor, Face of Divinity, Shield of the Oversoul, Shardmage's Rescue and Strong Back (D-422 to D-429)
 
 - CR: 303.4 and 301.5 (Aura, Equipment: attached to the permanent they enchant or equip; "enchanted" is having an Aura attached), 701.3 (attach), 611.3a and 613.8 (a static ability follows the board; counting and conditions read what layers 1, 4 and 5 give, never layer 7), 613.1d and 613.1e (types and colors of the host), 400.7 (the Aura that entered this turn is the same object), 701.19c (it can't be regenerated), 601.2c and 601.2f (targets, then the total cost), 602.2b (the same order for an activation), 702.6a (Equip), 118.7a (a reduction takes generic mana only).
 - Gap class: T + P. Engine primitives: `ObjectFilter.attachedTo` (`source`, `host`, `matching`), `enchanted` and `hostOfSource`; the conditions `thisEnteredThisTurn` and, in a static ability, `amountIs` of a count; `targetsObject` in the spell filter of `costReduction`; the static `abilityCostReduction` (Equip abilities) and the `equip` marker of the expanded Equip ability; the targets decisions offer only the targets after which a cost that is cheaper for some of them can be paid (`rules/target-payable.ts`).
@@ -4689,4 +4689,14 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Web: `game/attachment-text.ts` words the filters, the conditions and the two reductions.
 - AI: `isEnchanted` and the sweeper of `casual-priority.ts` (the creatures that are lost are those with no Aura attached); the SYNTHETIC cards are kept out of the generic soak pools (`DANITHA_G3_NAMES`), the style `danithaG3`.
 - Tests: engine `scenario-xx-danitha-g3-attachments.test.ts`; cards `parser-danitha-g3.test.ts` and `convert-grammar-engine-danitha-g3.test.ts`; web `danitha-g3-text.test.ts`; AI `casual-danitha-g3.test.ts` and the soak `danitha-g3-games.test.ts`.
+- Limits: see `docs/ROADMAP.md`.
+
+## The Danitha deck (issue 26), group 4: Boar Umbra, Hyena Umbra, Lion Umbra, Spider Umbra, Golden-Tail Trainer (D-416 to D-421)
+
+- CR: 702.89a (Umbra armor), 700.9 (modified permanents), 616.1 (the order of replacement effects), 601.2f (a cost reduction).
+- Gap class: K + P. AST: `Replacement.umbraArmor`, `ObjectFilter.modified`, `DestroyReplacementQuestion`, the event `umbraArmorUsed`.
+- Code: engine `rules/destroy-replacement.ts`, `rules/modified.ts`, `ast/validate-umbra.ts`.
+- Parser: the keyword line "Umbra armor" is `replacement.umbra-armor`; "modified" is a modifier of the `noun.*` phrases; "other ... get +N/+N until end of turn" is `effect.pump-others`; the cost reduction line lowers to `costReduction` with `powerOf this`.
+- Tests: engine `scenario-xx-danitha-g4-umbra.test.ts` and `scenario-xx-danitha-g4-modified.test.ts`; cards `parser-danitha-g4.test.ts` and `convert-grammar-engine-danitha-g4.test.ts`; AI `danitha-g4-agents.test.ts` and `danitha-g4-games.test.ts`; web `danitha-g4-text.test.ts`.
+- Added in: D-416 to D-421
 - Limits: see `docs/ROADMAP.md`.

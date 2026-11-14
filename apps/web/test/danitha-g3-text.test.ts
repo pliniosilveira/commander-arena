@@ -1,5 +1,5 @@
 /**
- * The words of group 3 of the Danitha deck (D-1230 to D-1236 provisional) as pure models: the Auras and the creature that count or check what is attached, the group of
+ * The words of group 3 of the Danitha deck (D-422 to D-428) as pure models: the Auras and the creature that count or check what is attached, the group of
  * creatures that are not enchanted, the conditions about the host and about the turn the Aura entered, and the reductions of Equip abilities and Aura spells that target the
  * enchanted creature. Read from the engine's SYNTHETIC cards, so a wording that drifts from the AST fails here. No DOM.
  */

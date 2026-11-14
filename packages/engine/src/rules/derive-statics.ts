@@ -133,7 +133,7 @@ export interface CostReductionSource {
 }
 
 /**
- * A static ability of a permanent that reduces what the Equip abilities its controller activates cost when they target a kind of object (`abilityCostReduction`, D-1233): read
+ * A static ability of a permanent that reduces what the Equip abilities its controller activates cost when they target a kind of object (`abilityCostReduction`, D-425): read
  * by `rules/activate-adjust.ts`, not by `derive`. A permanent that lost all its abilities has none (CR 613.1f).
  */
 export interface AbilityReductionSource {
@@ -183,7 +183,7 @@ interface BoardIndex {
   readonly deferred: EntryLists;
   /** Permanents with a `costReduction` static ability that names spells by a filter, in battlefield order. */
   readonly reductions: readonly CostReductionSource[];
-  /** Permanents with an `abilityCostReduction` static ability, in battlefield order (D-1233). */
+  /** Permanents with an `abilityCostReduction` static ability, in battlefield order (D-425). */
   readonly abilityReductions: readonly AbilityReductionSource[];
   /** Permanents with a `castAsThoughFlash` static ability, in battlefield order (D-139). */
   readonly flashes: readonly FlashPermissionSource[];
@@ -412,7 +412,7 @@ export function costReductionSources(state: GameState): readonly CostReductionSo
   return indexOf(state).reductions;
 }
 
-/** The cost-reducing static abilities of the permanents on the battlefield that name the Equip abilities a kind of object is the target of (D-1233). */
+/** The cost-reducing static abilities of the permanents on the battlefield that name the Equip abilities a kind of object is the target of (D-425). */
 export function abilityReductionSources(state: GameState): readonly AbilityReductionSource[] {
   return indexOf(state).abilityReductions;
 }

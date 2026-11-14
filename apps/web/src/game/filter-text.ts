@@ -59,7 +59,7 @@ const COUNTABLE: ReadonlySet<string> = new Set([
   'notSubtypes',
   'colorless',
   'keywords',
-  // D-1230: "Aura attached to it", "creatures that aren't enchanted".
+  // D-422: "Aura attached to it", "creatures that aren't enchanted".
   'attachedTo',
   'enchanted',
   'notKeywords',
@@ -163,7 +163,7 @@ function tokenGroup(filter: ObjectFilter, plural: boolean): string | null {
 
 /** The things a filter counts, "artifacts you control" (plural) or "artifact you control" (each). */
 export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | null {
-  // D-1230 (CR 301.5, 303.4): "Aura attached to it", "Aura and Equipment attached to it", "Aura you control that's attached to a creature".
+  // D-422 (CR 301.5, 303.4): "Aura attached to it", "Aura and Equipment attached to it", "Aura you control that's attached to a creature".
   if (filter.attachedTo !== undefined && attachableNouns(filter, plural) !== null) {
     return attachedThings(filter, plural);
   }
@@ -260,7 +260,7 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
         : filter.attackingOpponents === true
           ? ' attacking your opponents and/or planeswalkers they control'
           : '';
-  // D-1230 (CR 303.4): "creatures that aren't enchanted" names its objects by what is attached to them, so no "on the battlefield".
+  // D-422 (CR 303.4): "creatures that aren't enchanted" names its objects by what is attached to them, so no "on the battlefield".
   const attached = attachedToWords(filter);
   if (attached === null) return null;
   const enchanted = enchantedWords(filter, plural);
@@ -270,7 +270,7 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
 }
 
 /**
- * "Aura attached to it", "Auras you control that are attached to a creature", "other Aura and Equipment attached to it" (D-1230, CR 301.5, 303.4): the attachable permanents a filter
+ * "Aura attached to it", "Auras you control that are attached to a creature", "other Aura and Equipment attached to it" (D-422, CR 301.5, 303.4): the attachable permanents a filter
  * names by their subtype, with who controls them and what they are attached to. Null for any other field of the filter.
  */
 function attachedThings(filter: ObjectFilter, plural: boolean): string | null {

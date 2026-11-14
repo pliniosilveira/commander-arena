@@ -61,7 +61,7 @@ export const PERMANENT_OPERANDS = [
   'noun.target-commander',
   'noun.target-permanent',
   'noun.all-permanents',
-  // D-1234 (Danitha group 3): "all creatures that aren't enchanted".
+  // D-426 (Danitha group 3): "all creatures that aren't enchanted".
   'noun.all-enchanted',
   'noun.each-permanent',
   // D-268: "each artifact and creature your opponents control".

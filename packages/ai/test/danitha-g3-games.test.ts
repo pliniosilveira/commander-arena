@@ -1,4 +1,4 @@
-// Slice soak (D-1230 to D-1236, provisional): whole games with the 'danithaG3' deck style (SYNTHETIC cards of the engine fixtures `synthetic-danitha-g3.ts`: a creature and Auras that
+// Slice soak (D-422 to D-428): whole games with the 'danithaG3' deck style (SYNTHETIC cards of the engine fixtures `synthetic-danitha-g3.ts`: a creature and Auras that
 // count what is attached, a sorcery that destroys the creatures that are not enchanted, Auras that read the color of the creature, another Aura on it and the turn they entered, an Aura
 // that makes Equip abilities and Aura spells cheaper when they target the creature it enchants, and an Equipment with an expensive Equip, with bodies, other Auras and removal) between
 // random agents, with CasualAgent and HeuristicAgent in some seats. Every game finishes with a result, no fallback, no rejected action and consistent state after every action; the

@@ -233,7 +233,7 @@ export function checkCostReduction(
 ): void {
   if (kindOf(s.spells) !== 'this') {
     const filter = s.spells as ObjectFilter;
-    // D-1232 (CR 601.2c, 601.2f): "Aura spells you cast that target enchanted creature cost {3} less": the targets are chosen before the cost is determined, so the outer
+    // D-424 (CR 601.2c, 601.2f): "Aura spells you cast that target enchanted creature cost {3} less": the targets are chosen before the cost is determined, so the outer
     // filter may say what the spell targets; the object it targets is a permanent, described by a filter of its own.
     const { targetsObject, ...spell } = filter;
     checkFilter(spell, `${path}.spells`, out);
@@ -278,7 +278,7 @@ export function checkCostReduction(
 }
 
 /**
- * D-1233, CR 601.2f, 602.2b, 702.6a: "Equip abilities you activate that target enchanted creature cost {3} less to activate." `abilities` is `equip`; `targeting` describes the
+ * D-425, CR 601.2f, 602.2b, 702.6a: "Equip abilities you activate that target enchanted creature cost {3} less to activate." `abilities` is `equip`; `targeting` describes the
  * object the activation targets (a permanent on the battlefield: the source of this ability is the permanent that has it, so `hostOfSource` is the permanent it is attached to);
  * `amount` is read as `costReduction`'s is.
  */

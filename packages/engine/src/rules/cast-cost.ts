@@ -199,7 +199,7 @@ function reductionFor(
       ...base,
       // D-235: "spells you cast from anywhere other than your hand": the zone the card is cast from, before it has moved.
       ...(castFrom === undefined ? {} : { castFrom }),
-      // D-1232: "Aura spells you cast that target enchanted creature cost {3} less": before the targets are chosen the most favourable one is assumed.
+      // D-424: "Aura spells you cast that target enchanted creature cost {3} less": before the targets are chosen the most favourable one is assumed.
       ...(optimistic ? { spellTargetsMayHold: true } : {}),
     };
     if (!matchesFilter(state, spell, { ...source.spells, zone: 'stack' }, ctx)) continue;

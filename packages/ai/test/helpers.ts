@@ -2595,7 +2595,7 @@ export const DANITHA_G4_LANDS = supported([
 ]);
 
 /**
- * The SYNTHETIC cards of group 3 of the Danitha deck (D-1230 to D-1236, provisional): a creature and Auras that count what is attached, a sorcery that destroys the creatures that are not
+ * The SYNTHETIC cards of group 3 of the Danitha deck (D-422 to D-428): a creature and Auras that count what is attached, a sorcery that destroys the creatures that are not
  * enchanted, Auras that read the color of the creature, another Aura on it and the turn they entered, an Aura that makes Equip abilities and Aura spells cheaper when they target the
  * creature it enchants (the targets decision offers only the targets after which the cost can be paid), and an Equipment with an expensive Equip. The optional draw, the board wipe and
  * the cast that restricts its targets change which answers the generic pools ask for, which games-100 expects only from dedicated styles.
@@ -3436,7 +3436,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(DANITHA_G5_NAMES as readonly string[]).includes(card.name))
   // The Danitha group 4 cards (D-416 to D-421) have Umbra armor, which asks the order of a regeneration shield and a second Umbra Aura in the middle of a resolution: a style of their own.
   .filter((card) => !(DANITHA_G4_NAMES as readonly string[]).includes(card.name))
-  // The Danitha group 3 cards (D-1230 to D-1236) draw on an optional trigger, wipe the creatures that are not enchanted and restrict the targets of a cheaper cast and Equip: a style of their own.
+  // The Danitha group 3 cards (D-422 to D-428) draw on an optional trigger, wipe the creatures that are not enchanted and restrict the targets of a cheaper cast and Equip: a style of their own.
   .filter((card) => !(DANITHA_G3_NAMES as readonly string[]).includes(card.name))
   // The Hashaton group 9 cards (D-390 to D-395) pay life for a Phyrexian symbol, transform and exile a random card from a hand with two offers behind it, which games-100 expects only from dedicated styles.
   .filter((card) => !(HASHATON_G9_NAMES as readonly string[]).includes(card.name))
@@ -4338,7 +4338,7 @@ export const DANITHA_G4_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
   ['spells', 'danithaG4'],
 ];
 
-/** Style pairs of the Danitha group 3 soak test (D-1230 to D-1236): a mirror match and both mixed ways. */
+/** Style pairs of the Danitha group 3 soak test (D-422 to D-428): a mirror match and both mixed ways. */
 export const DANITHA_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['danithaG3', 'danithaG3'],
   ['danithaG3', 'spells'],

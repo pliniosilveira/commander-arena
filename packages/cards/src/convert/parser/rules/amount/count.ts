@@ -132,7 +132,7 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
     if (!found.ok) return found;
     let end = found.pos;
     let filter: IrFilter = found.value;
-    // D-1234 (Danitha group 3): "Aura attached to it", "Aura you control that's attached to a creature": the permanents an attachment is on, which also names the
+    // D-426 (Danitha group 3): "Aura attached to it", "Aura you control that's attached to a creature": the permanents an attachment is on, which also names the
     // objects, so a phrase with no controller needs no "on the battlefield".
     const attached = plural
       ? { ok: true as const, value: null, pos: end }

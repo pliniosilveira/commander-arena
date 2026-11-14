@@ -277,7 +277,7 @@ export function checkFilter(
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
   }
-  // D-1230: attachments: "attached to it", "that isn't enchanted", "enchanted creature" (of the source).
+  // D-422: attachments: "attached to it", "that isn't enchanted", "enchanted creature" (of the source).
   if (f.attachedTo !== undefined) checkAttachedTo(f.attachedTo, `${path}.attachedTo`, out);
   if (f.enchanted !== undefined && typeof f.enchanted !== 'boolean') {
     issue(
@@ -441,7 +441,7 @@ export function checkFilter(
   }
 }
 
-/** The parts of a filter a host named by `attachedTo` may have (D-1230): what layers 1, 4 and 5 give it, and its controller; nothing of layers 6 and 7, nothing of the game. */
+/** The parts of a filter a host named by `attachedTo` may have (D-422): what layers 1, 4 and 5 give it, and its controller; nothing of layers 6 and 7, nothing of the game. */
 const HOST_FILTER_KEYS: readonly string[] = [
   'types',
   'notTypes',
@@ -454,7 +454,7 @@ const HOST_FILTER_KEYS: readonly string[] = [
   'controller',
 ];
 
-/** D-1230: what an `attachedTo` filter names: the source, its host, or a permanent a plain filter describes. */
+/** D-422: what an `attachedTo` filter names: the source, its host, or a permanent a plain filter describes. */
 function checkAttachedTo(a: AttachedTo, path: string, out: Out): void {
   switch (a?.kind) {
     case 'source':
@@ -2020,7 +2020,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // CR 701.54e (D-196): read from the permanents of the controller; no operand.
       break;
     case 'thisEnteredThisTurn':
-      // D-1231 (CR 400.7): the permanent the condition belongs to entered this turn; no operand.
+      // D-423 (CR 400.7): the permanent the condition belongs to entered this turn; no operand.
       break;
     case 'paired':
       // CR 702.95b (D-286): the permanent the condition belongs to is paired with a creature; no operand. Where it may stand (a static ability that
