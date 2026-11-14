@@ -150,7 +150,7 @@ function checkCosts(t: Tally, mem: Memory, step: StepInfo): void {
       }
       if (name === WALKER) {
         t.walker += 1;
-        mem.walkers.set(e.stackObject, e.seat);
+        if (e.stackObject !== null) mem.walkers.set(e.stackObject, e.seat);
       }
     }
     if (e.kind === 'spellCopied') {
@@ -193,7 +193,10 @@ function checkWalker(mem: Memory, step: StepInfo): void {
       expect(count('land'), 'an opponent keeps at most one land').toBeLessThanOrEqual(1);
       expect(count('enchantment'), 'at most one enchantment').toBeLessThanOrEqual(1);
       expect(count('planeswalker'), 'at most one planeswalker').toBeLessThanOrEqual(1);
-      expect(count('creature'), 'at most two creatures (a creature that is an artifact too)').toBeLessThanOrEqual(2);
+      expect(
+        count('creature'),
+        'at most two creatures (a creature that is an artifact too)',
+      ).toBeLessThanOrEqual(2);
       expect(count('artifact'), 'at most two artifacts').toBeLessThanOrEqual(2);
       expect(mine.length, 'at most one permanent for each type').toBeLessThanOrEqual(5);
     }

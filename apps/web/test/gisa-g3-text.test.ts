@@ -11,7 +11,7 @@ import {
   syntheticCard,
 } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
-import { additionalCostsText, activationCostText, sacrificeWhat } from '../src/game/cost-text';
+import { activationCostText, additionalCostsText, sacrificeWhat } from '../src/game/cost-text';
 import { chipsOf } from '../src/ui/board/keywords';
 import { activationLabel, triggerGist } from '../src/ui/decisions/ability-label';
 import { choosePermanentPrompt, spellSacrificeWhat } from '../src/ui/decisions/permanents';
@@ -49,7 +49,10 @@ describe('the costs', () => {
 describe('the labels of the abilities', () => {
   test('Priest: any number of target players each lose life and sacrifice a creature of their choice, then the mana and the card', () => {
     expect(
-      activationLabel(creature, { abilityIndex: 0, ability: activated('SYNTHETIC Sacrifice Priest') }),
+      activationLabel(creature, {
+        abilityIndex: 0,
+        ability: activated('SYNTHETIC Sacrifice Priest'),
+      }),
     ).toBe(
       '{T}, Sacrifice two other creatures: Any number of target players each lose 2 life. Any number of target players each sacrifice a creature of their choice. Add {B}{B}. You draw a card',
     );
@@ -143,7 +146,7 @@ describe('the prompts', () => {
       additionalCosts: face('SYNTHETIC Forbidden Rite').additionalCosts,
     } as unknown as ObjectView;
     expect(
-      spellSacrificeWhat({ source: 'r1', min: 0, max: 3 }, new Map([['r1', rite]]) as never),
+      spellSacrificeWhat({ source: 'o1', min: 0, max: 3 }, new Map([['o1', rite]]) as never),
     ).toBe('any number of creatures (you may choose none)');
   });
 });
@@ -174,6 +177,8 @@ describe('the chip of "partner with"', () => {
       oracleText:
         'Partner with Regna, the Redeemer (When this creature enters, target player may put Regna into their hand from their library, then shuffle.)',
     } as never);
-    expect(chips.map((c) => [c.short, c.full])).toEqual([['Ptn', 'Partner with Regna, the Redeemer']]);
+    expect(chips.map((c) => [c.short, c.full])).toEqual([
+      ['Ptn', 'Partner with Regna, the Redeemer'],
+    ]);
   });
 });

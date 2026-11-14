@@ -504,7 +504,8 @@ function sacrificeText(
   if (player === undefined) return `Sacrifice ${what}`;
   // CR 101.4 (D-131): each of several players chooses their own, in turn order.
   const eachTarget =
-    player.kind === 'target' && ability.targets?.find((t) => t.id === player.id)?.anyNumber === true;
+    player.kind === 'target' &&
+    ability.targets?.find((t) => t.id === player.id)?.anyNumber === true;
   const choice =
     objects.kind === 'choose' && (namesSeveral(player) || eachTarget) ? ' of their choice' : '';
   return `${playerVerb(player, ability, 'sacrifice')} ${what}${choice}`;

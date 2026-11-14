@@ -2853,7 +2853,11 @@ export const GISA_G3_SPELLS = [
   ...supported(GISA_G3_NAMES),
   ...supported(GISA_G3_NAMES),
   ...supported(GISA_G3_NAMES),
-  ...supported(['SYNTHETIC Sacrifice Priest', 'SYNTHETIC Sacrifice Demon', 'SYNTHETIC Forbidden Rite']),
+  ...supported([
+    'SYNTHETIC Sacrifice Priest',
+    'SYNTHETIC Sacrifice Demon',
+    'SYNTHETIC Forbidden Rite',
+  ]),
   ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
   ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
   ...supported(['Lightning Bolt', 'Murder']),

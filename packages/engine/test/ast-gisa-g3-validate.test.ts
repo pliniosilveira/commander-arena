@@ -83,7 +83,9 @@ describe('"Sacrifice X creatures" (CR 107.3a, 602.2b): the cost sacrifice with c
 
   test('not with a count, not of the permanent itself, and countX is true or absent', () => {
     expect(
-      messages(creature([activated([{ kind: 'sacrifice', what: CREATURES, count: 2, countX: true }])])),
+      messages(
+        creature([activated([{ kind: 'sacrifice', what: CREATURES, count: 2, countX: true }])]),
+      ),
     ).toContainEqual(expect.stringContaining('X or a count, not both'));
     expect(
       messages(
@@ -125,7 +127,8 @@ describe('"you may sacrifice one or more creatures" (CR 118.8, 701.21a): the cos
   });
 
   test('not with a count or an X, not of the permanent itself, and anyNumber is true or absent', () => {
-    const cost = (extra: object): Cost => ({ kind: 'sacrifice', what: CREATURES, ...extra }) as Cost;
+    const cost = (extra: object): Cost =>
+      ({ kind: 'sacrifice', what: CREATURES, ...extra }) as Cost;
     expect(messages(instant([cost({ anyNumber: true, count: 2 })], []))).toContainEqual(
       expect.stringContaining('no count and no X'),
     );
@@ -165,7 +168,9 @@ describe('"you may sacrifice one or more creatures" (CR 118.8, 701.21a): the cos
         [{ kind: 'payLife', amount: 3 }],
       ],
     });
-    expect(messages(choice)).toContainEqual(expect.stringContaining('no "you may sacrifice any number"'));
+    expect(messages(choice)).toContainEqual(
+      expect.stringContaining('no "you may sacrifice any number"'),
+    );
   });
 
   test('not the cost of an ability, of a mana ability', () => {
@@ -235,15 +240,11 @@ describe('sacrificedAsCost, the amount and the condition (CR 118.8, 603.4, 113.7
 
 describe('sparePermanents with own (CR 608.2d, 701.21a, 101.4)', () => {
   const spare = (own: unknown): CardDefinition =>
-    instant(
-      undefined,
-      [],
-      {
-        kind: 'sparePermanents',
-        types: ['creature'],
-        ...(own === undefined ? {} : { own }),
-      } as Effect,
-    );
+    instant(undefined, [], {
+      kind: 'sparePermanents',
+      types: ['creature'],
+      ...(own === undefined ? {} : { own }),
+    } as unknown as Effect);
 
   test('each opponent or each player choose for themselves', () => {
     expect(validateCard(spare({ players: { kind: 'eachOpponent' } }))).toEqual([]);
@@ -260,7 +261,9 @@ describe('sparePermanents with own (CR 608.2d, 701.21a, 101.4)', () => {
 describe('partnerWith (CR 702.124j)', () => {
   test('a name is needed', () => {
     expect(
-      validateCard(creature([{ kind: 'keyword', keyword: { kind: 'partnerWith', name: 'Regna' } }])),
+      validateCard(
+        creature([{ kind: 'keyword', keyword: { kind: 'partnerWith', name: 'Regna' } }]),
+      ),
     ).toEqual([]);
     expect(
       messages(creature([{ kind: 'keyword', keyword: { kind: 'partnerWith', name: ' ' } }])),

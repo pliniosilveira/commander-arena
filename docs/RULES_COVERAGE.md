@@ -689,3 +689,15 @@ Rule numbers and titles were read with `pnpm rule` from the CR copy of the owner
 | 601.2i, 603.2, 603.4, 115.1, 109.4 | "Whenever you cast an Equipment spell or a spell that targets a creature you control, draw a card. This ability triggers only once each turn." | Implemented (D-438, D-440): a disjunction of spells with a member that reads what the spell targets; the limit is `oncePerTurn` (D-149). | `rules/select.ts` (anyOf split), `rules/triggers.ts` |
 | 707.10, 707.10e, 115.3, 702.18a, 702.11b | "copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." and "that player copies that spell for each other creature they control ..." | Implemented (D-438): `copySpell.forEach` and `copier`: a copy for each creature that is a legal target for every instance of the word "target", with that creature as every target; the copy belongs to the player who cast the spell for "that player"; a copy is not cast (no cast trigger sees it). | `rules/copy-spell.ts` (`expandEach`) |
 | 614.1a, 608.2n, 603.7, 603.7c, 400.7, 603.3b | "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." | Implemented (D-439): `exileOnResolve` marks the spell; as an instant or sorcery card resolves it is exiled instead of going to its owner's graveyard and a delayed trigger returns it to the hand; a spell that is countered or fizzles is not changed. | `rules/exile-on-resolve.ts`, `rules/stack.ts` |
+
+## Added by the Gisa deck, group 3 (D-1420 to D-1429, provisional)
+
+| CR | Text | Status | Notes |
+| --- | --- | --- | --- |
+| 608.2d, 701.21a, 101.4, 110.4 | "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest." | Implemented (D-1420): `sparePermanents.own`: each opponent keeps one permanent of each of the six types they control (the same permanent may fill two types), and sacrifices the others, lands included, together. | `rules/spare.ts` |
+| 118.3, 701.21a | "Sacrifice two other creatures" as a cost | Implemented (D-1421): `count` with `other` in the filter. | `rules/activate-costs.ts` |
+| 107.3a, 602.2b, 118.3 | "Sacrifice X creatures" as a cost | Implemented (D-1424): X announced first; X = 0 allowed; the effect reads X. | `rules/x-value.ts`, `activate.ts` |
+| 115.1, 101.4 | "Any number of target players each lose 2 life and sacrifice a creature of their choice" | Implemented (D-1422). | `lower/nouns.ts` |
+| 605.1a | An ability with a target that adds mana is not a mana ability | Implemented (D-1423). | `lower/activated.ts` |
+| 702.124j | "Partner with [name]": when it enters, target player may search for the named card | Implemented (D-1426); deck construction is D-053. | `derive-keywords.ts` |
+| 118.8, 601.2b, 601.2h, 707.10 | "you may sacrifice one or more creatures. When you do, copy this spell for each creature sacrificed this way" | Implemented (D-1427, D-1428). | `cast-additional.ts`, `copy-spell.ts` |

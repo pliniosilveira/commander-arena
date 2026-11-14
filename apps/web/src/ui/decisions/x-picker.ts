@@ -72,7 +72,8 @@ export function perXText(d: Pick<ChooseXDecision, 'perX'>): string {
   if ((d.perX.loyalty ?? 0) > 0) parts.push(`${d.perX.loyalty} loyalty`);
   // D-1424 (CR 107.3a): "Sacrifice X creatures" sacrifices that many permanents.
   const sacrifices = d.perX.sacrifice ?? 0;
-  if (sacrifices > 0) parts.push(sacrifices === 1 ? 'a sacrificed permanent' : `${sacrifices} sacrificed permanents`);
+  if (sacrifices > 0)
+    parts.push(sacrifices === 1 ? 'a sacrificed permanent' : `${sacrifices} sacrificed permanents`);
   const discard = discardXText(d);
   if (parts.length === 0) return discard === '' ? 'X costs nothing extra' : discard;
   return `Each X costs ${parts.join(' and ')}${discard === '' ? '' : `, and you ${discard.replace(/^D/, 'd')}`}`;
@@ -124,7 +125,8 @@ export function xCostAt(d: Pick<ChooseXDecision, 'perX'>, x: number): string {
   const discard = (d.perX.discard ?? 0) * x;
   if (discard > 0) parts.push(`discard ${discard} ${discard === 1 ? 'card' : 'cards'}`);
   const sacrifice = (d.perX.sacrifice ?? 0) * x;
-  if (sacrifice > 0) parts.push(`sacrifice ${sacrifice} ${sacrifice === 1 ? 'permanent' : 'permanents'}`);
+  if (sacrifice > 0)
+    parts.push(`sacrifice ${sacrifice} ${sacrifice === 1 ? 'permanent' : 'permanents'}`);
   return parts.join(' and ');
 }
 

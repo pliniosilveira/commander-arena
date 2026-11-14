@@ -74,7 +74,11 @@ describe('the real cards are the nodes the engine fixtures hold', () => {
   });
 });
 
-const names = (g: ScenarioGame, seat: 0 | 1, zone: 'battlefield' | 'graveyard' | 'hand'): string[] =>
+const names = (
+  g: ScenarioGame,
+  seat: 0 | 1,
+  zone: 'battlefield' | 'graveyard' | 'hand',
+): string[] =>
   Object.values(g.state.objects)
     .filter((o) => o.zone === zone && o.owner === seat)
     .map((o) => {

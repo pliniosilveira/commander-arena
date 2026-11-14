@@ -87,7 +87,9 @@ describe('Priest of Forgotten Gods: "{T}, Sacrifice two other creatures: Any num
 
   test('the cost alone: other creatures, with a larger count and another kind of permanent (SYNTHETIC)', () => {
     const cost = (text: string) =>
-      readAll(`{T}, ${text}: Draw a card.`, 'creature').abilities[0] as { cost: unknown[] };
+      readAll(`{T}, ${text}: Draw a card.`, 'creature').abilities[0] as unknown as {
+        cost: unknown[];
+      };
     expect(cost('Sacrifice three other artifacts').cost[1]).toEqual({
       kind: 'sacrifice',
       what: { types: ['artifact'], other: true },
@@ -101,8 +103,10 @@ describe('Priest of Forgotten Gods: "{T}, Sacrifice two other creatures: Any num
   });
 
   test('mana added by a later instruction of an ability with a target is not a mana ability (CR 605.1a), the first instruction is the target one (SYNTHETIC)', () => {
-    const [ability] = readAll('{T}: Target player loses 2 life. You add {B}{B}.', 'creature')
-      .abilities;
+    const [ability] = readAll(
+      '{T}: Target player loses 2 life. You add {B}{B}.',
+      'creature',
+    ).abilities;
     expect(ability).toMatchObject({
       kind: 'activated',
       targets: [{ id: 't1', what: { kind: 'player', filter: 'any' } }],
@@ -248,7 +252,11 @@ describe('Partner with (CR 702.124j)', () => {
   });
 
   test('the lowering names the engine feature it needs', () => {
-    const missing = withoutFeature('keyword:partnerWith', 'Partner with Regna, the Redeemer', 'creature');
+    const missing = withoutFeature(
+      'keyword:partnerWith',
+      'Partner with Regna, the Redeemer',
+      'creature',
+    );
     expect(missing).toMatchObject({ reason: 'notRunnable' });
     expect(missing.needs).toContain('keyword:partnerWith');
   });
