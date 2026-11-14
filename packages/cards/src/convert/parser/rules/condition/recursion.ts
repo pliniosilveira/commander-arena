@@ -13,6 +13,7 @@ import {
   optional,
   type Parser,
   pattern,
+  quiet,
   satisfy,
   separatedBy1,
   sequence,
@@ -107,8 +108,7 @@ export const CONDITION_EXILED_THIS_WAY = defineRule<IrCondition>({
   ],
   parse: (ctx, pos) => {
     const r = sequence(
-      pattern(/an? /iu),
-      WHAT_IT_IS,
+      quiet(sequence(pattern(/an? /iu), WHAT_IT_IS)),
       pattern(/ is exiled this way(?![\p{L}\p{N}])/iu),
     )(ctx, pos);
     if (!r.ok) return r;
@@ -116,7 +116,7 @@ export const CONDITION_EXILED_THIS_WAY = defineRule<IrCondition>({
       ok: true,
       value: {
         kind: 'condition',
-        test: { kind: 'exiledThisWay', filter: r.value[1] },
+        test: { kind: 'exiledThisWay', filter: r.value[0][1] },
         span: { start: pos, end: r.pos },
         rule: 'condition.exiled-this-way',
       },

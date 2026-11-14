@@ -990,6 +990,22 @@ describe('triggers: a batch of combat damage, tapping for mana, a state, enterin
 });
 
 describe('statics: blockers, base power and toughness, types in addition, flash, linked exile, the monarch (CR 509.1b, 613, 601.3b, 607.2a)', () => {
+  test('only attacking creatures you control have deathtouch', () => {
+    expect(abilities('Attacking creatures you control have deathtouch.', 'enchantment')).toEqual([
+      {
+        kind: 'static',
+        static: {
+          kind: 'grantKeyword',
+          subject: {
+            kind: 'filter',
+            filter: { types: ['creature'], controller: 'you', attacking: true },
+          },
+          keyword: { kind: 'deathtouch' },
+        },
+      },
+    ]);
+  });
+
   test('"Elves you control can\'t be blocked by Walls" and "~ can\'t be blocked by creatures with power 2 or less"', () => {
     expect(abilities("Elves you control can't be blocked by Walls.", 'creature')).toEqual([
       {
@@ -1074,7 +1090,6 @@ describe('statics: blockers, base power and toughness, types in addition, flash,
     ],
     ['When ~ enters, tap enchanted creature.', 'creature', []],
     ['Living weapon', 'artifact', []],
-    ['Attacking creatures you control have deathtouch.', 'enchantment', []],
     ["Creatures you control can't be blocked by Walls you control.", 'enchantment', []],
     [
       'Other creatures you control have base power and toughness 5/3 until end of turn.',

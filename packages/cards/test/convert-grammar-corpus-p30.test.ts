@@ -141,6 +141,12 @@ const SIBLINGS: readonly Line[] = [
     expect: OK,
     note: 'another creature type for the permission',
   },
+  {
+    kind: 'creature',
+    text: '{2}: Return this card from your graveyard to the battlefield tapped.',
+    expect: OK,
+    note: 'a self-return ability works from the graveyard and returns the card tapped',
+  },
 ];
 
 const UNREAD: readonly Line[] = [
@@ -175,12 +181,6 @@ const UNREAD: readonly Line[] = [
     text: '{T}: You may cast target Zombie creature card from a graveyard this turn.',
     expect: no('from a graveyard this turn.', 'effect.may-cast'),
     note: 'only a card of your own graveyard',
-  },
-  {
-    kind: 'creature',
-    text: '{2}: Return this card from your graveyard to the battlefield tapped.',
-    expect: no('tapped.', 'effect.return-self'),
-    note: 'the words after the battlefield are the counters of "with"',
   },
   {
     kind: 'land',

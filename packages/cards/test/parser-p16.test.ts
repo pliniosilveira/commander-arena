@@ -32,6 +32,14 @@ const creatureTarget: TargetSpec = {
 };
 
 describe('X as the amount of an effect in a spell (CR 107.3a, 608.2)', () => {
+  test('"Return up to X target creatures" keeps the optional X-sized target slot', () => {
+    expect(spell('Return up to X target creatures to their owners’ hands.')).toEqual({
+      targets: [{ ...creatureTarget, countX: true, min: 0 }],
+      effect: { kind: 'moveToZone', objects: T1, to: 'hand' },
+      x: true,
+    });
+  });
+
   test.each([
     ['Draw X cards.', { kind: 'draw', player: { kind: 'you' }, count: X }],
     ['You draw X cards.', { kind: 'draw', player: { kind: 'you' }, count: X }],
@@ -363,7 +371,6 @@ describe('what stays unread: X where the engine has no X (CR 107.3, 107.3j)', ()
     ['Draw Y cards.', 'sorcery'],
     ['Target creature gets +Y/+Y until end of turn.', 'sorcery'],
     ['Creatures you control get +X/+X.', 'enchantment'],
-    ['Return up to X target creatures to their owners’ hands.', 'sorcery'],
   ] as const)('%s', (text, type) => {
     expect(dropped(text, type)).toMatchObject({ reason: 'unrecognised' });
   });
