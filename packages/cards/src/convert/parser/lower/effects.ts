@@ -1419,7 +1419,9 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                 ? 'objectMatches'
                 : test === 'discardedThisWay' || test === 'discardedSpellThisWay'
                   ? 'thisWayAtLeast'
-                  : test;
+                  : test === 'otherAttachedToHost'
+                    ? 'amountIs'
+                    : test;
     return failure(
       clause,
       kind === 'raw' ||

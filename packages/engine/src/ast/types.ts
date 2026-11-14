@@ -489,6 +489,26 @@ export interface ObjectFilter {
    */
   readonly powerLessThanSource?: true;
   /**
+   * "Aura attached to it", "Equipment attached to enchanted creature", "Aura you control that's attached to a creature" (CR 301.5, 303.4, 701.3, D-1230): the object
+   * is a permanent attached to another one (an Aura, an Equipment, a Fortification) and that other permanent is `source` (the permanent that has the ability: "attached
+   * to it", "attached to this creature"), `host` (the permanent the source is attached to: "attached to enchanted creature") or a permanent that matches `filter` (a
+   * type, subtype, color or supertype and a controller: "attached to a creature"). Read from the attachment itself (`GameObject.attachedTo`), which no layer
+   * changes, so a static ability may count it; the host named by `matching` is read through layers 1, 4 and 5 there (CR 613.8). It is the Aura's own type that says "Aura": put
+   * `subtypes: ['Aura']` beside it. A source that is attached to nothing has no host: `host` matches nothing then.
+   */
+  readonly attachedTo?: AttachedTo;
+  /**
+   * "Creatures that aren't enchanted", "enchanted creature" (CR 303.4, D-1230): `true` the permanent has at least one Aura attached to it, `false` it has none. An Equipment
+   * attached to it is no Aura (`equipped` is not read). Read from the attachments, which no layer changes (the Aura's subtype through layers 1, 4 and 5).
+   */
+  readonly enchanted?: boolean;
+  /**
+   * "Enchanted creature", "equipped creature" as the object a filter describes (CR 301.5a, 303.4b, D-1230): the object is the permanent the source of the ability (an Aura or an
+   * Equipment) is attached to. Used where the object is another one's host ("Aura spells you cast that target enchanted creature": `targetsObject` of it). Matches nothing when the
+   * source is attached to nothing.
+   */
+  readonly hostOfSource?: true;
+  /**
    * "Of the chosen type" (D-100): the object has the creature type that the source of the ability or
    * static ability chose as it entered (`GameObject.chosen.creatureType`, CR 607.2d). Matches nothing
    * when the source has made no such choice. `validateCard` requires the card to ask for it with an
@@ -530,6 +550,16 @@ export interface ObjectFilter {
    */
   readonly anyOf?: readonly ObjectFilter[];
 }
+
+/**
+ * What `ObjectFilter.attachedTo` names (D-1230): the permanent with the ability (`source`), the permanent it is attached to (`host`), or any permanent that matches `filter`.
+ * `filter` describes a permanent on the battlefield by what no effect of layers 6 and 7 changes (`types`, `notTypes`, `supertypes`, `subtypes`, `colors`, `controller`) and
+ * names no zone.
+ */
+export type AttachedTo =
+  | { readonly kind: 'source' }
+  | { readonly kind: 'host' }
+  | { readonly kind: 'matching'; readonly filter: ObjectFilter };
 
 export type PlayerFilter = 'any' | 'opponent';
 
@@ -3637,6 +3667,12 @@ export type Condition =
       readonly token?: boolean;
     }
   /**
+   * "As long as this Aura entered this turn" (D-1231, CR 400.7, 611.3a): the permanent the condition belongs to entered the battlefield during this turn and is still the same
+   * object (one that left and came back is a new object, and it entered this turn as that new object). Reads the turn log only, so a static ability may use it in any layer.
+   * `true` of the object itself, not of "a permanent of yours" (that is `enteredThisTurn`).
+   */
+  | { readonly kind: 'thisEnteredThisTurn' }
+  /**
    * "If an opponent was dealt 7 or more damage this turn" (D-151, CR 120.3): the damage the players the selector names were dealt this turn, by
    * any source, combat or not, as it was dealt after prevention (the damage of the whole turn so far, from every source): `opponent` is true
    * when some one opponent of the condition's controller was dealt at least `atLeast`, `you` when the controller was. Reads the turn log only.
@@ -4155,6 +4191,19 @@ export type StaticEffect =
       readonly amount: Amount;
     }
   /**
+   * "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-1233, CR 601.2f, 602.2b, 118.7, 702.6a): a static ability of a permanent on the
+   * battlefield that takes `amount` generic mana off the generic part of the mana cost of the Equip abilities (`abilities: 'equip'`) its controller activates, when one of the
+   * targets the activation chose is an object `targeting` matches (read with the permanent that has this ability as the source: `hostOfSource` is the permanent it is attached
+   * to). The targets are chosen before the total cost is determined (CR 602.2b), so the cost is worked out after them; the question "may this ability be activated at all?" assumes
+   * the most favourable target (as `spellTargets` does for a spell, D-207). Never below zero, only the generic part (CR 601.2f), and it adds to the other reductions of the ability.
+   */
+  | {
+      readonly kind: 'abilityCostReduction';
+      readonly abilities: 'equip';
+      readonly targeting: ObjectFilter;
+      readonly amount: Amount;
+    }
+  /**
    * "Lands you control have "{T}: Add one mana of any color."" (D-099): the subject has the mana
    * ability, in layer 6 (CR 613.1f), in timestamp order with the other ability-changing effects, so
    * "loses all abilities" on the subject removes it and one that comes later does not. A mana ability can be
@@ -4556,6 +4605,11 @@ export type Ability =
        * produce (CR 106.7).
        */
       readonly activateOnlyIf?: Condition;
+      /**
+       * The ability is the one an Equip keyword expands to (CR 702.6a, D-1233): what `abilityCostReduction` of `equip` names. The engine writes it when it expands the keyword;
+       * a card never does (`validateCard` refuses it).
+       */
+      readonly equip?: true;
     }
   /** A mana ability (CR 605.1a): no target, produces mana, not a loyalty ability. */
   | ManaAbility;

@@ -30,6 +30,17 @@ export const isAura = (o: ObjectView): boolean => o.subtypes.includes('Aura');
 export const isEquipment = (o: ObjectView): boolean => o.subtypes.includes('Equipment');
 export const auraIsHostile = (o: ObjectView): boolean => HOSTILE_AURA.test(o.oracleText);
 
+/**
+ * "Enchanted" (D-1237, CR 303.4): a permanent with an Aura attached to it, whoever controls the Aura. The view lists what is attached to a permanent
+ * (`attachments`); an Equipment attached is no Aura.
+ */
+export function isEnchanted(view: GameView, o: ObjectView): boolean {
+  return (o.attachments ?? []).some((id) => {
+    const attached = view.battlefield.find((b) => b.id === id);
+    return attached !== undefined && isAura(attached);
+  });
+}
+
 /** "You may cast this spell as though it had flash if it targets a commander." (D-408, CR 601.3b, 601.3d): an Aura that can be cast at instant speed only on a commander. */
 const FLASH_FOR_COMMANDER = /cast this spell as though it had flash if it targets a commander/i;
 

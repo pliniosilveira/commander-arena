@@ -44,6 +44,7 @@ import {
 import { chosenIssues } from './validate-chosen';
 import { checkContinuousEffect } from './validate-continuous';
 import {
+  checkAbilityCostReduction,
   checkAdditionalCostChoice,
   checkAdditionalCosts,
   checkAlternativeCosts,
@@ -432,6 +433,9 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'costReduction':
       checkCostReduction(s, path, out);
+      break;
+    case 'abilityCostReduction':
+      checkAbilityCostReduction(s, path, out);
       break;
     case 'castFromGraveyard':
       // D-133: the permission has no parameters; the face-level checks say where it may stand.
@@ -1342,6 +1346,14 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       checkActivationCosts(a, path, out);
       checkLoyaltyAbility(a, path, out);
+      // D-1233: the engine writes it as it expands an Equip keyword; card data says "equip {N}" with the keyword.
+      if (a.equip !== undefined) {
+        issue(
+          out,
+          `${path}.equip`,
+          'equip is written by the engine for the Equip keyword: a card writes the keyword',
+        );
+      }
       if (a.activateOnlyIf !== undefined) {
         checkCondition(a.activateOnlyIf, `${path}.activateOnlyIf`, out);
       }

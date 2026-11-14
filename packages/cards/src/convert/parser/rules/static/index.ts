@@ -15,6 +15,7 @@ import { ANGEL_PLAY_RULES } from './angels-play';
 import { ARTIFACT_STATIC_RULES } from './artifacts';
 import { CONDITIONAL_STATIC_RULES } from './conditional';
 import { COST_STATIC_RULES } from './cost';
+import { DANITHA_G3_STATIC_RULES } from './danitha-g3';
 import { DINOSAUR_STATIC_RULES } from './dinosaurs';
 import { DRAGON_STATIC_RULES } from './dragons';
 import { EDHREC_STATIC_RULES } from './edhrec';
@@ -112,4 +113,6 @@ export const STATIC_RULES = [
   ...HASHATON_G6_STATIC_RULES,
   // Hashaton deck, group 3 (D-380): "Creatures you control can't have -1/-1 counters put on them."
   ...HASHATON_G3_STATIC_RULES,
+  // Issue 26 (the Danitha deck, D-1236): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
+  ...DANITHA_G3_STATIC_RULES,
 ];

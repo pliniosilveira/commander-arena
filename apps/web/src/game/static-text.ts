@@ -30,6 +30,7 @@ import {
   JOB_SELECT_REMINDER,
   LIVING_WEAPON_REMINDER,
 } from './artifacts-text';
+import { targetedReductionWording } from './attachment-text';
 import { gameConditionWords } from './condition-text';
 import { umbraArmorWording } from './danitha-g4-text';
 import {
@@ -323,6 +324,12 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
     case 'keepsDamage':
       // D-192 (CR 514.2): "Damage isn't removed from this creature during cleanup steps".
       return keepsDamageWording(ctx.noun);
+    case 'abilityCostReduction':
+    case 'costReduction': {
+      // D-1232, D-1233 (CR 601.2f, 602.2b): "Equip abilities you activate that target enchanted creature cost {3} less to activate", "Aura spells you cast that target ... cost {3} less to cast".
+      const host = attachedSubject({ kind: 'attached' }, ctx)?.text;
+      return targetedReductionWording(effect, host === undefined ? null : host.toLowerCase());
+    }
     default:
       // D-149: "You have hexproof", "You can't lose the game", prevention to this creature, a tax on blocking.
       return angelsStaticWording(effect, ctx.noun);

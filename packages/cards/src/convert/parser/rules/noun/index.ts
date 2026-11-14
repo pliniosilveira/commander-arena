@@ -23,6 +23,7 @@ import { NOUN_ATTACKED_BY_IT } from './attacked';
 import { CHOOSE_NOUN_RULES } from './choose';
 import { NOUN_ITS_CONTROLLER } from './controller';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
+import { DANITHA_G3_NOUN_RULES } from './danitha-g3';
 import { DESTINY_EARLY_NOUN_RULES } from './destiny';
 import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
@@ -621,6 +622,8 @@ export const NOUN_RULES = [
   NOUN_ALL_GRAVEYARD_CARDS,
   NOUN_ALL_GRAVEYARDS,
   NOUN_TARGET_PERMANENT,
+  // D-1234 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
+  ...DANITHA_G3_NOUN_RULES,
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.
   ...HOFRI_NOUN_RULES,

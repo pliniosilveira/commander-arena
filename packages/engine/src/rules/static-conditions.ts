@@ -82,6 +82,15 @@ export function staticConditionHolds(
       return source.chosen?.option === condition.option;
     case 'enteredThisTurn': // D-151: the turn log, which no layer changes
       return enteredThisTurnHolds(state, controllerOf(state, source), condition);
+    case 'thisEnteredThisTurn': // D-1231 (CR 400.7): the turn log, which no layer changes
+      return state.turnLog.entered.some((e) => e.object === source.id);
+    case 'amountIs': {
+      // D-1231: "as long as another Aura is attached to enchanted creature": the count of a filter, read through layers 1, 4 and 5 (`validateCard` allows only `countOf` here).
+      if (typeof condition.amount === 'number' || condition.amount.kind !== 'countOf') return false;
+      const n = countForSource(state, condition.amount.filter, source);
+      const { cmp, value } = condition.compare;
+      return cmp === 'atLeast' ? n >= value : cmp === 'atMost' ? n <= value : n === value;
+    }
     case 'playerDealtDamage':
       return playerDealtDamageHolds(state, controllerOf(state, source), condition);
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes

@@ -160,7 +160,7 @@ function areTypes(plural: boolean): Parser<Effects> {
  * (plural), or `~` (only restrictions). Each thing the subject gets, has or can't do is one effect. A restriction and a grant
  * join with " and " in either order; the engine runs each as its own static ability.
  */
-function predicate(mode: RestrictionSubject): Parser<Effects> {
+export function predicate(mode: RestrictionSubject): Parser<Effects> {
   const plural = mode === 'plural';
   const gets = plural ? 'get ' : 'gets ';
   const has = plural ? 'have ' : 'has ';

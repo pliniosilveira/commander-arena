@@ -42,6 +42,7 @@ import type { GameState, PendingTrigger } from '../state/types';
 import {
   afterManaPaid,
   payCosts,
+  reduceForChosenTargets,
   setChosenModes,
   setX,
   toActivationTargets,
@@ -110,6 +111,7 @@ import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { setPending } from './set-pending';
 import { sourceInfo } from './source-info';
 import { maxTargetCountX, targetAnswerError, targetChoiceSpecs } from './target-choice';
+import { payableSpellTargets } from './target-payable';
 import { collectTriggers } from './triggers';
 import { hasX, largestPayableX } from './x-value';
 import { moveObject } from './zones';
@@ -662,6 +664,8 @@ function toTargets(state: GameState, events: GameEvent[]): Result {
           x,
           // D-408: cast only by its own conditional flash ("if it targets a commander"): the targets are chosen from what meets it.
           casting.flashTargets ?? null,
+          // D-1232: a cost that is cheaper for some targets is payable only with them: only those are offered.
+          payableSpellTargets(state, casting, specs, ctx),
         ),
       },
     ),
@@ -979,7 +983,7 @@ export function answerTargets(state: GameState, chosen: readonly ChosenTarget[])
     stack: { ...stack, chosenTargets: chosen },
   });
   // CR 602.2b: an activation goes on from the targets to its costs, a spell to its total cost.
-  return casting.activation ? payCosts(next, []) : toPayment(next, []);
+  return casting.activation ? payCosts(reduceForChosenTargets(next), []) : toPayment(next, []);
 }
 
 export function answerPayment(

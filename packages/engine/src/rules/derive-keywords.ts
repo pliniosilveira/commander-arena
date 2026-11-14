@@ -46,6 +46,8 @@ function equipAbility(cost: readonly Cost[], restriction?: ObjectFilter): Abilit
     effect: { kind: 'attach', object: { kind: 'this' }, to: { kind: 'target', id: 't1' } },
     // CR 702.6a: "Activate only as a sorcery." (CR 602.5d)
     timing: 'sorcery',
+    // D-1233: what "Equip abilities you activate that target ..." names.
+    equip: true,
   };
 }
 

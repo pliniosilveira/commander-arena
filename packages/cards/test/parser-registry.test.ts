@@ -579,6 +579,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.it-targets': permanent((e) => `~ costs {3} less to cast if ${e}.`),
   'cost.discard-filtered': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
   'noun.target-triggered-ability-or-spell': spell((e) => `Counter ${e}.`),
+  // Issue 26 (the Danitha deck, D-1234 to D-1236): the conditions about the permanent an Aura enchants, a group of the creatures that are not enchanted, and the Equip reduction.
+  'condition.host-is-color': permanent((e) => `As long as ${e}, it gets +1/+1.`),
+  'condition.other-attached-to-host': permanent((e) => `As long as ${e}, it has first strike.`),
+  'condition.this-entered-this-turn': permanent(
+    (e) => `As long as ${e}, enchanted creature has hexproof.`,
+  ),
+  'noun.all-enchanted': spell((e) => `Destroy ${e}.`),
+  'static.equip-cost-reduction': asIs,
   // Stage P52 (D-210): the players an effect asks, and what the instructions before them did.
   // Issue 26 (the Danitha deck, D-403): the condition of the second sentence of an offer to put a card onto the battlefield.
   'condition.you-dont-put-it-onto-battlefield': spell(

@@ -15,6 +15,9 @@ function failure(c: IrCondition, needs: readonly FeatureRef[]): LowerFailure {
   return { ok: false, needs, at: c.span, rule: c.rule };
 }
 
+/** The attachment a word of "enchanted creature is ..." and "equipped creature is ..." says the source is: an Aura enchants and an Equipment equips (CR 303.4a, 301.5a). */
+const HOST_KIND = { enchanted: 'Aura', equipped: 'Equipment' } as const;
+
 /**
  * Lowers one condition, naming the missing engine feature when the engine cannot run it.
  * `itIsSelf` says that "it" in the text is the object the ability belongs to (the subject of the
@@ -204,6 +207,10 @@ export function lowerCondition(
       // filter; "it" is the permanent of an ability about itself, as for `thisMatches`.
       const blocked = missingFeatures(['condition:objectMatches', 'selector:attached']);
       if (blocked.length > 0) return failure(c, blocked);
+      // "As long as enchanted creature is green" (D-1235, CR 303.4b, 301.5a): the word says the kind of attachment the source is, which the face must be.
+      if (test.via !== undefined && !(ctx?.faceSubtypes ?? []).includes(HOST_KIND[test.via])) {
+        return failure(c, []);
+      }
       const noun: IrNoun = {
         kind: 'noun',
         det: 'a',
@@ -218,6 +225,42 @@ export function lowerCondition(
       return filter.ok
         ? ok({ kind: 'objectMatches', of: { kind: 'attached' }, filter: filter.value })
         : filter;
+    }
+    case 'otherAttachedToHost': {
+      // "As long as another Aura is attached to enchanted creature" (D-1235, CR 303.4, 301.5, 701.3): the number of other permanents of the kind attached to the
+      // permanent the source is attached to is at least one. The word of the condition says the kind of attachment the source is, which the face must be.
+      const blocked = missingFeatures([
+        'condition:amountIs',
+        'amount:countOf',
+        'selector:attachedTo',
+      ]);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (!(ctx?.faceSubtypes ?? []).includes(HOST_KIND[test.via])) return failure(c, []);
+      const noun: IrNoun = {
+        kind: 'noun',
+        det: 'each',
+        filter: test.attachment,
+        upTo: false,
+        plural: false,
+        other: false,
+        span: c.span,
+        rule: c.rule,
+      };
+      const attachment = lowerFilter(noun);
+      if (!attachment.ok) return attachment;
+      return ok({
+        kind: 'amountIs',
+        amount: {
+          kind: 'countOf',
+          filter: { ...attachment.value, other: true, attachedTo: { kind: 'host' } },
+        },
+        compare: { cmp: 'atLeast', value: 1 },
+      });
+    }
+    case 'thisEnteredThisTurn': {
+      // "As long as ~ entered this turn" (D-1235, CR 400.7): the permanent itself entered the battlefield during this turn, read from the turn log.
+      const blocked = missingFeatures(['condition:thisEnteredThisTurn']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'thisEnteredThisTurn' });
     }
     case 'thisMatches': {
       // "As long as it's untapped" (stage P29, D-133): this permanent against a filter, read as it is now.
@@ -523,4 +566,6 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:spellTargets',
   'condition:controlsRingBearer',
   'condition:paired',
+  // D-1235 (Danitha group 3): "as long as ~ entered this turn".
+  'condition:thisEnteredThisTurn',
 ];

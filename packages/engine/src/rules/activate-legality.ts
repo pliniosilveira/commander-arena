@@ -6,7 +6,7 @@
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, zoneList } from '../state/ops';
 import type { ActivatedAbility, GameObject, GameState } from '../state/types';
-import { adjustedAbility } from './activate-adjust';
+import { adjustedAbility, reducedForTargets } from './activate-adjust';
 import { costRefusal } from './activate-costs';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
@@ -115,8 +115,30 @@ export function activationRefusal(
       : legalModeSets(state, modal, ctx).length > 0;
   if (!targetable) return 'That ability has no legal targets';
   // D-135: the cost as it stands now (a life amount worked out, a reduction that applies).
-  const stuck = costRefusal(state, seat, obj, adjustedAbility(state, seat, obj, ability).cost);
-  return stuck === null ? null : `You cannot pay for that ability: ${stuck}`;
+  const adjusted = adjustedAbility(state, seat, obj, ability);
+  const stuck = costRefusal(state, seat, obj, adjusted.cost);
+  if (stuck === null) return null;
+  // D-1233 (CR 602.2b): an Equip ability whose cost a static ability reduces for some targets may be activated if the cost of one legal target can be paid (the targets
+  // are chosen before the total cost is determined).
+  if (reducibleForSomeTarget(state, seat, obj, adjusted, ctx)) return null;
+  return `You cannot pay for that ability: ${stuck}`;
+}
+
+/** D-1233: whether some legal target of the first slot of an Equip ability makes its reduced cost payable. */
+function reducibleForSomeTarget(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+  ability: ActivatedAbility,
+  ctx: { readonly controller: SeatId; readonly source: ObjectId },
+): boolean {
+  const spec = ability.targets?.[0];
+  if (ability.equip !== true || spec === undefined) return false;
+  return legalTargets(state, spec, ctx).some((t) => {
+    if (t.kind !== 'object') return false;
+    const reduced = reducedForTargets(state, seat, ability, [t.id]);
+    return reduced !== ability && costRefusal(state, seat, obj, reduced.cost) === null;
+  });
 }
 
 /**

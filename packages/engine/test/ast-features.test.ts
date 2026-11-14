@@ -128,6 +128,8 @@ describe('the dimensions', () => {
       'sameNameAtLeast',
       // D-151: what entered this turn, damage dealt this turn.
       'enteredThisTurn',
+      // D-1231: "as long as this Aura entered this turn".
+      'thisEnteredThisTurn',
       'playerDealtDamage',
       // D-252: "if you gained 3 or more life this turn".
       'lifeGainedThisTurn',
@@ -162,6 +164,8 @@ describe('the dimensions', () => {
       'grantAbility',
       'restriction',
       'costReduction',
+      // D-1233: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
+      'abilityCostReduction',
       'setTypes',
       'castFromGraveyard',
       // D-139: base power and toughness, "can't be blocked by Walls", "exiled with", "as though they had flash".

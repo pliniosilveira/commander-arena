@@ -41,6 +41,7 @@ describe('CR 702.6a: Equip is "[Cost]: Attach this to target creature you contro
       ],
       effect: { kind: 'attach', object: { kind: 'this' }, to: { kind: 'target', id: 't1' } },
       timing: 'sorcery',
+      equip: true, // D-1233: what "Equip abilities you activate that target ..." names
     });
   });
 

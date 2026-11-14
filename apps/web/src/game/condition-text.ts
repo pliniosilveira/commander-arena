@@ -13,6 +13,7 @@ import type {
 } from '@commander-arena/engine';
 import { type AmountContext, amountPhrase, UNKNOWN_AMOUNT } from './amount-text';
 import { angelsConditionWords } from './angels-conditions';
+import { otherAttachedWords, thisEnteredWords } from './attachment-text';
 import { dragonsConditionWords } from './dragons-conditions';
 import { thingsPhrase } from './filter-text';
 import { playerSubject } from './player-text';
@@ -256,7 +257,13 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'giftPromised':
       // CR 702.174k (D-135): "if the gift was promised".
       return negate ? "the gift wasn't promised" : 'the gift was promised';
+    case 'thisEnteredThisTurn':
+      // D-1235 (CR 400.7): "as long as this permanent entered this turn".
+      return thisEnteredWords(negate);
     case 'amountIs': {
+      // D-1235 (CR 303.4, 301.5): "another Aura is attached to the permanent this is attached to".
+      const other = otherAttachedWords(condition, negate);
+      if (other !== null) return other;
       // "if an opponent has more life than you": at least one opponent is ahead (D-131).
       if (
         !negate &&
