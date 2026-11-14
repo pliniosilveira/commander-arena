@@ -2215,9 +2215,10 @@ export type Effect =
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
    * triggered this one (`triggerSubject`), that sacrifices it, by its controller, as the next combat ends. Only the effect of an inherent ability
-   * of the Ring (`validateCard` refuses it anywhere else).
+   * of the Ring (`validateCard` refuses it anywhere else). `of: 'this'` (D-1440, CR 702.147a Decayed): the creature the ability belongs to ("When this creature
+   * attacks, sacrifice it at end of combat") and not the creature whose event triggered it; the same delayed triggered ability, the same end of combat.
    */
-  | { readonly kind: 'delayedSacrifice' }
+  | { readonly kind: 'delayedSacrifice'; readonly of?: 'this' }
   /**
    * "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able" and "Creatures your
    * opponents control attack this turn if able" (CR 508.1d, 611.2a, 611.2c, D-179): a requirement on a group of creatures. It changes the rules of the
@@ -3421,6 +3422,11 @@ export type Keyword =
    * it." A triggered ability that `derive` writes (`rules/derive-keywords.ts`), with the condition `attackingMostLife` as part of the trigger.
    */
   | { readonly kind: 'dethrone' }
+  /**
+   * CR 702.147a (Decayed, D-1440): "This creature can't block" and "When this creature attacks, sacrifice it at end of combat." `derive` expands it into a static
+   * `restriction` `cantBlock` of the creature and a triggered ability (`rules/derive-keywords.ts`). Grantable, and a decayed counter gives it (CR 122.1b).
+   */
+  | { readonly kind: 'decayed' }
   /**
    * CR 702.116a (Myriad, D-151): "Whenever this creature attacks, for each opponent other than defending player, you may create a token that's a
    * copy of this creature that's tapped and attacking that player or a planeswalker they control. Exile the tokens at end of combat." The engine

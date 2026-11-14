@@ -151,6 +151,7 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       return true;
     case 'dethrone':
     case 'myriad':
+    case 'decayed':
       // CR 702.105a, 702.116a (D-151): no parameter.
       return true;
     case 'readAhead':

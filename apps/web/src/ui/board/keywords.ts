@@ -6,6 +6,7 @@ import type { ObjectView, Restriction } from '@commander-arena/engine';
 import { JOB_SELECT_REMINDER, LIVING_WEAPON_REMINDER } from '../../game/artifacts-text';
 import { ESCALATE_REMINDER, hideawayReminder } from '../../game/dinosaurs-text';
 import { DETHRONE_REMINDER, MYRIAD_REMINDER, READ_AHEAD_REMINDER } from '../../game/dragons-text';
+import { DECAYED_REMINDER } from '../../game/gisa-g5-text';
 import { ETERNALIZE_REMINDER } from '../../game/hashaton-g5-text';
 import { devourReminder, ENCORE_REMINDER, RIOT_REMINDER } from '../../game/keywords-text';
 
@@ -81,6 +82,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   readAhead: ['RA', `Read ahead (${READ_AHEAD_REMINDER})`],
   dethrone: ['Dth', `Dethrone (${DETHRONE_REMINDER})`],
   myriad: ['Myr', `Myriad (${MYRIAD_REMINDER})`],
+  // Gisa deck group 5 (D-1440): the reminder text (CR 702.147a) rides in the tooltip.
+  decayed: ['Dec', `Decayed (${DECAYED_REMINDER})`],
   // The Korvold slice 6 (D-185): the reminder text (CR 702.141a, 702.82a, 702.136a) rides in the tooltip; Devour's number is in `PARAMETERIZED`.
   encore: ['Enc', `Encore (${ENCORE_REMINDER})`],
   // Hashaton deck group 5 (D-384): Eternalize (CR 702.129a).

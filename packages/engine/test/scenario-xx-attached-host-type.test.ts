@@ -173,6 +173,8 @@ describe('GRANTABLE_KEYWORDS is exported for the parser', () => {
         'prowess',
         // D-185: riot, given to a group by a static ability and read as a permanent enters (an effect or an attached host cannot give it).
         'riot',
+        // D-1440: decayed, the keyword of a token and of a counter, with the trigger it stands for added when it is granted.
+        'decayed',
       ].sort(),
     );
     for (const excluded of [

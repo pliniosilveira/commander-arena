@@ -699,6 +699,18 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const count = event.args.count;
     const counter = event.args.counter;
     if (counter?.kind !== 'counterSpec') return failure(ability);
+    // "~ escapes with two +1/+1 counters on it" (D-1444, CR 702.138c): the counters of a permanent that escaped, a fixed number of them.
+    if (event.args.escapes?.kind === 'flag') {
+      if (count?.kind !== 'number') return failure(ability);
+      const blocked = gate(ability, ['ability:replacement', 'replacement:entersWithCounters']);
+      if (blocked !== null) return blocked;
+      return built({
+        kind: 'entersWithCounters',
+        counter: counter.name,
+        count: count.value,
+        ifEscaped: true,
+      });
+    }
     // "enters with X counters" (stage P16, D-103, CR 107.3m): the X of the spell the permanent came
     // from, so the card needs an {X} in its mana cost (`validateCard` checks it, CR 107.3g).
     if (count?.kind === 'x') {

@@ -392,3 +392,10 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `cardsDrawnThisTurn` is the controller's own count: "for each card an opponent has drawn this turn", the whole game and a static ability that follows it are not read (a layer effect would need a refresh when a card is drawn).
 - `effect.becomes` takes keywords after a color alone only ("becomes red and gains haste"); a creature type or a card type with keywords is read by the lead rules (`effect.lead-becomes`, `effect.lead-becomes-target`) in their own words. `effect.lead-double-pt` takes a target (not `~`'s power or a group) and the keywords of "it".
 - The rulings of the seven cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
+
+## The Gisa deck, group 5 (issue 41, D-1440 to D-1445, provisional)
+
+- Decayed is a keyword with its own reading of "can't block": `derive` adds the restriction `cantBlock` from the keyword among the final abilities (D-1440). The trigger of the keyword is appended after the printed abilities of the creature, and a granted decayed brings it once (a list `EXPANDED_WHEN_GRANTED`); other keywords whose expansion is a static ability (not a trigger) would need the same kind of reading, because the index of static abilities (`derive-statics.ts`) is built from printed abilities only.
+- `effect.have-player-life` reads "have [target player or opponent, each opponent] lose or gain life": another verb after "have" ("have target player draw a card", "have target player discard ...") is not read.
+- `replacement.escapes-with-counters` reads a number of counters only (the real line of Woe Strider); "escapes with X counters" and "escapes with a counter for each ..." are not read, and "escapes with [ability]" (CR 702.138d) is not either.
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.

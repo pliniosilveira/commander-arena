@@ -135,6 +135,17 @@ const DETHRONE_ABILITY: Ability = {
 };
 
 /**
+ * CR 702.147a (D-1440): "Decayed" represents a static ability and a triggered ability: "This creature can't block" and "When this creature attacks, sacrifice it at end of
+ * combat." The static ability is read from the keyword itself where the restrictions of an object are worked out (`derive`: `restrictionsOf`); the sacrifice is a delayed
+ * triggered ability (CR 603.7) that the trigger creates about the attacking creature, as the Ring's sacrifice of a blocker is.
+ */
+const DECAYED_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'attacks', what: { kind: 'this' } },
+  effect: { kind: 'delayedSacrifice', of: 'this' },
+};
+
+/**
  * CR 702.86a: "Annihilator N" means "Whenever this creature attacks, defending player sacrifices N
  * permanents." The defending player (CR 508.5) chooses which, among the permanents they control.
  */
@@ -607,6 +618,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [hideawayAbility(ability.keyword.count)];
     case 'dethrone':
       return [DETHRONE_ABILITY];
+    case 'decayed':
+      return [DECAYED_ABILITY];
     default:
       return [];
   }

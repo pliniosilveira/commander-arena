@@ -2779,6 +2779,45 @@ export const FEATHER_G2_LANDS = supported([
 ]);
 
 /**
+ * The SYNTHETIC cards of group 5 of the Gisa deck (D-1440 to D-1444): a creature with decayed, a sorcery that gives decayed until end of turn and one that puts a decayed counter, an
+ * artifact that grows corpse counters and is sacrificed for that many decayed Zombies, a creature with an end step trigger that has an intervening "if you control no creatures with
+ * decayed", a Zombie with cycling and "you may have target player lose life equal to the number of Zombies on the battlefield", and a creature that escapes with two +1/+1 counters.
+ * They put the sacrifice of decayed creatures at end of combat, an optional trigger with a target player and an escape cost question into games, which games-100 expects only from
+ * dedicated styles.
+ */
+export const GISA_G5_NAMES = [
+  'SYNTHETIC Decayed Husk',
+  'SYNTHETIC Rot Touch',
+  'SYNTHETIC Rot Seed',
+  'SYNTHETIC Corpse Vault',
+  'SYNTHETIC Husk Raiser',
+  'SYNTHETIC Rot Cycler',
+  'SYNTHETIC Grave Strider',
+] as const;
+
+/** The gisaG5 style: every card of the group three times, bodies to aim the sorceries at and to die for the corpse counters, and removal to fill the graveyard. */
+export const GISA_G5_SPELLS = [
+  ...supported(GISA_G5_NAMES),
+  ...supported(GISA_G5_NAMES),
+  ...supported(GISA_G5_NAMES),
+  ...supported(['Lightning Bolt', 'Murder', 'Divination']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+];
+
+/** Black for the cards of the group, the rest basic. */
+export const GISA_G5_LANDS = supported([
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Plains',
+  'Island',
+  'Forest',
+]);
+
+/**
  * The SYNTHETIC cards of group 3 of the Feather deck (D-437 to D-439): creatures with a cast trigger on the spells that target them (counters, a card drawn once each turn,
  * scry), the exile of an instant or sorcery as it resolves with its return to the hand at the end step, the copy of a spell for each other creature it could target (Zada and Mirrorwing
  * style), and a spell with two targets. They put copies of spells, delayed returns and `orderTriggers` questions into games, which the generic pools are not built to follow.
@@ -3587,6 +3626,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(DANITHA_G7_NAMES as readonly string[]).includes(card.name))
   // The Feather group 3 cards (D-437 to D-439) copy spells for each creature they could target, exile spells as they resolve and bring them back at the end step: a style of their own.
   .filter((card) => !(FEATHER_G3_NAMES as readonly string[]).includes(card.name))
+  // The Gisa group 5 cards (D-1440 to D-1444) sacrifice decayed creatures at end of combat, ask a "you may" with a target player when cycled and ask the cards to exile for an escape: a style of their own.
+  .filter((card) => !(GISA_G5_NAMES as readonly string[]).includes(card.name))
   // The Feather group 2 cards (D-443 to D-448) ask the modes of a spell and two targets in one cast, and the land is for sorcery timing after a spell: a style of their own.
   .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
   // The Feather group 1 cards (D-451) ask which color to protect from as a spell resolves: a style of their own.
@@ -3801,6 +3842,7 @@ export type DeckStyle =
   | 'ward'
   | 'danithaG6'
   | 'danithaG7'
+  | 'gisaG5'
   | 'featherG3'
   | 'featherG2'
   | 'featherG1'
@@ -3881,6 +3923,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG6' && DANITHA_G6_SPELLS.length > 0) return DANITHA_G6_SPELLS;
   if (style === 'danithaG7' && DANITHA_G7_SPELLS.length > 0) return DANITHA_G7_SPELLS;
   if (style === 'featherG3' && FEATHER_G3_SPELLS.length > 0) return FEATHER_G3_SPELLS;
+  if (style === 'gisaG5' && GISA_G5_SPELLS.length > 0) return GISA_G5_SPELLS;
   if (style === 'featherG2' && FEATHER_G2_SPELLS.length > 0) return FEATHER_G2_SPELLS;
   if (style === 'featherG1' && FEATHER_G1_SPELLS.length > 0) return FEATHER_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
@@ -4072,6 +4115,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG6' && BASIC_LANDS.length > 0) return DANITHA_G6_LANDS;
   if (style === 'danithaG7' && BASIC_LANDS.length > 0) return DANITHA_G7_LANDS;
   if (style === 'featherG3' && BASIC_LANDS.length > 0) return FEATHER_G3_LANDS;
+  if (style === 'gisaG5' && BASIC_LANDS.length > 0) return GISA_G5_LANDS;
   if (style === 'featherG2' && BASIC_LANDS.length > 0) return FEATHER_G2_LANDS;
   if (style === 'featherG1' && BASIC_LANDS.length > 0) return FEATHER_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
@@ -4574,6 +4618,13 @@ export const DANITHA_G7_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
   ['danithaG7', 'danithaG7'],
   ['danithaG7', 'spells'],
   ['spells', 'danithaG7'],
+];
+
+/** Style pairs of the Gisa group 5 soak test (D-1440 to D-1444): a mirror match and both mixed ways. */
+export const GISA_G5_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['gisaG5', 'gisaG5'],
+  ['gisaG5', 'spells'],
+  ['spells', 'gisaG5'],
 ];
 
 /** Style pairs of the Feather group 2 soak test (D-443 to D-448): a mirror match and both mixed ways. */

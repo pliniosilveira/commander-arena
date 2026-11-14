@@ -47,6 +47,7 @@ import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
+import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
@@ -924,6 +925,8 @@ export const EFFECT_RULES = [
   ...DANITHA_G4_EFFECT_RULES,
   // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
   ...FEATHER_G2_EFFECT_RULES,
+  // Issue 41 (D-1443): "you may have target player lose life equal to the number of Zombies on the battlefield".
+  ...GISA_G5_EFFECT_RULES,
   // Feather deck, group 1 (issue 27, D-451, D-457): protection for the turn (before `effect.gain-keyword`, which refuses it) and "Until end of turn, double target creature's power and it gains first strike.".
   ...FEATHER_G1_EFFECT_RULES,
   // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. ..." (three sentences kept together).
