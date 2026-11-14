@@ -194,11 +194,11 @@ export const SYNTHETIC_DANITHA_G3_LIST: readonly CardDefinition[] = [
   // "Enchant creature. As long as enchanted creature is green, it gets +1/+1 and has indestructible. As long as enchanted creature is white, it gets +1/+1 and has flying."
   singleFace({
     name: 'SYNTHETIC Dual Hue Aura',
-    manaCost: ['2', 'G'],
+    manaCost: ['2', 'G/W'],
     types: ['enchantment'],
     subtypes: ['Aura'],
-    colors: ['G', 'W'],
-    colorIdentity: ['G', 'W'],
+    colors: ['W', 'G'],
+    colorIdentity: ['W', 'G'],
     oracleText:
       'Enchant creature\nAs long as enchanted creature is green, it gets +1/+1 and has indestructible.\nAs long as enchanted creature is white, it gets +1/+1 and has flying.',
     abilities: [

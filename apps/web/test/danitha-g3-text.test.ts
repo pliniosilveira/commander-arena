@@ -72,7 +72,7 @@ describe('the static abilities of the group', () => {
   });
 
   test('another reduction is not worded: a spell of any kind, an amount that is not a number, another target', () => {
-    const say = (effect: Ability): string[] =>
+    const say = (effect: Ability): readonly string[] =>
       lordWordings([effect], { noun: 'enchantment', subtypes: ['Aura'] });
     const reduce = (spells: ObjectFilter, amount: number | { kind: 'x' }): Ability =>
       ({

@@ -74,6 +74,17 @@ export function checkStaticSubject(
           'a static ability cannot name attacking creatures or compare power with its source',
         );
       }
+      // D-1230: `derive` reads the group before layers 6 and 7 with the view of each permanent alone: a permanent that has an Aura attached, or one attached to a permanent of a
+      // kind, needs the view of another object, which only a count or a condition is given.
+      if (
+        filterSome(s.filter, (f) => f.enchanted !== undefined || f.attachedTo?.kind === 'matching')
+      ) {
+        issue(
+          out,
+          `${path}.filter`,
+          'a static ability\'s group cannot be named by "enchanted" or by the kind of permanent something is attached to (D-1230)',
+        );
+      }
       if (!keywords && filterSome(s.filter, readsKeywords)) {
         issue(
           out,
