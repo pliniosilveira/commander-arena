@@ -65,7 +65,7 @@ describe('the token and the count of the Corpse Vault', () => {
 
   test('the token is worded with its keyword', () => {
     if (activated.effect.kind !== 'createToken') throw new Error('no token');
-    expect(tokenWords(activated.effect.token)).toEqual({
+    expect(tokenWords(activated.effect.token, false, () => 'it')).toEqual({
       one: '2/2 black Zombie creature token with decayed',
       many: '2/2 black Zombie creature tokens with decayed',
     });
