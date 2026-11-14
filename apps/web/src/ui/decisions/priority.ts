@@ -97,16 +97,16 @@ export function clickOutcome(
     // A loyalty ability is asked about even when it is the only one (D-203): the menu shows its cost, "+1", "\u22122", "0", and what it does.
     const card = index?.get(id);
     const loyalty = isLoyaltyItem(card, only);
-    // #40: an ability of a card in the hand (cycling) is asked about even when it is the only
-    // thing to do: it costs the card itself, and a stray tap on the opponent's turn, when the
-    // card cannot be cast, must not cycle it. A graveyard card's ability is not: the player
-    // opened that zone to use it.
-    const fromHand = only.action.kind === 'activate' && card?.zone === 'hand';
+    // #40: an ability of a card in the hand (cycling) or in the graveyard (Unearth, Eternalize) is
+    // asked about even when it is the only thing to do: it costs the card or its place, and a stray
+    // tap, for example on the opponent's turn when the card cannot be cast, must not use it.
+    const fromCardZone =
+      only.action.kind === 'activate' && (card?.zone === 'hand' || card?.zone === 'graveyard');
     return more.length === 0 &&
       !namedAlternativeOnly(decision, id) &&
       !hasSpecialAction(decision, id) &&
       !loyalty &&
-      !fromHand
+      !fromCardZone
       ? { kind: 'act', action: only.action }
       : { kind: 'menu', items };
   }

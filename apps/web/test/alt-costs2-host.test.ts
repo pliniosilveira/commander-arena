@@ -216,11 +216,15 @@ describe('Unearth', () => {
     const decision = priority(view);
     if (card === undefined || decision === null) throw new Error('no unearth card');
     expect(graveyardLabels(decision, card)).toEqual(['Unearth {R}']);
+    // A click asks first (a one-item menu, #40), and the item is the activation.
     const outcome = clickOutcome(decision, card.id, objectIndex(view));
-    if (outcome.kind !== 'act') throw new Error(`expected an action, got ${outcome.kind}`);
-    expect(outcome.action).toMatchObject({ kind: 'activate', object: card.id });
+    if (outcome.kind !== 'menu') throw new Error(`expected a menu, got ${outcome.kind}`);
+    const [item] = outcome.items;
+    expect(outcome.items).toHaveLength(1);
+    expect(item?.action).toMatchObject({ kind: 'activate', object: card.id });
+    if (item === undefined) throw new Error('no unearth item');
 
-    let snap = await must(session, outcome.action);
+    let snap = await must(session, item.action);
     if (snap.view.pending?.kind === 'payMana') snap = await must(session, { kind: 'payAuto' });
     const ability = snap.view.stack[snap.view.stack.length - 1];
     if (ability?.ability === undefined) throw new Error('no ability on the stack');
