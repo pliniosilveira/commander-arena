@@ -46,9 +46,12 @@ for (const mode of ['matched', 'ambiguous', 'offline', 'broken-image'] as const)
       if (mode === 'offline') return route.abort();
       // The live Thopter query also finds Servo // Thopter unless layout:token excludes it.
       const duplicateFace = query.startsWith('!"Thopter"') && !query.includes('layout:token');
+      const zombieVariants =
+        query.startsWith('!"Zombie"') &&
+        (!query.includes('t:/^token creature — Zombie$/') || !query.includes('-o:/./'));
       const total = query.includes('Uncatalogued')
         ? 0
-        : mode === 'ambiguous' || duplicateFace
+        : mode === 'ambiguous' || duplicateFace || zombieVariants
           ? 2
           : 1;
       const image_uris = {
@@ -74,8 +77,8 @@ for (const mode of ['matched', 'ambiguous', 'offline', 'broken-image'] as const)
         ),
       golden,
     );
-    await expect.poll(() => queries.length).toBe(5);
-    for (const name of ['Treasure', 'Soldier', 'Thopter', 'stack']) {
+    await expect.poll(() => queries.length).toBe(6);
+    for (const name of ['Treasure', 'Soldier', 'Thopter', 'Zombie', 'stack']) {
       const section = page.locator(`[data-token-test="${name}"]`);
       await expect(section.locator('.board-card-name')).toBeVisible();
       if (mode === 'matched') {
@@ -94,6 +97,7 @@ for (const mode of ['matched', 'ambiguous', 'offline', 'broken-image'] as const)
     expect(queries.filter((q) => q.startsWith('!"Treasure"'))).toHaveLength(1);
     expect(queries.filter((q) => q.startsWith('!"Soldier"'))).toHaveLength(1);
     expect(queries.filter((q) => q.startsWith('!"Thopter"'))).toHaveLength(1);
+    expect(queries.filter((q) => q.startsWith('!"Zombie"'))).toHaveLength(1);
     expect(queries.some((q) => q.includes('pow=1 tou=1'))).toBe(true);
     expect(errors).toEqual([]);
   });

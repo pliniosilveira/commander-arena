@@ -11,6 +11,7 @@ import { scenario } from '@commander-arena/engine/testing';
 import { createRoot } from 'react-dom/client';
 import { GameHost } from '../../src/game/host';
 import artifacts from '../../src/precons/snapshots/artifacts.json';
+import zombies from '../../src/precons/snapshots/zombies.json';
 import { createAppStore } from '../../src/store';
 import { CardFace } from '../../src/ui/board/CardFace';
 import { Tile } from '../../src/ui/board/Tile';
@@ -74,6 +75,19 @@ export function mount(golden: string): void {
   const thopter = saiGame.view(0).battlefield.find((o) => o.name === 'Thopter');
   if (thopter === undefined) throw new Error("Sai's Thopter was not made");
 
+  const zombieSnapshot = parsePreconSnapshot(zombies);
+  if (!zombieSnapshot.ok) throw new Error(zombieSnapshot.error);
+  const zombieMaker = zombieSnapshot.snapshot.cards.find(
+    (c) => c.name === 'Moan of the Unhallowed',
+  );
+  if (zombieMaker === undefined) throw new Error('Zombie maker missing from snapshot');
+  const moan = importCard(fromSnapshotCard(zombieMaker)).definition;
+  const zombieGame = scenario().define(moan).seat(0).hand(moan.name).pool('CCBB').seat(1).build();
+  zombieGame.act(0).cast(moan.name, { pay: true });
+  zombieGame.passAll();
+  const zombie = zombieGame.view(0).battlefield.find((o) => o.name === 'Zombie');
+  if (zombie === undefined) throw new Error('Zombie was not made');
+
   const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
   const container = document.createElement('main');
   document.body.replaceChildren(container);
@@ -91,6 +105,10 @@ export function mount(golden: string): void {
       <section data-token-test="Thopter">
         <Tile object={thopter} w={90} h={120} />
         <CardFace object={thopter} variant="full" />
+      </section>
+      <section data-token-test="Zombie">
+        <Tile object={zombie} w={90} h={120} />
+        <CardFace object={zombie} variant="full" />
       </section>
     </StoreProvider>,
   );
