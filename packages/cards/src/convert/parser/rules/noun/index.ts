@@ -64,7 +64,11 @@ function bare(det: IrNoun['det'], filter: IrFilter, extra: Partial<Bare> = {}): 
  * singular phrase and "up to two" or more the plural, and they set `upTo`, the engine's minimum of
  * zero targets.
  */
-function targetOf(id: string, phrase: (plural: boolean) => Parser<IrFilter>): Parser<IrNoun> {
+function targetOf(
+  id: string,
+  phrase: (plural: boolean) => Parser<IrFilter>,
+  allowX = false,
+): Parser<IrNoun> {
   const xTargets: Parser<Bare> = map(
     sequence(
       optional(literal('up to '), null),
@@ -136,7 +140,16 @@ function targetOf(id: string, phrase: (plural: boolean) => Parser<IrFilter>): Pa
   );
   return node<Bare, IrNoun>(
     id,
-    choice(xTargets, eachOf, oneOrTwo, upTo, upToThatMany, counted, another, single),
+    choice(
+      ...(allowX ? [xTargets] : []),
+      eachOf,
+      oneOrTwo,
+      upTo,
+      upToThatMany,
+      counted,
+      another,
+      single,
+    ),
     (b) => b,
   );
 }
@@ -495,8 +508,11 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     "target creature that's green or",
   ],
   // Stage P48 (D-205): one target may say which colors it has, "target creature or planeswalker that's green or blue".
-  parse: targetOf(ID.targetPermanent, (plural) =>
-    plural ? permanentPhrase(true, 'all') : withColorList(permanentPhrase(false, 'all')),
+  parse: targetOf(
+    ID.targetPermanent,
+    (plural) =>
+      plural ? permanentPhrase(true, 'all') : withColorList(permanentPhrase(false, 'all')),
+    true,
   ),
 });
 

@@ -741,6 +741,7 @@ describe('unmatched abilities', () => {
       'noun.one-or-more-permanents',
       'noun.all-they-control',
       'noun.library-card',
+      'amount.for-each-died',
       'amount.for-each-color',
       'amount.for-each-commander-cast',
       'amount.for-each-own-nontoken-destroyed',
