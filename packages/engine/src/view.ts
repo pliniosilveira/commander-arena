@@ -165,6 +165,12 @@ export interface ObjectView {
    */
   readonly abilitySource?: ObjectId;
   /**
+   * For a triggered ability on the stack that reads the object whose event caused it ("that card":
+   * `triggerSubject`, #44): that object, so a question about the ability can say which card it is
+   * for when several of the same trigger are on the stack. Absent for every other object.
+   */
+  readonly triggerSubject?: ObjectId;
+  /**
    * For a triggered or activated ability on the stack: the ability's own text in AST form (CR 113.7a,
    * 603.3: it exists on the stack independently of its source), so a player or the AI can read what
    * it does and what it targets even when the source's `oracleText` lists several abilities. Public,
@@ -731,6 +737,9 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
         }),
     targets: obj.stack?.chosenTargets ?? [],
     ...(abilitySource === null ? {} : { abilitySource }),
+    ...(obj.stack?.kind === 'ability' && obj.stack.triggerSubject !== undefined
+      ? { triggerSubject: obj.stack.triggerSubject }
+      : {}),
     ...(obj.stack?.kind === 'ability' && obj.stack.ability !== null
       ? { ability: obj.stack.ability }
       : {}),

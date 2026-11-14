@@ -300,6 +300,7 @@ const OBJECT_VIEW_FIELDS: Readonly<Record<keyof ObjectView, FieldClass>> = {
   modes: 'public',
   modeTexts: 'public',
   abilitySource: 'public',
+  triggerSubject: 'public',
   ability: 'public',
   activated: 'public',
   attachedTo: 'public',
