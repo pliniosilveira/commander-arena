@@ -290,6 +290,7 @@ describe('supported feature gate', () => {
         'dealtDamage',
         'combatDamageBatch',
         'countersAdded',
+        'crimeCommitted',
         'dies',
         'diesBatch',
         'discarded',
@@ -309,6 +310,7 @@ describe('supported feature gate', () => {
         'step',
         'tappedForMana',
         'tapsForMana',
+        'tokenCreated',
         'upkeep',
       ].sort(),
     );

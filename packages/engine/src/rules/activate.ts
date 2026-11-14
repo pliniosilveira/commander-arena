@@ -37,6 +37,7 @@ import { activatedAbilitiesOf, activationRefusal } from './activate-legality';
 import { activationExileDecision, exileChosen, exileCostCandidates } from './activation-exile';
 import { becameTargetEvents } from './becomes-target';
 import { crewCandidates, crewPowerOf, totalPower } from './crew';
+import { crimeEvents } from './crime';
 import { discardCandidates, discardCostDecision, discardObjects } from './discard-cost';
 import { targetSpecsOf } from './legality';
 import { isLoyaltyAbility } from './loyalty';
@@ -633,6 +634,8 @@ function finishActivation(state: GameState, events: GameEvent[]): Result {
   if (!casting || !activation) return fail('No activation is in progress');
   // CR 602.2b, 601.2c: the targets became targets as they were chosen.
   events.push(...becameTargetEvents(state, casting.object, casting.seat));
+  // CR 700.13 (D-1410): activating an ability that targets an opponent, what they control or a card in their graveyard is committing a crime.
+  events.push(...crimeEvents(state, casting.object, casting.seat));
   const announced = state.objects[casting.object]?.stack?.x;
   events.push({
     kind: 'abilityActivated',

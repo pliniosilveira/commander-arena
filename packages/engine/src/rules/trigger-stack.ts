@@ -36,6 +36,7 @@ import type { GameState, PendingTrigger } from '../state/types';
 import { pushAbilityObject } from './ability-object';
 import { becameTargetEvents } from './becomes-target';
 import { controllerOf } from './control';
+import { crimeEvents } from './crime';
 import { EXALTED_ABILITY, EXTORT_ABILITY } from './derive-keywords';
 import { INHERENT_TEXT, inherentName } from './inherent';
 import {
@@ -162,7 +163,11 @@ function targetsChosen(
   stackObject: ObjectId,
   seat: SeatId,
 ): { state: GameState; events: GameEvent[] } {
-  const events = becameTargetEvents(state, stackObject, seat);
+  // CR 700.13 (D-1410): putting a triggered ability on the stack with such a target is committing a crime too.
+  const events = [
+    ...becameTargetEvents(state, stackObject, seat),
+    ...crimeEvents(state, stackObject, seat),
+  ];
   const before = state.pendingTriggers.length;
   const collected = collectTriggers(state, events);
   return {

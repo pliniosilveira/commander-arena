@@ -336,6 +336,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cycled',
     // D-196: "Whenever the Ring tempts you" (CR 701.54d).
     'ringTempted',
+    // D-1410, D-1411: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
+    'crimeCommitted',
+    'tokenCreated',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -1728,6 +1731,8 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   attackBatch: true,
   cycled: true,
   ringTempted: true,
+  crimeCommitted: true,
+  tokenCreated: true,
   interveningIf: true,
   alone: true,
   attacksAt: true,

@@ -311,6 +311,16 @@ function occurrences(
       return event.kind === 'tappedForMana'
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
+    case 'crimeCommitted':
+      // CR 700.13 (D-1410): the spell or ability that committed the crime is the subject, the player who put it on the stack the player.
+      return event.kind === 'crimeCommitted'
+        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+        : [];
+    case 'tokenCreated':
+      // CR 111.2 (D-1411): a token enters under the control of the player who creates it; one occurrence for each token.
+      return event.kind === 'tokenCreated'
+        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+        : [];
     case 'becomesTarget':
       // CR 702.21a: the spell or ability is the subject, the permanent it targeted the `target`.
       return event.kind === 'becameTarget'
@@ -543,6 +553,12 @@ function matches(
     case 'tappedForMana':
     case 'combatDamageBatch':
       return false;
+    case 'crimeCommitted':
+    case 'tokenCreated':
+      // CR 700.13, 111.2 (D-1410, D-1411): the player who committed the crime or created the token, relative to the controller of this ability.
+      if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
+      if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      return true;
     case 'lifeGained':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
@@ -698,6 +714,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'untapped':
     case 'tappedForMana':
     case 'becameTarget':
+    case 'crimeCommitted':
     case 'ringTempted':
       return true;
     case 'counterAdded':
