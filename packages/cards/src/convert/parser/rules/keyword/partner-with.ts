@@ -1,5 +1,5 @@
 /**
- * "Partner with [name]" (CR 702.124j, D-1426; Krav, the Unredeemed): a keyword line that stands for two abilities, a deck-construction one ("You may designate two legendary cards as
+ * "Partner with [name]" (CR 702.124j, D-490; Krav, the Unredeemed): a keyword line that stands for two abilities, a deck-construction one ("You may designate two legendary cards as
  * your commander rather than one if each has a 'partner with [name]' ability with the other's name", which `packages/cards` reads from the stored card, D-053) and a triggered
  * ability ("When this permanent enters, target player may search their library for a card named [name], reveal it, put it into their hand, then shuffle", which the engine builds
  * for the keyword). The reminder text in parentheses is not part of the line the grammar reads.

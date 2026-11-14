@@ -345,7 +345,7 @@ export const KEYWORD_CYCLING = defineRule<readonly IrKeyword[]>({
 });
 
 export const KEYWORD_RULES = [
-  // D-1426 (Gisa deck, group 3): "Partner with Regna, the Redeemer" starts like the plain keyword Partner, which `keyword.line` reads a prefix of: tried first.
+  // D-490 (Gisa deck, group 3): "Partner with Regna, the Redeemer" starts like the plain keyword Partner, which `keyword.line` reads a prefix of: tried first.
   ...PARTNER_WITH_KEYWORD_RULES,
   KEYWORD_LINE,
   KEYWORD_CYCLING,

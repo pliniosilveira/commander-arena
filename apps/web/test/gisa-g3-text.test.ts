@@ -1,5 +1,5 @@
 /**
- * The words of group 3 of the Gisa deck (D-1420 to D-1428) as pure models: the cost of sacrificing two other creatures and X creatures, the optional sacrifice of any number, the label
+ * The words of group 3 of the Gisa deck (D-484 to D-492) as pure models: the cost of sacrificing two other creatures and X creatures, the optional sacrifice of any number, the label
  * of the minus nine, of Priest of Forgotten Gods and of the X ability, the prompts of the keep question and of the X question, the copies of a spell for each creature sacrificed, the
  * keyword chip of "partner with" (read from the engine's SYNTHETIC cards, so a wording that drifts from the AST fails here). No DOM.
  */

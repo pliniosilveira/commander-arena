@@ -595,7 +595,7 @@ function runEffect(
           effect.player === undefined
             ? [undefined]
             : resolvePlayers(state, effect.player, ctx, targets);
-        // D-1421 (CR 608.2b, 701.21a): a player named by a selector that names nobody now ("any number of target players" with none chosen, a target that has left the game)
+        // D-485 (CR 608.2b, 701.21a): a player named by a selector that names nobody now ("any number of target players" with none chosen, a target that has left the game)
         // sacrifices nothing; the controller of the effect does not take their place.
         if (effect.player !== undefined && sacrificers.length === 0) return done(state);
         // D-131: the number may be an amount ("each player sacrifices X creatures"), read as the effect runs.
@@ -1736,7 +1736,7 @@ function runEffect(
 
     case 'sparePermanents':
       // D-231: "For each player, you choose ... Then each player sacrifices all other nonland permanents they control" (rules/spare.ts).
-      // D-1420: with `own` the players the selector names choose among their own permanents and sacrifice the rest, lands too.
+      // D-484: with `own` the players the selector names choose among their own permanents and sacrifice the rest, lands too.
       return done(
         state,
         [],

@@ -28,14 +28,14 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       issue(
         out,
         `${path}.cost[${i}].anyNumber`,
-        'a mana ability sacrifices one permanent: no "any number" (D-1427)',
+        'a mana ability sacrifices one permanent: no "any number" (D-491)',
       );
     }
     if (c?.kind === 'sacrifice' && c.countX !== undefined) {
       issue(
         out,
         `${path}.cost[${i}].countX`,
-        'a mana ability sacrifices one permanent: no X (it uses no stack to announce one, D-1424)',
+        'a mana ability sacrifices one permanent: no X (it uses no stack to announce one, D-488)',
       );
     }
   });

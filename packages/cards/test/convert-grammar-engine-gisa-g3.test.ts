@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 3 (D-1420 to D-1428): the REAL Oracle text of Liliana, Dreadhorde General, Priest of Forgotten Gods, Krav, the Unredeemed and Plumb the Forbidden
+// The Gisa deck (issue 41), group 3 (D-484 to D-492): the REAL Oracle text of Liliana, Dreadhorde General, Priest of Forgotten Gods, Krav, the Unredeemed and Plumb the Forbidden
 // (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is compared with the SYNTHETIC cards of the engine fixtures the engine scenarios of
 // `scenario-xx-gisa-g3-*.test.ts` run, and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs. Pins: CR 608.2d, 701.21a and 101.4
 // (the opponent's choice of a permanent of each type, and the sacrifice of the rest), CR 118.3, 602.2b and 115.1 (the cost of two other creatures and the targets), CR 107.3a (X as the

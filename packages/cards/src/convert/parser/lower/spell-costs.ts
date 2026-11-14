@@ -122,7 +122,7 @@ function lowerAdditional(
 }
 
 /**
- * "As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way." (D-1428, CR 118.8, 601.2b, 603.12, 707.10):
+ * "As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way." (D-492, CR 118.8, 601.2b, 603.12, 707.10):
  * the face's additional cost, a `sacrifice` of any number of creatures, and the spell's own "When you cast this spell" ability: if a creature was sacrificed for the cost, copy the spell for
  * each of them (the spell has no new targets for the copies: the words do not say so, CR 707.10).
  */

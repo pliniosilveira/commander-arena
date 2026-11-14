@@ -70,7 +70,7 @@ export function perXText(d: Pick<ChooseXDecision, 'perX'>): string {
   if (d.perX.life > 0) parts.push(`${d.perX.life} life`);
   // D-200 (CR 606.5): the X of "[-X]" removes that many loyalty counters.
   if ((d.perX.loyalty ?? 0) > 0) parts.push(`${d.perX.loyalty} loyalty`);
-  // D-1424 (CR 107.3a): "Sacrifice X creatures" sacrifices that many permanents.
+  // D-488 (CR 107.3a): "Sacrifice X creatures" sacrifices that many permanents.
   const sacrifices = d.perX.sacrifice ?? 0;
   if (sacrifices > 0)
     parts.push(sacrifices === 1 ? 'a sacrificed permanent' : `${sacrifices} sacrificed permanents`);

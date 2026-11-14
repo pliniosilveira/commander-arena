@@ -748,7 +748,7 @@ export const STATIC_ADDITIONAL_COST_SACRIFICE_COPIES = defineRule<IrStatic>({
 export const COST_STATIC_RULES = [
   STATIC_SELF_COST_REDUCTION,
   STATIC_SPELLS_COST_REDUCTION,
-  // D-1428: its first words are those of `static.additional-cost`, which reads that prefix and fails after it: tried first.
+  // D-492: its first words are those of `static.additional-cost`, which reads that prefix and fails after it: tried first.
   STATIC_ADDITIONAL_COST_SACRIFICE_COPIES,
   STATIC_ADDITIONAL_COST,
   STATIC_FREE_CAST,

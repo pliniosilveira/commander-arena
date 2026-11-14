@@ -97,7 +97,7 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     case 'sacrifice': {
       const { what } = cost;
       if (what.det === 'self') return ok({ kind: 'sacrifice', what: { kind: 'this' } });
-      // "Sacrifice X creatures" (D-1424, CR 107.3a, 602.2b): the X announced as the ability is activated; the cost of an ordinary activated ability only.
+      // "Sacrifice X creatures" (D-488, CR 107.3a, 602.2b): the X announced as the ability is activated; the cost of an ordinary activated ability only.
       if (what.det === 'a' && what.count?.kind === 'x') {
         if (options.ordinary !== true || what.other) return failure(cost);
         const { count: _counted, ...described } = what;

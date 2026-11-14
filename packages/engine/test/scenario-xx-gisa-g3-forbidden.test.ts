@@ -1,4 +1,4 @@
-// Group 3 of the Gisa deck (issue 41, D-1427 and D-1428): "As an additional cost to cast this spell, you may sacrifice one or more creatures. When you do, copy this spell for each
+// Group 3 of the Gisa deck (issue 41, D-491 and D-492): "As an additional cost to cast this spell, you may sacrifice one or more creatures. When you do, copy this spell for each
 // creature sacrificed this way." (Plumb the Forbidden), the SYNTHETIC Forbidden Rite of `src/cards/fixtures/synthetic-gisa-g3.ts`. Pins: CR 118.8 and 601.2b (an optional additional cost is
 // announced as the spell is cast), CR 601.2h (it is paid with the other costs), CR 701.21a (the caster chooses what to sacrifice among the permanents they control), CR 603.12 and 603.4
 // (a trigger that happens only if the cost was paid), CR 707.10 (a copy of a spell is put onto the stack above the original and is not cast), CR 707.10a (a copy that leaves the stack

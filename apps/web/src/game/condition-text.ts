@@ -255,7 +255,7 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       return negate ? words.not : words.yes;
     }
     case 'sacrificedAsCost':
-      // CR 118.8, 603.4 (D-1427): the intervening "if" of the cast trigger of a spell whose additional cost may sacrifice any number of creatures.
+      // CR 118.8, 603.4 (D-491): the intervening "if" of the cast trigger of a spell whose additional cost may sacrifice any number of creatures.
       return negate
         ? "you didn't sacrifice a permanent to cast it"
         : 'you sacrificed one or more permanents to cast it';

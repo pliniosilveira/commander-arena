@@ -1,6 +1,6 @@
 /**
  * "For each player, you choose from among the permanents that player controls an artifact, a creature, an enchantment, and a planeswalker. Then each player
- * sacrifices all other nonland permanents they control" (Tragic Arrogance; CR 608.2d, 701.21a, 101.4, D-231). With `own` (D-1420, Liliana, Dreadhorde General: "Each
+ * sacrifices all other nonland permanents they control" (Tragic Arrogance; CR 608.2d, 701.21a, 101.4, D-231). With `own` (D-484, Liliana, Dreadhorde General: "Each
  * opponent chooses a permanent they control of each permanent type and sacrifices the rest") each player the effect names chooses among their own permanents and
  * sacrifices everything else they control, lands included. The controller of the effect makes every choice, one
  * for each card type and each player, the players in turn order starting with the active player (APNAP) and the types in the order the text lists them. A type of
@@ -34,7 +34,7 @@ function permanentsOf(
 }
 
 /**
- * The instruction that starts the choices of the effect: the players still in the game, in turn order from the active player. With `own` (D-1420, "Each opponent chooses a
+ * The instruction that starts the choices of the effect: the players still in the game, in turn order from the active player. With `own` (D-484, "Each opponent chooses a
  * permanent they control of each permanent type and sacrifices the rest") only the players the effect names, each choosing for themselves.
  */
 export function startSpare(
@@ -94,7 +94,7 @@ export function runSpare(
       { ...ins, step: ins.step + 1, spared: [...ins.spared, ...chosen], chosen: null },
     ]);
   if (candidates.length === 0) return next([], []);
-  // D-1420: with `own` the player chooses among their own permanents; otherwise the controller of the effect chooses for every player.
+  // D-484: with `own` the player chooses among their own permanents; otherwise the controller of the effect chooses for every player.
   const chooser = ins.own === true ? pair.player : res.controller;
   const event = (objects: readonly ObjectId[], automatic: boolean): GameEvent => ({
     kind: 'permanentsChosen',

@@ -1,4 +1,4 @@
-// Slice soak (D-1420 to D-1428): whole games with the 'gisaG3' deck style (SYNTHETIC cards of the engine fixtures `synthetic-gisa-g3.ts`: a planeswalker whose minus nine makes each opponent
+// Slice soak (D-484 to D-492): whole games with the 'gisaG3' deck style (SYNTHETIC cards of the engine fixtures `synthetic-gisa-g3.ts`: a planeswalker whose minus nine makes each opponent
 // keep a permanent of each type, a creature that sacrifices two other creatures and has any number of players lose life and sacrifice, a creature that sacrifices X creatures, "partner with" and
 // the card it fetches, and an instant with an optional sacrifice of any number of creatures that copies it) between random agents, with CasualAgent and HeuristicAgent in some seats. Every game
 // finishes with a result, no fallback, no rejected action and consistent state after every action; the action log replays to the same final state; and, with the rules read again here from the

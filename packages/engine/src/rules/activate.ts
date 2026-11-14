@@ -384,7 +384,7 @@ function paySacrifice(state: GameState, events: GameEvent[]): Result {
   if (!going) return fail('No activation is in progress');
   const { casting, activation, costs } = going;
   const seat = casting.seat;
-  // D-1424: "Sacrifice X creatures" with X = 0 sacrifices nothing.
+  // D-488: "Sacrifice X creatures" with X = 0 sacrifices nothing.
   if (costs.sacrifice === null || costs.sacrificeCount === 0) {
     return payBounce(state, events, payDiscard);
   }

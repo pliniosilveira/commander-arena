@@ -140,7 +140,7 @@ export function evaluateCondition(
       return source !== null && (source.stack?.replicated ?? 0) > 0;
     }
     case 'sacrificedAsCost': {
-      // CR 118.8, 603.4 (D-1427): "if you sacrificed one or more creatures to cast it": the spell carries the sacrificed permanents on the stack, or its last-known information
+      // CR 118.8, 603.4 (D-491): "if you sacrificed one or more creatures to cast it": the spell carries the sacrificed permanents on the stack, or its last-known information
       // does once it has left (CR 113.7a).
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return (source?.stack?.sacrificedAsCost?.length ?? 0) > 0;

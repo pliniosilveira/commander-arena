@@ -1,4 +1,4 @@
-// Group 3 of the Gisa deck (issue 41, D-1421 to D-1423): "{T}, Sacrifice two other creatures: Any number of target players each lose 2 life and sacrifice a creature of their choice.
+// Group 3 of the Gisa deck (issue 41, D-485 to D-487): "{T}, Sacrifice two other creatures: Any number of target players each lose 2 life and sacrifice a creature of their choice.
 // You add {B}{B} and draw a card." (Priest of Forgotten Gods), the SYNTHETIC Sacrifice Priest of `src/cards/fixtures/synthetic-gisa-g3.ts`. Pins: CR 118.3 and 701.21a (a cost of
 // sacrificing two other creatures needs two creatures besides the source, which the controller chooses), CR 602.2b and 115.1 (any number of target players: none, one or each),
 // CR 608.2d and 101.4 (each target player chooses the creature they sacrifice, in turn order), CR 605.1a (an ability with a target is not a mana ability: it adds mana as it

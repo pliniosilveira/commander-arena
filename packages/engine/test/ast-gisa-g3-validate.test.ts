@@ -1,4 +1,4 @@
-// validateCard for the nodes of group 3 of the Gisa deck (D-1420 to D-1428): `sparePermanents` with `own`, the cost `sacrifice` with `countX` ("Sacrifice X creatures") and with
+// validateCard for the nodes of group 3 of the Gisa deck (D-484 to D-492): `sparePermanents` with `own`, the cost `sacrifice` with `countX` ("Sacrifice X creatures") and with
 // `anyNumber` ("you may sacrifice one or more creatures"), the keyword `partnerWith`, the filter `named`, and the amount and condition `sacrificedAsCost`. Cards are SYNTHETIC or defined here.
 import { describe, expect, test } from 'vitest';
 import type { Ability, Cost, Effect } from '../src/ast/types';

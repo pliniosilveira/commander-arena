@@ -89,7 +89,7 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       }
       return true;
     case 'partnerWith':
-      // CR 702.124j (D-1426): the name of the card the other commander is, and the card the enters trigger searches for.
+      // CR 702.124j (D-490): the name of the card the other commander is, and the card the enters trigger searches for.
       if (typeof k.name !== 'string' || k.name.trim() === '') {
         issue(out, `${path}.name`, 'partner with names a card');
       }

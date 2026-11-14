@@ -23,7 +23,7 @@ export interface XCost {
   readonly loyalty?: number;
   /** Cards of the hand for each point of X ("discard X cards", CR 701.9, D-386); absent for none. */
   readonly discard?: number;
-  /** Permanents sacrificed for each point of X ("Sacrifice X creatures", CR 118.3, D-1424); absent for none. */
+  /** Permanents sacrificed for each point of X ("Sacrifice X creatures", CR 118.3, D-488); absent for none. */
   readonly sacrifice?: number;
 }
 

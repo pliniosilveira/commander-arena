@@ -186,7 +186,7 @@ export const COST_SACRIFICE = defineRule<IrCost>({
     map(
       sequence(
         literal('sacrifice '),
-        // D-1424: "Sacrifice X creatures" (`noun.x-permanents`), the X announced as the ability is activated.
+        // D-488: "Sacrifice X creatures" (`noun.x-permanents`), the X announced as the ability is activated.
         family<IrNoun>('noun', { only: ['noun.self', 'noun.a-permanent', 'noun.x-permanents'] }),
       ),
       ([, what]) => what,

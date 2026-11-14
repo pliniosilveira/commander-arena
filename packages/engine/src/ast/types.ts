@@ -229,7 +229,7 @@ export type Amount =
    */
   | { readonly kind: 'cardsDrawnThisTurn' }
   /**
-   * "For each creature sacrificed this way" (CR 118.8, 701.21a, 707.10, D-1427, Plumb the Forbidden): the number of permanents sacrificed to pay the additional cost of the
+   * "For each creature sacrificed this way" (CR 118.8, 701.21a, 707.10, D-491, Plumb the Forbidden): the number of permanents sacrificed to pay the additional cost of the
    * spell the effect belongs to (the spell is the source of its own "When you cast this spell" ability, or of its own text), read from the spell on the stack or from its last-known
    * information once it has left (CR 113.7a). 0 when none was. Only in the abilities of a spell that name `castSpell` with `self` and in its own text, of a face whose additional
    * cost sacrifices any number of permanents (`validateCard`).
@@ -399,7 +399,7 @@ export interface ObjectFilter {
    */
   readonly enteredThisTurn?: true;
   /**
-   * "A card named Regna, the Redeemer" (CR 201.2, D-1425): the object's name (the name of its front face outside the battlefield, CR 711.4 analogue) is exactly this text. Read where the
+   * "A card named Regna, the Redeemer" (CR 201.2, D-489): the object's name (the name of its front face outside the battlefield, CR 711.4 analogue) is exactly this text. Read where the
    * filter is matched against the game (a target slot, an `each` selector, a search of a library); refused in a static ability, as `attacking` is.
    */
   readonly named?: string;
@@ -879,13 +879,13 @@ export type Cost =
        */
       readonly count?: number;
       /**
-       * "Sacrifice X creatures" (CR 107.3a, 602.2b, 118.3, D-1424): the number of permanents sacrificed is the X announced as the ability is activated, 0 or more (with X = 0
+       * "Sacrifice X creatures" (CR 107.3a, 602.2b, 118.3, D-488): the number of permanents sacrificed is the X announced as the ability is activated, 0 or more (with X = 0
        * nothing is sacrificed); X is offered only up to the number of permanents the player could sacrifice. The ability's effect reads that X. Only in the cost of an activated
        * ability (not an additional cost of a spell, not a mana ability), with a filter and never with `this` or `count`.
        */
       readonly countX?: true;
       /**
-       * "As an additional cost to cast this spell, you may sacrifice one or more creatures" (CR 118.8, 601.2b, 601.2h, 701.21a, D-1427): the caster chooses any number of the
+       * "As an additional cost to cast this spell, you may sacrifice one or more creatures" (CR 118.8, 601.2b, 601.2h, 701.21a, D-491): the caster chooses any number of the
        * permanents they control that match, none to all of them (none is the "may" declined), as the cost is paid after the mana. The spell is castable with none. Only an additional
        * cost of a spell (`CardFace.additionalCosts`), alone as its sacrifice, with a filter and never with `this`, `count` or `countX`. What was sacrificed is what the amount and
        * the condition `sacrificedAsCost` read.
@@ -1516,7 +1516,7 @@ export type Effect =
       readonly types: readonly CardType[];
       /**
        * "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest." (Liliana, Dreadhorde General; CR 608.2d, 701.21a, 101.4,
-       * D-1420): each player `players` names (`eachPlayer` or `eachOpponent`; the active player first) makes the choices for their own permanents, one of each type of
+       * D-484): each player `players` names (`eachPlayer` or `eachOpponent`; the active player first) makes the choices for their own permanents, one of each type of
        * `types` they control (none when they control none; the same permanent may be chosen for several of its types), and then sacrifices every other permanent they control,
        * lands included, all of them together. Without `own` the controller of the effect chooses for every player and the lands are kept (Tragic Arrogance).
        */
@@ -3245,7 +3245,7 @@ export type Keyword =
    */
   | { readonly kind: 'partner' }
   /**
-   * CR 702.124j (Partner with [name], D-1426): "You may designate two legendary cards as your commander rather than one if each has a 'partner with [name]' ability with the
+   * CR 702.124j (Partner with [name], D-490): "You may designate two legendary cards as your commander rather than one if each has a 'partner with [name]' ability with the
    * other's name" (a deck-construction ability: `packages/cards` reads it from the stored card, D-053) and "When this permanent enters, target player may search their library for a
    * card named [name], reveal it, put it into their hand, then shuffle": the second is a triggered ability the engine builds for the keyword (`rules/derive-keywords.ts`), so the card
    * lists only the name. Printed only: it cannot be granted.
@@ -3581,7 +3581,7 @@ export type Condition =
    */
   | { readonly kind: 'replicated' }
   /**
-   * "If you sacrificed one or more creatures to cast it" (CR 118.8, 701.21a, D-1427): the spell was cast with at least one permanent sacrificed for its additional cost
+   * "If you sacrificed one or more creatures to cast it" (CR 118.8, 701.21a, D-491): the spell was cast with at least one permanent sacrificed for its additional cost
    * (`Cost` `sacrifice` with `anyNumber`). Read from the spell, or from its last-known information once it has left (CR 113.7a). The intervening "if" of the spell's own
    * "When you cast this spell" ability (CR 603.4).
    */

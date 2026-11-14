@@ -293,7 +293,7 @@ export function stateAmountOf(
       // CR 121.1 (D-450): "for each card you've drawn this turn": the cards the controller of the effect has drawn so far this turn (`SeatState.cardsDrawnThisTurn`).
       return getSeat(state, ctx.controller).cardsDrawnThisTurn;
     case 'sacrificedAsCost': {
-      // CR 118.8, 701.21a (D-1427): "for each creature sacrificed this way": the permanents sacrificed to pay the additional cost of the spell that is the source, read from the spell
+      // CR 118.8, 701.21a (D-491): "for each creature sacrificed this way": the permanents sacrificed to pay the additional cost of the spell that is the source, read from the spell
       // or, once it has left the stack, from its last-known information (CR 113.7a).
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return source?.stack?.sacrificedAsCost?.length ?? 0;

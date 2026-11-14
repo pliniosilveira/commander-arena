@@ -1,5 +1,5 @@
 /**
- * Noun rules of group 3 of the Gisa deck (issue 41, D-1422): "any number of target players" as the subject of a player verb (Priest of Forgotten Gods).
+ * Noun rules of group 3 of the Gisa deck (issue 41, D-486): "any number of target players" as the subject of a player verb (Priest of Forgotten Gods).
  */
 import { map, pattern, satisfy, sequence } from '../../combinators';
 import type { IrFilter, IrNoun } from '../../ir/types';

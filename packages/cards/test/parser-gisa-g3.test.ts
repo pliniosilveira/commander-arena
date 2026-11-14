@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 3 (D-1420 to D-1428): the lines of Liliana, Dreadhorde General ("Each opponent chooses a permanent they control of each permanent type and
+// The Gisa deck (issue 41), group 3 (D-484 to D-492): the lines of Liliana, Dreadhorde General ("Each opponent chooses a permanent they control of each permanent type and
 // sacrifices the rest."), Priest of Forgotten Gods ("{T}, Sacrifice two other creatures: Any number of target players each lose 2 life and sacrifice a creature of their choice. You
 // add {B}{B} and draw a card."), Krav, the Unredeemed ("Partner with Regna, the Redeemer" and "{B}, Sacrifice X creatures: Target player draws X cards and gains X life. Put X +1/+1
 // counters on ~.") and Plumb the Forbidden ("As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way.")

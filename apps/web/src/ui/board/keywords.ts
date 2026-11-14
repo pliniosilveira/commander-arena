@@ -48,7 +48,7 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   toxic: ['Tox', 'Toxic'],
   splitSecond: ['Spl', 'Split second'],
   partner: ['Ptn', 'Partner'],
-  // D-1426 (CR 702.124j): the name rides in the tooltip (`PARAMETERIZED`).
+  // D-490 (CR 702.124j): the name rides in the tooltip (`PARAMETERIZED`).
   partnerWith: ['Ptn', 'Partner with'],
   typecycling: ['Tcy', 'Typecycling'],
   multikicker: ['MK', 'Multikicker'],
@@ -142,7 +142,7 @@ const PARAMETERIZED: Readonly<
     [...text.matchAll(/\bdevour\s+(\d+)/gi)].map(
       (m) => [`Dev ${m[1]}`, `Devour ${m[1]} (${devourReminder(Number(m[1]))})`] as const,
     ),
-  // "Partner with Regna, the Redeemer" (D-1426, CR 702.124j): the name of the card, from the line of the Oracle text the object shows.
+  // "Partner with Regna, the Redeemer" (D-490, CR 702.124j): the name of the card, from the line of the Oracle text the object shows.
   partnerWith: (text) =>
     [...text.matchAll(/\bpartner with ([^(\n]+)/gi)].map(
       (m) => ['Ptn', `Partner with ${(m[1] ?? '').trim()}`] as const,

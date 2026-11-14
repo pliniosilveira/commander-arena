@@ -1,4 +1,4 @@
-// Group 3 of the Gisa deck (issue 41, D-1424 to D-1426): "{B}, Sacrifice X creatures: Target player draws X cards and gains X life. Put X +1/+1 counters on ~." and "Partner with
+// Group 3 of the Gisa deck (issue 41, D-488 to D-490): "{B}, Sacrifice X creatures: Target player draws X cards and gains X life. Put X +1/+1 counters on ~." and "Partner with
 // [name]" (the two lines of Krav, the Unredeemed), the SYNTHETIC Sacrifice Demon, Partner Seeker and Partner Quarry of `src/cards/fixtures/synthetic-gisa-g3.ts`. Pins: CR 107.3a and 602.2b (X is
 // announced as the ability is activated, before the targets and the costs; it is the number of permanents sacrificed and every X of the effect), CR 118.3 (a cost can't be paid with fewer
 // permanents than it asks for), CR 701.21a (the player chooses the permanents among those they control), CR 603.10a (a permanent sacrificed as a cost is gone when the effect

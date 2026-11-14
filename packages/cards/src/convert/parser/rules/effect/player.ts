@@ -264,7 +264,7 @@ const millAction: Action = (subject, you, rule) =>
  * controller of the effect, chooses, which is what a sacrifice means anyway (CR 701.21a): the engine's `player` and `choose`.
  */
 const sacrificeAction: Action = (subject, you, rule) =>
-  // D-1422: "any number of target players each ... sacrifice a creature of their choice" takes the plural verb; "you", "they" and the others stay as they were.
+  // D-486: "any number of target players each ... sacrifice a creature of their choice" takes the plural verb; "you", "they" and the others stay as they were.
   you && !(subject.det === 'target' && subject.anyNumber === true)
     ? (ctx, pos) => fail(ctx, pos)
     : map(
@@ -355,7 +355,7 @@ export const PLAYER_SUBJECTS = [
   // D-269: "each player ~ attacked this turn loses the game".
   'noun.each-player-attacked',
   'noun.you-and-player',
-  // D-1422: "any number of target players each lose 2 life and sacrifice a creature of their choice".
+  // D-486: "any number of target players each lose 2 life and sacrifice a creature of their choice".
   'noun.any-number-target-players',
   'noun.each-other-player',
   'noun.defending-player',
@@ -559,7 +559,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
       // "You and target opponent each draw ...": the verb has no "s", as it has none for "you".
       const several = subject.det === 'players';
       const they = subject.det === 'anaphor' && subject.filter.raw.toLowerCase() === 'they';
-      // D-1422: "any number of target players each" takes the plural verb, as "you" does.
+      // D-486: "any number of target players each" takes the plural verb, as "you" does.
       const eachOfMany = subject.det === 'target' && subject.anyNumber === true;
       const you = subject.det === 'you' || several || they || eachOfMany;
       const part = (id: string, action: Action) => named(id, action(subject, you, 'effect.player'));

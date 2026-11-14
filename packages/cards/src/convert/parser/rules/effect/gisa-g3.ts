@@ -1,5 +1,5 @@
 /**
- * Effect rules of group 3 of the Gisa deck (issue 41, D-1420 and later): "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest."
+ * Effect rules of group 3 of the Gisa deck (issue 41, D-484 and later): "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest."
  * (Liliana, Dreadhorde General) and the other words of the sacrifice cards of the group.
  */
 import { fail, literal, pattern, sequence } from '../../combinators';

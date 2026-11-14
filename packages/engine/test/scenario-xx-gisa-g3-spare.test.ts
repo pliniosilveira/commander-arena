@@ -1,4 +1,4 @@
-// Group 3 of the Gisa deck (issue 41, D-1420): "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest." (Liliana, Dreadhorde General), the
+// Group 3 of the Gisa deck (issue 41, D-484): "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest." (Liliana, Dreadhorde General), the
 // SYNTHETIC Culling Walker and Culling Rite of `src/cards/fixtures/synthetic-gisa-g3.ts`. Pins: CR 608.2d (the player chooses as the effect resolves), CR 701.21a (a player sacrifices
 // permanents they control), CR 101.4 (the players choose in turn order, the active player first), CR 110.4 (the six permanent types), CR 205.2b (an object with two card types satisfies
 // the criteria for both), CR 603.10a (permanents sacrificed together leave together).

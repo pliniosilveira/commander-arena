@@ -1,13 +1,13 @@
 /**
  * Paying what a spell's additional costs ask once its mana is paid (CR 118.8, 601.2h, D-095): the
- * permanent to sacrifice, the permanents the caster may choose to sacrifice (any number, none included, D-1427), then the cards to discard, then (an escape cost, CR 702.138a, D-124) the other cards
+ * permanent to sacrifice, the permanents the caster may choose to sacrifice (any number, none included, D-491), then the cards to discard, then (an escape cost, CR 702.138a, D-124) the other cards
  * of the graveyard to exile. The total cost was locked in at CR 601.2f and
  * the mana paid (CR 601.2g), so these are the costs that need a choice; the legal-action code
  * (`canPaySpellCost`) checked beforehand that they can be paid.
  *
  *   sacrifice  one candidate: the engine chooses and says so (`permanentsChosen`, `automatic`);
  *              several: a `choosePermanent` decision with `forCost`, stage 'sacrifice'
- *   sacrifice  "you may sacrifice one or more creatures" (D-1427): with at least one candidate, a `choosePermanent`
+ *   sacrifice  "you may sacrifice one or more creatures" (D-491): with at least one candidate, a `choosePermanent`
  *   (any number)  decision with `forCost`, `min` 0 and `max` the candidates, stage 'sacrifice' too; the permanents
  *              chosen are written on the spell for `sacrificedAsCost`
  *   discard    exactly as many cards in hand as asked: all of them; more: a `chooseCards` decision
@@ -151,7 +151,7 @@ function sacrificeChosen(
 }
 
 /**
- * CR 118.8, 601.2b, 601.2h, 701.21a (D-1427): "As an additional cost to cast this spell, you may sacrifice one or more creatures." The caster chooses any number of the
+ * CR 118.8, 601.2b, 601.2h, 701.21a (D-491): "As an additional cost to cast this spell, you may sacrifice one or more creatures." The caster chooses any number of the
  * permanents that match, none included, once the mana is paid; with no candidate nothing is asked. What was sacrificed is written on the spell (`sacrificedAsCost`), which the
  * spell's own "When you cast this spell" ability reads. `cancel` rewinds the cast (CR 733).
  */
@@ -212,7 +212,7 @@ function optionalSacrificeChosen(
       next = done.state;
       events.push(...done.events);
     }
-    // D-1427: the spell remembers what was sacrificed for it (`sacrificedAsCost`), which "for each creature sacrificed this way" counts.
+    // D-491: the spell remembers what was sacrificed for it (`sacrificedAsCost`), which "for each creature sacrificed this way" counts.
     const stack = next.objects[casting.object]?.stack;
     if (stack !== undefined && stack !== null) {
       next = patchObject(next, casting.object, { stack: { ...stack, sacrificedAsCost: chosen } });
@@ -233,7 +233,7 @@ export function answerSacrifice(
   if (state.casting?.stage !== 'sacrifice' || state.casting.activation !== null) {
     return fail('No sacrifice is being chosen for a spell');
   }
-  // D-1427: the question of "you may sacrifice one or more creatures" has its own answer.
+  // D-491: the question of "you may sacrifice one or more creatures" has its own answer.
   if (state.casting.extra?.sacrificeAnyAsked === true) {
     return optionalSacrificeChosen({ ...state, pending: null }, chosen, finish);
   }

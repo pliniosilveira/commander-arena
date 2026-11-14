@@ -444,7 +444,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
   // "Any number of target creatures" has no bounds of its own: a divided damage reads it (`declareDividedTarget`), and an effect that takes any number of
   // targets (stage P74, D-234: "any number of other target creatures you control phase out") has the slot `anyNumber`.
   const anyNumberTarget = noun.anyNumber === true && noun.det === 'target';
-  // D-1422 (CR 115.1): "any number of target players" is a player slot of the engine's `anyNumber`; other player forms ("or planeswalker") are not read.
+  // D-486 (CR 115.1): "any number of target players" is a player slot of the engine's `anyNumber`; other player forms ("or planeswalker") are not read.
   if (anyNumberTarget && noun.filter.player !== undefined && noun.filter.orPlaneswalker === true) {
     return failure(noun, []);
   }

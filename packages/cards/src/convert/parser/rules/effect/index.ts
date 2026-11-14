@@ -922,7 +922,7 @@ export const EFFECT_RULES = [
   ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
-  // Gisa deck, group 3 (issue 41, D-1420): "each opponent chooses a permanent they control of each permanent type and sacrifices the rest".
+  // Gisa deck, group 3 (issue 41, D-484): "each opponent chooses a permanent they control of each permanent type and sacrifices the rest".
   ...GISA_G3_EFFECT_RULES,
   // D-393, D-394 (Hashaton, group 9): the body of Rona, Tolarian Obliterator.
   ...HASHATON_G9_EFFECT_RULES,

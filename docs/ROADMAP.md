@@ -428,7 +428,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `replacement.escapes-with-counters` reads a number of counters only (the real line of Woe Strider); "escapes with X counters" and "escapes with a counter for each ..." are not read, and "escapes with [ability]" (CR 702.138d) is not either.
 - The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
 
-## The Gisa deck, group 3 (issue 41, D-1420 to D-1429, provisional)
+## The Gisa deck, group 3 (issue 41, D-484 to D-493)
 
 - "Sacrifice X creatures" is the cost of an activated ability only (not a spell's additional cost, not a mana ability); the casual agent never activates such an ability (it uses no sacrifice outlet), and when asked X it announces no more than its tokens.
 - "You may sacrifice one or more creatures" is read for creatures with the copy sentence of Plumb the Forbidden only (`static.additional-cost-sacrifice-copies`); the same cost with another sentence, or of other permanents, is not read. The question is asked with the payment, after the mana, not at the start of the cast.

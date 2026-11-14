@@ -115,13 +115,13 @@ const capitalize = (text: string): string => `${text.charAt(0).toUpperCase()}${t
 export function sacrificeWhat(
   what: Extract<Cost, { kind: 'sacrifice' }>['what'],
   count = 1,
-  /** D-1424: "Sacrifice X creatures": the number is the X announced. */
+  /** D-488: "Sacrifice X creatures": the number is the X announced. */
   countX = false,
 ): string {
   if ('kind' in what) return 'this';
   const words = nounsOf(what);
   if (countX) return `X ${plural(words)}`;
-  // D-1421: "two other creatures": all but the permanent with the ability.
+  // D-485: "two other creatures": all but the permanent with the ability.
   if (count > 1) {
     return `${NUMBER_WORDS[count] ?? count} ${what.other === true ? 'other ' : ''}${plural(words)}`;
   }
@@ -187,7 +187,7 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
       // D-386: the additional cost of a spell, "Discard X cards".
       return 'Discard X cards';
     case 'sacrifice':
-      // D-1427 (CR 118.8): the additional cost of a spell that may sacrifice any number of permanents.
+      // D-491 (CR 118.8): the additional cost of a spell that may sacrifice any number of permanents.
       if (cost.anyNumber === true && !('kind' in cost.what)) {
         return `Sacrifice one or more ${plural(nounsOf(cost.what))} (optional)`;
       }

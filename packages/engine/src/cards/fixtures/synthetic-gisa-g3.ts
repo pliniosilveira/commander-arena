@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 3 OF THE GISA DECK (issue 41, D-1420 and later). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 3 OF THE GISA DECK (issue 41, D-484 and later). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the real cards of the group need from the engine, written out by hand (the cards package checks that the grammar lowers the real Oracle text to
  * these same nodes): a planeswalker whose last ability makes each opponent keep one permanent of each permanent type, a creature that sacrifices X creatures as a cost, a creature that

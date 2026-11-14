@@ -34,7 +34,7 @@ export function playerSubject(
     case 'ownerOf':
       return { text: 'its owner', base: false };
     case 'target': {
-      // D-1422: "any number of target players each lose 2 life": the slot says "any number of", the verb keeps its base form.
+      // D-486: "any number of target players each lose 2 life": the slot says "any number of", the verb keeps its base form.
       const text = target(player.id);
       return text.startsWith('any number of target players')
         ? { text: `${text} each`, base: true }

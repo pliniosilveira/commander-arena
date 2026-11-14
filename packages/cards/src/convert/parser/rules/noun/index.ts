@@ -599,7 +599,7 @@ export const NOUN_RULES = [
   ...KORVOLD_EARLY_NOUN_RULES,
   // Before `noun.player`: "you and target opponent each" starts with "you", "each other player" with "each".
   ...PLAYER_NOUN_RULES,
-  // D-1422 (Gisa deck, group 3): "any number of target players each".
+  // D-486 (Gisa deck, group 3): "any number of target players each".
   ...GISA_G3_NOUN_RULES,
   // Stage P52 (D-210): "each player who discarded a card this way".
   ...VRASKA_EARLY_NOUN_RULES,

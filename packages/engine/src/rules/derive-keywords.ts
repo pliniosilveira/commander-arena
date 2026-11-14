@@ -174,7 +174,7 @@ function afflictAbility(count: number): Ability {
 }
 
 /**
- * CR 702.124j (D-1426): "Partner with [name]" is also "When this permanent enters, target player may search their library for a card named [name], reveal it, put it into
+ * CR 702.124j (D-490): "Partner with [name]" is also "When this permanent enters, target player may search their library for a card named [name], reveal it, put it into
  * their hand, then shuffle." The searching player is the target, who makes the choices.
  */
 function partnerWithAbility(name: string): Ability {
@@ -611,7 +611,7 @@ export function expansionOf(ability: Ability): Ability[] {
     case 'afflict':
       return [afflictAbility(ability.keyword.count)];
     case 'partnerWith':
-      // CR 702.124j (D-1426): the second of the two abilities "Partner with [name]" represents.
+      // CR 702.124j (D-490): the second of the two abilities "Partner with [name]" represents.
       return [partnerWithAbility(ability.keyword.name)];
     case 'persist':
       return [returnWithCounter('-1/-1')];

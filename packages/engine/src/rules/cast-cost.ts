@@ -76,7 +76,7 @@ export interface SpellCost {
   readonly life: number;
   /** The permanent to sacrifice, by filter, or null. */
   readonly sacrifice: ObjectFilter | null;
-  /** "You may sacrifice one or more creatures" (D-1427): the permanents the caster may sacrifice, any number, or null; asked once the mana is paid, the spell is castable with none. */
+  /** "You may sacrifice one or more creatures" (D-491): the permanents the caster may sacrifice, any number, or null; asked once the mana is paid, the spell is castable with none. */
   readonly sacrificeAny?: ObjectFilter | null;
   /** How many cards to discard. */
   readonly discard: number;
@@ -339,7 +339,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   let discard = 0;
   for (const c of additional) {
     if (c.kind === 'sacrifice' && !('kind' in c.what)) {
-      // D-1427: "you may sacrifice one or more creatures" is no requirement for casting the spell: it is asked as the cost is paid.
+      // D-491: "you may sacrifice one or more creatures" is no requirement for casting the spell: it is asked as the cost is paid.
       if (c.anyNumber === true) sacrificeAny = c.what;
       else sacrifice = c.what;
     } else if (c.kind === 'discard') discard += c.count;

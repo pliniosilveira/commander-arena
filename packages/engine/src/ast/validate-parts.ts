@@ -262,7 +262,7 @@ export function checkFilter(
   if (f.commander !== undefined && f.commander !== true && f.commander !== 'yours') {
     issue(out, `${path}.commander`, "commander must be true or 'yours'");
   }
-  // D-1425 (CR 201.2): "a card named X" is the text of a name.
+  // D-489 (CR 201.2): "a card named X" is the text of a name.
   if (f.named !== undefined && (typeof f.named !== 'string' || f.named === '')) {
     issue(out, `${path}.named`, 'named must be the name of a card');
   }
@@ -1328,7 +1328,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
     case 'sacrificedAsCost':
-      // D-1427 (CR 118.8): what the spell sacrificed for its additional cost; the face is checked as a whole (`checkSacrificedAsCost`: only a spell's own cast trigger and text).
+      // D-491 (CR 118.8): what the spell sacrificed for its additional cost; the face is checked as a whole (`checkSacrificedAsCost`: only a spell's own cast trigger and text).
       break;
     case 'half':
       if (!isOneOf(a.round, ['down', 'up'])) {
@@ -1697,7 +1697,7 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       break;
     case 'sacrifice':
       if (cost.countX !== undefined) {
-        // D-1424 (CR 107.3a): "Sacrifice X creatures": the X announced for the ability, of permanents chosen among those that match; no fixed count and not the permanent itself.
+        // D-488 (CR 107.3a): "Sacrifice X creatures": the X announced for the ability, of permanents chosen among those that match; no fixed count and not the permanent itself.
         if (cost.countX !== true) {
           issue(out, `${path}.countX`, 'countX must be true when present');
         } else if (cost.count !== undefined) {
@@ -1707,7 +1707,7 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         }
       }
       if (cost.anyNumber !== undefined) {
-        // D-1427 (CR 118.8, 701.21a): "you may sacrifice one or more creatures": any number of the permanents that match; only an additional cost of a spell, checked where it stands.
+        // D-491 (CR 118.8, 701.21a): "you may sacrifice one or more creatures": any number of the permanents that match; only an additional cost of a spell, checked where it stands.
         if (cost.anyNumber !== true) {
           issue(out, `${path}.anyNumber`, 'anyNumber must be true when present');
         } else if (cost.count !== undefined || cost.countX !== undefined) {
@@ -2234,7 +2234,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
     case 'kicked':
-    case 'sacrificedAsCost': // D-1427: the face must list a cost that sacrifices any number of permanents (`checkSacrificedAsCost`)
+    case 'sacrificedAsCost': // D-491: the face must list a cost that sacrifices any number of permanents (`checkSacrificedAsCost`)
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
@@ -4065,7 +4065,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       } else {
         checkEnumList(out, `${path}.types`, e.types, CARD_TYPES, 'card type');
       }
-      // D-1420: "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest": the players choose for themselves.
+      // D-484: "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest": the players choose for themselves.
       if (e.own !== undefined) {
         checkPlayerSelector(e.own.players, `${path}.own.players`, scope, out);
         if (e.own.players?.kind !== 'eachPlayer' && e.own.players?.kind !== 'eachOpponent') {

@@ -226,7 +226,7 @@ function targetText(spec: TargetSpec | undefined): string {
       return `target ${nounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
     }
     case 'player':
-      // D-1422 (CR 115.1): "any number of target players" (none, one or each).
+      // D-486 (CR 115.1): "any number of target players" (none, one or each).
       if (spec.anyNumber === true) {
         return spec.what.filter === 'opponent'
           ? 'any number of target opponents'
@@ -272,7 +272,7 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'triggerSubject':
       // The spell of a "whenever you cast" trigger (Storm-like copies) or what targeted the permanent; else the
       // permanent or creature the trigger is about (D-133): "put a +1/+1 counter on it".
-      // D-1427: the "When you cast this spell" ability of the spell itself says "this spell".
+      // D-491: the "When you cast this spell" ability of the spell itself says "this spell".
       if (ability.trigger?.kind === 'castSpell' && ability.trigger.self === true) {
         return 'this spell';
       }
@@ -1101,7 +1101,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return inner === '' ? pay : `${pay}. When you do, ${lower(inner)}`;
     }
     case 'sparePermanents': {
-      // D-1420 (CR 608.2d, 701.21a): "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest." Only the shape with the six types is said; the
+      // D-484 (CR 608.2d, 701.21a): "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest." Only the shape with the six types is said; the
       // controller's own choices (Tragic Arrogance) are not worded here.
       if (effect.own === undefined) return UNSAID;
       const all =
@@ -1137,7 +1137,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
             ? null
             : typeof effect.count === 'object' && effect.count.kind === 'commanderCasts'
               ? "time you've cast your commander from the command zone this game"
-              : // D-1427 (CR 118.8): "copy this spell for each creature sacrificed this way".
+              : // D-491 (CR 118.8): "copy this spell for each creature sacrificed this way".
                 typeof effect.count === 'object' && effect.count.kind === 'sacrificedAsCost'
                 ? 'creature sacrificed this way'
                 : UNSAID;

@@ -693,11 +693,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.create-copy-spirit': permanent(
     (e) => `Whenever another nontoken creature you control dies, exile it. If you do, ${e}`,
   ),
-  // Gisa deck, group 3 (D-1422, D-1424, D-1426): the subject "any number of target players each", the cost "Sacrifice X creatures" and "Partner with [name]".
+  // Gisa deck, group 3 (D-486, D-488, D-490): the subject "any number of target players each", the cost "Sacrifice X creatures" and "Partner with [name]".
   'noun.any-number-target-players': spell((e) => `${cap(e)} lose 2 life.`),
   'noun.x-permanents': permanent((e) => `{T}, Sacrifice ${e}: Draw X cards.`),
   'keyword.partner-with': asIs,
-  // D-1428: the optional sacrifice and the copies are one statement of a spell.
+  // D-492: the optional sacrifice and the copies are one statement of a spell.
   'static.additional-cost-sacrifice-copies': spell((e) => e),
   'noun.that-token': spell(
     (e) =>

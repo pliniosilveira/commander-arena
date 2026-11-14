@@ -443,7 +443,7 @@ export function lowerKeyword(
     return lowerNumbered(ability, ability.name);
   }
   if (ability.name === 'affinity') return lowerAffinity(ability);
-  // CR 702.124j (D-1426): "Partner with [name]": the keyword with the name; the engine builds its enters trigger.
+  // CR 702.124j (D-490): "Partner with [name]": the keyword with the name; the engine builds its enters trigger.
   if (ability.name === 'partnerWith') {
     const [named] = ability.params;
     if (ability.params.length !== 1 || named?.kind !== 'name') return failure(ability);

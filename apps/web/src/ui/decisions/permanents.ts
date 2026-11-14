@@ -177,7 +177,7 @@ export function isSpare(decision: Pick<ChoosePermanentDecision, 'purpose'>): boo
 function sparePrompt(decision: Partial<Pick<ChoosePermanentDecision, 'seat' | 'spare'>>): string {
   const type = decision.spare?.type ?? 'permanent';
   const whose = decision.spare?.player === decision.seat ? 'you control' : 'an opponent controls';
-  // D-1420 (CR 608.2d, 701.21a): "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest": the player keeps one of their own, and sacrifices every other.
+  // D-484 (CR 608.2d, 701.21a): "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest": the player keeps one of their own, and sacrifices every other.
   if (decision.spare?.own === true) {
     return `Choose ${/^[aeiou]/.test(type) ? 'an' : 'a'} ${type} you control to keep. You sacrifice every other permanent you control.`;
   }
@@ -375,7 +375,7 @@ export function choosePermanentPrompt(
     return `Sacrifice ${spellSacrificeWhat(decision, index)} as an additional cost to cast ${source}.`;
   }
   const link = decision.forCost === true ? 'to pay for' : 'for';
-  // D-1421, D-1424 (CR 118.3, 602.2b): the cost of an activated ability names what it sacrifices: "Sacrifice two other creatures to pay for Name.", "Sacrifice 3 creatures to pay for Name." (X).
+  // D-485, D-488 (CR 118.3, 602.2b): the cost of an activated ability names what it sacrifices: "Sacrifice two other creatures to pay for Name.", "Sacrifice 3 creatures to pay for Name." (X).
   const cost = activationSacrifice(decision, index);
   if (cost !== null) return `Sacrifice ${cost} ${link} ${source}.`;
   // D-135: "Sacrifice any number of other permanents you control for Name." (none is allowed).
@@ -480,7 +480,7 @@ export function spellSacrificeWhat(
   index: Index,
 ): string {
   const cost = index.get(decision.source)?.additionalCosts?.find((c) => c.kind === 'sacrifice');
-  // D-1427 (CR 118.8): "you may sacrifice one or more creatures": any number of them, none included.
+  // D-491 (CR 118.8): "you may sacrifice one or more creatures": any number of them, none included.
   if (cost?.kind === 'sacrifice' && cost.anyNumber === true && !('kind' in cost.what)) {
     return `any number of ${sacrificeWhat(cost.what, 2).replace(/^two /, '')} (you may choose none)`;
   }

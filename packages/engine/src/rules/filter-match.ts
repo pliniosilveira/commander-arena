@@ -17,7 +17,7 @@ import { isCommanderObject } from './melded';
 
 /** The characteristics a filter looks at. `Derived` has all of them. */
 export interface FilterSubject {
-  /** The object's name, read by `named` (D-1425, CR 201.2); left out where the caller does not know it, which fails that test closed. */
+  /** The object's name, read by `named` (D-489, CR 201.2); left out where the caller does not know it, which fails that test closed. */
   readonly name?: string;
   readonly types: readonly CardType[];
   readonly supertypes: readonly Supertype[];
@@ -238,7 +238,7 @@ export function matchesFilterWith(
   // CR 115.9a (D-181): "with a single target": the spell or ability was put on the stack with exactly one target (one chosen twice counts twice).
   if (filter.singleTarget === true && obj.stack?.chosenTargets.length !== 1) return false;
   const d = describe();
-  // CR 201.2 (D-1425): "a card named X": the name is exactly the text.
+  // CR 201.2 (D-489): "a card named X": the name is exactly the text.
   if (filter.named !== undefined && d.name !== filter.named) return false;
   if (filter.types && !filter.types.every((t) => d.types.includes(t))) return false;
   if (filter.notTypes?.some((t) => d.types.includes(t))) return false;

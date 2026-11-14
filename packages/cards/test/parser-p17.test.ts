@@ -73,7 +73,7 @@ describe('keywords without a parameter (CR 702)', () => {
   });
 
   test.each([
-    // D-1426: "Partner with [name]" with a capitalised name is read now (`keyword.partner-with`); a line that names no card is not.
+    // D-490: "Partner with [name]" with a capitalised name is read now (`keyword.partner-with`); a line that names no card is not.
     'Partner with another legendary creature',
     'Partner—Friends forever',
     'Partner—Character select',

@@ -2999,7 +2999,7 @@ export const GISA_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] =
 ];
 
 /**
- * The SYNTHETIC cards of group 3 of the Gisa deck (D-1420 to D-1428): a planeswalker whose minus nine has each opponent choose a permanent of each type and sacrifice the rest (and a
+ * The SYNTHETIC cards of group 3 of the Gisa deck (D-484 to D-492): a planeswalker whose minus nine has each opponent choose a permanent of each type and sacrifice the rest (and a
  * sorcery that does it for each player), a creature that sacrifices two other creatures as a cost and has any number of target players lose life and sacrifice, a creature that sacrifices
  * X creatures as a cost (an X announced before the targets), a creature with "partner with" and the card it searches for, and an instant with an optional sacrifice of any number of creatures
  * that copies it, with three permanents of the types the questions of the group are about. They ask `chooseX`, `choosePermanent` of purpose `spare` and of a sacrifice that may choose none,
@@ -3046,7 +3046,7 @@ export const GISA_G3_LANDS = supported([
   'Forest',
 ]);
 
-/** Style pairs of the Gisa group 3 soak test (D-1420 to D-1428): a mirror match and both mixed ways. */
+/** Style pairs of the Gisa group 3 soak test (D-484 to D-492): a mirror match and both mixed ways. */
 export const GISA_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['gisaG3', 'gisaG3'],
   ['gisaG3', 'spells'],
@@ -3810,7 +3810,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(DANITHA_G6_NAMES as readonly string[]).includes(card.name))
   // The Danitha group 7 cards (D-433) have modes with a cost of their own, which ask the modes of every cast: a style of their own.
   .filter((card) => !(DANITHA_G7_NAMES as readonly string[]).includes(card.name))
-  // The Gisa group 3 cards (D-1420 to D-1428) ask which permanent each player keeps, an X announced for a sacrifice, and a sacrifice that may choose none: a style of their own.
+  // The Gisa group 3 cards (D-484 to D-492) ask which permanent each player keeps, an X announced for a sacrifice, and a sacrifice that may choose none: a style of their own.
   .filter((card) => !(GISA_G3_NAMES as readonly string[]).includes(card.name))
   // The Feather group 3 cards (D-437 to D-439) copy spells for each creature they could target, exile spells as they resolve and bring them back at the end step: a style of their own.
   .filter((card) => !(FEATHER_G3_NAMES as readonly string[]).includes(card.name))

@@ -115,9 +115,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseAmongMoved',
     // D-433: "Tiered", a mode with a cost listed before its effect (`SpellMode.cost`, CR 700.2h, 702.183a).
     'modeCost',
-    // D-1424: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
+    // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
     'sacrificeX',
-    // D-1427: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
+    // D-491: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
     'optionalSacrifice',
   ],
   effectKinds: [
@@ -393,7 +393,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'changeling',
     'devoid',
     'partner',
-    // D-1426: "Partner with [name]" (CR 702.124j): the engine builds its enters trigger.
+    // D-490: "Partner with [name]" (CR 702.124j): the engine builds its enters trigger.
     'partnerWith',
     'chooseBackground',
     // D-200: "~ can be your commander".
@@ -709,7 +709,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'kicked',
     // D-129: "if a replicate cost was paid for it" (CR 702.56a).
     'replicated',
-    // D-1427: "if you sacrificed one or more creatures to cast it" (`Cost` `sacrifice` with `anyNumber`).
+    // D-491: "if you sacrificed one or more creatures to cast it" (`Cost` `sacrifice` with `anyNumber`).
     'sacrificedAsCost',
     'controlCommander',
     'sourceHasCounter',
@@ -921,7 +921,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
     'cardsDrawnThisTurn',
-    // D-1427: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
+    // D-491: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
     'sacrificedAsCost',
   ],
   // D-405: 'library' is "then shuffle and put that card on top".
@@ -1068,9 +1068,9 @@ export const ABILITY_FEATURES = [
   'chooseAmongMoved',
   /** "Tiered" (D-433, CR 700.2h, 702.183a): a mode of a modal spell with a cost listed before its effect, paid as an additional cost when the mode is chosen (`SpellMode.cost`). */
   'modeCost',
-  /** "{B}, Sacrifice X creatures: ..." (D-1424, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
+  /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
   'sacrificeX',
-  /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-1427, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
+  /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-491, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
   'optionalSacrifice',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
@@ -1250,7 +1250,7 @@ export const CONDITION_KINDS = [
   'kicked',
   /** "If a replicate cost was paid for it" (CR 702.56a): the engine's `replicated`. */
   'replicated',
-  /** "If you sacrificed one or more creatures to cast it" (CR 118.8, D-1427): the engine's `sacrificedAsCost`. */
+  /** "If you sacrificed one or more creatures to cast it" (CR 118.8, D-491): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
   /** "If you control a commander" (CR 903.3d): the engine's `controlCommander`. */
   'controlCommander',
@@ -1526,7 +1526,7 @@ export const AMOUNT_KINDS = [
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
-  /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-1427): the engine's `sacrificedAsCost`. */
+  /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
   'bound',
 ] as const;
