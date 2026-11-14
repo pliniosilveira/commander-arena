@@ -198,7 +198,7 @@ describe('the trigger: attacks, blocks, or becomes the target of a spell', () =>
     g.expect.invariants();
   });
 
-  test('becomes the target of a spell: of an opponent\'s spell, before the spell resolves, and the spell does nothing to it (indestructible)', () => {
+  test("becomes the target of a spell: of an opponent's spell, before the spell resolves, and the spell does nothing to it (indestructible)", () => {
     const g = scenario()
       .seat(0)
       .library(...LIBRARY)

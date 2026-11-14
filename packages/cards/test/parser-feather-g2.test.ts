@@ -249,15 +249,18 @@ describe('Giggling Skitterspike: "Whenever ~ attacks, blocks, or becomes the tar
       'Whenever ~ becomes the target of a spell, it deals damage equal to its power to each opponent.',
       1,
     ],
-  ])('"it" is the creature itself for a trigger of becoming the target (SYNTHETIC): %s', (text, n) => {
-    const parsed = readAll(text, 'creature');
-    expect(parsed.abilities).toHaveLength(n);
-    expect(parsed.abilities.at(-1)).toMatchObject({
-      kind: 'triggered',
-      trigger: { kind: 'becomesTarget', spellOnly: true },
-      effect: DAMAGE,
-    });
-  });
+  ])(
+    '"it" is the creature itself for a trigger of becoming the target (SYNTHETIC): %s',
+    (text, n) => {
+      const parsed = readAll(text, 'creature');
+      expect(parsed.abilities).toHaveLength(n);
+      expect(parsed.abilities.at(-1)).toMatchObject({
+        kind: 'triggered',
+        trigger: { kind: 'becomesTarget', spellOnly: true },
+        effect: DAMAGE,
+      });
+    },
+  );
 
   test.each([
     ['Whenever ~ enters, attacks, or dies, draw a card.', 3],
@@ -287,7 +290,7 @@ describe('Giggling Skitterspike: "Whenever ~ attacks, blocks, or becomes the tar
 });
 
 describe('Giggling Skitterspike: "{5}: Monstrosity 5" (D-1312, CR 701.37)', () => {
-  test('the real line: the activated ability of the engine\'s monstrosity effect', () => {
+  test("the real line: the activated ability of the engine's monstrosity effect", () => {
     const parsed = readAll('{5}: Monstrosity 5.', 'creature');
     expect(parsed.abilities).toEqual([
       {
@@ -371,7 +374,10 @@ describe('Light the Way: "target creature or Vehicle" (D-1314, CR 205.2a, 205.3g
   test.each([
     ['Destroy target Vehicle or creature.', [{ subtypes: ['Vehicle'] }, { types: ['creature'] }]],
     ['Destroy target creature or Elf.', [{ types: ['creature'] }, { subtypes: ['Elf'] }]],
-    ['Destroy target artifact or Equipment.', [{ types: ['artifact'] }, { subtypes: ['Equipment'] }]],
+    [
+      'Destroy target artifact or Equipment.',
+      [{ types: ['artifact'] }, { subtypes: ['Equipment'] }],
+    ],
   ])('a card type and a subtype in either order (SYNTHETIC): %s', (text, anyOf) => {
     const parsed = readAll(text, 'sorcery');
     expect(parsed.spell).toMatchObject({
@@ -434,12 +440,15 @@ describe('Hall of Oracles: "Activate only as a sorcery and only if you\'ve cast 
     ["you've cast a creature spell this turn", 1, ['creature']],
     ["you've cast an artifact spell this turn", 1, ['artifact']],
     ["you've cast a creature or planeswalker spell this turn", 1, ['creature', 'planeswalker']],
-  ])('the condition in the other order, and for other types (SYNTHETIC): %s', (condition, atLeast, ofTypes) => {
-    const parsed = readAll(`{T}: Draw a card. Activate only if ${condition}.`, 'land');
-    expect(parsed.abilities).toMatchObject([
-      { kind: 'activated', activateOnlyIf: { kind: 'spellsCastThisTurn', atLeast, ofTypes } },
-    ]);
-  });
+  ])(
+    'the condition in the other order, and for other types (SYNTHETIC): %s',
+    (condition, atLeast, ofTypes) => {
+      const parsed = readAll(`{T}: Draw a card. Activate only if ${condition}.`, 'land');
+      expect(parsed.abilities).toMatchObject([
+        { kind: 'activated', activateOnlyIf: { kind: 'spellsCastThisTurn', atLeast, ofTypes } },
+      ]);
+    },
+  );
 
   test('the older reading of the same condition is untouched: a count of spells, with no type', () => {
     const parsed = readAll(

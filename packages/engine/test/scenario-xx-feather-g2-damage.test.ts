@@ -125,7 +125,7 @@ describe('"~ deals 4 damage to target creature you don\'t control and 2 damage t
       .at('precombatMain', { active: 0 })
       .build();
 
-  test('each amount goes to its own target: 4 kills the opponent\'s 2/4, 2 kills my 2/2', () => {
+  test("each amount goes to its own target: 4 kills the opponent's 2/4, 2 kills my 2/2", () => {
     const g = board();
     g.act(0).cast(TWIN, { targets: ['theirs', 'mybears'], pay: true });
     g.passAll();
@@ -143,7 +143,7 @@ describe('"~ deals 4 damage to target creature you don\'t control and 2 damage t
     g.expect.damage('myspider', 2);
   });
 
-  test('the first target must be a creature you don\'t control and the second one you control', () => {
+  test("the first target must be a creature you don't control and the second one you control", () => {
     const g = board();
     expect(() => g.act(0).cast(TWIN, { targets: ['mybears', 'theirs'], pay: true })).toThrow();
     const h = board();

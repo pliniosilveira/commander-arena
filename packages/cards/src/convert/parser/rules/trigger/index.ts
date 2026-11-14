@@ -474,9 +474,7 @@ export const TRIGGER_OR = defineRule<IrTrigger>({
     const events = satisfy(
       sequence(
         OR_EVENT,
-        many(
-          sequence(choice(literal(', or'), literal(' or'), literal(',')), OR_EVENT),
-        ),
+        many(sequence(choice(literal(', or'), literal(' or'), literal(',')), OR_EVENT)),
       ),
       ([first, more]) => {
         const rest = more.map(([, e]) => e);

@@ -113,7 +113,7 @@ describe('Fall of the Hammer', () => {
 });
 
 describe('Reckless Rage', () => {
-  test('4 damage to the creature you don\'t control, 2 damage to the creature you control', () => {
+  test("4 damage to the creature you don't control, 2 damage to the creature you control", () => {
     const g = scenario()
       .define(rage)
       .seat(0)

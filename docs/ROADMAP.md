@@ -367,3 +367,13 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - A mode cost is mana only, no X, on a spell only, and not with a repeatable choice (`validateCard`); a mode whose cost is another kind of cost (tap, sacrifice, life) is not read. Spree (CR 702.172: "+ {cost} — effect" bullets and a "choose one or more" lead) needs only another header and bullet syntax on the same `SpellMode.cost`; it is not read yet.
 - The hand shows the card's mana cost alone (`castCostOf`), as it does for escalate and kicker; the cost of each tier is in the text of the mode, which the modes decision shows.
 - The rulings of Restoration Magic on Scryfall were not fetched (blocked in a cloud session): the behaviour follows CR 702.183a and 700.2h.
+
+## The Feather deck, group 2 (issue 27, D-1310 to D-1316, provisional numbers)
+
+- "Commander" is read before a type in the permanent phrases only ("commander creatures you control"); "target commander creature" is still taken by the older `noun.target-commander` and left unread, "commander" in the spell, cost and condition phrases is not read, and a count in a static ability (`countOf`, `colorsAmong`) still refuses it (the objects are counted before `derive` knows the attachments; a commander has no such dependency, so this can be opened when a card needs it).
+- Monstrosity: "Monstrosity X" (CR 701.37c, X read by other abilities of the permanent), the trigger "When ~ becomes monstrous" (the event `becameMonstrous` exists), the condition and filter "if ~ is monstrous" and "monstrous creatures" are not read.
+- Spells cast this turn by kind: only card types (`ofTypes`); "noncreature", a color, a subtype ("a Dragon spell"), a count with a kind ("two or more creature spells"), an opponent's spells and the order of the spells ("your second spell") are not read.
+- "another target creature": read for a bite whose source is a target (the slot before it); for the creature of a trigger or for a list of two such nouns it is refused.
+- "target creature or Vehicle": one card type and one subtype only; a list of three ("creature, Vehicle, or Elf") and "or" between a subtype and a modifier ("nonartifact creature or Vehicle") are not read.
+- The list of events of a trigger: "A, B, or C" with the Oxford comma and one subject; "A, B or C", a list with "or ability" and lists of two subjects are not read.
+- The rulings of the six cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited above.

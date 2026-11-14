@@ -94,17 +94,23 @@ describe('Choose one: a +1/+1 counter on a creature or Vehicle and untap it, or 
   test('mode 1 does not target a land or an artifact that is no Vehicle: only creatures and Vehicles', () => {
     const g = board();
     expect(() =>
-      g.act(0).cast(`${WAY}[0]`, { modes: [0], targets: [{ name: 'Plains', seat: 0, zone: 'battlefield', nth: 0 }], pay: true }),
+      g.act(0).cast(`${WAY}[0]`, {
+        modes: [0],
+        targets: [{ name: 'Plains', seat: 0, zone: 'battlefield', nth: 0 }],
+        pay: true,
+      }),
     ).toThrow();
   });
 
-  test('mode 2: a permanent you control returns to its owner\'s hand; one of the opponent is not a legal target', () => {
+  test("mode 2: a permanent you control returns to its owner's hand; one of the opponent is not a legal target", () => {
     const g = board();
     g.act(0).cast(`${WAY}[0]`, { modes: [1], targets: ['elves'], pay: true });
     g.passAll();
     g.expect.zone(ELVES, 'hand', { seat: 0 });
     const h = board();
-    expect(() => h.act(0).cast(`${WAY}[0]`, { modes: [1], targets: ['theirs'], pay: true })).toThrow();
+    expect(() =>
+      h.act(0).cast(`${WAY}[0]`, { modes: [1], targets: ['theirs'], pay: true }),
+    ).toThrow();
   });
 
   test('a permanent that is a land may be returned too (any permanent you control)', () => {
@@ -207,7 +213,11 @@ describe('"Activate only as a sorcery and only if you\'ve cast an instant or sor
     g.act(0).cast(BOLT, { targets: [{ player: 1 }], pay: true });
     g.passAll();
     g.expect.legal(0, { activate: HALL });
-    g.advanceTo('precombatMain', { turn: 'next', active: 0 });
+    // The opponent's turn, then mine again: the Hall is untapped (it untaps in my untap step) and nothing was cast in my new turn.
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.expect.step('precombatMain', { active: 0 });
+    g.expect.tapped('hall', false);
     g.expect.illegal(0, { activate: HALL });
   });
 });

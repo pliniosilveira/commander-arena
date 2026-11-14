@@ -31,7 +31,10 @@ const COUNTER_AND_UNTAP: SpellMode = {
       id: 't1',
       what: {
         kind: 'object',
-        filter: { zone: 'battlefield', anyOf: [{ types: ['creature'] }, { subtypes: ['Vehicle'] }] },
+        filter: {
+          zone: 'battlefield',
+          anyOf: [{ types: ['creature'] }, { subtypes: ['Vehicle'] }],
+        },
       },
     },
   ],

@@ -734,6 +734,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'gainLevel':
       // CR 716.2a (D-235): the effect of a class level bar, "Level 2".
       return `Level ${effect.level}`;
+    case 'monstrosity':
+      // CR 701.37a (D-1312): "Monstrosity 5"; a count the game reads has no short word, so the label shows the cost only.
+      return typeof effect.count === 'number' ? `Monstrosity ${effect.count}` : '';
     case 'transform':
       // CR 701.27a (D-395 provisional): "Transform this creature".
       return `Transform ${object(effect.objects)}`;

@@ -412,7 +412,8 @@ export function evaluateCondition(
       return (
         state.turnLog.castSpells.filter(
           (s) =>
-            s.seat === ctx.controller && s.types.some((t) => condition.ofTypes?.includes(t) ?? false),
+            s.seat === ctx.controller &&
+            s.types.some((t) => condition.ofTypes?.includes(t) ?? false),
         ).length >= condition.atLeast
       );
     case 'dieResult': {
