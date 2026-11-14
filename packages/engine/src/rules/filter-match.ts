@@ -13,6 +13,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { ChosenValues, GameObject, GameState } from '../state/types';
 import { sameCreatureType } from './chosen';
 import { controllerOf } from './control';
+import { isCommanderObject } from './melded';
 
 /** The characteristics a filter looks at. `Derived` has all of them. */
 export interface FilterSubject {
@@ -35,7 +36,10 @@ export interface FilterSubject {
    * in the places that read filters without abilities: static abilities).
    */
   readonly keywords?: readonly Keyword['kind'][];
-  /** Whether the object is a commander card (`commander`, D-145); left out where the caller does not know, which fails the test closed. */
+  /**
+   * Whether the object is a commander card (`commander`, D-145). Left out where the caller does not know it: the test then reads it from the object (CR 903.3: a card its owner
+   * designated, which no layer changes, D-443), so a static ability's subject ("commander creatures you control") finds it without the view a caller built for the layers.
+   */
   readonly commander?: boolean;
   /** Whether the permanent is modified (`modified`, D-416, CR 700.9); left out where the caller does not know, which fails the test closed. */
   readonly modified?: boolean;
@@ -174,6 +178,8 @@ export function matchesFilterWith(
   const zone = filter.zone ?? (filter.stackKind ? 'stack' : 'battlefield');
   if (obj.zone !== zone) return false;
   if (filter.other && ctx.source !== null && obj.id === ctx.source) return false;
+  // D-437: "a spell that targets this creature": the object is the permanent that has the ability.
+  if (filter.isSource === true && (ctx.source === null || obj.id !== ctx.source)) return false;
   if (filter.controller === 'you' && controllerOf(state, obj) !== ctx.controller) return false;
   if (filter.controller === 'opponent' && controllerOf(state, obj) === ctx.controller) return false;
   // D-151: "that opponent": the player the event that triggered the ability is about; no such player, nothing matches.
@@ -242,7 +248,8 @@ export function matchesFilterWith(
   // CR 111.1 (D-133): a token is a permanent that is not represented by a card.
   if (filter.token !== undefined && (obj.token !== null) !== filter.token) return false;
   // CR 903.3 (D-145): "commander" is a card designated as a player's commander.
-  if (filter.commander !== undefined && d.commander !== true) return false;
+  if (filter.commander !== undefined && (d.commander ?? isCommanderObject(state, obj)) !== true)
+    return false;
   // D-149: "your commander" is one its owner designated, and that owner is the player reading the filter.
   if (filter.commander === 'yours' && obj.owner !== ctx.controller) return false;
   // CR 700.9 (D-416): "modified": a counter, an Equipment, or an Aura its controller controls.

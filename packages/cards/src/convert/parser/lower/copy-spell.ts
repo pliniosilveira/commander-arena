@@ -6,11 +6,11 @@
  * targets for the copy" is `newTargets: 'may'`, its absence `'no'`. Which spells can be copied from where is
  * `validateCard`'s refusal (a trigger that is not about a cast, a target slot the ability does not declare).
  */
-import type { Amount, ObjectRef } from '@commander-arena/engine';
+import type { Amount, ObjectFilter, ObjectRef } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
 import { amountArg, arg, type Effects, failure } from './clauses';
 import { missingFeatures } from './features';
-import { objectRefOf } from './nouns';
+import { lowerFilter, objectRefOf } from './nouns';
 import type { Lowering } from './types';
 
 export const COPY_SPELL: Lowering<IrClause, Effects> = {
@@ -39,6 +39,23 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
       if (!lowered.ok) return lowered;
       count = lowered.value;
     }
+    // "copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." (D-438, CR 707.10e): a copy
+    // for each creature the filter names, each aimed at one of them; "that player copies" is the copy of the player the trigger is about.
+    let forEach: ObjectFilter | undefined;
+    let copier: 'triggerPlayer' | undefined;
+    const each = arg(clause, 'each');
+    if (each !== undefined) {
+      if (each.kind !== 'noun' || spell.kind !== 'triggerSubject' || count !== undefined) {
+        return failure(clause);
+      }
+      const missing = missingFeatures(['selector:copyForEach']);
+      if (missing.length > 0) return failure(clause, missing);
+      const filter = lowerFilter(each);
+      if (!filter.ok) return filter;
+      forEach = filter.value;
+      const by = arg(clause, 'copier');
+      if (by?.kind === 'flag' && by.value) copier = 'triggerPlayer';
+    }
     return {
       ok: true,
       value: [
@@ -47,8 +64,29 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
           spell,
           newTargets: flag.value ? 'may' : 'no',
           ...(count === undefined ? {} : { count }),
+          ...(forEach === undefined ? {} : { forEach }),
+          ...(copier === undefined ? {} : { copier }),
         },
       ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (Feather group 3, D-439,
+ * CR 614.1a, 603.7): the engine's `exileOnResolve` of the spell whose casting caused the trigger (`triggerSubject`); the return is part of it.
+ */
+export const EXILE_ON_RESOLVE: Lowering<IrClause, Effects> = {
+  head: 'exileOnResolve',
+  id: 'lower.exileOnResolve',
+  needs: ['effect:exileOnResolve', 'selector:triggerSubject'],
+  lower(clause) {
+    const noun = arg(clause, 'spell');
+    if (noun?.kind !== 'noun' || noun.det !== 'triggerSubject') return failure(clause);
+    return {
+      ok: true,
+      value: [{ kind: 'exileOnResolve', spell: { kind: 'triggerSubject' } }],
       rule: clause.rule,
     };
   },

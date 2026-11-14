@@ -297,6 +297,14 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       return dragonsConditionWords(condition, negate);
     case 'spellsCastThisTurn':
       // D-318 (CR 601.2i): "you've cast three or more spells this turn".
+      // D-444: "you've cast an instant or sorcery spell this turn", "you've cast two or more creature spells this turn".
+      if (condition.ofTypes !== undefined) {
+        const kinds = condition.ofTypes.join(' or ');
+        const have = negate ? "haven't" : 'have';
+        return condition.atLeast === 1
+          ? `you ${have} cast ${/^[aeiou]/u.test(kinds) ? 'an' : 'a'} ${kinds} spell this turn`
+          : `you ${have} cast ${condition.atLeast} or more ${kinds} spells this turn`;
+      }
       return `you ${negate ? "haven't" : 'have'} cast ${condition.atLeast} or more spells this turn`;
     case 'lifeGainedThisTurn':
       // D-252, D-363 (CR 119.3, 603.4): "if you gained life this turn" (at least 1), "if you gained 3 or more life this turn".

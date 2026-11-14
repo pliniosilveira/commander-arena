@@ -5,6 +5,7 @@
  * (`OptionNamesDialog.tsx`) draws what these return, so the words are unit tested without a DOM.
  */
 import type { ChooseOptionDecision } from '@commander-arena/engine';
+import { colorName } from '../../game/chosen';
 import { destroyReplacementPrompt, destroyReplacementThen } from '../../game/danitha-g4-text';
 import { RIOT_ROWS, riotPrompt } from '../../game/keywords-text';
 import { romanNumeral } from '../../game/saga';
@@ -59,6 +60,11 @@ export function isCardTypeChoice(d: Asked): boolean {
   return d.purpose === 'cardType';
 }
 
+/** True for "gains protection from the color of your choice" (CR 702.16, 608.2d, D-451): the options are the five color letters, chosen as the effect resolves. */
+export function isProtectionColorChoice(d: Asked): boolean {
+  return d.purpose === 'protectionColor';
+}
+
 /** True for the choice of a name the card gives ("Khans or Dragons"). */
 export function isNamedChoice(d: Asked): boolean {
   return d.purpose === 'option' && !isChapterChoice(d);
@@ -101,6 +107,10 @@ export function namedOptionPrompt(
   if (isReplacementChoice(d)) return replacementPrompt(d.replacement);
   if (isEffectChoice(d)) return `Choose one for ${d.sourceName}: ${optionList(d.options)}.`;
   if (isCardTypeChoice(d)) return `As ${d.sourceName} enters, choose a card type.`;
+  // D-451 (CR 702.16, 608.2d): asked as the spell resolves, so there is no "enters".
+  if (isProtectionColorChoice(d)) {
+    return `Choose a color for ${d.sourceName}: protection from it until end of turn.`;
+  }
   return isChapterChoice(d)
     ? `Choose a chapter to start with for ${d.sourceName}.`
     : `As ${d.sourceName} enters, choose ${optionList(d.options)}.`;
@@ -245,6 +255,9 @@ export function namedOptionRows(
   }
   if (isEffectChoice(d) || isVoteChoice(d) || isCardTypeChoice(d)) {
     return d.options.map((option) => ({ option, label: capitalised(option), detail: null }));
+  }
+  if (isProtectionColorChoice(d)) {
+    return d.options.map((option) => ({ option, label: colorName(option), detail: null }));
   }
   if (isRiotChoice(d)) {
     return d.options.map((option) => ({

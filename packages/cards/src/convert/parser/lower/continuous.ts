@@ -4,7 +4,7 @@
  * needs and is checked before it runs. Every continuous effect here lasts until end of turn, the
  * one duration the engine runs (`duration:untilEndOfTurn`), and the clause must state it.
  */
-import type { CardType, Color, Effect, ObjectSelector } from '@commander-arena/engine';
+import type { CardType, Color, Effect, Keyword, ObjectSelector } from '@commander-arena/engine';
 import type { IrClause, IrTypeList } from '../ir/types';
 import { isGrantable, keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
 import { arg, type Effects, eachObject, failure, operand } from './clauses';
@@ -47,6 +47,30 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
       ]);
       if (blocked.length > 0)
         return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+    }
+    // D-451, D-452 (CR 702.16): "gains protection from red", "gains protection from the color of your choice" until end of turn: the engine's `grantKeyword` of a
+    // protection, whose color is asked as the effect resolves when the text leaves it to the controller. Only for the turn (the engine asks nothing for a longer duration).
+    if (word.protection !== undefined) {
+      if (!endsWithTurn(clause)) return failure(clause);
+      const blocked = missingFeatures(['keyword:protection']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+      const protection = word.protection;
+      let keyword: Keyword;
+      if ('choice' in protection) {
+        keyword = { kind: 'protection', from: 'colorOfChoice' };
+      } else {
+        const colors = protection.colors.map(colorLetter);
+        if (colors.some((c) => c === undefined) || colors.length === 0) return failure(clause);
+        keyword = { kind: 'protection', from: 'color', colors: colors as Color[] };
+      }
+      return eachObject(
+        clause,
+        ctx,
+        (objects) => ({ kind: 'grantKeyword', objects, keyword, duration: END }),
+        'objects',
+        { ...TRIGGER_SUBJECT, token: true },
+      );
     }
     const kind = keywordKind(word.name);
     if (kind === undefined || !isGrantable(kind)) return failure(clause);

@@ -82,6 +82,8 @@ const ALL_RECIPIENTS = [
   'noun.target-permanent',
   'noun.each-permanent',
   'noun.plain-permanents',
+  // D-455 (Fleeting Flight): "Prevent all combat damage that would be dealt to it this turn", the creature an earlier sentence named.
+  'noun.it',
 ] as const;
 
 /** Recipients of "the next N damage": one player, one target, or each of a group of creatures. */
@@ -228,6 +230,7 @@ export const EFFECT_PREVENT_ALL = defineRule<Clauses>({
     'prevent all damage that would be dealt to target creature this turn',
     'prevent all damage that would be dealt to any target this turn',
     'prevent all damage that would be dealt to each opponent this turn',
+    'prevent all combat damage that would be dealt to it this turn',
     'prevent all combat damage that would be dealt to and dealt by target creature this turn',
     'prevent all combat damage that would be dealt by target creature this turn',
     // Stage P32 (D-147): the sources are a group.
@@ -255,6 +258,9 @@ export const EFFECT_PREVENT_ALL = defineRule<Clauses>({
     'prevent all combat damage that would be dealt to and dealt by that creature this turn',
     'prevent all combat damage that would be dealt to target creature and dealt by it this turn',
     'prevent all combat damage dealt this turn',
+    'prevent all combat damage that would be dealt to it',
+    'prevent all combat damage that would be dealt to them this turn',
+    'prevent all combat damage that would be dealt to it and dealt by it this turn',
     'prevent the next 3 damage that would be dealt to you this turn',
     'prevent all damage that would be dealt to you and creatures you control this turn and draw a card',
     'prevent all damage that would be dealt by target creature for as long as you control ~',

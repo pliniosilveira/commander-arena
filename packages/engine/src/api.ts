@@ -97,6 +97,7 @@ import {
   answerResolutionEntersPaid,
   answerResolutionOptional,
   answerResolutionPayAmount,
+  answerResolutionProtectionColor,
   answerResolutionReplacement,
   answerResolutionReselect,
   answerResolutionReveal,
@@ -465,6 +466,11 @@ function answerChooseOption(
     // CR 608.2d (D-175): the instruction of a resolving effect that the controller chose among the ones it offered.
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionChooseOne(state, option));
+  }
+  if (d.purpose === 'protectionColor') {
+    // CR 702.16, 608.2d (D-451): the color the controller chose for "gains protection from the color of your choice".
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionProtectionColor(state, option));
   }
   if (d.purpose === 'pile') {
     // CR 700.3 (D-303): the pile the chooser picked.

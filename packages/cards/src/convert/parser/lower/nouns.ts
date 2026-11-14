@@ -109,6 +109,9 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:attachedTo',
   'selector:enchanted',
   'selector:hostOfSource',
+  // D-437 (Feather group 3): "a spell that targets ~" and "that targets only ~" (CR 115.1, 115.9c).
+  'selector:isSource',
+  'selector:targetsOnly',
   'selector:powerAboveBase',
   'selector:sharesCreatureTypeWith',
   'selector:eachOtherOpponent',
@@ -130,7 +133,13 @@ export function itemsOf(operand: IrNoun | IrNounList): readonly IrNoun[] {
   return operand.kind === 'noun' ? [operand] : operand.items;
 }
 
-function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerResult<ObjectFilter> {
+function lowerFilterAt(
+  filter: IrFilter,
+  noun: IrNoun,
+  inner: boolean,
+  /** D-437: a member of a disjunction of spells (the outer filter is on the stack): it may read what the spell targets. */
+  stackMember = false,
+): LowerResult<ObjectFilter> {
   const rule = noun.rule;
   const bad = (needs: readonly FeatureRef[]): LowerResult<ObjectFilter> => ({
     ok: false,
@@ -160,7 +169,12 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
     if (missing.length > 0) return bad(missing);
     anyOf = [];
     for (const member of filter.anyOf) {
-      const lowered = lowerFilterAt(member, noun, true);
+      const lowered = lowerFilterAt(
+        member,
+        noun,
+        true,
+        filter.zone === 'stack' || filter.stackKind !== undefined,
+      );
       if (!lowered.ok) return lowered;
       anyOf.push(lowered.value);
     }
@@ -249,12 +263,26 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
   }
   // D-206 (stage P49): "that targets a creature" (CR 115.1, 601.2c), a spell on the stack (a cast trigger's filter or a target slot).
   let targetsObject: ObjectFilter | undefined;
+  const onStack = inner ? stackMember : filter.zone === 'stack' || filter.stackKind !== undefined;
   if (filter.targets !== undefined) {
-    if (inner || (filter.zone !== 'stack' && filter.stackKind === undefined)) return bad([]);
+    if (!onStack) return bad([]);
     parts.push('selector:targetsObject');
     const aimed = lowerFilterAt(filter.targets, noun, true);
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
+  }
+  // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~": the source of the ability is the object the spell targets, the only one for "only".
+  let targetsOnly: ObjectFilter | undefined;
+  if (filter.targetsSelf === true || filter.targetsOnlySelf === true) {
+    if (!onStack || targetsObject !== undefined) return bad([]);
+    parts.push('selector:isSource');
+    if (filter.targetsOnlySelf === true) {
+      parts.push('selector:targetsOnly');
+      targetsOnly = { isSource: true };
+    } else {
+      parts.push('selector:targetsObject');
+      targetsObject = { isSource: true };
+    }
   }
   // D-426 (CR 303.4, 301.5, 701.3): the permanent something is attached to, and "enchanted": a permanent on the battlefield, so no member of a choice and no other zone.
   let attachedTo: ObjectFilter['attachedTo'];
@@ -356,6 +384,7 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
       ? { sharesCreatureTypeWith: 'triggerSubject' as const }
       : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
+    ...(targetsOnly === undefined ? {} : { targetsOnly }),
     ...(attachedTo === undefined ? {} : { attachedTo }),
     ...(filter.enchanted === undefined ? {} : { enchanted: filter.enchanted }),
     ...compared,

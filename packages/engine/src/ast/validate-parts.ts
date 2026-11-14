@@ -165,6 +165,7 @@ export function checkFilter(
   out: Out,
   ownerScope?: Scope,
   sharesWith?: boolean,
+  where: FilterWhere = {},
 ): void {
   if (f.controlledBy !== undefined) {
     if (ownerScope === undefined) {
@@ -360,15 +361,32 @@ export function checkFilter(
     );
   }
   // CR 115.1 (D-206): "that targets a creature" is about a spell or ability on the stack, and its filter describes a permanent or an object it targets.
-  if (f.targetsObject !== undefined) {
-    if (f.zone !== 'stack' && f.stackKind === undefined) {
+  // D-437: "a spell that targets only this creature" (CR 115.9c) is read as `targetsObject` is; a member of a disjunction of such a filter is read with the outer filter's stack.
+  for (const key of ['targetsObject', 'targetsOnly'] as const) {
+    const aimed = f[key];
+    if (aimed === undefined) continue;
+    if (f.zone !== 'stack' && f.stackKind === undefined && where.onStack !== true) {
       issue(
         out,
-        `${path}.targetsObject`,
+        `${path}.${key}`,
         "only a spell or ability on the stack has targets chosen: the filter's zone is 'stack' or it has a stackKind",
       );
     }
-    checkFilter(f.targetsObject, `${path}.targetsObject`, out);
+    if (key === 'targetsOnly' && f.targetsObject !== undefined) {
+      issue(out, `${path}.targetsOnly`, 'targetsObject and targetsOnly are not read together');
+    }
+    checkFilter(aimed, `${path}.${key}`, out, undefined, undefined, { inTargets: true });
+  }
+  // D-437: "this creature" is the object a spell targets, in the filter of `targetsObject` or `targetsOnly`: the permanent that has the ability.
+  if (f.isSource !== undefined) {
+    if (f.isSource !== true) issue(out, `${path}.isSource`, 'isSource must be true');
+    else if (where.inTargets !== true) {
+      issue(
+        out,
+        `${path}.isSource`,
+        'isSource is read in the filter of what a spell targets (targetsObject, targetsOnly)',
+      );
+    }
   }
   // D-139: "mana value X" and "whose controller was dealt combat damage by this creature this turn" are flags read in an
   // effect's `each` selector (the one place with an X and a source ability).
@@ -425,7 +443,10 @@ export function checkFilter(
     }
     f.anyOf.forEach((member, i) => {
       const p = `${path}.anyOf[${i}]`;
-      checkFilter(member, p, out, undefined, sharesWith);
+      checkFilter(member, p, out, undefined, sharesWith, {
+        onStack: f.zone === 'stack' || f.stackKind !== undefined,
+        ...(where.inTargets === true ? { inTargets: true } : {}),
+      });
       // Where to look (CR 115.1, 601.2c) is the outer filter's business.
       // D-207: a member may say what kind of stack object it is when the outer filter, on the stack, does not ("triggered ability or colorless spell").
       if (member.zone !== undefined) {
@@ -440,6 +461,12 @@ export function checkFilter(
       }
     });
   }
+}
+
+/** Where a filter is read (D-437): on the stack (a member of a disjunction of the outer filter's spells), or as the object a spell targets. */
+interface FilterWhere {
+  readonly onStack?: boolean;
+  readonly inTargets?: boolean;
 }
 
 /** The parts of a filter a host named by `attachedTo` may have (D-422): what layers 1, 4 and 5 give it, and its controller; nothing of layers 6 and 7, nothing of the game. */
@@ -1272,6 +1299,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'commanderManaValue':
     case 'commanderCasts':
       break;
+    case 'cardsDrawnThisTurn':
+      // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
+      break;
     case 'half':
       if (!isOneOf(a.round, ['down', 'up'])) {
         issue(out, `${path}.round`, 'half is rounded "down" or "up" (CR 107.1a)');
@@ -2102,6 +2132,14 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // D-318, CR 601.2i: the spells the controller has cast this turn.
       if (!isCount(c.atLeast) || c.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
+      }
+      // D-444: only the spells of these card types count; at least one, each a card type.
+      if (c.ofTypes !== undefined) {
+        if (!Array.isArray(c.ofTypes) || c.ofTypes.length === 0) {
+          issue(out, `${path}.ofTypes`, 'ofTypes names at least one card type');
+        } else {
+          checkEnumList(out, `${path}.ofTypes`, c.ofTypes, CARD_TYPES, 'card type');
+        }
       }
       break;
     case 'dieResult':
@@ -3345,6 +3383,58 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // D-337 (CR 707.10): how many copies, an amount of the game as the effect resolves (zero makes none).
       if (e.count !== undefined) checkAmount(e.count, `${path}.count`, scope, out);
+      // D-438 (CR 707.10, 707.10e): "for each other creature you control that the spell could target", each copy aimed at one of them; nobody chooses, and a count says nothing then.
+      if (e.forEach !== undefined) {
+        checkFilter(e.forEach, `${path}.forEach`, out);
+        if (e.newTargets !== 'no') {
+          issue(
+            out,
+            `${path}.newTargets`,
+            'a copy for each object has the target the effect gives it: newTargets is "no"',
+          );
+        }
+        if (e.count !== undefined) {
+          issue(out, `${path}.count`, 'a copy for each object has no count of its own');
+        }
+        if (
+          scope.triggerPlayer !== true &&
+          filterSome(e.forEach, (f) => f.controller === 'triggerPlayer')
+        ) {
+          issue(
+            out,
+            `${path}.forEach`,
+            "'triggerPlayer' needs a trigger whose event is about a player",
+          );
+        }
+        if (filterSome(e.forEach, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(
+            out,
+            `${path}.forEach`,
+            'the objects a copy of a spell is aimed at are permanents on the battlefield',
+          );
+        }
+      }
+      if (e.copier !== undefined && e.copier !== 'triggerPlayer') {
+        issue(out, `${path}.copier`, 'copier is "triggerPlayer"');
+      } else if (e.copier !== undefined && kindOf(e.spell) !== 'triggerSubject') {
+        issue(
+          out,
+          `${path}.copier`,
+          'the player a copy belongs to is the one who cast the spell of the trigger (triggerSubject)',
+        );
+      }
+      break;
+    case 'exileOnResolve':
+      // D-439 (CR 614.1a, 608.2n): the spell whose casting caused the trigger.
+      if (kindOf(e.spell) === 'triggerSubject') {
+        checkSubjectRef(e.spell, 'stack', `${path}.spell`, scope, out);
+      } else {
+        issue(
+          out,
+          `${path}.spell`,
+          'exileOnResolve names the spell that was cast (triggerSubject)',
+        );
+      }
       break;
     case 'unearth':
       // CR 702.84a: no operand; it is the effect of an ability that functions from the graveyard and stands nowhere else.
@@ -3803,6 +3893,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (scope.owner !== 'ability') {
         issue(out, path, 'only an ability of a permanent gains a level');
+      }
+      break;
+    case 'monstrosity':
+      // CR 701.37a (D-445): N counters on the permanent the ability belongs to; an amount that is a whole number of one or more, or a count the game reads.
+      checkAmount(e.count, `${path}.count`, scope, out);
+      if (typeof e.count === 'number' && !(Number.isSafeInteger(e.count) && e.count >= 1)) {
+        issue(out, `${path}.count`, 'monstrosity puts one or more counters');
+      }
+      if (scope.owner !== 'ability') {
+        issue(out, path, 'only an ability of a permanent becomes monstrous');
       }
       break;
     case 'exileRandomFromGraveyard':

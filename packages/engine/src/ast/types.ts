@@ -220,7 +220,14 @@ export type Amount =
    * has run before this amount is read ("twice the number of profit votes" is a `multiple` of it). `option` is one of the options of that `vote`
    * (the words of the card, as it wrote them). 0 when nobody voted for it. Valid only after a `vote` effect in the same sequence that offers `option`.
    */
-  | { readonly kind: 'votesFor'; readonly option: string };
+  | { readonly kind: 'votesFor'; readonly option: string }
+  /**
+   * "For each card you've drawn this turn" (CR 121.1, 608.2h; D-450, the Feather deck's Fists of Flame): the number of cards the controller of the spell or
+   * ability has drawn this turn (`SeatState.cardsDrawnThisTurn`), counted as the instruction runs, so a card drawn by an earlier instruction of the same
+   * resolution counts. A draw that was replaced (the commander going to the command zone instead, CR 903.9b) is not a card drawn. Not valid in a static
+   * ability, a trigger's subject or a characteristic-defining ability: nothing refreshes a layer effect when a card is drawn.
+   */
+  | { readonly kind: 'cardsDrawnThisTurn' };
 
 /** What a `thisWay` amount counts (D-131). */
 export type ThisWayKind =
@@ -446,8 +453,9 @@ export interface ObjectFilter {
    * permanent that copies one is not). Whose commander it is does not matter; `controller` says whose it must be to control. `'yours'`
    * (D-149, "your commander", "whenever your commander enters or attacks") is a commander its owner designated and that owner is the
    * controller of the ability that reads the filter (a commander card the player owns, whoever controls it now). Read where
-   * the filter is matched against the game (a target slot, an `each` selector, a trigger subject, a condition); refused in a static
-   * ability's subject and in a count a static ability reads, as `attacking` is.
+   * the filter is matched against the game (a target slot, an `each` selector, a trigger subject, a condition) and, since D-443
+   * (CR 903.3: no layer changes it), in a static ability's subject ("Commander creatures you control get +2/+2"); refused in a
+   * count a static ability reads, as `attacking` is.
    */
   readonly commander?: true | 'yours';
   /**
@@ -549,6 +557,17 @@ export interface ObjectFilter {
    * static ability and where `derive` matches filters.
    */
   readonly targetsObject?: ObjectFilter;
+  /**
+   * "A spell that targets only this creature" (CR 115.9c, D-437): a spell or ability on the stack whose chosen targets are one object, whatever
+   * the number of times it was chosen (an object chosen for two instances of the word "target" is still one), and that object is one this filter matches
+   * (a player target is none, and a spell with a second different target does not match). Read where `targetsObject` is, with the same limits.
+   */
+  readonly targetsOnly?: ObjectFilter;
+  /**
+   * "This creature" as the object a filter describes (D-437): the object is the source of the ability that reads the filter. It is the inner
+   * filter of `targetsObject` or `targetsOnly` ("a spell that targets this creature"), and nothing else (`validateCard`).
+   */
+  readonly isSource?: true;
   /**
    * A disjunction: the object must match every field above AND at least one of these filters
    * ("artifact or enchantment" is `{ anyOf: [{ types: ['artifact'] }, { types: ['enchantment'] }] }`).
@@ -1462,6 +1481,12 @@ export type Effect =
    */
   | { readonly kind: 'gainLevel'; readonly level: number }
   /**
+   * "Monstrosity 5" (CR 701.37a, 701.37b, D-445): "If this permanent isn't monstrous, put N +1/+1 counters on it and it becomes monstrous." `count` is N, an amount read as the effect
+   * resolves. The permanent is the one the ability belongs to; nothing happens when it has left the battlefield or is monstrous already. Monstrous is a designation (`GameObject.monstrous`) that
+   * stays until the permanent leaves the battlefield and is not copiable. A permanent that can't have +1/+1 counters (D-380) still becomes monstrous. Only in an ability of a permanent.
+   */
+  | { readonly kind: 'monstrosity'; readonly count: Amount }
+  /**
    * "Exile a card from your graveyard at random" (CR 701.13, D-235): the controller exiles one card of their graveyard chosen at random by the game's generator (none when it is empty);
    * it is what `moved` names afterwards ("You may play the exiled card this turn", `mayPlay`).
    */
@@ -1657,7 +1682,29 @@ export type Effect =
        * makes none. Each copy may have new targets when `newTargets` is `may` (CR 707.10c).
        */
       readonly count?: Amount;
+      /**
+       * "Copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." (CR 707.10, 707.10e, 115.3,
+       * D-438): instead of one copy there is one for each permanent this filter names (read for the controller of the copy, with the source of the ability as
+       * the source: "other" leaves it out) that is a legal target for each instance of the word "target" that the spell's targets stand for (CR 707.10e: otherwise the copy is
+       * not created). Each copy has that one permanent as the target of every instance, and nobody chooses (`newTargets` is `no`, and there is no `count`). The copies are put onto the
+       * stack in the order the permanents are in on the battlefield. The spell is the one the trigger is about (`triggerSubject`) or a target; its targets must be one object
+       * (a spell that targets something else more is changed in none of its instances, which the card's trigger leaves out with `targetsOnly`).
+       */
+      readonly forEach?: ObjectFilter;
+      /**
+       * "That player copies that spell" (D-438, CR 707.10): the copy is put onto the stack under the control of the player the event of the trigger is about
+       * (`triggerPlayer`: the player who cast the spell), not the controller of the ability. Without it the controller of the ability copies.
+       */
+      readonly copier?: 'triggerPlayer';
     }
+  /**
+   * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (CR 614.1a, 608.2n,
+   * 603.7, 603.7c, D-439): a replacement effect the spell `spell` names (the spell whose casting caused the trigger: `triggerSubject`) carries from now on: when it resolves
+   * as an instant or sorcery and would be put into its owner's graveyard, it is exiled instead (a spell that is countered, or fizzles, or is not a card, or is put into exile
+   * by another effect is not changed: the "if you do" is false for it) and its controller's delayed triggered ability returns the card to its owner's hand at the beginning of the next
+   * end step (the one that is exiled; one that left exile since is a new object, CR 400.7). Does nothing when the spell has left the stack as this resolves.
+   */
+  | { readonly kind: 'exileOnResolve'; readonly spell: ObjectRef }
   /**
    * "Change the target of target spell or ability with a single target." (CR 115.7a, 115.7b, D-181): the controller of the resolving spell or
    * ability changes the one target of the spell or ability `object` names (a `target` slot, as `copySpell`'s `spell`, whose filter says "with a single
@@ -2091,7 +2138,11 @@ export type Effect =
       readonly abilities: readonly Ability[];
       readonly duration: 'untilEndOfTurn' | 'permanent';
     }
-  /** "Target creature gains flying until end of turn": layer 6 (CR 613.1f), a keyword without parameters. */
+  /**
+   * "Target creature gains flying until end of turn": layer 6 (CR 613.1f), a keyword without parameters. D-451 (CR 702.16): or a protection, from named colors
+   * (`from: 'color'`) or card types (`from: 'cardType'`), or from the color of the controller's choice (`from: 'colorOfChoice'`, asked as the effect resolves, see
+   * `Keyword`); the other protection qualities need a permanent that chose or a commander, so only a static ability gives them.
+   */
   | {
       readonly kind: 'grantKeyword';
       readonly objects: ObjectSelector;
@@ -3090,6 +3141,14 @@ export type Keyword =
   | { readonly kind: 'protection'; readonly from: 'cardType'; readonly types: readonly CardType[] }
   | { readonly kind: 'protection'; readonly from: 'chosenCardType' }
   /**
+   * "Target creature you control gains protection from the color of your choice until end of turn" (CR 702.16, 608.2d; D-451, the Feather deck's Gods Willing
+   * and Shelter): the controller of the spell or ability chooses one of the five colors as the effect resolves (a `chooseOption` decision of purpose
+   * `protectionColor`, not when it is put on the stack, so nobody can respond knowing it), and the creature gains protection from that color. Only a `grantKeyword`
+   * effect may carry it (it is replaced by `{ protection, from: 'color', colors: [the color] }` before the continuous effect is made, so no derived ability has it);
+   * a printed keyword or a static `grantKeyword` cannot, since nothing there asks.
+   */
+  | { readonly kind: 'protection'; readonly from: 'colorOfChoice' }
+  /**
    * CR 702.73a (Changeling): a characteristic-defining ability, "This object is every creature type"
    * (CR 604.3), in layer 4 first (CR 613.3), working in every zone, also in a hand or a library. The
    * creature types are the CR 205.3m list (`CREATURE_TYPES`). It is read from the object's printed
@@ -3709,9 +3768,14 @@ export type Condition =
    * "Activate only if you've cast three or more spells this turn" (CR 602.5b, 601.2i, D-318): the controller of the condition has cast at least
    * `atLeast` spells this turn (`SeatState.spellsCastThisTurn`: a spell counts once it is on the stack with its costs paid, whether or not it
    * resolved or was countered; a copy is not cast, CR 707.10, and an opponent's spell is not the controller's). Reads a count, so it is read as
-   * the ability is activated. Not for a static ability.
+   * the ability is activated. Not for a static ability. `ofTypes` (D-444, "Activate only if you've cast an instant or sorcery spell this turn"): only the
+   * spells that have at least one of those card types, as they were cast, count (`TurnLog.castSpells`); left out, every spell counts.
    */
-  | { readonly kind: 'spellsCastThisTurn'; readonly atLeast: number }
+  | {
+      readonly kind: 'spellsCastThisTurn';
+      readonly atLeast: number;
+      readonly ofTypes?: readonly CardType[];
+    }
   /**
    * "If the result is 1", "if the result is 10 or more" (CR 706.2, 706.3a, D-271): the result of the latest `rollDie` of this resolution against a whole number.
    * Only in a `conditional` after a `rollDie` of the same sequence (`validateCard` checks it); false if no die was rolled.

@@ -50,6 +50,8 @@ export interface FilterParts {
   readonly historic: boolean;
   /** "modified" (D-416, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls. */
   readonly modified: boolean;
+  /** "commander" before a type (D-443, CR 903.3): "commander creatures you control", a card a player designated as a commander. Only `permanentPhrase` reads it. */
+  readonly commander: boolean;
   /** "monocolored", "multicolored" (CR 105.2a, 105.2b): the number of colors; stage P31. */
   readonly colorCount: IrComparison | undefined;
 }
@@ -71,6 +73,7 @@ export const NO_PARTS: FilterParts = {
   attackingOrBlocking: false,
   historic: false,
   modified: false,
+  commander: false,
   colorCount: undefined,
 };
 
@@ -130,6 +133,9 @@ export const MODIFIER: Parser<Modifier> = choice(
   ...COLOR_WORDS.map((c) => word(c, (p) => ({ ...p, colors: [...p.colors, c] }))),
   ...SUPERTYPE_WORDS.map((s) => word(s, (p) => ({ ...p, supertypes: [...p.supertypes, s] }))),
 );
+
+/** "commander creature" (D-443, CR 903.3): a modifier of the permanent phrases only, not of the spell and card phrases that share `MODIFIER` (a commander spell is another reading). */
+const COMMANDER_MODIFIER: Parser<Modifier> = word('commander', (p) => ({ ...p, commander: true }));
 
 export const PERMANENT_TYPES = 'artifact|battle|creature|enchantment|land|planeswalker';
 /** The permanent types in the order of "permanent card" (stage P33): a card of any of them is a permanent card (CR 110.1). */
@@ -218,6 +224,7 @@ export function toFilter(
     ...(p.attackingOrBlocking ? { attackingOrBlocking: true as const } : {}),
     ...(p.historic ? { historic: true as const } : {}),
     ...(p.modified ? { modified: true as const } : {}),
+    ...(p.commander ? { commander: true as const } : {}),
     ...(p.colorCount !== undefined ? { colorCount: p.colorCount } : {}),
     raw,
   };
@@ -549,7 +556,7 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
     };
   };
   const single: Parser<IrFilter> = (ctx, pos) => {
-    const r = sequence(many(MODIFIER), nouns, tail)(ctx, pos);
+    const r = sequence(many(choice(MODIFIER, COMMANDER_MODIFIER)), nouns, tail)(ctx, pos);
     if (!r.ok) return r;
     const [
       modifiers,
@@ -652,6 +659,40 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
     const anyOf = words.map((w): IrFilter => ({ subtypes: [w], raw: w }));
     return { ok: true, value: { ...base, anyOf }, pos: r.pos };
   };
+  // "creature or Vehicle" (D-447, CR 205.2a, 205.3g): one card type and one subtype joined by " or ", in either order; a permanent with the type or with the subtype matches.
+  const typeOrSubtype: Parser<IrFilter> = (ctx, pos) => {
+    if (subtypes === false) return fail(ctx, pos);
+    const type: Parser<string> = map(
+      pattern(new RegExp(`(?:${PERMANENT_TYPES})${BOUNDARY}`, 'iu')),
+      (m) => m[0].toLowerCase(),
+    );
+    const subtype: Parser<string> = map(
+      satisfy(
+        SUBTYPE_WORD_NUMBERED,
+        (w) => w.plural !== true && (subtypes === 'all' || !isBasicLandType(w.subtype)),
+      ),
+      (w) => w.subtype,
+    );
+    const typeMember = (t: string): IrFilter => ({ types: [t], raw: t });
+    const subtypeMember = (st: string): IrFilter => ({ subtypes: [st], raw: st });
+    const r = sequence(
+      choice(
+        map(sequence(type, literal(' or '), subtype), ([t, , st]) => [
+          typeMember(t),
+          subtypeMember(st),
+        ]),
+        map(sequence(subtype, literal(' or '), type), ([st, , t]) => [
+          subtypeMember(st),
+          typeMember(t),
+        ]),
+      ),
+      optional(CONTROL_SUFFIX, undefined),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [anyOf, controller] = r.value;
+    const base = toFilter('battlefield', { ...NO_PARTS, controller }, ctx.text.slice(pos, r.pos));
+    return { ok: true, value: { ...base, anyOf }, pos: r.pos };
+  };
   // "up to two target artifacts and/or enchantments" (stage P33, D-150, CR 115.1): the targets are each of one of the types.
   const pluralAndOr: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
@@ -671,7 +712,7 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
   // artifacts and enchantments") join with "and" and are not read.
   return plural
     ? choice(quiet(pluralAndOr), single)
-    : choice(choose, quiet(modifiedChoice), quiet(subtypeChoice), single);
+    : choice(choose, quiet(modifiedChoice), quiet(typeOrSubtype), quiet(subtypeChoice), single);
 }
 
 /**

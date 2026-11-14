@@ -2706,6 +2706,129 @@ export const DANITHA_G7_LANDS = supported([
 ]);
 
 /**
+ * The SYNTHETIC cards of group 1 of the Feather deck (D-450 to D-452): "gains protection from the color of your choice until end of turn" (a `chooseOption` of purpose
+ * `protectionColor` in the middle of a resolution, for one creature and for a group), "gains protection from red until end of turn" and "draw a card, then +1/+0 for each card you've
+ * drawn this turn". The color question is a decision kind that games-100 expects only from dedicated styles, so the group is kept out of every generic pool.
+ */
+export const FEATHER_G1_NAMES = [
+  'SYNTHETIC Feather Ward',
+  'SYNTHETIC Feather Rally',
+  'SYNTHETIC Feather Veil',
+  'SYNTHETIC Feather Fist',
+] as const;
+
+/** The featherG1 style: every card of the group three times, bodies to protect, burn and removal to respond to, and a card-draw spell. */
+export const FEATHER_G1_SPELLS = [
+  ...supported(FEATHER_G1_NAMES),
+  ...supported(FEATHER_G1_NAMES),
+  ...supported(FEATHER_G1_NAMES),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Murder', 'Divination']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Raging Goblin']),
+];
+
+/** White for the protection, red for the burn and the pump, blue for the card draw, a little black for the removal. */
+export const FEATHER_G1_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Mountain',
+  'Island',
+  'Island',
+  'Swamp',
+]);
+
+/**
+ * The SYNTHETIC cards of group 2 of the Feather deck (D-443 to D-448): a creature that gives commander creatures +2/+2 and indestructible (the commander of the deck is the one it
+ * reads), a bite with "another target creature" and a damage spell with two amounts to two targets (two target questions in one cast, with a differ rule), a creature with a trigger of
+ * three events and "Monstrosity 5", a modal spell with a counter-and-untap mode and a bounce mode (a `chooseModes` question), and a land whose counter ability is only for sorcery timing
+ * after an instant or sorcery spell was cast this turn. The modal question and the targets of each cast change which answers the generic pools ask for, which games-100 expects
+ * only from dedicated styles.
+ */
+export const FEATHER_G2_NAMES = [
+  'SYNTHETIC Commander Guard',
+  'SYNTHETIC Hammer Blow',
+  'SYNTHETIC Twin Strike',
+  'SYNTHETIC Spike Toy',
+  'SYNTHETIC Way Light',
+  'SYNTHETIC Oracle Hall',
+] as const;
+
+/** The featherG2 style: every spell of the group three times, bodies to aim at (a Vehicle too), and instants and a sorcery to wake the land. */
+export const FEATHER_G2_SPELLS = [
+  ...supported(FEATHER_G2_NAMES.filter((n) => n !== 'SYNTHETIC Oracle Hall')),
+  ...supported(FEATHER_G2_NAMES.filter((n) => n !== 'SYNTHETIC Oracle Hall')),
+  ...supported(FEATHER_G2_NAMES.filter((n) => n !== 'SYNTHETIC Oracle Hall')),
+  ...supported(['Lightning Bolt', 'Murder', 'Divination']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Scout Skiff', 'SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** White, red and black for the cards of the group, the land of the group twice, the rest basic. */
+export const FEATHER_G2_LANDS = supported([
+  'SYNTHETIC Oracle Hall',
+  'SYNTHETIC Oracle Hall',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Mountain',
+  'Swamp',
+  'Island',
+]);
+
+/**
+ * The SYNTHETIC cards of group 3 of the Feather deck (D-437 to D-439): creatures with a cast trigger on the spells that target them (counters, a card drawn once each turn,
+ * scry), the exile of an instant or sorcery as it resolves with its return to the hand at the end step, the copy of a spell for each other creature it could target (Zada and Mirrorwing
+ * style), and a spell with two targets. They put copies of spells, delayed returns and `orderTriggers` questions into games, which the generic pools are not built to follow.
+ */
+export const FEATHER_G3_NAMES = [
+  'SYNTHETIC Heroic Captain',
+  'SYNTHETIC Heroic Scout',
+  'SYNTHETIC Cast Draw Knight',
+  'SYNTHETIC Spell Recycler',
+  'SYNTHETIC Echo Grinder',
+  'SYNTHETIC Mirror Wyrm',
+  'SYNTHETIC Paired Boost',
+] as const;
+
+/**
+ * The featherG3 style: every card of the group three times, many spells that target a creature (random agents aim one at a creature of the group often enough for the copies and the
+ * triggers to happen in 100 games), an Equipment, and bodies to aim them at.
+ */
+export const FEATHER_G3_SPELLS = [
+  ...supported(FEATHER_G3_NAMES),
+  ...supported(FEATHER_G3_NAMES),
+  ...supported(FEATHER_G3_NAMES),
+  ...supported(['Unsummon', 'Unsummon', 'Unsummon', 'Unsummon', 'Unsummon', 'Unsummon']),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Lightning Bolt', 'Murder']),
+  ...supported(['SYNTHETIC Blade']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3']),
+];
+
+/** White and red for the creatures, blue for Unsummon, a little black for the removal. */
+export const FEATHER_G3_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Island',
+  'Island',
+  'Swamp',
+]);
+
+/** Style pairs of the Feather group 3 soak test (D-437 to D-439): a mirror match and both mixed ways. */
+export const FEATHER_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['featherG3', 'featherG3'],
+  ['featherG3', 'spells'],
+  ['spells', 'featherG3'],
+];
+
+/**
  * The SYNTHETIC cards of group 9 of the Hashaton deck (D-390 to D-395): an activated ability with a Phyrexian symbol in its cost (paid with mana or 2 life), the
  * transforming double-faced creature that has it, the exile of a random card from a hand, and the 5/5 whose damage trigger exiles a card from the hand of the controller of the source
  * and then asks "you may put it onto the battlefield" or "you may cast it without paying its mana cost" (a `confirmOptional` or a `chooseCards` of purpose `cast`, in the middle of a
@@ -3462,6 +3585,12 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(DANITHA_G6_NAMES as readonly string[]).includes(card.name))
   // The Danitha group 7 cards (D-433) have modes with a cost of their own, which ask the modes of every cast: a style of their own.
   .filter((card) => !(DANITHA_G7_NAMES as readonly string[]).includes(card.name))
+  // The Feather group 3 cards (D-437 to D-439) copy spells for each creature they could target, exile spells as they resolve and bring them back at the end step: a style of their own.
+  .filter((card) => !(FEATHER_G3_NAMES as readonly string[]).includes(card.name))
+  // The Feather group 2 cards (D-443 to D-448) ask the modes of a spell and two targets in one cast, and the land is for sorcery timing after a spell: a style of their own.
+  .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
+  // The Feather group 1 cards (D-451) ask which color to protect from as a spell resolves: a style of their own.
+  .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ANGEL_NAMES as readonly string[]).includes(card.name))
@@ -3672,6 +3801,9 @@ export type DeckStyle =
   | 'ward'
   | 'danithaG6'
   | 'danithaG7'
+  | 'featherG3'
+  | 'featherG2'
+  | 'featherG1'
   | 'vehicles'
   | 'prevention'
   | 'layouts'
@@ -3748,6 +3880,9 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG5' && DANITHA_G5_SPELLS.length > 0) return DANITHA_G5_SPELLS;
   if (style === 'danithaG6' && DANITHA_G6_SPELLS.length > 0) return DANITHA_G6_SPELLS;
   if (style === 'danithaG7' && DANITHA_G7_SPELLS.length > 0) return DANITHA_G7_SPELLS;
+  if (style === 'featherG3' && FEATHER_G3_SPELLS.length > 0) return FEATHER_G3_SPELLS;
+  if (style === 'featherG2' && FEATHER_G2_SPELLS.length > 0) return FEATHER_G2_SPELLS;
+  if (style === 'featherG1' && FEATHER_G1_SPELLS.length > 0) return FEATHER_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
@@ -3936,6 +4071,9 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG5' && BASIC_LANDS.length > 0) return DANITHA_G5_LANDS;
   if (style === 'danithaG6' && BASIC_LANDS.length > 0) return DANITHA_G6_LANDS;
   if (style === 'danithaG7' && BASIC_LANDS.length > 0) return DANITHA_G7_LANDS;
+  if (style === 'featherG3' && BASIC_LANDS.length > 0) return FEATHER_G3_LANDS;
+  if (style === 'featherG2' && BASIC_LANDS.length > 0) return FEATHER_G2_LANDS;
+  if (style === 'featherG1' && BASIC_LANDS.length > 0) return FEATHER_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
@@ -4436,6 +4574,20 @@ export const DANITHA_G7_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
   ['danithaG7', 'danithaG7'],
   ['danithaG7', 'spells'],
   ['spells', 'danithaG7'],
+];
+
+/** Style pairs of the Feather group 2 soak test (D-443 to D-448): a mirror match and both mixed ways. */
+export const FEATHER_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['featherG2', 'featherG2'],
+  ['featherG2', 'spells'],
+  ['spells', 'featherG2'],
+];
+
+/** Style pairs of the Feather group 1 soak test (D-451): a mirror match and both mixed ways. */
+export const FEATHER_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['featherG1', 'featherG1'],
+  ['featherG1', 'spells'],
+  ['spells', 'featherG1'],
 ];
 
 /** Style pairs of the repeatable-mode soak test (D-344): a mirror match and both mixed ways. */

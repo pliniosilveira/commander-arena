@@ -405,7 +405,17 @@ export function evaluateCondition(
       return lifeGainedThisTurnHolds(state, ctx.controller, condition);
     case 'spellsCastThisTurn':
       // D-318, CR 601.2i: the spells the controller has cast this turn (copies are not cast, CR 707.10).
-      return getSeat(state, ctx.controller).spellsCastThisTurn >= condition.atLeast;
+      if (condition.ofTypes === undefined) {
+        return getSeat(state, ctx.controller).spellsCastThisTurn >= condition.atLeast;
+      }
+      // D-444: only the spells with one of the card types they were cast with.
+      return (
+        state.turnLog.castSpells.filter(
+          (s) =>
+            s.seat === ctx.controller &&
+            s.types.some((t) => condition.ofTypes?.includes(t) ?? false),
+        ).length >= condition.atLeast
+      );
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die rolled earlier in this resolution against the number; no die rolled, no result.
       if (ctx.dieResult === undefined) return false;

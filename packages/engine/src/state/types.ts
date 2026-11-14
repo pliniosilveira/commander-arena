@@ -154,6 +154,11 @@ export interface GameObject {
    */
   readonly level?: number;
   /**
+   * The monstrous designation (CR 701.37b, D-445): set by the monstrosity action, kept until the permanent leaves the battlefield. It has no rules meaning but to be a marker, is not an
+   * ability and is not a copiable value; a new object after any zone change (CR 400.7) is not monstrous.
+   */
+  readonly monstrous?: true;
+  /**
    * Present (true) on an emblem (CR 114, D-201): an object in the command zone of the player who got it (`owner` and `controller`), with no characteristics but
    * the abilities its `token` record gives it, which work from there (CR 114.4): `derive` reads its static abilities and `findTriggers` its triggered ones.
    * It is not a card and not a permanent, never leaves the command zone (CR 114.5) and is not a token that ceases to exist there (CR 704.5d is about the
@@ -401,6 +406,16 @@ export interface StackData {
    * (CR 400.7). Absent otherwise, and for an ability.
    */
   readonly exileInstead?: true;
+  /**
+   * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (D-439,
+   * CR 614.1a, 608.2n, 603.7): set on a spell by the effect `exileOnResolve`. When this instant or sorcery resolves and would be put into its owner's graveyard it is exiled instead, and
+   * a delayed triggered ability of `by` (with `source` as its source) returns the card to its owner's hand at the beginning of the next end step. A spell that does not resolve is not
+   * changed. It ends when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
+   */
+  readonly exileOnResolve?: {
+    readonly by: SeatId;
+    readonly source: ObjectId;
+  };
   /**
    * True when the spell was cast as the effect of a resolving ability allows (CR 608.2g, Cascade, D-120), which
    * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own.
@@ -1343,8 +1358,16 @@ export type Instruction =
       readonly spell: ObjectId;
       readonly count: number;
       readonly newTargets: 'may' | 'no';
-      readonly stage: 'make' | 'targets';
+      readonly stage: 'make' | 'targets' | 'each';
       readonly copy: ObjectId | null;
+      /**
+       * D-438 (CR 707.10e): "for each other creature you control that the spell could target": the stage `each` finds the permanents this filter names that are a legal target
+       * for the spell's targets, and makes a copy for each (`retarget`: the one permanent that copy targets in every instance of the word "target"). `controller` is the player
+       * the copies belong to when it is not the controller of the resolving ability ("that player copies that spell").
+       */
+      readonly forEach?: ObjectFilter;
+      readonly controller?: SeatId;
+      readonly retarget?: ObjectId;
     }
   /**
    * CR 115.7a, 115.7b (D-181): "Change the target of target spell or ability with a single target." The target of `object`, a spell or ability on
@@ -1394,6 +1417,16 @@ export type Instruction =
       readonly chosen: number | null;
       /** D-229: the player who chooses, when it is not the controller ("Target player adds one mana of any color"). */
       readonly chooser?: SeatId;
+    }
+  /**
+   * "Target creature gains protection from the color of your choice until end of turn" (CR 702.16, 608.2d; D-451): the controller chooses one of the five colors
+   * with a `chooseOption` decision (`purpose` 'protectionColor'), then `effect` (a `grantKeyword` whose keyword is `protection` from `colorOfChoice`) runs with
+   * that color in its place. `chosen` is the color answered, null until then. Not asked when no permanent is left for the effect to affect (CR 608.2b).
+   */
+  | {
+      readonly kind: 'protectionColor';
+      readonly effect: Extract<Effect, { readonly kind: 'grantKeyword' }>;
+      readonly chosen: Color | null;
     }
   /**
    * "Starting with you, each player votes for profit or security" (`vote`, CR 701.38a, D-194): `cast` is the votes so far, in the order they were
@@ -1883,6 +1916,11 @@ export interface TurnLog {
   readonly leftGraveyard: readonly SeatId[];
   /** The modes a triggered ability chose this turn, by the permanent it belongs to (D-151, "choose one that hasn't been chosen this turn"). */
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];
+  /**
+   * Each spell cast this turn (D-444, CR 601.2i), in order: who cast it and its card types as it was cast. A copy is not cast (CR 707.10) and is not here.
+   * "Activate only if you've cast an instant or sorcery spell this turn" reads it.
+   */
+  readonly castSpells: readonly { readonly seat: SeatId; readonly types: readonly CardType[] }[];
 }
 
 export const EMPTY_TURN_LOG: TurnLog = {
@@ -1899,6 +1937,7 @@ export const EMPTY_TURN_LOG: TurnLog = {
   graveyarded: [],
   leftGraveyard: [],
   modesChosen: [],
+  castSpells: [],
 };
 
 export interface GameState {

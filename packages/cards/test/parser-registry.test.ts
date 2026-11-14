@@ -184,6 +184,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.x-target-graveyard-cards': spell((e) => `Return ${e} to your hand.`),
   'cost.remove-counters': permanent((e) => `${e}: Draw a card.`),
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
+  // Feather deck, group 2 (D-444): the two restrictions in the order of Hall of Oracles.
+  'restriction.sorcery-and-if': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   'duration.until-end-of-turn': permanent((e) => `{1}: ~ gets +1/+1 ${e}.`),
   'keyword.cycling': asIs,
   // Stage P17: typecycling is a keyword line, the count of kicks follows a quantity of one.
@@ -274,6 +276,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.power-of': spell((e) => `Exile target creature. You gain life ${e}.`),
   'amount.mana-value-of': spell((e) => `Exile target creature. You lose life ${e}.`),
   'amount.times-kicked': spell((e) => `Draw a card ${e}.`),
+  // Feather deck group 1 (D-450): the count of a pump, or of a draw, after "for each".
+  'amount.for-each-card-drawn': spell((e) => `Draw a card ${e}.`),
   // Stage P28 (D-131): the amounts that read the game, the conditions about the state of the game and the player nouns.
   'amount.equal-to': spell((e) => `Exile target creature. You gain life ${e}.`),
   'amount.where-x': spell((e) => `Exile target creature. Draw X cards, ${e}.`),

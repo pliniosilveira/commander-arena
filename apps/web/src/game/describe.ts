@@ -645,6 +645,15 @@ export function describeEvent(
         [event.object, event.copy],
         'CR 722.3',
       );
+    case 'becameMonstrous':
+      // CR 701.37a, 701.37b (D-445): the monstrosity action finished; the permanent is monstrous until it leaves the battlefield.
+      return line(
+        'major',
+        `${label(event.object)} became monstrous.`,
+        null,
+        [event.object],
+        'CR 701.37',
+      );
     case 'energyChanged': {
       // CR 107.14, 122.1 (D-209): "You get {E}{E}", and paying {E}: "You have 2 energy counters."
       const change = event.to - event.from;
@@ -1033,6 +1042,16 @@ export function describeEvent(
           event.seat,
           [],
           'CR 701.38a',
+        );
+      }
+      // CR 702.16, 608.2d (D-451): "You choose Red for Gods Willing (protection from that color)." The choice is public: the player who did not choose needs the color.
+      if (event.purpose === 'protectionColor') {
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${optionText(event.purpose, event.option)} for ${label(event.source)} (protection from that color until end of turn).`,
+          event.seat,
+          [],
+          'CR 702.16a',
         );
       }
       // CR 702.136a (D-185): "You choose a +1/+1 counter for Riot Goblin (riot)." or "... haste ...".

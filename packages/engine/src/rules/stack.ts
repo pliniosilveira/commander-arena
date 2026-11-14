@@ -5,7 +5,7 @@
  *   ("fizzles"); if only some are, it resolves and does as much as possible without them.
  * - CR 608.2c-d: effects run in written order, one instruction at a time, so the engine can stop for
  *   a decision (CR 903.9b) and continue from the same place.
- * - CR 608.2m: a resolved instant or sorcery goes to its owner's graveyard; a permanent spell
+ * - CR 608.2n: a resolved instant or sorcery goes to its owner's graveyard; a permanent spell
  *   becomes a permanent (CR 608.3). An Adventure that resolves is exiled instead (CR 715.3d).
  */
 
@@ -29,6 +29,7 @@ import { runCopySpell } from './copy-spell';
 import { derive } from './derive';
 import { DASH_RETURN_ABILITY } from './derive-alt';
 import { runInstruction } from './effects';
+import { exiledAsItResolves, returnExiledSpell } from './exile-on-resolve';
 import { isAdventureSpell } from './layouts';
 import { faceOf, targetSpecsOf } from './legality';
 import { chosenEffect, modalOfObject } from './modes';
@@ -42,6 +43,7 @@ import {
   runCounterUnlessPays,
   type UnlessAnswer,
 } from './pay-unless';
+import { colorOfAnswer } from './protection-choice';
 import { stillLegalTargets } from './select';
 import { setPending } from './set-pending';
 import { collectTriggers } from './triggers';
@@ -319,9 +321,11 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
     // CR 715.3d: a spell cast as an Adventure that resolves is exiled instead of going to the
     // graveyard; a countered or fizzled one never gets here (CR 715.4) and goes to the graveyard.
     const adventure = isAdventureSpell(next, obj);
+    // CR 614.1a, 608.2n (D-439): "exile that card instead of putting it into your graveyard as it resolves": an instant or sorcery that carries the mark is exiled.
+    const exiled = exiledAsItResolves(obj, permanent, adventure);
     const moved = moveObject(next, {
       object: res.object,
-      to: permanent ? 'battlefield' : adventure ? 'exile' : 'graveyard',
+      to: permanent ? 'battlefield' : adventure || exiled ? 'exile' : 'graveyard',
       // CR 400.3 (D-353): an instant or sorcery that resolves goes to its OWNER's graveyard, whoever cast it (a card cast from another player's graveyard); a
       // permanent enters under its controller's control (CR 110.2), and an Adventure is exiled for its caster (CR 715.3d).
       toSeat: permanent || adventure ? controllerOf(state, obj) : obj.owner,
@@ -356,6 +360,13 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
             },
           ],
         };
+      }
+      // CR 603.7, 603.7c (D-439): the card exiled as it resolved comes back to its owner's hand at the beginning of the next end step.
+      if (exiled && moved.newObject !== null) {
+        const back = returnExiledSpell(obj, moved.newObject);
+        if (back !== null) {
+          next = { ...next, delayedTriggers: [...next.delayedTriggers, back] };
+        }
       }
       events.push({ kind: 'resolved', object: res.object });
     } else if (
@@ -784,6 +795,26 @@ export function answerResolutionChooseOne(state: GameState, option: string): Res
   const index = head.options.findIndex((o) => o.label === option);
   if (index < 0) return null;
   const updated: Instruction = { ...head, chosen: index };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/**
+ * Records the answer to "gains protection from the color of your choice" (CR 702.16, 608.2d, D-451) on the instruction that asked: the color chosen. Then continues.
+ * Null when no such question is waiting or the answer is not one of the five colors.
+ */
+export function answerResolutionProtectionColor(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'protectionColor') return null;
+  const color = colorOfAnswer(option);
+  if (color === null) return null;
+  const updated: Instruction = { ...head, chosen: color };
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
     [],

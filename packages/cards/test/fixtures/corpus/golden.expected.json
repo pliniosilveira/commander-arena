@@ -1,5 +1,5 @@
 {
-  "parserVersion": 100,
+  "parserVersion": 101,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -327,6 +327,14 @@
       "reasons": [],
       "ast": "dc1d7a26"
     },
+    "0bb896ba-e15e-43a9-9120-e674d7ba003c": {
+      "name": "Hall of Oracles",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "de60b5b9"
+    },
     "0bc7f093-bef0-4f1a-852c-4b75ebf54838": {
       "name": "Arcane Signet",
       "group": "acceptance",
@@ -562,6 +570,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "28a7effb"
+    },
+    "19b5c94b-b4fa-41a9-b649-51c4e6f03602": {
+      "name": "Might of the Meek",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a974ec46"
     },
     "19cf5798-4600-4a66-b1c7-de77bde157d0": {
       "name": "Tablet of Discovery",
@@ -1005,6 +1021,14 @@
       "reasons": [],
       "ast": "35404e21"
     },
+    "32fad8d3-5351-49ce-a453-53dee403b5ff": {
+      "name": "Tenth District Legionnaire",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d40567b2"
+    },
     "33e3793c-098f-4897-88f3-9f9ce9081e0f": {
       "name": "Pompous Battlemage // Improvised Act",
       "group": "acceptance",
@@ -1409,6 +1433,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "79e7b8e9"
+    },
+    "48e603a2-b965-4fbc-ad57-4388bce5ac8b": {
+      "name": "Gods Willing",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "745c4b43"
     },
     "48e6d3d8-2f27-4017-acdd-40bce8cdbc02": {
       "name": "Giada, Font of Hope",
@@ -1897,6 +1929,14 @@
       ],
       "reasons": [],
       "ast": "2400916c"
+    },
+    "6336401f-4e2d-4ebe-8c5b-24aa6f516abf": {
+      "name": "Fleeting Flight",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "092c22af"
     },
     "63394e24-a456-4cc6-9885-8c62447b050a": {
       "name": "Tyrant's Familiar",
@@ -2547,6 +2587,14 @@
       "reasons": [],
       "ast": "158c68f0"
     },
+    "7e3fe8e4-e56a-4109-a314-96c44bbe7d22": {
+      "name": "Fall of the Hammer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "64c66651"
+    },
     "7f268b15-ac92-4e98-821b-78d15d9285d9": {
       "name": "Loyal Apprentice",
       "group": "acceptance",
@@ -2685,6 +2733,14 @@
       "reasons": [],
       "ast": "9a35e9cd"
     },
+    "83917116-d2d8-4701-a79f-af17486706ae": {
+      "name": "Light the Way",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7e69df7b"
+    },
     "84275aab-f718-4896-b61c-63bf49fb483b": {
       "name": "Merchant of Truth",
       "group": "training",
@@ -2708,6 +2764,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2522c329"
+    },
+    "857db7e0-254a-4920-a71d-9bab6555342f": {
+      "name": "Phalanx Leader",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d91b4fd6"
+    },
+    "858f53ef-3fec-4aa0-867d-b7f040614b3c": {
+      "name": "Bastion Protector",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c5cd4c5e"
     },
     "868882d2-ed4e-4171-a17c-478a341080fb": {
       "name": "Prossh, Skyraider of Kher",
@@ -3126,6 +3198,22 @@
       "reasons": [],
       "ast": "7d6f9e36"
     },
+    "9ea14a03-c6a2-49ec-953d-4249a2c27e1d": {
+      "name": "Mirrorwing Dragon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4ece150a"
+    },
+    "9f7d5e1c-bf5b-4ab9-bd6e-2627b4d22b36": {
+      "name": "Zada, Hedron Grinder",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "799e936a"
+    },
     "a0753b28-e693-4f5b-a4e4-846e933058d3": {
       "name": "Roar of Resistance",
       "group": "acceptance",
@@ -3319,6 +3407,14 @@
       "reasons": [],
       "ast": "4604dc38"
     },
+    "aa219936-661b-4ccb-8741-78b70cff2b1a": {
+      "name": "Feather, the Redeemed",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1d65ce6f"
+    },
     "aa913409-7a7a-4e74-82ff-7ff8195585ad": {
       "name": "Roll-Roll-Roll-Roll",
       "group": "acceptance",
@@ -3430,6 +3526,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4d49c504"
+    },
+    "ad225ec2-ff3a-48f6-81a7-dfdd1b75e1f7": {
+      "name": "Legion Leadership // Legion Stronghold",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "83567aa2"
     },
     "add60aad-2532-4f59-bfb9-f0168c2adda6": {
       "name": "Cosmic Rebirth",
@@ -3700,6 +3804,14 @@
       "reasons": [],
       "ast": "3f14f6aa"
     },
+    "c1909d70-d8f4-4c54-8587-0a910f123238": {
+      "name": "Shelter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5e13630b"
+    },
     "c20a96f7-aa5a-4c15-b8b1-806685c99b27": {
       "name": "Bolt Bend",
       "group": "acceptance",
@@ -3852,6 +3964,14 @@
       ],
       "reasons": [],
       "ast": "7ac10afa"
+    },
+    "ca02cb31-9850-48bf-bc8d-ed86a4d4d4f7": {
+      "name": "Giggling Skitterspike",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ececb964"
     },
     "ca204b66-8d0c-431a-8d34-282f7c2d17da": {
       "name": "Lightning Greaves",
@@ -4126,6 +4246,14 @@
       "reasons": [],
       "ast": "4d69ece5"
     },
+    "d7e2b2ba-cb5e-41f1-ad33-baf56c0b72ed": {
+      "name": "Reckless Rage",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "704353cd"
+    },
     "d8599f06-f030-4575-8497-307a4d7ec182": {
       "name": "Spiral into Solitude",
       "group": "acceptance",
@@ -4311,6 +4439,14 @@
       "reasons": [],
       "ast": "abf2e6df"
     },
+    "e05abb6b-e9f4-4d9e-ad1e-7805ebc09914": {
+      "name": "Fists of Flame",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ee64fbf7"
+    },
     "e060bf7a-f266-40b4-9772-e243dcbf965b": {
       "name": "Dreams of Laguna",
       "group": "acceptance",
@@ -4398,6 +4534,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9bdd91f6"
+    },
+    "e699d140-eb13-4f15-aecb-85c76e8b1b14": {
+      "name": "Crimson Wisps",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "550d3f87"
     },
     "e89e1fae-bac3-4cc0-a233-24b9e08a5290": {
       "name": "Fall from Favor",
@@ -4755,6 +4899,14 @@
       "reasons": [],
       "ast": "1c6f2563"
     },
+    "f7b754d3-9863-420d-895d-00e70b8b078a": {
+      "name": "Danitha, Sword of Hope",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ee188b63"
+    },
     "f7f435bc-1716-4412-9505-a1f2f2d83d08": {
       "name": "Dragonhawk, Fate's Tempest",
       "group": "training",
@@ -5062,8 +5214,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 283,
-      "total": 300
+      "supported": 302,
+      "total": 319
     }
   }
 }
