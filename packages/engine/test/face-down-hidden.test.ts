@@ -288,6 +288,7 @@ const OBJECT_VIEW_FIELDS: Readonly<Record<keyof ObjectView, FieldClass>> = {
   wouldBeSummoningSick: 'public',
   printedPt: 'public',
   isToken: 'public',
+  tokenDefinition: 'masked',
   printedLoyalty: 'public',
   loyaltyUsed: 'public',
   emblem: 'public',
@@ -476,6 +477,7 @@ describe('the classification of the view fields and the event kinds', () => {
         'hiddenFace',
         'turnFaceUpCost',
         'ifFaceUp',
+        'tokenDefinition',
       ]) {
         expect(v, key).not.toHaveProperty(key);
       }

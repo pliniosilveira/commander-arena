@@ -8,6 +8,7 @@ import type {
   ObjectFilter,
   PermanentAlternativeKind,
   Restriction,
+  TokenDefinition,
 } from './ast/types';
 import type { CardLayout } from './cards/definition';
 import type { CardType, Characteristics, Color, Subtype, Supertype } from './characteristics';
@@ -31,7 +32,7 @@ import { isPaired, partnerOf } from './rules/pairing';
 import { regenerationShieldsOn } from './rules/regenerate';
 import { ringBearerSeat } from './rules/ring-bearer';
 import { finalChapterOf, isSaga } from './rules/saga';
-import { sourceInfo } from './rules/source-info';
+import { objectOrLki, sourceInfo } from './rules/source-info';
 import { foretellCostOf, isForetold, suspendOf } from './rules/special-legality';
 import { landPlaysAllowed, topCardVisibleTo } from './rules/statics';
 import type { ChosenTarget } from './state/chosen';
@@ -111,6 +112,8 @@ export interface ObjectView {
    */
   readonly printedPt?: { readonly power: number; readonly toughness: number };
   readonly isToken: boolean;
+  /** The token's original definition, also for its abilities on the stack. Absent face down. */
+  readonly tokenDefinition?: TokenDefinition;
   /**
    * The printed loyalty of a planeswalker (CR 306.5a, D-200), wherever it is: a card in a hand or a graveyard has no counters, so `counters`
    * shows no number for it. On the battlefield the loyalty is the number of loyalty counters in `counters` (CR 306.5c). Absent when the object
@@ -655,6 +658,14 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
   // CR 708.2, 708.5 (D-312): a face-down permanent is shown to every viewer as what it is face down; only the player who controls it (also while it is phased out) sees the
   // card behind it. Everything that comes from the card instead of the characteristics (the commander status, the support badge, the faces) is left out for the others.
   const down = faceDownBy(obj);
+  const tokenSource = abilitySource === null ? obj : objectOrLki(state, abilitySource);
+  const token =
+    down === null &&
+    tokenSource !== null &&
+    tokenSource.emblem !== true &&
+    faceDownBy(tokenSource) === null
+      ? tokenSource.token
+      : null;
   const controls =
     down !== null &&
     (obj.zone === 'phased'
@@ -702,6 +713,9 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
       ? { printedPt: { power: printed.power, toughness: printed.toughness } }
       : {}),
     isToken: obj.token !== null && obj.emblem !== true,
+    ...(token === null
+      ? {}
+      : { tokenDefinition: { ...token.characteristics, abilities: token.abilities } }),
     ...(obj.emblem === true ? { emblem: true as const } : {}),
     ...(d.loyalty !== null && d.types.includes('planeswalker')
       ? { printedLoyalty: d.loyalty }

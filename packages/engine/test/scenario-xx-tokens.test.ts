@@ -50,6 +50,12 @@ describe('creating tokens (CR 111)', () => {
     // Summoning sick like any creature that came under its controller's control this turn.
     expect(g.view(0).battlefield.find((o) => o.id === soldier.id)?.summoningSick).toBe(true);
     expect(g.view(0).battlefield.find((o) => o.id === soldier.id)?.isToken).toBe(true);
+    expect(g.view(0).battlefield.find((o) => o.id === soldier.id)?.tokenDefinition).toMatchObject({
+      name: 'Soldier',
+      power: 1,
+      toughness: 1,
+      colors: ['W'],
+    });
   });
 
   test('a land that creates a Treasure when it enters (CR 111.2)', () => {
@@ -161,6 +167,12 @@ describe('token details', () => {
     g.expect.counters('Construct', { '+1/+1': 2 });
     const d = derive(g.state, g.object('Construct'));
     expect([d.power, d.toughness]).toEqual([2, 2]);
+    expect(
+      g.view(0).battlefield.find((o) => o.name === 'Construct')?.tokenDefinition,
+    ).toMatchObject({
+      power: 0,
+      toughness: 0,
+    });
   });
 
   test('a 0/0 token with no counters dies at once (CR 704.5f) and triggers "dies"', () => {

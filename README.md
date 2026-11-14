@@ -14,6 +14,8 @@ What exists: a rules engine for two-player Commander (the stack, turn structure 
 
 **Witherbloom Pestilence**, led by Dina, Essence Brewer, is available in Quick start with its complete deck and offline card-data snapshot.
 
+Tokens also load pictures from Scryfall when an exact search of their original characteristics finds one card. Missing, ambiguous or unavailable pictures keep the drawn token frame, including in previews and on the stack.
+
 Where to look next:
 
 - `docs/STATUS.md`: current milestone, what is done, blockers and next steps.

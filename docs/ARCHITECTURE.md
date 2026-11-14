@@ -2,6 +2,12 @@
 
 **Current state.** All four packages are real. The engine runs the whole two-player Commander turn structure, casting, the stack, combat, triggered, activated and static abilities, layers, replacement and prevention effects, tokens, copies and the multi-face layouts; the Oracle parser turns card text into engine definitions; `CasualAgent` plays the web opponent; the web app plays a full game against it from real precons or an imported deck. What is still planned is marked PLANNED below (the stronger AI agents of M7, save and resume, replay import, animation, multiplayer). One section per mechanic would duplicate `docs/MECHANICS.md`, so the per-mechanic detail lives there; this file keeps the structure and the data flows.
 
+Token pictures (D-494) use the optional `ObjectView.tokenDefinition`: the original token characteristics and abilities, also carried by its stack abilities from the live source or last-known information, never exposed face down. `packages/cards/src/scryfall/token-query.ts` builds the exact search; the web's `token-art.ts` caches one promise per query and uses the existing Scryfall request queue. Only a single result with HTTPS Scryfall image files replaces the drawn frame. `image-uris.ts` shares image validation with the Manifest picture lookup. No stored-card or precon snapshot changes.
+
+Token searches restrict results to standalone `layout:token` cards (D-495). Double-faced token printings otherwise count as separate cards even when the requested face is the same token, causing the ambiguity fallback. Tokens with no standalone match still retain their drawn frame.
+
+The type line is matched by an escaped, anchored regex; tokens with no abilities and no rules text also exclude any Oracle text (`-o:/./`, D-496). A plain Zombie therefore cannot accidentally match an enchantment Zombie or one with decayed. Tokens with abilities retain their positive ability-word refinements and the ambiguity fallback.
+
 ## How to read this document
 
 | Tag | Meaning |
@@ -16,7 +22,7 @@ Rule numbers in this document were checked against the CR effective September 25
 
 ## Module map
 
-### Witherbloom additions (REAL, D-494)
+### Witherbloom additions (REAL, D-497)
 
 The existing turn log also retains event-time permanent-to-graveyard history; amount evaluation and Gravestorm consume it. Last-known information records explicit simultaneous-departure membership so graveyard abilities can distinguish later deaths within one resolution. Entry-counter replacements read the permanent after its as-entry copy choice. Preparation effects and combat-scoped delayed damage triggers reuse the existing preparation and delayed-trigger flows. Repeated inline choices reuse `chooseOne`, not a new decision kind. The shipped snapshot `apps/web/src/precons/snapshots/witherbloom-pestilence.json` is discovered by the existing precon glob and uses the supplied decklist with real Scryfall data; no live lookup is needed to start it.
 

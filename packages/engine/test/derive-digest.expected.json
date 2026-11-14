@@ -33,7 +33,7 @@
     "label": "board 2",
     "steps": 268,
     "peak": 70,
-    "digest": "b59c65dda0089a88"
+    "digest": "c0a4efa256a31cc4"
   },
   {
     "label": "board 3",
@@ -51,6 +51,6 @@
     "label": "board 5",
     "steps": 217,
     "peak": 70,
-    "digest": "98e52e2246a0a9f6"
+    "digest": "c39d375986f41ea2"
   }
 ]

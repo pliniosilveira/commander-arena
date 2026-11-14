@@ -6,7 +6,7 @@ Statuses: **Implemented** (code and tests), **Partial** (the part named is imple
 
 Rule numbers shift by one from 713 up after the October 19, 2026 bulletin (`docs/rules/RULES_VERSION.md`); the titles are the stable reference.
 
-## Witherbloom support additions (D-494)
+## Witherbloom support additions (D-497)
 
 Implemented within the existing casting, resolution, continuous-effect and preparation paths: variable sacrifice costs of spells and non-damage X targets; independently repeated choices; attacking-only keyword/stat grants; event-time entry/death counts; preparation by an effect and delayed combat-damage triggers; graveyard-functioning death triggers; all modeled player-counter removal; and Gravestorm using the spell-copy path. No new subsystem or decision kind is introduced.
 

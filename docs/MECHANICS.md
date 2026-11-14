@@ -2,7 +2,7 @@
 
 One entry per mechanic the engine or the card grammar supports: the rules, the AST nodes, the tests. Entries from different slices are separate sections; add yours as a new section.
 
-## Witherbloom Pestilence (issue 58, D-494)
+## Witherbloom Pestilence (issue 58, D-497)
 
 - **History.** `lifeGainedThisTurn` reads actual life gained, not the net life-total change. `enteredThisTurn` and `diedThisTurn` amounts filter event-time types, controller and token status. The turn log retains permanent-to-graveyard events, including tokens, after objects leave their destinations. These amounts drive end-step Food production, life-gain scaling and additional entry counters; entry replacements include the entering permanent's own applicable ability.
 - **Combat statics and conditions.** Attacking-only static subjects read the current combat state. An opponent's life-total comparison is distinct from the controller's comparison. Token-qualified control conditions and graveyard returns entering tapped reuse the existing filter and move machinery.
