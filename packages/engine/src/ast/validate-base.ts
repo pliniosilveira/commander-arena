@@ -47,6 +47,8 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'attackBatch':
     case 'tapsForMana':
     case 'discarded':
+    case 'crimeCommitted':
+    case 'tokenCreated':
       return true;
     // The active player of the step (CR 102.1, 603.2b): "that player" in "at the beginning of each opponent's end step".
     case 'step':

@@ -392,3 +392,12 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `cardsDrawnThisTurn` is the controller's own count: "for each card an opponent has drawn this turn", the whole game and a static ability that follows it are not read (a layer effect would need a refresh when a card is drawn).
 - `effect.becomes` takes keywords after a color alone only ("becomes red and gains haste"); a creature type or a card type with keywords is read by the lead rules (`effect.lead-becomes`, `effect.lead-becomes-target`) in their own words. `effect.lead-double-pt` takes a target (not `~`'s power or a group) and the keywords of "it".
 - The rulings of the seven cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
+
+## The Gisa deck, group 2 (issue 41, D-1410 to D-1417, provisional)
+
+- A crime is committed when a spell is cast, an ability activated or a triggered ability put on the stack with such a target; a target changed afterwards (CR 115.7) and a copy of a spell (CR 707.10) are not. There is no record of the crimes of a turn (no `TurnLog.crimes`): "if you've committed a crime this turn" and "the number of crimes" are not read; the first card that needs them adds the list.
+- "Whenever you create a token" reads the token's creator (`tokenCreated`, CR 111.2): a kind of token ("a Treasure token", "a creature token"), "one or more tokens" counted by creator (that rule still reads the tokens that enter under your control, D-229) and "an opponent sacrifices a token" are not read.
+- `trigger.dies-batch` reads a group of the controller's or of every player's creatures; "one or more creatures an opponent controls die" is not read.
+- Ward costs with three parts, or a sacrifice or a discard beside a mana cost, are not read.
+- `noun.subtype-pair` reads two creature types in the plural joined by "and" with "you control" for both; "other", a third type and another controller are not read.
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Mirkwood Bats triggering once for each token (CR 603.2c) is unverified against its rulings.

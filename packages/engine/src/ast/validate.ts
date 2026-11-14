@@ -607,6 +607,13 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'ringTempted':
       // D-196: "whenever the Ring tempts you" (CR 701.54d) has no parameters.
       break;
+    case 'crimeCommitted':
+    case 'tokenCreated':
+      // D-1410, D-1411: the player who commits the crime or creates the token, relative to the controller of this ability.
+      if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
+        issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      break;
     case 'cycled':
       // D-179: "when you cycle this card" has no parameters; the face is checked for Cycling or typecycling with its abilities.
       break;
@@ -917,7 +924,10 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
       return 'permanent';
     case 'castSpell':
     case 'becomesTarget':
+    case 'crimeCommitted':
       return 'stack';
+    case 'tokenCreated':
+      return 'permanent';
     default:
       return undefined;
   }

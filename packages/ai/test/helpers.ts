@@ -2829,6 +2829,53 @@ export const FEATHER_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
 ];
 
 /**
+ * The SYNTHETIC cards of group 2 of the Gisa deck (D-1410 to D-1414): a lord with ward that costs mana and life and a trigger on committing a crime (two Zombie Rogue tokens, once
+ * each turn), a creature card that comes back from the graveyard when its controller commits a crime and pays {B} (a `confirmOptional` question from the graveyard), a creature that
+ * drains when its controller creates or sacrifices a token, a creature that draws when others die (once each turn), two helpers that commit a crime (an activated ability and a
+ * triggered ability that target), a token maker and a sweeper. The payment questions and the trigger from the graveyard change which answers the generic pools ask for, which games-100
+ * expects only from dedicated styles.
+ */
+export const GISA_G2_NAMES = [
+  'SYNTHETIC Crypt Warlock',
+  'SYNTHETIC Restless Digger',
+  'SYNTHETIC Token Leech',
+  'SYNTHETIC Grave Scholar',
+  'SYNTHETIC Needle Rogue',
+  'SYNTHETIC Entry Stinger',
+  'SYNTHETIC Rat Swarm',
+  'SYNTHETIC Grim Sweep',
+] as const;
+
+/** The gisaG2 style: every card of the group three times, and removal and burn that target (crimes), and bodies to aim them at. */
+export const GISA_G2_SPELLS = [
+  ...supported(GISA_G2_NAMES),
+  ...supported(GISA_G2_NAMES),
+  ...supported(GISA_G2_NAMES),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Lightning Bolt', 'Murder', 'Murder']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Black for the creatures and the payments, red for the burn. */
+export const GISA_G2_LANDS = supported([
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+]);
+
+/** Style pairs of the Gisa group 2 soak test (D-1410 to D-1414): a mirror match and both mixed ways. */
+export const GISA_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['gisaG2', 'gisaG2'],
+  ['gisaG2', 'spells'],
+  ['spells', 'gisaG2'],
+];
+
+/**
  * The SYNTHETIC cards of group 9 of the Hashaton deck (D-390 to D-395): an activated ability with a Phyrexian symbol in its cost (paid with mana or 2 life), the
  * transforming double-faced creature that has it, the exile of a random card from a hand, and the 5/5 whose damage trigger exiles a card from the hand of the controller of the source
  * and then asks "you may put it onto the battlefield" or "you may cast it without paying its mana cost" (a `confirmOptional` or a `chooseCards` of purpose `cast`, in the middle of a
@@ -3591,6 +3638,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
   // The Feather group 1 cards (D-451) ask which color to protect from as a spell resolves: a style of their own.
   .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
+  // The Gisa group 2 cards (D-1410 to D-1414) ask to pay {B} to return a card from the graveyard and put tokens, ward payments and drawing into games: a style of their own.
+  .filter((card) => !(GISA_G2_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ANGEL_NAMES as readonly string[]).includes(card.name))
@@ -3804,6 +3853,7 @@ export type DeckStyle =
   | 'featherG3'
   | 'featherG2'
   | 'featherG1'
+  | 'gisaG2'
   | 'vehicles'
   | 'prevention'
   | 'layouts'
@@ -3883,6 +3933,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'featherG3' && FEATHER_G3_SPELLS.length > 0) return FEATHER_G3_SPELLS;
   if (style === 'featherG2' && FEATHER_G2_SPELLS.length > 0) return FEATHER_G2_SPELLS;
   if (style === 'featherG1' && FEATHER_G1_SPELLS.length > 0) return FEATHER_G1_SPELLS;
+  if (style === 'gisaG2' && GISA_G2_SPELLS.length > 0) return GISA_G2_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
@@ -4074,6 +4125,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'featherG3' && BASIC_LANDS.length > 0) return FEATHER_G3_LANDS;
   if (style === 'featherG2' && BASIC_LANDS.length > 0) return FEATHER_G2_LANDS;
   if (style === 'featherG1' && BASIC_LANDS.length > 0) return FEATHER_G1_LANDS;
+  if (style === 'gisaG2' && BASIC_LANDS.length > 0) return GISA_G2_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;

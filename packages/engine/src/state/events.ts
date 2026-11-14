@@ -178,6 +178,13 @@ export type GameEvent =
       readonly from: ChosenTarget;
       readonly to: ChosenTarget;
     }
+  /**
+   * `seat` committed a crime (CR 700.13, D-1410): `object` is the spell they cast, the ability they activated or the triggered ability they put on the
+   * stack, and at least one of its targets is an opponent of `seat`, a permanent, spell or ability an opponent controls, or a card in an opponent's
+   * graveyard. Emitted once for the object, right after its `becameTarget` events and before its `spellCast` or `abilityActivated`; for a triggered
+   * ability, after its `abilityTriggered`. A copy of a spell is put on the stack, not cast, so it makes none.
+   */
+  | { readonly kind: 'crimeCommitted'; readonly seat: SeatId; readonly object: ObjectId }
   | {
       readonly kind: 'abilityActivated';
       readonly seat: SeatId;

@@ -88,10 +88,14 @@ type CostedKeyword =
  * other cost for the last two, though the engine could pay life or a discard for Cumulative upkeep); any
  * other cost, and a list of costs, is not lowered.
  */
-/** The equip cost that is a mana cost and a payment of life: the engine pays both as the ability is activated (CR 602.2b, 118.1). */
+/**
+ * The equip cost that is a mana cost and a payment of life: the engine pays both as the ability is activated (CR 602.2b, 118.1). The same two costs make a ward cost, "Ward—{2}, Pay 2
+ * life." (D-1413, CR 702.21a): the engine pays the life and then the mana as the ward ability resolves (`rules/pay-unless.ts`).
+ */
 function lowerEquipCosts(
   ability: IrKeyword,
   written: readonly IrCost[],
+  name: 'equip' | 'ward' = 'equip',
 ): LowerResult<readonly Ability[]> {
   const kinds = written.map((c) => c.kind);
   if (kinds.length !== 2 || !kinds.includes('mana') || !kinds.includes('payLife')) {
@@ -105,14 +109,14 @@ function lowerEquipCosts(
   }
   const blocked = gate(ability, [
     'ability:keyword',
-    'keyword:equip',
+    `keyword:${name}`,
     ...costs.map((c) => `cost:${c.kind}` as FeatureRef),
   ]);
   if (blocked !== null) return blocked;
   return {
     ok: true,
-    value: [{ kind: 'keyword', keyword: { kind: 'equip', cost: costs } }],
-    rule: KEYWORD_RULE.equip,
+    value: [{ kind: 'keyword', keyword: { kind: name, cost: costs } }],
+    rule: KEYWORD_RULE[name],
   };
 }
 
@@ -124,6 +128,10 @@ function lowerCostedKeyword(
   // "Equip—{2}, Pay 2 life." (stage P35, D-176, CR 702.6a): a mana cost and a payment of life, each once.
   if (name === 'equip' && only !== undefined && more.length === 1 && ability.params.length === 0) {
     return lowerEquipCosts(ability, [only, ...more]);
+  }
+  // "Ward—{2}, Pay 2 life." (Gisa deck, D-1413, CR 702.21a): a mana cost and a payment of life, each once.
+  if (name === 'ward' && only !== undefined && more.length === 1 && ability.params.length === 0) {
+    return lowerEquipCosts(ability, [only, ...more], 'ward');
   }
   if (only === undefined || more.length > 0 || ability.params.length > 0) return failure(ability);
   // A cost the engine does not pay for this keyword is refused at the keyword, whatever else it is.

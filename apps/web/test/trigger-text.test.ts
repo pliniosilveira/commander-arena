@@ -184,6 +184,8 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   leftGraveyard: { kind: 'leftGraveyard', who: 'you' },
   exiledFromLibraryOrGraveyard: { kind: 'exiledFromLibraryOrGraveyard', who: 'you' },
   ringTempted: { kind: 'ringTempted' },
+  crimeCommitted: { kind: 'crimeCommitted', who: 'you' },
+  tokenCreated: { kind: 'tokenCreated', who: 'you' },
   upkeep: { kind: 'upkeep', whose: 'you' },
   endStep: { kind: 'endStep', whose: 'each' },
   step: { kind: 'step', step: 'beginCombat', whose: 'you' },

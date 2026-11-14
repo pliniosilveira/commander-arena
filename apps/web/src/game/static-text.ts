@@ -103,6 +103,17 @@ export function groupPhrase(filter: ObjectFilter, other?: boolean): string | nul
   const said = (f: ObjectFilter): string | null =>
     thingsPhrase(f, true)?.replace(' on the battlefield', '') ?? null;
   if (anyOf === undefined || anyOf.length === 0) return said(merged);
+  // D-1414: "Skeletons and Zombies you control": two creature types, each alone in its member, with one controller for both.
+  const pair = anyOf.map((m) => (Object.keys(m).join() === 'subtypes' ? (m.subtypes ?? []) : []));
+  if (
+    anyOf.length === 2 &&
+    pair.every((s) => s.length === 1) &&
+    base.controller === 'you' &&
+    Object.keys(base).every((k) => k === 'controller' || k === 'zone')
+  ) {
+    const [a, b] = pair.map((s) => pluralSubtype(s[0] ?? ''));
+    return `${other === true ? 'other ' : ''}${a} and ${b} you control`;
+  }
   const parts = anyOf.map((member) => said({ ...merged, ...member }));
   return parts.some((part) => part === null) ? null : joinAnd(parts as string[]);
 }

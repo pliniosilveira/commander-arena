@@ -33,6 +33,7 @@ import { DINOSAUR_TRIGGER_RULES } from './dinosaurs';
 import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
 import { EVENT_TRIGGER_RULES } from './events';
+import { GISA_G2_TRIGGER_RULES } from './gisa-g2';
 import { HASHATON_G1_TRIGGER_RULES } from './hashaton';
 import { HASHATON_G9_TRIGGER_RULES } from './hashaton-g9';
 import { HOFRI_TRIGGER_RULES } from './hofri';
@@ -1126,5 +1127,7 @@ export const TRIGGER_RULES = [
   ...VRASKA_TRIGGER_RULES,
   // Hashaton deck, group 1 (D-374): "you cycle or discard another card".
   ...HASHATON_G1_TRIGGER_RULES,
+  // Gisa deck, group 2 (D-1410, D-1411): "you commit a crime", "you create or sacrifice a token".
+  ...GISA_G2_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];
