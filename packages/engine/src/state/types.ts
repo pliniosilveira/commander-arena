@@ -402,6 +402,16 @@ export interface StackData {
    */
   readonly exileInstead?: true;
   /**
+   * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (D-1322 provisional,
+   * CR 614.1a, 608.2n, 603.7): set on a spell by the effect `exileOnResolve`. When this instant or sorcery resolves and would be put into its owner's graveyard it is exiled instead, and
+   * a delayed triggered ability of `by` (with `source` as its source) returns the card to its owner's hand at the beginning of the next end step. A spell that does not resolve is not
+   * changed. It ends when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
+   */
+  readonly exileOnResolve?: {
+    readonly by: SeatId;
+    readonly source: ObjectId;
+  };
+  /**
    * True when the spell was cast as the effect of a resolving ability allows (CR 608.2g, Cascade, D-120), which
    * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own.
    * Absent otherwise, and for an ability.
@@ -1343,8 +1353,16 @@ export type Instruction =
       readonly spell: ObjectId;
       readonly count: number;
       readonly newTargets: 'may' | 'no';
-      readonly stage: 'make' | 'targets';
+      readonly stage: 'make' | 'targets' | 'each';
       readonly copy: ObjectId | null;
+      /**
+       * D-1321 (CR 707.10e): "for each other creature you control that the spell could target": the stage `each` finds the permanents this filter names that are a legal target
+       * for the spell's targets, and makes a copy for each (`retarget`: the one permanent that copy targets in every instance of the word "target"). `controller` is the player
+       * the copies belong to when it is not the controller of the resolving ability ("that player copies that spell").
+       */
+      readonly forEach?: ObjectFilter;
+      readonly controller?: SeatId;
+      readonly retarget?: ObjectId;
     }
   /**
    * CR 115.7a, 115.7b (D-181): "Change the target of target spell or ability with a single target." The target of `object`, a spell or ability on

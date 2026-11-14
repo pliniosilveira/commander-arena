@@ -525,12 +525,41 @@ export const TRIGGER_OR_SUBJECTS = defineRule<IrTrigger>({
   },
 });
 
+/** What a cast trigger's spell targets: "that targets a creature [you control]" (the object's kind and, for "you control", its controller) or the source itself. */
+type Aimed =
+  | { readonly kind: 'object'; readonly what: string; readonly yours: boolean }
+  | { readonly kind: 'self'; readonly only: boolean };
+
+const AIMED: Parser<Aimed> = map(
+  pattern(
+    /\s?that targets an? (creature|artifact|enchantment|land|planeswalker|permanent)( you control)?(?![\p{L}\p{N}])/iu,
+  ),
+  (m): Aimed => ({ kind: 'object', what: (m[1] ?? '').toLowerCase(), yours: m[2] !== undefined }),
+);
+
+/** D-1320: "that targets ~", "that targets only ~" (the `~` is the permanent with the ability). */
+const AIMED_SELF: Parser<Aimed> = map(
+  pattern(/\s?that targets (only )?~(?![\p{L}\p{N}])/iu),
+  (m): Aimed => ({ kind: 'self', only: m[1] !== undefined }),
+);
+
+/** D-400 (CR 109.4, 115.1): the filter of the object the spell targets; "you control" says whose it is. */
+function aimedFilter(aimed: Aimed): IrFilter {
+  if (aimed.kind !== 'object') throw new Error('aimedFilter: an object');
+  const yours = aimed.yours ? { controller: 'you' as const } : {};
+  return aimed.what === 'permanent'
+    ? { ...yours, raw: aimed.what }
+    : { types: [aimed.what], ...yours, raw: aimed.what };
+}
+
 /**
  * `trigger.cast`: "you cast a creature spell", "you cast a noncreature spell", "a player casts a
  * spell", "you cast an Aura, Equipment, or Vehicle spell" (CR 601.2i: abilities that trigger when
  * a spell is cast trigger as it becomes cast). The spell is the subject of the trigger, described
  * by a filter of the spells on the stack. "An opponent casts" is `by: 'opponent'` (D-111, stage P18);
- * "cast or copy" and "your first spell each turn" are other events.
+ * "cast or copy" and "your first spell each turn" are other events. What the spell targets: "that targets a creature
+ * [you control]" (D-206, D-400), "that targets ~" and "that targets only ~" (D-1320, CR 115.9c), and a second kind
+ * of spell joined with "or": "an Equipment spell or a spell that targets a creature you control" (D-1321).
  */
 export const TRIGGER_CAST = defineRule<IrTrigger>({
   id: 'trigger.cast',
@@ -562,6 +591,13 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     // D-400 (Danitha, group 1b): "you control" of the object the spell targets.
     'you cast a spell that targets a creature you control',
     'an opponent casts a spell that targets a permanent you control',
+    // D-1320 (Feather, group 3): the spell targets the source of the ability, or only it (CR 115.9c).
+    'you cast a spell that targets ~',
+    'you cast an instant or sorcery spell that targets only ~',
+    'a player casts an instant or sorcery spell that targets only ~',
+    // D-1320: a second kind of spell joined with "or".
+    'you cast an Equipment spell or a spell that targets a creature you control',
+    'you cast an artifact spell or a spell that targets a permanent',
   ],
   rejects: [
     'you cast ~',
@@ -583,6 +619,16 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     "you cast a spell that targets a creature you don't control",
     'you cast a spell that targets a creature an opponent controls',
     'you cast a spell that targets a creature you controlled',
+    'you cast a spell that targets ~ and a creature',
+    'you cast a spell that targets only a creature',
+    'you cast a spell that targets only',
+    'you cast a spell that targets it',
+    'you cast an instant or sorcery spell or a spell that targets ~',
+    'you cast an Equipment spell or a spell that targets a creature you control or',
+    'you cast an Equipment spell or a spell',
+    'you cast an Equipment spell or a creature spell that targets a creature you control',
+    'you cast an Aura or Equipment spell or a spell that targets a creature you control',
+    'you cast an Equipment spell that targets a creature or a spell that targets a land',
   ],
   parse: (ctx, pos) => {
     const r = sequence(
@@ -610,28 +656,31 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       ),
       spanned(sequence(pattern(/an? /i), map(spellPhrase(), withoutZone))),
       // Stage P49 (D-206, CR 115.1, 601.2c): "an instant or sorcery spell that targets a creature".
-      optional(
-        pattern(
-          /\s?that targets an? (creature|artifact|enchantment|land|planeswalker|permanent)( you control)?(?![\p{L}\p{N}])/iu,
-        ),
-        null,
-      ),
+      // D-1320 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~", the source of the ability.
+      optional(choice(AIMED, AIMED_SELF), null),
+      // D-1320: "an Equipment spell or a spell that targets a creature you control": a second kind of spell, which is the one that targets.
+      optional(sequence(literal(' or '), pattern(/a spell\s/iu), AIMED), null),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [actor, spell, aimed] = r.value;
-    const what = (aimed?.[1] ?? '').toLowerCase();
-    // D-400 (CR 109.4, 115.1): "that targets a creature you control" says whose the object the spell targets is.
-    const yours = aimed?.[2] === undefined ? {} : { controller: 'you' as const };
-    const filter: IrFilter =
-      aimed === null
-        ? spell.value[1]
-        : {
-            ...spell.value[1],
-            targets:
-              what === 'permanent'
-                ? { ...yours, raw: what }
-                : { types: [what], ...yours, raw: what },
-          };
+    const [actor, spell, aimed, alternative] = r.value;
+    const base: IrFilter = spell.value[1];
+    let filter: IrFilter;
+    if (alternative !== null) {
+      // The first kind of spell must be a plain description: no aim of its own, no choice of its own (the engine's disjunction is one level).
+      if (aimed !== null || base.anyOf !== undefined) return fail(ctx, pos);
+      const { stackKind: _kind, ...first } = base;
+      filter = {
+        stackKind: 'spell',
+        raw: base.raw,
+        anyOf: [first, { targets: aimedFilter(alternative[2]), raw: 'a spell that targets' }],
+      };
+    } else if (aimed === null) {
+      filter = base;
+    } else if (aimed.kind === 'self') {
+      filter = aimed.only ? { ...base, targetsOnlySelf: true } : { ...base, targetsSelf: true };
+    } else {
+      filter = { ...base, targets: aimedFilter(aimed) };
+    }
     const subject = makeNoun('trigger.cast', spell.span, 'a', filter);
     return {
       ok: true,

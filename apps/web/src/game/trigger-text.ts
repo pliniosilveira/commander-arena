@@ -235,13 +235,33 @@ function onlyCreatureTypes(filter: ObjectFilter): boolean {
  * "a creature with power 4 or greater", "a noncreature spell". `base` is the noun when the filter
  * names no type ("permanent", or "spell" for a cast trigger). Null when a field cannot be said.
  */
-export function filterPhrase(given: ObjectFilter, base = 'permanent'): string | null {
-  // D-206, D-400 (CR 115.1, 601.2c): "a spell that targets a creature you control": what the spell targets is a phrase of its own.
-  if (given.targetsObject !== undefined) {
-    const { targetsObject, ...rest } = given;
-    const spell = filterPhrase(rest, base);
-    const aimed = filterPhrase(targetsObject);
-    return spell === null || aimed === null ? null : `${spell} that targets ${aimed}`;
+export function filterPhrase(
+  given: ObjectFilter,
+  base = 'permanent',
+  self?: string,
+): string | null {
+  // D-1320 (CR 115.1): "an Equipment spell or a spell that targets a creature you control": a disjunction with a member that says what the spell targets is said member by member.
+  if (given.anyOf?.some((m) => m.targetsObject !== undefined || m.targetsOnly !== undefined)) {
+    const { anyOf, ...outer } = given;
+    const parts = anyOf.map((member) => filterPhrase({ ...outer, ...member }, base, self));
+    return parts.includes(null) ? null : parts.join(' or ');
+  }
+  // D-206, D-400, D-1320 (CR 115.1, 115.9c, 601.2c): "a spell that targets a creature you control", "a spell that targets only this creature": what the spell targets is a phrase of its own.
+  if (given.targetsObject !== undefined || given.targetsOnly !== undefined) {
+    const { targetsObject, targetsOnly, ...rest } = given;
+    const aim = targetsObject ?? targetsOnly;
+    if (aim === undefined) return null;
+    const spell = filterPhrase(rest, base, self);
+    // The permanent with the ability: its name when the words have it, otherwise "this permanent".
+    const aimed =
+      aim.isSource === undefined
+        ? filterPhrase(aim)
+        : Object.keys(aim).length === 1
+          ? (self ?? 'this permanent')
+          : null;
+    return spell === null || aimed === null
+      ? null
+      : `${spell} that targets ${targetsOnly === undefined ? '' : 'only '}${aimed}`;
   }
   // D-151: "a Dragon you control enters": a creature type and no card type names creatures, not "Dragon permanents".
   const filter =
@@ -457,7 +477,7 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'castSpell': {
       // CR 601.2i, 603.2 (D-183): the spell's own ability, "When you cast this spell".
       if (trigger.self === true) return 'When you cast this spell';
-      const spell = filterPhrase(trigger.filter, 'spell');
+      const spell = filterPhrase(trigger.filter, 'spell', ctx.self);
       if (spell === null) return null;
       // D-218 (CR 707.10): Magecraft's "cast or copy".
       const who = trigger.by === 'you' ? 'you cast' : `${BY_WORDS[trigger.by]} casts`;

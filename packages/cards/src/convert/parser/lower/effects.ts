@@ -38,7 +38,7 @@ import {
 } from './continuous';
 import { GAIN_CONTROL } from './control';
 import { lowerCopyToken } from './copies';
-import { COPY_SPELL } from './copy-spell';
+import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
 import { DANITHA_G2_LOWERINGS } from './danitha-g2';
@@ -1331,6 +1331,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   BECOME_MONARCH,
   DELAYED_DRAW,
   COPY_SPELL,
+  EXILE_ON_RESOLVE,
   CHANGE_TARGET,
   libraryVerb('scry'),
   libraryVerb('surveil'),
