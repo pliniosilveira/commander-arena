@@ -595,6 +595,9 @@ function runEffect(
           effect.player === undefined
             ? [undefined]
             : resolvePlayers(state, effect.player, ctx, targets);
+        // D-485 (CR 608.2b, 701.21a): a player named by a selector that names nobody now ("any number of target players" with none chosen, a target that has left the game)
+        // sacrifices nothing; the controller of the effect does not take their place.
+        if (effect.player !== undefined && sacrificers.length === 0) return done(state);
         // D-131: the number may be an amount ("each player sacrifices X creatures"), read as the effect runs.
         // D-135: "any number" is no number at all: the player chooses none to all of the candidates.
         const count = what.anyNumber === true ? 0 : amountOf(state, what.count ?? 1, ctx, targets);
@@ -988,6 +991,25 @@ function runEffect(
       // next upkeep": the card is the one the dying creature became, found now (in the graveyard, where it is expected, as `triggerCard` reads it); one that
       // is gone from there when the ability triggers is a new object and is not found. A commander that went to the command zone (CR 903.9a) is not in the
       // graveyard, and a token that died has ceased to exist (CR 111.8): nothing is created for them.
+      // D-459 (CR 603.7c, 400.7j): "Exile it at the beginning of the next end step", about the permanents the effect before it put onto the battlefield (`moved`): one
+      // delayed ability for each, named by the permanent as it is now (the ability is about that object: once it has changed zones it is a new object and nothing happens,
+      // CR 603.7c, 400.7), as Unearth's is.
+      if (effect.effect.kind === 'exile' && effect.effect.objects.kind === 'moved') {
+        const ability: TriggeredAbility = {
+          kind: 'triggered',
+          trigger,
+          effect: { kind: 'exile', objects: { kind: 'this' } },
+        };
+        return done({
+          ...state,
+          delayedTriggers: [
+            ...state.delayedTriggers,
+            ...(res.lastMoved ?? [])
+              .filter((id) => state.objects[id]?.zone === 'battlefield')
+              .map((id) => ({ source: id, controller: res.controller, ability })),
+          ],
+        });
+      }
       if (effect.effect.kind === 'moveToZone') {
         const back: Effect = { ...effect.effect, objects: { kind: 'triggerSubject' } };
         const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: back };
@@ -1097,7 +1119,8 @@ function runEffect(
     case 'delayedSacrifice': {
       // CR 603.7, 701.54c (D-196): about the creature whose event triggered the ability (the blocker): at the end of combat its controller
       // sacrifices it. The delayed ability belongs to the controller of the Ring's ability and names that creature (CR 603.7c).
-      const blocker = res.triggerSubject;
+      // D-478 (CR 702.147a): `of: 'this'` is the creature with the ability (Decayed): the one that attacked.
+      const blocker = effect.of === 'this' ? res.source : res.triggerSubject;
       if (blocker === undefined) return done(state);
       const ability: TriggeredAbility = {
         kind: 'triggered',
@@ -1111,6 +1134,18 @@ function runEffect(
           { source: blocker, controller: res.controller, ability },
         ],
       });
+    }
+
+    case 'exileIfLeaves': {
+      // CR 614.1a, 614.6 (D-459): "If it would leave the battlefield, exile it instead of putting it anywhere else": each permanent the effect before it put onto the
+      // battlefield is marked; `moveObject` exiles it when it would go anywhere else. A token the effect named is marked too (it ceases to exist in exile, CR 111.8).
+      let next = state;
+      for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
+        if (next.objects[id]?.zone === 'battlefield') {
+          next = patchObject(next, id, { exileIfLeaves: true });
+        }
+      }
+      return done(next);
     }
 
     case 'becomeMonarch': {
@@ -1701,7 +1736,20 @@ function runEffect(
 
     case 'sparePermanents':
       // D-231: "For each player, you choose ... Then each player sacrifices all other nonland permanents they control" (rules/spare.ts).
-      return done(state, [], [startSpare(state, effect.types)]);
+      // D-484: with `own` the players the selector names choose among their own permanents and sacrifice the rest, lands too.
+      return done(
+        state,
+        [],
+        [
+          startSpare(
+            state,
+            effect.types,
+            effect.own === undefined
+              ? undefined
+              : resolvePlayers(state, effect.own.players, ctx, targets),
+          ),
+        ],
+      );
 
     case 'exileOwnGraveyardCard': {
       // CR 701.13, 101.4 (D-231): each player named chooses a card of their own graveyard, in turn order from the active player; it is exiled.

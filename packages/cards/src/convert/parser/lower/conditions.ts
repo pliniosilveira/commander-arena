@@ -472,6 +472,25 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'playerDealtDamage', player: test.who, atLeast: test.atLeast });
     }
+    case 'combatDamagedBy': {
+      // CR 120.2a (issue 41, D-475): the engine's turn log keeps the card types, the subtypes and the controller of the source of combat damage to a player.
+      const blocked = missingFeatures(['condition:combatDamagedBy']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const test = c.test;
+      if (test.kind !== 'combatDamagedBy') return failure(c, []);
+      const filter = lowerFilter(test.noun);
+      if (!filter.ok) return filter;
+      const { types, subtypes, controller, ...rest } = filter.value;
+      if (Object.keys(rest).length > 0) return failure(c, []);
+      return ok({
+        kind: 'combatDamagedBy',
+        filter: {
+          ...(types === undefined ? {} : { types }),
+          ...(subtypes === undefined ? {} : { subtypes }),
+          ...(controller === undefined ? {} : { controller }),
+        },
+      });
+    }
     case 'enteredThisTurn': {
       // CR 400.7 (stage P34, D-152): the turn log of the permanents that entered under the controller's control.
       const blocked = missingFeatures(['condition:enteredThisTurn']);
@@ -572,4 +591,6 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:paired',
   // D-427 (Danitha group 3): "as long as ~ entered this turn".
   'condition:thisEnteredThisTurn',
+  // D-475 (Gisa deck group 1): "a player was dealt combat damage by a Zombie this turn".
+  'condition:combatDamagedBy',
 ];

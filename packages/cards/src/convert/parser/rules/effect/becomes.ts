@@ -44,6 +44,14 @@ import { SINGLE_SUBJECTS } from './pump';
 
 const COLOR_WORDS = ['white', 'blue', 'black', 'red', 'green'] as const;
 
+const BASIC_LAND_TYPE_NAMES: readonly string[] = [
+  'Plains',
+  'Island',
+  'Swamp',
+  'Mountain',
+  'Forest',
+];
+
 /** A color word, or "colorless", as the color words the IR keeps (none for colorless). */
 export const COLOR: Parser<readonly string[]> = choice(
   ...COLOR_WORDS.map((word) =>
@@ -72,6 +80,19 @@ export const CREATURE_TYPE_LIST: Parser<string[]> = (ctx, pos) => {
   if (!rest.ok) return rest;
   return { ok: true, value: [first.value, ...rest.value], pos: rest.pos };
 };
+
+/**
+ * "a Swamp", "an Island", "a Plains" (CR 305.6, D-474): one basic land type with its article, capitalized as the CR writes it. The word kept is the land type.
+ */
+const BASIC_LAND_TYPE_WORD: Parser<string> = choice(
+  map(pattern(new RegExp(`a (Plains|Swamp|Mountain|Forest)${BOUNDARY}`, 'u')), (m) => m[1] ?? ''),
+  map(pattern(new RegExp(`an (Island)${BOUNDARY}`, 'u')), (m) => m[1] ?? ''),
+);
+
+/** Whether the words of a `typeList` name a basic land type (CR 305.6), which only a land can be set to. */
+function setsBasicLandType(what: Becoming): boolean {
+  return (what.types?.subtypes ?? []).some((t) => BASIC_LAND_TYPE_NAMES.includes(t));
+}
 
 const IN_ADDITION = new RegExp(
   ` in addition to (?:its|his|her|their) other types${BOUNDARY}`,
@@ -220,11 +241,21 @@ function becoming(rule: string, withCardTypes = false, numbered = false): Parser
       span,
     }),
   );
+  // "becomes a Swamp" (Gisa deck group 1, D-474, CR 305.7): a basic land type, which the caller allows only for a land (`BASIC_LAND_TYPE_WORD`).
+  const basicLand = map(
+    spanned(BASIC_LAND_TYPE_WORD),
+    ({ value, span }): Becoming => ({
+      colors: null,
+      types: { kind: 'typeList', subtypes: [value], span, rule },
+      basePt: null,
+      span,
+    }),
+  );
   // "becomes a 4/4 artifact creature" (stage P64, D-217, CR 613.4b): only where the caller reads numbers (a group of permanents).
   return withCardTypes
     ? numbered
       ? choice(numberedType, cardTypes, typed, colorOnly)
-      : choice(cardTypes, typed, colorOnly)
+      : choice(cardTypes, basicLand, typed, colorOnly)
     : choice(typed, colorOnly);
 }
 
@@ -335,8 +366,20 @@ export const EFFECT_BECOMES = defineRule<Clauses>({
     'target creature becomes red and gains haste until end of turn',
     'target creature becomes blue and gains flying and first strike until end of turn',
     'it becomes colorless and gains haste until end of turn',
+    // D-474 (CR 305.7, Zombie Trailblazer): a land becomes a basic land type.
+    'target land becomes a Swamp until end of turn',
+    'target land becomes an Island until end of turn',
+    'target land becomes a Plains until end of turn',
   ],
   rejects: [
+    'target land becomes a Swamp',
+    'target land becomes a swamp until end of turn',
+    'target land becomes a Swamp and gains haste until end of turn',
+    'target land becomes a Swamp Forest until end of turn',
+    'target land becomes an Swamp until end of turn',
+    'target land becomes a Swamp in addition to its other land types until end of turn',
+    'target land becomes a Swamp until your next turn',
+    'target artifact becomes a Swamp until end of turn',
     'target creature becomes red and gains haste',
     'target creature becomes red and gains until end of turn',
     'target creature becomes red and gains flash until end of turn',
@@ -380,6 +423,11 @@ export const EFFECT_BECOMES = defineRule<Clauses>({
     )(ctx, pos);
     if (!r.ok) return r;
     const [subject, , what, gains, , duration] = r.value;
+    // CR 305.7 (D-474): only a land can be set to a basic land type; a creature "becomes a Forest" is nothing the engine knows.
+    if (setsBasicLandType(what)) {
+      const types = subject.filter.types;
+      if (gains !== null || types?.length !== 1 || types[0] !== 'land') return fail(ctx, pos);
+    }
     const becomes = becomesClause(rule, subject, what);
     if (gains === null) return { ok: true, value: [{ ...becomes, duration }], pos: r.pos };
     // Only after a color alone: a creature type or a card type that goes with keywords is read by `effect.lead-becomes` and `effect.lead-becomes-target` in the words they have.

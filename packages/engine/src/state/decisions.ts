@@ -424,9 +424,14 @@ export interface ChoosePermanentDecision extends DecisionBase {
   readonly subject?: ObjectId;
   /**
    * For `'spare'` (D-231, "For each player, you choose from among the permanents that player controls an artifact, a creature, ..."): `seat` (the controller of
-   * the effect) chooses which of `legal` (the permanents of that card type `player` controls) is not sacrificed; exactly one (`min` = `max` = 1). Absent otherwise.
+   * the effect) chooses which of `legal` (the permanents of that card type `player` controls) is not sacrificed; exactly one (`min` = `max` = 1); with `own` (D-484) `seat` is `player`. Absent otherwise.
    */
-  readonly spare?: { readonly player: SeatId; readonly type: CardType };
+  readonly spare?: {
+    readonly player: SeatId;
+    readonly type: CardType;
+    /** D-484: `player` chooses among their own permanents and sacrifices every other one, lands too (Liliana, Dreadhorde General). */
+    readonly own?: true;
+  };
   /**
    * For `'proliferate'` (CR 701.34a, D-149): `seat` chooses any number of the permanents in `legal` (those with a counter) and of the
    * players listed here (those with poison counters); `min` is 0 and `max` is `legal.length`. The answer, a `choosePermanents` action,
@@ -994,6 +999,8 @@ export interface ChooseXDecision extends DecisionBase {
     readonly loyalty?: number;
     /** Cards of the hand discarded for each point of X ("discard X cards", D-386); absent for none. */
     readonly discard?: number;
+    /** Permanents sacrificed for each point of X ("Sacrifice X creatures", D-488); absent for none. */
+    readonly sacrifice?: number;
   };
   /** For `multikicker` and `replicate`: the cost paid each time. Absent for X. */
   readonly cost?: readonly Cost[];

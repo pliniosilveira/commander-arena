@@ -607,6 +607,13 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'ringTempted':
       // D-196: "whenever the Ring tempts you" (CR 701.54d) has no parameters.
       break;
+    case 'crimeCommitted':
+    case 'tokenCreated':
+      // D-464, D-465: the player who commits the crime or creates the token, relative to the controller of this ability.
+      if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
+        issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      break;
     case 'cycled':
       // D-179: "when you cycle this card" has no parameters; the face is checked for Cycling or typecycling with its abilities.
       break;
@@ -917,7 +924,10 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
       return 'permanent';
     case 'castSpell':
     case 'becomesTarget':
+    case 'crimeCommitted':
       return 'stack';
+    case 'tokenCreated':
+      return 'permanent';
     default:
       return undefined;
   }
@@ -944,6 +954,37 @@ function effectHas(e: unknown, kind: string): boolean {
   return JSON.stringify(e ?? null).includes(`"kind":"${kind}"`);
 }
 
+/**
+ * D-491 (CR 118.8, 701.21a): the amount and the condition `sacrificedAsCost` read what a spell sacrificed for its additional cost, so the face lists a cost that sacrifices any
+ * number of permanents, a land is not cast, and an ability reads it only in "When you cast this spell" (`castSpell` with `self`, the spell being the source of its own ability).
+ */
+function checkSacrificedAsCost(face: CardFace, path: string, out: AstIssue[]): void {
+  const reads = (node: unknown) => effectHas(node, 'sacrificedAsCost');
+  const optional = (face.additionalCosts ?? []).some(
+    (c) => c?.kind === 'sacrifice' && c.anyNumber === true,
+  );
+  const readers = face.abilities.filter((a) => reads(a));
+  if (!optional && (readers.length > 0 || reads(face.spell))) {
+    issue(
+      out,
+      path,
+      'sacrificedAsCost reads the permanents a spell sacrificed for its additional cost: the face needs a cost that sacrifices any number of permanents (D-491)',
+    );
+  }
+  face.abilities.forEach((a, i) => {
+    if (!reads(a)) return;
+    const own =
+      a.kind === 'triggered' && a.trigger?.kind === 'castSpell' && a.trigger.self === true;
+    if (!own) {
+      issue(
+        out,
+        `${path}.abilities[${i}]`,
+        'sacrificedAsCost is read by the spell\'s own "When you cast this spell" ability (castSpell with self) and by its text only (D-491)',
+      );
+    }
+  });
+}
+
 /** The mana cost of the face as a cost and its additional costs: where a spell can have an X. */
 function spellCosts(face: CardFace): readonly Cost[] {
   const mana: readonly Cost[] =
@@ -959,6 +1000,8 @@ function hasXCost(
     (c) =>
       c.kind === 'payXLife' ||
       c.kind === 'discardX' ||
+      // D-488: "Sacrifice X creatures" announces X as the ability is activated.
+      (c.kind === 'sacrifice' && (c as { countX?: unknown }).countX === true) ||
       (c.kind === 'mana' && (c.symbols ?? []).includes('X')) ||
       // D-200: the X of "[-X]".
       (c.kind === 'loyalty' && c.change === 'x'),
@@ -983,6 +1026,10 @@ function checkActivationCosts(
     if (kind === 'discardThis' && !fromHand) {
       issue(out, `${path}.cost[${i}]`, "discardThis needs functionsIn: 'hand'");
     }
+    // D-462 (CR 701.20a): "Reveal this card from your hand" is paid from the hand.
+    if (kind === 'revealThis' && !fromHand) {
+      issue(out, `${path}.cost[${i}]`, "revealThis needs functionsIn: 'hand'");
+    }
     // D-185: "Exile this card from your graveyard" is paid from the graveyard.
     if (kind === 'exileThis' && a.functionsIn === 'hand') {
       issue(
@@ -1001,6 +1048,14 @@ function checkActivationCosts(
       kind === 'sacrifice' ||
       kind === 'discard' ||
       kind === 'tapCreatures';
+    // D-491: "you may sacrifice one or more creatures" is an additional cost of a spell, chosen as it is cast.
+    if (c?.kind === 'sacrifice' && c.anyNumber !== undefined) {
+      issue(
+        out,
+        `${path}.cost[${i}].anyNumber`,
+        'an activated ability sacrifices a number it states: "any number" is an additional cost of a spell (D-491)',
+      );
+    }
     if (offBattlefield && needsBattlefield) {
       issue(
         out,
@@ -1611,6 +1666,7 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
   if (face.additionalCosts !== undefined) {
     checkAdditionalCosts(face.additionalCosts, `${path}.additionalCosts`, out);
   }
+  checkSacrificedAsCost(face, path, out);
   if (face.additionalCostChoice !== undefined) {
     checkAdditionalCostChoice(
       face.additionalCostChoice,

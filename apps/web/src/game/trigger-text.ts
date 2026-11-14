@@ -8,6 +8,7 @@
  */
 import {
   CREATURE_TYPES,
+  type Keyword,
   type NumberComparison,
   type ObjectFilter,
   type Trigger,
@@ -141,9 +142,12 @@ function nounCore(filter: ObjectFilter, base: string): string | null {
         ? ' of the chosen color'
         : '';
   // "Creature token": a token is named after what it is.
+  // D-465: a token of no kind is "a token", not "a permanent token".
   const kind =
     filter.token === true
-      ? `${nouns} token`
+      ? members.length === 0 && (filter.types ?? []).length === 0
+        ? 'token'
+        : `${nouns} token`
       : bare
         ? (subtypes[subtypes.length - 1] ?? nouns)
         : nouns;
@@ -198,6 +202,20 @@ function counterOnIt(counter: true | string): string {
 
 /** "first strike" for `firstStrike`: a keyword as the cards print it, lower case. */
 export const keywordWords = (kind: string): string => kind.replace(/([A-Z])/g, ' $1').toLowerCase();
+
+/**
+ * A keyword a static ability or an effect gives, as the cards print it (D-472, D-473): "swampwalk" and "nonbasic landwalk" carry their land type, "afflict 3" its number
+ * (CR 702.14a, 702.130a); any other is `keywordWords` of its kind.
+ */
+export function grantedKeywordWords(keyword: Keyword): string {
+  if (keyword.kind === 'landwalk') {
+    return keyword.landType === 'nonbasic'
+      ? 'nonbasic landwalk'
+      : `${keyword.landType.toLowerCase()}walk`;
+  }
+  if (keyword.kind === 'afflict') return `afflict ${keyword.count}`;
+  return keywordWords(keyword.kind);
+}
 
 /** " you control" / " an opponent controls", or ''. */
 function controlText(filter: ObjectFilter): string {
@@ -497,6 +515,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'ringTempted':
       // D-196 (CR 701.54d): each time the Ring tempts you, whatever you could choose.
       return 'Whenever the Ring tempts you';
+    case 'crimeCommitted':
+      // D-464 (CR 700.13): a spell or ability of the player that targets an opponent, what an opponent controls or a card in an opponent's graveyard.
+      return `Whenever ${trigger.who === 'you' ? 'you commit' : `${BY_WORDS[trigger.who]} commits`} a crime`;
+    case 'tokenCreated':
+      // D-465 (CR 111.2): once for each token the player creates.
+      return `Whenever ${trigger.who === 'you' ? 'you create' : `${BY_WORDS[trigger.who]} creates`} a token`;
     case 'permanentSacrificed': {
       const what = trigger.filter === undefined ? 'a permanent' : filterPhrase(trigger.filter);
       if (what === null) return null;

@@ -459,7 +459,11 @@ export const KEYWORD_SUFFIX: Parser<KeywordSuffix> = (ctx, pos) => {
 };
 
 /** "nonland permanent you control": the filter of a phrase about permanents (CR 110.1). */
-export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false): Parser<IrFilter> {
+export function permanentPhrase(
+  plural: boolean,
+  subtypes: SubtypeMode = false,
+  tokens = false,
+): Parser<IrFilter> {
   const choose: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
       TYPE_CHOICE,
@@ -556,17 +560,31 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
     };
   };
   const single: Parser<IrFilter> = (ctx, pos) => {
-    const r = sequence(many(choice(MODIFIER, COMMANDER_MODIFIER)), nouns, tail)(ctx, pos);
+    // Gisa deck group 1 (D-476, CR 111.1): "a Zombie token you control with power 6 or greater", where the caller says what a token is: the word after the noun.
+    const tokenWord: Parser<boolean> = tokens
+      ? optional(
+          map(pattern(new RegExp(` token${plural ? 's' : ''}${BOUNDARY}`, 'iu')), () => true),
+          false,
+        )
+      : map(literal(''), () => false);
+    const r = sequence(
+      many(choice(MODIFIER, COMMANDER_MODIFIER)),
+      nouns,
+      tokenWord,
+      tail,
+    )(ctx, pos);
     if (!r.ok) return r;
     const [
       modifiers,
       noun,
+      isToken,
       { controller, chosen, compared, keyword, manaValueX, damaged, counter, aboveBase },
     ] = r.value;
     const parts = modifiers.reduce<FilterParts>((acc, m) => m(acc), {
       ...NO_PARTS,
       types: noun.types,
       controller,
+      ...(isToken ? { token: true } : {}),
       ...(keyword === undefined
         ? {}
         : keyword.has

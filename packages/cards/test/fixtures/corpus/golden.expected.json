@@ -1,5 +1,5 @@
 {
-  "parserVersion": 101,
+  "parserVersion": 102,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -50,6 +50,14 @@
       ],
       "reasons": [],
       "ast": "e7704bfc"
+    },
+    "01deabbb-af6a-4998-99a7-35b7cfa9ef77": {
+      "name": "Dreadhorde Invasion",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1d3d8666"
     },
     "02090581-61aa-4348-ad57-451be8ee91c2": {
       "name": "Ponder",
@@ -188,6 +196,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "47febf41"
+    },
+    "0636b6c3-0662-420a-b30d-f0a14e7c512d": {
+      "name": "Mirkwood Bats",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "266ca19d"
     },
     "06496a05-7f1a-402c-9594-304cd82bfefd": {
       "name": "Scourge of the Throne",
@@ -772,6 +788,14 @@
       "reasons": [],
       "ast": "bc8eed8a"
     },
+    "25712827-626a-484d-bc52-f3bd6087857f": {
+      "name": "Crowded Crypt",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b6378e7b"
+    },
     "2579e9e0-b00f-4a1b-8fce-15d06bb7fe5a": {
       "name": "Angelic Sleuth",
       "group": "training",
@@ -843,6 +867,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9564f29c"
+    },
+    "2ad8ff62-d090-4835-9274-3b755ba0f8e6": {
+      "name": "Priest of Forgotten Gods",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "93e39c44"
     },
     "2b62543f-a475-457a-a96b-b5d070383d3c": {
       "name": "Goldvein Hydra",
@@ -989,6 +1021,14 @@
       "reasons": [],
       "ast": "da05cd21"
     },
+    "316d49a0-620b-4942-a5e8-04cff15e6c01": {
+      "name": "Krav, the Unredeemed",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "25724a77"
+    },
     "31f15274-301b-47c5-ba19-0ced04520878": {
       "name": "Wayfarer's Bauble",
       "group": "training",
@@ -996,6 +1036,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ef4d7b6b"
+    },
+    "322f44f0-e6da-4ee0-b474-e7d5e9a461c5": {
+      "name": "Morbid Opportunist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a6c03074"
     },
     "3233af43-7826-4895-b67e-03c6102c2cd5": {
       "name": "Kutzil, Malamet Exemplar",
@@ -1209,8 +1257,7 @@
           "face": 0,
           "ability": 2,
           "text": "−11: Destroy up to six target nonland permanents, then create six 2/2 green Cat Warrior creature tokens with forestwalk.",
-          "reason": "unrecognised",
-          "slot": "token",
+          "reason": "notRunnable",
           "closestRule": "token.custom"
         }
       ],
@@ -1249,6 +1296,14 @@
       ],
       "reasons": [],
       "ast": "fd3f3928"
+    },
+    "3adbd963-e85d-4569-963a-4472594f06f9": {
+      "name": "Woe Strider",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "94f727e1"
     },
     "3bb518ff-399b-4ce7-b9ad-a1d563dd7792": {
       "name": "Arch of Orazca",
@@ -1571,6 +1626,14 @@
       "reasons": [],
       "ast": "dc997d74"
     },
+    "4ef583ab-e0a0-4e4b-bd65-af766038b1fd": {
+      "name": "Ghost Vacuum",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fb10320f"
+    },
     "4f819ba4-52ef-4fdd-8e4c-5ae3b2f44db5": {
       "name": "Ramunap Excavator",
       "group": "training",
@@ -1676,6 +1739,14 @@
       "reasons": [],
       "ast": "d0d26e10"
     },
+    "53987a39-c18c-4c13-b1ea-fd1b2a369f9e": {
+      "name": "Whip of Erebos",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a7dde27c"
+    },
     "539f5396-d99a-417d-a84c-dff7930b5900": {
       "name": "Chromatic Lantern",
       "group": "training",
@@ -1683,6 +1754,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b9306fd3"
+    },
+    "5446c92f-ff22-4e9b-a2f6-e64c8560c1e0": {
+      "name": "Zombie Master",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e43806b4"
     },
     "5548ff43-e5f6-4a63-8562-a2b1de06d6f5": {
       "name": "Riveteers Overlook",
@@ -1808,6 +1887,14 @@
       "reasons": [],
       "ast": "90a97946"
     },
+    "5bb4ee32-11c6-4ed4-a071-c3cf48070fff": {
+      "name": "Embalmer's Tools",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b34537f4"
+    },
     "5c40a8d4-6969-4d71-aba5-5c7e4109b7d5": {
       "name": "Quintorius, History Chaser",
       "group": "acceptance",
@@ -1815,6 +1902,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "39bd92c6"
+    },
+    "5cd96cf2-c1c6-4982-8cf8-70c16704e387": {
+      "name": "Zombie Trailblazer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d3847c8d"
     },
     "5d2acd3e-4782-42e3-bcd5-80f8b439cc28": {
       "name": "Rhonas the Indomitable",
@@ -1848,6 +1943,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ac73db81"
+    },
+    "5e958212-6a5b-4288-8d31-f1572619d7dc": {
+      "name": "Liliana, Dreadhorde General",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5a43c693"
     },
     "5eb8bb1d-7567-4c24-913b-463b5fe463c4": {
       "name": "Gilt-Leaf's Embrace",
@@ -1904,6 +2007,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f8cf15ac"
+    },
+    "626a979f-bed7-4cb1-9ab7-c3f2bbe37781": {
+      "name": "Lost Monarch of Ifnir",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "420cd5f2"
     },
     "6288c0cb-cf32-4ae9-abf0-104ec71654fa": {
       "name": "Moraug, Fury of Akoum",
@@ -2106,6 +2217,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0775952a"
+    },
+    "696363c9-e8a7-4c65-b65c-4a94891ec43d": {
+      "name": "Gisa, the Hellraiser",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "92970f25"
     },
     "697ac261-263b-4879-bf45-6d10d23312ae": {
       "name": "Ao, the Dawn Sky",
@@ -2390,6 +2509,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6359e759"
+    },
+    "7565c101-a479-4812-9d18-63918084bfca": {
+      "name": "Tetzimoc, Primal Death",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3ecc6edf"
     },
     "75e4448b-5bd7-4ed4-8db8-820cd6d04c12": {
       "name": "Boar Umbra",
@@ -3600,6 +3727,14 @@
       "reasons": [],
       "ast": "d67c7c09"
     },
+    "b099fc54-cdbc-46cb-b4e4-7c2ca77b115b": {
+      "name": "Plumb the Forbidden",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ec1fcda8"
+    },
     "b1544f21-7e98-461b-aed5-e748b0168c52": {
       "name": "Swords to Plowshares",
       "group": "training",
@@ -3746,6 +3881,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8f8b16fe"
+    },
+    "bd532f8d-789f-4ee1-a2f3-ae30e8282c76": {
+      "name": "Gempalm Polluter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "231bc7c5"
     },
     "bd92cacd-c7d8-43a2-a261-ea4754fefdc5": {
       "name": "Sage's Reverie",
@@ -4133,6 +4276,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b330bd1e"
+    },
+    "d37e0127-6f68-438e-8b9e-a71bb3c34733": {
+      "name": "Forsaken Miner",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "41005009"
     },
     "d37f858e-03c8-4594-9b92-cd03699a1591": {
       "name": "Scoured Barrens",
@@ -4971,6 +5122,14 @@
       "reasons": [],
       "ast": "ef18b0f8"
     },
+    "fb3defc0-c93a-4423-9ff9-c399f8a8ef1f": {
+      "name": "Jadar, Ghoulcaller of Nephalia",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "24a689f7"
+    },
     "fb69bc57-f05a-41c2-9b7b-9a9761ef0cd3": {
       "name": "Sacred Peaks",
       "group": "acceptance",
@@ -5214,8 +5373,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 302,
-      "total": 319
+      "supported": 322,
+      "total": 339
     }
   }
 }

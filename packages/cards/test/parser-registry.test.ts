@@ -106,6 +106,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-prepared': asIs,
   // Danitha deck, group 4 (D-417): the keyword line of an Aura.
   'replacement.umbra-armor': asIs,
+  // Gisa deck, group 5 (D-482).
+  'replacement.escapes-with-counters': asIs,
   'static.no-maximum-hand-size': asIs,
   // Stage P24: the play rules are lines of their own.
   'static.additional-land': asIs,
@@ -186,6 +188,15 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   // Feather deck, group 2 (D-444): the two restrictions in the order of Hall of Oracles.
   'restriction.sorcery-and-if': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
+  // Gisa deck, group 4 (D-459 to D-462): the restriction of the turn and the cost of the reveal of Tetzimoc, the reduction of Embalmer's Tools, and the sentences of Whip of
+  // Erebos and Ghost Vacuum that need the instruction before them (a return from the graveyard, the exile that links).
+  'restriction.during-your-turn': permanent((e) => `{1}: Draw a card. ${e}`),
+  'cost.reveal-this': permanent((e) => `{B}, ${e}: Draw a card.`),
+  'static.graveyard-ability-cost-reduction': asIs,
+  'effect.exile-instead-when-leaving': permanent(
+    (e) => `{T}: Return target creature card from your graveyard to the battlefield. ${cap(e)}.`,
+  ),
+  'effect.put-exiled-with-battlefield': permanent((e) => `{6}, {T}, Sacrifice ~: ${cap(e)}.`),
   'duration.until-end-of-turn': permanent((e) => `{1}: ~ gets +1/+1 ${e}.`),
   'keyword.cycling': asIs,
   // Stage P17: typecycling is a keyword line, the count of kicks follows a quantity of one.
@@ -422,6 +433,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ attacks, if ${e}, you gain 1 life.`,
   ),
   'condition.player-dealt-damage': permanent((e) => `{T}: Draw a card if ${e}.`),
+  // Issue 41 (D-475): the intervening "if" of a second main phase trigger.
+  'condition.combat-damaged-by': permanent(
+    (e) => `At the beginning of your second main phase, if ${e}, you gain 1 life.`,
+  ),
   // Stage P69 (D-252): the Bruna deck.
   'condition.life-above-starting': permanent(
     (e) => `At the beginning of your end step, draw a card if ${e}.`,
@@ -526,6 +541,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.job-select': asIs,
   'trigger.becomes-untapped': whenever,
   'trigger.dies-batch': whenever,
+  // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token", "Skeletons and Zombies you control".
+  'trigger.commit-crime': whenever,
+  'trigger.create-token': whenever,
+  'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'trigger.discarded': whenever,
   'trigger.cycled-or-discarded': whenever,
   'condition.mana-spent-at-least': permanent(
@@ -674,6 +693,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.create-copy-spirit': permanent(
     (e) => `Whenever another nontoken creature you control dies, exile it. If you do, ${e}`,
   ),
+  // Gisa deck, group 3 (D-486, D-488, D-490): the subject "any number of target players each", the cost "Sacrifice X creatures" and "Partner with [name]".
+  'noun.any-number-target-players': spell((e) => `${cap(e)} lose 2 life.`),
+  'noun.x-permanents': permanent((e) => `{T}, Sacrifice ${e}: Draw X cards.`),
+  'keyword.partner-with': asIs,
+  // D-492: the optional sacrifice and the copies are one statement of a spell.
+  'static.additional-cost-sacrifice-copies': spell((e) => e),
   'noun.that-token': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,

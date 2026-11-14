@@ -95,13 +95,38 @@ export const thisEnteredWords = (negate: boolean): string =>
   `this permanent ${negate ? "didn't enter" : 'entered'} this turn`;
 
 /**
+ * "Activated abilities of creature cards in your graveyard cost {1} less to activate" (D-461, CR 601.2f, 113.6b): the reduction of the abilities of the cards of a kind in the
+ * graveyard of the controller. Null for a filter the words do not say (another zone, another controller, another field).
+ */
+function graveyardReductionWording(
+  effect: Extract<StaticEffect, { kind: 'abilityCostReduction'; abilities: 'ofObjects' }>,
+): string | null {
+  const generic = mana(effect.amount);
+  const { zone, controller, types, ...rest } = effect.objects;
+  if (
+    generic === null ||
+    zone !== 'graveyard' ||
+    controller !== 'you' ||
+    types === undefined ||
+    types.length !== 1 ||
+    Object.keys(rest).length > 0
+  ) {
+    return null;
+  }
+  return `Activated abilities of ${types[0]} cards in your graveyard cost ${generic} less to activate`;
+}
+
+/**
  * "Equip abilities you activate that target enchanted creature cost {3} less to activate" and "Aura spells you cast that target enchanted creature cost {3} less to cast"
  * (D-425, D-424, CR 601.2f, 602.2b): the reductions that read what the cost's object targets. `host` is the permanent an Aura or Equipment is attached to, as the card names it
  * ("enchanted creature"). Null for any other reduction, which these words do not say.
  */
 export function targetedReductionWording(effect: StaticEffect, host: string | null): string | null {
+  if (effect.kind === 'abilityCostReduction' && effect.abilities === 'ofObjects') {
+    return graveyardReductionWording(effect);
+  }
   if (host === null) return null;
-  if (effect.kind === 'abilityCostReduction') {
+  if (effect.kind === 'abilityCostReduction' && effect.abilities === 'equip') {
     const generic = mana(effect.amount);
     const { hostOfSource, ...rest } = effect.targeting;
     if (generic === null || hostOfSource !== true || Object.keys(rest).length > 0) return null;

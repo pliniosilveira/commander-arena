@@ -78,6 +78,7 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
         }
       }
       return true;
+    case 'afflict':
     case 'annihilator':
     case 'backup':
     case 'bushido':
@@ -85,6 +86,12 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       // CR 702.86a, 702.45a, 702.164a: "Annihilator N", "Bushido N", "Toxic N": N is a number, at least 1.
       if (!isCount(k.count) || k.count < 1) {
         issue(out, `${path}.count`, `${k.kind} needs a positive integer`);
+      }
+      return true;
+    case 'partnerWith':
+      // CR 702.124j (D-490): the name of the card the other commander is, and the card the enters trigger searches for.
+      if (typeof k.name !== 'string' || k.name.trim() === '') {
+        issue(out, `${path}.name`, 'partner with names a card');
       }
       return true;
     case 'typecycling':
@@ -151,6 +158,7 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       return true;
     case 'dethrone':
     case 'myriad':
+    case 'decayed':
       // CR 702.105a, 702.116a (D-151): no parameter.
       return true;
     case 'readAhead':

@@ -101,6 +101,7 @@ describe('amounts that read an object', () => {
       'votesFor',
       // D-450: "for each card you've drawn this turn" (CR 121.1).
       'cardsDrawnThisTurn',
+      'sacrificedAsCost',
     ]);
   });
 });

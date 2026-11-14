@@ -24,7 +24,7 @@ const NOT_IN_WORD = '(?![\\p{L}\\p{N}])';
 /**
  * `trigger.dies-batch`: "one or more other creatures and/or artifacts you control die", "one or more creatures you control die" (CR 603.10a,
  * 603.2c, 700.4: the permanents that die together are one event, and the ability triggers once for them). The permanents are a plural group of the
- * controller's (the engine's `diesBatch`, with the filter of the group as they were on the battlefield). "Dies" for one permanent is `trigger.dies`.
+ * controller's, or of every player (D-466: "one or more other creatures die"); the engine's `diesBatch`, with the filter of the group as they were on the battlefield. "Dies" for one permanent is `trigger.dies`.
  */
 export const TRIGGER_DIES_BATCH = defineRule<IrTrigger>({
   id: 'trigger.dies-batch',
@@ -40,9 +40,12 @@ export const TRIGGER_DIES_BATCH = defineRule<IrTrigger>({
     'one or more creatures you control die',
     'one or more other creatures you control die',
     'one or more artifacts you control die',
+    // D-466 (Gisa deck, Morbid Opportunist): the permanents of every player, not only the controller's.
+    'one or more other creatures die',
+    'one or more creatures die',
+    'one or more other creatures and/or artifacts die',
   ],
   rejects: [
-    'one or more creatures die',
     'one or more creatures you control dies',
     'one or more creature you control die',
     'one or more creatures an opponent controls die',
@@ -64,7 +67,9 @@ export const TRIGGER_DIES_BATCH = defineRule<IrTrigger>({
     )(ctx, pos);
     if (!r.ok) return r;
     const [, other, group] = r.value;
-    if (group.value.controller !== 'you') return fail(ctx, pos);
+    // D-466: a group of the controller's ('you') or of every player's (no controller); another controller is not a filter this event is read for.
+    if (group.value.controller !== undefined && group.value.controller !== 'you')
+      return fail(ctx, pos);
     const subject: IrNoun = {
       ...makeNoun('trigger.dies-batch', group.span, 'a', group.value),
       plural: true,

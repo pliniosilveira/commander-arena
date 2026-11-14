@@ -24,6 +24,20 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         'a mana ability sacrifices one permanent: no count (D-133)',
       );
     }
+    if (c?.kind === 'sacrifice' && c.anyNumber !== undefined) {
+      issue(
+        out,
+        `${path}.cost[${i}].anyNumber`,
+        'a mana ability sacrifices one permanent: no "any number" (D-491)',
+      );
+    }
+    if (c?.kind === 'sacrifice' && c.countX !== undefined) {
+      issue(
+        out,
+        `${path}.cost[${i}].countX`,
+        'a mana ability sacrifices one permanent: no X (it uses no stack to announce one, D-488)',
+      );
+    }
   });
   checkManaProduction(a.production, `${path}.production`, out);
   // D-151: "for each ..." mana is added as a spell or a triggered ability resolves; a mana ability makes its mana before it can read anything (CR 605.1a).

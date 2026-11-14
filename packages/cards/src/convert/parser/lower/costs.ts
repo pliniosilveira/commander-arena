@@ -97,6 +97,13 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     case 'sacrifice': {
       const { what } = cost;
       if (what.det === 'self') return ok({ kind: 'sacrifice', what: { kind: 'this' } });
+      // "Sacrifice X creatures" (D-488, CR 107.3a, 602.2b): the X announced as the ability is activated; the cost of an ordinary activated ability only.
+      if (what.det === 'a' && what.count?.kind === 'x') {
+        if (options.ordinary !== true || what.other) return failure(cost);
+        const { count: _counted, ...described } = what;
+        const filter = lowerFilter(described);
+        return filter.ok ? ok({ kind: 'sacrifice', what: filter.value, countX: true }) : filter;
+      }
       // "Sacrifice two artifacts" (stage P29, D-133): the engine's `count` of an activated ability's cost.
       const many = what.count?.kind === 'number' ? what.count.value : 1;
       if (what.det !== 'a' || (what.count !== undefined && what.count.kind !== 'number')) {
@@ -126,6 +133,9 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     case 'discardThis':
       // CR 701.9, 113.6b (stage P68, D-229): the card itself, from the hand: the cost of an ordinary activated ability, which then works from the hand.
       return options.ordinary === true ? ok({ kind: 'discardThis' }) : failure(cost);
+    case 'revealThis':
+      // CR 701.20a, 113.6b (Gisa deck, group 4, D-462): the card itself is shown from the hand: the cost of an ordinary activated ability, which then works from the hand.
+      return options.ordinary === true ? ok({ kind: 'revealThis' }) : failure(cost);
     case 'exileThis':
       // CR 118.1, 406.1 (stage P68, D-229): the permanent with the ability exiles itself, a cost of an ordinary activated ability.
       return options.ordinary === true ? ok({ kind: 'exileThis' }) : failure(cost);

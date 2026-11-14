@@ -46,6 +46,8 @@ export interface CostBreakdown {
   /** The counters put on the source as a cost (D-139, "Put a page counter on this artifact"). */
   readonly putCounters: readonly { readonly counter: string; readonly count: number }[];
   readonly discardThis: boolean;
+  /** "Reveal this card from your hand" (D-462, CR 701.20a): the card is shown to every player as the cost is paid and stays in the hand. */
+  readonly revealThis: boolean;
   /** The card itself is exiled from the graveyard (D-185, CR 702.141a: the cost of Encore) or, since D-229, the permanent from the battlefield ("Exile this artifact"). */
   readonly exileThis: boolean;
   /** "Mill a card" as the cost of an ordinary ability (D-229, CR 701.17, 118.3): the top cards of the library, none when 0. */
@@ -60,7 +62,7 @@ export interface CostBreakdown {
   readonly mana: readonly string[];
   /** The permanents to sacrifice: the source itself, or a choice among a filter's matches. */
   readonly sacrifice: 'this' | ObjectFilter | null;
-  /** How many of them (D-133, "Sacrifice two artifacts"); 1 for the source and for an ordinary cost. */
+  /** How many of them (D-133, "Sacrifice two artifacts"; D-488, "Sacrifice X creatures": the X announced, 0 for none); 1 for the source and for an ordinary cost. */
   readonly sacrificeCount: number;
   /** The permanents to return to their owners' hands (D-139): the source itself, or a choice among a filter's matches; null for none. */
   readonly bounce: 'this' | ObjectFilter | null;
@@ -87,6 +89,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let tap = false;
   let life = 0;
   let discardThis = false;
+  let revealThis = false;
   let exileThis = false;
   let mill = 0;
   let cycling = false;
@@ -144,6 +147,9 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         discardThis = true;
         if (cost.cycling === true) cycling = true;
         break;
+      case 'revealThis':
+        revealThis = true;
+        break;
       case 'exileThis':
         exileThis = true;
         break;
@@ -166,7 +172,8 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
       case 'sacrifice':
         sacrifices += 1;
         sacrifice = 'kind' in cost.what ? 'this' : cost.what;
-        sacrificeCount = cost.count ?? 1;
+        // D-488 (CR 107.3a, 602.2b): "Sacrifice X creatures" is X permanents, the X announced for the ability (none for X = 0).
+        sacrificeCount = cost.countX === true ? x : (cost.count ?? 1);
         break;
       case 'exileFromGraveyard':
         exileCardsCosts += 1;
@@ -213,6 +220,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     putCounters: [...put].map(([counter, count]) => ({ counter, count })),
     loyalty,
     discardThis,
+    revealThis,
     exileThis,
     mill,
     cycling,
@@ -257,6 +265,8 @@ function immediateRefusal(
     }
   }
   if (costs.discardThis && source.zone !== 'hand') return 'the card is not in your hand';
+  // D-462 (CR 701.20a): only a card in the hand can be revealed from it.
+  if (costs.revealThis && source.zone !== 'hand') return 'the card is not in your hand';
   // D-185: "Exile this card from your graveyard" is paid from the graveyard; D-229: "Exile this artifact" from the battlefield.
   if (costs.exileThis && source.zone !== 'graveyard' && source.zone !== 'battlefield') {
     return 'it is not in a zone it can be exiled from';
@@ -338,6 +348,19 @@ export function payImmediateCosts(
         if (landed?.kind === 'zoneChanged')
           events.push({ kind: 'cycled', seat, object: landed.to });
       }
+    }
+  }
+  if (costs.revealThis) {
+    // CR 701.20a (D-462): "Reveal this card from your hand": the card is shown to every player (the event is public) and stays where it is.
+    const card = state.objects[source];
+    if (card?.card != null) {
+      events.push({
+        kind: 'cardsRevealed',
+        seat,
+        cards: [card.card],
+        names: [derive(state, card).name],
+        from: 'hand',
+      });
     }
   }
   if (costs.mill > 0) {
@@ -422,8 +445,8 @@ export function costRefusal(
     if (source.zone !== 'battlefield' || controllerOf(state, source) !== seat) {
       return 'you do not control it, so you cannot sacrifice it';
     }
-  } else if (parts.sacrifice !== null) {
-    // CR 701.21a: permanents you control that match. `other` leaves the source out.
+  } else if (parts.sacrifice !== null && parts.sacrificeCount > 0) {
+    // CR 701.21a: permanents you control that match. `other` leaves the source out. (X = 0 of "Sacrifice X creatures" asks for none, D-488.)
     const found = sacrificeCandidates(paid, seat, source.id, parts.sacrifice).length;
     if (found === 0) return 'you have nothing to sacrifice';
     if (found < parts.sacrificeCount) {

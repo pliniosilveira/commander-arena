@@ -57,6 +57,8 @@ export type ParseOutcome =
 const SPELL_STATICS = [
   'static.self',
   'static.self-cost-reduction',
+  // D-492: "As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way." is tried first (it starts like the next).
+  'static.additional-cost-sacrifice-copies',
   'static.additional-cost',
   'static.free-cast',
 ] as const;

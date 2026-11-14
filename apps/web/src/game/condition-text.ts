@@ -254,6 +254,11 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       if (words === undefined) return null;
       return negate ? words.not : words.yes;
     }
+    case 'sacrificedAsCost':
+      // CR 118.8, 603.4 (D-491): the intervening "if" of the cast trigger of a spell whose additional cost may sacrifice any number of creatures.
+      return negate
+        ? "you didn't sacrifice a permanent to cast it"
+        : 'you sacrificed one or more permanents to cast it';
     case 'giftPromised':
       // CR 702.174k (D-135): "if the gift was promised".
       return negate ? "the gift wasn't promised" : 'the gift was promised';
@@ -290,6 +295,7 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       return angelsConditionWords(condition, negate);
     case 'enteredThisTurn':
     case 'playerDealtDamage':
+    case 'combatDamagedBy':
     case 'chosenOption':
     case 'attackingMostLife':
     case 'attackersTotalPower':

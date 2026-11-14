@@ -44,7 +44,7 @@ import { pluralSubtype, thingsPhrase } from './filter-text';
 import { ptChangeText } from './pt-text';
 import { keepsDamageWording, redirectDamageWording } from './redirect-text';
 import { tokenWords } from './token-text';
-import { filterPhrase, keywordWords, withText } from './trigger-text';
+import { filterPhrase, grantedKeywordWords, withText } from './trigger-text';
 import { COLOR_NAMES } from './words';
 
 /** What the words need to know about the permanent or card that has the ability. */
@@ -103,6 +103,17 @@ export function groupPhrase(filter: ObjectFilter, other?: boolean): string | nul
   const said = (f: ObjectFilter): string | null =>
     thingsPhrase(f, true)?.replace(' on the battlefield', '') ?? null;
   if (anyOf === undefined || anyOf.length === 0) return said(merged);
+  // D-468: "Skeletons and Zombies you control": two creature types, each alone in its member, with one controller for both.
+  const pair = anyOf.map((m) => (Object.keys(m).join() === 'subtypes' ? (m.subtypes ?? []) : []));
+  if (
+    anyOf.length === 2 &&
+    pair.every((s) => s.length === 1) &&
+    base.controller === 'you' &&
+    Object.keys(base).every((k) => k === 'controller' || k === 'zone')
+  ) {
+    const [a, b] = pair.map((s) => pluralSubtype(s[0] ?? ''));
+    return `${other === true ? 'other ' : ''}${a} and ${b} you control`;
+  }
   const parts = anyOf.map((member) => said({ ...merged, ...member }));
   return parts.some((part) => part === null) ? null : joinAnd(parts as string[]);
 }
@@ -215,7 +226,7 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
           ? 'protection from the chosen card type'
           : effect.keyword.kind === 'protection' && effect.keyword.from === 'cardType'
             ? `protection from ${effect.keyword.types.map(pluralCardType).join(' and from ')}`
-            : keywordWords(effect.keyword.kind);
+            : grantedKeywordWords(effect.keyword);
       return `${subject.text} ${subject.many ? 'have' : 'has'} ${has}`;
     }
     case 'restriction': {

@@ -100,7 +100,11 @@ describe('activated abilities equal the engine fixtures', () => {
     expect(abilitiesOf('{1}: Draw a card. Activate only as a sorcery.')[0]).toMatchObject({
       timing: 'sorcery',
     });
-    const refused = parseFaceText('{1}: Draw a card. Activate only during your turn.', OPTS, 0);
+    const refused = parseFaceText(
+      '{1}: Draw a card. Activate only during an opponent’s turn.',
+      OPTS,
+      0,
+    );
     expect(refused.abilities).toEqual([]);
     expect(refused.unparsed[0]).toMatchObject({ slot: 'restriction' });
   });

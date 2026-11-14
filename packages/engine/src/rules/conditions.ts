@@ -11,6 +11,7 @@ import { chosenOf } from './chosen';
 import {
   cardsInGraveyardHolds,
   cardsInLibraryHolds,
+  combatDamagedByHolds,
   controlsCommander,
   enteredThisTurnHolds,
   lifeGainedThisTurnHolds,
@@ -137,6 +138,12 @@ export function evaluateCondition(
       // last-known information does once it has left (CR 113.7a), as the trigger resolves after the spell was countered.
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return source !== null && (source.stack?.replicated ?? 0) > 0;
+    }
+    case 'sacrificedAsCost': {
+      // CR 118.8, 603.4 (D-491): "if you sacrificed one or more creatures to cast it": the spell carries the sacrificed permanents on the stack, or its last-known information
+      // does once it has left (CR 113.7a).
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return (source?.stack?.sacrificedAsCost?.length ?? 0) > 0;
     }
     case 'escaped': {
       // CR 702.138b: a spell that is resolving was cast from a graveyard with an escape ability (the fact is on
@@ -400,6 +407,9 @@ export function evaluateCondition(
     case 'playerDealtDamage':
       // D-151, CR 120.3: the damage dealt to the controller, or to an opponent, this turn.
       return playerDealtDamageHolds(state, ctx.controller, condition);
+    case 'combatDamagedBy':
+      // D-475, CR 120.2a: combat damage a player was dealt this turn by a source of the kind, as it was when it dealt it.
+      return combatDamagedByHolds(state, ctx.controller, condition);
     case 'lifeGainedThisTurn':
       // D-252, CR 119.3: the life the controller has gained this turn, from the turn log.
       return lifeGainedThisTurnHolds(state, ctx.controller, condition);

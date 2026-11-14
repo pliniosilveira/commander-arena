@@ -371,7 +371,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 702.84a (Unearth, D-124): "If it would leave the battlefield, exile it instead of putting it anywhere
   // else." It belongs to the unearthed object, not to its abilities, so it holds when it lost them (CR 614.6).
   // It comes before the commander replacement below, whose zones (hand, library) it removes.
-  if (old.zone === 'battlefield' && old.alt === 'unearth' && to !== 'exile') {
+  // CR 614.1a, 614.6 (D-459): the same replacement for a permanent an effect marked `exileIfLeaves` ("If it would leave the battlefield, exile it instead of
+  // putting it anywhere else", Whip of Erebos).
+  if (
+    old.zone === 'battlefield' &&
+    (old.alt === 'unearth' || old.exileIfLeaves === true) &&
+    to !== 'exile'
+  ) {
     to = 'exile';
     toSeat = null;
   }

@@ -41,12 +41,14 @@ const EXECUTABLE_KEYWORDS = [
   'changeling', // scenario-xx-changeling-devoid
   'devoid', // scenario-xx-changeling-devoid
   'partner', // scenario-xx-changeling-devoid
+  'partnerWith', // scenario-xx-gisa-g3-sacrifice-x
   'chooseBackground', // scenario-xx-choose-background
   'canBeCommander', // scenario-xx-planeswalker-commander
   'ascend', // scenario-xx-ascend
   'soulbond', // scenario-xx-soulbond (D-286)
   'exalted', // scenario-xx-exalted-annihilator
   'annihilator', // scenario-xx-exalted-annihilator
+  'afflict', // scenario-xx-gisa-g1-afflict (D-472)
   'backup', // convert-grammar-engine-p69 (Guardian Scalelord, on the real card)
   'persist', // scenario-xx-persist-undying
   'undying', // scenario-xx-persist-undying
@@ -83,6 +85,7 @@ const EXECUTABLE_KEYWORDS = [
   'readAhead', // scenario-xx-read-ahead
   'dethrone', // scenario-xx-extra-combat
   'myriad', // scenario-xx-extra-combat
+  'decayed', // scenario-xx-gisa-g5-decayed (D-478)
 ];
 
 /** Keyword abilities that exist in the AST but that the engine does not execute yet. */
@@ -130,12 +133,14 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   changeling: { kind: 'changeling' },
   devoid: { kind: 'devoid' },
   partner: { kind: 'partner' },
+  partnerWith: { kind: 'partnerWith', name: 'SYNTHETIC Partner Quarry' },
   chooseBackground: { kind: 'chooseBackground' },
   canBeCommander: { kind: 'canBeCommander' },
   ascend: { kind: 'ascend' },
   soulbond: { kind: 'soulbond' },
   exalted: { kind: 'exalted' },
   annihilator: { kind: 'annihilator', count: 2 },
+  afflict: { kind: 'afflict', count: 3 },
   backup: { kind: 'backup', count: 1 },
   persist: { kind: 'persist' },
   undying: { kind: 'undying' },
@@ -178,6 +183,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   dethrone: { kind: 'dethrone' },
   readAhead: { kind: 'readAhead' },
   myriad: { kind: 'myriad' },
+  decayed: { kind: 'decayed' },
   protection: { kind: 'protection', from: 'color', colors: ['R'] },
 };
 
@@ -290,6 +296,7 @@ describe('supported feature gate', () => {
         'dealtDamage',
         'combatDamageBatch',
         'countersAdded',
+        'crimeCommitted',
         'dies',
         'diesBatch',
         'discarded',
@@ -309,6 +316,7 @@ describe('supported feature gate', () => {
         'step',
         'tappedForMana',
         'tapsForMana',
+        'tokenCreated',
         'upkeep',
       ].sort(),
     );

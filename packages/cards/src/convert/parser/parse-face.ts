@@ -124,6 +124,11 @@ export function parseFaceText(
       }
       additionalCosts.push(...result.costs.additionalCosts);
       alternativeCosts.push(...result.costs.alternativeCosts);
+      // D-492: a line that is a cost and an ability of the card ("When you do, copy ~ for each creature sacrificed this way").
+      for (const ability of result.costs.abilities ?? []) {
+        abilities.push(ability);
+        lineOf.push({ index, text, ruleId: result.ruleId });
+      }
       if (result.costs.additionalCostChoice !== undefined) {
         additionalCostChoice = result.costs.additionalCostChoice;
       }

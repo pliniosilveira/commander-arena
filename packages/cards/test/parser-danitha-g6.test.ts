@@ -10,7 +10,7 @@ vi.mock('@commander-arena/engine', async (importOriginal) =>
 );
 
 import { DECLARED_NEEDS } from '../src/convert/parser/index';
-import { dropped, read, readAll, withoutFeature } from './parser-p5-helpers';
+import { read, readAll, withoutFeature } from './parser-p5-helpers';
 
 const T1 = { kind: 'target', id: 't1' } as const;
 const BASE_CREATURES = { types: ['creature'], controller: 'you', powerAboveBase: true } as const;
@@ -197,12 +197,16 @@ describe('Gift of the Viper: "Put a +1/+1 counter, a reach counter, and a deatht
     expect(parsed.spell ?? null).toBeNull();
   });
 
-  test('a keyword counter the engine cannot run is dropped, not read as a plain counter (CR 122.1b: decayed)', () => {
-    const first = dropped('Put a decayed counter on target creature.');
-    expect(first).toMatchObject({ reason: 'notRunnable' });
-    const list = read('Put a decayed counter and a reach counter on target creature.');
-    expect(list.unparsed.length).toBeGreaterThan(0);
-    expect(list.spell ?? null).toBeNull();
+  test('decayed is a keyword counter the engine runs since D-478 (CR 122.1b, 702.147a): one counter, alone or in a list', () => {
+    expect(readAll('Put a decayed counter on target creature.').spell?.effect).toEqual(
+      counter('decayed'),
+    );
+    expect(
+      readAll('Put a decayed counter and a reach counter on target creature.').spell?.effect,
+    ).toEqual({
+      kind: 'sequence',
+      effects: ['decayed', 'reach'].map(counter),
+    });
   });
 
   test('the counters name the feature the engine lacks (D-068)', () => {

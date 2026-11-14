@@ -392,3 +392,47 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `cardsDrawnThisTurn` is the controller's own count: "for each card an opponent has drawn this turn", the whole game and a static ability that follows it are not read (a layer effect would need a refresh when a card is drawn).
 - `effect.becomes` takes keywords after a color alone only ("becomes red and gains haste"); a creature type or a card type with keywords is read by the lead rules (`effect.lead-becomes`, `effect.lead-becomes-target`) in their own words. `effect.lead-double-pt` takes a target (not `~`'s power or a group) and the keywords of "it".
 - The rulings of the seven cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
+
+## The Gisa deck, group 4 (issue 41, D-459 to D-463)
+
+- The delayed exile is "at the beginning of the next end step" only: "your next end step", another step and "Sacrifice it at the beginning of the next end step" are not read; "If it would leave the battlefield, exile it instead of putting it anywhere else" is read after an instruction that put the object onto the battlefield (not "would die", not "this turn", not a spell). The delayed ability of Whip of Erebos has the returned permanent as its source, so the stack shows it under the creature's name.
+- "It gains haste." with no duration is read for "it" after a move onto the battlefield only; "target creature gains flying" with no duration is not read.
+- `linkedExile` with a filter describes cards by card type, subtype, color and mana value; "put each X card exiled with ~ onto the battlefield" is read for a card type, "under your control" and one counter; "a card exiled with ~", "all cards", "under its owner's control", tapped and "exiled with" another permanent are not.
+- The reduction of the cost of abilities by a permanent is read for the abilities of the cards of one card type in the graveyard of its controller (generic mana, {N} less). The abilities of permanents on the battlefield ("Activated abilities of creatures you control cost {2} less", with the floor of one mana of Training Grounds and Heartstone), those of an opponent's graveyard and mana and loyalty abilities are not read.
+- A hand ability with a reveal cost: the card is revealed and stays in the hand; "Reveal a card from your hand" (another card), a reveal as a cost of a mana ability and "Activate only during your turn" with a second restriction in the same sentence are not read.
+- The CasualAgent and the HeuristicAgent reanimate with Whip of Erebos as they unearth (`wantsOneTurnReanimation`: a creature card of their graveyard would attack safely in the first main phase), but never activate Tetzimoc's ability from the hand or Ghost Vacuum (`casual-activations.ts` uses a short list of abilities it can judge; the view does not show the cards exiled with a permanent), so those are used only by the random agents of the soak, and the 100-game soak does not reach the Vacuum's Spirits (the engine scenarios prove them). Embalmer's Tools needs no decision: the reduction lowers the cost of an Unearth the agent already wants.
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
+
+## The Gisa deck, group 2 (issue 41, D-464 to D-471)
+
+- A crime is committed when a spell is cast, an ability activated or a triggered ability put on the stack with such a target; a target changed afterwards (CR 115.7) and a copy of a spell (CR 707.10) are not. There is no record of the crimes of a turn (no `TurnLog.crimes`): "if you've committed a crime this turn" and "the number of crimes" are not read; the first card that needs them adds the list.
+- "Whenever you create a token" reads the token's creator (`tokenCreated`, CR 111.2): a kind of token ("a Treasure token", "a creature token"), "one or more tokens" counted by creator (that rule still reads the tokens that enter under your control, D-229) and "an opponent sacrifices a token" are not read.
+- `trigger.dies-batch` reads a group of the controller's or of every player's creatures; "one or more creatures an opponent controls die" is not read.
+- Ward costs with three parts, or a sacrifice or a discard beside a mana cost, are not read.
+- `noun.subtype-pair` reads two creature types in the plural joined by "and" with "you control" for both; "other", a third type and another controller are not read.
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Mirkwood Bats triggering once for each token (CR 603.2c) is unverified against its rulings.
+
+## The Gisa deck, group 1 (issue 41, D-472 to D-477)
+
+- Afflict is the only keyword with a number that can be granted besides landwalk: `toxic`, `annihilator`, `bushido` and the other keywords with a parameter are still refused by `validateCard` in a grant (the instances of each would need their own rule).
+- A land set to a basic land type (`setTypes` with `Plains`, `Island`, `Swamp`, `Mountain`, `Forest`) is run for an effect only: the static form ("Each land is a Swamp in addition to its other land types", Urborg, Yavimaya) is still refused by `validateCard`, and "in addition to its other land types" is not read (`effect.becomes` rejects it; the engine runs the additive effect). Other land types (a Desert, a Gate) cannot be set. The dependencies of CR 613.8 between layer 4 effects (Blood Moon with Urborg) are not modelled.
+- `combatDamagedBy` reads the card types, the subtypes and the controller of the source only: "by a nontoken creature", "by a creature with power 4 or greater", "by a white creature" and "an opponent was dealt combat damage by ..." are not read, and the log has no amount of damage by kind.
+- The word "token" is read in the subject of a trigger (`a Zombie token you control`) and nowhere else in a permanent phrase: "destroy target creature token" and the like stay unread until a card asks for them.
+- Snow, legendary and artifact landwalk and the landwalks of other land types are not read (`LANDWALKS` lists the five basic land types and "nonbasic landwalk").
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
+
+## The Gisa deck, group 5 (issue 41, D-478 to D-483)
+
+- Decayed is a keyword with its own reading of "can't block": `derive` adds the restriction `cantBlock` from the keyword among the final abilities (D-478). The trigger of the keyword is appended after the printed abilities of the creature, and a granted decayed brings it once (a list `EXPANDED_WHEN_GRANTED`); other keywords whose expansion is a static ability (not a trigger) would need the same kind of reading, because the index of static abilities (`derive-statics.ts`) is built from printed abilities only.
+- `effect.have-player-life` reads "have [target player or opponent, each opponent] lose or gain life": another verb after "have" ("have target player draw a card", "have target player discard ...") is not read.
+- `replacement.escapes-with-counters` reads a number of counters only (the real line of Woe Strider); "escapes with X counters" and "escapes with a counter for each ..." are not read, and "escapes with [ability]" (CR 702.138d) is not either.
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
+
+## The Gisa deck, group 3 (issue 41, D-484 to D-493)
+
+- "Sacrifice X creatures" is the cost of an activated ability only (not a spell's additional cost, not a mana ability); the casual agent never activates such an ability (it uses no sacrifice outlet), and when asked X it announces no more than its tokens.
+- "You may sacrifice one or more creatures" is read for creatures with the copy sentence of Plumb the Forbidden only (`static.additional-cost-sacrifice-copies`); the same cost with another sentence, or of other permanents, is not read. The question is asked with the payment, after the mana, not at the start of the cast.
+- The "When you do" of that card is a cast trigger of the spell (same moment as CR 603.12's reflexive trigger); an effect that tells the two apart (stopping a cast trigger, copying a reflexive one) is not modelled.
+- `sparePermanents.own` has each opponent keep a permanent of each type; "each player" is built (SYNTHETIC) but not read; whether one artifact creature may be chosen for both the artifact and the creature follows the independent choices of the text (D-231 does the same). The Scryfall rulings of Liliana, Dreadhorde General, Krav, Priest of Forgotten Gods and Plumb the Forbidden were not fetched (blocked in a cloud session): marked unverified.
+- "Partner with" reveals the card, as CR 702.124j says; today's reminder text says "put into their hand from their library" without a reveal. The search is offered even when the library holds no such card (a player may search for a card that is not there).
+- "You add {B}{B}" is read only with fixed symbols and only where it does not make a mana ability.

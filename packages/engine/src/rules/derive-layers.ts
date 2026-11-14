@@ -21,11 +21,18 @@
  * effect that ends simply stops being in the list and nothing needs undoing.
  */
 import type { Ability } from '../ast/types';
-import { type CardType, type Color, isNonCreatureSubtype, type Subtype } from '../characteristics';
+import {
+  type CardType,
+  type Color,
+  isNonCreatureSubtype,
+  LAND_TYPES,
+  type Subtype,
+} from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
 import type { ContinuousChange, ContinuousEffect } from '../state/types';
 import { expansionOf } from './derive-keywords';
 import { effectsOn } from './effects-on';
+import { areBasicLandTypes } from './land-types';
 
 export { effectsOn };
 
@@ -94,7 +101,10 @@ export function applyTypeLayer(
       types = [...new Set([...kept, ...e.change.types])];
     }
     if (e.change.subtypes !== undefined) {
-      subtypes = [...new Set([...subtypes.filter(isNonCreatureSubtype), ...e.change.subtypes])];
+      // CR 305.7, 205.1a (D-474): basic land types set a land's subtype: the land types it had go and everything else, creature types too, stays.
+      subtypes = areBasicLandTypes(e.change.subtypes)
+        ? [...new Set([...subtypes.filter((s) => !LAND_TYPES.includes(s)), ...e.change.subtypes])]
+        : [...new Set([...subtypes.filter(isNonCreatureSubtype), ...e.change.subtypes])];
     }
     if (!types.includes('creature') && !types.includes('kindred')) {
       subtypes = subtypes.filter(isNonCreatureSubtype);
@@ -133,8 +143,8 @@ export interface StaticGrant {
 }
 
 /**
- * Whether the list already has what a grant would add: the same keyword (only keywords without
- * parameters are granted, so the kind identifies them; protection is the exception, D-376, below),
+ * Whether the list already has what a grant would add: the same keyword (the kind identifies a keyword without parameters; protection, D-376,
+ * and landwalk, D-473, are the exceptions, below, and afflict is counted by instance, `INSTANCE_KEYWORDS`),
  * or a mana ability written the same way (a land given "{T}: Add one mana of any color" twice has it
  * once, which changes nothing in play).
  */
@@ -146,6 +156,14 @@ function hasAbility(list: readonly Ability[], grant: Ability): boolean {
       const written = JSON.stringify(grant.keyword);
       return list.some((a) => a.kind === 'keyword' && JSON.stringify(a.keyword) === written);
     }
+    // CR 702.14e (D-473): landwalks of different land types are different abilities; the same one twice is redundant.
+    if (grant.keyword.kind === 'landwalk') {
+      const landType = grant.keyword.landType;
+      return list.some(
+        (a) =>
+          a.kind === 'keyword' && a.keyword.kind === 'landwalk' && a.keyword.landType === landType,
+      );
+    }
     return list.some((a) => a.kind === 'keyword' && a.keyword.kind === grant.keyword.kind);
   }
   // D-151: an activated or a triggered ability is given by each source that grants it (two sources, two instances).
@@ -154,8 +172,11 @@ function hasAbility(list: readonly Ability[], grant: Ability): boolean {
   return list.some((a) => a.kind === 'mana' && JSON.stringify(a) === written);
 }
 
-/** The keywords whose instances each count (CR 702.83b: exalted, CR 702.108b: prowess) and so are not added once only. */
-const INSTANCE_KEYWORDS: readonly (string | null)[] = ['exalted', 'prowess'];
+/** The keywords whose instances each count (CR 702.83b: exalted, CR 702.108b: prowess, CR 702.130b: afflict) and so are not added once only. */
+const INSTANCE_KEYWORDS: readonly (string | null)[] = ['exalted', 'prowess', 'afflict'];
+
+/** The keywords a grant gives together with the abilities they stand for, once (D-478: Decayed, a static and a triggered ability). */
+const EXPANDED_WHEN_GRANTED: readonly (string | null)[] = ['decayed'];
 
 function keywordKindOf(ability: Ability): string | null {
   return ability.kind === 'keyword' ? ability.keyword.kind : null;
@@ -195,10 +216,15 @@ export function applyAbilityLayer(
   for (const step of steps) {
     if (step.grant === null) abilities = [];
     else if (INSTANCE_KEYWORDS.includes(keywordKindOf(step.grant))) {
-      // CR 702.83b, 702.108b (D-149): every instance of exalted or prowess is its own triggered ability, so each grant adds one,
+      // CR 702.83b, 702.108b, 702.130b (D-149, D-472): every instance of exalted, prowess or afflict is its own triggered ability, so each grant adds one,
       // whatever the object already has, and the triggered ability the keyword stands for with it.
       abilities = [...abilities, step.grant, ...expansionOf(step.grant)];
-    } else if (!hasAbility(abilities, step.grant)) abilities = [...abilities, step.grant];
+    } else if (!hasAbility(abilities, step.grant)) {
+      // D-478 (CR 702.147a): a granted decayed has the static and the triggered ability it stands for, once.
+      abilities = EXPANDED_WHEN_GRANTED.includes(keywordKindOf(step.grant))
+        ? [...abilities, step.grant, ...expansionOf(step.grant)]
+        : [...abilities, step.grant];
+    }
   }
   return abilities;
 }

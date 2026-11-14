@@ -17,7 +17,7 @@ export function readsTriggerSubject(ability: Ability): boolean {
   // caused the trigger, so the subject stays on the stack as it does for the intervening "if" below.
   if (effects.includes('"manaSpentAtLeast"')) return true;
   // D-196: the Ring's sacrifice at end of combat is about the creature that blocked the Ring-bearer.
-  if (ability.effect.kind === 'delayedSacrifice') return true;
+  if (ability.effect.kind === 'delayedSacrifice' && ability.effect.of !== 'this') return true;
   // CR 702.100a (D-120): the intervening "if" of Evolve compares the creature that entered with the source,
   // as it triggers and again as the ability resolves, so the subject stays on the stack.
   // CR 601.2h, 603.4 (D-206): the intervening "if" of Sahagin reads the mana spent on the spell that caused the trigger, again as the ability resolves.

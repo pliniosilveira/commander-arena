@@ -12,6 +12,7 @@ import { GIFT_KEYWORD_RULES } from './gift';
 import { LATER_KEYWORD_RULES } from './later';
 import { LIVING_WEAPON_KEYWORD_RULES } from './living-weapon';
 import { numberedKeyword } from './numbered';
+import { PARTNER_WITH_KEYWORD_RULES } from './partner-with';
 import { protectionKeyword } from './protection';
 import { simpleKeyword } from './simple';
 import { TYPECYCLING_RULES } from './typecycling';
@@ -109,6 +110,9 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'split second',
     'Toxic 1',
     'Annihilator 2',
+    // D-472 (CR 702.130a): Afflict N.
+    'Afflict 3',
+    'Flying, afflict 2',
     'Flying, infect',
     'Infect, wither',
     'Trample, toxic 1',
@@ -210,6 +214,12 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Annihilator 0',
     'Annihilator 02',
     'Annihilator X',
+    'Afflict',
+    'Afflict 0',
+    'Afflict X',
+    'Afflict three',
+    'Afflict 3 4',
+    'Afflict {1}',
     'Infectious',
     'Split',
     'Split second.',
@@ -335,6 +345,8 @@ export const KEYWORD_CYCLING = defineRule<readonly IrKeyword[]>({
 });
 
 export const KEYWORD_RULES = [
+  // D-490 (Gisa deck, group 3): "Partner with Regna, the Redeemer" starts like the plain keyword Partner, which `keyword.line` reads a prefix of: tried first.
+  ...PARTNER_WITH_KEYWORD_RULES,
   KEYWORD_LINE,
   KEYWORD_CYCLING,
   ...TYPECYCLING_RULES,

@@ -412,6 +412,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
       'noun.other-permanents',
       'noun.other-subtype-permanents',
       'noun.subtype-union',
+      // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control get +1/+1 and have menace."
+      'noun.subtype-pair',
       'noun.all-permanents',
       // Stage P64 (D-217): "Creature tokens you control have haste."
       'noun.token-permanents',

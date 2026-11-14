@@ -308,6 +308,16 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:cycled']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'cycled' });
     }
+    case 'crimeCommitted':
+    case 'tokenCreated': {
+      // "Whenever you commit a crime" (Gisa deck, D-464, CR 700.13), "whenever you create a token" (D-465, CR 111.2): the player is relative to the controller.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures([`trigger:${t.event}`]);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({ kind: t.event as 'crimeCommitted' | 'tokenCreated', who });
+    }
     case 'ringTempted': {
       // "Whenever the Ring tempts you" (stage P45, D-197, CR 701.54d): the controller of the ability is the player tempted.
       const blocked = missingFeatures(['trigger:ringTempted']);
@@ -515,9 +525,16 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
   // combat damage, whose spell or ability targeted, who sacrificed. A step, a death and an entering have none.
   const aboutPlayer =
     // D-391 (CR 120.3, 113.7a): "a source deals damage to ~" is about the controller of the source (the engine's `dealtDamage` has it as the trigger player).
-    (['drawn', 'sacrifice', 'becomesTarget', 'lifeGained', 'attackBatch', 'dealtDamage'].includes(
-      only.event,
-    ) &&
+    ([
+      'drawn',
+      'sacrifice',
+      'becomesTarget',
+      'lifeGained',
+      'attackBatch',
+      'dealtDamage',
+      'crimeCommitted',
+      'tokenCreated',
+    ].includes(only.event) &&
       only.actor !== undefined) ||
     ((only.event === 'dealsCombatDamage' ||
       only.event === 'combatDamageBatch' ||
@@ -1113,6 +1130,8 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:leftGraveyard',
   'trigger:exiledFromLibraryOrGraveyard',
   'trigger:castNth',
+  'trigger:crimeCommitted',
+  'trigger:tokenCreated',
   'ability:oncePerTurn',
   'ability:doOnlyOnceEachTurn',
   'condition:duringStep',

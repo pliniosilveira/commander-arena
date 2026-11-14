@@ -238,6 +238,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): "for each card you've drawn this turn".
       return "the number of cards you've drawn this turn";
+    case 'sacrificedAsCost':
+      // D-491 (CR 118.8): "for each creature sacrificed this way", the additional cost of the spell.
+      return 'the number of permanents sacrificed to cast this spell';
     case 'exiledStillThere':
     case 'cardsStillExiled':
       // D-151: "each of those cards that are still exiled" (CR 400.7: a card that left exile is not counted).

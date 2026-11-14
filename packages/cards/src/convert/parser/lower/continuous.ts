@@ -6,7 +6,7 @@
  */
 import type { CardType, Color, Effect, Keyword, ObjectSelector } from '@commander-arena/engine';
 import type { IrClause, IrTypeList } from '../ir/types';
-import { isGrantable, keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
+import { grantedKeyword } from '../rules/keyword/vocabulary';
 import { arg, type Effects, eachObject, failure, operand } from './clauses';
 import { missingFeatures } from './features';
 import { colorLetter, itemsOf, objectSelectorOf } from './nouns';
@@ -72,15 +72,21 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
         { ...TRIGGER_SUBJECT, token: true },
       );
     }
-    const kind = keywordKind(word.name);
-    if (kind === undefined || !isGrantable(kind)) return failure(clause);
+    // D-472, D-473: a keyword without parameters, "afflict 3" or a landwalk; each word is one node of the engine's.
+    const keyword = grantedKeyword(word.name);
+    if (keyword === undefined) return failure(clause);
+    if (keyword.kind === 'afflict' || keyword.kind === 'landwalk') {
+      const blocked = missingFeatures([`keyword:${keyword.kind}`]);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+    }
     return eachObject(
       clause,
       ctx,
       (objects) => ({
         kind: 'grantKeyword',
         objects,
-        keyword: plainKeyword(kind),
+        keyword,
         duration: whileRemains
           ? ('forAsLongAsThisRemains' as const)
           : whileControlling

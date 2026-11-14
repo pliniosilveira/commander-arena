@@ -17,7 +17,6 @@ import type {
   PlayerSelector,
   TokenDefinition,
 } from '@commander-arena/engine';
-import { UNSUPPORTED_KEYWORD_COUNTERS } from '@commander-arena/engine';
 import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
 import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
 import { lowerAmount } from './amounts';
@@ -50,6 +49,7 @@ import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
+import { GISA_G4_LOWERINGS } from './gisa-g4';
 import { GAIN_STATIC_ABILITY } from './granted-static';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
 import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
@@ -1125,8 +1125,6 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     if (!count.ok) return count;
     const counter = arg(clause, 'counter');
     if (counter?.kind !== 'counterSpec') return failure(clause);
-    // D-430 (CR 122.1b): a keyword counter the engine has no keyword for (decayed) would do nothing: the line is not read, never run without its effect.
-    if (UNSUPPORTED_KEYWORD_COUNTERS.includes(counter.name)) return failure(clause);
     return eachObject(
       clause,
       ctx,
@@ -1374,6 +1372,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DANITHA_G2_LOWERINGS,
   // D-445: "Monstrosity 5".
   ...FEATHER_G2_LOWERINGS,
+  // D-459, D-460: "It gains haste.", "Exile it at the beginning of the next end step.", "If it would leave the battlefield, exile it instead ...", "Put each creature card exiled with ~ onto the battlefield ...".
+  ...GISA_G4_LOWERINGS,
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,

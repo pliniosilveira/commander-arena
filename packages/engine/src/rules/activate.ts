@@ -37,6 +37,7 @@ import { activatedAbilitiesOf, activationRefusal } from './activate-legality';
 import { activationExileDecision, exileChosen, exileCostCandidates } from './activation-exile';
 import { becameTargetEvents } from './becomes-target';
 import { crewCandidates, crewPowerOf, totalPower } from './crew';
+import { crimeEvents } from './crime';
 import { discardCandidates, discardCostDecision, discardObjects } from './discard-cost';
 import { targetSpecsOf } from './legality';
 import { isLoyaltyAbility } from './loyalty';
@@ -383,7 +384,10 @@ function paySacrifice(state: GameState, events: GameEvent[]): Result {
   if (!going) return fail('No activation is in progress');
   const { casting, activation, costs } = going;
   const seat = casting.seat;
-  if (costs.sacrifice === null) return payBounce(state, events, payDiscard);
+  // D-488: "Sacrifice X creatures" with X = 0 sacrifices nothing.
+  if (costs.sacrifice === null || costs.sacrificeCount === 0) {
+    return payBounce(state, events, payDiscard);
+  }
   if (costs.sacrifice === 'this') {
     const done = sacrificePermanent(state, activation.source, seat);
     if (done === null) return fail('The permanent you must sacrifice is gone');
@@ -633,6 +637,8 @@ function finishActivation(state: GameState, events: GameEvent[]): Result {
   if (!casting || !activation) return fail('No activation is in progress');
   // CR 602.2b, 601.2c: the targets became targets as they were chosen.
   events.push(...becameTargetEvents(state, casting.object, casting.seat));
+  // CR 700.13 (D-464): activating an ability that targets an opponent, what they control or a card in their graveyard is committing a crime.
+  events.push(...crimeEvents(state, casting.object, casting.seat));
   const announced = state.objects[casting.object]?.stack?.x;
   events.push({
     kind: 'abilityActivated',

@@ -262,6 +262,10 @@ export function checkFilter(
   if (f.commander !== undefined && f.commander !== true && f.commander !== 'yours') {
     issue(out, `${path}.commander`, "commander must be true or 'yours'");
   }
+  // D-489 (CR 201.2): "a card named X" is the text of a name.
+  if (f.named !== undefined && (typeof f.named !== 'string' || f.named === '')) {
+    issue(out, `${path}.named`, 'named must be the name of a card');
+  }
   // D-120: "attacking" and "power less than this creature's power" are flags; D-179: so is "put there from the battlefield this turn", a graveyard card's.
   for (const key of [
     'attacking',
@@ -538,6 +542,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.enteredThisTurn !== undefined ||
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
+  f.named !== undefined ||
   f.targetsObject !== undefined;
 
 /**
@@ -900,6 +905,26 @@ export function checkRef(
           path,
           "'linkedExile' is only valid in abilities of a permanent with a linked exile",
         );
+      }
+      // D-460: "each creature card exiled with this artifact": the cards of the link a filter of cards in exile describes.
+      if (ref.filter !== undefined) {
+        checkFilter(ref.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            ref.filter,
+            (f) =>
+              f.zone !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the cards exiled with a permanent are described by what they are: no zone, controller, owner or stackKind',
+          );
+        }
       }
       break;
     default:
@@ -1302,6 +1327,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
+    case 'sacrificedAsCost':
+      // D-491 (CR 118.8): what the spell sacrificed for its additional cost; the face is checked as a whole (`checkSacrificedAsCost`: only a spell's own cast trigger and text).
+      break;
     case 'half':
       if (!isOneOf(a.round, ['down', 'up'])) {
         issue(out, `${path}.round`, 'half is rounded "down" or "up" (CR 107.1a)');
@@ -1668,6 +1696,26 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       }
       break;
     case 'sacrifice':
+      if (cost.countX !== undefined) {
+        // D-488 (CR 107.3a): "Sacrifice X creatures": the X announced for the ability, of permanents chosen among those that match; no fixed count and not the permanent itself.
+        if (cost.countX !== true) {
+          issue(out, `${path}.countX`, 'countX must be true when present');
+        } else if (cost.count !== undefined) {
+          issue(out, `${path}.countX`, 'the number sacrificed is X or a count, not both');
+        } else if (kindOf(cost.what) === 'this') {
+          issue(out, `${path}.countX`, 'this permanent is sacrificed once: no X');
+        }
+      }
+      if (cost.anyNumber !== undefined) {
+        // D-491 (CR 118.8, 701.21a): "you may sacrifice one or more creatures": any number of the permanents that match; only an additional cost of a spell, checked where it stands.
+        if (cost.anyNumber !== true) {
+          issue(out, `${path}.anyNumber`, 'anyNumber must be true when present');
+        } else if (cost.count !== undefined || cost.countX !== undefined) {
+          issue(out, `${path}.anyNumber`, 'any number of permanents is no count and no X');
+        } else if (kindOf(cost.what) === 'this') {
+          issue(out, `${path}.anyNumber`, 'this permanent is sacrificed once: no "any number"');
+        }
+      }
       if (cost.count !== undefined) {
         // D-133: "Sacrifice two artifacts": 2 or more, of permanents chosen among those that match.
         if (!isCount(cost.count) || cost.count < 2) {
@@ -1698,6 +1746,9 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       break;
     case 'exileThis':
       // D-185: no operand; where it may stand is checked with the ability (`checkActivationCosts`).
+      break;
+    case 'revealThis':
+      // D-462 (CR 701.20a): no operand; paid from the hand (`checkActivationCosts`).
       break;
     case 'discardThis':
       // D-179: the engine marks the cost of a cycling ability itself; a card does not say that its own discard is a cycling.
@@ -2113,6 +2164,35 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
       break;
+    case 'combatDamagedBy': {
+      // D-475, CR 120.2a: the kind of source: card types, subtypes and (relative to the controller) who controlled it, nothing else.
+      const f = c.filter;
+      if (f === undefined || f === null || typeof f !== 'object') {
+        issue(out, `${path}.filter`, 'combatDamagedBy needs a filter of the damage source');
+        break;
+      }
+      checkEnumList(out, `${path}.filter.types`, f.types, CARD_TYPES, 'card type');
+      if (f.subtypes !== undefined && (!Array.isArray(f.subtypes) || f.subtypes.length === 0)) {
+        issue(out, `${path}.filter.subtypes`, 'subtypes must be a non-empty list when present');
+      }
+      if (f.controller !== undefined && !isOneOf(f.controller, ['you', 'opponent', 'any'])) {
+        issue(out, `${path}.filter.controller`, 'the controller is you, opponent or any');
+      }
+      const extra = Object.keys(f).filter(
+        (k) => k !== 'types' && k !== 'subtypes' && k !== 'controller',
+      );
+      if (extra.length > 0) {
+        issue(
+          out,
+          `${path}.filter`,
+          `the turn log keeps only the types, subtypes and controller of the source: not ${extra.join(', ')}`,
+        );
+      }
+      if (f.types === undefined && f.subtypes === undefined) {
+        issue(out, `${path}.filter`, 'name the card types or the subtypes of the source');
+      }
+      break;
+    }
     case 'ownsAndControlsNamed':
       // D-278, CR 701.42a: the permanent the ability belongs to and a permanent of a card type with a name.
       if (typeof c.name !== 'string' || c.name === '') {
@@ -2154,6 +2234,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
     case 'kicked':
+    case 'sacrificedAsCost': // D-491: the face must list a cost that sacrifices any number of permanents (`checkSacrificedAsCost`)
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
@@ -3491,6 +3572,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'exileIfLeaves':
+      // CR 614.1a (D-459): the object is what the effect before it put onto the battlefield.
+      if (kindOf(e.objects) !== 'moved') {
+        issue(
+          out,
+          `${path}.objects`,
+          "exileIfLeaves names the objects an earlier effect moved ('moved')",
+        );
+      } else {
+        checkRef(e.objects, 'object', `${path}.objects`, scope, out);
+      }
+      break;
     case 'delayedSacrifice':
       // CR 701.54c (D-196): the effect of the third ability of the Ring, which the engine writes; a card says "the Ring tempts you".
       issue(out, path, "delayedSacrifice is part of the engine's own abilities of the Ring");
@@ -3971,6 +4064,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.types`, 'sparePermanents needs the list of card types to choose');
       } else {
         checkEnumList(out, `${path}.types`, e.types, CARD_TYPES, 'card type');
+      }
+      // D-484: "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest": the players choose for themselves.
+      if (e.own !== undefined) {
+        checkPlayerSelector(e.own.players, `${path}.own.players`, scope, out);
+        if (e.own.players?.kind !== 'eachPlayer' && e.own.players?.kind !== 'eachOpponent') {
+          issue(
+            out,
+            `${path}.own.players`,
+            'the players who choose for themselves are each player or each opponent',
+          );
+        }
       }
       break;
     case 'exileOwnGraveyardCard':

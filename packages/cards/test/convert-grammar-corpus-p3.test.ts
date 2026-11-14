@@ -311,8 +311,8 @@ const EQUIPMENT: readonly Line[] = [
   },
   {
     kind: 'equipment',
-    text: 'Equipped creature has nonbasic landwalk.\nEquip {1}',
-    expect: no('nonbasic landwalk.', 'static.attached'),
+    text: 'Equipped creature has snow landwalk.\nEquip {1}',
+    expect: no('snow landwalk.', 'static.attached'),
     note: 'backlog: 1 card',
   },
   {

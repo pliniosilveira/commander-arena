@@ -135,6 +135,17 @@ const DETHRONE_ABILITY: Ability = {
 };
 
 /**
+ * CR 702.147a (D-478): "Decayed" represents a static ability and a triggered ability: "This creature can't block" and "When this creature attacks, sacrifice it at end of
+ * combat." The static ability is read from the keyword itself where the restrictions of an object are worked out (`derive`: `restrictionsOf`); the sacrifice is a delayed
+ * triggered ability (CR 603.7) that the trigger creates about the attacking creature, as the Ring's sacrifice of a blocker is.
+ */
+const DECAYED_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'attacks', what: { kind: 'this' } },
+  effect: { kind: 'delayedSacrifice', of: 'this' },
+};
+
+/**
  * CR 702.86a: "Annihilator N" means "Whenever this creature attacks, defending player sacrifices N
  * permanents." The defending player (CR 508.5) chooses which, among the permanents they control.
  */
@@ -146,6 +157,40 @@ function annihilatorAbility(count: number): Ability {
       kind: 'sacrifice',
       objects: { kind: 'choose', filter: {}, count },
       player: { kind: 'defendingPlayer' },
+    },
+  };
+}
+
+/**
+ * CR 702.130a (D-472): "Afflict N" means "Whenever this creature becomes blocked, defending player loses N life." The defending player is the one
+ * the creature attacks (CR 508.5); each instance triggers separately (CR 702.130b).
+ */
+function afflictAbility(count: number): Ability {
+  return {
+    kind: 'triggered',
+    trigger: { kind: 'becomesBlocked', what: { kind: 'this' } },
+    effect: { kind: 'loseLife', player: { kind: 'defendingPlayer' }, amount: count },
+  };
+}
+
+/**
+ * CR 702.124j (D-490): "Partner with [name]" is also "When this permanent enters, target player may search their library for a card named [name], reveal it, put it into
+ * their hand, then shuffle." The searching player is the target, who makes the choices.
+ */
+function partnerWithAbility(name: string): Ability {
+  return {
+    kind: 'triggered',
+    trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+    targets: [{ id: 'partner', what: { kind: 'player', filter: 'any' } }],
+    effect: {
+      kind: 'search',
+      player: { kind: 'target', id: 'partner' },
+      optional: true,
+      filter: { named: name },
+      max: 1,
+      destinations: [{ zone: 'hand', count: 1 }],
+      reveal: true,
+      shuffle: true,
     },
   };
 }
@@ -563,6 +608,11 @@ export function expansionOf(ability: Ability): Ability[] {
       return [SOULBOND_ENTERS_ABILITY, SOULBOND_OTHER_ENTERS_ABILITY];
     case 'annihilator':
       return [annihilatorAbility(ability.keyword.count)];
+    case 'afflict':
+      return [afflictAbility(ability.keyword.count)];
+    case 'partnerWith':
+      // CR 702.124j (D-490): the second of the two abilities "Partner with [name]" represents.
+      return [partnerWithAbility(ability.keyword.name)];
     case 'persist':
       return [returnWithCounter('-1/-1')];
     case 'undying':
@@ -607,6 +657,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [hideawayAbility(ability.keyword.count)];
     case 'dethrone':
       return [DETHRONE_ABILITY];
+    case 'decayed':
+      return [DECAYED_ABILITY];
     default:
       return [];
   }

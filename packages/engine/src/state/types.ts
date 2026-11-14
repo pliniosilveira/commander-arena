@@ -159,6 +159,12 @@ export interface GameObject {
    */
   readonly monstrous?: true;
   /**
+   * "If it would leave the battlefield, exile it instead of putting it anywhere else" (CR 614.1a, 614.6, D-459), set by the effect `exileIfLeaves` on the permanent an earlier
+   * effect put onto the battlefield (Whip of Erebos): it is exiled instead of going to any other zone, whatever its abilities. Not a copiable value; a new object after any
+   * zone change (CR 400.7) has none.
+   */
+  readonly exileIfLeaves?: true;
+  /**
    * Present (true) on an emblem (CR 114, D-201): an object in the command zone of the player who got it (`owner` and `controller`), with no characteristics but
    * the abilities its `token` record gives it, which work from there (CR 114.4): `derive` reads its static abilities and `findTriggers` its triggered ones.
    * It is not a card and not a permanent, never leaves the command zone (CR 114.5) and is not a token that ceases to exist there (CR 704.5d is about the
@@ -444,7 +450,8 @@ export interface StackData {
   readonly triggerAttacked?: readonly SeatId[];
   /**
    * For an activated ability whose cost sacrificed permanents (D-133): the ids they had on the battlefield, which the
-   * `sacrificedCost` reference reads (from last-known information: they are gone). Absent for every other object.
+   * `sacrificedCost` reference reads (from last-known information: they are gone). For a spell whose additional cost sacrificed any number of permanents
+   * (D-491): the ids they had, which the amount and the condition `sacrificedAsCost` count (absent when none was). Absent for every other object.
    */
   readonly sacrificedAsCost?: readonly ObjectId[];
   /**
@@ -798,6 +805,12 @@ export interface CastingContext {
    */
   readonly extra?: {
     readonly sacrifice: ObjectFilter | null;
+    /**
+     * "You may sacrifice one or more creatures" (D-491): the filter of the permanents the caster may sacrifice, any number of them, after the mana is paid; null for
+     * none. `sacrificeAnyAsked` is set once the question is being asked (the answer then goes to this cost and not to `sacrifice`).
+     */
+    readonly sacrificeAny?: ObjectFilter | null;
+    readonly sacrificeAnyAsked?: true;
     readonly discard: number;
     /** How many other cards of the caster's graveyard to exile (Escape, CR 702.138a, D-124); 0 for none. */
     readonly exile: number;
@@ -973,6 +986,8 @@ export type Instruction =
    */
   | {
       readonly kind: 'spare';
+      /** D-484: each of `players` chooses among their own permanents and sacrifices all the rest, lands too (`sparePermanents.own`); absent: the controller chooses and the lands stay. */
+      readonly own?: true;
       readonly players: readonly SeatId[];
       readonly types: readonly CardType[];
       readonly step: number;
@@ -1859,8 +1874,19 @@ export interface TurnLog {
     readonly abilityIndex: number;
     readonly loyalty?: true;
   }[];
-  /** Each combat damage event to a player this turn: the source that dealt it and the player dealt it (damage prevented entirely is not here). */
-  readonly combatDamaged: readonly { readonly source: ObjectId; readonly player: SeatId }[];
+  /**
+   * Each combat damage event to a player this turn: the source that dealt it and the player dealt it (damage prevented entirely is not here). D-475
+   * (CR 120.2a, 608.2h, 113.7a): also what the source was as it dealt the damage, for "if a player was dealt combat damage by a Zombie this turn": its card
+   * types, its subtypes and who controlled it (read from the permanent, or from its last-known information when it had left), so a source that has died
+   * or changed still counts as it was.
+   */
+  readonly combatDamaged: readonly {
+    readonly source: ObjectId;
+    readonly player: SeatId;
+    readonly types: readonly CardType[];
+    readonly subtypes: readonly Subtype[];
+    readonly controller: SeatId | null;
+  }[];
   /** Each time a player gained life this turn (D-149), in order, one entry for each life gain event: "for the first time each turn". */
   readonly lifeGained: readonly SeatId[];
   /** The life each player has gained this turn, by seat (D-252, CR 119.3): the sum of every life gain after replacement, for "if you gained 3 or more life this turn". */

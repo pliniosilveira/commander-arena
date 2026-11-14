@@ -8,6 +8,7 @@ import type { IrAmount, IrCondition, IrRestriction } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, node } from '../registry';
 import { FEATHER_G2_RESTRICTION_RULES } from './feather-g2';
+import { GISA_G4_RESTRICTION_RULES } from './gisa-g4';
 
 /**
  * `restriction.sorcery`: "Activate only as a sorcery." means the player must follow the timing
@@ -238,4 +239,6 @@ export const RESTRICTION_RULES = [
   RESTRICTION_COST_REDUCTION,
   RESTRICTION_COST_REDUCED_BY,
   ...FEATHER_G2_RESTRICTION_RULES,
+  // Gisa deck, group 4 (D-462): "Activate only during your turn."
+  ...GISA_G4_RESTRICTION_RULES,
 ];

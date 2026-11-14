@@ -10,6 +10,7 @@ import { quantity } from '../amount/index';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, node, spanned } from '../registry';
 import { DANITHA_G5_COST_RULES } from './danitha-group-5';
+import { GISA_G4_COST_RULES } from './gisa-g4';
 import { HASHATON_G2_COST_RULES } from './hashaton-group-2';
 import { HASHATON_G9_COST_RULES } from './hashaton-group-9';
 import { HASHATON_G10_COST_RULES } from './hashaton-group-10';
@@ -168,9 +169,13 @@ export const COST_SACRIFICE = defineRule<IrCost>({
     'Sacrifice another permanent',
     'Sacrifice an artifact',
     'Sacrifice a Treasure',
+    'Sacrifice two other creatures',
+    'Sacrifice X creatures',
   ],
   rejects: [
     'Sacrifice',
+    'Sacrifice X other creatures',
+    'Sacrifice X',
     'Sacrifice target creature',
     'Sacrifice it',
     'Sacrifice all creatures',
@@ -181,7 +186,8 @@ export const COST_SACRIFICE = defineRule<IrCost>({
     map(
       sequence(
         literal('sacrifice '),
-        family<IrNoun>('noun', { only: ['noun.self', 'noun.a-permanent'] }),
+        // D-488: "Sacrifice X creatures" (`noun.x-permanents`), the X announced as the ability is activated.
+        family<IrNoun>('noun', { only: ['noun.self', 'noun.a-permanent', 'noun.x-permanents'] }),
       ),
       ([, what]) => what,
     ),
@@ -821,6 +827,8 @@ export const COST_RULES = [
   COST_DISCARD_FILTERED,
   // Stage P68 (D-229): "Discard this card", "Exile ~".
   ...HOFRI_COST_RULES,
+  // Gisa deck, group 4 (D-462): "Reveal this card from your hand".
+  ...GISA_G4_COST_RULES,
   COST_MILL,
   COST_ENERGY,
   COST_PAY_LIFE,

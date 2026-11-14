@@ -76,6 +76,8 @@ export interface SpellCost {
   readonly life: number;
   /** The permanent to sacrifice, by filter, or null. */
   readonly sacrifice: ObjectFilter | null;
+  /** "You may sacrifice one or more creatures" (D-491): the permanents the caster may sacrifice, any number, or null; asked once the mana is paid, the spell is castable with none. */
+  readonly sacrificeAny?: ObjectFilter | null;
   /** How many cards to discard. */
   readonly discard: number;
   /** How many other cards of the caster's graveyard are exiled (Escape, CR 702.138a, D-124). */
@@ -333,10 +335,14 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   ];
   symbols.push(...manaSymbolsOf(additional));
   let sacrifice: ObjectFilter | null = null;
+  let sacrificeAny: ObjectFilter | null = null;
   let discard = 0;
   for (const c of additional) {
-    if (c.kind === 'sacrifice' && !('kind' in c.what)) sacrifice = c.what;
-    else if (c.kind === 'discard') discard += c.count;
+    if (c.kind === 'sacrifice' && !('kind' in c.what)) {
+      // D-491: "you may sacrifice one or more creatures" is no requirement for casting the spell: it is asked as the cost is paid.
+      if (c.anyNumber === true) sacrificeAny = c.what;
+      else sacrifice = c.what;
+    } else if (c.kind === 'discard') discard += c.count;
   }
   const life = lifeOf(additional) + (kicker === null ? 0 : lifeOf(kicker) * kicks) + perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
@@ -364,6 +370,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     tax,
     life,
     sacrifice,
+    ...(sacrificeAny === null ? {} : { sacrificeAny }),
     discard,
     exile,
     tap,

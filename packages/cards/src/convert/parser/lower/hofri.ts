@@ -311,9 +311,17 @@ const SPARE_PERMANENTS: Lowering<IrClause, Effects> = {
     if (types === undefined || types.kind !== 'typeList' || types.cardTypes === undefined) {
       return failure(clause);
     }
+    // D-484 (Liliana, Dreadhorde General): "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest": each opponent chooses for themselves.
+    const own = arg(clause, 'eachOpponent')?.kind === 'flag';
     return {
       ok: true,
-      value: [{ kind: 'sparePermanents', types: types.cardTypes as CardType[] }],
+      value: [
+        {
+          kind: 'sparePermanents',
+          types: types.cardTypes as CardType[],
+          ...(own ? { own: { players: { kind: 'eachOpponent' as const } } } : {}),
+        },
+      ],
       rule: clause.rule,
     };
   },

@@ -41,6 +41,7 @@ import { applyAbilityLayer, applyPtLayers, basePtOf, effectsOn } from './derive-
 import { type BlockLimit, type StaticSet, staticEffectsOn } from './derive-statics';
 import { manaCostOf, typeLayersOf } from './derive-view';
 import { keywordCounterAbilities } from './keyword-counters';
+import { landTypeAbilities, landTypeSetIds } from './land-types';
 import { hasLostAbilities } from './lost-abilities';
 import { manaValueOfCost } from './mana-value';
 import { isRingBearerOf } from './ring-bearer';
@@ -201,13 +202,17 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
   // which are appended, so every ability keeps the index it had (triggers and activations refer
   // to indexes). Grants and "loses all abilities" follow in timestamp order.
   // The abilities of an evoked permanent (D-121) are appended too, and "loses all abilities" removes them.
-  const printed = expandKeywords(input.abilities);
-  const own = alternativeAbilitiesOf(state, obj);
+  // CR 305.6, 305.7 (D-474): a land whose basic land types an effect set loses the abilities of its rules text; a land that has basic land types it did not
+  // print, from an effect, has their mana abilities (appended after what it keeps).
+  const land = landTypeAbilities(input, line, landTypeSetIds(effects).has(obj.id));
+  const printed = land.dropsRulesText ? [] : expandKeywords(input.abilities);
+  const own = land.dropsRulesText ? [] : alternativeAbilitiesOf(state, obj);
   // CR 122.1b (D-430): the keywords of the object's keyword counters, after everything it has printed.
-  const start = keywordCounterAbilities(
+  const counted = keywordCounterAbilities(
     obj.counters,
     own.length === 0 ? printed : [...printed, ...own],
   );
+  const start = land.gained.length === 0 ? counted : [...counted, ...land.gained];
   const fx = staticEffectsOn(state, obj, {
     ...input,
     types: line.types,
@@ -232,7 +237,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
     subtypes: line.subtypes,
     colors,
     abilities,
-    restrictions: restrictionsOf(state, obj, input.abilities, fx.restrictions, effects),
+    restrictions: restrictionsOf(state, obj, input.abilities, fx.restrictions, effects, abilities),
     blockLimits: fx.blockLimits,
     attachments: fx.attachments,
     attachedTo: fx.attachedTo,
@@ -256,8 +261,17 @@ function restrictionsOf(
   printed: readonly Ability[],
   fromStatics: readonly Restriction[],
   effects: readonly ContinuousEffect[],
+  abilities: readonly Ability[],
 ): readonly Restriction[] {
   let own = fromStatics;
+  // CR 702.147a (D-478): the static ability of Decayed, "This creature can't block", is part of the keyword: it comes with the keyword from wherever the object has it (printed,
+  // granted in layer 6, or a decayed counter) and goes with it when the object loses its abilities, so it is read from the abilities the layers leave.
+  if (
+    abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'decayed') &&
+    !own.includes('cantBlock')
+  ) {
+    own = [...own, 'cantBlock'];
+  }
   if (
     obj.zone === 'stack' &&
     (obj.card !== null || obj.copyOf !== undefined) &&

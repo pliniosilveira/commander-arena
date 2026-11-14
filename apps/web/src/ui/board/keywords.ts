@@ -6,6 +6,7 @@ import type { ObjectView, Restriction } from '@commander-arena/engine';
 import { JOB_SELECT_REMINDER, LIVING_WEAPON_REMINDER } from '../../game/artifacts-text';
 import { ESCALATE_REMINDER, hideawayReminder } from '../../game/dinosaurs-text';
 import { DETHRONE_REMINDER, MYRIAD_REMINDER, READ_AHEAD_REMINDER } from '../../game/dragons-text';
+import { DECAYED_REMINDER } from '../../game/gisa-g5-text';
 import { ETERNALIZE_REMINDER } from '../../game/hashaton-g5-text';
 import { devourReminder, ENCORE_REMINDER, RIOT_REMINDER } from '../../game/keywords-text';
 
@@ -37,6 +38,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   devoid: ['Dvd', 'Devoid'],
   exalted: ['Exl', 'Exalted'],
   annihilator: ['Ann', 'Annihilator'],
+  // Gisa deck group 1 (D-472): Afflict N (CR 702.130a).
+  afflict: ['Afl', 'Afflict'],
   backup: ['Bkp', 'Backup'],
   persist: ['Per', 'Persist'],
   undying: ['Und', 'Undying'],
@@ -45,6 +48,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   toxic: ['Tox', 'Toxic'],
   splitSecond: ['Spl', 'Split second'],
   partner: ['Ptn', 'Partner'],
+  // D-490 (CR 702.124j): the name rides in the tooltip (`PARAMETERIZED`).
+  partnerWith: ['Ptn', 'Partner with'],
   typecycling: ['Tcy', 'Typecycling'],
   multikicker: ['MK', 'Multikicker'],
   // Keyword batch 2 (D-116, D-120). Regenerate is an activated ability, not a keyword: it has no chip.
@@ -81,6 +86,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   readAhead: ['RA', `Read ahead (${READ_AHEAD_REMINDER})`],
   dethrone: ['Dth', `Dethrone (${DETHRONE_REMINDER})`],
   myriad: ['Myr', `Myriad (${MYRIAD_REMINDER})`],
+  // Gisa deck group 5 (D-478): the reminder text (CR 702.147a) rides in the tooltip.
+  decayed: ['Dec', `Decayed (${DECAYED_REMINDER})`],
   // The Korvold slice 6 (D-185): the reminder text (CR 702.141a, 702.82a, 702.136a) rides in the tooltip; Devour's number is in `PARAMETERIZED`.
   encore: ['Enc', `Encore (${ENCORE_REMINDER})`],
   // Hashaton deck group 5 (D-384): Eternalize (CR 702.129a).
@@ -99,6 +106,8 @@ const PARAMETERIZED: Readonly<
   Record<string, (text: string) => readonly (readonly [short: string, full: string])[]>
 > = {
   annihilator: (text) => numbered(text, 'Annihilator', 'Ann'),
+  // "Afflict 3": one chip per instance (CR 702.130b: each triggers separately).
+  afflict: (text) => numbered(text, 'Afflict', 'Afl'),
   backup: (text) => numbered(text, 'Backup', 'Bkp'),
   toxic: (text) => numbered(text, 'Toxic', 'Tox'),
   // "Bushido 1": one chip per instance (CR 702.45b: each triggers).
@@ -132,6 +141,11 @@ const PARAMETERIZED: Readonly<
   devour: (text) =>
     [...text.matchAll(/\bdevour\s+(\d+)/gi)].map(
       (m) => [`Dev ${m[1]}`, `Devour ${m[1]} (${devourReminder(Number(m[1]))})`] as const,
+    ),
+  // "Partner with Regna, the Redeemer" (D-490, CR 702.124j): the name of the card, from the line of the Oracle text the object shows.
+  partnerWith: (text) =>
+    [...text.matchAll(/\bpartner with ([^(\n]+)/gi)].map(
+      (m) => ['Ptn', `Partner with ${(m[1] ?? '').trim()}`] as const,
     ),
   // "Encore {3}{R}": one chip per instance (CR 702.141a).
   encore: (text) =>

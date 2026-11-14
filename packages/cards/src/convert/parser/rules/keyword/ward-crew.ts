@@ -3,7 +3,16 @@
  * IR (a cost, a number); the engine expands them into the triggered and activated abilities the
  * rules define (`rules/derive-keywords.ts`), so the lowering only builds the keyword node.
  */
-import { literal, map, optional, type Parser, pattern, satisfy, sequence } from '../../combinators';
+import {
+  literal,
+  map,
+  optional,
+  type Parser,
+  pattern,
+  quiet,
+  satisfy,
+  sequence,
+} from '../../combinators';
 import type { IrAmount, IrCost, IrKeyword } from '../../ir/types';
 import { defineRule, family, node, spanned } from '../registry';
 
@@ -36,6 +45,24 @@ export function plainWard(rule: string): Parser<IrKeyword> {
 const WARD_LINE: Parser<readonly IrKeyword[]> = (ctx, pos) => {
   const plain = plainWard('keyword.ward')(ctx, pos);
   if (plain.ok) return { ok: true, value: [plain.value], pos: plain.pos };
+  // D-467 (CR 702.21a, 118.1): a mana cost and a payment of life, "Ward—{2}, Pay 2 life."
+  const both = quiet(
+    sequence(
+      literal('ward—'),
+      WARD_COST,
+      literal(', '),
+      family<IrCost>('cost', { only: ['cost.pay-life'] }),
+      optional(literal('.'), null),
+    ),
+  )(ctx, pos);
+  if (both.ok) {
+    const [, mana, , life] = both.value;
+    return {
+      ok: true,
+      value: [{ ...wardNode('keyword.ward', pos, both.pos, mana), cost: [mana, life] }],
+      pos: both.pos,
+    };
+  }
   const dashed = sequence(literal('ward—'), WARD_DASH_COST, optional(literal('.'), null))(ctx, pos);
   if (!dashed.ok) return dashed;
   return {
@@ -62,7 +89,8 @@ const WARD_LINE: Parser<readonly IrKeyword[]> = (ctx, pos) => {
 export const KEYWORD_WARD = defineRule<readonly IrKeyword[]>({
   id: 'keyword.ward',
   family: 'keyword',
-  leading: ['ward', 'ward—pay', 'ward—sacrifice', 'ward—discard'],
+  // D-467: "Ward—{2}, Pay 2 life." starts with its cost, whose words vary: tried at every keyword line (it fails at its first literal), as `keyword.equip` is.
+  leading: [],
   cites: ['CR 702.21a (Ward)', 'CR 702.21b (Ward)', 'CR 118.1 (Costs)'],
   examples: [
     'Ward {2}',
@@ -74,6 +102,9 @@ export const KEYWORD_WARD = defineRule<readonly IrKeyword[]>({
     'Ward—Discard a card.',
     'Ward—Discard two cards.',
     'ward {1}',
+    // D-467 (CR 702.21a, 118.1): the two costs the engine pays for a ward ability, together.
+    'Ward—{2}, Pay 2 life.',
+    'Ward—{1}{U}, Pay 3 life',
   ],
   rejects: [
     'Ward',
@@ -85,6 +116,14 @@ export const KEYWORD_WARD = defineRule<readonly IrKeyword[]>({
     'Ward—Discard a creature card.',
     'Ward—Discard your hand.',
     'Ward—Discard this card.',
+    'Ward—{2}, Pay 0 life.',
+    'Ward—{2}, Pay 2 life, Pay 1 life',
+    'Ward—{2}, Pay 2 life..',
+    'Ward—Pay 2 life, {2}',
+    'Ward—{2}, Sacrifice a creature',
+    'Ward—{2}, Discard a card.',
+    'Ward—{2}',
+    'Ward {2}, Pay 2 life',
     'Ward {2}, flying',
     'Ward {2}, ward {1}',
     'Ward {2} {1}',

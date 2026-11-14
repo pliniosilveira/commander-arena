@@ -58,6 +58,7 @@ describe('the dimensions', () => {
       'sacrifice',
       'removeCounters',
       'discardThis',
+      'revealThis',
       'discard',
       'tapCreatures',
       'tapPermanents',
@@ -90,6 +91,7 @@ describe('the dimensions', () => {
       'opponentsAtLeast',
       'kicked',
       'replicated',
+      'sacrificedAsCost',
       'controlCommander',
       'sourceHasCounter',
       'subjectGreaterPt',
@@ -131,6 +133,7 @@ describe('the dimensions', () => {
       // D-423: "as long as this Aura entered this turn".
       'thisEnteredThisTurn',
       'playerDealtDamage',
+      'combatDamagedBy',
       // D-252: "if you gained 3 or more life this turn".
       'lifeGainedThisTurn',
       // D-318: "Activate only if you've cast three or more spells this turn".

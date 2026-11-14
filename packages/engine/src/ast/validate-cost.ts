@@ -60,6 +60,21 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
             'a spell sacrifices one permanent as an additional cost: no count (D-133)',
           );
         }
+        if (cost.countX !== undefined) {
+          issue(
+            out,
+            `${p}.countX`,
+            'an additional cost of a spell sacrifices no X permanents (D-488)',
+          );
+        }
+        // D-491: "you may sacrifice one or more creatures" is the one sacrifice of the spell, chosen as the cost is paid (the engine's `sacrificeAny`).
+        if (cost.anyNumber === true && costs.some((c, j) => j !== i && c?.kind === 'sacrifice')) {
+          issue(
+            out,
+            `${p}.anyNumber`,
+            'any number of permanents is the only sacrifice cost of a spell (D-491)',
+          );
+        }
         break;
       case 'discard':
         discards += 1;
@@ -126,6 +141,9 @@ export function checkAdditionalCostChoice(
     checkAdditionalCosts([...fixed, ...way], p, out);
     if (way.some((c) => c?.kind === 'payXLife' || c?.kind === 'discardX')) {
       issue(out, p, 'a choice of additional costs has no "pay X life" and no "discard X cards"');
+    }
+    if (way.some((c) => c?.kind === 'sacrifice' && c.anyNumber !== undefined)) {
+      issue(out, p, 'a choice of additional costs has no "you may sacrifice any number" (D-491)');
     }
   });
   if (JSON.stringify(choice[0]) === JSON.stringify(choice[1])) {
@@ -287,8 +305,16 @@ export function checkAbilityCostReduction(
   path: string,
   out: Out,
 ): void {
+  if (s.abilities === 'ofObjects') {
+    checkObjectsAbilityReduction(s, path, out);
+    return;
+  }
   if (s.abilities !== 'equip') {
-    issue(out, `${path}.abilities`, 'only Equip abilities are named (abilities: "equip")');
+    issue(
+      out,
+      `${path}.abilities`,
+      'only Equip abilities or the abilities of some objects are named (abilities: "equip" or "ofObjects")',
+    );
   }
   if (s.targeting === undefined || s.targeting === null || typeof s.targeting !== 'object') {
     issue(out, `${path}.targeting`, 'an ability cost reduction needs a filter of what it targets');
@@ -304,6 +330,50 @@ export function checkAbilityCostReduction(
         out,
         `${path}.targeting`,
         'the object an ability targets is a permanent on the battlefield: no zone, stackKind or targetsObject',
+      );
+    }
+  }
+  if (typeof s.amount === 'number') {
+    if (!isCount(s.amount) || s.amount < 1) {
+      issue(out, `${path}.amount`, 'a cost reduction must be a positive integer');
+    }
+  } else {
+    checkStateAmount(s.amount, `${path}.amount`, out, 'a cost reduction');
+  }
+}
+
+/**
+ * D-461, CR 601.2f, 118.7, 113.6b: "Activated abilities of creature cards in your graveyard cost {1} less to activate." `objects` describes the object with the ability, a card in
+ * the graveyard (the zone is named, the only one besides the battlefield where an ability works; `controller` is relative to the permanent with this ability); `amount` is read as
+ * `costReduction`'s is.
+ */
+function checkObjectsAbilityReduction(
+  s: Extract<StaticEffect, { kind: 'abilityCostReduction'; abilities: 'ofObjects' }>,
+  path: string,
+  out: Out,
+): void {
+  if (s.objects === undefined || s.objects === null || typeof s.objects !== 'object') {
+    issue(out, `${path}.objects`, 'an ability cost reduction needs a filter of the objects');
+  } else {
+    checkFilter(s.objects, `${path}.objects`, out);
+    if (s.objects.zone !== 'graveyard') {
+      issue(
+        out,
+        `${path}.objects.zone`,
+        'the abilities of cards in a graveyard are the ones named (zone: "graveyard")',
+      );
+    }
+    if (
+      filterSome(
+        s.objects,
+        (f) =>
+          f.stackKind !== undefined || f.targetsObject !== undefined || f.attachedTo !== undefined,
+      )
+    ) {
+      issue(
+        out,
+        `${path}.objects`,
+        'the object with the ability is a card in a graveyard: no stackKind, targetsObject or attachedTo',
       );
     }
   }
