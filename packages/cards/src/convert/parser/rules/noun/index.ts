@@ -23,10 +23,13 @@ import { NOUN_ATTACKED_BY_IT } from './attacked';
 import { CHOOSE_NOUN_RULES } from './choose';
 import { NOUN_ITS_CONTROLLER } from './controller';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
+import { DANITHA_G3_NOUN_RULES } from './danitha-g3';
 import { DESTINY_EARLY_NOUN_RULES } from './destiny';
 import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_NOUN_RULES } from './edhrec';
+import { GISA_G2_NOUN_RULES } from './gisa-g2';
+import { GISA_G3_NOUN_RULES } from './gisa-g3';
 import { HASHATON_G8_NOUN_RULES } from './hashaton-g8';
 import { HASHATON_G9_NOUN_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_NOUN_RULES } from './hashaton-group-4';
@@ -596,6 +599,8 @@ export const NOUN_RULES = [
   ...KORVOLD_EARLY_NOUN_RULES,
   // Before `noun.player`: "you and target opponent each" starts with "you", "each other player" with "each".
   ...PLAYER_NOUN_RULES,
+  // D-486 (Gisa deck, group 3): "any number of target players each".
+  ...GISA_G3_NOUN_RULES,
   // Stage P52 (D-210): "each player who discarded a card this way".
   ...VRASKA_EARLY_NOUN_RULES,
   // D-269: "each player ~ attacked this turn", whose first words are those of `noun.player` ("each player").
@@ -621,6 +626,8 @@ export const NOUN_RULES = [
   NOUN_ALL_GRAVEYARD_CARDS,
   NOUN_ALL_GRAVEYARDS,
   NOUN_TARGET_PERMANENT,
+  // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
+  ...DANITHA_G3_NOUN_RULES,
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.
   ...HOFRI_NOUN_RULES,
@@ -634,6 +641,8 @@ export const NOUN_RULES = [
   ...HASHATON_GROUP_4_NOUN_RULES,
   // Before `noun.plain-permanents`, which reads the first group of "A you control and other B you control" alone.
   NOUN_SUBTYPE_UNION,
+  // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control", which `noun.plain-permanents` would stop in the middle of.
+  ...GISA_G2_NOUN_RULES,
   NOUN_PLAIN_PERMANENTS,
   NOUN_IT,
   NOUN_EACH_OF_THEM,

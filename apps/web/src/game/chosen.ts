@@ -29,10 +29,12 @@ export function optionText(
     | 'option'
     | 'effect'
     | 'riot'
-    | 'vote',
+    | 'vote'
+    | 'protectionColor',
   option: string,
 ): string {
-  if (purpose === 'color') return colorName(option);
+  // D-451: "gains protection from the color of your choice", answered with a color letter.
+  if (purpose === 'color' || purpose === 'protectionColor') return colorName(option);
   if (purpose === 'riot') return riotAnswerText(option);
   // D-139 (CR 508.7): "player:1" is a player (seats count from 0), "permanent:o17" a planeswalker or battle.
   if (purpose === 'attackTarget') {
@@ -54,9 +56,11 @@ export function purposeNoun(
     | 'riot'
     | 'replacement'
     | 'vote'
-    | 'meldOrder',
+    | 'meldOrder'
+    | 'protectionColor',
 ): string {
   if (purpose === 'meldOrder') return 'order of the two cards';
+  if (purpose === 'protectionColor') return 'color';
   if (purpose === 'riot') return 'riot choice';
   if (purpose === 'vote') return 'vote';
   if (purpose === 'replacement') return 'effect to apply first';

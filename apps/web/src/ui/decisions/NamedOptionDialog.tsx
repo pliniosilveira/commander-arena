@@ -6,11 +6,13 @@ import {
   isChapterChoice,
   isEffectChoice,
   isMeldOrderChoice,
+  isProtectionColorChoice,
   isReplacementChoice,
   isRiotChoice,
   isVoteChoice,
   namedOptionPrompt,
   namedOptionRows,
+  replacementTitle,
 } from './option-names';
 
 /**
@@ -40,18 +42,20 @@ export function NamedOptionDialog({
         chapters
           ? 'Choose a chapter'
           : replacement
-            ? 'Damage replacement'
+            ? replacementTitle(d)
             : isMeldOrderChoice(d)
               ? 'Order the two cards'
               : isVoteChoice(d)
                 ? 'Vote'
                 : isEffectChoice(d) || isRiotChoice(d)
                   ? 'Choose one'
-                  : 'Choose an option'
+                  : isProtectionColorChoice(d)
+                    ? 'Choose a color'
+                    : 'Choose an option'
       }
       className="dec-option dec-named"
     >
-      <h2 className="dec-title">{replacement ? 'Damage replacement' : d.sourceName}</h2>
+      <h2 className="dec-title">{replacement ? replacementTitle(d) : d.sourceName}</h2>
       {d.sourceOracleText === '' ? null : <p className="dec-source-quote">{d.sourceOracleText}</p>}
       <p className="dec-sub" data-option-prompt>
         {namedOptionPrompt(d)}

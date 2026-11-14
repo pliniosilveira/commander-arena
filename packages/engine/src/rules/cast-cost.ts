@@ -37,6 +37,7 @@ import {
   flashbackCostOf,
   kickerLikeCostOf,
   manaSymbolsOf,
+  modeCostsOf,
   namedAlternativeCostOf,
   replicateCostOf,
 } from './alt-costs';
@@ -75,6 +76,8 @@ export interface SpellCost {
   readonly life: number;
   /** The permanent to sacrifice, by filter, or null. */
   readonly sacrifice: ObjectFilter | null;
+  /** "You may sacrifice one or more creatures" (D-491): the permanents the caster may sacrifice, any number, or null; asked once the mana is paid, the spell is castable with none. */
+  readonly sacrificeAny?: ObjectFilter | null;
   /** How many cards to discard. */
   readonly discard: number;
   /** How many other cards of the caster's graveyard are exiled (Escape, CR 702.138a, D-124). */
@@ -199,6 +202,8 @@ function reductionFor(
       ...base,
       // D-235: "spells you cast from anywhere other than your hand": the zone the card is cast from, before it has moved.
       ...(castFrom === undefined ? {} : { castFrom }),
+      // D-424: "Aura spells you cast that target enchanted creature cost {3} less": before the targets are chosen the most favourable one is assumed.
+      ...(optimistic ? { spellTargetsMayHold: true } : {}),
     };
     if (!matchesFilter(state, spell, { ...source.spells, zone: 'stack' }, ctx)) continue;
     total += amountOf(state, source.amount, ctx, []);
@@ -229,6 +234,11 @@ export interface CostRequest {
    * has chosen (`StackData.chosenModes`); 0 for a spell that is not on the stack yet or not modal.
    */
   readonly modes?: number;
+  /**
+   * Which modes were chosen (their indexes, CR 700.2, 700.2h, D-433), for the costs a mode lists before its effect: left out, the modes the spell on the stack has chosen. Where
+   * a caller has `modes` for the escalate cost it passes the set too.
+   */
+  readonly modeSet?: readonly number[];
   /**
    * Which way the caster pays the face's additional cost choice (`CardFace.additionalCostChoice`, D-181): left out, the one the spell on the stack
    * has chosen (`StackData.costOption`); with none chosen yet the cost has neither (`canPayRequest` asks about both).
@@ -313,6 +323,10 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;
     for (let i = 1; i < modes; i += 1) symbols.push(...manaSymbolsOf(escalate));
   }
+  // CR 700.2h, 702.183a (D-433): a mode with a cost before its effect is an additional cost if the mode is chosen; all the costs of the modes chosen are paid.
+  symbols.push(
+    ...manaSymbolsOf(modeCostsOf(face, request.modeSet ?? spell.stack?.chosenModes ?? [])),
+  );
   // CR 118.8, 601.2b (D-181): one of the two ways of the additional cost choice, the one the caster announced.
   const option = request.costOption ?? spell.stack?.costOption;
   const additional: readonly Cost[] = [
@@ -321,10 +335,14 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   ];
   symbols.push(...manaSymbolsOf(additional));
   let sacrifice: ObjectFilter | null = null;
+  let sacrificeAny: ObjectFilter | null = null;
   let discard = 0;
   for (const c of additional) {
-    if (c.kind === 'sacrifice' && !('kind' in c.what)) sacrifice = c.what;
-    else if (c.kind === 'discard') discard += c.count;
+    if (c.kind === 'sacrifice' && !('kind' in c.what)) {
+      // D-491: "you may sacrifice one or more creatures" is no requirement for casting the spell: it is asked as the cost is paid.
+      if (c.anyNumber === true) sacrificeAny = c.what;
+      else sacrifice = c.what;
+    } else if (c.kind === 'discard') discard += c.count;
   }
   const life = lifeOf(additional) + (kicker === null ? 0 : lifeOf(kicker) * kicks) + perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
@@ -352,6 +370,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     tax,
     life,
     sacrifice,
+    ...(sacrificeAny === null ? {} : { sacrificeAny }),
     discard,
     exile,
     tap,

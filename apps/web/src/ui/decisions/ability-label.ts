@@ -45,7 +45,7 @@ import {
 } from '../../game/artifacts-text';
 import { castCardText } from '../../game/cast-card-text';
 import { gameConditionWords } from '../../game/condition-text';
-import { copySpellWords, delayedCastWords } from '../../game/copy-text';
+import { copyForEachWords, copySpellWords, delayedCastWords } from '../../game/copy-text';
 import { activationCostPart, activationCostText, unlessCostPhrase } from '../../game/cost-text';
 import {
   castFreeText,
@@ -71,6 +71,7 @@ import {
   revealTopText,
 } from '../../game/dragons-text';
 import { pluralSubtype, thingsPhrase } from '../../game/filter-text';
+import { delayedSacrificeText } from '../../game/gisa-g5-text';
 import { copiesOfTokensText } from '../../game/hashaton-g5-text';
 import { ENCORE_EFFECT_TEXT } from '../../game/keywords-text';
 import { controlDurationText, requireAttackText } from '../../game/korvold-text';
@@ -80,7 +81,7 @@ import { ptEffectText } from '../../game/pt-text';
 import { isReflexiveAbility, positionPhrase } from '../../game/recursion-text';
 import { groupPhrase } from '../../game/static-text';
 import { tokenWords } from '../../game/token-text';
-import { filterPhrase, keywordWords, withText } from '../../game/trigger-text';
+import { filterPhrase, grantedKeywordWords, withText } from '../../game/trigger-text';
 
 /** True for Cycling's expansion: an ability from the hand whose cost discards the card (CR 702.29a). */
 export function isCycling(ability: ActivatedAbility): boolean {
@@ -190,7 +191,15 @@ function targetText(spec: TargetSpec | undefined): string {
         const { controller } = spec.what.filter;
         const whose =
           controller === 'you' ? 'your' : controller === 'opponent' ? "an opponent's" : 'a';
-        return `target ${nounOf(spec.what.filter)} card from ${whose} graveyard${withText(spec.what.filter)}`;
+        // D-460: a card of any kind ("Exile target card from a graveyard", Ghost Vacuum) is "card", not "permanent card".
+        const { types, subtypes, anyOf, commander } = spec.what.filter;
+        const any =
+          types === undefined &&
+          subtypes === undefined &&
+          anyOf === undefined &&
+          commander === undefined;
+        const kind = any ? 'card' : `${nounOf(spec.what.filter)} card`;
+        return `target ${kind} from ${whose} graveyard${withText(spec.what.filter)}`;
       }
       // "target creature an opponent controls": the controller is part of what the text promises.
       const { controller } = spec.what.filter;
@@ -217,6 +226,12 @@ function targetText(spec: TargetSpec | undefined): string {
       return `target ${nounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
     }
     case 'player':
+      // D-486 (CR 115.1): "any number of target players" (none, one or each).
+      if (spec.anyNumber === true) {
+        return spec.what.filter === 'opponent'
+          ? 'any number of target opponents'
+          : 'any number of target players';
+      }
       return spec.what.filter === 'opponent' ? 'target opponent' : 'target player';
     case 'anyTarget':
       return 'any target';
@@ -257,6 +272,10 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'triggerSubject':
       // The spell of a "whenever you cast" trigger (Storm-like copies) or what targeted the permanent; else the
       // permanent or creature the trigger is about (D-133): "put a +1/+1 counter on it".
+      // D-491: the "When you cast this spell" ability of the spell itself says "this spell".
+      if (ability.trigger?.kind === 'castSpell' && ability.trigger.self === true) {
+        return 'this spell';
+      }
       return ability.trigger === undefined ||
         ability.trigger.kind === 'castSpell' ||
         ability.trigger.kind === 'becomesTarget'
@@ -283,6 +302,15 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
  */
 const UNSAID = '\u0000';
 
+/** D-474 (CR 305.6): the basic land types, the ones an effect can set a land to. */
+const BASIC_LAND_TYPE_WORDS: readonly string[] = [
+  'Plains',
+  'Island',
+  'Swamp',
+  'Mountain',
+  'Forest',
+];
+
 /** The fields of a filter the fallback of `eachText` says: its nouns and the "with ..." clause. */
 const FALLBACK_SAYS: ReadonlySet<string> = new Set([
   'types',
@@ -297,6 +325,8 @@ const FALLBACK_SAYS: ReadonlySet<string> = new Set([
   'keywords',
   'notKeywords',
   'powerLessThanSource',
+  // D-431: "creatures with power greater than its base power".
+  'powerAboveBase',
   'controllerDealtDamageBySource',
 ]);
 
@@ -491,7 +521,11 @@ function sacrificeText(
           }`;
   if (player === undefined) return `Sacrifice ${what}`;
   // CR 101.4 (D-131): each of several players chooses their own, in turn order.
-  const choice = objects.kind === 'choose' && namesSeveral(player) ? ' of their choice' : '';
+  const eachTarget =
+    player.kind === 'target' &&
+    ability.targets?.find((t) => t.id === player.id)?.anyNumber === true;
+  const choice =
+    objects.kind === 'choose' && (namesSeveral(player) || eachTarget) ? ' of their choice' : '';
   return `${playerVerb(player, ability, 'sacrifice')} ${what}${choice}`;
 }
 
@@ -603,6 +637,20 @@ function moveText(
   // D-151 (CR 113.6b): a card that returns itself from the graveyard says where it comes from.
   if (objects.kind === 'this' && self === 'card' && effect.to === 'hand') {
     return 'Return this card from your graveyard to your hand';
+  }
+  // D-460 (CR 607.2a, 110.2a, 122.6): "Put each creature card exiled with this artifact onto the battlefield under your control with a flying counter on it".
+  if (
+    objects.kind === 'linkedExile' &&
+    objects.filter !== undefined &&
+    effect.to === 'battlefield'
+  ) {
+    const kind = nounOf(objects.filter);
+    const kept = effect.withCounters;
+    const withCounters =
+      kept === undefined ? '' : ` with ${quantity(kept.count, defs, counters(kept.counter))} on it`;
+    const control =
+      effect.controller === 'owner' ? " under its owner's control" : ' under your control';
+    return `Put each ${kind} card exiled with this ${self} onto the battlefield${effect.tapped === true ? ' tapped' : ''}${control}${withCounters}`;
   }
   // D-394 (CR 110.2a, 400.7): the card an earlier instruction exiled ("it") put onto the battlefield under the control of the player who puts it: it is not returning anywhere.
   if (objects.kind === 'moved' && effect.to === 'battlefield' && effect.controller === 'you') {
@@ -732,6 +780,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'gainLevel':
       // CR 716.2a (D-235): the effect of a class level bar, "Level 2".
       return `Level ${effect.level}`;
+    case 'monstrosity':
+      // CR 701.37a (D-445): "Monstrosity 5"; a count the game reads has no short word, so the label shows the cost only.
+      return typeof effect.count === 'number' ? `Monstrosity ${effect.count}` : '';
     case 'transform':
       // CR 701.27a (D-395 provisional): "Transform this creature".
       return `Transform ${object(effect.objects)}`;
@@ -910,6 +961,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         ? `Exile ${object(effect.objects)}. It's exiled with this ${self}`
         : `Exile ${object(effect.objects)}`;
     }
+    case 'attach': {
+      // D-406 (CR 701.3): "Attach this Aura to that creature": the creature a trigger is about is "that creature" here, not "it".
+      const onto = effect.to.kind === 'triggerSubject' ? 'that creature' : object(effect.to);
+      return `Attach ${object(effect.object)} to ${onto}`;
+    }
     case 'tap':
       // D-139 (CR 701.26a): "You may tap any number of untapped Myr you control".
       return effect.objects.kind === 'choose'
@@ -926,6 +982,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'ringTempts':
       // D-196 (CR 701.54a): the Ring tempts the controller.
       return 'The Ring tempts you';
+    case 'delayedSacrifice':
+      // D-478 (CR 702.147a, 701.54c): the sacrifice at end of combat of the ability of Decayed, and of the third level of the Ring.
+      return delayedSacrificeText(effect.of);
     case 'empowerJace':
       // D-201 (CR 701.71a): the keyword action, as the cards write it.
       return `Empower Jace ${effect.amount}`;
@@ -964,7 +1023,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'grantKeyword':
       // "Each Zombie gains menace until end of turn" (CR 613.1f, 611.2c).
       // D-187: "up to that many target creatures gain double strike": several targets, the plural verb.
-      return `${capital(object(effect.objects))} ${object(effect.objects).startsWith('up to ') ? 'gain' : 'gains'} ${keywordWords(effect.keyword.kind)}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
+      return `${capital(object(effect.objects))} ${object(effect.objects).startsWith('up to ') ? 'gain' : 'gains'} ${grantedKeywordWords(effect.keyword)}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
     case 'restrict':
       // "Target creature can't be blocked this turn" (CR 613.11).
       return `${capital(object(effect.objects))} ${RESTRICTION_EFFECT[effect.restriction]}${effect.duration === 'untilEndOfTurn' ? ' this turn' : effect.duration === 'forAsLongAsYouControlThis' ? ' for as long as you control this' : ''}`;
@@ -1041,7 +1100,35 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       const pay = payAnyAmountText(effect.symbol);
       return inner === '' ? pay : `${pay}. When you do, ${lower(inner)}`;
     }
+    case 'sparePermanents': {
+      // D-484 (CR 608.2d, 701.21a): "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest." Only the shape with the six types is said; the
+      // controller's own choices (Tragic Arrogance) are not worded here.
+      if (effect.own === undefined) return UNSAID;
+      const all =
+        effect.types.length === 6 &&
+        ['artifact', 'battle', 'creature', 'enchantment', 'land', 'planeswalker'].every((t) =>
+          (effect.types as readonly string[]).includes(t),
+        );
+      if (!all) return UNSAID;
+      const who = effect.own.players.kind === 'eachOpponent' ? 'Each opponent' : 'Each player';
+      return `${who} chooses a permanent they control of each permanent type and sacrifices the rest`;
+    }
     case 'copySpell': {
+      // D-438 (CR 707.10, 707.10e): a copy for each other creature, each aimed at one of them; only the shape the engine's cards have is said.
+      if (effect.forEach !== undefined) {
+        const f = effect.forEach;
+        const theirs = effect.copier === 'triggerPlayer';
+        const shape =
+          f.types?.length === 1 &&
+          f.types[0] === 'creature' &&
+          f.other === true &&
+          f.controller === (theirs ? 'triggerPlayer' : 'you') &&
+          effect.newTargets === 'no' &&
+          effect.count === undefined &&
+          Object.keys(f).every((k) => ['types', 'other', 'controller', 'zone'].includes(k));
+        const named = object(effect.spell);
+        return shape && named !== UNSAID ? copyForEachWords(named, theirs) : UNSAID;
+      }
       // D-337 (CR 707.10, 707.10c, 903.8): "Copy that spell", with new targets, and once for each time the commander was cast from the command zone.
       const count =
         effect.count === undefined
@@ -1050,10 +1137,19 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
             ? null
             : typeof effect.count === 'object' && effect.count.kind === 'commanderCasts'
               ? "time you've cast your commander from the command zone this game"
-              : UNSAID;
+              : // D-491 (CR 118.8): "copy this spell for each creature sacrificed this way".
+                typeof effect.count === 'object' && effect.count.kind === 'sacrificedAsCost'
+                ? 'creature sacrificed this way'
+                : UNSAID;
       if (count === UNSAID) return UNSAID;
       const spell = object(effect.spell);
       return spell === UNSAID ? UNSAID : copySpellWords(spell, effect.newTargets, count);
+    }
+    case 'exileOnResolve': {
+      // D-439 (CR 614.1a, 608.2n, 603.7): the spell whose casting caused the trigger is exiled as it resolves, and comes back to the hand at the next end step.
+      return object(effect.spell) === UNSAID
+        ? UNSAID
+        : 'Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step';
     }
     case 'delayedCast': {
       // D-336 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell".
@@ -1068,6 +1164,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // A choice of types says "an instant or sorcery"; the trigger is about a spell, as the card says.
       return delayedCastWords(/\bspells?$/.test(spell) ? spell : `${spell} spell`, inner);
     }
+    case 'exileIfLeaves':
+      // D-459 (CR 614.1a): the replacement of the permanent an earlier instruction put onto the battlefield (Whip of Erebos).
+      return `If ${object(effect.objects)} would leave the battlefield, exile it instead of putting it anywhere else`;
     case 'delayedTrigger': {
       // D-151 (CR 603.7): "At the beginning of your next end step, this creature deals 2 damage to each opponent for each of those cards".
       const when = delayedWords(effect.at);
@@ -1077,8 +1176,23 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'setTypes': {
       // D-151 (CR 205.1b, 613.1d): "Until end of turn, this creature becomes a Dragon in addition to its other types".
       const kinds = [...(effect.subtypes ?? []), ...(effect.types ?? [])];
+      // D-474 (CR 305.7): "Target land becomes a Swamp until end of turn": a basic land type replaces the land types.
+      if (
+        effect.additive !== true &&
+        effect.types === undefined &&
+        effect.subtypes?.length === 1 &&
+        BASIC_LAND_TYPE_WORDS.includes(effect.subtypes[0] ?? '')
+      ) {
+        const land = effect.subtypes[0] ?? '';
+        return `${capital(object(effect.objects))} becomes ${land === 'Island' ? 'an' : 'a'} ${land}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
+      }
       if (effect.additive !== true || kinds.length === 0) return UNSAID;
       const noun = kinds.join(' ');
+      // D-460 (CR 613.1d, 613.4b, 611.2a): "Each of them is a 1/1 Spirit in addition to its other types", for good: the base power and toughness are said too.
+      if (effect.basePt !== undefined && effect.duration === 'permanent') {
+        const size = `${effect.basePt.power}/${effect.basePt.toughness}`;
+        return `${capital(object(effect.objects))} is a ${size} ${noun} in addition to its other types`;
+      }
       const until = effect.duration === 'untilEndOfTurn' ? ' until end of turn' : '';
       return `${capital(object(effect.objects))} becomes ${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun} in addition to its other types${until}`;
     }

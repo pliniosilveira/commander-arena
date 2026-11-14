@@ -81,6 +81,7 @@ export function kw(
     | 'crew'
     | 'landwalk'
     | 'annihilator'
+    | 'afflict'
     | 'toxic'
     | 'typecycling'
     | 'multikicker'

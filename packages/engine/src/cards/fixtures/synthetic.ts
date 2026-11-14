@@ -35,6 +35,14 @@ import { SYNTHETIC_COPY_LIST } from './synthetic-copies';
 import { SYNTHETIC_COST_LIST } from './synthetic-costs';
 import { SYNTHETIC_CROSS_ZONE_LIST } from './synthetic-cross-zone';
 import { SYNTHETIC_DAMAGE_ORDER_LIST } from './synthetic-damage-order';
+import { SYNTHETIC_DANITHA_G1A_LIST } from './synthetic-danitha-g1a';
+import { SYNTHETIC_DANITHA_G1B_LIST } from './synthetic-danitha-g1b';
+import { SYNTHETIC_DANITHA_G2_LIST } from './synthetic-danitha-g2';
+import { SYNTHETIC_DANITHA_G3_LIST } from './synthetic-danitha-g3';
+import { SYNTHETIC_DANITHA_G4_LIST } from './synthetic-danitha-g4';
+import { SYNTHETIC_DANITHA_G5_LIST } from './synthetic-danitha-g5';
+import { SYNTHETIC_DANITHA_G6_LIST } from './synthetic-danitha-g6';
+import { SYNTHETIC_DANITHA_G7_LIST } from './synthetic-danitha-g7';
 import { SYNTHETIC_DAWNBREAK_LIST } from './synthetic-dawnbreak';
 import { SYNTHETIC_DELAYED_RETURN_LIST } from './synthetic-delayed-return';
 import { SYNTHETIC_DESTROY_PER_OPPONENT_LIST } from './synthetic-destroy-per-opponent';
@@ -47,11 +55,19 @@ import { SYNTHETIC_DRAGONS_LIST } from './synthetic-dragons';
 import { SYNTHETIC_EDHREC_LIST } from './synthetic-edhrec';
 import { SYNTHETIC_ENTERS_GROUP_LIST } from './synthetic-enters-group';
 import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
+import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
+import { SYNTHETIC_FEATHER_G2_LIST } from './synthetic-feather-g2';
+import { SYNTHETIC_FEATHER_G3_LIST } from './synthetic-feather-g3';
 import { SYNTHETIC_FETCH_GRANTS_LIST } from './synthetic-fetch-grants';
 import { SYNTHETIC_FIGHT_LIST } from './synthetic-fight';
 import { SYNTHETIC_FOLLOWUP_LIST } from './synthetic-followups';
 import { SYNTHETIC_FREE_CAST_LIST } from './synthetic-free-cast';
 import { SYNTHETIC_GIFT_LIST } from './synthetic-gift';
+import { SYNTHETIC_GISA_G1_LIST } from './synthetic-gisa-g1';
+import { SYNTHETIC_GISA_G2_LIST } from './synthetic-gisa-g2';
+import { SYNTHETIC_GISA_G3_LIST } from './synthetic-gisa-g3';
+import { SYNTHETIC_GISA_G4_LIST } from './synthetic-gisa-g4';
+import { SYNTHETIC_GISA_G5_LIST } from './synthetic-gisa-g5';
 import { SYNTHETIC_GRAVEYARD_LIST } from './synthetic-graveyard';
 import { SYNTHETIC_GREATEST_LIST } from './synthetic-greatest';
 import { SYNTHETIC_HASHATON_G1_LIST } from './synthetic-hashaton-g1';
@@ -383,8 +399,24 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_HASHATON_G3_LIST,
   ...SYNTHETIC_HASHATON_G8_LIST,
   ...SYNTHETIC_HASHATON_GROUP_4_LIST,
+  ...SYNTHETIC_DANITHA_G4_LIST,
+  ...SYNTHETIC_DANITHA_G5_LIST,
+  ...SYNTHETIC_DANITHA_G6_LIST,
+  ...SYNTHETIC_DANITHA_G7_LIST,
+  ...SYNTHETIC_FEATHER_G2_LIST,
+  ...SYNTHETIC_GISA_G5_LIST,
   ...SYNTHETIC_HASHATON_G10_LIST,
   ...SYNTHETIC_HASHATON_G9_LIST,
+  ...SYNTHETIC_DANITHA_G1A_LIST,
+  ...SYNTHETIC_DANITHA_G1B_LIST,
+  ...SYNTHETIC_DANITHA_G2_LIST,
+  ...SYNTHETIC_DANITHA_G3_LIST,
+  ...SYNTHETIC_FEATHER_G3_LIST,
+  ...SYNTHETIC_GISA_G1_LIST,
+  ...SYNTHETIC_GISA_G3_LIST,
+  ...SYNTHETIC_FEATHER_G1_LIST,
+  ...SYNTHETIC_GISA_G4_LIST,
+  ...SYNTHETIC_GISA_G2_LIST,
   ...SYNTHETIC_UNTIL_LEAVES_LIST,
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
   ...SYNTHETIC_HOFRI_LIST,

@@ -8,6 +8,7 @@
  */
 import {
   CREATURE_TYPES,
+  type Keyword,
   type NumberComparison,
   type ObjectFilter,
   type Trigger,
@@ -80,6 +81,8 @@ const SAYABLE: ReadonlySet<string> = new Set([
   'zone',
   'attacking',
   'powerLessThanSource',
+  // D-431: "with power greater than its base power".
+  'powerAboveBase',
   // D-133: nontoken, non-Zombie, colorless, with and without a keyword.
   'token',
   'notSubtypes',
@@ -139,9 +142,12 @@ function nounCore(filter: ObjectFilter, base: string): string | null {
         ? ' of the chosen color'
         : '';
   // "Creature token": a token is named after what it is.
+  // D-465: a token of no kind is "a token", not "a permanent token".
   const kind =
     filter.token === true
-      ? `${nouns} token`
+      ? members.length === 0 && (filter.types ?? []).length === 0
+        ? 'token'
+        : `${nouns} token`
       : bare
         ? (subtypes[subtypes.length - 1] ?? nouns)
         : nouns;
@@ -176,6 +182,8 @@ export function withText(filter: ObjectFilter): string {
     filter.hasCounter === undefined ? '' : counterOnIt(filter.hasCounter),
     // Mentor (CR 702.134a): "target attacking creature with power less than this creature's power".
     filter.powerLessThanSource === true ? "power less than this creature's power" : '',
+    // CR 208.4b (D-431): the power it has now is more than the base power it has before counters and effects that only modify it.
+    filter.powerAboveBase === true ? 'power greater than its base power' : '',
     (filter.keywords ?? []).map(keywordWords).join(' and '),
   ].filter((p) => p !== '');
   const without = (filter.notKeywords ?? []).map(keywordWords).join(' or ');
@@ -194,6 +202,20 @@ function counterOnIt(counter: true | string): string {
 
 /** "first strike" for `firstStrike`: a keyword as the cards print it, lower case. */
 export const keywordWords = (kind: string): string => kind.replace(/([A-Z])/g, ' $1').toLowerCase();
+
+/**
+ * A keyword a static ability or an effect gives, as the cards print it (D-472, D-473): "swampwalk" and "nonbasic landwalk" carry their land type, "afflict 3" its number
+ * (CR 702.14a, 702.130a); any other is `keywordWords` of its kind.
+ */
+export function grantedKeywordWords(keyword: Keyword): string {
+  if (keyword.kind === 'landwalk') {
+    return keyword.landType === 'nonbasic'
+      ? 'nonbasic landwalk'
+      : `${keyword.landType.toLowerCase()}walk`;
+  }
+  if (keyword.kind === 'afflict') return `afflict ${keyword.count}`;
+  return keywordWords(keyword.kind);
+}
 
 /** " you control" / " an opponent controls", or ''. */
 function controlText(filter: ObjectFilter): string {
@@ -231,7 +253,34 @@ function onlyCreatureTypes(filter: ObjectFilter): boolean {
  * "a creature with power 4 or greater", "a noncreature spell". `base` is the noun when the filter
  * names no type ("permanent", or "spell" for a cast trigger). Null when a field cannot be said.
  */
-export function filterPhrase(given: ObjectFilter, base = 'permanent'): string | null {
+export function filterPhrase(
+  given: ObjectFilter,
+  base = 'permanent',
+  self?: string,
+): string | null {
+  // D-437 (CR 115.1): "an Equipment spell or a spell that targets a creature you control": a disjunction with a member that says what the spell targets is said member by member.
+  if (given.anyOf?.some((m) => m.targetsObject !== undefined || m.targetsOnly !== undefined)) {
+    const { anyOf, ...outer } = given;
+    const parts = anyOf.map((member) => filterPhrase({ ...outer, ...member }, base, self));
+    return parts.includes(null) ? null : parts.join(' or ');
+  }
+  // D-206, D-400, D-437 (CR 115.1, 115.9c, 601.2c): "a spell that targets a creature you control", "a spell that targets only this creature": what the spell targets is a phrase of its own.
+  if (given.targetsObject !== undefined || given.targetsOnly !== undefined) {
+    const { targetsObject, targetsOnly, ...rest } = given;
+    const aim = targetsObject ?? targetsOnly;
+    if (aim === undefined) return null;
+    const spell = filterPhrase(rest, base, self);
+    // The permanent with the ability: its name when the words have it, otherwise "this permanent".
+    const aimed =
+      aim.isSource === undefined
+        ? filterPhrase(aim)
+        : Object.keys(aim).length === 1
+          ? (self ?? 'this permanent')
+          : null;
+    return spell === null || aimed === null
+      ? null
+      : `${spell} that targets ${targetsOnly === undefined ? '' : 'only '}${aimed}`;
+  }
   // D-151: "a Dragon you control enters": a creature type and no card type names creatures, not "Dragon permanents".
   const filter =
     base === 'permanent' && onlyCreatureTypes(given)
@@ -446,7 +495,7 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'castSpell': {
       // CR 601.2i, 603.2 (D-183): the spell's own ability, "When you cast this spell".
       if (trigger.self === true) return 'When you cast this spell';
-      const spell = filterPhrase(trigger.filter, 'spell');
+      const spell = filterPhrase(trigger.filter, 'spell', ctx.self);
       if (spell === null) return null;
       // D-218 (CR 707.10): Magecraft's "cast or copy".
       const who = trigger.by === 'you' ? 'you cast' : `${BY_WORDS[trigger.by]} casts`;
@@ -466,6 +515,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'ringTempted':
       // D-196 (CR 701.54d): each time the Ring tempts you, whatever you could choose.
       return 'Whenever the Ring tempts you';
+    case 'crimeCommitted':
+      // D-464 (CR 700.13): a spell or ability of the player that targets an opponent, what an opponent controls or a card in an opponent's graveyard.
+      return `Whenever ${trigger.who === 'you' ? 'you commit' : `${BY_WORDS[trigger.who]} commits`} a crime`;
+    case 'tokenCreated':
+      // D-465 (CR 111.2): once for each token the player creates.
+      return `Whenever ${trigger.who === 'you' ? 'you create' : `${BY_WORDS[trigger.who]} creates`} a token`;
     case 'permanentSacrificed': {
       const what = trigger.filter === undefined ? 'a permanent' : filterPhrase(trigger.filter);
       if (what === null) return null;

@@ -58,11 +58,16 @@ const TRIGGER_WORD = /^(?:when|whenever|at)\s/i;
 /** "When you next cast an instant or sorcery spell this turn, " (D-336): the lead of a sentence that creates a delayed triggered ability. */
 const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
-const MODAL_HEADER = /^choose\b/i;
+/** "Tiered" (D-433, CR 702.183a) is the lead line of a modal text whose modes have costs, as "Choose one —" is of the others. */
+const MODAL_HEADER = /^(?:choose\b|tiered(?:\n|$))/i;
 const REPLACEMENT_ENTERS = /^(?:as )?~ enters\b/i;
+/** "~ escapes with two +1/+1 counters on it." (D-482, CR 702.138c): the replacement effect of a permanent that escaped. */
+const REPLACEMENT_ESCAPES = /^~ escapes with\b/i;
+/** "Umbra armor" (CR 702.89a, D-417): the keyword line of an Aura, which is a replacement effect of the permanent it enchants. */
+const REPLACEMENT_UMBRA_ARMOR = /^umbra armor$/i;
 /** "If ~ was kicked, it enters with ...": a conditional replacement of the permanent itself. */
 const REPLACEMENT_IF_ENTERS = /^if [^,]+, (?:~|it) enters\b/i;
-const COST_WORDS = /^(?:sacrifice|discard|pay|remove|exile|tap)\b/i;
+const COST_WORDS = /^(?:sacrifice|discard|pay|remove|exile|tap|reveal this card from your hand)\b/i;
 /**
  * The loyalty symbol that starts a loyalty ability (CR 606.2, 606.4, 606.5; stage P47, D-202): "+1", "−2" (U+2212, which Oracle text writes; a hyphen-minus and an
  * en dash too), "0", "−X", each with or without the square brackets of the rules text. The colon follows at once.
@@ -74,6 +79,14 @@ const LOYALTY_PREFIX = /^\[?(?:[+]\d+|[\u2212\u2013-](?:\d+|X)|0)\]?\s*:/;
  */
 const ACTIVATED_MAY_CAST_RIDER =
   /^(?:[^:.]+: )?you may cast target [^.,]* cards? from your graveyard (?:this turn|until end of turn)\. if that spell would be put into your graveyard, exile it instead\./i;
+
+/**
+ * "{2}{B}{B}, {T}: Return target creature card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step. If it would leave the battlefield,
+ * exile it instead of putting it anywhere else. Activate only as a sorcery." (Gisa deck, group 4, D-459, Whip of Erebos): an activated ability whose last sentence says a replacement
+ * effect of the permanent its first sentence put onto the battlefield; read before the replacement test below, which "would ... instead" would take.
+ */
+const LEAVE_EXILE_RIDER =
+  /\. if it would leave the battlefield, exile it instead of putting it anywhere else\./i;
 
 function isOpenQuote(c: string): boolean {
   return c === '"' || c === '“';
@@ -89,6 +102,20 @@ function insideNamedCard(text: string, at: number, start: number): boolean {
   if (named < start) return false;
   if (text.slice(named + 7, at).includes(', ')) return false;
   return /^, (?:the |of |[A-Z])/u.test(text.slice(at, at + 6));
+}
+
+const EVENT_WORD =
+  '(?:enters(?: the battlefield)?|dies|attacks|blocks|becomes (?:tapped|untapped|blocked|the target of a spell))';
+
+/**
+ * Whether the comma at `at` separates two events of a trigger's list ("attacks, blocks, or becomes the target of a spell"): an event ends right before it and an event (after an
+ * optional "or") follows it. The next comma, the one that ends the list, is followed by the effect. A trigger of one event or of "A or B" has no such comma.
+ */
+function insideEventList(text: string, at: number): boolean {
+  return (
+    new RegExp(`${EVENT_WORD}$`, 'iu').test(text.slice(Math.max(0, at - 40), at)) &&
+    new RegExp(`^, (?:or )?${EVENT_WORD}(?![\\p{L}\\p{N}])`, 'iu').test(text.slice(at, at + 60))
+  );
 }
 
 /** Offsets of `, ` (comma and space) that are outside quotes and braces. */
@@ -110,6 +137,8 @@ function topLevelCommas(text: string, start: number, end: number): number[] {
       !(
         text.slice(i - 8, i).toLowerCase() === 'nontoken' && /^, non-/i.test(text.slice(i, i + 6))
       ) &&
+      // D-448 (CR 603.2c): "Whenever ~ attacks, blocks, or becomes the target of a spell, ...": a comma between the events of a list is not the end of the trigger condition.
+      !insideEventList(text, i) &&
       // D-278 (CR 201.2): the name of a card may hold a comma ("a creature named Bruna, the Fading Light"): a comma inside the name after "named" is not the end of the clause.
       !insideNamedCard(text, i, start)
     ) {
@@ -139,10 +168,29 @@ const NEW_TARGETS_SENTENCE = /^you may choose new targets for the copy\.$/i;
 const NEW_TARGETS_COPIES_SENTENCE = /^you may choose new targets for the copies\.$/i;
 const COPY_FOR_EACH = /(?:^|, )copy (?:it|that spell) for each time [^.]*\.$/i;
 
+/**
+ * "Copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." (Feather group 3, D-438, CR 707.10e): the
+ * second sentence only says where the copies of the first aim, so the two are read as one (`effect.copy-spell-each`). Joined only to a sentence that says it, for "you" and for "that player".
+ */
+const COPY_EACH_SENTENCE = /^each copy targets a different one of those creatures\.$/i;
+const COPY_FOR_EACH_OTHER =
+  /(?:^|, )(?:copy that spell|that player copies that spell) for each other creature (?:you|they) control that the spell could target\.$/i;
+/**
+ * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (Feather group 3, D-439, CR 614.1a,
+ * 603.7): "if you do" is about the exile of the sentence before it, so the two are read as one (`effect.exile-on-resolve`).
+ */
+const RETURN_EXILED_SENTENCE =
+  /^if you do, return it to your hand at the beginning of the next end step\.$/i;
+const EXILE_ON_RESOLVE =
+  /(?:^|, )exile that card instead of putting it into your graveyard as it resolves\.$/i;
+
 /** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-337). */
 function newTargetsOf(text: string, before: Span | undefined, span: Span): boolean {
   if (before === undefined) return false;
   const said = text.slice(span.start, span.end);
+  const beforeText = text.slice(before.start, before.end);
+  if (COPY_EACH_SENTENCE.test(said)) return COPY_FOR_EACH_OTHER.test(beforeText);
+  if (RETURN_EXILED_SENTENCE.test(said)) return EXILE_ON_RESOLVE.test(beforeText);
   if (NEW_TARGETS_SENTENCE.test(said)) return true;
   return (
     NEW_TARGETS_COPIES_SENTENCE.test(said) &&
@@ -282,6 +330,11 @@ const EXILE_THAT_SPELL_INSTEAD_YOUR =
 const REVEAL_THE_TOP = /^reveal the top [^.]* cards of your library\.$/i;
 const SEPARATES_INTO_PILES = /^an opponent separates those cards into two piles\.$/i;
 const PUT_ONE_PILE = /^put one pile into your hand and the other into your graveyard\.$/i;
+/**
+ * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (D-396, CR 701.20a):
+ * the second sentence of the same instruction after `REVEAL_THE_TOP` (the cards are revealed, so "reveal" is not said again), kept together with the rest for `effect.reveal-take`.
+ */
+const PUT_FROM_AMONG_REVEALED = /^you may put [^.]* from among them into your hand\.$/i;
 
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
@@ -326,8 +379,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
-      said(a, LOOK_AT_TOP) &&
-      (said(b, TAKE_FROM_AMONG) || said(b, PUT_ANY_TOTAL)) &&
+      ((said(a, LOOK_AT_TOP) && (said(b, TAKE_FROM_AMONG) || said(b, PUT_ANY_TOTAL))) ||
+        (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&
       said(c, PUT_THE_REST)
     ) {
       out.push({ start: a.start, end: c.end });
@@ -595,8 +648,16 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
   }
 
+  if (LEAVE_EXILE_RIDER.test(text)) {
+    const colon = costColon(text);
+    if (colon > 0 && text.slice(0, colon).includes('{'))
+      return activatedSkeleton(text, colon, base);
+  }
+
   if (
     REPLACEMENT_ENTERS.test(text) ||
+    REPLACEMENT_ESCAPES.test(text) ||
+    REPLACEMENT_UMBRA_ARMOR.test(text) ||
     REPLACEMENT_IF_ENTERS.test(text) ||
     (/ would /.test(text) && / instead\b/.test(text))
   ) {

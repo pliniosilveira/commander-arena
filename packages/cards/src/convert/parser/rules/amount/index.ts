@@ -4,6 +4,7 @@ import { possessedNoun } from '../noun/controller';
 import { defineRule, spanned } from '../registry';
 import { COUNT_AMOUNT_RULES } from './count';
 import { AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
+import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
 import { HASHATON_G2_AMOUNT_RULES } from './hashaton-group-2';
 import { HOFRI_AMOUNT_RULES } from './hofri';
 import { AMOUNT_TIMES_KICKED } from './kicked';
@@ -309,6 +310,8 @@ export const AMOUNT_RULES = [
   ...HOFRI_AMOUNT_RULES,
   // Hashaton deck, group 2 (D-365): "equal to the life that player lost this turn".
   ...HASHATON_G2_AMOUNT_RULES,
+  // Feather deck, group 1 (D-450): "for each card you've drawn this turn".
+  ...FEATHER_G1_AMOUNT_RULES,
   AMOUNT_NUMBER,
   AMOUNT_X,
   AMOUNT_ARTICLE,

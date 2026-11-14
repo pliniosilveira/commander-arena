@@ -9,7 +9,6 @@
  */
 import type {
   Amount,
-  CardType,
   Duration,
   Effect,
   ManaProduction,
@@ -20,7 +19,7 @@ import type {
   TriggerStep,
 } from '@commander-arena/engine';
 import { amountPhrase, UNKNOWN_AMOUNT } from './amount-text';
-import { asCreatures, cardNoun, numberWord } from './artifacts-text';
+import { asCreatures, cardNoun, isPermanentCard, numberWord } from './artifacts-text';
 import { pluralSubtype, thingsPhrase } from './filter-text';
 import { triggerWording, withText } from './trigger-text';
 import { COLOR_NAMES } from './words';
@@ -84,24 +83,6 @@ export function extraCombatText(atBeginning: string | null): string {
 }
 
 const lowerFirst = (text: string): string => `${text.charAt(0).toLowerCase()}${text.slice(1)}`;
-
-/** The six types a "permanent card" is (CR 110.4): `anyOf` of exactly these says "permanent". */
-const PERMANENT_TYPES: readonly CardType[] = [
-  'artifact',
-  'creature',
-  'enchantment',
-  'land',
-  'planeswalker',
-  'battle',
-];
-
-/** True when the filter is the union of the six permanent types and nothing else. */
-function isPermanentCard(filter: ObjectFilter): boolean {
-  const members = filter.anyOf;
-  if (members === undefined || Object.keys(filter).length !== 1) return false;
-  const types = members.flatMap((m) => (Object.keys(m).length === 1 ? (m.types ?? []) : []));
-  return types.length === members.length && PERMANENT_TYPES.every((t) => types.includes(t));
-}
 
 /** "a permanent card", "a land card", "an artifact card with mana value 3 or less": the card `revealTop` looks for. */
 function revealedCard(filter: ObjectFilter): string | null {

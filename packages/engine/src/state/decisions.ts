@@ -368,7 +368,9 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * returns permanents to their owners' hands ("Return an artifact you control to its owner's hand"), always `forCost`: `legal` are
    * the permanents the player controls that match, `min` and `max` the number to return. `'fight'` (D-145): see `subject`.
    * `'untapChoice'` (D-216, CR 701.26a: "Untap up to three lands"): an effect untaps permanents the controller chooses; `legal` are the tapped
-   * permanents on the battlefield that match, of any player, `min` is 0 and `max` the most that may be untapped.
+   * permanents on the battlefield that match, of any player, `min` is 0 and `max` the most that may be untapped. `'blight'` (D-407, CR 701.68a): the cost of
+   * an activated ability that puts -1/-1 counters on a creature the player controls ("Blight 1"), always `forCost`: `legal` are the creatures they control that can
+   * have the counters put on them, `min` and `max` are 1.
    */
   readonly purpose:
     | 'sacrifice'
@@ -389,7 +391,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'untapChoice'
     | 'conniveOrder'
     | 'spare'
-    | 'soulbond';
+    | 'soulbond'
+    | 'blight';
   /**
    * For `'fight'` (D-145, CR 701.14: "Each of those tokens fights a different one of those creatures"): `seat` (the controller of the effect)
    * chooses which creature of `legal` the creature `subject` fights; exactly one (`min` = `max` = 1). For `'auraHost'` (D-149, CR 303.4f):
@@ -421,9 +424,14 @@ export interface ChoosePermanentDecision extends DecisionBase {
   readonly subject?: ObjectId;
   /**
    * For `'spare'` (D-231, "For each player, you choose from among the permanents that player controls an artifact, a creature, ..."): `seat` (the controller of
-   * the effect) chooses which of `legal` (the permanents of that card type `player` controls) is not sacrificed; exactly one (`min` = `max` = 1). Absent otherwise.
+   * the effect) chooses which of `legal` (the permanents of that card type `player` controls) is not sacrificed; exactly one (`min` = `max` = 1); with `own` (D-484) `seat` is `player`. Absent otherwise.
    */
-  readonly spare?: { readonly player: SeatId; readonly type: CardType };
+  readonly spare?: {
+    readonly player: SeatId;
+    readonly type: CardType;
+    /** D-484: `player` chooses among their own permanents and sacrifices every other one, lands too (Liliana, Dreadhorde General). */
+    readonly own?: true;
+  };
   /**
    * For `'proliferate'` (CR 701.34a, D-149): `seat` chooses any number of the permanents in `legal` (those with a counter) and of the
    * players listed here (those with poison counters); `min` is 0 and `max` is `legal.length`. The answer, a `choosePermanents` action,
@@ -731,8 +739,15 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'replacement'
     | 'vote'
     | 'meldOrder'
-    | 'pile';
+    | 'pile'
+    | 'protectionColor';
   readonly options: readonly string[];
+  /**
+   * For purpose `'protectionColor'` (D-451, CR 702.16, 608.2d, "gains protection from the color of your choice"): the controller of the resolving spell or
+   * ability chooses one of the five colors (`options` are `W`, `U`, `B`, `R`, `G`, in that order) and the permanents in `protects` gain protection from it
+   * until end of turn. `source` is the spell or ability that resolves. Absent for the other purposes.
+   */
+  readonly protects?: readonly ObjectId[];
   /**
    * For purpose `'replacement'` (D-191, CR 616.1): several prevention effects apply to one damage event and the order can change the
    * result, so the affected player (`seat`: the damaged player, or the controller of the damaged permanent) chooses which to apply
@@ -847,7 +862,26 @@ export interface TokenReplacementChoice extends ReplacementChoiceBase {
   };
 }
 
-export type ReplacementChoice = DamageReplacementChoice | TokenReplacementChoice;
+/**
+ * One effect the affected player may choose to apply first to the destruction of a permanent (CR 616.1, D-418): a regeneration shield (`regenerate`,
+ * CR 701.19a) or the Umbra armor of an Aura attached to it (`umbra`, CR 702.89a, `object` is the Aura). Each replaces the destruction, so the one applied first
+ * is the only one used up.
+ */
+export interface DestroyReplacementChoice extends ReplacementChoiceBase {
+  readonly kind: 'regenerate' | 'umbra';
+  /** What happens if this effect is applied: the Aura that is destroyed instead (none for a regeneration shield) and whether the permanent is tapped and taken out of combat. */
+  readonly outcome: {
+    /** The name of the Aura destroyed in its place; null for a regeneration shield. */
+    readonly aura: string | null;
+    /** A regenerated permanent is tapped and removed from combat (CR 701.19a); one saved by Umbra armor is not. */
+    readonly tapped: boolean;
+  };
+}
+
+export type ReplacementChoice =
+  | DamageReplacementChoice
+  | TokenReplacementChoice
+  | DestroyReplacementChoice;
 
 /**
  * Combat damage waiting for the answers of a replacement question (CR 510.2, D-191): all the damage of the step is simulated before
@@ -886,6 +920,7 @@ export interface DamageReplacementQuestion {
   };
   readonly choices: readonly DamageReplacementChoice[];
   readonly tokens?: undefined;
+  readonly destroy?: undefined;
   /** Set when the damage is combat damage: the batch to deal again once the question is answered. Absent for damage from a spell or ability. */
   readonly resume?: DamageResume;
 }
@@ -902,10 +937,32 @@ export interface TokenReplacementQuestion {
   };
   readonly choices: readonly TokenReplacementChoice[];
   readonly event?: undefined;
+  readonly destroy?: undefined;
   readonly resume?: undefined;
 }
 
-export type ReplacementQuestion = DamageReplacementQuestion | TokenReplacementQuestion;
+/**
+ * The question of a `'replacement'` choice about the destruction of a permanent (CR 616.1, D-418): `object` would be destroyed (by an effect, or by lethal
+ * damage or a deathtouch source as state-based actions are checked, `during`) and two or more replacement effects can be applied (a regeneration shield, the
+ * Umbra armor of each Aura attached to it). The player who controls the permanent is asked; the question is not asked when only one effect applies.
+ */
+export interface DestroyReplacementQuestion {
+  readonly destroy: {
+    readonly object: ObjectId;
+    readonly objectName: string;
+    /** `resolution`: an instruction of a resolving spell or ability (the answer is added to its answers and it runs again); `sba`: state-based actions (the answer is applied and they are checked again). */
+    readonly during: 'resolution' | 'sba';
+  };
+  readonly choices: readonly DestroyReplacementChoice[];
+  readonly event?: undefined;
+  readonly tokens?: undefined;
+  readonly resume?: undefined;
+}
+
+export type ReplacementQuestion =
+  | DamageReplacementQuestion
+  | TokenReplacementQuestion
+  | DestroyReplacementQuestion;
 
 /**
  * CR 107.3a, 601.2b, 602.2b (D-103): the controller of a spell or activated ability with an {X} in its
@@ -942,6 +999,8 @@ export interface ChooseXDecision extends DecisionBase {
     readonly loyalty?: number;
     /** Cards of the hand discarded for each point of X ("discard X cards", D-386); absent for none. */
     readonly discard?: number;
+    /** Permanents sacrificed for each point of X ("Sacrifice X creatures", D-488); absent for none. */
+    readonly sacrifice?: number;
   };
   /** For `multikicker` and `replicate`: the cost paid each time. Absent for X. */
   readonly cost?: readonly Cost[];

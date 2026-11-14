@@ -42,6 +42,7 @@ const PLAIN_CONDITIONS: readonly Condition['kind'][] = [
   'lifeTotal',
   'ownTurnNumber',
   'enteredThisTurn',
+  'thisEnteredThisTurn', // D-423: the turn log
   'playerDealtDamage',
   'lifeGainedThisTurn',
   'cardsInGraveyard',
@@ -109,6 +110,9 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
     }
     case 'objectMatches': {
       // D-179: "as long as this Equipment is attached to a creature": the permanent this one is attached to matches the filter.
+      if (c.inZone !== undefined) {
+        issue(out, `${path}.inZone`, "a static ability's condition does not read inZone (D-412)");
+      }
       if (kindOf(c.of) !== 'attached') {
         issue(
           out,
@@ -126,7 +130,30 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
       }
       return;
     }
+    case 'amountIs': {
+      // D-423: "as long as another Aura is attached to enchanted creature": a count of objects (never a greatest, a total or a devotion: they read power or
+      // another layer 7 result), read through layers 1, 4 and 5.
+      const amount = c.amount;
+      if (typeof amount === 'number' || amount?.kind !== 'countOf') {
+        issue(
+          out,
+          `${path}.amount`,
+          "a static ability's condition compares a count of objects (countOf) with a number",
+        );
+        return;
+      }
+      const problem = filterProblem(amount.filter);
+      if (problem !== null) {
+        issue(
+          out,
+          `${path}.amount.filter`,
+          `a static ability's condition cannot read ${problem}: it would depend on the layer it applies in (CR 613.8)`,
+        );
+      }
+      return;
+    }
     case 'yourTurn': // D-206: the active player, which no layer changes
+    case 'thisEnteredThisTurn': // D-423: the turn log, which no layer changes
     case 'controlCommander':
     case 'lifeTotal':
     case 'ownTurnNumber': // D-149: the turns the controller has had, which no layer changes
@@ -215,6 +242,20 @@ export function checkStaticCondition(
         out,
         `${path}.condition`,
         'only the spell\'s own cost reduction ("this spell costs {3} less to cast if ...") takes a condition',
+      );
+      return;
+    }
+    checkCondition(condition, `${path}.condition`, out);
+    return;
+  }
+  // D-408, CR 601.3b, 601.3d: "You may cast this spell as though it had flash if it targets a commander": the spell's own permission, read as the spell is cast
+  // (`rules/flash-targets.ts`), not by `derive`. A permanent's own `castAsThoughFlash` takes no condition.
+  if (s?.kind === 'castAsThoughFlash') {
+    if (kindOf(s.spells) !== 'this') {
+      issue(
+        out,
+        `${path}.condition`,
+        'only the spell\'s own permission ("You may cast this spell as though it had flash if ...") takes a condition',
       );
       return;
     }

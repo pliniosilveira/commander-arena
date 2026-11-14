@@ -26,11 +26,15 @@ import { ARDEN_CONDITION_RULES } from './arden';
 import { ARTIFACT_CONDITION_RULES } from './artifacts';
 import { BRUNA_CONDITION_RULES } from './bruna';
 import { CHOOSER_CONDITION_RULES } from './choosers';
+import { DANITHA_G1B_CONDITION_RULES } from './danitha-g1b';
+import { DANITHA_G2_CONDITION_RULES, DANITHA_G2_LATE_CONDITION_RULES } from './danitha-g2';
+import { DANITHA_G3_CONDITION_RULES } from './danitha-g3';
 import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
+import { GISA_G1_CONDITION_RULES } from './gisa-g1';
 import { HOFRI_CONDITION_RULES } from './hofri';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
 import { CONDITION_KICKED } from './kicked';
@@ -394,6 +398,8 @@ export const CONDITION_RULES = [
   ...MELD_CONDITION_RULES,
   // Stage P69 (D-271): "the result is 1" after a die roll, "~ is in your graveyard".
   ...ARDEN_CONDITION_RULES,
+  // Issue 26 (the Danitha deck, D-412): "you control a Squirrel or returned a Squirrel card to your hand this way", before the plain count whose phrase is a prefix of it.
+  ...DANITHA_G2_CONDITION_RULES,
   CONDITION_CONTROL_AT_LEAST,
   CONDITION_CONTROL_A,
   CONDITION_CONTROL_AT_MOST,
@@ -426,6 +432,14 @@ export const CONDITION_RULES = [
   ...EDHREC_CONDITION_RULES,
   // Stage P68 (D-229): "there are fewer than eight cards in your graveyard".
   ...HOFRI_CONDITION_RULES,
+  // Issue 26 (the Danitha deck, D-403): "you don't put it onto the battlefield".
+  ...DANITHA_G1B_CONDITION_RULES,
+  // Issue 26 (the Danitha deck, D-411): "you don't", after "you don't put it onto the battlefield", whose phrase it is a prefix of.
+  ...DANITHA_G2_LATE_CONDITION_RULES,
+  // Issue 26 (the Danitha deck, D-427): "enchanted creature is green", "another Aura is attached to enchanted creature", "~ entered this turn".
+  ...DANITHA_G3_CONDITION_RULES,
+  // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".
+  ...GISA_G1_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,

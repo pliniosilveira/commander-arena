@@ -16,6 +16,7 @@ import { dealDamageAsking, dealDamageWithExcess } from './damage';
 import type { Asked, OrderFlow } from './damage-order';
 import { attackedTarget } from './defending';
 import { derive } from './derive';
+import type { DestroyAsked } from './destroy-replacement';
 import { amountOf, PLAYER_ONLY_KINDS } from './effect-support';
 import { abilitiesHaveKeyword } from './keywords';
 import { resolveObjects, resolvePlayers, type SelectContext } from './select';
@@ -23,7 +24,10 @@ import { done, type StepOutcome } from './step-outcome';
 import type { TokensAsked } from './token-replacement';
 
 /** The instruction asks: nothing it did so far is kept (it will run again from the same state with the answer). */
-export const asking = (state: GameState, question: Asked | TokensAsked): StepOutcome => ({
+export const asking = (
+  state: GameState,
+  question: Asked | TokensAsked | DestroyAsked,
+): StepOutcome => ({
   state,
   events: [],
   front: [],

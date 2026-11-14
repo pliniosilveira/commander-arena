@@ -1,4 +1,4 @@
-// `node tools/corpus/coverage-badge.ts --baseline <json> --reports <dir> --out <dir> --date <YYYY-MM-DD>` (D-396): turns the numbers of a
+// `node tools/corpus/coverage-badge.ts --baseline <json> --reports <dir> --out <dir> --date <YYYY-MM-DD>` (D-410): turns the numbers of a
 // coverage run (the baseline JSON that `pnpm coverage:cards --update-baseline --baseline <file>` writes) into what the repository's front
 // page shows, a small site for GitHub Pages: `coverage.json`, `coverage-top500.json` and `coverage-top1000.json` (the endpoint format of
 // shields.io, for a README badge), `coverage.svg` (a self-contained image of the three shares), and `index.html` with the full report as

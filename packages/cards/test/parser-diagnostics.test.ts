@@ -189,11 +189,15 @@ describe('reason: unrecognised', () => {
   });
 
   test('a restriction no rule reads is a restriction slot, after the cost and the body', () => {
-    const [u] = parseFaceText('{T}: Add {G}. Activate only during your turn.', OPTS, 0).unparsed;
+    const [u] = parseFaceText(
+      '{T}: Add {G}. Activate only during an opponent’s turn.',
+      OPTS,
+      0,
+    ).unparsed;
     expect(u).toMatchObject({
       reason: 'unrecognised',
       slot: 'restriction',
-      stoppedAt: 'Activate only during your turn.',
+      stoppedAt: 'Activate only during an opponent’s turn.',
       recognised: ['cost.tap', 'effect.add-mana'],
     });
   });

@@ -8,6 +8,7 @@ import { GRANTABLE_KEYWORDS } from './features';
 import type {
   Ability,
   Amount,
+  AttachedTo,
   AttackedBySelector,
   ChooseSelector,
   Condition,
@@ -164,6 +165,7 @@ export function checkFilter(
   out: Out,
   ownerScope?: Scope,
   sharesWith?: boolean,
+  where: FilterWhere = {},
 ): void {
   if (f.controlledBy !== undefined) {
     if (ownerScope === undefined) {
@@ -260,6 +262,10 @@ export function checkFilter(
   if (f.commander !== undefined && f.commander !== true && f.commander !== 'yours') {
     issue(out, `${path}.commander`, "commander must be true or 'yours'");
   }
+  // D-489 (CR 201.2): "a card named X" is the text of a name.
+  if (f.named !== undefined && (typeof f.named !== 'string' || f.named === '')) {
+    issue(out, `${path}.named`, 'named must be the name of a card');
+  }
   // D-120: "attacking" and "power less than this creature's power" are flags; D-179: so is "put there from the battlefield this turn", a graveyard card's.
   for (const key of [
     'attacking',
@@ -267,13 +273,38 @@ export function checkFilter(
     'attackingOpponents',
     'attackingOrBlocking',
     'powerLessThanSource',
+    'powerAboveBase',
     'putFromBattlefieldThisTurn',
     'notCastFromHand',
     'enteredThisTurn',
     'singleTarget',
+    'modified',
   ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
+  }
+  // D-422: attachments: "attached to it", "that isn't enchanted", "enchanted creature" (of the source).
+  if (f.attachedTo !== undefined) checkAttachedTo(f.attachedTo, `${path}.attachedTo`, out);
+  if (f.enchanted !== undefined && typeof f.enchanted !== 'boolean') {
+    issue(
+      out,
+      `${path}.enchanted`,
+      'enchanted must be a boolean (true: has an Aura, false: has none)',
+    );
+  }
+  if (f.hostOfSource !== undefined && f.hostOfSource !== true) {
+    issue(out, `${path}.hostOfSource`, 'hostOfSource must be true');
+  }
+  if (
+    (f.attachedTo !== undefined || f.enchanted !== undefined || f.hostOfSource === true) &&
+    f.zone !== undefined &&
+    f.zone !== 'battlefield'
+  ) {
+    issue(
+      out,
+      `${path}.attachedTo`,
+      'only a permanent on the battlefield is attached to, or has something attached: the filter has no other zone',
+    );
   }
   // D-230: "mana value X or less, where X is ...": an amount that reads no target and no earlier instruction.
   if (f.manaValueAtMost !== undefined) {
@@ -307,6 +338,10 @@ export function checkFilter(
   ) {
     issue(out, `${path}.attacking`, 'only a permanent on the battlefield can be attacking');
   }
+  // CR 700.9 (D-416): only a permanent is modified.
+  if (f.modified === true && f.zone !== undefined && f.zone !== 'battlefield') {
+    issue(out, `${path}.modified`, 'only a permanent on the battlefield can be modified');
+  }
   if (f.putFromBattlefieldThisTurn === true && f.zone !== 'graveyard') {
     issue(
       out,
@@ -330,15 +365,32 @@ export function checkFilter(
     );
   }
   // CR 115.1 (D-206): "that targets a creature" is about a spell or ability on the stack, and its filter describes a permanent or an object it targets.
-  if (f.targetsObject !== undefined) {
-    if (f.zone !== 'stack' && f.stackKind === undefined) {
+  // D-437: "a spell that targets only this creature" (CR 115.9c) is read as `targetsObject` is; a member of a disjunction of such a filter is read with the outer filter's stack.
+  for (const key of ['targetsObject', 'targetsOnly'] as const) {
+    const aimed = f[key];
+    if (aimed === undefined) continue;
+    if (f.zone !== 'stack' && f.stackKind === undefined && where.onStack !== true) {
       issue(
         out,
-        `${path}.targetsObject`,
+        `${path}.${key}`,
         "only a spell or ability on the stack has targets chosen: the filter's zone is 'stack' or it has a stackKind",
       );
     }
-    checkFilter(f.targetsObject, `${path}.targetsObject`, out);
+    if (key === 'targetsOnly' && f.targetsObject !== undefined) {
+      issue(out, `${path}.targetsOnly`, 'targetsObject and targetsOnly are not read together');
+    }
+    checkFilter(aimed, `${path}.${key}`, out, undefined, undefined, { inTargets: true });
+  }
+  // D-437: "this creature" is the object a spell targets, in the filter of `targetsObject` or `targetsOnly`: the permanent that has the ability.
+  if (f.isSource !== undefined) {
+    if (f.isSource !== true) issue(out, `${path}.isSource`, 'isSource must be true');
+    else if (where.inTargets !== true) {
+      issue(
+        out,
+        `${path}.isSource`,
+        'isSource is read in the filter of what a spell targets (targetsObject, targetsOnly)',
+      );
+    }
   }
   // D-139: "mana value X" and "whose controller was dealt combat damage by this creature this turn" are flags read in an
   // effect's `each` selector (the one place with an X and a source ability).
@@ -395,7 +447,10 @@ export function checkFilter(
     }
     f.anyOf.forEach((member, i) => {
       const p = `${path}.anyOf[${i}]`;
-      checkFilter(member, p, out, undefined, sharesWith);
+      checkFilter(member, p, out, undefined, sharesWith, {
+        onStack: f.zone === 'stack' || f.stackKind !== undefined,
+        ...(where.inTargets === true ? { inTargets: true } : {}),
+      });
       // Where to look (CR 115.1, 601.2c) is the outer filter's business.
       // D-207: a member may say what kind of stack object it is when the outer filter, on the stack, does not ("triggered ability or colorless spell").
       if (member.zone !== undefined) {
@@ -412,6 +467,62 @@ export function checkFilter(
   }
 }
 
+/** Where a filter is read (D-437): on the stack (a member of a disjunction of the outer filter's spells), or as the object a spell targets. */
+interface FilterWhere {
+  readonly onStack?: boolean;
+  readonly inTargets?: boolean;
+}
+
+/** The parts of a filter a host named by `attachedTo` may have (D-422): what layers 1, 4 and 5 give it, and its controller; nothing of layers 6 and 7, nothing of the game. */
+const HOST_FILTER_KEYS: readonly string[] = [
+  'types',
+  'notTypes',
+  'supertypes',
+  'notSupertypes',
+  'subtypes',
+  'notSubtypes',
+  'colors',
+  'colorless',
+  'controller',
+];
+
+/** D-422: what an `attachedTo` filter names: the source, its host, or a permanent a plain filter describes. */
+function checkAttachedTo(a: AttachedTo, path: string, out: Out): void {
+  switch (a?.kind) {
+    case 'source':
+    case 'host':
+      return;
+    case 'matching': {
+      const inner = a.filter;
+      if (inner === undefined || inner === null || typeof inner !== 'object') {
+        issue(out, `${path}.filter`, 'a matching host needs a filter');
+        return;
+      }
+      checkFilter(inner, `${path}.filter`, out);
+      for (const key of Object.keys(inner)) {
+        if (!HOST_FILTER_KEYS.includes(key)) {
+          issue(
+            out,
+            `${path}.filter.${key}`,
+            'the permanent something is attached to is described by types, subtypes, colors, supertypes and its controller only',
+          );
+        }
+      }
+      if (
+        inner.controller !== undefined &&
+        inner.controller !== 'you' &&
+        inner.controller !== 'opponent' &&
+        inner.controller !== 'any'
+      ) {
+        issue(out, `${path}.filter.controller`, "the host's controller is you, opponent or any");
+      }
+      return;
+    }
+    default:
+      issue(out, path, `attachedTo is source, host or matching, not ${kindOf(a)}`);
+  }
+}
+
 /** True when the filter or any anyOf member satisfies `test`. */
 /** True for a filter that reads the combat or the source's power, which `derive` cannot (D-120, D-131). */
 export const readsCombatOrSource = (f: ObjectFilter): boolean =>
@@ -424,11 +535,14 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.attackingOpponents !== undefined ||
   f.attackingOrBlocking !== undefined ||
   f.powerLessThanSource === true ||
+  f.powerAboveBase === true ||
   f.manaValueX !== undefined ||
   f.controllerDealtDamageBySource !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.singleTarget !== undefined ||
+  f.modified !== undefined ||
+  f.named !== undefined ||
   f.targetsObject !== undefined;
 
 /**
@@ -791,6 +905,26 @@ export function checkRef(
           path,
           "'linkedExile' is only valid in abilities of a permanent with a linked exile",
         );
+      }
+      // D-460: "each creature card exiled with this artifact": the cards of the link a filter of cards in exile describes.
+      if (ref.filter !== undefined) {
+        checkFilter(ref.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            ref.filter,
+            (f) =>
+              f.zone !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the cards exiled with a permanent are described by what they are: no zone, controller, owner or stackKind',
+          );
+        }
       }
       break;
     default:
@@ -1190,6 +1324,12 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'commanderManaValue':
     case 'commanderCasts':
       break;
+    case 'cardsDrawnThisTurn':
+      // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
+      break;
+    case 'sacrificedAsCost':
+      // D-491 (CR 118.8): what the spell sacrificed for its additional cost; the face is checked as a whole (`checkSacrificedAsCost`: only a spell's own cast trigger and text).
+      break;
     case 'half':
       if (!isOneOf(a.round, ['down', 'up'])) {
         issue(out, `${path}.round`, 'half is rounded "down" or "up" (CR 107.1a)');
@@ -1545,7 +1685,37 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         );
       }
       break;
+    case 'blight':
+      // D-407 (CR 701.68a): "Blight 1": a positive number of -1/-1 counters.
+      if (!isCount(cost.count) || cost.count < 1) {
+        issue(
+          out,
+          `${path}.count`,
+          'the number of -1/-1 counters of a blight must be a positive integer',
+        );
+      }
+      break;
     case 'sacrifice':
+      if (cost.countX !== undefined) {
+        // D-488 (CR 107.3a): "Sacrifice X creatures": the X announced for the ability, of permanents chosen among those that match; no fixed count and not the permanent itself.
+        if (cost.countX !== true) {
+          issue(out, `${path}.countX`, 'countX must be true when present');
+        } else if (cost.count !== undefined) {
+          issue(out, `${path}.countX`, 'the number sacrificed is X or a count, not both');
+        } else if (kindOf(cost.what) === 'this') {
+          issue(out, `${path}.countX`, 'this permanent is sacrificed once: no X');
+        }
+      }
+      if (cost.anyNumber !== undefined) {
+        // D-491 (CR 118.8, 701.21a): "you may sacrifice one or more creatures": any number of the permanents that match; only an additional cost of a spell, checked where it stands.
+        if (cost.anyNumber !== true) {
+          issue(out, `${path}.anyNumber`, 'anyNumber must be true when present');
+        } else if (cost.count !== undefined || cost.countX !== undefined) {
+          issue(out, `${path}.anyNumber`, 'any number of permanents is no count and no X');
+        } else if (kindOf(cost.what) === 'this') {
+          issue(out, `${path}.anyNumber`, 'this permanent is sacrificed once: no "any number"');
+        }
+      }
       if (cost.count !== undefined) {
         // D-133: "Sacrifice two artifacts": 2 or more, of permanents chosen among those that match.
         if (!isCount(cost.count) || cost.count < 2) {
@@ -1576,6 +1746,9 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       break;
     case 'exileThis':
       // D-185: no operand; where it may stand is checked with the ability (`checkActivationCosts`).
+      break;
+    case 'revealThis':
+      // D-462 (CR 701.20a): no operand; paid from the hand (`checkActivationCosts`).
       break;
     case 'discardThis':
       // D-179: the engine marks the cost of a cycling ability itself; a card does not say that its own discard is a cycling.
@@ -1929,6 +2102,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'controlsRingBearer':
       // CR 701.54e (D-196): read from the permanents of the controller; no operand.
       break;
+    case 'thisEnteredThisTurn':
+      // D-423 (CR 400.7): the permanent the condition belongs to entered this turn; no operand.
+      break;
     case 'paired':
       // CR 702.95b (D-286): the permanent the condition belongs to is paired with a creature; no operand. Where it may stand (a static ability that
       // `derive` reads, an intervening "if") is checked with the ability.
@@ -1988,6 +2164,35 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
       break;
+    case 'combatDamagedBy': {
+      // D-475, CR 120.2a: the kind of source: card types, subtypes and (relative to the controller) who controlled it, nothing else.
+      const f = c.filter;
+      if (f === undefined || f === null || typeof f !== 'object') {
+        issue(out, `${path}.filter`, 'combatDamagedBy needs a filter of the damage source');
+        break;
+      }
+      checkEnumList(out, `${path}.filter.types`, f.types, CARD_TYPES, 'card type');
+      if (f.subtypes !== undefined && (!Array.isArray(f.subtypes) || f.subtypes.length === 0)) {
+        issue(out, `${path}.filter.subtypes`, 'subtypes must be a non-empty list when present');
+      }
+      if (f.controller !== undefined && !isOneOf(f.controller, ['you', 'opponent', 'any'])) {
+        issue(out, `${path}.filter.controller`, 'the controller is you, opponent or any');
+      }
+      const extra = Object.keys(f).filter(
+        (k) => k !== 'types' && k !== 'subtypes' && k !== 'controller',
+      );
+      if (extra.length > 0) {
+        issue(
+          out,
+          `${path}.filter`,
+          `the turn log keeps only the types, subtypes and controller of the source: not ${extra.join(', ')}`,
+        );
+      }
+      if (f.types === undefined && f.subtypes === undefined) {
+        issue(out, `${path}.filter`, 'name the card types or the subtypes of the source');
+      }
+      break;
+    }
     case 'ownsAndControlsNamed':
       // D-278, CR 701.42a: the permanent the ability belongs to and a permanent of a card type with a name.
       if (typeof c.name !== 'string' || c.name === '') {
@@ -2008,6 +2213,14 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isCount(c.atLeast) || c.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
+      // D-444: only the spells of these card types count; at least one, each a card type.
+      if (c.ofTypes !== undefined) {
+        if (!Array.isArray(c.ofTypes) || c.ofTypes.length === 0) {
+          issue(out, `${path}.ofTypes`, 'ofTypes names at least one card type');
+        } else {
+          checkEnumList(out, `${path}.ofTypes`, c.ofTypes, CARD_TYPES, 'card type');
+        }
+      }
       break;
     case 'dieResult':
       // D-271, CR 706.2: the result of a die is read in the `conditional` effect after the roll (`checkEffectCondition`), nowhere else.
@@ -2021,6 +2234,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
     case 'kicked':
+    case 'sacrificedAsCost': // D-491: the face must list a cost that sacrifices any number of permanents (`checkSacrificedAsCost`)
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
@@ -2284,6 +2498,25 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   }
   if (sel.optional !== undefined && sel.optional !== true) {
     issue(out, `${path}.optional`, 'optional must be true when present');
+  }
+  // D-411: "You may put a land card from among them into your hand": only the cards the effect before it moved (`moved`) are the candidates.
+  if (sel.fromMoved !== undefined) {
+    if (sel.fromMoved !== true)
+      issue(out, `${path}.fromMoved`, 'fromMoved must be true when present');
+    if (sel.filter?.zone !== 'graveyard') {
+      issue(
+        out,
+        `${path}.filter.zone`,
+        "a choice among the cards an earlier effect moved is among cards in your graveyard (D-411): set zone to 'graveyard'",
+      );
+    }
+    if (scope.movedAvailable !== true) {
+      issue(
+        out,
+        `${path}.fromMoved`,
+        'fromMoved ("from among them") needs an effect before it in the sequence that moved cards (a mill)',
+      );
+    }
   }
   if (sel.count !== undefined) {
     if (typeof sel.count === 'number' && (!isCount(sel.count) || sel.count < 1)) {
@@ -2560,7 +2793,7 @@ export function checkReplacementToken(spec: unknown, path: string, out: Out): vo
   }
 }
 
-const SEARCH_ZONES = ['battlefield', 'hand', 'graveyard'];
+const SEARCH_ZONES = ['battlefield', 'hand', 'graveyard', 'library'];
 
 /** CR 701.23 (Search): the filter, the number of cards and where the cards found go. */
 function checkSearch(
@@ -2724,6 +2957,10 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
           `${path}.filter`,
           'objectMatches describes the object (type, subtype, color, ...): no zone, controller, owner or stackKind',
         );
+      }
+      // D-412: "If you put a Town card into your hand this way": the card is where the earlier instruction put it.
+      if (c.inZone !== undefined && c.inZone !== 'hand') {
+        issue(out, `${path}.inZone`, "inZone is only 'hand' (D-412)");
       }
       break;
     }
@@ -3227,6 +3464,58 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // D-337 (CR 707.10): how many copies, an amount of the game as the effect resolves (zero makes none).
       if (e.count !== undefined) checkAmount(e.count, `${path}.count`, scope, out);
+      // D-438 (CR 707.10, 707.10e): "for each other creature you control that the spell could target", each copy aimed at one of them; nobody chooses, and a count says nothing then.
+      if (e.forEach !== undefined) {
+        checkFilter(e.forEach, `${path}.forEach`, out);
+        if (e.newTargets !== 'no') {
+          issue(
+            out,
+            `${path}.newTargets`,
+            'a copy for each object has the target the effect gives it: newTargets is "no"',
+          );
+        }
+        if (e.count !== undefined) {
+          issue(out, `${path}.count`, 'a copy for each object has no count of its own');
+        }
+        if (
+          scope.triggerPlayer !== true &&
+          filterSome(e.forEach, (f) => f.controller === 'triggerPlayer')
+        ) {
+          issue(
+            out,
+            `${path}.forEach`,
+            "'triggerPlayer' needs a trigger whose event is about a player",
+          );
+        }
+        if (filterSome(e.forEach, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+          issue(
+            out,
+            `${path}.forEach`,
+            'the objects a copy of a spell is aimed at are permanents on the battlefield',
+          );
+        }
+      }
+      if (e.copier !== undefined && e.copier !== 'triggerPlayer') {
+        issue(out, `${path}.copier`, 'copier is "triggerPlayer"');
+      } else if (e.copier !== undefined && kindOf(e.spell) !== 'triggerSubject') {
+        issue(
+          out,
+          `${path}.copier`,
+          'the player a copy belongs to is the one who cast the spell of the trigger (triggerSubject)',
+        );
+      }
+      break;
+    case 'exileOnResolve':
+      // D-439 (CR 614.1a, 608.2n): the spell whose casting caused the trigger.
+      if (kindOf(e.spell) === 'triggerSubject') {
+        checkSubjectRef(e.spell, 'stack', `${path}.spell`, scope, out);
+      } else {
+        issue(
+          out,
+          `${path}.spell`,
+          'exileOnResolve names the spell that was cast (triggerSubject)',
+        );
+      }
       break;
     case 'unearth':
       // CR 702.84a: no operand; it is the effect of an ability that functions from the graveyard and stands nowhere else.
@@ -3281,6 +3570,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.subtype`,
           `${e.subtype} is not a creature type, which is all an Army can be`,
         );
+      }
+      break;
+    case 'exileIfLeaves':
+      // CR 614.1a (D-459): the object is what the effect before it put onto the battlefield.
+      if (kindOf(e.objects) !== 'moved') {
+        issue(
+          out,
+          `${path}.objects`,
+          "exileIfLeaves names the objects an earlier effect moved ('moved')",
+        );
+      } else {
+        checkRef(e.objects, 'object', `${path}.objects`, scope, out);
       }
       break;
     case 'delayedSacrifice':
@@ -3393,6 +3694,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
         if (fromCards && e.to === zone) {
           issue(out, `${path}.to`, `the cards chosen are already in the ${zone}`);
+        }
+        // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand).
+        if ((e.objects as ChooseSelector).fromMoved === true && e.to !== 'hand') {
+          issue(
+            out,
+            `${path}.to`,
+            'a choice among the cards an earlier effect moved is put into the hand (D-411)',
+          );
         }
       } else {
         checkObjectSelector(e.objects as ObjectSelector, `${path}.objects`, scope, out);
@@ -3533,6 +3842,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'hidden is true, and only for cards put into the hand (a card put onto the battlefield is public)',
         );
       }
+      // D-396 (CR 701.20a): "Reveal the top five cards": every card is shown, so nothing about the take can be hidden from anyone.
+      if (
+        e.revealAll !== undefined &&
+        (e.revealAll !== true || e.take?.hidden === true || e.take?.to === 'exileFaceDown')
+      ) {
+        issue(
+          out,
+          `${path}.revealAll`,
+          'revealAll is true, and not with cards taken unrevealed (take.hidden) or exiled face down',
+        );
+      }
       if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top', 'bottomChosen'])) {
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }
@@ -3668,6 +3988,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, path, 'only an ability of a permanent gains a level');
       }
       break;
+    case 'monstrosity':
+      // CR 701.37a (D-445): N counters on the permanent the ability belongs to; an amount that is a whole number of one or more, or a count the game reads.
+      checkAmount(e.count, `${path}.count`, scope, out);
+      if (typeof e.count === 'number' && !(Number.isSafeInteger(e.count) && e.count >= 1)) {
+        issue(out, `${path}.count`, 'monstrosity puts one or more counters');
+      }
+      if (scope.owner !== 'ability') {
+        issue(out, path, 'only an ability of a permanent becomes monstrous');
+      }
+      break;
     case 'exileRandomFromGraveyard':
       // CR 701.13 (D-235): no fields.
       break;
@@ -3734,6 +4064,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.types`, 'sparePermanents needs the list of card types to choose');
       } else {
         checkEnumList(out, `${path}.types`, e.types, CARD_TYPES, 'card type');
+      }
+      // D-484: "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest": the players choose for themselves.
+      if (e.own !== undefined) {
+        checkPlayerSelector(e.own.players, `${path}.own.players`, scope, out);
+        if (e.own.players?.kind !== 'eachPlayer' && e.own.players?.kind !== 'eachOpponent') {
+          issue(
+            out,
+            `${path}.own.players`,
+            'the players who choose for themselves are each player or each opponent',
+          );
+        }
       }
       break;
     case 'exileOwnGraveyardCard':
@@ -3896,7 +4237,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'attach':
       // CR 701.3: both are single objects named by reference ("this", a target, "this spell").
       checkRef(e.object, 'object', `${path}.object`, scope, out);
-      checkRef(e.to, 'object', `${path}.to`, scope, out);
+      // D-406: "Whenever a creature enters, you may attach this Aura to that creature": the permanent the trigger is about.
+      if (kindOf(e.to) === 'triggerSubject')
+        checkSubjectRef(e.to, 'permanent', `${path}.to`, scope, out);
+      else checkRef(e.to, 'object', `${path}.to`, scope, out);
       break;
     case 'conditional':
       // CR 608.2c: "If [condition], [effect]. Otherwise, [else]." Both branches see the same

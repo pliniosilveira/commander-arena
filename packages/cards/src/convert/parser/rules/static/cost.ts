@@ -340,6 +340,7 @@ const CAST_HEAD: Parser<{
   readonly compared: Comparison | undefined;
   readonly notHand?: true;
   readonly anyCaster?: true;
+  readonly targetsHost?: true;
 }> = choice(
   map(sequence(CHOSEN_SUFFIX, literal(' you cast cost ')), ([chosen]) => ({
     chosen,
@@ -350,6 +351,12 @@ const CAST_HEAD: Parser<{
     chosen,
     compared: undefined,
     anyCaster: true as const,
+  })),
+  // D-426 (Danitha group 3, CR 601.2c, 601.2f, 303.4): "Aura spells you cast that target enchanted creature cost {3} less to cast": the targets are chosen before the cost.
+  map(literal(' you cast that target enchanted creature cost '), () => ({
+    chosen: undefined,
+    compared: undefined,
+    targetsHost: true as const,
   })),
   // Stage P75 (D-235, CR 601.2a): "Spells you cast from anywhere other than your hand cost {2} less to cast".
   map(literal(' you cast from anywhere other than your hand cost '), () => ({
@@ -415,6 +422,9 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells you cast from anywhere other than your hand cost {2} less to cast.',
     'Spells you cast with mana value 5 or greater cost {1} less to cast.',
     'Creature spells you cast with toughness 3 or less cost {1} less to cast.',
+    // D-426 (Danitha group 3): the spells that target the permanent the Aura is attached to.
+    'Aura spells you cast that target enchanted creature cost {3} less to cast.',
+    'Aura and Equipment spells you cast that target enchanted creature cost {1} less to cast.',
   ],
   rejects: [
     'Angel spells and Angel spells you cast cost {1} less to cast.',
@@ -442,13 +452,21 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     '~ costs {1} less to cast.',
     'Spells you cast from anywhere other than your graveyard cost {2} less to cast.',
     'Spells you cast from your graveyard cost {2} less to cast.',
+    'Aura spells you cast that target enchanted creature cost {3} less to cast',
+    'Aura spells you cast that target equipped creature cost {3} less to cast.',
+    'Aura spells you cast that target a creature cost {3} less to cast.',
+    'Aura spells you cast that target enchanted creature cost {3} less to activate.',
+    'Aura spells that target enchanted creature cost {3} less to cast.',
+    'Aura spells your opponents cast that target enchanted creature cost {3} less to cast.',
+    'Aura spells you cast that target enchanted creature of the chosen type cost {3} less to cast.',
+    'Aura spells you cast that target enchanted creatures cost {3} less to cast.',
   ],
   parse: (ctx, pos) => {
     // The subject and "you cast cost" are read as one: a line that merely starts like a subject
     // ("Creature spells you control can't be countered.") was never this statement.
     const r = sequence(quiet(sequence(spellSubject(), CAST_HEAD)), reduction(), PERIOD)(ctx, pos);
     if (!r.ok) return r;
-    const [[filter, { chosen, compared, notHand, anyCaster }], amount] = r.value;
+    const [[filter, { chosen, compared, notHand, anyCaster, targetsHost }], amount] = r.value;
     const subjectEnd = pos + filter.raw.length;
     const subject: IrNoun = {
       kind: 'noun',
@@ -459,6 +477,7 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
           ...(anyCaster === true ? {} : { controller: 'you' as const }),
           ...(chosen === undefined ? {} : { chosen }),
           ...(notHand === true ? { notCastFromHand: true as const } : {}),
+          ...(targetsHost === true ? { targetsHost: true as const } : {}),
         },
         compared,
       ),
@@ -659,9 +678,78 @@ export const STATIC_FREE_CAST = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.additional-cost-sacrifice-copies`: "As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this
+ * way." (Plumb the Forbidden; CR 118.8, 601.2b, 601.2h, 603.12, 707.10: the optional additional cost of sacrificing any number of creatures, and the copies of the spell, one for each
+ * creature sacrificed). Two sentences read as one statement: the second is about the first. The face's additional cost and a "When you cast this spell" ability of the spell.
+ * Not read: another kind of permanent, "another", a count, a copy "may choose new targets", one sentence without the other.
+ */
+export const STATIC_ADDITIONAL_COST_SACRIFICE_COPIES = defineRule<IrStatic>({
+  id: 'static.additional-cost-sacrifice-copies',
+  family: 'static',
+  leading: ['as'],
+  cites: [
+    'CR 118.8 (Costs)',
+    'CR 601.2b (Casting Spells)',
+    'CR 603.12 (Handling Triggered Abilities)',
+    'CR 707.10 (Copying Objects)',
+    'CR 701.21a (Sacrifice)',
+  ],
+  examples: [
+    'As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way.',
+  ],
+  rejects: [
+    'As an additional cost to cast ~, you may sacrifice one or more creatures.',
+    'As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way',
+    'As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way and draw a card.',
+    'As an additional cost to cast ~, you may sacrifice one or more artifacts. When you do, copy ~ for each creature sacrificed this way.',
+    'As an additional cost to cast ~, you may sacrifice one or more other creatures. When you do, copy ~ for each creature sacrificed this way.',
+    'As an additional cost to cast ~, you may sacrifice a creature. When you do, copy ~ for each creature sacrificed this way.',
+    'As an additional cost to cast ~, sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way.',
+    'As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way. You may choose new targets for the copies.',
+    'As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy it for each creature sacrificed this way.',
+    'As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature you control.',
+    'As an additional cost to cast ~, you may sacrifice any number of creatures. When you do, copy ~ for each creature sacrificed this way.',
+  ],
+  parse: (ctx, pos) => {
+    // Nothing is read, and so no progress is reported, unless the words are those of this rule: another "you may sacrifice" keeps the diagnostic of `static.additional-cost`.
+    const lead = pattern(/(?=as an additional cost to cast ~, you may sacrifice one or more )/iu)(
+      ctx,
+      pos,
+    );
+    if (!lead.ok) return lead;
+    const r = sequence(
+      literal('as an additional cost to cast ~, you may sacrifice '),
+      family<IrNoun>('noun', { only: ['noun.one-or-more-permanents'] }),
+      literal('. when you do, copy ~ for each creature sacrificed this way'),
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const what = r.value[1];
+    // Creatures only (the second sentence says "creature"), none "other": the spell is not on the battlefield, so nothing is left out (CR 701.21a).
+    if (what.other || what.filter.types?.join(',') !== 'creature' || what.filter.raw === '') {
+      return fail(ctx, pos);
+    }
+    const castAt = pos + 'as an additional cost to cast '.length;
+    return {
+      ok: true,
+      value: statement(
+        'static.additional-cost-sacrifice-copies',
+        selfNoun('static.additional-cost-sacrifice-copies', castAt),
+        { kind: 'optionalSacrificeCopies', what },
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 export const COST_STATIC_RULES = [
   STATIC_SELF_COST_REDUCTION,
   STATIC_SPELLS_COST_REDUCTION,
+  // D-492: its first words are those of `static.additional-cost`, which reads that prefix and fails after it: tried first.
+  STATIC_ADDITIONAL_COST_SACRIFICE_COPIES,
   STATIC_ADDITIONAL_COST,
   STATIC_FREE_CAST,
 ];

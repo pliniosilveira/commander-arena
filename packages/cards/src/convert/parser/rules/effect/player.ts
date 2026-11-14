@@ -76,7 +76,7 @@ const cardsAmount = (verb: Parser<unknown>): Parser<IrAmount> =>
 const drawAmount = cardsAmount;
 
 /** A player verb phrase, given the subject it is said of. Returns one clause. */
-type Action = (subject: IrNoun, you: boolean, rule: string) => Parser<IrClause>;
+export type Action = (subject: IrNoun, you: boolean, rule: string) => Parser<IrClause>;
 
 function actionClause(
   rule: string,
@@ -174,7 +174,7 @@ const discardAction: Action = (subject, you, rule) =>
  * amount family ("gain life equal to that creature's toughness", "lose X life, where X is your devotion to black")
  * and a quantity above one for each ("gain 2 life for each creature you control").
  */
-const lifeAction: Action = (subject, you, rule) => {
+export const lifeAction: Action = (subject, you, rule) => {
   const life = (base: 'gain' | 'lose', verb: 'gainLife' | 'loseLife') =>
     map(
       spanned(
@@ -264,13 +264,14 @@ const millAction: Action = (subject, you, rule) =>
  * controller of the effect, chooses, which is what a sacrifice means anyway (CR 701.21a): the engine's `player` and `choose`.
  */
 const sacrificeAction: Action = (subject, you, rule) =>
-  you
+  // D-486: "any number of target players each ... sacrifice a creature of their choice" takes the plural verb; "you", "they" and the others stay as they were.
+  you && !(subject.det === 'target' && subject.anyNumber === true)
     ? (ctx, pos) => fail(ctx, pos)
     : map(
         spanned(
           satisfy(
             sequence(
-              verbWord('sacrifice', false),
+              verbWord('sacrifice', you),
               // Stage P30 (D-135): "a creature with the greatest power among creatures they control" is read too.
               // Stage P31 (D-140): "all permanents they control that are one or more colors" (each permanent by its controller).
               family<IrNoun>('noun', {
@@ -348,12 +349,14 @@ const createAction: Action = (subject, you, rule) =>
   );
 
 /** The nouns that can be the subject of a player verb: a player or players, or the controller of an earlier object. */
-const PLAYER_SUBJECTS = [
+export const PLAYER_SUBJECTS = [
   // Stage P52 (D-210): "each player who discarded a card this way draws a card".
   'noun.each-player-discarded',
   // D-269: "each player ~ attacked this turn loses the game".
   'noun.each-player-attacked',
   'noun.you-and-player',
+  // D-486: "any number of target players each lose 2 life and sacrifice a creature of their choice".
+  'noun.any-number-target-players',
   'noun.each-other-player',
   'noun.defending-player',
   'noun.player',
@@ -376,7 +379,7 @@ function never(id: string): Parser<IrClause> {
 export const EFFECT_PLAYER = defineRule<Clauses>({
   id: 'effect.player',
   family: 'effect',
-  leading: ['you', 'target', 'each', 'its', 'that', 'defending', 'they'],
+  leading: ['you', 'target', 'each', 'its', 'that', 'defending', 'they', 'any'],
   cites: [
     'CR 119.3 (Life)',
     'CR 121.1 (Drawing a Card)',
@@ -434,6 +437,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you and target opponent each draw two cards',
     'you and target player each discard a card',
     'each player sacrifices a creature of their choice',
+    'any number of target players each lose 2 life and sacrifice a creature of their choice',
     'each player sacrifices a creature',
     'target player sacrifices a land',
     'each opponent sacrifices two creatures of their choice',
@@ -555,7 +559,9 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
       // "You and target opponent each draw ...": the verb has no "s", as it has none for "you".
       const several = subject.det === 'players';
       const they = subject.det === 'anaphor' && subject.filter.raw.toLowerCase() === 'they';
-      const you = subject.det === 'you' || several || they;
+      // D-486: "any number of target players each" takes the plural verb, as "you" does.
+      const eachOfMany = subject.det === 'target' && subject.anyNumber === true;
+      const you = subject.det === 'you' || several || they || eachOfMany;
       const part = (id: string, action: Action) => named(id, action(subject, you, 'effect.player'));
       const alone = (id: string, action: Action) => (several ? never(id) : part(id, action));
       const actions = choice(

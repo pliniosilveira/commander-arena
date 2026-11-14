@@ -1,6 +1,6 @@
 name: Coverage report
 
-# D-396: once a week (and on demand) runs the card pipeline over a fresh copy of Scryfall's
+# D-410: once a week (and on demand) runs the card pipeline over a fresh copy of Scryfall's
 # oracle_cards file and publishes the result as a small site on GitHub Pages: the badge JSONs
 # that the README draws, an image of the three shares, the full report and the ranked backlog.
 # The repository's front page reads it from there, so it stays current without a pull request.

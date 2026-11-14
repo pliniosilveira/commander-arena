@@ -1,12 +1,15 @@
 /**
  * Paying what a spell's additional costs ask once its mana is paid (CR 118.8, 601.2h, D-095): the
- * permanent to sacrifice, then the cards to discard, then (an escape cost, CR 702.138a, D-124) the other cards
+ * permanent to sacrifice, the permanents the caster may choose to sacrifice (any number, none included, D-491), then the cards to discard, then (an escape cost, CR 702.138a, D-124) the other cards
  * of the graveyard to exile. The total cost was locked in at CR 601.2f and
  * the mana paid (CR 601.2g), so these are the costs that need a choice; the legal-action code
  * (`canPaySpellCost`) checked beforehand that they can be paid.
  *
  *   sacrifice  one candidate: the engine chooses and says so (`permanentsChosen`, `automatic`);
  *              several: a `choosePermanent` decision with `forCost`, stage 'sacrifice'
+ *   sacrifice  "you may sacrifice one or more creatures" (D-491): with at least one candidate, a `choosePermanent`
+ *   (any number)  decision with `forCost`, `min` 0 and `max` the candidates, stage 'sacrifice' too; the permanents
+ *              chosen are written on the spell for `sacrificedAsCost`
  *   discard    exactly as many cards in hand as asked: all of them; more: a `chooseCards` decision
  *              with `forCost`, stage 'discard'
  *   exile      exactly as many other cards in the graveyard as asked: all of them; more: a `chooseCards`
@@ -101,7 +104,7 @@ function paySacrifice(state: GameState, events: GameEvent[], finish: Finish): Re
   const casting = state.casting;
   if (!casting) return fail('No cast in progress');
   const filter = casting.extra?.sacrifice ?? null;
-  if (filter === null) return payDiscard(state, events, finish);
+  if (filter === null) return payOptionalSacrifice(state, events, finish);
   const seat = casting.seat;
   const legal = sacrificeCandidates(state, seat, casting.object, filter);
   if (legal.length === 0) return fail('You have nothing to sacrifice');
@@ -144,7 +147,81 @@ function sacrificeChosen(
     next = done.state;
     events.push(...done.events);
   }
-  return payDiscard(next, events, finish);
+  return payOptionalSacrifice(next, events, finish);
+}
+
+/**
+ * CR 118.8, 601.2b, 601.2h, 701.21a (D-491): "As an additional cost to cast this spell, you may sacrifice one or more creatures." The caster chooses any number of the
+ * permanents that match, none included, once the mana is paid; with no candidate nothing is asked. What was sacrificed is written on the spell (`sacrificedAsCost`), which the
+ * spell's own "When you cast this spell" ability reads. `cancel` rewinds the cast (CR 733).
+ */
+function payOptionalSacrifice(state: GameState, events: GameEvent[], finish: Finish): Result {
+  const casting = state.casting;
+  if (!casting) return fail('No cast in progress');
+  const any = casting.extra?.sacrificeAny ?? null;
+  if (any === null || casting.extra === undefined) return payDiscard(state, events, finish);
+  const legal = sacrificeCandidates(state, casting.seat, casting.object, any);
+  if (legal.length === 0) return payDiscard(state, events, finish);
+  return pause(
+    {
+      ...state,
+      casting: {
+        ...casting,
+        stage: 'sacrifice',
+        extra: { ...casting.extra, sacrificeAnyAsked: true },
+      },
+    },
+    events,
+    {
+      kind: 'choosePermanent',
+      seat: casting.seat,
+      source: casting.object,
+      purpose: 'sacrifice',
+      min: 0,
+      max: legal.length,
+      legal,
+      forCost: true,
+    },
+  );
+}
+
+/** Pays the permanents the caster chose for "you may sacrifice one or more creatures", remembers them on the spell, and goes on with the discard. */
+function optionalSacrificeChosen(
+  state: GameState,
+  chosen: readonly ObjectId[],
+  finish: Finish,
+): Result {
+  const casting = state.casting;
+  if (!casting) return fail('No cast in progress');
+  const events: GameEvent[] = [];
+  let next: GameState = state;
+  if (chosen.length > 0) {
+    events.push({
+      kind: 'permanentsChosen',
+      seat: casting.seat,
+      source: casting.object,
+      objects: chosen,
+      purpose: 'sacrifice',
+      automatic: false,
+    });
+    // D-283 (CR 603.10a): permanents sacrificed together keep the last-known information recorded before the first leaves.
+    next = recordObjectsTogether(next, chosen);
+    for (const id of chosen) {
+      const done = sacrificePermanent(next, id, casting.seat, chosen.length > 1);
+      if (done === null) return fail('That permanent cannot be sacrificed');
+      next = done.state;
+      events.push(...done.events);
+    }
+    // D-491: the spell remembers what was sacrificed for it (`sacrificedAsCost`), which "for each creature sacrificed this way" counts.
+    const stack = next.objects[casting.object]?.stack;
+    if (stack !== undefined && stack !== null) {
+      next = patchObject(next, casting.object, { stack: { ...stack, sacrificedAsCost: chosen } });
+    }
+  }
+  const settled = next.casting;
+  if (settled?.extra === undefined) return fail('No cast in progress');
+  const { sacrificeAnyAsked: _asked, ...extra } = settled.extra;
+  return payDiscard({ ...next, casting: { ...settled, extra } }, events, finish);
 }
 
 /** The answer to the sacrifice question of a spell's cost; the caller checked it against the decision. */
@@ -155,6 +232,10 @@ export function answerSacrifice(
 ): Result {
   if (state.casting?.stage !== 'sacrifice' || state.casting.activation !== null) {
     return fail('No sacrifice is being chosen for a spell');
+  }
+  // D-491: the question of "you may sacrifice one or more creatures" has its own answer.
+  if (state.casting.extra?.sacrificeAnyAsked === true) {
+    return optionalSacrificeChosen({ ...state, pending: null }, chosen, finish);
   }
   return sacrificeChosen({ ...state, pending: null }, [], chosen, false, finish);
 }

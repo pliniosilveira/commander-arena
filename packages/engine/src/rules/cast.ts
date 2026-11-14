@@ -42,13 +42,20 @@ import type { GameState, PendingTrigger } from '../state/types';
 import {
   afterManaPaid,
   payCosts,
+  reduceForChosenTargets,
   setChosenModes,
   setX,
   toActivationTargets,
   toActivationX,
 } from './activate';
 import { planForActivation } from './activate-costs';
-import { escalateCostOf, kickerCostOf, multikickerCostOf, replicateCostOf } from './alt-costs';
+import {
+  escalateCostOf,
+  hasModeCosts,
+  kickerCostOf,
+  multikickerCostOf,
+  replicateCostOf,
+} from './alt-costs';
 import { becameTargetEvents } from './becomes-target';
 import {
   answerDiscard,
@@ -73,12 +80,14 @@ import {
 import { answerGift, toGift } from './cast-gift';
 import { leastAllowedX } from './cast-restrictions';
 import { commanderCreatureTypes } from './commander-identity';
+import { crimeEvents } from './crime';
 import { derive } from './derive';
 import { graveyardPlayPermission, markGraveyardPlay, riderOf } from './graveyard-play';
 import {
   canCast,
   canCastDuringResolution,
   castPermissionExiles,
+  castTiming,
   castZone,
   faceOf,
   hasKickedTargets,
@@ -109,6 +118,7 @@ import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { setPending } from './set-pending';
 import { sourceInfo } from './source-info';
 import { maxTargetCountX, targetAnswerError, targetChoiceSpecs } from './target-choice';
+import { payableSpellTargets } from './target-payable';
 import { collectTriggers } from './triggers';
 import { hasX, largestPayableX } from './x-value';
 import { moveObject } from './zones';
@@ -220,6 +230,11 @@ export function beginCast(
     },
   });
   if (graveyardUse !== null) next = markGraveyardPlay(next, graveyardUse.object.id);
+  // D-408 (CR 601.3b, 601.3d): a spell cast now only because of its own conditional flash ("if it targets a commander") chooses its targets from what meets it.
+  // Read before the spell moves: the timing is that of the state it is cast in.
+  const flashTargets = resolving
+    ? null
+    : castTiming(state, seat, castAs(obj, seat, face)).onlyTargets;
   // The cost, the kicker and the legality look at the face being cast only (CR 709.3a, 712.11c).
   const { tax } = spellCost(state, {
     seat,
@@ -242,6 +257,7 @@ export function beginCast(
       activation: null,
       snapshot: state,
       ...(resolving ? { duringResolution: true as const } : {}),
+      ...(flashTargets === null ? {} : { flashTargets }),
     },
   };
   return toModes(next, [...moved.events]);
@@ -259,7 +275,7 @@ function toModes(state: GameState, events: GameEvent[]): Result {
   const modal = modalOfSpellText(faceOf(state, spell)?.spell);
   if (modal === null) return toKicker(state, events);
   const ctx = { controller: casting.seat, source: casting.object };
-  const sets = escalateAffordable(state, casting, legalModeSets(state, modal, ctx));
+  const sets = affordableModeSets(state, casting, legalModeSets(state, modal, ctx));
   const only = sets[0];
   if (only === undefined) return fail('That spell has no legal choice of modes');
   if (sets.length === 1) {
@@ -282,18 +298,19 @@ function toModes(state: GameState, events: GameEvent[]): Result {
 }
 
 /**
- * CR 702.120a (D-145): with an escalate cost a set of modes is legal only if the caster could pay the total with its escalate cost (one
+ * CR 702.120a (D-145), 700.2h (D-433): with an escalate cost, or modes that have a cost of their own, a set of modes is legal only if the caster could pay the total with them (one
  * additional cost for each mode beyond the first); costs are read from the state before the cast began, as the kicker's are. Spells
  * without escalate keep every set.
  */
-function escalateAffordable(
+function affordableModeSets(
   state: GameState,
   casting: NonNullable<GameState['casting']>,
   sets: readonly (readonly number[])[],
 ): readonly (readonly number[])[] {
   const before = casting.snapshot;
   const face = faceOf(before, getObject(state, casting.object));
-  if (escalateCostOf(face) === null) return sets;
+  // CR 700.2h (D-433): the costs of the modes are additional costs too, so a set whose modes cost more than the caster has is not offered.
+  if (escalateCostOf(face) === null && !hasModeCosts(face)) return sets;
   const spell = castAs(
     getObject(before, casting.from),
     casting.seat,
@@ -308,6 +325,7 @@ function escalateAffordable(
       excluded: casting.from,
       kicked: false,
       modes: set.length,
+      modeSet: set,
     }),
   );
 }
@@ -358,6 +376,7 @@ function toKicker(state: GameState, events: GameEvent[]): Result {
     alternative,
     excluded: obj.id,
     modes: stack.chosenModes.length,
+    modeSet: stack.chosenModes,
   } as const;
   const kickerCost = kickerCostOf(faceOf(before, spell));
   let asksKicker =
@@ -366,9 +385,10 @@ function toKicker(state: GameState, events: GameEvent[]): Result {
   // targets and its total cost, the unkicked way its own targets. With both possible the caster is asked; with one the cast goes that way.
   if (kickerCost !== null && hasKickedTargets(faceOf(before, spell))) {
     const overloaded = alternative === 'overload';
-    const kickedOk = asksKicker && targetsPossible(before, seat, spell, overloaded, true);
+    const only = casting.flashTargets ?? null;
+    const kickedOk = asksKicker && targetsPossible(before, seat, spell, overloaded, true, only);
     const unkickedOk =
-      targetsPossible(before, seat, spell, overloaded, false) &&
+      targetsPossible(before, seat, spell, overloaded, false, only) &&
       canPayRequest(before, seat, spell, { ...request, kicked: false });
     if (kickedOk && !unkickedOk) {
       return toReplicate(
@@ -450,6 +470,7 @@ function toReplicate(state: GameState, events: GameEvent[]): Result {
     excluded: card.id,
     kicked: stack.kicked,
     modes: stack.chosenModes.length,
+    modeSet: stack.chosenModes,
     ...(stack.kicks === undefined ? {} : { kicks: stack.kicks }),
   } as const;
   const max = largestPayableX((n) =>
@@ -500,6 +521,7 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
     excluded: card.id,
     kicked: stack.kicked,
     modes: stack.chosenModes.length,
+    modeSet: stack.chosenModes,
     ...(stack.kicks === undefined ? {} : { kicks: stack.kicks }),
     ...(stack.replicated === undefined ? {} : { replicas: stack.replicated }),
   } as const;
@@ -652,6 +674,10 @@ function toTargets(state: GameState, events: GameEvent[]): Result {
           ctx,
           modal === null ? undefined : specModes(modal, object.stack?.chosenModes ?? []),
           x,
+          // D-408: cast only by its own conditional flash ("if it targets a commander"): the targets are chosen from what meets it.
+          casting.flashTargets ?? null,
+          // D-424: a cost that is cheaper for some targets is payable only with them: only those are offered.
+          payableSpellTargets(state, casting, specs, ctx),
         ),
       },
     ),
@@ -748,6 +774,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
       totalCost: symbols,
       extra: {
         sacrifice: cost.sacrifice,
+        ...(cost.sacrificeAny === undefined ? {} : { sacrificeAny: cost.sacrificeAny }),
         discard: cost.discard,
         exile: cost.exile,
         tap: cost.tap,
@@ -969,7 +996,7 @@ export function answerTargets(state: GameState, chosen: readonly ChosenTarget[])
     stack: { ...stack, chosenTargets: chosen },
   });
   // CR 602.2b: an activation goes on from the targets to its costs, a spell to its total cost.
-  return casting.activation ? payCosts(next, []) : toPayment(next, []);
+  return casting.activation ? payCosts(reduceForChosenTargets(next), []) : toPayment(next, []);
 }
 
 export function answerPayment(
@@ -1223,6 +1250,17 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
     next = patchSeat(next, casting.seat, {
       spellsCastThisTurn: getSeat(next, casting.seat).spellsCastThisTurn + 1,
     });
+    // D-444 (CR 601.2i): the card types it was cast with, for "you've cast an instant or sorcery spell this turn".
+    next = {
+      ...next,
+      turnLog: {
+        ...next.turnLog,
+        castSpells: [
+          ...next.turnLog.castSpells,
+          { seat: casting.seat, types: derive(next, getObject(next, casting.object)).types },
+        ],
+      },
+    };
   }
   if (obj.stack?.castFromCommandZone && obj.card !== null) {
     const card = obj.card;
@@ -1233,6 +1271,8 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
   }
   // CR 601.2c: the spell's targets became targets as they were chosen; Ward and the like see it now.
   events.push(...becameTargetEvents(next, casting.object, casting.seat));
+  // CR 700.13 (D-464): casting a spell that targets an opponent, what they control or a card in their graveyard is committing a crime.
+  events.push(...crimeEvents(next, casting.object, casting.seat));
   const cast = alternativeOfStack(obj.stack);
   events.push({
     kind: 'spellCast',

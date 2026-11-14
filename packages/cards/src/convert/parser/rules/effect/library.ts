@@ -20,7 +20,7 @@ import {
 } from '../../combinators';
 import type { IrArg, IrFilter, IrNoun } from '../../ir/types';
 import { countAmount } from '../amount/count';
-import { CARD_TYPES, typeChoice, typeWords } from '../noun/phrases';
+import { CARD_TYPES, PERMANENT_CARD_TYPES, typeChoice, typeWords } from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, single } from './operands';
@@ -239,8 +239,20 @@ const MIXED_TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
   });
 };
 
+/**
+ * "a permanent card" (D-397, CR 110.4a (Permanents): a card that could be put onto the battlefield, so an instant or a sorcery card is not): the choice of the six permanent card
+ * types, as `noun.permanent-card` reads it for a phrase of cards in a zone.
+ */
+export const PERMANENT_TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
+  const r = pattern(/a permanent card(?![\p{L}\p{N}])/iu)(ctx, pos);
+  if (!r.ok) return r;
+  return takenNoun(ctx, pos, r.pos, {
+    anyOf: PERMANENT_CARD_TYPES.map((t): IrFilter => ({ types: [t], raw: t })),
+  });
+};
+
 /** One list of card types or subtypes: "an artifact card", "a creature or land card", "a Dragon card", "a Goblin creature card". */
-const PLAIN_TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
+export const PLAIN_TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
   const r = sequence(
     pattern(/an? /i),
     many(
@@ -289,7 +301,11 @@ const PLAIN_TAKEN_CARD: Parser<IrNoun> = (ctx, pos) => {
  * The card a look at the top cards lets the player take: one list of card types or subtypes ("an artifact card", "a creature or land card", "a Dragon
  * card"), or a list of both kinds, "an instant, sorcery, or Dragon card" (issue 25).
  */
-export const TAKEN_CARD: Parser<IrNoun> = choice(PLAIN_TAKEN_CARD, MIXED_TAKEN_CARD);
+export const TAKEN_CARD: Parser<IrNoun> = choice(
+  PERMANENT_TAKEN_CARD,
+  PLAIN_TAKEN_CARD,
+  MIXED_TAKEN_CARD,
+);
 
 /**
  * `effect.look-take`: "look at the top six cards of your library. You may reveal an artifact card from among them and put it into your

@@ -6,7 +6,7 @@ Every limit under "Deferred engine features" and "Deferred grammar" is refused o
 
 ## Owner-run work and tooling
 
-- **Fresh coverage numbers.** Built (D-396): the weekly `Coverage report` workflow publishes them on GitHub Pages and the README draws them from there. The committed `reports/` and the baseline are still from an older parser version and only the `Coverage` check reads them. The routine does not work the backlog by itself (the owner's decision); a card nobody asked for is built when the owner asks.
+- **Fresh coverage numbers.** Built (D-410): the weekly `Coverage report` workflow publishes them on GitHub Pages and the README draws them from there. The committed `reports/` and the baseline are still from an older parser version and only the `Coverage` check reads them. The routine does not work the backlog by itself (the owner's decision); a card nobody asked for is built when the owner asks.
 - **Blocked hosts.** The cloud sandbox cannot reach Scryfall or Wizards (`AGENTS.md`, "Network"), so the owner runs `pnpm coverage:cards`, the `corpus:*` extracts, `pnpm precon:snapshot` and `pnpm rules:fetch` locally and commits the result.
 - **Refresh `reports/`.** `reports/coverage.md`, `reports/backlog.md`, `reports/templates.json` and `reports/coverage-baseline.json` are from an older parser version; run `pnpm coverage:cards --download --update-baseline` and `pnpm corpus:decks` and commit the result. `reports/template-replay.md` is rebuilt offline by `pnpm corpus:replay`.
 - **CR update.** When Wizards publishes the CR that contains the October 19 bulletin: `pnpm rules:fetch --force`, `pnpm rule --check`, update `tools/rules/cr-real.test.ts` and `docs/rules/RULES_VERSION.md`, confirm the 7xx renumbering (D-035).
@@ -306,3 +306,133 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The trigger "a source deals damage to ~" reads no filter on the source ("a creature deals damage to ~", "a source you control deals damage to ~"): the engine's `dealtDamage` has none.
 - `exileRandomFromHand` names one player; "each opponent exiles a card from their hand at random" (several players, several cards, no single "it") is not built. "You exile a card from your hand at random" and "target player exiles ..." run in the engine but the grammar reads only the subjects "that source's controller" and "that player".
 - "put it onto the battlefield" and "cast it without paying its mana cost" are read only for "it" of the card `exile-random-from-hand` exiled (tapped, attacking, with counters, "under its owner's control" and another card are not read). The web words the question of the land offer as every `may` ("name: text — do it?").
+
+## The Danitha deck, group 1A (issue 26, D-396 to D-399)
+
+- `effect.reveal-take` reads the take into the hand with the rest into the graveyard only: "Put the rest on the bottom of your library in a random order" after "Reveal the top N cards ... you may put" (the wording of other cards of the corpus) is not read, nor a card put onto the battlefield, more than one card, a count of one card, X or a library that is not the controller's. The engine runs `revealAll` with every `rest` and with `to: 'battlefield'`; the grammar does not read those wordings, because no card of the owner's decks says them.
+- The cards put into the graveyard together are not arranged by the owner (CR 404.3): they go in the order of the top of the library. No card of the group depends on it.
+- `revealAll` shows the whole top to the other player through one log line that names the cards; the picker of the player who chooses lists the cards that may be taken first and the others below ("Also revealed (cannot be taken)"), as for a look.
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session); the behaviour rests on CR 701.20a and 701.20b.
+
+## The Danitha deck, group 1b (issue 26, D-400 to D-404)
+
+- "put it onto the battlefield" after "choose target ... card" reads for the sentence's own "you may" only, with no "tapped", "under its owner's control", "attacking" or counters; "put it into your hand" reads only for a card of your own graveyard that a target phrase of the text named. A card of another graveyard (it would go to its owner's hand, CR 400.3) and "that card" or "them" are not read.
+- The pair "you may put it onto the battlefield. If you don't put it onto the battlefield, put it into your hand." is the only "if you don't" sentence that reads; "If you don't" alone, with another second instruction, or with a rider is refused (never guessed).
+- Protection from card types is read in the plural, for a static grant (an attached permanent or a group) only: the keyword line of a card ("Protection from artifacts") still reads colors only, and a modifier ("nonblack creatures"), a creature type and "everything" are not read.
+- The cast trigger reads " you control" after the card type of what a spell targets, not "you don't control" or a creature type.
+- The graveyard permission names subtypes of permanents (Aura, Curse, Equipment, Fortification, Saga, Shrine, Vehicle); the creature types ("cast a Human spell from your graveyard") and the rider "that artifact enters tapped" for a spell that is not a pure artifact filter are not read.
+
+## The Danitha deck, group 5 (issue 26, D-405 to D-409)
+
+- "Then shuffle and put that card on top" is read for one card only (`effect.search`): "put them on top" (an order of the cards) and the other positions of a library ("on the bottom", "third from the top") are not built. A search of another player's library is not read.
+- CR 701.68c and 701.68d (the "blighted creature" and "whenever a player blights" triggers) are not implemented: the cost `blight` records no event of its own. "Blight N" is read as the cost of an ordinary activated ability only, not as an additional cost to cast a spell, an optional cost, a keyword cost or the cost of a mana ability, and the Casual and Heuristic agents never activate an ability with a blight cost by themselves (they answer the question of the creature).
+- "Enchanted creature can't attack" and "can't attack or block" are read for the permanent an Aura or Equipment is attached to only: "~ can't attack", "creatures you control can't attack", "can't attack or block alone" and "can't attack you" with a tax are not read for the new words.
+- The spell's own flash (`castAsThoughFlash` with `this`): a spell with several mandatory target slots restricts only the first to the objects the condition's filter matches, so a legal cast whose second slot meets "it targets a commander" is not offered; a modal spell's modes are not restricted. The grammar reads only the condition "it targets <a kind of permanent or a commander>"; "if you control a Dragon" and the like are run by the engine (SYNTHETIC `Crowd Aura`) but not read.
+- The attach to "that creature" needs a trigger that names a creature; "it" is the token of the same sentence only. The AI reads the entering creature as the newest creature on the battlefield (the view has no trigger subject), which is wrong when several creatures enter at once.
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited above.
+
+## The Danitha deck, group 2 (issue 26, D-411 to D-415,)
+
+- `ChooseSelector.fromMoved` puts the card taken into the hand only: "You may put a creature card from among them onto the battlefield" after a mill is not built (the choice of a card from the graveyard onto the battlefield exists, D-139, but not restricted to the cards moved), and `effect.put-from-among` does not read it.
+- A mill of another player ("target player mills four cards. You may put a land card from among them into your hand") is not lowered: the card would come from a graveyard the controller does not own. "Them" is read only right after one mill of the controller's own library.
+- The cards milled are the new objects the mill put into the graveyard; a card that a replacement effect sent elsewhere is not among them (CR 701.17c finds a milled card in the zone it moved to; the engine's `moved` names the graveyard objects only).
+- "If you don't" is read only after this choice; after other offers it stays unread, as before.
+- `objectMatches.inZone` knows `hand` only.
+- The rulings of the seven cards on Scryfall were not fetched (blocked in a cloud session); the behaviour rests on the CR rules listed in `docs/MECHANICS.md`.
+
+## The Danitha deck, group 3 (issue 26, D-422 to D-429)
+
+- "for each Aura attached to it" binds "it" for a static ability whose subject is `~` or "enchanted creature"; for a group ("Creatures you control get +1/+1 for each Aura attached to it") and for an effect it stays unbound and is not read. "attached to" reads only "it" and "a creature" (not "attached to target creature", "attached to a land", "attached to a creature you control"), in the singular.
+- `enchanted` is read as "has an Aura attached" for a group ("all creatures that aren't enchanted"); "equipped", "that aren't enchanted or tapped" and the singular "each creature that isn't enchanted" are not read.
+- "enchanted creature is <one color>" is the only host condition by quality; a creature type, "is red or white", "isn't green" and a keyword or power of the host are not read (the last two would read layers 6 and 7, CR 613.8).
+- `abilityCostReduction` names Equip abilities only and a filter on the target; Crew, Cycling and "abilities you activate" are not read. A reduction that depends on the targets restricts only the first mandatory target slot of the spell or ability (as the conditional flash of D-408): a spell whose second slot could be the cheap target is offered fewer choices than the rules allow.
+- The Comprehensive Rules text and the Scryfall rulings of the eight cards were not available in the cloud session: the behaviour follows the rules lines cited in `docs/MECHANICS.md`; the exact subrule that defines "enchanted" is unverified.
+
+## The Danitha deck, group 4 (issue 26, D-416 to D-421)
+
+- "Modified" is not read in the subject of a static ability, nor as the subject of a "dies" trigger (last-known information of the attachments).
+- `noun.other-subtype-permanents` ("other Elves you control") is not read by `effect.pump-others`.
+- The destruction of the Aura by Umbra armor takes the Aura's own shield or indestructible and asks no question.
+- Two creatures that each need an answer in one state-based-action check are asked one per check.
+
+## The Danitha deck, group 6 (issue 26, D-430 to D-432)
+
+- Keyword counters (CR 122.1b) apply before every other layer 6 step: the engine keeps no timestamp for a counter (CR 613.7c), so a "loses all abilities" effect that began before a keyword counter was put on removes it too, where the rules would let the later counter stand. A counter named decayed (listed by CR 122.1b) is not run (the engine has no decayed keyword): the grammar drops a line that puts one. The variants of the keywords the rule mentions ("variants of those keywords": protection-like or parameter forms) are not read as keyword counters.
+- `effect.add-counters-kinds` reads counters of "a" or "an" only and one object that is a target, "~" or "it": "two +1/+1 counters and a reach counter", a list of objects and "each creature you control" are not read.
+- `powerAboveBase` is a test of the filter, not of a static ability's subject (it would read the layers it is part of, CR 613.8): "creatures you control with power greater than its base power get +1/+1" is refused. The batch trigger reads the wording "each with power greater than its base power deals"; the base toughness has a value (`Derived.baseToughness`) and no filter.
+- The rulings of Kutzil and Gift of the Viper on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited above.
+
+## The Danitha deck, group 7 (issue 26, D-433 to D-435)
+
+- A mode cost is mana only, no X, on a spell only, and not with a repeatable choice (`validateCard`); a mode whose cost is another kind of cost (tap, sacrifice, life) is not read. Spree (CR 702.172: "+ {cost} — effect" bullets and a "choose one or more" lead) needs only another header and bullet syntax on the same `SpellMode.cost`; it is not read yet.
+- The hand shows the card's mana cost alone (`castCostOf`), as it does for escalate and kicker; the cost of each tier is in the text of the mode, which the modes decision shows.
+- The rulings of Restoration Magic on Scryfall were not fetched (blocked in a cloud session): the behaviour follows CR 702.183a and 700.2h.
+
+## The Feather deck, group 3 (issue 27, D-437 to D-442)
+
+- The copies for each other creature (`copySpell.forEach`) are put onto the stack in the order of the battlefield (oldest permanent first); the rules do not make the order a decision, and it matters only when copies of one spell affect each other. The filter is a set of creatures "you" or "the player the event is about" control, one creature at a time: a copy for each creature of an opponent, for each permanent or for each player is not read. The legality of a candidate is read for the copier with the spell itself as the source (CR 707.10e: "legal target for each instance of the word target"); a spell whose slots have a restriction that reads the copy's own characteristics differently from the original's (it has none today) would need the copy as the source.
+- "Targets only" is read at the moment the trigger triggers (as the spell is cast); a spell whose targets change before the trigger resolves is not looked at again (CR 115.9c does not ask for it). The filter field is read for any spell or ability on the stack, but the grammar reads it only in the filter of a cast trigger ("that targets only ~"): a target slot "target spell that targets only ~" and the triggers of an ability that targets only a creature are not read.
+- `exileOnResolve` is for an instant or sorcery card cast as a spell (a copy is no card); an Adventure, a flashback spell and a spell with "exile it instead" (D-352) are not changed, so no return is made for them. The mark names the end step and the hand, as the card says; another destination or time is another effect. Rebound (CR 702.88) is still unbuilt.
+- The rulings of Phalanx Leader, Tenth District Legionnaire, Danitha, Sword of Hope, Feather, the Redeemed, Zada, Hedron Grinder and Mirrorwing Dragon on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
+
+## The Feather deck, group 2 (issue 27, D-443 to D-449)
+
+- "Commander" is read before a type in the permanent phrases only ("commander creatures you control"); "target commander creature" is still taken by the older `noun.target-commander` and left unread, "commander" in the spell, cost and condition phrases is not read, and a count in a static ability (`countOf`, `colorsAmong`) still refuses it (the objects are counted before `derive` knows the attachments; a commander has no such dependency, so this can be opened when a card needs it).
+- Monstrosity: "Monstrosity X" (CR 701.37c, X read by other abilities of the permanent), the trigger "When ~ becomes monstrous" (the event `becameMonstrous` exists), the condition and filter "if ~ is monstrous" and "monstrous creatures" are not read.
+- Spells cast this turn by kind: only card types (`ofTypes`); "noncreature", a color, a subtype ("a Dragon spell"), a count with a kind ("two or more creature spells"), an opponent's spells and the order of the spells ("your second spell") are not read.
+- "another target creature": read for a bite whose source is a target (the slot before it); for the creature of a trigger or for a list of two such nouns it is refused.
+- "target creature or Vehicle": one card type and one subtype only; a list of three ("creature, Vehicle, or Elf") and "or" between a subtype and a modifier ("nonartifact creature or Vehicle") are not read.
+- The list of events of a trigger: "A, B, or C" with the Oxford comma and one subject; "A, B or C", a list with "or ability" and lists of two subjects are not read.
+- The rulings of the six cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited above.
+
+## The Feather deck, group 1 (issue 27, D-450 to D-458)
+
+- The view tells that a creature has protection (the chip "Pro"), not from what: the player of the other seat reads the color in the log line of the choice ("Opponent chooses Red for Gods Willing ..."), as for the protection of the commander's plate (D-259). A tooltip with the qualities of a protection would need the derived keyword with its quality in `ObjectView`.
+- `effect.gain-protection` reads one object and, for the quality, colors or "the color of your choice": a group ("Creatures you control gain protection from the color of your choice until end of turn", which the engine runs), a card type in an effect ("gains protection from artifacts", which `validateCard` accepts), "from the player of your choice", "from everything", another duration and protection together with other keywords in one gain are not read. The cards that say them stay unsupported.
+- `cardsDrawnThisTurn` is the controller's own count: "for each card an opponent has drawn this turn", the whole game and a static ability that follows it are not read (a layer effect would need a refresh when a card is drawn).
+- `effect.becomes` takes keywords after a color alone only ("becomes red and gains haste"); a creature type or a card type with keywords is read by the lead rules (`effect.lead-becomes`, `effect.lead-becomes-target`) in their own words. `effect.lead-double-pt` takes a target (not `~`'s power or a group) and the keywords of "it".
+- The rulings of the seven cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
+
+## The Gisa deck, group 4 (issue 41, D-459 to D-463)
+
+- The delayed exile is "at the beginning of the next end step" only: "your next end step", another step and "Sacrifice it at the beginning of the next end step" are not read; "If it would leave the battlefield, exile it instead of putting it anywhere else" is read after an instruction that put the object onto the battlefield (not "would die", not "this turn", not a spell). The delayed ability of Whip of Erebos has the returned permanent as its source, so the stack shows it under the creature's name.
+- "It gains haste." with no duration is read for "it" after a move onto the battlefield only; "target creature gains flying" with no duration is not read.
+- `linkedExile` with a filter describes cards by card type, subtype, color and mana value; "put each X card exiled with ~ onto the battlefield" is read for a card type, "under your control" and one counter; "a card exiled with ~", "all cards", "under its owner's control", tapped and "exiled with" another permanent are not.
+- The reduction of the cost of abilities by a permanent is read for the abilities of the cards of one card type in the graveyard of its controller (generic mana, {N} less). The abilities of permanents on the battlefield ("Activated abilities of creatures you control cost {2} less", with the floor of one mana of Training Grounds and Heartstone), those of an opponent's graveyard and mana and loyalty abilities are not read.
+- A hand ability with a reveal cost: the card is revealed and stays in the hand; "Reveal a card from your hand" (another card), a reveal as a cost of a mana ability and "Activate only during your turn" with a second restriction in the same sentence are not read.
+- The CasualAgent and the HeuristicAgent reanimate with Whip of Erebos as they unearth (`wantsOneTurnReanimation`: a creature card of their graveyard would attack safely in the first main phase), but never activate Tetzimoc's ability from the hand or Ghost Vacuum (`casual-activations.ts` uses a short list of abilities it can judge; the view does not show the cards exiled with a permanent), so those are used only by the random agents of the soak, and the 100-game soak does not reach the Vacuum's Spirits (the engine scenarios prove them). Embalmer's Tools needs no decision: the reduction lowers the cost of an Unearth the agent already wants.
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
+
+## The Gisa deck, group 2 (issue 41, D-464 to D-471)
+
+- A crime is committed when a spell is cast, an ability activated or a triggered ability put on the stack with such a target; a target changed afterwards (CR 115.7) and a copy of a spell (CR 707.10) are not. There is no record of the crimes of a turn (no `TurnLog.crimes`): "if you've committed a crime this turn" and "the number of crimes" are not read; the first card that needs them adds the list.
+- "Whenever you create a token" reads the token's creator (`tokenCreated`, CR 111.2): a kind of token ("a Treasure token", "a creature token"), "one or more tokens" counted by creator (that rule still reads the tokens that enter under your control, D-229) and "an opponent sacrifices a token" are not read.
+- `trigger.dies-batch` reads a group of the controller's or of every player's creatures; "one or more creatures an opponent controls die" is not read.
+- Ward costs with three parts, or a sacrifice or a discard beside a mana cost, are not read.
+- `noun.subtype-pair` reads two creature types in the plural joined by "and" with "you control" for both; "other", a third type and another controller are not read.
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Mirkwood Bats triggering once for each token (CR 603.2c) is unverified against its rulings.
+
+## The Gisa deck, group 1 (issue 41, D-472 to D-477)
+
+- Afflict is the only keyword with a number that can be granted besides landwalk: `toxic`, `annihilator`, `bushido` and the other keywords with a parameter are still refused by `validateCard` in a grant (the instances of each would need their own rule).
+- A land set to a basic land type (`setTypes` with `Plains`, `Island`, `Swamp`, `Mountain`, `Forest`) is run for an effect only: the static form ("Each land is a Swamp in addition to its other land types", Urborg, Yavimaya) is still refused by `validateCard`, and "in addition to its other land types" is not read (`effect.becomes` rejects it; the engine runs the additive effect). Other land types (a Desert, a Gate) cannot be set. The dependencies of CR 613.8 between layer 4 effects (Blood Moon with Urborg) are not modelled.
+- `combatDamagedBy` reads the card types, the subtypes and the controller of the source only: "by a nontoken creature", "by a creature with power 4 or greater", "by a white creature" and "an opponent was dealt combat damage by ..." are not read, and the log has no amount of damage by kind.
+- The word "token" is read in the subject of a trigger (`a Zombie token you control`) and nowhere else in a permanent phrase: "destroy target creature token" and the like stay unread until a card asks for them.
+- Snow, legendary and artifact landwalk and the landwalks of other land types are not read (`LANDWALKS` lists the five basic land types and "nonbasic landwalk").
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
+
+## The Gisa deck, group 5 (issue 41, D-478 to D-483)
+
+- Decayed is a keyword with its own reading of "can't block": `derive` adds the restriction `cantBlock` from the keyword among the final abilities (D-478). The trigger of the keyword is appended after the printed abilities of the creature, and a granted decayed brings it once (a list `EXPANDED_WHEN_GRANTED`); other keywords whose expansion is a static ability (not a trigger) would need the same kind of reading, because the index of static abilities (`derive-statics.ts`) is built from printed abilities only.
+- `effect.have-player-life` reads "have [target player or opponent, each opponent] lose or gain life": another verb after "have" ("have target player draw a card", "have target player discard ...") is not read.
+- `replacement.escapes-with-counters` reads a number of counters only (the real line of Woe Strider); "escapes with X counters" and "escapes with a counter for each ..." are not read, and "escapes with [ability]" (CR 702.138d) is not either.
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
+
+## The Gisa deck, group 3 (issue 41, D-484 to D-493)
+
+- "Sacrifice X creatures" is the cost of an activated ability only (not a spell's additional cost, not a mana ability); the casual agent never activates such an ability (it uses no sacrifice outlet), and when asked X it announces no more than its tokens.
+- "You may sacrifice one or more creatures" is read for creatures with the copy sentence of Plumb the Forbidden only (`static.additional-cost-sacrifice-copies`); the same cost with another sentence, or of other permanents, is not read. The question is asked with the payment, after the mana, not at the start of the cast.
+- The "When you do" of that card is a cast trigger of the spell (same moment as CR 603.12's reflexive trigger); an effect that tells the two apart (stopping a cast trigger, copying a reflexive one) is not modelled.
+- `sparePermanents.own` has each opponent keep a permanent of each type; "each player" is built (SYNTHETIC) but not read; whether one artifact creature may be chosen for both the artifact and the creature follows the independent choices of the text (D-231 does the same). The Scryfall rulings of Liliana, Dreadhorde General, Krav, Priest of Forgotten Gods and Plumb the Forbidden were not fetched (blocked in a cloud session): marked unverified.
+- "Partner with" reveals the card, as CR 702.124j says; today's reminder text says "put into their hand from their library" without a reveal. The search is offered even when the library holds no such card (a player may search for a card that is not there).
+- "You add {B}{B}" is read only with fixed symbols and only where it does not make a mana ability.

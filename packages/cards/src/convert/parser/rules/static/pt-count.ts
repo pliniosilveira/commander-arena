@@ -7,8 +7,19 @@
  * graveyard. The lowering refuses what the engine's static count does not read (a power or toughness in
  * the counted filter, CR 613.8; another player's objects).
  */
-import { choice, fail, literal, type Parser, pattern, quiet, sequence } from '../../combinators';
-import type { IrAmount, IrNoun, IrStatic } from '../../ir/types';
+import {
+  choice,
+  fail,
+  literal,
+  map,
+  optional,
+  type Parser,
+  pattern,
+  quiet,
+  sequence,
+} from '../../combinators';
+import type { IrAmount, IrNoun, IrStatic, IrStaticEffect } from '../../ir/types';
+import { KEYWORD_WORDS } from '../keyword/list';
 import { defineRule, family } from '../registry';
 
 /** "+1/+1", "-1/-1", "+1/+0": the change for each object counted. Never X, and never "+0/+0". */
@@ -45,23 +56,40 @@ function countStatement(id: string): Parser<IrStatic> {
   const subject = choice(singular, plural);
   // The space is read with a look-ahead for "for each", so a statement that goes on in another way stops
   // where the older static rules stop and keeps their `closestRule`.
-  const rest = sequence(STEP, pattern(/ (?=for each )/), FOR_EACH, PERIOD);
+  const head = sequence(STEP, pattern(/ (?=for each )/), FOR_EACH);
+  // D-426 (Danitha group 3, Ethereal Armor): "... for each enchantment you control and has first strike": the keywords the subject has besides, in the verb of its number.
+  const andHas = (plural: boolean): Parser<readonly IrStaticEffect[]> =>
+    optional(
+      map(
+        sequence(literal(plural ? ' and have ' : ' and has '), KEYWORD_WORDS),
+        ([, words]): readonly IrStaticEffect[] =>
+          words.map((keyword): IrStaticEffect => ({ kind: 'grantKeyword', keyword })),
+      ),
+      [] as readonly IrStaticEffect[],
+    );
   return (ctx, pos) => {
     const s = subject(ctx, pos);
     if (!s.ok) return s;
-    const r = rest(ctx, s.pos);
+    const r = head(ctx, s.pos);
     if (!r.ok) return r;
     const [step, , count] = r.value;
+    const has = andHas(s.value[0].plural)(ctx, r.pos);
+    if (!has.ok) return has;
+    const end = PERIOD(ctx, has.pos);
+    if (!end.ok) return end;
     return {
       ok: true,
       value: {
         kind: 'static',
         subject: s.value[0],
-        effects: [{ kind: 'ptCount', power: step.power, toughness: step.toughness, count }],
-        span: { start: pos, end: r.pos },
+        effects: [
+          { kind: 'ptCount', power: step.power, toughness: step.toughness, count },
+          ...has.value,
+        ],
+        span: { start: pos, end: end.pos },
         rule: id,
       },
-      pos: r.pos,
+      pos: end.pos,
     };
   };
 }
@@ -94,6 +122,12 @@ export const STATIC_PT_COUNT = defineRule<IrStatic>({
     'Creatures you control get +1/+0 for each artifact you control.',
     // Stage P37 (D-180): the colors the permanents have between them.
     'Equipped creature gets +1/+1 for each color among permanents you control.',
+    // D-426 (Danitha group 3, CR 303.4, 702.7): Auras attached to the permanent, Auras of yours on creatures, and keywords besides.
+    '~ gets +2/+2 for each Aura attached to it.',
+    'Enchanted creature gets +2/+2 for each Aura and Equipment attached to it.',
+    "Enchanted creature gets +1/+1 for each Aura you control that's attached to a creature.",
+    'Enchanted creature gets +1/+1 for each enchantment you control and has first strike.',
+    'Creatures you control get +1/+1 for each artifact you control and have flying.',
   ],
   rejects: [
     '~ gets +1/+1 for each artifact you control',
@@ -104,7 +138,12 @@ export const STATIC_PT_COUNT = defineRule<IrStatic>({
     '~ gets +0/+0 for each artifact you control.',
     '~ gets +1/+1 for each artifact you control until end of turn.',
     '~ gets +1/+1 until end of turn for each artifact you control.',
-    '~ gets +1/+1 for each artifact you control and has flying.',
+    '~ gets +1/+1 for each artifact you control and has flying and.',
+    '~ gets +1/+1 for each artifact you control and have flying.',
+    'Creatures you control get +1/+1 for each artifact you control and has flying.',
+    '~ gets +1/+1 for each artifact you control and has flying until end of turn.',
+    '~ gets +1/+1 for each artifact you control and gains flying.',
+    '~ gets +1/+1 for each artifact you control and can fly.',
     '~ gets +1/+1 for each burden counter on ~.',
     'Creatures you control get +1/+1.',
     'Target creature gets +1/+1 for each artifact you control.',

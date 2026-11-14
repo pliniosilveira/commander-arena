@@ -13,6 +13,7 @@ import type {
 } from '@commander-arena/engine';
 import { type AmountContext, amountPhrase, UNKNOWN_AMOUNT } from './amount-text';
 import { angelsConditionWords } from './angels-conditions';
+import { otherAttachedWords, thisEnteredWords } from './attachment-text';
 import { dragonsConditionWords } from './dragons-conditions';
 import { thingsPhrase } from './filter-text';
 import { playerSubject } from './player-text';
@@ -141,6 +142,10 @@ function matchesWords(
     const named = filterPhrase(filter, 'permanent')?.replace(/ permanent$/, '') ?? null;
     return named === null ? null : `that permanent ${negate ? "isn't" : 'is'} ${named}`;
   }
+  // D-412 (CR 608.2c): "If you put a Town card into your hand this way": the card an earlier instruction put into the hand.
+  if (condition.inZone === 'hand') {
+    return `you ${negate ? "don't put" : 'put'} ${card} into your hand this way`;
+  }
   return `it ${negate ? "isn't" : 'is'} ${card}`.replace(/^it is /, "it's ");
 }
 
@@ -249,10 +254,21 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       if (words === undefined) return null;
       return negate ? words.not : words.yes;
     }
+    case 'sacrificedAsCost':
+      // CR 118.8, 603.4 (D-491): the intervening "if" of the cast trigger of a spell whose additional cost may sacrifice any number of creatures.
+      return negate
+        ? "you didn't sacrifice a permanent to cast it"
+        : 'you sacrificed one or more permanents to cast it';
     case 'giftPromised':
       // CR 702.174k (D-135): "if the gift was promised".
       return negate ? "the gift wasn't promised" : 'the gift was promised';
+    case 'thisEnteredThisTurn':
+      // D-427 (CR 400.7): "as long as this permanent entered this turn".
+      return thisEnteredWords(negate);
     case 'amountIs': {
+      // D-427 (CR 303.4, 301.5): "another Aura is attached to the permanent this is attached to".
+      const other = otherAttachedWords(condition, negate);
+      if (other !== null) return other;
       // "if an opponent has more life than you": at least one opponent is ahead (D-131).
       if (
         !negate &&
@@ -279,6 +295,7 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       return angelsConditionWords(condition, negate);
     case 'enteredThisTurn':
     case 'playerDealtDamage':
+    case 'combatDamagedBy':
     case 'chosenOption':
     case 'attackingMostLife':
     case 'attackersTotalPower':
@@ -286,6 +303,14 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       return dragonsConditionWords(condition, negate);
     case 'spellsCastThisTurn':
       // D-318 (CR 601.2i): "you've cast three or more spells this turn".
+      // D-444: "you've cast an instant or sorcery spell this turn", "you've cast two or more creature spells this turn".
+      if (condition.ofTypes !== undefined) {
+        const kinds = condition.ofTypes.join(' or ');
+        const have = negate ? "haven't" : 'have';
+        return condition.atLeast === 1
+          ? `you ${have} cast ${/^[aeiou]/u.test(kinds) ? 'an' : 'a'} ${kinds} spell this turn`
+          : `you ${have} cast ${condition.atLeast} or more ${kinds} spells this turn`;
+      }
       return `you ${negate ? "haven't" : 'have'} cast ${condition.atLeast} or more spells this turn`;
     case 'lifeGainedThisTurn':
       // D-252, D-363 (CR 119.3, 603.4): "if you gained life this turn" (at least 1), "if you gained 3 or more life this turn".

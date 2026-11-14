@@ -33,6 +33,7 @@ import { DINOSAUR_TRIGGER_RULES } from './dinosaurs';
 import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
 import { EVENT_TRIGGER_RULES } from './events';
+import { GISA_G2_TRIGGER_RULES } from './gisa-g2';
 import { HASHATON_G1_TRIGGER_RULES } from './hashaton';
 import { HASHATON_G9_TRIGGER_RULES } from './hashaton-g9';
 import { HOFRI_TRIGGER_RULES } from './hofri';
@@ -424,8 +425,8 @@ export const TRIGGER_BECOMES_BLOCKED = singleEvent('trigger.becomes-blocked', 'b
 /**
  * `trigger.or`: one subject with two or more events joined by "or": "~ enters or attacks",
  * "~ attacks or dies". Each event is an ability of its own once lowered (CR 603.2c); a repeated
- * event is not read. A comma list ("enters, attacks, or dies") is not: the segmenter ends the
- * trigger at the first comma, so the rest would read as the body.
+ * event is not read. A comma list ("enters, attacks, or dies", D-448) is read too: the segmenter keeps the commas between two events in the trigger (`insideEventList`), and the
+ * list is "A, B, or C" with the Oxford comma.
  */
 export const TRIGGER_OR = defineRule<IrTrigger>({
   id: 'trigger.or',
@@ -447,6 +448,10 @@ export const TRIGGER_OR = defineRule<IrTrigger>({
     // Stage P36 (D-178, CR 603.2): an event that is for spells only.
     '~ attacks or becomes the target of a spell',
     '~ becomes the target of a spell or attacks',
+    // D-448 (CR 603.2c): a list of events with commas.
+    '~ attacks, blocks, or becomes the target of a spell',
+    '~ enters, attacks, or dies',
+    'another creature you control attacks, blocks, or dies',
   ],
   rejects: [
     '~ attacks or becomes the target of a spell or ability',
@@ -455,18 +460,39 @@ export const TRIGGER_OR = defineRule<IrTrigger>({
     '~ enters or enters',
     '~ enters and attacks',
     '~ enters or attacks or',
-    '~ enters, attacks, or dies',
+    '~ enters, attacks',
+    '~ enters, attacks or dies',
+    '~ enters, or attacks',
+    '~ enters, attacks, or',
+    '~ enters, attacks, or attacks',
+    '~ enters or attacks, or dies',
+    '~ attacks, blocks, or becomes the target of a spell or ability',
     '~ blocks or blocks',
     '~ blocks or becomes blocked by a creature',
   ],
   parse: (ctx, pos) => {
+    // "A or B [or C]", and (D-448, CR 603.2c) the list of a comma: "A, B, or C", the last joined by ", or".
     const events = satisfy(
-      sequence(OR_EVENT, many(map(sequence(literal(' or'), OR_EVENT), ([, e]) => e))),
-      ([first, rest]) => rest.length > 0 && new Set([first, ...rest]).size === rest.length + 1,
+      sequence(
+        OR_EVENT,
+        many(sequence(choice(literal(', or'), literal(' or'), literal(',')), OR_EVENT)),
+      ),
+      ([first, more]) => {
+        const rest = more.map(([, e]) => e);
+        if (rest.length === 0 || new Set([first, ...rest]).size !== rest.length + 1) return false;
+        const joins = more.map(([join]) => join);
+        const allOr = joins.every((j) => j === ' or');
+        const commaList =
+          rest.length >= 2 &&
+          joins.slice(0, -1).every((j) => j === ',') &&
+          joins[joins.length - 1] === ', or';
+        return allOr || commaList;
+      },
     );
     const r = sequence(triggerSubject('trigger.or'), events)(ctx, pos);
     if (!r.ok) return r;
-    const [subject, [first, rest]] = r.value;
+    const [subject, [first, more]] = r.value;
+    const rest = more.map(([, e]) => e);
     const span = { start: pos, end: r.pos };
     const alternatives = rest.map((event) => trigger('trigger.or', span, event, { subject }));
     return {
@@ -525,12 +551,41 @@ export const TRIGGER_OR_SUBJECTS = defineRule<IrTrigger>({
   },
 });
 
+/** What a cast trigger's spell targets: "that targets a creature [you control]" (the object's kind and, for "you control", its controller) or the source itself. */
+type Aimed =
+  | { readonly kind: 'object'; readonly what: string; readonly yours: boolean }
+  | { readonly kind: 'self'; readonly only: boolean };
+
+const AIMED: Parser<Aimed> = map(
+  pattern(
+    /\s?that targets an? (creature|artifact|enchantment|land|planeswalker|permanent)( you control)?(?![\p{L}\p{N}])/iu,
+  ),
+  (m): Aimed => ({ kind: 'object', what: (m[1] ?? '').toLowerCase(), yours: m[2] !== undefined }),
+);
+
+/** D-437: "that targets ~", "that targets only ~" (the `~` is the permanent with the ability). */
+const AIMED_SELF: Parser<Aimed> = map(
+  pattern(/\s?that targets (only )?~(?![\p{L}\p{N}])/iu),
+  (m): Aimed => ({ kind: 'self', only: m[1] !== undefined }),
+);
+
+/** D-400 (CR 109.4, 115.1): the filter of the object the spell targets; "you control" says whose it is. */
+function aimedFilter(aimed: Aimed): IrFilter {
+  if (aimed.kind !== 'object') throw new Error('aimedFilter: an object');
+  const yours = aimed.yours ? { controller: 'you' as const } : {};
+  return aimed.what === 'permanent'
+    ? { ...yours, raw: aimed.what }
+    : { types: [aimed.what], ...yours, raw: aimed.what };
+}
+
 /**
  * `trigger.cast`: "you cast a creature spell", "you cast a noncreature spell", "a player casts a
  * spell", "you cast an Aura, Equipment, or Vehicle spell" (CR 601.2i: abilities that trigger when
  * a spell is cast trigger as it becomes cast). The spell is the subject of the trigger, described
  * by a filter of the spells on the stack. "An opponent casts" is `by: 'opponent'` (D-111, stage P18);
- * "cast or copy" and "your first spell each turn" are other events.
+ * "cast or copy" and "your first spell each turn" are other events. What the spell targets: "that targets a creature
+ * [you control]" (D-206, D-400), "that targets ~" and "that targets only ~" (D-437, CR 115.9c), and a second kind
+ * of spell joined with "or": "an Equipment spell or a spell that targets a creature you control" (D-438).
  */
 export const TRIGGER_CAST = defineRule<IrTrigger>({
   id: 'trigger.cast',
@@ -559,6 +614,16 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     'you cast an instant or sorcery spell that targets a creature',
     'you cast a spell that targets a permanent',
     'an opponent casts a creature spell that targets an artifact',
+    // D-400 (Danitha, group 1b): "you control" of the object the spell targets.
+    'you cast a spell that targets a creature you control',
+    'an opponent casts a spell that targets a permanent you control',
+    // D-437 (Feather, group 3): the spell targets the source of the ability, or only it (CR 115.9c).
+    'you cast a spell that targets ~',
+    'you cast an instant or sorcery spell that targets only ~',
+    'a player casts an instant or sorcery spell that targets only ~',
+    // D-437: a second kind of spell joined with "or".
+    'you cast an Equipment spell or a spell that targets a creature you control',
+    'you cast an artifact spell or a spell that targets a permanent',
   ],
   rejects: [
     'you cast ~',
@@ -576,6 +641,20 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     'you cast a spell that targets a Dragon',
     'you cast a spell that targets you',
     'you cast a spell that targets creatures',
+    'you cast a spell that targets a creature you do not control',
+    "you cast a spell that targets a creature you don't control",
+    'you cast a spell that targets a creature an opponent controls',
+    'you cast a spell that targets a creature you controlled',
+    'you cast a spell that targets ~ and a creature',
+    'you cast a spell that targets only a creature',
+    'you cast a spell that targets only',
+    'you cast a spell that targets it',
+    'you cast an instant or sorcery spell or a spell that targets ~',
+    'you cast an Equipment spell or a spell that targets a creature you control or',
+    'you cast an Equipment spell or a spell',
+    'you cast an Equipment spell or a creature spell that targets a creature you control',
+    'you cast an Aura or Equipment spell or a spell that targets a creature you control',
+    'you cast an Equipment spell that targets a creature or a spell that targets a land',
   ],
   parse: (ctx, pos) => {
     const r = sequence(
@@ -603,23 +682,31 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       ),
       spanned(sequence(pattern(/an? /i), map(spellPhrase(), withoutZone))),
       // Stage P49 (D-206, CR 115.1, 601.2c): "an instant or sorcery spell that targets a creature".
-      optional(
-        pattern(
-          /\s?that targets an? (creature|artifact|enchantment|land|planeswalker|permanent)(?![\p{L}\p{N}])/iu,
-        ),
-        null,
-      ),
+      // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~", the source of the ability.
+      optional(choice(AIMED, AIMED_SELF), null),
+      // D-437: "an Equipment spell or a spell that targets a creature you control": a second kind of spell, which is the one that targets.
+      optional(sequence(literal(' or '), pattern(/a spell\s/iu), AIMED), null),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [actor, spell, aimed] = r.value;
-    const what = (aimed?.[1] ?? '').toLowerCase();
-    const filter: IrFilter =
-      aimed === null
-        ? spell.value[1]
-        : {
-            ...spell.value[1],
-            targets: what === 'permanent' ? { raw: what } : { types: [what], raw: what },
-          };
+    const [actor, spell, aimed, alternative] = r.value;
+    const base: IrFilter = spell.value[1];
+    let filter: IrFilter;
+    if (alternative !== null) {
+      // The first kind of spell must be a plain description: no aim of its own, no choice of its own (the engine's disjunction is one level).
+      if (aimed !== null || base.anyOf !== undefined) return fail(ctx, pos);
+      const { stackKind: _kind, ...first } = base;
+      filter = {
+        stackKind: 'spell',
+        raw: base.raw,
+        anyOf: [first, { targets: aimedFilter(alternative[2]), raw: 'a spell that targets' }],
+      };
+    } else if (aimed === null) {
+      filter = base;
+    } else if (aimed.kind === 'self') {
+      filter = aimed.only ? { ...base, targetsOnlySelf: true } : { ...base, targetsSelf: true };
+    } else {
+      filter = { ...base, targets: aimedFilter(aimed) };
+    }
     const subject = makeNoun('trigger.cast', spell.span, 'a', filter);
     return {
       ok: true,
@@ -1040,5 +1127,7 @@ export const TRIGGER_RULES = [
   ...VRASKA_TRIGGER_RULES,
   // Hashaton deck, group 1 (D-374): "you cycle or discard another card".
   ...HASHATON_G1_TRIGGER_RULES,
+  // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token".
+  ...GISA_G2_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];

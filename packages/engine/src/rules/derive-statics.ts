@@ -133,6 +133,19 @@ export interface CostReductionSource {
 }
 
 /**
+ * A static ability of a permanent that reduces what the Equip abilities its controller activates cost when they target a kind of object (`abilityCostReduction`, D-425): read
+ * by `rules/activate-adjust.ts`, not by `derive`. A permanent that lost all its abilities has none (CR 613.1f).
+ */
+export interface AbilityReductionSource {
+  readonly object: GameObject;
+  /** The Equip abilities that target an object this matches (D-425); absent for a reduction of the abilities of some objects. */
+  readonly targeting?: ObjectFilter;
+  /** The objects whose activated abilities cost less, cards in a graveyard (D-461); absent for an Equip reduction. */
+  readonly objects?: ObjectFilter;
+  readonly amount: Amount;
+}
+
+/**
  * A static ability of a permanent that lets its controller cast the spells `spells` names as though they had flash (`castAsThoughFlash`,
  * D-139): read by `rules/legality.ts`, not by `derive`. A permanent that lost all its abilities has none (CR 613.1f).
  */
@@ -173,6 +186,8 @@ interface BoardIndex {
   readonly deferred: EntryLists;
   /** Permanents with a `costReduction` static ability that names spells by a filter, in battlefield order. */
   readonly reductions: readonly CostReductionSource[];
+  /** Permanents with an `abilityCostReduction` static ability, in battlefield order (D-425). */
+  readonly abilityReductions: readonly AbilityReductionSource[];
   /** Permanents with a `castAsThoughFlash` static ability, in battlefield order (D-139). */
   readonly flashes: readonly FlashPermissionSource[];
   /** Permanents with a `castFromTopOfLibrary` static ability, in battlefield order (D-151). */
@@ -247,10 +262,32 @@ function costReductionsOf(
   return out;
 }
 
+function abilityReductionsOf(
+  object: GameObject,
+  abilities: readonly Ability[],
+): AbilityReductionSource[] {
+  const out: AbilityReductionSource[] = [];
+  for (const a of abilities) {
+    if (a.kind === 'static' && a.static.kind === 'abilityCostReduction') {
+      out.push(
+        a.static.abilities === 'ofObjects'
+          ? { object, objects: a.static.objects, amount: a.static.amount }
+          : { object, targeting: a.static.targeting, amount: a.static.amount },
+      );
+    }
+  }
+  return out;
+}
+
 function flashesOf(object: GameObject, abilities: readonly Ability[]): FlashPermissionSource[] {
   const out: FlashPermissionSource[] = [];
   for (const a of abilities) {
-    if (a.kind === 'static' && a.static.kind === 'castAsThoughFlash') {
+    // D-408: `spells: this` is the spell's own permission (`rules/flash-targets.ts`), not a permanent's.
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'castAsThoughFlash' &&
+      !('kind' in a.static.spells)
+    ) {
       out.push({ object, spells: a.static.spells });
     }
   }
@@ -289,6 +326,7 @@ function graveyardPlaysOf(
 function buildIndex(state: GameState): BoardIndex {
   const sources: ModifierSource[] = [];
   const reductions: CostReductionSource[] = [];
+  const abilityReductions: AbilityReductionSource[] = [];
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
   const graveyardPlays: GraveyardPlaySource[] = [];
@@ -302,6 +340,7 @@ function buildIndex(state: GameState): BoardIndex {
     if (modifiers.length > 0)
       sources.push({ object, modifiers, context: subjectContextOf(state, object) });
     reductions.push(...costReductionsOf(object, printed));
+    abilityReductions.push(...abilityReductionsOf(object, printed));
     flashes.push(...flashesOf(object, printed));
     libraryCasts.push(...libraryCastsOf(object, printed));
     graveyardPlays.push(...graveyardPlaysOf(object, printed));
@@ -352,6 +391,7 @@ function buildIndex(state: GameState): BoardIndex {
     immediate: listEntries(immediate),
     deferred: listEntries(deferred),
     reductions,
+    abilityReductions,
     flashes,
     libraryCasts,
     graveyardPlays,
@@ -377,6 +417,11 @@ function indexOf(state: GameState): BoardIndex {
 /** The cost-reducing static abilities of the permanents on the battlefield (D-095). */
 export function costReductionSources(state: GameState): readonly CostReductionSource[] {
   return indexOf(state).reductions;
+}
+
+/** The cost-reducing static abilities of the permanents on the battlefield that name the Equip abilities a kind of object is the target of (D-425). */
+export function abilityReductionSources(state: GameState): readonly AbilityReductionSource[] {
+  return indexOf(state).abilityReductions;
 }
 
 /** The permission "You may cast creature spells ... from the top of your library" of the permanents on the battlefield (D-151). */

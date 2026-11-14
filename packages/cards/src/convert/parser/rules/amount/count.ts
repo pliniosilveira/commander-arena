@@ -30,6 +30,7 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
+import { ATTACHMENT_SUFFIX } from '../noun/danitha-g3';
 import {
   BOUNDARY,
   CARD_TYPES,
@@ -131,6 +132,21 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
     if (!found.ok) return found;
     let end = found.pos;
     let filter: IrFilter = found.value;
+    // D-426 (Danitha group 3): "Aura attached to it", "Aura you control that's attached to a creature": the permanents an attachment is on, which also names the
+    // objects, so a phrase with no controller needs no "on the battlefield".
+    const attached = plural
+      ? { ok: true as const, value: null, pos: end }
+      : optional(ATTACHMENT_SUFFIX, null)(ctx, end);
+    if (!attached.ok) return attached;
+    if (attached.value !== null) {
+      filter = { ...filter, attachedTo: attached.value };
+      end = attached.pos;
+      return {
+        ok: true,
+        value: { filter: { ...filter, raw: ctx.text.slice(pos, end) }, other: other.value },
+        pos: end,
+      };
+    }
     const attacking = optional(ATTACKING_YOU, null)(ctx, end);
     if (!attacking.ok) return attacking;
     if (attacking.value !== null) {

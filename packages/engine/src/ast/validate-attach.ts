@@ -12,8 +12,9 @@ import {
   checkEnumList,
   checkFilter,
   filterSome,
+  isCount,
   issue,
-  readsCombatOrSource,
+  readsCombatOrSourceBesidesCommander,
   readsKeywords,
 } from './validate-parts';
 
@@ -66,12 +67,24 @@ export function checkStaticSubject(
       break;
     case 'filter':
       checkBattlefieldFilter(s.filter, `${path}.filter`, out);
-      // D-120: `derive` matches this filter without the combat or a source power.
-      if (filterSome(s.filter, readsCombatOrSource)) {
+      // D-120: `derive` matches this filter without the combat or a source power. "Commander" is read from the card, which no layer changes (D-443), so a group
+      // of commander creatures is a subject.
+      if (filterSome(s.filter, readsCombatOrSourceBesidesCommander)) {
         issue(
           out,
           `${path}.filter`,
           'a static ability cannot name attacking creatures or compare power with its source',
+        );
+      }
+      // D-422: `derive` reads the group before layers 6 and 7 with the view of each permanent alone: a permanent that has an Aura attached, or one attached to a permanent of a
+      // kind, needs the view of another object, which only a count or a condition is given.
+      if (
+        filterSome(s.filter, (f) => f.enchanted !== undefined || f.attachedTo?.kind === 'matching')
+      ) {
+        issue(
+          out,
+          `${path}.filter`,
+          'a static ability\'s group cannot be named by "enchanted" or by the kind of permanent something is attached to (D-422)',
         );
       }
       if (!keywords && filterSome(s.filter, readsKeywords)) {
@@ -99,6 +112,23 @@ export function checkProtectionTypes(types: unknown, path: string, out: AstIssue
   checkEnumList(out, path, types, CARD_TYPES, 'card type');
 }
 
+/**
+ * D-472, D-473: the parameter of a keyword that is granted and has one: "afflict 3" (CR 702.130a, a positive whole number) and a landwalk
+ * (CR 702.14a, a land type or "nonbasic", as for a printed one).
+ */
+export function checkGrantedParameter(k: Keyword, path: string, out: AstIssue[]): void {
+  if (k?.kind === 'afflict' && (!isCount(k.count) || k.count < 1)) {
+    issue(out, `${path}.count`, 'afflict needs a positive integer');
+  }
+  if (k?.kind === 'landwalk') {
+    if (typeof k.landType !== 'string' || k.landType === '') {
+      issue(out, `${path}.landType`, 'landwalk needs a land type or "nonbasic"');
+    } else if (k.landType !== 'nonbasic' && !/^[A-Z][A-Za-z'-]*$/.test(k.landType)) {
+      issue(out, `${path}.landType`, `${JSON.stringify(k.landType)} is not a land type`);
+    }
+  }
+}
+
 export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): void {
   // D-259 (CR 702.16): a static ability may give protection from colors; its colors are checked as a printed protection keyword is.
   // D-376: or from card types, or from the chosen card type.
@@ -113,6 +143,13 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
           if (!isOneOf(c, COLORS)) issue(out, `${path}.colors[${i}]`, `unknown color ${String(c)}`);
         });
       }
+    } else if (k.from === 'colorOfChoice') {
+      // D-451: asked as an effect resolves; a static ability or a printed keyword has nothing to ask.
+      issue(
+        out,
+        `${path}.from`,
+        'protection from the color of your choice is chosen as an effect resolves: only a grantKeyword effect gives it',
+      );
     } else if (k.from !== 'colorsNotInCommanderIdentity' && k.from !== 'chosenCardType') {
       issue(
         out,
@@ -126,9 +163,11 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
     issue(
       out,
       path,
-      `a static ability cannot grant ${kindOf(k)}: only keywords without parameters can be granted`,
+      `a static ability cannot grant ${kindOf(k)}: only keywords without parameters can be granted (and afflict and landwalk, D-472, D-473)`,
     );
+    return;
   }
+  checkGrantedParameter(k, path, out);
 }
 
 /**

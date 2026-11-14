@@ -5,6 +5,7 @@
  * cannot say gives `null`, never a guess (AGENTS.md "Honesty"). Pure.
  */
 import type { ObjectFilter } from '@commander-arena/engine';
+import { attachableNouns, attachedToWords, enchantedWords } from './attachment-text';
 import { withText } from './trigger-text';
 import { COLOR_NAMES } from './words';
 
@@ -58,11 +59,16 @@ const COUNTABLE: ReadonlySet<string> = new Set([
   'notSubtypes',
   'colorless',
   'keywords',
+  // D-422: "Aura attached to it", "creatures that aren't enchanted".
+  'attachedTo',
+  'enchanted',
   'notKeywords',
   // D-139: said by `withText`.
   'colorCount',
   'manaValueX',
   'controllerDealtDamageBySource',
+  // D-431: said by `withText`.
+  'powerAboveBase',
   // D-145: "commanders you control", "creatures you control with a counter on it"; `withText` says the counter.
   'commander',
   'hasCounter',
@@ -159,6 +165,10 @@ function tokenGroup(filter: ObjectFilter, plural: boolean): string | null {
 
 /** The things a filter counts, "artifacts you control" (plural) or "artifact you control" (each). */
 export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | null {
+  // D-422 (CR 301.5, 303.4): "Aura attached to it", "Aura and Equipment attached to it", "Aura you control that's attached to a creature".
+  if (filter.attachedTo !== undefined && attachableNouns(filter, plural) !== null) {
+    return attachedThings(filter, plural);
+  }
   // D-139: "artifacts or enchantments you control", a union of card types and nothing else per member.
   if (filter.anyOf !== undefined) {
     const { anyOf, ...rest } = filter;
@@ -252,7 +262,42 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
         : filter.attackingOpponents === true
           ? ' attacking your opponents and/or planeswalkers they control'
           : '';
-  return `${[...adjectives, noun].join(' ')}${place}${attackers}${withText(filter)}`;
+  // D-422 (CR 303.4): "creatures that aren't enchanted" names its objects by what is attached to them, so no "on the battlefield".
+  const attached = attachedToWords(filter);
+  if (attached === null) return null;
+  const enchanted = enchantedWords(filter, plural);
+  const where =
+    (attached !== '' || enchanted !== '') && place === ' on the battlefield' ? '' : place;
+  return `${[...adjectives, noun].join(' ')}${where}${attackers}${withText(filter)}${attached}${enchanted}`;
+}
+
+/**
+ * "Aura attached to it", "Auras you control that are attached to a creature", "other Aura and Equipment attached to it" (D-422, CR 301.5, 303.4): the attachable permanents a filter
+ * names by their subtype, with who controls them and what they are attached to. Null for any other field of the filter.
+ */
+function attachedThings(filter: ObjectFilter, plural: boolean): string | null {
+  const {
+    anyOf: _anyOf,
+    subtypes: _subtypes,
+    controller,
+    other,
+    attachedTo: _to,
+    ...rest
+  } = filter;
+  if (Object.keys(rest).some((k) => k !== 'zone' || filter.zone !== 'battlefield')) return null;
+  const noun = attachableNouns(filter, plural);
+  const to = attachedToWords(filter);
+  if (noun === null || to === null) return null;
+  const control =
+    controller === 'you'
+      ? ' you control'
+      : controller === 'opponent'
+        ? ' an opponent controls'
+        : '';
+  if (controller !== undefined && controller !== 'you' && controller !== 'opponent') return null;
+  // "that's attached to a creature" says "that are" of a plural group.
+  const tail = plural ? to.replace(" that's attached", ' that are attached') : to;
+  return `${other === true ? 'other ' : ''}${noun}${control}${tail}`;
 }
 
 /**

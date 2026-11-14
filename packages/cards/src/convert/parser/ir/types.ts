@@ -257,6 +257,10 @@ export interface IrFilter {
   readonly singleTarget?: true;
   /** "that targets a creature" (stage P49, D-206, CR 115.1, 601.2c): a spell with a chosen target that is an object of this kind (a card type). */
   readonly targets?: IrFilter;
+  /** "that targets ~" (Feather group 3, D-437, CR 115.1): a spell with a chosen target that is the source of the ability. */
+  readonly targetsSelf?: true;
+  /** "that targets only ~" (Feather group 3, D-437, CR 115.9c): a spell whose chosen targets are all the source of the ability. */
+  readonly targetsOnlySelf?: true;
   /** "creatures attacking you" (stage P28, CR 508.1b): attackers whose attack target is the controller as a player. */
   readonly attackingYou?: true;
   /** "creatures attacking your opponents and/or planeswalkers they control" (stage P65, D-218, CR 508.1b, 506.3): attackers of an opponent or of a permanent of an opponent. */
@@ -276,6 +280,8 @@ export interface IrFilter {
   readonly manaValueAtMostX?: true;
   /** "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga. */
   readonly historic?: true;
+  /** "modified" (D-416, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls (the engine's `modified`). */
+  readonly modified?: true;
   /**
    * "that shares a creature type with it" (D-261, CR 205.3m, 603.10a): the card has a creature type the creature of the trigger had (the one that died), as it last was
    * (CR 113.7a). Read in the filter of a library search `revealUntil` only; the engine's `sharesCreatureTypeWith`.
@@ -322,6 +328,23 @@ export interface IrFilter {
   readonly notCastFromHand?: true;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
+  /**
+   * "attached to it", "attached to enchanted creature", "that's attached to a creature" (Danitha deck group 3, D-426, CR 303.4, 301.5, 701.3): the object is a permanent attached to
+   * another one. `it` is the permanent the statement is about (the lowering of a static ability reads it as the source or, for "enchanted creature gets ...", the permanent the
+   * source is attached to); `type` a permanent of these card types.
+   */
+  readonly attachedTo?:
+    | { readonly kind: 'it' }
+    // the two things the lowering of a static ability makes of `it` (the source, or the permanent the source is attached to)
+    | { readonly kind: 'source' }
+    | { readonly kind: 'host' }
+    | { readonly kind: 'type'; readonly types: readonly string[] };
+  /** "that aren't enchanted" (`false`), "that are enchanted" (`true`) (D-426, CR 303.4): the permanent has no Aura attached to it (or has one). */
+  readonly enchanted?: boolean;
+  /** "that target enchanted creature" (D-426, CR 601.2c, 303.4): of a spell, that it targets the permanent the source is attached to. Read in the filter of a cost reduction only. */
+  readonly targetsHost?: true;
+  /** "with power greater than its base power" (D-431, CR 208.4b): the engine's `powerAboveBase`. */
+  readonly powerAboveBase?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
   readonly anyTarget?: boolean;
   /** The words the filter was read from, for diagnostics and templateOf. */
@@ -344,6 +367,8 @@ export type IrAmount =
   | { readonly kind: 'lifeLostThisWay'; readonly span: Span }
   // "equal to the life that player lost this turn" (Hashaton deck group 2, D-365, CR 119.3): the life the player the instruction affects lost this turn
   | { readonly kind: 'lifeLostThisTurn'; readonly span: Span }
+  // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
+  | { readonly kind: 'cardsDrawnThisTurn'; readonly span: Span }
   // Stage P28 (D-131): "equal to that creature's toughness", "for each +1/+1 counter on ~"
   | { readonly kind: 'toughnessOf'; readonly of: IrNoun; readonly span: Span }
   | {
@@ -458,6 +483,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'didPrevious' }
     // "If the player doesn't" (stage P52, D-210): the player an earlier "may have you" sentence asked said no
     | { readonly kind: 'declined' }
+    // "If you don't put it onto the battlefield, ..." (Danitha deck group 1b, D-403, CR 608.2c): the card the sentence before it offered to put onto the battlefield did not enter it
+    | { readonly kind: 'notPutOntoBattlefield' }
     // "If a creature card was discarded this way", "if a noncreature card was discarded this way" (stage P52, D-210, CR 608.2c)
     | { readonly kind: 'discardedThisWay'; readonly creature: boolean }
     // "If you discarded an instant or sorcery card this way" (D-358, CR 608.2c, 701.9): what a discard before it in the same text did
@@ -477,7 +504,12 @@ export interface IrCondition extends IrNode {
     // D-252 (the Bruna deck): "you gained 3 or more life this turn" (CR 119.3)
     | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
     // D-318 (the Niv-Mizzet deck): "you've cast three or more spells this turn" (CR 601.2i)
-    | { readonly kind: 'spellsCastThisTurn'; readonly atLeast: number }
+    // D-444 (Feather): "you've cast an instant or sorcery spell this turn": only the spells of these card types count.
+    | {
+        readonly kind: 'spellsCastThisTurn';
+        readonly atLeast: number;
+        readonly ofTypes?: readonly string[];
+      }
     // D-271 (CR 706.2, 706.3a): "the result is 1", "the result is 4 or more": the die the roll before it in the same text rolled
     | { readonly kind: 'dieResult'; readonly compare: IrComparison }
     // D-271 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard
@@ -494,8 +526,21 @@ export interface IrCondition extends IrNode {
     // "~ is paired with another creature" (D-286, CR 702.95b): the permanent the ability is on is paired
     // (`who` is the word the text used for the permanent: `~`, or "it", which is the source only in an ability about it)
     | { readonly kind: 'paired'; readonly who: 'self' | 'it' }
-    // "~ is attached to a creature" (stage P37, D-180, CR 301.5, 303.4): the permanent this one is attached to, against a filter (`creature`)
-    | { readonly kind: 'attachedTo'; readonly filter: IrFilter }
+    // "~ is attached to a creature" (stage P37, D-180, CR 301.5, 303.4): the permanent this one is attached to, against a filter (`creature`); D-427 (Danitha group 3):
+    // "enchanted creature is green" says the same of the permanent an Aura enchants (`via`: the word, "enchanted" for an Aura, "equipped" for an Equipment)
+    | {
+        readonly kind: 'attachedTo';
+        readonly filter: IrFilter;
+        readonly via?: 'enchanted' | 'equipped';
+      }
+    // "another Aura is attached to enchanted creature" (D-427, CR 303.4, 301.5): at least one other permanent of the kind is attached to the permanent the source is attached to
+    | {
+        readonly kind: 'otherAttachedToHost';
+        readonly attachment: IrFilter;
+        readonly via: 'enchanted' | 'equipped';
+      }
+    // "~ entered this turn" (D-427, CR 400.7): the permanent itself entered the battlefield this turn
+    | { readonly kind: 'thisEnteredThisTurn' }
     // "it's untapped", "~ is untapped": this permanent against a filter (stage P29, D-133)
     // (`who` is the word the text used for the permanent: `~`, or "it", which is the source only in an ability about it)
     | { readonly kind: 'thisMatches'; readonly filter: IrFilter; readonly who?: 'self' | 'it' }
@@ -504,7 +549,10 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'objectMatches'; readonly who: IrNoun; readonly filter: IrFilter }
     // "you put a Cave onto the battlefield this way" (stage P37, D-180, CR 608.2c): what the instruction before it put onto the battlefield is, against
     // a filter that says what it is (no zone, controller or owner)
-    | { readonly kind: 'putThisWay'; readonly filter: IrFilter }
+    // `zone` 'hand' (Danitha deck group 2, D-412): "you put a Town card into your hand this way" says where the card went; absent for the battlefield.
+    | { readonly kind: 'putThisWay'; readonly filter: IrFilter; readonly zone?: 'hand' }
+    // "If you don't, put a +1/+1 counter on ~" (Danitha deck group 2, D-411, CR 608.2c): the player did not put a card from among the cards the sentence before it milled into their hand
+    | { readonly kind: 'youDont' }
     // "if the gift was promised" (CR 702.174k, stage P30)
     | { readonly kind: 'giftPromised' }
     // "an opponent controls four or more nonbasic lands" (stage P30): some one opponent controls that many
@@ -561,6 +609,8 @@ export interface IrCondition extends IrNode {
         readonly who: 'you' | 'opponent';
         readonly atLeast: number;
       }
+    // Issue 41 (D-475): "a player was dealt combat damage by a Zombie this turn" (CR 120.2a): the kind of source, as the turn log keeps it.
+    | { readonly kind: 'combatDamagedBy'; readonly noun: IrNoun }
     | {
         readonly kind: 'enteredThisTurn';
         readonly count: number;
@@ -589,6 +639,8 @@ export type IrCost = IrNode &
         readonly count: number;
       }
     | { readonly kind: 'payLife'; readonly amount: IrAmount }
+    // Blight 1 (Danitha deck, D-407, CR 701.68a): `count` -1/-1 counters on a creature the player controls
+    | { readonly kind: 'blight'; readonly count: number }
     // "Pay X life" (stage P16): the amount is announced as X (CR 107.3a), not a number
     | { readonly kind: 'payXLife' }
     // "Discard X cards" (Hashaton group 10, D-386, CR 107.3a, 701.9): as many cards as the X announced; an additional cost of a spell
@@ -605,6 +657,8 @@ export type IrCost = IrNode &
     | { readonly kind: 'exile'; readonly what: IrNoun }
     // "Discard this card" (stage P68, D-229, CR 701.9, 113.6b): the card itself, from the hand; "Exile ~" (CR 118.1): the permanent itself
     | { readonly kind: 'discardThis' }
+    // "Reveal this card from your hand" (Gisa deck, group 4, D-462, CR 701.20a, 113.6b): the card itself is shown, from the hand
+    | { readonly kind: 'revealThis' }
     | { readonly kind: 'exileThis' }
     // "Mill a card" (stage P51, D-208, CR 701.17): the cost of a mana ability
     | { readonly kind: 'mill'; readonly amount: IrAmount }
@@ -719,6 +773,11 @@ export interface IrZoneSpec extends IrNode {
 export interface IrKeywordArg extends IrNode {
   readonly kind: 'keywordName';
   readonly name: string;
+  /**
+   * Feather deck group 1 (D-451, D-452, CR 702.16): the quality of a protection the clause grants ("gains protection from red", "gains protection from the color
+   * of your choice"): the color words, lowercase, or `choice` for the color the controller chooses as the effect resolves. `name` is then `protection`.
+   */
+  readonly protection?: { readonly colors: readonly string[] } | { readonly choice: 'color' };
 }
 
 /** Keywords as the words spell them ("haste", "first strike"), the grant of "except it has haste" (stage P34, D-152, CR 707.9b). */
@@ -1046,6 +1105,8 @@ export interface IrRestriction extends IrNode {
 /** What a static ability or a `restrict` clause says its subject can't or must do (D-094). */
 export type IrRestrictionKind =
   | 'cantBlock'
+  // "Enchanted creature can't attack or block" (Danitha deck, D-407, CR 508.1a): only of the permanent an Aura or Equipment is attached to.
+  | 'cantAttack'
   | 'cantBeBlocked'
   | 'attacksEachCombat'
   | 'doesntUntap'
@@ -1091,6 +1152,8 @@ export type IrStaticEffect =
       readonly kind: 'grantProtection';
       readonly colors?: readonly string[];
       readonly commanderIdentity?: true;
+      /** "protection from creatures" (Danitha deck group 1b, D-402, CR 702.16a, 205.2a): the card types named, as the engine's card type words (`creature`). */
+      readonly cardTypes?: readonly string[];
       /** "protection from the chosen card type" (Hashaton deck group 6, D-376, CR 702.16a): the card type the source of the ability chose as it entered. */
       readonly chosenCardType?: true;
     }
@@ -1115,6 +1178,15 @@ export type IrStaticEffect =
    * subject is `~` (the spell itself) or the spells described (`det` `each`, `controller` you).
    */
   | { readonly kind: 'costReduction'; readonly amount: IrAmount }
+  // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off
+  | { readonly kind: 'abilityCostReduction'; readonly amount: number }
+  // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa deck, group 4, D-461, CR 601.2f, 118.7, 113.6b): the generic mana taken off
+  // the abilities of the cards of these card types in the graveyard of the controller
+  | {
+      readonly kind: 'graveyardAbilityCostReduction';
+      readonly amount: number;
+      readonly types: readonly string[];
+    }
   /**
    * "As an additional cost to cast ~, sacrifice a creature." (stage P13, CR 118.8): costs paid with
    * the spell's total cost. The statement's subject is `~`.
@@ -1128,6 +1200,11 @@ export type IrStaticEffect =
        */
       readonly orCosts?: readonly IrCost[];
     }
+  /**
+   * "As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way." (D-492, CR 118.8, 601.2b,
+   * 603.12, 707.10): the cost is any number of the permanents `what` names, and the spell is copied for each. The statement's subject is `~`.
+   */
+  | { readonly kind: 'optionalSacrificeCopies'; readonly what: IrNoun }
   /**
    * "If you control a commander, you may cast ~ without paying its mana cost." (stage P13, CR
    * 118.9): an alternative cost of the card itself. The statement's subject is `~`.
@@ -1379,6 +1456,11 @@ export interface IrModeChoice {
 export interface IrModeHeader extends IrNode {
   readonly kind: 'modeHeader';
   readonly choose: IrModeChoice;
+  /**
+   * "Tiered" (D-433, CR 702.183a, 700.2h): every bullet starts with a name and the cost of the mode, "Cure — {0} — Target permanent gains ...": the
+   * cost is paid as an additional cost when the mode is chosen. The modal reading takes the name and the cost off each bullet (`IrModes.costs`).
+   */
+  readonly costed?: true;
 }
 
 /**
@@ -1390,6 +1472,8 @@ export interface IrModes extends IrNode {
   readonly choose: IrModeChoice;
   readonly modes: readonly IrBody[];
   readonly texts: readonly string[];
+  /** Tiered (D-433, CR 702.183a): the mana symbols of each mode's cost, in the order of the bullets, from "Cure — {0} — ...". Absent for a modal text without costs. */
+  readonly costs?: readonly (readonly string[])[];
 }
 
 export type IrAbility =
@@ -1438,6 +1522,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'timesKicked',
   'lifeLostThisWay',
   'lifeLostThisTurn',
+  'cardsDrawnThisTurn',
   'toughnessOf',
   'countersOn',
   'aggregate',

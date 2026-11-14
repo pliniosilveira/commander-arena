@@ -25,6 +25,7 @@ import { type FilterSubject, matchesFilterWith } from './filter-match';
 import { abilitiesHaveKeyword } from './keywords';
 import { manaValueOfCost } from './mana-value';
 import { commanderCardOf, successorsOf } from './melded';
+import { isModified } from './modified';
 import { playerCanBeTargetedBy } from './player-protection';
 import { hasProtectionFrom } from './protection';
 import { objectOrLki } from './source-info';
@@ -72,6 +73,11 @@ export interface SelectContext {
   readonly thisWay?: ThisWayCounts;
   /** The tally of the latest vote of this resolution, for `votesFor` amounts (D-194). */
   readonly votes?: Readonly<Record<string, number>>;
+  /**
+   * Whether `targetsObject` assumes a target the spell has not chosen yet could match (D-424): the question "may this spell be cast at all?" asks it before any target is chosen
+   * (the cost reduction of a permanent that names the spells that target a kind of permanent).
+   */
+  readonly spellTargetsMayHold?: boolean;
 }
 
 /** CR 903.3 (D-145): the object is a card its owner designated as a commander; a token or a copy of one is not. */
@@ -91,12 +97,14 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
     if (lki !== undefined) {
       const c = lki.characteristics;
       return {
+        name: c.name,
         types: c.types,
         supertypes: c.supertypes,
         subtypes: c.subtypes,
         colors: c.colors,
         power: lki.power,
         toughness: lki.toughness,
+        basePower: lki.basePower ?? null,
         // Only a filter that names a keyword reads them.
         get keywords() {
           return keywordKindsOf(lki.abilities);
@@ -112,17 +120,23 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
   }
   const d = derive(state, obj);
   return {
+    name: d.name,
     types: d.types,
     supertypes: d.supertypes,
     subtypes: d.subtypes,
     colors: d.colors,
     power: d.power,
     toughness: d.toughness,
+    basePower: d.basePower,
     get keywords() {
       return keywordKindsOf(d.abilities);
     },
     get commander() {
       return isCommanderObject(state, obj);
+    },
+    // D-416 (CR 700.9): only a filter that says "modified" reads it.
+    get modified() {
+      return isModified(state, obj);
     },
     // Only a filter that compares mana value reads it.
     get manaValue() {
@@ -140,16 +154,55 @@ export function matchesFilter(
   // CR 115.1, 601.2c (D-206): "that targets a creature": one of the spell's chosen targets is an object the inner filter matches.
   if (filter.targetsObject !== undefined) {
     const { targetsObject, ...rest } = filter;
-    const aimed = (obj.stack?.chosenTargets ?? []).some((t) => {
-      if (t.kind !== 'object') return false;
-      const target = objectOrLki(state, t.id);
-      return target !== null && matchesFilter(state, target, targetsObject, ctx);
-    });
+    // D-424: the question "may this spell be cast at all?" asks before any target is chosen, and assumes the most favourable one (as `spellTargets` does, D-207).
+    const unchosen = (obj.stack?.chosenTargets.length ?? 0) === 0;
+    const aimed =
+      (ctx.spellTargetsMayHold === true && unchosen) ||
+      (obj.stack?.chosenTargets ?? []).some((t) => {
+        if (t.kind !== 'object') return false;
+        const target = objectOrLki(state, t.id);
+        return target !== null && matchesFilter(state, target, targetsObject, ctx);
+      });
     return aimed && matchesFilter(state, obj, rest, ctx);
+  }
+  // CR 115.9c (D-437): "that targets only this creature": the targets chosen are one object (chosen once or more), and the inner filter matches it.
+  if (filter.targetsOnly !== undefined) {
+    const { targetsOnly, ...rest } = filter;
+    const unchosen = (obj.stack?.chosenTargets.length ?? 0) === 0;
+    let aimed = ctx.spellTargetsMayHold === true && unchosen;
+    if (!aimed) {
+      const targets = obj.stack?.chosenTargets ?? [];
+      const first = targets[0];
+      const one =
+        first !== undefined &&
+        first.kind === 'object' &&
+        targets.every((t) => t.kind === 'object' && t.id === first.id);
+      const target = one ? objectOrLki(state, first.id) : null;
+      aimed = target !== null && matchesFilter(state, target, targetsOnly, ctx);
+    }
+    return aimed && matchesFilter(state, obj, rest, ctx);
+  }
+  // D-437: a disjunction one of whose members reads what a spell targets ("an Equipment spell or a spell that targets a creature you control"): the outer filter
+  // says where to look, each member is matched as a filter of its own with that.
+  if (filter.anyOf?.some((m) => m.targetsObject !== undefined || m.targetsOnly !== undefined)) {
+    const { anyOf, ...outer } = filter;
+    const scoped = {
+      ...(filter.zone === undefined ? {} : { zone: filter.zone }),
+      ...(filter.stackKind === undefined ? {} : { stackKind: filter.stackKind }),
+    };
+    return (
+      matchesFilter(state, obj, outer, ctx) &&
+      anyOf.some((member) => matchesFilter(state, obj, { ...member, ...scoped }, ctx))
+    );
   }
   // D-100: "of the chosen type" reads what the source chose as it entered, which only the state knows.
   const chosen = chosenOf(state, ctx.source);
-  const withChoice = chosen === undefined ? ctx : { ...ctx, sourceChosen: chosen };
+  const withChoice = {
+    ...ctx,
+    ...(chosen === undefined ? {} : { sourceChosen: chosen }),
+    // D-422: what the objects attached to this one, or the one it is attached to, are.
+    describeOther: (other: GameObject) => describeObject(state, other),
+  };
   if (!readsGame(filter))
     return matchesFilterWith(state, obj, () => describeObject(state, obj), filter, withChoice);
   // D-120: "attacking" reads the combat, and "power less than this creature's power" the source's power.
@@ -512,7 +565,15 @@ export function resolveObjects(
         ctx.source === null
           ? undefined
           : (state.objects[ctx.source] ?? state.lki[ctx.source]?.object);
-      return (source?.linkedExile ?? []).filter((id) => state.objects[id]?.zone === 'exile');
+      // D-460: "each creature card exiled with this artifact": the cards a filter of cards describes, among those.
+      const filter = selector.filter;
+      return (source?.linkedExile ?? []).filter((id) => {
+        const card = state.objects[id];
+        return (
+          card?.zone === 'exile' &&
+          (filter === undefined || matchesFilter(state, card, { ...filter, zone: 'exile' }, ctx))
+        );
+      });
     }
     case 'triggerCard': {
       // CR 400.7, 603.10a (D-230): the card the permanent the event is about became in the graveyard, if it is still there.

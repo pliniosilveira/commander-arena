@@ -8,6 +8,7 @@ import type { ObjectId, SeatId } from './ids';
 import { legalActionsForDecision } from './legal-actions';
 import type { ManaColor } from './mana/types';
 import {
+  answerBlight,
   answerCrewCost,
   answerDiscardCost,
   answerExileCost,
@@ -53,6 +54,7 @@ import {
   answerDamage,
 } from './rules/combat-flow';
 import { answerCopyTargets } from './rules/copy-spell-answer';
+import { answerDestruction } from './rules/destroy-replacement';
 import { answerTurnFaceUpPayment, beginTurnFaceUp } from './rules/face-down-actions';
 import {
   afterResolution,
@@ -95,6 +97,7 @@ import {
   answerResolutionEntersPaid,
   answerResolutionOptional,
   answerResolutionPayAmount,
+  answerResolutionProtectionColor,
   answerResolutionReplacement,
   answerResolutionReselect,
   answerResolutionReveal,
@@ -464,6 +467,11 @@ function answerChooseOption(
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionChooseOne(state, option));
   }
+  if (d.purpose === 'protectionColor') {
+    // CR 702.16, 608.2d (D-451): the color the controller chose for "gains protection from the color of your choice".
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionProtectionColor(state, option));
+  }
   if (d.purpose === 'pile') {
     // CR 700.3 (D-303): the pile the chooser picked.
     if (!d.options.includes(option)) return fail('That is not one of the options');
@@ -535,6 +543,14 @@ function answerReplacement(
   if (d.replacement.resume !== undefined) {
     const dealt = answerCombatReplacement(state, d.replacement.resume, option, chosen);
     return ok(dealt.state, dealt.events);
+  }
+  if (d.replacement.destroy?.during === 'sba') {
+    // CR 616.1, 704.5g (D-418): the effect chosen replaces the destruction found by the state-based actions; they are checked again.
+    const applied = answerDestruction(state, d.replacement.destroy.object, option);
+    if (applied === null) return fail('Choose one of the effects');
+    const prior = [chosen, ...applied.events];
+    const resumed = resumeAfterSbaDecision(applied.state, prior);
+    return resumed.ok ? ok(resumed.state, [...prior, ...resumed.events]) : resumed;
   }
   return finishResolutionAnswer(answerResolutionReplacement(state, option, chosen));
 }
@@ -870,6 +886,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           ? answerCastTap(state, action.objects)
           : answerTapCost(state, action.objects);
       }
+      // D-407 (CR 701.68a): the creature that gets the -1/-1 counters of a blight cost.
+      if (d.purpose === 'blight') return answerBlight(state, action.objects);
       // D-139: the permanents returned to their owners' hands to pay "Return an artifact you control to its owner's hand".
       if (d.purpose === 'bounce') return answerReturnCost(state, action.objects);
       if (d.forCost) {

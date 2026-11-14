@@ -104,6 +104,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-tapped-unless-pays': asIs,
   'replacement.enters-tapped-unless-reveals': asIs,
   'replacement.enters-prepared': asIs,
+  // Danitha deck, group 4 (D-417): the keyword line of an Aura.
+  'replacement.umbra-armor': asIs,
+  // Gisa deck, group 5 (D-482).
+  'replacement.escapes-with-counters': asIs,
   'static.no-maximum-hand-size': asIs,
   // Stage P24: the play rules are lines of their own.
   'static.additional-land': asIs,
@@ -182,6 +186,17 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.x-target-graveyard-cards': spell((e) => `Return ${e} to your hand.`),
   'cost.remove-counters': permanent((e) => `${e}: Draw a card.`),
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
+  // Feather deck, group 2 (D-444): the two restrictions in the order of Hall of Oracles.
+  'restriction.sorcery-and-if': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
+  // Gisa deck, group 4 (D-459 to D-462): the restriction of the turn and the cost of the reveal of Tetzimoc, the reduction of Embalmer's Tools, and the sentences of Whip of
+  // Erebos and Ghost Vacuum that need the instruction before them (a return from the graveyard, the exile that links).
+  'restriction.during-your-turn': permanent((e) => `{1}: Draw a card. ${e}`),
+  'cost.reveal-this': permanent((e) => `{B}, ${e}: Draw a card.`),
+  'static.graveyard-ability-cost-reduction': asIs,
+  'effect.exile-instead-when-leaving': permanent(
+    (e) => `{T}: Return target creature card from your graveyard to the battlefield. ${cap(e)}.`,
+  ),
+  'effect.put-exiled-with-battlefield': permanent((e) => `{6}, {T}, Sacrifice ~: ${cap(e)}.`),
   'duration.until-end-of-turn': permanent((e) => `{1}: ~ gets +1/+1 ${e}.`),
   'keyword.cycling': asIs,
   // Stage P17: typecycling is a keyword line, the count of kicks follows a quantity of one.
@@ -272,6 +287,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.power-of': spell((e) => `Exile target creature. You gain life ${e}.`),
   'amount.mana-value-of': spell((e) => `Exile target creature. You lose life ${e}.`),
   'amount.times-kicked': spell((e) => `Draw a card ${e}.`),
+  // Feather deck group 1 (D-450): the count of a pump, or of a draw, after "for each".
+  'amount.for-each-card-drawn': spell((e) => `Draw a card ${e}.`),
   // Stage P28 (D-131): the amounts that read the game, the conditions about the state of the game and the player nouns.
   'amount.equal-to': spell((e) => `Exile target creature. You gain life ${e}.`),
   'amount.where-x': spell((e) => `Exile target creature. Draw X cards, ${e}.`),
@@ -416,6 +433,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever ~ attacks, if ${e}, you gain 1 life.`,
   ),
   'condition.player-dealt-damage': permanent((e) => `{T}: Draw a card if ${e}.`),
+  // Issue 41 (D-475): the intervening "if" of a second main phase trigger.
+  'condition.combat-damaged-by': permanent(
+    (e) => `At the beginning of your second main phase, if ${e}, you gain 1 life.`,
+  ),
   // Stage P69 (D-252): the Bruna deck.
   'condition.life-above-starting': permanent(
     (e) => `At the beginning of your end step, draw a card if ${e}.`,
@@ -466,6 +487,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'modal.choose-not-repeated': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   // D-344 (repeatable modes, CR 700.2d): the header with no dash, its bullets after it.
   'modal.choose-repeatable': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
+  // Danitha deck, group 7 (D-433): Tiered, whose bullets name their mode and its cost before the effect.
+  'modal.tiered': spell(
+    (e) => `${e}\n• Cure — {0} — Draw a card.\n• Cura — {1} — You gain 1 life.`,
+  ),
   // Stage P37 (D-180): the Korvold deck's triggers and small statics. The statics are lines of their own; the trigger follows "When"; the
   // conditions follow "As long as" or "If"; the nouns are operands of damage; the amount follows "gets +1/+1".
   'trigger.cycled': permanent((e) => `When ${e}, you gain 1 life.`),
@@ -516,6 +541,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.job-select': asIs,
   'trigger.becomes-untapped': whenever,
   'trigger.dies-batch': whenever,
+  // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token", "Skeletons and Zombies you control".
+  'trigger.commit-crime': whenever,
+  'trigger.create-token': whenever,
+  'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'trigger.discarded': whenever,
   'trigger.cycled-or-discarded': whenever,
   'condition.mana-spent-at-least': permanent(
@@ -546,6 +575,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
   'trigger.noncombat-damage': whenever,
+  // Danitha deck, group 5 (D-407, D-408): the blight cost of an ordinary ability, and the spell's own permission to be cast as though it had flash (a line of its own).
+  'cost.blight': permanent((e) => `{1}, ${e}: Draw a card.`),
+  'static.cast-self-as-though-flash': asIs,
   // Group 9 of the Hashaton deck (D-390 to D-395): the Phyrexian cost of an ordinary activation, the trigger about a source, its controller and the exile of a random card.
   'cost.mana-phyrexian': permanent((e) => `${e}: Draw a card.`),
   'trigger.source-deals-damage': whenever,
@@ -574,7 +606,29 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.it-targets': permanent((e) => `~ costs {3} less to cast if ${e}.`),
   'cost.discard-filtered': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
   'noun.target-triggered-ability-or-spell': spell((e) => `Counter ${e}.`),
+  // Issue 26 (the Danitha deck, D-426 to D-428): the conditions about the permanent an Aura enchants, a group of the creatures that are not enchanted, and the Equip reduction.
+  'condition.host-is-color': permanent((e) => `As long as ${e}, it gets +1/+1.`),
+  'condition.other-attached-to-host': permanent((e) => `As long as ${e}, it has first strike.`),
+  'condition.this-entered-this-turn': permanent(
+    (e) => `As long as ${e}, enchanted creature has hexproof.`,
+  ),
+  'noun.all-enchanted': spell((e) => `Destroy ${e}.`),
+  'static.equip-cost-reduction': asIs,
   // Stage P52 (D-210): the players an effect asks, and what the instructions before them did.
+  // Issue 26 (the Danitha deck, D-403): the condition of the second sentence of an offer to put a card onto the battlefield.
+  'condition.you-dont-put-it-onto-battlefield': spell(
+    (e) =>
+      `Choose target permanent card in your graveyard. You may put it onto the battlefield. If ${e}, put it into your hand.`,
+  ),
+  // Issue 26 (the Danitha deck, D-411, D-412): the riders of a choice among the cards a mill moved.
+  'condition.if-you-dont': permanent(
+    (e) =>
+      `When ~ enters, mill three cards. You may put a land card from among them into your hand. If ${e}, put a +1/+1 counter on ~.`,
+  ),
+  'condition.control-or-returned': spell(
+    (e) =>
+      `Mill four cards. You may put a permanent card from among them into your hand. If ${e}, create a Food token.`,
+  ),
   'condition.player-declines': permanent(
     (e) => `When ~ enters, target opponent may have you draw a card. If ${e}, you gain 1 life.`,
   ),
@@ -639,6 +693,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.create-copy-spirit': permanent(
     (e) => `Whenever another nontoken creature you control dies, exile it. If you do, ${e}`,
   ),
+  // Gisa deck, group 3 (D-486, D-488, D-490): the subject "any number of target players each", the cost "Sacrifice X creatures" and "Partner with [name]".
+  'noun.any-number-target-players': spell((e) => `${cap(e)} lose 2 life.`),
+  'noun.x-permanents': permanent((e) => `{T}, Sacrifice ${e}: Draw X cards.`),
+  'keyword.partner-with': asIs,
+  // D-492: the optional sacrifice and the copies are one statement of a spell.
+  'static.additional-cost-sacrifice-copies': spell((e) => e),
   'noun.that-token': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,

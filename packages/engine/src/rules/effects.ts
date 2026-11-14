@@ -5,7 +5,7 @@
  * It implements exactly the effect kinds in SUPPORTED_FEATURES. There is no "not implemented"
  * path: a card using any other kind is rejected by validateCard before it can be supported.
  */
-import type { Effect, ObjectSelector } from '../ast/types';
+import type { Effect, ObjectFilter, ObjectSelector } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
 import type { GameEvent } from '../state/events';
@@ -38,6 +38,7 @@ import { asking, runDealDamage, runDealDividedDamage } from './damage-effects';
 import { askingFlow, type OrderFlow, quietFlow } from './damage-order';
 import { derive } from './derive';
 import { UNEARTH_EXILE_ABILITY } from './derive-alt';
+import { settleDestruction } from './destroy-replacement';
 import { runDraw } from './draw';
 import { runDrawUpTo } from './draw-up-to';
 import {
@@ -54,6 +55,7 @@ import { createEmblem } from './emblem';
 import { runEmpowerJace } from './empower';
 import { runEnterAttacking } from './enter-attacking';
 import { runEnterToken } from './enter-token';
+import { markExileOnResolve } from './exile-on-resolve';
 import { runExileRandomFromHand } from './exile-random-hand';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
@@ -77,7 +79,8 @@ import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
-import { regenerateInstead, runRegenerate } from './regenerate';
+import { givesProtectionOfChoice, runProtectionColor } from './protection-choice';
+import { runRegenerate } from './regenerate';
 import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
@@ -154,6 +157,9 @@ export function runInstruction(
   if (instruction.kind === 'auraEntry') return runAuraEntry(state, res, instruction);
   if (instruction.kind === 'reselectAttack') return runReselectAttack(state, res, instruction);
   if (instruction.kind === 'chooseOne') return runChooseOne(state, res, instruction);
+  if (instruction.kind === 'protectionColor') {
+    return runProtectionColor(state, res, instruction, contextOf(state, res), targets);
+  }
   if (instruction.kind === 'vote') return runVote(state, res, instruction);
   if (instruction.kind === 'ringTempts') return runRingTempts(state, res, instruction);
   if (instruction.kind === 'pair') return runPair(state, res, instruction);
@@ -166,7 +172,7 @@ export function runInstruction(
   if (instruction.kind === 'copyFromCards') return runCopyFromCards(state, res, instruction);
   if (instruction.kind === 'search') return runSearch(state, res, instruction);
   if (instruction.kind === 'shuffle') {
-    const r = shuffleLibrary(state, instruction.seat);
+    const r = shuffleLibrary(state, instruction.seat, instruction.keep);
     return done(r.state, r.events);
   }
   if (instruction.kind === 'discard') return runDiscard(state, res, instruction);
@@ -477,15 +483,9 @@ function graveyardSuccessors(state: GameState, id: ObjectId): readonly ObjectId[
   return found.length > 0 ? found : [id];
 }
 
-function runEffect(
-  state: GameState,
-  res: ResolutionContext,
-  effect: Effect,
-  targets: readonly ChosenTarget[],
-  flow: OrderFlow,
-): StepOutcome {
-  // "This" is the spell, or for an ability the permanent it belongs to (which may be gone).
-  const ctx: SelectContext = {
+/** The context the selectors and amounts of a resolving spell or ability read: "this" is the spell, or for an ability the permanent it belongs to (which may be gone). */
+function contextOf(state: GameState, res: ResolutionContext): SelectContext {
+  return {
     controller: res.controller,
     source: res.source,
     // CR 107.3a: the X announced for the spell or ability that is resolving.
@@ -501,6 +501,16 @@ function runEffect(
     ...(res.thisWay === undefined ? {} : { thisWay: res.thisWay }),
     ...(res.votes === undefined ? {} : { votes: res.votes }),
   };
+}
+
+function runEffect(
+  state: GameState,
+  res: ResolutionContext,
+  effect: Effect,
+  targets: readonly ChosenTarget[],
+  flow: OrderFlow,
+): StepOutcome {
+  const ctx = contextOf(state, res);
   const events: GameEvent[] = [];
   let next = state;
 
@@ -528,11 +538,20 @@ function runEffect(
         );
       });
       // CR 701.19a (D-120): a regeneration shield replaces the destruction, unless it "can't be regenerated"
-      // (CR 701.19c). The shields are used as the destruction happens, before anything is moved.
+      // (CR 701.19c); so does the Umbra armor of an Aura on it (CR 702.89a, D-417). The shields are used as the destruction
+      // happens, before anything is moved. With two or more effects the controller of the permanent chooses (CR 616.1, D-418):
+      // the instruction asks and runs again from this state with the answer.
       const destroyed: ObjectId[] = [];
       for (const id of ids) {
-        const replaced = effect.cantBeRegenerated === true ? null : regenerateInstead(next, id);
-        if (replaced === null) {
+        const replaced = settleDestruction(
+          next,
+          id,
+          effect.cantBeRegenerated === true,
+          flow,
+          'resolution',
+        );
+        if (replaced.kind === 'asked') return asking(state, replaced);
+        if (replaced.kind === 'destroyed') {
           destroyed.push(id);
           continue;
         }
@@ -576,6 +595,9 @@ function runEffect(
           effect.player === undefined
             ? [undefined]
             : resolvePlayers(state, effect.player, ctx, targets);
+        // D-485 (CR 608.2b, 701.21a): a player named by a selector that names nobody now ("any number of target players" with none chosen, a target that has left the game)
+        // sacrifices nothing; the controller of the effect does not take their place.
+        if (effect.player !== undefined && sacrificers.length === 0) return done(state);
         // D-131: the number may be an amount ("each player sacrifices X creatures"), read as the effect runs.
         // D-135: "any number" is no number at all: the player chooses none to all of the candidates.
         const count = what.anyNumber === true ? 0 : amountOf(state, what.count ?? 1, ctx, targets);
@@ -717,6 +739,8 @@ function runEffect(
                 to: effect.to,
                 position: effect.position ?? 'top',
                 ...(effect.objects.optional === true ? { optional: true as const } : {}),
+                // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
+                ...(effect.objects.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
                 ...(effect.to === 'battlefield'
                   ? {
                       tapped: effect.tapped ?? false,
@@ -874,6 +898,29 @@ function runEffect(
       // D-337 (CR 707.10, 903.8): "copy it for each time you've cast your commander from the command zone this game": the count is read as this resolves; none
       // when it is zero (copyInstructions makes nothing for it).
       const copies = effect.count === undefined ? 1 : amountOf(state, effect.count, ctx, targets);
+      // D-438 (CR 707.10, 707.10e): "copy that spell for each other creature you control that the spell could target": the stack finds the permanents and makes a copy for each
+      // (`rules/copy-spell.ts`, which reads the legal targets of the spell); "that player copies" is the copy of the player the event is about.
+      if (effect.forEach !== undefined) {
+        const copier = effect.copier === 'triggerPlayer' ? ctx.triggerPlayer : undefined;
+        if (effect.copier === 'triggerPlayer' && copier === undefined) return done(state);
+        return {
+          ...done(
+            state,
+            [],
+            spells.map((id) => ({
+              kind: 'copySpell' as const,
+              spell: id,
+              count: 0,
+              newTargets: 'no' as const,
+              stage: 'each' as const,
+              copy: null,
+              forEach: effect.forEach as ObjectFilter,
+              ...(copier === undefined ? {} : { controller: copier }),
+            })),
+          ),
+          performed: spells.length,
+        };
+      }
       return {
         ...done(
           state,
@@ -882,6 +929,12 @@ function runEffect(
         ),
         performed: copies > 0 ? spells.length : 0,
       };
+    }
+
+    case 'exileOnResolve': {
+      // D-439 (CR 614.1a, 608.2n): the spell whose casting caused the trigger carries the replacement from now on (`rules/exile-on-resolve.ts`).
+      const spells = resolveObjects(state, effect.spell, ctx, targets);
+      return done(markExileOnResolve(state, spells, res.controller, res.source));
     }
 
     case 'changeTarget': {
@@ -938,6 +991,25 @@ function runEffect(
       // next upkeep": the card is the one the dying creature became, found now (in the graveyard, where it is expected, as `triggerCard` reads it); one that
       // is gone from there when the ability triggers is a new object and is not found. A commander that went to the command zone (CR 903.9a) is not in the
       // graveyard, and a token that died has ceased to exist (CR 111.8): nothing is created for them.
+      // D-459 (CR 603.7c, 400.7j): "Exile it at the beginning of the next end step", about the permanents the effect before it put onto the battlefield (`moved`): one
+      // delayed ability for each, named by the permanent as it is now (the ability is about that object: once it has changed zones it is a new object and nothing happens,
+      // CR 603.7c, 400.7), as Unearth's is.
+      if (effect.effect.kind === 'exile' && effect.effect.objects.kind === 'moved') {
+        const ability: TriggeredAbility = {
+          kind: 'triggered',
+          trigger,
+          effect: { kind: 'exile', objects: { kind: 'this' } },
+        };
+        return done({
+          ...state,
+          delayedTriggers: [
+            ...state.delayedTriggers,
+            ...(res.lastMoved ?? [])
+              .filter((id) => state.objects[id]?.zone === 'battlefield')
+              .map((id) => ({ source: id, controller: res.controller, ability })),
+          ],
+        });
+      }
       if (effect.effect.kind === 'moveToZone') {
         const back: Effect = { ...effect.effect, objects: { kind: 'triggerSubject' } };
         const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: back };
@@ -1047,7 +1119,8 @@ function runEffect(
     case 'delayedSacrifice': {
       // CR 603.7, 701.54c (D-196): about the creature whose event triggered the ability (the blocker): at the end of combat its controller
       // sacrifices it. The delayed ability belongs to the controller of the Ring's ability and names that creature (CR 603.7c).
-      const blocker = res.triggerSubject;
+      // D-478 (CR 702.147a): `of: 'this'` is the creature with the ability (Decayed): the one that attacked.
+      const blocker = effect.of === 'this' ? res.source : res.triggerSubject;
       if (blocker === undefined) return done(state);
       const ability: TriggeredAbility = {
         kind: 'triggered',
@@ -1061,6 +1134,18 @@ function runEffect(
           { source: blocker, controller: res.controller, ability },
         ],
       });
+    }
+
+    case 'exileIfLeaves': {
+      // CR 614.1a, 614.6 (D-459): "If it would leave the battlefield, exile it instead of putting it anywhere else": each permanent the effect before it put onto the
+      // battlefield is marked; `moveObject` exiles it when it would go anywhere else. A token the effect named is marked too (it ceases to exist in exile, CR 111.8).
+      let next = state;
+      for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
+        if (next.objects[id]?.zone === 'battlefield') {
+          next = patchObject(next, id, { exileIfLeaves: true });
+        }
+      }
+      return done(next);
     }
 
     case 'becomeMonarch': {
@@ -1590,6 +1675,33 @@ function runEffect(
       return { ...done(patchObject(state, source.id, { level: effect.level })), performed: 1 };
     }
 
+    case 'monstrosity': {
+      // CR 701.37a (D-445): "If this permanent isn't monstrous, put N +1/+1 counters on it and it becomes monstrous": the permanent the ability belongs to, if it is still on the
+      // battlefield. A permanent that can't have the counters (D-380) still becomes monstrous.
+      const source = res.source === null ? undefined : state.objects[res.source];
+      if (source?.zone !== 'battlefield' || source.monstrous === true) return done(state);
+      const count = amountOf(state, effect.count, ctx, targets);
+      let afterCounters = state;
+      const monstrousEvents: GameEvent[] = [];
+      if (count > 0 && !blocks(state, counterBlockers(state), source, '+1/+1')) {
+        afterCounters = patchObject(afterCounters, source.id, {
+          counters: { ...source.counters, '+1/+1': (source.counters['+1/+1'] ?? 0) + count },
+        });
+        monstrousEvents.push({
+          kind: 'counterAdded',
+          object: source.id,
+          counter: '+1/+1',
+          count,
+          by: ctx.controller,
+        });
+      }
+      monstrousEvents.push({ kind: 'becameMonstrous', object: source.id });
+      return {
+        ...done(patchObject(afterCounters, source.id, { monstrous: true }), monstrousEvents),
+        performed: 1,
+      };
+    }
+
     case 'exileRandomFromGraveyard': {
       // CR 701.13 (D-235): one card of the controller's graveyard, chosen by the game's random number generator.
       const yard = getSeat(state, res.controller).graveyard;
@@ -1624,7 +1736,20 @@ function runEffect(
 
     case 'sparePermanents':
       // D-231: "For each player, you choose ... Then each player sacrifices all other nonland permanents they control" (rules/spare.ts).
-      return done(state, [], [startSpare(state, effect.types)]);
+      // D-484: with `own` the players the selector names choose among their own permanents and sacrifice the rest, lands too.
+      return done(
+        state,
+        [],
+        [
+          startSpare(
+            state,
+            effect.types,
+            effect.own === undefined
+              ? undefined
+              : resolvePlayers(state, effect.own.players, ctx, targets),
+          ),
+        ],
+      );
 
     case 'exileOwnGraveyardCard': {
       // CR 701.13, 101.4 (D-231): each player named chooses a card of their own graveyard, in turn order from the active player; it is exiled.
@@ -1720,6 +1845,8 @@ function runEffect(
               : { totalManaValue: effect.take.totalManaValue }),
             // D-324 (CR 701.20a): "Put two of them into your hand" does not reveal them.
             ...(effect.take.hidden === true ? { hidden: true as const } : {}),
+            // CR 701.20a (D-396): "Reveal the top five cards of your library" shows every one of them.
+            ...(effect.revealAll === true ? { revealAll: true as const } : {}),
             rest: effect.rest,
             chosen: null,
           },
@@ -1991,6 +2118,10 @@ function runEffect(
     case 'grantAbility':
     case 'grantKeyword':
     case 'restrict':
+      // D-451 (CR 702.16, 608.2d): "gains protection from the color of your choice": the controller chooses the color first (rules/protection-choice.ts).
+      if (givesProtectionOfChoice(effect)) {
+        return done(state, [], [{ kind: 'protectionColor', effect, chosen: null }]);
+      }
       // CR 611.2, 613: "gets +N/+N until end of turn", "loses all abilities", "becomes a Frog" and
       // the rest are continuous effects in the game state, applied by `derive` in their layers.
       return runContinuous(state, effect, ctx, targets);

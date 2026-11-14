@@ -77,6 +77,8 @@ function whereWords(d: SearchEffect['destinations'][number]): string {
       return 'into your hand';
     case 'graveyard':
       return 'into your graveyard';
+    case 'library':
+      return 'on top of your library';
     default: {
       const unreachable: never = d.zone;
       return unreachable;
@@ -116,6 +118,12 @@ export function describeSearch(search: SearchEffect): string {
     start += c.taken;
   }
   const reveal = search.reveal ? ' The cards you find are revealed.' : '';
-  const shuffle = search.shuffle ? ' Then your library is shuffled.' : '';
+  // D-405 (CR 701.24b): a card put on top is left out of the shuffle, which comes first.
+  const onTop = search.destinations.some((d) => d.zone === 'library');
+  const shuffle = !search.shuffle
+    ? ''
+    : onTop
+      ? ' The rest of your library is shuffled first.'
+      : ' Then your library is shuffled.';
   return `Choose up to ${numberWord(search.max)} ${noun}; ${clauses.join(', ')}.${reveal}${shuffle}`;
 }

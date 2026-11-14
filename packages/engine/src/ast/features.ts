@@ -111,6 +111,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpentRiderCopy',
     // D-327: "Mill a card. You may play that card this turn." (`mayPlay` of the cards a `mill` put into the graveyard).
     'mayPlayFromGraveyard',
+    // D-411: "Mill four cards. You may put a land card from among them into your hand." (`ChooseSelector.fromMoved`: the choice among the cards `moved` names).
+    'chooseAmongMoved',
+    // D-433: "Tiered", a mode with a cost listed before its effect (`SpellMode.cost`, CR 700.2h, 702.183a).
+    'modeCost',
+    // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
+    'sacrificeX',
+    // D-491: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
+    'optionalSacrifice',
   ],
   effectKinds: [
     'sequence',
@@ -134,6 +142,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'phaseOut',
     // D-235: the level bar of a Class (CR 716) and "exile a card from your graveyard at random".
     'gainLevel',
+    // D-445: "Monstrosity N" (CR 701.37).
+    'monstrosity',
     'exileRandomFromGraveyard',
     // D-393 (provisional): "that source's controller exiles a card from their hand at random" (CR 701.13).
     'exileRandomFromHand',
@@ -201,6 +211,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cascade',
     // D-129: copying a spell (CR 707.10) and Storm (CR 702.40a), the effect of the engine's expansion of the keyword.
     'copySpell',
+    // D-439: "exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (`exileOnResolve`).
+    'exileOnResolve',
     // D-181: "Change the target of target spell or ability with a single target" (CR 115.7a).
     'changeTarget',
     'storm',
@@ -248,6 +260,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-201: "You get an emblem with ..." (CR 114).
     'createEmblem',
     'delayedSacrifice',
+    // D-459: "If it would leave the battlefield, exile it instead of putting it anywhere else" (CR 614.1a).
+    'exileIfLeaves',
     // D-145: "reveal cards from the top of your library until you reveal a land card. Put it onto the battlefield tapped and the rest
     // on the bottom in a random order" (CR 701.20).
     'revealUntil',
@@ -326,6 +340,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cycled',
     // D-196: "Whenever the Ring tempts you" (CR 701.54d).
     'ringTempted',
+    // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
+    'crimeCommitted',
+    'tokenCreated',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -376,6 +393,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'changeling',
     'devoid',
     'partner',
+    // D-490: "Partner with [name]" (CR 702.124j): the engine builds its enters trigger.
+    'partnerWith',
     'chooseBackground',
     // D-200: "~ can be your commander".
     'canBeCommander',
@@ -385,6 +404,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'soulbond',
     'exalted',
     'annihilator',
+    // D-472: Afflict N (CR 702.130).
+    'afflict',
     // D-230: Backup N (CR 702.165).
     'backup',
     'persist',
@@ -436,6 +457,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'readAhead',
     'dethrone',
     'myriad',
+    // D-478: Decayed (CR 702.147).
+    'decayed',
   ],
   // D-100: `asEntersChoose` ("As this enters, choose a creature type / a color").
   replacementKinds: [
@@ -464,6 +487,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'skipDraw',
     // D-379 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
     'drawInstead',
+    // D-417 (CR 702.89a): "Umbra armor".
+    'umbraArmor',
   ],
   // {T}, "Sacrifice this permanent" (a Treasure, CR 111.10a) and mana ({1}, {T}: a Signet). A mana
   // cost is paid from the pool, or by auto-pay from sources that have no mana cost themselves.
@@ -533,10 +558,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrifice',
     'removeCounters',
     'discardThis',
+    // D-462: "Reveal this card from your hand" as the cost of an ability that functions from the hand (CR 701.20a).
+    'revealThis',
     'discard',
     'tapCreatures',
     // D-133: "Tap three untapped Zombies you control".
     'tapPermanents',
+    // D-407 (CR 701.68): "Blight 1" as the cost of an activated ability.
+    'blight',
     // D-139: "Put a page counter on this artifact" and "Return an artifact you control to its owner's hand" as costs.
     'putCounters',
     'returnToHand',
@@ -582,6 +611,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notCastFromHand',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
+    // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
+    'attachedTo',
+    'enchanted',
+    'hostOfSource',
     // D-261: "a creature card that shares a creature type with it" (`ObjectFilter.sharesCreatureTypeWith`).
     'sharesCreatureTypeWith',
     // D-262: "up to two basic land cards that share a land type" (`search.sharedLandType`).
@@ -590,6 +623,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'singleTarget',
     // D-206: "an instant or sorcery spell that targets a creature" (`ObjectFilter.targetsObject`).
     'targetsObject',
+    // D-437: "a spell that targets only this creature" and "a spell that targets this creature" (`ObjectFilter.targetsOnly`, `isSource`).
+    'targetsOnly',
+    'isSource',
+    // D-438: "copy that spell for each other creature you control that the spell could target" (`copySpell.forEach`, `copier`).
+    'copyForEach',
     'moved',
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
@@ -610,6 +648,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-120: `ObjectFilter.attacking` and `powerLessThanSource`.
     'attacking',
     'powerLessThanSource',
+    // D-431: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
+    'powerAboveBase',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
     // opponent", `all`) and a creature that deals the damage (`dealDamage.from`, a "bite").
     'attackingYou',
@@ -657,6 +697,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-145: "with a counter on it" (`ObjectFilter.hasCounter`), "target commander" (`ObjectFilter.commander`).
     'hasCounter',
     'commander',
+    // D-416 (CR 700.9): "modified creature" (`ObjectFilter.modified`).
+    'modified',
   ],
   // Conditions of `entersTapped.unless` (CR 614.12), of the `conditional` effect (CR 608.2c) and of
   // the intervening "if" (CR 603.4): counts of permanents and opponents, "was kicked" (CR 702.33d),
@@ -667,6 +709,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'kicked',
     // D-129: "if a replicate cost was paid for it" (CR 702.56a).
     'replicated',
+    // D-491: "if you sacrificed one or more creatures to cast it" (`Cost` `sacrifice` with `anyNumber`).
+    'sacrificedAsCost',
     'controlCommander',
     'sourceHasCounter',
     // D-120: "that creature's power or toughness is greater than this creature's" (Evolve).
@@ -720,7 +764,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sameNameAtLeast',
     // D-151: "two or more nonland permanents entered the battlefield under your control this turn", "an opponent was dealt 7 or more damage".
     'enteredThisTurn',
+    // D-423: "as long as this Aura entered this turn".
+    'thisEnteredThisTurn',
     'playerDealtDamage',
+    // D-475: "if a player was dealt combat damage by a Zombie this turn".
+    'combatDamagedBy',
     // D-252: "if you gained 3 or more life this turn".
     'lifeGainedThisTurn',
     // D-318: "Activate only if you've cast three or more spells this turn".
@@ -776,6 +824,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantAbility',
     'restriction',
     'costReduction',
+    // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
+    'abilityCostReduction',
     'setTypes',
     // D-133: "You may cast this card from your graveyard as long as you control a Zombie."
     'castFromGraveyard',
@@ -869,8 +919,13 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerDamage',
     // D-194: "the number of profit votes" (CR 701.38a).
     'votesFor',
+    // D-450: "for each card you've drawn this turn" (CR 121.1).
+    'cardsDrawnThisTurn',
+    // D-491: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
+    'sacrificedAsCost',
   ],
-  searchDestinationKinds: ['battlefield', 'hand', 'graveyard'],
+  // D-405: 'library' is "then shuffle and put that card on top".
+  searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library'],
   // D-121, D-124: the named alternative costs (Overload, Evoke, Dash, Spectacle, Escape).
   castAlternatives: [
     'flashback',
@@ -921,9 +976,15 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'wither',
   // D-120: read straight from the derived abilities by the blocker check.
   'skulk',
+  // D-478: Decayed is the keyword of a token ("a 2/2 black Zombie creature token with decayed") and a keyword counter; `derive` expands a granted one (CR 702.147a).
+  'decayed',
   // D-185: Riot is read from the permanents on the battlefield as a permanent enters (`rules/enters-keywords.ts`), so only a static ability that
   // names a group can give it ("Nontoken creatures you control have riot"): an effect, an attached subject and an "enters as a copy" are refused.
   'riot',
+  // D-472: Afflict N (CR 702.130): each instance granted is a triggered ability of its own (CR 702.130b), like exalted's.
+  'afflict',
+  // D-473: landwalk (CR 702.14): the land type is part of the keyword, and one kind twice is redundant (CR 702.14e).
+  'landwalk',
 ];
 
 /**
@@ -1003,6 +1064,14 @@ export const ABILITY_FEATURES = [
   'manaSpentRiderCopy',
   /** "Mill a card. You may play that card this turn" (D-327, CR 601.2, 305.1): the engine's `mayPlay` of a card a `mill` put into its owner's graveyard. */
   'mayPlayFromGraveyard',
+  /** "Mill four cards. You may put a land card from among them into your hand" (D-411, CR 608.2c, 608.2d): the engine's `ChooseSelector.fromMoved` of a `moveToZone`. */
+  'chooseAmongMoved',
+  /** "Tiered" (D-433, CR 700.2h, 702.183a): a mode of a modal spell with a cost listed before its effect, paid as an additional cost when the mode is chosen (`SpellMode.cost`). */
+  'modeCost',
+  /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
+  'sacrificeX',
+  /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-491, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
+  'optionalSacrifice',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 
@@ -1064,12 +1133,24 @@ export const SELECTOR_KINDS = [
   'putFromBattlefieldThisTurn',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
+  /** "Aura attached to it", "attached to enchanted creature", "attached to a creature" (CR 303.4, 301.5, 701.3, D-422): the engine's `ObjectFilter.attachedTo`. */
+  'attachedTo',
+  /** "Creatures that aren't enchanted" (CR 303.4, D-422): the engine's `ObjectFilter.enchanted`. */
+  'enchanted',
+  /** "Enchanted creature" as the object another filter describes (CR 303.4b, D-422): the engine's `ObjectFilter.hostOfSource`. */
+  'hostOfSource',
   /** "That shares a creature type with it" (CR 205.3m, 603.10a, D-261): the engine's `ObjectFilter.sharesCreatureTypeWith`. */
   'sharesCreatureTypeWith',
   /** "Up to two basic land cards that share a land type" (CR 205.3i, 701.23, D-262): the engine's `search.sharedLandType`. */
   'sharedLandType',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
+  /** "That targets only this creature" (CR 115.9c, D-437): the engine's `ObjectFilter.targetsOnly`. */
+  'targetsOnly',
+  /** "This creature" as the object a filter describes, "that targets this creature" (D-437): the engine's `ObjectFilter.isSource`. */
+  'isSource',
+  /** "Copy that spell for each other creature you control that the spell could target", "that player copies" (CR 707.10, 707.10e, D-438): the engine's `copySpell.forEach` and `copier`. */
+  'copyForEach',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
   'singleTarget',
   /** "Spells you cast from anywhere other than your hand" (CR 601.2a, D-235): the engine's `ObjectFilter.notCastFromHand`. */
@@ -1098,6 +1179,8 @@ export const SELECTOR_KINDS = [
   'attacking',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
+  /** "With power greater than its base power" (CR 208.4b, D-431): the engine's `ObjectFilter.powerAboveBase`. */
+  'powerAboveBase',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */
   'attackingYou',
   /** "Creatures attacking your opponents and/or planeswalkers they control" (D-218): the engine's `ObjectFilter.attackingOpponents`. */
@@ -1153,6 +1236,8 @@ export const SELECTOR_KINDS = [
   'hasCounter',
   /** "Target commander" (CR 903.3, D-145): the engine's `ObjectFilter.commander`. */
   'commander',
+  /** "Modified creature" (CR 700.9, D-416): the engine's `ObjectFilter.modified`. */
+  'modified',
 ] as const;
 export type SelectorKind = (typeof SELECTOR_KINDS)[number];
 
@@ -1165,6 +1250,8 @@ export const CONDITION_KINDS = [
   'kicked',
   /** "If a replicate cost was paid for it" (CR 702.56a): the engine's `replicated`. */
   'replicated',
+  /** "If you sacrificed one or more creatures to cast it" (CR 118.8, D-491): the engine's `sacrificedAsCost`. */
+  'sacrificedAsCost',
   /** "If you control a commander" (CR 903.3d): the engine's `controlCommander`. */
   'controlCommander',
   /** "If it had no -1/-1 counters on it" (CR 702.79a, as `not` of this): the engine's `sourceHasCounter`. */
@@ -1223,8 +1310,12 @@ export const CONDITION_KINDS = [
   'sameNameAtLeast',
   /** "Two or more nonland permanents entered the battlefield under your control this turn" (D-151): the engine's `enteredThisTurn`. */
   'enteredThisTurn',
+  /** "As long as this Aura entered this turn" (CR 400.7, D-423): the engine's `thisEnteredThisTurn`. */
+  'thisEnteredThisTurn',
   /** "An opponent was dealt 7 or more damage this turn" (D-151): the engine's `playerDealtDamage`. */
   'playerDealtDamage',
+  /** "If a player was dealt combat damage by a Zombie this turn" (CR 120.2a, D-475): the engine's `combatDamagedBy`. */
+  'combatDamagedBy',
   /** "If you gained 3 or more life this turn" (D-252): the engine's `lifeGainedThisTurn`. */
   'lifeGainedThisTurn',
   /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
@@ -1294,6 +1385,8 @@ export const STATIC_KINDS = [
   'untapInOthersUntapStep',
   /** "~ costs {1} less to cast for each ...", "Artifact spells you cast cost {1} less" (D-095): the engine's `costReduction`. */
   'costReduction',
+  /** "Equip abilities you activate that target enchanted creature cost {3} less to activate." (CR 601.2f, 602.2b, 702.6a, D-425): the engine's `abilityCostReduction`. */
+  'abilityCostReduction',
   /** "~ is the chosen type in addition to its other types." (D-100): the engine's `setTypes` static, layer 4. */
   'setTypes',
   /** "~'s power and toughness are each equal to the number of ..." (CR 604.3, D-115): a characteristic-defining ability, layer 7a. */
@@ -1431,6 +1524,10 @@ export const AMOUNT_KINDS = [
   'triggerDamage',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
   'votesFor',
+  /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
+  'cardsDrawnThisTurn',
+  /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491): the engine's `sacrificedAsCost`. */
+  'sacrificedAsCost',
   'bound',
 ] as const;
 export type AmountKind = (typeof AMOUNT_KINDS)[number];
@@ -1510,6 +1607,10 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaDistinctColors: true,
   manaSpentRiderCopy: true,
   mayPlayFromGraveyard: true,
+  chooseAmongMoved: true,
+  modeCost: true,
+  sacrificeX: true,
+  optionalSacrifice: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,
@@ -1538,6 +1639,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   returnGraveyardPair: true,
   phaseOut: true,
   gainLevel: true,
+  monstrosity: true,
   exileRandomFromGraveyard: true,
   exileRandomFromHand: true,
   becomeCopyOfCard: true,
@@ -1586,6 +1688,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   mayPay: true,
   cascade: true,
   copySpell: true,
+  exileOnResolve: true,
   changeTarget: true,
   storm: true,
   replicate: true,
@@ -1615,6 +1718,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   amass: true,
   createEmblem: true,
   delayedSacrifice: true,
+  exileIfLeaves: true,
   proliferate: true,
   exileTop: true,
   mayPlay: true,
@@ -1661,6 +1765,8 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   attackBatch: true,
   cycled: true,
   ringTempted: true,
+  crimeCommitted: true,
+  tokenCreated: true,
   interveningIf: true,
   alone: true,
   attacksAt: true,
@@ -1702,12 +1808,14 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   changeling: true,
   devoid: true,
   partner: true,
+  partnerWith: true,
   chooseBackground: true,
   canBeCommander: true,
   ascend: true,
   soulbond: true,
   exalted: true,
   annihilator: true,
+  afflict: true,
   backup: true,
   persist: true,
   undying: true,
@@ -1746,6 +1854,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   readAhead: true,
   dethrone: true,
   myriad: true,
+  decayed: true,
 };
 const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   entersTapped: true,
@@ -1763,6 +1872,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   redirectDamage: true,
   skipDraw: true,
   drawInstead: true,
+  umbraArmor: true,
 };
 const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   fixed: true,
@@ -1785,9 +1895,11 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   sacrifice: true,
   discard: true,
   discardThis: true,
+  revealThis: true,
   exileThis: true,
   tapCreatures: true,
   tapPermanents: true,
+  blight: true,
   exileFromGraveyard: true,
   removeCounters: true,
   loyalty: true,

@@ -88,10 +88,14 @@ type CostedKeyword =
  * other cost for the last two, though the engine could pay life or a discard for Cumulative upkeep); any
  * other cost, and a list of costs, is not lowered.
  */
-/** The equip cost that is a mana cost and a payment of life: the engine pays both as the ability is activated (CR 602.2b, 118.1). */
+/**
+ * The equip cost that is a mana cost and a payment of life: the engine pays both as the ability is activated (CR 602.2b, 118.1). The same two costs make a ward cost, "Ward—{2}, Pay 2
+ * life." (D-467, CR 702.21a): the engine pays the life and then the mana as the ward ability resolves (`rules/pay-unless.ts`).
+ */
 function lowerEquipCosts(
   ability: IrKeyword,
   written: readonly IrCost[],
+  name: 'equip' | 'ward' = 'equip',
 ): LowerResult<readonly Ability[]> {
   const kinds = written.map((c) => c.kind);
   if (kinds.length !== 2 || !kinds.includes('mana') || !kinds.includes('payLife')) {
@@ -105,14 +109,14 @@ function lowerEquipCosts(
   }
   const blocked = gate(ability, [
     'ability:keyword',
-    'keyword:equip',
+    `keyword:${name}`,
     ...costs.map((c) => `cost:${c.kind}` as FeatureRef),
   ]);
   if (blocked !== null) return blocked;
   return {
     ok: true,
-    value: [{ kind: 'keyword', keyword: { kind: 'equip', cost: costs } }],
-    rule: KEYWORD_RULE.equip,
+    value: [{ kind: 'keyword', keyword: { kind: name, cost: costs } }],
+    rule: KEYWORD_RULE[name],
   };
 }
 
@@ -124,6 +128,10 @@ function lowerCostedKeyword(
   // "Equip—{2}, Pay 2 life." (stage P35, D-176, CR 702.6a): a mana cost and a payment of life, each once.
   if (name === 'equip' && only !== undefined && more.length === 1 && ability.params.length === 0) {
     return lowerEquipCosts(ability, [only, ...more]);
+  }
+  // "Ward—{2}, Pay 2 life." (Gisa deck, D-467, CR 702.21a): a mana cost and a payment of life, each once.
+  if (name === 'ward' && only !== undefined && more.length === 1 && ability.params.length === 0) {
+    return lowerEquipCosts(ability, [only, ...more], 'ward');
   }
   if (only === undefined || more.length > 0 || ability.params.length > 0) return failure(ability);
   // A cost the engine does not pay for this keyword is refused at the keyword, whatever else it is.
@@ -301,7 +309,7 @@ function lowerCrew(ability: IrKeyword, ctx: LowerContext): LowerResult<readonly 
  */
 function lowerNumbered(
   ability: IrKeyword,
-  kind: 'toxic' | 'annihilator' | 'bushido' | 'hideaway' | 'devour' | 'backup',
+  kind: 'toxic' | 'annihilator' | 'afflict' | 'bushido' | 'hideaway' | 'devour' | 'backup',
 ): LowerResult<readonly Ability[]> {
   const [count, ...more] = ability.params;
   if (count?.kind !== 'number' || more.length > 0 || ability.cost !== undefined) {
@@ -426,6 +434,7 @@ export function lowerKeyword(
   if (
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||
+    ability.name === 'afflict' ||
     ability.name === 'bushido' ||
     ability.name === 'hideaway' ||
     ability.name === 'devour' ||
@@ -434,6 +443,18 @@ export function lowerKeyword(
     return lowerNumbered(ability, ability.name);
   }
   if (ability.name === 'affinity') return lowerAffinity(ability);
+  // CR 702.124j (D-490): "Partner with [name]": the keyword with the name; the engine builds its enters trigger.
+  if (ability.name === 'partnerWith') {
+    const [named] = ability.params;
+    if (ability.params.length !== 1 || named?.kind !== 'name') return failure(ability);
+    const blocked = gate(ability, ['ability:keyword', 'keyword:partnerWith']);
+    if (blocked !== null) return blocked;
+    return {
+      ok: true,
+      value: [{ kind: 'keyword', keyword: { kind: 'partnerWith', name: named.name } }],
+      rule: 'keyword.partner-with',
+    };
+  }
   if (ability.name === 'protection') return lowerProtection(ability);
   const typeSearch = typecyclingFilter(ability.name);
   if (typeSearch !== undefined) return lowerTypecycling(ability, typeSearch);
@@ -504,6 +525,12 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     if (event.condition === undefined) return built({ kind: 'skipDraw' });
     const when = lowerCondition(event.condition);
     return when.ok ? built({ kind: 'skipDraw', while: when.value }) : when;
+  }
+  if (event.verb === 'umbraArmor') {
+    // CR 702.89a (Danitha deck, D-417): the keyword of an Aura; the engine checks that the face is one.
+    const blocked = gate(ability, ['ability:replacement', 'replacement:umbraArmor']);
+    if (blocked !== null) return blocked;
+    return built({ kind: 'umbraArmor' });
   }
   if (event.verb === 'entersTappedUnlessPays') {
     const amount = event.args.amount;
@@ -693,6 +720,18 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const count = event.args.count;
     const counter = event.args.counter;
     if (counter?.kind !== 'counterSpec') return failure(ability);
+    // "~ escapes with two +1/+1 counters on it" (D-482, CR 702.138c): the counters of a permanent that escaped, a fixed number of them.
+    if (event.args.escapes?.kind === 'flag') {
+      if (count?.kind !== 'number') return failure(ability);
+      const blocked = gate(ability, ['ability:replacement', 'replacement:entersWithCounters']);
+      if (blocked !== null) return blocked;
+      return built({
+        kind: 'entersWithCounters',
+        counter: counter.name,
+        count: count.value,
+        ifEscaped: true,
+      });
+    }
     // "enters with X counters" (stage P16, D-103, CR 107.3m): the X of the spell the permanent came
     // from, so the card needs an {X} in its mana cost (`validateCard` checks it, CR 107.3g).
     if (count?.kind === 'x') {
@@ -764,7 +803,7 @@ export function lowerModalSpell(
   ability: Extract<IrAbility, { kind: 'modal' }>,
   ctx: LowerContext,
 ): LowerResult<SpellParts> {
-  const lowered = lowerModes(ability, ctx);
+  const lowered = lowerModes(ability, ctx, true);
   if (!lowered.ok) return lowered;
   const { modes, chooseModes, usesX } = lowered.value;
   return {
@@ -784,6 +823,8 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:typecycling',
   'keyword:toxic',
   'keyword:annihilator',
+  'keyword:afflict',
+  'keyword:partnerWith',
   'keyword:bushido',
   'keyword:affinity',
   'keyword:flashback',
@@ -819,4 +860,5 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:skipDraw',
   'replacement:tokensInstead',
   'replacement:drawInstead',
+  'replacement:umbraArmor',
 ];

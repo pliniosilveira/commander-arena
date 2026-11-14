@@ -279,6 +279,32 @@ export function searchPrompt(sourceName: string, caster: 'you' | 'other'): strin
 }
 
 /**
+ * "You may put it onto the battlefield" of a card an earlier sentence of the spell chose as its target (D-403, Cosmic Rebirth: "If it has mana value 3 or less, you may put it
+ * onto the battlefield. If you don't put it onto the battlefield, put it into your hand."): worded "Put Grizzly Bears onto the battlefield? If you don't, it goes into your hand.",
+ * from the spell on the stack (its text and the card it targets). Null for any other plain question, and when the target is not shown (never guessed).
+ */
+export function mayPutOntoBattlefieldPrompt(
+  d: ConfirmOptionalDecision,
+  index: Index,
+): string | null {
+  if (d.purpose !== undefined || d.cost !== undefined) return null;
+  const spell = index.get(d.source);
+  if (
+    spell === undefined ||
+    !/you may put it onto the battlefield\. If you don['’]t put it onto the battlefield, put it into your hand/iu.test(
+      spell.oracleText,
+    )
+  ) {
+    return null;
+  }
+  const target = spell.targets.find((t) => t.kind === 'object');
+  const card = target?.kind === 'object' ? index.get(target.id)?.name : undefined;
+  return card === undefined
+    ? null
+    : `Put ${card} onto the battlefield? If you don't, it goes into your hand.`;
+}
+
+/**
  * The name and rules text the question quotes. A land played from the hand as the back face of a
  * modal double-faced card (`face` set, CR 712.12) is still the front face in the hand, so the
  * decision's `sourceName` and `sourceOracleText` read the front face: the face being played is
@@ -483,6 +509,15 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
   const behold = mayBeholdPrompt(d, index);
   if (behold !== null) {
     return { prompt: behold, yes: 'Behold', no: "Don't behold", cancellable: false };
+  }
+  const mayPut = mayPutOntoBattlefieldPrompt(d, index);
+  if (mayPut !== null) {
+    return {
+      prompt: mayPut,
+      yes: 'Put it onto the battlefield',
+      no: 'Put it into your hand',
+      cancellable: false,
+    };
   }
   const mayEffect = mayEffectPrompt(d, index);
   if (mayEffect !== null) {

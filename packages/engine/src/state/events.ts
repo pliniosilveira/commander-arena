@@ -178,6 +178,13 @@ export type GameEvent =
       readonly from: ChosenTarget;
       readonly to: ChosenTarget;
     }
+  /**
+   * `seat` committed a crime (CR 700.13, D-464): `object` is the spell they cast, the ability they activated or the triggered ability they put on the
+   * stack, and at least one of its targets is an opponent of `seat`, a permanent, spell or ability an opponent controls, or a card in an opponent's
+   * graveyard. Emitted once for the object, right after its `becameTarget` events and before its `spellCast` or `abilityActivated`; for a triggered
+   * ability, after its `abilityTriggered`. A copy of a spell is put on the stack, not cast, so it makes none.
+   */
+  | { readonly kind: 'crimeCommitted'; readonly seat: SeatId; readonly object: ObjectId }
   | {
       readonly kind: 'abilityActivated';
       readonly seat: SeatId;
@@ -249,6 +256,11 @@ export type GameEvent =
    * attacking or blocking, it was removed from combat (`removedFromCombat`).
    */
   | { readonly kind: 'regenerated'; readonly object: ObjectId }
+  /**
+   * The Umbra armor of `aura` replaced the destruction of `object` (CR 702.89a, D-417): the permanent was not destroyed and all damage marked on it was
+   * removed; the Aura is destroyed next (its own events follow: it may be indestructible or regenerate, which `regenerated` says).
+   */
+  | { readonly kind: 'umbraArmorUsed'; readonly object: ObjectId; readonly aura: ObjectId }
   | { readonly kind: 'resolved'; readonly object: ObjectId }
   /**
    * The object is removed from the stack without resolving: every target was illegal (CR 608.2b),
@@ -343,6 +355,8 @@ export type GameEvent =
       /** The player who put the counters (CR 122.6a; D-149), when one did: "whenever you put one or more +1/+1 counters on ~". */
       readonly by?: SeatId;
     }
+  /** CR 701.37a (D-445): the permanent became monstrous (the monstrosity action; the `counterAdded` event of its counters comes first). */
+  | { readonly kind: 'becameMonstrous'; readonly object: ObjectId }
   | {
       readonly kind: 'counterRemoved';
       readonly object: ObjectId;
@@ -405,7 +419,7 @@ export type GameEvent =
       readonly seat: SeatId;
       readonly source: ObjectId;
       readonly objects: readonly ObjectId[];
-      readonly purpose: 'sacrifice' | 'crew' | 'effect' | 'tap' | 'bounce' | 'fight';
+      readonly purpose: 'sacrifice' | 'crew' | 'effect' | 'tap' | 'bounce' | 'fight' | 'blight';
       readonly automatic: boolean;
       /** For purpose `'fight'` (D-145): the creature the chosen one is paired with; for the choice of what an Aura enters enchanting (D-149): the Aura. */
       readonly subject?: ObjectId;
@@ -544,7 +558,8 @@ export type GameEvent =
         | 'attackTarget'
         | 'effect'
         | 'riot'
-        | 'vote';
+        | 'vote'
+        | 'protectionColor';
       readonly option: string;
     }
   /**

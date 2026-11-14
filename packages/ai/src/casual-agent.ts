@@ -33,6 +33,7 @@ import { chooseModalTargets, chooseModesAnswer } from './casual-modes';
 import { chooseOptionAnswer } from './casual-options';
 import { choosePayOptionsAnswer } from './casual-pay-options';
 import {
+  chooseBlightCreature,
   chooseLegendToKeep,
   choosePermanentToReturn,
   choosePermanentToSacrifice,
@@ -124,15 +125,17 @@ export function createCasualHandlers(
                               ? choosePermanentToReturn(view, d)
                               : d.purpose === 'tap'
                                 ? choosePermanentToTap(view, d) // D-133: the permanents tapped for a cost
-                                : d.purpose === 'proliferate'
-                                  ? chooseProliferate(view, d) // CR 701.34a, D-149: the permanents and players that get another counter
-                                  : d.purpose === 'auraHost'
-                                    ? chooseAuraHost(view, d) // CR 303.4f, D-149: what an Aura that enters by an effect enchants
-                                    : d.purpose === 'soulbond'
-                                      ? chooseSoulbondPartner(view, d) // CR 702.95a, D-286: always pair, with the strongest creature
-                                      : d.min === 0
-                                        ? chooseAnyNumberToSacrifice(view, d) // D-135: "sacrifice any number of other permanents"
-                                        : choosePermanentToSacrifice(view, d),
+                                : d.purpose === 'blight'
+                                  ? chooseBlightCreature(view, d) // D-407: the creature that gets the -1/-1 counters of a blight cost
+                                  : d.purpose === 'proliferate'
+                                    ? chooseProliferate(view, d) // CR 701.34a, D-149: the permanents and players that get another counter
+                                    : d.purpose === 'auraHost'
+                                      ? chooseAuraHost(view, d) // CR 303.4f, D-149: what an Aura that enters by an effect enchants
+                                      : d.purpose === 'soulbond'
+                                        ? chooseSoulbondPartner(view, d) // CR 702.95a, D-286: always pair, with the strongest creature
+                                        : d.min === 0
+                                          ? chooseAnyNumberToSacrifice(view, d) // D-135: "sacrifice any number of other permanents"
+                                          : choosePermanentToSacrifice(view, d),
     chooseCards: (d) => chooseCardsFromZone(view, d),
     arrangeCards: (d) => chooseArrangement(view, d),
     orderTriggers: (d) => orderTriggersAsListed(d),

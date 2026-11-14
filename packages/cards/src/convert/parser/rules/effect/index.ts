@@ -34,13 +34,22 @@ import { CONTROL_EFFECT_RULES } from './control';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
+import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
+import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
+import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
 import { DAWNBREAK_EFFECT_RULES } from './dawnbreak';
 import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
+import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
+import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
+import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
+import { GISA_G3_EFFECT_RULES } from './gisa-g3';
+import { GISA_G4_EFFECT_RULES } from './gisa-g4';
+import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
@@ -85,6 +94,7 @@ import { PUT_RULES } from './put';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
+import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
@@ -341,6 +351,9 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile that card',
     'exile that card from your graveyard',
     'exile that creature',
+    // D-407: the permanent an Aura or Equipment is attached to.
+    'exile enchanted creature',
+    'exile equipped creature',
     "exile each opponent's graveyard",
     // Stage P33 (D-150, CR 610.3): until the permanent with the ability leaves the battlefield.
     'exile target nonland permanent an opponent controls until ~ leaves the battlefield',
@@ -388,6 +401,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.that-card',
             // Stage P63 (D-216): "If you control three or more artifacts, exile that creature." (the target of the sentence before, CR 608.2c).
             'noun.that-object',
+            // D-407 (Danitha deck): "Exile enchanted creature." (the permanent the Aura is attached to, which the engine's `attached` names).
+            'noun.attached-permanent',
           ],
           'effect.exile',
         ),
@@ -842,6 +857,11 @@ export const EFFECT_TAP = tapRule('tap');
 export const EFFECT_UNTAP = tapRule('untap');
 
 export const EFFECT_RULES = [
+  // D-438, D-439 (Feather, group 3): the copies for each other creature and the exile as a spell resolves start like a plain copy, a plain exile and "that player ...", and are tried first.
+  ...FEATHER_G3_EFFECT_RULES,
+  // Gisa deck, group 4 (issue 41, D-459, D-460): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
+  // exile and a plain put, and "It gains haste." like a gain: tried first.
+  ...GISA_G4_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
@@ -902,10 +922,24 @@ export const EFFECT_RULES = [
   ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
+  // Gisa deck, group 3 (issue 41, D-484): "each opponent chooses a permanent they control of each permanent type and sacrifices the rest".
+  ...GISA_G3_EFFECT_RULES,
   // D-393, D-394 (Hashaton, group 9): the body of Rona, Tolarian Obliterator.
   ...HASHATON_G9_EFFECT_RULES,
+  ...DANITHA_G1B_EFFECT_RULES,
+  // Issue 26 (D-411): "you may put a land card from among them into your hand" after a mill.
+  ...DANITHA_G2_EFFECT_RULES,
+  ...DANITHA_G4_EFFECT_RULES,
+  // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
+  ...FEATHER_G2_EFFECT_RULES,
+  // Issue 41 (D-481): "you may have target player lose life equal to the number of Zombies on the battlefield".
+  ...GISA_G5_EFFECT_RULES,
+  // Feather deck, group 1 (issue 27, D-451, D-457): protection for the turn (before `effect.gain-keyword`, which refuses it) and "Until end of turn, double target creature's power and it gains first strike.".
+  ...FEATHER_G1_EFFECT_RULES,
   // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. ..." (three sentences kept together).
   ...PILES_EFFECT_RULES,
+  // D-396 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."
+  ...REVEAL_TAKE_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.
   ...ARTIFACT_EFFECT_RULES,
   EFFECT_TAP,

@@ -154,6 +154,17 @@ export interface GameObject {
    */
   readonly level?: number;
   /**
+   * The monstrous designation (CR 701.37b, D-445): set by the monstrosity action, kept until the permanent leaves the battlefield. It has no rules meaning but to be a marker, is not an
+   * ability and is not a copiable value; a new object after any zone change (CR 400.7) is not monstrous.
+   */
+  readonly monstrous?: true;
+  /**
+   * "If it would leave the battlefield, exile it instead of putting it anywhere else" (CR 614.1a, 614.6, D-459), set by the effect `exileIfLeaves` on the permanent an earlier
+   * effect put onto the battlefield (Whip of Erebos): it is exiled instead of going to any other zone, whatever its abilities. Not a copiable value; a new object after any
+   * zone change (CR 400.7) has none.
+   */
+  readonly exileIfLeaves?: true;
+  /**
    * Present (true) on an emblem (CR 114, D-201): an object in the command zone of the player who got it (`owner` and `controller`), with no characteristics but
    * the abilities its `token` record gives it, which work from there (CR 114.4): `derive` reads its static abilities and `findTriggers` its triggered ones.
    * It is not a card and not a permanent, never leaves the command zone (CR 114.5) and is not a token that ceases to exist there (CR 704.5d is about the
@@ -402,6 +413,16 @@ export interface StackData {
    */
   readonly exileInstead?: true;
   /**
+   * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (D-439,
+   * CR 614.1a, 608.2n, 603.7): set on a spell by the effect `exileOnResolve`. When this instant or sorcery resolves and would be put into its owner's graveyard it is exiled instead, and
+   * a delayed triggered ability of `by` (with `source` as its source) returns the card to its owner's hand at the beginning of the next end step. A spell that does not resolve is not
+   * changed. It ends when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
+   */
+  readonly exileOnResolve?: {
+    readonly by: SeatId;
+    readonly source: ObjectId;
+  };
+  /**
    * True when the spell was cast as the effect of a resolving ability allows (CR 608.2g, Cascade, D-120), which
    * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own.
    * Absent otherwise, and for an ability.
@@ -429,7 +450,8 @@ export interface StackData {
   readonly triggerAttacked?: readonly SeatId[];
   /**
    * For an activated ability whose cost sacrificed permanents (D-133): the ids they had on the battlefield, which the
-   * `sacrificedCost` reference reads (from last-known information: they are gone). Absent for every other object.
+   * `sacrificedCost` reference reads (from last-known information: they are gone). For a spell whose additional cost sacrificed any number of permanents
+   * (D-491): the ids they had, which the amount and the condition `sacrificedAsCost` count (absent when none was). Absent for every other object.
    */
   readonly sacrificedAsCost?: readonly ObjectId[];
   /**
@@ -621,6 +643,8 @@ export interface LastKnownInfo {
   readonly abilities: readonly Ability[];
   readonly power: number | null;
   readonly toughness: number | null;
+  /** The base power it had (CR 208.4b, D-431); absent in a record made before it was kept. */
+  readonly basePower?: number | null;
 }
 
 /**
@@ -764,7 +788,13 @@ export interface CastingContext {
     | 'exile'
     | 'crew'
     | 'tap'
-    | 'bounce';
+    | 'bounce'
+    | 'blight';
+  /**
+   * The spell is being cast only because of its own conditional flash ("You may cast this spell as though it had flash if it targets a commander", D-408,
+   * CR 601.3b, 601.3d): its targets are chosen from the objects this filter matches. Absent for every other cast.
+   */
+  readonly flashTargets?: ObjectFilter;
   /** Mana symbols of the total cost, locked in at CR 601.2f. Empty until the payment stage. */
   readonly totalCost: readonly string[];
   readonly commanderTax: number;
@@ -775,6 +805,12 @@ export interface CastingContext {
    */
   readonly extra?: {
     readonly sacrifice: ObjectFilter | null;
+    /**
+     * "You may sacrifice one or more creatures" (D-491): the filter of the permanents the caster may sacrifice, any number of them, after the mana is paid; null for
+     * none. `sacrificeAnyAsked` is set once the question is being asked (the answer then goes to this cost and not to `sacrifice`).
+     */
+    readonly sacrificeAny?: ObjectFilter | null;
+    readonly sacrificeAnyAsked?: true;
     readonly discard: number;
     /** How many other cards of the caster's graveyard to exile (Escape, CR 702.138a, D-124); 0 for none. */
     readonly exile: number;
@@ -950,6 +986,8 @@ export type Instruction =
    */
   | {
       readonly kind: 'spare';
+      /** D-484: each of `players` chooses among their own permanents and sacrifices all the rest, lands too (`sparePermanents.own`); absent: the controller chooses and the lands stay. */
+      readonly own?: true;
       readonly players: readonly SeatId[];
       readonly types: readonly CardType[];
       readonly step: number;
@@ -1016,6 +1054,11 @@ export type Instruction =
       readonly tapped?: boolean;
       readonly controller?: 'owner' | 'you';
       readonly withCounters?: { readonly counter: string; readonly count: number };
+      /**
+       * "You may put a land card from among them into your hand" (`ChooseSelector.fromMoved`, D-411): the only cards that can be chosen, the new objects the effect
+       * before it moved (`ResolutionContext.lastMoved`), when the choice was made; the instruction also starts `performed` again, as a "you may" does (D-135).
+       */
+      readonly among?: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -1091,6 +1134,10 @@ export type Instruction =
       readonly totalManaValue?: number;
       /** The cards taken are not revealed (`take.hidden`, D-324): "Put two of them into your hand". */
       readonly hidden?: true;
+      /** Every card of the top is revealed to everyone (`revealAll`, D-396, CR 701.20a): "Reveal the top five cards of your library". */
+      readonly revealAll?: true;
+      /** With `revealAll`: the cards have been revealed (the event came out), so the instruction asks the question now (D-396). */
+      readonly revealed?: true;
       /** `bottomChosen` (D-324): the rest go on the bottom in the order their owner chooses (an `arrange` instruction of purpose 'bottom'). */
       readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen';
       readonly chosen: readonly ObjectId[] | null;
@@ -1164,7 +1211,12 @@ export type Instruction =
       readonly players: readonly SeatId[];
     }
   /** CR 701.24 (Shuffle): `seat` shuffles their library with the game's random number generator. */
-  | { readonly kind: 'shuffle'; readonly seat: SeatId }
+  | {
+      readonly kind: 'shuffle';
+      readonly seat: SeatId;
+      /** Cards of the library left out of the shuffle and kept where they are (CR 701.24b, D-405: the card a search found and is to put on top). */
+      readonly keep?: readonly ObjectId[];
+    }
   /**
    * CR 701.9 (Discard): `seat` discards `count` cards of their choice (all of their hand if it has
    * fewer). `chosen` is null until they have chosen.
@@ -1321,8 +1373,16 @@ export type Instruction =
       readonly spell: ObjectId;
       readonly count: number;
       readonly newTargets: 'may' | 'no';
-      readonly stage: 'make' | 'targets';
+      readonly stage: 'make' | 'targets' | 'each';
       readonly copy: ObjectId | null;
+      /**
+       * D-438 (CR 707.10e): "for each other creature you control that the spell could target": the stage `each` finds the permanents this filter names that are a legal target
+       * for the spell's targets, and makes a copy for each (`retarget`: the one permanent that copy targets in every instance of the word "target"). `controller` is the player
+       * the copies belong to when it is not the controller of the resolving ability ("that player copies that spell").
+       */
+      readonly forEach?: ObjectFilter;
+      readonly controller?: SeatId;
+      readonly retarget?: ObjectId;
     }
   /**
    * CR 115.7a, 115.7b (D-181): "Change the target of target spell or ability with a single target." The target of `object`, a spell or ability on
@@ -1372,6 +1432,16 @@ export type Instruction =
       readonly chosen: number | null;
       /** D-229: the player who chooses, when it is not the controller ("Target player adds one mana of any color"). */
       readonly chooser?: SeatId;
+    }
+  /**
+   * "Target creature gains protection from the color of your choice until end of turn" (CR 702.16, 608.2d; D-451): the controller chooses one of the five colors
+   * with a `chooseOption` decision (`purpose` 'protectionColor'), then `effect` (a `grantKeyword` whose keyword is `protection` from `colorOfChoice`) runs with
+   * that color in its place. `chosen` is the color answered, null until then. Not asked when no permanent is left for the effect to affect (CR 608.2b).
+   */
+  | {
+      readonly kind: 'protectionColor';
+      readonly effect: Extract<Effect, { readonly kind: 'grantKeyword' }>;
+      readonly chosen: Color | null;
     }
   /**
    * "Starting with you, each player votes for profit or security" (`vote`, CR 701.38a, D-194): `cast` is the votes so far, in the order they were
@@ -1804,8 +1874,19 @@ export interface TurnLog {
     readonly abilityIndex: number;
     readonly loyalty?: true;
   }[];
-  /** Each combat damage event to a player this turn: the source that dealt it and the player dealt it (damage prevented entirely is not here). */
-  readonly combatDamaged: readonly { readonly source: ObjectId; readonly player: SeatId }[];
+  /**
+   * Each combat damage event to a player this turn: the source that dealt it and the player dealt it (damage prevented entirely is not here). D-475
+   * (CR 120.2a, 608.2h, 113.7a): also what the source was as it dealt the damage, for "if a player was dealt combat damage by a Zombie this turn": its card
+   * types, its subtypes and who controlled it (read from the permanent, or from its last-known information when it had left), so a source that has died
+   * or changed still counts as it was.
+   */
+  readonly combatDamaged: readonly {
+    readonly source: ObjectId;
+    readonly player: SeatId;
+    readonly types: readonly CardType[];
+    readonly subtypes: readonly Subtype[];
+    readonly controller: SeatId | null;
+  }[];
   /** Each time a player gained life this turn (D-149), in order, one entry for each life gain event: "for the first time each turn". */
   readonly lifeGained: readonly SeatId[];
   /** The life each player has gained this turn, by seat (D-252, CR 119.3): the sum of every life gain after replacement, for "if you gained 3 or more life this turn". */
@@ -1861,6 +1942,11 @@ export interface TurnLog {
   readonly leftGraveyard: readonly SeatId[];
   /** The modes a triggered ability chose this turn, by the permanent it belongs to (D-151, "choose one that hasn't been chosen this turn"). */
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];
+  /**
+   * Each spell cast this turn (D-444, CR 601.2i), in order: who cast it and its card types as it was cast. A copy is not cast (CR 707.10) and is not here.
+   * "Activate only if you've cast an instant or sorcery spell this turn" reads it.
+   */
+  readonly castSpells: readonly { readonly seat: SeatId; readonly types: readonly CardType[] }[];
 }
 
 export const EMPTY_TURN_LOG: TurnLog = {
@@ -1877,6 +1963,7 @@ export const EMPTY_TURN_LOG: TurnLog = {
   graveyarded: [],
   leftGraveyard: [],
   modesChosen: [],
+  castSpells: [],
 };
 
 export interface GameState {

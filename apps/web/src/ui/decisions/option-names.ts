@@ -5,6 +5,8 @@
  * (`OptionNamesDialog.tsx`) draws what these return, so the words are unit tested without a DOM.
  */
 import type { ChooseOptionDecision } from '@commander-arena/engine';
+import { colorName } from '../../game/chosen';
+import { destroyReplacementPrompt, destroyReplacementThen } from '../../game/danitha-g4-text';
 import { RIOT_ROWS, riotPrompt } from '../../game/keywords-text';
 import { romanNumeral } from '../../game/saga';
 
@@ -58,6 +60,11 @@ export function isCardTypeChoice(d: Asked): boolean {
   return d.purpose === 'cardType';
 }
 
+/** True for "gains protection from the color of your choice" (CR 702.16, 608.2d, D-451): the options are the five color letters, chosen as the effect resolves. */
+export function isProtectionColorChoice(d: Asked): boolean {
+  return d.purpose === 'protectionColor';
+}
+
 /** True for the choice of a name the card gives ("Khans or Dragons"). */
 export function isNamedChoice(d: Asked): boolean {
   return d.purpose === 'option' && !isChapterChoice(d);
@@ -100,6 +107,10 @@ export function namedOptionPrompt(
   if (isReplacementChoice(d)) return replacementPrompt(d.replacement);
   if (isEffectChoice(d)) return `Choose one for ${d.sourceName}: ${optionList(d.options)}.`;
   if (isCardTypeChoice(d)) return `As ${d.sourceName} enters, choose a card type.`;
+  // D-451 (CR 702.16, 608.2d): asked as the spell resolves, so there is no "enters".
+  if (isProtectionColorChoice(d)) {
+    return `Choose a color for ${d.sourceName}: protection from it until end of turn.`;
+  }
   return isChapterChoice(d)
     ? `Choose a chapter to start with for ${d.sourceName}.`
     : `As ${d.sourceName} enters, choose ${optionList(d.options)}.`;
@@ -122,6 +133,11 @@ export function votePrompt(
   return `${question} ${cast.map((c) => `${who(c.seat)} voted for ${c.option}.`).join(' ')}`;
 }
 
+/** The title of the dialog of the order of replacement effects: "Damage replacement", or "Destruction replacement" for the destruction of a permanent (D-418). */
+export function replacementTitle(d: Pick<ChooseOptionDecision, 'replacement'>): string {
+  return d.replacement?.destroy === undefined ? 'Damage replacement' : 'Destruction replacement';
+}
+
 /**
  * "3 damage from Goblin Chainwhirler would be dealt to you. Several effects apply. Choose which to apply first." (CR 616.1, D-191): the
  * damage event as it is now (what is left of it after the effects already applied), its source and its recipient: "you" (the question goes to
@@ -129,6 +145,10 @@ export function votePrompt(
  */
 export function replacementPrompt(replacement: ChooseOptionDecision['replacement']): string {
   if (replacement === undefined) return 'Several effects apply. Choose which to apply first.';
+  if (replacement.destroy !== undefined) {
+    // D-418 (CR 616.1): the permanent that would be destroyed, and the effects that replace it.
+    return destroyReplacementPrompt(replacement.destroy.objectName);
+  }
   if (replacement.event === undefined) {
     // D-221 (CR 616.1): the tokens the player would create, and the effects that replace their creation.
     const would = replacement.tokens.would.join(' and ');
@@ -213,7 +233,15 @@ export function namedOptionRows(
       const choice = d.replacement?.choices.find((c) => c.option === option);
       const question = d.replacement;
       let detail: string | null = null;
-      if (choice !== undefined && question?.event !== undefined && choice.kind !== 'tokens') {
+      if (choice !== undefined && 'aura' in choice.outcome) {
+        // D-418: the Aura destroyed in place of the permanent, or the regeneration (tapped, removed from combat).
+        detail = destroyReplacementThen(choice.outcome);
+      } else if (
+        choice !== undefined &&
+        question?.event !== undefined &&
+        choice.kind !== 'tokens' &&
+        'amount' in choice.outcome
+      ) {
         detail = replacementThen(
           choice.outcome.amount,
           newRecipient(question.event.to, choice.outcome),
@@ -227,6 +255,9 @@ export function namedOptionRows(
   }
   if (isEffectChoice(d) || isVoteChoice(d) || isCardTypeChoice(d)) {
     return d.options.map((option) => ({ option, label: capitalised(option), detail: null }));
+  }
+  if (isProtectionColorChoice(d)) {
+    return d.options.map((option) => ({ option, label: colorName(option), detail: null }));
   }
   if (isRiotChoice(d)) {
     return d.options.map((option) => ({

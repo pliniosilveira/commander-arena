@@ -29,13 +29,15 @@ import type { GameEvent } from '../state/events';
 import { patchObject } from '../state/ops';
 import type { ActivationContext, CastingContext, GameState, StackAbility } from '../state/types';
 import { pushAbilityObject } from './ability-object';
-import { adjustedAbility } from './activate-adjust';
+import { adjustedAbility, reducedForTargets } from './activate-adjust';
+import { answerBlightCost, payBlight } from './activate-blight';
 import { answerBounceCommander, answerBounceCost, payBounce } from './activate-bounce';
 import { breakDown, type CostBreakdown, costRefusal, payImmediateCosts } from './activate-costs';
 import { activatedAbilitiesOf, activationRefusal } from './activate-legality';
 import { activationExileDecision, exileChosen, exileCostCandidates } from './activation-exile';
 import { becameTargetEvents } from './becomes-target';
 import { crewCandidates, crewPowerOf, totalPower } from './crew';
+import { crimeEvents } from './crime';
 import { discardCandidates, discardCostDecision, discardObjects } from './discard-cost';
 import { targetSpecsOf } from './legality';
 import { isLoyaltyAbility } from './loyalty';
@@ -48,6 +50,7 @@ import { setPending } from './set-pending';
 import { recordObjectsTogether } from './simultaneous';
 import { sourceInfo } from './source-info';
 import { targetChoiceSpecs } from './target-choice';
+import { payableEquipTargets } from './target-payable';
 import { collectTriggers } from './triggers';
 import { abilityXCost, hasX, largestPayableX } from './x-value';
 
@@ -227,11 +230,37 @@ export function toActivationTargets(state: GameState, events: GameEvent[] = []):
           specs,
           ctx,
           modal === null ? undefined : specModes(modal, object.stack?.chosenModes ?? []),
+          0,
+          null,
+          // D-425: an Equip ability that is cheaper for some targets is payable only with them: only those are offered.
+          payableEquipTargets(casting.snapshot, casting, specs, {
+            controller: casting.seat,
+            source: activation.source,
+          }),
         ),
       },
     ),
     events,
   );
+}
+
+/**
+ * CR 601.2f, 602.2b (D-425): the targets are chosen before the total cost is determined, so a reduction that depends on them ("Equip abilities you activate that target
+ * enchanted creature cost {3} less") is applied once they are: the ability on the stack and in the activation takes the reduced cost.
+ */
+export function reduceForChosenTargets(state: GameState): GameState {
+  const casting = state.casting;
+  const activation = casting?.activation ?? null;
+  const object = casting === null ? undefined : state.objects[casting.object];
+  const stack = object?.stack ?? null;
+  if (!casting || !activation || stack === null) return state;
+  const targets = stack.chosenTargets.flatMap((t) => (t.kind === 'object' ? [t.id] : []));
+  const reduced = reducedForTargets(state, casting.seat, activation.ability, targets);
+  if (reduced === activation.ability) return state;
+  const withStack = patchObject(state, casting.object, {
+    stack: { ...stack, ability: reduced },
+  });
+  return { ...withStack, casting: { ...casting, activation: { ...activation, ability: reduced } } };
 }
 
 /** The costs that need no mana and no choice, then mana (CR 601.2g-h), then the rest. */
@@ -271,7 +300,7 @@ function payRest(state: GameState, events: GameEvent[]): Result {
   const { costs } = going;
   if (costs.tapCreatures !== null) return payCrew(state, events, costs.tapCreatures);
   if (costs.tapPermanents !== null) return payTap(state, events, costs.tapPermanents);
-  return paySacrifice(state, events);
+  return payBlight(state, events, paySacrifice);
 }
 
 /**
@@ -324,7 +353,7 @@ function tapChosen(
     next = patchObject(next, id, { tapped: true });
     events.push({ kind: 'tapped', object: id });
   }
-  return paySacrifice(next, events);
+  return payBlight(next, events, paySacrifice);
 }
 
 /** The answer to the tap question of a cost; the caller checked it against the decision's candidates and count. */
@@ -355,7 +384,10 @@ function paySacrifice(state: GameState, events: GameEvent[]): Result {
   if (!going) return fail('No activation is in progress');
   const { casting, activation, costs } = going;
   const seat = casting.seat;
-  if (costs.sacrifice === null) return payBounce(state, events, payDiscard);
+  // D-488: "Sacrifice X creatures" with X = 0 sacrifices nothing.
+  if (costs.sacrifice === null || costs.sacrificeCount === 0) {
+    return payBounce(state, events, payDiscard);
+  }
   if (costs.sacrifice === 'this') {
     const done = sacrificePermanent(state, activation.source, seat);
     if (done === null) return fail('The permanent you must sacrifice is gone');
@@ -579,6 +611,11 @@ export function answerSacrificeCost(state: GameState, chosen: readonly ObjectId[
   return sacrificeChosen({ ...state, pending: null }, [], chosen, false);
 }
 
+/** The answer to the question of a blight cost (D-407, CR 701.68a): the creature gets the counters, then the sacrifice comes next. */
+export function answerBlight(state: GameState, chosen: readonly ObjectId[]): Result {
+  return answerBlightCost(state, chosen, paySacrifice);
+}
+
 /** The answer to the question of a cost that returns permanents to their owners' hands (D-139); the discard comes next. */
 export function answerReturnCost(state: GameState, chosen: readonly ObjectId[]): Result {
   return answerBounceCost(state, chosen, payDiscard);
@@ -600,6 +637,8 @@ function finishActivation(state: GameState, events: GameEvent[]): Result {
   if (!casting || !activation) return fail('No activation is in progress');
   // CR 602.2b, 601.2c: the targets became targets as they were chosen.
   events.push(...becameTargetEvents(state, casting.object, casting.seat));
+  // CR 700.13 (D-464): activating an ability that targets an opponent, what they control or a card in their graveyard is committing a crime.
+  events.push(...crimeEvents(state, casting.object, casting.seat));
   const announced = state.objects[casting.object]?.stack?.x;
   events.push({
     kind: 'abilityActivated',

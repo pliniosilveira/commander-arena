@@ -106,8 +106,14 @@ const AURAS: readonly Line[] = [
   {
     kind: 'aura',
     text: "Enchant creature\nEnchanted creature can't attack or block.",
-    expect: no("can't attack or block.", 'static.attached'),
-    note: 'no engine primitive for it',
+    expect: OK,
+    note: 'read since D-407 (CR 508.1a, 509.1a): two restrictions of the enchanted creature, each its own static ability of the engine',
+  },
+  {
+    kind: 'aura',
+    text: "Enchant creature\nEnchanted creature can't attack or block alone.",
+    expect: no('alone.', 'static.attached'),
+    note: "SYNTHETIC; still not read (D-407): the engine has no 'alone' restriction",
   },
   {
     kind: 'aura',
@@ -305,8 +311,8 @@ const EQUIPMENT: readonly Line[] = [
   },
   {
     kind: 'equipment',
-    text: 'Equipped creature has nonbasic landwalk.\nEquip {1}',
-    expect: no('nonbasic landwalk.', 'static.attached'),
+    text: 'Equipped creature has snow landwalk.\nEquip {1}',
+    expect: no('snow landwalk.', 'static.attached'),
     note: 'backlog: 1 card',
   },
   {

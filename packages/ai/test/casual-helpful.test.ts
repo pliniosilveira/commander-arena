@@ -69,6 +69,25 @@ describe('where a helpful spell goes', () => {
     expect(chosen(g, await answer(g))).toEqual([{ name: 'SYNTHETIC Vanilla 3/3', controller: 0 }]);
   });
 
+  test('a pump with two targets is answered for both slots, the same creature for two of them (CR 115.3, Feather group 3)', async () => {
+    // Paired Boost: "Target creature you control gets +1/+0. Target creature with flying gets +0/+1": the only flying creature is the agent's own.
+    const g = game(
+      'SYNTHETIC Paired Boost',
+      [SMALL, 'Serra Angel'],
+      [BIG],
+      ['Mountain', 'Mountain'],
+    );
+    g.act(0).cast('SYNTHETIC Paired Boost');
+    const action = await answer(g);
+    expect(chosen(g, action)).toEqual([
+      { name: 'Serra Angel', controller: 0 },
+      { name: 'Serra Angel', controller: 0 },
+    ]);
+    // The engine accepts it: both slots are filled.
+    g.choose(action);
+    g.expect.invariants();
+  });
+
   test('a keyword gain goes on the agent own creature too', async () => {
     const g = game(WINGS, [SMALL], [BIG]);
     g.act(0).cast(WINGS);

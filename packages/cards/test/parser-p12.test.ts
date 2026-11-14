@@ -277,19 +277,38 @@ describe('landwalk (CR 702.14): a keyword with a land type', () => {
     ]);
   });
 
-  test('a landwalk cannot be granted (D-098): the words are in no grant list', () => {
-    expect(dropped('Equipped creature has islandwalk.', 'artifact', ['Equipment'])).toMatchObject({
-      reason: 'unrecognised',
-      stoppedAt: 'islandwalk.',
-      closestRule: 'static.attached',
+  test('a landwalk can be granted since D-473 (CR 702.14a, 613.1f): the words are in the grant lists, by a static ability and by an effect', () => {
+    const grant = (landType: string): Ability => ({
+      kind: 'static',
+      static: {
+        kind: 'grantKeyword',
+        subject: HOST,
+        keyword: { kind: 'landwalk', landType },
+      },
     });
     expect(
-      dropped('Equipped creature has nonbasic landwalk.', 'artifact', ['Equipment']),
+      readAll('Equipped creature has islandwalk.', 'artifact', ['Equipment']).abilities,
+    ).toEqual([grant('Island')]);
+    expect(
+      readAll('Equipped creature has nonbasic landwalk.', 'artifact', ['Equipment']).abilities,
+    ).toEqual([grant('nonbasic')]);
+    expect(
+      readAll('Target creature gains swampwalk until end of turn.', 'instant').spell?.effect,
+    ).toMatchObject({
+      kind: 'grantKeyword',
+      keyword: { kind: 'landwalk', landType: 'Swamp' },
+      duration: 'untilEndOfTurn',
+    });
+  });
+
+  test('a landwalk that is not one of the six the engine knows is still not granted', () => {
+    expect(
+      dropped('Equipped creature has snow landwalk.', 'artifact', ['Equipment']),
     ).toMatchObject({
       reason: 'unrecognised',
-      stoppedAt: 'nonbasic landwalk.',
+      closestRule: 'static.attached',
     });
-    expect(dropped('Target creature gains swampwalk until end of turn.', 'instant')).toMatchObject({
+    expect(dropped('Equipped creature has desertwalk.', 'artifact', ['Equipment'])).toMatchObject({
       reason: 'unrecognised',
     });
   });
@@ -334,10 +353,10 @@ describe('what stays unread, and where it stops', () => {
       'static.attached',
     ],
     [
-      "Enchanted creature can't attack or block.",
+      "Enchanted creature can't attack or block alone.",
       'enchantment',
       ['Aura'],
-      "can't attack or block.",
+      'alone.',
       'static.attached',
     ],
     // Stage P40 (D-186): "Spells you control can't be countered." and "Creature spells you control can't be countered." are read by

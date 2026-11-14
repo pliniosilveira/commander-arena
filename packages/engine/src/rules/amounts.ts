@@ -37,7 +37,9 @@ type StateAmount = Extract<
       | 'commanderCasts'
       | 'thisWay'
       | 'opponentsWithMore'
-      | 'cardsStillExiled';
+      | 'cardsStillExiled'
+      | 'cardsDrawnThisTurn'
+      | 'sacrificedAsCost';
   }
 >;
 
@@ -53,7 +55,9 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'commanderCasts' ||
     amount.kind === 'thisWay' ||
     amount.kind === 'opponentsWithMore' ||
-    amount.kind === 'cardsStillExiled'
+    amount.kind === 'cardsStillExiled' ||
+    amount.kind === 'cardsDrawnThisTurn' ||
+    amount.kind === 'sacrificedAsCost'
   );
 }
 
@@ -285,6 +289,15 @@ export function stateAmountOf(
     case 'cardsStillExiled':
       // CR 400.7: a card that left exile is a new object, so only the very objects still there count.
       return amount.objects.filter((id) => state.objects[id]?.zone === 'exile').length;
+    case 'cardsDrawnThisTurn':
+      // CR 121.1 (D-450): "for each card you've drawn this turn": the cards the controller of the effect has drawn so far this turn (`SeatState.cardsDrawnThisTurn`).
+      return getSeat(state, ctx.controller).cardsDrawnThisTurn;
+    case 'sacrificedAsCost': {
+      // CR 118.8, 701.21a (D-491): "for each creature sacrificed this way": the permanents sacrificed to pay the additional cost of the spell that is the source, read from the spell
+      // or, once it has left the stack, from its last-known information (CR 113.7a).
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return source?.stack?.sacrificedAsCost?.length ?? 0;
+    }
     default: {
       const unreachable: never = amount;
       return unreachable;

@@ -10,6 +10,7 @@
  */
 import type {
   Ability,
+  Condition,
   ObjectFilter,
   Replacement,
   Restriction,
@@ -29,7 +30,9 @@ import {
   JOB_SELECT_REMINDER,
   LIVING_WEAPON_REMINDER,
 } from './artifacts-text';
+import { targetedReductionWording } from './attachment-text';
 import { gameConditionWords } from './condition-text';
+import { umbraArmorWording } from './danitha-g4-text';
 import {
   castFromTopText,
   entersAsCopyText,
@@ -41,7 +44,7 @@ import { pluralSubtype, thingsPhrase } from './filter-text';
 import { ptChangeText } from './pt-text';
 import { keepsDamageWording, redirectDamageWording } from './redirect-text';
 import { tokenWords } from './token-text';
-import { filterPhrase, keywordWords, withText } from './trigger-text';
+import { filterPhrase, grantedKeywordWords, withText } from './trigger-text';
 import { COLOR_NAMES } from './words';
 
 /** What the words need to know about the permanent or card that has the ability. */
@@ -100,6 +103,17 @@ export function groupPhrase(filter: ObjectFilter, other?: boolean): string | nul
   const said = (f: ObjectFilter): string | null =>
     thingsPhrase(f, true)?.replace(' on the battlefield', '') ?? null;
   if (anyOf === undefined || anyOf.length === 0) return said(merged);
+  // D-468: "Skeletons and Zombies you control": two creature types, each alone in its member, with one controller for both.
+  const pair = anyOf.map((m) => (Object.keys(m).join() === 'subtypes' ? (m.subtypes ?? []) : []));
+  if (
+    anyOf.length === 2 &&
+    pair.every((s) => s.length === 1) &&
+    base.controller === 'you' &&
+    Object.keys(base).every((k) => k === 'controller' || k === 'zone')
+  ) {
+    const [a, b] = pair.map((s) => pluralSubtype(s[0] ?? ''));
+    return `${other === true ? 'other ' : ''}${a} and ${b} you control`;
+  }
   const parts = anyOf.map((member) => said({ ...merged, ...member }));
   return parts.some((part) => part === null) ? null : joinAnd(parts as string[]);
 }
@@ -187,6 +201,11 @@ function replacedKind(
   return `${/^[aeiou]/i.test(phrase) ? 'an' : 'a'} ${phrase}`;
 }
 
+/** The card types in the plural, as a card says them: "creatures", "sorceries". */
+function pluralCardType(type: string): string {
+  return type === 'sorcery' ? 'sorceries' : `${type}s`;
+}
+
 /** The sentence of one static effect (no condition, no final period); null for the kinds these words do not cover. */
 export function lordWording(effect: StaticEffect, ctx: StaticContext): string | null {
   switch (effect.kind) {
@@ -201,10 +220,13 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
       const subject = subjectWords(effect.subject, ctx);
       if (subject === null) return null;
       // D-376 (CR 702.16): "Creatures you control have protection from the chosen card type".
+      // D-402 (CR 702.16a): "Enchanted creature has protection from creatures".
       const has =
         effect.keyword.kind === 'protection' && effect.keyword.from === 'chosenCardType'
           ? 'protection from the chosen card type'
-          : keywordWords(effect.keyword.kind);
+          : effect.keyword.kind === 'protection' && effect.keyword.from === 'cardType'
+            ? `protection from ${effect.keyword.types.map(pluralCardType).join(' and from ')}`
+            : grantedKeywordWords(effect.keyword);
       return `${subject.text} ${subject.many ? 'have' : 'has'} ${has}`;
     }
     case 'restriction': {
@@ -266,6 +288,8 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
       return spells === null ? null : `Your opponents can't cast ${spells}`;
     }
     case 'castAsThoughFlash': {
+      // D-408 (CR 601.3b, 113.6d): the spell's own permission, "You may cast this spell as though it had flash" (its condition is worded by `conditionalWording`).
+      if ('kind' in effect.spells) return 'You may cast this spell as though it had flash';
       // D-139 (CR 601.3b, 702.8a): "You may cast artifact spells as though they had flash".
       const spells = spellsPhrase(effect.spells);
       return spells === null ? null : `You may cast ${spells} as though they had flash`;
@@ -311,6 +335,12 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
     case 'keepsDamage':
       // D-192 (CR 514.2): "Damage isn't removed from this creature during cleanup steps".
       return keepsDamageWording(ctx.noun);
+    case 'abilityCostReduction':
+    case 'costReduction': {
+      // D-424, D-425 (CR 601.2f, 602.2b): "Equip abilities you activate that target enchanted creature cost {3} less to activate", "Aura spells you cast that target ... cost {3} less to cast".
+      const host = attachedSubject({ kind: 'attached' }, ctx)?.text;
+      return targetedReductionWording(effect, host === undefined ? null : host.toLowerCase());
+    }
     default:
       // D-149: "You have hexproof", "You can't lose the game", prevention to this creature, a tax on blocking.
       return angelsStaticWording(effect, ctx.noun);
@@ -332,10 +362,28 @@ export function conditionalWording(
   const text = lordWording(ability.static, ctx);
   if (text === null) return null;
   if (ability.condition === undefined) return text;
+  // D-408: "You may cast this spell as though it had flash if it targets a commander": an "if" of the spell, not an "as long as".
+  if (ability.static.kind === 'castAsThoughFlash' && 'kind' in ability.static.spells) {
+    const when = flashCondition(ability.condition);
+    return when === null ? null : `${text} if ${when}`;
+  }
   const when = gameConditionWords(ability.condition);
   if (when === null) return null;
   // "You may cast this card from your graveyard as long as you control a Zombie."
   return `${text} as long as ${when}`;
+}
+
+/**
+ * The condition of a spell's own permission to be cast as though it had flash, in words (D-408): "it targets a commander", "it targets a creature", or any condition
+ * the game words know ("you control two or more creatures"). Null when it cannot be said.
+ */
+function flashCondition(condition: Condition): string | null {
+  if (condition.kind !== 'spellTargets') return gameConditionWords(condition);
+  const { types, commander, ...rest } = condition.filter;
+  if (Object.keys(rest).length > 0 || (types ?? []).length > 1) return null;
+  const noun = [...(types ?? []), ...(commander === true ? ['commander'] : [])].join(' ');
+  if (noun === '') return null;
+  return `it targets ${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`;
 }
 
 /**
@@ -383,6 +431,8 @@ export function replacementWording(replacement: Replacement, noun = 'permanent')
   if (replacement.kind === 'tokensInstead' && replacement.mode === 'double') {
     return 'If one or more tokens would be created under your control, twice that many of those tokens are created instead';
   }
+  // D-417 (CR 702.89a): Umbra armor.
+  if (replacement.kind === 'umbraArmor') return umbraArmorWording();
   // D-192 (CR 614.9): "All damage that would be dealt to you and other permanents you control is dealt to this creature instead".
   if (replacement.kind === 'redirectDamage') return redirectDamageWording(replacement, noun);
   if (replacement.kind !== 'wouldDie') return null;

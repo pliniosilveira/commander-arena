@@ -19,6 +19,7 @@ import { findEffect } from './artifacts-text';
 import { castCardAnswerLine } from './cast-card-text';
 import { optionText } from './chosen';
 import { costText, unlessCostPhrase } from './cost-text';
+import { umbraArmorUsedText } from './danitha-g4-text';
 import {
   bottomedText,
   isPayOptionsEvent,
@@ -644,6 +645,15 @@ export function describeEvent(
         [event.object, event.copy],
         'CR 722.3',
       );
+    case 'becameMonstrous':
+      // CR 701.37a, 701.37b (D-445): the monstrosity action finished; the permanent is monstrous until it leaves the battlefield.
+      return line(
+        'major',
+        `${label(event.object)} became monstrous.`,
+        null,
+        [event.object],
+        'CR 701.37',
+      );
     case 'energyChanged': {
       // CR 107.14, 122.1 (D-209): "You get {E}{E}", and paying {E}: "You have 2 energy counters."
       const change = event.to - event.from;
@@ -839,6 +849,19 @@ export function describeEvent(
           'CR 602.2b',
         );
       }
+      // D-407 (CR 701.68a, 602.2b): "Blight 1" as a cost; the counter's own line follows.
+      if (event.purpose === 'blight') {
+        const blighted = joinNames(event.objects.map(name));
+        return line(
+          'major',
+          event.automatic
+            ? `${who(event.seat)} must blight ${blighted} to pay for ${label(event.source)}: no other choice.`
+            : `${who(event.seat)} ${verb(event.seat, 'blight', 'blights')} ${blighted} to pay for ${label(event.source)}.`,
+          event.seat,
+          event.objects,
+          'CR 701.68a',
+        );
+      }
       // An effect that moves a permanent you choose ("return a land you control to its owner's
       // hand", D-096): the event does not say where it goes, the move's own line does.
       // D-139 (CR 701.26a): "you may tap any number of untapped Myr you control": the choice is what is tapped.
@@ -1021,6 +1044,16 @@ export function describeEvent(
           'CR 701.38a',
         );
       }
+      // CR 702.16, 608.2d (D-451): "You choose Red for Gods Willing (protection from that color)." The choice is public: the player who did not choose needs the color.
+      if (event.purpose === 'protectionColor') {
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${optionText(event.purpose, event.option)} for ${label(event.source)} (protection from that color until end of turn).`,
+          event.seat,
+          [],
+          'CR 702.16a',
+        );
+      }
       // CR 702.136a (D-185): "You choose a +1/+1 counter for Riot Goblin (riot)." or "... haste ...".
       if (event.purpose === 'riot') {
         const subject =
@@ -1065,6 +1098,15 @@ export function describeEvent(
         event.seat,
         [event.object, event.by],
         'CR 601.2c',
+      );
+    case 'crimeCommitted':
+      // CR 700.13 (D-464): the spell or ability targets an opponent, something an opponent controls or a card in an opponent's graveyard.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'commit', 'commits')} a crime with ${label(event.object)}.`,
+        event.seat,
+        [event.object],
+        'CR 700.13',
       );
     case 'legendRule':
       return line(
@@ -1251,6 +1293,15 @@ export function describeEvent(
         null,
         [event.object],
         'CR 701.19a',
+      );
+    case 'umbraArmorUsed':
+      // CR 702.89a (D-417): Umbra armor replaced a destruction.
+      return line(
+        'major',
+        umbraArmorUsedText(name(event.object), name(event.aura)),
+        null,
+        [event.object, event.aura],
+        'CR 702.89a',
       );
     case 'cardsBottomed':
       // CR 702.85a (Cascade): only the count is told, the order is random and hidden. D-324 (CR 401.4): or chosen by the owner, and as hidden.

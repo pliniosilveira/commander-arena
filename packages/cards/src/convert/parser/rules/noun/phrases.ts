@@ -48,6 +48,10 @@ export interface FilterParts {
   readonly attackingOrBlocking: boolean;
   /** "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga. */
   readonly historic: boolean;
+  /** "modified" (D-416, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls. */
+  readonly modified: boolean;
+  /** "commander" before a type (D-443, CR 903.3): "commander creatures you control", a card a player designated as a commander. Only `permanentPhrase` reads it. */
+  readonly commander: boolean;
   /** "monocolored", "multicolored" (CR 105.2a, 105.2b): the number of colors; stage P31. */
   readonly colorCount: IrComparison | undefined;
 }
@@ -68,6 +72,8 @@ export const NO_PARTS: FilterParts = {
   attacking: false,
   attackingOrBlocking: false,
   historic: false,
+  modified: false,
+  commander: false,
   colorCount: undefined,
 };
 
@@ -115,6 +121,8 @@ export const MODIFIER: Parser<Modifier> = choice(
   // Stage P31 (D-140): "attacking creature" (CR 508.1k), "monocolored" and "multicolored" (CR 105.2a, 105.2b: one color, two or more).
   // Stage P68 (D-229): "attacking or blocking creature" (CR 506.4, 509.1g), before "attacking", of which it is the start.
   word('historic', (p) => ({ ...p, historic: true })),
+  // D-416 (Danitha deck, CR 700.9): "modified creature".
+  word('modified', (p) => ({ ...p, modified: true })),
   word('attacking or blocking', (p) => ({ ...p, attackingOrBlocking: true })),
   word('attacking', (p) => ({ ...p, attacking: true })),
   word('monocolored', (p) => ({ ...p, colorCount: { cmp: 'equal', value: 1 } })),
@@ -125,6 +133,9 @@ export const MODIFIER: Parser<Modifier> = choice(
   ...COLOR_WORDS.map((c) => word(c, (p) => ({ ...p, colors: [...p.colors, c] }))),
   ...SUPERTYPE_WORDS.map((s) => word(s, (p) => ({ ...p, supertypes: [...p.supertypes, s] }))),
 );
+
+/** "commander creature" (D-443, CR 903.3): a modifier of the permanent phrases only, not of the spell and card phrases that share `MODIFIER` (a commander spell is another reading). */
+const COMMANDER_MODIFIER: Parser<Modifier> = word('commander', (p) => ({ ...p, commander: true }));
 
 export const PERMANENT_TYPES = 'artifact|battle|creature|enchantment|land|planeswalker';
 /** The permanent types in the order of "permanent card" (stage P33): a card of any of them is a permanent card (CR 110.1). */
@@ -212,6 +223,8 @@ export function toFilter(
     ...(p.attacking ? { attacking: true as const } : {}),
     ...(p.attackingOrBlocking ? { attackingOrBlocking: true as const } : {}),
     ...(p.historic ? { historic: true as const } : {}),
+    ...(p.modified ? { modified: true as const } : {}),
+    ...(p.commander ? { commander: true as const } : {}),
     ...(p.colorCount !== undefined ? { colorCount: p.colorCount } : {}),
     raw,
   };
@@ -394,6 +407,20 @@ const DAMAGED_BY_SOURCE: Parser<boolean> = map(
 );
 
 /**
+ * " with power greater than its base power" (D-431, CR 208.4b): the object's power as it is now is more than its base power, the power before
+ * counters and the effects that only modify it (the engine's `powerAboveBase`). Said of a creature only; "greater than" any other number or value is
+ * not read (`comparisonSuffix` reads "with power 4 or greater").
+ */
+function powerAboveBase(plural: boolean): Parser<boolean> {
+  // "creatures you control each with power greater than its base power": the plural says "each" (Kutzil).
+  const each = plural ? '(?: each)?' : '';
+  return map(
+    pattern(new RegExp(`${each} with power greater than its base power${BOUNDARY}`, 'iu')),
+    () => true,
+  );
+}
+
+/**
  * " with a counter on it", " with a +1/+1 counter on it", " with a stun counter on it" and, in the plural, " with counters on them",
  * " with +1/+1 counters on them" (stage P32, D-147, CR 122.1): the object has a counter, of any kind (`true`) or of the kind named.
  */
@@ -432,7 +459,11 @@ export const KEYWORD_SUFFIX: Parser<KeywordSuffix> = (ctx, pos) => {
 };
 
 /** "nonland permanent you control": the filter of a phrase about permanents (CR 110.1). */
-export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false): Parser<IrFilter> {
+export function permanentPhrase(
+  plural: boolean,
+  subtypes: SubtypeMode = false,
+  tokens = false,
+): Parser<IrFilter> {
   const choose: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
       TYPE_CHOICE,
@@ -471,6 +502,7 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
     manaValueX: boolean;
     damaged: boolean;
     counter: true | string | undefined;
+    aboveBase: boolean;
   }> = (ctx, pos) => {
     const control = optional(EVENT_CONTROL_SUFFIX, undefined)(ctx, pos);
     if (!control.ok) return control;
@@ -493,15 +525,19 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
     // "creatures you control with a counter on it" (stage P32).
     const counter = optional(quiet(counterSuffix(plural)), undefined)(ctx, damaged.pos);
     if (!counter.ok) return counter;
+    // "creatures you control with power greater than its base power" (D-431).
+    const aboveBase = optional(quiet(powerAboveBase(plural)), false)(ctx, counter.pos);
+    if (!aboveBase.ok) return aboveBase;
     let controller = control.value;
-    let end = counter.pos;
+    let end = aboveBase.pos;
     // "creature of the chosen type you control", "creature with power 4 or greater you control".
     if (
       controller === undefined &&
       (chosen.value !== undefined ||
         compared.value !== undefined ||
         keyword.value !== undefined ||
-        counter.value !== undefined)
+        counter.value !== undefined ||
+        aboveBase.value)
     ) {
       const late = optional(EVENT_CONTROL_SUFFIX, undefined)(ctx, end);
       if (!late.ok) return late;
@@ -518,22 +554,37 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
         manaValueX: manaValueX.value,
         damaged: damaged.value,
         counter: counter.value,
+        aboveBase: aboveBase.value,
       },
       pos: end,
     };
   };
   const single: Parser<IrFilter> = (ctx, pos) => {
-    const r = sequence(many(MODIFIER), nouns, tail)(ctx, pos);
+    // Gisa deck group 1 (D-476, CR 111.1): "a Zombie token you control with power 6 or greater", where the caller says what a token is: the word after the noun.
+    const tokenWord: Parser<boolean> = tokens
+      ? optional(
+          map(pattern(new RegExp(` token${plural ? 's' : ''}${BOUNDARY}`, 'iu')), () => true),
+          false,
+        )
+      : map(literal(''), () => false);
+    const r = sequence(
+      many(choice(MODIFIER, COMMANDER_MODIFIER)),
+      nouns,
+      tokenWord,
+      tail,
+    )(ctx, pos);
     if (!r.ok) return r;
     const [
       modifiers,
       noun,
-      { controller, chosen, compared, keyword, manaValueX, damaged, counter },
+      isToken,
+      { controller, chosen, compared, keyword, manaValueX, damaged, counter, aboveBase },
     ] = r.value;
     const parts = modifiers.reduce<FilterParts>((acc, m) => m(acc), {
       ...NO_PARTS,
       types: noun.types,
       controller,
+      ...(isToken ? { token: true } : {}),
       ...(keyword === undefined
         ? {}
         : keyword.has
@@ -551,6 +602,7 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
           ...(manaValueX ? { manaValueX: true as const } : {}),
           ...(damaged ? { controllerDamagedBySource: true as const } : {}),
           ...(counter === undefined ? {} : { hasCounter: counter }),
+          ...(aboveBase ? { powerAboveBase: true as const } : {}),
         },
         compared,
       ),
@@ -625,6 +677,40 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
     const anyOf = words.map((w): IrFilter => ({ subtypes: [w], raw: w }));
     return { ok: true, value: { ...base, anyOf }, pos: r.pos };
   };
+  // "creature or Vehicle" (D-447, CR 205.2a, 205.3g): one card type and one subtype joined by " or ", in either order; a permanent with the type or with the subtype matches.
+  const typeOrSubtype: Parser<IrFilter> = (ctx, pos) => {
+    if (subtypes === false) return fail(ctx, pos);
+    const type: Parser<string> = map(
+      pattern(new RegExp(`(?:${PERMANENT_TYPES})${BOUNDARY}`, 'iu')),
+      (m) => m[0].toLowerCase(),
+    );
+    const subtype: Parser<string> = map(
+      satisfy(
+        SUBTYPE_WORD_NUMBERED,
+        (w) => w.plural !== true && (subtypes === 'all' || !isBasicLandType(w.subtype)),
+      ),
+      (w) => w.subtype,
+    );
+    const typeMember = (t: string): IrFilter => ({ types: [t], raw: t });
+    const subtypeMember = (st: string): IrFilter => ({ subtypes: [st], raw: st });
+    const r = sequence(
+      choice(
+        map(sequence(type, literal(' or '), subtype), ([t, , st]) => [
+          typeMember(t),
+          subtypeMember(st),
+        ]),
+        map(sequence(subtype, literal(' or '), type), ([st, , t]) => [
+          subtypeMember(st),
+          typeMember(t),
+        ]),
+      ),
+      optional(CONTROL_SUFFIX, undefined),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [anyOf, controller] = r.value;
+    const base = toFilter('battlefield', { ...NO_PARTS, controller }, ctx.text.slice(pos, r.pos));
+    return { ok: true, value: { ...base, anyOf }, pos: r.pos };
+  };
   // "up to two target artifacts and/or enchantments" (stage P33, D-150, CR 115.1): the targets are each of one of the types.
   const pluralAndOr: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
@@ -644,7 +730,7 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
   // artifacts and enchantments") join with "and" and are not read.
   return plural
     ? choice(quiet(pluralAndOr), single)
-    : choice(choose, quiet(modifiedChoice), quiet(subtypeChoice), single);
+    : choice(choose, quiet(modifiedChoice), quiet(typeOrSubtype), quiet(subtypeChoice), single);
 }
 
 /**
@@ -705,7 +791,11 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
         map(many(MODIFIER), (modifiers) =>
           modifiers.reduce<FilterParts>((acc, m) => m(acc), NO_PARTS),
         ),
-        (parts) => parts.tapped === undefined && parts.token === undefined && !parts.attacking,
+        (parts) =>
+          parts.tapped === undefined &&
+          parts.token === undefined &&
+          !parts.attacking &&
+          !parts.modified,
       ),
       optional(
         map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([types]) => types),
@@ -746,7 +836,12 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
       if (!modifiers.ok) return modifiers;
       if (modifiers.value.length > 0) {
         const parts = modifiers.value.reduce<FilterParts>((acc, m) => m(acc), NO_PARTS);
-        if (parts.tapped !== undefined || parts.token !== undefined || parts.attacking)
+        if (
+          parts.tapped !== undefined ||
+          parts.token !== undefined ||
+          parts.attacking ||
+          parts.modified
+        )
           return fail(c, at);
         const types = optional(typeWords(CARD_TYPES, false), [] as string[])(c, modifiers.pos);
         if (!types.ok) return types;
@@ -916,6 +1011,7 @@ export function graveyardPhrase(
       parts.notSupertypes.length === 0 &&
       !parts.attacking &&
       !parts.historic &&
+      !parts.modified &&
       parts.colorCount === undefined;
     const left = PERMANENT_CARD_TYPES.filter((t) => !parts.notTypes.includes(t));
     if (!plain || left.length === 0) return fail(ctx, pos);

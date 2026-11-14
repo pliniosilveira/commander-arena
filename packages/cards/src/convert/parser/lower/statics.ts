@@ -18,15 +18,17 @@ import {
 } from '@commander-arena/engine';
 import { bind } from '../ir/bind';
 import type { IrAbility, IrNoun, IrStaticEffect, IrStaticPart } from '../ir/types';
-import { isGrantable, keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
+import { AFFLICT_WORD, grantedKeyword, landwalkOf } from '../rules/keyword/vocabulary';
 import { lowerActivated, lowerGrantedMana } from './activated';
 import { isKeepsDamage, lowerKeepsDamage } from './adamantoise';
 import { lowerAmount, lowerDefinedPt, lowerStaticAmount, lowerStaticPtStep } from './amounts';
 import { isAngelStatic, lowerAngelStatic } from './angels';
 import { withoutZone } from './attachments';
 import { lowerCondition } from './conditions';
+import { bindAttachedIt, lowerAbilityCostReduction } from './danitha-g3';
 import { isDragonStatic, lowerDragonStatic } from './dragons';
 import { type FeatureRef, missingFeatures } from './features';
+import { lowerGraveyardAbilityCostReduction } from './gisa-g4';
 import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
 import { isKorvoldStatic, lowerKorvoldStatic } from './korvold';
 import { colorLetter, lowerFilter } from './nouns';
@@ -188,9 +190,11 @@ function effectOf(
       return ok({ kind: 'modifyPt', subject, power: effect.power, toughness: effect.toughness });
     case 'ptCount': {
       // D-115, CR 611.3a: a bonus per object counted, worked out each time the subject is derived.
-      const power = lowerStaticPtStep(effect.power, effect.count, ctx, at.rule);
+      // D-426 (Danitha group 3): "for each Aura attached to it": "it" is the permanent the statement is about.
+      const counted = bindAttachedIt(effect.count, subject);
+      const power = lowerStaticPtStep(effect.power, counted, ctx, at.rule);
       if (!power.ok) return power;
-      const toughness = lowerStaticPtStep(effect.toughness, effect.count, ctx, at.rule);
+      const toughness = lowerStaticPtStep(effect.toughness, counted, ctx, at.rule);
       if (!toughness.ok) return toughness;
       return ok({ kind: 'modifyPt', subject, power: power.value, toughness: toughness.value });
     }
@@ -207,11 +211,10 @@ function effectOf(
       });
     }
     case 'grantKeyword': {
-      const kind = keywordKind(effect.keyword);
-      if (kind === undefined || !isGrantable(kind) || (effect.params ?? []).length > 0) {
-        return failure(at);
-      }
-      return ok({ kind: 'grantKeyword', subject, keyword: plainKeyword(kind) });
+      // D-472, D-473: a keyword without parameters, "afflict 3" or a landwalk ("swampwalk"): `grantedKeyword` knows each word.
+      const keyword = grantedKeyword(effect.keyword);
+      if (keyword === undefined || (effect.params ?? []).length > 0) return failure(at);
+      return ok({ kind: 'grantKeyword', subject, keyword });
     }
     case 'grantProtection': {
       // CR 702.16, 903.4 (stage P70, D-259): the engine's `grantKeyword` with a protection, from the named colors or from those outside the
@@ -229,6 +232,18 @@ function effectOf(
           kind: 'grantKeyword',
           subject,
           keyword: { kind: 'protection', from: 'colorsNotInCommanderIdentity' },
+        });
+      }
+      // CR 702.16a, 205.2a (Danitha deck group 1b, D-402): "protection from creatures", from the card types the text names.
+      if (effect.cardTypes !== undefined) {
+        const types = effect.cardTypes.filter((t): t is CardType =>
+          (CARD_TYPES as readonly string[]).includes(t),
+        );
+        if (types.length === 0 || types.length !== effect.cardTypes.length) return failure(at);
+        return ok({
+          kind: 'grantKeyword',
+          subject,
+          keyword: { kind: 'protection', from: 'cardType', types },
         });
       }
       const colors = (effect.colors ?? []).map((w) => colorLetter(w));
@@ -394,9 +409,13 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:characteristicPt', 'amount:countOf'];
     case 'grantKeyword':
       // D-186: riot is read by the engine from the group's static ability as a permanent enters, and listed as a keyword of its own.
-      return effect.keyword === 'riot'
-        ? ['static:grantKeyword', 'keyword:riot']
-        : ['static:grantKeyword'];
+      if (effect.keyword === 'riot') return ['static:grantKeyword', 'keyword:riot'];
+      // D-472, D-473: the keyword node of a granted afflict or landwalk is a kind of its own for the engine.
+      if (AFFLICT_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:afflict'];
+      if (landwalkOf(effect.keyword) !== undefined) {
+        return ['static:grantKeyword', 'keyword:landwalk'];
+      }
+      return ['static:grantKeyword'];
     case 'grantProtection':
       return ['static:grantKeyword', 'keyword:protection'];
     case 'grantQuoted':
@@ -425,6 +444,9 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:takeFromLinkedExile'];
     case 'costReduction':
       return ['static:costReduction'];
+    case 'abilityCostReduction':
+    case 'graveyardAbilityCostReduction':
+      return ['static:abilityCostReduction'];
     case 'restrictUnless':
       return ['static:restrictionUnless'];
     case 'ptAmount':
@@ -446,6 +468,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'untapInOthersStep':
       return playRuleNeeds(effect);
     case 'additionalCost':
+    case 'optionalSacrificeCopies':
     case 'freeCast':
     case 'tapAlternative':
       return [];
@@ -505,6 +528,8 @@ function readsCombat(filter: ObjectFilter): boolean {
     filter.attacking === true ||
     filter.manaValueX === true ||
     filter.controllerDealtDamageBySource === true ||
+    // D-416 (CR 700.9): the attachments of a permanent are read from the game, which `derive` does not have while it matches a subject.
+    filter.modified === true ||
     (filter.anyOf?.some(readsCombat) ?? false)
   );
 }
@@ -540,6 +565,10 @@ function lowerCostReduction(
   if (subject.det === 'self') {
     spells = { kind: 'this' };
   } else if (subject.det === 'each') {
+    // D-426: "that target enchanted creature" is the permanent the Aura is attached to (CR 303.4b): only an Aura has one.
+    if (subject.filter.targetsHost === true && !ctx.faceSubtypes.includes('Aura')) {
+      return failure(subject);
+    }
     const filter = lowerFilter(subject);
     if (!filter.ok) return filter;
     spells = filter.value;
@@ -767,6 +796,26 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       rule: reduction.rule,
     };
   }
+  // "You may cast ~ as though it had flash if it targets a commander." (Danitha deck, D-408, CR 601.3b, 601.3d): the spell's own permission, with the condition
+  // the engine reads as the spell is cast.
+  if (first.kind === 'castAsThoughFlash' && statement.subject.det === 'self') {
+    if (more.length > 0 || statement.condition === undefined) return failure(ability);
+    const lowered = lowerCondition(statement.condition, false, ctx);
+    if (!lowered.ok) return lowered;
+    const missing = missingFeatures(['ability:static', 'static:castAsThoughFlash']);
+    if (missing.length > 0) return failure(ability, missing);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: { kind: 'castAsThoughFlash', spells: { kind: 'this' } },
+          condition: lowered.value,
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
   if (statement.condition === undefined) {
     if (parts.length > 1) return failure(ability);
   } else {
@@ -805,6 +854,12 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     if (more.length > 0) return failure(ability);
     return lowerCostReduction(ability, first.amount, ctx);
   }
+  // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (Danitha group 3, D-428, CR 601.2f, 602.2b, 702.6a).
+  if (first.kind === 'abilityCostReduction')
+    return lowerAbilityCostReduction(ability, first, more.length, ctx);
+  // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa group 4, D-461, CR 601.2f, 118.7, 113.6b).
+  if (first.kind === 'graveyardAbilityCostReduction')
+    return lowerGraveyardAbilityCostReduction(ability, first, more.length);
   if (first.kind === 'additionalCost' || first.kind === 'freeCast') return failure(ability);
   if (
     first.kind === 'castAsThoughFlash' ||
@@ -916,6 +971,8 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:grantAbility',
   'static:restriction',
   'static:costReduction',
+  // D-428 (Danitha group 3): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
+  'static:abilityCostReduction',
   'static:setTypes',
   'static:loseTypes',
   'static:castFromGraveyard',

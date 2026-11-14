@@ -2511,6 +2511,549 @@ export const HASHATON_G10_LANDS = supported([
 ]);
 
 /**
+ * The SYNTHETIC cards of group 5 of the Danitha deck (D-405 to D-408): a search that puts the card on top after the shuffle (a `chooseCards` search with a reveal), an Aura
+ * that asks the controller whether to move onto each creature that enters (a `confirmOptional` in the middle of other turns), an Aura with a blight cost (a `choosePermanent` of
+ * purpose `blight`, asked in the middle of an activation) and Auras that can be cast at flash timing when they target a commander (a cast at an unusual time). They change which
+ * answers the generic pools ask for, which games-100 expects only from dedicated styles.
+ */
+export const DANITHA_G5_NAMES = [
+  'SYNTHETIC Grove Warden',
+  'SYNTHETIC Quiet Tutor',
+  'SYNTHETIC Wandering Aura',
+  'SYNTHETIC Loyal Wanderer',
+  'SYNTHETIC Blighting Aura',
+  'SYNTHETIC Blight Scholar',
+  'SYNTHETIC Warding Aura',
+  'SYNTHETIC Crowd Aura',
+  'SYNTHETIC Idle Flash Spell',
+] as const;
+
+/** The danithaG5 style: every card of the group, creatures to enchant, to blight and to enter, and removal that the commander-flash Aura answers. */
+export const DANITHA_G5_SPELLS = [
+  ...supported(DANITHA_G5_NAMES),
+  ...supported(DANITHA_G5_NAMES),
+  ...supported(['Lightning Bolt', 'Murder']),
+  ...supported(['SYNTHETIC Might Aura', 'SYNTHETIC Curse Aura']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** White for the Auras, black for the removal, a little green for the bodies. */
+export const DANITHA_G5_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Forest',
+  'Forest',
+]);
+
+/**
+ * The SYNTHETIC cards of group 4 of the Danitha deck (D-416 to D-421): three Auras with Umbra armor (one of them enchants only a modified creature) and the creature that
+ * pumps the other modified creatures and makes Auras and Equipment cheaper. Umbra armor replaces a destruction, and with a regeneration shield or a second Umbra Aura on the
+ * same creature the controller is asked in what order (a `chooseOption` of purpose `replacement`, in the middle of a resolution or of the state-based actions). That question
+ * changes which answers the generic pools ask for, which games-100 expects only from dedicated styles.
+ */
+export const DANITHA_G4_NAMES = [
+  'SYNTHETIC Umbra Hide',
+  'SYNTHETIC Umbra Veil',
+  'SYNTHETIC Umbra Mantle',
+  'SYNTHETIC Modified Rallier',
+] as const;
+
+/** The danithaG4 style: every card of the group twice, creatures with and without regeneration, the removal that destroys them, and Auras, Equipment and counters that make a creature modified. */
+export const DANITHA_G4_SPELLS = [
+  ...supported(DANITHA_G4_NAMES),
+  ...supported(DANITHA_G4_NAMES),
+  ...supported(['SYNTHETIC Regenerating Troll', 'SYNTHETIC Regrowth Charm']),
+  ...supported(['Lightning Bolt', 'Murder', 'SYNTHETIC Final Smite', 'SYNTHETIC Wrath']),
+  ...supported(['SYNTHETIC Might Aura', 'SYNTHETIC Blade']),
+  ...supported([
+    'Grizzly Bears',
+    'Grizzly Bears',
+    'Giant Spider',
+    'Llanowar Elves',
+    'Typhoid Rats',
+  ]),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Green for the Auras, black for the regeneration and the removal, a little red and white for the rest. */
+export const DANITHA_G4_LANDS = supported([
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Swamp',
+  'Swamp',
+  'Plains',
+  'Plains',
+  'Mountain',
+]);
+
+/**
+ * The SYNTHETIC cards of group 3 of the Danitha deck (D-422 to D-428): a creature and Auras that count what is attached, a sorcery that destroys the creatures that are not
+ * enchanted, Auras that read the color of the creature, another Aura on it and the turn they entered, an Aura that makes Equip abilities and Aura spells cheaper when they target the
+ * creature it enchants (the targets decision offers only the targets after which the cost can be paid), and an Equipment with an expensive Equip. The optional draw, the board wipe and
+ * the cast that restricts its targets change which answers the generic pools ask for, which games-100 expects only from dedicated styles.
+ */
+export const DANITHA_G3_NAMES = [
+  'SYNTHETIC Aura Weaver',
+  'SYNTHETIC Aura Scholar',
+  'SYNTHETIC Bare Purge',
+  'SYNTHETIC Armor of Many',
+  'SYNTHETIC Twin Face Aura',
+  'SYNTHETIC Dual Hue Aura',
+  'SYNTHETIC Flash Ward Aura',
+  'SYNTHETIC Strong Spine Aura',
+  'SYNTHETIC Costly Blade',
+] as const;
+
+/** The danithaG3 style: every card of the group twice, other Auras and Equipment to attach, bodies of every color to enchant, and removal to answer. */
+export const DANITHA_G3_SPELLS = [
+  ...supported(DANITHA_G3_NAMES),
+  ...supported(DANITHA_G3_NAMES),
+  ...supported(['SYNTHETIC Might Aura', 'SYNTHETIC Wings Aura', 'SYNTHETIC Blade']),
+  ...supported(['Lightning Bolt', 'Murder']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** White for the Auras, green for the bodies and the Equip, a little red and black for the removal. */
+export const DANITHA_G3_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Island',
+  'Mountain',
+  'Swamp',
+]);
+
+/**
+ * The SYNTHETIC cards of group 6 of the Danitha deck (D-430, D-431): a batch combat damage trigger and a look-back trigger over creatures with power greater than their
+ * base power, a spell that destroys one, and spells that put keyword counters (reach, deathtouch, flying, first strike, double strike, exalted) on a creature. They change which
+ * creatures have which keywords during a game, which the generic pools are not built to follow.
+ */
+export const DANITHA_G6_NAMES = [
+  'SYNTHETIC Base Power Batch Watcher',
+  'SYNTHETIC Surge Mourner',
+  'SYNTHETIC Viper Boon',
+  'SYNTHETIC Strike Boon',
+  'SYNTHETIC Exalting Boon',
+  'SYNTHETIC Overgrowth Snare',
+] as const;
+
+/** The danithaG6 style: every card of the group twice, and bodies to put the counters on. */
+export const DANITHA_G6_SPELLS = [
+  ...supported(DANITHA_G6_NAMES),
+  ...supported(DANITHA_G6_NAMES),
+  ...supported(['Lightning Bolt', 'Murder']),
+  ...supported(['SYNTHETIC Might Aura', 'SYNTHETIC Growth Spurt']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Green, white and black for the counters, a little red for the removal. */
+export const DANITHA_G6_LANDS = supported([
+  'Forest',
+  'Forest',
+  'Forest',
+  'Plains',
+  'Plains',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+]);
+
+/**
+ * The SYNTHETIC cards of group 7 of the Danitha deck (D-433): modal spells whose modes have a cost listed before the effect (Tiered): a "choose one" with three tiers
+ * (one costing {0}), a "choose one or more" whose modes all cost something, and a "choose one" with one costed mode. They put a `chooseModes` question in front of every cast whose
+ * mana the caster can only partly spend, which games-100 expects only from dedicated styles.
+ */
+export const DANITHA_G7_NAMES = [
+  'SYNTHETIC Tiered Ward',
+  'SYNTHETIC Costed Pair',
+  'SYNTHETIC Half Costed Choice',
+] as const;
+
+/** The danithaG7 style: every card of the group three times, bodies to protect and aim at, and a burn spell to respond to. */
+export const DANITHA_G7_SPELLS = [
+  ...supported(DANITHA_G7_NAMES),
+  ...supported(DANITHA_G7_NAMES),
+  ...supported(DANITHA_G7_NAMES),
+  ...supported(['Lightning Bolt', 'Murder']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** White, red and blue for the three cards, a little black for the removal. */
+export const DANITHA_G7_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Mountain',
+  'Island',
+  'Island',
+  'Swamp',
+]);
+
+/**
+ * The SYNTHETIC cards of group 1 of the Feather deck (D-450 to D-452): "gains protection from the color of your choice until end of turn" (a `chooseOption` of purpose
+ * `protectionColor` in the middle of a resolution, for one creature and for a group), "gains protection from red until end of turn" and "draw a card, then +1/+0 for each card you've
+ * drawn this turn". The color question is a decision kind that games-100 expects only from dedicated styles, so the group is kept out of every generic pool.
+ */
+export const FEATHER_G1_NAMES = [
+  'SYNTHETIC Feather Ward',
+  'SYNTHETIC Feather Rally',
+  'SYNTHETIC Feather Veil',
+  'SYNTHETIC Feather Fist',
+] as const;
+
+/** The featherG1 style: every card of the group three times, bodies to protect, burn and removal to respond to, and a card-draw spell. */
+export const FEATHER_G1_SPELLS = [
+  ...supported(FEATHER_G1_NAMES),
+  ...supported(FEATHER_G1_NAMES),
+  ...supported(FEATHER_G1_NAMES),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Murder', 'Divination']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Raging Goblin']),
+];
+
+/** White for the protection, red for the burn and the pump, blue for the card draw, a little black for the removal. */
+export const FEATHER_G1_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Mountain',
+  'Island',
+  'Island',
+  'Swamp',
+]);
+
+/**
+ * The SYNTHETIC cards of group 1 of the Gisa deck (D-472 to D-476): Afflict N and a group that has it, a group that has swampwalk, a cost that taps an untapped Zombie with
+ * abilities that turn a land into a Swamp and give a creature swampwalk, the second main phase trigger that reads the turn's combat damage by Zombies and asks which creature card to
+ * return from the graveyard, and the Zombie token with power 6 or greater that gains lifelink as it attacks. The cost asks which Zombies to tap, the trigger asks cards from the
+ * graveyard and the abilities ask targets: questions games-100 expects only from dedicated styles, so the group is kept out of every generic pool.
+ */
+export const GISA_G1_NAMES = [
+  'SYNTHETIC Afflict Monarch',
+  'SYNTHETIC Walk Master',
+  'SYNTHETIC Trail Scout',
+  'SYNTHETIC Horde Banner',
+  'SYNTHETIC Gisa Zombie',
+] as const;
+
+/** The gisaG1 style: every card of the group three times (the Zombie body five), removal and burn to kill them, and plain bodies to block. */
+export const GISA_G1_SPELLS = [
+  ...supported(GISA_G1_NAMES),
+  ...supported(GISA_G1_NAMES),
+  ...supported(GISA_G1_NAMES),
+  ...supported(['SYNTHETIC Gisa Zombie', 'SYNTHETIC Gisa Zombie']),
+  ...supported(['Lightning Bolt', 'Murder', 'Divination']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+];
+
+/** Black for the Zombies, a few of every other basic land so that swampwalk and "becomes a Swamp" are sometimes the difference. */
+export const GISA_G1_LANDS = supported([
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Forest',
+  'Forest',
+  'Mountain',
+  'Island',
+]);
+
+/**
+ * The SYNTHETIC cards of group 2 of the Feather deck (D-443 to D-448): a creature that gives commander creatures +2/+2 and indestructible (the commander of the deck is the one it
+ * reads), a bite with "another target creature" and a damage spell with two amounts to two targets (two target questions in one cast, with a differ rule), a creature with a trigger of
+ * three events and "Monstrosity 5", a modal spell with a counter-and-untap mode and a bounce mode (a `chooseModes` question), and a land whose counter ability is only for sorcery timing
+ * after an instant or sorcery spell was cast this turn. The modal question and the targets of each cast change which answers the generic pools ask for, which games-100 expects
+ * only from dedicated styles.
+ */
+export const FEATHER_G2_NAMES = [
+  'SYNTHETIC Commander Guard',
+  'SYNTHETIC Hammer Blow',
+  'SYNTHETIC Twin Strike',
+  'SYNTHETIC Spike Toy',
+  'SYNTHETIC Way Light',
+  'SYNTHETIC Oracle Hall',
+] as const;
+
+/** The featherG2 style: every spell of the group three times, bodies to aim at (a Vehicle too), and instants and a sorcery to wake the land. */
+export const FEATHER_G2_SPELLS = [
+  ...supported(FEATHER_G2_NAMES.filter((n) => n !== 'SYNTHETIC Oracle Hall')),
+  ...supported(FEATHER_G2_NAMES.filter((n) => n !== 'SYNTHETIC Oracle Hall')),
+  ...supported(FEATHER_G2_NAMES.filter((n) => n !== 'SYNTHETIC Oracle Hall')),
+  ...supported(['Lightning Bolt', 'Murder', 'Divination']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Scout Skiff', 'SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** White, red and black for the cards of the group, the land of the group twice, the rest basic. */
+export const FEATHER_G2_LANDS = supported([
+  'SYNTHETIC Oracle Hall',
+  'SYNTHETIC Oracle Hall',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Mountain',
+  'Swamp',
+  'Island',
+]);
+
+/**
+ * The SYNTHETIC cards of group 5 of the Gisa deck (D-478 to D-482): a creature with decayed, a sorcery that gives decayed until end of turn and one that puts a decayed counter, an
+ * artifact that grows corpse counters and is sacrificed for that many decayed Zombies, a creature with an end step trigger that has an intervening "if you control no creatures with
+ * decayed", a Zombie with cycling and "you may have target player lose life equal to the number of Zombies on the battlefield", and a creature that escapes with two +1/+1 counters.
+ * They put the sacrifice of decayed creatures at end of combat, an optional trigger with a target player and an escape cost question into games, which games-100 expects only from
+ * dedicated styles.
+ */
+export const GISA_G5_NAMES = [
+  'SYNTHETIC Decayed Husk',
+  'SYNTHETIC Rot Touch',
+  'SYNTHETIC Rot Seed',
+  'SYNTHETIC Corpse Vault',
+  'SYNTHETIC Husk Raiser',
+  'SYNTHETIC Rot Cycler',
+  'SYNTHETIC Grave Strider',
+] as const;
+
+/** The gisaG5 style: every card of the group three times, bodies to aim the sorceries at and to die for the corpse counters, and removal to fill the graveyard. */
+export const GISA_G5_SPELLS = [
+  ...supported(GISA_G5_NAMES),
+  ...supported(GISA_G5_NAMES),
+  ...supported(GISA_G5_NAMES),
+  ...supported(['Lightning Bolt', 'Murder', 'Divination']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+];
+
+/** Black for the cards of the group, the rest basic. */
+export const GISA_G5_LANDS = supported([
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Plains',
+  'Island',
+  'Forest',
+]);
+
+/**
+ * The SYNTHETIC cards of group 3 of the Feather deck (D-437 to D-439): creatures with a cast trigger on the spells that target them (counters, a card drawn once each turn,
+ * scry), the exile of an instant or sorcery as it resolves with its return to the hand at the end step, the copy of a spell for each other creature it could target (Zada and Mirrorwing
+ * style), and a spell with two targets. They put copies of spells, delayed returns and `orderTriggers` questions into games, which the generic pools are not built to follow.
+ */
+export const FEATHER_G3_NAMES = [
+  'SYNTHETIC Heroic Captain',
+  'SYNTHETIC Heroic Scout',
+  'SYNTHETIC Cast Draw Knight',
+  'SYNTHETIC Spell Recycler',
+  'SYNTHETIC Echo Grinder',
+  'SYNTHETIC Mirror Wyrm',
+  'SYNTHETIC Paired Boost',
+] as const;
+
+/**
+ * The featherG3 style: every card of the group three times, many spells that target a creature (random agents aim one at a creature of the group often enough for the copies and the
+ * triggers to happen in 100 games), an Equipment, and bodies to aim them at.
+ */
+export const FEATHER_G3_SPELLS = [
+  ...supported(FEATHER_G3_NAMES),
+  ...supported(FEATHER_G3_NAMES),
+  ...supported(FEATHER_G3_NAMES),
+  ...supported(['Unsummon', 'Unsummon', 'Unsummon', 'Unsummon', 'Unsummon', 'Unsummon']),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Lightning Bolt', 'Murder']),
+  ...supported(['SYNTHETIC Blade']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3']),
+];
+
+/** White and red for the creatures, blue for Unsummon, a little black for the removal. */
+export const FEATHER_G3_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Island',
+  'Island',
+  'Swamp',
+]);
+
+/**
+ * The SYNTHETIC cards of group 4 of the Gisa deck (D-459 to D-462): a Whip that returns a creature card from the graveyard with haste, exiles it at the end step and exiles it
+ * instead of letting it leave (a target in the graveyard, a delayed trigger and a replacement), an artifact that makes the activated abilities of creature cards in your graveyard cost
+ * {1} less, a creature whose ability works from the hand (a reveal cost, only in its controller's turn) and whose enters trigger destroys the creatures with its counter, and a Vacuum
+ * that exiles a card with a linked ability and is sacrificed to put the creature cards it exiled onto the battlefield as 1/1 Spirits with flying counters. They put abilities from the
+ * hand and from graveyards, targets in graveyards and delayed triggers into games, which the generic pools are not built to follow.
+ */
+export const GISA_G4_NAMES = [
+  'SYNTHETIC Grave Whip',
+  'SYNTHETIC Grave Tools',
+  'SYNTHETIC Prey Hunter',
+  'SYNTHETIC Soul Vacuum',
+] as const;
+
+/**
+ * The gisaG4 style: every card of the group three times, creatures with a graveyard ability (unearth) for the Tools to cheapen, creatures to die and to put counters on, and removal
+ * to fill the graveyards for the Whip and the Vacuum.
+ */
+export const GISA_G4_SPELLS = [
+  ...supported(GISA_G4_NAMES),
+  ...supported(GISA_G4_NAMES),
+  ...supported(GISA_G4_NAMES),
+  ...supported(['SYNTHETIC Unearth Shade', 'SYNTHETIC Unearth Shade', 'SYNTHETIC Unearth Gnoll']),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Murder', 'Murder']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Black for the cards of the group (all of them cost black or nothing), a little red for the removal and the Gnoll. */
+export const GISA_G4_LANDS = supported([
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Mountain',
+  'Plains',
+  'Forest',
+]);
+
+/** Style pairs of the Gisa group 4 soak test (D-459 to D-462): a mirror match and both mixed ways. */
+export const GISA_G4_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['gisaG4', 'gisaG4'],
+  ['gisaG4', 'spells'],
+  ['spells', 'gisaG4'],
+];
+
+/** Style pairs of the Feather group 3 soak test (D-437 to D-439): a mirror match and both mixed ways. */
+export const FEATHER_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['featherG3', 'featherG3'],
+  ['featherG3', 'spells'],
+  ['spells', 'featherG3'],
+];
+
+/**
+ * The SYNTHETIC cards of group 2 of the Gisa deck (D-464 to D-468): a lord with ward that costs mana and life and a trigger on committing a crime (two Zombie Rogue tokens, once
+ * each turn), a creature card that comes back from the graveyard when its controller commits a crime and pays {B} (a `confirmOptional` question from the graveyard), a creature that
+ * drains when its controller creates or sacrifices a token, a creature that draws when others die (once each turn), two helpers that commit a crime (an activated ability and a
+ * triggered ability that target), a token maker and a sweeper. The payment questions and the trigger from the graveyard change which answers the generic pools ask for, which games-100
+ * expects only from dedicated styles.
+ */
+export const GISA_G2_NAMES = [
+  'SYNTHETIC Crypt Warlock',
+  'SYNTHETIC Restless Digger',
+  'SYNTHETIC Token Leech',
+  'SYNTHETIC Grave Scholar',
+  'SYNTHETIC Needle Rogue',
+  'SYNTHETIC Entry Stinger',
+  'SYNTHETIC Rat Swarm',
+  'SYNTHETIC Grim Sweep',
+] as const;
+
+/** The gisaG2 style: every card of the group three times, and removal and burn that target (crimes), and bodies to aim them at. */
+export const GISA_G2_SPELLS = [
+  ...supported(GISA_G2_NAMES),
+  ...supported(GISA_G2_NAMES),
+  ...supported(GISA_G2_NAMES),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Lightning Bolt', 'Murder', 'Murder']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Black for the creatures and the payments, red for the burn. */
+export const GISA_G2_LANDS = supported([
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+]);
+
+/** Style pairs of the Gisa group 2 soak test (D-464 to D-468): a mirror match and both mixed ways. */
+export const GISA_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['gisaG2', 'gisaG2'],
+  ['gisaG2', 'spells'],
+  ['spells', 'gisaG2'],
+];
+
+/**
+ * The SYNTHETIC cards of group 3 of the Gisa deck (D-484 to D-492): a planeswalker whose minus nine has each opponent choose a permanent of each type and sacrifice the rest (and a
+ * sorcery that does it for each player), a creature that sacrifices two other creatures as a cost and has any number of target players lose life and sacrifice, a creature that sacrifices
+ * X creatures as a cost (an X announced before the targets), a creature with "partner with" and the card it searches for, and an instant with an optional sacrifice of any number of creatures
+ * that copies it, with three permanents of the types the questions of the group are about. They ask `chooseX`, `choosePermanent` of purpose `spare` and of a sacrifice that may choose none,
+ * which the generic pools are not built to follow: a style of their own.
+ */
+export const GISA_G3_NAMES = [
+  'SYNTHETIC Culling Walker',
+  'SYNTHETIC Culling Rite',
+  'SYNTHETIC Sacrifice Priest',
+  'SYNTHETIC Sacrifice Demon',
+  'SYNTHETIC Partner Seeker',
+  'SYNTHETIC Partner Quarry',
+  'SYNTHETIC Forbidden Rite',
+  'SYNTHETIC Gisa Relic',
+  'SYNTHETIC Gisa Golem',
+  'SYNTHETIC Gisa Ward',
+] as const;
+
+/** The gisaG3 style: every card of the group three times (the walker and the sorceries a little less), and creatures to give up. */
+export const GISA_G3_SPELLS = [
+  ...supported(GISA_G3_NAMES),
+  ...supported(GISA_G3_NAMES),
+  ...supported(GISA_G3_NAMES),
+  ...supported([
+    'SYNTHETIC Sacrifice Priest',
+    'SYNTHETIC Sacrifice Demon',
+    'SYNTHETIC Forbidden Rite',
+  ]),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+  ...supported(['Lightning Bolt', 'Murder']),
+];
+
+/** Black for everything of the group, the rest to cast the creatures and the removal. */
+export const GISA_G3_LANDS = supported([
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Plains',
+  'Mountain',
+  'Island',
+  'Forest',
+]);
+
+/** Style pairs of the Gisa group 3 soak test (D-484 to D-492): a mirror match and both mixed ways. */
+export const GISA_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['gisaG3', 'gisaG3'],
+  ['gisaG3', 'spells'],
+  ['spells', 'gisaG3'],
+];
+
+/**
  * The SYNTHETIC cards of group 9 of the Hashaton deck (D-390 to D-395): an activated ability with a Phyrexian symbol in its cost (paid with mana or 2 life), the
  * transforming double-faced creature that has it, the exile of a random card from a hand, and the 5/5 whose damage trigger exiles a card from the hand of the controller of the source
  * and then asks "you may put it onto the battlefield" or "you may cast it without paying its mana cost" (a `confirmOptional` or a `chooseCards` of purpose `cast`, in the middle of a
@@ -2523,6 +3066,19 @@ export const HASHATON_G9_NAMES = [
   'SYNTHETIC Chaos Twice',
   'SYNTHETIC Chaos Obelisk',
   'SYNTHETIC Chaos Obliterator',
+] as const;
+
+/**
+ * The SYNTHETIC cards of group 1b of the Danitha deck (D-400 to D-404): an instant that chooses a card of the graveyard and asks "you may put it onto the battlefield"
+ * (a `confirmOptional` in the middle of a resolution, then the Aura's `choosePermanent` of purpose `auraHost`), a creature that lets its controller cast Auras and Equipment from the
+ * graveyard, an Aura with protection from creatures, and an enchantment that scries and draws. The questions change which answers the generic pools ask for, which games-100 expects
+ * only from dedicated styles.
+ */
+export const DANITHA_G1B_NAMES = [
+  'SYNTHETIC Rebirth Rite',
+  'SYNTHETIC Aura Recaller',
+  'SYNTHETIC Creature Ward Aura',
+  'SYNTHETIC Growth Watcher',
 ] as const;
 
 /** The cast-or-copy trigger doubling cards of the Niv-Mizzet deck (D-339): extra triggers and their questions stay out of the generic pools. */
@@ -2746,6 +3302,92 @@ export const HASHATON_G5_LANDS = supported([
   'Mountain',
   'Forest',
 ]);
+
+/**
+ * The SYNTHETIC cards of group 1A of the Danitha deck (D-396, D-397): a sorcery, an enters trigger, an enchantment sacrificed for its ability and a sorcery with a token, all of
+ * which reveal the top cards of the library to everyone (`cardsRevealed`), ask which card of a kind to take into the hand (a `chooseCards` of purpose `lookTake`) and put the rest
+ * into the graveyard. The graveyard fills from the library, so games-100 (which expects only dedicated styles to ask `lookTake` of a revealed top) leaves them to the
+ * 'danithaReveal' style.
+ */
+export const DANITHA_G1A_NAMES = [
+  'SYNTHETIC Reveal Five Sorcery',
+  'SYNTHETIC Reveal Four Scout',
+  'SYNTHETIC Reveal Four Vessel',
+  'SYNTHETIC Reveal Four Permanent Spawn',
+  'SYNTHETIC Reveal Three Spells',
+  'SYNTHETIC Look Five Sorcery',
+] as const;
+
+/** The danithaReveal style: each card of the group twice, bodies of every permanent kind to find, burn and removal. */
+export const DANITHA_G1A_SPELLS = [
+  ...supported(DANITHA_G1A_NAMES),
+  ...supported(DANITHA_G1A_NAMES),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Grizzly Bears', 'Serra Angel']),
+  ...supported(['Lightning Bolt', 'Murder', 'Divination']),
+];
+
+/** Green for the cards of the group, a little of the rest for the cards they find. */
+export const DANITHA_G1A_LANDS = supported([
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Plains',
+  'Mountain',
+  'Swamp',
+]);
+
+/** Style pairs of the Danitha reveal soak test: a mirror match and both mixed ways. */
+export const DANITHA_G1A_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['danithaReveal', 'danithaReveal'],
+  ['danithaReveal', 'spells'],
+  ['spells', 'danithaReveal'],
+];
+
+/**
+ * The SYNTHETIC cards of group 2 of the Danitha deck (D-411, D-412): a creature with an enters trigger and a spell each mill cards and ask which card of a kind
+ * from among the cards milled to put into the hand (a `chooseCards` of purpose `move`, `fromMoved`), with the riders of the real cards (a counter, life, a Food token). The
+ * graveyard fills from the library and the question is asked of a mill, so games-100 (which expects only dedicated styles to ask this) leaves them to the 'danithaMill' style.
+ * The Squirrel creature card and the Town land card are the cards the riders look for.
+ */
+export const DANITHA_G2_NAMES = [
+  'SYNTHETIC Mill Three Scout',
+  'SYNTHETIC Mill Three Chaplain',
+  'SYNTHETIC Mill Four Grab',
+  'SYNTHETIC Mill Four Saving',
+  'SYNTHETIC Mill Four Greeter',
+  'SYNTHETIC Mill Four Tilling',
+  'SYNTHETIC Squirrel Card',
+  'SYNTHETIC Town Land',
+] as const;
+
+/** The danithaMill style: each card of the group twice, bodies of every permanent kind to find, burn and removal. */
+export const DANITHA_G2_SPELLS = [
+  ...supported(DANITHA_G2_NAMES.filter((n) => n !== 'SYNTHETIC Town Land')),
+  ...supported(DANITHA_G2_NAMES.filter((n) => n !== 'SYNTHETIC Town Land')),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'Grizzly Bears', 'Serra Angel']),
+  ...supported(['Lightning Bolt', 'Murder', 'Divination']),
+];
+
+/** Green and white for the cards of the group, and one Town land card for the rider that looks for it. */
+export const DANITHA_G2_LANDS = supported([
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Swamp',
+  'SYNTHETIC Town Land',
+]);
+
+/** Style pairs of the Danitha mill soak test: a mirror match and both mixed ways. */
+export const DANITHA_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['danithaMill', 'danithaMill'],
+  ['danithaMill', 'spells'],
+  ['spells', 'danithaMill'],
+];
 
 export const NIV_DRAW_NAMES = [
   'SYNTHETIC Hollow Warden',
@@ -3164,6 +3806,26 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(SUBJECT_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(RECURSION_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ARTIFACT_NAMES as readonly string[]).includes(card.name))
+  // The Danitha group 6 cards (D-430, D-431) read base power and put keyword counters on creatures: a style of their own.
+  .filter((card) => !(DANITHA_G6_NAMES as readonly string[]).includes(card.name))
+  // The Danitha group 7 cards (D-433) have modes with a cost of their own, which ask the modes of every cast: a style of their own.
+  .filter((card) => !(DANITHA_G7_NAMES as readonly string[]).includes(card.name))
+  // The Gisa group 3 cards (D-484 to D-492) ask which permanent each player keeps, an X announced for a sacrifice, and a sacrifice that may choose none: a style of their own.
+  .filter((card) => !(GISA_G3_NAMES as readonly string[]).includes(card.name))
+  // The Feather group 3 cards (D-437 to D-439) copy spells for each creature they could target, exile spells as they resolve and bring them back at the end step: a style of their own.
+  .filter((card) => !(FEATHER_G3_NAMES as readonly string[]).includes(card.name))
+  // The Gisa group 5 cards (D-478 to D-482) sacrifice decayed creatures at end of combat, ask a "you may" with a target player when cycled and ask the cards to exile for an escape: a style of their own.
+  .filter((card) => !(GISA_G5_NAMES as readonly string[]).includes(card.name))
+  // The Feather group 2 cards (D-443 to D-448) ask the modes of a spell and two targets in one cast, and the land is for sorcery timing after a spell: a style of their own.
+  .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
+  // The Feather group 1 cards (D-451) ask which color to protect from as a spell resolves: a style of their own.
+  .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
+  // The Gisa group 2 cards (D-464 to D-468) ask to pay {B} to return a card from the graveyard and put tokens, ward payments and drawing into games: a style of their own.
+  .filter((card) => !(GISA_G2_NAMES as readonly string[]).includes(card.name))
+  // The Gisa group 1 cards (D-472 to D-476) ask which Zombies to tap, which card to return from the graveyard and the targets of their abilities: a style of their own.
+  .filter((card) => !(GISA_G1_NAMES as readonly string[]).includes(card.name))
+  // The Gisa group 4 cards (D-459 to D-462) have abilities that work from the hand and from graveyards, targets in graveyards and delayed exiles: a style of their own.
+  .filter((card) => !(GISA_G4_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ANGEL_NAMES as readonly string[]).includes(card.name))
@@ -3207,8 +3869,16 @@ const FIXTURES: readonly CardDefinition[] = [
   // The discard X cards of the Hashaton deck (D-386 to D-389) ask X, then the targets, then a discard, while a spell is cast: a style of their own.
   .filter((card) => !(HASHATON_G10_NAMES as readonly string[]).includes(card.name))
 
+  // The Danitha group 5 cards (D-405 to D-408) search with a card on top, move an Aura onto each creature that enters, blight a creature as a cost and cast an Aura at flash timing: a style of their own.
+  .filter((card) => !(DANITHA_G5_NAMES as readonly string[]).includes(card.name))
+  // The Danitha group 4 cards (D-416 to D-421) have Umbra armor, which asks the order of a regeneration shield and a second Umbra Aura in the middle of a resolution: a style of their own.
+  .filter((card) => !(DANITHA_G4_NAMES as readonly string[]).includes(card.name))
+  // The Danitha group 3 cards (D-422 to D-428) draw on an optional trigger, wipe the creatures that are not enchanted and restrict the targets of a cheaper cast and Equip: a style of their own.
+  .filter((card) => !(DANITHA_G3_NAMES as readonly string[]).includes(card.name))
   // The Hashaton group 9 cards (D-390 to D-395) pay life for a Phyrexian symbol, transform and exile a random card from a hand with two offers behind it, which games-100 expects only from dedicated styles.
   .filter((card) => !(HASHATON_G9_NAMES as readonly string[]).includes(card.name))
+  // The Danitha group 1b cards (D-400 to D-404) ask "you may put it onto the battlefield" and an Aura's host in the middle of a resolution, and cast Auras from the graveyard: dedicated tests.
+  .filter((card) => !(DANITHA_G1B_NAMES as readonly string[]).includes(card.name))
   // The life cards of the Hashaton deck (D-363 to D-365) have their own style: a life gain that does not happen, an end step loss and a payment question.
   .filter((card) => !(HASHATON_G2_NAMES as readonly string[]).includes(card.name))
   // Group 4 of the Hashaton deck (D-367): amass asks which Army gets the counters, and the token replacements change what other cards make.
@@ -3221,6 +3891,10 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(HASHATON_G3_NAMES as readonly string[]).includes(card.name))
   // The copy cards of the Hashaton deck (D-382 to D-385) ask what to discard, whether to pay and which type; they have their own style.
   .filter((card) => !(HASHATON_G5_NAMES as readonly string[]).includes(card.name))
+  // The reveal-and-take cards of the Danitha deck (D-396, D-397) have their own style: they reveal the top of the library and ask which card to take.
+  .filter((card) => !(DANITHA_G1A_NAMES as readonly string[]).includes(card.name))
+  // The mill-and-take cards of the Danitha deck (D-411, D-412) have their own style: they mill and ask which card of the cards milled to take.
+  .filter((card) => !(DANITHA_G2_NAMES as readonly string[]).includes(card.name))
   // D-344: the repeatable-mode cards have their own style.
   .filter((card) => !(REPEATABLE_NAMES as readonly string[]).includes(card.name))
   // The manifest slice has its own style: a manifested card is face down, and the agents may turn it face up.
@@ -3354,12 +4028,22 @@ export type DeckStyle =
   | 'keywords'
   | 'mana'
   | 'search'
+  | 'gisaG3'
   | 'activated'
   | 'attachments'
   | 'kicker'
   | 'food'
   | 'layers'
   | 'ward'
+  | 'danithaG6'
+  | 'danithaG7'
+  | 'gisaG5'
+  | 'featherG3'
+  | 'gisaG2'
+  | 'gisaG1'
+  | 'featherG2'
+  | 'featherG1'
+  | 'gisaG4'
   | 'vehicles'
   | 'prevention'
   | 'layouts'
@@ -3409,6 +4093,11 @@ export type DeckStyle =
   | 'hashatonG3'
   | 'hashatonCopies'
   | 'hashatonDiscardX'
+  | 'danithaReveal'
+  | 'danithaMill'
+  | 'danithaG5'
+  | 'danithaG4'
+  | 'danithaG3'
   | 'repeatable'
   | 'manifest'
   | 'combat';
@@ -3419,6 +4108,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'hofri' && HOFRI_SPELLS.length > 0) return HOFRI_SPELLS;
   if (style === 'soulbond' && SOULBOND_SPELLS.length > 0) return SOULBOND_SPELLS;
   if (style === 'piles' && PILES_SPELLS.length > 0) return PILES_SPELLS;
+  if (style === 'gisaG3' && GISA_G3_SPELLS.length > 0) return GISA_G3_SPELLS;
   if (style === 'nivDraw' && NIV_DRAW_SPELLS.length > 0) return NIV_DRAW_SPELLS;
   if (style === 'hashatonLife' && HASHATON_G2_SPELLS.length > 0) return HASHATON_G2_SPELLS;
   if (style === 'hashatonG1' && HASHATON_G1_SPELLS.length > 0) return HASHATON_G1_SPELLS;
@@ -3426,6 +4116,20 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'hashatonG3' && HASHATON_G3_SPELLS.length > 0) return HASHATON_G3_SPELLS;
   if (style === 'hashatonCopies' && HASHATON_G5_SPELLS.length > 0) return HASHATON_G5_SPELLS;
   if (style === 'hashatonDiscardX' && HASHATON_G10_SPELLS.length > 0) return HASHATON_G10_SPELLS;
+  if (style === 'danithaReveal' && DANITHA_G1A_SPELLS.length > 0) return DANITHA_G1A_SPELLS;
+  if (style === 'danithaMill' && DANITHA_G2_SPELLS.length > 0) return DANITHA_G2_SPELLS;
+  if (style === 'danithaG5' && DANITHA_G5_SPELLS.length > 0) return DANITHA_G5_SPELLS;
+  if (style === 'danithaG6' && DANITHA_G6_SPELLS.length > 0) return DANITHA_G6_SPELLS;
+  if (style === 'danithaG7' && DANITHA_G7_SPELLS.length > 0) return DANITHA_G7_SPELLS;
+  if (style === 'gisaG4' && GISA_G4_SPELLS.length > 0) return GISA_G4_SPELLS;
+  if (style === 'featherG3' && FEATHER_G3_SPELLS.length > 0) return FEATHER_G3_SPELLS;
+  if (style === 'gisaG5' && GISA_G5_SPELLS.length > 0) return GISA_G5_SPELLS;
+  if (style === 'featherG2' && FEATHER_G2_SPELLS.length > 0) return FEATHER_G2_SPELLS;
+  if (style === 'featherG1' && FEATHER_G1_SPELLS.length > 0) return FEATHER_G1_SPELLS;
+  if (style === 'gisaG2' && GISA_G2_SPELLS.length > 0) return GISA_G2_SPELLS;
+  if (style === 'gisaG1' && GISA_G1_SPELLS.length > 0) return GISA_G1_SPELLS;
+  if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
+  if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
   if (style === 'manifest' && MANIFEST_SPELLS.length > 0) return MANIFEST_SPELLS;
   if (style === 'vraska') return VRASKA_SPELLS;
@@ -3596,6 +4300,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'ring' && BASIC_LANDS.length > 0) return RING_LANDS;
   if (style === 'planeswalkers' && BASIC_LANDS.length > 0) return PLANESWALKER_LANDS;
   if (style === 'vraska' && BASIC_LANDS.length > 0) return VRASKA_LANDS;
+  if (style === 'gisaG3' && BASIC_LANDS.length > 0) return GISA_G3_LANDS;
   if (style === 'edhrec' && BASIC_LANDS.length > 0) return EDHREC_LANDS;
   if (style === 'hofri' && BASIC_LANDS.length > 0) return HOFRI_LANDS;
   if (style === 'soulbond' && BASIC_LANDS.length > 0) return SOULBOND_LANDS;
@@ -3607,6 +4312,20 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'hashatonG3' && BASIC_LANDS.length > 0) return HASHATON_G3_LANDS;
   if (style === 'hashatonCopies' && BASIC_LANDS.length > 0) return HASHATON_G5_LANDS;
   if (style === 'hashatonDiscardX' && BASIC_LANDS.length > 0) return HASHATON_G10_LANDS;
+  if (style === 'danithaReveal' && BASIC_LANDS.length > 0) return DANITHA_G1A_LANDS;
+  if (style === 'danithaMill' && BASIC_LANDS.length > 0) return DANITHA_G2_LANDS;
+  if (style === 'danithaG5' && BASIC_LANDS.length > 0) return DANITHA_G5_LANDS;
+  if (style === 'danithaG6' && BASIC_LANDS.length > 0) return DANITHA_G6_LANDS;
+  if (style === 'danithaG7' && BASIC_LANDS.length > 0) return DANITHA_G7_LANDS;
+  if (style === 'gisaG4' && BASIC_LANDS.length > 0) return GISA_G4_LANDS;
+  if (style === 'featherG3' && BASIC_LANDS.length > 0) return FEATHER_G3_LANDS;
+  if (style === 'gisaG5' && BASIC_LANDS.length > 0) return GISA_G5_LANDS;
+  if (style === 'featherG2' && BASIC_LANDS.length > 0) return FEATHER_G2_LANDS;
+  if (style === 'featherG1' && BASIC_LANDS.length > 0) return FEATHER_G1_LANDS;
+  if (style === 'gisaG2' && BASIC_LANDS.length > 0) return GISA_G2_LANDS;
+  if (style === 'gisaG1' && BASIC_LANDS.length > 0) return GISA_G1_LANDS;
+  if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
+  if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
   if (style === 'manifest' && BASIC_LANDS.length > 0) return MANIFEST_LANDS;
   return style === 'mana' && MANA_LANDS.length > 0 ? MANA_LANDS : LANDS;
@@ -4070,6 +4789,69 @@ export const HASHATON_G10_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle]
   ['hashatonDiscardX', 'hashatonDiscardX'],
   ['hashatonDiscardX', 'spells'],
   ['spells', 'hashatonDiscardX'],
+];
+
+/** Style pairs of the Danitha group 5 soak test (D-405 to D-408): a mirror match and both mixed ways. */
+export const DANITHA_G5_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['danithaG5', 'danithaG5'],
+  ['danithaG5', 'spells'],
+  ['spells', 'danithaG5'],
+];
+
+/** Style pairs of the Danitha group 4 soak test (D-416 to D-421): a mirror match and both mixed ways. */
+export const DANITHA_G4_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['danithaG4', 'danithaG4'],
+  ['danithaG4', 'spells'],
+  ['spells', 'danithaG4'],
+];
+
+/** Style pairs of the Danitha group 3 soak test (D-422 to D-428): a mirror match and both mixed ways. */
+export const DANITHA_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['danithaG3', 'danithaG3'],
+  ['danithaG3', 'spells'],
+  ['spells', 'danithaG3'],
+];
+
+/** Style pairs of the Danitha group 6 soak test (D-430, D-431): a mirror match and both mixed ways. */
+export const DANITHA_G6_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['danithaG6', 'danithaG6'],
+  ['danithaG6', 'spells'],
+  ['spells', 'danithaG6'],
+];
+
+/** Style pairs of the Danitha group 7 soak test (D-433): a mirror match and both mixed ways. */
+export const DANITHA_G7_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['danithaG7', 'danithaG7'],
+  ['danithaG7', 'spells'],
+  ['spells', 'danithaG7'],
+];
+
+/** Style pairs of the Gisa group 5 soak test (D-478 to D-482): a mirror match and both mixed ways. */
+export const GISA_G5_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['gisaG5', 'gisaG5'],
+  ['gisaG5', 'spells'],
+  ['spells', 'gisaG5'],
+];
+
+/** Style pairs of the Feather group 2 soak test (D-443 to D-448): a mirror match and both mixed ways. */
+export const FEATHER_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['featherG2', 'featherG2'],
+  ['featherG2', 'spells'],
+  ['spells', 'featherG2'],
+];
+
+/** Style pairs of the Feather group 1 soak test (D-451): a mirror match and both mixed ways. */
+export const FEATHER_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['featherG1', 'featherG1'],
+  ['featherG1', 'spells'],
+  ['spells', 'featherG1'],
+];
+
+/** Style pairs of the Gisa group 1 soak test (D-472 to D-476): a mirror match and both mixed ways. */
+export const GISA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['gisaG1', 'gisaG1'],
+  ['gisaG1', 'spells'],
+  ['spells', 'gisaG1'],
 ];
 
 /** Style pairs of the repeatable-mode soak test (D-344): a mirror match and both mixed ways. */

@@ -150,8 +150,8 @@ describe('the continuous-effect nodes that are refused', () => {
       'subtypes must be a non-empty list',
     );
     expectIssue(
-      structure(on({ kind: 'setTypes', objects: T1, subtypes: ['Island'], duration: END })),
-      'Island is not a creature type',
+      structure(on({ kind: 'setTypes', objects: T1, subtypes: ['Desert'], duration: END })),
+      'Desert is not a creature type',
     );
     expectIssue(
       structure(

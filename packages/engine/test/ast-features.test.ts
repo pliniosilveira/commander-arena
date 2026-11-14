@@ -58,9 +58,12 @@ describe('the dimensions', () => {
       'sacrifice',
       'removeCounters',
       'discardThis',
+      'revealThis',
       'discard',
       'tapCreatures',
       'tapPermanents',
+      // D-407: "Blight 1" as the cost of an activated ability.
+      'blight',
       // D-139: "Put a page counter on this artifact", "Return an artifact you control to its owner's hand".
       'putCounters',
       'returnToHand',
@@ -88,6 +91,7 @@ describe('the dimensions', () => {
       'opponentsAtLeast',
       'kicked',
       'replicated',
+      'sacrificedAsCost',
       'controlCommander',
       'sourceHasCounter',
       'subjectGreaterPt',
@@ -126,7 +130,10 @@ describe('the dimensions', () => {
       'sameNameAtLeast',
       // D-151: what entered this turn, damage dealt this turn.
       'enteredThisTurn',
+      // D-423: "as long as this Aura entered this turn".
+      'thisEnteredThisTurn',
       'playerDealtDamage',
+      'combatDamagedBy',
       // D-252: "if you gained 3 or more life this turn".
       'lifeGainedThisTurn',
       // D-318: "Activate only if you've cast three or more spells this turn".
@@ -160,6 +167,8 @@ describe('the dimensions', () => {
       'grantAbility',
       'restriction',
       'costReduction',
+      // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
+      'abilityCostReduction',
       'setTypes',
       'castFromGraveyard',
       // D-139: base power and toughness, "can't be blocked by Walls", "exiled with", "as though they had flash".
@@ -219,7 +228,7 @@ describe('feature references', () => {
     expect(isFeatureSupported('searchDestination:battlefield')).toBe(true);
     expect(isFeatureSupported('searchDestination:hand')).toBe(true);
     expect(isFeatureSupported('searchDestination:graveyard')).toBe(true);
-    expect(isFeatureSupported('searchDestination:library')).toBe(false);
+    expect(isFeatureSupported('searchDestination:library')).toBe(true);
     expect(isFeatureSupported('searchDestination:exile')).toBe(false);
     expect(isFeatureSupported('effect:modifyPt')).toBe(true);
     expect(isFeatureSupported('duration:untilEndOfTurn')).toBe(true);

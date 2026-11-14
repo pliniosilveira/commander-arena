@@ -6,16 +6,19 @@
  * colors and subtypes it reads are the final ones). It must not
  * import `derive`: `derive` depends on it.
  */
-import type { Keyword, NumberComparison, ObjectFilter } from '../ast/types';
+import type { AttachedTo, Keyword, NumberComparison, ObjectFilter } from '../ast/types';
 import type { CardType, Color, Subtype, Supertype } from '../characteristics';
 import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import type { ChosenValues, GameObject, GameState } from '../state/types';
 import { sameCreatureType } from './chosen';
 import { controllerOf } from './control';
+import { isCommanderObject } from './melded';
 
 /** The characteristics a filter looks at. `Derived` has all of them. */
 export interface FilterSubject {
+  /** The object's name, read by `named` (D-489, CR 201.2); left out where the caller does not know it, which fails that test closed. */
+  readonly name?: string;
   readonly types: readonly CardType[];
   readonly supertypes: readonly Supertype[];
   readonly subtypes: readonly Subtype[];
@@ -26,6 +29,8 @@ export interface FilterSubject {
    */
   readonly power?: number | null;
   readonly toughness?: number | null;
+  /** The base power (CR 208.4b), read by `powerAboveBase` (D-431); left out where the caller does not know it, which fails that test closed. */
+  readonly basePower?: number | null;
   readonly manaValue?: number;
   /**
    * The keywords without parameters the object has (`keywords`, `notKeywords`, D-133); left out where the caller does
@@ -33,8 +38,13 @@ export interface FilterSubject {
    * in the places that read filters without abilities: static abilities).
    */
   readonly keywords?: readonly Keyword['kind'][];
-  /** Whether the object is a commander card (`commander`, D-145); left out where the caller does not know, which fails the test closed. */
+  /**
+   * Whether the object is a commander card (`commander`, D-145). Left out where the caller does not know it: the test then reads it from the object (CR 903.3: a card its owner
+   * designated, which no layer changes, D-443), so a static ability's subject ("commander creatures you control") finds it without the view a caller built for the layers.
+   */
   readonly commander?: boolean;
+  /** Whether the permanent is modified (`modified`, D-416, CR 700.9); left out where the caller does not know, which fails the test closed. */
+  readonly modified?: boolean;
 }
 
 /** D-111: whether `value` satisfies the comparison; an object with no such value satisfies none. */
@@ -109,6 +119,51 @@ export interface FilterContext {
    * The subtypes of the object the trigger is about, as it last was (`sharesCreatureTypeWith`, D-261, CR 603.10a, 113.7a): read by the caller; absent fails the flag closed.
    */
   readonly subjectSubtypes?: readonly Subtype[];
+  /**
+   * What another object is, for the filters that read objects attached to this one or the one this is attached to (`attachedTo`, `enchanted`, D-422): the caller says how
+   * (`derive` for a rule that reads the game, the view after layers 1, 4 and 5 for `derive` itself). Absent fails those filters closed.
+   */
+  readonly describeOther?: (obj: GameObject) => FilterSubject;
+}
+
+/** Whether `obj` is attached to what `attached` names (CR 303.4, 301.5, 701.3, D-422). */
+function attachedToHolds(
+  state: GameState,
+  obj: GameObject,
+  attached: AttachedTo,
+  ctx: FilterContext,
+): boolean {
+  const target = obj.attachedTo;
+  if (target === null) return false;
+  if (attached.kind === 'source') return ctx.source !== null && target === ctx.source;
+  if (attached.kind === 'host') {
+    const source = ctx.source === null ? undefined : state.objects[ctx.source];
+    return source !== undefined && source.attachedTo !== null && target === source.attachedTo;
+  }
+  const host = state.objects[target];
+  if (host === undefined || ctx.describeOther === undefined) return false;
+  const describeOther = ctx.describeOther;
+  return matchesFilterWith(
+    state,
+    host,
+    () => describeOther(host),
+    { ...attached.filter, zone: 'battlefield' },
+    ctx,
+  );
+}
+
+/** CR 303.4: "enchanted": at least one Aura is attached to the permanent (an Equipment or a Fortification is not an Aura). Fails closed without `describeOther`. */
+function hasAuraAttached(state: GameState, obj: GameObject, ctx: FilterContext): boolean | null {
+  const describeOther = ctx.describeOther;
+  if (describeOther === undefined) return null;
+  return state.battlefield.some((id) => {
+    const other = state.objects[id];
+    return (
+      other !== undefined &&
+      other.attachedTo === obj.id &&
+      describeOther(other).subtypes.includes('Aura')
+    );
+  });
 }
 
 /**
@@ -125,6 +180,8 @@ export function matchesFilterWith(
   const zone = filter.zone ?? (filter.stackKind ? 'stack' : 'battlefield');
   if (obj.zone !== zone) return false;
   if (filter.other && ctx.source !== null && obj.id === ctx.source) return false;
+  // D-437: "a spell that targets this creature": the object is the permanent that has the ability.
+  if (filter.isSource === true && (ctx.source === null || obj.id !== ctx.source)) return false;
   if (filter.controller === 'you' && controllerOf(state, obj) !== ctx.controller) return false;
   if (filter.controller === 'opponent' && controllerOf(state, obj) === ctx.controller) return false;
   // D-151: "that opponent": the player the event that triggered the ability is about; no such player, nothing matches.
@@ -143,6 +200,17 @@ export function matchesFilterWith(
     return false;
   }
   if (filter.tapped !== undefined && obj.tapped !== filter.tapped) return false;
+  // CR 303.4, 301.5, 701.3 (D-422): "Aura attached to it", "attached to a creature", "creatures that aren't enchanted", "enchanted creature".
+  if (filter.attachedTo !== undefined && !attachedToHolds(state, obj, filter.attachedTo, ctx)) {
+    return false;
+  }
+  if (filter.hostOfSource === true) {
+    const source = ctx.source === null ? undefined : state.objects[ctx.source];
+    if (source === undefined || source.attachedTo !== obj.id) return false;
+  }
+  if (filter.enchanted !== undefined && hasAuraAttached(state, obj, ctx) !== filter.enchanted) {
+    return false;
+  }
   // CR 122.1 (D-145): "with a counter on it": a counter of any kind, or of the named kind.
   if (filter.hasCounter !== undefined) {
     const has =
@@ -170,6 +238,8 @@ export function matchesFilterWith(
   // CR 115.9a (D-181): "with a single target": the spell or ability was put on the stack with exactly one target (one chosen twice counts twice).
   if (filter.singleTarget === true && obj.stack?.chosenTargets.length !== 1) return false;
   const d = describe();
+  // CR 201.2 (D-489): "a card named X": the name is exactly the text.
+  if (filter.named !== undefined && d.name !== filter.named) return false;
   if (filter.types && !filter.types.every((t) => d.types.includes(t))) return false;
   if (filter.notTypes?.some((t) => d.types.includes(t))) return false;
   if (filter.supertypes && !filter.supertypes.every((t) => d.supertypes.includes(t))) return false;
@@ -182,9 +252,12 @@ export function matchesFilterWith(
   // CR 111.1 (D-133): a token is a permanent that is not represented by a card.
   if (filter.token !== undefined && (obj.token !== null) !== filter.token) return false;
   // CR 903.3 (D-145): "commander" is a card designated as a player's commander.
-  if (filter.commander !== undefined && d.commander !== true) return false;
+  if (filter.commander !== undefined && (d.commander ?? isCommanderObject(state, obj)) !== true)
+    return false;
   // D-149: "your commander" is one its owner designated, and that owner is the player reading the filter.
   if (filter.commander === 'yours' && obj.owner !== ctx.controller) return false;
+  // CR 700.9 (D-416): "modified": a counter, an Equipment, or an Aura its controller controls.
+  if (filter.modified === true && d.modified !== true) return false;
   if (filter.keywords && !filter.keywords.every((k) => d.keywords?.includes(k) === true)) {
     return false;
   }
@@ -229,6 +302,14 @@ export function matchesFilterWith(
       return false;
     }
     if (!(d.power < power)) return false;
+  }
+  // CR 208.4b (D-431): "with power greater than its base power": the power the object has now is more than its base power.
+  if (filter.powerAboveBase === true) {
+    const base = d.basePower;
+    if (base === null || base === undefined || d.power === null || d.power === undefined) {
+      return false;
+    }
+    if (!(d.power > base)) return false;
   }
   // D-100, CR 607.2d: "of the chosen type" / "of the chosen color" is what the source chose as it entered.
   if (filter.chosenType === true) {

@@ -1,4 +1,4 @@
-// Entry point of `node tools/corpus/coverage-badge-cli.ts ...` (D-396): see coverage-badge.ts.
+// Entry point of `node tools/corpus/coverage-badge-cli.ts ...` (D-410): see coverage-badge.ts.
 
 import { main } from './coverage-badge.ts';
 

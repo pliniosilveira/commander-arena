@@ -25,6 +25,7 @@ export function optionPrompt(
       d.purpose === 'riot' ||
       d.purpose === 'replacement' ||
       d.purpose === 'meldOrder' ||
+      d.purpose === 'protectionColor' ||
       d.purpose === 'vote') &&
     d.options !== undefined
   ) {

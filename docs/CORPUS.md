@@ -27,7 +27,7 @@ Expected cost: reading is a stream, so memory does not grow with the file; about
 
 Exit codes: 0 done; 1 `--check` found a drop; 2 bad arguments, unreadable input or no baseline.
 
-## The weekly published numbers (D-396)
+## The weekly published numbers (D-410)
 
 The `Coverage report` workflow runs every Monday (and on demand from the Actions tab) on a GitHub runner, which can reach Scryfall. It runs `pnpm coverage:cards --download --out .coverage --update-baseline`, then `node tools/corpus/coverage-badge-cli.ts` turns the new baseline into a site (badge JSONs for shields.io, `coverage.svg`, `index.html`, `backlog.txt`) that it deploys to GitHub Pages; the README draws its badge from there. The committed `reports/` are not touched.
 

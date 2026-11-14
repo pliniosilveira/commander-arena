@@ -9,7 +9,12 @@
  * life of one or more (or X, stage P16) and plain mana (an {X} in it is refused). A second sacrifice or discard in the same sentence, which
  * the engine's `validateCard` would refuse, is refused here with the line.
  */
-import { type AlternativeCost, type Cost, SUPPORTED_FEATURES } from '@commander-arena/engine';
+import {
+  type Ability,
+  type AlternativeCost,
+  type Cost,
+  SUPPORTED_FEATURES,
+} from '@commander-arena/engine';
 import type { IrAbility, IrCondition, IrCost, IrKeyword } from '../ir/types';
 import { withoutZone } from './attachments';
 import { lowerCondition } from './conditions';
@@ -116,6 +121,50 @@ function lowerAdditional(
   return { ok: true, value: { ...NONE, additionalCosts: lowered }, rule: ability.rule };
 }
 
+/**
+ * "As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way." (D-492, CR 118.8, 601.2b, 603.12, 707.10):
+ * the face's additional cost, a `sacrifice` of any number of creatures, and the spell's own "When you cast this spell" ability: if a creature was sacrificed for the cost, copy the spell for
+ * each of them (the spell has no new targets for the copies: the words do not say so, CR 707.10).
+ */
+function lowerSacrificeCopies(
+  ability: Static,
+  effect: Extract<Static['statement']['effects'][number], { kind: 'optionalSacrificeCopies' }>,
+): LowerResult<FaceCosts> {
+  const { what } = effect;
+  const { count: _counted, anyNumber: _any, atLeastOne: _least, ...described } = what;
+  const filter = lowerFilter(described);
+  if (!filter.ok) return filter;
+  const blocked = missingFeatures([
+    'cost:sacrifice',
+    'ability:optionalSacrifice',
+    'effect:copySpell',
+    'trigger:castSpell',
+    'condition:sacrificedAsCost',
+    'amount:sacrificedAsCost',
+  ]);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const copies: Ability = {
+    kind: 'triggered',
+    trigger: { kind: 'castSpell', filter: { stackKind: 'spell' }, by: 'you', self: true },
+    interveningIf: { kind: 'sacrificedAsCost' },
+    effect: {
+      kind: 'copySpell',
+      spell: { kind: 'triggerSubject' },
+      newTargets: 'no',
+      count: { kind: 'sacrificedAsCost' },
+    },
+  };
+  return {
+    ok: true,
+    value: {
+      ...NONE,
+      additionalCosts: [{ kind: 'sacrifice', what: filter.value, anyNumber: true }],
+      abilities: [copies],
+    },
+    rule: ability.rule,
+  };
+}
+
 function lowerFree(ability: Static, condition: IrCondition | undefined): LowerResult<FaceCosts> {
   // The alternative cost itself has no `FeatureRef`: it is named by `castAlternatives`.
   if (!SUPPORTED_FEATURES.castAlternatives.includes('free')) return failure(ability);
@@ -174,6 +223,7 @@ export function lowerSpellCosts(ability: Static): SpellCostLowering | null {
   if (effect.kind === 'additionalCost') {
     return lowerAdditional(ability, effect.costs, effect.orCosts);
   }
+  if (effect.kind === 'optionalSacrificeCopies') return lowerSacrificeCopies(ability, effect);
   if (effect.kind === 'freeCast') return lowerFree(ability, effect.condition);
   if (effect.kind === 'tapAlternative') return lowerTapAlternative(ability, effect);
   return null;

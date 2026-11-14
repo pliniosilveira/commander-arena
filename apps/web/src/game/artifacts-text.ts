@@ -10,6 +10,7 @@
 import {
   type Ability,
   type Amount,
+  type CardType,
   type ChooseSelector,
   type CombatStep,
   type Condition,
@@ -64,6 +65,37 @@ export function asCreatures(filter: ObjectFilter): ObjectFilter {
     : filter;
 }
 
+/** The six types a "permanent card" is (CR 110.4): `anyOf` of exactly these says "permanent". */
+const PERMANENT_TYPES: readonly CardType[] = [
+  'artifact',
+  'creature',
+  'enchantment',
+  'land',
+  'planeswalker',
+  'battle',
+];
+
+/** True when the filter is the union of the six permanent types and nothing else. */
+export function isPermanentCard(filter: ObjectFilter): boolean {
+  const members = filter.anyOf;
+  if (members === undefined || Object.keys(filter).length !== 1) return false;
+  const types = members.flatMap((m) => (Object.keys(m).length === 1 ? (m.types ?? []) : []));
+  return types.length === members.length && PERMANENT_TYPES.every((t) => types.includes(t));
+}
+
+/**
+ * "an artifact, creature, enchantment, land, or planeswalker card" (D-397): a list of three or more card types, joined as English joins a list. `cardNoun` of the same
+ * filter says "an artifact or creature or enchantment ... card", which is no wording a card prints. Null for any other filter.
+ */
+function typeListNoun(filter: ObjectFilter): string | null {
+  const members = filter.anyOf;
+  if (members === undefined || Object.keys(filter).length !== 1 || members.length < 3) return null;
+  const types = members.flatMap((m) => (Object.keys(m).length === 1 ? (m.types ?? []) : []));
+  if (types.length !== members.length) return null;
+  const list = `${types.slice(0, -1).join(', ')}, or ${types[types.length - 1]}`;
+  return `${/^[aeiou]/i.test(list) ? 'an' : 'a'} ${list} card`;
+}
+
 /**
  * "an artifact card", "a creature card with mana value 3 or less", "a card"; with `many`, "creature cards": the cards a
  * filter names in a hand or a library. Null when a field cannot be said.
@@ -107,7 +139,13 @@ export function lookAtTopText(
       : `the top ${typeof count === 'number' ? numberWord(count) : say(count)} cards`;
   const one = take.max === 1;
   const plain = Object.keys(take.filter).length === 0;
-  let what = one ? cardNoun(take.filter) : cardNoun(take.filter, true);
+  // D-397: "a permanent card" and "an artifact, creature, enchantment, land, or planeswalker card" are worded as the cards print them (one card only).
+  const special = one
+    ? isPermanentCard(take.filter)
+      ? 'a permanent card'
+      : typeListNoun(take.filter)
+    : null;
+  let what = special ?? (one ? cardNoun(take.filter) : cardNoun(take.filter, true));
   if (what === null) return null;
   // D-145 (CR 202.3): "with mana value less than or equal to the number of lands you control".
   if (take.manaValueAtMost !== undefined) {
@@ -122,6 +160,10 @@ export function lookAtTopText(
   }
   const taken = one ? what : `up to ${numberWord(take.max)} ${what}`;
   const them = one ? 'it' : 'them';
+  // D-396 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand."
+  if (effect.revealAll === true && take.to === undefined && take.hidden !== true) {
+    return `Reveal ${top} of your library. You may put ${taken} from among them into your hand. ${REST_WORDS[rest]}`;
+  }
   const look = `Look at ${top} of your library`;
   // D-145 (CR 702.75a, Hideaway): "Exile one of them face down", a card that must be taken.
   if (take.to === 'exileFaceDown') {
@@ -208,12 +250,37 @@ export function untapChooseText(selector: ChooseSelector): string | null {
 }
 
 /**
+ * The card of "You may put a land card from among them into your hand" (D-411): "a permanent card", a list of types, or two kinds with limits of their own, "a Plains card or a
+ * creature card with mana value 3 or less" (each member of the choice is said whole, so a limit is never dropped). Null when the filter cannot be said.
+ */
+function fromAmongNoun(kind: ObjectFilter): string | null {
+  if (isPermanentCard(kind)) return 'a permanent card';
+  const members = kind.anyOf;
+  if (
+    members !== undefined &&
+    Object.keys(kind).length === 1 &&
+    members.some((m) => m.manaValue !== undefined)
+  ) {
+    const parts = members.map((m) => cardNoun(m));
+    return parts.every((p): p is string => p !== null) ? parts.join(' or ') : null;
+  }
+  return typeListNoun(kind) ?? cardNoun(kind);
+}
+
+/**
  * "You may put an artifact card from your hand onto the battlefield", "Put a creature card from your graveyard onto the
  * battlefield tapped" (D-139): a `moveToZone` of a card the controller chooses in their hand or graveyard. Null for any
  * other choice, or a filter that cannot be said.
  */
 export function chosenCardMoveText(effect: Extract<Effect, { kind: 'moveToZone' }>): string | null {
   const { objects } = effect;
+  // D-411 (CR 608.2d): "You may put a land card from among them into your hand": a choice among the cards the mill before it put into the graveyard.
+  if (objects.kind === 'choose' && objects.fromMoved === true && effect.to === 'hand') {
+    const { zone: _zone, controller: _owner, ...kind } = objects.filter;
+    const noun = fromAmongNoun(kind);
+    if (noun === null) return null;
+    return `${objects.optional === true ? 'You may put' : 'Put'} ${noun} from among them into your hand`;
+  }
   if (objects.kind !== 'choose' || effect.to !== 'battlefield') return null;
   const { zone, controller: _controller, ...rest } = objects.filter;
   if (zone !== 'hand' && zone !== 'graveyard') return null;

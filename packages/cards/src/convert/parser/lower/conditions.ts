@@ -15,6 +15,9 @@ function failure(c: IrCondition, needs: readonly FeatureRef[]): LowerFailure {
   return { ok: false, needs, at: c.span, rule: c.rule };
 }
 
+/** The attachment a word of "enchanted creature is ..." and "equipped creature is ..." says the source is: an Aura enchants and an Equipment equips (CR 303.4a, 301.5a). */
+const HOST_KIND = { enchanted: 'Aura', equipped: 'Equipment' } as const;
+
 /**
  * Lowers one condition, naming the missing engine feature when the engine cannot run it.
  * `itIsSelf` says that "it" in the text is the object the ability belongs to (the subject of the
@@ -113,7 +116,11 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:spellsCastThisTurn']);
       return blocked.length > 0
         ? failure(c, blocked)
-        : ok({ kind: 'spellsCastThisTurn', atLeast: test.atLeast });
+        : ok({
+            kind: 'spellsCastThisTurn',
+            atLeast: test.atLeast,
+            ...(test.ofTypes === undefined ? {} : { ofTypes: test.ofTypes as CardType[] }),
+          });
     }
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die the text rolled before this condition, read by a `conditional`. A condition with no roll before it
@@ -204,6 +211,10 @@ export function lowerCondition(
       // filter; "it" is the permanent of an ability about itself, as for `thisMatches`.
       const blocked = missingFeatures(['condition:objectMatches', 'selector:attached']);
       if (blocked.length > 0) return failure(c, blocked);
+      // "As long as enchanted creature is green" (D-427, CR 303.4b, 301.5a): the word says the kind of attachment the source is, which the face must be.
+      if (test.via !== undefined && !(ctx?.faceSubtypes ?? []).includes(HOST_KIND[test.via])) {
+        return failure(c, []);
+      }
       const noun: IrNoun = {
         kind: 'noun',
         det: 'a',
@@ -218,6 +229,42 @@ export function lowerCondition(
       return filter.ok
         ? ok({ kind: 'objectMatches', of: { kind: 'attached' }, filter: filter.value })
         : filter;
+    }
+    case 'otherAttachedToHost': {
+      // "As long as another Aura is attached to enchanted creature" (D-427, CR 303.4, 301.5, 701.3): the number of other permanents of the kind attached to the
+      // permanent the source is attached to is at least one. The word of the condition says the kind of attachment the source is, which the face must be.
+      const blocked = missingFeatures([
+        'condition:amountIs',
+        'amount:countOf',
+        'selector:attachedTo',
+      ]);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (!(ctx?.faceSubtypes ?? []).includes(HOST_KIND[test.via])) return failure(c, []);
+      const noun: IrNoun = {
+        kind: 'noun',
+        det: 'each',
+        filter: test.attachment,
+        upTo: false,
+        plural: false,
+        other: false,
+        span: c.span,
+        rule: c.rule,
+      };
+      const attachment = lowerFilter(noun);
+      if (!attachment.ok) return attachment;
+      return ok({
+        kind: 'amountIs',
+        amount: {
+          kind: 'countOf',
+          filter: { ...attachment.value, other: true, attachedTo: { kind: 'host' } },
+        },
+        compare: { cmp: 'atLeast', value: 1 },
+      });
+    }
+    case 'thisEnteredThisTurn': {
+      // "As long as ~ entered this turn" (D-427, CR 400.7): the permanent itself entered the battlefield during this turn, read from the turn log.
+      const blocked = missingFeatures(['condition:thisEnteredThisTurn']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'thisEnteredThisTurn' });
     }
     case 'thisMatches': {
       // "As long as it's untapped" (stage P29, D-133): this permanent against a filter, read as it is now.
@@ -294,6 +341,8 @@ export function lowerCondition(
       // (`moved`); `validateCard` refuses it where no instruction before it moves a card.
       const blocked = missingFeatures(['condition:objectMatches']);
       if (blocked.length > 0) return failure(c, blocked);
+      // D-412 (CR 608.2c): "into your hand this way" follows a move to the hand and "onto the battlefield this way" does not: the words must say what the move before did.
+      if ((test.zone === 'hand') !== (ctx?.movedToHand === true)) return failure(c, []);
       const filter = lowerFilter({
         kind: 'noun',
         det: 'a',
@@ -304,8 +353,14 @@ export function lowerCondition(
         span: c.span,
         rule: c.rule,
       });
+      // D-412 (Danitha deck group 2): "If you put a Town card into your hand this way": the card is in the hand it was put into.
       return filter.ok
-        ? ok({ kind: 'objectMatches', of: { kind: 'moved' }, filter: filter.value })
+        ? ok({
+            kind: 'objectMatches',
+            of: { kind: 'moved' },
+            filter: filter.value,
+            ...(test.zone === 'hand' ? { inZone: 'hand' as const } : {}),
+          })
         : filter;
     }
     case 'giftPromised': {
@@ -417,6 +472,25 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'playerDealtDamage', player: test.who, atLeast: test.atLeast });
     }
+    case 'combatDamagedBy': {
+      // CR 120.2a (issue 41, D-475): the engine's turn log keeps the card types, the subtypes and the controller of the source of combat damage to a player.
+      const blocked = missingFeatures(['condition:combatDamagedBy']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const test = c.test;
+      if (test.kind !== 'combatDamagedBy') return failure(c, []);
+      const filter = lowerFilter(test.noun);
+      if (!filter.ok) return filter;
+      const { types, subtypes, controller, ...rest } = filter.value;
+      if (Object.keys(rest).length > 0) return failure(c, []);
+      return ok({
+        kind: 'combatDamagedBy',
+        filter: {
+          ...(types === undefined ? {} : { types }),
+          ...(subtypes === undefined ? {} : { subtypes }),
+          ...(controller === undefined ? {} : { controller }),
+        },
+      });
+    }
     case 'enteredThisTurn': {
       // CR 400.7 (stage P34, D-152): the turn log of the permanents that entered under the controller's control.
       const blocked = missingFeatures(['condition:enteredThisTurn']);
@@ -456,6 +530,12 @@ export function lowerCondition(
     }
     case 'unlessReturn':
       // "... unless you return a land you control to its owner's hand" belongs to the sentence of one instruction, which the lowering of the sentences reads (D-258).
+      return failure(c, []);
+    case 'notPutOntoBattlefield':
+      // "If you don't put it onto the battlefield, put it into your hand" belongs to the pair of sentences of an offer to put a card onto the battlefield, which the lowering of the sentences reads (D-403).
+      return failure(c, []);
+    case 'youDont':
+      // "If you don't, put a +1/+1 counter on ~" belongs to the pair of sentences of a choice from among the cards a mill moved, which the lowering of the sentences reads (D-411).
       return failure(c, []);
     case 'declined':
       // "If the player doesn't" belongs to a "may have you" sentence, which the lowering of the sentences reads; anywhere else it is not run.
@@ -509,4 +589,8 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:spellTargets',
   'condition:controlsRingBearer',
   'condition:paired',
+  // D-427 (Danitha group 3): "as long as ~ entered this turn".
+  'condition:thisEnteredThisTurn',
+  // D-475 (Gisa deck group 1): "a player was dealt combat damage by a Zombie this turn".
+  'condition:combatDamagedBy',
 ];

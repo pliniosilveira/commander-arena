@@ -104,6 +104,15 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:hasCounter',
   'selector:commander',
   'selector:enteredThisTurn',
+  'selector:modified',
+  // D-426 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
+  'selector:attachedTo',
+  'selector:enchanted',
+  'selector:hostOfSource',
+  // D-437 (Feather group 3): "a spell that targets ~" and "that targets only ~" (CR 115.1, 115.9c).
+  'selector:isSource',
+  'selector:targetsOnly',
+  'selector:powerAboveBase',
   'selector:sharesCreatureTypeWith',
   'selector:eachOtherOpponent',
   'selector:discardedThisWay',
@@ -124,7 +133,13 @@ export function itemsOf(operand: IrNoun | IrNounList): readonly IrNoun[] {
   return operand.kind === 'noun' ? [operand] : operand.items;
 }
 
-function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerResult<ObjectFilter> {
+function lowerFilterAt(
+  filter: IrFilter,
+  noun: IrNoun,
+  inner: boolean,
+  /** D-437: a member of a disjunction of spells (the outer filter is on the stack): it may read what the spell targets. */
+  stackMember = false,
+): LowerResult<ObjectFilter> {
   const rule = noun.rule;
   const bad = (needs: readonly FeatureRef[]): LowerResult<ObjectFilter> => ({
     ok: false,
@@ -154,7 +169,12 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
     if (missing.length > 0) return bad(missing);
     anyOf = [];
     for (const member of filter.anyOf) {
-      const lowered = lowerFilterAt(member, noun, true);
+      const lowered = lowerFilterAt(
+        member,
+        noun,
+        true,
+        filter.zone === 'stack' || filter.stackKind !== undefined,
+      );
       if (!lowered.ok) return lowered;
       anyOf.push(lowered.value);
     }
@@ -224,6 +244,13 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
     if (inner) return bad([]);
     parts.push('selector:enteredThisTurn');
   }
+  // D-416 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice.
+  if (filter.modified === true) {
+    if (inner) return bad([]);
+    parts.push('selector:modified');
+  }
+  // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
+  if (filter.powerAboveBase === true) parts.push('selector:powerAboveBase');
   // D-262: "that share a land type" is a condition on the cards found together, which a filter of one card cannot say: the search lowering takes it off first.
   if (filter.sharedLandType === true) return bad([]);
   // D-261: "that shares a creature type with it" (CR 205.3m, 603.10a): the creature a "dies" trigger is about; the engine refuses it anywhere but the filter of a `revealUntil`
@@ -236,12 +263,52 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
   }
   // D-206 (stage P49): "that targets a creature" (CR 115.1, 601.2c), a spell on the stack (a cast trigger's filter or a target slot).
   let targetsObject: ObjectFilter | undefined;
+  const onStack = inner ? stackMember : filter.zone === 'stack' || filter.stackKind !== undefined;
   if (filter.targets !== undefined) {
-    if (inner || (filter.zone !== 'stack' && filter.stackKind === undefined)) return bad([]);
+    if (!onStack) return bad([]);
     parts.push('selector:targetsObject');
     const aimed = lowerFilterAt(filter.targets, noun, true);
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
+  }
+  // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~": the source of the ability is the object the spell targets, the only one for "only".
+  let targetsOnly: ObjectFilter | undefined;
+  if (filter.targetsSelf === true || filter.targetsOnlySelf === true) {
+    if (!onStack || targetsObject !== undefined) return bad([]);
+    parts.push('selector:isSource');
+    if (filter.targetsOnlySelf === true) {
+      parts.push('selector:targetsOnly');
+      targetsOnly = { isSource: true };
+    } else {
+      parts.push('selector:targetsObject');
+      targetsObject = { isSource: true };
+    }
+  }
+  // D-426 (CR 303.4, 301.5, 701.3): the permanent something is attached to, and "enchanted": a permanent on the battlefield, so no member of a choice and no other zone.
+  let attachedTo: ObjectFilter['attachedTo'];
+  if (filter.attachedTo !== undefined) {
+    if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
+    parts.push('selector:attachedTo');
+    const to = filter.attachedTo;
+    // The statement the count is in says what "it" is (the lowering of a static ability does); anywhere else there is no such permanent.
+    if (to.kind === 'it') return bad([]);
+    if (to.kind === 'type') {
+      if (!to.types.every((t) => (CARD_TYPES as readonly string[]).includes(t))) return bad([]);
+      attachedTo = { kind: 'matching', filter: { types: to.types as CardType[] } };
+    } else {
+      attachedTo = { kind: to.kind };
+    }
+  }
+  if (filter.enchanted !== undefined) {
+    if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
+    parts.push('selector:enchanted');
+  }
+  // D-426 (CR 601.2c, 303.4): "that target enchanted creature", the objects a spell targets are the permanent its source is attached to. Only a spell's filter says it
+  // (a cost reduction), as `targets`: not a member of a choice, and not together with it.
+  if (filter.targetsHost === true) {
+    if (inner || targetsObject !== undefined) return bad([]);
+    parts.push('selector:hostOfSource');
+    targetsObject = { hostOfSource: true };
   }
   const missingParts = missingFeatures(parts);
   if (missingParts.length > 0) return bad(missingParts);
@@ -310,11 +377,16 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
       : {}),
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
+    ...(filter.modified === true ? { modified: true as const } : {}),
+    ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),
     ...(filter.sharesCreatureTypeWithIt === true
       ? { sharesCreatureTypeWith: 'triggerSubject' as const }
       : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
+    ...(targetsOnly === undefined ? {} : { targetsOnly }),
+    ...(attachedTo === undefined ? {} : { attachedTo }),
+    ...(filter.enchanted === undefined ? {} : { enchanted: filter.enchanted }),
     ...compared,
     ...chosen,
     ...(anyOfFinal === undefined ? {} : { anyOf: anyOfFinal }),
@@ -372,7 +444,10 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
   // "Any number of target creatures" has no bounds of its own: a divided damage reads it (`declareDividedTarget`), and an effect that takes any number of
   // targets (stage P74, D-234: "any number of other target creatures you control phase out") has the slot `anyNumber`.
   const anyNumberTarget = noun.anyNumber === true && noun.det === 'target';
-  if (anyNumberTarget && noun.filter.player !== undefined) return failure(noun, []);
+  // D-486 (CR 115.1): "any number of target players" is a player slot of the engine's `anyNumber`; other player forms ("or planeswalker") are not read.
+  if (anyNumberTarget && noun.filter.player !== undefined && noun.filter.orPlaneswalker === true) {
+    return failure(noun, []);
+  }
   // "Return X target creature cards from your graveyard to your hand" (Hashaton group 10, D-386, CR 601.2b-c): as many targets as the X announced, of a spell's own
   // text and of objects (cards or permanents); the one place the engine's `countX` is read. Anything else about the noun that sets a count refuses it.
   const countX = noun.det === 'target' && noun.count?.kind === 'x';
@@ -421,7 +496,13 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         ...boundsOf(noun),
       };
     } else if (noun.filter.player !== undefined) {
-      spec = { id, what: { kind: 'player', filter: noun.filter.player }, ...boundsOf(noun) };
+      if (anyNumberTarget) {
+        const blocked = missingFeatures(['selector:anyNumber']);
+        if (blocked.length > 0) return failure(noun, blocked);
+      }
+      spec = anyNumberTarget
+        ? { id, what: { kind: 'player', filter: noun.filter.player }, anyNumber: true }
+        : { id, what: { kind: 'player', filter: noun.filter.player }, ...boundsOf(noun) };
     } else if (noun.orCard !== undefined) {
       // "up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270, CR 115.1): the engine's slot of two zones. The text of a
       // spell has no such slot (the engine reads it in a triggered ability only), and nothing else about the noun may be set that the slot does not say.

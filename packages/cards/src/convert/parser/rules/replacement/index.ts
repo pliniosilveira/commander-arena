@@ -8,9 +8,11 @@ import type { IrAbility, IrChoiceArg, IrClause } from '../../ir/types';
 import { defineRule } from '../registry';
 import { ADAMANTOISE_REPLACEMENT_RULES } from './adamantoise';
 import { ANGEL_REPLACEMENT_RULES } from './angels';
+import { DANITHA_G4_REPLACEMENT_RULES } from './danitha-g4';
 import { DIE_REPLACEMENT_RULES } from './die';
 import { DRAGON_REPLACEMENT_RULES } from './dragons';
 import { EDHREC_REPLACEMENT_RULES } from './edhrec';
+import { GISA_G5_REPLACEMENT_RULES } from './gisa-g5';
 import { HASHATON_G3_REPLACEMENT_RULES } from './hashaton-group-3';
 import { KICKED_REPLACEMENT_RULES } from './kicked';
 import { REVEAL_REPLACEMENT_RULES } from './reveal';
@@ -249,4 +251,8 @@ export const REPLACEMENT_RULES = [
   ...SKIP_DRAW_REPLACEMENT_RULES,
   // Hashaton deck, group 3 (D-378, D-379): the two replacement effects of Bard, King of Dale.
   ...HASHATON_G3_REPLACEMENT_RULES,
+  // Danitha deck, group 4 (D-417): "Umbra armor".
+  ...DANITHA_G4_REPLACEMENT_RULES,
+  // Gisa deck, group 5 (D-482): "~ escapes with two +1/+1 counters on it."
+  ...GISA_G5_REPLACEMENT_RULES,
 ];

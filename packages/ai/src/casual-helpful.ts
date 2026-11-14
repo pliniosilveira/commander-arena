@@ -17,14 +17,26 @@ const HELPS = new RegExp(
     // D-103: "Put X +1/+1 counters on target creature" (a number of counters stays hostile, as before).
     String.raw`put X \+\d+/\+\d+ counters? on target creature`,
     `gains? (flying|first strike|double strike|deathtouch|haste|hexproof|indestructible|lifelink|menace|reach|shroud|trample|vigilance)`,
+    // D-451: "gains protection from the color of your choice", "gains protection from red".
+    String.raw`gains? protection from`,
   ].join('|'),
   'i',
 );
 const HURTS = /loses |becomes |gets? [+-]\d+\/-|gets? -|can't|damage|destroy|exile|return|\btap/i;
 
+/**
+ * Wording that carries a word of HURTS and is not hurting (D-453, the Feather deck): "Prevent all combat damage that would be dealt to it" protects the creature the
+ * spell gave a counter or a keyword, and "becomes red and gains haste" changes a color and gives haste (the color is no harm to the creature).
+ */
+const NOT_HURTING: readonly RegExp[] = [
+  /prevent all combat damage that would be dealt to it/gi,
+  /becomes (?:white|blue|black|red|green) and (?=gains haste)/gi,
+];
+
 /** Whether the rules text of a spell reads as helping the creature it targets. */
 export function helpsItsTarget(oracleText: string): boolean {
-  return HELPS.test(oracleText) && !HURTS.test(oracleText);
+  const text = NOT_HURTING.reduce((t, words) => t.replace(words, ''), oracleText);
+  return HELPS.test(text) && !HURTS.test(text);
 }
 
 /** An instant or sorcery whose text helps its target. */
@@ -42,14 +54,17 @@ export function helpfulSpellBeingCast(view: GameView, d: TargetsDecision): Objec
  * first legal target (the cast cannot be undone once it has started).
  */
 export function chooseCreatureToHelp(view: GameView, d: TargetsDecision): ChosenTarget[] {
-  const [slot] = d.specs;
-  if (slot === undefined) return [];
-  let best: { target: ChosenTarget; power: number } | undefined;
-  for (const target of slot.legal) {
-    const o = target.kind === 'object' ? findObject(view, target.id) : undefined;
-    if (o === undefined || o.controller !== view.viewer || !isCreature(o)) continue;
-    if (best === undefined || powerOf(o) > best.power) best = { target, power: powerOf(o) };
+  // Every slot of the spell is filled the same way (D-437: a pump with two targets, one of them "a creature with flying"): the same creature may be the target of two of them (CR 115.3).
+  const out: ChosenTarget[] = [];
+  for (const slot of d.specs) {
+    let best: { target: ChosenTarget; power: number } | undefined;
+    for (const target of slot.legal) {
+      const o = target.kind === 'object' ? findObject(view, target.id) : undefined;
+      if (o === undefined || o.controller !== view.viewer || !isCreature(o)) continue;
+      if (best === undefined || powerOf(o) > best.power) best = { target, power: powerOf(o) };
+    }
+    const chosen = best?.target ?? slot.legal[0];
+    if (chosen !== undefined) out.push(chosen);
   }
-  const chosen = best?.target ?? slot.legal[0];
-  return chosen === undefined ? [] : [chosen];
+  return out;
 }

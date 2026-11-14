@@ -37,15 +37,19 @@ import {
 } from './continuous';
 import { GAIN_CONTROL } from './control';
 import { lowerCopyToken } from './copies';
-import { COPY_SPELL } from './copy-spell';
+import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
+import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
+import { DANITHA_G2_LOWERINGS } from './danitha-g2';
 import { DAWNBREAK_LOWERINGS } from './dawnbreak';
 import { DESTINY_LOWERINGS } from './destiny';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
+import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
+import { GISA_G4_LOWERINGS } from './gisa-g4';
 import { GAIN_STATIC_ABILITY } from './granted-static';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
 import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
@@ -69,6 +73,7 @@ import {
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { PREVENT_DAMAGE } from './prevent';
+import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { VRASKA_LOWERINGS } from './vraska';
@@ -229,6 +234,14 @@ const DAMAGE: Lowering<IrClause, Effects> = {
       // be said of another source (stage P28). Stage P34 (D-152): with the creature a target, the engine says which one is left out
       // (`except`): "Target creature you control deals damage equal to its power to each other creature and each opponent."
       if (from !== undefined && item.other) {
+        // D-446 (CR 115.3, 601.2c): "Target creature you control deals damage equal to its power to another target creature": "another" is a target that is not the target
+        // of the slot before it, the creature that deals the damage; the engine's `differentFrom`.
+        if (from.kind === 'target' && item.det === 'target' && itemsOf(to).length === 1) {
+          const apart = recipientOf({ ...item, other: false, otherTarget: true }, ctx);
+          if (!apart.ok) return apart;
+          effects.push({ kind: 'dealDamage', amount: amount.value, to: apart.value, from });
+          continue;
+        }
         if (from.kind !== 'target' || item.det !== 'each') return failure(clause);
         const group = objectSelectorOf({ ...item, other: false }, ctx);
         if (!group.ok) return group;
@@ -1091,7 +1104,7 @@ const ATTACH: Lowering<IrClause, Effects> = {
     const what = objectRefOf(object, ctx);
     if (!what.ok) return what;
     if (what.value.kind !== 'this') return failure(clause);
-    const onto = objectRefOf(to, ctx, { token: true });
+    const onto = objectRefOf(to, ctx, { token: true, triggerSubject: true });
     if (!onto.ok) return onto;
     return {
       ok: true,
@@ -1325,6 +1338,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   BECOME_MONARCH,
   DELAYED_DRAW,
   COPY_SPELL,
+  EXILE_ON_RESOLVE,
   CHANGE_TARGET,
   libraryVerb('scry'),
   libraryVerb('surveil'),
@@ -1353,7 +1367,15 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HOFRI_LOWERINGS,
   // D-393, D-394 (Hashaton, group 9): the exile of a random card from a hand, then "put it onto the battlefield" and "cast it without paying its mana cost".
   ...HASHATON_G9_LOWERINGS,
+  ...DANITHA_G1B_LOWERINGS,
+  // D-411: "you may put a land card from among them into your hand" after a mill.
+  ...DANITHA_G2_LOWERINGS,
+  // D-445: "Monstrosity 5".
+  ...FEATHER_G2_LOWERINGS,
+  // D-459, D-460: "It gains haste.", "Exile it at the beginning of the next end step.", "If it would leave the battlefield, exile it instead ...", "Put each creature card exiled with ~ onto the battlefield ...".
+  ...GISA_G4_LOWERINGS,
   ...PILES_LOWERINGS,
+  ...REVEAL_TAKE_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,
   ...EDHREC_LOWERINGS,
   ...DRAGON_LOWERINGS,
@@ -1412,10 +1434,17 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                 ? 'objectMatches'
                 : test === 'discardedThisWay' || test === 'discardedSpellThisWay'
                   ? 'thisWayAtLeast'
-                  : test;
+                  : test === 'otherAttachedToHost'
+                    ? 'amountIs'
+                    : test;
     return failure(
       clause,
-      kind === 'raw' || kind === 'hadCounters' || kind === 'declined' || kind === 'unlessReturn'
+      kind === 'raw' ||
+        kind === 'hadCounters' ||
+        kind === 'declined' ||
+        kind === 'notPutOntoBattlefield' ||
+        kind === 'youDont' ||
+        kind === 'unlessReturn'
         ? []
         : missingFeatures([`condition:${kind}`]),
     );

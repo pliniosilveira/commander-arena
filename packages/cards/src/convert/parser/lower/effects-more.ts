@@ -94,7 +94,12 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     const max = cards.count?.kind === 'number' ? cards.count.value : 1;
     const destinations: SearchDestination[] = [];
     for (const place of places.items) {
-      if (place.zone !== 'battlefield' && place.zone !== 'hand' && place.zone !== 'graveyard') {
+      if (
+        place.zone !== 'battlefield' &&
+        place.zone !== 'hand' &&
+        place.zone !== 'graveyard' &&
+        place.zone !== 'library'
+      ) {
         const needs = missingFeatures([`searchDestination:${place.zone}`]);
         return { ok: false, needs, at: place.span, rule: place.rule };
       }

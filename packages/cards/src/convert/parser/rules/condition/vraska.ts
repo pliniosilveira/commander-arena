@@ -6,7 +6,7 @@
 import { fail, map, pattern, sequence } from '../../combinators';
 import type { IrCondition, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
-import { permanentPhrase, withoutZone } from '../noun/phrases';
+import { BOUNDARY, permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
 
 /**
@@ -139,7 +139,14 @@ export const CONDITION_IT_TARGETS = defineRule<IrCondition>({
   family: 'condition',
   leading: ['it'],
   cites: ['CR 601.2c (Casting Spells)', 'CR 601.2f (Casting Spells)'],
-  examples: ['it targets a tapped creature', 'it targets a creature', 'it targets an artifact'],
+  examples: [
+    'it targets a tapped creature',
+    'it targets a creature',
+    'it targets an artifact',
+    // Danitha deck (D-408, CR 903.3): a commander is a card a player designated.
+    'it targets a commander',
+    'it targets a creature commander',
+  ],
   rejects: [
     'it targets a tapped creature.',
     'it targets tapped creatures',
@@ -148,8 +155,43 @@ export const CONDITION_IT_TARGETS = defineRule<IrCondition>({
     'it targets',
     'it targets a creature you control',
     'it targets two creatures',
+    'it targets commanders',
+    'it targets your commander',
+    'it targets a commander you control',
+    'it targets a nonland commander',
   ],
   parse: (ctx, pos) => {
+    // D-408 (CR 903.3): "it targets a commander", "it targets a creature commander": the commander is a card, wherever it is; the engine's `commander: true`.
+    const commander = spanned(
+      pattern(new RegExp(`it targets an? (creature )?commander${BOUNDARY}`, 'iu')),
+    )(ctx, pos);
+    if (commander.ok) {
+      const m = commander.value.value;
+      const noun: IrNoun = {
+        kind: 'noun',
+        det: 'a',
+        filter: {
+          ...(m[1] === undefined ? {} : { types: ['creature'] }),
+          commander: true,
+          raw: m[0].slice('it targets '.length).toLowerCase(),
+        },
+        upTo: false,
+        plural: false,
+        other: false,
+        span: commander.value.span,
+        rule: 'condition.it-targets',
+      };
+      return {
+        ok: true,
+        value: {
+          kind: 'condition',
+          test: { kind: 'spellTargets', noun },
+          span: { start: pos, end: commander.pos },
+          rule: 'condition.it-targets',
+        },
+        pos: commander.pos,
+      };
+    }
     const r = sequence(
       pattern(/it targets an? /iu),
       map(spanned(map(permanentPhrase(false, 'all'), withoutZone)), (p) => p),

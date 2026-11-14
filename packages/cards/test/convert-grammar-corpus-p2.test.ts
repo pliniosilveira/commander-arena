@@ -282,8 +282,14 @@ const SEARCH: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Search your library for a card, then shuffle and put that card on top.',
-    expect: no(', then shuffle and put that card on top.', 'effect.search'),
-    note: 'backlog: 3 cards; the library is not a destination',
+    expect: OK,
+    note: 'backlog: 3 cards; read since D-405 (CR 701.24b): the found card is left out of the shuffle and put on top (the search destination library)',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Search your library for up to two cards, then shuffle and put them on top.',
+    expect: no(', then shuffle and put them on top.', 'effect.search'),
+    note: 'SYNTHETIC; still not read (D-405): several cards put on top need an order the engine does not ask for',
   },
   {
     kind: 'sorcery',
@@ -425,8 +431,14 @@ const CHOICES: readonly Line[] = [
   {
     kind: 'instant',
     text: 'Other creatures you control get +1/+1 until end of turn.',
-    expect: no('Other creatures you control get +1/+1 until end of turn.', NONE),
-    note: '"other" is not read',
+    expect: OK,
+    note: 'read since the Danitha deck, group 4 (D-419, `effect.pump-others`: the group of "other ..." with the change and its duration)',
+  },
+  {
+    kind: 'instant',
+    text: 'Other creatures you control get +1/+1 and gain trample until end of turn.',
+    expect: no('Other creatures you control get +1/+1 and gain trample until end of turn.', NONE),
+    note: '"other" with a second change is not read (the rule reads one change and its duration)',
   },
   {
     kind: 'instant',

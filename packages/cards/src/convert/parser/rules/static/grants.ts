@@ -22,11 +22,15 @@ import {
 } from '../../combinators';
 import type { IrClause, IrCost, IrNoun, IrStatic, IrStaticEffect } from '../../ir/types';
 import { KEYWORD_WORDS } from '../keyword/list';
-import { PROTECTION_COLORS, PROTECTION_OUTSIDE_COMMANDER_IDENTITY } from '../keyword/protection';
+import {
+  PROTECTION_CARD_TYPES,
+  PROTECTION_COLORS,
+  PROTECTION_OUTSIDE_COMMANDER_IDENTITY,
+} from '../keyword/protection';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family } from '../registry';
 import { QUOTED_ABILITY } from './quoted';
-import { AND_RESTRICTION, type RestrictionSubject, restrictionPhrase } from './restriction-words';
+import { AND_RESTRICTION, type RestrictionSubject, restrictionEffects } from './restriction-words';
 
 type Effects = readonly IrStaticEffect[];
 
@@ -103,6 +107,11 @@ const PROTECTION: Parser<Effects> = choice(
     (ctx, pos) => PROTECTION_COLORS(ctx, pos),
     (colors): Effects => [{ kind: 'grantProtection', colors }],
   ),
+  // D-402 (Danitha group 1b, CR 702.16a): "protection from creatures".
+  map(
+    (ctx, pos) => PROTECTION_CARD_TYPES(ctx, pos),
+    (cardTypes): Effects => [{ kind: 'grantProtection', cardTypes }],
+  ),
 );
 
 /** What a subject has: keywords it can be granted, one ability in quotes, a protection (stage P70) or (stage P31) a base power and toughness. */
@@ -151,11 +160,11 @@ function areTypes(plural: boolean): Parser<Effects> {
  * (plural), or `~` (only restrictions). Each thing the subject gets, has or can't do is one effect. A restriction and a grant
  * join with " and " in either order; the engine runs each as its own static ability.
  */
-function predicate(mode: RestrictionSubject): Parser<Effects> {
+export function predicate(mode: RestrictionSubject): Parser<Effects> {
   const plural = mode === 'plural';
   const gets = plural ? 'get ' : 'gets ';
   const has = plural ? 'have ' : 'has ';
-  const restriction = map(restrictionPhrase(mode), (effect): Effects => [effect]);
+  const restriction = map(restrictionEffects(mode), (effects): Effects => [...effects]);
   // ", has flying and first strike, and is an Angel ...": the things a subject gets and has are joined by "and" or by commas.
   const andHas = map(
     sequence(pattern(new RegExp(`(?: and |, and |, )${has}`, 'i')), HAS_WHAT),
@@ -269,8 +278,8 @@ export function statement(
  * 303.4b, 301.5a): "Enchanted creature gets +2/+2.", "Equipped creature has hexproof and haste.",
  * "Enchanted creature gets +1/+1 and has vigilance.", "Equipped creature has "{T}: Add {G}."" (a
  * granted mana ability, stage P14; any other quoted ability is read as text and dropped whole by the
- * lowering) and "Equipped creature can't be blocked.". Not read: "can't attack or
- * block", "loses flying", "gets +X/+X", "for each", "as long as", ward and landwalk. Protection from colors, or from each color outside the commander's color identity
+ * lowering), "Equipped creature can't be blocked." and, since the Danitha deck (D-407), "Enchanted creature can't attack or block." (CR 508.1a, 509.1a: two restrictions,
+ * each its own static ability). Not read: "can't attack or block alone", "loses flying", "gets +X/+X", "for each", "as long as", ward and landwalk. Protection from colors, or from each color outside the commander's color identity
  * (stage P70, D-259), is read after "has".
  */
 export const STATIC_ATTACHED = defineRule<IrStatic>({
@@ -294,6 +303,10 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted permanent gets +1/+1.',
     'Equipped creature has "{T}: Add {G}."',
     "Equipped creature can't be blocked.",
+    // Danitha deck (D-407, CR 508.1a, 509.1a): two restrictions at once, and one alone.
+    "Enchanted creature can't attack or block.",
+    "Enchanted creature can't attack.",
+    "Equipped creature has flying and can't attack.",
     // Stage P33 (D-150): a creature type the permanent is in addition to its own.
     'Enchanted creature is an Angel in addition to its other types.',
     // Stage P70 (D-259, CR 702.16, 903.4): protection a static ability gives.
@@ -326,7 +339,8 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature is an Angel in addition to its other types and gets +1/+1.',
     'Enchanted creature has flying, first strike and vigilance.',
     'Enchanted creature loses flying.',
-    "Enchanted creature can't attack or block.",
+    "Enchanted creature can't attack or block alone.",
+    "Equipped creature can't attack you or planeswalkers you control.",
     'Enchanted creature gets +1/+1 and loses flying.',
     'Equipped land has hexproof.',
     'Equipped creature has "{T}: Add {G}.".',
@@ -398,6 +412,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
       'noun.other-permanents',
       'noun.other-subtype-permanents',
       'noun.subtype-union',
+      // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control get +1/+1 and have menace."
+      'noun.subtype-pair',
       'noun.all-permanents',
       // Stage P64 (D-217): "Creature tokens you control have haste."
       'noun.token-permanents',

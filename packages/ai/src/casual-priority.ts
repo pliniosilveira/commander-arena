@@ -31,7 +31,13 @@ import type {
 } from '@commander-arena/engine';
 import { chooseActivation, chooseRegenerateActivation } from './casual-activations';
 import { alternativeSpend, chooseNamedAlternative } from './casual-alt-costs';
-import { auraHasHost, isAura } from './casual-attachments';
+import {
+  auraHasHost,
+  commanderAuraWorthCasting,
+  flashesForCommander,
+  isAura,
+  isEnchanted,
+} from './casual-attachments';
 import { copiesTargetSpell, copyWorthCasting, hasStorm } from './casual-copies';
 import { additionalCostsWorthPaying, discountsHand, ownGraveyardCreatures } from './casual-costs';
 import { chooseTurnFaceUp } from './casual-face-down';
@@ -44,6 +50,7 @@ import {
   asFace,
   effectiveCost,
   findObject,
+  isCreature,
   isLand,
   manaValueOf,
   opposingCreatures,
@@ -65,6 +72,9 @@ const TARGETS_PERMANENT = /target (artifact|enchantment|planeswalker|battle|perm
 /** Mass removal: only worth it when the opponent loses more creatures than we do. */
 const SWEEPER = /destroy all creatures|each creature|all creatures/i;
 
+/** Mass removal that spares the enchanted creatures (D-429, CR 303.4): "Destroy all creatures that aren't enchanted": only the creatures with no Aura attached are lost. */
+const SWEEPER_SPARING_ENCHANTED = /destroy all creatures that aren['’]t enchanted/i;
+
 const isNonPermanentSpell = (o: ObjectView): boolean =>
   o.types.includes('instant') || o.types.includes('sorcery');
 
@@ -82,7 +92,12 @@ const isNonPermanentSpell = (o: ObjectView): boolean =>
  */
 export function worthCasting(view: GameView, spell: ObjectView): boolean {
   // An Aura needs a host on the right side: the cast cannot be cancelled once it has started.
-  if (isAura(spell)) return auraHasHost(view, spell);
+  // D-408: one that has flash only if it targets a commander is held up for a response that saves the agent's commander (outside its sorcery timing).
+  if (isAura(spell)) {
+    return (
+      auraHasHost(view, spell) && (!flashesForCommander(spell) || commanderAuraWorthCasting(view))
+    );
+  }
   if (!isNonPermanentSpell(spell)) return true;
   if (isPreventionSpell(spell)) return worthCastingPrevention(view, spell);
   // A modal spell (D-114): worth casting when some mode is worth choosing now; the other modes' targets
@@ -92,6 +107,14 @@ export function worthCasting(view: GameView, spell: ObjectView): boolean {
   // (what it discards is judged with the additional cost, `additionalCostsWorthPaying`).
   if (RETURNS_X_CREATURE_CARDS.test(spell.oracleText))
     return ownGraveyardCreatures(view).length > 0;
+  // D-429: the creatures that are lost are those with no Aura attached to them, on both sides.
+  if (SWEEPER_SPARING_ENCHANTED.test(spell.oracleText)) {
+    const lost = (own: boolean) =>
+      view.battlefield.filter(
+        (o) => isCreature(o) && (o.controller === view.viewer) === own && !isEnchanted(view, o),
+      ).length;
+    return lost(false) > lost(true);
+  }
   if (SWEEPER.test(spell.oracleText)) {
     return opposingCreatures(view).length > ownCreatureCount(view);
   }

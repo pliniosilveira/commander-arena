@@ -1,4 +1,4 @@
-// The coverage site (D-396) from a SYNTHETIC set of numbers: nothing here is a real coverage run.
+// The coverage site (D-410) from a SYNTHETIC set of numbers: nothing here is a real coverage run.
 
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
