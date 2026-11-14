@@ -200,6 +200,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
         : `Discard ${cost.filter === undefined ? countText(cost.count, 'card', 'cards') : `a ${nounsOf(cost.filter)} card`}`;
     case 'discardThis':
       return 'Discard this card';
+    case 'revealThis':
+      // D-1433 (CR 701.20a): Tetzimoc's cost; the card stays in the hand.
+      return 'Reveal this card from your hand';
     case 'exileThis':
       // D-185 (CR 702.141a): the cost of Encore.
       return 'Exile this card from your graveyard';

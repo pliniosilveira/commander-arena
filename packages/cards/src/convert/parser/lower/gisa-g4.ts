@@ -9,10 +9,13 @@ import { isGrantable, keywordKind, plainKeyword } from '../rules/keyword/vocabul
 import { arg, type Effects, eachObject, failure, operand } from './clauses';
 import { missingFeatures } from './features';
 import { lowerFilter } from './nouns';
-import type { LowerContext, LowerFailure, LowerResult, Lowering } from './types';
+import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 
 /** The objects of an "it" clause, which must be what the instruction before it put onto the battlefield. */
-function movedObjects(clause: IrClause, ctx: LowerContext): LowerResult<readonly Effects[number][]> {
+function movedObjects(
+  clause: IrClause,
+  ctx: LowerContext,
+): LowerResult<readonly Effects[number][]> {
   return eachObject(
     clause,
     ctx,
@@ -117,47 +120,11 @@ const PUT_LINKED_EXILE: Lowering<IrClause, Effects> = {
   },
 };
 
-/** "Each of them is a 1/1 Spirit in addition to its other types." after the cards were put onto the battlefield. */
-const BECOMES_IN_ADDITION: Lowering<IrClause, Effects> = {
-  head: 'becomesInAddition',
-  id: 'lower.becomes-in-addition',
-  needs: ['effect:setPt', 'effect:setTypes', 'selector:moved'],
-  lower(clause, ctx) {
-    const pt = arg(clause, 'basePt');
-    const types = arg(clause, 'types');
-    // "Them" is the cards the instruction right before it put onto the battlefield; after anything else it names something this lowering does not know.
-    if (pt?.kind !== 'basePt' || types?.kind !== 'typeList' || !ctx.putLinked) {
-      return failure(clause);
-    }
-    return {
-      ok: true,
-      value: [
-        {
-          kind: 'setPt',
-          objects: { kind: 'moved' },
-          power: pt.power,
-          toughness: pt.toughness,
-          duration: 'permanent',
-        },
-        {
-          kind: 'setTypes',
-          objects: { kind: 'moved' },
-          subtypes: [...types.subtypes],
-          additive: true,
-          duration: 'permanent',
-        },
-      ],
-      rule: clause.rule,
-    };
-  },
-};
-
 export const GISA_G4_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   GRANT_FOR_GOOD,
   EXILE_AT_END_STEP,
   EXILE_IF_LEAVES,
   PUT_LINKED_EXILE,
-  BECOMES_IN_ADDITION,
 ];
 
 type Static = Extract<IrAbility, { kind: 'static' }>;

@@ -5,7 +5,7 @@
  * (`delayedTrigger` of an `exile` of `moved`, `exileIfLeaves`, CR 603.7c, 614.1a), a static ability that reduces the cost of the activated abilities of the creature cards in a graveyard
  * (`abilityCostReduction` of `ofObjects`, CR 601.2f, 113.6b), an ability that works from the hand with a reveal cost and can be activated only in its controller's turn (`revealThis`,
  * CR 701.20a, `activateOnlyIf` of `yourTurn`) and a linked exile that puts the creature cards it exiled onto the battlefield as 1/1 Spirits with flying counters (`linkedExile` with a
- * filter, `setPt`, `setTypes`, CR 607.2a). Names start with "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle text, and none of these is the
+ * filter, `setTypes` with a base power and toughness, CR 607.2a). Names start with "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle text, and none of these is the
  * definition of a real card (the real ones are read from the golden corpus by the grammar, and have the same abilities).
  */
 import type { Ability, Cost } from '../../ast/types';
@@ -172,12 +172,13 @@ export const SYNTHETIC_GISA_G4_LIST: readonly CardDefinition[] = [
               controller: 'you',
               withCounters: { counter: 'flying', count: 1 },
             },
-            { kind: 'setPt', objects: MOVED, power: 1, toughness: 1, duration: 'permanent' },
             {
               kind: 'setTypes',
               objects: MOVED,
+              types: ['creature'],
               subtypes: ['Spirit'],
               additive: true,
+              basePt: { power: 1, toughness: 1 },
               duration: 'permanent',
             },
           ],

@@ -180,11 +180,6 @@ export interface LowerContext {
    */
   movedToHand: boolean;
   /**
-   * True right after a clause that put the cards exiled with the permanent onto the battlefield (Gisa deck, group 4, D-1431, CR 607.2a, 400.7j): "Each of them is a 1/1 Spirit in
-   * addition to its other types" is about those cards. Any other clause lowered after it makes it false again.
-   */
-  putLinked: boolean;
-  /**
    * What "it" means in "If you do, return it to the battlefield ... at the beginning of the next end step" (stage P48, D-205, CR 603.7c, 400.7j): the reference of the
    * target the last instruction exiled, which the engine's `moved` names. Null before an exile of a target and after any other move, destroy or sacrifice.
    */
@@ -244,7 +239,6 @@ export function newContext(
     madeToken: null,
     milled: false,
     movedToHand: false,
-    putLinked: false,
     exiledRef: null,
     namedInQuotes: false,
     readAsCast: false,

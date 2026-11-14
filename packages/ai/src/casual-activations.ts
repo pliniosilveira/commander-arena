@@ -39,6 +39,9 @@
  * - "{4}, {T}: Target creature can't be blocked this turn" (casual-evasion.ts) in the precombat main
  *   phase when a creature of ours could attack and the opponent has something that could block it.
  *
+ * - A one-turn reanimation (D-1430, "Return target creature card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step. ...",
+ *   Whip of Erebos): in the first main phase, when a creature card of our graveyard would attack safely (`wantsUnearth`'s test), casual-alt-costs.ts.
+ *
  * - A loyalty ability of a planeswalker of ours (D-203, CR 606), once a turn, by a small rule (casual-loyalty.ts).
  *
  * Everything else is left unused: sacrifice outlets, life costs, pingers and pumps that target have
@@ -52,7 +55,12 @@ import type {
   PriorityDecision,
   PriorityOption,
 } from '@commander-arena/engine';
-import { wantsEternalize, wantsUnearth } from './casual-alt-costs';
+import {
+  isOneTurnReanimation,
+  wantsEternalize,
+  wantsOneTurnReanimation,
+  wantsUnearth,
+} from './casual-alt-costs';
 import { isEquipAbility } from './casual-attachments';
 import { isUnblockableAbility, wantsUnblockable } from './casual-evasion';
 import { wantsPlayExiled } from './casual-free';
@@ -232,6 +240,21 @@ export function chooseActivation(
     );
   });
   if (unearth !== undefined) return act(unearth);
+
+  // A one-turn reanimation of a permanent of ours (D-1430, Whip of Erebos): the same test as Unearth's, for a creature card that waits in the graveyard.
+  const whip = fresh.find((o) => {
+    const obj = findObject(view, o.object);
+    const ability = obj?.activated?.find((a) => a.abilityIndex === o.abilityIndex)?.ability;
+    return (
+      obj !== undefined &&
+      obj.controller === view.viewer &&
+      obj.zone === 'battlefield' &&
+      ability !== undefined &&
+      isOneTurnReanimation(ability) &&
+      wantsOneTurnReanimation(view)
+    );
+  });
+  if (whip !== undefined) return act(whip);
 
   // Eternalize (CR 702.129a, D-384): a creature card of ours in the graveyard becomes a 4/4 black Zombie token that stays (casual-alt-costs.ts).
   const eternalize = fresh.find((o) => {

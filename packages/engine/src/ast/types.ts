@@ -2239,7 +2239,10 @@ export type Effect =
    * (CR 614.6); a new object after any zone change (CR 400.7) is not marked. A commander so exiled is offered the command zone (CR 903.9a). Unearth does the same through
    * `GameObject.alt`.
    */
-  | { readonly kind: 'exileIfLeaves'; readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }> }
+  | {
+      readonly kind: 'exileIfLeaves';
+      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+    }
   /**
    * "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able" and "Creatures your
    * opponents control attack this turn if able" (CR 508.1d, 611.2a, 611.2c, D-179): a requirement on a group of creatures. It changes the rules of the

@@ -324,12 +324,12 @@ describe('"If it would leave the battlefield, exile it instead of putting it any
     reanimate(g);
     g.passAll();
     g.passAll();
-    const hand = getView(g.state, 0).seats[0]?.handSize;
+    const hand = getView(g.state, 0).seats[0]?.handCount;
     g.act(0).pass();
     g.act(1).cast(MURDER, { pay: true, targets: [SHADE] });
     g.passAll();
     g.expect.zone(SHADE, 'exile', { seat: 0 });
-    expect(getView(g.state, 0).seats[0]?.handSize).toBe(hand);
+    expect(getView(g.state, 0).seats[0]?.handCount).toBe(hand);
   });
 
   test('a commander that comes back this way and is exiled is offered the command zone (CR 903.9a)', () => {

@@ -87,12 +87,7 @@ describe("Embalmer's Tools: the activated abilities of creature cards in your gr
   });
 
   test('not a card in the hand or a permanent: "activated abilities of creature cards in your graveyard"', () => {
-    const g = scenario()
-      .seat(0)
-      .battlefield(TOOLS, SINK)
-      .battlefield('Swamp')
-      .seat(1)
-      .build();
+    const g = scenario().seat(0).battlefield(TOOLS, SINK).battlefield('Swamp').seat(1).build();
     g.expect.illegal(0, { activate: SINK });
   });
 
@@ -129,7 +124,7 @@ describe("Embalmer's Tools: the activated abilities of creature cards in your gr
   });
 });
 
-describe("Tetzimoc: {B}, Reveal this card from your hand: put a prey counter on target creature, only during your turn (CR 701.20a, 602.5b)", () => {
+describe('Tetzimoc: {B}, Reveal this card from your hand: put a prey counter on target creature, only during your turn (CR 701.20a, 602.5b)', () => {
   test('the card is valid and works from the hand', () => {
     expect(validateCard(syntheticCard(HUNTER))).toEqual([]);
   });
@@ -422,9 +417,15 @@ describe('what the validation refuses (D-1431 to D-1433)', () => {
         kind: 'static',
         static: { kind: 'abilityCostReduction', abilities: 'ofObjects', objects, amount: 1 },
       });
-    expect(validateCard(make({ zone: 'graveyard', types: ['creature'], controller: 'you' }) as never)).toEqual([]);
-    expect(validateCard(make({ types: ['creature'], controller: 'you' }) as never).length).toBeGreaterThan(0);
-    expect(validateCard(make({ zone: 'battlefield', types: ['creature'] }) as never).length).toBeGreaterThan(0);
+    expect(
+      validateCard(make({ zone: 'graveyard', types: ['creature'], controller: 'you' }) as never),
+    ).toEqual([]);
+    expect(
+      validateCard(make({ types: ['creature'], controller: 'you' }) as never).length,
+    ).toBeGreaterThan(0);
+    expect(
+      validateCard(make({ zone: 'battlefield', types: ['creature'] }) as never).length,
+    ).toBeGreaterThan(0);
   });
 
   test('the filter of a linked exile describes the cards: no zone, controller or owner', () => {
@@ -442,7 +443,11 @@ describe('what the validation refuses (D-1431 to D-1433)', () => {
         },
       });
     expect(validateCard(make({ types: ['creature'] }) as never)).toEqual([]);
-    expect(validateCard(make({ types: ['creature'], zone: 'exile' }) as never).length).toBeGreaterThan(0);
-    expect(validateCard(make({ types: ['creature'], controller: 'you' }) as never).length).toBeGreaterThan(0);
+    expect(
+      validateCard(make({ types: ['creature'], zone: 'exile' }) as never).length,
+    ).toBeGreaterThan(0);
+    expect(
+      validateCard(make({ types: ['creature'], controller: 'you' }) as never).length,
+    ).toBeGreaterThan(0);
   });
 });

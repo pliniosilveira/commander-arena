@@ -1,8 +1,9 @@
 /**
  * Effect rules of group 4 of the Gisa deck (issue 41, D-1430, D-1431): the sentences after "Return target creature card from your graveyard to the battlefield." of Whip of
  * Erebos ("It gains haste. Exile it at the beginning of the next end step. If it would leave the battlefield, exile it instead of putting it anywhere else.") and the effect of
- * Ghost Vacuum ("Put each creature card exiled with ~ onto the battlefield under your control with a flying counter on it. Each of them is a 1/1 Spirit in addition to its other
- * types."). Every sentence is about the objects the instruction before it put onto the battlefield, which the lowering checks (`ctx.movedOnto`, `ctx.putLinked`).
+ * Ghost Vacuum ("Put each creature card exiled with ~ onto the battlefield under your control with a flying counter on it."; its next sentence, "Each of them is a 1/1 Spirit in
+ * addition to its other types.", is `effect.becomes-in-addition` of the Hofri deck). Every sentence is about the objects the instruction before it put onto the battlefield, which the
+ * lowering checks (`ctx.movedOnto`).
  */
 import { fail, literal, map, pattern, sequence } from '../../combinators';
 import type { IrArg, IrNoun } from '../../ir/types';
@@ -80,7 +81,10 @@ export const EFFECT_EXILE_AT_END_STEP = defineRule<Clauses>({
     'CR 603.7c (Delayed Triggered Abilities)',
     'CR 400.7j (General)',
   ],
-  examples: ['exile it at the beginning of the next end step', 'Exile it at the beginning of the next end step'],
+  examples: [
+    'exile it at the beginning of the next end step',
+    'Exile it at the beginning of the next end step',
+  ],
   rejects: [
     'exile it at the beginning of your next end step',
     'exile it at the beginning of the next end step and draw a card',
@@ -160,13 +164,13 @@ export const EFFECT_EXILE_INSTEAD_WHEN_LEAVING = defineRule<Clauses>({
 const LINKED_TYPES = ['creature', 'artifact', 'enchantment', 'land', 'planeswalker'] as const;
 
 /**
- * `effect.put-exiled-with`: "Put each creature card exiled with ~ onto the battlefield under your control with a flying counter on it." (CR 607.2a: the cards the linked ability of
+ * `effect.put-exiled-with-battlefield`: "Put each creature card exiled with ~ onto the battlefield under your control with a flying counter on it." (CR 607.2a: the cards the linked ability of
  * the permanent exiled, read from its last-known information when it was sacrificed to pay for this; CR 110.2a, 122.6 and 614.1c: they enter under your control with the counter on
  * them). The engine's `moveToZone` of the `linkedExile` cards of the kind, to the battlefield under the control of the player, with the counter. A counter "with a [keyword] counter on
  * it" is optional. Not read: "a card", the number of cards, another zone, "under its owner's control", tapped, "exiled with" another object, more than one counter.
  */
-export const EFFECT_PUT_EXILED_WITH = defineRule<Clauses>({
-  id: 'effect.put-exiled-with',
+export const EFFECT_PUT_EXILED_WITH_BATTLEFIELD = defineRule<Clauses>({
+  id: 'effect.put-exiled-with-battlefield',
   family: 'effect',
   leading: ['put'],
   cites: [
@@ -192,7 +196,7 @@ export const EFFECT_PUT_EXILED_WITH = defineRule<Clauses>({
     'put each creature card exiled with ~ onto the battlefield under your control with two flying counters on it',
   ],
   parse: (ctx, pos) => {
-    const id = 'effect.put-exiled-with';
+    const id = 'effect.put-exiled-with-battlefield';
     const types = LINKED_TYPES.join('|');
     const r = spanned(
       pattern(
@@ -232,66 +236,10 @@ export const EFFECT_PUT_EXILED_WITH = defineRule<Clauses>({
   },
 });
 
-/**
- * `effect.each-of-them-becomes`: "Each of them is a 1/1 Spirit in addition to its other types." (CR 613.1d, 613.4b, 205.1b, 611.2a: the objects the instruction before it put onto the
- * battlefield have the base power and toughness and the creature type for as long as they stay, a permanent effect). The engine's `setPt` and `setTypes` (additive) of the `moved`
- * objects, with the duration `permanent`. A whole base power and toughness and one creature type. Not read: another subject, a color, a card type, "until end of turn".
- */
-export const EFFECT_EACH_OF_THEM_BECOMES = defineRule<Clauses>({
-  id: 'effect.each-of-them-becomes',
-  family: 'effect',
-  leading: ['each'],
-  cites: [
-    'CR 613.1d (Interaction of Continuous Effects)',
-    'CR 613.4b (Interaction of Continuous Effects)',
-    'CR 205.1b (Type Line)',
-    'CR 611.2a (Continuous Effects)',
-  ],
-  examples: [
-    'each of them is a 1/1 Spirit in addition to its other types',
-    'Each of them is a 2/2 Zombie in addition to its other types',
-  ],
-  rejects: [
-    'each of them is a 1/1 Spirit',
-    'each of them is a 1/1 Spirit in addition to its other types until end of turn',
-    'each of them is a 1/1 spirit in addition to its other types',
-    'each of them is a 1/1 white Spirit in addition to its other types',
-    'each of them is a 1/1 Spirit artifact in addition to its other types',
-    'each of them gets +1/+1',
-    'each of those is a 1/1 Spirit in addition to its other types',
-    'each of them is a 1/1 Spirit in addition to its other types and draw a card',
-    'each of them is a X/X Spirit in addition to its other types',
-  ],
-  parse: (ctx, pos) => {
-    const id = 'effect.each-of-them-becomes';
-    const r = spanned(
-      pattern(
-        /each of them is an? (\d+)\/(\d+) ([A-Z][A-Za-z]+) in addition to its other types(?![\p{L}\p{N}])/u,
-      ),
-    )(ctx, pos);
-    if (!r.ok) return r;
-    if (!endsSentence()(ctx, r.pos)) return fail(ctx, pos);
-    const span = r.value.span;
-    const [, power, toughness, subtype] = r.value.value;
-    const args: Record<string, IrArg> = {
-      basePt: {
-        kind: 'basePt',
-        power: Number(power),
-        toughness: Number(toughness),
-        span,
-        rule: id,
-      },
-      types: { kind: 'typeList', subtypes: [subtype ?? ''], additive: true, span, rule: id },
-    };
-    return { ok: true, value: [makeClause(id, 'becomesInAddition', args, span)], pos: r.pos };
-  },
-});
-
 /** Quiet: a line these rules do not read stops where it always did. */
 export const GISA_G4_EFFECT_RULES = [
   quietly(EFFECT_GAIN_KEYWORD_FOR_GOOD),
   quietly(EFFECT_EXILE_AT_END_STEP),
   quietly(EFFECT_EXILE_INSTEAD_WHEN_LEAVING),
-  quietly(EFFECT_PUT_EXILED_WITH),
-  quietly(EFFECT_EACH_OF_THEM_BECOMES),
+  quietly(EFFECT_PUT_EXILED_WITH_BATTLEFIELD),
 ];

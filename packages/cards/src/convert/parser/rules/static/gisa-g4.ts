@@ -48,7 +48,12 @@ export const STATIC_GRAVEYARD_ABILITY_COST_REDUCTION = defineRule<IrStatic>({
   parse: (ctx, pos) => {
     const id = 'static.graveyard-ability-cost-reduction';
     const r = sequence(
-      pattern(new RegExp(`activated abilities of (${TYPES.join('|')}) cards in your graveyard cost `, 'iu')),
+      pattern(
+        new RegExp(
+          `activated abilities of (${TYPES.join('|')}) cards in your graveyard cost `,
+          'iu',
+        ),
+      ),
       pattern(/\{([1-9]\d*)\}/),
       literal(' less to activate'),
       literal('.'),

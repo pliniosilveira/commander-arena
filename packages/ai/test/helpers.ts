@@ -2821,6 +2821,54 @@ export const FEATHER_G3_LANDS = supported([
   'Swamp',
 ]);
 
+/**
+ * The SYNTHETIC cards of group 4 of the Gisa deck (D-1430 to D-1433): a Whip that returns a creature card from the graveyard with haste, exiles it at the end step and exiles it
+ * instead of letting it leave (a target in the graveyard, a delayed trigger and a replacement), an artifact that makes the activated abilities of creature cards in your graveyard cost
+ * {1} less, a creature whose ability works from the hand (a reveal cost, only in its controller's turn) and whose enters trigger destroys the creatures with its counter, and a Vacuum
+ * that exiles a card with a linked ability and is sacrificed to put the creature cards it exiled onto the battlefield as 1/1 Spirits with flying counters. They put abilities from the
+ * hand and from graveyards, targets in graveyards and delayed triggers into games, which the generic pools are not built to follow.
+ */
+export const GISA_G4_NAMES = [
+  'SYNTHETIC Grave Whip',
+  'SYNTHETIC Grave Tools',
+  'SYNTHETIC Prey Hunter',
+  'SYNTHETIC Soul Vacuum',
+] as const;
+
+/**
+ * The gisaG4 style: every card of the group three times, creatures with a graveyard ability (unearth) for the Tools to cheapen, creatures to die and to put counters on, and removal
+ * to fill the graveyards for the Whip and the Vacuum.
+ */
+export const GISA_G4_SPELLS = [
+  ...supported(GISA_G4_NAMES),
+  ...supported(GISA_G4_NAMES),
+  ...supported(GISA_G4_NAMES),
+  ...supported(['SYNTHETIC Unearth Shade', 'SYNTHETIC Unearth Shade', 'SYNTHETIC Unearth Gnoll']),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Murder', 'Murder']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Black for the cards of the group (all of them cost black or nothing), a little red for the removal and the Gnoll. */
+export const GISA_G4_LANDS = supported([
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+  'Mountain',
+  'Plains',
+  'Forest',
+]);
+
+/** Style pairs of the Gisa group 4 soak test (D-1430 to D-1433): a mirror match and both mixed ways. */
+export const GISA_G4_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['gisaG4', 'gisaG4'],
+  ['gisaG4', 'spells'],
+  ['spells', 'gisaG4'],
+];
+
 /** Style pairs of the Feather group 3 soak test (D-437 to D-439): a mirror match and both mixed ways. */
 export const FEATHER_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['featherG3', 'featherG3'],
@@ -3591,6 +3639,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
   // The Feather group 1 cards (D-451) ask which color to protect from as a spell resolves: a style of their own.
   .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
+  // The Gisa group 4 cards (D-1430 to D-1433) have abilities that work from the hand and from graveyards, targets in graveyards and delayed exiles: a style of their own.
+  .filter((card) => !(GISA_G4_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ANGEL_NAMES as readonly string[]).includes(card.name))
@@ -3804,6 +3854,7 @@ export type DeckStyle =
   | 'featherG3'
   | 'featherG2'
   | 'featherG1'
+  | 'gisaG4'
   | 'vehicles'
   | 'prevention'
   | 'layouts'
@@ -3880,6 +3931,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG5' && DANITHA_G5_SPELLS.length > 0) return DANITHA_G5_SPELLS;
   if (style === 'danithaG6' && DANITHA_G6_SPELLS.length > 0) return DANITHA_G6_SPELLS;
   if (style === 'danithaG7' && DANITHA_G7_SPELLS.length > 0) return DANITHA_G7_SPELLS;
+  if (style === 'gisaG4' && GISA_G4_SPELLS.length > 0) return GISA_G4_SPELLS;
   if (style === 'featherG3' && FEATHER_G3_SPELLS.length > 0) return FEATHER_G3_SPELLS;
   if (style === 'featherG2' && FEATHER_G2_SPELLS.length > 0) return FEATHER_G2_SPELLS;
   if (style === 'featherG1' && FEATHER_G1_SPELLS.length > 0) return FEATHER_G1_SPELLS;
@@ -4071,6 +4123,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG5' && BASIC_LANDS.length > 0) return DANITHA_G5_LANDS;
   if (style === 'danithaG6' && BASIC_LANDS.length > 0) return DANITHA_G6_LANDS;
   if (style === 'danithaG7' && BASIC_LANDS.length > 0) return DANITHA_G7_LANDS;
+  if (style === 'gisaG4' && BASIC_LANDS.length > 0) return GISA_G4_LANDS;
   if (style === 'featherG3' && BASIC_LANDS.length > 0) return FEATHER_G3_LANDS;
   if (style === 'featherG2' && BASIC_LANDS.length > 0) return FEATHER_G2_LANDS;
   if (style === 'featherG1' && BASIC_LANDS.length > 0) return FEATHER_G1_LANDS;

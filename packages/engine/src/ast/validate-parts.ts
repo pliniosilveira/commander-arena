@@ -3517,7 +3517,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'exileIfLeaves':
       // CR 614.1a (D-1430): the object is what the effect before it put onto the battlefield.
       if (kindOf(e.objects) !== 'moved') {
-        issue(out, `${path}.objects`, "exileIfLeaves names the objects an earlier effect moved ('moved')");
+        issue(
+          out,
+          `${path}.objects`,
+          "exileIfLeaves names the objects an earlier effect moved ('moved')",
+        );
       } else {
         checkRef(e.objects, 'object', `${path}.objects`, scope, out);
       }

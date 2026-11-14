@@ -65,7 +65,7 @@ const REPLACEMENT_ENTERS = /^(?:as )?~ enters\b/i;
 const REPLACEMENT_UMBRA_ARMOR = /^umbra armor$/i;
 /** "If ~ was kicked, it enters with ...": a conditional replacement of the permanent itself. */
 const REPLACEMENT_IF_ENTERS = /^if [^,]+, (?:~|it) enters\b/i;
-const COST_WORDS = /^(?:sacrifice|discard|pay|remove|exile|tap)\b/i;
+const COST_WORDS = /^(?:sacrifice|discard|pay|remove|exile|tap|reveal this card from your hand)\b/i;
 /**
  * The loyalty symbol that starts a loyalty ability (CR 606.2, 606.4, 606.5; stage P47, D-202): "+1", "−2" (U+2212, which Oracle text writes; a hyphen-minus and an
  * en dash too), "0", "−X", each with or without the square brackets of the rules text. The colon follows at once.
@@ -648,7 +648,8 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
 
   if (LEAVE_EXILE_RIDER.test(text)) {
     const colon = costColon(text);
-    if (colon > 0 && text.slice(0, colon).includes('{')) return activatedSkeleton(text, colon, base);
+    if (colon > 0 && text.slice(0, colon).includes('{'))
+      return activatedSkeleton(text, colon, base);
   }
 
   if (

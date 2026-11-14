@@ -58,6 +58,7 @@ describe('the dimensions', () => {
       'sacrifice',
       'removeCounters',
       'discardThis',
+      'revealThis',
       'discard',
       'tapCreatures',
       'tapPermanents',

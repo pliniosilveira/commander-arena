@@ -190,7 +190,15 @@ function targetText(spec: TargetSpec | undefined): string {
         const { controller } = spec.what.filter;
         const whose =
           controller === 'you' ? 'your' : controller === 'opponent' ? "an opponent's" : 'a';
-        return `target ${nounOf(spec.what.filter)} card from ${whose} graveyard${withText(spec.what.filter)}`;
+        // D-1431: a card of any kind ("Exile target card from a graveyard", Ghost Vacuum) is "card", not "permanent card".
+        const { types, subtypes, anyOf, commander } = spec.what.filter;
+        const any =
+          types === undefined &&
+          subtypes === undefined &&
+          anyOf === undefined &&
+          commander === undefined;
+        const kind = any ? 'card' : `${nounOf(spec.what.filter)} card`;
+        return `target ${kind} from ${whose} graveyard${withText(spec.what.filter)}`;
       }
       // "target creature an opponent controls": the controller is part of what the text promises.
       const { controller } = spec.what.filter;
@@ -605,6 +613,20 @@ function moveText(
   // D-151 (CR 113.6b): a card that returns itself from the graveyard says where it comes from.
   if (objects.kind === 'this' && self === 'card' && effect.to === 'hand') {
     return 'Return this card from your graveyard to your hand';
+  }
+  // D-1431 (CR 607.2a, 110.2a, 122.6): "Put each creature card exiled with this artifact onto the battlefield under your control with a flying counter on it".
+  if (
+    objects.kind === 'linkedExile' &&
+    objects.filter !== undefined &&
+    effect.to === 'battlefield'
+  ) {
+    const kind = nounOf(objects.filter);
+    const kept = effect.withCounters;
+    const withCounters =
+      kept === undefined ? '' : ` with ${quantity(kept.count, defs, counters(kept.counter))} on it`;
+    const control =
+      effect.controller === 'owner' ? " under its owner's control" : ' under your control';
+    return `Put each ${kind} card exiled with this ${self} onto the battlefield${effect.tapped === true ? ' tapped' : ''}${control}${withCounters}`;
   }
   // D-394 (CR 110.2a, 400.7): the card an earlier instruction exiled ("it") put onto the battlefield under the control of the player who puts it: it is not returning anywhere.
   if (objects.kind === 'moved' && effect.to === 'battlefield' && effect.controller === 'you') {
@@ -1099,6 +1121,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // A choice of types says "an instant or sorcery"; the trigger is about a spell, as the card says.
       return delayedCastWords(/\bspells?$/.test(spell) ? spell : `${spell} spell`, inner);
     }
+    case 'exileIfLeaves':
+      // D-1430 (CR 614.1a): the replacement of the permanent an earlier instruction put onto the battlefield (Whip of Erebos).
+      return `If ${object(effect.objects)} would leave the battlefield, exile it instead of putting it anywhere else`;
     case 'delayedTrigger': {
       // D-151 (CR 603.7): "At the beginning of your next end step, this creature deals 2 damage to each opponent for each of those cards".
       const when = delayedWords(effect.at);
@@ -1110,6 +1135,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       const kinds = [...(effect.subtypes ?? []), ...(effect.types ?? [])];
       if (effect.additive !== true || kinds.length === 0) return UNSAID;
       const noun = kinds.join(' ');
+      // D-1431 (CR 613.1d, 613.4b, 611.2a): "Each of them is a 1/1 Spirit in addition to its other types", for good: the base power and toughness are said too.
+      if (effect.basePt !== undefined && effect.duration === 'permanent') {
+        const size = `${effect.basePt.power}/${effect.basePt.toughness}`;
+        return `${capital(object(effect.objects))} is a ${size} ${noun} in addition to its other types`;
+      }
       const until = effect.duration === 'untilEndOfTurn' ? ' until end of turn' : '';
       return `${capital(object(effect.objects))} becomes ${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun} in addition to its other types${until}`;
     }

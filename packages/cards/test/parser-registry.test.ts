@@ -186,6 +186,15 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   // Feather deck, group 2 (D-444): the two restrictions in the order of Hall of Oracles.
   'restriction.sorcery-and-if': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
+  // Gisa deck, group 4 (D-1430 to D-1433): the restriction of the turn and the cost of the reveal of Tetzimoc, the reduction of Embalmer's Tools, and the sentences of Whip of
+  // Erebos and Ghost Vacuum that need the instruction before them (a return from the graveyard, the exile that links).
+  'restriction.during-your-turn': permanent((e) => `{1}: Draw a card. ${e}`),
+  'cost.reveal-this': permanent((e) => `{B}, ${e}: Draw a card.`),
+  'static.graveyard-ability-cost-reduction': asIs,
+  'effect.exile-instead-when-leaving': permanent(
+    (e) => `{T}: Return target creature card from your graveyard to the battlefield. ${cap(e)}.`,
+  ),
+  'effect.put-exiled-with-battlefield': permanent((e) => `{6}, {T}, Sacrifice ~: ${cap(e)}.`),
   'duration.until-end-of-turn': permanent((e) => `{1}: ~ gets +1/+1 ${e}.`),
   'keyword.cycling': asIs,
   // Stage P17: typecycling is a keyword line, the count of kicks follows a quantity of one.

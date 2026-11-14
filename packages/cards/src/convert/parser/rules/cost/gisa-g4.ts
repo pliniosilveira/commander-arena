@@ -35,9 +35,10 @@ export const COST_REVEAL_THIS = defineRule<IrCost>({
     'Reveal two cards from your hand',
   ],
   parse: (ctx, pos) => {
-    const r = spanned(
-      pattern(/reveal this card from your hand(?![\p{L}\p{N}])(?!\s+and)/iu),
-    )(ctx, pos);
+    const r = spanned(pattern(/reveal this card from your hand(?![\p{L}\p{N}])(?!\s+and)/iu))(
+      ctx,
+      pos,
+    );
     if (!r.ok) return r;
     return {
       ok: true,
