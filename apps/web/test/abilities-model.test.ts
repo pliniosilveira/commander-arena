@@ -159,13 +159,25 @@ describe('clicking an object with activated abilities', () => {
     ]);
   });
 
-  test('a graveyard, exile or battlefield card with one ability still acts at once', () => {
-    for (const zone of ['graveyard', 'exile', 'battlefield']) {
-      const there = card(7, 'There Bear', {
+  test('a graveyard card with one ability asks first too: "Unearth"-like abilities cost mana and exile it', () => {
+    const gone = card(7, 'Gone Bear', {
+      zone: 'graveyard',
+      activated: [{ abilityIndex: 0, ability: pump }],
+    });
+    const outcome = clickOutcome(priority(act(7, 0)), o(7), lookupIndexFor([gone]));
+    if (outcome.kind !== 'menu') throw new Error(`expected a menu, got ${outcome.kind}`);
+    expect(outcome.items.map((i) => i.action)).toEqual([
+      { kind: 'activate', object: o(7), abilityIndex: 0 },
+    ]);
+  });
+
+  test('an exile or battlefield card with one ability still acts at once', () => {
+    for (const zone of ['exile', 'battlefield']) {
+      const there = card(8, 'There Bear', {
         zone,
         activated: [{ abilityIndex: 0, ability: pump }],
       });
-      expect(clickOutcome(priority(act(7, 0)), o(7), lookupIndexFor([there])).kind).toBe('act');
+      expect(clickOutcome(priority(act(8, 0)), o(8), lookupIndexFor([there])).kind).toBe('act');
     }
   });
 
