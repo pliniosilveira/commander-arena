@@ -115,6 +115,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseAmongMoved',
     // D-433: "Tiered", a mode with a cost listed before its effect (`SpellMode.cost`, CR 700.2h, 702.183a).
     'modeCost',
+    // D-1424: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
+    'sacrificeX',
+    // D-1427: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
+    'optionalSacrifice',
   ],
   effectKinds: [
     'sequence',
@@ -389,6 +393,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'changeling',
     'devoid',
     'partner',
+    // D-1426: "Partner with [name]" (CR 702.124j): the engine builds its enters trigger.
+    'partnerWith',
     'chooseBackground',
     // D-200: "~ can be your commander".
     'canBeCommander',
@@ -703,6 +709,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'kicked',
     // D-129: "if a replicate cost was paid for it" (CR 702.56a).
     'replicated',
+    // D-1427: "if you sacrificed one or more creatures to cast it" (`Cost` `sacrifice` with `anyNumber`).
+    'sacrificedAsCost',
     'controlCommander',
     'sourceHasCounter',
     // D-120: "that creature's power or toughness is greater than this creature's" (Evolve).
@@ -913,6 +921,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
     'cardsDrawnThisTurn',
+    // D-1427: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
+    'sacrificedAsCost',
   ],
   // D-405: 'library' is "then shuffle and put that card on top".
   searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library'],
@@ -1058,6 +1068,10 @@ export const ABILITY_FEATURES = [
   'chooseAmongMoved',
   /** "Tiered" (D-433, CR 700.2h, 702.183a): a mode of a modal spell with a cost listed before its effect, paid as an additional cost when the mode is chosen (`SpellMode.cost`). */
   'modeCost',
+  /** "{B}, Sacrifice X creatures: ..." (D-1424, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
+  'sacrificeX',
+  /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-1427, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
+  'optionalSacrifice',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 
@@ -1236,6 +1250,8 @@ export const CONDITION_KINDS = [
   'kicked',
   /** "If a replicate cost was paid for it" (CR 702.56a): the engine's `replicated`. */
   'replicated',
+  /** "If you sacrificed one or more creatures to cast it" (CR 118.8, D-1427): the engine's `sacrificedAsCost`. */
+  'sacrificedAsCost',
   /** "If you control a commander" (CR 903.3d): the engine's `controlCommander`. */
   'controlCommander',
   /** "If it had no -1/-1 counters on it" (CR 702.79a, as `not` of this): the engine's `sourceHasCounter`. */
@@ -1510,6 +1526,8 @@ export const AMOUNT_KINDS = [
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
+  /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-1427): the engine's `sacrificedAsCost`. */
+  'sacrificedAsCost',
   'bound',
 ] as const;
 export type AmountKind = (typeof AMOUNT_KINDS)[number];
@@ -1591,6 +1609,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   mayPlayFromGraveyard: true,
   chooseAmongMoved: true,
   modeCost: true,
+  sacrificeX: true,
+  optionalSacrifice: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,
@@ -1788,6 +1808,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   changeling: true,
   devoid: true,
   partner: true,
+  partnerWith: true,
   chooseBackground: true,
   canBeCommander: true,
   ascend: true,

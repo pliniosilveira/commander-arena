@@ -279,6 +279,7 @@ describe('unmatched abilities', () => {
 
   test('rule ids are stable and unique', () => {
     expect(DEFAULT_RULES.map((r) => r.id)).toEqual([
+      'keyword.partner-with',
       'keyword.line',
       'keyword.cycling',
       'keyword.typecycling',
@@ -579,6 +580,8 @@ describe('unmatched abilities', () => {
       'effect.player-adds-mana',
       'effect.copy-this-spell',
       'effect.becomes-in-addition',
+      'effect.each-opponent-choose-keep',
+      'effect.you-add-mana',
       'effect.exile-random-from-hand',
       'effect.put-it-onto-battlefield',
       'effect.cast-it-free',
@@ -683,6 +686,8 @@ describe('unmatched abilities', () => {
       'noun.defending-player',
       'noun.that-player',
       'noun.they',
+      'noun.any-number-target-players',
+      'noun.x-permanents',
       'noun.each-player-discarded',
       'noun.each-player-attacked',
       'noun.paired-creatures',
@@ -774,6 +779,7 @@ describe('unmatched abilities', () => {
       'static.untap-in-others-step',
       'static.self-cost-reduction',
       'static.spells-cost-reduction',
+      'static.additional-cost-sacrifice-copies',
       'static.additional-cost',
       'static.free-cast',
       'static.conditional-prefix',

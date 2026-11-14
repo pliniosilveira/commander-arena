@@ -450,7 +450,8 @@ export interface StackData {
   readonly triggerAttacked?: readonly SeatId[];
   /**
    * For an activated ability whose cost sacrificed permanents (D-133): the ids they had on the battlefield, which the
-   * `sacrificedCost` reference reads (from last-known information: they are gone). Absent for every other object.
+   * `sacrificedCost` reference reads (from last-known information: they are gone). For a spell whose additional cost sacrificed any number of permanents
+   * (D-1427): the ids they had, which the amount and the condition `sacrificedAsCost` count (absent when none was). Absent for every other object.
    */
   readonly sacrificedAsCost?: readonly ObjectId[];
   /**
@@ -804,6 +805,12 @@ export interface CastingContext {
    */
   readonly extra?: {
     readonly sacrifice: ObjectFilter | null;
+    /**
+     * "You may sacrifice one or more creatures" (D-1427): the filter of the permanents the caster may sacrifice, any number of them, after the mana is paid; null for
+     * none. `sacrificeAnyAsked` is set once the question is being asked (the answer then goes to this cost and not to `sacrifice`).
+     */
+    readonly sacrificeAny?: ObjectFilter | null;
+    readonly sacrificeAnyAsked?: true;
     readonly discard: number;
     /** How many other cards of the caster's graveyard to exile (Escape, CR 702.138a, D-124); 0 for none. */
     readonly exile: number;
@@ -979,6 +986,8 @@ export type Instruction =
    */
   | {
       readonly kind: 'spare';
+      /** D-1420: each of `players` chooses among their own permanents and sacrifices all the rest, lands too (`sparePermanents.own`); absent: the controller chooses and the lands stay. */
+      readonly own?: true;
       readonly players: readonly SeatId[];
       readonly types: readonly CardType[];
       readonly step: number;

@@ -169,9 +169,13 @@ export const COST_SACRIFICE = defineRule<IrCost>({
     'Sacrifice another permanent',
     'Sacrifice an artifact',
     'Sacrifice a Treasure',
+    'Sacrifice two other creatures',
+    'Sacrifice X creatures',
   ],
   rejects: [
     'Sacrifice',
+    'Sacrifice X other creatures',
+    'Sacrifice X',
     'Sacrifice target creature',
     'Sacrifice it',
     'Sacrifice all creatures',
@@ -182,7 +186,8 @@ export const COST_SACRIFICE = defineRule<IrCost>({
     map(
       sequence(
         literal('sacrifice '),
-        family<IrNoun>('noun', { only: ['noun.self', 'noun.a-permanent'] }),
+        // D-1424: "Sacrifice X creatures" (`noun.x-permanents`), the X announced as the ability is activated.
+        family<IrNoun>('noun', { only: ['noun.self', 'noun.a-permanent', 'noun.x-permanents'] }),
       ),
       ([, what]) => what,
     ),

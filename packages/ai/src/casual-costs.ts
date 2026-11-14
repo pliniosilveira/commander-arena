@@ -212,6 +212,8 @@ function costsWorthPaying(
     ) {
       return false;
     }
+    // D-1427: "you may sacrifice one or more creatures" is no price: the spell is cast with none, and the agent chooses none (`choosePermanentToSacrifice` takes `min`).
+    if (cost.kind === 'sacrifice' && cost.anyNumber === true) continue;
     if (cost.kind === 'sacrifice' && !('kind' in cost.what)) {
       const candidates = sacrificeCandidates(view, cost.what);
       if (candidates.length === 0) return false;

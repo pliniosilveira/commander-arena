@@ -444,7 +444,10 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
   // "Any number of target creatures" has no bounds of its own: a divided damage reads it (`declareDividedTarget`), and an effect that takes any number of
   // targets (stage P74, D-234: "any number of other target creatures you control phase out") has the slot `anyNumber`.
   const anyNumberTarget = noun.anyNumber === true && noun.det === 'target';
-  if (anyNumberTarget && noun.filter.player !== undefined) return failure(noun, []);
+  // D-1422 (CR 115.1): "any number of target players" is a player slot of the engine's `anyNumber`; other player forms ("or planeswalker") are not read.
+  if (anyNumberTarget && noun.filter.player !== undefined && noun.filter.orPlaneswalker === true) {
+    return failure(noun, []);
+  }
   // "Return X target creature cards from your graveyard to your hand" (Hashaton group 10, D-386, CR 601.2b-c): as many targets as the X announced, of a spell's own
   // text and of objects (cards or permanents); the one place the engine's `countX` is read. Anything else about the noun that sets a count refuses it.
   const countX = noun.det === 'target' && noun.count?.kind === 'x';
@@ -493,7 +496,13 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         ...boundsOf(noun),
       };
     } else if (noun.filter.player !== undefined) {
-      spec = { id, what: { kind: 'player', filter: noun.filter.player }, ...boundsOf(noun) };
+      if (anyNumberTarget) {
+        const blocked = missingFeatures(['selector:anyNumber']);
+        if (blocked.length > 0) return failure(noun, blocked);
+      }
+      spec = anyNumberTarget
+        ? { id, what: { kind: 'player', filter: noun.filter.player }, anyNumber: true }
+        : { id, what: { kind: 'player', filter: noun.filter.player }, ...boundsOf(noun) };
     } else if (noun.orCard !== undefined) {
       // "up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270, CR 115.1): the engine's slot of two zones. The text of a
       // spell has no such slot (the engine reads it in a triggered ability only), and nothing else about the noun may be set that the slot does not say.

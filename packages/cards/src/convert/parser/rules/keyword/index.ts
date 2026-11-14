@@ -12,6 +12,7 @@ import { GIFT_KEYWORD_RULES } from './gift';
 import { LATER_KEYWORD_RULES } from './later';
 import { LIVING_WEAPON_KEYWORD_RULES } from './living-weapon';
 import { numberedKeyword } from './numbered';
+import { PARTNER_WITH_KEYWORD_RULES } from './partner-with';
 import { protectionKeyword } from './protection';
 import { simpleKeyword } from './simple';
 import { TYPECYCLING_RULES } from './typecycling';
@@ -344,6 +345,8 @@ export const KEYWORD_CYCLING = defineRule<readonly IrKeyword[]>({
 });
 
 export const KEYWORD_RULES = [
+  // D-1426 (Gisa deck, group 3): "Partner with Regna, the Redeemer" starts like the plain keyword Partner, which `keyword.line` reads a prefix of: tried first.
+  ...PARTNER_WITH_KEYWORD_RULES,
   KEYWORD_LINE,
   KEYWORD_CYCLING,
   ...TYPECYCLING_RULES,

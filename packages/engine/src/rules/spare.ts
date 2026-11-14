@@ -1,6 +1,8 @@
 /**
  * "For each player, you choose from among the permanents that player controls an artifact, a creature, an enchantment, and a planeswalker. Then each player
- * sacrifices all other nonland permanents they control" (Tragic Arrogance; CR 608.2d, 701.21a, 101.4, D-231). The controller of the effect makes every choice, one
+ * sacrifices all other nonland permanents they control" (Tragic Arrogance; CR 608.2d, 701.21a, 101.4, D-231). With `own` (D-1420, Liliana, Dreadhorde General: "Each
+ * opponent chooses a permanent they control of each permanent type and sacrifices the rest") each player the effect names chooses among their own permanents and
+ * sacrifices everything else they control, lands included. The controller of the effect makes every choice, one
  * for each card type and each player, the players in turn order starting with the active player (APNAP) and the types in the order the text lists them. A type of
  * which the player controls no permanent is skipped; with one candidate the engine chooses (and says so); otherwise a `choosePermanent` decision (purpose `spare`)
  * asks. The same permanent may be chosen for more than one type it has (an artifact creature as the artifact and as the creature: the text names no other limit).
@@ -31,11 +33,20 @@ function permanentsOf(
   );
 }
 
-/** The instruction that starts the choices of the effect: the players still in the game, in turn order from the active player. */
-export function startSpare(state: GameState, types: readonly CardType[]): SpareInstruction {
+/**
+ * The instruction that starts the choices of the effect: the players still in the game, in turn order from the active player. With `own` (D-1420, "Each opponent chooses a
+ * permanent they control of each permanent type and sacrifices the rest") only the players the effect names, each choosing for themselves.
+ */
+export function startSpare(
+  state: GameState,
+  types: readonly CardType[],
+  own?: readonly SeatId[],
+): SpareInstruction {
+  const players = seatsInOrder(state, state.turn.activeSeat);
   return {
     kind: 'spare',
-    players: seatsInOrder(state, state.turn.activeSeat),
+    ...(own === undefined ? {} : { own: true as const }),
+    players: own === undefined ? players : players.filter((seat) => own.includes(seat)),
     types,
     step: 0,
     spared: [],
@@ -51,9 +62,14 @@ export function runSpare(
   const pairs = ins.players.flatMap((player) => ins.types.map((type) => ({ player, type })));
   const pair = pairs[ins.step];
   if (pair === undefined) {
-    // Every choice is made: each player sacrifices all the other nonland permanents they control (CR 701.21a, 101.4).
+    // Every choice is made: each player sacrifices all the other nonland permanents they control, or with `own` all the other permanents they control (CR 701.21a, 101.4).
     const kept = new Set(ins.spared);
-    const doomed = permanentsOf(state).filter((p) => !p.types.includes('land') && !kept.has(p.id));
+    const doomed = permanentsOf(state).filter(
+      (p) =>
+        ins.players.includes(p.controller) &&
+        (ins.own === true || !p.types.includes('land')) &&
+        !kept.has(p.id),
+    );
     const seats = apnapOrder(
       state,
       doomed.map((p) => p.controller),
@@ -78,9 +94,11 @@ export function runSpare(
       { ...ins, step: ins.step + 1, spared: [...ins.spared, ...chosen], chosen: null },
     ]);
   if (candidates.length === 0) return next([], []);
+  // D-1420: with `own` the player chooses among their own permanents; otherwise the controller of the effect chooses for every player.
+  const chooser = ins.own === true ? pair.player : res.controller;
   const event = (objects: readonly ObjectId[], automatic: boolean): GameEvent => ({
     kind: 'permanentsChosen',
-    seat: res.controller,
+    seat: chooser,
     source: res.object,
     objects,
     purpose: 'effect',
@@ -95,10 +113,14 @@ export function runSpare(
     front: [],
     needs: {
       kind: 'choosePermanent',
-      seat: res.controller,
+      seat: chooser,
       source: res.object,
       purpose: 'spare',
-      spare: { player: pair.player, type: pair.type },
+      spare: {
+        player: pair.player,
+        type: pair.type,
+        ...(ins.own === true ? { own: true as const } : {}),
+      },
       min: 1,
       max: 1,
       legal: candidates,

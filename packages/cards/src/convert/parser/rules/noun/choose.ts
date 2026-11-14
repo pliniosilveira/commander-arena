@@ -51,7 +51,7 @@ function chosenPhrase(plural: boolean): Parser<IrFilter> {
 /**
  * `noun.a-permanent`: "a creature", "another permanent", "two lands": the acting player chooses
  * among the permanents that match (CR 608.2d), as in "sacrifice a creature" (CR 701.21). A count
- * is two or more; "another" means any permanent but the source (CR 109.1).
+ * is two or more (and may say "other": "two other creatures", D-1421); "another" means any permanent but the source (CR 109.1).
  */
 export const NOUN_A_PERMANENT = defineRule<IrNoun>({
   id: 'noun.a-permanent',
@@ -68,6 +68,8 @@ export const NOUN_A_PERMANENT = defineRule<IrNoun>({
     'a Treasure',
     'a Dragon',
     'two Clues',
+    'two other creatures',
+    'three other artifacts',
   ],
   rejects: [
     'target creature',
@@ -77,16 +79,31 @@ export const NOUN_A_PERMANENT = defineRule<IrNoun>({
     'two target creatures',
     'one creature',
     'a card',
+    'one other creature',
+    'two other',
+    'two others',
+    'two other creatures an opponent controls',
+    'two other target creatures',
   ],
   parse: node<Bare, IrNoun>(
     'noun.a-permanent',
     choice<Bare>(
       map(
-        sequence(spanned(satisfy(quantity, (n) => n >= 2)), literal(' '), chosenPhrase(true)),
-        ([count, , filter]) =>
+        sequence(
+          spanned(satisfy(quantity, (n) => n >= 2)),
+          literal(' '),
+          // D-1421 (Priest of Forgotten Gods): "two other creatures": all but the source of the ability (CR 109.1).
+          optional(
+            map(literal('other '), () => true),
+            false,
+          ),
+          chosenPhrase(true),
+        ),
+        ([count, , other, filter]) =>
           bare('a', filter, {
             count: { kind: 'number', value: count.value, span: count.span },
             plural: true,
+            other,
           }),
       ),
       map(sequence(literal('another '), chosenPhrase(false)), ([, filter]) =>

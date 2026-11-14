@@ -1201,6 +1201,11 @@ export type IrStaticEffect =
       readonly orCosts?: readonly IrCost[];
     }
   /**
+   * "As an additional cost to cast ~, you may sacrifice one or more creatures. When you do, copy ~ for each creature sacrificed this way." (D-1428, CR 118.8, 601.2b,
+   * 603.12, 707.10): the cost is any number of the permanents `what` names, and the spell is copied for each. The statement's subject is `~`.
+   */
+  | { readonly kind: 'optionalSacrificeCopies'; readonly what: IrNoun }
+  /**
    * "If you control a commander, you may cast ~ without paying its mana cost." (stage P13, CR
    * 118.9): an alternative cost of the card itself. The statement's subject is `~`.
    */

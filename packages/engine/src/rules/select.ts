@@ -97,6 +97,7 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
     if (lki !== undefined) {
       const c = lki.characteristics;
       return {
+        name: c.name,
         types: c.types,
         supertypes: c.supertypes,
         subtypes: c.subtypes,
@@ -119,6 +120,7 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
   }
   const d = derive(state, obj);
   return {
+    name: d.name,
     types: d.types,
     supertypes: d.supertypes,
     subtypes: d.subtypes,

@@ -427,3 +427,12 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `effect.have-player-life` reads "have [target player or opponent, each opponent] lose or gain life": another verb after "have" ("have target player draw a card", "have target player discard ...") is not read.
 - `replacement.escapes-with-counters` reads a number of counters only (the real line of Woe Strider); "escapes with X counters" and "escapes with a counter for each ..." are not read, and "escapes with [ability]" (CR 702.138d) is not either.
 - The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
+
+## The Gisa deck, group 3 (issue 41, D-1420 to D-1429, provisional)
+
+- "Sacrifice X creatures" is the cost of an activated ability only (not a spell's additional cost, not a mana ability); the casual agent never activates such an ability (it uses no sacrifice outlet), and when asked X it announces no more than its tokens.
+- "You may sacrifice one or more creatures" is read for creatures with the copy sentence of Plumb the Forbidden only (`static.additional-cost-sacrifice-copies`); the same cost with another sentence, or of other permanents, is not read. The question is asked with the payment, after the mana, not at the start of the cast.
+- The "When you do" of that card is a cast trigger of the spell (same moment as CR 603.12's reflexive trigger); an effect that tells the two apart (stopping a cast trigger, copying a reflexive one) is not modelled.
+- `sparePermanents.own` has each opponent keep a permanent of each type; "each player" is built (SYNTHETIC) but not read; whether one artifact creature may be chosen for both the artifact and the creature follows the independent choices of the text (D-231 does the same). The Scryfall rulings of Liliana, Dreadhorde General, Krav, Priest of Forgotten Gods and Plumb the Forbidden were not fetched (blocked in a cloud session): marked unverified.
+- "Partner with" reveals the card, as CR 702.124j says; today's reminder text says "put into their hand from their library" without a reveal. The search is offered even when the library holds no such card (a player may search for a card that is not there).
+- "You add {B}{B}" is read only with fixed symbols and only where it does not make a mana ability.

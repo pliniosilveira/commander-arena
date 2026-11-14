@@ -227,7 +227,14 @@ export type Amount =
    * resolution counts. A draw that was replaced (the commander going to the command zone instead, CR 903.9b) is not a card drawn. Not valid in a static
    * ability, a trigger's subject or a characteristic-defining ability: nothing refreshes a layer effect when a card is drawn.
    */
-  | { readonly kind: 'cardsDrawnThisTurn' };
+  | { readonly kind: 'cardsDrawnThisTurn' }
+  /**
+   * "For each creature sacrificed this way" (CR 118.8, 701.21a, 707.10, D-1427, Plumb the Forbidden): the number of permanents sacrificed to pay the additional cost of the
+   * spell the effect belongs to (the spell is the source of its own "When you cast this spell" ability, or of its own text), read from the spell on the stack or from its last-known
+   * information once it has left (CR 113.7a). 0 when none was. Only in the abilities of a spell that name `castSpell` with `self` and in its own text, of a face whose additional
+   * cost sacrifices any number of permanents (`validateCard`).
+   */
+  | { readonly kind: 'sacrificedAsCost' };
 
 /** What a `thisWay` amount counts (D-131). */
 export type ThisWayKind =
@@ -391,6 +398,11 @@ export interface ObjectFilter {
    * selector); refused in a static ability, as `attacking` is, and for a zone other than the battlefield.
    */
   readonly enteredThisTurn?: true;
+  /**
+   * "A card named Regna, the Redeemer" (CR 201.2, D-1425): the object's name (the name of its front face outside the battlefield, CR 711.4 analogue) is exactly this text. Read where the
+   * filter is matched against the game (a target slot, an `each` selector, a search of a library); refused in a static ability, as `attacking` is.
+   */
+  readonly named?: string;
   /**
    * "Token" (`true`) or "nontoken" (`false`) (D-133, CR 111.1): a token is a permanent that is not represented by a
    * card, and so is a copy of a permanent spell that became one (CR 707.10f). Read from the object as it is or, for
@@ -866,6 +878,19 @@ export type Cost =
        * permanents are what `sacrificedCost` names.
        */
       readonly count?: number;
+      /**
+       * "Sacrifice X creatures" (CR 107.3a, 602.2b, 118.3, D-1424): the number of permanents sacrificed is the X announced as the ability is activated, 0 or more (with X = 0
+       * nothing is sacrificed); X is offered only up to the number of permanents the player could sacrifice. The ability's effect reads that X. Only in the cost of an activated
+       * ability (not an additional cost of a spell, not a mana ability), with a filter and never with `this` or `count`.
+       */
+      readonly countX?: true;
+      /**
+       * "As an additional cost to cast this spell, you may sacrifice one or more creatures" (CR 118.8, 601.2b, 601.2h, 701.21a, D-1427): the caster chooses any number of the
+       * permanents they control that match, none to all of them (none is the "may" declined), as the cost is paid after the mana. The spell is castable with none. Only an additional
+       * cost of a spell (`CardFace.additionalCosts`), alone as its sacrifice, with a filter and never with `this`, `count` or `countX`. What was sacrificed is what the amount and
+       * the condition `sacrificedAsCost` read.
+       */
+      readonly anyNumber?: true;
     }
   /**
    * "Tap two untapped artifacts you control", "Tap three untapped Zombies you control" (D-133, CR 118.3): the player taps
@@ -1486,7 +1511,17 @@ export type Effect =
    * (the active player first) and each type of `types` in order, one permanent of that type the player controls (none when there is none; the same permanent may be
    * chosen for several of its types), then every player sacrifices the nonland permanents they control that were not chosen, together. Only this whole instruction.
    */
-  | { readonly kind: 'sparePermanents'; readonly types: readonly CardType[] }
+  | {
+      readonly kind: 'sparePermanents';
+      readonly types: readonly CardType[];
+      /**
+       * "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest." (Liliana, Dreadhorde General; CR 608.2d, 701.21a, 101.4,
+       * D-1420): each player `players` names (`eachPlayer` or `eachOpponent`; the active player first) makes the choices for their own permanents, one of each type of
+       * `types` they control (none when they control none; the same permanent may be chosen for several of its types), and then sacrifices every other permanent they control,
+       * lands included, all of them together. Without `own` the controller of the effect chooses for every player and the lands are kept (Tragic Arrogance).
+       */
+      readonly own?: { readonly players: PlayerSelector };
+    }
   /**
    * "[Cost]: Level 2" (CR 716.2a, 716.2c, D-235): "This Class's level becomes N": the permanent the ability belongs to has level `level`, a designation that stays while it is on
    * the battlefield (CR 716.2b) and is not copiable. Nothing happens when the permanent has left the battlefield. Only the effect of an activated ability whose `activateOnlyIf`
@@ -3210,6 +3245,13 @@ export type Keyword =
    */
   | { readonly kind: 'partner' }
   /**
+   * CR 702.124j (Partner with [name], D-1426): "You may designate two legendary cards as your commander rather than one if each has a 'partner with [name]' ability with the
+   * other's name" (a deck-construction ability: `packages/cards` reads it from the stored card, D-053) and "When this permanent enters, target player may search their library for a
+   * card named [name], reveal it, put it into their hand, then shuffle": the second is a triggered ability the engine builds for the keyword (`rules/derive-keywords.ts`), so the card
+   * lists only the name. Printed only: it cannot be granted.
+   */
+  | { readonly kind: 'partnerWith'; readonly name: string }
+  /**
    * CR 702.124k (Choose a Background, D-175): a deck-construction ability, like `partner`: it lets its card be a commander together with a
    * legendary Background enchantment card, and does nothing in the game. Accepted so that a card with it validates; `packages/cards`
    * checks the pair of commanders (D-053). It cannot be granted.
@@ -3538,6 +3580,12 @@ export type Condition =
    * Needs a replicate ability on the card.
    */
   | { readonly kind: 'replicated' }
+  /**
+   * "If you sacrificed one or more creatures to cast it" (CR 118.8, 701.21a, D-1427): the spell was cast with at least one permanent sacrificed for its additional cost
+   * (`Cost` `sacrifice` with `anyNumber`). Read from the spell, or from its last-known information once it has left (CR 113.7a). The intervening "if" of the spell's own
+   * "When you cast this spell" ability (CR 603.4).
+   */
+  | { readonly kind: 'sacrificedAsCost' }
   /**
    * "If you control a commander" (CR 903.3d): the condition's controller controls a permanent on the
    * battlefield that is a commander (a card designated as a commander, CR 903.3: a token or a permanent

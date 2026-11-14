@@ -2999,6 +2999,61 @@ export const GISA_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] =
 ];
 
 /**
+ * The SYNTHETIC cards of group 3 of the Gisa deck (D-1420 to D-1428): a planeswalker whose minus nine has each opponent choose a permanent of each type and sacrifice the rest (and a
+ * sorcery that does it for each player), a creature that sacrifices two other creatures as a cost and has any number of target players lose life and sacrifice, a creature that sacrifices
+ * X creatures as a cost (an X announced before the targets), a creature with "partner with" and the card it searches for, and an instant with an optional sacrifice of any number of creatures
+ * that copies it, with three permanents of the types the questions of the group are about. They ask `chooseX`, `choosePermanent` of purpose `spare` and of a sacrifice that may choose none,
+ * which the generic pools are not built to follow: a style of their own.
+ */
+export const GISA_G3_NAMES = [
+  'SYNTHETIC Culling Walker',
+  'SYNTHETIC Culling Rite',
+  'SYNTHETIC Sacrifice Priest',
+  'SYNTHETIC Sacrifice Demon',
+  'SYNTHETIC Partner Seeker',
+  'SYNTHETIC Partner Quarry',
+  'SYNTHETIC Forbidden Rite',
+  'SYNTHETIC Gisa Relic',
+  'SYNTHETIC Gisa Golem',
+  'SYNTHETIC Gisa Ward',
+] as const;
+
+/** The gisaG3 style: every card of the group three times (the walker and the sorceries a little less), and creatures to give up. */
+export const GISA_G3_SPELLS = [
+  ...supported(GISA_G3_NAMES),
+  ...supported(GISA_G3_NAMES),
+  ...supported(GISA_G3_NAMES),
+  ...supported([
+    'SYNTHETIC Sacrifice Priest',
+    'SYNTHETIC Sacrifice Demon',
+    'SYNTHETIC Forbidden Rite',
+  ]),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+  ...supported(['Lightning Bolt', 'Murder']),
+];
+
+/** Black for everything of the group, the rest to cast the creatures and the removal. */
+export const GISA_G3_LANDS = supported([
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Plains',
+  'Mountain',
+  'Island',
+  'Forest',
+]);
+
+/** Style pairs of the Gisa group 3 soak test (D-1420 to D-1428): a mirror match and both mixed ways. */
+export const GISA_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['gisaG3', 'gisaG3'],
+  ['gisaG3', 'spells'],
+  ['spells', 'gisaG3'],
+];
+
+/**
  * The SYNTHETIC cards of group 9 of the Hashaton deck (D-390 to D-395): an activated ability with a Phyrexian symbol in its cost (paid with mana or 2 life), the
  * transforming double-faced creature that has it, the exile of a random card from a hand, and the 5/5 whose damage trigger exiles a card from the hand of the controller of the source
  * and then asks "you may put it onto the battlefield" or "you may cast it without paying its mana cost" (a `confirmOptional` or a `chooseCards` of purpose `cast`, in the middle of a
@@ -3755,6 +3810,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(DANITHA_G6_NAMES as readonly string[]).includes(card.name))
   // The Danitha group 7 cards (D-433) have modes with a cost of their own, which ask the modes of every cast: a style of their own.
   .filter((card) => !(DANITHA_G7_NAMES as readonly string[]).includes(card.name))
+  // The Gisa group 3 cards (D-1420 to D-1428) ask which permanent each player keeps, an X announced for a sacrifice, and a sacrifice that may choose none: a style of their own.
+  .filter((card) => !(GISA_G3_NAMES as readonly string[]).includes(card.name))
   // The Feather group 3 cards (D-437 to D-439) copy spells for each creature they could target, exile spells as they resolve and bring them back at the end step: a style of their own.
   .filter((card) => !(FEATHER_G3_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 5 cards (D-478 to D-482) sacrifice decayed creatures at end of combat, ask a "you may" with a target player when cycled and ask the cards to exile for an escape: a style of their own.
@@ -3971,6 +4028,7 @@ export type DeckStyle =
   | 'keywords'
   | 'mana'
   | 'search'
+  | 'gisaG3'
   | 'activated'
   | 'attachments'
   | 'kicker'
@@ -4050,6 +4108,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'hofri' && HOFRI_SPELLS.length > 0) return HOFRI_SPELLS;
   if (style === 'soulbond' && SOULBOND_SPELLS.length > 0) return SOULBOND_SPELLS;
   if (style === 'piles' && PILES_SPELLS.length > 0) return PILES_SPELLS;
+  if (style === 'gisaG3' && GISA_G3_SPELLS.length > 0) return GISA_G3_SPELLS;
   if (style === 'nivDraw' && NIV_DRAW_SPELLS.length > 0) return NIV_DRAW_SPELLS;
   if (style === 'hashatonLife' && HASHATON_G2_SPELLS.length > 0) return HASHATON_G2_SPELLS;
   if (style === 'hashatonG1' && HASHATON_G1_SPELLS.length > 0) return HASHATON_G1_SPELLS;
@@ -4241,6 +4300,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'ring' && BASIC_LANDS.length > 0) return RING_LANDS;
   if (style === 'planeswalkers' && BASIC_LANDS.length > 0) return PLANESWALKER_LANDS;
   if (style === 'vraska' && BASIC_LANDS.length > 0) return VRASKA_LANDS;
+  if (style === 'gisaG3' && BASIC_LANDS.length > 0) return GISA_G3_LANDS;
   if (style === 'edhrec' && BASIC_LANDS.length > 0) return EDHREC_LANDS;
   if (style === 'hofri' && BASIC_LANDS.length > 0) return HOFRI_LANDS;
   if (style === 'soulbond' && BASIC_LANDS.length > 0) return SOULBOND_LANDS;

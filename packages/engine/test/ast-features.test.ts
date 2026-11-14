@@ -91,6 +91,7 @@ describe('the dimensions', () => {
       'opponentsAtLeast',
       'kicked',
       'replicated',
+      'sacrificedAsCost',
       'controlCommander',
       'sourceHasCounter',
       'subjectGreaterPt',

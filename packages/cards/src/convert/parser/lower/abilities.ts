@@ -443,6 +443,18 @@ export function lowerKeyword(
     return lowerNumbered(ability, ability.name);
   }
   if (ability.name === 'affinity') return lowerAffinity(ability);
+  // CR 702.124j (D-1426): "Partner with [name]": the keyword with the name; the engine builds its enters trigger.
+  if (ability.name === 'partnerWith') {
+    const [named] = ability.params;
+    if (ability.params.length !== 1 || named?.kind !== 'name') return failure(ability);
+    const blocked = gate(ability, ['ability:keyword', 'keyword:partnerWith']);
+    if (blocked !== null) return blocked;
+    return {
+      ok: true,
+      value: [{ kind: 'keyword', keyword: { kind: 'partnerWith', name: named.name } }],
+      rule: 'keyword.partner-with',
+    };
+  }
   if (ability.name === 'protection') return lowerProtection(ability);
   const typeSearch = typecyclingFilter(ability.name);
   if (typeSearch !== undefined) return lowerTypecycling(ability, typeSearch);
@@ -812,6 +824,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:toxic',
   'keyword:annihilator',
   'keyword:afflict',
+  'keyword:partnerWith',
   'keyword:bushido',
   'keyword:affinity',
   'keyword:flashback',

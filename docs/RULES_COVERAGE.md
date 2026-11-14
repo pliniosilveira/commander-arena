@@ -712,3 +712,15 @@ Rule numbers and titles were read with `pnpm rule` from the CR copy of the owner
 | 603.4 | "if you control no creatures with decayed" | Implemented (D-480): checked as the ability would trigger and as it resolves; a creature that has decayed by a counter or a grant counts. | `controlsAtLeast` with `keywords`. `test/scenario-xx-gisa-g5-cards.test.ts`. |
 | 702.29c, 119.3, 608.2d | "When you cycle this card, you may have target player lose life equal to the number of Zombies on the battlefield." | Implemented (D-481): the optional trigger from the graveyard, the target player, the count of the battlefield. | `effect.have-player-life`. `test/scenario-xx-gisa-g5-cards.test.ts`, `test/parser-gisa-g5.test.ts`. |
 | 702.138b, 702.138c | "~ escapes with two +1/+1 counters on it." | Implemented (D-482): a number of counters only; the engine side is D-124. | `replacement.escapes-with-counters`. `test/parser-gisa-g5.test.ts`, `test/scenario-xx-gisa-g5-cards.test.ts`. |
+
+## Added by the Gisa deck, group 3 (D-1420 to D-1429, provisional)
+
+| CR | Text | Status | Notes |
+| --- | --- | --- | --- |
+| 608.2d, 701.21a, 101.4, 110.4 | "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest." | Implemented (D-1420): `sparePermanents.own`: each opponent keeps one permanent of each of the six types they control (the same permanent may fill two types), and sacrifices the others, lands included, together. | `rules/spare.ts` |
+| 118.3, 701.21a | "Sacrifice two other creatures" as a cost | Implemented (D-1421): `count` with `other` in the filter. | `rules/activate-costs.ts` |
+| 107.3a, 602.2b, 118.3 | "Sacrifice X creatures" as a cost | Implemented (D-1424): X announced first; X = 0 allowed; the effect reads X. | `rules/x-value.ts`, `activate.ts` |
+| 115.1, 101.4 | "Any number of target players each lose 2 life and sacrifice a creature of their choice" | Implemented (D-1422). | `lower/nouns.ts` |
+| 605.1a | An ability with a target that adds mana is not a mana ability | Implemented (D-1423). | `lower/activated.ts` |
+| 702.124j | "Partner with [name]": when it enters, target player may search for the named card | Implemented (D-1426); deck construction is D-053. | `derive-keywords.ts` |
+| 118.8, 601.2b, 601.2h, 707.10 | "you may sacrifice one or more creatures. When you do, copy this spell for each creature sacrificed this way" | Implemented (D-1427, D-1428). | `cast-additional.ts`, `copy-spell.ts` |

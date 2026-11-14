@@ -62,7 +62,7 @@ export interface CostBreakdown {
   readonly mana: readonly string[];
   /** The permanents to sacrifice: the source itself, or a choice among a filter's matches. */
   readonly sacrifice: 'this' | ObjectFilter | null;
-  /** How many of them (D-133, "Sacrifice two artifacts"); 1 for the source and for an ordinary cost. */
+  /** How many of them (D-133, "Sacrifice two artifacts"; D-1424, "Sacrifice X creatures": the X announced, 0 for none); 1 for the source and for an ordinary cost. */
   readonly sacrificeCount: number;
   /** The permanents to return to their owners' hands (D-139): the source itself, or a choice among a filter's matches; null for none. */
   readonly bounce: 'this' | ObjectFilter | null;
@@ -172,7 +172,8 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
       case 'sacrifice':
         sacrifices += 1;
         sacrifice = 'kind' in cost.what ? 'this' : cost.what;
-        sacrificeCount = cost.count ?? 1;
+        // D-1424 (CR 107.3a, 602.2b): "Sacrifice X creatures" is X permanents, the X announced for the ability (none for X = 0).
+        sacrificeCount = cost.countX === true ? x : (cost.count ?? 1);
         break;
       case 'exileFromGraveyard':
         exileCardsCosts += 1;
@@ -444,8 +445,8 @@ export function costRefusal(
     if (source.zone !== 'battlefield' || controllerOf(state, source) !== seat) {
       return 'you do not control it, so you cannot sacrifice it';
     }
-  } else if (parts.sacrifice !== null) {
-    // CR 701.21a: permanents you control that match. `other` leaves the source out.
+  } else if (parts.sacrifice !== null && parts.sacrificeCount > 0) {
+    // CR 701.21a: permanents you control that match. `other` leaves the source out. (X = 0 of "Sacrifice X creatures" asks for none, D-1424.)
     const found = sacrificeCandidates(paid, seat, source.id, parts.sacrifice).length;
     if (found === 0) return 'you have nothing to sacrifice';
     if (found < parts.sacrificeCount) {
