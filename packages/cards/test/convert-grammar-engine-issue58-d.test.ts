@@ -317,6 +317,42 @@ describe('issue58 group D real imports', () => {
     g.expect.invariants();
   });
 
+  test.each([true, false])(
+    'Nether Traitor tracks separate destruction instructions, Traitor destroyed first=%s',
+    (first) => {
+      const card = real('Nether Traitor');
+      const destroy = (subtype: string): Effect => ({
+        kind: 'destroy',
+        objects: { kind: 'each', filter: { types: ['creature'], subtypes: [subtype] } },
+      });
+      const sequence = syntheticSpell('Sequential destruction', {
+        kind: 'sequence',
+        effects: first
+          ? [destroy('Spirit'), destroy('Bear')]
+          : [destroy('Bear'), destroy('Spirit')],
+      });
+      const g = scenario()
+        .define(card)
+        .define(sequence)
+        .seat(0)
+        .hand(sequence.name)
+        .battlefield(card.name, 'Grizzly Bears', 'Swamp')
+        .build();
+      g.act(0).cast(sequence.name, { pay: true });
+      g.passAll();
+      g.expect.pending(first ? 'confirmOptional' : 'priority', 0);
+      if (first) {
+        g.act(0).accept();
+        g.act(0).payAuto();
+        g.passAll();
+        expect(g.find({ name: card.name, zone: 'battlefield' })).toHaveLength(1);
+      } else {
+        expect(g.find({ name: card.name, zone: 'graveyard' })).toHaveLength(1);
+      }
+      g.expect.invariants();
+    },
+  );
+
   test('Nether Traitor does not trigger for an opponent-owned creature', () => {
     const card = real('Nether Traitor');
     const g = scenario()

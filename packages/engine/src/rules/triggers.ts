@@ -854,9 +854,13 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
                 ? event.object
                 : event.kind === 'zoneChanged'
                   ? event.from
-                  : null;
+                  : event.kind === 'sacrificed'
+                    ? event.permanent
+                    : null;
             const together = departed === null ? undefined : state.lki[departed]?.departedTogether;
-            return entryIndex >= eventIndex || together?.includes(e.from) === true;
+            return (
+              entryIndex >= eventIndex || departed === e.from || together?.includes(e.from) === true
+            );
           })
         )
           continue;
