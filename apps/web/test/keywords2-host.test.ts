@@ -35,7 +35,9 @@ async function must(
   const reached = await reachKeywords2(accept, opts);
   if (reached === null)
     throw new Error(
-      opts.seed === undefined ? 'no seed reaches the situation' : `seed ${opts.seed} missed the situation`,
+      opts.seed === undefined
+        ? 'no seed reaches the situation'
+        : `seed ${opts.seed} missed the situation`,
     );
   return reached;
 }

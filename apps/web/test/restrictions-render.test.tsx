@@ -3,9 +3,9 @@ import type { DeclareAttackersDecision } from '@commander-arena/engine';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test } from 'vitest';
 import { PreviewPanel } from '../src/ui/board/PreviewPanel';
+import { Tile } from '../src/ui/board/Tile';
 import { DecisionLayer } from '../src/ui/decisions/DecisionLayer';
 import { StoreProvider } from '../src/ui/store-context';
-import { Tile } from '../src/ui/board/Tile';
 import { gameView, liveStore, objectView, storeFor } from './render-fixtures';
 
 const berserker = objectView('o1', {
@@ -24,7 +24,12 @@ const declaration: DeclareAttackersDecision = {
 };
 
 test('the tile carries the must-attack restriction chip', () => {
-  const html = renderToStaticMarkup(<Tile object={berserker} w={90} h={120} />);
+  const store = storeFor(gameView([berserker]));
+  const html = renderToStaticMarkup(
+    <StoreProvider store={liveStore(store)}>
+      <Tile object={berserker} w={90} h={120} />
+    </StoreProvider>,
+  );
   expect(html).toContain('class="board-kw board-kw-restrict" title="Attacks each combat"');
   expect(html).toContain('>Atk!<');
 });

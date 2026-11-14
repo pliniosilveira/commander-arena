@@ -24,7 +24,8 @@ if (tier === 'pr') {
   ) as string[];
   for (const name of excluded) {
     const path = `packages/ai/test/${name}`;
-    if (!existsSync(resolve(path))) throw new Error(`PR-excluded test file does not exist: ${path}`);
+    if (!existsSync(resolve(path)))
+      throw new Error(`PR-excluded test file does not exist: ${path}`);
     args.push('--exclude', path);
   }
 }

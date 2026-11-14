@@ -9,6 +9,7 @@ import { crossPairs, loadPreconDecks, mirrorPairs, readSnapshots } from './preco
 
 const GAMES = 8;
 const TIMEOUT_MS = 600_000;
+const soakDescribe = process.env.TEST_TIER === 'pr' ? describe.skip : describe;
 
 describe('the precon decks of the AI tools', () => {
   test('every committed snapshot becomes a 100-card engine deck through the web pipeline', async () => {
@@ -35,7 +36,7 @@ describe('the precon decks of the AI tools', () => {
   }, 120_000);
 });
 
-describe.skipIf(process.env.TEST_TIER === 'pr')('the HeuristicAgent on the real precons soak', () => {
+soakDescribe('the HeuristicAgent on the real precons soak', () => {
   test(
     'plays whole games between two precons with no fallback, no rejected action and a result',
     async () => {

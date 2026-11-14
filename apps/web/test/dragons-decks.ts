@@ -65,7 +65,8 @@ export async function reachDragonsStore(
     from = 1,
   } = opts;
   const choose = scripted(want, opts.filler, opts.others);
-  const candidates = seed === undefined ? Array.from({ length: seeds }, (_, i) => from + i) : [seed];
+  const candidates =
+    seed === undefined ? Array.from({ length: seeds }, (_, i) => from + i) : [seed];
   for (const candidate of candidates) {
     const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
     store.getState().setManualPay(opts.manual === true);

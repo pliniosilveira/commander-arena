@@ -37,7 +37,8 @@ export async function searchRestrictions(
   opts: { seed?: number; seeds?: number; maxClicks?: number; from?: number } = {},
 ): Promise<{ session: Session; seed: number } | null> {
   const { seed, seeds = 60, maxClicks = 700, from = 1 } = opts;
-  const candidates = seed === undefined ? Array.from({ length: seeds }, (_, i) => from + i) : [seed];
+  const candidates =
+    seed === undefined ? Array.from({ length: seeds }, (_, i) => from + i) : [seed];
   for (const candidate of candidates) {
     const session = await start(candidate);
     for (let clicks = 0; clicks < maxClicks; clicks += 1) {

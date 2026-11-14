@@ -1,7 +1,7 @@
 import type { GameView, ObjectView, PendingDecision } from '@commander-arena/engine';
 import { GameHost } from '../src/game/host';
 import type { Snapshot } from '../src/game/protocol';
-import { createAppStore, type AppStore } from '../src/store';
+import { type AppStore, createAppStore } from '../src/store';
 
 export function objectView(id: string, patch: Partial<ObjectView> = {}): ObjectView {
   return {

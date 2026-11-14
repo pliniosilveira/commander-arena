@@ -16,10 +16,13 @@ import { PreviewPanel } from '../src/ui/board/PreviewPanel';
 import { Tile } from '../src/ui/board/Tile';
 import { DecisionLayer } from '../src/ui/decisions/DecisionLayer';
 import { StoreProvider } from '../src/ui/store-context';
+import { asksConfirm, reachKeywords2Store } from './keywords2-decks';
 import { gameView, liveStore, objectView, storeFor } from './render-fixtures';
 
 const renderWith = (view: GameView, node: React.ReactNode) =>
   renderToStaticMarkup(<StoreProvider store={liveStore(storeFor(view))}>{node}</StoreProvider>);
+const renderStore = (store: ReturnType<typeof storeFor>, node: React.ReactNode) =>
+  renderToStaticMarkup(<StoreProvider store={liveStore(store)}>{node}</StoreProvider>);
 
 const layer = (
   <DecisionLayer>
@@ -42,7 +45,11 @@ function payDecision(
     cost: ['2', 'W'],
     candidates: candidates.map((candidate) => candidate.id),
     ...(mechanism === 'convoke'
-      ? { colors: Object.fromEntries(candidates.map((candidate) => [candidate.id, candidate.colors])) }
+      ? {
+          colors: Object.fromEntries(
+            candidates.map((candidate) => [candidate.id, candidate.colors]),
+          ),
+        }
       : {}),
     maxUsable: candidates.length,
     suggested,
@@ -54,35 +61,16 @@ function sourceObject(id: string, name: string, oracleText: string): ObjectView 
   return objectView(id, { zone: 'stack', name, oracleText, types: ['instant'] });
 }
 
-function confirmDecision(
-  purpose: 'mayPay',
-  source: ObjectView,
-): ConfirmOptionalDecision;
-function confirmDecision(
-  purpose: 'cascade',
-  source: ObjectView,
-  subject: ObjectView,
-): ConfirmOptionalDecision;
-function confirmDecision(
-  purpose: 'mayPay' | 'cascade',
-  source: ObjectView,
-  subject?: ObjectView,
-): ConfirmOptionalDecision {
-  const base = {
+function confirmDecision(source: ObjectView, subject: ObjectView): ConfirmOptionalDecision;
+function confirmDecision(source: ObjectView, subject: ObjectView): ConfirmOptionalDecision {
+  return {
     id: 'd1',
     seat: 0,
-    kind: 'confirmOptional' as const,
+    kind: 'confirmOptional',
     source: source.id,
     sourceName: source.name,
     sourceOracleText: source.oracleText,
-  };
-  if (purpose === 'mayPay') {
-    return { ...base, purpose, cost: [{ kind: 'mana', symbols: ['W/B'] }] };
-  }
-  if (subject === undefined) throw new Error('Cascade needs the exiled card');
-  return {
-    ...base,
-    purpose,
+    purpose: 'cascade',
     subject: subject.id,
   };
 }
@@ -94,10 +82,7 @@ test('the Convoke dialog names the spell and its cost, lists the creatures and p
     objectView('o3', { name: 'SYNTHETIC Green Creature', colors: ['G'] }),
   ];
   const decision = payDecision('convoke', candidates);
-  const html = renderWith(
-    gameView(candidates, decision, { stack: [spell] }),
-    layer,
-  );
+  const html = renderWith(gameView(candidates, decision, { stack: [spell] }), layer);
   expect(html).toContain('aria-label="Convoke"');
   expect(html).toContain(
     `Convoke: tap creatures to pay for ${spell.name} (${decision.cost.map((x) => `{${x}}`).join('')})`,
@@ -105,7 +90,9 @@ test('the Convoke dialog names the spell and its cost, lists the creatures and p
   expect(html).toContain('data-pay-cards');
   const buttons = html.match(/<button[^>]*dec-card-button[^>]*>/g) ?? [];
   expect(buttons.length).toBe(decision.candidates.length);
-  expect(buttons.filter((b) => b.includes('aria-pressed="true"')).length).toBe(decision.suggested.length);
+  expect(buttons.filter((b) => b.includes('aria-pressed="true"')).length).toBe(
+    decision.suggested.length,
+  );
   expect((html.match(/dec-card-badge">Tap</g) ?? []).length).toBe(decision.suggested.length);
   expect(html).toMatch(/data-pay-line[^>]*>These pay /);
   expect(html).toContain(`${decision.suggested.length} of up to ${decision.maxUsable}`);
@@ -136,10 +123,10 @@ test('the Delve dialog lists graveyard cards to exile', () => {
   expect(html).not.toContain('data-pay-colors');
 });
 
-test('Extort asks "Pay {W/B} for extort?" and Cascade names the card', () => {
-  const extort = sourceObject('o1', 'SYNTHETIC Extort Ability', 'Extort');
-  const may = confirmDecision('mayPay', extort);
-  const mayHtml = renderWith(gameView([], may, { stack: [extort] }), layer);
+test('Extort asks "Pay {W/B} for extort?" and Cascade names the card', async () => {
+  const may = await reachKeywords2Store(asksConfirm('mayPay'), { seed: 11 });
+  if (may === null) throw new Error('seed 11 missed the Extort question');
+  const mayHtml = renderStore(may, layer);
   expect(mayHtml).toContain('aria-label="You may pay"');
   expect(mayHtml).toContain('Pay {W/B} for extort?');
   expect(mayHtml).toContain('>Pay<');
@@ -148,13 +135,15 @@ test('Extort asks "Pay {W/B} for extort?" and Cascade names the card', () => {
 
   const cascadeSource = sourceObject('o1', 'SYNTHETIC Cascade Giant', 'Cascade');
   const exiled = objectView('o2', { zone: 'exile', name: 'SYNTHETIC Cascade Card' });
-  const cascade = confirmDecision('cascade', cascadeSource, exiled);
+  const cascade = confirmDecision(cascadeSource, exiled);
   const cascadeHtml = renderWith(
     gameView([], cascade, { stack: [cascadeSource], exile: [exiled] }),
     layer,
   );
-  expect(cascadeHtml).toMatch(/Cascade: cast .+ without paying its mana cost\?/);
-  expect(cascadeHtml).toContain('aria-label="Cascade"');
+  expect(cascadeHtml).toMatch(
+    /Cast SYNTHETIC Cascade Card without paying its mana cost, or put it into your hand\?/,
+  );
+  expect(cascadeHtml).toContain('aria-label="Cast without paying"');
   expect(cascadeHtml).toContain('>Cast it<');
   expect(cascadeHtml).not.toContain('>Cancel<');
 });

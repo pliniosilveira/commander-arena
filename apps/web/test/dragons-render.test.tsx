@@ -56,7 +56,9 @@ async function must(
   const found = await reachDragonsStore(accept, want, opts);
   if (found === null)
     throw new Error(
-      opts.seed === undefined ? 'no seed reaches the situation' : `seed ${opts.seed} missed the situation`,
+      opts.seed === undefined
+        ? 'no seed reaches the situation'
+        : `seed ${opts.seed} missed the situation`,
     );
   return found.store;
 }

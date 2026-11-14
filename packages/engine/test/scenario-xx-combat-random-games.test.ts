@@ -2,18 +2,19 @@
 // Combat decisions are answered from the decision (random attackers and targets, random blocks that
 // respect menace, random legal damage divisions), the rest from getLegalActions. After every action
 // the structural invariants hold, no action the driver built is rejected, and every game finishes.
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { checkInvariants, createGame, stateHash } from '../src/index';
 import { combatDecks, playCombatGame } from './random-games';
 
 const PR_SEEDS = [1, 25] as const;
 const EXHAUSTIVE_GAMES = 200;
 const MAX_ACTIONS = 30_000;
+const t = process.env.TEST_TIER === 'pr' ? test.skip : test;
+const pr = process.env.TEST_TIER === 'pr' ? test : test.skip;
+vi.setConfig({ testTimeout: 300_000 });
 
 describe('random combat games', () => {
-  test.skipIf(process.env.TEST_TIER === 'pr')(
-    `${EXHAUSTIVE_GAMES} seeded games finish with consistent states after every action`,
-    () => {
+  t(`${EXHAUSTIVE_GAMES} games finish with consistent combat states`, () => {
     let combats = 0;
     let doubleBlocks = 0;
     let tramples = 0;
@@ -63,12 +64,10 @@ describe('random combat games', () => {
     expect(kinds.has('declareAttackers')).toBe(true);
     expect(kinds.has('declareBlockers')).toBe(true);
     expect(kinds.has('assignDamage')).toBe(true);
-    },
-    300_000,
-  );
+  });
 
-  test.skipIf(process.env.TEST_TIER !== 'pr')(
-    'fixed seeds finish cleanly with combat decisions and invariants after every action',
+  pr(
+    'fixed seeds exercise combat actions with invariants',
     () => {
       const kinds = new Set<string>();
       for (const seed of PR_SEEDS) {
@@ -81,7 +80,10 @@ describe('random combat games', () => {
           const problems = checkInvariants(s);
           if (problems.length > 0) throw new Error(`seed ${seed}: ${problems.join('; ')}`);
         });
-        expect(state.result, `seed ${seed} did not finish in ${MAX_ACTIONS} actions`).not.toBeNull();
+        expect(
+          state.result,
+          `seed ${seed} did not finish in ${MAX_ACTIONS} actions`,
+        ).not.toBeNull();
         for (const entry of log) kinds.add(entry.action.kind);
       }
       expect(kinds.has('declareAttackers')).toBe(true);
