@@ -274,7 +274,11 @@ describe('abilityCostReduction and the equip marker', () => {
   });
 
   test.each<[string, Record<string, unknown>, RegExp]>([
-    ['another kind of ability', { abilities: 'crew' }, /only Equip abilities are named/],
+    [
+      'another kind of ability',
+      { abilities: 'crew' },
+      /only Equip abilities or the abilities of some objects are named/,
+    ],
     ['no target filter', { targeting: undefined }, /needs a filter of what it targets/],
     [
       'a target with a zone',
