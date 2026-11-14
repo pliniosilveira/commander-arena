@@ -503,6 +503,35 @@ describe('Mirrorwing Dragon: a spell any player casts that targets only this cre
     ]);
   });
 
+  test('a spell that targets the dragon and another creature does not target only the dragon: it is not copied (CR 115.9c)', () => {
+    const g = scenario()
+      .seat(0)
+      .hand(PAIRED)
+      .battlefield(WYRM, ANGEL, BEARS, 'Mountain', 'Mountain')
+      .library(...LIBRARY)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    // The Wyrm is the creature you control, the Angel the creature with flying: two different objects.
+    g.act(0).cast(PAIRED, { targets: [WYRM, ANGEL], pay: true });
+    expect(abilitiesOnStack(g)).toHaveLength(0);
+  });
+
+  test('a spell that targets only the dragon, twice, is copied: one object chosen for two instances still is one (CR 115.9c)', () => {
+    const g = scenario()
+      .seat(0)
+      .hand(PAIRED)
+      .battlefield(WYRM, ANGEL, 'Mountain', 'Mountain')
+      .library(...LIBRARY)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).cast(PAIRED, { targets: [WYRM, WYRM], pay: true });
+    expect(abilitiesOnStack(g)).toHaveLength(1);
+  });
+
   test('a spell that targets something besides the dragon is not copied', () => {
     const g = game([BEARS], [VANILLA]);
     g.act(0).pass();

@@ -42,14 +42,17 @@ export function helpfulSpellBeingCast(view: GameView, d: TargetsDecision): Objec
  * first legal target (the cast cannot be undone once it has started).
  */
 export function chooseCreatureToHelp(view: GameView, d: TargetsDecision): ChosenTarget[] {
-  const [slot] = d.specs;
-  if (slot === undefined) return [];
-  let best: { target: ChosenTarget; power: number } | undefined;
-  for (const target of slot.legal) {
-    const o = target.kind === 'object' ? findObject(view, target.id) : undefined;
-    if (o === undefined || o.controller !== view.viewer || !isCreature(o)) continue;
-    if (best === undefined || powerOf(o) > best.power) best = { target, power: powerOf(o) };
+  // Every slot of the spell is filled the same way (D-1320: a pump with two targets, one of them "a creature with flying"): the same creature may be the target of two of them (CR 115.3).
+  const out: ChosenTarget[] = [];
+  for (const slot of d.specs) {
+    let best: { target: ChosenTarget; power: number } | undefined;
+    for (const target of slot.legal) {
+      const o = target.kind === 'object' ? findObject(view, target.id) : undefined;
+      if (o === undefined || o.controller !== view.viewer || !isCreature(o)) continue;
+      if (best === undefined || powerOf(o) > best.power) best = { target, power: powerOf(o) };
+    }
+    const chosen = best?.target ?? slot.legal[0];
+    if (chosen !== undefined) out.push(chosen);
   }
-  const chosen = best?.target ?? slot.legal[0];
-  return chosen === undefined ? [] : [chosen];
+  return out;
 }
