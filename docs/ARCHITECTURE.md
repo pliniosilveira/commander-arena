@@ -4,6 +4,8 @@
 
 Token pictures (D-494) use the optional `ObjectView.tokenDefinition`: the original token characteristics and abilities, also carried by its stack abilities from the live source or last-known information, never exposed face down. `packages/cards/src/scryfall/token-query.ts` builds the exact search; the web's `token-art.ts` caches one promise per query and uses the existing Scryfall request queue. Only a single result with HTTPS Scryfall image files replaces the drawn frame. `image-uris.ts` shares image validation with the Manifest picture lookup. No stored-card or precon snapshot changes.
 
+Token searches restrict results to standalone `layout:token` cards (D-495). Double-faced token printings otherwise count as separate cards even when the requested face is the same token, causing the ambiguity fallback. Tokens with no standalone match still retain their drawn frame.
+
 ## How to read this document
 
 | Tag | Meaning |

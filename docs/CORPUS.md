@@ -135,9 +135,13 @@ The bulk file itself stays in `.cache/` and is never committed. After each slice
 
 ## Token image search audit
 
+Queries use `layout:token` to select standalone token cards (D-495); a double-faced printing of the same token can otherwise make `unique:cards` return an extra result. The original Sai Thopter query returned both Servo // Thopter and Thopter; adding the layout filter returned one Thopter with image files, verified on a GitHub runner on 2026-11-14.
+
 The **Coverage** workflow's manual `token_art` input also audits image searches for token definitions found in the precon snapshots and golden corpus, including tokens made by nested abilities. Results are JSON lines in the job log: `total: 0` and `total > 1` both mean the browser keeps the drawn frame. Runtime-dependent copies and P/T are counted separately, not guessed. This is an image audit, never card-support coverage.
 
-`node tools/corpus/token-art-cli.ts --dry-run` lists the queries offline. Without `--dry-run` it contacts Scryfall through the existing rate-limited queue; run that only where Scryfall is reachable (the owner or a GitHub runner). It stores neither images nor card answers and changes no snapshots. Live results were not verified in the cloud sandbox.
+`node tools/corpus/token-art-cli.ts --dry-run` lists the queries offline. Without `--dry-run` it contacts Scryfall through the existing rate-limited queue; run that only where Scryfall is reachable (the owner or a GitHub runner). It stores neither images nor card answers and changes no snapshots.
+
+[Runner audit 43591927316](https://github.com/pliniosilveira/commander-arena/actions/runs/43591927316), 2026-11-14: Thopter and Treasure each matched one card. The queries for white 3/3 and 4/4 flying Angels, blue 2/2 flying Bird, red 4/4 flying Dragon, Pest, Rogue, white 1/1 Soldier and black 2/2 Zombie still returned multiple matches and keep the drawn frame. These are image-search results, not rules-support failures or coverage numbers; the complete per-query results are in the job log.
 
 ## Notes for developers
 
