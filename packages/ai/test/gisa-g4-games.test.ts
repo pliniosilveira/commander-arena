@@ -78,7 +78,7 @@ const newTally = (): Tally => ({
 
 interface Memory {
   /** The creatures the Whip returned that are still on the battlefield, with the turn they came back. */
-  returned: Map<string, number>;
+  returned: Map<ObjectId, number>;
   /** The abilities of a Prey Hunter on the stack. */
   hunterTriggers: Set<string>;
   /** The reveals of a Prey Hunter from the hand seen so far, and the activations of its hand ability. */
