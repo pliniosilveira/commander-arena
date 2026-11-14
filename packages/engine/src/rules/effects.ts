@@ -595,6 +595,9 @@ function runEffect(
           effect.player === undefined
             ? [undefined]
             : resolvePlayers(state, effect.player, ctx, targets);
+        // D-1421 (CR 608.2b, 701.21a): a player named by a selector that names nobody now ("any number of target players" with none chosen, a target that has left the game)
+        // sacrifices nothing; the controller of the effect does not take their place.
+        if (effect.player !== undefined && sacrificers.length === 0) return done(state);
         // D-131: the number may be an amount ("each player sacrifices X creatures"), read as the effect runs.
         // D-135: "any number" is no number at all: the player chooses none to all of the candidates.
         const count = what.anyNumber === true ? 0 : amountOf(state, what.count ?? 1, ctx, targets);
@@ -1701,7 +1704,20 @@ function runEffect(
 
     case 'sparePermanents':
       // D-231: "For each player, you choose ... Then each player sacrifices all other nonland permanents they control" (rules/spare.ts).
-      return done(state, [], [startSpare(state, effect.types)]);
+      // D-1420: with `own` the players the selector names choose among their own permanents and sacrifice the rest, lands too.
+      return done(
+        state,
+        [],
+        [
+          startSpare(
+            state,
+            effect.types,
+            effect.own === undefined
+              ? undefined
+              : resolvePlayers(state, effect.own.players, ctx, targets),
+          ),
+        ],
+      );
 
     case 'exileOwnGraveyardCard': {
       // CR 701.13, 101.4 (D-231): each player named chooses a card of their own graveyard, in turn order from the active player; it is exiled.

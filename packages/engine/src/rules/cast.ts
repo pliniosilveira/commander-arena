@@ -773,6 +773,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
       totalCost: symbols,
       extra: {
         sacrifice: cost.sacrifice,
+        ...(cost.sacrificeAny === undefined ? {} : { sacrificeAny: cost.sacrificeAny }),
         discard: cost.discard,
         exile: cost.exile,
         tap: cost.tap,

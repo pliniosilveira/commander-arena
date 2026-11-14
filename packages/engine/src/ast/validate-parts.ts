@@ -262,6 +262,10 @@ export function checkFilter(
   if (f.commander !== undefined && f.commander !== true && f.commander !== 'yours') {
     issue(out, `${path}.commander`, "commander must be true or 'yours'");
   }
+  // D-1425 (CR 201.2): "a card named X" is the text of a name.
+  if (f.named !== undefined && (typeof f.named !== 'string' || f.named === '')) {
+    issue(out, `${path}.named`, 'named must be the name of a card');
+  }
   // D-120: "attacking" and "power less than this creature's power" are flags; D-179: so is "put there from the battlefield this turn", a graveyard card's.
   for (const key of [
     'attacking',
@@ -538,6 +542,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.enteredThisTurn !== undefined ||
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
+  f.named !== undefined ||
   f.targetsObject !== undefined;
 
 /**
@@ -1302,6 +1307,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
+    case 'sacrificedAsCost':
+      // D-1427 (CR 118.8): what the spell sacrificed for its additional cost; the face is checked as a whole (`checkSacrificedAsCost`: only a spell's own cast trigger and text).
+      break;
     case 'half':
       if (!isOneOf(a.round, ['down', 'up'])) {
         issue(out, `${path}.round`, 'half is rounded "down" or "up" (CR 107.1a)');
@@ -1668,6 +1676,26 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       }
       break;
     case 'sacrifice':
+      if (cost.countX !== undefined) {
+        // D-1424 (CR 107.3a): "Sacrifice X creatures": the X announced for the ability, of permanents chosen among those that match; no fixed count and not the permanent itself.
+        if (cost.countX !== true) {
+          issue(out, `${path}.countX`, 'countX must be true when present');
+        } else if (cost.count !== undefined) {
+          issue(out, `${path}.countX`, 'the number sacrificed is X or a count, not both');
+        } else if (kindOf(cost.what) === 'this') {
+          issue(out, `${path}.countX`, 'this permanent is sacrificed once: no X');
+        }
+      }
+      if (cost.anyNumber !== undefined) {
+        // D-1427 (CR 118.8, 701.21a): "you may sacrifice one or more creatures": any number of the permanents that match; only an additional cost of a spell, checked where it stands.
+        if (cost.anyNumber !== true) {
+          issue(out, `${path}.anyNumber`, 'anyNumber must be true when present');
+        } else if (cost.count !== undefined || cost.countX !== undefined) {
+          issue(out, `${path}.anyNumber`, 'any number of permanents is no count and no X');
+        } else if (kindOf(cost.what) === 'this') {
+          issue(out, `${path}.anyNumber`, 'this permanent is sacrificed once: no "any number"');
+        }
+      }
       if (cost.count !== undefined) {
         // D-133: "Sacrifice two artifacts": 2 or more, of permanents chosen among those that match.
         if (!isCount(cost.count) || cost.count < 2) {
@@ -2154,6 +2182,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
     case 'kicked':
+    case 'sacrificedAsCost': // D-1427: the face must list a cost that sacrifices any number of permanents (`checkSacrificedAsCost`)
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
@@ -3971,6 +4000,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.types`, 'sparePermanents needs the list of card types to choose');
       } else {
         checkEnumList(out, `${path}.types`, e.types, CARD_TYPES, 'card type');
+      }
+      // D-1420: "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest": the players choose for themselves.
+      if (e.own !== undefined) {
+        checkPlayerSelector(e.own.players, `${path}.own.players`, scope, out);
+        if (e.own.players?.kind !== 'eachPlayer' && e.own.players?.kind !== 'eachOpponent') {
+          issue(
+            out,
+            `${path}.own.players`,
+            'the players who choose for themselves are each player or each opponent',
+          );
+        }
       }
       break;
     case 'exileOwnGraveyardCard':

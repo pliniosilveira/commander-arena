@@ -1,4 +1,5 @@
 import type {
+  Ability,
   AlternativeCost,
   Amount,
   Cost,
@@ -321,4 +322,6 @@ export interface FaceCosts {
   readonly alternativeCosts: readonly AlternativeCost[];
   /** "Sacrifice an artifact or creature or pay {4}" (stage P38, D-182): the face's `additionalCostChoice`. */
   readonly additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
+  /** The abilities the line makes besides the cost (D-1428): "When you do, copy ~ for each creature sacrificed this way" is a "When you cast this spell" ability of the card. */
+  readonly abilities?: readonly Ability[];
 }

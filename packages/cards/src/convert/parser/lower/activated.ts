@@ -216,7 +216,10 @@ function lowerManaAbility(
   if (ability.body.sentences.some((s) => s.condition !== undefined || s.instead === true)) {
     return failure(ability);
   }
-  if (add?.verb !== 'addMana' || spec?.kind !== 'manaSpec' || !plainClause(add)) {
+  // D-1423 (CR 605.1a): mana added by a later instruction of an ability with a target ("Any number of target players each lose 2 life. You add {B}{B}.") is not a mana
+  // ability: the ordinary reading runs it through the stack, and refuses mana added where nothing is targeted (`lowerOrdinary`).
+  if (add?.verb !== 'addMana') return null;
+  if (spec?.kind !== 'manaSpec' || !plainClause(add)) {
     return failure(ability);
   }
   // A trial context: a target found here means this is not a mana ability, and must not leak.
@@ -532,7 +535,9 @@ function prepare(
       c.kind === 'payXLife' ||
       (c.kind === 'mana' && c.symbols.includes('X')) ||
       // "−X" of a loyalty ability (stage P47, D-202): X is announced as the ability is activated.
-      (c.kind === 'loyalty' && c.change === 'x'),
+      (c.kind === 'loyalty' && c.change === 'x') ||
+      // "Sacrifice X creatures" (D-1424, CR 107.3a): the X is announced as the ability is activated.
+      (c.kind === 'sacrifice' && c.countX === true),
   );
   // CR 606.2 (stage P47, D-202): a loyalty symbol is the cost of an ability of a planeswalker, once, and nothing else is paid with it
   // that the rules of 606 do not know (a loyalty ability has no "Activate only" restriction of its own, CR 606.3).
@@ -548,6 +553,9 @@ function prepare(
     ...extra,
     ...costs.value.map((c): FeatureRef => `cost:${c.kind}`),
     ...(hasX ? (['ability:xCost'] as const) : []),
+    ...(costs.value.some((c) => c.kind === 'sacrifice' && c.countX === true)
+      ? (['ability:sacrificeX'] as const)
+      : []),
   ]);
   if (blocked !== null) return blocked;
   // The engine refuses a cost that taps permanents together with a mana cost, another tap cost or Crew (D-133): the
@@ -733,4 +741,5 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'manaAlso:draw',
   'ability:activated',
   'ability:xCost',
+  'ability:sacrificeX',
 ];

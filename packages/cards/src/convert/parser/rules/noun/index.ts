@@ -28,6 +28,7 @@ import { DESTINY_EARLY_NOUN_RULES } from './destiny';
 import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_NOUN_RULES } from './edhrec';
+import { GISA_G3_NOUN_RULES } from './gisa-g3';
 import { HASHATON_G8_NOUN_RULES } from './hashaton-g8';
 import { HASHATON_G9_NOUN_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_NOUN_RULES } from './hashaton-group-4';
@@ -597,6 +598,8 @@ export const NOUN_RULES = [
   ...KORVOLD_EARLY_NOUN_RULES,
   // Before `noun.player`: "you and target opponent each" starts with "you", "each other player" with "each".
   ...PLAYER_NOUN_RULES,
+  // D-1422 (Gisa deck, group 3): "any number of target players each".
+  ...GISA_G3_NOUN_RULES,
   // Stage P52 (D-210): "each player who discarded a card this way".
   ...VRASKA_EARLY_NOUN_RULES,
   // D-269: "each player ~ attacked this turn", whose first words are those of `noun.player` ("each player").

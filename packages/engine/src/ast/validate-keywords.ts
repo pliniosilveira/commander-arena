@@ -87,6 +87,12 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
         issue(out, `${path}.count`, `${k.kind} needs a positive integer`);
       }
       return true;
+    case 'partnerWith':
+      // CR 702.124j (D-1426): the name of the card the other commander is, and the card the enters trigger searches for.
+      if (typeof k.name !== 'string' || k.name.trim() === '') {
+        issue(out, `${path}.name`, 'partner with names a card');
+      }
+      return true;
     case 'typecycling':
       // CR 702.29e: the cost is paid like a cycling cost, and the discard is its own.
       checkCosts(k.cost, `${path}.cost`, out);

@@ -97,6 +97,13 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     case 'sacrifice': {
       const { what } = cost;
       if (what.det === 'self') return ok({ kind: 'sacrifice', what: { kind: 'this' } });
+      // "Sacrifice X creatures" (D-1424, CR 107.3a, 602.2b): the X announced as the ability is activated; the cost of an ordinary activated ability only.
+      if (what.det === 'a' && what.count?.kind === 'x') {
+        if (options.ordinary !== true || what.other) return failure(cost);
+        const { count: _counted, ...described } = what;
+        const filter = lowerFilter(described);
+        return filter.ok ? ok({ kind: 'sacrifice', what: filter.value, countX: true }) : filter;
+      }
       // "Sacrifice two artifacts" (stage P29, D-133): the engine's `count` of an activated ability's cost.
       const many = what.count?.kind === 'number' ? what.count.value : 1;
       if (what.det !== 'a' || (what.count !== undefined && what.count.kind !== 'number')) {

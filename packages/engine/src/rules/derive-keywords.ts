@@ -151,6 +151,28 @@ function annihilatorAbility(count: number): Ability {
 }
 
 /**
+ * CR 702.124j (D-1426): "Partner with [name]" is also "When this permanent enters, target player may search their library for a card named [name], reveal it, put it into
+ * their hand, then shuffle." The searching player is the target, who makes the choices.
+ */
+function partnerWithAbility(name: string): Ability {
+  return {
+    kind: 'triggered',
+    trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+    targets: [{ id: 'partner', what: { kind: 'player', filter: 'any' } }],
+    effect: {
+      kind: 'search',
+      player: { kind: 'target', id: 'partner' },
+      optional: true,
+      filter: { named: name },
+      max: 1,
+      destinations: [{ zone: 'hand', count: 1 }],
+      reveal: true,
+      shuffle: true,
+    },
+  };
+}
+
+/**
  * CR 702.79a, 702.93a: Persist and Undying: "When this permanent is put into a graveyard from the
  * battlefield, if it had no [counter] counters on it, return it to the battlefield under its owner's
  * control with a [counter] counter on it." The "if" reads the permanent as it last existed (CR 603.10a);
@@ -563,6 +585,9 @@ export function expansionOf(ability: Ability): Ability[] {
       return [SOULBOND_ENTERS_ABILITY, SOULBOND_OTHER_ENTERS_ABILITY];
     case 'annihilator':
       return [annihilatorAbility(ability.keyword.count)];
+    case 'partnerWith':
+      // CR 702.124j (D-1426): the second of the two abilities "Partner with [name]" represents.
+      return [partnerWithAbility(ability.keyword.name)];
     case 'persist':
       return [returnWithCounter('-1/-1')];
     case 'undying':

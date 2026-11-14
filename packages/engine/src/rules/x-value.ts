@@ -23,6 +23,8 @@ export interface XCost {
   readonly loyalty?: number;
   /** Cards of the hand for each point of X ("discard X cards", CR 701.9, D-386); absent for none. */
   readonly discard?: number;
+  /** Permanents sacrificed for each point of X ("Sacrifice X creatures", CR 118.3, D-1424); absent for none. */
+  readonly sacrifice?: number;
 }
 
 export const NO_X: XCost = { mana: 0, life: 0 };
@@ -54,12 +56,19 @@ export function abilityXCost(costs: readonly Cost[]): XCost {
   let mana = 0;
   let life = 0;
   let loyalty = 0;
+  let sacrifice = 0;
   for (const c of costs) {
     if (c.kind === 'mana') mana += xSymbolCount(c.symbols);
     else if (c.kind === 'payXLife') life += 1;
     else if (c.kind === 'loyalty' && c.change === 'x') loyalty += 1;
+    else if (c.kind === 'sacrifice' && c.countX === true) sacrifice += 1;
   }
-  return loyalty === 0 ? { mana, life } : { mana, life, loyalty };
+  return {
+    mana,
+    life,
+    ...(loyalty === 0 ? {} : { loyalty }),
+    ...(sacrifice === 0 ? {} : { sacrifice }),
+  };
 }
 
 /**
@@ -92,7 +101,9 @@ export function spellXCost(
 
 /** Whether announcing X means anything: the cost has an {X} or a "pay X life". */
 export function hasX(cost: XCost): boolean {
-  return cost.mana + cost.life + (cost.loyalty ?? 0) + (cost.discard ?? 0) > 0;
+  return (
+    cost.mana + cost.life + (cost.loyalty ?? 0) + (cost.discard ?? 0) + (cost.sacrifice ?? 0) > 0
+  );
 }
 
 /**

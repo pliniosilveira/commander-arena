@@ -138,6 +138,12 @@ export function evaluateCondition(
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return source !== null && (source.stack?.replicated ?? 0) > 0;
     }
+    case 'sacrificedAsCost': {
+      // CR 118.8, 603.4 (D-1427): "if you sacrificed one or more creatures to cast it": the spell carries the sacrificed permanents on the stack, or its last-known information
+      // does once it has left (CR 113.7a).
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return (source?.stack?.sacrificedAsCost?.length ?? 0) > 0;
+    }
     case 'escaped': {
       // CR 702.138b: a spell that is resolving was cast from a graveyard with an escape ability (the fact is on
       // the stack), and a permanent that came from such a spell remembers it (`GameObject.alt`); last-known

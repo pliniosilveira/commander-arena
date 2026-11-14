@@ -383,7 +383,10 @@ function paySacrifice(state: GameState, events: GameEvent[]): Result {
   if (!going) return fail('No activation is in progress');
   const { casting, activation, costs } = going;
   const seat = casting.seat;
-  if (costs.sacrifice === null) return payBounce(state, events, payDiscard);
+  // D-1424: "Sacrifice X creatures" with X = 0 sacrifices nothing.
+  if (costs.sacrifice === null || costs.sacrificeCount === 0) {
+    return payBounce(state, events, payDiscard);
+  }
   if (costs.sacrifice === 'this') {
     const done = sacrificePermanent(state, activation.source, seat);
     if (done === null) return fail('The permanent you must sacrifice is gone');

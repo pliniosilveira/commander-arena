@@ -463,6 +463,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'untapInOthersStep':
       return playRuleNeeds(effect);
     case 'additionalCost':
+    case 'optionalSacrificeCopies':
     case 'freeCast':
     case 'tapAlternative':
       return [];
