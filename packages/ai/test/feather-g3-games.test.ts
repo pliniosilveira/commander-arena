@@ -7,7 +7,7 @@
 //   - every copy of a spell that Echo Grinder or Mirror Wyrm made belongs to the player who cast the spell, targets one creature that player controls other than the one the spell targeted,
 //     a creature each of the copies of that spell has a different one of (CR 707.10, 707.10e, 115.3);
 //   - an instant or sorcery cast by the controller of a Spell Recycler that targets a creature that player controls is exiled as it resolves, and one that is countered or fizzles is not
-//     (CR 614.1a, 608.2m), and none of the cards exiled that way is ever put into a graveyard while it waits for the end step (CR 603.7).
+//     (CR 614.1a, 608.2n), and none of the cards exiled that way is ever put into a graveyard while it waits for the end step (CR 603.7).
 // The count is `soakGames()` (D-126); the path checks run from 100 games up.
 import {
   applyAction,

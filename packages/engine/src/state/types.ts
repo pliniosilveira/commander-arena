@@ -403,7 +403,7 @@ export interface StackData {
   readonly exileInstead?: true;
   /**
    * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (D-1322 provisional,
-   * CR 614.1a, 608.2m, 603.7): set on a spell by the effect `exileOnResolve`. When this instant or sorcery resolves and would be put into its owner's graveyard it is exiled instead, and
+   * CR 614.1a, 608.2n, 603.7): set on a spell by the effect `exileOnResolve`. When this instant or sorcery resolves and would be put into its owner's graveyard it is exiled instead, and
    * a delayed triggered ability of `by` (with `source` as its source) returns the card to its owner's hand at the beginning of the next end step. A spell that does not resolve is not
    * changed. It ends when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
    */

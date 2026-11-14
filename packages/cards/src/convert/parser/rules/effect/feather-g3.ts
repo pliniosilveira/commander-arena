@@ -125,7 +125,7 @@ export const EFFECT_COPY_SPELL_EACH = defineRule<Clauses>({
 
 /**
  * `effect.exile-on-resolve`: "exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end
- * step." (CR 614.1a, 608.2m, 603.7, 603.7c: the spell whose casting caused the trigger is exiled when it resolves instead of going to its owner's graveyard, and a delayed
+ * step." (CR 614.1a, 608.2n, 603.7, 603.7c: the spell whose casting caused the trigger is exiled when it resolves instead of going to its owner's graveyard, and a delayed
  * triggered ability returns it to the hand; both sentences are one instruction, because the second is about the first). The engine's `exileOnResolve`.
  * Not read: another place or time of the return, "that spell", a graveyard other than yours, one sentence without the other, a join with a second instruction.
  */
@@ -135,7 +135,7 @@ export const EFFECT_EXILE_ON_RESOLVE = defineRule<Clauses>({
   leading: ['exile'],
   cites: [
     'CR 614.1a (Replacement Effects)',
-    'CR 608.2m (Resolving Spells and Abilities)',
+    'CR 608.2n (Resolving Spells and Abilities)',
     'CR 603.7 (Handling Triggered Abilities)',
     'CR 603.7c (Handling Triggered Abilities)',
   ],

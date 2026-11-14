@@ -101,8 +101,8 @@ export const SYNTHETIC_FEATHER_G3_LIST: readonly CardDefinition[] = [
     manaCost: ['R', 'W'],
     types: ['creature'],
     subtypes: ['Human', 'Soldier'],
-    colors: ['R', 'W'],
-    colorIdentity: ['R', 'W'],
+    colors: ['W', 'R'],
+    colorIdentity: ['W', 'R'],
     power: 2,
     toughness: 2,
     oracleText:
@@ -158,8 +158,8 @@ export const SYNTHETIC_FEATHER_G3_LIST: readonly CardDefinition[] = [
     manaCost: ['R', 'W', 'W'],
     types: ['creature'],
     subtypes: ['Angel'],
-    colors: ['R', 'W'],
-    colorIdentity: ['R', 'W'],
+    colors: ['W', 'R'],
+    colorIdentity: ['W', 'R'],
     power: 3,
     toughness: 4,
     oracleText:

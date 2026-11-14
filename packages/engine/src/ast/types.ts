@@ -1684,7 +1684,7 @@ export type Effect =
       readonly copier?: 'triggerPlayer';
     }
   /**
-   * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (CR 614.1a, 608.2m,
+   * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (CR 614.1a, 608.2n,
    * 603.7, 603.7c, D-1322 provisional): a replacement effect the spell `spell` names (the spell whose casting caused the trigger: `triggerSubject`) carries from now on: when it resolves
    * as an instant or sorcery and would be put into its owner's graveyard, it is exiled instead (a spell that is countered, or fizzles, or is not a card, or is put into exile
    * by another effect is not changed: the "if you do" is false for it) and its controller's delayed triggered ability returns the card to its owner's hand at the beginning of the next

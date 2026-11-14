@@ -1,5 +1,5 @@
 /**
- * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (CR 614.1a, 608.2m,
+ * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (CR 614.1a, 608.2n,
  * 603.7, 603.7c, D-1322 provisional): the effect `exileOnResolve` and what the stack does with the mark it leaves.
  *
  * The effect resolves while the spell is still on the stack (it is the effect of a trigger of its being cast): it marks the spell (`StackData.exileOnResolve`). The mark is a

@@ -557,7 +557,9 @@ function aimedFilter(aimed: Aimed): IrFilter {
  * spell", "you cast an Aura, Equipment, or Vehicle spell" (CR 601.2i: abilities that trigger when
  * a spell is cast trigger as it becomes cast). The spell is the subject of the trigger, described
  * by a filter of the spells on the stack. "An opponent casts" is `by: 'opponent'` (D-111, stage P18);
- * "cast or copy" and "your first spell each turn" are other events.
+ * "cast or copy" and "your first spell each turn" are other events. What the spell targets: "that targets a creature
+ * [you control]" (D-206, D-400), "that targets ~" and "that targets only ~" (D-1320, CR 115.9c), and a second kind
+ * of spell joined with "or": "an Equipment spell or a spell that targets a creature you control" (D-1321).
  */
 export const TRIGGER_CAST = defineRule<IrTrigger>({
   id: 'trigger.cast',

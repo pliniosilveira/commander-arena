@@ -175,7 +175,7 @@ describe('Danitha: "Whenever you cast an Equipment spell or a spell that targets
   });
 });
 
-describe('Feather: "exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (CR 614.1a, 608.2m, 603.7)', () => {
+describe('Feather: "exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (CR 614.1a, 608.2n, 603.7)', () => {
   const LINE =
     'Whenever you cast an instant or sorcery spell that targets a creature you control, exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step.';
 

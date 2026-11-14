@@ -921,7 +921,7 @@ function runEffect(
     }
 
     case 'exileOnResolve': {
-      // D-1322 (CR 614.1a, 608.2m): the spell whose casting caused the trigger carries the replacement from now on (`rules/exile-on-resolve.ts`).
+      // D-1322 (CR 614.1a, 608.2n): the spell whose casting caused the trigger carries the replacement from now on (`rules/exile-on-resolve.ts`).
       const spells = resolveObjects(state, effect.spell, ctx, targets);
       return done(markExileOnResolve(state, spells, res.controller, res.source));
     }

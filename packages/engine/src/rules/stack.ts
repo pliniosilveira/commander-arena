@@ -5,7 +5,7 @@
  *   ("fizzles"); if only some are, it resolves and does as much as possible without them.
  * - CR 608.2c-d: effects run in written order, one instruction at a time, so the engine can stop for
  *   a decision (CR 903.9b) and continue from the same place.
- * - CR 608.2m: a resolved instant or sorcery goes to its owner's graveyard; a permanent spell
+ * - CR 608.2n: a resolved instant or sorcery goes to its owner's graveyard; a permanent spell
  *   becomes a permanent (CR 608.3). An Adventure that resolves is exiled instead (CR 715.3d).
  */
 
@@ -320,7 +320,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
     // CR 715.3d: a spell cast as an Adventure that resolves is exiled instead of going to the
     // graveyard; a countered or fizzled one never gets here (CR 715.4) and goes to the graveyard.
     const adventure = isAdventureSpell(next, obj);
-    // CR 614.1a, 608.2m (D-1322): "exile that card instead of putting it into your graveyard as it resolves": an instant or sorcery that carries the mark is exiled.
+    // CR 614.1a, 608.2n (D-1322): "exile that card instead of putting it into your graveyard as it resolves": an instant or sorcery that carries the mark is exiled.
     const exiled = exiledAsItResolves(obj, permanent, adventure);
     const moved = moveObject(next, {
       object: res.object,

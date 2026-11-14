@@ -3414,7 +3414,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'exileOnResolve':
-      // D-1322 (CR 614.1a, 608.2m): the spell whose casting caused the trigger.
+      // D-1322 (CR 614.1a, 608.2n): the spell whose casting caused the trigger.
       if (kindOf(e.spell) === 'triggerSubject') {
         checkSubjectRef(e.spell, 'stack', `${path}.spell`, scope, out);
       } else {

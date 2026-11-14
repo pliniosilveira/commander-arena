@@ -1078,7 +1078,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return spell === UNSAID ? UNSAID : copySpellWords(spell, effect.newTargets, count);
     }
     case 'exileOnResolve': {
-      // D-1322 (CR 614.1a, 608.2m, 603.7): the spell whose casting caused the trigger is exiled as it resolves, and comes back to the hand at the next end step.
+      // D-1322 (CR 614.1a, 608.2n, 603.7): the spell whose casting caused the trigger is exiled as it resolves, and comes back to the hand at the next end step.
       return object(effect.spell) === UNSAID
         ? UNSAID
         : 'Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step';
