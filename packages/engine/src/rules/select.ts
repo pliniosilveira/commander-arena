@@ -25,6 +25,7 @@ import { type FilterSubject, matchesFilterWith } from './filter-match';
 import { abilitiesHaveKeyword } from './keywords';
 import { manaValueOfCost } from './mana-value';
 import { commanderCardOf, successorsOf } from './melded';
+import { isModified } from './modified';
 import { playerCanBeTargetedBy } from './player-protection';
 import { hasProtectionFrom } from './protection';
 import { objectOrLki } from './source-info';
@@ -123,6 +124,10 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
     },
     get commander() {
       return isCommanderObject(state, obj);
+    },
+    // D-1240 (CR 700.9): only a filter that says "modified" reads it.
+    get modified() {
+      return isModified(state, obj);
     },
     // Only a filter that compares mana value reads it.
     get manaValue() {

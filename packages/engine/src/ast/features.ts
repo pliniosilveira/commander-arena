@@ -466,6 +466,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'skipDraw',
     // D-379 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
     'drawInstead',
+    // D-1241 (CR 702.89a): "Umbra armor".
+    'umbraArmor',
   ],
   // {T}, "Sacrifice this permanent" (a Treasure, CR 111.10a) and mana ({1}, {T}: a Signet). A mana
   // cost is paid from the pool, or by auto-pay from sources that have no mana cost themselves.
@@ -661,6 +663,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-145: "with a counter on it" (`ObjectFilter.hasCounter`), "target commander" (`ObjectFilter.commander`).
     'hasCounter',
     'commander',
+    // D-1240 (CR 700.9): "modified creature" (`ObjectFilter.modified`).
+    'modified',
   ],
   // Conditions of `entersTapped.unless` (CR 614.12), of the `conditional` effect (CR 608.2c) and of
   // the intervening "if" (CR 603.4): counts of permanents and opponents, "was kicked" (CR 702.33d),
@@ -1160,6 +1164,8 @@ export const SELECTOR_KINDS = [
   'hasCounter',
   /** "Target commander" (CR 903.3, D-145): the engine's `ObjectFilter.commander`. */
   'commander',
+  /** "Modified creature" (CR 700.9, D-1240): the engine's `ObjectFilter.modified`. */
+  'modified',
 ] as const;
 export type SelectorKind = (typeof SELECTOR_KINDS)[number];
 
@@ -1771,6 +1777,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   redirectDamage: true,
   skipDraw: true,
   drawInstead: true,
+  umbraArmor: true,
 };
 const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   fixed: true,

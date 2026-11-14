@@ -850,7 +850,26 @@ export interface TokenReplacementChoice extends ReplacementChoiceBase {
   };
 }
 
-export type ReplacementChoice = DamageReplacementChoice | TokenReplacementChoice;
+/**
+ * One effect the affected player may choose to apply first to the destruction of a permanent (CR 616.1, D-1242): a regeneration shield (`regenerate`,
+ * CR 701.19a) or the Umbra armor of an Aura attached to it (`umbra`, CR 702.89a, `object` is the Aura). Each replaces the destruction, so the one applied first
+ * is the only one used up.
+ */
+export interface DestroyReplacementChoice extends ReplacementChoiceBase {
+  readonly kind: 'regenerate' | 'umbra';
+  /** What happens if this effect is applied: the Aura that is destroyed instead (none for a regeneration shield) and whether the permanent is tapped and taken out of combat. */
+  readonly outcome: {
+    /** The name of the Aura destroyed in its place; null for a regeneration shield. */
+    readonly aura: string | null;
+    /** A regenerated permanent is tapped and removed from combat (CR 701.19a); one saved by Umbra armor is not. */
+    readonly tapped: boolean;
+  };
+}
+
+export type ReplacementChoice =
+  | DamageReplacementChoice
+  | TokenReplacementChoice
+  | DestroyReplacementChoice;
 
 /**
  * Combat damage waiting for the answers of a replacement question (CR 510.2, D-191): all the damage of the step is simulated before
@@ -889,6 +908,7 @@ export interface DamageReplacementQuestion {
   };
   readonly choices: readonly DamageReplacementChoice[];
   readonly tokens?: undefined;
+  readonly destroy?: undefined;
   /** Set when the damage is combat damage: the batch to deal again once the question is answered. Absent for damage from a spell or ability. */
   readonly resume?: DamageResume;
 }
@@ -905,10 +925,32 @@ export interface TokenReplacementQuestion {
   };
   readonly choices: readonly TokenReplacementChoice[];
   readonly event?: undefined;
+  readonly destroy?: undefined;
   readonly resume?: undefined;
 }
 
-export type ReplacementQuestion = DamageReplacementQuestion | TokenReplacementQuestion;
+/**
+ * The question of a `'replacement'` choice about the destruction of a permanent (CR 616.1, D-1242): `object` would be destroyed (by an effect, or by lethal
+ * damage or a deathtouch source as state-based actions are checked, `during`) and two or more replacement effects can be applied (a regeneration shield, the
+ * Umbra armor of each Aura attached to it). The player who controls the permanent is asked; the question is not asked when only one effect applies.
+ */
+export interface DestroyReplacementQuestion {
+  readonly destroy: {
+    readonly object: ObjectId;
+    readonly objectName: string;
+    /** `resolution`: an instruction of a resolving spell or ability (the answer is added to its answers and it runs again); `sba`: state-based actions (the answer is applied and they are checked again). */
+    readonly during: 'resolution' | 'sba';
+  };
+  readonly choices: readonly DestroyReplacementChoice[];
+  readonly event?: undefined;
+  readonly tokens?: undefined;
+  readonly resume?: undefined;
+}
+
+export type ReplacementQuestion =
+  | DamageReplacementQuestion
+  | TokenReplacementQuestion
+  | DestroyReplacementQuestion;
 
 /**
  * CR 107.3a, 601.2b, 602.2b (D-103): the controller of a spell or activated ability with an {X} in its

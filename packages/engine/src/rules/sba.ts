@@ -30,13 +30,14 @@ import { illegalAttachments, illegalAuras, unattach } from './attach';
 import { gainCitysBlessings } from './city-blessing';
 import { controllerOf } from './control';
 import { endLostControlEffects } from './control-effects';
+import { askingFlow } from './damage-order';
 import { derive } from './derive';
+import { settleDestruction } from './destroy-replacement';
 import { replacementSources } from './die-replacement';
 import { type LegendCandidate, legendRuleDecision } from './legend-rule';
 import { monarchAfterLoss } from './monarch';
 import { endBrokenPairs } from './pairing-sba';
 import { cannotLoseGame } from './player-protection';
-import { regenerateInstead } from './regenerate';
 import { endLostRingBearers } from './ring';
 import { sacrificePermanent } from './sacrifice';
 import { sagaIsDone } from './saga';
@@ -204,14 +205,24 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   if (batch.length > 1) for (const obj of batch) state = recordLastKnown(state, obj);
   // CR 704.5m: an Aura is put into the graveyard, not destroyed; the creature it enchanted may be
   // dying in the same check, which the next pass of the caller's loop settles.
+  let waiting: NewDecision | null = null;
   for (const obj of [...toGraveyard, ...fallenAuras, ...destroyedOnce].sort(order)) {
     // CR 701.19a, 704.5g (D-120): a regeneration shield replaces the destruction by lethal damage or
-    // deathtouch with: remove the damage, tap it, remove it from combat. Only a destruction is replaced,
-    // not a creature put into a graveyard for 0 toughness (CR 704.5f) or an Aura (CR 704.5m).
-    const regenerated = destroyed.includes(obj) ? regenerateInstead(state, obj.id) : null;
-    if (regenerated !== null) {
-      state = regenerated.state;
-      events.push(...regenerated.events);
+    // deathtouch with: remove the damage, tap it, remove it from combat. So does the Umbra armor of an Aura
+    // on it (CR 702.89a, D-1241): remove the damage and destroy the Aura. Only a destruction is replaced,
+    // not a creature put into a graveyard for 0 toughness (CR 704.5f) or an Aura (CR 704.5m). With two or
+    // more effects the controller chooses (CR 616.1, D-1242): the creature waits, and is asked when
+    // nothing else was performed in this check.
+    const replaced = destroyed.includes(obj)
+      ? settleDestruction(state, obj.id, false, askingFlow(), 'sba')
+      : null;
+    if (replaced?.kind === 'asked') {
+      waiting ??= replaced.decision;
+      continue;
+    }
+    if (replaced?.kind === 'replaced') {
+      state = replaced.state;
+      events.push(...replaced.events);
       performed = true;
       continue;
     }
@@ -269,6 +280,8 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   // the caller checks again after the answer. Then CR 903.9a: a commander that went to a graveyard
   // or exile since the last check. Entries that put a commander there during step 2 are handled on
   // the next iteration.
+  // CR 616.1 (D-1242): the question of a destruction that two or more replacement effects can replace.
+  if (!performed && waiting !== null) return { state, events, performed: false, decision: waiting };
   if (!performed) {
     const duplicates = legendRuleDecision(state, legendary);
     if (duplicates !== null) return { state, events, performed: false, decision: duplicates };

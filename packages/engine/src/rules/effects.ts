@@ -38,6 +38,7 @@ import { asking, runDealDamage, runDealDividedDamage } from './damage-effects';
 import { askingFlow, type OrderFlow, quietFlow } from './damage-order';
 import { derive } from './derive';
 import { UNEARTH_EXILE_ABILITY } from './derive-alt';
+import { settleDestruction } from './destroy-replacement';
 import { runDraw } from './draw';
 import { runDrawUpTo } from './draw-up-to';
 import {
@@ -77,7 +78,7 @@ import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
-import { regenerateInstead, runRegenerate } from './regenerate';
+import { runRegenerate } from './regenerate';
 import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
@@ -528,11 +529,20 @@ function runEffect(
         );
       });
       // CR 701.19a (D-120): a regeneration shield replaces the destruction, unless it "can't be regenerated"
-      // (CR 701.19c). The shields are used as the destruction happens, before anything is moved.
+      // (CR 701.19c); so does the Umbra armor of an Aura on it (CR 702.89a, D-1241). The shields are used as the destruction
+      // happens, before anything is moved. With two or more effects the controller of the permanent chooses (CR 616.1, D-1242):
+      // the instruction asks and runs again from this state with the answer.
       const destroyed: ObjectId[] = [];
       for (const id of ids) {
-        const replaced = effect.cantBeRegenerated === true ? null : regenerateInstead(next, id);
-        if (replaced === null) {
+        const replaced = settleDestruction(
+          next,
+          id,
+          effect.cantBeRegenerated === true,
+          flow,
+          'resolution',
+        );
+        if (replaced.kind === 'asked') return asking(state, replaced);
+        if (replaced.kind === 'destroyed') {
           destroyed.push(id);
           continue;
         }

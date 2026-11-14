@@ -60,6 +60,8 @@ const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
 const MODAL_HEADER = /^choose\b/i;
 const REPLACEMENT_ENTERS = /^(?:as )?~ enters\b/i;
+/** "Umbra armor" (CR 702.89a, D-1241): the keyword line of an Aura, which is a replacement effect of the permanent it enchants. */
+const REPLACEMENT_UMBRA_ARMOR = /^umbra armor$/i;
 /** "If ~ was kicked, it enters with ...": a conditional replacement of the permanent itself. */
 const REPLACEMENT_IF_ENTERS = /^if [^,]+, (?:~|it) enters\b/i;
 const COST_WORDS = /^(?:sacrifice|discard|pay|remove|exile|tap)\b/i;
@@ -602,6 +604,7 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
 
   if (
     REPLACEMENT_ENTERS.test(text) ||
+    REPLACEMENT_UMBRA_ARMOR.test(text) ||
     REPLACEMENT_IF_ENTERS.test(text) ||
     (/ would /.test(text) && / instead\b/.test(text))
   ) {

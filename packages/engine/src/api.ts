@@ -54,6 +54,7 @@ import {
   answerDamage,
 } from './rules/combat-flow';
 import { answerCopyTargets } from './rules/copy-spell-answer';
+import { answerDestruction } from './rules/destroy-replacement';
 import { answerTurnFaceUpPayment, beginTurnFaceUp } from './rules/face-down-actions';
 import {
   afterResolution,
@@ -536,6 +537,14 @@ function answerReplacement(
   if (d.replacement.resume !== undefined) {
     const dealt = answerCombatReplacement(state, d.replacement.resume, option, chosen);
     return ok(dealt.state, dealt.events);
+  }
+  if (d.replacement.destroy?.during === 'sba') {
+    // CR 616.1, 704.5g (D-1242): the effect chosen replaces the destruction found by the state-based actions; they are checked again.
+    const applied = answerDestruction(state, d.replacement.destroy.object, option);
+    if (applied === null) return fail('Choose one of the effects');
+    const prior = [chosen, ...applied.events];
+    const resumed = resumeAfterSbaDecision(applied.state, prior);
+    return resumed.ok ? ok(resumed.state, [...prior, ...resumed.events]) : resumed;
   }
   return finishResolutionAnswer(answerResolutionReplacement(state, option, chosen));
 }

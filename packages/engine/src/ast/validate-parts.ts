@@ -271,6 +271,7 @@ export function checkFilter(
     'notCastFromHand',
     'enteredThisTurn',
     'singleTarget',
+    'modified',
   ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
@@ -306,6 +307,10 @@ export function checkFilter(
     f.zone !== 'battlefield'
   ) {
     issue(out, `${path}.attacking`, 'only a permanent on the battlefield can be attacking');
+  }
+  // CR 700.9 (D-1240): only a permanent is modified.
+  if (f.modified === true && f.zone !== undefined && f.zone !== 'battlefield') {
+    issue(out, `${path}.modified`, 'only a permanent on the battlefield can be modified');
   }
   if (f.putFromBattlefieldThisTurn === true && f.zone !== 'graveyard') {
     issue(
@@ -429,6 +434,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.putFromBattlefieldThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.singleTarget !== undefined ||
+  f.modified !== undefined ||
   f.targetsObject !== undefined;
 
 /**

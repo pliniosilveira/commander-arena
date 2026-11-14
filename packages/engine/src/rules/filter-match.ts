@@ -35,6 +35,8 @@ export interface FilterSubject {
   readonly keywords?: readonly Keyword['kind'][];
   /** Whether the object is a commander card (`commander`, D-145); left out where the caller does not know, which fails the test closed. */
   readonly commander?: boolean;
+  /** Whether the permanent is modified (`modified`, D-1240, CR 700.9); left out where the caller does not know, which fails the test closed. */
+  readonly modified?: boolean;
 }
 
 /** D-111: whether `value` satisfies the comparison; an object with no such value satisfies none. */
@@ -185,6 +187,8 @@ export function matchesFilterWith(
   if (filter.commander !== undefined && d.commander !== true) return false;
   // D-149: "your commander" is one its owner designated, and that owner is the player reading the filter.
   if (filter.commander === 'yours' && obj.owner !== ctx.controller) return false;
+  // CR 700.9 (D-1240): "modified": a counter, an Equipment, or an Aura its controller controls.
+  if (filter.modified === true && d.modified !== true) return false;
   if (filter.keywords && !filter.keywords.every((k) => d.keywords?.includes(k) === true)) {
     return false;
   }

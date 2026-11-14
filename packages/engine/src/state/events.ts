@@ -249,6 +249,11 @@ export type GameEvent =
    * attacking or blocking, it was removed from combat (`removedFromCombat`).
    */
   | { readonly kind: 'regenerated'; readonly object: ObjectId }
+  /**
+   * The Umbra armor of `aura` replaced the destruction of `object` (CR 702.89a, D-1241): the permanent was not destroyed and all damage marked on it was
+   * removed; the Aura is destroyed next (its own events follow: it may be indestructible or regenerate, which `regenerated` says).
+   */
+  | { readonly kind: 'umbraArmorUsed'; readonly object: ObjectId; readonly aura: ObjectId }
   | { readonly kind: 'resolved'; readonly object: ObjectId }
   /**
    * The object is removed from the stack without resolving: every target was illegal (CR 608.2b),

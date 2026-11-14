@@ -31,6 +31,7 @@ import {
   LIVING_WEAPON_REMINDER,
 } from './artifacts-text';
 import { gameConditionWords } from './condition-text';
+import { umbraArmorWording } from './danitha-g4-text';
 import {
   castFromTopText,
   entersAsCopyText,
@@ -412,6 +413,8 @@ export function replacementWording(replacement: Replacement, noun = 'permanent')
   if (replacement.kind === 'tokensInstead' && replacement.mode === 'double') {
     return 'If one or more tokens would be created under your control, twice that many of those tokens are created instead';
   }
+  // D-1241 (CR 702.89a): Umbra armor.
+  if (replacement.kind === 'umbraArmor') return umbraArmorWording();
   // D-192 (CR 614.9): "All damage that would be dealt to you and other permanents you control is dealt to this creature instead".
   if (replacement.kind === 'redirectDamage') return redirectDamageWording(replacement, noun);
   if (replacement.kind !== 'wouldDie') return null;

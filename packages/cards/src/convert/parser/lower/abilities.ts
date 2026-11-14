@@ -505,6 +505,12 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const when = lowerCondition(event.condition);
     return when.ok ? built({ kind: 'skipDraw', while: when.value }) : when;
   }
+  if (event.verb === 'umbraArmor') {
+    // CR 702.89a (Danitha deck, D-1241): the keyword of an Aura; the engine checks that the face is one.
+    const blocked = gate(ability, ['ability:replacement', 'replacement:umbraArmor']);
+    if (blocked !== null) return blocked;
+    return built({ kind: 'umbraArmor' });
+  }
   if (event.verb === 'entersTappedUnlessPays') {
     const amount = event.args.amount;
     if (amount?.kind !== 'number' || amount.value < 1) return failure(ability);
@@ -819,4 +825,5 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:skipDraw',
   'replacement:tokensInstead',
   'replacement:drawInstead',
+  'replacement:umbraArmor',
 ];
