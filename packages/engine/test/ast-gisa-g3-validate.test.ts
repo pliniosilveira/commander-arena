@@ -101,7 +101,7 @@ describe('"Sacrifice X creatures" (CR 107.3a, 602.2b): the cost sacrifice with c
     ).toContainEqual(expect.stringContaining('countX must be true'));
   });
 
-  test('not a cost of a mana ability, not an additional cost of a spell', () => {
+  test('not a cost of a mana ability, but valid as an additional cost of a spell', () => {
     expect(
       messages(
         creature([
@@ -114,8 +114,8 @@ describe('"Sacrifice X creatures" (CR 107.3a, 602.2b): the cost sacrifice with c
       ),
     ).toContainEqual(expect.stringContaining('no X'));
     expect(
-      messages(instant([{ kind: 'sacrifice', what: CREATURES, countX: true }], [])),
-    ).toContainEqual(expect.stringContaining('sacrifices no X permanents'));
+      validateCard(instant([{ kind: 'sacrifice', what: CREATURES, countX: true }], [])),
+    ).toEqual([]);
   });
 });
 

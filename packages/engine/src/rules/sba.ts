@@ -202,7 +202,10 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   const inGraveyardBatch = new Set([...toGraveyard, ...fallenAuras].map((o) => o.id));
   const destroyedOnce = destroyed.filter((o) => !inGraveyardBatch.has(o.id));
   const batch = [...toGraveyard, ...fallenAuras, ...destroyedOnce];
-  if (batch.length > 1) for (const obj of batch) state = recordLastKnown(state, obj);
+  if (batch.length > 1) {
+    const departedTogether = batch.map((obj) => obj.id);
+    for (const obj of batch) state = recordLastKnown(state, obj, departedTogether);
+  }
   // CR 704.5m: an Aura is put into the graveyard, not destroyed; the creature it enchanted may be
   // dying in the same check, which the next pass of the caller's loop settles.
   let waiting: NewDecision | null = null;

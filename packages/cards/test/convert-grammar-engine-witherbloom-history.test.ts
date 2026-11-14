@@ -51,6 +51,55 @@ function real(name: string): CardDefinition {
 }
 
 describe('Witherbloom history: real imports executed through the scenario DSL', () => {
+  test('Gorma does not give counters to other creatures entering simultaneously with it', () => {
+    const card = real('Gorma, the Gullet');
+    const base = syntheticCard('SYNTHETIC Mend');
+    const face = base.faces[0];
+    if (face === undefined) throw new Error('missing fixture');
+    const name = 'SYNTHETIC History Mass Return';
+    const massReturn: CardDefinition = {
+      ...base,
+      name,
+      faces: [
+        {
+          ...face,
+          name,
+          manaCost: ['0'],
+          spell: {
+            targets: [],
+            effect: {
+              kind: 'moveToZone',
+              objects: {
+                kind: 'each',
+                filter: { zone: 'graveyard', owner: { kind: 'you' }, types: ['creature'] },
+              },
+              to: 'battlefield',
+            },
+          },
+        },
+      ],
+    };
+    const g = scenario()
+      .define(card)
+      .define(massReturn)
+      .seat(0)
+      .battlefield("Healer's Hawk", 'Mountain')
+      .graveyard(card.name, 'Grizzly Bears')
+      .hand('Lightning Bolt', massReturn.name)
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .build();
+    g.act(0).cast('Lightning Bolt', { targets: ["Healer's Hawk"], pay: true });
+    g.passAll();
+    g.act(0).cast(massReturn.name, { pay: true });
+    g.passAll();
+    g.expect.counters(card.name, { '+1/+1': 1 });
+    g.expect.counters('Grizzly Bears', {});
+    g.expect.counters("Healer's Hawk", {});
+    g.expect.invariants();
+  });
+
   test('Bogbeast counts all life gained, not net life, and snapshots its pump', () => {
     const card = real('Blossoming Bogbeast');
     const g = scenario()
@@ -259,5 +308,123 @@ describe('Witherbloom history: real imports executed through the scenario DSL', 
     g.passAll();
     g.expect.counters(card.name, { '+1/+1': 2 });
     g.expect.counters("Healer's Hawk", { '+1/+1': 2 });
+  });
+
+  test.each([false, true])(
+    'Nether Traitor distinguishes sequential deaths from simultaneous=%s',
+    (simultaneous) => {
+      const traitor = real('Nether Traitor');
+      const base = syntheticCard('SYNTHETIC Mend');
+      const face = base.faces[0];
+      if (face === undefined) throw new Error('missing fixture');
+      const name = 'SYNTHETIC Ordered Deaths';
+      const wipe: CardDefinition = {
+        ...base,
+        name,
+        faces: [
+          {
+            ...face,
+            name,
+            manaCost: ['0'],
+            spell: {
+              targets: simultaneous
+                ? []
+                : [
+                    { id: 't1', what: { kind: 'object', filter: { types: ['creature'] } } },
+                    { id: 't2', what: { kind: 'object', filter: { types: ['creature'] } } },
+                  ],
+              effect: simultaneous
+                ? { kind: 'destroy', objects: { kind: 'each', filter: { types: ['creature'] } } }
+                : {
+                    kind: 'sequence',
+                    effects: [
+                      { kind: 'destroy', objects: { kind: 'target', id: 't1' } },
+                      { kind: 'destroy', objects: { kind: 'target', id: 't2' } },
+                    ],
+                  },
+            },
+          },
+        ],
+      };
+      const g = scenario()
+        .define(traitor)
+        .define(wipe)
+        .seat(0)
+        .battlefield(traitor.name, 'Grizzly Bears', 'Swamp')
+        .hand(wipe.name)
+        .library(...FILLER)
+        .seat(1)
+        .library(...FILLER)
+        .build();
+      g.act(0).cast(wipe.name, {
+        pay: true,
+        ...(simultaneous ? {} : { targets: [traitor.name, 'Grizzly Bears'] }),
+      });
+      g.passAll();
+      if (simultaneous) {
+        g.expect.pending('priority', 0);
+        g.expect.zone(traitor.name, 'graveyard');
+      } else {
+        g.expect.pending('confirmOptional', 0);
+        g.act(0).accept();
+        if (g.state.pending?.kind === 'payMana') g.act(0).payAuto();
+        g.passAll();
+        g.expect.zone(traitor.name, 'battlefield');
+      }
+      g.expect.invariants();
+    },
+  );
+
+  test('Cursed Mirror copies Gorma before applying its own entry replacement', () => {
+    const gorma = real('Gorma, the Gullet');
+    const mirror = real('Cursed Mirror');
+    const g = scenario()
+      .define(gorma)
+      .define(mirror)
+      .seat(0)
+      .battlefield('Grizzly Bears', 'Mountain', 'Mountain', 'Mountain', 'Mountain')
+      .hand('Lightning Bolt', mirror.name)
+      .library(...FILLER)
+      .seat(1)
+      .battlefield(gorma.name)
+      .library(...FILLER)
+      .build();
+    g.act(0).cast('Lightning Bolt', { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.act(0).cast(mirror.name, { pay: true });
+    g.passAll();
+    g.act(0).choosePermanents({ name: gorma.name, seat: 1 });
+    g.expect.counters(mirror.name, { '+1/+1': 1 });
+    g.expect.invariants();
+  });
+
+  test('group static ability removal remains rejected rather than reaching entry replacements', () => {
+    const base = fixtureCard('Grizzly Bears');
+    const face = base.faces[0];
+    if (face === undefined) throw new Error('missing fixture');
+    const name = 'SYNTHETIC Entry Silencer';
+    const silencer: CardDefinition = {
+      ...base,
+      name,
+      faces: [
+        {
+          ...face,
+          name,
+          types: ['enchantment'],
+          power: null,
+          toughness: null,
+          abilities: [
+            {
+              kind: 'static',
+              static: {
+                kind: 'loseAllAbilities',
+                subject: { kind: 'each', filter: { types: ['creature'] } } as never,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    expect(validateCard(silencer).some((issue) => issue.path.endsWith('.subject'))).toBe(true);
   });
 });

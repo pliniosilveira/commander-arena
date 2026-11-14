@@ -628,6 +628,8 @@ export interface MeldOrder {
 /** Characteristics of an object immediately before it left its zone (CR 113.7a, 603.10). */
 export interface LastKnownInfo {
   readonly object: GameObject;
+  /** The permanents in this one departure event, recorded before any moves (CR 603.10a, D-283). */
+  readonly departedTogether?: readonly ObjectId[];
   /**
    * The object this one became when it moved to another zone, set as it moves (CR 400.7): what "it" means
    * for an ability that looks for the card its source became (Persist's "return it", `thisCard`). It is

@@ -44,8 +44,70 @@ const WIPE = spell('Wipe', {
   objects: { kind: 'each', filter: { types: ['creature'] } },
 });
 const COUNT = spell('Count', gain(dead));
+const HISTORY_AMOUNTS: readonly Amount[] = [
+  { kind: 'lifeGainedThisTurn' },
+  { kind: 'enteredThisTurn', controller: 'you', types: ['creature'] },
+  dead,
+];
 
 describe('event-time history amounts', () => {
+  test.each(HISTORY_AMOUNTS)('state conditions evaluate %j through amountOf', (amount) => {
+    const proof = spell('State Condition', {
+      kind: 'sequence',
+      effects: [
+        gain(2),
+        {
+          kind: 'conditional',
+          condition: { kind: 'amountIs', amount, compare: { cmp: 'atLeast', value: 1 } },
+          effect: gain(3),
+        },
+      ],
+    });
+    const g = scenario()
+      .define(MAKE)
+      .define(WIPE)
+      .define(proof)
+      .seat(0)
+      .hand(MAKE.name, WIPE.name, proof.name)
+      .library(...LIBRARY)
+      .seat(1)
+      .library(...LIBRARY)
+      .build();
+    g.act(0).cast(MAKE.name, { pay: true });
+    g.passAll();
+    g.act(0).cast(WIPE.name, { pay: true });
+    g.passAll();
+    g.act(0).cast(proof.name, { pay: true });
+    g.passAll();
+    g.expect.life(0, 45);
+  });
+
+  test.each(HISTORY_AMOUNTS)('unsupported continuous P/T rejects history amount %j', (amount) => {
+    const card = fixtureCard('Grizzly Bears');
+    const invalid = {
+      ...card,
+      name: 'SYNTHETIC Unsupported History Static',
+      faces: [
+        {
+          ...bears,
+          name: 'SYNTHETIC Unsupported History Static',
+          abilities: [
+            {
+              kind: 'static',
+              static: {
+                kind: 'modifyPt',
+                subject: { kind: 'this' },
+                power: amount,
+                toughness: 0,
+              },
+            },
+          ],
+        },
+      ],
+    } as unknown as CardDefinition;
+    expect(validateCard(invalid).some((issue) => issue.path.endsWith('.power'))).toBe(true);
+  });
+
   test('token and nontoken deaths are counted once each; opponents are excluded and the log resets', () => {
     const g = scenario()
       .define(MAKE)

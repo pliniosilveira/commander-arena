@@ -152,6 +152,43 @@ describe('issue58 group D real imports', () => {
     g.expect.invariants();
   });
 
+  test.each([false, true])(
+    'Pest Infestation target legality on resolution, surviving target=%s',
+    (survives) => {
+      const card = real('Pest Infestation');
+      const removal = syntheticSpell('Remove opposing artifacts', {
+        kind: 'destroy',
+        objects: { kind: 'each', filter: { types: ['artifact'], controller: 'opponent' } },
+      });
+      const instant = {
+        ...removal,
+        faces: removal.faces.map((face) => ({ ...face, types: ['instant'] as const })),
+      };
+      let b = scenario()
+        .define(card)
+        .define(instant)
+        .seat(0)
+        .hand(card.name, instant.name)
+        .battlefield('Forest', { count: 5 });
+      if (survives) b = b.battlefield('Sol Ring');
+      const g = b.seat(1).battlefield('Sol Ring').build();
+      g.act(0).cast(card.name);
+      g.act(0).chooseX(survives ? 2 : 1);
+      if (survives) {
+        g.act(0).chooseTargets({ name: 'Sol Ring', seat: 0 }, { name: 'Sol Ring', seat: 1 });
+      } else {
+        g.act(0).chooseTargets('Sol Ring');
+      }
+      g.act(0).payAuto();
+      g.act(0).cast(instant.name, { pay: true });
+      g.passAll();
+      expect(getView(g.state, 0).battlefield.filter((o) => o.name === 'Pest')).toHaveLength(
+        survives ? 4 : 0,
+      );
+      g.expect.invariants();
+    },
+  );
+
   test('a copy of Immoral Bargain preserves X and does not sacrifice again', () => {
     const card = real('Immoral Bargain');
     const g = scenario()

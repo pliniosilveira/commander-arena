@@ -21,7 +21,7 @@ export function recordObjectsTogether(state: GameState, ids: readonly ObjectId[]
   let next = state;
   for (const id of leaving) {
     const obj = state.objects[id];
-    if (obj !== undefined) next = recordLastKnown(next, obj);
+    if (obj !== undefined) next = recordLastKnown(next, obj, leaving);
   }
   return next;
 }
@@ -38,10 +38,13 @@ export function recordTogether(
   );
   if (leaving.length < 2) return { state, instructions: [...instructions] };
   let next = state;
+  const departedTogether = leaving.flatMap((i) =>
+    i.kind === 'move' || i.kind === 'sacrifice' ? [i.object] : [],
+  );
   for (const i of leaving) {
     if (i.kind !== 'move' && i.kind !== 'sacrifice') continue;
     const obj = state.objects[i.object];
-    if (obj !== undefined) next = recordLastKnown(next, obj);
+    if (obj !== undefined) next = recordLastKnown(next, obj, departedTogether);
   }
   return {
     state: next,

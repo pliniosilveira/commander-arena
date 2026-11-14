@@ -806,11 +806,9 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
   let members = battlefieldBefore(state, events).sort(byAge);
   // The battlefield just before a run of simultaneous departures (CR 603.10a).
   let beforeDepartures: ObjectId[] | null = null;
-  let departuresFrom = 0;
 
   for (const [eventIndex, event] of events.entries()) {
     if (leavesBattlefield(event)) {
-      if (beforeDepartures === null) departuresFrom = eventIndex;
       beforeDepartures ??= [...members];
     } else beforeDepartures = null;
     if (event.kind === 'zoneChanged') {
@@ -849,9 +847,17 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
         if (
           ability.functionsIn === 'graveyard' &&
           LOOK_BACK.has(ability.trigger.kind) &&
-          events
-            .slice(beforeDepartures === null ? eventIndex : departuresFrom)
-            .some((e) => e.kind === 'zoneChanged' && e.to === id && e.toZone === 'graveyard')
+          events.some((e, entryIndex) => {
+            if (e.kind !== 'zoneChanged' || e.to !== id || e.toZone !== 'graveyard') return false;
+            const departed =
+              event.kind === 'died'
+                ? event.object
+                : event.kind === 'zoneChanged'
+                  ? event.from
+                  : null;
+            const together = departed === null ? undefined : state.lki[departed]?.departedTogether;
+            return entryIndex >= eventIndex || together?.includes(e.from) === true;
+          })
         )
           continue;
         const lookBack = LOOK_BACK.has(ability.trigger.kind);
