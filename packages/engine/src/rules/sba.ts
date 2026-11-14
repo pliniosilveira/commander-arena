@@ -209,9 +209,9 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   for (const obj of [...toGraveyard, ...fallenAuras, ...destroyedOnce].sort(order)) {
     // CR 701.19a, 704.5g (D-120): a regeneration shield replaces the destruction by lethal damage or
     // deathtouch with: remove the damage, tap it, remove it from combat. So does the Umbra armor of an Aura
-    // on it (CR 702.89a, D-1241): remove the damage and destroy the Aura. Only a destruction is replaced,
+    // on it (CR 702.89a, D-417): remove the damage and destroy the Aura. Only a destruction is replaced,
     // not a creature put into a graveyard for 0 toughness (CR 704.5f) or an Aura (CR 704.5m). With two or
-    // more effects the controller chooses (CR 616.1, D-1242): the creature waits, and is asked when
+    // more effects the controller chooses (CR 616.1, D-418): the creature waits, and is asked when
     // nothing else was performed in this check.
     const replaced = destroyed.includes(obj)
       ? settleDestruction(state, obj.id, false, askingFlow(), 'sba')
@@ -280,7 +280,7 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   // the caller checks again after the answer. Then CR 903.9a: a commander that went to a graveyard
   // or exile since the last check. Entries that put a commander there during step 2 are handled on
   // the next iteration.
-  // CR 616.1 (D-1242): the question of a destruction that two or more replacement effects can replace.
+  // CR 616.1 (D-418): the question of a destruction that two or more replacement effects can replace.
   if (!performed && waiting !== null) return { state, events, performed: false, decision: waiting };
   if (!performed) {
     const duplicates = legendRuleDecision(state, legendary);

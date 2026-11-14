@@ -1,4 +1,4 @@
-// The Danitha deck (issue 26), group 4 (D-1240 to D-1244): the lines of Boar Umbra, Hyena Umbra, Lion Umbra, Spider Umbra and Golden-Tail Trainer. The first lines of each block
+// The Danitha deck (issue 26), group 4 (D-416 to D-420): the lines of Boar Umbra, Hyena Umbra, Lion Umbra, Spider Umbra and Golden-Tail Trainer. The first lines of each block
 // are the real Oracle text of the acceptance cards of the golden corpus read through the whole pipeline; the other lines are SYNTHETIC siblings and the near misses the grammar
 // must not read. The engine runs what is lowered in convert-grammar-engine-danitha-g4.test.ts.
 import { describe, expect, test, vi } from 'vitest';

@@ -123,7 +123,7 @@ export function votePrompt(
   return `${question} ${cast.map((c) => `${who(c.seat)} voted for ${c.option}.`).join(' ')}`;
 }
 
-/** The title of the dialog of the order of replacement effects: "Damage replacement", or "Destruction replacement" for the destruction of a permanent (D-1242). */
+/** The title of the dialog of the order of replacement effects: "Damage replacement", or "Destruction replacement" for the destruction of a permanent (D-418). */
 export function replacementTitle(d: Pick<ChooseOptionDecision, 'replacement'>): string {
   return d.replacement?.destroy === undefined ? 'Damage replacement' : 'Destruction replacement';
 }
@@ -136,7 +136,7 @@ export function replacementTitle(d: Pick<ChooseOptionDecision, 'replacement'>): 
 export function replacementPrompt(replacement: ChooseOptionDecision['replacement']): string {
   if (replacement === undefined) return 'Several effects apply. Choose which to apply first.';
   if (replacement.destroy !== undefined) {
-    // D-1242 (CR 616.1): the permanent that would be destroyed, and the effects that replace it.
+    // D-418 (CR 616.1): the permanent that would be destroyed, and the effects that replace it.
     return destroyReplacementPrompt(replacement.destroy.objectName);
   }
   if (replacement.event === undefined) {
@@ -224,7 +224,7 @@ export function namedOptionRows(
       const question = d.replacement;
       let detail: string | null = null;
       if (choice !== undefined && 'aura' in choice.outcome) {
-        // D-1242: the Aura destroyed in place of the permanent, or the regeneration (tapped, removed from combat).
+        // D-418: the Aura destroyed in place of the permanent, or the regeneration (tapped, removed from combat).
         detail = destroyReplacementThen(choice.outcome);
       } else if (
         choice !== undefined &&

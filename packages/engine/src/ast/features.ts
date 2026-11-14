@@ -466,7 +466,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'skipDraw',
     // D-379 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
     'drawInstead',
-    // D-1241 (CR 702.89a): "Umbra armor".
+    // D-417 (CR 702.89a): "Umbra armor".
     'umbraArmor',
   ],
   // {T}, "Sacrifice this permanent" (a Treasure, CR 111.10a) and mana ({1}, {T}: a Signet). A mana
@@ -663,7 +663,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-145: "with a counter on it" (`ObjectFilter.hasCounter`), "target commander" (`ObjectFilter.commander`).
     'hasCounter',
     'commander',
-    // D-1240 (CR 700.9): "modified creature" (`ObjectFilter.modified`).
+    // D-416 (CR 700.9): "modified creature" (`ObjectFilter.modified`).
     'modified',
   ],
   // Conditions of `entersTapped.unless` (CR 614.12), of the `conditional` effect (CR 608.2c) and of
@@ -1164,7 +1164,7 @@ export const SELECTOR_KINDS = [
   'hasCounter',
   /** "Target commander" (CR 903.3, D-145): the engine's `ObjectFilter.commander`. */
   'commander',
-  /** "Modified creature" (CR 700.9, D-1240): the engine's `ObjectFilter.modified`. */
+  /** "Modified creature" (CR 700.9, D-416): the engine's `ObjectFilter.modified`. */
   'modified',
 ] as const;
 export type SelectorKind = (typeof SELECTOR_KINDS)[number];

@@ -539,7 +539,7 @@ function answerReplacement(
     return ok(dealt.state, dealt.events);
   }
   if (d.replacement.destroy?.during === 'sba') {
-    // CR 616.1, 704.5g (D-1242): the effect chosen replaces the destruction found by the state-based actions; they are checked again.
+    // CR 616.1, 704.5g (D-418): the effect chosen replaces the destruction found by the state-based actions; they are checked again.
     const applied = answerDestruction(state, d.replacement.destroy.object, option);
     if (applied === null) return fail('Choose one of the effects');
     const prior = [chosen, ...applied.events];

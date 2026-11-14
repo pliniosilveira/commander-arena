@@ -250,7 +250,7 @@ export type GameEvent =
    */
   | { readonly kind: 'regenerated'; readonly object: ObjectId }
   /**
-   * The Umbra armor of `aura` replaced the destruction of `object` (CR 702.89a, D-1241): the permanent was not destroyed and all damage marked on it was
+   * The Umbra armor of `aura` replaced the destruction of `object` (CR 702.89a, D-417): the permanent was not destroyed and all damage marked on it was
    * removed; the Aura is destroyed next (its own events follow: it may be indestructible or regenerate, which `regenerated` says).
    */
   | { readonly kind: 'umbraArmorUsed'; readonly object: ObjectId; readonly aura: ObjectId }

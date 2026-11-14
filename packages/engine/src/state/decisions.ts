@@ -851,7 +851,7 @@ export interface TokenReplacementChoice extends ReplacementChoiceBase {
 }
 
 /**
- * One effect the affected player may choose to apply first to the destruction of a permanent (CR 616.1, D-1242): a regeneration shield (`regenerate`,
+ * One effect the affected player may choose to apply first to the destruction of a permanent (CR 616.1, D-418): a regeneration shield (`regenerate`,
  * CR 701.19a) or the Umbra armor of an Aura attached to it (`umbra`, CR 702.89a, `object` is the Aura). Each replaces the destruction, so the one applied first
  * is the only one used up.
  */
@@ -930,7 +930,7 @@ export interface TokenReplacementQuestion {
 }
 
 /**
- * The question of a `'replacement'` choice about the destruction of a permanent (CR 616.1, D-1242): `object` would be destroyed (by an effect, or by lethal
+ * The question of a `'replacement'` choice about the destruction of a permanent (CR 616.1, D-418): `object` would be destroyed (by an effect, or by lethal
  * damage or a deathtouch source as state-based actions are checked, `during`) and two or more replacement effects can be applied (a regeneration shield, the
  * Umbra armor of each Aura attached to it). The player who controls the permanent is asked; the question is not asked when only one effect applies.
  */

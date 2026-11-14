@@ -1,8 +1,8 @@
 /**
- * SYNTHETIC CARDS FOR THE DANITHA DECK (ISSUE 26), GROUP 4 (D-1240 TO D-1245). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR THE DANITHA DECK (ISSUE 26), GROUP 4 (D-416 TO D-421). NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of Umbra armor (CR 702.89a, D-1241: "If enchanted permanent would be destroyed, instead remove all damage marked on it and
- * destroy this Aura") and of "modified" permanents (CR 700.9, D-1240: a counter, an Equipment, or an Aura its controller controls). Each one has the
+ * Invented for the tests of Umbra armor (CR 702.89a, D-417: "If enchanted permanent would be destroyed, instead remove all damage marked on it and
+ * destroy this Aura") and of "modified" permanents (CR 700.9, D-416: a counter, an Equipment, or an Aura its controller controls). Each one has the
  * wording of a real card, the name replaced. Names start with "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle
  * text, and none of these is the definition of a real card.
  */

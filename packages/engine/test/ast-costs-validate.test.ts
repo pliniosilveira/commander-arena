@@ -342,7 +342,7 @@ describe('the costReduction static ability (CR 118.7, 601.2f)', () => {
     expect(structural(reducer({ types: ['artifact'] }, { kind: 'x' }))).toEqual([
       expect.stringContaining('a cost reduction reads what the game says now'),
     ]);
-    // D-1244: the power of the permanent with the ability is read as the cost is determined; the power of anything else is not.
+    // D-420: the power of the permanent with the ability is read as the cost is determined; the power of anything else is not.
     expect(
       structural(
         reducer({ types: ['artifact'] }, { kind: 'powerOf', of: { kind: 'target', id: 't1' } }),

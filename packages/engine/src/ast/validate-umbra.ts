@@ -1,12 +1,12 @@
 /**
- * Checks of the Umbra armor slice (D-1241): the replacement `umbraArmor` ("If enchanted permanent would be destroyed, instead remove all damage marked
+ * Checks of the Umbra armor slice (D-417): the replacement `umbraArmor` ("If enchanted permanent would be destroyed, instead remove all damage marked
  * on it and destroy this Aura", CR 702.89a). `validate.ts` calls into this file for the kinds it does not know itself.
  */
 import type { CardFace } from '../cards/definition';
 import type { Replacement } from './types';
 import { type AstIssue, issue } from './validate-parts';
 
-/** The replacement kind D-1241 adds. True when `r` is it (it has nothing to check but the face it stands on). */
+/** The replacement kind D-417 adds. True when `r` is it (it has nothing to check but the face it stands on). */
 export function checkUmbraReplacement(r: Replacement, _path: string, _out: AstIssue[]): boolean {
   return r?.kind === 'umbraArmor';
 }

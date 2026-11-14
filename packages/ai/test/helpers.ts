@@ -2552,7 +2552,7 @@ export const DANITHA_G5_LANDS = supported([
 ]);
 
 /**
- * The SYNTHETIC cards of group 4 of the Danitha deck (D-1240 to D-1245): three Auras with Umbra armor (one of them enchants only a modified creature) and the creature that
+ * The SYNTHETIC cards of group 4 of the Danitha deck (D-416 to D-421): three Auras with Umbra armor (one of them enchants only a modified creature) and the creature that
  * pumps the other modified creatures and makes Auras and Equipment cheaper. Umbra armor replaces a destruction, and with a regeneration shield or a second Umbra Aura on the
  * same creature the controller is asked in what order (a `chooseOption` of purpose `replacement`, in the middle of a resolution or of the state-based actions). That question
  * changes which answers the generic pools ask for, which games-100 expects only from dedicated styles.
@@ -3392,7 +3392,7 @@ const FIXTURES: readonly CardDefinition[] = [
 
   // The Danitha group 5 cards (D-405 to D-408) search with a card on top, move an Aura onto each creature that enters, blight a creature as a cost and cast an Aura at flash timing: a style of their own.
   .filter((card) => !(DANITHA_G5_NAMES as readonly string[]).includes(card.name))
-  // The Danitha group 4 cards (D-1240 to D-1245) have Umbra armor, which asks the order of a regeneration shield and a second Umbra Aura in the middle of a resolution: a style of their own.
+  // The Danitha group 4 cards (D-416 to D-421) have Umbra armor, which asks the order of a regeneration shield and a second Umbra Aura in the middle of a resolution: a style of their own.
   .filter((card) => !(DANITHA_G4_NAMES as readonly string[]).includes(card.name))
   // The Hashaton group 9 cards (D-390 to D-395) pay life for a Phyrexian symbol, transform and exile a random card from a hand with two offers behind it, which games-100 expects only from dedicated styles.
   .filter((card) => !(HASHATON_G9_NAMES as readonly string[]).includes(card.name))
@@ -4284,7 +4284,7 @@ export const DANITHA_G5_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
   ['spells', 'danithaG5'],
 ];
 
-/** Style pairs of the Danitha group 4 soak test (D-1240 to D-1245): a mirror match and both mixed ways. */
+/** Style pairs of the Danitha group 4 soak test (D-416 to D-421): a mirror match and both mixed ways. */
 export const DANITHA_G4_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['danithaG4', 'danithaG4'],
   ['danithaG4', 'spells'],

@@ -1,5 +1,5 @@
 /**
- * The words of Umbra armor and of its question (CR 702.89a, 616.1; D-1241, D-1242, the Danitha deck, group 4). Composed from the AST and the engine's decision, never from
+ * The words of Umbra armor and of its question (CR 702.89a, 616.1; D-417, D-418, the Danitha deck, group 4). Composed from the AST and the engine's decision, never from
  * the Oracle text. Pure.
  */
 import type { DestroyReplacementChoice } from '@commander-arena/engine';

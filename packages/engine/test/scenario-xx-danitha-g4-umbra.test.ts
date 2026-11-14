@@ -1,4 +1,4 @@
-// Umbra armor (CR 702.89a), the Danitha deck (issue 26), group 4 (D-1241, D-1242): "If enchanted permanent would be destroyed, instead remove all damage marked
+// Umbra armor (CR 702.89a), the Danitha deck (issue 26), group 4 (D-417, D-418): "If enchanted permanent would be destroyed, instead remove all damage marked
 // on it and destroy this Aura." A replacement effect of the Aura for the destruction of the permanent it is attached to: by the effect `destroy` (a
 // resolving spell) and by the state-based actions for lethal damage and deathtouch (CR 704.5g, 704.5h). A regeneration shield (CR 701.19a) and a second Umbra
 // armor on the same permanent replace the same destruction, and the permanent's controller chooses which one applies (CR 616.1): the replacement question of

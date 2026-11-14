@@ -9,7 +9,7 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Ainok Wayfarer | 2 | T + P (choose among the moved cards) | done |  |
 | Airlift Chaplain | 2 | T + P (choose among the moved cards) | done |  |
 | Blanchwood Prowler | 2 | T + P (choose among the moved cards) | done |  |
-| Boar Umbra | 4 | K + P (Umbra armor, modified filter) | waiting |  |
+| Boar Umbra | 4 | K + P (Umbra armor, modified filter) | done |  |
 | Cache Grab | 2 | T + P (choose among the moved cards) | done |  |
 | Commune with the Gods | 1a | T + small P (reveal-all flag) | done |  |
 | Cosmic Rebirth | 1b | T | done |  |
@@ -17,11 +17,11 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Ethereal Armor | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Face of Divinity | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Gift of the Viper | 6 | P (base power, keyword counters) | waiting |  |
-| Golden-Tail Trainer | 4 | K + P (Umbra armor, modified filter) | waiting |  |
-| Hyena Umbra | 4 | K + P (Umbra armor, modified filter) | waiting |  |
+| Golden-Tail Trainer | 4 | K + P (Umbra armor, modified filter) | done |  |
+| Hyena Umbra | 4 | K + P (Umbra armor, modified filter) | done |  |
 | Kor Spiritdancer | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Kutzil, Malamet Exemplar | 6 | P (base power, keyword counters) | waiting |  |
-| Lion Umbra | 4 | K + P (Umbra armor, modified filter) | waiting |  |
+| Lion Umbra | 4 | K + P (Umbra armor, modified filter) | done |  |
 | Malevolent Rumble | 1a | T + small P (reveal-all flag) | done |  |
 | Midnight Tilling | 2 | T + P (choose among the moved cards) | done |  |
 | Restoration Magic | 7 | K (Tiered) | waiting |  |
@@ -32,7 +32,7 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Shield of the Oversoul | 3 | T + P (attachment filters, host subject) | waiting |  |
 | Shielded by Faith | 5 | P + T (one-offs) | done |  |
 | Something Worth Saving | 2 | T + P (choose among the moved cards) | done |  |
-| Spider Umbra | 4 | K + P (Umbra armor, modified filter) | waiting |  |
+| Spider Umbra | 4 | K + P (Umbra armor, modified filter) | done |  |
 | Spiral into Solitude | 5 | P + T (one-offs) | done |  |
 | Spirit Mantle | 1b | T | done |  |
 | Sterling Grove | 5 | P + T (one-offs) | done |  |

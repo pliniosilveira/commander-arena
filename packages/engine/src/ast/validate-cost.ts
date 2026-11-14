@@ -252,7 +252,7 @@ export function checkCostReduction(
     kindOf((amount as { of?: unknown }).of) === 'this' &&
     kindOf(s.spells) !== 'this'
   ) {
-    // D-1244 (CR 601.2f, 208.1): "Aura and Equipment spells you cast cost {X} less to cast, where X is this creature's power": the power of the permanent
+    // D-420 (CR 601.2f, 208.1): "Aura and Equipment spells you cast cost {X} less to cast, where X is this creature's power": the power of the permanent
     // with the ability, read as the cost is determined. A spell's own reduction has no such permanent ("this" is the spell).
   } else {
     // D-131: a count, or any amount that reads the game as the spell is cast (total power, devotion, counters on this

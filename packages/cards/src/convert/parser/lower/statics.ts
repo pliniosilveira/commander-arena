@@ -517,7 +517,7 @@ function readsCombat(filter: ObjectFilter): boolean {
     filter.attacking === true ||
     filter.manaValueX === true ||
     filter.controllerDealtDamageBySource === true ||
-    // D-1240 (CR 700.9): the attachments of a permanent are read from the game, which `derive` does not have while it matches a subject.
+    // D-416 (CR 700.9): the attachments of a permanent are read from the game, which `derive` does not have while it matches a subject.
     filter.modified === true ||
     (filter.anyOf?.some(readsCombat) ?? false)
   );

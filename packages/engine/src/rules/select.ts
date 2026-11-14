@@ -125,7 +125,7 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
     get commander() {
       return isCommanderObject(state, obj);
     },
-    // D-1240 (CR 700.9): only a filter that says "modified" reads it.
+    // D-416 (CR 700.9): only a filter that says "modified" reads it.
     get modified() {
       return isModified(state, obj);
     },

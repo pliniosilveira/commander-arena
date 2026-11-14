@@ -1,4 +1,4 @@
-// Every agent answers the question of the order of the replacement effects of a destruction (CR 616.1, D-1242, `chooseOption` with purpose 'replacement' and a `destroy`: a
+// Every agent answers the question of the order of the replacement effects of a destruction (CR 616.1, D-418, `chooseOption` with purpose 'replacement' and a `destroy`: a
 // regeneration shield and the Umbra armor of an Aura) with an option the engine lists and accepts, on real engine states built with the scenario DSL and the SYNTHETIC Auras of the
 // engine's `synthetic-danitha-g4.ts`. The casual and greedy agents take the first option (the default order: the shield first), the heuristic agent takes the effect that costs no Aura
 // and otherwise the first, the random agent picks among the options.

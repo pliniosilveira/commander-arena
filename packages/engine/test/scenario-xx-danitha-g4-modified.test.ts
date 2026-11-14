@@ -1,4 +1,4 @@
-// "Modified" (CR 700.9), the Danitha deck (issue 26), group 4 (D-1240): a permanent is modified if it has a counter on it, is equipped, or is enchanted by an Aura that
+// "Modified" (CR 700.9), the Danitha deck (issue 26), group 4 (D-416): a permanent is modified if it has a counter on it, is equipped, or is enchanted by an Aura that
 // its controller controls (an Aura an opponent controls is no modification). The engine's `ObjectFilter.modified`, read where a filter is matched against the game: an
 // `each` selector, an enchant ability ("Enchant modified creature", CR 303.4a, 704.5m), a target slot. It is refused in a static ability's subject (`validateCard`).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-danitha-g4.ts, synthetic-attachments.ts) or real fixtures.

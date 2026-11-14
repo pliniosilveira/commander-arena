@@ -1,7 +1,7 @@
 /**
- * Effect rules of group 4 of the Danitha deck (issue 26, D-1243): the second line of Golden-Tail Trainer, "Whenever ~ attacks, other modified creatures you control
+ * Effect rules of group 4 of the Danitha deck (issue 26, D-419): the second line of Golden-Tail Trainer, "Whenever ~ attacks, other modified creatures you control
  * get +X/+X until end of turn, where X is ~'s power." The trigger is `trigger.attacks`, the group of creatures is `noun.other-permanents` (with the filter word
- * "modified", D-1240) and the tail "where X is ~'s power" is `amount.where-x`; the lowering is `lower.pump` (`lower/effects-more.ts`).
+ * "modified", D-416) and the tail "where X is ~'s power" is `amount.where-x`; the lowering is `lower.pump` (`lower/effects-more.ts`).
  */
 import { literal, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';

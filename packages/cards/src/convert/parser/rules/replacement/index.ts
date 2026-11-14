@@ -250,6 +250,6 @@ export const REPLACEMENT_RULES = [
   ...SKIP_DRAW_REPLACEMENT_RULES,
   // Hashaton deck, group 3 (D-378, D-379): the two replacement effects of Bard, King of Dale.
   ...HASHATON_G3_REPLACEMENT_RULES,
-  // Danitha deck, group 4 (D-1241): "Umbra armor".
+  // Danitha deck, group 4 (D-417): "Umbra armor".
   ...DANITHA_G4_REPLACEMENT_RULES,
 ];

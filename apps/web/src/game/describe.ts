@@ -1267,7 +1267,7 @@ export function describeEvent(
         'CR 701.19a',
       );
     case 'umbraArmorUsed':
-      // CR 702.89a (D-1241): Umbra armor replaced a destruction.
+      // CR 702.89a (D-417): Umbra armor replaced a destruction.
       return line(
         'major',
         umbraArmorUsedText(name(event.object), name(event.aura)),

@@ -1,5 +1,5 @@
 /**
- * The replacement effects of the destruction of a permanent (CR 614.1a, 616.1; D-1241, D-1242): a regeneration shield (CR 701.19a, `rules/regenerate.ts`) and
+ * The replacement effects of the destruction of a permanent (CR 614.1a, 616.1; D-417, D-418): a regeneration shield (CR 701.19a, `rules/regenerate.ts`) and
  * the Umbra armor of each Aura attached to the permanent (CR 702.89a: "If enchanted permanent would be destroyed, instead remove all damage marked on it and
  * destroy this Aura"). Both replace the same event, the destruction, and either one leaves nothing for the other to replace: the permanent is not destroyed
  * any more, so the effect applied first is the only one used up. When two or more apply, the player who controls the permanent chooses which (CR 616.1,

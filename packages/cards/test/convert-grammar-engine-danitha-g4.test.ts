@@ -1,4 +1,4 @@
-// The Danitha deck (issue 26), group 4 (D-1240 to D-1244): the REAL Oracle text of Boar Umbra, Hyena Umbra, Lion Umbra, Spider Umbra and Golden-Tail Trainer (the corpus's golden.jsonl,
+// The Danitha deck (issue 26), group 4 (D-416 to D-420): the REAL Oracle text of Boar Umbra, Hyena Umbra, Lion Umbra, Spider Umbra and Golden-Tail Trainer (the corpus's golden.jsonl,
 // taken from the issue) goes through the grammar as a card with no override, is defined in an engine scenario and is played through applyAction, so the nodes the parser writes for the real
 // text are what the engine runs. The helper cards are real or SYNTHETIC fixtures. Pins: CR 702.89a (Umbra armor), CR 704.5g (lethal damage destroys), CR 700.9 (modified), CR 303.4a (enchant),
 // CR 601.2f (cost reductions), CR 508.1 (an attack triggers), CR 611.2c (the group a resolving effect pumps is fixed as it resolves).

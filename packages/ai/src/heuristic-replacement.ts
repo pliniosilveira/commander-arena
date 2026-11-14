@@ -6,7 +6,7 @@
  * unless something says otherwise), then the most damage prevented, and on a tie the first option, which is the default order (prevention first, the
  * owner's decision). It reads the decision only, never engine internals, so it stays within the engine's public API and is deterministic. Every answer is
  * one of the options, so it is always legal. For the order of the replacement effects of the creation of tokens (D-221) it picks the choice that makes the most tokens. For
- * the order of a regeneration shield and Umbra armor on a permanent that would be destroyed (D-1242) it picks the shield, which costs no Aura, else the first option.
+ * the order of a regeneration shield and Umbra armor on a permanent that would be destroyed (D-418) it picks the shield, which costs no Aura, else the first option.
  */
 import type { Action, ChooseOptionDecision } from '@commander-arena/engine';
 
@@ -32,7 +32,7 @@ export function chooseReplacementByOutcome(d: ChooseOptionDecision): Action {
       continue;
     }
     if ('aura' in choice.outcome) {
-      // CR 616.1 (D-1242): the order of a regeneration shield and the Umbra armor of the Auras on the permanent that would be destroyed: the effect that
+      // CR 616.1 (D-418): the order of a regeneration shield and the Umbra armor of the Auras on the permanent that would be destroyed: the effect that
       // costs no Aura first (the shield lasts only this turn), else the first, the oldest Aura, which is the default order the engine lists.
       if (choice.outcome.aura === null) return { kind: 'chooseOption', option: choice.option };
       continue;

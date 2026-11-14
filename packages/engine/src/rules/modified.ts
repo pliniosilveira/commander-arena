@@ -1,5 +1,5 @@
 /**
- * "Modified" (CR 700.9, D-1240): a permanent is modified if it has a counter on it, is equipped (an Equipment is attached to it) or is enchanted by an Aura
+ * "Modified" (CR 700.9, D-416): a permanent is modified if it has a counter on it, is equipped (an Equipment is attached to it) or is enchanted by an Aura
  * that its controller controls. Equipment, Auras controlled by the permanent's controller and counters are the modifications; an Aura an opponent
  * controls is not one (the Oracle reminder text of the cards says so: "Equipment, Auras you control, and counters are modifications").
  *

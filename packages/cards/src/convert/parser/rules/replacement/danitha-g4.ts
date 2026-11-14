@@ -1,5 +1,5 @@
 /**
- * Replacement rules of the Danitha deck (issue 26), group 4 (D-1241): Umbra armor (CR 702.89a), the keyword of Boar Umbra, Hyena Umbra, Lion Umbra and
+ * Replacement rules of the Danitha deck (issue 26), group 4 (D-417): Umbra armor (CR 702.89a), the keyword of Boar Umbra, Hyena Umbra, Lion Umbra and
  * Spider Umbra. Its reminder text ("If enchanted creature would be destroyed, instead remove all damage from it and destroy this Aura.") is cut off before
  * the grammar reads the line, as the reminder of every keyword is, so the line is the two words.
  */

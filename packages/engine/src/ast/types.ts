@@ -434,7 +434,7 @@ export interface ObjectFilter {
    */
   readonly hasCounter?: true | string;
   /**
-   * "Modified creature", "enchant modified creature", "other modified creatures you control" (CR 700.9, D-1240): the permanent has a counter on it, is
+   * "Modified creature", "enchant modified creature", "other modified creatures you control" (CR 700.9, D-416): the permanent has a counter on it, is
    * equipped (an Equipment is attached to it), or is enchanted by an Aura that its controller controls (an Aura an opponent controls is no modification).
    * Read where the filter is matched against the game with the permanent's attachments (`select.ts`: a target slot, an `each` selector, an enchant
    * ability, a trigger's subject); refused in a static ability's subject and in a count a static ability reads, as `attacking` is, because `derive`
@@ -3937,7 +3937,7 @@ export type Replacement =
       readonly exceptFirstInDrawStep: true;
     }
   /**
-   * "Umbra armor" (CR 702.89a, D-1241): "If enchanted permanent would be destroyed, instead remove all damage marked on it and destroy this Aura." A
+   * "Umbra armor" (CR 702.89a, D-417): "If enchanted permanent would be destroyed, instead remove all damage marked on it and destroy this Aura." A
    * replacement effect of an Aura on the battlefield for the destruction of the permanent it is attached to: by the effect `destroy`, or by the
    * state-based actions for lethal damage or damage from a deathtouch source (CR 704.5g, 704.5h). The destruction does not happen (the permanent stays, with
    * its damage removed, and is neither tapped nor removed from combat), and the Aura is destroyed. Nothing replaces the destruction of an indestructible

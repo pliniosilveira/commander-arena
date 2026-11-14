@@ -308,7 +308,7 @@ export function checkFilter(
   ) {
     issue(out, `${path}.attacking`, 'only a permanent on the battlefield can be attacking');
   }
-  // CR 700.9 (D-1240): only a permanent is modified.
+  // CR 700.9 (D-416): only a permanent is modified.
   if (f.modified === true && f.zone !== undefined && f.zone !== 'battlefield') {
     issue(out, `${path}.modified`, 'only a permanent on the battlefield can be modified');
   }

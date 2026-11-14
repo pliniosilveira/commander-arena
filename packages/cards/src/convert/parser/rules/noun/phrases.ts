@@ -48,7 +48,7 @@ export interface FilterParts {
   readonly attackingOrBlocking: boolean;
   /** "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga. */
   readonly historic: boolean;
-  /** "modified" (D-1240, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls. */
+  /** "modified" (D-416, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls. */
   readonly modified: boolean;
   /** "monocolored", "multicolored" (CR 105.2a, 105.2b): the number of colors; stage P31. */
   readonly colorCount: IrComparison | undefined;
@@ -118,7 +118,7 @@ export const MODIFIER: Parser<Modifier> = choice(
   // Stage P31 (D-140): "attacking creature" (CR 508.1k), "monocolored" and "multicolored" (CR 105.2a, 105.2b: one color, two or more).
   // Stage P68 (D-229): "attacking or blocking creature" (CR 506.4, 509.1g), before "attacking", of which it is the start.
   word('historic', (p) => ({ ...p, historic: true })),
-  // D-1240 (Danitha deck, CR 700.9): "modified creature".
+  // D-416 (Danitha deck, CR 700.9): "modified creature".
   word('modified', (p) => ({ ...p, modified: true })),
   word('attacking or blocking', (p) => ({ ...p, attackingOrBlocking: true })),
   word('attacking', (p) => ({ ...p, attacking: true })),

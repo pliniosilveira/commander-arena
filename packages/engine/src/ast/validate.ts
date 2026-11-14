@@ -1657,7 +1657,7 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
 
   // CR 614.9 (D-192): a redirection deals the damage to the permanent that has it.
   redirectFaceIssues(face, path, out);
-  // CR 702.89a (D-1241): Umbra armor is the ability of an Aura.
+  // CR 702.89a (D-417): Umbra armor is the ability of an Aura.
   umbraFaceIssues(face, path, out);
 
   // CR 702.29c (D-179): "When you cycle this card" triggers only when the card is discarded to pay a cycling cost, so the face needs Cycling or typecycling.

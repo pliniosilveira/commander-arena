@@ -506,7 +506,7 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     return when.ok ? built({ kind: 'skipDraw', while: when.value }) : when;
   }
   if (event.verb === 'umbraArmor') {
-    // CR 702.89a (Danitha deck, D-1241): the keyword of an Aura; the engine checks that the face is one.
+    // CR 702.89a (Danitha deck, D-417): the keyword of an Aura; the engine checks that the face is one.
     const blocked = gate(ability, ['ability:replacement', 'replacement:umbraArmor']);
     if (blocked !== null) return blocked;
     return built({ kind: 'umbraArmor' });

@@ -1,5 +1,5 @@
 /**
- * The words of group 4 of the Danitha deck (D-1240 to D-1245) as pure models: Umbra armor (the ability, the log line and the question of its order with a regeneration shield or a
+ * The words of group 4 of the Danitha deck (D-416 to D-421) as pure models: Umbra armor (the ability, the log line and the question of its order with a regeneration shield or a
  * second Umbra Aura, CR 702.89a, 616.1). The ability is read from the engine's SYNTHETIC Aura, so a wording that drifts from the AST fails here. No DOM.
  */
 import {
@@ -61,7 +61,7 @@ const decision = (): Pick<
   },
 });
 
-describe('Umbra armor (CR 702.89a, D-1241)', () => {
+describe('Umbra armor (CR 702.89a, D-417)', () => {
   test('the ability of an Aura is worded from its AST', () => {
     expect(replacementWording(umbra())).toBe(umbraArmorWording());
     expect(umbraArmorWording()).toBe(
@@ -104,7 +104,7 @@ describe('the log of a destruction that Umbra armor replaces', () => {
   });
 });
 
-describe('the question of the order of a regeneration shield and Umbra armor (CR 616.1, D-1242)', () => {
+describe('the question of the order of a regeneration shield and Umbra armor (CR 616.1, D-418)', () => {
   test('it is the question of replacement effects, titled for the destruction', () => {
     expect(isReplacementChoice(decision())).toBe(true);
     expect(replacementTitle(decision())).toBe('Destruction replacement');

@@ -225,7 +225,7 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
     if (inner) return bad([]);
     parts.push('selector:enteredThisTurn');
   }
-  // D-1240 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice.
+  // D-416 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice.
   if (filter.modified === true) {
     if (inner) return bad([]);
     parts.push('selector:modified');

@@ -104,7 +104,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-tapped-unless-pays': asIs,
   'replacement.enters-tapped-unless-reveals': asIs,
   'replacement.enters-prepared': asIs,
-  // Danitha deck, group 4 (D-1241): the keyword line of an Aura.
+  // Danitha deck, group 4 (D-417): the keyword line of an Aura.
   'replacement.umbra-armor': asIs,
   'static.no-maximum-hand-size': asIs,
   // Stage P24: the play rules are lines of their own.

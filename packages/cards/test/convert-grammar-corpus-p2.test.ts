@@ -432,7 +432,7 @@ const CHOICES: readonly Line[] = [
     kind: 'instant',
     text: 'Other creatures you control get +1/+1 until end of turn.',
     expect: OK,
-    note: 'read since the Danitha deck, group 4 (D-1243, `effect.pump-others`: the group of "other ..." with the change and its duration)',
+    note: 'read since the Danitha deck, group 4 (D-419, `effect.pump-others`: the group of "other ..." with the change and its duration)',
   },
   {
     kind: 'instant',

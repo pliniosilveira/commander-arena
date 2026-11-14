@@ -1,4 +1,4 @@
-// Slice soak (D-1240 to D-1245): whole games with the 'danithaG4' deck style (SYNTHETIC cards of the engine fixtures `synthetic-danitha-g4.ts`: Auras with Umbra armor, one that
+// Slice soak (D-416 to D-421): whole games with the 'danithaG4' deck style (SYNTHETIC cards of the engine fixtures `synthetic-danitha-g4.ts`: Auras with Umbra armor, one that
 // enchants only a modified creature, and the creature that pumps the other modified creatures and makes Auras and Equipment cheaper, with regeneration, removal and bodies) between
 // random agents, with CasualAgent and HeuristicAgent in some seats. Every game finishes with a result, no fallback, no rejected action and consistent state after every action; the
 // action log replays to the same final state; and, with the rules read again here from the cards' texts (not from the engine's own code), at every step:

@@ -529,8 +529,8 @@ function runEffect(
         );
       });
       // CR 701.19a (D-120): a regeneration shield replaces the destruction, unless it "can't be regenerated"
-      // (CR 701.19c); so does the Umbra armor of an Aura on it (CR 702.89a, D-1241). The shields are used as the destruction
-      // happens, before anything is moved. With two or more effects the controller of the permanent chooses (CR 616.1, D-1242):
+      // (CR 701.19c); so does the Umbra armor of an Aura on it (CR 702.89a, D-417). The shields are used as the destruction
+      // happens, before anything is moved. With two or more effects the controller of the permanent chooses (CR 616.1, D-418):
       // the instruction asks and runs again from this state with the answer.
       const destroyed: ObjectId[] = [];
       for (const id of ids) {
