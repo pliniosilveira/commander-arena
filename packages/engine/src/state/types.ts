@@ -722,6 +722,9 @@ export interface DelayedTrigger {
    * created in. Absent for the abilities that wait for a step, which may wait for a later turn.
    */
   readonly untilEndOfTurn?: true;
+  readonly untilEndOfCombat?: true;
+  readonly repeat?: true;
+  readonly watched?: ObjectId;
 }
 
 /**

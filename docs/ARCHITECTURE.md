@@ -16,6 +16,10 @@ Rule numbers in this document were checked against the CR effective September 25
 
 ## Module map
 
+### Witherbloom additions (REAL, D-494)
+
+The existing turn log also retains event-time permanent-to-graveyard history; amount evaluation and Gravestorm consume it. Preparation effects and combat-scoped delayed damage triggers reuse the existing preparation and delayed-trigger flows. Repeated inline choices reuse `chooseOne`, not a new decision kind. The shipped snapshot `apps/web/src/precons/snapshots/witherbloom-pestilence.json` is discovered by the existing precon glob and uses the supplied decklist with real Scryfall data; no live lookup is needed to start it.
+
 ### Packages and apps
 
 | Path | Status | Today | Planned |

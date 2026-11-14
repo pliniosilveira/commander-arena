@@ -137,4 +137,37 @@ export const TRIGGER_LEAVES_TO = defineRule<IrTrigger>({
   },
 });
 
-export const RECURSION_TRIGGER_RULES = [TRIGGER_LEAVES_TO, TRIGGER_ENTERS_STATE];
+export const TRIGGER_DIES_OWN_GRAVEYARD = defineRule<IrTrigger>({
+  id: 'trigger.dies-own-graveyard',
+  family: 'trigger',
+  leading: ['another', 'a', 'an'],
+  cites: ['CR 700.4 (General)', 'CR 603.10a (Handling Triggered Abilities)'],
+  examples: ['another creature is put into your graveyard from the battlefield'],
+  rejects: ['another creature is put into your graveyard from anywhere'],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      triggerSubject('trigger.dies-own-graveyard'),
+      pattern(/ is put into your graveyard from the battlefield(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      pos: r.pos,
+      value: {
+        kind: 'trigger',
+        event: 'dies',
+        subject: r.value[0],
+        by: 'you',
+        args: {},
+        span: { start: pos, end: r.pos },
+        rule: 'trigger.dies-own-graveyard',
+      },
+    };
+  },
+});
+
+export const RECURSION_TRIGGER_RULES = [
+  TRIGGER_DIES_OWN_GRAVEYARD,
+  TRIGGER_LEAVES_TO,
+  TRIGGER_ENTERS_STATE,
+];

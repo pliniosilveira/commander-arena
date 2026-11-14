@@ -38,6 +38,15 @@ const TOKEN_WORD = map(pattern(/ tokens?(?![\p{L}\p{N}])/iu), (m) =>
  * X of the spell or ability; X tokens are always plural, "X Treasure tokens").
  */
 const COUNT = choice(
+  map(
+    spanned(pattern(/twice X(?![\p{L}\p{N}])/iu)),
+    ({ span }): IrAmount => ({
+      kind: 'multiple',
+      factor: 2,
+      of: { kind: 'x', span },
+      span,
+    }),
+  ),
   map(spanned(positiveCount), ({ value, span }): IrAmount => ({ kind: 'number', value, span })),
   map(spanned(pattern(/X(?![\p{L}\p{N}])/u)), ({ span }): IrAmount => ({ kind: 'x', span })),
 );

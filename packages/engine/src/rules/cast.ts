@@ -846,8 +846,17 @@ function settlePayOptions(
   // The first way the chosen resources can pay (colors first) that leaves a cost the other sources can pay.
   const cost = options.find(
     (o) =>
-      castManaPlan(used.state, casting.seat, spell, o, sacrifice, extra, casting.extra?.tap, undefined, casting.extra?.sacrificeCount ?? 1) !==
-      null,
+      castManaPlan(
+        used.state,
+        casting.seat,
+        spell,
+        o,
+        sacrifice,
+        extra,
+        casting.extra?.tap,
+        undefined,
+        casting.extra?.sacrificeCount ?? 1,
+      ) !== null,
   );
   return cost === undefined ? null : { state: used.state, events: used.events, cost };
 }
@@ -1036,7 +1045,8 @@ export function answerPayment(
     // (a Treasure tapped for mana): the cast would be stuck, so the payment is refused.
     if (
       sacrifice !== null &&
-      sacrificeCandidates(s, seat, casting.object, sacrifice).length < (casting.extra?.sacrificeCount ?? 1)
+      sacrificeCandidates(s, seat, casting.object, sacrifice).length <
+        (casting.extra?.sacrificeCount ?? 1)
     ) {
       return fail('That payment would leave nothing to sacrifice for the additional cost');
     }

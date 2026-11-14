@@ -43,6 +43,21 @@ type StateAmount = Extract<
   }
 >;
 
+/** History uses the event's controller and types, never the object's current zone or characteristics. */
+export function historyCount(
+  state: GameState,
+  amount: Extract<Amount, { kind: 'enteredThisTurn' | 'diedThisTurn' }>,
+  controller: SeatId,
+): number {
+  const entries = amount.kind === 'enteredThisTurn' ? state.turnLog.entered : state.turnLog.died;
+  return entries.filter(
+    (e) =>
+      (amount.controller === 'any' || e.controller === controller) &&
+      (amount.types === undefined || amount.types.every((t) => e.types.includes(t))) &&
+      (amount.token === undefined || amount.token === e.token),
+  ).length;
+}
+
 /** The amount kinds `stateAmountOf` reads. */
 export function isStateAmount(amount: Exclude<Amount, number>): amount is StateAmount {
   return (
@@ -171,7 +186,8 @@ export function amountOf(
   targets: readonly ChosenTarget[],
 ): number {
   if (typeof amount === 'number') return amount;
-  if (amount.kind === 'lifeGainedThisTurn') return state.turnLog.lifeGainedTotal[ctx.controller] ?? 0;
+  if (amount.kind === 'lifeGainedThisTurn')
+    return state.turnLog.lifeGainedTotal[ctx.controller] ?? 0;
   if (amount.kind === 'enteredThisTurn' || amount.kind === 'diedThisTurn') {
     return historyCount(state, amount, ctx.controller);
   }
@@ -182,20 +198,6 @@ export function amountOf(
     return x ?? 0;
   }
 
-  /** History uses the event's controller and types, never the object's current zone or characteristics. */
-  export function historyCount(
-    state: GameState,
-    amount: Extract<Amount, { kind: 'enteredThisTurn' | 'diedThisTurn' }>,
-    controller: SeatId,
-  ): number {
-    const entries = amount.kind === 'enteredThisTurn' ? state.turnLog.entered : state.turnLog.died;
-    return entries.filter(
-      (e) =>
-        (amount.controller === 'any' || e.controller === controller) &&
-        (amount.types === undefined || amount.types.every((t) => e.types.includes(t))) &&
-        (amount.token === undefined || amount.token === e.token),
-    ).length;
-  }
   // D-095: "for each creature on the battlefield": counted now, as the instruction runs.
   if (amount.kind === 'countOf') return countMatching(state, amount.filter, ctx);
   // D-120: "the total life lost this way": what the earlier `loseLife` of this resolution made players lose.

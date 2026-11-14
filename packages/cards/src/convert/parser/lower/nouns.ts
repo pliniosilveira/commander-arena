@@ -575,7 +575,12 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         ctx.usesX = true;
       }
       spec = countX
-        ? { id, what: { kind: 'object', filter: filter.value }, countX: true, ...(noun.upTo ? { min: 0 } : {}) }
+        ? {
+            id,
+            what: { kind: 'object', filter: filter.value },
+            countX: true,
+            ...(noun.upTo ? { min: 0 } : {}),
+          }
         : anyNumberTarget
           ? { id, what: { kind: 'object', filter: filter.value }, anyNumber: true }
           : noun.perOpponent === true

@@ -138,6 +138,8 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add three mana of different colors',
     'add {R} for each tapped land your opponents control',
     'add {G}{G} for each creature you control',
+    'add {B} or {G} for each permanent destroyed this way',
+    'add {R} or {G} for each creature you control',
     // CR 605.3b, 700.5: the color of the sentence "Choose a color." before it; the lowering reads it only there.
     'add an amount of mana of that color equal to your devotion to that color',
   ],
@@ -168,7 +170,6 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add four mana of different colors',
     'add two mana of the same color',
     'add two mana of different colors for each creature you control',
-    'add {R} or {G} for each creature you control',
     'add one mana of any color for each creature you control',
     'add {R} for each',
     'add an amount of mana of that color',
@@ -231,7 +232,8 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
         optional(quiet(FOR_EACH_TAIL_ENDING), null),
       ),
       // Only fixed mana is added once for each: a choice of colors would be chosen once or for each, which the words do not say.
-      ([, what, each]) => each === null || what.value.kind === 'symbols',
+      ([, what, each]) =>
+        each === null || what.value.kind === 'symbols' || what.value.kind === 'oneOf',
     ),
     ([, what, each]) => ({
       verb: 'addMana',

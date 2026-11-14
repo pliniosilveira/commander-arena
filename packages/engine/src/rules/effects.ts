@@ -76,7 +76,7 @@ import { isCardZoneChoice, runChooseMove } from './move-choice';
 import { nextMainStep } from './next-main';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
-import { prepareCardOf } from './prepare';
+import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
 import { givesProtectionOfChoice, runProtectionColor } from './protection-choice';
@@ -544,7 +544,7 @@ function runEffect(
       // (CR 701.19c); so does the Umbra armor of an Aura on it (CR 702.89a, D-417). The shields are used as the destruction
       // happens, before anything is moved. With two or more effects the controller of the permanent chooses (CR 616.1, D-418):
       // the instruction asks and runs again from this state with the answer.
-      const destroyed: ObjectId[] = [];
+      const destroyed = new Set<ObjectId>();
       for (const id of ids) {
         const replaced = settleDestruction(
           next,
@@ -555,25 +555,32 @@ function runEffect(
         );
         if (replaced.kind === 'asked') return asking(state, replaced);
         if (replaced.kind === 'destroyed') {
-          destroyed.push(id);
+          destroyed.add(id);
           continue;
         }
         next = replaced.state;
         events.push(...replaced.events);
+        for (const other of replaced.destroyed ?? []) destroyed.add(other);
       }
       // D-131: "for each creature destroyed this way" counts the permanents the effect destroyed.
       // D-283 (CR 603.10a): they die together, so what each was is recorded before the first moves.
       const together = recordTogether(
         next,
-        withReplacers(moveInstructions(destroyed, 'graveyard'), next),
+        withReplacers(
+          moveInstructions(
+            [...destroyed].filter((id) => next.objects[id]?.zone === 'battlefield'),
+            'graveyard',
+          ),
+          next,
+        ),
       );
       return {
         ...done(together.state, events, together.instructions),
         lastMoved: [],
         thisWay: {
-          destroyed: destroyed.length,
+          destroyed: destroyed.size,
           // CR 701.8, 608.2h (D-230): the nontoken creatures of the controller of the effect, as they were as they were destroyed (before they moved).
-          destroyedOwnNontoken: destroyed.filter((id) => {
+          destroyedOwnNontoken: [...destroyed].filter((id) => {
             const obj = state.objects[id];
             return (
               obj !== undefined &&
@@ -748,9 +755,14 @@ function runEffect(
                   ? {
                       among: Object.keys(state.objects).filter(
                         (id) =>
-                          !(res.sacrificed ?? []).some((old) =>
-                            graveyardSuccessors(state, old).includes(id as ObjectId),
-                          ),
+                          !(res.sacrificed ?? []).some((old) => {
+                            const sacrificed = state.lki[old]?.object;
+                            return (
+                              sacrificed !== undefined &&
+                              controllerOf(state, sacrificed) === res.controller &&
+                              graveyardSuccessors(state, old).includes(id as ObjectId)
+                            );
+                          }),
                       ) as ObjectId[],
                     }
                   : {}),
@@ -968,7 +980,13 @@ function runEffect(
       return done(
         state,
         [],
-        copyInstructions(res.source, spell?.stack?.spellsCastBefore ?? 0, 'may'),
+        copyInstructions(
+          res.source,
+          effect.gravestorm === true
+            ? state.turnLog.died.length
+            : (spell?.stack?.spellsCastBefore ?? 0),
+          'may',
+        ),
       );
     }
 
@@ -987,6 +1005,44 @@ function runEffect(
         [{ kind: 'castExiled', mode: effect.mode, stage: 'start', card: null }],
       );
 
+    case 'forEachPlayer':
+      return done(
+        state,
+        [],
+        resolvePlayers(state, effect.players, ctx, targets).map(() => ({
+          kind: 'effect' as const,
+          effect: effect.effect,
+        })),
+      );
+    case 'prepare': {
+      let next = state;
+      const events: GameEvent[] = [];
+      for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
+        const prepared = becomePrepared(next, id);
+        next = prepared.state;
+        events.push(...prepared.events);
+      }
+      return done(next, events);
+    }
+    case 'delayedCombatDamage':
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          ...resolveObjects(state, effect.objects, ctx, targets).map((watched) => ({
+            source: res.source,
+            controller: res.controller,
+            watched,
+            repeat: true as const,
+            untilEndOfCombat: true as const,
+            ability: {
+              kind: 'triggered' as const,
+              trigger: { kind: 'dealsCombatDamage' as const, what: {}, to: 'player' as const },
+              effect: effect.effect,
+            },
+          })),
+        ],
+      });
     case 'delayedTrigger': {
       // CR 603.7, 603.7d, 603.7e (D-128): a delayed triggered ability, created as the spell or ability resolves. It
       // belongs to its controller and refers to the source only as the thing that created it (CR 603.7c: the source

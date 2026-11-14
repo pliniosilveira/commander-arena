@@ -796,6 +796,30 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return `Phase out ${object(effect.objects)}`;
     case 'sequence':
       return sequenceText(effect.effects, ability, self, defs);
+    case 'forEachPlayer': {
+      const who =
+        effect.players.kind === 'eachOpponent'
+          ? 'opponent'
+          : effect.players.kind === 'eachPlayer'
+            ? 'player'
+            : null;
+      const inner = effectText(effect.effect, ability, self, defs);
+      return who === null || inner === '' ? UNSAID : `For each ${who}, ${lower(inner)}`;
+    }
+    case 'prepare':
+      return `${capital(object(effect.objects))} becomes prepared`;
+    case 'delayedCombatDamage': {
+      const inner = effectText(effect.effect, ability, self, defs);
+      return inner === ''
+        ? UNSAID
+        : `Whenever ${object(effect.objects)} deals combat damage to a player this combat, ${lower(inner)}`;
+    }
+    case 'chooseOne': {
+      const choices = effect.options.map((option) => option.label).join('; ');
+      return effect.times === undefined
+        ? `Choose one: ${choices}`
+        : `Repeat this choice ${defs.say(effect.times, { self })} times (choose independently): ${choices}`;
+    }
     case 'modifyPt':
     case 'setPt': {
       // D-145 (CR 701.10): "Double the power and toughness of each creature you control until end of turn".
@@ -1013,6 +1037,8 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         : `Untap ${object(effect.objects)}`;
     case 'removeAllCounters':
       return `Remove all counters from ${object(effect.objects)}`;
+    case 'removeAllPlayerCounters':
+      return `${playerVerb(effect.player, ability, 'lose')} all counters`;
     case 'createCopies':
       // D-385: "For each token you control of the chosen type that entered this turn, create a token that's a copy of it".
       return copiesOfTokensText(effect) ?? UNSAID;

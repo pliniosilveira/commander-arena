@@ -112,6 +112,7 @@ const PERIOD = literal('.');
  * permanents the controller has and their commander, read as the total cost is determined.
  */
 const REDUCTION_CONDITIONS = [
+  'condition.life-gained-this-turn',
   'condition.control-a',
   'condition.control-at-least',
   'condition.control-at-most',
@@ -148,6 +149,7 @@ export const STATIC_SELF_COST_REDUCTION = defineRule<IrStatic>({
     'CR 601.2f (Casting Spells)',
   ],
   examples: [
+    '~ costs {2} less to cast if you gained life this turn.',
     '~ costs {1} less to cast for each creature on the battlefield.',
     '~ costs {2} less to cast.',
     '~ costs {1} less to cast for each card in your hand.',

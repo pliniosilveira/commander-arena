@@ -887,6 +887,12 @@ describe('permanents that enter with counters (CR 614.1c, 614.12, 122.6)', () =>
       1,
     ],
     [
+      'Each creature you control enters with an additional +1/+1 counter on it.',
+      { types: ['creature'], controller: 'you' },
+      '+1/+1',
+      1,
+    ],
+    [
       'Each other nontoken creature you control enters with an additional +1/+1 counter on it.',
       { types: ['creature'], token: false, controller: 'you', other: true },
       '+1/+1',
@@ -931,7 +937,6 @@ describe('permanents that enter with counters (CR 614.1c, 614.12, 122.6)', () =>
   });
 
   test.each([
-    'Each creature you control enters with an additional +1/+1 counter on it.',
     'Each other creature enters with an additional +1/+1 counter on it.',
     'Each other creature you control enters with a +1/+1 counter on it.',
     'Each other creature you control enters with an additional +1/+1 counter.',

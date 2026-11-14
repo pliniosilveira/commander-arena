@@ -367,6 +367,21 @@ export type IrAmount =
   | { readonly kind: 'lifeLostThisWay'; readonly span: Span }
   // "equal to the life that player lost this turn" (Hashaton deck group 2, D-365, CR 119.3): the life the player the instruction affects lost this turn
   | { readonly kind: 'lifeLostThisTurn'; readonly span: Span }
+  | { readonly kind: 'lifeGainedThisTurn'; readonly span: Span }
+  | {
+      readonly kind: 'enteredThisTurn';
+      readonly types?: readonly string[];
+      readonly token?: boolean;
+      readonly controller: 'you' | 'any';
+      readonly span: Span;
+    }
+  | {
+      readonly kind: 'diedThisTurn';
+      readonly types?: readonly string[];
+      readonly token?: boolean;
+      readonly controller: 'you' | 'any';
+      readonly span: Span;
+    }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
   | { readonly kind: 'cardsDrawnThisTurn'; readonly span: Span }
   // Stage P28 (D-131): "equal to that creature's toughness", "for each +1/+1 counter on ~"
@@ -1528,6 +1543,9 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'timesKicked',
   'lifeLostThisWay',
   'lifeLostThisTurn',
+  'lifeGainedThisTurn',
+  'enteredThisTurn',
+  'diedThisTurn',
   'cardsDrawnThisTurn',
   'toughnessOf',
   'countersOn',

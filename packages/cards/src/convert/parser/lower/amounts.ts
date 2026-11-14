@@ -1,5 +1,6 @@
 import type {
   Amount,
+  CardType,
   Color,
   DefinedPtAmount,
   ObjectFilter,
@@ -197,6 +198,25 @@ export function lowerAmount(
       const blocked = needs('lifeLostThisTurn');
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'lifeLostThisTurn' }, rule };
+    }
+    case 'lifeGainedThisTurn': {
+      const blocked = needs(amount.kind);
+      return blocked ?? { ok: true, value: { kind: amount.kind }, rule };
+    }
+    case 'enteredThisTurn':
+    case 'diedThisTurn': {
+      const blocked = needs(amount.kind);
+      if (blocked !== null) return blocked;
+      return {
+        ok: true,
+        value: {
+          kind: amount.kind,
+          controller: amount.controller,
+          ...(amount.types === undefined ? {} : { types: amount.types as readonly CardType[] }),
+          ...(amount.token === undefined ? {} : { token: amount.token }),
+        },
+        rule,
+      };
     }
     case 'cardsDrawnThisTurn': {
       // CR 121.1 (D-450): the cards the controller has drawn so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
@@ -533,6 +553,9 @@ export const AMOUNT_NEEDS = [
   'amount:manaSpent',
   'amount:lifeLostThisWay',
   'amount:lifeLostThisTurn',
+  'amount:lifeGainedThisTurn',
+  'amount:enteredThisTurn',
+  'amount:diedThisTurn',
   'amount:cardsDrawnThisTurn',
   'amount:times',
   'amount:toughnessOf',

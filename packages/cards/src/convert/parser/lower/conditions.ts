@@ -337,13 +337,18 @@ export function lowerCondition(
         at.movedOnto === id ? ({ kind: 'moved' } as const) : ({ kind: 'target', id } as const);
       return ok({ kind: 'objectMatches', of, filter: filter.value });
     }
+    case 'exiledThisWay':
     case 'putThisWay': {
       // "If you put a Cave onto the battlefield this way" (stage P37, D-180, CR 608.2c, 400.7j): the object the instruction before it moved, as it is
       // (`moved`); `validateCard` refuses it where no instruction before it moves a card.
       const blocked = missingFeatures(['condition:objectMatches']);
       if (blocked.length > 0) return failure(c, blocked);
       // D-412 (CR 608.2c): "into your hand this way" follows a move to the hand and "onto the battlefield this way" does not: the words must say what the move before did.
-      if ((test.zone === 'hand') !== (ctx?.movedToHand === true)) return failure(c, []);
+      if (test.kind === 'exiledThisWay') {
+        if (ctx?.exiledRef === null || ctx?.exiledRef === undefined) return failure(c, []);
+      } else if ((test.zone === 'hand') !== (ctx?.movedToHand === true)) {
+        return failure(c, []);
+      }
       const filter = lowerFilter({
         kind: 'noun',
         det: 'a',
@@ -360,7 +365,11 @@ export function lowerCondition(
             kind: 'objectMatches',
             of: { kind: 'moved' },
             filter: filter.value,
-            ...(test.zone === 'hand' ? { inZone: 'hand' as const } : {}),
+            ...(test.kind === 'exiledThisWay'
+              ? { inZone: 'exile' as const }
+              : test.zone === 'hand'
+                ? { inZone: 'hand' as const }
+                : {}),
           })
         : filter;
     }

@@ -36,8 +36,8 @@ describe('issue58 group A real imports', () => {
 
   test('attacking-only Pest lords and combat draw follow the current combat', () => {
     const cards = ['Blight Mound', 'Feral Appetite', 'Ohran Frostfang', "Teacher's Pest"].map(real);
-    const g = scenario()
-      .define(...cards)
+    const g = cards
+      .reduce((builder, card) => builder.define(card), scenario())
       .seat(0)
       .library(...LIBRARY)
       .battlefield(...cards.map((c) => c.name), 'Grizzly Bears')
@@ -46,41 +46,105 @@ describe('issue58 group A real imports', () => {
       .at('precombatMain')
       .build();
     g.expect.pt("Teacher's Pest", 1, 1);
+    expect(g.view(0).battlefield.find((o) => o.name === 'Grizzly Bears')?.keywords).not.toContain(
+      'deathtouch',
+    );
     g.playCombat({ attack: ["Teacher's Pest", 'Grizzly Bears'], until: 'declareBlockers' });
     g.expect.pt("Teacher's Pest", 3, 1);
     g.expect.derived("Teacher's Pest", { keywords: ['menace', 'deathtouch'] });
     g.expect.derived('Grizzly Bears', { keywords: ['deathtouch'] });
-    g.playCombat({ until: 'postcombatMain' });
+    expect(g.view(0).battlefield.find((o) => o.name === 'Ohran Frostfang')?.keywords).not.toContain(
+      'deathtouch',
+    );
+    g.advanceTo('postcombatMain');
     g.expect.life(0, 41);
     g.expect.life(1, 35);
-    expect(g.find({ zone: 'hand', seat: 0 })).toHaveLength(2);
+    expect(g.state.seats[0]?.hand).toHaveLength(2);
     g.expect.pt("Teacher's Pest", 1, 1);
+    expect(g.view(0).battlefield.find((o) => o.name === "Teacher's Pest")?.keywords).not.toContain(
+      'deathtouch',
+    );
+    expect(g.view(0).battlefield.find((o) => o.name === 'Grizzly Bears')?.keywords).not.toContain(
+      'deathtouch',
+    );
     g.expect.invariants();
   });
 
-  test.each([9, 10, 11])('Bloodghast checks opponent life %s and returns optionally on landfall', (life) => {
+  test('Bloodghast may stay in the graveyard and cannot block after returning', () => {
     const card = real('Bloodghast');
+    const declined = scenario()
+      .define(card)
+      .seat(0)
+      .graveyard(card.name)
+      .hand('Forest')
+      .at('precombatMain')
+      .build();
+    declined.act(0).playLand('Forest');
+    declined.passAll();
+    declined.act(0).decline();
+    declined.expect.zone(card.name, 'graveyard');
+    const blocking = scenario()
+      .define(card)
+      .seat(0)
+      .battlefield(card.name, 'Giant Spider')
+      .seat(1)
+      .battlefield('Grizzly Bears')
+      .at('precombatMain', { active: 1 })
+      .build();
+    blocking.advanceTo('declareAttackers', { attack: false });
+    blocking.act(1).attack('Grizzly Bears');
+    blocking.advanceTo('declareBlockers', { block: false });
+    blocking.expect.canBlock(card.name, 'Grizzly Bears', false);
+  });
+
+  test('Ohran Frostfang grants lethal deathtouch to an attacking creature but draws nothing for blocked damage', () => {
+    const card = real('Ohran Frostfang');
     const g = scenario()
       .define(card)
       .seat(0)
       .library(...LIBRARY)
-      .graveyard(card.name)
-      .hand('Forest')
+      .battlefield(card.name, 'Grizzly Bears')
       .seat(1)
-      .life(life)
       .library(...LIBRARY)
+      .battlefield('Giant Spider')
       .at('precombatMain')
       .build();
-    g.act(0).playLand('Forest');
-    g.passAll();
-    g.expect.pending('confirmOptional', 0);
-    g.act(0).chooseOption('yes');
-    g.expect.zone(card.name, 'battlefield', { seat: 0 });
-    const keywords = g.find({ name: card.name, zone: 'battlefield' })[0];
-    expect(keywords).toBeDefined();
-    if (life <= 10) g.expect.derived(card.name, { keywords: ['haste'] });
+    g.playCombat({
+      attack: ['Grizzly Bears'],
+      block: [{ blocker: 'Giant Spider', attacker: 'Grizzly Bears' }],
+      until: 'postcombatMain',
+    });
+    g.expect.zone('Giant Spider', 'graveyard', { seat: 1 });
+    expect(g.state.seats[0]?.hand).toHaveLength(0);
+    g.expect.life(1, 40);
     g.expect.invariants();
   });
+
+  test.each([9, 10, 11])(
+    'Bloodghast checks opponent life %s and returns optionally on landfall',
+    (life) => {
+      const card = real('Bloodghast');
+      const g = scenario()
+        .define(card)
+        .seat(0)
+        .library(...LIBRARY)
+        .graveyard(card.name)
+        .hand('Forest')
+        .seat(1)
+        .life(life)
+        .library(...LIBRARY)
+        .at('precombatMain')
+        .build();
+      g.act(0).playLand('Forest');
+      g.passAll();
+      g.expect.pending('confirmOptional', 0);
+      g.act(0).accept();
+      g.expect.zone(card.name, 'battlefield', { seat: 0 });
+      g.advanceTo('declareAttackers', { attack: false });
+      g.expect.canAttack(card.name, life <= 10);
+      g.expect.invariants();
+    },
+  );
 
   test("Teacher's Pest returns tapped and only activates from its owner's graveyard", () => {
     const card = real("Teacher's Pest");
@@ -98,28 +162,34 @@ describe('issue58 group A real imports', () => {
     g.expect.invariants();
   });
 
-  test.each(['Grizzly Bears', 'Plains'])('Feral Appetite exiles %s and makes a Pest only for a creature', (target) => {
-    const card = real('Feral Appetite');
-    const g = scenario()
-      .define(card)
-      .seat(0)
-      .battlefield(card.name, 'Forest', 'Forest')
-      .seat(1)
-      .graveyard(target)
-      .at('precombatMain')
-      .build();
-    g.act(0).activate(card.name, { pay: true, targets: [target] });
-    g.passAll();
-    g.expect.zone(target, 'exile', { seat: 1 });
-    expect(g.find({ name: 'Pest', zone: 'battlefield' })).toHaveLength(target === 'Plains' ? 0 : 1);
-    g.expect.invariants();
-  });
+  test.each(['Grizzly Bears', 'Plains'])(
+    'Feral Appetite exiles %s and makes a Pest only for a creature',
+    (target) => {
+      const card = real('Feral Appetite');
+      const g = scenario()
+        .define(card)
+        .seat(0)
+        .battlefield(card.name, 'Forest', 'Forest')
+        .seat(1)
+        .graveyard(target)
+        .at('precombatMain')
+        .build();
+      g.act(0).activate(card.name, { pay: true, targets: [target] });
+      g.passAll();
+      g.expect.zone(target, 'exile', { seat: 1 });
+      expect(g.find({ name: 'Pest', zone: 'battlefield' })).toHaveLength(
+        target === 'Plains' ? 0 : 1,
+      );
+      g.expect.invariants();
+    },
+  );
 
   test('Pest Rescuer ignores nontoken Pests, creates only when absent, and increases the death life gain', () => {
     const card = real('Pest Rescuer');
     const pest = real("Teacher's Pest");
     const g = scenario()
-      .define(card, pest)
+      .define(card)
+      .define(pest)
       .seat(0)
       .library(...LIBRARY)
       .battlefield(card.name, pest.name, 'Swamp', 'Swamp', 'Swamp')
@@ -141,11 +211,32 @@ describe('issue58 group A real imports', () => {
     g.expect.invariants();
   });
 
+  test('Feral Appetite makes nothing when its only target has already left the graveyard', () => {
+    const card = real('Feral Appetite');
+    const g = scenario()
+      .define(card)
+      .seat(0)
+      .battlefield(card.name)
+      .battlefield('Forest', { count: 4 })
+      .seat(1)
+      .graveyard('Grizzly Bears')
+      .at('precombatMain')
+      .build();
+    g.act(0).activate(card.name, { pay: true, targets: ['Grizzly Bears'] });
+    g.act(0).activate(card.name, { pay: true, targets: ['Grizzly Bears'] });
+    g.passAll();
+    g.passAll();
+    expect(g.find({ name: 'Pest', zone: 'battlefield' })).toHaveLength(1);
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 1 });
+    g.expect.invariants();
+  });
+
   test('Ribtruss Roaster devours and creates counted Pests with death abilities', () => {
     const card = real('Ribtruss Roaster');
     const mound = real('Blight Mound');
     const g = scenario()
-      .define(card, mound)
+      .define(card)
+      .define(mound)
       .seat(0)
       .library(...LIBRARY)
       .hand(card.name, 'Murder')
@@ -167,10 +258,11 @@ describe('issue58 group A real imports', () => {
     expect(g.find({ name: 'Pest', zone: 'battlefield' })).toHaveLength(4);
     g.advanceTo('precombatMain', { turn: 'next' });
     g.act(1).pass();
-    g.act(0).cast('Murder', { pay: true, targets: [{ name: 'Pest', index: 3 }] });
+    g.act(0).cast('Murder', { pay: true, targets: [{ name: 'Pest', nth: 3 }] });
     g.passAll();
     g.passAll();
     g.expect.life(0, 41);
+    expect(g.find({ name: 'Pest', zone: 'battlefield' })).toHaveLength(3);
     g.expect.invariants();
   });
 });

@@ -453,7 +453,8 @@ export function castManaPlan(
   const leaves = (p: PaymentPlan): boolean => {
     const after = applyPaymentPlan(state, seat, p, p.lifePaid).state;
     return (
-      (sacrifice === null || sacrificeCandidates(after, seat, spell.id, sacrifice).length >= sacrificeCount) &&
+      (sacrifice === null ||
+        sacrificeCandidates(after, seat, spell.id, sacrifice).length >= sacrificeCount) &&
       (tap == null || tapCandidates(after, seat, spell.id, tap.filter).length >= tap.count)
     );
   };

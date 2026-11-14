@@ -6,6 +6,7 @@ import { COUNT_AMOUNT_RULES } from './count';
 import { AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
 import { HASHATON_G2_AMOUNT_RULES } from './hashaton-group-2';
+import { AMOUNT_FOR_EACH_DIED } from './history';
 import { HOFRI_AMOUNT_RULES } from './hofri';
 import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
@@ -304,6 +305,7 @@ export const AMOUNT_MILLED_VALUE_THIS_WAY = defineRule<IrAmount>({
 });
 
 export const AMOUNT_RULES = [
+  AMOUNT_FOR_EACH_DIED,
   // Stage P37 (D-180): "for each color among permanents you control", which `amount.for-each` does not read.
   ...KORVOLD_AMOUNT_RULES,
   // Stage P68 (D-229): "for each time you've cast your commander from the command zone this game".

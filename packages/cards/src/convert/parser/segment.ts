@@ -335,6 +335,8 @@ const PUT_ONE_PILE = /^put one pile into your hand and the other into your grave
  * the second sentence of the same instruction after `REVEAL_THE_TOP` (the cards are revealed, so "reveal" is not said again), kept together with the rest for `effect.reveal-take`.
  */
 const PUT_FROM_AMONG_REVEALED = /^you may put [^.]* from among them into your hand\.$/i;
+const CREATE_TOKENS = /^create [^.]* tokens(?: [^.]*)?\.$/i;
+const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
 
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
@@ -364,6 +366,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       a !== undefined &&
       b !== undefined &&
       ((said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
+        (said(a, CREATE_TOKENS) && said(b, TOKENS_HAVE_QUOTED_ABILITY)) ||
         (said(a, LOOK_AT_TOP_CARD) && said(b, IF_ITS_CARD_MAY_TAKE)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||

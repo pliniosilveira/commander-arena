@@ -22,7 +22,13 @@ export function copyAbilityWords(
   const { effect } = ability;
   const when = 'When you cast this spell';
   if (effect.kind === 'storm') {
-    return { when, does: 'Copy this spell for each other spell cast before it this turn.' };
+    return {
+      when,
+      does:
+        effect.gravestorm === true
+          ? 'Copy this spell for each permanent put into a graveyard from the battlefield this turn.'
+          : 'Copy this spell for each other spell cast before it this turn.',
+    };
   }
   if (effect.kind !== 'replicate') return null;
   const times = source?.replicated;

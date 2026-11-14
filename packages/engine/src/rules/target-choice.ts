@@ -84,7 +84,8 @@ export function maxTargetCountX(
 ): number {
   let most = Number.MAX_SAFE_INTEGER;
   for (const spec of specs) {
-    if (spec.countX === true && spec.min !== 0) most = Math.min(most, legalTargets(state, spec, ctx).length);
+    if (spec.countX === true && spec.min !== 0)
+      most = Math.min(most, legalTargets(state, spec, ctx).length);
   }
   return most;
 }

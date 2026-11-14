@@ -66,12 +66,18 @@ function bare(det: IrNoun['det'], filter: IrFilter, extra: Partial<Bare> = {}): 
  */
 function targetOf(id: string, phrase: (plural: boolean) => Parser<IrFilter>): Parser<IrNoun> {
   const xTargets: Parser<Bare> = map(
-    sequence(optional(literal('up to ')), spanned(literal('X')), literal(' target '), phrase(true)),
-    ([upTo, count, , filter]) => bare('target', filter, {
-      count: { kind: 'x', span: count.span },
-      plural: true,
-      upTo: upTo !== null,
-    }),
+    sequence(
+      optional(literal('up to '), null),
+      spanned(literal('X')),
+      literal(' target '),
+      phrase(true),
+    ),
+    ([upTo, count, , filter]) =>
+      bare('target', filter, {
+        count: { kind: 'x', span: count.span },
+        plural: true,
+        upTo: upTo !== null,
+      }),
   );
   const counted: Parser<Bare> = map(
     sequence(spanned(satisfy(quantity, (n) => n >= 2)), literal(' target '), phrase(true)),

@@ -1,0 +1,486 @@
+// The template corpus of stage P28 (D-131): the counted-amounts slice. The lines are the real wordings of the blockers of
+// the owner's five decks (reports/decks.md, parser version 32, whose numbers are N: the numbers here are SYNTHETIC, and so
+// is every card around them); the near misses and the unread lines of the D-131 survey are SYNTHETIC. No real card is
+// marked supported here except through the golden corpus. Each line says whether it must import as supported, or where and
+// why it stops, so a change that makes the grammar read less OR more than it should fails here. The kinds of expectation are
+// those of convert-grammar-corpus.test.ts; `noX` is a line whose X the text defines (the card has no {X} in its cost).
+import { type Line, no, OK, runCorpus } from './convert-grammar-corpus-helpers';
+
+const SUPPORTED: readonly Line[] = [
+  {
+    kind: 'creature',
+    text: 'At the beginning of your upkeep, you draw X cards and lose X life, where X is the number of Zombies you control.',
+    expect: OK,
+    noX: true,
+    note: 'row 24 (Graveborn Muse): X is the count, in the draw and in the loss',
+  },
+  {
+    kind: 'sorcery',
+    text: '~ deals X damage to each creature, where X is the number of creatures on the battlefield.',
+    expect: OK,
+    noX: true,
+    note: 'row 135 (Chain Reaction)',
+  },
+  {
+    kind: 'sorcery',
+    text: '~ deals X damage to target creature and you gain X life, where X is the number of Swamps you control.',
+    expect: OK,
+    noX: true,
+    note: 'row 136 (Tendrils of Corruption)',
+  },
+  {
+    kind: 'sorcery',
+    text: '~ deals X damage to target creature or planeswalker and you gain X life, where X is the number of Swamps you control.',
+    expect: OK,
+    noX: true,
+    note: 'row 137 (Consuming Corruption)',
+  },
+  {
+    kind: 'creature',
+    text: "When ~ enters, put X +1/+1 counters on target creature, where X is that creature's power.",
+    expect: OK,
+    noX: true,
+    note: 'row 181 (Thickest in the Thicket)',
+  },
+  {
+    kind: 'creature',
+    text: '~ enters with a +1/+1 counter on it for each Zombie card in your graveyard.',
+    expect: OK,
+    note: 'row 218 (Diregraf Colossus)',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Until end of turn, creatures you control gain trample and get +X/+X, where X is the greatest power among creatures you control.',
+    expect: OK,
+    noX: true,
+    note: 'row 57 (Overwhelming Stampede)',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Draw cards equal to the greatest power among creatures you control.',
+    expect: OK,
+    note: "row 155 (Rishkar's Expertise)",
+  },
+  {
+    kind: 'creature',
+    stats: ['12', '12'],
+    text: '~ costs {X} less to cast, where X is the total power of creatures you control.',
+    expect: OK,
+    noX: true,
+    note: 'row 131 (Ghalta, Primal Hunger)',
+  },
+  {
+    kind: 'creature',
+    text: 'When ~ enters, each opponent loses X life, where X is your devotion to black. You gain life equal to the life lost this way.',
+    expect: OK,
+    noX: true,
+    note: 'row 62 (Gray Merchant of Asphodel)',
+  },
+  {
+    kind: 'enchantment',
+    text: 'At the beginning of your upkeep, create X 2/2 black Zombie creature tokens, where X is half the number of Zombies you control, rounded down.',
+    expect: OK,
+    noX: true,
+    note: 'row 16 (Endless Ranks of the Dead)',
+  },
+  {
+    kind: 'sorcery',
+    text: 'You gain 2 life for each creature you control with power 4 or greater.',
+    expect: OK,
+    note: 'row 107 (Shamanic Revelation)',
+  },
+  {
+    kind: 'creature',
+    stats: ['*', '*'],
+    text: "~'s power and toughness are each equal to the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards.",
+    expect: OK,
+    note: 'row 220 (a sum of two counts)',
+  },
+  {
+    kind: 'creature',
+    text: "Whenever ~ or another creature you control enters, you gain life equal to that creature's toughness.",
+    expect: OK,
+    note: "row 102 (Verdant Sun's Avatar)",
+  },
+  {
+    kind: 'creature',
+    text: "Whenever another Angel or Cleric you control enters, you gain life equal to that creature's toughness.",
+    expect: OK,
+    note: 'row 190 (Righteous Valkyrie): a choice of creature types for one object',
+  },
+  {
+    kind: 'creature',
+    text: 'Angel spells and Human spells you cast cost {1} less to cast for each +1/+1 counter on ~.',
+    expect: OK,
+    note: 'row 7 (Herald of War)',
+  },
+  {
+    kind: 'creature',
+    text: "~ gets +1/+1 for each creature card in your opponents' graveyards.",
+    expect: OK,
+    note: 'row 138 (Wight of Precinct Six)',
+  },
+  {
+    kind: 'equipment',
+    text: 'Equipped creature gets +1/+1 for each artifact and/or enchantment you control.',
+    expect: OK,
+    note: 'row 160',
+  },
+  {
+    kind: 'sorcery',
+    text: 'All creatures get -2/-2 until end of turn for each Swamp you control.',
+    expect: OK,
+    note: 'row 6 (Mutilate)',
+  },
+  {
+    kind: 'instant',
+    text: 'Create X 1/2 green Spider creature tokens with reach, where X is the number of creatures attacking you.',
+    expect: OK,
+    noX: true,
+    note: 'row 26 (Arachnogenesis), its first sentence alone; the second sentence is below',
+  },
+  {
+    kind: 'creature',
+    text: 'At the beginning of your upkeep, investigate once for each opponent who has more cards in hand than you.',
+    expect: OK,
+    note: 'row 22 (Wojek Investigator)',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Destroy target creature or planeswalker. Its controller investigates.',
+    expect: OK,
+    note: 'row 28 (Fateful Absence)',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Create thirteen tapped 2/2 black Zombie creature tokens.',
+    expect: OK,
+    note: 'row 27 (Army of the Damned)',
+  },
+  {
+    kind: 'enchantment',
+    text: 'Whenever you cast a Zombie spell, create a tapped 2/2 black Zombie creature token.',
+    expect: OK,
+    note: 'row 194 (Diregraf Colossus)',
+  },
+  {
+    kind: 'creature',
+    text: 'Kicker {2}\nWhen ~ enters, if he was kicked, create 2 2/2 black Zombie Knight creature tokens with menace.',
+    expect: OK,
+    note: 'row 67: the kicked Zombie Knights ("he", a creature with a personal name); the Kicker line is SYNTHETIC',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Each opponent draws a card, then you draw a card for each opponent who drew a card this way.',
+    expect: OK,
+    note: 'row 34 (Cut a Deal)',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Each other player sacrifices a creature of their choice. You create a 2/2 black Zombie creature token for each creature sacrificed this way.',
+    expect: OK,
+    note: 'row 36 (Syphon Flesh)',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Each player sacrifices 2 creatures of their choice. You create 2 tapped 2/2 black Zombie creature tokens.',
+    expect: OK,
+    note: 'row 37 (Necrotic Hex)',
+  },
+  {
+    kind: 'creature',
+    text: 'When ~ enters, each player sacrifices a creature of their choice.',
+    expect: OK,
+    note: 'row 63 (Fleshbag Marauder)',
+  },
+  {
+    kind: 'sorcery',
+    text: 'You and target opponent each draw 2 cards.',
+    expect: OK,
+    note: 'row 104 (Secret Rendezvous)',
+  },
+  {
+    kind: 'creature',
+    text: 'When ~ enters, mill 2 cards and you gain 2 life.',
+    expect: OK,
+    note: 'row 68 (Mire Triton)',
+  },
+  {
+    kind: 'creature',
+    text: 'When ~ enters, mill 2 cards.',
+    expect: OK,
+    note: 'row 180 (Undead Butler)',
+  },
+  {
+    kind: 'sorcery',
+    text: "Target creature you control deals damage equal to its power to target creature or planeswalker you don't control.",
+    expect: OK,
+    note: 'row 54 (Bite Down)',
+  },
+  {
+    kind: 'enchantment',
+    text: 'Whenever a creature you control enters, it deals damage equal to its power to any target.',
+    expect: OK,
+    note: 'row 78 (Warstorm Surge)',
+  },
+  {
+    kind: 'creature',
+    text: 'Whenever ~ or another Dragon you control enters, it deals X damage to any target, where X is the number of Dragons you control.',
+    expect: OK,
+    noX: true,
+    note: 'row 99 (Scourge of Valkas)',
+  },
+  {
+    kind: 'enchantment',
+    text: 'Whenever a Dragon you control enters, it deals X damage to any target, where X is the number of Dragons you control.',
+    expect: OK,
+    noX: true,
+    note: 'row 186 (Dragon Tempest)',
+  },
+  {
+    kind: 'creature',
+    text: "At the beginning of your upkeep, if you're the monarch, create a 4/4 red Dragon creature token with flying.",
+    expect: OK,
+    note: 'row 21 (Skyline Despot)',
+  },
+  {
+    kind: 'enchantment',
+    text: "At the beginning of your upkeep, create a 2/2 white Spirit creature token with flying. If you're the monarch, create a 2/2 white Angel creature token with flying instead.",
+    expect: OK,
+    note: 'row 17 (Court of Grace)',
+  },
+  {
+    kind: 'creature',
+    text: 'When ~ enters, if an opponent controls more creatures than you, create a 4/4 white Angel creature token with flying.',
+    expect: OK,
+    note: 'row 177 (Linvala, the Preserver)',
+  },
+  {
+    kind: 'creature',
+    text: 'When ~ enters, if an opponent has more life than you, you gain 5 life.',
+    expect: OK,
+    note: 'row 178 (Linvala, the Preserver)',
+  },
+  {
+    kind: 'creature',
+    text: 'At the beginning of combat on your turn, if creatures you control have total power 8 or greater, target creature you control gains haste until end of turn.',
+    expect: OK,
+    note: 'row 14 (Surrak, the Hunt Caller)',
+  },
+  {
+    kind: 'creature',
+    text: 'At the beginning of your upkeep, if you have 7 or more creature cards in your graveyard, you may return target creature card from your graveyard to your hand.',
+    expect: OK,
+    note: 'row 20 (Oversold Cemetery)',
+  },
+  {
+    kind: 'creature',
+    text: '{1}, Sacrifice another Vampire or Zombie: Put 2 +2/+2 counters on ~.',
+    expect: OK,
+    note: 'row 206: read as a side effect of the choice of subtypes for one object',
+  },
+  // SYNTHETIC variants of the same families.
+  {
+    kind: 'sorcery',
+    text: 'Draw cards equal to the total toughness of creatures you control.',
+    expect: OK,
+    note: 'SYNTHETIC: another stat of the aggregate',
+  },
+  {
+    kind: 'sorcery',
+    text: 'You gain life equal to your devotion to white and blue.',
+    expect: OK,
+    note: 'SYNTHETIC: devotion to two colors',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Draw cards equal to half the number of cards in your hand, rounded up.',
+    expect: OK,
+    note: 'SYNTHETIC: half, rounded up',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Target player mills X cards, where X is the number of creatures you control.',
+    expect: OK,
+    noX: true,
+    note: 'SYNTHETIC: mill by a counted X',
+  },
+  {
+    kind: 'instant',
+    text: 'You and target player each gain 3 life.',
+    expect: OK,
+    note: 'SYNTHETIC: the selector of several players with another verb',
+  },
+  {
+    kind: 'instant',
+    text: 'Target opponent sacrifices a creature of their choice. Draw a card for each creature sacrificed this way.',
+    expect: OK,
+    note: 'SYNTHETIC: a sacrifice by a target player',
+  },
+  {
+    kind: 'creature',
+    text: 'When ~ enters, create two tapped Treasure tokens.',
+    expect: OK,
+    note: 'SYNTHETIC: tapped Treasure tokens',
+  },
+  {
+    kind: 'enchantment',
+    text: 'At the beginning of your upkeep, you lose 1 life for each burden counter on ~.',
+    expect: OK,
+    note: 'SYNTHETIC: the counters on the permanent (a count of counters, not of objects)',
+  },
+  {
+    kind: 'enchantment',
+    text: "At the beginning of your end step, if you're not the monarch, you gain 1 life.",
+    expect: OK,
+    note: 'SYNTHETIC: the negative of the designation',
+  },
+  {
+    kind: 'instant',
+    text: "Draw a card. If you're the monarch, draw two cards.",
+    expect: OK,
+    note: 'SYNTHETIC: the designation as the condition of a sentence',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Target creature you control deals damage equal to its toughness to any target.',
+    expect: OK,
+    note: 'SYNTHETIC: a bite by toughness',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Destroy target Aura or Equipment.',
+    expect: OK,
+    note: 'SYNTHETIC: a choice of subtypes for one object',
+  },
+];
+
+const UNREAD: readonly Line[] = [
+  {
+    kind: 'artifact',
+    text: "{1}, {T}, Pay life equal to the number of colors in your commanders' color identity: Draw a card.",
+    expect: OK,
+    note: "row 4 (War Room), (b') until stage P30 (D-135): the engine's payLife takes an amount since ENGINE_VERSION 30",
+  },
+  {
+    kind: 'sorcery',
+    text: 'Add {1} for each tapped land your opponents control.',
+    expect: no('{1} for each tapped land your opponents control.', 'effect.add-mana'),
+    note: "row 5 (Mana Geyser), (b'): a mana production with an amount is not built",
+  },
+  {
+    kind: 'instant',
+    text: 'Create X 1/2 green Spider creature tokens with reach, where X is the number of creatures attacking you. Prevent all combat damage that would be dealt this turn by non-Spider creatures.',
+    expect: OK,
+    note: "row 26 (Arachnogenesis), (b'): read since stage P32 (D-147): the engine's `byFilter`",
+  },
+  {
+    kind: 'creature',
+    text: 'When ~ enters, destroy all creatures with flying. Put a +1/+1 counter on ~ for each creature destroyed this way.',
+    expect: OK,
+    note: 'row 61 (Whiptongue Hydra), read since stage P29: "with flying" is a part of the filter (D-133)',
+  },
+  {
+    kind: 'sorcery',
+    text: "Target creature you control deals damage equal to its power to target creature you don't control. If the creature you control has trample, excess damage is dealt to that creature's controller instead.",
+    expect: OK,
+    note: "row 55 (Ram Through), (b'): read since stage P32 (D-147): the engine's `trampleExcess` on the bite",
+  },
+  {
+    kind: 'sorcery',
+    text: 'Target creature you control deals damage equal to its power to each other creature and each opponent.',
+    expect: OK,
+    note: "row 53 (Chandra's Ignition), read since stage P34 (D-152): `each.except` names the creature that deals the damage (D-151)",
+  },
+  {
+    kind: 'creature',
+    text: 'Whenever ~ deals combat damage to a player, that player discards a card and you create a tapped 2/2 black Zombie creature token.',
+    expect: OK,
+    note: 'row 96 (Liliana\'s Reaver): "that player" is the engine\'s `triggerPlayer` since D-133',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Target opponent sacrifices a creature with the greatest power among creatures they control.',
+    expect: OK,
+    note: "row 171, (c) until stage P30 (D-135): a choice by the greatest power is the engine's `greatest` since ENGINE_VERSION 30",
+  },
+  {
+    kind: 'creature',
+    text: 'When ~ enters, tap enchanted creature and you become the monarch.',
+    expect: no('enchanted creature and you become the monarch.', 'noun.attached-permanent', {
+      reason: 'notRunnable',
+    }),
+    note: "row 183: read since stage P31 (D-140, the engine's `attached`), and not run on a creature, which nothing is attached to",
+  },
+  {
+    kind: 'artifact',
+    text: '{1}, {T}: You may play the exiled card without paying its mana cost if creatures you control have total power 8 or greater.',
+    expect: { engine: 'linkedExile reads the cards this permanent exiled' },
+    note: 'row 212, (c): read since stage P32 (D-147): the play of an exiled card, which an artifact without Hideaway has not exiled',
+  },
+  {
+    kind: 'creature',
+    text: '~ gets +1/+1 as long as you have 30 or more life.',
+    expect: OK,
+    note: 'row 219: a condition on the life total, read since stage P29 (D-133)',
+  },
+  {
+    kind: 'enchantment',
+    text: "Enchanted creature doesn't untap during its controller's untap step unless that player is the monarch.",
+    expect: no(
+      "Enchanted creature doesn't untap during its controller's untap step unless that player is the monarch.",
+      'noun.attached-permanent',
+      { reason: 'notRunnable' },
+    ),
+    note: 'row 158: read since stage P31 (D-140), and not run on an enchantment that is not an Aura',
+  },
+  {
+    kind: 'sorcery',
+    text: '~ deals X damage to target creature, where X is the greatest power among creatures you control as you cast ~.',
+    expect: no('the greatest power among creatures you control as you cast ~.', 'effect.damage', {
+      reason: 'notRunnable',
+    }),
+    note: 'row 133, (c): read since stage P32 (D-147), and run only as the total of a divided damage: here X would be read as the spell resolves',
+  },
+  {
+    kind: 'enchantment',
+    text: 'At the beginning of your end step, if an opponent is not the monarch, you gain 1 life.',
+    expect: no('an opponent is not the monarch, you gain 1 life.', 'ability.triggered'),
+    note: 'SYNTHETIC: only "is" of an opponent, not "is not"',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Each opponent draws a card. You create a 2/2 black Zombie creature token for each creature sacrificed this way.',
+    expect: no(
+      'You create a 2/2 black Zombie creature token for each creature sacrificed this way.',
+      'effect.player',
+      { reason: 'notRunnable' },
+    ),
+    note: 'SYNTHETIC: "this way" with no sacrifice before it',
+  },
+  {
+    kind: 'sorcery',
+    text: 'You gain 3 life, where X is the number of creatures you control.',
+    expect: no(
+      'You gain 3 life, where X is the number of creatures you control.',
+      'effect.player',
+      {
+        reason: 'notRunnable',
+      },
+    ),
+    note: 'SYNTHETIC: a definition of X that no clause reads',
+  },
+  {
+    kind: 'artifact',
+    text: '{X}, {T}: Draw X cards, where X is the number of lands you control.',
+    expect: no(
+      '{X}, {T}: Draw X cards, where X is the number of lands you control.',
+      'ability.activated',
+      { reason: 'notRunnable' },
+    ),
+    note: 'SYNTHETIC: an {X} cost that the text also defines',
+  },
+];
+
+runCorpus('the template corpus (stage P28): the counted amounts and the player effects', SUPPORTED);
+runCorpus('the template corpus (stage P28): what stays unread', UNREAD);

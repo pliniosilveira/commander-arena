@@ -118,14 +118,14 @@ export const STATIC_BLOCK_TAX = defineRule<IrStatic>({
  * creature you control enters with two additional +1/+1 counters on it." (CR 614.1c, 614.12, 122.6: a replacement effect of a permanent
  * on the battlefield for the permanents that enter; the counters are in addition to those they enter with otherwise). The permanents are
  * any phrase of "each other <permanent you control>" (a type of the table of CR 205.3m, a card type, "of the chosen type"), and the count a
- * number or "for each ..." counted for the controller without the permanent that enters. Not read: "each creature you control" (this
- * permanent would count itself), "each other creature" with no controller, "enters tapped", a counter that is not "additional" and a
+ * number or "for each ..." counted for the controller without the permanent that enters. A matching permanent's own replacement applies
+ * to itself too (CR 614.12), unless the subject says "other". Not read: "each other creature" with no controller, "enters tapped", a counter that is not "additional" and a
  * condition.
  */
 export const STATIC_OTHERS_ENTER_WITH_COUNTERS = defineRule<IrStatic>({
   id: 'static.others-enter-with-counters',
   family: 'static',
-  leading: ['each'],
+  leading: ['each', 'nontoken', 'token', 'creatures'],
   cites: [
     'CR 614.1c (Replacement Effects)',
     'CR 614.12 (Replacement Effects)',
@@ -133,6 +133,7 @@ export const STATIC_OTHERS_ENTER_WITH_COUNTERS = defineRule<IrStatic>({
     'CR 604.1 (Handling Static Abilities)',
   ],
   examples: [
+    'Nontoken creatures you control enter with an additional +1/+1 counter on them for each creature that died under your control this turn.',
     'Each other Angel you control enters with an additional +1/+1 counter on it for each Angel you already control.',
     'Each other creature you control of the chosen type enters with an additional +1/+1 counter on it.',
     'Each other creature you control enters with an additional +1/+1 counter on it.',
@@ -167,18 +168,19 @@ export const STATIC_OTHERS_ENTER_WITH_COUNTERS = defineRule<IrStatic>({
   ],
   parse: (ctx, pos) => {
     const id = 'static.others-enter-with-counters';
-    const subject = quiet(family<IrNoun>('noun', { only: ['noun.each-permanent'] }))(ctx, pos);
+    const subject = quiet(
+      family<IrNoun>('noun', { only: ['noun.each-permanent', 'noun.plain-permanents'] }),
+    )(ctx, pos);
     if (!subject.ok) return subject;
     const noun = subject.value;
-    // "Each other": the permanent with the ability is left out. Stage P34 (D-152): "Each Dragon you control" leaves nothing out, which the lowering
-    // allows for a permanent that is not itself such a Dragon. The permanents are the controller's own.
+    // "Each other" leaves the source out; a plain plural includes it. The permanents are the controller's own.
     if (noun.filter.controller !== 'you') return fail(ctx, pos);
     const tail = sequence(
-      literal(' enters with '),
+      pattern(noun.plural ? / enter with /iu : / enters with /iu),
       satisfy(positiveCount, () => true),
       pattern(/ additional /iu),
       pattern(/([+-]\d+\/[+-]\d+|[a-z]+) counters?(?![\p{L}\p{N}])/iu),
-      literal(' on it'),
+      literal(noun.plural ? ' on them' : ' on it'),
     )(ctx, subject.pos);
     if (!tail.ok) return tail;
     const [, number, , kind] = tail.value;
@@ -192,7 +194,7 @@ export const STATIC_OTHERS_ENTER_WITH_COUNTERS = defineRule<IrStatic>({
           sequence(
             literal(' '),
             family<IrAmount>('amount', {
-              only: ['amount.for-each', 'amount.for-each-mana-spent'],
+              only: ['amount.for-each', 'amount.for-each-mana-spent', 'amount.for-each-died'],
             }),
           ),
           ([, amount]) => amount,

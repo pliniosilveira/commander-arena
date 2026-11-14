@@ -126,7 +126,9 @@ export const CONDITION_LIFE_TOTAL = defineRule<IrCondition>({
       value: condition('condition.life-total', pos, r.pos, {
         kind: 'lifeTotal',
         compare,
-        ...(r.value.value[0].toLowerCase().startsWith('an ') ? { player: 'opponent' as const } : {}),
+        ...(r.value.value[0].toLowerCase().startsWith('an ')
+          ? { player: 'opponent' as const }
+          : {}),
         ...(aboveStarting ? { aboveStarting: true as const } : {}),
       }),
       pos: r.pos,

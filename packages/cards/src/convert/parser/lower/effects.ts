@@ -51,6 +51,7 @@ import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
 import { GAIN_STATIC_ABILITY } from './granted-static';
+import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
 import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
 import { HASHATON_G9_LOWERINGS } from './hashaton-g9';
@@ -72,6 +73,7 @@ import {
 } from './nouns';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
+import { PREPARE_LOWERINGS } from './prepare';
 import { PREVENT_DAMAGE } from './prevent';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
@@ -665,9 +667,27 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
     // "Add {R} for each tapped land your opponents control." (stage P34, D-152, CR 106.1): the fixed mana once for each of an amount read
     // as the effect runs; a spell or a triggered ability only (a mana ability fixes its production before it resolves, CR 605.1a).
     if (arg(clause, 'times') !== undefined) {
-      if (spec.what.kind !== 'symbols') return failure(clause);
+      if (spec.what.kind !== 'symbols' && spec.what.kind !== 'oneOf') return failure(clause);
       const times = amountArg(clause, 'times', ctx);
       if (!times.ok) return times;
+      if (spec.what.kind === 'oneOf') {
+        const blocked = missingFeatures(['effect:chooseOne']);
+        if (blocked.length > 0) return failure(clause, blocked);
+        return {
+          ok: true,
+          value: [
+            {
+              kind: 'chooseOne',
+              times: times.value,
+              options: spec.what.colors.map((color) => ({
+                label: `{${color}}`,
+                effect: { kind: 'addMana', mana: { kind: 'fixed', mana: [color as ManaColor] } },
+              })),
+            },
+          ],
+          rule: clause.rule,
+        };
+      }
       const mana = spec.what.symbols as ManaColor[];
       return {
         ok: true,
@@ -1310,6 +1330,26 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SACRIFICE,
   ADD_COUNTERS,
   CREATE_TOKEN,
+  {
+    head: 'createPerOpponent',
+    id: 'lower.create-per-opponent',
+    needs: ['effect:forEachPlayer', 'effect:createToken'],
+    lower: (clause, ctx) => {
+      const lowered = lowerCreateToken(clause, ctx);
+      if (!lowered.ok) return lowered;
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'forEachPlayer',
+            players: { kind: 'eachOpponent' },
+            effect: { kind: 'sequence', effects: lowered.value },
+          },
+        ],
+        rule: clause.rule,
+      };
+    },
+  },
   DAMAGE,
   simple('destroy'),
   simple('exile'),
@@ -1375,9 +1415,11 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...FEATHER_G2_LOWERINGS,
   // D-459, D-460: "It gains haste.", "Exile it at the beginning of the next end step.", "If it would leave the battlefield, exile it instead ...", "Put each creature card exiled with ~ onto the battlefield ...".
   ...GISA_G4_LOWERINGS,
+  ...GRAVEYARD_CHOICE_LOWERINGS,
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,
+  ...PREPARE_LOWERINGS,
   ...EDHREC_LOWERINGS,
   ...DRAGON_LOWERINGS,
   ...KORVOLD_LOWERINGS,
@@ -1431,7 +1473,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
             ? 'opponentControlsAtLeast'
             : test === 'sameName'
               ? 'sameNameAtLeast'
-              : test === 'attachedTo' || test === 'putThisWay'
+              : test === 'attachedTo' || test === 'putThisWay' || test === 'exiledThisWay'
                 ? 'objectMatches'
                 : test === 'discardedThisWay' || test === 'discardedSpellThisWay'
                   ? 'thisWayAtLeast'

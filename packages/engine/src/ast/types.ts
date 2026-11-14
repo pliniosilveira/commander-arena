@@ -117,7 +117,13 @@ export type Amount =
   | { readonly kind: 'lifeGainedThisTurn' }
   /** Entries or deaths recorded at the event, including objects that have since left their destination. */
   | {
-      readonly kind: 'enteredThisTurn' | 'diedThisTurn';
+      readonly kind: 'enteredThisTurn';
+      readonly types?: readonly CardType[];
+      readonly token?: boolean;
+      readonly controller: 'you' | 'any';
+    }
+  | {
+      readonly kind: 'diedThisTurn';
       readonly types?: readonly CardType[];
       readonly token?: boolean;
       readonly controller: 'you' | 'any';
@@ -1254,7 +1260,7 @@ export interface ChooseSelector {
    * card was put into the hand, not the cards the mill moved.
    */
   readonly fromMoved?: true;
-  /** Excludes the cards the permanents sacrificed earlier in this resolution became. */
+  /** Excludes the cards the permanents you sacrificed earlier in this resolution became. */
   readonly exceptSacrificed?: true;
 }
 
@@ -1297,8 +1303,14 @@ export interface InlineChoice {
   readonly label: string;
   readonly effect: Effect;
 }
-
 export type Effect =
+  | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }
+  | { readonly kind: 'prepare'; readonly objects: ObjectSelector }
+  | {
+      readonly kind: 'delayedCombatDamage';
+      readonly objects: ObjectSelector;
+      readonly effect: Effect;
+    }
   | { readonly kind: 'sequence'; readonly effects: readonly Effect[] }
   /**
    * A prevention shield (CR 615), a continuous effect until end of turn. Damage that would be dealt
@@ -2746,7 +2758,7 @@ export type Trigger =
        */
       readonly tapped?: boolean;
     }
-  | { readonly kind: 'dies'; readonly what: TriggerSubject }
+  | { readonly kind: 'dies'; readonly what: TriggerSubject; readonly graveyardOwner?: 'you' }
   /**
    * "When you cycle this card" (CR 702.29c, 702.29f, D-179): the ability of a card that was just cycled, that is, discarded to pay an activation cost of a
    * cycling ability (Cycling or typecycling; a card discarded any other way is not cycled). It triggers from whatever zone the card winds up in
@@ -3725,13 +3737,13 @@ export type Condition =
    * reference, or (D-149, "If that land is a Plains") the `triggerSubject` of a trigger whose subject is a permanent; the filter names no zone,
    * controller or owner (it describes the object).
    * `inZone` (D-412, "If you put a Town card into your hand this way", CR 608.2c, 400.7j): the object must also be in that zone as it is now (or was, once it has
-   * left): the card an earlier instruction put into the hand, not one that went anywhere else. Only `hand`, only in a `conditional` effect (a static ability does not read it).
+   * left): the card an earlier instruction put into the hand or exiled, not one that went anywhere else. Only in a `conditional` effect (a static ability does not read it).
    */
   | {
       readonly kind: 'objectMatches';
       readonly of: ObjectRef;
       readonly filter: ObjectFilter;
-      readonly inZone?: 'hand';
+      readonly inZone?: 'hand' | 'exile';
     }
   /**
    * "During your first, second, or third turn of the game" (CR 500.1, D-149): it is the turn of the player the condition is read for and
@@ -4110,7 +4122,11 @@ export type Replacement =
       readonly what: ObjectFilter;
       readonly counter: string;
       /** A number, a count of permanents, or (D-183, "for each mana from an artifact source spent to cast it") the mana spent to cast the entering permanent. */
-      readonly count: number | CountAmount | ManaSpentAmount | Extract<Amount, { kind: 'enteredThisTurn' | 'diedThisTurn' }>;
+      readonly count:
+        | number
+        | CountAmount
+        | ManaSpentAmount
+        | Extract<Amount, { kind: 'enteredThisTurn' | 'diedThisTurn' }>;
     }
   /**
    * "Lands you control enter untapped." (CR 614.1c, 614.12, 616.1, D-179): a replacement effect of a permanent on the battlefield for the permanents

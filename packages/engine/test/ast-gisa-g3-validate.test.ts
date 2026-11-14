@@ -314,7 +314,7 @@ describe('the filter named (CR 201.2)', () => {
       },
     } as never;
     expect(messages(creature([lord]))).toContainEqual(
-      expect.stringContaining('cannot name attacking creatures or compare power'),
+      expect.stringContaining('cannot read resolution-only values or compare power'),
     );
   });
 });

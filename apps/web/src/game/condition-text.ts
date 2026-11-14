@@ -146,25 +146,32 @@ function matchesWords(
   if (condition.inZone === 'hand') {
     return `you ${negate ? "don't put" : 'put'} ${card} into your hand this way`;
   }
+  if (condition.inZone === 'exile') {
+    return `${negate ? `no ${card.replace(/^an? /, '')}` : card} is exiled this way`;
+  }
   return `it ${negate ? "isn't" : 'is'} ${card}`.replace(/^it is /, "it's ");
 }
 
 /** "you have 30 or more life", "you have at least 7 life more than your starting life total" (CR 119.1, D-133). */
 function lifeWords(condition: Extract<Condition, { kind: 'lifeTotal' }>, negate: boolean): string {
   const { compare, aboveStarting } = condition;
+  if (condition.player === 'opponent' && negate) {
+    return lifeWords(condition, false).replace(/^an opponent has /, 'no opponent has ');
+  }
+  const who = condition.player === 'opponent' ? 'an opponent has' : 'you have';
   const bound = {
     atLeast: negate ? 'less than' : 'at least',
     atMost: negate ? 'more than' : 'at most',
     equal: negate ? 'other than' : 'exactly',
   }[compare.cmp];
   if (aboveStarting === true) {
-    return `you have ${bound} ${compare.value} life more than your starting life total`;
+    return `${who} ${bound} ${compare.value} life more than your starting life total`;
   }
   // "30 or more life" reads better than "at least 30 life" when the life total itself is compared.
   if (!negate && compare.cmp !== 'equal') {
-    return `you have ${compare.value} or ${compare.cmp === 'atLeast' ? 'more' : 'less'} life`;
+    return `${who} ${compare.value} or ${compare.cmp === 'atLeast' ? 'more' : 'less'} life`;
   }
-  return `you have ${bound} ${compare.value} life`;
+  return `${who} ${bound} ${compare.value} life`;
 }
 
 /** "it's untapped", "it's a Zombie creature": the permanent the condition belongs to against a filter (D-133). */
@@ -225,6 +232,10 @@ const THIS_WAY_WORDS: Readonly<Record<string, { readonly yes: string; readonly n
   sacrificed: {
     yes: 'a permanent was sacrificed this way',
     not: 'no permanent was sacrificed this way',
+  },
+  sacrificedOwn: {
+    yes: 'you sacrificed a permanent this way',
+    not: "you didn't sacrifice a permanent this way",
   },
 };
 

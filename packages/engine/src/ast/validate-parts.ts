@@ -1332,6 +1332,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
     case 'lifeGainedThisTurn':
+      if (Object.keys(a).some((key) => key !== 'kind')) {
+        issue(out, path, 'life gained this turn reads only the controller; no extra fields');
+      }
       break;
     case 'enteredThisTurn':
     case 'diedThisTurn':
@@ -2525,10 +2528,18 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   }
   if (sel.exceptSacrificed !== undefined) {
     if (sel.exceptSacrificed !== true || sel.fromMoved === true) {
-      issue(out, `${path}.exceptSacrificed`, 'exceptSacrificed must be true and not combined with fromMoved');
+      issue(
+        out,
+        `${path}.exceptSacrificed`,
+        'exceptSacrificed must be true and not combined with fromMoved',
+      );
     }
     if (sel.filter?.zone !== 'graveyard' || !(scope.thisWay ?? []).includes('sacrificed')) {
-      issue(out, `${path}.exceptSacrificed`, 'excluding sacrificed cards needs a prior sacrifice and a graveyard choice');
+      issue(
+        out,
+        `${path}.exceptSacrificed`,
+        'excluding sacrificed cards needs a prior sacrifice and a graveyard choice',
+      );
     }
   }
   // D-411: "You may put a land card from among them into your hand": only the cards the effect before it moved (`moved`) are the candidates.
@@ -2991,8 +3002,8 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         );
       }
       // D-412: "If you put a Town card into your hand this way": the card is where the earlier instruction put it.
-      if (c.inZone !== undefined && c.inZone !== 'hand') {
-        issue(out, `${path}.inZone`, "inZone is only 'hand' (D-412)");
+      if (c.inZone !== undefined && c.inZone !== 'hand' && c.inZone !== 'exile') {
+        issue(out, `${path}.inZone`, "inZone is only 'hand' or 'exile'");
       }
       break;
     }
@@ -3084,6 +3095,19 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
 }
 
 export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): void {
+  if (
+    e !== undefined &&
+    'objects' in e &&
+    e.objects?.kind === 'choose' &&
+    e.objects.exceptSacrificed !== undefined &&
+    e.kind !== 'moveToZone'
+  ) {
+    issue(
+      out,
+      `${path}.objects.exceptSacrificed`,
+      'excluding sacrificed cards is only read by a moveToZone choice',
+    );
+  }
   switch (e?.kind) {
     case 'sequence':
       if (!Array.isArray(e.effects) || e.effects.length === 0) {
@@ -3393,6 +3417,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 603.7 (D-128): an effect that creates a delayed triggered ability.
       checkDelayedTrigger(e, path, out, scope.movedAvailable === true, scope.diesTrigger === true);
       break;
+    case 'prepare':
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
+    case 'forEachPlayer':
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      checkEffect(e.effect, `${path}.effect`, scope, out);
+      break;
+    case 'delayedCombatDamage':
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
+      break;
     case 'delayedCast': {
       // CR 603.7 (D-336): an effect that creates a delayed triggered ability on the controller's next cast of a spell the filter names.
       checkFilter(e.filter, `${path}.filter`, out);
@@ -3689,10 +3724,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkObjectSelector(e.objects as ObjectSelector, `${path}.objects`, scope, out);
       }
       break;
-    case 'counter':
     case 'removeAllPlayerCounters':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
+    case 'counter':
     case 'removeAllCounters':
     case 'connive':
     case 'reselectAttack':

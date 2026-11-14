@@ -909,6 +909,23 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     };
   }
   // CR 700.4 (D-179): a card put into a graveyard from the battlefield this turn ("that was put there from the battlefield this turn").
+  if (old.zone === 'battlefield' && to === 'graveyard') {
+    const last = next.lki[old.id];
+    next = {
+      ...next,
+      turnLog: {
+        ...next.turnLog,
+        died: [
+          ...next.turnLog.died,
+          {
+            controller: sourceInfo(next, old.id)?.controller ?? controllerOf(state, old),
+            types: last?.characteristics.types ?? derive(state, old).types,
+            token: old.token !== null,
+          },
+        ],
+      },
+    };
+  }
   if (old.zone === 'battlefield' && to === 'graveyard' && created.card !== null) {
     next = {
       ...next,

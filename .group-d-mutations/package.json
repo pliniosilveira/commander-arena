@@ -1,0 +1,44 @@
+{
+  "name": "commander-arena",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Rules-accurate Magic: The Gathering Commander game for the browser. Unofficial fan project.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @commander-arena/web dev",
+    "build": "pnpm -r --filter './packages/*' --filter './apps/*' run build",
+    "typecheck": "pnpm -r --filter './packages/*' --filter './apps/*' --filter './tools' run typecheck",
+    "lint": "biome check . && pnpm lint:boundaries",
+    "lint:boundaries": "depcruise --config .dependency-cruiser.cjs packages apps",
+    "format": "biome check --write .",
+    "test": "vitest run",
+    "test:soak": "SOAK_GAMES=100 vitest run packages/ai",
+    "rule": "node tools/rules/rule.ts",
+    "rules:fetch": "node tools/rules/fetch-cr.ts",
+    "corpus:templates": "node tools/corpus/cli.ts templates",
+    "coverage:cards": "node tools/corpus/cli.ts coverage",
+    "corpus:extract": "node tools/corpus/cli.ts extract",
+    "corpus:replay": "node tools/corpus/cli.ts replay",
+    "corpus:decks": "node tools/corpus/cli.ts decks",
+    "corpus:from-issue": "node tools/corpus/cli.ts from-issue",
+    "corpus:check-issue": "node tools/corpus/check-issue-cli.ts",
+    "corpus:fetch-card-data": "node tools/corpus/fetch-card-data-cli.ts",
+    "creature-types:generate": "node tools/creature-types/generate.ts",
+    "planeswalker-types:generate": "node tools/creature-types/generate-planeswalker.ts",
+    "ai:arena": "node tools/ai/arena.ts",
+    "precon:snapshot": "node tools/precon/cli.ts",
+    "e2e": "pnpm --filter @commander-arena/web e2e"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "dependency-cruiser": "18.6.0",
+    "fast-check": "4.10.2",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

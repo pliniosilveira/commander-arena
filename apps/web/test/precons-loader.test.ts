@@ -157,19 +157,20 @@ test('a game starts from prepared precons for both seats', async () => {
 
 // ------------------------------------------------------------ the snapshots that ship
 
-test('every shipped snapshot is read without problems and is a legal, fully supported deck', async () => {
+test('every shipped snapshot is read without problems and listed', () => {
   expect(SHIPPED.problems).toEqual([]);
   const precons = createPrecons(SHIPPED.snapshots, serviceFor);
   expect(precons.list.map((info) => info.id)).toEqual(SHIPPED.snapshots.map((s) => s.id));
-  for (const snapshot of SHIPPED.snapshots) {
-    const result = await precons.prepare(snapshot.id);
-    if (!result.ok)
-      throw new Error(`Shipped precon "${snapshot.id}" is not startable: ${result.reason}`);
-    expect(result.deck.cards).toHaveLength(100);
-    // The snapshot holds exactly the cards of its list, the decklist replays through the parser.
-    expect(parseDecklist(snapshot.decklist).errors).toEqual([]);
-    expect(snapshot.cards.every((card) => fromSnapshotCard(card).fetchedAt === 0)).toBe(true);
-  }
+});
+
+test.each(SHIPPED.snapshots)('shipped $id is a legal, fully supported deck', async (snapshot) => {
+  const result = await buildPreconDeck(snapshot, serviceFor);
+  if (!result.ok)
+    throw new Error(`Shipped precon "${snapshot.id}" is not startable: ${result.reason}`);
+  expect(result.deck.cards).toHaveLength(100);
+  // The snapshot holds exactly the cards of its list, the decklist replays through the parser.
+  expect(parseDecklist(snapshot.decklist).errors).toEqual([]);
+  expect(snapshot.cards.every((card) => fromSnapshotCard(card).fetchedAt === 0)).toBe(true);
 });
 
 const zombies = SHIPPED.snapshots.find((snapshot) => snapshot.id === 'zombies');

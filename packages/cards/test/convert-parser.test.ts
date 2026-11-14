@@ -438,6 +438,7 @@ describe('unmatched abilities', () => {
       'condition.this-tapped',
       'condition.attached-to',
       'condition.paired',
+      'condition.exiled-this-way',
       'condition.it-matches',
       'condition.its-mana-value',
       'condition.gift-promised',
