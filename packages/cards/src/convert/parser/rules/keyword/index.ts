@@ -109,7 +109,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'split second',
     'Toxic 1',
     'Annihilator 2',
-    // D-1400 (CR 702.130a): Afflict N.
+    // D-472 (CR 702.130a): Afflict N.
     'Afflict 3',
     'Flying, afflict 2',
     'Flying, infect',

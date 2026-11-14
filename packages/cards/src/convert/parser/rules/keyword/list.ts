@@ -12,11 +12,11 @@ export const KEYWORD_WORD: Parser<string> = choice(
   ...GRANTABLE_KEYWORDS.map(([word]) =>
     map(pattern(new RegExp(`${word.replace(' ', '\\s+')}${BOUNDARY}`, 'iu')), () => word as string),
   ),
-  // D-1401 (CR 702.14): a landwalk, "swampwalk", "nonbasic landwalk".
+  // D-473 (CR 702.14): a landwalk, "swampwalk", "nonbasic landwalk".
   ...LANDWALKS.map(([word]) =>
     map(pattern(new RegExp(`${word.replace(' ', '\\s+')}${BOUNDARY}`, 'iu')), () => word as string),
   ),
-  // D-1400 (CR 702.130a): "afflict 3", the number in digits, the word kept with its number ("afflict 3").
+  // D-472 (CR 702.130a): "afflict 3", the number in digits, the word kept with its number ("afflict 3").
   map(
     pattern(new RegExp(`afflict\\s+([1-9]\\d*)${BOUNDARY}`, 'iu')),
     (m) => `afflict ${m[1]}` as string,

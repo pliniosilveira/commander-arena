@@ -72,7 +72,7 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
         { ...TRIGGER_SUBJECT, token: true },
       );
     }
-    // D-1400, D-1401: a keyword without parameters, "afflict 3" or a landwalk; each word is one node of the engine's.
+    // D-472, D-473: a keyword without parameters, "afflict 3" or a landwalk; each word is one node of the engine's.
     const keyword = grantedKeyword(word.name);
     if (keyword === undefined) return failure(clause);
     if (keyword.kind === 'afflict' || keyword.kind === 'landwalk') {

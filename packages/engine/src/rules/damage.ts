@@ -52,7 +52,7 @@ function toxicValue(abilities: readonly Ability[]): number {
 }
 
 /**
- * D-1403: the card types and subtypes the source of damage has now, or had as it last existed if it has left (CR 113.7a), for the turn log of combat damage
+ * D-475: the card types and subtypes the source of damage has now, or had as it last existed if it has left (CR 113.7a), for the turn log of combat damage
  * to players ("if a player was dealt combat damage by a Zombie this turn").
  */
 function sourceTypesOf(

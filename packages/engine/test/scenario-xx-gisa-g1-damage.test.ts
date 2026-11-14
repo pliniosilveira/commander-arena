@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 1 (D-1403, D-1404): "At the beginning of your second main phase, if a player was dealt combat damage by a Zombie this turn, mill three
+// The Gisa deck (issue 41), group 1 (D-475, D-476): "At the beginning of your second main phase, if a player was dealt combat damage by a Zombie this turn, mill three
 // cards, then you may return a creature card from your graveyard to your hand." (Lost Monarch of Ifnir: the intervening "if" reads the log of combat damage dealt to players,
 // with what the source was as it dealt it) and "Whenever a Zombie token you control with power 6 or greater attacks, it gains lifelink until end of turn." (Dreadhorde Invasion).
 // Pins: CR 603.4 (an intervening "if" is true as the ability triggers and as it resolves), CR 120.2a and 510.2 (combat damage to a player), CR 603.2g and 615 (damage that is

@@ -29,7 +29,7 @@ export function objectSubject(rule: string): Parser<IrNoun> {
           literal('another '),
           map(pattern(/an? /i), (m) => m[0]),
         ),
-        // D-1404: "a Zombie token you control with power 6 or greater" (tokens: true).
+        // D-476: "a Zombie token you control with power 6 or greater" (tokens: true).
         map(permanentPhrase(false, 'all', true), withoutZone),
       ),
     ),

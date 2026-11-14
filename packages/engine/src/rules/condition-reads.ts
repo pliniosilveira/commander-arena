@@ -109,7 +109,7 @@ export function playerDealtDamageHolds(
 }
 
 /**
- * D-1403, CR 120.2a: some combat damage a player was dealt this turn came from a source that matches the condition's `types`, `subtypes` and `controller` (relative
+ * D-475, CR 120.2a: some combat damage a player was dealt this turn came from a source that matches the condition's `types`, `subtypes` and `controller` (relative
  * to `seat`) as it was when it dealt the damage, read from the turn log.
  */
 export function combatDamagedByHolds(

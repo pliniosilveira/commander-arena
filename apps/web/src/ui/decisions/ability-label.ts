@@ -291,7 +291,7 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
  */
 const UNSAID = '\u0000';
 
-/** D-1402 (CR 305.6): the basic land types, the ones an effect can set a land to. */
+/** D-474 (CR 305.6): the basic land types, the ones an effect can set a land to. */
 const BASIC_LAND_TYPE_WORDS: readonly string[] = [
   'Plains',
   'Island',
@@ -1142,7 +1142,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'setTypes': {
       // D-151 (CR 205.1b, 613.1d): "Until end of turn, this creature becomes a Dragon in addition to its other types".
       const kinds = [...(effect.subtypes ?? []), ...(effect.types ?? [])];
-      // D-1402 (CR 305.7): "Target land becomes a Swamp until end of turn": a basic land type replaces the land types.
+      // D-474 (CR 305.7): "Target land becomes a Swamp until end of turn": a basic land type replaces the land types.
       if (
         effect.additive !== true &&
         effect.types === undefined &&

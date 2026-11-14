@@ -2740,7 +2740,7 @@ export const FEATHER_G1_LANDS = supported([
 ]);
 
 /**
- * The SYNTHETIC cards of group 1 of the Gisa deck (D-1400 to D-1404): Afflict N and a group that has it, a group that has swampwalk, a cost that taps an untapped Zombie with
+ * The SYNTHETIC cards of group 1 of the Gisa deck (D-472 to D-476): Afflict N and a group that has it, a group that has swampwalk, a cost that taps an untapped Zombie with
  * abilities that turn a land into a Swamp and give a creature swampwalk, the second main phase trigger that reads the turn's combat damage by Zombies and asks which creature card to
  * return from the graveyard, and the Zombie token with power 6 or greater that gains lifelink as it attacks. The cost asks which Zombies to tap, the trigger asks cards from the
  * graveyard and the abilities ask targets: questions games-100 expects only from dedicated styles, so the group is kept out of every generic pool.
@@ -3724,7 +3724,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 2 cards (D-464 to D-468) ask to pay {B} to return a card from the graveyard and put tokens, ward payments and drawing into games: a style of their own.
   .filter((card) => !(GISA_G2_NAMES as readonly string[]).includes(card.name))
-  // The Gisa group 1 cards (D-1400 to D-1404) ask which Zombies to tap, which card to return from the graveyard and the targets of their abilities: a style of their own.
+  // The Gisa group 1 cards (D-472 to D-476) ask which Zombies to tap, which card to return from the graveyard and the targets of their abilities: a style of their own.
   .filter((card) => !(GISA_G1_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 4 cards (D-459 to D-462) have abilities that work from the hand and from graveyards, targets in graveyards and delayed exiles: a style of their own.
   .filter((card) => !(GISA_G4_NAMES as readonly string[]).includes(card.name))
@@ -4736,7 +4736,7 @@ export const FEATHER_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
   ['spells', 'featherG1'],
 ];
 
-/** Style pairs of the Gisa group 1 soak test (D-1400 to D-1404): a mirror match and both mixed ways. */
+/** Style pairs of the Gisa group 1 soak test (D-472 to D-476): a mirror match and both mixed ways. */
 export const GISA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['gisaG1', 'gisaG1'],
   ['gisaG1', 'spells'],

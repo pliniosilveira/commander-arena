@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 1 (D-1400 to D-1404): what `validateCard` allows of the new nodes: the keyword `afflict` (printed and granted), a granted `landwalk` (static and
+// The Gisa deck (issue 41), group 1 (D-472 to D-476): what `validateCard` allows of the new nodes: the keyword `afflict` (printed and granted), a granted `landwalk` (static and
 // effect), the basic land types set by a `setTypes` effect (CR 305.7), and the condition `combatDamagedBy` (CR 120.2a); and the SYNTHETIC cards of the group are valid and supported.
 import { describe, expect, test } from 'vitest';
 import { singleFace } from '../src/cards/fixtures/helpers';

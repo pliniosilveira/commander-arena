@@ -412,7 +412,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `noun.subtype-pair` reads two creature types in the plural joined by "and" with "you control" for both; "other", a third type and another controller are not read.
 - The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Mirkwood Bats triggering once for each token (CR 603.2c) is unverified against its rulings.
 
-## The Gisa deck, group 1 (issue 41, D-1400 to D-1405)
+## The Gisa deck, group 1 (issue 41, D-472 to D-477)
 
 - Afflict is the only keyword with a number that can be granted besides landwalk: `toxic`, `annihilator`, `bushido` and the other keywords with a parameter are still refused by `validateCard` in a grant (the instances of each would need their own rule).
 - A land set to a basic land type (`setTypes` with `Plains`, `Island`, `Swamp`, `Mountain`, `Forest`) is run for an effect only: the static form ("Each land is a Swamp in addition to its other land types", Urborg, Yavimaya) is still refused by `validateCard`, and "in addition to its other land types" is not read (`effect.becomes` rejects it; the engine runs the additive effect). Other land types (a Desert, a Gate) cannot be set. The dependencies of CR 613.8 between layer 4 effects (Blood Moon with Urborg) are not modelled.

@@ -82,7 +82,7 @@ export const CREATURE_TYPE_LIST: Parser<string[]> = (ctx, pos) => {
 };
 
 /**
- * "a Swamp", "an Island", "a Plains" (CR 305.6, D-1402): one basic land type with its article, capitalized as the CR writes it. The word kept is the land type.
+ * "a Swamp", "an Island", "a Plains" (CR 305.6, D-474): one basic land type with its article, capitalized as the CR writes it. The word kept is the land type.
  */
 const BASIC_LAND_TYPE_WORD: Parser<string> = choice(
   map(pattern(new RegExp(`a (Plains|Swamp|Mountain|Forest)${BOUNDARY}`, 'u')), (m) => m[1] ?? ''),
@@ -241,7 +241,7 @@ function becoming(rule: string, withCardTypes = false, numbered = false): Parser
       span,
     }),
   );
-  // "becomes a Swamp" (Gisa deck group 1, D-1402, CR 305.7): a basic land type, which the caller allows only for a land (`BASIC_LAND_TYPE_WORD`).
+  // "becomes a Swamp" (Gisa deck group 1, D-474, CR 305.7): a basic land type, which the caller allows only for a land (`BASIC_LAND_TYPE_WORD`).
   const basicLand = map(
     spanned(BASIC_LAND_TYPE_WORD),
     ({ value, span }): Becoming => ({
@@ -366,7 +366,7 @@ export const EFFECT_BECOMES = defineRule<Clauses>({
     'target creature becomes red and gains haste until end of turn',
     'target creature becomes blue and gains flying and first strike until end of turn',
     'it becomes colorless and gains haste until end of turn',
-    // D-1402 (CR 305.7, Zombie Trailblazer): a land becomes a basic land type.
+    // D-474 (CR 305.7, Zombie Trailblazer): a land becomes a basic land type.
     'target land becomes a Swamp until end of turn',
     'target land becomes an Island until end of turn',
     'target land becomes a Plains until end of turn',
@@ -423,7 +423,7 @@ export const EFFECT_BECOMES = defineRule<Clauses>({
     )(ctx, pos);
     if (!r.ok) return r;
     const [subject, , what, gains, , duration] = r.value;
-    // CR 305.7 (D-1402): only a land can be set to a basic land type; a creature "becomes a Forest" is nothing the engine knows.
+    // CR 305.7 (D-474): only a land can be set to a basic land type; a creature "becomes a Forest" is nothing the engine knows.
     if (setsBasicLandType(what)) {
       const types = subject.filter.types;
       if (gains !== null || types?.length !== 1 || types[0] !== 'land') return fail(ctx, pos);

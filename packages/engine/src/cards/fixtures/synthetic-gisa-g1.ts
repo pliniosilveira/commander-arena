@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 1 OF THE GISA DECK (issue 41, D-1400 TO D-1405). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 1 OF THE GISA DECK (issue 41, D-472 TO D-477). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the real cards of the group need from the engine, written out by hand (the cards package checks that the grammar lowers the real Oracle
  * text to these same nodes): Afflict N and a group that has it (CR 702.130), a group that has a landwalk (CR 702.14), a cost that taps an untapped creature of a type the

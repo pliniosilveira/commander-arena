@@ -101,7 +101,7 @@ export function applyTypeLayer(
       types = [...new Set([...kept, ...e.change.types])];
     }
     if (e.change.subtypes !== undefined) {
-      // CR 305.7, 205.1a (D-1402): basic land types set a land's subtype: the land types it had go and everything else, creature types too, stays.
+      // CR 305.7, 205.1a (D-474): basic land types set a land's subtype: the land types it had go and everything else, creature types too, stays.
       subtypes = areBasicLandTypes(e.change.subtypes)
         ? [...new Set([...subtypes.filter((s) => !LAND_TYPES.includes(s)), ...e.change.subtypes])]
         : [...new Set([...subtypes.filter(isNonCreatureSubtype), ...e.change.subtypes])];
@@ -144,7 +144,7 @@ export interface StaticGrant {
 
 /**
  * Whether the list already has what a grant would add: the same keyword (the kind identifies a keyword without parameters; protection, D-376,
- * and landwalk, D-1401, are the exceptions, below, and afflict is counted by instance, `INSTANCE_KEYWORDS`),
+ * and landwalk, D-473, are the exceptions, below, and afflict is counted by instance, `INSTANCE_KEYWORDS`),
  * or a mana ability written the same way (a land given "{T}: Add one mana of any color" twice has it
  * once, which changes nothing in play).
  */
@@ -156,7 +156,7 @@ function hasAbility(list: readonly Ability[], grant: Ability): boolean {
       const written = JSON.stringify(grant.keyword);
       return list.some((a) => a.kind === 'keyword' && JSON.stringify(a.keyword) === written);
     }
-    // CR 702.14e (D-1401): landwalks of different land types are different abilities; the same one twice is redundant.
+    // CR 702.14e (D-473): landwalks of different land types are different abilities; the same one twice is redundant.
     if (grant.keyword.kind === 'landwalk') {
       const landType = grant.keyword.landType;
       return list.some(
@@ -213,7 +213,7 @@ export function applyAbilityLayer(
   for (const step of steps) {
     if (step.grant === null) abilities = [];
     else if (INSTANCE_KEYWORDS.includes(keywordKindOf(step.grant))) {
-      // CR 702.83b, 702.108b, 702.130b (D-149, D-1400): every instance of exalted, prowess or afflict is its own triggered ability, so each grant adds one,
+      // CR 702.83b, 702.108b, 702.130b (D-149, D-472): every instance of exalted, prowess or afflict is its own triggered ability, so each grant adds one,
       // whatever the object already has, and the triggered ability the keyword stands for with it.
       abilities = [...abilities, step.grant, ...expansionOf(step.grant)];
     } else if (!hasAbility(abilities, step.grant)) abilities = [...abilities, step.grant];

@@ -37,7 +37,7 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   devoid: ['Dvd', 'Devoid'],
   exalted: ['Exl', 'Exalted'],
   annihilator: ['Ann', 'Annihilator'],
-  // Gisa deck group 1 (D-1400): Afflict N (CR 702.130a).
+  // Gisa deck group 1 (D-472): Afflict N (CR 702.130a).
   afflict: ['Afl', 'Afflict'],
   backup: ['Bkp', 'Backup'],
   persist: ['Per', 'Persist'],

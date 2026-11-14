@@ -609,7 +609,7 @@ export interface IrCondition extends IrNode {
         readonly who: 'you' | 'opponent';
         readonly atLeast: number;
       }
-    // Issue 41 (D-1403): "a player was dealt combat damage by a Zombie this turn" (CR 120.2a): the kind of source, as the turn log keeps it.
+    // Issue 41 (D-475): "a player was dealt combat damage by a Zombie this turn" (CR 120.2a): the kind of source, as the turn log keeps it.
     | { readonly kind: 'combatDamagedBy'; readonly noun: IrNoun }
     | {
         readonly kind: 'enteredThisTurn';

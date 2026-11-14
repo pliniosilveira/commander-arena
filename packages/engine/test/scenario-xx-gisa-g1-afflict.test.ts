@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 1 (D-1400): Afflict N (CR 702.130) and a group that is given it ("Other Zombies you control have afflict 3", Lost Monarch of Ifnir).
+// The Gisa deck (issue 41), group 1 (D-472): Afflict N (CR 702.130) and a group that is given it ("Other Zombies you control have afflict 3", Lost Monarch of Ifnir).
 // Pins: CR 702.130a (a triggered ability: whenever this creature becomes blocked, defending player loses N life), CR 702.130b (each instance triggers separately: a
 // creature with two instances triggers twice), CR 509.3c (a creature becomes blocked once however many creatures block it), CR 508.5 (the defending player is the player the
 // creature attacks), CR 613.1f (a granted keyword is a layer 6 effect that ends when the permanent leaves, CR 611.3a) and CR 603.2 (an unblocked creature does not trigger it).

@@ -151,7 +151,7 @@ function annihilatorAbility(count: number): Ability {
 }
 
 /**
- * CR 702.130a (D-1400): "Afflict N" means "Whenever this creature becomes blocked, defending player loses N life." The defending player is the one
+ * CR 702.130a (D-472): "Afflict N" means "Whenever this creature becomes blocked, defending player loses N life." The defending player is the one
  * the creature attacks (CR 508.5); each instance triggers separately (CR 702.130b).
  */
 function afflictAbility(count: number): Ability {

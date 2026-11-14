@@ -7,7 +7,7 @@
  */
 import { BASIC_LAND_TYPES, CARD_TYPES, COLORS, isNonCreatureSubtype } from '../characteristics';
 
-/** D-1402 (CR 305.6): the basic land types, the one kind of land subtype an effect can set. */
+/** D-474 (CR 305.6): the basic land types, the one kind of land subtype an effect can set. */
 const BASIC_LAND_TYPE_NAMES: readonly string[] = Object.keys(BASIC_LAND_TYPES);
 
 import { GRANTABLE_KEYWORDS, RESTRICTABLE_BY_EFFECT } from './features';
@@ -128,7 +128,7 @@ function checkSetTypes(
       if (typeof s !== 'string' || s === '') {
         issue(out, `${path}.subtypes[${i}]`, 'empty subtype');
       } else if (isNonCreatureSubtype(s) && !BASIC_LAND_TYPE_NAMES.includes(s)) {
-        // The effect replaces creature types, or (D-1402, CR 305.7) a land's basic land types; replacing another card type's subtypes is not run.
+        // The effect replaces creature types, or (D-474, CR 305.7) a land's basic land types; replacing another card type's subtypes is not run.
         issue(
           out,
           `${path}.subtypes[${i}]`,
@@ -136,7 +136,7 @@ function checkSetTypes(
         );
       }
     });
-    // D-1402 (CR 305.7): a land's basic land types are set alone: no card type goes with them and no creature type is mixed in.
+    // D-474 (CR 305.7): a land's basic land types are set alone: no card type goes with them and no creature type is mixed in.
     const landTypes = e.subtypes.filter((s) => BASIC_LAND_TYPE_NAMES.includes(s));
     if (landTypes.length > 0 && (landTypes.length !== e.subtypes.length || e.types !== undefined)) {
       issue(
@@ -261,7 +261,7 @@ export function checkContinuousEffect(
         issue(
           out,
           `${path}.keyword`,
-          'only keywords without parameters can be granted (and afflict and landwalk, D-1400, D-1401)',
+          'only keywords without parameters can be granted (and afflict and landwalk, D-472, D-473)',
         );
       } else if (e.keyword?.kind === 'riot') {
         // D-185: riot is applied as a permanent enters; an effect that gives it later would have no choice left to make.

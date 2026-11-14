@@ -277,7 +277,7 @@ describe('landwalk (CR 702.14): a keyword with a land type', () => {
     ]);
   });
 
-  test('a landwalk can be granted since D-1401 (CR 702.14a, 613.1f): the words are in the grant lists, by a static ability and by an effect', () => {
+  test('a landwalk can be granted since D-473 (CR 702.14a, 613.1f): the words are in the grant lists, by a static ability and by an effect', () => {
     const grant = (landType: string): Ability => ({
       kind: 'static',
       static: {

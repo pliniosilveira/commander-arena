@@ -71,7 +71,7 @@ export function hasLostAbilities(state: GameState, id: ObjectId): boolean {
 }
 
 /**
- * CR 305.7 (D-1402): a land whose basic land types an effect set loses all abilities generated from its rules text, its static abilities among them. The abilities
+ * CR 305.7 (D-474): a land whose basic land types an effect set loses all abilities generated from its rules text, its static abilities among them. The abilities
  * other effects give it stay (layer 6 comes after), which `derive` keeps by not removing them.
  */
 function landLostRulesText(state: GameState, id: ObjectId): boolean {

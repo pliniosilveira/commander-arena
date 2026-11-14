@@ -211,7 +211,7 @@ function effectOf(
       });
     }
     case 'grantKeyword': {
-      // D-1400, D-1401: a keyword without parameters, "afflict 3" or a landwalk ("swampwalk"): `grantedKeyword` knows each word.
+      // D-472, D-473: a keyword without parameters, "afflict 3" or a landwalk ("swampwalk"): `grantedKeyword` knows each word.
       const keyword = grantedKeyword(effect.keyword);
       if (keyword === undefined || (effect.params ?? []).length > 0) return failure(at);
       return ok({ kind: 'grantKeyword', subject, keyword });
@@ -410,7 +410,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'grantKeyword':
       // D-186: riot is read by the engine from the group's static ability as a permanent enters, and listed as a keyword of its own.
       if (effect.keyword === 'riot') return ['static:grantKeyword', 'keyword:riot'];
-      // D-1400, D-1401: the keyword node of a granted afflict or landwalk is a kind of its own for the engine.
+      // D-472, D-473: the keyword node of a granted afflict or landwalk is a kind of its own for the engine.
       if (AFFLICT_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:afflict'];
       if (landwalkOf(effect.keyword) !== undefined) {
         return ['static:grantKeyword', 'keyword:landwalk'];

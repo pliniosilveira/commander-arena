@@ -1,5 +1,5 @@
 /**
- * Setting a land's basic land type (CR 305.6, 305.7, D-1402): "Target land becomes a Swamp until end of turn." (Zombie Trailblazer).
+ * Setting a land's basic land type (CR 305.6, 305.7, D-474): "Target land becomes a Swamp until end of turn." (Zombie Trailblazer).
  *
  * - An object with the land card type and a basic land type has the intrinsic ability "{T}: Add [mana symbol]" (CR 305.6), whether or not its text box says so.
  *   A land the card prints with its types has it as a mana ability of its definition; one that gains the type from an effect gets it here.

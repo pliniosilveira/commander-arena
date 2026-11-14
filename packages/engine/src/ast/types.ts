@@ -3093,7 +3093,7 @@ export type Keyword =
    * CR 702.14 (Landwalk): "[type]walk": the creature can't be blocked as long as the defending
    * player controls a land with that land type ("islandwalk": `landType: 'Island'`), or a land that
    * is not basic ("nonbasic landwalk": `landType: 'nonbasic'`, CR 702.14c). A snow or artifact
-   * landwalk is not supported. D-1401 (CR 702.14e): it can be granted ("Other Zombie creatures have swampwalk", "gains swampwalk until end of turn");
+   * landwalk is not supported. D-473 (CR 702.14e): it can be granted ("Other Zombie creatures have swampwalk", "gains swampwalk until end of turn");
    * landwalks of different land types are different abilities and the same one twice is redundant.
    */
   | { readonly kind: 'landwalk'; readonly landType: Subtype | 'nonbasic' }
@@ -3246,7 +3246,7 @@ export type Keyword =
    */
   | { readonly kind: 'annihilator'; readonly count: number }
   /**
-   * CR 702.130a (Afflict, D-1400): "Afflict N" means "Whenever this creature becomes blocked, defending player loses N life." A triggered ability the
+   * CR 702.130a (Afflict, D-472): "Afflict N" means "Whenever this creature becomes blocked, defending player loses N life." A triggered ability the
    * engine writes when it derives the object's abilities (`rules/derive-keywords.ts`); each instance triggers separately (CR 702.130b), so a creature that
    * has it printed and is given it again triggers twice. `count` is N, a positive integer. Grantable: "Other Zombies you control have afflict 3."
    */
@@ -3796,7 +3796,7 @@ export type Condition =
       readonly atLeast: number;
     }
   /**
-   * "If a player was dealt combat damage by a Zombie this turn" (D-1403, CR 120.2a, 510.2): some combat damage a player was dealt this turn came from a source
+   * "If a player was dealt combat damage by a Zombie this turn" (D-475, CR 120.2a, 510.2): some combat damage a player was dealt this turn came from a source
    * that matches `filter` as it was when it dealt the damage (its card types, its subtypes and, with `controller`, who controlled it relative to the controller of
    * the condition: `you` or `opponent`; a source that has left the battlefield counts as it last was, CR 113.7a). Reads the turn log only (`TurnLog.combatDamaged`);
    * damage that was entirely prevented is not there. `filter` names `types`, `subtypes` and `controller` and nothing else. Not for a static ability.

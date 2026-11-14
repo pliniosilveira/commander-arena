@@ -2137,7 +2137,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       break;
     case 'combatDamagedBy': {
-      // D-1403, CR 120.2a: the kind of source: card types, subtypes and (relative to the controller) who controlled it, nothing else.
+      // D-475, CR 120.2a: the kind of source: card types, subtypes and (relative to the controller) who controlled it, nothing else.
       const f = c.filter;
       if (f === undefined || f === null || typeof f !== 'object') {
         issue(out, `${path}.filter`, 'combatDamagedBy needs a filter of the damage source');

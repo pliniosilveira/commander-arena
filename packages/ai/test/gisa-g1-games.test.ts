@@ -1,4 +1,4 @@
-// Slice soak (D-1400 to D-1404): whole games with the 'gisaG1' deck style (SYNTHETIC cards of the engine fixtures `synthetic-gisa-g1.ts`: a Zombie with Afflict 3 that gives it to the
+// Slice soak (D-472 to D-476): whole games with the 'gisaG1' deck style (SYNTHETIC cards of the engine fixtures `synthetic-gisa-g1.ts`: a Zombie with Afflict 3 that gives it to the
 // other Zombies and mills and returns a creature card after a Zombie dealt combat damage, a Zombie that gives the other Zombie creatures swampwalk, a Zombie that taps an untapped
 // Zombie to make a land a Swamp or give a creature swampwalk, an enchantment that amasses and gives a big Zombie token lifelink, and a plain Zombie, with removal, burn and bodies)
 // between random agents, with CasualAgent and HeuristicAgent in some seats. Every game finishes with a result, no fallback, no rejected action and consistent state after every

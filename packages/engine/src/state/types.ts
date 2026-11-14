@@ -1866,7 +1866,7 @@ export interface TurnLog {
     readonly loyalty?: true;
   }[];
   /**
-   * Each combat damage event to a player this turn: the source that dealt it and the player dealt it (damage prevented entirely is not here). D-1403
+   * Each combat damage event to a player this turn: the source that dealt it and the player dealt it (damage prevented entirely is not here). D-475
    * (CR 120.2a, 608.2h, 113.7a): also what the source was as it dealt the damage, for "if a player was dealt combat damage by a Zombie this turn": its card
    * types, its subtypes and who controlled it (read from the permanent, or from its last-known information when it had left), so a source that has died
    * or changed still counts as it was.

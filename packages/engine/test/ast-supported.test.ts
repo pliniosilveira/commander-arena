@@ -47,7 +47,7 @@ const EXECUTABLE_KEYWORDS = [
   'soulbond', // scenario-xx-soulbond (D-286)
   'exalted', // scenario-xx-exalted-annihilator
   'annihilator', // scenario-xx-exalted-annihilator
-  'afflict', // scenario-xx-gisa-g1-afflict (D-1400)
+  'afflict', // scenario-xx-gisa-g1-afflict (D-472)
   'backup', // convert-grammar-engine-p69 (Guardian Scalelord, on the real card)
   'persist', // scenario-xx-persist-undying
   'undying', // scenario-xx-persist-undying

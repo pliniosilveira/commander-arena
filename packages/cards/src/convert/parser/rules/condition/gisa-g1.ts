@@ -1,5 +1,5 @@
 /**
- * Conditions of group 1 of the Gisa deck (issue 41, D-1403): "a player was dealt combat damage by a Zombie this turn" (Lost Monarch of Ifnir), a test of the turn
+ * Conditions of group 1 of the Gisa deck (issue 41, D-475): "a player was dealt combat damage by a Zombie this turn" (Lost Monarch of Ifnir), a test of the turn
  * that reads the log of the combat damage dealt to players (CR 120.2a, 510.2), with what the source was as it dealt the damage. Read after the "if" of an intervening
  * "if" (CR 603.4) like every condition.
  */
@@ -8,7 +8,7 @@ import type { IrCondition, IrNoun } from '../../ir/types';
 import { BOUNDARY, permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
 
-/** The fields of a phrase of permanents that the turn log of combat damage keeps of the source (D-1403). */
+/** The fields of a phrase of permanents that the turn log of combat damage keeps of the source (D-475). */
 const KEPT_FIELDS: readonly string[] = ['types', 'subtypes', 'controller', 'raw', 'zone'];
 
 /**

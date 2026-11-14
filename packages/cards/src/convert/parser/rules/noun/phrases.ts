@@ -560,7 +560,7 @@ export function permanentPhrase(
     };
   };
   const single: Parser<IrFilter> = (ctx, pos) => {
-    // Gisa deck group 1 (D-1404, CR 111.1): "a Zombie token you control with power 6 or greater", where the caller says what a token is: the word after the noun.
+    // Gisa deck group 1 (D-476, CR 111.1): "a Zombie token you control with power 6 or greater", where the caller says what a token is: the word after the noun.
     const tokenWord: Parser<boolean> = tokens
       ? optional(
           map(pattern(new RegExp(` token${plural ? 's' : ''}${BOUNDARY}`, 'iu')), () => true),

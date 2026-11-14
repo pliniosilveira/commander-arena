@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 1 (D-1401, D-1402): landwalk that is given ("Other Zombie creatures have swampwalk", Zombie Master; "Target creature gains swampwalk until
+// The Gisa deck (issue 41), group 1 (D-473, D-474): landwalk that is given ("Other Zombie creatures have swampwalk", Zombie Master; "Target creature gains swampwalk until
 // end of turn", Zombie Trailblazer) and "Target land becomes a Swamp until end of turn" (Zombie Trailblazer).
 // Pins: CR 702.14c (a creature with landwalk can't be blocked as long as the defending player controls a land with the land type, tapped or not), CR 702.14e (the same landwalk
 // twice is redundant), CR 702.14d and 509.1b (different landwalks are different abilities, each an evasion), CR 613.1f (a granted keyword, layer 6, in timestamp order with the

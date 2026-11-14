@@ -202,7 +202,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
   // which are appended, so every ability keeps the index it had (triggers and activations refer
   // to indexes). Grants and "loses all abilities" follow in timestamp order.
   // The abilities of an evoked permanent (D-121) are appended too, and "loses all abilities" removes them.
-  // CR 305.6, 305.7 (D-1402): a land whose basic land types an effect set loses the abilities of its rules text; a land that has basic land types it did not
+  // CR 305.6, 305.7 (D-474): a land whose basic land types an effect set loses the abilities of its rules text; a land that has basic land types it did not
   // print, from an effect, has their mana abilities (appended after what it keeps).
   const land = landTypeAbilities(input, line, landTypeSetIds(effects).has(obj.id));
   const printed = land.dropsRulesText ? [] : expandKeywords(input.abilities);

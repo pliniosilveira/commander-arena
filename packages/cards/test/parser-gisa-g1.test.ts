@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 1 (D-1400 to D-1404): the real Oracle lines of Lost Monarch of Ifnir, Zombie Master, Zombie Trailblazer and Dreadhorde Invasion read through the
+// The Gisa deck (issue 41), group 1 (D-472 to D-476): the real Oracle lines of Lost Monarch of Ifnir, Zombie Master, Zombie Trailblazer and Dreadhorde Invasion read through the
 // whole pipeline, the nodes they lower to, SYNTHETIC siblings, the near misses the grammar must not read and the features the engine lacks (D-068). The engine runs what is lowered in
 // convert-grammar-engine-gisa-g1.test.ts.
 import { describe, expect, test, vi } from 'vitest';

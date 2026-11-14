@@ -473,7 +473,7 @@ export function lowerCondition(
         : ok({ kind: 'playerDealtDamage', player: test.who, atLeast: test.atLeast });
     }
     case 'combatDamagedBy': {
-      // CR 120.2a (issue 41, D-1403): the engine's turn log keeps the card types, the subtypes and the controller of the source of combat damage to a player.
+      // CR 120.2a (issue 41, D-475): the engine's turn log keeps the card types, the subtypes and the controller of the source of combat damage to a player.
       const blocked = missingFeatures(['condition:combatDamagedBy']);
       if (blocked.length > 0) return failure(c, blocked);
       const test = c.test;
@@ -591,6 +591,6 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:paired',
   // D-427 (Danitha group 3): "as long as ~ entered this turn".
   'condition:thisEnteredThisTurn',
-  // D-1403 (Gisa deck group 1): "a player was dealt combat damage by a Zombie this turn".
+  // D-475 (Gisa deck group 1): "a player was dealt combat damage by a Zombie this turn".
   'condition:combatDamagedBy',
 ];

@@ -113,7 +113,7 @@ export function checkProtectionTypes(types: unknown, path: string, out: AstIssue
 }
 
 /**
- * D-1400, D-1401: the parameter of a keyword that is granted and has one: "afflict 3" (CR 702.130a, a positive whole number) and a landwalk
+ * D-472, D-473: the parameter of a keyword that is granted and has one: "afflict 3" (CR 702.130a, a positive whole number) and a landwalk
  * (CR 702.14a, a land type or "nonbasic", as for a printed one).
  */
 export function checkGrantedParameter(k: Keyword, path: string, out: AstIssue[]): void {
@@ -163,7 +163,7 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
     issue(
       out,
       path,
-      `a static ability cannot grant ${kindOf(k)}: only keywords without parameters can be granted (and afflict and landwalk, D-1400, D-1401)`,
+      `a static ability cannot grant ${kindOf(k)}: only keywords without parameters can be granted (and afflict and landwalk, D-472, D-473)`,
     );
     return;
   }

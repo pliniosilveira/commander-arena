@@ -84,7 +84,7 @@ export function dragonsConditionWords(condition: Condition, negate: boolean): st
     case 'playerDealtDamage':
       return damageWords(condition, negate);
     case 'combatDamagedBy':
-      // D-1403 (CR 120.2a): "a player was dealt combat damage by a Zombie this turn".
+      // D-475 (CR 120.2a): "a player was dealt combat damage by a Zombie this turn".
       return combatDamagedWords(condition, negate);
     case 'chosenOption':
       // CR 607.2d: "Khans was chosen" (the option the permanent chose as it entered).

@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 1 (D-1400 to D-1404): the REAL Oracle text of Lost Monarch of Ifnir, Zombie Master, Zombie Trailblazer and Dreadhorde Invasion (the corpus's
+// The Gisa deck (issue 41), group 1 (D-472 to D-476): the REAL Oracle text of Lost Monarch of Ifnir, Zombie Master, Zombie Trailblazer and Dreadhorde Invasion (the corpus's
 // golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is compared with the SYNTHETIC cards of the engine fixtures the engine scenarios of
 // `scenario-xx-gisa-g1-*.test.ts` run, and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs. Pins: CR 702.130a and 702.130b
 // (afflict), CR 702.14c (swampwalk), CR 305.7 (a land becomes a Swamp), CR 118.3 and 302.6 (the cost that taps an untapped Zombie), CR 603.4 and 120.2a (the intervening "if" that

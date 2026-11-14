@@ -7,7 +7,7 @@ Status values: waiting, in progress, done. Groups: 1 Zombie tribal statics, affl
 | Card | Group | Class | Status | What it needs |
 | --- | --- | --- | --- | --- |
 | Crowded Crypt | 5 | T + P | waiting | Corpse counters; a sacrifice ability that creates a Zombie token with decayed for each corpse counter. |
-| Dreadhorde Invasion | 1 | T + P | waiting | A Zombie token with power 6 or greater attacks: lifelink until end of turn (plus the rest of the card). |
+| Dreadhorde Invasion | 1 | T + P | done | A Zombie token with power 6 or greater attacks: lifelink until end of turn (plus the rest of the card). |
 | Embalmer's Tools | 4 | P | done | Activated abilities of creature cards in your graveyard cost {1} less. |
 | Forsaken Miner | 2 | P | done | Commit a crime: pay {B}, return this card from the graveyard to the battlefield. |
 | Gempalm Polluter | 5 | T + P | waiting | When you cycle this card: a player loses life equal to the number of Zombies on the battlefield. |
@@ -16,7 +16,7 @@ Status values: waiting, in progress, done. Groups: 1 Zombie tribal statics, affl
 | Jadar, Ghoulcaller of Nephalia | 5 | T + P | waiting | End step trigger, if you control no creatures with decayed: a 2/2 Zombie token with decayed. |
 | Krav, the Unredeemed | 3 | T + P | waiting | Partner with Regna, the Redeemer; sacrifice X creatures as a cost. |
 | Liliana, Dreadhorde General | 3 | P | waiting | Minus nine: each opponent chooses a permanent of each permanent type and sacrifices the rest (plus the other abilities). |
-| Lost Monarch of Ifnir | 1 | T + P | waiting | Afflict 3; other Zombies have afflict 3; second main phase trigger with mill and return. |
+| Lost Monarch of Ifnir | 1 | T + P | done | Afflict 3; other Zombies have afflict 3; second main phase trigger with mill and return. |
 | Mirkwood Bats | 2 | T + P | done | Whenever you create or sacrifice a token, each opponent loses 1 life. |
 | Morbid Opportunist | 2 | T + P | done | Whenever one or more other creatures die, draw a card, once each turn. |
 | Plumb the Forbidden | 3 | P | waiting | Additional cost: sacrifice one or more creatures; copy the spell for each creature sacrificed. |
@@ -24,7 +24,7 @@ Status values: waiting, in progress, done. Groups: 1 Zombie tribal statics, affl
 | Tetzimoc, Primal Death | 4 | P | done | Reveal this card from your hand as a cost; put a prey counter; activate only during your turn. |
 | Whip of Erebos | 4 | P | done | Return a creature card from the graveyard with haste, exile it at the next end step, and a leave-the-battlefield replacement. |
 | Woe Strider | 5 | T + P | waiting | Escape with two +1/+1 counters. |
-| Zombie Master | 1 | T | waiting | Other Zombie creatures have swampwalk. |
-| Zombie Trailblazer | 1 | T + P | waiting | Tap an untapped Zombie you control as a cost: a land becomes a Swamp, or a creature gains swampwalk. |
+| Zombie Master | 1 | T | done | Other Zombie creatures have swampwalk. |
+| Zombie Trailblazer | 1 | T + P | done | Tap an untapped Zombie you control as a cost: a land becomes a Swamp, or a creature gains swampwalk. |
 
 Owner decisions asked: none.

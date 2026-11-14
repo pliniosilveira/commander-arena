@@ -1,5 +1,5 @@
 /**
- * The words of group 1 of the Gisa deck (D-1400 to D-1404) as pure models: the keyword chips of Afflict N, the grants of swampwalk and afflict by a static ability and by an effect, the
+ * The words of group 1 of the Gisa deck (D-472 to D-476) as pure models: the keyword chips of Afflict N, the grants of swampwalk and afflict by a static ability and by an effect, the
  * effect that turns a land into a Swamp, and the condition of the combat damage by a creature type. Read from the engine's SYNTHETIC cards, so a wording that drifts from the AST
  * fails here. No DOM.
  */
@@ -61,7 +61,7 @@ describe('the activations of the Scout', () => {
   });
 });
 
-describe('the condition of the combat damage by a kind of creature (D-1403)', () => {
+describe('the condition of the combat damage by a kind of creature (D-475)', () => {
   test('a Zombie, a creature you control, an Elf an opponent controls', () => {
     expect(gameConditionWords({ kind: 'combatDamagedBy', filter: { subtypes: ['Zombie'] } })).toBe(
       'a player was dealt combat damage by a Zombie this turn',
