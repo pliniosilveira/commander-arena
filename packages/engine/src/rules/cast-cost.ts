@@ -233,7 +233,7 @@ export interface CostRequest {
    */
   readonly modes?: number;
   /**
-   * Which modes were chosen (their indexes, CR 700.2, 700.2h, D-1270), for the costs a mode lists before its effect: left out, the modes the spell on the stack has chosen. Where
+   * Which modes were chosen (their indexes, CR 700.2, 700.2h, D-433), for the costs a mode lists before its effect: left out, the modes the spell on the stack has chosen. Where
    * a caller has `modes` for the escalate cost it passes the set too.
    */
   readonly modeSet?: readonly number[];
@@ -321,7 +321,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;
     for (let i = 1; i < modes; i += 1) symbols.push(...manaSymbolsOf(escalate));
   }
-  // CR 700.2h, 702.183a (D-1270): a mode with a cost before its effect is an additional cost if the mode is chosen; all the costs of the modes chosen are paid.
+  // CR 700.2h, 702.183a (D-433): a mode with a cost before its effect is an additional cost if the mode is chosen; all the costs of the modes chosen are paid.
   symbols.push(
     ...manaSymbolsOf(modeCostsOf(face, request.modeSet ?? spell.stack?.chosenModes ?? [])),
   );

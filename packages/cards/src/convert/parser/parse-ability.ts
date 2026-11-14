@@ -165,7 +165,7 @@ function best(failures: readonly ParseFailure[]): ParseFailure {
   return chosen;
 }
 
-/** "Cure — {0} — ": the name of a mode of a Tiered spell and its cost before the effect (D-1270, CR 702.183a, 700.2h); group 1 is the cost, in braces. */
+/** "Cure — {0} — ": the name of a mode of a Tiered spell and its cost before the effect (D-433, CR 702.183a, 700.2h); group 1 is the cost, in braces. */
 const MODE_COST_LEAD = /^\p{Lu}[\p{L}'’ -]* — ((?:\{[^{}]+\})+) — (?=\S)/u;
 
 /** The symbols of "{3}{W}" as written, without braces; the lowering checks that the engine runs each in a mode cost. */
@@ -202,7 +202,7 @@ function readModes(
   const texts: string[] = [];
   const costs: (readonly string[])[] = [];
   for (const mode of sk.modes) {
-    // Tiered (D-1270, CR 702.183a, 700.2h): "Cure — {0} — Target permanent ...": the name and the cost of the mode come off the bullet, the cost is kept.
+    // Tiered (D-433, CR 702.183a, 700.2h): "Cure — {0} — Target permanent ...": the name and the cost of the mode come off the bullet, the cost is kept.
     let from = mode.start;
     if (header.value.costed === true) {
       const lead = MODE_COST_LEAD.exec(sk.text.slice(mode.start, mode.end));

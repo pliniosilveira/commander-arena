@@ -1,4 +1,4 @@
-// The Danitha deck (issue 26), group 6 (D-1260, D-1261 provisional): the REAL Oracle text of Kutzil, Malamet Exemplar and Gift of the Viper (the corpus's golden.jsonl, taken from
+// The Danitha deck (issue 26), group 6 (D-430, D-431): the REAL Oracle text of Kutzil, Malamet Exemplar and Gift of the Viper (the corpus's golden.jsonl, taken from
 // the issue) goes through the grammar as a card with no override, is defined in an engine scenario and is played through applyAction, so the nodes the parser writes for the real text
 // are what the engine runs. The helper cards are real fixtures. Pins: CR 208.4b (base power ignores counters and effects that only modify power), CR 603.2c (one or more: one trigger),
 // CR 101.2 (a cast forbidden by an effect), CR 122.1b (a keyword counter gives the keyword), CR 702.2b (deathtouch), CR 702.17b (reach).

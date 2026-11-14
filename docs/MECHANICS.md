@@ -4700,7 +4700,7 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Tests: engine `scenario-xx-danitha-g4-umbra.test.ts` and `scenario-xx-danitha-g4-modified.test.ts`; cards `parser-danitha-g4.test.ts` and `convert-grammar-engine-danitha-g4.test.ts`; AI `danitha-g4-agents.test.ts` and `danitha-g4-games.test.ts`; web `danitha-g4-text.test.ts`.
 - Added in: D-416 to D-421
 
-## The Danitha deck (issue 26), group 6: Kutzil, Malamet Exemplar and Gift of the Viper (D-1260 to D-1262, provisional)
+## The Danitha deck (issue 26), group 6: Kutzil, Malamet Exemplar and Gift of the Viper (D-430 to D-432)
 
 - CR: 208.4b (a base power ignores counters and the effects that only modify power), 613.4b-c (layer 7b sets, layer 7c modifies), 122.1b and 613.1f (a keyword counter makes the object gain the keyword, in layer 6), 613.7 and 613.7c (counters have timestamps), 702.83b (every instance of exalted triggers), 603.2c and 510.2 (one or more creatures deal combat damage: one trigger), 603.10a and 113.7a (look-back triggers read the last-known power), 122.6 (putting counters), 608.2c (instructions in order), 115.1 (a target is chosen once).
 - Gap class: P (base power, keyword counters) and T (the phrases); no new decision kind.
@@ -4710,7 +4710,7 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Tests: engine `scenario-xx-danitha-g6-base-power.test.ts`; cards `parser-danitha-g6.test.ts` and `convert-grammar-engine-danitha-g6.test.ts`; AI soak `danitha-g6-games.test.ts`; web `danitha-g6-text.test.ts`. Mutation checks (on the file, restored after each): the comparison `>` of `powerAboveBase` turned into `>=`, the duplicate check of keyword counters removed, the mode cost of group 7 left out (all killed).
 - Limits: see `docs/ROADMAP.md`.
 
-## The Danitha deck (issue 26), group 7: Restoration Magic, Tiered (D-1270 to D-1272, provisional)
+## The Danitha deck (issue 26), group 7: Restoration Magic, Tiered (D-433 to D-435)
 
 - CR: 702.183a (Tiered: choose one, and pay the cost of that mode as an additional cost), 700.2h (a mode with a cost before its effect: its cost is an additional cost if chosen, all of them if several are), 601.2b-f (the modes are chosen first, then the total cost is determined), 118.3 (a cost that can't be paid isn't paid: the set is not offered), 700.2a, 202.3 (additional costs do not change the mana value).
 - Gap class: K / P (a cost on a mode, checked by the survey: no S proposal needed) and T; no new decision kind.

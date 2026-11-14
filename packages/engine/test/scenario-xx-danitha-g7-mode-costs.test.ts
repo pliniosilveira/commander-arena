@@ -1,4 +1,4 @@
-// The Danitha deck (issue 26), group 7 (D-1270 provisional): modes that have a cost listed before their effect, Tiered (Restoration Magic).
+// The Danitha deck (issue 26), group 7 (D-433): modes that have a cost listed before their effect, Tiered (Restoration Magic).
 // Pins: CR 702.183a (Tiered: "Choose one. As an additional cost to cast this spell, pay the cost associated with that mode."), CR 700.2h (a mode with a cost before its effect has an
 // additional cost that must be paid as the spell is cast if the mode is chosen; with several such modes chosen, all the costs are paid), CR 601.2b-f (the modes are announced first, the
 // total cost is the mana cost plus all additional costs), CR 118.3 (a cost that cannot be paid is not paid: a set of modes the caster cannot afford is not offered), CR 700.2a.

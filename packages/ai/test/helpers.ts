@@ -2637,7 +2637,7 @@ export const DANITHA_G3_LANDS = supported([
 ]);
 
 /**
- * The SYNTHETIC cards of group 6 of the Danitha deck (D-1260, D-1261, provisional): a batch combat damage trigger and a look-back trigger over creatures with power greater than their
+ * The SYNTHETIC cards of group 6 of the Danitha deck (D-430, D-431): a batch combat damage trigger and a look-back trigger over creatures with power greater than their
  * base power, a spell that destroys one, and spells that put keyword counters (reach, deathtouch, flying, first strike, double strike, exalted) on a creature. They change which
  * creatures have which keywords during a game, which the generic pools are not built to follow.
  */
@@ -2673,7 +2673,7 @@ export const DANITHA_G6_LANDS = supported([
 ]);
 
 /**
- * The SYNTHETIC cards of group 7 of the Danitha deck (D-1270, provisional): modal spells whose modes have a cost listed before the effect (Tiered): a "choose one" with three tiers
+ * The SYNTHETIC cards of group 7 of the Danitha deck (D-433): modal spells whose modes have a cost listed before the effect (Tiered): a "choose one" with three tiers
  * (one costing {0}), a "choose one or more" whose modes all cost something, and a "choose one" with one costed mode. They put a `chooseModes` question in front of every cast whose
  * mana the caster can only partly spend, which games-100 expects only from dedicated styles.
  */
@@ -3458,9 +3458,9 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(SUBJECT_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(RECURSION_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ARTIFACT_NAMES as readonly string[]).includes(card.name))
-  // The Danitha group 6 cards (D-1260, D-1261) read base power and put keyword counters on creatures: a style of their own.
+  // The Danitha group 6 cards (D-430, D-431) read base power and put keyword counters on creatures: a style of their own.
   .filter((card) => !(DANITHA_G6_NAMES as readonly string[]).includes(card.name))
-  // The Danitha group 7 cards (D-1270) have modes with a cost of their own, which ask the modes of every cast: a style of their own.
+  // The Danitha group 7 cards (D-433) have modes with a cost of their own, which ask the modes of every cast: a style of their own.
   .filter((card) => !(DANITHA_G7_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
@@ -3691,8 +3691,6 @@ export type DeckStyle =
   | 'pt'
   | 'altCosts'
   | 'playRules'
-  if (style === 'danithaG6' && DANITHA_G6_SPELLS.length > 0) return DANITHA_G6_SPELLS;
-  if (style === 'danithaG7' && DANITHA_G7_SPELLS.length > 0) return DANITHA_G7_SPELLS;
   | 'upkeep'
   | 'later'
   | 'miracle'
@@ -3748,6 +3746,8 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaReveal' && DANITHA_G1A_SPELLS.length > 0) return DANITHA_G1A_SPELLS;
   if (style === 'danithaMill' && DANITHA_G2_SPELLS.length > 0) return DANITHA_G2_SPELLS;
   if (style === 'danithaG5' && DANITHA_G5_SPELLS.length > 0) return DANITHA_G5_SPELLS;
+  if (style === 'danithaG6' && DANITHA_G6_SPELLS.length > 0) return DANITHA_G6_SPELLS;
+  if (style === 'danithaG7' && DANITHA_G7_SPELLS.length > 0) return DANITHA_G7_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
@@ -3876,8 +3876,6 @@ export function landSlots(style: DeckStyle): readonly string[] {
   // Basic lands of every color: the coverage creatures need green, black and others.
   if (style === 'combat' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'search' && BASIC_LANDS.length > 0) return BASIC_LANDS;
-  if (style === 'danithaG6' && BASIC_LANDS.length > 0) return DANITHA_G6_LANDS;
-  if (style === 'danithaG7' && BASIC_LANDS.length > 0) return DANITHA_G7_LANDS;
   if (style === 'activated' && ACTIVATED_LANDS.length > 0) return ACTIVATED_LANDS;
   if (style === 'attachments' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'kicker' && BASIC_LANDS.length > 0) return BASIC_LANDS;
@@ -3936,6 +3934,8 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaReveal' && BASIC_LANDS.length > 0) return DANITHA_G1A_LANDS;
   if (style === 'danithaMill' && BASIC_LANDS.length > 0) return DANITHA_G2_LANDS;
   if (style === 'danithaG5' && BASIC_LANDS.length > 0) return DANITHA_G5_LANDS;
+  if (style === 'danithaG6' && BASIC_LANDS.length > 0) return DANITHA_G6_LANDS;
+  if (style === 'danithaG7' && BASIC_LANDS.length > 0) return DANITHA_G7_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
@@ -4424,14 +4424,14 @@ export const DANITHA_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
   ['spells', 'danithaG3'],
 ];
 
-/** Style pairs of the Danitha group 6 soak test (D-1260, D-1261): a mirror match and both mixed ways. */
+/** Style pairs of the Danitha group 6 soak test (D-430, D-431): a mirror match and both mixed ways. */
 export const DANITHA_G6_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['danithaG6', 'danithaG6'],
   ['danithaG6', 'spells'],
   ['spells', 'danithaG6'],
 ];
 
-/** Style pairs of the Danitha group 7 soak test (D-1270): a mirror match and both mixed ways. */
+/** Style pairs of the Danitha group 7 soak test (D-433): a mirror match and both mixed ways. */
 export const DANITHA_G7_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['danithaG7', 'danithaG7'],
   ['danithaG7', 'spells'],

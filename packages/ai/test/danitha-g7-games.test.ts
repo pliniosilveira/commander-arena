@@ -1,4 +1,4 @@
-// Slice soak (D-1270 provisional): whole games with the 'danithaG7' deck style (SYNTHETIC cards of the engine fixtures `synthetic-danitha-g7.ts`: modal spells whose modes have a cost
+// Slice soak (D-433): whole games with the 'danithaG7' deck style (SYNTHETIC cards of the engine fixtures `synthetic-danitha-g7.ts`: modal spells whose modes have a cost
 // listed before the effect, Tiered, with bodies and removal) between random agents, with CasualAgent and HeuristicAgent in some seats. Every game finishes with a result, no fallback,
 // no rejected action and consistent state after every action; the action log replays to the same final state; and, with the rules read again here from the cards' texts (not from
 // the engine's own code), at every step:

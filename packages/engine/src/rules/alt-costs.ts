@@ -39,14 +39,14 @@ export function escalateCostOf(face: CardFace | null): readonly Cost[] | null {
   return keywordCost(face, 'escalate');
 }
 
-/** Whether a mode of the face's modal spell has a cost listed before its effect (CR 700.2h, 702.183a, D-1270): Tiered. */
+/** Whether a mode of the face's modal spell has a cost listed before its effect (CR 700.2h, 702.183a, D-433): Tiered. */
 export function hasModeCosts(face: CardFace | null): boolean {
   return face?.spell?.modes?.some((m) => m.cost !== undefined) === true;
 }
 
 /**
  * The costs of the modes in `chosen` (indexes of the face's modes), to be paid as additional costs of the spell (CR 700.2h: "if more than one such mode is chosen, all
- * additional costs must be paid"; D-1270). A mode with no cost adds none; mana only (`validateCard`), so the helpers that add mana up read them like the other costs.
+ * additional costs must be paid"; D-433). A mode with no cost adds none; mana only (`validateCard`), so the helpers that add mana up read them like the other costs.
  */
 export function modeCostsOf(face: CardFace | null, chosen: readonly number[]): readonly Cost[] {
   const modes = face?.spell?.modes;

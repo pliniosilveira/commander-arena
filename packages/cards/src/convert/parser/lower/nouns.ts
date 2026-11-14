@@ -235,7 +235,7 @@ function lowerFilterAt(filter: IrFilter, noun: IrNoun, inner: boolean): LowerRes
     if (inner) return bad([]);
     parts.push('selector:modified');
   }
-  // D-1261: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
+  // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
   if (filter.powerAboveBase === true) parts.push('selector:powerAboveBase');
   // D-262: "that share a land type" is a condition on the cards found together, which a filter of one card cannot say: the search lowering takes it off first.
   if (filter.sharedLandType === true) return bad([]);

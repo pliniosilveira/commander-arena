@@ -1,4 +1,4 @@
-// The Danitha deck (issue 26), group 6 (D-1260, D-1261 provisional): base power and keyword counters. "Whenever one or more creatures you control each with
+// The Danitha deck (issue 26), group 6 (D-430, D-431): base power and keyword counters. "Whenever one or more creatures you control each with
 // power greater than its base power deal combat damage to a player, draw a card." (Kutzil) and "Put a +1/+1 counter, a reach counter, and a deathtouch counter on
 // target creature. Untap it." (Gift of the Viper).
 // Pins: CR 208.4b (a base power ignores the counters and the effects that only modify power), CR 613.4b-c (layer 7b sets, layer 7c modifies), CR 613.7b (an

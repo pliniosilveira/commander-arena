@@ -26,7 +26,7 @@ export interface FilterSubject {
    */
   readonly power?: number | null;
   readonly toughness?: number | null;
-  /** The base power (CR 208.4b), read by `powerAboveBase` (D-1261); left out where the caller does not know it, which fails that test closed. */
+  /** The base power (CR 208.4b), read by `powerAboveBase` (D-431); left out where the caller does not know it, which fails that test closed. */
   readonly basePower?: number | null;
   readonly manaValue?: number;
   /**
@@ -292,7 +292,7 @@ export function matchesFilterWith(
     }
     if (!(d.power < power)) return false;
   }
-  // CR 208.4b (D-1261): "with power greater than its base power": the power the object has now is more than its base power.
+  // CR 208.4b (D-431): "with power greater than its base power": the power the object has now is more than its base power.
   if (filter.powerAboveBase === true) {
     const base = d.basePower;
     if (base === null || base === undefined || d.power === null || d.power === undefined) {

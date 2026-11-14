@@ -1,5 +1,5 @@
 /**
- * The words of group 6 of the Danitha deck (D-1260, D-1261 provisional) as pure models: the trigger over creatures with power greater than their base power, the
+ * The words of group 6 of the Danitha deck (D-430, D-431) as pure models: the trigger over creatures with power greater than their base power, the
  * target that says it, and the keyword counters (read from the engine's SYNTHETIC cards, so a wording that drifts from the AST fails here). No DOM.
  */
 import { type Ability, syntheticCard } from '@commander-arena/engine';
@@ -21,7 +21,7 @@ const triggerOf = (name: string): Extract<Ability, { kind: 'triggered' }> => {
   return ability;
 };
 
-describe('the trigger over creatures above their base power (D-1261)', () => {
+describe('the trigger over creatures above their base power (D-431)', () => {
   test('the batch trigger names the power test', () => {
     expect(triggerWording(triggerOf('SYNTHETIC Base Power Batch Watcher').trigger, CTX)).toBe(
       'Whenever one or more creatures you control with power greater than its base power deal combat damage to a player',

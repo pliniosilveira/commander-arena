@@ -468,7 +468,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'modal.choose-not-repeated': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   // D-344 (repeatable modes, CR 700.2d): the header with no dash, its bullets after it.
   'modal.choose-repeatable': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
-  // Danitha deck, group 7 (D-1270): Tiered, whose bullets name their mode and its cost before the effect.
+  // Danitha deck, group 7 (D-433): Tiered, whose bullets name their mode and its cost before the effect.
   'modal.tiered': spell(
     (e) => `${e}\n• Cure — {0} — Draw a card.\n• Cura — {1} — You gain 1 life.`,
   ),

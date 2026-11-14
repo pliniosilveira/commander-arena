@@ -1116,7 +1116,7 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     if (!count.ok) return count;
     const counter = arg(clause, 'counter');
     if (counter?.kind !== 'counterSpec') return failure(clause);
-    // D-1260 (CR 122.1b): a keyword counter the engine has no keyword for (decayed) would do nothing: the line is not read, never run without its effect.
+    // D-430 (CR 122.1b): a keyword counter the engine has no keyword for (decayed) would do nothing: the line is not read, never run without its effect.
     if (UNSUPPORTED_KEYWORD_COUNTERS.includes(counter.name)) return failure(clause);
     return eachObject(
       clause,

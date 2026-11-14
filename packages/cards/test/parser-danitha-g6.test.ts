@@ -1,4 +1,4 @@
-// The Danitha deck (issue 26), group 6 (D-1260, D-1261 provisional): the lines of Kutzil, Malamet Exemplar and Gift of the Viper. The first lines of each block are the real
+// The Danitha deck (issue 26), group 6 (D-430, D-431): the lines of Kutzil, Malamet Exemplar and Gift of the Viper. The first lines of each block are the real
 // Oracle text of the acceptance cards of the golden corpus read through the whole pipeline; the other lines are SYNTHETIC siblings and the near misses the grammar must not
 // read. The engine runs what is lowered in convert-grammar-engine-danitha-g6.test.ts.
 import { describe, expect, test, vi } from 'vitest';

@@ -1,7 +1,7 @@
 /**
- * SYNTHETIC CARDS FOR THE DANITHA DECK (ISSUE 26), GROUP 7 (D-1270 TO D-1279, PROVISIONAL). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR THE DANITHA DECK (ISSUE 26), GROUP 7 (D-433 TO D-435). NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of modes that have a cost listed before their effect (CR 700.2h, 702.183 Tiered, D-1270): a "choose one" instant whose three modes each add a
+ * Invented for the tests of modes that have a cost listed before their effect (CR 700.2h, 702.183 Tiered, D-433): a "choose one" instant whose three modes each add a
  * cost (one of them {0}, one aimed at a permanent, one that affects a group), a "choose one or more" sorcery whose modes all have a cost (all the costs of the modes chosen
  * are paid), and a "choose one" spell where only one of the modes has a cost. Each has the wording of a real card, the name replaced. Names start with "SYNTHETIC ";
  * oracleId is null. The text describes what the AST does; it is not Oracle text, and none of these is the definition of a real card.

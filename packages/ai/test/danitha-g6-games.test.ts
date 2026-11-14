@@ -1,4 +1,4 @@
-// Slice soak (D-1260, D-1261 provisional): whole games with the 'danithaG6' deck style (SYNTHETIC cards of the engine fixtures `synthetic-danitha-g6.ts`: a batch combat damage
+// Slice soak (D-430, D-431): whole games with the 'danithaG6' deck style (SYNTHETIC cards of the engine fixtures `synthetic-danitha-g6.ts`: a batch combat damage
 // trigger and a "dies" trigger over creatures with power greater than their base power, a spell that destroys one, and spells that put keyword counters on creatures, with bodies, a
 // pump and removal) between random agents, with CasualAgent and HeuristicAgent in some seats. Every game finishes with a result, no fallback, no rejected action and consistent state
 // after every action; the action log replays to the same final state; and, with the rules read again here from the cards' texts (not from the engine's own code), at every step:

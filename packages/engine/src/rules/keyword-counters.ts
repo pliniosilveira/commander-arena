@@ -1,5 +1,5 @@
 /**
- * Keyword counters (CR 122.1b, D-1260): "a keyword counter on a permanent or on a card in a zone other than the battlefield causes that object to gain that
+ * Keyword counters (CR 122.1b, D-430): "a keyword counter on a permanent or on a card in a zone other than the battlefield causes that object to gain that
  * keyword". The counter is named as the keyword is ("reach", "first strike"), and `derive` adds the keyword in layer 6 (CR 613.1f) from the counters the
  * object has, after the abilities it has printed and before every grant and every "loses all abilities" effect (see `keywordCounterAbilities`).
  */

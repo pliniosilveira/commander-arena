@@ -113,7 +113,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayPlayFromGraveyard',
     // D-411: "Mill four cards. You may put a land card from among them into your hand." (`ChooseSelector.fromMoved`: the choice among the cards `moved` names).
     'chooseAmongMoved',
-    // D-1270: "Tiered", a mode with a cost listed before its effect (`SpellMode.cost`, CR 700.2h, 702.183a).
+    // D-433: "Tiered", a mode with a cost listed before its effect (`SpellMode.cost`, CR 700.2h, 702.183a).
     'modeCost',
   ],
   effectKinds: [
@@ -622,7 +622,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-120: `ObjectFilter.attacking` and `powerLessThanSource`.
     'attacking',
     'powerLessThanSource',
-    // D-1261: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
+    // D-431: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
     'powerAboveBase',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
     // opponent", `all`) and a creature that deals the damage (`dealDamage.from`, a "bite").
@@ -1026,7 +1026,7 @@ export const ABILITY_FEATURES = [
   'mayPlayFromGraveyard',
   /** "Mill four cards. You may put a land card from among them into your hand" (D-411, CR 608.2c, 608.2d): the engine's `ChooseSelector.fromMoved` of a `moveToZone`. */
   'chooseAmongMoved',
-  /** "Tiered" (D-1270, CR 700.2h, 702.183a): a mode of a modal spell with a cost listed before its effect, paid as an additional cost when the mode is chosen (`SpellMode.cost`). */
+  /** "Tiered" (D-433, CR 700.2h, 702.183a): a mode of a modal spell with a cost listed before its effect, paid as an additional cost when the mode is chosen (`SpellMode.cost`). */
   'modeCost',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
@@ -1129,7 +1129,7 @@ export const SELECTOR_KINDS = [
   'attacking',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
-  /** "With power greater than its base power" (CR 208.4b, D-1261): the engine's `ObjectFilter.powerAboveBase`. */
+  /** "With power greater than its base power" (CR 208.4b, D-431): the engine's `ObjectFilter.powerAboveBase`. */
   'powerAboveBase',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */
   'attackingYou',

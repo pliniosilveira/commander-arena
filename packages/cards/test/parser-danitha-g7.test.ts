@@ -1,4 +1,4 @@
-// The Danitha deck (issue 26), group 7 (D-1270 provisional): the Tiered lines of Restoration Magic (CR 702.183a, 700.2h). The first block is the real Oracle text of the acceptance
+// The Danitha deck (issue 26), group 7 (D-433): the Tiered lines of Restoration Magic (CR 702.183a, 700.2h). The first block is the real Oracle text of the acceptance
 // card of the golden corpus read through the whole pipeline; the other lines are SYNTHETIC siblings and the near misses the grammar must not read. The engine runs what is
 // lowered in convert-grammar-engine-danitha-g7.test.ts.
 import { describe, expect, test, vi } from 'vitest';

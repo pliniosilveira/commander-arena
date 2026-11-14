@@ -42,7 +42,7 @@ export function checkModes(
   out: AstIssue[],
   /** True for a triggered ability: with no mode chosen it is removed from the stack (CR 700.2b), which a choice of 0 modes would need (D-346). */
   triggered = false,
-  /** True for a spell: only its modes may have a cost listed before the effect (CR 700.2h, D-1270). */
+  /** True for a spell: only its modes may have a cost listed before the effect (CR 700.2h, D-433). */
   spell = false,
 ): void {
   const list = modes ?? [];
@@ -79,7 +79,7 @@ export function checkModes(
   });
 }
 
-/** CR 700.2h (D-1270): a mode's cost is an additional cost to cast the spell: mana, no X, not with a repeatable choice, and only on a spell. */
+/** CR 700.2h (D-433): a mode's cost is an additional cost to cast the spell: mana, no X, not with a repeatable choice, and only on a spell. */
 function checkModeCost(
   mode: SpellMode,
   choose: ModeChoice | undefined,

@@ -558,7 +558,7 @@ export function canCast(
           kicked,
           excluded: obj.id,
           x: least,
-          // CR 702.120a (D-145): a modal spell with escalate needs at least the mana for the fewest modes it must choose; with modes that have a cost (D-1270) the set chosen.
+          // CR 702.120a (D-145): a modal spell with escalate needs at least the mana for the fewest modes it must choose; with modes that have a cost (D-433) the set chosen.
           ...modes,
         }),
       ),
@@ -568,7 +568,7 @@ export function canCast(
 /**
  * What a spell's modes add to its cost, for the check that it can be cast at all (CR 601.2f, 700.2h): one request for each way of choosing the modes. A spell that is not modal
  * has none to add; one whose modes have no cost of their own needs the mana of the fewest modes it must choose (escalate, CR 702.120a, D-145); one with modes that cost something
- * (Tiered, D-1270) can be cast if some legal choice of modes can be paid, whatever it costs.
+ * (Tiered, D-433) can be cast if some legal choice of modes can be paid, whatever it costs.
  */
 function modePayments(
   state: GameState,
@@ -646,7 +646,7 @@ export function canCastDuringResolution(
           alternative: alternative === 'normal' ? undefined : alternative,
           kicked,
           excluded: obj.id,
-          // CR 702.120a, 118.9 (D-145): a free cast still pays the escalate cost of the fewest modes it must choose, and the cost of the modes chosen (D-1270).
+          // CR 702.120a, 118.9 (D-145): a free cast still pays the escalate cost of the fewest modes it must choose, and the cost of the modes chosen (D-433).
           ...modes,
           ...(anyManaType ? { anyType: true as const } : {}),
         }),

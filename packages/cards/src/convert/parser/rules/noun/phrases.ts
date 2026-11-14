@@ -400,7 +400,7 @@ const DAMAGED_BY_SOURCE: Parser<boolean> = map(
 );
 
 /**
- * " with power greater than its base power" (D-1261, CR 208.4b): the object's power as it is now is more than its base power, the power before
+ * " with power greater than its base power" (D-431, CR 208.4b): the object's power as it is now is more than its base power, the power before
  * counters and the effects that only modify it (the engine's `powerAboveBase`). Said of a creature only; "greater than" any other number or value is
  * not read (`comparisonSuffix` reads "with power 4 or greater").
  */
@@ -514,7 +514,7 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
     // "creatures you control with a counter on it" (stage P32).
     const counter = optional(quiet(counterSuffix(plural)), undefined)(ctx, damaged.pos);
     if (!counter.ok) return counter;
-    // "creatures you control with power greater than its base power" (D-1261).
+    // "creatures you control with power greater than its base power" (D-431).
     const aboveBase = optional(quiet(powerAboveBase(plural)), false)(ctx, counter.pos);
     if (!aboveBase.ok) return aboveBase;
     let controller = control.value;

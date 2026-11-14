@@ -58,7 +58,7 @@ const TRIGGER_WORD = /^(?:when|whenever|at)\s/i;
 /** "When you next cast an instant or sorcery spell this turn, " (D-336): the lead of a sentence that creates a delayed triggered ability. */
 const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
-/** "Tiered" (D-1270, CR 702.183a) is the lead line of a modal text whose modes have costs, as "Choose one —" is of the others. */
+/** "Tiered" (D-433, CR 702.183a) is the lead line of a modal text whose modes have costs, as "Choose one —" is of the others. */
 const MODAL_HEADER = /^(?:choose\b|tiered(?:\n|$))/i;
 const REPLACEMENT_ENTERS = /^(?:as )?~ enters\b/i;
 /** "Umbra armor" (CR 702.89a, D-417): the keyword line of an Aura, which is a replacement effect of the permanent it enchants. */

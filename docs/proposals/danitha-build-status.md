@@ -16,15 +16,15 @@ Status values: waiting, in progress, done. The surveys found no S-class gap: eve
 | Danitha, New Benalia's Light | 1b | T | done |  |
 | Ethereal Armor | 3 | T + P (attachment filters, host subject) | done |  |
 | Face of Divinity | 3 | T + P (attachment filters, host subject) | done |  |
-| Gift of the Viper | 6 | P (base power, keyword counters) | waiting |  |
+| Gift of the Viper | 6 | P (base power, keyword counters) | done |  |
 | Golden-Tail Trainer | 4 | K + P (Umbra armor, modified filter) | done |  |
 | Hyena Umbra | 4 | K + P (Umbra armor, modified filter) | done |  |
 | Kor Spiritdancer | 3 | T + P (attachment filters, host subject) | done |  |
-| Kutzil, Malamet Exemplar | 6 | P (base power, keyword counters) | waiting |  |
+| Kutzil, Malamet Exemplar | 6 | P (base power, keyword counters) | done |  |
 | Lion Umbra | 4 | K + P (Umbra armor, modified filter) | done |  |
 | Malevolent Rumble | 1a | T + small P (reveal-all flag) | done |  |
 | Midnight Tilling | 2 | T + P (choose among the moved cards) | done |  |
-| Restoration Magic | 7 | K (Tiered) | waiting |  |
+| Restoration Magic | 7 | K (Tiered) | done |  |
 | Sage's Reverie | 3 | T + P (attachment filters, host subject) | done |  |
 | Satyr Wayfinder | 1a | T + small P (reveal-all flag) | done |  |
 | Season of Growth | 1b | T | done |  |

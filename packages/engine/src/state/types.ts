@@ -621,7 +621,7 @@ export interface LastKnownInfo {
   readonly abilities: readonly Ability[];
   readonly power: number | null;
   readonly toughness: number | null;
-  /** The base power it had (CR 208.4b, D-1261); absent in a record made before it was kept. */
+  /** The base power it had (CR 208.4b, D-431); absent in a record made before it was kept. */
   readonly basePower?: number | null;
 }
 

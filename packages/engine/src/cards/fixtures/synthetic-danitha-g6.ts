@@ -1,8 +1,8 @@
 /**
- * SYNTHETIC CARDS FOR THE DANITHA DECK (ISSUE 26), GROUP 6 (D-1260 TO D-1269, PROVISIONAL). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR THE DANITHA DECK (ISSUE 26), GROUP 6 (D-430 TO D-432). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of base power and keyword counters: a batch combat damage trigger over creatures "each with power greater than its base
- * power" (D-1261), spells that put a +1/+1 counter and keyword counters on a creature (D-1260), and a spell that destroys a creature with power
+ * power" (D-431), spells that put a +1/+1 counter and keyword counters on a creature (D-430), and a spell that destroys a creature with power
  * greater than its base power. Each has the wording of a real card, the name replaced. Names start with "SYNTHETIC "; oracleId is null. The text
  * describes what the AST does; it is not Oracle text, and none of these is the definition of a real card.
  */

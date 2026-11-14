@@ -42,7 +42,7 @@ export const TRIGGER_COMBAT_DAMAGE_BATCH = defineRule<IrTrigger>({
     'one or more creatures you control deal combat damage to a player',
     'one or more Zombies you control deal combat damage to an opponent',
     'two or more creatures you control deal combat damage to a player',
-    // D-1261 (CR 208.4b): the sources are creatures whose power is more than their base power (Kutzil).
+    // D-431 (CR 208.4b): the sources are creatures whose power is more than their base power (Kutzil).
     'one or more creatures you control each with power greater than its base power deals combat damage to a player',
     'one or more creatures you control with power greater than its base power deal combat damage to an opponent',
   ],
@@ -91,7 +91,7 @@ export const TRIGGER_COMBAT_DAMAGE_BATCH = defineRule<IrTrigger>({
     )(ctx, pos);
     if (!r.ok) return r;
     const [group, words] = r.value;
-    // "deal" for the group ("one or more creatures you control deal"), "deals" for the one each of them is ("... each with power greater than its base power deals", D-1261).
+    // "deal" for the group ("one or more creatures you control deal"), "deals" for the one each of them is ("... each with power greater than its base power deals", D-431).
     const each = / each with /iu.test(ctx.text.slice(group.span.start, group.span.end));
     if (/^ deals /iu.test(words.value[0]) !== each) return { ok: false };
     const [atLeast, filter] = group.value;

@@ -25,7 +25,7 @@ import { type Clauses, LIST_SEPARATOR, makeClause, operands, single } from './op
 // Stage P69 (D-256): "that many", the life a life gain trigger names (the lowering refuses it where no such trigger or instruction gives it a meaning).
 /**
  * The name of a kind of counter: "+1/+1", "-1/-1", the keyword counters of two words (CR 122.1b: first strike, double strike) and any other word ("charge").
- * Read at the lowering, where the names the engine runs as keyword counters (D-1260) are told from the ones it cannot run (decayed).
+ * Read at the lowering, where the names the engine runs as keyword counters (D-430) are told from the ones it cannot run (decayed).
  */
 const COUNTER_NAME = /[+-]\d+\/[+-]\d+|first strike|double strike|[a-z]+/i;
 
@@ -176,7 +176,7 @@ export const EFFECT_ADD_COUNTERS_NUMBER_OF = defineRule<Clauses>({
 });
 
 /**
- * `effect.add-counters-kinds`: "Put a +1/+1 counter, a reach counter, and a deathtouch counter on target creature" (D-1260, CR 122.6, 122.1b): one counter of each of
+ * `effect.add-counters-kinds`: "Put a +1/+1 counter, a reach counter, and a deathtouch counter on target creature" (D-430, CR 122.6, 122.1b): one counter of each of
  * two or more kinds on the same object, put in the order written (CR 608.2c), each its own instruction. The object is one noun (a target, "~" or "it"), which every
  * instruction shares: a target is chosen once (CR 115.1). Only "a" or "an" before each counter: "two +1/+1 counters and a reach counter" is not read.
  */

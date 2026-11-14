@@ -68,7 +68,7 @@ export interface Derived extends DerivedBase {
   /** The creatures this one can't be blocked by, from static abilities (CR 509.1b, D-139). Read where blockers are declared. */
   readonly blockLimits: readonly BlockLimit[];
   /**
-   * The base power and toughness (CR 208.4b, D-1261): the values after characteristic-defining abilities and the effects that set them (layer 7b), ignoring counters and
+   * The base power and toughness (CR 208.4b, D-431): the values after characteristic-defining abilities and the effects that set them (layer 7b), ignoring counters and
    * the effects that only modify them (layer 7c). Null for an object with no power or toughness.
    */
   readonly basePower: number | null;
@@ -203,7 +203,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
   // The abilities of an evoked permanent (D-121) are appended too, and "loses all abilities" removes them.
   const printed = expandKeywords(input.abilities);
   const own = alternativeAbilitiesOf(state, obj);
-  // CR 122.1b (D-1260): the keywords of the object's keyword counters, after everything it has printed.
+  // CR 122.1b (D-430): the keywords of the object's keyword counters, after everything it has printed.
   const start = keywordCounterAbilities(
     obj.counters,
     own.length === 0 ? printed : [...printed, ...own],
@@ -222,7 +222,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
     ptWith,
   });
   const abilities = applyAbilityLayer(start, fx.grants, effects);
-  // CR 208.4b (D-1261): the base power and toughness are what layer 7b leaves, before any counter or "+N/+N" effect of layer 7c.
+  // CR 208.4b (D-431): the base power and toughness are what layer 7b leaves, before any counter or "+N/+N" effect of layer 7c.
   const baseValues = basePtOf(ptBase, withStaticSets(obj, effects, fx.sets));
   const typed: Derived = {
     ...input,

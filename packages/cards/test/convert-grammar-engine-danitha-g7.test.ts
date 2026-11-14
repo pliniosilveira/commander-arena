@@ -1,4 +1,4 @@
-// The Danitha deck (issue 26), group 7 (D-1270 provisional): the REAL Oracle text of Restoration Magic (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a
+// The Danitha deck (issue 26), group 7 (D-433): the REAL Oracle text of Restoration Magic (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a
 // card with no override, is defined in an engine scenario and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs. Pins:
 // CR 702.183a (Tiered), CR 700.2h (the cost of the chosen mode is an additional cost), CR 601.2b-f (modes first, then the total cost), CR 702.11 (hexproof), CR 702.12 (indestructible),
 // CR 119 (life gain), CR 700.2a (the modes are chosen as the spell is cast).

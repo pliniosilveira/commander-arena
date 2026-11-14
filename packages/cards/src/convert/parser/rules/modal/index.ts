@@ -261,7 +261,7 @@ export const MODAL_CHOOSE_REPEATABLE = defineRule<IrModeHeader>({
 });
 
 /**
- * `modal.tiered`: "Tiered" (D-1270, CR 702.183a, 700.2h; the reminder text "(Choose one additional cost.)" is dropped before the rules read the line). One mode is chosen,
+ * `modal.tiered`: "Tiered" (D-433, CR 702.183a, 700.2h; the reminder text "(Choose one additional cost.)" is dropped before the rules read the line). One mode is chosen,
  * and "as an additional cost to cast this spell, pay the cost associated with that mode": each bullet names its mode and its cost before the effect, "Cure — {0} — Target
  * permanent gains hexproof and indestructible until end of turn." The modal reading takes the cost off the bullets (`IrModes.costs`).
  */

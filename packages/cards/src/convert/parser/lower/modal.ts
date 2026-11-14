@@ -33,7 +33,7 @@ export interface LoweredModes {
 /** The ability-level feature a modal spell or ability needs, for the dimension test. */
 export const MODAL_NEEDS: readonly FeatureRef[] = ['ability:modal'];
 
-/** What a mode with a cost listed before its effect needs (D-1270): the engine's `SpellMode.cost`. */
+/** What a mode with a cost listed before its effect needs (D-433): the engine's `SpellMode.cost`. */
 export const MODE_COST_NEEDS: readonly FeatureRef[] = ['ability:modeCost'];
 
 function refuse(modal: IrModes, needs: readonly FeatureRef[] = []): LowerFailure {
@@ -53,7 +53,7 @@ function textOf(text: string, ctx: LowerContext): string {
 export function lowerModes(
   modal: IrModes,
   ctx: LowerContext,
-  /** True for a spell: only its modes may have a cost listed before the effect (Tiered, D-1270, CR 700.2h). */
+  /** True for a spell: only its modes may have a cost listed before the effect (Tiered, D-433, CR 700.2h). */
   allowModeCosts = false,
 ): LowerResult<LoweredModes> {
   const count = modal.modes.length;
@@ -72,7 +72,7 @@ export function lowerModes(
   if (choose.widenTo !== undefined && (widened <= max || widened > count)) return refuse(modal);
   const blocked = missingFeatures(MODAL_NEEDS);
   if (blocked.length > 0) return refuse(modal, blocked);
-  // Tiered (D-1270, CR 702.183a, 700.2h): the cost of each mode is an additional cost of the spell, mana only, one mode chosen (the engine's `SpellMode.cost`).
+  // Tiered (D-433, CR 702.183a, 700.2h): the cost of each mode is an additional cost of the spell, mana only, one mode chosen (the engine's `SpellMode.cost`).
   if (modal.costs !== undefined) {
     if (!allowModeCosts || modal.costs.length !== count) return refuse(modal);
     const unrunnable = missingFeatures(MODE_COST_NEEDS);

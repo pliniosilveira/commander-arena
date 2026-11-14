@@ -297,7 +297,7 @@ function toModes(state: GameState, events: GameEvent[]): Result {
 }
 
 /**
- * CR 702.120a (D-145), 700.2h (D-1270): with an escalate cost, or modes that have a cost of their own, a set of modes is legal only if the caster could pay the total with them (one
+ * CR 702.120a (D-145), 700.2h (D-433): with an escalate cost, or modes that have a cost of their own, a set of modes is legal only if the caster could pay the total with them (one
  * additional cost for each mode beyond the first); costs are read from the state before the cast began, as the kicker's are. Spells
  * without escalate keep every set.
  */
@@ -308,7 +308,7 @@ function affordableModeSets(
 ): readonly (readonly number[])[] {
   const before = casting.snapshot;
   const face = faceOf(before, getObject(state, casting.object));
-  // CR 700.2h (D-1270): the costs of the modes are additional costs too, so a set whose modes cost more than the caster has is not offered.
+  // CR 700.2h (D-433): the costs of the modes are additional costs too, so a set whose modes cost more than the caster has is not offered.
   if (escalateCostOf(face) === null && !hasModeCosts(face)) return sets;
   const spell = castAs(
     getObject(before, casting.from),
