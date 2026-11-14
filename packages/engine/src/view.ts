@@ -70,6 +70,8 @@ export interface ObjectView {
   readonly counters: Readonly<Record<string, number>>;
   /** The level of a Class on the battlefield (CR 716.2, D-235): shown for a permanent that has a Class subtype or a level; 1 until a level is gained. Absent otherwise. */
   readonly level?: number;
+  /** The monstrous designation of a permanent on the battlefield (CR 701.37b, D-1312). Absent otherwise. */
+  readonly monstrous?: true;
   readonly isCommander: boolean;
   readonly summoningSick: boolean;
   /**
@@ -680,6 +682,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     ...(obj.zone === 'battlefield' && (obj.level !== undefined || d.subtypes.includes('Class'))
       ? { level: obj.level ?? 1 }
       : {}),
+    ...(obj.zone === 'battlefield' && obj.monstrous === true ? { monstrous: true as const } : {}),
     isCommander: (down === null || controls) && commanderCardOf(state, obj) !== null,
     summoningSick: obj.zone === 'battlefield' && isSummoningSick(state, obj),
     ...controlEndsOf(state, obj),

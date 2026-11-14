@@ -84,7 +84,8 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'put Y +1/+1 counters on ~',
     'put X counters on ~',
     'put up to X +1/+1 counters on ~',
-    'put a +1/+1 counter on target creature or Dragon',
+    // A choice of three (a type and two subtypes) is not read: "creature or Dragon" is (D-1314).
+    'put a +1/+1 counter on target creature, Dragon, or Elf',
     'put a +1/+1 counter on ~ and draw a card',
     'put a +1/+1 counter on',
     'put that many counters on ~',

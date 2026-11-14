@@ -500,7 +500,8 @@ describe('diagnostics point at the clause that did not parse', () => {
     ],
     ['Destroy target creature with flying or reach.', 'or reach.', 'noun.target-permanent'],
     ['Destroy target nonblack creature.', 'nonblack creature.', 'noun.target-permanent'],
-    ['Destroy target creature or Dragon.', 'or Dragon.', 'noun.target-permanent'],
+    // D-1314 read "creature or Dragon"; a choice of three words joined by "or" is still unread.
+    ['Destroy target creature or Dragon or Elf.', 'or Elf.', 'noun.target-permanent'],
     ['Destroy target artifact and enchantment.', 'enchantment.', 'spell.effect'],
     ['Exile target creature. Exile target Banana.', 'Banana.', 'noun.target-graveyard-card'],
     ['Counter target spell unless its controller pays {X}.', '{X}.', 'effect.counter-unless'],

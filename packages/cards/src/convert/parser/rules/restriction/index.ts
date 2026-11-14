@@ -7,6 +7,7 @@ import { fail, literal, map, optional, pattern, sequence } from '../../combinato
 import type { IrAmount, IrCondition, IrRestriction } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, node } from '../registry';
+import { FEATHER_G2_RESTRICTION_RULES } from './feather-g2';
 
 /**
  * `restriction.sorcery`: "Activate only as a sorcery." means the player must follow the timing
@@ -236,4 +237,5 @@ export const RESTRICTION_RULES = [
   RESTRICTION_ONCE_EACH_TURN,
   RESTRICTION_COST_REDUCTION,
   RESTRICTION_COST_REDUCED_BY,
+  ...FEATHER_G2_RESTRICTION_RULES,
 ];

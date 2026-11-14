@@ -498,7 +498,12 @@ export interface IrCondition extends IrNode {
     // D-252 (the Bruna deck): "you gained 3 or more life this turn" (CR 119.3)
     | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
     // D-318 (the Niv-Mizzet deck): "you've cast three or more spells this turn" (CR 601.2i)
-    | { readonly kind: 'spellsCastThisTurn'; readonly atLeast: number }
+    // D-1311 (Feather): "you've cast an instant or sorcery spell this turn": only the spells of these card types count.
+    | {
+        readonly kind: 'spellsCastThisTurn';
+        readonly atLeast: number;
+        readonly ofTypes?: readonly string[];
+      }
     // D-271 (CR 706.2, 706.3a): "the result is 1", "the result is 4 or more": the die the roll before it in the same text rolled
     | { readonly kind: 'dieResult'; readonly compare: IrComparison }
     // D-271 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard

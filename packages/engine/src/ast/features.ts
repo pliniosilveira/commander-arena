@@ -138,6 +138,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'phaseOut',
     // D-235: the level bar of a Class (CR 716) and "exile a card from your graveyard at random".
     'gainLevel',
+    // D-1312: "Monstrosity N" (CR 701.37).
+    'monstrosity',
     'exileRandomFromGraveyard',
     // D-393 (provisional): "that source's controller exiles a card from their hand at random" (CR 701.13).
     'exileRandomFromHand',
@@ -1579,6 +1581,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   returnGraveyardPair: true,
   phaseOut: true,
   gainLevel: true,
+  monstrosity: true,
   exileRandomFromGraveyard: true,
   exileRandomFromHand: true,
   becomeCopyOfCard: true,

@@ -154,6 +154,11 @@ export interface GameObject {
    */
   readonly level?: number;
   /**
+   * The monstrous designation (CR 701.37b, D-1312): set by the monstrosity action, kept until the permanent leaves the battlefield. It has no rules meaning but to be a marker, is not an
+   * ability and is not a copiable value; a new object after any zone change (CR 400.7) is not monstrous.
+   */
+  readonly monstrous?: true;
+  /**
    * Present (true) on an emblem (CR 114, D-201): an object in the command zone of the player who got it (`owner` and `controller`), with no characteristics but
    * the abilities its `token` record gives it, which work from there (CR 114.4): `derive` reads its static abilities and `findTriggers` its triggered ones.
    * It is not a card and not a permanent, never leaves the command zone (CR 114.5) and is not a token that ceases to exist there (CR 704.5d is about the
@@ -1883,6 +1888,11 @@ export interface TurnLog {
   readonly leftGraveyard: readonly SeatId[];
   /** The modes a triggered ability chose this turn, by the permanent it belongs to (D-151, "choose one that hasn't been chosen this turn"). */
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];
+  /**
+   * Each spell cast this turn (D-1311, CR 601.2i), in order: who cast it and its card types as it was cast. A copy is not cast (CR 707.10) and is not here.
+   * "Activate only if you've cast an instant or sorcery spell this turn" reads it.
+   */
+  readonly castSpells: readonly { readonly seat: SeatId; readonly types: readonly CardType[] }[];
 }
 
 export const EMPTY_TURN_LOG: TurnLog = {
@@ -1899,6 +1909,7 @@ export const EMPTY_TURN_LOG: TurnLog = {
   graveyarded: [],
   leftGraveyard: [],
   modesChosen: [],
+  castSpells: [],
 };
 
 export interface GameState {
