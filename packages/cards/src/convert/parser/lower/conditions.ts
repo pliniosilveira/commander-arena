@@ -116,7 +116,11 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:spellsCastThisTurn']);
       return blocked.length > 0
         ? failure(c, blocked)
-        : ok({ kind: 'spellsCastThisTurn', atLeast: test.atLeast });
+        : ok({
+            kind: 'spellsCastThisTurn',
+            atLeast: test.atLeast,
+            ...(test.ofTypes === undefined ? {} : { ofTypes: test.ofTypes as CardType[] }),
+          });
     }
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die the text rolled before this condition, read by a `conditional`. A condition with no roll before it

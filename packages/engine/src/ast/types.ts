@@ -446,8 +446,9 @@ export interface ObjectFilter {
    * permanent that copies one is not). Whose commander it is does not matter; `controller` says whose it must be to control. `'yours'`
    * (D-149, "your commander", "whenever your commander enters or attacks") is a commander its owner designated and that owner is the
    * controller of the ability that reads the filter (a commander card the player owns, whoever controls it now). Read where
-   * the filter is matched against the game (a target slot, an `each` selector, a trigger subject, a condition); refused in a static
-   * ability's subject and in a count a static ability reads, as `attacking` is.
+   * the filter is matched against the game (a target slot, an `each` selector, a trigger subject, a condition) and, since D-1310
+   * (CR 903.3: no layer changes it), in a static ability's subject ("Commander creatures you control get +2/+2"); refused in a
+   * count a static ability reads, as `attacking` is.
    */
   readonly commander?: true | 'yours';
   /**
@@ -1472,6 +1473,12 @@ export type Effect =
    * is `classLevelIs` of the level before and that is at sorcery timing (`validateCard`).
    */
   | { readonly kind: 'gainLevel'; readonly level: number }
+  /**
+   * "Monstrosity 5" (CR 701.37a, 701.37b, D-1312): "If this permanent isn't monstrous, put N +1/+1 counters on it and it becomes monstrous." `count` is N, an amount read as the effect
+   * resolves. The permanent is the one the ability belongs to; nothing happens when it has left the battlefield or is monstrous already. Monstrous is a designation (`GameObject.monstrous`) that
+   * stays until the permanent leaves the battlefield and is not copiable. A permanent that can't have +1/+1 counters (D-380) still becomes monstrous. Only in an ability of a permanent.
+   */
+  | { readonly kind: 'monstrosity'; readonly count: Amount }
   /**
    * "Exile a card from your graveyard at random" (CR 701.13, D-235): the controller exiles one card of their graveyard chosen at random by the game's generator (none when it is empty);
    * it is what `moved` names afterwards ("You may play the exiled card this turn", `mayPlay`).
@@ -3742,9 +3749,14 @@ export type Condition =
    * "Activate only if you've cast three or more spells this turn" (CR 602.5b, 601.2i, D-318): the controller of the condition has cast at least
    * `atLeast` spells this turn (`SeatState.spellsCastThisTurn`: a spell counts once it is on the stack with its costs paid, whether or not it
    * resolved or was countered; a copy is not cast, CR 707.10, and an opponent's spell is not the controller's). Reads a count, so it is read as
-   * the ability is activated. Not for a static ability.
+   * the ability is activated. Not for a static ability. `ofTypes` (D-1311, "Activate only if you've cast an instant or sorcery spell this turn"): only the
+   * spells that have at least one of those card types, as they were cast, count (`TurnLog.castSpells`); left out, every spell counts.
    */
-  | { readonly kind: 'spellsCastThisTurn'; readonly atLeast: number }
+  | {
+      readonly kind: 'spellsCastThisTurn';
+      readonly atLeast: number;
+      readonly ofTypes?: readonly CardType[];
+    }
   /**
    * "If the result is 1", "if the result is 10 or more" (CR 706.2, 706.3a, D-271): the result of the latest `rollDie` of this resolution against a whole number.
    * Only in a `conditional` after a `rollDie` of the same sequence (`validateCard` checks it); false if no die was rolled.

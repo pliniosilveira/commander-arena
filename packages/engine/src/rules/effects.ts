@@ -1632,6 +1632,33 @@ function runEffect(
       return { ...done(patchObject(state, source.id, { level: effect.level })), performed: 1 };
     }
 
+    case 'monstrosity': {
+      // CR 701.37a (D-1312): "If this permanent isn't monstrous, put N +1/+1 counters on it and it becomes monstrous": the permanent the ability belongs to, if it is still on the
+      // battlefield. A permanent that can't have the counters (D-380) still becomes monstrous.
+      const source = res.source === null ? undefined : state.objects[res.source];
+      if (source?.zone !== 'battlefield' || source.monstrous === true) return done(state);
+      const count = amountOf(state, effect.count, ctx, targets);
+      let afterCounters = state;
+      const monstrousEvents: GameEvent[] = [];
+      if (count > 0 && !blocks(state, counterBlockers(state), source, '+1/+1')) {
+        afterCounters = patchObject(afterCounters, source.id, {
+          counters: { ...source.counters, '+1/+1': (source.counters['+1/+1'] ?? 0) + count },
+        });
+        monstrousEvents.push({
+          kind: 'counterAdded',
+          object: source.id,
+          counter: '+1/+1',
+          count,
+          by: ctx.controller,
+        });
+      }
+      monstrousEvents.push({ kind: 'becameMonstrous', object: source.id });
+      return {
+        ...done(patchObject(afterCounters, source.id, { monstrous: true }), monstrousEvents),
+        performed: 1,
+      };
+    }
+
     case 'exileRandomFromGraveyard': {
       // CR 701.13 (D-235): one card of the controller's graveyard, chosen by the game's random number generator.
       const yard = getSeat(state, res.controller).graveyard;

@@ -645,6 +645,15 @@ export function describeEvent(
         [event.object, event.copy],
         'CR 722.3',
       );
+    case 'becameMonstrous':
+      // CR 701.37a, 701.37b (D-1312): the monstrosity action finished; the permanent is monstrous until it leaves the battlefield.
+      return line(
+        'major',
+        `${label(event.object)} became monstrous.`,
+        null,
+        [event.object],
+        'CR 701.37',
+      );
     case 'energyChanged': {
       // CR 107.14, 122.1 (D-209): "You get {E}{E}", and paying {E}: "You have 2 energy counters."
       const change = event.to - event.from;

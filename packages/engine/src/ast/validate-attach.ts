@@ -13,7 +13,7 @@ import {
   checkFilter,
   filterSome,
   issue,
-  readsCombatOrSource,
+  readsCombatOrSourceBesidesCommander,
   readsKeywords,
 } from './validate-parts';
 
@@ -66,8 +66,9 @@ export function checkStaticSubject(
       break;
     case 'filter':
       checkBattlefieldFilter(s.filter, `${path}.filter`, out);
-      // D-120: `derive` matches this filter without the combat or a source power.
-      if (filterSome(s.filter, readsCombatOrSource)) {
+      // D-120: `derive` matches this filter without the combat or a source power. "Commander" is read from the card, which no layer changes (D-1310), so a group
+      // of commander creatures is a subject.
+      if (filterSome(s.filter, readsCombatOrSourceBesidesCommander)) {
         issue(
           out,
           `${path}.filter`,

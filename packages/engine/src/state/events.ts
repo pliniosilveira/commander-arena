@@ -348,6 +348,8 @@ export type GameEvent =
       /** The player who put the counters (CR 122.6a; D-149), when one did: "whenever you put one or more +1/+1 counters on ~". */
       readonly by?: SeatId;
     }
+  /** CR 701.37a (D-1312): the permanent became monstrous (the monstrosity action; the `counterAdded` event of its counters comes first). */
+  | { readonly kind: 'becameMonstrous'; readonly object: ObjectId }
   | {
       readonly kind: 'counterRemoved';
       readonly object: ObjectId;

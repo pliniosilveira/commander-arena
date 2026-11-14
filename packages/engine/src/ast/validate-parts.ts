@@ -2130,6 +2130,14 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isCount(c.atLeast) || c.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
+      // D-1311: only the spells of these card types count; at least one, each a card type.
+      if (c.ofTypes !== undefined) {
+        if (!Array.isArray(c.ofTypes) || c.ofTypes.length === 0) {
+          issue(out, `${path}.ofTypes`, 'ofTypes names at least one card type');
+        } else {
+          checkEnumList(out, `${path}.ofTypes`, c.ofTypes, CARD_TYPES, 'card type');
+        }
+      }
       break;
     case 'dieResult':
       // D-271, CR 706.2: the result of a die is read in the `conditional` effect after the roll (`checkEffectCondition`), nowhere else.
@@ -3882,6 +3890,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (scope.owner !== 'ability') {
         issue(out, path, 'only an ability of a permanent gains a level');
+      }
+      break;
+    case 'monstrosity':
+      // CR 701.37a (D-1312): N counters on the permanent the ability belongs to; an amount that is a whole number of one or more, or a count the game reads.
+      checkAmount(e.count, `${path}.count`, scope, out);
+      if (typeof e.count === 'number' && !(Number.isSafeInteger(e.count) && e.count >= 1)) {
+        issue(out, `${path}.count`, 'monstrosity puts one or more counters');
+      }
+      if (scope.owner !== 'ability') {
+        issue(out, path, 'only an ability of a permanent becomes monstrous');
       }
       break;
     case 'exileRandomFromGraveyard':
