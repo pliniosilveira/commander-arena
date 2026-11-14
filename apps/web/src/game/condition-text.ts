@@ -290,6 +290,7 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       return angelsConditionWords(condition, negate);
     case 'enteredThisTurn':
     case 'playerDealtDamage':
+    case 'combatDamagedBy':
     case 'chosenOption':
     case 'attackingMostLife':
     case 'attackersTotalPower':

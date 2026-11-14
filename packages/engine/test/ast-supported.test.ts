@@ -47,6 +47,7 @@ const EXECUTABLE_KEYWORDS = [
   'soulbond', // scenario-xx-soulbond (D-286)
   'exalted', // scenario-xx-exalted-annihilator
   'annihilator', // scenario-xx-exalted-annihilator
+  'afflict', // scenario-xx-gisa-g1-afflict (D-1400)
   'backup', // convert-grammar-engine-p69 (Guardian Scalelord, on the real card)
   'persist', // scenario-xx-persist-undying
   'undying', // scenario-xx-persist-undying
@@ -136,6 +137,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   soulbond: { kind: 'soulbond' },
   exalted: { kind: 'exalted' },
   annihilator: { kind: 'annihilator', count: 2 },
+  afflict: { kind: 'afflict', count: 3 },
   backup: { kind: 'backup', count: 1 },
   persist: { kind: 'persist' },
   undying: { kind: 'undying' },

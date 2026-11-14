@@ -1859,8 +1859,19 @@ export interface TurnLog {
     readonly abilityIndex: number;
     readonly loyalty?: true;
   }[];
-  /** Each combat damage event to a player this turn: the source that dealt it and the player dealt it (damage prevented entirely is not here). */
-  readonly combatDamaged: readonly { readonly source: ObjectId; readonly player: SeatId }[];
+  /**
+   * Each combat damage event to a player this turn: the source that dealt it and the player dealt it (damage prevented entirely is not here). D-1403
+   * (CR 120.2a, 608.2h, 113.7a): also what the source was as it dealt the damage, for "if a player was dealt combat damage by a Zombie this turn": its card
+   * types, its subtypes and who controlled it (read from the permanent, or from its last-known information when it had left), so a source that has died
+   * or changed still counts as it was.
+   */
+  readonly combatDamaged: readonly {
+    readonly source: ObjectId;
+    readonly player: SeatId;
+    readonly types: readonly CardType[];
+    readonly subtypes: readonly Subtype[];
+    readonly controller: SeatId | null;
+  }[];
   /** Each time a player gained life this turn (D-149), in order, one entry for each life gain event: "for the first time each turn". */
   readonly lifeGained: readonly SeatId[];
   /** The life each player has gained this turn, by seat (D-252, CR 119.3): the sum of every life gain after replacement, for "if you gained 3 or more life this turn". */

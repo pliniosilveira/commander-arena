@@ -2113,6 +2113,35 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
       break;
+    case 'combatDamagedBy': {
+      // D-1403, CR 120.2a: the kind of source: card types, subtypes and (relative to the controller) who controlled it, nothing else.
+      const f = c.filter;
+      if (f === undefined || f === null || typeof f !== 'object') {
+        issue(out, `${path}.filter`, 'combatDamagedBy needs a filter of the damage source');
+        break;
+      }
+      checkEnumList(out, `${path}.filter.types`, f.types, CARD_TYPES, 'card type');
+      if (f.subtypes !== undefined && (!Array.isArray(f.subtypes) || f.subtypes.length === 0)) {
+        issue(out, `${path}.filter.subtypes`, 'subtypes must be a non-empty list when present');
+      }
+      if (f.controller !== undefined && !isOneOf(f.controller, ['you', 'opponent', 'any'])) {
+        issue(out, `${path}.filter.controller`, 'the controller is you, opponent or any');
+      }
+      const extra = Object.keys(f).filter(
+        (k) => k !== 'types' && k !== 'subtypes' && k !== 'controller',
+      );
+      if (extra.length > 0) {
+        issue(
+          out,
+          `${path}.filter`,
+          `the turn log keeps only the types, subtypes and controller of the source: not ${extra.join(', ')}`,
+        );
+      }
+      if (f.types === undefined && f.subtypes === undefined) {
+        issue(out, `${path}.filter`, 'name the card types or the subtypes of the source');
+      }
+      break;
+    }
     case 'ownsAndControlsNamed':
       // D-278, CR 701.42a: the permanent the ability belongs to and a permanent of a card type with a name.
       if (typeof c.name !== 'string' || c.name === '') {

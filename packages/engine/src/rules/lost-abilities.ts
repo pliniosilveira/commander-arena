@@ -8,6 +8,7 @@
 import type { ObjectId } from '../ids';
 import type { ContinuousEffect, GameState } from '../state/types';
 import { copiableValues } from './copiable';
+import { landTypeSetIds } from './land-types';
 
 interface Cached {
   readonly battlefield: GameState['battlefield'];
@@ -63,8 +64,32 @@ export function staticallyLostAbilities(state: GameState): ReadonlySet<ObjectId>
  */
 export function hasLostAbilities(state: GameState, id: ObjectId): boolean {
   return (
-    effectLostAbilities(state.continuousEffects).has(id) || staticallyLostAbilities(state).has(id)
+    effectLostAbilities(state.continuousEffects).has(id) ||
+    staticallyLostAbilities(state).has(id) ||
+    landLostRulesText(state, id)
   );
+}
+
+/**
+ * CR 305.7 (D-1402): a land whose basic land types an effect set loses all abilities generated from its rules text, its static abilities among them. The abilities
+ * other effects give it stay (layer 6 comes after), which `derive` keeps by not removing them.
+ */
+function landLostRulesText(state: GameState, id: ObjectId): boolean {
+  if (!landSetBy(state.continuousEffects).has(id)) return false;
+  const obj = state.objects[id];
+  return obj !== undefined && copiableValues(state, obj).characteristics.types.includes('land');
+}
+
+const landSetByEffects = new WeakMap<readonly ContinuousEffect[], ReadonlySet<ObjectId>>();
+
+/** The objects a continuous effect of the list sets to basic land types, made once for each list. */
+function landSetBy(effects: readonly ContinuousEffect[]): ReadonlySet<ObjectId> {
+  let ids = landSetByEffects.get(effects);
+  if (ids === undefined) {
+    ids = landTypeSetIds(effects);
+    landSetByEffects.set(effects, ids);
+  }
+  return ids;
 }
 
 const lostByEffects = new WeakMap<readonly ContinuousEffect[], ReadonlySet<ObjectId>>();

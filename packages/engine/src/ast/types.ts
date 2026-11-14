@@ -3053,7 +3053,8 @@ export type Keyword =
    * CR 702.14 (Landwalk): "[type]walk": the creature can't be blocked as long as the defending
    * player controls a land with that land type ("islandwalk": `landType: 'Island'`), or a land that
    * is not basic ("nonbasic landwalk": `landType: 'nonbasic'`, CR 702.14c). A snow or artifact
-   * landwalk is not supported. Only a printed keyword: a landwalk cannot be granted.
+   * landwalk is not supported. D-1401 (CR 702.14e): it can be granted ("Other Zombie creatures have swampwalk", "gains swampwalk until end of turn");
+   * landwalks of different land types are different abilities and the same one twice is redundant.
    */
   | { readonly kind: 'landwalk'; readonly landType: Subtype | 'nonbasic' }
   /** CR 702.36 (Fear): can't be blocked except by artifact creatures and/or black creatures. */
@@ -3204,6 +3205,12 @@ export type Keyword =
    * (CR 702.86b).
    */
   | { readonly kind: 'annihilator'; readonly count: number }
+  /**
+   * CR 702.130a (Afflict, D-1400): "Afflict N" means "Whenever this creature becomes blocked, defending player loses N life." A triggered ability the
+   * engine writes when it derives the object's abilities (`rules/derive-keywords.ts`); each instance triggers separately (CR 702.130b), so a creature that
+   * has it printed and is given it again triggers twice. `count` is N, a positive integer. Grantable: "Other Zombies you control have afflict 3."
+   */
+  | { readonly kind: 'afflict'; readonly count: number }
   /**
    * CR 702.165a (Backup, D-230): "Backup N" means "When this creature enters, put N +1/+1 counters on target creature. If that's another creature, it also gains the
    * non-backup abilities of this creature printed below this one until end of turn." A triggered ability the engine writes when it derives the object's abilities
@@ -3748,6 +3755,13 @@ export type Condition =
       readonly player: 'you' | 'opponent';
       readonly atLeast: number;
     }
+  /**
+   * "If a player was dealt combat damage by a Zombie this turn" (D-1403, CR 120.2a, 510.2): some combat damage a player was dealt this turn came from a source
+   * that matches `filter` as it was when it dealt the damage (its card types, its subtypes and, with `controller`, who controlled it relative to the controller of
+   * the condition: `you` or `opponent`; a source that has left the battlefield counts as it last was, CR 113.7a). Reads the turn log only (`TurnLog.combatDamaged`);
+   * damage that was entirely prevented is not there. `filter` names `types`, `subtypes` and `controller` and nothing else. Not for a static ability.
+   */
+  | { readonly kind: 'combatDamagedBy'; readonly filter: ObjectFilter }
   /**
    * "If it's attacking the player with the most life or tied for most life" (Dethrone, CR 702.105a, D-151): the source is an attacking creature
    * whose attack target is a player (not a planeswalker or a battle) with at least as much life as every other player still in the game. As

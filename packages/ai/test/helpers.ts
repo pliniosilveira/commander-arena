@@ -2740,6 +2740,42 @@ export const FEATHER_G1_LANDS = supported([
 ]);
 
 /**
+ * The SYNTHETIC cards of group 1 of the Gisa deck (D-1400 to D-1404): Afflict N and a group that has it, a group that has swampwalk, a cost that taps an untapped Zombie with
+ * abilities that turn a land into a Swamp and give a creature swampwalk, the second main phase trigger that reads the turn's combat damage by Zombies and asks which creature card to
+ * return from the graveyard, and the Zombie token with power 6 or greater that gains lifelink as it attacks. The cost asks which Zombies to tap, the trigger asks cards from the
+ * graveyard and the abilities ask targets: questions games-100 expects only from dedicated styles, so the group is kept out of every generic pool.
+ */
+export const GISA_G1_NAMES = [
+  'SYNTHETIC Afflict Monarch',
+  'SYNTHETIC Walk Master',
+  'SYNTHETIC Trail Scout',
+  'SYNTHETIC Horde Banner',
+  'SYNTHETIC Gisa Zombie',
+] as const;
+
+/** The gisaG1 style: every card of the group three times (the Zombie body five), removal and burn to kill them, and plain bodies to block. */
+export const GISA_G1_SPELLS = [
+  ...supported(GISA_G1_NAMES),
+  ...supported(GISA_G1_NAMES),
+  ...supported(GISA_G1_NAMES),
+  ...supported(['SYNTHETIC Gisa Zombie', 'SYNTHETIC Gisa Zombie']),
+  ...supported(['Lightning Bolt', 'Murder', 'Divination']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+];
+
+/** Black for the Zombies, a few of every other basic land so that swampwalk and "becomes a Swamp" are sometimes the difference. */
+export const GISA_G1_LANDS = supported([
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Swamp',
+  'Forest',
+  'Forest',
+  'Mountain',
+  'Island',
+]);
+
+/**
  * The SYNTHETIC cards of group 2 of the Feather deck (D-443 to D-448): a creature that gives commander creatures +2/+2 and indestructible (the commander of the deck is the one it
  * reads), a bite with "another target creature" and a damage spell with two amounts to two targets (two target questions in one cast, with a differ rule), a creature with a trigger of
  * three events and "Monstrosity 5", a modal spell with a counter-and-untap mode and a bounce mode (a `chooseModes` question), and a land whose counter ability is only for sorcery timing
@@ -3591,6 +3627,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
   // The Feather group 1 cards (D-451) ask which color to protect from as a spell resolves: a style of their own.
   .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
+  // The Gisa group 1 cards (D-1400 to D-1404) ask which Zombies to tap, which card to return from the graveyard and the targets of their abilities: a style of their own.
+  .filter((card) => !(GISA_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ANGEL_NAMES as readonly string[]).includes(card.name))
@@ -3804,6 +3842,7 @@ export type DeckStyle =
   | 'featherG3'
   | 'featherG2'
   | 'featherG1'
+  | 'gisaG1'
   | 'vehicles'
   | 'prevention'
   | 'layouts'
@@ -3883,6 +3922,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'featherG3' && FEATHER_G3_SPELLS.length > 0) return FEATHER_G3_SPELLS;
   if (style === 'featherG2' && FEATHER_G2_SPELLS.length > 0) return FEATHER_G2_SPELLS;
   if (style === 'featherG1' && FEATHER_G1_SPELLS.length > 0) return FEATHER_G1_SPELLS;
+  if (style === 'gisaG1' && GISA_G1_SPELLS.length > 0) return GISA_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
@@ -4074,6 +4114,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'featherG3' && BASIC_LANDS.length > 0) return FEATHER_G3_LANDS;
   if (style === 'featherG2' && BASIC_LANDS.length > 0) return FEATHER_G2_LANDS;
   if (style === 'featherG1' && BASIC_LANDS.length > 0) return FEATHER_G1_LANDS;
+  if (style === 'gisaG1' && BASIC_LANDS.length > 0) return GISA_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;
@@ -4588,6 +4629,13 @@ export const FEATHER_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
   ['featherG1', 'featherG1'],
   ['featherG1', 'spells'],
   ['spells', 'featherG1'],
+];
+
+/** Style pairs of the Gisa group 1 soak test (D-1400 to D-1404): a mirror match and both mixed ways. */
+export const GISA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['gisaG1', 'gisaG1'],
+  ['gisaG1', 'spells'],
+  ['spells', 'gisaG1'],
 ];
 
 /** Style pairs of the repeatable-mode soak test (D-344): a mirror match and both mixed ways. */

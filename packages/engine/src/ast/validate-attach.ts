@@ -12,6 +12,7 @@ import {
   checkEnumList,
   checkFilter,
   filterSome,
+  isCount,
   issue,
   readsCombatOrSourceBesidesCommander,
   readsKeywords,
@@ -111,6 +112,23 @@ export function checkProtectionTypes(types: unknown, path: string, out: AstIssue
   checkEnumList(out, path, types, CARD_TYPES, 'card type');
 }
 
+/**
+ * D-1400, D-1401: the parameter of a keyword that is granted and has one: "afflict 3" (CR 702.130a, a positive whole number) and a landwalk
+ * (CR 702.14a, a land type or "nonbasic", as for a printed one).
+ */
+export function checkGrantedParameter(k: Keyword, path: string, out: AstIssue[]): void {
+  if (k?.kind === 'afflict' && (!isCount(k.count) || k.count < 1)) {
+    issue(out, `${path}.count`, 'afflict needs a positive integer');
+  }
+  if (k?.kind === 'landwalk') {
+    if (typeof k.landType !== 'string' || k.landType === '') {
+      issue(out, `${path}.landType`, 'landwalk needs a land type or "nonbasic"');
+    } else if (k.landType !== 'nonbasic' && !/^[A-Z][A-Za-z'-]*$/.test(k.landType)) {
+      issue(out, `${path}.landType`, `${JSON.stringify(k.landType)} is not a land type`);
+    }
+  }
+}
+
 export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): void {
   // D-259 (CR 702.16): a static ability may give protection from colors; its colors are checked as a printed protection keyword is.
   // D-376: or from card types, or from the chosen card type.
@@ -145,9 +163,11 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
     issue(
       out,
       path,
-      `a static ability cannot grant ${kindOf(k)}: only keywords without parameters can be granted`,
+      `a static ability cannot grant ${kindOf(k)}: only keywords without parameters can be granted (and afflict and landwalk, D-1400, D-1401)`,
     );
+    return;
   }
+  checkGrantedParameter(k, path, out);
 }
 
 /**

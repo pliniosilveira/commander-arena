@@ -393,6 +393,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'soulbond',
     'exalted',
     'annihilator',
+    // D-1400: Afflict N (CR 702.130).
+    'afflict',
     // D-230: Backup N (CR 702.165).
     'backup',
     'persist',
@@ -748,6 +750,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-423: "as long as this Aura entered this turn".
     'thisEnteredThisTurn',
     'playerDealtDamage',
+    // D-1403: "if a player was dealt combat damage by a Zombie this turn".
+    'combatDamagedBy',
     // D-252: "if you gained 3 or more life this turn".
     'lifeGainedThisTurn',
     // D-318: "Activate only if you've cast three or more spells this turn".
@@ -956,6 +960,10 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   // D-185: Riot is read from the permanents on the battlefield as a permanent enters (`rules/enters-keywords.ts`), so only a static ability that
   // names a group can give it ("Nontoken creatures you control have riot"): an effect, an attached subject and an "enters as a copy" are refused.
   'riot',
+  // D-1400: Afflict N (CR 702.130): each instance granted is a triggered ability of its own (CR 702.130b), like exalted's.
+  'afflict',
+  // D-1401: landwalk (CR 702.14): the land type is part of the keyword, and one kind twice is redundant (CR 702.14e).
+  'landwalk',
 ];
 
 /**
@@ -1279,6 +1287,8 @@ export const CONDITION_KINDS = [
   'thisEnteredThisTurn',
   /** "An opponent was dealt 7 or more damage this turn" (D-151): the engine's `playerDealtDamage`. */
   'playerDealtDamage',
+  /** "If a player was dealt combat damage by a Zombie this turn" (CR 120.2a, D-1403): the engine's `combatDamagedBy`. */
+  'combatDamagedBy',
   /** "If you gained 3 or more life this turn" (D-252): the engine's `lifeGainedThisTurn`. */
   'lifeGainedThisTurn',
   /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
@@ -1770,6 +1780,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   soulbond: true,
   exalted: true,
   annihilator: true,
+  afflict: true,
   backup: true,
   persist: true,
   undying: true,

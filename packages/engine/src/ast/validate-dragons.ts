@@ -7,6 +7,7 @@
 import type { CardFace } from '../cards/definition';
 import { GRANTABLE_KEYWORDS } from './features';
 import type { Ability, Effect, Replacement, StaticEffect } from './types';
+import { checkGrantedParameter } from './validate-attach';
 import { isOneOf, kindOf, triggerHasPlayer } from './validate-base';
 import {
   type AstIssue,
@@ -429,6 +430,8 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
             `${path}.gains[${i}]`,
             'riot is applied as a permanent enters, not gained afterwards',
           );
+        } else {
+          checkGrantedParameter(k, `${path}.gains[${i}]`, out);
         }
       });
     }

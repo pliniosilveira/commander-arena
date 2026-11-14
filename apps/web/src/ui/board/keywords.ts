@@ -37,6 +37,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   devoid: ['Dvd', 'Devoid'],
   exalted: ['Exl', 'Exalted'],
   annihilator: ['Ann', 'Annihilator'],
+  // Gisa deck group 1 (D-1400): Afflict N (CR 702.130a).
+  afflict: ['Afl', 'Afflict'],
   backup: ['Bkp', 'Backup'],
   persist: ['Per', 'Persist'],
   undying: ['Und', 'Undying'],
@@ -99,6 +101,8 @@ const PARAMETERIZED: Readonly<
   Record<string, (text: string) => readonly (readonly [short: string, full: string])[]>
 > = {
   annihilator: (text) => numbered(text, 'Annihilator', 'Ann'),
+  // "Afflict 3": one chip per instance (CR 702.130b: each triggers separately).
+  afflict: (text) => numbered(text, 'Afflict', 'Afl'),
   backup: (text) => numbered(text, 'Backup', 'Bkp'),
   toxic: (text) => numbered(text, 'Toxic', 'Tox'),
   // "Bushido 1": one chip per instance (CR 702.45b: each triggers).

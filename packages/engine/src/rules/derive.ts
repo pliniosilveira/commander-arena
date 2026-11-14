@@ -41,6 +41,7 @@ import { applyAbilityLayer, applyPtLayers, basePtOf, effectsOn } from './derive-
 import { type BlockLimit, type StaticSet, staticEffectsOn } from './derive-statics';
 import { manaCostOf, typeLayersOf } from './derive-view';
 import { keywordCounterAbilities } from './keyword-counters';
+import { landTypeAbilities, landTypeSetIds } from './land-types';
 import { hasLostAbilities } from './lost-abilities';
 import { manaValueOfCost } from './mana-value';
 import { isRingBearerOf } from './ring-bearer';
@@ -201,13 +202,17 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
   // which are appended, so every ability keeps the index it had (triggers and activations refer
   // to indexes). Grants and "loses all abilities" follow in timestamp order.
   // The abilities of an evoked permanent (D-121) are appended too, and "loses all abilities" removes them.
-  const printed = expandKeywords(input.abilities);
-  const own = alternativeAbilitiesOf(state, obj);
+  // CR 305.6, 305.7 (D-1402): a land whose basic land types an effect set loses the abilities of its rules text; a land that has basic land types it did not
+  // print, from an effect, has their mana abilities (appended after what it keeps).
+  const land = landTypeAbilities(input, line, landTypeSetIds(effects).has(obj.id));
+  const printed = land.dropsRulesText ? [] : expandKeywords(input.abilities);
+  const own = land.dropsRulesText ? [] : alternativeAbilitiesOf(state, obj);
   // CR 122.1b (D-430): the keywords of the object's keyword counters, after everything it has printed.
-  const start = keywordCounterAbilities(
+  const counted = keywordCounterAbilities(
     obj.counters,
     own.length === 0 ? printed : [...printed, ...own],
   );
+  const start = land.gained.length === 0 ? counted : [...counted, ...land.gained];
   const fx = staticEffectsOn(state, obj, {
     ...input,
     types: line.types,

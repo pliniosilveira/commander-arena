@@ -392,3 +392,12 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `cardsDrawnThisTurn` is the controller's own count: "for each card an opponent has drawn this turn", the whole game and a static ability that follows it are not read (a layer effect would need a refresh when a card is drawn).
 - `effect.becomes` takes keywords after a color alone only ("becomes red and gains haste"); a creature type or a card type with keywords is read by the lead rules (`effect.lead-becomes`, `effect.lead-becomes-target`) in their own words. `effect.lead-double-pt` takes a target (not `~`'s power or a group) and the keywords of "it".
 - The rulings of the seven cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
+
+## The Gisa deck, group 1 (issue 41, D-1400 to D-1405)
+
+- Afflict is the only keyword with a number that can be granted besides landwalk: `toxic`, `annihilator`, `bushido` and the other keywords with a parameter are still refused by `validateCard` in a grant (the instances of each would need their own rule).
+- A land set to a basic land type (`setTypes` with `Plains`, `Island`, `Swamp`, `Mountain`, `Forest`) is run for an effect only: the static form ("Each land is a Swamp in addition to its other land types", Urborg, Yavimaya) is still refused by `validateCard`, and "in addition to its other land types" is not read (`effect.becomes` rejects it; the engine runs the additive effect). Other land types (a Desert, a Gate) cannot be set. The dependencies of CR 613.8 between layer 4 effects (Blood Moon with Urborg) are not modelled.
+- `combatDamagedBy` reads the card types, the subtypes and the controller of the source only: "by a nontoken creature", "by a creature with power 4 or greater", "by a white creature" and "an opponent was dealt combat damage by ..." are not read, and the log has no amount of damage by kind.
+- The word "token" is read in the subject of a trigger (`a Zombie token you control`) and nowhere else in a permanent phrase: "destroy target creature token" and the like stay unread until a card asks for them.
+- Snow, legendary and artifact landwalk and the landwalks of other land types are not read (`LANDWALKS` lists the five basic land types and "nonbasic landwalk").
+- The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.

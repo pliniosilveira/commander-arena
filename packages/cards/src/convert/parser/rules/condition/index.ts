@@ -34,6 +34,7 @@ import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
+import { GISA_G1_CONDITION_RULES } from './gisa-g1';
 import { HOFRI_CONDITION_RULES } from './hofri';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
 import { CONDITION_KICKED } from './kicked';
@@ -437,6 +438,8 @@ export const CONDITION_RULES = [
   ...DANITHA_G2_LATE_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-427): "enchanted creature is green", "another Aura is attached to enchanted creature", "~ entered this turn".
   ...DANITHA_G3_CONDITION_RULES,
+  // Issue 41 (the Gisa deck, D-1403): "a player was dealt combat damage by a Zombie this turn".
+  ...GISA_G1_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,

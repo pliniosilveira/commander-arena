@@ -1,6 +1,6 @@
 /**
  * The keywords that take one whole number, written after the word: "Toxic 1" (CR 702.164a),
- * "Annihilator 2" (CR 702.86a), "Bushido 1" (CR 702.45a, stage P21), "Hideaway 4" (CR 702.75a, stage P32) and "Devour 2" (CR 702.82a, stage P40; "Devour [quality]", CR 702.82c, is not read: the number must follow the word). Read by `keyword.line` like the keywords without a parameter, so
+ * "Annihilator 2" (CR 702.86a), "Afflict 3" (CR 702.130a, D-1400), "Bushido 1" (CR 702.45a, stage P21), "Hideaway 4" (CR 702.75a, stage P32) and "Devour 2" (CR 702.82a, stage P40; "Devour [quality]", CR 702.82c, is not read: the number must follow the word). Read by `keyword.line` like the keywords without a parameter, so
  * they stand alone or in a list ("Trample, toxic 1"); the engine expands Annihilator and Bushido into
  * their triggered abilities and reads Toxic where combat damage is dealt, so the lowering only builds
  * the keyword with its number.
@@ -14,6 +14,8 @@ import { CREW_POWER } from './ward-crew';
 export const NUMBERED_KEYWORDS = [
   'toxic',
   'annihilator',
+  // D-1400 (CR 702.130a): "Afflict 3".
+  'afflict',
   'bushido',
   'hideaway',
   'devour',

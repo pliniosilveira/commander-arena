@@ -80,7 +80,7 @@ import { ptEffectText } from '../../game/pt-text';
 import { isReflexiveAbility, positionPhrase } from '../../game/recursion-text';
 import { groupPhrase } from '../../game/static-text';
 import { tokenWords } from '../../game/token-text';
-import { filterPhrase, keywordWords, withText } from '../../game/trigger-text';
+import { filterPhrase, grantedKeywordWords, withText } from '../../game/trigger-text';
 
 /** True for Cycling's expansion: an ability from the hand whose cost discards the card (CR 702.29a). */
 export function isCycling(ability: ActivatedAbility): boolean {
@@ -282,6 +282,15 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
  * dropped as a whole, never said with the field missing (AGENTS.md "Honesty").
  */
 const UNSAID = '\u0000';
+
+/** D-1402 (CR 305.6): the basic land types, the ones an effect can set a land to. */
+const BASIC_LAND_TYPE_WORDS: readonly string[] = [
+  'Plains',
+  'Island',
+  'Swamp',
+  'Mountain',
+  'Forest',
+];
 
 /** The fields of a filter the fallback of `eachText` says: its nouns and the "with ..." clause. */
 const FALLBACK_SAYS: ReadonlySet<string> = new Set([
@@ -974,7 +983,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'grantKeyword':
       // "Each Zombie gains menace until end of turn" (CR 613.1f, 611.2c).
       // D-187: "up to that many target creatures gain double strike": several targets, the plural verb.
-      return `${capital(object(effect.objects))} ${object(effect.objects).startsWith('up to ') ? 'gain' : 'gains'} ${keywordWords(effect.keyword.kind)}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
+      return `${capital(object(effect.objects))} ${object(effect.objects).startsWith('up to ') ? 'gain' : 'gains'} ${grantedKeywordWords(effect.keyword)}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
     case 'restrict':
       // "Target creature can't be blocked this turn" (CR 613.11).
       return `${capital(object(effect.objects))} ${RESTRICTION_EFFECT[effect.restriction]}${effect.duration === 'untilEndOfTurn' ? ' this turn' : effect.duration === 'forAsLongAsYouControlThis' ? ' for as long as you control this' : ''}`;
@@ -1108,6 +1117,16 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'setTypes': {
       // D-151 (CR 205.1b, 613.1d): "Until end of turn, this creature becomes a Dragon in addition to its other types".
       const kinds = [...(effect.subtypes ?? []), ...(effect.types ?? [])];
+      // D-1402 (CR 305.7): "Target land becomes a Swamp until end of turn": a basic land type replaces the land types.
+      if (
+        effect.additive !== true &&
+        effect.types === undefined &&
+        effect.subtypes?.length === 1 &&
+        BASIC_LAND_TYPE_WORDS.includes(effect.subtypes[0] ?? '')
+      ) {
+        const land = effect.subtypes[0] ?? '';
+        return `${capital(object(effect.objects))} becomes ${land === 'Island' ? 'an' : 'a'} ${land}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
+      }
       if (effect.additive !== true || kinds.length === 0) return UNSAID;
       const noun = kinds.join(' ');
       const until = effect.duration === 'untilEndOfTurn' ? ' until end of turn' : '';
