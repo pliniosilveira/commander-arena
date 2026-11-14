@@ -25,6 +25,7 @@ import {
 import type { IrToken } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family } from '../registry';
+import { TOKEN_QUOTED_ABILITY } from '../static/quoted';
 import { type Clauses, makeClause, single } from './operands';
 
 /**
@@ -69,6 +70,17 @@ const createdTokens: Parser<{ token: IrToken; alternative: IrToken | null }> = (
   const head = sequence(literal('create '), tokenWithEach())(ctx, pos);
   if (!head.ok) return head;
   const [, token] = head.value;
+  const rider = sequence(literal('. They have '), TOKEN_QUOTED_ABILITY)(ctx, head.pos);
+  if (rider.ok) {
+    return {
+      ok: true,
+      value: {
+        token: { ...token, abilities: [...(token.abilities ?? []), rider.value[1]] },
+        alternative: null,
+      },
+      pos: rider.pos,
+    };
+  }
   const one =
     token.predefined !== undefined && token.count.kind === 'number' && token.count.value === 1;
   const alternative = one ? OR_ANOTHER_TOKEN(ctx, head.pos) : null;
@@ -106,6 +118,7 @@ export const EFFECT_CREATE_TOKEN = defineRule<Clauses>({
     // Stage P35 (D-176, CR 608.2d): one of two predefined tokens, chosen as the instruction resolves.
     'create a Food token or a Treasure token',
     'create a Clue token or a Treasure token',
+    'create a number of 1/1 black and green Pest creature tokens equal to the number of +1/+1 counters on ~. They have "When ~ dies, you gain 1 life."',
   ],
   rejects: [
     'create X Treasure tokens for each time it was kicked',

@@ -101,6 +101,7 @@ export function lowerCondition(
       return ok({
         kind: 'lifeTotal',
         compare: { cmp, value },
+        ...(test.player === undefined ? {} : { player: test.player }),
         ...(test.aboveStarting === true ? { aboveStarting: true as const } : {}),
       });
     }

@@ -222,11 +222,12 @@ function lowerSuspend(ability: IrKeyword): LowerResult<readonly Ability[]> {
  */
 function lowerStorm(ability: IrKeyword): LowerResult<readonly Ability[]> {
   if (ability.params.length > 0 || (ability.cost ?? []).length > 0) return failure(ability);
-  const blocked = gate(ability, ['ability:keyword', 'keyword:storm']);
+  const kind = ability.name === 'gravestorm' ? 'gravestorm' : 'storm';
+  const blocked = gate(ability, ['ability:keyword', `keyword:${kind}`]);
   if (blocked !== null) return blocked;
   return {
     ok: true,
-    value: [{ kind: 'keyword', keyword: { kind: 'storm' } }],
+    value: [{ kind: 'keyword', keyword: { kind } }],
     rule: 'keyword.storm',
   };
 }
@@ -423,7 +424,7 @@ export function lowerKeyword(
     return lowerCostedKeyword(ability, ability.name);
   }
   if (ability.name === 'suspend') return lowerSuspend(ability);
-  if (ability.name === 'storm') return lowerStorm(ability);
+  if (ability.name === 'storm' || ability.name === 'gravestorm') return lowerStorm(ability);
   if (ability.name === 'gift') return lowerGift(ability);
   if (ability.name === 'livingWeapon' || ability.name === 'jobSelect') {
     return lowerLivingWeapon(ability, ctx);

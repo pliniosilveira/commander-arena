@@ -326,6 +326,7 @@ function lowerReturnSelf(
           objects: { kind: 'this' },
           to: 'battlefield',
           controller: 'owner',
+          ...(to.tapped === true ? { tapped: true } : {}),
           ...(to.counters === undefined ? {} : { withCounters: { ...to.counters } }),
           ...(attachTo === undefined ? {} : { attachTo }),
         }

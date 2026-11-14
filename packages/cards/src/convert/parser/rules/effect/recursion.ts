@@ -180,6 +180,7 @@ const RETURN_SELF_RULE = 'effect.return-self';
 
 interface Destination {
   readonly zone: 'battlefield' | 'hand';
+  readonly tapped?: true;
   readonly counters: { readonly count: number; readonly counter: string } | null;
   readonly span: Span;
 }
@@ -290,6 +291,7 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
   ],
   examples: [
     'return this card from your graveyard to the battlefield',
+    'return this card from your graveyard to the battlefield tapped',
     'return this card from your graveyard to the battlefield with a +1/+1 counter on it',
     'return this card from your graveyard to the battlefield with two +1/+1 counters on it',
     'return this card from your graveyard to your hand',
@@ -298,7 +300,7 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
   ],
   rejects: [
     'return this card from a graveyard to the battlefield',
-    'return this card from your graveyard to the battlefield tapped',
+    'return this card from your graveyard to your hand tapped',
     'return this card from your graveyard to your hand with a +1/+1 counter on it',
     'return this card to the battlefield',
     'return this card from your graveyard to its owner’s hand',
@@ -314,8 +316,19 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
       literal(' from your graveyard to '),
       choice<Destination>(
         map(
-          spanned(sequence(literal('the battlefield'), optional(WITH_COUNTERS, null))),
-          ({ value, span }): Destination => ({ zone: 'battlefield', counters: value[1], span }),
+          spanned(
+            sequence(
+              literal('the battlefield'),
+              optional(literal(' tapped'), null),
+              optional(WITH_COUNTERS, null),
+            ),
+          ),
+          ({ value, span }): Destination => ({
+            zone: 'battlefield',
+            counters: value[2],
+            ...(value[1] === null ? {} : { tapped: true }),
+            span,
+          }),
         ),
         map(
           spanned(literal('your hand')),
@@ -341,6 +354,7 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
       zone: to.zone,
       from: 'graveyard',
       whose: to.zone === 'hand' ? 'you' : 'owner',
+      ...(to.tapped === true ? { tapped: true } : {}),
       ...(to.counters === null
         ? {}
         : { counters: { counter: to.counters.counter, count: to.counters.count } }),

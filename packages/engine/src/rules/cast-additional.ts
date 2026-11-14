@@ -107,15 +107,16 @@ function paySacrifice(state: GameState, events: GameEvent[], finish: Finish): Re
   if (filter === null) return payOptionalSacrifice(state, events, finish);
   const seat = casting.seat;
   const legal = sacrificeCandidates(state, seat, casting.object, filter);
-  if (legal.length === 0) return fail('You have nothing to sacrifice');
-  if (legal.length === 1) return sacrificeChosen(state, events, legal, true, finish);
+  const count = casting.extra?.sacrificeCount ?? 1;
+  if (legal.length < count) return fail('You have too few permanents to sacrifice');
+  if (legal.length === count) return sacrificeChosen(state, events, legal, true, finish);
   return pause({ ...state, casting: { ...casting, stage: 'sacrifice' } }, events, {
     kind: 'choosePermanent',
     seat,
     source: casting.object,
     purpose: 'sacrifice',
-    min: 1,
-    max: 1,
+    min: count,
+    max: count,
     legal,
     forCost: true,
   });

@@ -774,6 +774,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
       totalCost: symbols,
       extra: {
         sacrifice: cost.sacrifice,
+        ...(cost.sacrificeCount === undefined ? {} : { sacrificeCount: cost.sacrificeCount }),
         ...(cost.sacrificeAny === undefined ? {} : { sacrificeAny: cost.sacrificeAny }),
         discard: cost.discard,
         exile: cost.exile,
@@ -845,7 +846,7 @@ function settlePayOptions(
   // The first way the chosen resources can pay (colors first) that leaves a cost the other sources can pay.
   const cost = options.find(
     (o) =>
-      castManaPlan(used.state, casting.seat, spell, o, sacrifice, extra, casting.extra?.tap) !==
+      castManaPlan(used.state, casting.seat, spell, o, sacrifice, extra, casting.extra?.tap, undefined, casting.extra?.sacrificeCount ?? 1) !==
       null,
   );
   return cost === undefined ? null : { state: used.state, events: used.events, cost };
@@ -876,6 +877,8 @@ function withSuggestions(
     casting.extra?.sacrifice ?? null,
     payOptionSources(state, casting.seat, [base.mechanism, ...after]),
     casting.extra?.tap,
+    undefined,
+    casting.extra?.sacrificeCount ?? 1,
   );
   const planned = new Set(
     (plan?.taps ?? []).filter((t) => t.abilityIndex === index).map((t) => t.object),
@@ -1033,7 +1036,7 @@ export function answerPayment(
     // (a Treasure tapped for mana): the cast would be stuck, so the payment is refused.
     if (
       sacrifice !== null &&
-      sacrificeCandidates(s, seat, casting.object, sacrifice).length === 0
+      sacrificeCandidates(s, seat, casting.object, sacrifice).length < (casting.extra?.sacrificeCount ?? 1)
     ) {
       return fail('That payment would leave nothing to sacrifice for the additional cost');
     }
@@ -1056,6 +1059,8 @@ export function answerPayment(
           sacrifice,
           undefined,
           casting.extra?.tap,
+          undefined,
+          casting.extra?.sacrificeCount ?? 1,
         );
     if (plan === null) return fail('You cannot pay that cost');
     const applied = applyPaymentPlan(cleared, seat, plan, plan.lifePaid);

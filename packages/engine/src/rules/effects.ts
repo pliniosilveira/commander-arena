@@ -144,7 +144,10 @@ export function runInstruction(
       ? done(state)
       : {
           ...done(r.state, r.events),
-          thisWay: { sacrificed: 1 },
+          thisWay: {
+            sacrificed: 1,
+            sacrificedOwn: (instruction.seat ?? res.controller) === res.controller ? 1 : 0,
+          },
           performed: 1,
           sacrificed: [instruction.object],
         };
@@ -741,6 +744,16 @@ function runEffect(
                 ...(effect.objects.optional === true ? { optional: true as const } : {}),
                 // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
                 ...(effect.objects.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
+                ...(effect.objects.exceptSacrificed === true
+                  ? {
+                      among: Object.keys(state.objects).filter(
+                        (id) =>
+                          !(res.sacrificed ?? []).some((old) =>
+                            graveyardSuccessors(state, old).includes(id as ObjectId),
+                          ),
+                      ) as ObjectId[],
+                    }
+                  : {}),
                 ...(effect.to === 'battlefield'
                   ? {
                       tapped: effect.tapped ?? false,
@@ -1171,8 +1184,9 @@ function runEffect(
       return done(
         state,
         [],
-        [
-          {
+        Array.from(
+          { length: Math.max(0, amountOf(state, effect.times ?? 1, ctx, targets)) },
+          () => ({
             kind: 'chooseOne',
             options: effect.options,
             chosen: null,
@@ -1183,8 +1197,8 @@ function runEffect(
                   const chooser = resolvePlayers(state, effect.chooser, ctx, targets)[0];
                   return chooser === undefined ? {} : { chooser };
                 })()),
-          },
-        ],
+          }),
+        ),
       );
 
     case 'vote':
@@ -1957,6 +1971,21 @@ function runEffect(
       }
       // D-206 (CR 701.3b): "you may attach it to target creature you control. If you do, ...": it was done when something was attached.
       return { ...done(next, events), performed: attached };
+    }
+
+    case 'removeAllPlayerCounters': {
+      const removed: GameEvent[] = [];
+      for (const id of resolvePlayers(state, effect.player, ctx, targets)) {
+        const seat = getSeat(next, id);
+        if (seat.poison > 0) {
+          removed.push({ kind: 'poisonChanged', seat: id, from: seat.poison, to: 0 });
+        }
+        if ((seat.energy ?? 0) > 0) {
+          removed.push({ kind: 'energyChanged', seat: id, from: seat.energy ?? 0, to: 0 });
+        }
+        next = patchSeat(next, id, { poison: 0, energy: 0 });
+      }
+      return done(next, removed);
     }
 
     case 'removeAllCounters': {

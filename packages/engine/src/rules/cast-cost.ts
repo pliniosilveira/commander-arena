@@ -76,6 +76,7 @@ export interface SpellCost {
   readonly life: number;
   /** The permanent to sacrifice, by filter, or null. */
   readonly sacrifice: ObjectFilter | null;
+  readonly sacrificeCount?: number;
   /** "You may sacrifice one or more creatures" (D-491): the permanents the caster may sacrifice, any number, or null; asked once the mana is paid, the spell is castable with none. */
   readonly sacrificeAny?: ObjectFilter | null;
   /** How many cards to discard. */
@@ -336,12 +337,16 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   symbols.push(...manaSymbolsOf(additional));
   let sacrifice: ObjectFilter | null = null;
   let sacrificeAny: ObjectFilter | null = null;
+  let sacrificeCount = 1;
   let discard = 0;
   for (const c of additional) {
     if (c.kind === 'sacrifice' && !('kind' in c.what)) {
       // D-491: "you may sacrifice one or more creatures" is no requirement for casting the spell: it is asked as the cost is paid.
       if (c.anyNumber === true) sacrificeAny = c.what;
-      else sacrifice = c.what;
+      else {
+        sacrificeCount = c.countX === true ? x : 1;
+        if (sacrificeCount > 0) sacrifice = c.what;
+      }
     } else if (c.kind === 'discard') discard += c.count;
   }
   const life = lifeOf(additional) + (kicker === null ? 0 : lifeOf(kicker) * kicks) + perX.life * x;
@@ -370,6 +375,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     tax,
     life,
     sacrifice,
+    ...(sacrificeCount === 1 ? {} : { sacrificeCount }),
     ...(sacrificeAny === null ? {} : { sacrificeAny }),
     discard,
     exile,
@@ -431,6 +437,7 @@ export function castManaPlan(
   tap?: TapRequirement | null,
   /** D-351 (CR 609.4b): mana of any type can be spent on the spell: left out, what the spell on the stack says. */
   anyType: boolean = spell.stack?.anyManaType === true,
+  sacrificeCount = 1,
 ): PaymentPlan | null {
   const derived = derive(state, spell);
   // D-149: mana that may be spent only on a spell of a type and creature type ("only to cast an Angel spell") reads the subtypes.
@@ -446,7 +453,7 @@ export function castManaPlan(
   const leaves = (p: PaymentPlan): boolean => {
     const after = applyPaymentPlan(state, seat, p, p.lifePaid).state;
     return (
-      (sacrifice === null || sacrificeCandidates(after, seat, spell.id, sacrifice).length > 0) &&
+      (sacrifice === null || sacrificeCandidates(after, seat, spell.id, sacrifice).length >= sacrificeCount) &&
       (tap == null || tapCandidates(after, seat, spell.id, tap.filter).length >= tap.count)
     );
   };
@@ -503,7 +510,7 @@ export function canPaySpellCost(
   if (cost.exile > exilable(state, seat, spell.id).length) return false;
   if (
     cost.sacrifice !== null &&
-    sacrificeCandidates(state, seat, spell.id, cost.sacrifice).length === 0
+    sacrificeCandidates(state, seat, spell.id, cost.sacrifice).length < (cost.sacrificeCount ?? 1)
   ) {
     return false;
   }
@@ -529,6 +536,7 @@ export function canPaySpellCost(
       extra,
       cost.tap,
       cost.anyType === true,
+      cost.sacrificeCount ?? 1,
     ) !== null
   );
 }

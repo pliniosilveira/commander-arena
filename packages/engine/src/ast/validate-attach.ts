@@ -69,11 +69,16 @@ export function checkStaticSubject(
       checkBattlefieldFilter(s.filter, `${path}.filter`, out);
       // D-120: `derive` matches this filter without the combat or a source power. "Commander" is read from the card, which no layer changes (D-443), so a group
       // of commander creatures is a subject.
-      if (filterSome(s.filter, readsCombatOrSourceBesidesCommander)) {
+      if (
+        filterSome(s.filter, (f) => {
+          const { attacking: _attacking, ...rest } = f;
+          return readsCombatOrSourceBesidesCommander(rest);
+        })
+      ) {
         issue(
           out,
           `${path}.filter`,
-          'a static ability cannot name attacking creatures or compare power with its source',
+          'a static ability cannot read resolution-only values or compare power with its source',
         );
       }
       // D-422: `derive` reads the group before layers 6 and 7 with the view of each permanent alone: a permanent that has an Aura attached, or one attached to a permanent of a

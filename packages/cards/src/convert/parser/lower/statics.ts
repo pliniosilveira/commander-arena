@@ -525,7 +525,6 @@ function comparesPowerOrToughness(filter: ObjectFilter): boolean {
 /** Whether the filter, or one of its `anyOf` members, reads combat or the turn: attacking, a source's damage, an announced X. */
 function readsCombat(filter: ObjectFilter): boolean {
   return (
-    filter.attacking === true ||
     filter.manaValueX === true ||
     filter.controllerDealtDamageBySource === true ||
     // D-416 (CR 700.9): the attachments of a permanent are read from the game, which `derive` does not have while it matches a subject.
@@ -644,8 +643,7 @@ function lowerPart(
   ) {
     return failure(part.subject);
   }
-  // "Attacking creatures you control have deathtouch" (stage P31): whether a creature attacks is the game's state, which a static
-  // ability's subject does not read in the engine (`validateCard`), so the statement is read and not run.
+  // Resolution-only values cannot be read by a static ability.
   if (subject.value.kind === 'filter' && readsCombat(subject.value.filter))
     return failure(part.subject);
   const needs: FeatureRef[] = ['ability:static', `staticSubject:${subject.value.kind}`];

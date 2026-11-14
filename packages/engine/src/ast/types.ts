@@ -113,6 +113,15 @@ export type Amount =
    * number: two opponents who lost 3 and 5 lose 3 and 5), so it is not valid inside another amount or in any other effect.
    */
   | { readonly kind: 'lifeLostThisTurn' }
+  /** Life actually gained by this instruction's controller this turn, before this instruction runs. */
+  | { readonly kind: 'lifeGainedThisTurn' }
+  /** Entries or deaths recorded at the event, including objects that have since left their destination. */
+  | {
+      readonly kind: 'enteredThisTurn' | 'diedThisTurn';
+      readonly types?: readonly CardType[];
+      readonly token?: boolean;
+      readonly controller: 'you' | 'any';
+    }
   /**
    * The toughness of an object a reference names, read as `powerOf` is (D-131): "you gain life equal to that
    * creature's toughness". From last-known information when the object left (CR 608.2h, 113.7a). `of` may be the
@@ -239,6 +248,7 @@ export type Amount =
 /** What a `thisWay` amount counts (D-131). */
 export type ThisWayKind =
   | 'sacrificed'
+  | 'sacrificedOwn'
   | 'destroyed'
   // D-230: "for each nontoken creature you controlled that was destroyed this way" (Ceaseless Conflict): the creatures the controller of the effect controlled as they were destroyed.
   | 'destroyedOwnNontoken'
@@ -1244,6 +1254,8 @@ export interface ChooseSelector {
    * card was put into the hand, not the cards the mill moved.
    */
   readonly fromMoved?: true;
+  /** Excludes the cards the permanents sacrificed earlier in this resolution became. */
+  readonly exceptSacrificed?: true;
 }
 
 /**
@@ -1426,6 +1438,8 @@ export type Effect =
   | {
       readonly kind: 'chooseOne';
       readonly options: readonly InlineChoice[];
+      /** Repeat the choice independently this many times, read once when the effect starts. */
+      readonly times?: Amount;
       /**
        * "Target player adds one mana of any color" (D-229, CR 608.2d, 106.1b): the one player this selector names (a target) makes the choice, not the
        * controller of the effect. Left out, the controller chooses. A chooser that is no longer there (the target was illegal) is skipped with the effect.
@@ -1770,7 +1784,7 @@ export type Effect =
    * recorded as it was cast (spells cast since, in response, do not count). Copies of a spell that has left the
    * stack are made from that information (CR 707.10).
    */
-  | { readonly kind: 'storm' }
+  | { readonly kind: 'storm'; readonly gravestorm?: true }
   /**
    * CR 702.56a (Replicate, D-129): "copy it for each time its replicate cost was paid. If the spell has any targets, you
    * may choose new targets for any of the copies." The effect of the trigger the engine expands the keyword into and
@@ -2073,6 +2087,7 @@ export type Effect =
    * one `counterRemoved` event for each kind. Nothing for a permanent that has none or has left.
    */
   | { readonly kind: 'removeAllCounters'; readonly objects: ObjectSelector }
+  | { readonly kind: 'removeAllPlayerCounters'; readonly player: PlayerSelector }
   /**
    * "Each player may discard their hand and draw seven cards" and "target opponent may have you draw three cards. If the player doesn't, ..." (D-210, CR 608.2d,
    * 101.4): each player `players` names, in the order CR 101.4 gives, is asked whether to do `effect`; a player who accepts has it done, a player who declines
@@ -3413,6 +3428,7 @@ export type Keyword =
    * instance triggers separately (CR 702.40b).
    */
   | { readonly kind: 'storm' }
+  | { readonly kind: 'gravestorm' }
   /**
    * CR 702.56a (Replicate, D-129): "Replicate [cost]" means "As an additional cost to cast this spell, you may pay
    * [cost] any number of times" and "When you cast this spell, if a replicate cost was paid for it, copy it for each
@@ -3610,6 +3626,7 @@ export type Condition =
   | {
       readonly kind: 'lifeTotal';
       readonly compare: NumberComparison;
+      readonly player?: 'opponent';
       readonly aboveStarting?: true;
     }
   /**
@@ -4093,7 +4110,7 @@ export type Replacement =
       readonly what: ObjectFilter;
       readonly counter: string;
       /** A number, a count of permanents, or (D-183, "for each mana from an artifact source spent to cast it") the mana spent to cast the entering permanent. */
-      readonly count: number | CountAmount | ManaSpentAmount;
+      readonly count: number | CountAmount | ManaSpentAmount | Extract<Amount, { kind: 'enteredThisTurn' | 'diedThisTurn' }>;
     }
   /**
    * "Lands you control enter untapped." (CR 614.1c, 614.12, 616.1, D-179): a replacement effect of a permanent on the battlefield for the permanents

@@ -355,7 +355,7 @@ const CASCADE_ABILITY: Ability = {
  * the spell that functions on the stack, found as the spell is cast (CR 603.3b); each instance triggers separately
  * (CR 702.40b). The effect reads how many spells were cast before it as it was cast (D-129).
  */
-const STORM_ABILITY: Ability = {
+const STORM_ABILITY: Extract<Ability, { kind: 'triggered' }> = {
   kind: 'triggered',
   trigger: { kind: 'castSpell', filter: { stackKind: 'spell' }, by: 'you', self: true },
   effect: { kind: 'storm' },
@@ -633,6 +633,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [CASCADE_ABILITY];
     case 'storm':
       return [STORM_ABILITY];
+    case 'gravestorm':
+      return [{ ...STORM_ABILITY, effect: { kind: 'storm', gravestorm: true } }];
     case 'replicate':
       return [REPLICATE_ABILITY];
     case 'unearth':

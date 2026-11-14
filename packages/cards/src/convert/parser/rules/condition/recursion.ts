@@ -91,6 +91,38 @@ export const WHAT_IT_IS: Parser<IrFilter> = (ctx, pos) => {
     value: whatItIs(modifiers, subtypes, types, ctx.text.slice(pos, r.pos)),
     pos: r.pos,
   };
+
+  export const CONDITION_EXILED_THIS_WAY = defineRule<IrCondition>({
+    id: 'condition.exiled-this-way',
+    family: 'condition',
+    leading: ['a', 'an'],
+    cites: ['CR 608.2c (Resolving Spells and Abilities)', 'CR 400.7j (General)'],
+    examples: ['a creature card is exiled this way', 'an artifact card is exiled this way'],
+    rejects: [
+      'a card is exiled this way',
+      'a creature card was discarded this way',
+      'a creature card is exiled',
+      'a creature card is exiled this way or another way',
+    ],
+    parse: (ctx, pos) => {
+      const r = sequence(
+        pattern(/an? /iu),
+        WHAT_IT_IS,
+        pattern(/ is exiled this way(?![\p{L}\p{N}])/iu),
+      )(ctx, pos);
+      if (!r.ok) return r;
+      return {
+        ok: true,
+        value: {
+          kind: 'condition',
+          test: { kind: 'exiledThisWay', filter: r.value[1] },
+          span: { start: pos, end: r.pos },
+          rule: 'condition.exiled-this-way',
+        },
+        pos: r.pos,
+      };
+    },
+  });
 };
 
 /**

@@ -500,7 +500,12 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'controlCommander'; readonly yours?: true }
     // Stage P29 (D-133): "you have 30 or more life", "you have at least 7 life more than your starting life total"
     // (`aboveStarting`, CR 119.1, 903.7)
-    | { readonly kind: 'lifeTotal'; readonly compare: IrComparison; readonly aboveStarting?: true }
+    | {
+        readonly kind: 'lifeTotal';
+        readonly compare: IrComparison;
+        readonly aboveStarting?: true;
+        readonly player?: 'opponent';
+      }
     // D-252 (the Bruna deck): "you gained 3 or more life this turn" (CR 119.3)
     | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
     // D-318 (the Niv-Mizzet deck): "you've cast three or more spells this turn" (CR 601.2i)
@@ -551,6 +556,7 @@ export interface IrCondition extends IrNode {
     // a filter that says what it is (no zone, controller or owner)
     // `zone` 'hand' (Danitha deck group 2, D-412): "you put a Town card into your hand this way" says where the card went; absent for the battlefield.
     | { readonly kind: 'putThisWay'; readonly filter: IrFilter; readonly zone?: 'hand' }
+    | { readonly kind: 'exiledThisWay'; readonly filter: IrFilter }
     // "If you don't, put a +1/+1 counter on ~" (Danitha deck group 2, D-411, CR 608.2c): the player did not put a card from among the cards the sentence before it milled into their hand
     | { readonly kind: 'youDont' }
     // "if the gift was promised" (CR 702.174k, stage P30)

@@ -160,6 +160,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tap',
     'untap',
     'removeAllCounters',
+    'removeAllPlayerCounters',
     // D-209: "You get {E}{E}" (`gainEnergy`) and "connives" (`connive`).
     'gainEnergy',
     'connive',
@@ -444,6 +445,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-129: Storm (CR 702.40a) and Replicate (CR 702.56a).
     'storm',
     'replicate',
+    'gravestorm',
     // D-135: Gift (CR 702.174), "Gift a card".
     'gift',
     // D-139: Living weapon (CR 702.92).
@@ -893,6 +895,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeLostThisWay',
     // D-365: "the life that player lost this turn" (CR 119.3), read for each player a `loseLife` affects.
     'lifeLostThisTurn',
+    'lifeGainedThisTurn',
+    'enteredThisTurn',
+    'diedThisTurn',
     // D-131: counts, aggregates and arithmetic.
     'toughnessOf',
     'countersOn',
@@ -1486,6 +1491,9 @@ export const AMOUNT_KINDS = [
   'lifeLostThisWay',
   /** "The life that player lost this turn" (CR 119.3, D-365): the engine's `lifeLostThisTurn`, the whole amount of a `loseLife`. */
   'lifeLostThisTurn',
+  'lifeGainedThisTurn',
+  'enteredThisTurn',
+  'diedThisTurn',
   /** "-X/-X", "+2/+2 for each ..." (D-115): a multiple of an amount, only as a power or toughness. */
   'times',
   /** "That creature's toughness" (D-131): the engine's `toughnessOf`. */
@@ -1651,6 +1659,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   tap: true,
   untap: true,
   removeAllCounters: true,
+  removeAllPlayerCounters: true,
   gainEnergy: true,
   connive: true,
   createCopies: true,
@@ -1845,6 +1854,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   cumulativeUpkeep: true,
   suspend: true,
   storm: true,
+  gravestorm: true,
   replicate: true,
   gift: true,
   livingWeapon: true,

@@ -34,7 +34,7 @@ describe('issue58 group D real imports', () => {
   test('Immoral Bargain announces X before exactly X targets and sacrifices X creatures', () => {
     const card = real('Immoral Bargain');
     const g = scenario()
-      .definitions(card)
+      .define(card)
       .seat(0)
       .hand(card.name)
       .battlefield('Grizzly Bears', { count: 2 })

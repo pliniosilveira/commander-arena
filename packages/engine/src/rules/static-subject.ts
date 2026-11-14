@@ -59,5 +59,8 @@ export function subjectAffects(
     const partner = partnerOf(state, source);
     return partner !== null && (source.id === target.id || partner.id === target.id);
   }
-  return matchesFilterWith(state, target, () => view, filterOf(subject), context);
+  return matchesFilterWith(state, target, () => view, filterOf(subject), {
+    ...context,
+    attackers: state.combat?.attackers.map((a) => a.object) ?? [],
+  });
 }
