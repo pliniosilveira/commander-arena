@@ -233,6 +233,7 @@ describe('creating and cracking a Clue (CR 111.10f)', () => {
     g.expect.tapped({ name: 'Island', zone: 'battlefield', nth: 0 });
     g.expect.tapped({ name: 'Island', zone: 'battlefield', nth: 1 });
     g.expect.stack(['Clue (ability)']);
+    expect(g.view(0).stack[0]?.tokenDefinition).toEqual(TOKEN_PRESETS.Clue);
     g.expect.handSize(0, 0);
     g.passAll();
     g.expect.handSize(0, 1);

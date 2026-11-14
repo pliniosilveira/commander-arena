@@ -33,3 +33,4 @@ export {
   scryfallCollectionSchema,
   toStoredCard,
 } from './schema';
+export { tokenSearchQuery } from './token-query';

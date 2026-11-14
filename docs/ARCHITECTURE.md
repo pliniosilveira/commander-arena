@@ -2,6 +2,8 @@
 
 **Current state.** All four packages are real. The engine runs the whole two-player Commander turn structure, casting, the stack, combat, triggered, activated and static abilities, layers, replacement and prevention effects, tokens, copies and the multi-face layouts; the Oracle parser turns card text into engine definitions; `CasualAgent` plays the web opponent; the web app plays a full game against it from real precons or an imported deck. What is still planned is marked PLANNED below (the stronger AI agents of M7, save and resume, replay import, animation, multiplayer). One section per mechanic would duplicate `docs/MECHANICS.md`, so the per-mechanic detail lives there; this file keeps the structure and the data flows.
 
+Token pictures (D-494) use the optional `ObjectView.tokenDefinition`: the original token characteristics and abilities, also carried by its stack abilities from the live source or last-known information, never exposed face down. `packages/cards/src/scryfall/token-query.ts` builds the exact search; the web's `token-art.ts` caches one promise per query and uses the existing Scryfall request queue. Only a single result with HTTPS Scryfall image files replaces the drawn frame. `image-uris.ts` shares image validation with the Manifest picture lookup. No stored-card or precon snapshot changes.
+
 ## How to read this document
 
 | Tag | Meaning |

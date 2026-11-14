@@ -12,7 +12,13 @@
  * game works offline. A failed lookup is remembered for the session, so a missing connection is asked about once.
  */
 import { type CSSProperties, useEffect, useState } from 'react';
-import type { ArtVersion } from './art';
+import {
+  type ArtVersion,
+  type CardArt as ManifestArt,
+  parseCardArt as parseManifestArt,
+} from './image-uris';
+
+export { type CardArt as ManifestArt, parseCardArt as parseManifestArt } from './image-uris';
 
 /** The set code of Fate Reforged Tokens on Scryfall. */
 export const MANIFEST_TOKEN_SET = 'tfrf';
@@ -20,25 +26,6 @@ export const MANIFEST_TOKEN_SET = 'tfrf';
 export const MANIFEST_TOKEN_NUMBER = '4';
 /** The documented lookup of one card by set code and collector number. */
 export const MANIFEST_TOKEN_LOOKUP = `https://api.scryfall.com/cards/${MANIFEST_TOKEN_SET}/${MANIFEST_TOKEN_NUMBER}`;
-
-/** The image files of the token, by the versions the page asks for. */
-export type ManifestArt = Readonly<Partial<Record<ArtVersion, string>>>;
-
-const VERSIONS: readonly ArtVersion[] = ['art_crop', 'normal', 'small'];
-
-/** The `image_uris` of a Scryfall card answer, or null when it has none the page uses. Pure, so the shape is tested without a network. */
-export function parseManifestArt(answer: unknown): ManifestArt | null {
-  if (typeof answer !== 'object' || answer === null) return null;
-  const uris = (answer as { image_uris?: unknown }).image_uris;
-  if (typeof uris !== 'object' || uris === null) return null;
-  const art: Partial<Record<ArtVersion, string>> = {};
-  for (const version of VERSIONS) {
-    const url = (uris as Record<string, unknown>)[version];
-    // Only an https address on Scryfall's own image host is used as a picture.
-    if (typeof url === 'string' && /^https:\/\/cards\.scryfall\.io\//.test(url)) art[version] = url;
-  }
-  return Object.keys(art).length === 0 ? null : art;
-}
 
 let lookup: Promise<ManifestArt | null> | null = null;
 

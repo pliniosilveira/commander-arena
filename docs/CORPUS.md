@@ -133,6 +133,12 @@ Commit the files in `reports/` (they are small, text only; the name lists are ca
 
 The bulk file itself stays in `.cache/` and is never committed. After each slice of M5, rerun `pnpm coverage:cards --file <same file> --check` and then `--update-baseline`: progress is the change in those numbers.
 
+## Token image search audit
+
+The **Coverage** workflow's manual `token_art` input also audits image searches for token definitions found in the precon snapshots and golden corpus, including tokens made by nested abilities. Results are JSON lines in the job log: `total: 0` and `total > 1` both mean the browser keeps the drawn frame. Runtime-dependent copies and P/T are counted separately, not guessed. This is an image audit, never card-support coverage.
+
+`node tools/corpus/token-art-cli.ts --dry-run` lists the queries offline. Without `--dry-run` it contacts Scryfall through the existing rate-limited queue; run that only where Scryfall is reachable (the owner or a GitHub runner). It stores neither images nor card answers and changes no snapshots. Live results were not verified in the cloud sandbox.
+
 ## Notes for developers
 
 - The scripts run under plain `node` (`node tools/corpus/cli.ts`). The packages are written for a bundler, so `tools/corpus/register.ts` installs a small resolution hook first (see `docs/ARCHITECTURE.md`, "Corpus and coverage tooling"). Tests run through Vitest and the synthetic fixture is written to a temporary directory in the test (`tools/corpus/synthetic.ts`; its ability texts use invented words so no grammar rule can ever read them).
