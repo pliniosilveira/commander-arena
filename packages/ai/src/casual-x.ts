@@ -11,6 +11,7 @@
  *  - "draw X cards": all of it, but one card fewer than its library holds, so it never draws itself out;
  *  - "pay X life": no more X than leaves it above `PAY_LIFE_ABOVE`, as for any life it pays;
  *  - "discard X cards" (D-386): no more X than the cards it is glad to lose (`expendableCount`);
+ *  - "Sacrifice X creatures" (D-1424): no more X than the tokens it controls (the permanents it gives up most readily; the source is never counted);
  *  - anything else ("X +1/+1 counters", "gain X life", "enters with X counters"): all of it;
  *  - a creature that "enters with X +1/+1 counters" (issue 131, D-237): all of it, and never less than the X
  *    that keeps it alive (`minXToSurvive`): a 0/0 that enters with no counter dies at once (CR 704.5f).
@@ -117,6 +118,14 @@ export function chooseXAnswer(view: GameView, d: ChooseXDecision): Action {
   if (perDiscard > 0) {
     const hand = ownHand(view).filter((o) => o.id !== d.source);
     want = Math.min(want, Math.floor(expendableCount(view, hand) / perDiscard));
+  }
+  // D-1424 (CR 107.3a): "Sacrifice X creatures": no more permanents than the agent is glad to lose, the tokens it controls besides the permanent with the ability.
+  const perSacrifice = d.perX.sacrifice ?? 0;
+  if (perSacrifice > 0) {
+    const tokens = view.battlefield.filter(
+      (o) => o.controller === view.viewer && o.isToken && o.id !== source?.abilitySource,
+    ).length;
+    want = Math.min(want, Math.floor(tokens / perSacrifice));
   }
   // A creature that X sizes is never announced at an X that kills it on arrival, when any larger X is on offer.
   const alive = source === undefined ? 0 : minXToSurvive(source);

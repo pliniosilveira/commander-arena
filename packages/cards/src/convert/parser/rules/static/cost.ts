@@ -712,6 +712,9 @@ export const STATIC_ADDITIONAL_COST_SACRIFICE_COPIES = defineRule<IrStatic>({
     'As an additional cost to cast ~, you may sacrifice any number of creatures. When you do, copy ~ for each creature sacrificed this way.',
   ],
   parse: (ctx, pos) => {
+    // Nothing is read, and so no progress is reported, unless the words are those of this rule: another "you may sacrifice" keeps the diagnostic of `static.additional-cost`.
+    const lead = pattern(/(?=as an additional cost to cast ~, you may sacrifice one or more )/iu)(ctx, pos);
+    if (!lead.ok) return lead;
     const r = sequence(
       literal('as an additional cost to cast ~, you may sacrifice '),
       family<IrNoun>('noun', { only: ['noun.one-or-more-permanents'] }),

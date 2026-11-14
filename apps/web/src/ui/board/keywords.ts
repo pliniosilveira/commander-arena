@@ -45,6 +45,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   toxic: ['Tox', 'Toxic'],
   splitSecond: ['Spl', 'Split second'],
   partner: ['Ptn', 'Partner'],
+  // D-1426 (CR 702.124j): the name rides in the tooltip (`PARAMETERIZED`).
+  partnerWith: ['Ptn', 'Partner with'],
   typecycling: ['Tcy', 'Typecycling'],
   multikicker: ['MK', 'Multikicker'],
   // Keyword batch 2 (D-116, D-120). Regenerate is an activated ability, not a keyword: it has no chip.
@@ -132,6 +134,11 @@ const PARAMETERIZED: Readonly<
   devour: (text) =>
     [...text.matchAll(/\bdevour\s+(\d+)/gi)].map(
       (m) => [`Dev ${m[1]}`, `Devour ${m[1]} (${devourReminder(Number(m[1]))})`] as const,
+    ),
+  // "Partner with Regna, the Redeemer" (D-1426, CR 702.124j): the name of the card, from the line of the Oracle text the object shows.
+  partnerWith: (text) =>
+    [...text.matchAll(/\bpartner with ([^(\n]+)/gi)].map(
+      (m) => ['Ptn', `Partner with ${(m[1] ?? '').trim()}`] as const,
     ),
   // "Encore {3}{R}": one chip per instance (CR 702.141a).
   encore: (text) =>

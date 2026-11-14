@@ -33,8 +33,13 @@ export function playerSubject(
       return { text: 'its controller', base: false };
     case 'ownerOf':
       return { text: 'its owner', base: false };
-    case 'target':
-      return { text: target(player.id), base: false };
+    case 'target': {
+      // D-1422: "any number of target players each lose 2 life": the slot says "any number of", the verb keeps its base form.
+      const text = target(player.id);
+      return text.startsWith('any number of target players')
+        ? { text: `${text} each`, base: true }
+        : { text, base: false };
+    }
     case 'defendingPlayer':
       // CR 508.5, 702.86a (Annihilator): "defending player sacrifices two permanents".
       return { text: 'the defending player', base: false };

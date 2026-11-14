@@ -217,6 +217,12 @@ function targetText(spec: TargetSpec | undefined): string {
       return `target ${nounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
     }
     case 'player':
+      // D-1422 (CR 115.1): "any number of target players" (none, one or each).
+      if (spec.anyNumber === true) {
+        return spec.what.filter === 'opponent'
+          ? 'any number of target opponents'
+          : 'any number of target players';
+      }
       return spec.what.filter === 'opponent' ? 'target opponent' : 'target player';
     case 'anyTarget':
       return 'any target';
@@ -257,6 +263,10 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'triggerSubject':
       // The spell of a "whenever you cast" trigger (Storm-like copies) or what targeted the permanent; else the
       // permanent or creature the trigger is about (D-133): "put a +1/+1 counter on it".
+      // D-1427: the "When you cast this spell" ability of the spell itself says "this spell".
+      if (ability.trigger?.kind === 'castSpell' && ability.trigger.self === true) {
+        return 'this spell';
+      }
       return ability.trigger === undefined ||
         ability.trigger.kind === 'castSpell' ||
         ability.trigger.kind === 'becomesTarget'
@@ -493,7 +503,10 @@ function sacrificeText(
           }`;
   if (player === undefined) return `Sacrifice ${what}`;
   // CR 101.4 (D-131): each of several players chooses their own, in turn order.
-  const choice = objects.kind === 'choose' && namesSeveral(player) ? ' of their choice' : '';
+  const eachTarget =
+    player.kind === 'target' && ability.targets?.find((t) => t.id === player.id)?.anyNumber === true;
+  const choice =
+    objects.kind === 'choose' && (namesSeveral(player) || eachTarget) ? ' of their choice' : '';
   return `${playerVerb(player, ability, 'sacrifice')} ${what}${choice}`;
 }
 
@@ -1051,6 +1064,19 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       const pay = payAnyAmountText(effect.symbol);
       return inner === '' ? pay : `${pay}. When you do, ${lower(inner)}`;
     }
+    case 'sparePermanents': {
+      // D-1420 (CR 608.2d, 701.21a): "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest." Only the shape with the six types is said; the
+      // controller's own choices (Tragic Arrogance) are not worded here.
+      if (effect.own === undefined) return UNSAID;
+      const all =
+        effect.types.length === 6 &&
+        ['artifact', 'battle', 'creature', 'enchantment', 'land', 'planeswalker'].every((t) =>
+          (effect.types as readonly string[]).includes(t),
+        );
+      if (!all) return UNSAID;
+      const who = effect.own.players.kind === 'eachOpponent' ? 'Each opponent' : 'Each player';
+      return `${who} chooses a permanent they control of each permanent type and sacrifices the rest`;
+    }
     case 'copySpell': {
       // D-438 (CR 707.10, 707.10e): a copy for each other creature, each aimed at one of them; only the shape the engine's cards have is said.
       if (effect.forEach !== undefined) {
@@ -1075,7 +1101,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
             ? null
             : typeof effect.count === 'object' && effect.count.kind === 'commanderCasts'
               ? "time you've cast your commander from the command zone this game"
-              : UNSAID;
+              : // D-1427 (CR 118.8): "copy this spell for each creature sacrificed this way".
+                typeof effect.count === 'object' && effect.count.kind === 'sacrificedAsCost'
+                ? 'creature sacrificed this way'
+                : UNSAID;
       if (count === UNSAID) return UNSAID;
       const spell = object(effect.spell);
       return spell === UNSAID ? UNSAID : copySpellWords(spell, effect.newTargets, count);
