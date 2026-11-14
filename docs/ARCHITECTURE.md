@@ -6,6 +6,8 @@ Token pictures (D-494) use the optional `ObjectView.tokenDefinition`: the origin
 
 Token searches restrict results to standalone `layout:token` cards (D-495). Double-faced token printings otherwise count as separate cards even when the requested face is the same token, causing the ambiguity fallback. Tokens with no standalone match still retain their drawn frame.
 
+The type line is matched by an escaped, anchored regex; tokens with no abilities and no rules text also exclude any Oracle text (`-o:/./`, D-496). A plain Zombie therefore cannot accidentally match an enchantment Zombie or one with decayed. Tokens with abilities retain their positive ability-word refinements and the ambiguity fallback.
+
 ## How to read this document
 
 | Tag | Meaning |

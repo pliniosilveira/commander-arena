@@ -143,6 +143,8 @@ The **Coverage** workflow's manual `token_art` input also audits image searches 
 
 [Runner audit 43591927316](https://github.com/pliniosilveira/commander-arena/actions/runs/43591927316), 2026-11-14: Thopter and Treasure each matched one card. The queries for white 3/3 and 4/4 flying Angels, blue 2/2 flying Bird, red 4/4 flying Dragon, Pest, Rogue, white 1/1 Soldier and black 2/2 Zombie still returned multiple matches and keep the drawn frame. These are image-search results, not rules-support failures or coverage numbers; the complete per-query results are in the job log.
 
+Zombie follow-up (D-496): the plain black 2/2 Zombie query now matches the complete type line and excludes Oracle text when the definition has no abilities. This rejects the enchantment and decayed variants. [Lookup 43593391889](https://github.com/pliniosilveira/commander-arena/actions/runs/43593391889) verified one matching Zombie with image files on 2026-11-14; the preceding audit's Zombie ambiguity describes the older query.
+
 ## Notes for developers
 
 - The scripts run under plain `node` (`node tools/corpus/cli.ts`). The packages are written for a bundler, so `tools/corpus/register.ts` installs a small resolution hook first (see `docs/ARCHITECTURE.md`, "Corpus and coverage tooling"). Tests run through Vitest and the synthetic fixture is written to a temporary directory in the test (`tools/corpus/synthetic.ts`; its ability texts use invented words so no grammar rule can ever read them).
