@@ -47,6 +47,11 @@ export function useActions(): AppActions {
   return useAppStore().getState();
 }
 
+/** The actions, or null outside a `StoreProvider` (a panel drawn on its own, as in a render test). */
+export function useActionsIfPresent(): AppActions | null {
+  return useContext(StoreContext)?.getState() ?? null;
+}
+
 /**
  * The note of a card whose face prints `*` for power or toughness (D-109), from the latest snapshot:
  * which of the two is `*` and what defines it. Undefined for any other card, and outside a

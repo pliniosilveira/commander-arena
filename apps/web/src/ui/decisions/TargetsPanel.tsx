@@ -7,6 +7,7 @@ import type {
 } from '@commander-arena/engine';
 import { keptDivisionText, keptTargets, shareLabel } from './copy-division';
 import { bumpShare, divisionLine, shareOf, sharesLeft, withEvenShares } from './divide';
+import { useHoverProps } from './hover';
 import { type Index, nameOf, objectIndex } from './lookup';
 import { modeHeading } from './target-prompt';
 import {
@@ -27,6 +28,15 @@ const targetLabel = (t: ChosenTarget, index: Index, viewer: SeatId): string =>
 
 const targetKey = (t: ChosenTarget): string => (t.kind === 'object' ? t.id : `p${t.seat}`);
 
+type HoverOf = ReturnType<typeof useHoverProps>;
+
+/**
+ * #45, #23: hovering or focusing the chip of an object shows it in the preview panel, so the
+ * player can read a card of a graveyard (or anywhere else) before picking it; a player has none.
+ */
+const hoverOf = (hoverProps: HoverOf, t: ChosenTarget) =>
+  t.kind === 'object' ? hoverProps(t.id) : {};
+
 /**
  * The dock panel of the targets decision: one chip per legal target. For a modal spell or ability
  * (D-114) the chips are grouped under the heading of the mode whose slot they fill, "Mode 2: Destroy
@@ -44,6 +54,7 @@ export function TargetsPanel({
   update: Update;
 }) {
   const index = objectIndex(view);
+  const hoverProps = useHoverProps();
   const groups = modeGroups(d.specs);
   if (groups !== null) {
     return (
@@ -65,6 +76,7 @@ export function TargetsPanel({
                     <button
                       type="button"
                       className="dec-chip"
+                      {...hoverOf(hoverProps, t)}
                       aria-pressed={pickedFor(ui.targets, t, spec.specId)}
                       onClick={() =>
                         update((u) => ({
@@ -87,7 +99,14 @@ export function TargetsPanel({
   return (
     <section className="dec-panel dec-targets" aria-label="Legal targets">
       <h3 className="dec-panel-title">Legal targets</h3>
-      <PlainList specs={d.specs} index={index} viewer={view.viewer} ui={ui} update={update} />
+      <PlainList
+        specs={d.specs}
+        index={index}
+        viewer={view.viewer}
+        ui={ui}
+        update={update}
+        hoverProps={hoverProps}
+      />
       <KeptDivision decision={d} index={index} viewer={view.viewer} />
       {d.specs.map((spec) => (
         <DivisionSection
@@ -110,12 +129,14 @@ function PlainList({
   viewer,
   ui,
   update,
+  hoverProps,
 }: {
   specs: readonly TargetChoiceSpec[];
   index: Index;
   viewer: SeatId;
   ui: UiState;
   update: Update;
+  hoverProps: HoverOf;
 }) {
   const pickedObjects = chosenObjects(ui.targets);
   const pickedSeats = chosenSeats(ui.targets);
@@ -138,6 +159,7 @@ function PlainList({
                     <button
                       type="button"
                       className="dec-chip"
+                      {...hoverOf(hoverProps, t)}
                       aria-pressed={pickedFor(ui.targets, t, grouped.specId)}
                       onClick={() =>
                         update((u) => ({
@@ -163,6 +185,7 @@ function PlainList({
           <button
             type="button"
             className="dec-chip"
+            {...hoverOf(hoverProps, t)}
             aria-pressed={t.kind === 'object' ? pickedObjects.has(t.id) : pickedSeats.has(t.seat)}
             onClick={() => update((u) => ({ ...u, targets: toggleTarget(specs, u.targets, t) }))}
           >

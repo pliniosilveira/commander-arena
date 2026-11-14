@@ -148,6 +148,27 @@ describe('clicking an object with activated abilities', () => {
     ]);
   });
 
+  test('an ability that is the only thing to do with a card in the hand asks first (#40)', () => {
+    // On the opponent's turn the bear cannot be cast, so cycling is its only option; one tap on
+    // the card must not discard it unasked.
+    const outcome = clickOutcome(priority(act(2, 1)), o(2), index);
+    if (outcome.kind !== 'menu') throw new Error(`expected a menu, got ${outcome.kind}`);
+    expect(outcome.items.map((i) => i.label)).toEqual(['Cycling {2}']);
+    expect(outcome.items.map((i) => i.action)).toEqual([
+      { kind: 'activate', object: o(2), abilityIndex: 1 },
+    ]);
+  });
+
+  test('a graveyard, exile or battlefield card with one ability still acts at once', () => {
+    for (const zone of ['graveyard', 'exile', 'battlefield']) {
+      const there = card(7, 'There Bear', {
+        zone,
+        activated: [{ abilityIndex: 0, ability: pump }],
+      });
+      expect(clickOutcome(priority(act(7, 0)), o(7), lookupIndexFor([there])).kind).toBe('act');
+    }
+  });
+
   test('a land that can be played or cycled offers both', () => {
     const land = card(6, 'Cycling Land', {
       types: ['land'],
