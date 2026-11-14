@@ -41,6 +41,7 @@ const EXECUTABLE_KEYWORDS = [
   'changeling', // scenario-xx-changeling-devoid
   'devoid', // scenario-xx-changeling-devoid
   'partner', // scenario-xx-changeling-devoid
+  'partnerWith', // scenario-xx-gisa-g3-sacrifice-x
   'chooseBackground', // scenario-xx-choose-background
   'canBeCommander', // scenario-xx-planeswalker-commander
   'ascend', // scenario-xx-ascend
@@ -130,6 +131,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   changeling: { kind: 'changeling' },
   devoid: { kind: 'devoid' },
   partner: { kind: 'partner' },
+  partnerWith: { kind: 'partnerWith', name: 'SYNTHETIC Partner Quarry' },
   chooseBackground: { kind: 'chooseBackground' },
   canBeCommander: { kind: 'canBeCommander' },
   ascend: { kind: 'ascend' },
