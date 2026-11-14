@@ -28,6 +28,9 @@ export function tokenSearchQuery(token: TokenDefinition): string | null {
   return [
     `!${quote(token.name)}`,
     't:token',
+    // Double-faced token cards count as separate matches even with unique:cards.
+    // Prefer a standalone token whose image_uris belong to this exact token.
+    'layout:token',
     ...types.map((t) => `t:${quote(t)}`),
     `c=${colors.join('').toLowerCase() || 'c'}`,
     ...(token.power === null ? [] : [`pow=${token.power === '*' ? quote('*') : token.power}`]),

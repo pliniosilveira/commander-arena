@@ -44,7 +44,13 @@ for (const mode of ['matched', 'ambiguous', 'offline', 'broken-image'] as const)
       const query = new URL(route.request().url()).searchParams.get('q') ?? '';
       queries.push(query);
       if (mode === 'offline') return route.abort();
-      const total = query.includes('Uncatalogued') ? 0 : mode === 'ambiguous' ? 2 : 1;
+      // The live Thopter query also finds Servo // Thopter unless layout:token excludes it.
+      const duplicateFace = query.startsWith('!"Thopter"') && !query.includes('layout:token');
+      const total = query.includes('Uncatalogued')
+        ? 0
+        : mode === 'ambiguous' || duplicateFace
+          ? 2
+          : 1;
       const image_uris = {
         normal: 'https://cards.scryfall.io/normal/token.jpg',
         art_crop: 'https://cards.scryfall.io/art_crop/token.jpg',
@@ -68,8 +74,8 @@ for (const mode of ['matched', 'ambiguous', 'offline', 'broken-image'] as const)
         ),
       golden,
     );
-    await expect.poll(() => queries.length).toBe(4);
-    for (const name of ['Treasure', 'Soldier', 'stack']) {
+    await expect.poll(() => queries.length).toBe(5);
+    for (const name of ['Treasure', 'Soldier', 'Thopter', 'stack']) {
       const section = page.locator(`[data-token-test="${name}"]`);
       await expect(section.locator('.board-card-name')).toBeVisible();
       if (mode === 'matched') {
@@ -87,6 +93,7 @@ for (const mode of ['matched', 'ambiguous', 'offline', 'broken-image'] as const)
     await expect(unknown.locator('img')).toHaveCount(0);
     expect(queries.filter((q) => q.startsWith('!"Treasure"'))).toHaveLength(1);
     expect(queries.filter((q) => q.startsWith('!"Soldier"'))).toHaveLength(1);
+    expect(queries.filter((q) => q.startsWith('!"Thopter"'))).toHaveLength(1);
     expect(queries.some((q) => q.includes('pow=1 tou=1'))).toBe(true);
     expect(errors).toEqual([]);
   });
