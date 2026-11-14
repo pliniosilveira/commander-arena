@@ -887,7 +887,7 @@ function runEffect(
       // D-337 (CR 707.10, 903.8): "copy it for each time you've cast your commander from the command zone this game": the count is read as this resolves; none
       // when it is zero (copyInstructions makes nothing for it).
       const copies = effect.count === undefined ? 1 : amountOf(state, effect.count, ctx, targets);
-      // D-1321 (CR 707.10, 707.10e): "copy that spell for each other creature you control that the spell could target": the stack finds the permanents and makes a copy for each
+      // D-438 (CR 707.10, 707.10e): "copy that spell for each other creature you control that the spell could target": the stack finds the permanents and makes a copy for each
       // (`rules/copy-spell.ts`, which reads the legal targets of the spell); "that player copies" is the copy of the player the event is about.
       if (effect.forEach !== undefined) {
         const copier = effect.copier === 'triggerPlayer' ? ctx.triggerPlayer : undefined;
@@ -921,7 +921,7 @@ function runEffect(
     }
 
     case 'exileOnResolve': {
-      // D-1322 (CR 614.1a, 608.2n): the spell whose casting caused the trigger carries the replacement from now on (`rules/exile-on-resolve.ts`).
+      // D-439 (CR 614.1a, 608.2n): the spell whose casting caused the trigger carries the replacement from now on (`rules/exile-on-resolve.ts`).
       const spells = resolveObjects(state, effect.spell, ctx, targets);
       return done(markExileOnResolve(state, spells, res.controller, res.source));
     }

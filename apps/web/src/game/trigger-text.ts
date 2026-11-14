@@ -240,13 +240,13 @@ export function filterPhrase(
   base = 'permanent',
   self?: string,
 ): string | null {
-  // D-1320 (CR 115.1): "an Equipment spell or a spell that targets a creature you control": a disjunction with a member that says what the spell targets is said member by member.
+  // D-437 (CR 115.1): "an Equipment spell or a spell that targets a creature you control": a disjunction with a member that says what the spell targets is said member by member.
   if (given.anyOf?.some((m) => m.targetsObject !== undefined || m.targetsOnly !== undefined)) {
     const { anyOf, ...outer } = given;
     const parts = anyOf.map((member) => filterPhrase({ ...outer, ...member }, base, self));
     return parts.includes(null) ? null : parts.join(' or ');
   }
-  // D-206, D-400, D-1320 (CR 115.1, 115.9c, 601.2c): "a spell that targets a creature you control", "a spell that targets only this creature": what the spell targets is a phrase of its own.
+  // D-206, D-400, D-437 (CR 115.1, 115.9c, 601.2c): "a spell that targets a creature you control", "a spell that targets only this creature": what the spell targets is a phrase of its own.
   if (given.targetsObject !== undefined || given.targetsOnly !== undefined) {
     const { targetsObject, targetsOnly, ...rest } = given;
     const aim = targetsObject ?? targetsOnly;

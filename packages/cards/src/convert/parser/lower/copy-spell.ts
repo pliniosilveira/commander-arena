@@ -39,7 +39,7 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
       if (!lowered.ok) return lowered;
       count = lowered.value;
     }
-    // "copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." (D-1321, CR 707.10e): a copy
+    // "copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." (D-438, CR 707.10e): a copy
     // for each creature the filter names, each aimed at one of them; "that player copies" is the copy of the player the trigger is about.
     let forEach: ObjectFilter | undefined;
     let copier: 'triggerPlayer' | undefined;
@@ -74,7 +74,7 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
 };
 
 /**
- * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (Feather group 3, D-1322,
+ * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (Feather group 3, D-439,
  * CR 614.1a, 603.7): the engine's `exileOnResolve` of the spell whose casting caused the trigger (`triggerSubject`); the return is part of it.
  */
 export const EXILE_ON_RESOLVE: Lowering<IrClause, Effects> = {

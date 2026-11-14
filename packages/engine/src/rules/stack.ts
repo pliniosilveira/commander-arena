@@ -320,7 +320,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
     // CR 715.3d: a spell cast as an Adventure that resolves is exiled instead of going to the
     // graveyard; a countered or fizzled one never gets here (CR 715.4) and goes to the graveyard.
     const adventure = isAdventureSpell(next, obj);
-    // CR 614.1a, 608.2n (D-1322): "exile that card instead of putting it into your graveyard as it resolves": an instant or sorcery that carries the mark is exiled.
+    // CR 614.1a, 608.2n (D-439): "exile that card instead of putting it into your graveyard as it resolves": an instant or sorcery that carries the mark is exiled.
     const exiled = exiledAsItResolves(obj, permanent, adventure);
     const moved = moveObject(next, {
       object: res.object,
@@ -360,7 +360,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
           ],
         };
       }
-      // CR 603.7, 603.7c (D-1322): the card exiled as it resolved comes back to its owner's hand at the beginning of the next end step.
+      // CR 603.7, 603.7c (D-439): the card exiled as it resolved comes back to its owner's hand at the beginning of the next end step.
       if (exiled && moved.newObject !== null) {
         const back = returnExiledSpell(obj, moved.newObject);
         if (back !== null) {

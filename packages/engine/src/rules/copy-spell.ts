@@ -54,7 +54,7 @@ export function runCopySpell(
 }
 
 /**
- * CR 707.10, 707.10e, 115.3 (D-1321): "copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures."
+ * CR 707.10, 707.10e, 115.3 (D-438): "copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures."
  * The permanents the effect's filter names are looked at in the order of the battlefield; each that is a legal target for every instance of the word "target" the spell's targets stand for
  * (read for the player the copies belong to, with the spell as the source, so that hexproof, shroud, protection and the wording of the slot count) gets a copy that has it, and
  * only it, as the target of each of those instances. One that is not a legal target for one of them gets none (CR 707.10e: the copy is not created). Nothing is asked.
@@ -140,7 +140,7 @@ function copyObject(
       source: null,
       abilityIndex: null,
       ability: null,
-      // D-1321 (CR 707.10e): a copy for each object has that object as the target of every instance of the word "target".
+      // D-438 (CR 707.10e): a copy for each object has that object as the target of every instance of the word "target".
       chosenTargets:
         retarget === undefined
           ? stack.chosenTargets
@@ -172,7 +172,7 @@ function makeCopy(
   if (ins.count <= 0 || original === null) return done(state);
   const [id, s1] = allocateObjectId(state);
   const [timestamp, s2] = allocateTimestamp(s1);
-  // D-1321 (CR 707.10): "that player copies that spell": the copy belongs to the player who has it put onto the stack.
+  // D-438 (CR 707.10): "that player copies that spell": the copy belongs to the player who has it put onto the stack.
   const copier = ins.controller ?? res.controller;
   const copy = copyObject(original, id, timestamp, copier, ins.retarget);
   if (copy === null) return done(state);

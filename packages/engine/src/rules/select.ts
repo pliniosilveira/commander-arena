@@ -163,7 +163,7 @@ export function matchesFilter(
       });
     return aimed && matchesFilter(state, obj, rest, ctx);
   }
-  // CR 115.9c (D-1320): "that targets only this creature": the targets chosen are one object (chosen once or more), and the inner filter matches it.
+  // CR 115.9c (D-437): "that targets only this creature": the targets chosen are one object (chosen once or more), and the inner filter matches it.
   if (filter.targetsOnly !== undefined) {
     const { targetsOnly, ...rest } = filter;
     const unchosen = (obj.stack?.chosenTargets.length ?? 0) === 0;
@@ -180,7 +180,7 @@ export function matchesFilter(
     }
     return aimed && matchesFilter(state, obj, rest, ctx);
   }
-  // D-1320: a disjunction one of whose members reads what a spell targets ("an Equipment spell or a spell that targets a creature you control"): the outer filter
+  // D-437: a disjunction one of whose members reads what a spell targets ("an Equipment spell or a spell that targets a creature you control"): the outer filter
   // says where to look, each member is matched as a filter of its own with that.
   if (filter.anyOf?.some((m) => m.targetsObject !== undefined || m.targetsOnly !== undefined)) {
     const { anyOf, ...outer } = filter;

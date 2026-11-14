@@ -1,6 +1,6 @@
 /**
  * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (CR 614.1a, 608.2n,
- * 603.7, 603.7c, D-1322 provisional): the effect `exileOnResolve` and what the stack does with the mark it leaves.
+ * 603.7, 603.7c, D-439): the effect `exileOnResolve` and what the stack does with the mark it leaves.
  *
  * The effect resolves while the spell is still on the stack (it is the effect of a trigger of its being cast): it marks the spell (`StackData.exileOnResolve`). The mark is a
  * replacement effect of the resolution only (CR 614.1a, "as it resolves"): a spell that is countered, fizzles or is put into exile by another effect is not changed, and so it is not
@@ -20,7 +20,7 @@ const RETURN_TO_HAND: TriggeredAbility = {
   effect: { kind: 'moveToZone', objects: { kind: 'triggerSubject' }, to: 'hand' },
 };
 
-/** D-1322: marks each of `spells` that is a spell card still on the stack. */
+/** D-439: marks each of `spells` that is a spell card still on the stack. */
 export function markExileOnResolve(
   state: GameState,
   spells: readonly ObjectId[],

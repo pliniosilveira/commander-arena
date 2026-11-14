@@ -402,7 +402,7 @@ export interface StackData {
    */
   readonly exileInstead?: true;
   /**
-   * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (D-1322 provisional,
+   * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (D-439,
    * CR 614.1a, 608.2n, 603.7): set on a spell by the effect `exileOnResolve`. When this instant or sorcery resolves and would be put into its owner's graveyard it is exiled instead, and
    * a delayed triggered ability of `by` (with `source` as its source) returns the card to its owner's hand at the beginning of the next end step. A spell that does not resolve is not
    * changed. It ends when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
@@ -1356,7 +1356,7 @@ export type Instruction =
       readonly stage: 'make' | 'targets' | 'each';
       readonly copy: ObjectId | null;
       /**
-       * D-1321 (CR 707.10e): "for each other creature you control that the spell could target": the stage `each` finds the permanents this filter names that are a legal target
+       * D-438 (CR 707.10e): "for each other creature you control that the spell could target": the stage `each` finds the permanents this filter names that are a legal target
        * for the spell's targets, and makes a copy for each (`retarget`: the one permanent that copy targets in every instance of the word "target"). `controller` is the player
        * the copies belong to when it is not the controller of the resolving ability ("that player copies that spell").
        */

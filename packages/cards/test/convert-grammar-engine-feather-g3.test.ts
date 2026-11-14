@@ -1,4 +1,4 @@
-// The Feather deck (issue 27), group 3 (D-1320 to D-1325 provisional): the REAL Oracle text of Phalanx Leader, Tenth District Legionnaire, Danitha Sword of Hope, Feather the Redeemed,
+// The Feather deck (issue 27), group 3 (D-437 to D-442): the REAL Oracle text of Phalanx Leader, Tenth District Legionnaire, Danitha Sword of Hope, Feather the Redeemed,
 // Zada Hedron Grinder and Mirrorwing Dragon (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is compared with the SYNTHETIC cards of
 // the engine fixtures the engine scenarios of `scenario-xx-feather-g3.test.ts` run, and is played through applyAction, so the nodes the parser writes for the real text are what the
 // engine runs. Pins: CR 601.2i and 603.2 (a trigger on a spell cast), CR 115.9c (targets only), CR 614.1a and 603.7 (the exile as a spell resolves, and its return), CR 707.10 and 707.10e (the

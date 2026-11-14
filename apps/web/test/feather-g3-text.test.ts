@@ -1,5 +1,5 @@
 /**
- * The words of group 3 of the Feather deck (D-1320 to D-1322 provisional) as pure models: the cast triggers about a spell that targets the permanent or only it, the disjunction of an
+ * The words of group 3 of the Feather deck (D-437 to D-439) as pure models: the cast triggers about a spell that targets the permanent or only it, the disjunction of an
  * Equipment spell and a spell that targets a creature you control, the copies for each other creature, and the exile of a spell as it resolves (read from the engine's SYNTHETIC cards, so a
  * wording that drifts from the AST fails here). No DOM.
  */

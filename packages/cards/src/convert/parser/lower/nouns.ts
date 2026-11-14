@@ -109,7 +109,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:attachedTo',
   'selector:enchanted',
   'selector:hostOfSource',
-  // D-1320 (Feather group 3): "a spell that targets ~" and "that targets only ~" (CR 115.1, 115.9c).
+  // D-437 (Feather group 3): "a spell that targets ~" and "that targets only ~" (CR 115.1, 115.9c).
   'selector:isSource',
   'selector:targetsOnly',
   'selector:powerAboveBase',
@@ -137,7 +137,7 @@ function lowerFilterAt(
   filter: IrFilter,
   noun: IrNoun,
   inner: boolean,
-  /** D-1320: a member of a disjunction of spells (the outer filter is on the stack): it may read what the spell targets. */
+  /** D-437: a member of a disjunction of spells (the outer filter is on the stack): it may read what the spell targets. */
   stackMember = false,
 ): LowerResult<ObjectFilter> {
   const rule = noun.rule;
@@ -271,7 +271,7 @@ function lowerFilterAt(
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
   }
-  // D-1320 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~": the source of the ability is the object the spell targets, the only one for "only".
+  // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~": the source of the ability is the object the spell targets, the only one for "only".
   let targetsOnly: ObjectFilter | undefined;
   if (filter.targetsSelf === true || filter.targetsOnlySelf === true) {
     if (!onStack || targetsObject !== undefined) return bad([]);

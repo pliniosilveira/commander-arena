@@ -257,9 +257,9 @@ export interface IrFilter {
   readonly singleTarget?: true;
   /** "that targets a creature" (stage P49, D-206, CR 115.1, 601.2c): a spell with a chosen target that is an object of this kind (a card type). */
   readonly targets?: IrFilter;
-  /** "that targets ~" (Feather group 3, D-1320, CR 115.1): a spell with a chosen target that is the source of the ability. */
+  /** "that targets ~" (Feather group 3, D-437, CR 115.1): a spell with a chosen target that is the source of the ability. */
   readonly targetsSelf?: true;
-  /** "that targets only ~" (Feather group 3, D-1320, CR 115.9c): a spell whose chosen targets are all the source of the ability. */
+  /** "that targets only ~" (Feather group 3, D-437, CR 115.9c): a spell whose chosen targets are all the source of the ability. */
   readonly targetsOnlySelf?: true;
   /** "creatures attacking you" (stage P28, CR 508.1b): attackers whose attack target is the controller as a player. */
   readonly attackingYou?: true;

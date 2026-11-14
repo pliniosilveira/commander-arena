@@ -1,4 +1,4 @@
-// Group 3 of the Feather deck (issue 27, D-1320 to D-1325 provisional): what the real cards Phalanx Leader, Tenth District Legionnaire, Danitha Sword of Hope, Feather the Redeemed,
+// Group 3 of the Feather deck (issue 27, D-437 to D-442): what the real cards Phalanx Leader, Tenth District Legionnaire, Danitha Sword of Hope, Feather the Redeemed,
 // Zada Hedron Grinder and Mirrorwing Dragon ask of the engine, as the SYNTHETIC cards of `src/cards/fixtures/synthetic-feather-g3.ts` (the cards package checks that the grammar lowers the
 // real text to the same nodes). Pins: CR 601.2i and 603.2 (a trigger on the cast of a spell), CR 115.1, 115.9b and 115.9c (a spell "that targets" and "that targets only" something), CR 603.4
 // and 603.2 (a trigger that triggers once each turn), CR 614.1a and 608.2n (an instant or sorcery that resolves goes to its owner's graveyard unless a replacement effect exiles it),

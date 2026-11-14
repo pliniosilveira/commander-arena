@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 3 OF THE FEATHER DECK (issue 27, D-1320 to D-1325 provisional). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 3 OF THE FEATHER DECK (issue 27, D-437 to D-442). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the real cards of the group need from the engine, written out by hand (the cards package checks that the grammar lowers the real Oracle text to
  * these same nodes): creatures with a cast trigger on a spell that targets the creature itself or only the creature itself, a draw once each turn on an Equipment spell or a spell that

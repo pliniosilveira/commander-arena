@@ -537,7 +537,7 @@ const AIMED: Parser<Aimed> = map(
   (m): Aimed => ({ kind: 'object', what: (m[1] ?? '').toLowerCase(), yours: m[2] !== undefined }),
 );
 
-/** D-1320: "that targets ~", "that targets only ~" (the `~` is the permanent with the ability). */
+/** D-437: "that targets ~", "that targets only ~" (the `~` is the permanent with the ability). */
 const AIMED_SELF: Parser<Aimed> = map(
   pattern(/\s?that targets (only )?~(?![\p{L}\p{N}])/iu),
   (m): Aimed => ({ kind: 'self', only: m[1] !== undefined }),
@@ -558,8 +558,8 @@ function aimedFilter(aimed: Aimed): IrFilter {
  * a spell is cast trigger as it becomes cast). The spell is the subject of the trigger, described
  * by a filter of the spells on the stack. "An opponent casts" is `by: 'opponent'` (D-111, stage P18);
  * "cast or copy" and "your first spell each turn" are other events. What the spell targets: "that targets a creature
- * [you control]" (D-206, D-400), "that targets ~" and "that targets only ~" (D-1320, CR 115.9c), and a second kind
- * of spell joined with "or": "an Equipment spell or a spell that targets a creature you control" (D-1321).
+ * [you control]" (D-206, D-400), "that targets ~" and "that targets only ~" (D-437, CR 115.9c), and a second kind
+ * of spell joined with "or": "an Equipment spell or a spell that targets a creature you control" (D-438).
  */
 export const TRIGGER_CAST = defineRule<IrTrigger>({
   id: 'trigger.cast',
@@ -591,11 +591,11 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     // D-400 (Danitha, group 1b): "you control" of the object the spell targets.
     'you cast a spell that targets a creature you control',
     'an opponent casts a spell that targets a permanent you control',
-    // D-1320 (Feather, group 3): the spell targets the source of the ability, or only it (CR 115.9c).
+    // D-437 (Feather, group 3): the spell targets the source of the ability, or only it (CR 115.9c).
     'you cast a spell that targets ~',
     'you cast an instant or sorcery spell that targets only ~',
     'a player casts an instant or sorcery spell that targets only ~',
-    // D-1320: a second kind of spell joined with "or".
+    // D-437: a second kind of spell joined with "or".
     'you cast an Equipment spell or a spell that targets a creature you control',
     'you cast an artifact spell or a spell that targets a permanent',
   ],
@@ -656,9 +656,9 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       ),
       spanned(sequence(pattern(/an? /i), map(spellPhrase(), withoutZone))),
       // Stage P49 (D-206, CR 115.1, 601.2c): "an instant or sorcery spell that targets a creature".
-      // D-1320 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~", the source of the ability.
+      // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~", the source of the ability.
       optional(choice(AIMED, AIMED_SELF), null),
-      // D-1320: "an Equipment spell or a spell that targets a creature you control": a second kind of spell, which is the one that targets.
+      // D-437: "an Equipment spell or a spell that targets a creature you control": a second kind of spell, which is the one that targets.
       optional(sequence(literal(' or '), pattern(/a spell\s/iu), AIMED), null),
     )(ctx, pos);
     if (!r.ok) return r;

@@ -852,7 +852,7 @@ export const EFFECT_TAP = tapRule('tap');
 export const EFFECT_UNTAP = tapRule('untap');
 
 export const EFFECT_RULES = [
-  // D-1321, D-1322 (Feather, group 3): the copies for each other creature and the exile as a spell resolves start like a plain copy, a plain exile and "that player ...", and are tried first.
+  // D-438, D-439 (Feather, group 3): the copies for each other creature and the exile as a spell resolves start like a plain copy, a plain exile and "that player ...", and are tried first.
   ...FEATHER_G3_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,

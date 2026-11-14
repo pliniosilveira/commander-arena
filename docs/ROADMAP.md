@@ -368,7 +368,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The hand shows the card's mana cost alone (`castCostOf`), as it does for escalate and kicker; the cost of each tier is in the text of the mode, which the modes decision shows.
 - The rulings of Restoration Magic on Scryfall were not fetched (blocked in a cloud session): the behaviour follows CR 702.183a and 700.2h.
 
-## The Feather deck, group 3 (issue 27, D-1320 to D-1325, provisional)
+## The Feather deck, group 3 (issue 27, D-437 to D-442)
 
 - The copies for each other creature (`copySpell.forEach`) are put onto the stack in the order of the battlefield (oldest permanent first); the rules do not make the order a decision, and it matters only when copies of one spell affect each other. The filter is a set of creatures "you" or "the player the event is about" control, one creature at a time: a copy for each creature of an opponent, for each permanent or for each player is not read. The legality of a candidate is read for the copier with the spell itself as the source (CR 707.10e: "legal target for each instance of the word target"); a spell whose slots have a restriction that reads the copy's own characteristics differently from the original's (it has none today) would need the copy as the source.
 - "Targets only" is read at the moment the trigger triggers (as the spell is cast); a spell whose targets change before the trigger resolves is not looked at again (CR 115.9c does not ask for it). The filter field is read for any spell or ability on the stack, but the grammar reads it only in the filter of a cast trigger ("that targets only ~"): a target slot "target spell that targets only ~" and the triggers of an ability that targets only a creature are not read.

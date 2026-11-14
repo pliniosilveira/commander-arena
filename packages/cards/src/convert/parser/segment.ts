@@ -143,14 +143,14 @@ const NEW_TARGETS_COPIES_SENTENCE = /^you may choose new targets for the copies\
 const COPY_FOR_EACH = /(?:^|, )copy (?:it|that spell) for each time [^.]*\.$/i;
 
 /**
- * "Copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." (Feather group 3, D-1321, CR 707.10e): the
+ * "Copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." (Feather group 3, D-438, CR 707.10e): the
  * second sentence only says where the copies of the first aim, so the two are read as one (`effect.copy-spell-each`). Joined only to a sentence that says it, for "you" and for "that player".
  */
 const COPY_EACH_SENTENCE = /^each copy targets a different one of those creatures\.$/i;
 const COPY_FOR_EACH_OTHER =
   /(?:^|, )(?:copy that spell|that player copies that spell) for each other creature (?:you|they) control that the spell could target\.$/i;
 /**
- * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (Feather group 3, D-1322, CR 614.1a,
+ * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (Feather group 3, D-439, CR 614.1a,
  * 603.7): "if you do" is about the exile of the sentence before it, so the two are read as one (`effect.exile-on-resolve`).
  */
 const RETURN_EXILED_SENTENCE =

@@ -1,4 +1,4 @@
-// Slice soak (D-1320 to D-1322 provisional): whole games with the 'featherG3' deck style (SYNTHETIC cards of the engine fixtures `synthetic-feather-g3.ts`: creatures with a cast trigger on the
+// Slice soak (D-437 to D-439): whole games with the 'featherG3' deck style (SYNTHETIC cards of the engine fixtures `synthetic-feather-g3.ts`: creatures with a cast trigger on the
 // spells that target them, the exile of a spell as it resolves with its return, the copies of a spell for each other creature it could target, and a spell with two targets) between random
 // agents, with CasualAgent and HeuristicAgent in some seats. Every game finishes with a result, no fallback, no rejected action and consistent state after every action; the action log
 // replays to the same final state; and, with the rules read again here from the cards' texts (not from the engine's own code), at every step:

@@ -174,7 +174,7 @@ export function matchesFilterWith(
   const zone = filter.zone ?? (filter.stackKind ? 'stack' : 'battlefield');
   if (obj.zone !== zone) return false;
   if (filter.other && ctx.source !== null && obj.id === ctx.source) return false;
-  // D-1320: "a spell that targets this creature": the object is the permanent that has the ability.
+  // D-437: "a spell that targets this creature": the object is the permanent that has the ability.
   if (filter.isSource === true && (ctx.source === null || obj.id !== ctx.source)) return false;
   if (filter.controller === 'you' && controllerOf(state, obj) !== ctx.controller) return false;
   if (filter.controller === 'opponent' && controllerOf(state, obj) === ctx.controller) return false;

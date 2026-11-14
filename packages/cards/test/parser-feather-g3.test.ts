@@ -1,4 +1,4 @@
-// The Feather deck (issue 27), group 3 (D-1320 to D-1322 provisional): the cast triggers of Phalanx Leader and Tenth District Legionnaire ("Whenever you cast a spell that targets this
+// The Feather deck (issue 27), group 3 (D-437 to D-439): the cast triggers of Phalanx Leader and Tenth District Legionnaire ("Whenever you cast a spell that targets this
 // creature, ..."), Danitha, Sword of Hope ("Whenever you cast an Equipment spell or a spell that targets a creature you control, draw a card. This ability triggers only once each turn."),
 // Feather, the Redeemed ("exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step."), Zada, Hedron
 // Grinder and Mirrorwing Dragon ("... that targets only this creature, copy that spell for each other creature you control that the spell could target. Each copy targets a different one of

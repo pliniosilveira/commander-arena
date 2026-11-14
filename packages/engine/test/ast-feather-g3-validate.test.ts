@@ -1,4 +1,4 @@
-// validateCard for the nodes of group 3 of the Feather deck (D-1320 to D-1322 provisional): `ObjectFilter.isSource` and `targetsOnly` (a spell that targets this creature, or only it),
+// validateCard for the nodes of group 3 of the Feather deck (D-437 to D-439): `ObjectFilter.isSource` and `targetsOnly` (a spell that targets this creature, or only it),
 // a disjunction of spells one member of which says what the spell targets, `copySpell` with `forEach` and `copier` (CR 707.10, 707.10e), and `exileOnResolve` (CR 614.1a). Cards are
 // SYNTHETIC or defined here.
 import { describe, expect, test } from 'vitest';

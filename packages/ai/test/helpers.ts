@@ -2706,7 +2706,7 @@ export const DANITHA_G7_LANDS = supported([
 ]);
 
 /**
- * The SYNTHETIC cards of group 3 of the Feather deck (D-1320 to D-1322 provisional): creatures with a cast trigger on the spells that target them (counters, a card drawn once each turn,
+ * The SYNTHETIC cards of group 3 of the Feather deck (D-437 to D-439): creatures with a cast trigger on the spells that target them (counters, a card drawn once each turn,
  * scry), the exile of an instant or sorcery as it resolves with its return to the hand at the end step, the copy of a spell for each other creature it could target (Zada and Mirrorwing
  * style), and a spell with two targets. They put copies of spells, delayed returns and `orderTriggers` questions into games, which the generic pools are not built to follow.
  */
@@ -2748,7 +2748,7 @@ export const FEATHER_G3_LANDS = supported([
   'Swamp',
 ]);
 
-/** Style pairs of the Feather group 3 soak test (D-1320 to D-1322): a mirror match and both mixed ways. */
+/** Style pairs of the Feather group 3 soak test (D-437 to D-439): a mirror match and both mixed ways. */
 export const FEATHER_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['featherG3', 'featherG3'],
   ['featherG3', 'spells'],
@@ -3512,7 +3512,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(DANITHA_G6_NAMES as readonly string[]).includes(card.name))
   // The Danitha group 7 cards (D-433) have modes with a cost of their own, which ask the modes of every cast: a style of their own.
   .filter((card) => !(DANITHA_G7_NAMES as readonly string[]).includes(card.name))
-  // The Feather group 3 cards (D-1320 to D-1322) copy spells for each creature they could target, exile spells as they resolve and bring them back at the end step: a style of their own.
+  // The Feather group 3 cards (D-437 to D-439) copy spells for each creature they could target, exile spells as they resolve and bring them back at the end step: a style of their own.
   .filter((card) => !(FEATHER_G3_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))

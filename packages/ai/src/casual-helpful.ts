@@ -42,7 +42,7 @@ export function helpfulSpellBeingCast(view: GameView, d: TargetsDecision): Objec
  * first legal target (the cast cannot be undone once it has started).
  */
 export function chooseCreatureToHelp(view: GameView, d: TargetsDecision): ChosenTarget[] {
-  // Every slot of the spell is filled the same way (D-1320: a pump with two targets, one of them "a creature with flying"): the same creature may be the target of two of them (CR 115.3).
+  // Every slot of the spell is filled the same way (D-437: a pump with two targets, one of them "a creature with flying"): the same creature may be the target of two of them (CR 115.3).
   const out: ChosenTarget[] = [];
   for (const slot of d.specs) {
     let best: { target: ChosenTarget; power: number } | undefined;

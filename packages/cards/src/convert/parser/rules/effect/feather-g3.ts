@@ -1,5 +1,5 @@
 /**
- * Effect rules of group 3 of the Feather deck (issue 27, D-1321, D-1322): the spell of a cast trigger copied for each other creature it could target, and exiled instead of put into
+ * Effect rules of group 3 of the Feather deck (issue 27, D-438, D-439): the spell of a cast trigger copied for each other creature it could target, and exiled instead of put into
  * the graveyard as it resolves, with its return to the hand. Each reads two sentences as one (`segment.ts` joins them).
  */
 import { fail, literal, optional, pattern, sequence } from '../../combinators';

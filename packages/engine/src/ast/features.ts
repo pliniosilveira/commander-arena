@@ -205,7 +205,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cascade',
     // D-129: copying a spell (CR 707.10) and Storm (CR 702.40a), the effect of the engine's expansion of the keyword.
     'copySpell',
-    // D-1322: "exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (`exileOnResolve`).
+    // D-439: "exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (`exileOnResolve`).
     'exileOnResolve',
     // D-181: "Change the target of target spell or ability with a single target" (CR 115.7a).
     'changeTarget',
@@ -604,10 +604,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'singleTarget',
     // D-206: "an instant or sorcery spell that targets a creature" (`ObjectFilter.targetsObject`).
     'targetsObject',
-    // D-1320: "a spell that targets only this creature" and "a spell that targets this creature" (`ObjectFilter.targetsOnly`, `isSource`).
+    // D-437: "a spell that targets only this creature" and "a spell that targets this creature" (`ObjectFilter.targetsOnly`, `isSource`).
     'targetsOnly',
     'isSource',
-    // D-1321: "copy that spell for each other creature you control that the spell could target" (`copySpell.forEach`, `copier`).
+    // D-438: "copy that spell for each other creature you control that the spell could target" (`copySpell.forEach`, `copier`).
     'copyForEach',
     'moved',
     'triggerSubject',
@@ -1108,11 +1108,11 @@ export const SELECTOR_KINDS = [
   'sharedLandType',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
-  /** "That targets only this creature" (CR 115.9c, D-1320): the engine's `ObjectFilter.targetsOnly`. */
+  /** "That targets only this creature" (CR 115.9c, D-437): the engine's `ObjectFilter.targetsOnly`. */
   'targetsOnly',
-  /** "This creature" as the object a filter describes, "that targets this creature" (D-1320): the engine's `ObjectFilter.isSource`. */
+  /** "This creature" as the object a filter describes, "that targets this creature" (D-437): the engine's `ObjectFilter.isSource`. */
   'isSource',
-  /** "Copy that spell for each other creature you control that the spell could target", "that player copies" (CR 707.10, 707.10e, D-1321): the engine's `copySpell.forEach` and `copier`. */
+  /** "Copy that spell for each other creature you control that the spell could target", "that player copies" (CR 707.10, 707.10e, D-438): the engine's `copySpell.forEach` and `copier`. */
   'copyForEach',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
   'singleTarget',

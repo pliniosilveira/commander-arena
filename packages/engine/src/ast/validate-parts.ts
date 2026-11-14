@@ -361,7 +361,7 @@ export function checkFilter(
     );
   }
   // CR 115.1 (D-206): "that targets a creature" is about a spell or ability on the stack, and its filter describes a permanent or an object it targets.
-  // D-1320: "a spell that targets only this creature" (CR 115.9c) is read as `targetsObject` is; a member of a disjunction of such a filter is read with the outer filter's stack.
+  // D-437: "a spell that targets only this creature" (CR 115.9c) is read as `targetsObject` is; a member of a disjunction of such a filter is read with the outer filter's stack.
   for (const key of ['targetsObject', 'targetsOnly'] as const) {
     const aimed = f[key];
     if (aimed === undefined) continue;
@@ -377,7 +377,7 @@ export function checkFilter(
     }
     checkFilter(aimed, `${path}.${key}`, out, undefined, undefined, { inTargets: true });
   }
-  // D-1320: "this creature" is the object a spell targets, in the filter of `targetsObject` or `targetsOnly`: the permanent that has the ability.
+  // D-437: "this creature" is the object a spell targets, in the filter of `targetsObject` or `targetsOnly`: the permanent that has the ability.
   if (f.isSource !== undefined) {
     if (f.isSource !== true) issue(out, `${path}.isSource`, 'isSource must be true');
     else if (where.inTargets !== true) {
@@ -463,7 +463,7 @@ export function checkFilter(
   }
 }
 
-/** Where a filter is read (D-1320): on the stack (a member of a disjunction of the outer filter's spells), or as the object a spell targets. */
+/** Where a filter is read (D-437): on the stack (a member of a disjunction of the outer filter's spells), or as the object a spell targets. */
 interface FilterWhere {
   readonly onStack?: boolean;
   readonly inTargets?: boolean;
@@ -3372,7 +3372,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // D-337 (CR 707.10): how many copies, an amount of the game as the effect resolves (zero makes none).
       if (e.count !== undefined) checkAmount(e.count, `${path}.count`, scope, out);
-      // D-1321 (CR 707.10, 707.10e): "for each other creature you control that the spell could target", each copy aimed at one of them; nobody chooses, and a count says nothing then.
+      // D-438 (CR 707.10, 707.10e): "for each other creature you control that the spell could target", each copy aimed at one of them; nobody chooses, and a count says nothing then.
       if (e.forEach !== undefined) {
         checkFilter(e.forEach, `${path}.forEach`, out);
         if (e.newTargets !== 'no') {
@@ -3414,7 +3414,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'exileOnResolve':
-      // D-1322 (CR 614.1a, 608.2n): the spell whose casting caused the trigger.
+      // D-439 (CR 614.1a, 608.2n): the spell whose casting caused the trigger.
       if (kindOf(e.spell) === 'triggerSubject') {
         checkSubjectRef(e.spell, 'stack', `${path}.spell`, scope, out);
       } else {

@@ -55,7 +55,7 @@ export function copySpellWords(
 
 /**
  * "Copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." and "That player copies that spell for each other
- * creature they control that the spell could target. ..." (CR 707.10, 707.10e; D-1321): the effect `copySpell` with `forEach`. `spell` is how the spell is named ("that spell"), `theirs`
+ * creature they control that the spell could target. ..." (CR 707.10, 707.10e; D-438): the effect `copySpell` with `forEach`. `spell` is how the spell is named ("that spell"), `theirs`
  * whether the player the trigger is about copies it.
  */
 export function copyForEachWords(spell: string, theirs: boolean): string {
