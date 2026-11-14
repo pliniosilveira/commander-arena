@@ -535,7 +535,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.job-select': asIs,
   'trigger.becomes-untapped': whenever,
   'trigger.dies-batch': whenever,
-  // Gisa deck, group 2 (D-1410, D-1411): "you commit a crime", "you create or sacrifice a token", "Skeletons and Zombies you control".
+  // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token", "Skeletons and Zombies you control".
   'trigger.commit-crime': whenever,
   'trigger.create-token': whenever,
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),

@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 2 (D-1410 to D-1414): the REAL Oracle text of Gisa, the Hellraiser, Forsaken Miner, Mirkwood Bats and Morbid Opportunist (the corpus's
+// The Gisa deck (issue 41), group 2 (D-464 to D-468): the REAL Oracle text of Gisa, the Hellraiser, Forsaken Miner, Mirkwood Bats and Morbid Opportunist (the corpus's
 // golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is defined in an engine scenario and is played through applyAction, so the nodes the
 // parser writes for the real text are what the engine runs. The abilities of each real card are also the ones of its SYNTHETIC sibling of the engine fixtures
 // (`synthetic-gisa-g2.ts`), which the engine tests and the AI soak play. Pins: CR 700.13 (committing a crime), CR 702.21a (ward), CR 111.2 (creating a token), CR 701.21

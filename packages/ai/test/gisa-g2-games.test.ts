@@ -1,4 +1,4 @@
-// Slice soak (D-1410 to D-1414): whole games with the 'gisaG2' deck style (SYNTHETIC cards of the engine fixtures `synthetic-gisa-g2.ts`: the lord with ward that costs {2} and 2 life and
+// Slice soak (D-464 to D-468): whole games with the 'gisaG2' deck style (SYNTHETIC cards of the engine fixtures `synthetic-gisa-g2.ts`: the lord with ward that costs {2} and 2 life and
 // the trigger of a crime that makes two Zombie Rogue tokens once each turn, the creature card that comes back from the graveyard when its controller commits a crime and pays {B}, the
 // creature that drains when its controller creates or sacrifices a token, the creature that draws when other creatures die once each turn, the two helpers that commit a crime by an
 // ability and by a trigger, a token maker and a sweeper) between random agents, with CasualAgent and HeuristicAgent in some seats. Every game finishes with a result, no fallback, no

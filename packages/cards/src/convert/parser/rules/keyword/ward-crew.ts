@@ -45,7 +45,7 @@ export function plainWard(rule: string): Parser<IrKeyword> {
 const WARD_LINE: Parser<readonly IrKeyword[]> = (ctx, pos) => {
   const plain = plainWard('keyword.ward')(ctx, pos);
   if (plain.ok) return { ok: true, value: [plain.value], pos: plain.pos };
-  // D-1413 (CR 702.21a, 118.1): a mana cost and a payment of life, "Ward—{2}, Pay 2 life."
+  // D-467 (CR 702.21a, 118.1): a mana cost and a payment of life, "Ward—{2}, Pay 2 life."
   const both = quiet(
     sequence(
       literal('ward—'),
@@ -89,7 +89,7 @@ const WARD_LINE: Parser<readonly IrKeyword[]> = (ctx, pos) => {
 export const KEYWORD_WARD = defineRule<readonly IrKeyword[]>({
   id: 'keyword.ward',
   family: 'keyword',
-  // D-1413: "Ward—{2}, Pay 2 life." starts with its cost, whose words vary: tried at every keyword line (it fails at its first literal), as `keyword.equip` is.
+  // D-467: "Ward—{2}, Pay 2 life." starts with its cost, whose words vary: tried at every keyword line (it fails at its first literal), as `keyword.equip` is.
   leading: [],
   cites: ['CR 702.21a (Ward)', 'CR 702.21b (Ward)', 'CR 118.1 (Costs)'],
   examples: [
@@ -102,7 +102,7 @@ export const KEYWORD_WARD = defineRule<readonly IrKeyword[]>({
     'Ward—Discard a card.',
     'Ward—Discard two cards.',
     'ward {1}',
-    // D-1413 (CR 702.21a, 118.1): the two costs the engine pays for a ward ability, together.
+    // D-467 (CR 702.21a, 118.1): the two costs the engine pays for a ward ability, together.
     'Ward—{2}, Pay 2 life.',
     'Ward—{1}{U}, Pay 3 life',
   ],

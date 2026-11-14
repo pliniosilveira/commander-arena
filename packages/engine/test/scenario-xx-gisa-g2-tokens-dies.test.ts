@@ -1,5 +1,5 @@
-// "Whenever you create or sacrifice a token, each opponent loses 1 life." (D-1411) and "Whenever one or more other creatures die, draw a card. This ability triggers only once each
-// turn." (D-1412).
+// "Whenever you create or sacrifice a token, each opponent loses 1 life." (D-465) and "Whenever one or more other creatures die, draw a card. This ability triggers only once each
+// turn." (D-466).
 // Pins: CR 111.2 (the player who creates a token is its owner and controls it as it enters), CR 701.21 (Sacrifice), CR 603.2c (an ability triggers once for each event; a batch of deaths
 // is one event), CR 603.10a (a leaves-the-battlefield trigger looks back, so a creature that dies with the others is seen), CR 700.4 (dies), CR 603.2 ("This ability triggers only once
 // each turn").

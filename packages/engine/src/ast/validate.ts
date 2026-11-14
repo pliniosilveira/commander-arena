@@ -609,7 +609,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'crimeCommitted':
     case 'tokenCreated':
-      // D-1410, D-1411: the player who commits the crime or creates the token, relative to the controller of this ability.
+      // D-464, D-465: the player who commits the crime or creates the token, relative to the controller of this ability.
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
       }

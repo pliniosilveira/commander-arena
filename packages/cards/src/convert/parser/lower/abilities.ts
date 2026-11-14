@@ -90,7 +90,7 @@ type CostedKeyword =
  */
 /**
  * The equip cost that is a mana cost and a payment of life: the engine pays both as the ability is activated (CR 602.2b, 118.1). The same two costs make a ward cost, "Ward—{2}, Pay 2
- * life." (D-1413, CR 702.21a): the engine pays the life and then the mana as the ward ability resolves (`rules/pay-unless.ts`).
+ * life." (D-467, CR 702.21a): the engine pays the life and then the mana as the ward ability resolves (`rules/pay-unless.ts`).
  */
 function lowerEquipCosts(
   ability: IrKeyword,
@@ -129,7 +129,7 @@ function lowerCostedKeyword(
   if (name === 'equip' && only !== undefined && more.length === 1 && ability.params.length === 0) {
     return lowerEquipCosts(ability, [only, ...more]);
   }
-  // "Ward—{2}, Pay 2 life." (Gisa deck, D-1413, CR 702.21a): a mana cost and a payment of life, each once.
+  // "Ward—{2}, Pay 2 life." (Gisa deck, D-467, CR 702.21a): a mana cost and a payment of life, each once.
   if (name === 'ward' && only !== undefined && more.length === 1 && ability.params.length === 0) {
     return lowerEquipCosts(ability, [only, ...more], 'ward');
   }

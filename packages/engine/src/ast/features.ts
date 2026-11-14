@@ -336,7 +336,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cycled',
     // D-196: "Whenever the Ring tempts you" (CR 701.54d).
     'ringTempted',
-    // D-1410, D-1411: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
+    // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
     'crimeCommitted',
     'tokenCreated',
   ],

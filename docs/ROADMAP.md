@@ -403,7 +403,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The CasualAgent and the HeuristicAgent reanimate with Whip of Erebos as they unearth (`wantsOneTurnReanimation`: a creature card of their graveyard would attack safely in the first main phase), but never activate Tetzimoc's ability from the hand or Ghost Vacuum (`casual-activations.ts` uses a short list of abilities it can judge; the view does not show the cards exiled with a permanent), so those are used only by the random agents of the soak, and the 100-game soak does not reach the Vacuum's Spirits (the engine scenarios prove them). Embalmer's Tools needs no decision: the reduction lowers the cost of an Unearth the agent already wants.
 - The rulings of the four cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
 
-## The Gisa deck, group 2 (issue 41, D-1410 to D-1417, provisional)
+## The Gisa deck, group 2 (issue 41, D-464 to D-471)
 
 - A crime is committed when a spell is cast, an ability activated or a triggered ability put on the stack with such a target; a target changed afterwards (CR 115.7) and a copy of a spell (CR 707.10) are not. There is no record of the crimes of a turn (no `TurnLog.crimes`): "if you've committed a crime this turn" and "the number of crimes" are not read; the first card that needs them adds the list.
 - "Whenever you create a token" reads the token's creator (`tokenCreated`, CR 111.2): a kind of token ("a Treasure token", "a creature token"), "one or more tokens" counted by creator (that rule still reads the tokens that enter under your control, D-229) and "an opponent sacrifices a token" are not read.

@@ -1,5 +1,5 @@
 /**
- * The words of group 2 of the Gisa deck (D-1410 to D-1414) as pure models: the triggers of a crime, of creating or sacrificing a token and of other creatures dying, the lord of
+ * The words of group 2 of the Gisa deck (D-464 to D-468) as pure models: the triggers of a crime, of creating or sacrificing a token and of other creatures dying, the lord of
  * two creature types, the ward that costs mana and life, and the log line of a crime (read from the engine's SYNTHETIC cards, so a wording that drifts from the AST fails here).
  * No DOM.
  */

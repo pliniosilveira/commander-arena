@@ -1100,7 +1100,7 @@ export function describeEvent(
         'CR 601.2c',
       );
     case 'crimeCommitted':
-      // CR 700.13 (D-1410): the spell or ability targets an opponent, something an opponent controls or a card in an opponent's graveyard.
+      // CR 700.13 (D-464): the spell or ability targets an opponent, something an opponent controls or a card in an opponent's graveyard.
       return line(
         'major',
         `${who(event.seat)} ${verb(event.seat, 'commit', 'commits')} a crime with ${label(event.object)}.`,

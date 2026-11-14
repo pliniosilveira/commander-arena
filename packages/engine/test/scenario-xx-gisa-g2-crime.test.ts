@@ -1,4 +1,4 @@
-// "Whenever you commit a crime" (CR 700.13, D-1410): a player commits a crime as they cast a spell, activate an ability or put a triggered ability on the stack and that spell or
+// "Whenever you commit a crime" (CR 700.13, D-464): a player commits a crime as they cast a spell, activate an ability or put a triggered ability on the stack and that spell or
 // ability targets at least one opponent; at least one permanent, spell or ability an opponent controls; and/or at least one card in an opponent's graveyard. The event is
 // `crimeCommitted`, made once for the spell or ability as its targets are chosen.
 // Pins: CR 700.13 (Committing a crime), CR 601.2c, 602.2b, 603.3d (targets chosen as the spell is cast, the ability activated or the trigger put on the stack), CR 603.2 (a trigger),

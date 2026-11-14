@@ -1,4 +1,4 @@
-// The Gisa deck (issue 41), group 2 (D-1410 to D-1414): the lines of Gisa, the Hellraiser, Forsaken Miner, Mirkwood Bats and Morbid Opportunist.
+// The Gisa deck (issue 41), group 2 (D-464 to D-468): the lines of Gisa, the Hellraiser, Forsaken Miner, Mirkwood Bats and Morbid Opportunist.
 // The first lines of each block are the real Oracle text of the acceptance cards of the golden corpus read through the whole pipeline; the other lines are SYNTHETIC siblings and
 // the near misses the grammar must not read. The engine runs what is lowered in convert-grammar-engine-gisa-g2.test.ts.
 import { describe, expect, test, vi } from 'vitest';
@@ -40,7 +40,7 @@ const ZOMBIE_ROGUE = {
   abilities: [],
 };
 
-describe('Gisa: "Ward—{2}, Pay 2 life." (D-1413, CR 702.21a)', () => {
+describe('Gisa: "Ward—{2}, Pay 2 life." (D-467, CR 702.21a)', () => {
   test('the real line: ward with a mana cost and a payment of life', () => {
     expect(readAll('Ward—{2}, Pay 2 life.').abilities).toEqual([
       {
@@ -93,7 +93,7 @@ describe('Gisa: "Ward—{2}, Pay 2 life." (D-1413, CR 702.21a)', () => {
   });
 });
 
-describe('Gisa: "Skeletons and Zombies you control get +1/+1 and have menace." (D-1414, CR 205.3m, 611.3a)', () => {
+describe('Gisa: "Skeletons and Zombies you control get +1/+1 and have menace." (D-468, CR 205.3m, 611.3a)', () => {
   const GROUP = {
     anyOf: [{ subtypes: ['Skeleton'] }, { subtypes: ['Zombie'] }],
     controller: 'you',
@@ -160,7 +160,7 @@ describe('Gisa: "Skeletons and Zombies you control get +1/+1 and have menace." (
   });
 });
 
-describe('Gisa and Forsaken Miner: "Whenever you commit a crime" (D-1410, CR 700.13)', () => {
+describe('Gisa and Forsaken Miner: "Whenever you commit a crime" (D-464, CR 700.13)', () => {
   const LINE =
     'Whenever you commit a crime, create two tapped 2/2 blue and black Zombie Rogue creature tokens. This ability triggers only once each turn.';
 
@@ -244,7 +244,7 @@ describe('Gisa and Forsaken Miner: "Whenever you commit a crime" (D-1410, CR 700
   });
 });
 
-describe('Mirkwood Bats: "Whenever you create or sacrifice a token" (D-1411, CR 111.2, 701.21)', () => {
+describe('Mirkwood Bats: "Whenever you create or sacrifice a token" (D-465, CR 111.2, 701.21)', () => {
   test('the real line: one ability for the creation and one for the sacrifice of a token, with the same body', () => {
     expect(
       readAll('Whenever you create or sacrifice a token, each opponent loses 1 life.').abilities,
@@ -309,7 +309,7 @@ describe('Mirkwood Bats: "Whenever you create or sacrifice a token" (D-1411, CR 
   });
 });
 
-describe('Morbid Opportunist: "Whenever one or more other creatures die" (D-1412, CR 700.4, 603.10a)', () => {
+describe('Morbid Opportunist: "Whenever one or more other creatures die" (D-466, CR 700.4, 603.10a)', () => {
   const GROUP = { types: ['creature'], other: true };
 
   test('the real line: a batch of the creatures of every player but this one, once each turn', () => {

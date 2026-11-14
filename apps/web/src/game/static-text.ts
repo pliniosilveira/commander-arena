@@ -103,7 +103,7 @@ export function groupPhrase(filter: ObjectFilter, other?: boolean): string | nul
   const said = (f: ObjectFilter): string | null =>
     thingsPhrase(f, true)?.replace(' on the battlefield', '') ?? null;
   if (anyOf === undefined || anyOf.length === 0) return said(merged);
-  // D-1414: "Skeletons and Zombies you control": two creature types, each alone in its member, with one controller for both.
+  // D-468: "Skeletons and Zombies you control": two creature types, each alone in its member, with one controller for both.
   const pair = anyOf.map((m) => (Object.keys(m).join() === 'subtypes' ? (m.subtypes ?? []) : []));
   if (
     anyOf.length === 2 &&

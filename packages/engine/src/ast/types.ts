@@ -2778,7 +2778,7 @@ export type Trigger =
    */
   | { readonly kind: 'ringTempted' }
   /**
-   * "Whenever you commit a crime" (CR 700.13, 603.2, D-1410): once each time the player `who` names (relative to the controller of this ability) casts a
+   * "Whenever you commit a crime" (CR 700.13, 603.2, D-464): once each time the player `who` names (relative to the controller of this ability) casts a
    * spell, activates an ability or puts a triggered ability on the stack and that spell or ability targets at least one opponent of that player, at least
    * one permanent, spell or ability an opponent of that player controls, and/or at least one card in an opponent's graveyard. One occurrence for the spell
    * or ability, however many such targets it has (a copy of a spell is not cast, so it commits none). `triggerSubject` is the spell or ability and
@@ -2786,7 +2786,7 @@ export type Trigger =
    */
   | { readonly kind: 'crimeCommitted'; readonly who: 'you' | 'opponent' | 'any' }
   /**
-   * "Whenever you create a token" (CR 111.2, 111.1, 603.2, D-1411): once for each token the player `who` names (relative to the controller of this
+   * "Whenever you create a token" (CR 111.2, 111.1, 603.2, D-465): once for each token the player `who` names (relative to the controller of this
    * ability) creates, as it enters the battlefield (a token a player creates is theirs even if control of it changes later, CR 111.2). A copy of a
    * permanent spell that becomes a permanent is a token that nobody created (CR 707.10f) and is not counted. `triggerSubject` is the token,
    * `triggerPlayer` the player who created it.

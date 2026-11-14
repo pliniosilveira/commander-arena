@@ -310,7 +310,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     }
     case 'crimeCommitted':
     case 'tokenCreated': {
-      // "Whenever you commit a crime" (Gisa deck, D-1410, CR 700.13), "whenever you create a token" (D-1411, CR 111.2): the player is relative to the controller.
+      // "Whenever you commit a crime" (Gisa deck, D-464, CR 700.13), "whenever you create a token" (D-465, CR 111.2): the player is relative to the controller.
       const who = whoOf(t.actor);
       if (who === null) return failure(t);
       const blocked = missingFeatures([`trigger:${t.event}`]);

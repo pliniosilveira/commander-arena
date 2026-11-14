@@ -4766,7 +4766,7 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Tests: engine `scenario-xx-gisa-g4-whip.test.ts` and `scenario-xx-gisa-g4-graveyard.test.ts`; cards `parser-gisa-g4.test.ts` and `convert-grammar-engine-gisa-g4.test.ts`; web `gisa-g4-text.test.ts`; AI `casual-gisa-g4.test.ts` and soak `gisa-g4-games.test.ts`.
 - Limits: see `docs/ROADMAP.md`.
 
-## The Gisa deck (issue 41), group 2: Gisa, the Hellraiser, Forsaken Miner, Mirkwood Bats and Morbid Opportunist (D-1410 to D-1417, provisional)
+## The Gisa deck (issue 41), group 2: Gisa, the Hellraiser, Forsaken Miner, Mirkwood Bats and Morbid Opportunist (D-464 to D-471)
 
 - CR: 700.13 (committing a crime), 601.2c, 602.2b and 603.3d (the targets are chosen as the spell is cast, the ability activated or the trigger put on the stack), 707.10 (a copy is not cast), 702.21a (ward), 118.1 and 119.4 (the costs of ward), 111.2 (the player who creates a token owns it and controls it as it enters), 701.21 (sacrifice), 603.2c (an ability triggers once for each event; a batch is one event), 603.10a (a leaves-the-battlefield trigger looks back), 700.4 (dies), 113.6b (an ability that works from the graveyard), 205.3m and 611.3a (a group of two creature types).
 - Gap class: P + T (no new decision kind). Engine primitives: the event `crimeCommitted` (`rules/crime.ts`, made where `becameTarget` is) and the trigger kind `crimeCommitted { who }`, the trigger kind `tokenCreated { who }` (the event `tokenCreated` existed). The rest was grammar: "Ward—{2}, Pay 2 life." (the two costs the engine pays for ward), "Skeletons and Zombies you control", "you commit a crime", "you create or sacrifice a token", and "one or more other creatures die" (a batch of every player's creatures).

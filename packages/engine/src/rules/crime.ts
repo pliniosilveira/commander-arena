@@ -1,5 +1,5 @@
 /**
- * "Committing a crime" (CR 700.13, D-1410): a player commits a crime as they cast a spell, activate an ability or put a triggered ability on the stack
+ * "Committing a crime" (CR 700.13, D-464): a player commits a crime as they cast a spell, activate an ability or put a triggered ability on the stack
  * and that spell or ability targets at least one opponent; at least one permanent, spell or ability an opponent controls; and/or at least one card in
  * an opponent's graveyard.
  *

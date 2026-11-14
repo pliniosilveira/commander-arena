@@ -1270,7 +1270,7 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
   }
   // CR 601.2c: the spell's targets became targets as they were chosen; Ward and the like see it now.
   events.push(...becameTargetEvents(next, casting.object, casting.seat));
-  // CR 700.13 (D-1410): casting a spell that targets an opponent, what they control or a card in their graveyard is committing a crime.
+  // CR 700.13 (D-464): casting a spell that targets an opponent, what they control or a card in their graveyard is committing a crime.
   events.push(...crimeEvents(next, casting.object, casting.seat));
   const cast = alternativeOfStack(obj.stack);
   events.push({

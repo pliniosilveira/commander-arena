@@ -2877,7 +2877,7 @@ export const FEATHER_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
 ];
 
 /**
- * The SYNTHETIC cards of group 2 of the Gisa deck (D-1410 to D-1414): a lord with ward that costs mana and life and a trigger on committing a crime (two Zombie Rogue tokens, once
+ * The SYNTHETIC cards of group 2 of the Gisa deck (D-464 to D-468): a lord with ward that costs mana and life and a trigger on committing a crime (two Zombie Rogue tokens, once
  * each turn), a creature card that comes back from the graveyard when its controller commits a crime and pays {B} (a `confirmOptional` question from the graveyard), a creature that
  * drains when its controller creates or sacrifices a token, a creature that draws when others die (once each turn), two helpers that commit a crime (an activated ability and a
  * triggered ability that target), a token maker and a sweeper. The payment questions and the trigger from the graveyard change which answers the generic pools ask for, which games-100
@@ -2916,7 +2916,7 @@ export const GISA_G2_LANDS = supported([
   'Mountain',
 ]);
 
-/** Style pairs of the Gisa group 2 soak test (D-1410 to D-1414): a mirror match and both mixed ways. */
+/** Style pairs of the Gisa group 2 soak test (D-464 to D-468): a mirror match and both mixed ways. */
 export const GISA_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['gisaG2', 'gisaG2'],
   ['gisaG2', 'spells'],
@@ -3686,7 +3686,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
   // The Feather group 1 cards (D-451) ask which color to protect from as a spell resolves: a style of their own.
   .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
-  // The Gisa group 2 cards (D-1410 to D-1414) ask to pay {B} to return a card from the graveyard and put tokens, ward payments and drawing into games: a style of their own.
+  // The Gisa group 2 cards (D-464 to D-468) ask to pay {B} to return a card from the graveyard and put tokens, ward payments and drawing into games: a style of their own.
   .filter((card) => !(GISA_G2_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 4 cards (D-459 to D-462) have abilities that work from the hand and from graveyards, targets in graveyards and delayed exiles: a style of their own.
   .filter((card) => !(GISA_G4_NAMES as readonly string[]).includes(card.name))

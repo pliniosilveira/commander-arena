@@ -1127,7 +1127,7 @@ export const TRIGGER_RULES = [
   ...VRASKA_TRIGGER_RULES,
   // Hashaton deck, group 1 (D-374): "you cycle or discard another card".
   ...HASHATON_G1_TRIGGER_RULES,
-  // Gisa deck, group 2 (D-1410, D-1411): "you commit a crime", "you create or sacrifice a token".
+  // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token".
   ...GISA_G2_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];

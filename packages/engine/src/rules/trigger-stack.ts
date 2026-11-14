@@ -163,7 +163,7 @@ function targetsChosen(
   stackObject: ObjectId,
   seat: SeatId,
 ): { state: GameState; events: GameEvent[] } {
-  // CR 700.13 (D-1410): putting a triggered ability on the stack with such a target is committing a crime too.
+  // CR 700.13 (D-464): putting a triggered ability on the stack with such a target is committing a crime too.
   const events = [
     ...becameTargetEvents(state, stackObject, seat),
     ...crimeEvents(state, stackObject, seat),

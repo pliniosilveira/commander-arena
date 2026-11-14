@@ -1,5 +1,5 @@
 /**
- * Noun rules of group 2 of the Gisa deck (issue 41, D-1414): "Skeletons and Zombies you control" (CR 205.3m, 611.3a), the subject of "Skeletons and Zombies you control get +1/+1
+ * Noun rules of group 2 of the Gisa deck (issue 41, D-468): "Skeletons and Zombies you control" (CR 205.3m, 611.3a), the subject of "Skeletons and Zombies you control get +1/+1
  * and have menace."
  */
 import { fail, literal, pattern, sequence } from '../../combinators';

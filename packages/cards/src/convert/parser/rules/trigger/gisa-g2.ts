@@ -1,5 +1,5 @@
 /**
- * Trigger rules of the Gisa deck, group 2 (issue 41, D-1410, D-1411): "whenever you commit a crime" (CR 700.13) and "whenever you create a token" / "you create or sacrifice a token"
+ * Trigger rules of the Gisa deck, group 2 (issue 41, D-464, D-465): "whenever you commit a crime" (CR 700.13) and "whenever you create a token" / "you create or sacrifice a token"
  * (CR 111.2, 701.21). Each says what the text says; what the engine can run is the lowering's business (`lower/triggers.ts`).
  */
 import { fail, pattern } from '../../combinators';

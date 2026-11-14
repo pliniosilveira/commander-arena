@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 2 OF THE GISA DECK (issue 41, D-1410 to D-1417). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 2 OF THE GISA DECK (issue 41, D-464 to D-471). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the real cards of the group need from the engine, written out by hand (the cards package checks that the grammar lowers the real Oracle text to
  * these same nodes): a creature with ward that costs mana and life, a lord of two creature types whose controller makes tokens when they commit a crime (once each turn), a creature
