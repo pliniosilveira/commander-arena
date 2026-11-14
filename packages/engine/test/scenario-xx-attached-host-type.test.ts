@@ -173,17 +173,12 @@ describe('GRANTABLE_KEYWORDS is exported for the parser', () => {
         'prowess',
         // D-185: riot, given to a group by a static ability and read as a permanent enters (an effect or an attached host cannot give it).
         'riot',
+        // D-1400, D-1401: afflict and landwalk carry a number or a land type, checked by `checkGrantedParameter`.
+        'afflict',
+        'landwalk',
       ].sort(),
     );
-    for (const excluded of [
-      'flash',
-      'ward',
-      'protection',
-      'cycling',
-      'enchant',
-      'equip',
-      'landwalk',
-    ]) {
+    for (const excluded of ['flash', 'ward', 'protection', 'cycling', 'enchant', 'equip']) {
       expect(GRANTABLE_KEYWORDS).not.toContain(excluded);
     }
   });

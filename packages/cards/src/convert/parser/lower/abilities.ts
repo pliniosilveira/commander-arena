@@ -309,7 +309,7 @@ function lowerCrew(ability: IrKeyword, ctx: LowerContext): LowerResult<readonly 
  */
 function lowerNumbered(
   ability: IrKeyword,
-  kind: 'toxic' | 'annihilator' | 'bushido' | 'hideaway' | 'devour' | 'backup',
+  kind: 'toxic' | 'annihilator' | 'afflict' | 'bushido' | 'hideaway' | 'devour' | 'backup',
 ): LowerResult<readonly Ability[]> {
   const [count, ...more] = ability.params;
   if (count?.kind !== 'number' || more.length > 0 || ability.cost !== undefined) {
@@ -434,6 +434,7 @@ export function lowerKeyword(
   if (
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||
+    ability.name === 'afflict' ||
     ability.name === 'bushido' ||
     ability.name === 'hideaway' ||
     ability.name === 'devour' ||
@@ -798,6 +799,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:typecycling',
   'keyword:toxic',
   'keyword:annihilator',
+  'keyword:afflict',
   'keyword:bushido',
   'keyword:affinity',
   'keyword:flashback',

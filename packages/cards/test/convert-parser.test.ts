@@ -469,6 +469,7 @@ describe('unmatched abilities', () => {
       'condition.host-is-color',
       'condition.other-attached-to-host',
       'condition.this-entered-this-turn',
+      'condition.combat-damaged-by',
       'condition.kicked',
       'condition.unless-pays',
       'condition.unless-escaped',

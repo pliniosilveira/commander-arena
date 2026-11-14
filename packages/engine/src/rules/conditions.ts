@@ -11,6 +11,7 @@ import { chosenOf } from './chosen';
 import {
   cardsInGraveyardHolds,
   cardsInLibraryHolds,
+  combatDamagedByHolds,
   controlsCommander,
   enteredThisTurnHolds,
   lifeGainedThisTurnHolds,
@@ -400,6 +401,9 @@ export function evaluateCondition(
     case 'playerDealtDamage':
       // D-151, CR 120.3: the damage dealt to the controller, or to an opponent, this turn.
       return playerDealtDamageHolds(state, ctx.controller, condition);
+    case 'combatDamagedBy':
+      // D-1403, CR 120.2a: combat damage a player was dealt this turn by a source of the kind, as it was when it dealt it.
+      return combatDamagedByHolds(state, ctx.controller, condition);
     case 'lifeGainedThisTurn':
       // D-252, CR 119.3: the life the controller has gained this turn, from the turn log.
       return lifeGainedThisTurnHolds(state, ctx.controller, condition);

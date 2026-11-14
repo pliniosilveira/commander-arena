@@ -63,6 +63,7 @@ import { SYNTHETIC_FIGHT_LIST } from './synthetic-fight';
 import { SYNTHETIC_FOLLOWUP_LIST } from './synthetic-followups';
 import { SYNTHETIC_FREE_CAST_LIST } from './synthetic-free-cast';
 import { SYNTHETIC_GIFT_LIST } from './synthetic-gift';
+import { SYNTHETIC_GISA_G1_LIST } from './synthetic-gisa-g1';
 import { SYNTHETIC_GISA_G2_LIST } from './synthetic-gisa-g2';
 import { SYNTHETIC_GISA_G4_LIST } from './synthetic-gisa-g4';
 import { SYNTHETIC_GRAVEYARD_LIST } from './synthetic-graveyard';
@@ -408,6 +409,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_DANITHA_G2_LIST,
   ...SYNTHETIC_DANITHA_G3_LIST,
   ...SYNTHETIC_FEATHER_G3_LIST,
+  ...SYNTHETIC_GISA_G1_LIST,
   ...SYNTHETIC_FEATHER_G1_LIST,
   ...SYNTHETIC_GISA_G4_LIST,
   ...SYNTHETIC_GISA_G2_LIST,

@@ -151,6 +151,18 @@ function annihilatorAbility(count: number): Ability {
 }
 
 /**
+ * CR 702.130a (D-1400): "Afflict N" means "Whenever this creature becomes blocked, defending player loses N life." The defending player is the one
+ * the creature attacks (CR 508.5); each instance triggers separately (CR 702.130b).
+ */
+function afflictAbility(count: number): Ability {
+  return {
+    kind: 'triggered',
+    trigger: { kind: 'becomesBlocked', what: { kind: 'this' } },
+    effect: { kind: 'loseLife', player: { kind: 'defendingPlayer' }, amount: count },
+  };
+}
+
+/**
  * CR 702.79a, 702.93a: Persist and Undying: "When this permanent is put into a graveyard from the
  * battlefield, if it had no [counter] counters on it, return it to the battlefield under its owner's
  * control with a [counter] counter on it." The "if" reads the permanent as it last existed (CR 603.10a);
@@ -563,6 +575,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [SOULBOND_ENTERS_ABILITY, SOULBOND_OTHER_ENTERS_ABILITY];
     case 'annihilator':
       return [annihilatorAbility(ability.keyword.count)];
+    case 'afflict':
+      return [afflictAbility(ability.keyword.count)];
     case 'persist':
       return [returnWithCounter('-1/-1')];
     case 'undying':

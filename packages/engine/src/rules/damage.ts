@@ -12,6 +12,7 @@
  * effects (CR 614.9) take their part first, in the order of `damage-order.ts` (CR 616.1): the damage is then dealt to the recipient they leave.
  */
 import type { Ability } from '../ast/types';
+import type { CardType, Subtype } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { DamageRecipient } from '../state/combat-types';
 import type { GameEvent } from '../state/events';
@@ -48,6 +49,23 @@ function toxicValue(abilities: readonly Ability[]): number {
   for (const a of abilities)
     if (a.kind === 'keyword' && a.keyword.kind === 'toxic') total += a.keyword.count;
   return total;
+}
+
+/**
+ * D-1403: the card types and subtypes the source of damage has now, or had as it last existed if it has left (CR 113.7a), for the turn log of combat damage
+ * to players ("if a player was dealt combat damage by a Zombie this turn").
+ */
+function sourceTypesOf(
+  state: GameState,
+  source: ObjectId,
+): { readonly types: readonly CardType[]; readonly subtypes: readonly Subtype[] } {
+  const live = state.objects[source];
+  if (live !== undefined) {
+    const d = derive(state, live);
+    return { types: d.types, subtypes: d.subtypes };
+  }
+  const c = state.lki[source]?.characteristics;
+  return { types: c?.types ?? [], subtypes: c?.subtypes ?? [] };
 }
 
 /** The source as it is now, or as it last existed if it has left (CR 113.7a, 608.2h). */
@@ -193,7 +211,15 @@ export function dealDamageAsking(
         ...state,
         turnLog: {
           ...state.turnLog,
-          combatDamaged: [...state.turnLog.combatDamaged, { source, player: to.seat }],
+          combatDamaged: [
+            ...state.turnLog.combatDamaged,
+            {
+              source,
+              player: to.seat,
+              ...sourceTypesOf(state, source),
+              controller: info?.controller ?? null,
+            },
+          ],
         },
       };
     }

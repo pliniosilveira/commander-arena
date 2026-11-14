@@ -56,6 +56,24 @@ function damageWords(
     : `an opponent was dealt ${amount} this turn`;
 }
 
+/** "a player was dealt combat damage by a Zombie this turn", "... by a creature you control ..."; negated, "no player was dealt ...". */
+function combatDamagedWords(
+  condition: Extract<Condition, { kind: 'combatDamagedBy' }>,
+  negate: boolean,
+): string {
+  const { types, subtypes, controller } = condition.filter;
+  const kind = [...(subtypes ?? []), ...(types ?? (subtypes === undefined ? ['creature'] : []))];
+  const noun = kind.length === 0 ? 'creature' : kind.join(' ');
+  const whose =
+    controller === 'you'
+      ? ' you control'
+      : controller === 'opponent'
+        ? ' an opponent controls'
+        : '';
+  const article = /^[aeiou]/iu.test(noun) ? 'an' : 'a';
+  return `${negate ? 'no player was' : 'a player was'} dealt combat damage by ${negate ? 'any' : article} ${noun}${whose} this turn`;
+}
+
 /**
  * The conditions of the slice as the words after "if". `negate` is the sense of the enclosing "not". Null for any other condition.
  */
@@ -65,6 +83,9 @@ export function dragonsConditionWords(condition: Condition, negate: boolean): st
       return enteredWords(condition, negate);
     case 'playerDealtDamage':
       return damageWords(condition, negate);
+    case 'combatDamagedBy':
+      // D-1403 (CR 120.2a): "a player was dealt combat damage by a Zombie this turn".
+      return combatDamagedWords(condition, negate);
     case 'chosenOption':
       // CR 607.2d: "Khans was chosen" (the option the permanent chose as it entered).
       return `${condition.option} ${negate ? "wasn't" : 'was'} chosen`;

@@ -18,7 +18,7 @@ import {
 } from '@commander-arena/engine';
 import { bind } from '../ir/bind';
 import type { IrAbility, IrNoun, IrStaticEffect, IrStaticPart } from '../ir/types';
-import { isGrantable, keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
+import { AFFLICT_WORD, grantedKeyword, landwalkOf } from '../rules/keyword/vocabulary';
 import { lowerActivated, lowerGrantedMana } from './activated';
 import { isKeepsDamage, lowerKeepsDamage } from './adamantoise';
 import { lowerAmount, lowerDefinedPt, lowerStaticAmount, lowerStaticPtStep } from './amounts';
@@ -211,11 +211,10 @@ function effectOf(
       });
     }
     case 'grantKeyword': {
-      const kind = keywordKind(effect.keyword);
-      if (kind === undefined || !isGrantable(kind) || (effect.params ?? []).length > 0) {
-        return failure(at);
-      }
-      return ok({ kind: 'grantKeyword', subject, keyword: plainKeyword(kind) });
+      // D-1400, D-1401: a keyword without parameters, "afflict 3" or a landwalk ("swampwalk"): `grantedKeyword` knows each word.
+      const keyword = grantedKeyword(effect.keyword);
+      if (keyword === undefined || (effect.params ?? []).length > 0) return failure(at);
+      return ok({ kind: 'grantKeyword', subject, keyword });
     }
     case 'grantProtection': {
       // CR 702.16, 903.4 (stage P70, D-259): the engine's `grantKeyword` with a protection, from the named colors or from those outside the
@@ -410,9 +409,13 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:characteristicPt', 'amount:countOf'];
     case 'grantKeyword':
       // D-186: riot is read by the engine from the group's static ability as a permanent enters, and listed as a keyword of its own.
-      return effect.keyword === 'riot'
-        ? ['static:grantKeyword', 'keyword:riot']
-        : ['static:grantKeyword'];
+      if (effect.keyword === 'riot') return ['static:grantKeyword', 'keyword:riot'];
+      // D-1400, D-1401: the keyword node of a granted afflict or landwalk is a kind of its own for the engine.
+      if (AFFLICT_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:afflict'];
+      if (landwalkOf(effect.keyword) !== undefined) {
+        return ['static:grantKeyword', 'keyword:landwalk'];
+      }
+      return ['static:grantKeyword'];
     case 'grantProtection':
       return ['static:grantKeyword', 'keyword:protection'];
     case 'grantQuoted':

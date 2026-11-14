@@ -198,8 +198,8 @@ const LANDWALK: readonly Line[] = [
   { kind: 'creature', text: 'Flying, islandwalk', expect: OK, note: 'SYNTHETIC; a mixed line' },
   {
     kind: 'equipment',
-    text: 'Equipped creature has nonbasic landwalk.\nEquip {1}',
-    expect: no('nonbasic landwalk.', 'static.attached'),
+    text: 'Equipped creature has snow landwalk.\nEquip {1}',
+    expect: no('snow landwalk.', 'static.attached'),
     note: 'replay: 1 card; a landwalk cannot be granted (D-098)',
   },
   {

@@ -165,8 +165,9 @@ describe('landwalk, fear, intimidate and shadow', () => {
     ).toEqual([expect.stringContaining('is not a land type')]);
   });
 
-  test('fear, intimidate and shadow can be granted; landwalk can not', () => {
-    expect(GRANTABLE_KEYWORDS).toEqual(expect.arrayContaining(['fear', 'intimidate', 'shadow']));
-    expect(GRANTABLE_KEYWORDS).not.toContain('landwalk');
+  test('fear, intimidate and shadow can be granted, and landwalk since D-1401', () => {
+    expect(GRANTABLE_KEYWORDS).toEqual(
+      expect.arrayContaining(['fear', 'intimidate', 'shadow', 'landwalk']),
+    );
   });
 });

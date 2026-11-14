@@ -8,6 +8,7 @@
  */
 import {
   CREATURE_TYPES,
+  type Keyword,
   type NumberComparison,
   type ObjectFilter,
   type Trigger,
@@ -201,6 +202,20 @@ function counterOnIt(counter: true | string): string {
 
 /** "first strike" for `firstStrike`: a keyword as the cards print it, lower case. */
 export const keywordWords = (kind: string): string => kind.replace(/([A-Z])/g, ' $1').toLowerCase();
+
+/**
+ * A keyword a static ability or an effect gives, as the cards print it (D-1400, D-1401): "swampwalk" and "nonbasic landwalk" carry their land type, "afflict 3" its number
+ * (CR 702.14a, 702.130a); any other is `keywordWords` of its kind.
+ */
+export function grantedKeywordWords(keyword: Keyword): string {
+  if (keyword.kind === 'landwalk') {
+    return keyword.landType === 'nonbasic'
+      ? 'nonbasic landwalk'
+      : `${keyword.landType.toLowerCase()}walk`;
+  }
+  if (keyword.kind === 'afflict') return `afflict ${keyword.count}`;
+  return keywordWords(keyword.kind);
+}
 
 /** " you control" / " an opponent controls", or ''. */
 function controlText(filter: ObjectFilter): string {

@@ -7,6 +7,7 @@ import { describe, expect, test } from 'vitest';
 import { bind, compileLine, readLine } from '../src/convert/parser/index';
 import {
   GRANTABLE_KEYWORDS,
+  grantedKeyword,
   isGrantable,
   keywordKind,
   SIMPLE_KEYWORDS,
@@ -77,9 +78,27 @@ describe('the vocabulary and the engine agree on what can be granted', () => {
   });
 
   test('the grantable words are exactly the engine list (no copy kept here)', () => {
-    expect(GRANTABLE_KEYWORDS.map(([, kind]) => kind).sort()).toEqual([...ENGINE_GRANTABLE].sort());
+    // Afflict and landwalk take a number and a land type: `grantedKeyword` reads them (D-1400, D-1401), the words of this table are the others.
+    const withParameter = ['afflict', 'landwalk'];
+    expect(GRANTABLE_KEYWORDS.map(([, kind]) => kind).sort()).toEqual(
+      [...ENGINE_GRANTABLE].filter((kind) => !withParameter.includes(kind)).sort(),
+    );
     for (const [, kind] of SIMPLE_KEYWORDS) {
       expect(isGrantable(kind), kind).toBe(ENGINE_GRANTABLE.includes(kind));
+    }
+    expect(grantedKeyword('afflict 3')).toEqual({ kind: 'afflict', count: 3 });
+    expect(grantedKeyword('swampwalk')).toEqual({ kind: 'landwalk', landType: 'Swamp' });
+    expect(grantedKeyword('nonbasic landwalk')).toEqual({ kind: 'landwalk', landType: 'nonbasic' });
+    expect(grantedKeyword('flying')).toEqual({ kind: 'flying' });
+    for (const word of [
+      'flash',
+      'afflict',
+      'afflict 0',
+      'afflict x',
+      'snow landwalk',
+      'landwalk',
+    ]) {
+      expect(grantedKeyword(word), word).toBeUndefined();
     }
   });
 

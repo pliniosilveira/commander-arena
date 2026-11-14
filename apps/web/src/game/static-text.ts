@@ -44,7 +44,7 @@ import { pluralSubtype, thingsPhrase } from './filter-text';
 import { ptChangeText } from './pt-text';
 import { keepsDamageWording, redirectDamageWording } from './redirect-text';
 import { tokenWords } from './token-text';
-import { filterPhrase, keywordWords, withText } from './trigger-text';
+import { filterPhrase, grantedKeywordWords, withText } from './trigger-text';
 import { COLOR_NAMES } from './words';
 
 /** What the words need to know about the permanent or card that has the ability. */
@@ -226,7 +226,7 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
           ? 'protection from the chosen card type'
           : effect.keyword.kind === 'protection' && effect.keyword.from === 'cardType'
             ? `protection from ${effect.keyword.types.map(pluralCardType).join(' and from ')}`
-            : keywordWords(effect.keyword.kind);
+            : grantedKeywordWords(effect.keyword);
       return `${subject.text} ${subject.many ? 'have' : 'has'} ${has}`;
     }
     case 'restriction': {

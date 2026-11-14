@@ -152,8 +152,8 @@ export function isGrantable(kind: SimpleKeyword): boolean {
  * The landwalk abilities (CR 702.14a): "[land type]walk", which the engine keeps as one keyword,
  * `landwalk`, with the land type. Only the five basic land types and "nonbasic landwalk"
  * (CR 702.14c) are listed: they are the ones of the owner's run, and "snow", "legendary" and
- * "artifact" landwalk are not engine keywords. A landwalk cannot be granted (the engine's
- * `GRANTABLE_KEYWORDS` has none), so these words are in no grant list.
+ * "artifact" landwalk are not engine keywords. D-1401: a landwalk can be granted ("Other Zombie creatures have swampwalk"), read by `KEYWORD_WORDS`
+ * and lowered by `grantedKeyword`.
  */
 export const LANDWALKS: readonly (readonly [string, string])[] = [
   ['plainswalk', 'Plains'],
@@ -167,6 +167,24 @@ export const LANDWALKS: readonly (readonly [string, string])[] = [
 /** The land type (or "nonbasic") of a landwalk written as `name` (lowercased words), or undefined. */
 export function landwalkOf(name: string): string | undefined {
   return LANDWALKS.find(([word]) => word === name)?.[1];
+}
+
+/** The grant words of an Afflict (CR 702.130a): "afflict 3", the word and a positive whole number written in digits (D-1400). */
+export const AFFLICT_WORD = /^afflict ([1-9]\d*)$/;
+
+/**
+ * The engine's keyword that a word of a grant ("has swampwalk", "gains afflict 3", "has flying") stands for, or undefined when the engine cannot
+ * grant it (CR 613.1f): a keyword without parameters (`GRANTABLE_KEYWORDS`), a landwalk with its land type (CR 702.14a, D-1401) or "afflict N"
+ * (CR 702.130a, D-1400). The one place that turns the words `KEYWORD_WORDS` reads into the nodes a `grantKeyword` carries.
+ */
+export function grantedKeyword(word: string): Keyword | undefined {
+  const simple = keywordKind(word);
+  if (simple !== undefined) return isGrantable(simple) ? plainKeyword(simple) : undefined;
+  const landType = landwalkOf(word);
+  if (landType !== undefined) return { kind: 'landwalk', landType };
+  const afflict = AFFLICT_WORD.exec(word);
+  if (afflict?.[1] !== undefined) return { kind: 'afflict', count: Number(afflict[1]) };
+  return undefined;
 }
 
 /**

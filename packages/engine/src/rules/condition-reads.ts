@@ -108,6 +108,26 @@ export function playerDealtDamageHolds(
     : opponentsOf(state, seat).some((o) => taken(o) >= condition.atLeast);
 }
 
+/**
+ * D-1403, CR 120.2a: some combat damage a player was dealt this turn came from a source that matches the condition's `types`, `subtypes` and `controller` (relative
+ * to `seat`) as it was when it dealt the damage, read from the turn log.
+ */
+export function combatDamagedByHolds(
+  state: GameState,
+  seat: SeatId,
+  condition: Extract<Condition, { kind: 'combatDamagedBy' }>,
+): boolean {
+  const { types, subtypes, controller } = condition.filter;
+  return state.turnLog.combatDamaged.some(
+    (d) =>
+      (types === undefined || types.every((t) => d.types.includes(t))) &&
+      (subtypes === undefined || subtypes.every((t) => d.subtypes.includes(t))) &&
+      (controller === undefined ||
+        controller === 'any' ||
+        (controller === 'you' ? d.controller === seat : d.controller !== seat)),
+  );
+}
+
 /** D-252, CR 119.3: `seat` gained at least `atLeast` life in all this turn, read from the turn log. */
 export function lifeGainedThisTurnHolds(
   state: GameState,

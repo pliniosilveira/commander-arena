@@ -5,10 +5,14 @@
  * [color]" and "gains [keyword]". `validate.ts` hands them to `checkEffect` (validate-parts.ts)
  * through `Scope.checkContinuous`, because this file needs that one's building blocks.
  */
-import { CARD_TYPES, COLORS, isNonCreatureSubtype } from '../characteristics';
+import { BASIC_LAND_TYPES, CARD_TYPES, COLORS, isNonCreatureSubtype } from '../characteristics';
+
+/** D-1402 (CR 305.6): the basic land types, the one kind of land subtype an effect can set. */
+const BASIC_LAND_TYPE_NAMES: readonly string[] = Object.keys(BASIC_LAND_TYPES);
+
 import { GRANTABLE_KEYWORDS, RESTRICTABLE_BY_EFFECT } from './features';
 import type { Effect } from './types';
-import { checkProtectionTypes } from './validate-attach';
+import { checkGrantedParameter, checkProtectionTypes } from './validate-attach';
 import {
   type AstIssue,
   checkAffectedObjects,
@@ -123,15 +127,24 @@ function checkSetTypes(
     e.subtypes.forEach((s, i) => {
       if (typeof s !== 'string' || s === '') {
         issue(out, `${path}.subtypes[${i}]`, 'empty subtype');
-      } else if (isNonCreatureSubtype(s)) {
-        // The effect replaces creature types; replacing another card type's subtypes is not run.
+      } else if (isNonCreatureSubtype(s) && !BASIC_LAND_TYPE_NAMES.includes(s)) {
+        // The effect replaces creature types, or (D-1402, CR 305.7) a land's basic land types; replacing another card type's subtypes is not run.
         issue(
           out,
           `${path}.subtypes[${i}]`,
-          `${s} is not a creature type, which is all that can be set`,
+          `${s} is not a creature type or a basic land type, which are all that can be set`,
         );
       }
     });
+    // D-1402 (CR 305.7): a land's basic land types are set alone: no card type goes with them and no creature type is mixed in.
+    const landTypes = e.subtypes.filter((s) => BASIC_LAND_TYPE_NAMES.includes(s));
+    if (landTypes.length > 0 && (landTypes.length !== e.subtypes.length || e.types !== undefined)) {
+      issue(
+        out,
+        `${path}.subtypes`,
+        'basic land types are set alone: with no card types and no creature types (CR 305.7)',
+      );
+    }
     // CR 205.1a: without the creature type, creature subtypes do not stay. An additive effect may
     // add a creature type to what already is a creature (CR 205.1b), so it is not held to this.
     if (
@@ -245,7 +258,11 @@ export function checkContinuousEffect(
           );
         }
       } else if (!GRANTABLE_KEYWORDS.includes(e.keyword?.kind)) {
-        issue(out, `${path}.keyword`, 'only keywords without parameters can be granted');
+        issue(
+          out,
+          `${path}.keyword`,
+          'only keywords without parameters can be granted (and afflict and landwalk, D-1400, D-1401)',
+        );
       } else if (e.keyword?.kind === 'riot') {
         // D-185: riot is applied as a permanent enters; an effect that gives it later would have no choice left to make.
         issue(
@@ -253,6 +270,8 @@ export function checkContinuousEffect(
           `${path}.keyword`,
           'riot is given by a static ability of a permanent, not by an effect',
         );
+      } else {
+        checkGrantedParameter(e.keyword, `${path}.keyword`, out);
       }
       break;
     case 'restrict':
