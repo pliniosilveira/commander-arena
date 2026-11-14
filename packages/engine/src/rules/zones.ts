@@ -214,14 +214,23 @@ export type MoveResult =
  * Records what the object looks like now as its last-known information (CR 113.7a, 603.10a). `rules/simultaneous.ts` calls it for every permanent
  * of an event in which several leave together, against the state as the event began (D-283).
  */
-export function recordLastKnown(state: GameState, obj: GameObject): GameState {
-  return recordLki(state, obj);
+export function recordLastKnown(
+  state: GameState,
+  obj: GameObject,
+  departedTogether?: readonly ObjectId[],
+): GameState {
+  return recordLki(state, obj, departedTogether);
 }
 
 /** Records what the object looked like just before it left (CR 113.7a, 603.10). */
-function recordLki(state: GameState, obj: GameObject): GameState {
+function recordLki(
+  state: GameState,
+  obj: GameObject,
+  departedTogether?: readonly ObjectId[],
+): GameState {
   const d = derive(state, obj);
   const info: LastKnownInfo = {
+    ...(departedTogether === undefined ? {} : { departedTogether }),
     // CR 113.7a: what it was just before it left, including who controlled it then (a control-changing effect, CR 613.1b, is not kept).
     object: { ...obj, controller: controllerOf(state, obj) },
     characteristics: {
@@ -320,7 +329,7 @@ export function sacrificeForDevour(
   if (going.length > 1) {
     for (const id of going) {
       const obj = input.objects[id];
-      if (obj !== undefined) state = recordLastKnown(state, obj);
+      if (obj !== undefined) state = recordLastKnown(state, obj, going);
     }
   }
   for (const id of ids) {
@@ -729,21 +738,6 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       counters = { ...counters, defense: copied.defense };
     }
   }
-  if (to === 'battlefield') {
-    // CR 614.1c, 614.12, 122.6 (D-149): "each other Angel you control enters with an additional +1/+1 counter": the replacement
-    // effects of the permanents already on the battlefield, read against the permanent as it would be there.
-    const entering: GameObject = {
-      ...old,
-      ...downEntry,
-      zone: 'battlefield',
-      controller,
-      token: becomesToken ? copiableValues(state, old) : old.token,
-    };
-    counters = addCounterMaps(counters, groupEntryCounters(nextBefore, entering));
-    // D-380 (CR 122.6, 101.2): "Creatures you control can't have -1/-1 counters put on them" keeps them off a permanent as it enters too, whatever it would have
-    // entered with (a persist return, an "enters with", riot, devour, a counter another permanent gives it, a planeswalker's loyalty).
-    counters = withoutBlockedCounters(nextBefore, { ...entering, counters }, counters);
-  }
   // CR 702.62a (D-128): "If you cast a creature spell this way, it gains haste until you lose control of the spell
   // or the permanent it becomes": the permanent remembers it came from a suspended creature spell.
   const enteredAlt =
@@ -863,6 +857,21 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     events.push(...became.events);
     copyEvents.push(...became.counterEvents);
   }
+  if (to === 'battlefield') {
+    // CR 614.12, 122.6 (D-149): apply entry counters to the characteristics after an as-entry copy, without the entering group on the battlefield.
+    const entering = getObject(next, newId);
+    const beforeEntry = withoutRun(next, [...(request.alongside ?? []), newId]);
+    const added = groupEntryCounters(beforeEntry, { ...entering, stack: old.stack });
+    counters = addCounterMaps(counters, added);
+    // D-380 (CR 122.6, 101.2): counter prohibitions apply to the permanent as it would enter too.
+    const finalCounters = withoutBlockedCounters(
+      beforeEntry,
+      { ...entering, counters: addCounterMaps(entering.counters, added) },
+      addCounterMaps(entering.counters, added),
+    );
+    next = setObject(next, { ...entering, counters: finalCounters });
+    counters = withoutBlockedCounters(beforeEntry, entering, counters);
+  }
   // D-151 (CR 702.10): "If that mana is spent on a Dragon creature spell, it gains haste until end of turn": the permanent a spell with that mark becomes
   // has haste until the end of the turn.
   if (
@@ -901,7 +910,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           {
             object: newId,
             controller,
-            types: derive(next, created).types,
+            types: derive(next, getObject(next, newId)).types,
             token: created.token !== null,
           },
         ],
@@ -909,6 +918,23 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     };
   }
   // CR 700.4 (D-179): a card put into a graveyard from the battlefield this turn ("that was put there from the battlefield this turn").
+  if (old.zone === 'battlefield' && to === 'graveyard') {
+    const last = next.lki[old.id];
+    next = {
+      ...next,
+      turnLog: {
+        ...next.turnLog,
+        died: [
+          ...next.turnLog.died,
+          {
+            controller: sourceInfo(next, old.id)?.controller ?? controllerOf(state, old),
+            types: last?.characteristics.types ?? derive(state, old).types,
+            token: old.token !== null,
+          },
+        ],
+      },
+    };
+  }
   if (old.zone === 'battlefield' && to === 'graveyard' && created.card !== null) {
     next = {
       ...next,

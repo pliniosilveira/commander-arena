@@ -543,6 +543,8 @@ function matches(
           matchesFilter(state, subject, { ...trigger.filter, zone: subject.zone }, ctx))
       );
     case 'dies':
+      if (trigger.graveyardOwner === 'you' && subject?.owner !== candidate.controller) return false;
+      return matchesWhat(state, trigger.what, subject, candidate);
     case 'dealtDamage':
     case 'becomesTapped':
     case 'becomesUntapped':
@@ -806,8 +808,9 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
   let beforeDepartures: ObjectId[] | null = null;
 
   for (const [eventIndex, event] of events.entries()) {
-    if (leavesBattlefield(event)) beforeDepartures ??= [...members];
-    else beforeDepartures = null;
+    if (leavesBattlefield(event)) {
+      beforeDepartures ??= [...members];
+    } else beforeDepartures = null;
     if (event.kind === 'zoneChanged') {
       if (event.fromZone === 'battlefield') members = members.filter((m) => m !== event.from);
       if (event.toZone === 'battlefield') {
@@ -840,6 +843,27 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
       const candidate = candidateOf(id);
       if (!candidate) continue;
       for (const { index, ability } of candidate.triggered) {
+        // A graveyard ability looking back at a death must already have been in that zone.
+        if (
+          ability.functionsIn === 'graveyard' &&
+          LOOK_BACK.has(ability.trigger.kind) &&
+          events.some((e, entryIndex) => {
+            if (e.kind !== 'zoneChanged' || e.to !== id || e.toZone !== 'graveyard') return false;
+            const departed =
+              event.kind === 'died'
+                ? event.object
+                : event.kind === 'zoneChanged'
+                  ? event.from
+                  : event.kind === 'sacrificed'
+                    ? event.permanent
+                    : null;
+            const together = departed === null ? undefined : state.lki[departed]?.departedTogether;
+            return (
+              entryIndex >= eventIndex || departed === e.from || together?.includes(e.from) === true
+            );
+          })
+        )
+          continue;
         const lookBack = LOOK_BACK.has(ability.trigger.kind);
         const fromStack = ability.trigger.kind === 'castSpell' && ability.trigger.self === true;
         const checked = lookBack ? (beforeDepartures ?? members) : members;
@@ -1020,26 +1044,33 @@ function findDelayedTriggers(
       triggered: [],
     };
     const trigger = delayed.ability.trigger;
-    const occurrence = events
+    const matched = events
       .flatMap((event) => occurrences(state, trigger, event, null))
-      .find((occ) => matches(state, trigger, occ, candidate));
-    if (occurrence === undefined) {
+      .filter(
+        (occ) =>
+          (delayed.watched === undefined || occ.subject === delayed.watched) &&
+          matches(state, trigger, occ, candidate),
+      );
+    if (matched.length === 0) {
       remaining.push(delayed);
       continue;
     }
-    found.push({
-      source: delayed.source,
-      controller: delayed.controller,
-      abilityIndex: -1,
-      ability: delayed.ability,
-      // D-149: a delayed trigger may name its own subject (the card exiled "until this leaves the battlefield").
-      subject: delayed.subject ?? occurrence.subject,
-      // D-217: the player a delayed effect is about, fixed as it was created, or the one the event is about.
-      ...(delayed.player !== undefined
-        ? { player: delayed.player }
-        : eventPlayer(delayed.ability, occurrence)),
-      ...(occurrence.damage === undefined ? {} : { damage: occurrence.damage }),
-    });
+    for (const occurrence of delayed.repeat === true ? matched : matched.slice(0, 1)) {
+      found.push({
+        source: delayed.source,
+        controller: delayed.controller,
+        abilityIndex: -1,
+        ability: delayed.ability,
+        // D-149: a delayed trigger may name its own subject (the card exiled "until this leaves the battlefield").
+        subject: delayed.subject ?? occurrence.subject,
+        // D-217: the player a delayed effect is about, fixed as it was created, or the one the event is about.
+        ...(delayed.player !== undefined
+          ? { player: delayed.player }
+          : eventPlayer(delayed.ability, occurrence)),
+        ...(occurrence.damage === undefined ? {} : { damage: occurrence.damage }),
+      });
+    }
+    if (delayed.repeat === true) remaining.push(delayed);
   }
   return { found, remaining };
 }

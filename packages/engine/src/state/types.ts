@@ -628,6 +628,8 @@ export interface MeldOrder {
 /** Characteristics of an object immediately before it left its zone (CR 113.7a, 603.10). */
 export interface LastKnownInfo {
   readonly object: GameObject;
+  /** The permanents in this one departure event, recorded before any moves (CR 603.10a, D-283). */
+  readonly departedTogether?: readonly ObjectId[];
   /**
    * The object this one became when it moved to another zone, set as it moves (CR 400.7): what "it" means
    * for an ability that looks for the card its source became (Persist's "return it", `thisCard`). It is
@@ -722,6 +724,9 @@ export interface DelayedTrigger {
    * created in. Absent for the abilities that wait for a step, which may wait for a later turn.
    */
   readonly untilEndOfTurn?: true;
+  readonly untilEndOfCombat?: true;
+  readonly repeat?: true;
+  readonly watched?: ObjectId;
 }
 
 /**
@@ -805,6 +810,7 @@ export interface CastingContext {
    */
   readonly extra?: {
     readonly sacrifice: ObjectFilter | null;
+    readonly sacrificeCount?: number;
     /**
      * "You may sacrifice one or more creatures" (D-491): the filter of the permanents the caster may sacrifice, any number of them, after the mana is paid; null for
      * none. `sacrificeAnyAsked` is set once the question is being asked (the answer then goes to this cost and not to `sacrifice`).
@@ -1642,6 +1648,7 @@ export interface ResolutionContext {
  */
 export interface ThisWayCounts {
   readonly sacrificed?: number;
+  readonly sacrificedOwn?: number;
   readonly destroyed?: number;
   /** The nonland cards `exileOwnGraveyardCard` put into exile (D-231). */
   readonly exiledNonland?: number;
@@ -1935,6 +1942,12 @@ export interface TurnLog {
    * in the graveyard: a card that moved on from there is a new object (CR 400.7) and is not in it. A token is not (it is not a card).
    */
   readonly graveyarded: readonly ObjectId[];
+  /** Permanent-to-graveyard events, including tokens, with their characteristics immediately before leaving. */
+  readonly died: readonly {
+    readonly controller: SeatId;
+    readonly types: readonly CardType[];
+    readonly token: boolean;
+  }[];
   /**
    * Each time a card left a graveyard this turn (D-206, CR 400.7), by the seat that owns the card, in order: "if a card left your graveyard this turn".
    * A card that goes from one graveyard to another is not here (it stays in a graveyard: no zone change of that kind is made).
@@ -1961,6 +1974,7 @@ export const EMPTY_TURN_LOG: TurnLog = {
   attacked: [],
   attackedPlayers: [],
   graveyarded: [],
+  died: [],
   leftGraveyard: [],
   modesChosen: [],
   castSpells: [],

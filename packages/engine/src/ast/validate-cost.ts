@@ -60,12 +60,8 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
             'a spell sacrifices one permanent as an additional cost: no count (D-133)',
           );
         }
-        if (cost.countX !== undefined) {
-          issue(
-            out,
-            `${p}.countX`,
-            'an additional cost of a spell sacrifices no X permanents (D-488)',
-          );
+        if (cost.countX === true && cost.anyNumber === true) {
+          issue(out, `${p}.countX`, 'a sacrifice cost cannot be both X and any number');
         }
         // D-491: "you may sacrifice one or more creatures" is the one sacrifice of the spell, chosen as the cost is paid (the engine's `sacrificeAny`).
         if (cost.anyNumber === true && costs.some((c, j) => j !== i && c?.kind === 'sacrifice')) {
@@ -142,7 +138,9 @@ export function checkAdditionalCostChoice(
     if (way.some((c) => c?.kind === 'payXLife' || c?.kind === 'discardX')) {
       issue(out, p, 'a choice of additional costs has no "pay X life" and no "discard X cards"');
     }
-    if (way.some((c) => c?.kind === 'sacrifice' && c.anyNumber !== undefined)) {
+    if (
+      way.some((c) => c?.kind === 'sacrifice' && (c.anyNumber !== undefined || c.countX === true))
+    ) {
       issue(out, p, 'a choice of additional costs has no "you may sacrifice any number" (D-491)');
     }
   });

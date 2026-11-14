@@ -113,6 +113,21 @@ export type Amount =
    * number: two opponents who lost 3 and 5 lose 3 and 5), so it is not valid inside another amount or in any other effect.
    */
   | { readonly kind: 'lifeLostThisTurn' }
+  /** Life actually gained by this instruction's controller this turn, before this instruction runs. */
+  | { readonly kind: 'lifeGainedThisTurn' }
+  /** Entries or deaths recorded at the event, including objects that have since left their destination. */
+  | {
+      readonly kind: 'enteredThisTurn';
+      readonly types?: readonly CardType[];
+      readonly token?: boolean;
+      readonly controller: 'you' | 'any';
+    }
+  | {
+      readonly kind: 'diedThisTurn';
+      readonly types?: readonly CardType[];
+      readonly token?: boolean;
+      readonly controller: 'you' | 'any';
+    }
   /**
    * The toughness of an object a reference names, read as `powerOf` is (D-131): "you gain life equal to that
    * creature's toughness". From last-known information when the object left (CR 608.2h, 113.7a). `of` may be the
@@ -239,6 +254,7 @@ export type Amount =
 /** What a `thisWay` amount counts (D-131). */
 export type ThisWayKind =
   | 'sacrificed'
+  | 'sacrificedOwn'
   | 'destroyed'
   // D-230: "for each nontoken creature you controlled that was destroyed this way" (Ceaseless Conflict): the creatures the controller of the effect controlled as they were destroyed.
   | 'destroyedOwnNontoken'
@@ -1244,6 +1260,8 @@ export interface ChooseSelector {
    * card was put into the hand, not the cards the mill moved.
    */
   readonly fromMoved?: true;
+  /** Excludes the cards the permanents you sacrificed earlier in this resolution became. */
+  readonly exceptSacrificed?: true;
 }
 
 /**
@@ -1285,8 +1303,14 @@ export interface InlineChoice {
   readonly label: string;
   readonly effect: Effect;
 }
-
 export type Effect =
+  | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }
+  | { readonly kind: 'prepare'; readonly objects: ObjectSelector }
+  | {
+      readonly kind: 'delayedCombatDamage';
+      readonly objects: ObjectSelector;
+      readonly effect: Effect;
+    }
   | { readonly kind: 'sequence'; readonly effects: readonly Effect[] }
   /**
    * A prevention shield (CR 615), a continuous effect until end of turn. Damage that would be dealt
@@ -1426,6 +1450,8 @@ export type Effect =
   | {
       readonly kind: 'chooseOne';
       readonly options: readonly InlineChoice[];
+      /** Repeat the choice independently this many times, read once when the effect starts. */
+      readonly times?: Amount;
       /**
        * "Target player adds one mana of any color" (D-229, CR 608.2d, 106.1b): the one player this selector names (a target) makes the choice, not the
        * controller of the effect. Left out, the controller chooses. A chooser that is no longer there (the target was illegal) is skipped with the effect.
@@ -1770,7 +1796,7 @@ export type Effect =
    * recorded as it was cast (spells cast since, in response, do not count). Copies of a spell that has left the
    * stack are made from that information (CR 707.10).
    */
-  | { readonly kind: 'storm' }
+  | { readonly kind: 'storm'; readonly gravestorm?: true }
   /**
    * CR 702.56a (Replicate, D-129): "copy it for each time its replicate cost was paid. If the spell has any targets, you
    * may choose new targets for any of the copies." The effect of the trigger the engine expands the keyword into and
@@ -2073,6 +2099,7 @@ export type Effect =
    * one `counterRemoved` event for each kind. Nothing for a permanent that has none or has left.
    */
   | { readonly kind: 'removeAllCounters'; readonly objects: ObjectSelector }
+  | { readonly kind: 'removeAllPlayerCounters'; readonly player: PlayerSelector }
   /**
    * "Each player may discard their hand and draw seven cards" and "target opponent may have you draw three cards. If the player doesn't, ..." (D-210, CR 608.2d,
    * 101.4): each player `players` names, in the order CR 101.4 gives, is asked whether to do `effect`; a player who accepts has it done, a player who declines
@@ -2731,7 +2758,7 @@ export type Trigger =
        */
       readonly tapped?: boolean;
     }
-  | { readonly kind: 'dies'; readonly what: TriggerSubject }
+  | { readonly kind: 'dies'; readonly what: TriggerSubject; readonly graveyardOwner?: 'you' }
   /**
    * "When you cycle this card" (CR 702.29c, 702.29f, D-179): the ability of a card that was just cycled, that is, discarded to pay an activation cost of a
    * cycling ability (Cycling or typecycling; a card discarded any other way is not cycled). It triggers from whatever zone the card winds up in
@@ -3413,6 +3440,7 @@ export type Keyword =
    * instance triggers separately (CR 702.40b).
    */
   | { readonly kind: 'storm' }
+  | { readonly kind: 'gravestorm' }
   /**
    * CR 702.56a (Replicate, D-129): "Replicate [cost]" means "As an additional cost to cast this spell, you may pay
    * [cost] any number of times" and "When you cast this spell, if a replicate cost was paid for it, copy it for each
@@ -3610,6 +3638,7 @@ export type Condition =
   | {
       readonly kind: 'lifeTotal';
       readonly compare: NumberComparison;
+      readonly player?: 'opponent';
       readonly aboveStarting?: true;
     }
   /**
@@ -3708,13 +3737,13 @@ export type Condition =
    * reference, or (D-149, "If that land is a Plains") the `triggerSubject` of a trigger whose subject is a permanent; the filter names no zone,
    * controller or owner (it describes the object).
    * `inZone` (D-412, "If you put a Town card into your hand this way", CR 608.2c, 400.7j): the object must also be in that zone as it is now (or was, once it has
-   * left): the card an earlier instruction put into the hand, not one that went anywhere else. Only `hand`, only in a `conditional` effect (a static ability does not read it).
+   * left): the card an earlier instruction put into the hand or exiled, not one that went anywhere else. Only in a `conditional` effect (a static ability does not read it).
    */
   | {
       readonly kind: 'objectMatches';
       readonly of: ObjectRef;
       readonly filter: ObjectFilter;
-      readonly inZone?: 'hand';
+      readonly inZone?: 'hand' | 'exile';
     }
   /**
    * "During your first, second, or third turn of the game" (CR 500.1, D-149): it is the turn of the player the condition is read for and
@@ -4093,7 +4122,11 @@ export type Replacement =
       readonly what: ObjectFilter;
       readonly counter: string;
       /** A number, a count of permanents, or (D-183, "for each mana from an artifact source spent to cast it") the mana spent to cast the entering permanent. */
-      readonly count: number | CountAmount | ManaSpentAmount;
+      readonly count:
+        | number
+        | CountAmount
+        | ManaSpentAmount
+        | Extract<Amount, { kind: 'enteredThisTurn' | 'diedThisTurn' }>;
     }
   /**
    * "Lands you control enter untapped." (CR 614.1c, 614.12, 616.1, D-179): a replacement effect of a permanent on the battlefield for the permanents

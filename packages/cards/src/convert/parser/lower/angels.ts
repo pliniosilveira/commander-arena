@@ -4,7 +4,13 @@
  * damage prevented to the permanent itself, a card that can't be cast early, and the permanents that enter with counters. Each declares
  * the engine features it needs and is gated before anything is built, like every lowering.
  */
-import type { Ability, Condition, CountAmount, ManaSpentAmount } from '@commander-arena/engine';
+import type {
+  Ability,
+  Amount,
+  Condition,
+  CountAmount,
+  ManaSpentAmount,
+} from '@commander-arena/engine';
 import type { IrAbility, IrClause, IrStaticEffect } from '../ir/types';
 import { lowerAmount } from './amounts';
 import { withoutZone } from './attachments';
@@ -71,7 +77,7 @@ export function isAngelStatic(effect: IrStaticEffect): effect is AngelStaticEffe
 function lowerOthersEnter(
   ability: Static,
   effect: Extract<AngelStaticEffect, { kind: 'othersEnterWithCounters' }>,
-  ctx: LowerContext,
+  _ctx: LowerContext,
 ): LowerResult<readonly Ability[]> {
   const subject = ability.statement.subject;
   const blocked = missingFeatures(['ability:replacement', 'replacement:othersEnterWithCounters']);
@@ -79,17 +85,11 @@ function lowerOthersEnter(
   if (subject.det !== 'each') return failure(ability);
   const what = lowerFilter({ ...subject, filter: withoutZone(subject.filter) });
   if (!what.ok) return what;
-  // "Each Dragon you control enters with ..." (stage P34, D-152): with no "other" the permanent would count itself if it were such a permanent;
-  // only a permanent that surely is not one (a type or a creature type of the kind that it does not have) is read, anything else is refused.
-  if (!subject.other) {
-    const { types = [], subtypes = [], anyOf } = what.value;
-    const notSelf =
-      anyOf === undefined &&
-      (types.some((t) => !ctx.faceTypes.includes(t)) ||
-        subtypes.some((t) => !ctx.faceSubtypes.includes(t)));
-    if (!notSelf) return failure(ability);
-  }
-  let count: number | CountAmount | ManaSpentAmount;
+  let count:
+    | number
+    | CountAmount
+    | ManaSpentAmount
+    | Extract<Amount, { kind: 'enteredThisTurn' | 'diedThisTurn' }>;
   if (effect.count.kind === 'number') {
     count = effect.count.value;
   } else if (effect.count.kind === 'manaSpent') {
@@ -104,11 +104,14 @@ function lowerOthersEnter(
     // "for each Angel you already control": counted for the controller of the permanent, without the one that enters.
     const counted = lowerAmount(effect.count, newContext('ability', []), ability.rule);
     if (!counted.ok) return counted;
-    if (typeof counted.value !== 'object' || counted.value.kind !== 'countOf') {
+    if (
+      typeof counted.value !== 'object' ||
+      (counted.value.kind !== 'countOf' &&
+        counted.value.kind !== 'enteredThisTurn' &&
+        counted.value.kind !== 'diedThisTurn')
+    ) {
       return failure(ability);
     }
-    const countFeature = missingFeatures(['amount:countOf']);
-    if (countFeature.length > 0) return failure(ability, countFeature);
     count = counted.value;
   }
   return {

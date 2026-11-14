@@ -78,6 +78,7 @@ const EXECUTABLE_KEYWORDS = [
   'suspend', // scenario-xx-suspend
   'cumulativeUpkeep', // scenario-xx-cumulative-upkeep
   'storm', // scenario-xx-storm
+  'gravestorm', // convert-grammar-engine-issue58-d
   'replicate', // scenario-xx-replicate
   'gift', // scenario-xx-gift
   'livingWeapon', // scenario-xx-living-weapon
@@ -174,6 +175,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   suspend: { kind: 'suspend', count: 2, cost: [{ kind: 'mana', symbols: ['R'] }] },
   cumulativeUpkeep: { kind: 'cumulativeUpkeep', cost: [{ kind: 'mana', symbols: ['1'] }] },
   storm: { kind: 'storm' },
+  gravestorm: { kind: 'gravestorm' },
   replicate: { kind: 'replicate', cost: [{ kind: 'mana', symbols: ['R'] }] },
   gift: { kind: 'gift', gift: 'card' },
   livingWeapon: { kind: 'livingWeapon' },

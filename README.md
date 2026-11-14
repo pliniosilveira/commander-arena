@@ -12,6 +12,8 @@ Playable and still growing. You can play a full two-player Commander game agains
 
 What exists: a rules engine for two-player Commander (the stack, turn structure and combat, triggered, activated and static abilities, layers, replacement and prevention effects, tokens, copies, the common keywords, split, Adventure, double-faced and Saga cards, state-based actions, commander tax and damage), an Oracle text parser that turns card text into engine definitions, an AI opponent that looks ahead (`HeuristicAgent`) and a casual AI kept for tests, and the web app: board, hand, card preview, stack with arrows, game log, targeting, attack and block, an auto-pass policy so you only click when there is a real decision (it always stops to show you the opponent's spell before it resolves, which Settings can turn off), and dialogs for every decision the engine can ask. What does not exist yet: a search-based AI beyond one turn, card animation beyond combat damage and deaths, and multiplayer (see `docs/ROADMAP.md`).
 
+**Witherbloom Pestilence**, led by Dina, Essence Brewer, is available in Quick start with its complete deck and offline card-data snapshot.
+
 Tokens also load pictures from Scryfall when an exact search of their original characteristics finds one card. Missing, ambiguous or unavailable pictures keep the drawn token frame, including in previews and on the stack.
 
 Where to look next:

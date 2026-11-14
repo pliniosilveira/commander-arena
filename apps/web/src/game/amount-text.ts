@@ -127,6 +127,8 @@ function thisWayPhrase(what: ThisWayKind): string {
   switch (what) {
     case 'sacrificed':
       return 'the number of permanents sacrificed this way';
+    case 'sacrificedOwn':
+      return 'the number of permanents you sacrificed this way';
     case 'destroyed':
       return 'the number of permanents destroyed this way';
     case 'exiledNonland':
@@ -191,6 +193,26 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'lifeLostThisTurn':
       // D-365 (CR 119.3): read for each player the instruction affects.
       return 'the life that player lost this turn';
+    case 'lifeGainedThisTurn':
+      return 'the amount of life you gained this turn';
+    case 'enteredThisTurn':
+    case 'diedThisTurn': {
+      const current = thingsPhrase(
+        {
+          ...(amount.types === undefined ? {} : { types: amount.types }),
+          ...(amount.token === undefined ? {} : { token: amount.token }),
+        },
+        true,
+      );
+      if (current === null) return UNKNOWN_AMOUNT;
+      const things = current.replace(/ on the battlefield$/, '');
+      const yours = amount.controller === 'you' ? ' under your control' : '';
+      return amount.kind === 'enteredThisTurn'
+        ? `the number of ${things} that entered${yours} this turn`
+        : amount.types?.length === 1 && amount.types[0] === 'creature'
+          ? `the number of ${things} that died${yours} this turn`
+          : `the number of ${things} put into graveyards from the battlefield${yours} this turn`;
+    }
     case 'aggregate': {
       const things = thingsPhrase(amount.filter, true);
       if (things === null) return UNKNOWN_AMOUNT;

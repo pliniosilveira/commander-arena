@@ -19,6 +19,7 @@ import type {
   StaticEffect,
   TargetSpec,
 } from '@commander-arena/engine';
+import { amountPhrase } from './amount-text';
 import { cardinalWord, ordinalWord } from './angels-conditions';
 import { asCreatures } from './artifacts-text';
 import { activationCostText } from './cost-text';
@@ -76,6 +77,9 @@ function perCounter(counter: string, count: Counted): string {
   // D-183 (CR 601.2h): "for each mana from an artifact source spent to cast it".
   if (count.kind === 'manaSpent') {
     return `${counterWords(counter, 1)} on it for each ${manaSpentWords(count.fromType)}`;
+  }
+  if (count.kind === 'enteredThisTurn' || count.kind === 'diedThisTurn') {
+    return `${counterWords(counter, 1)} on it for each of ${amountPhrase(count).replace(/^the number of /, 'the ')}`;
   }
   const things =
     thingsPhrase(asCreatures(count.filter), false)?.replace(' on the battlefield', '') ?? null;

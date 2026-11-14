@@ -228,7 +228,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'becomesUntapped': {
       const what = whatOf(t, ctx);
       if (!what.ok) return what;
-      return ok({ kind: TRIGGER_KIND[t.event], what: what.value });
+      return ok({
+        kind: TRIGGER_KIND[t.event],
+        what: what.value,
+        ...(t.event === 'dies' && t.by === 'you' ? { graveyardOwner: 'you' as const } : {}),
+      });
     }
     case 'leavesBattlefield': {
       const what = whatOf(t, ctx);

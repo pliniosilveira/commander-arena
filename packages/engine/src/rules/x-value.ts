@@ -86,7 +86,10 @@ export function spellXCost(
   const life = (face.additionalCosts ?? []).filter((c) => c.kind === 'payXLife').length;
   // D-386 (CR 107.3a): "discard X cards" is an additional cost, announced like "pay X life" and paid whatever way the spell is cast.
   const discard = (face.additionalCosts ?? []).filter((c) => c.kind === 'discardX').length;
-  const extra = discard > 0 ? { discard } : {};
+  const sacrifice = (face.additionalCosts ?? []).filter(
+    (c) => c.kind === 'sacrifice' && c.countX === true,
+  ).length;
+  const extra = { ...(discard > 0 ? { discard } : {}), ...(sacrifice > 0 ? { sacrifice } : {}) };
   if (alternative === 'miracle') {
     return {
       mana: xSymbolCount(manaSymbolsOf(namedAlternativeCostOf(face, 'miracle') ?? [])),

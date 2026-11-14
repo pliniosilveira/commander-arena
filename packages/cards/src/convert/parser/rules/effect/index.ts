@@ -51,6 +51,7 @@ import { GISA_G3_EFFECT_RULES } from './gisa-g3';
 import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
+import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
 import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
@@ -88,6 +89,7 @@ import {
   EFFECT_PLAYER,
   EFFECT_SHUFFLE,
 } from './player';
+import { PREPARE_EFFECT_RULES } from './prepare';
 import { PREVENT_RULES } from './prevent';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
@@ -857,6 +859,8 @@ export const EFFECT_TAP = tapRule('tap');
 export const EFFECT_UNTAP = tapRule('untap');
 
 export const EFFECT_RULES = [
+  ...PREPARE_EFFECT_RULES,
+  ...GRAVEYARD_CHOICE_RULES,
   // D-438, D-439 (Feather, group 3): the copies for each other creature and the exile as a spell resolves start like a plain copy, a plain exile and "that player ...", and are tried first.
   ...FEATHER_G3_EFFECT_RULES,
   // Gisa deck, group 4 (issue 41, D-459, D-460): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain

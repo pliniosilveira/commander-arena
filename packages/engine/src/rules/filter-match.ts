@@ -79,8 +79,8 @@ export interface FilterContext {
   readonly sourceChosen?: ChosenValues;
   /**
    * The creatures that are attacking, for `attacking` (D-120): the caller reads them from the combat in
-   * progress. A filter that asks for an attacking creature matches nothing without it, so `derive`, which
-   * reads filters without the combat, fails closed (`validateCard` refuses `attacking` in a static ability).
+   * progress. A filter that asks for an attacking creature matches nothing without it. Static subjects read
+   * the current combat through `subjectAffects`, independently of the cached static-ability index.
    */
   readonly attackers?: readonly ObjectId[];
   /** The zone a spell that is being cast comes from, for `notCastFromHand` while the card has not moved to the stack yet (D-235): the cost code passes it. */

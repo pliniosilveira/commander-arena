@@ -84,7 +84,8 @@ export function maxTargetCountX(
 ): number {
   let most = Number.MAX_SAFE_INTEGER;
   for (const spec of specs) {
-    if (spec.countX === true) most = Math.min(most, legalTargets(state, spec, ctx).length);
+    if (spec.countX === true && spec.min !== 0)
+      most = Math.min(most, legalTargets(state, spec, ctx).length);
   }
   return most;
 }
@@ -130,7 +131,7 @@ export function targetChoiceSpecs(
       const n = Math.min(x, legal.length);
       return {
         specId: spec.id,
-        min: n,
+        min: spec.min === 0 ? 0 : n,
         max: n,
         legal,
         ...(slotMode === undefined ? {} : { mode: slotMode.mode }),

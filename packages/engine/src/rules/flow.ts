@@ -328,6 +328,12 @@ export function endStep(input: GameState): Outcome {
   let state = emptied.state;
   const events = emptied.events;
   const step = state.turn.step;
+  if (step === 'endOfCombat' && state.delayedTriggers.some((d) => d.untilEndOfCombat === true)) {
+    state = {
+      ...state,
+      delayedTriggers: state.delayedTriggers.filter((d) => d.untilEndOfCombat !== true),
+    };
+  }
   if (step === 'cleanup') {
     // Priority was given during cleanup, so another cleanup step begins (CR 514.3a).
     return join({ state, events }, beginStep(state, 'cleanup'));

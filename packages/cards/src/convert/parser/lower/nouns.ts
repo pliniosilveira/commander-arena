@@ -457,7 +457,6 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       noun.filter.player !== undefined ||
       noun.filter.anyTarget === true ||
       noun.orCard !== undefined ||
-      noun.upTo ||
       noun.minTargets !== undefined ||
       anyNumberTarget ||
       noun.perOpponent === true ||
@@ -576,7 +575,12 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         ctx.usesX = true;
       }
       spec = countX
-        ? { id, what: { kind: 'object', filter: filter.value }, countX: true }
+        ? {
+            id,
+            what: { kind: 'object', filter: filter.value },
+            countX: true,
+            ...(noun.upTo ? { min: 0 } : {}),
+          }
         : anyNumberTarget
           ? { id, what: { kind: 'object', filter: filter.value }, anyNumber: true }
           : noun.perOpponent === true

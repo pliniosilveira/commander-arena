@@ -367,6 +367,21 @@ export type IrAmount =
   | { readonly kind: 'lifeLostThisWay'; readonly span: Span }
   // "equal to the life that player lost this turn" (Hashaton deck group 2, D-365, CR 119.3): the life the player the instruction affects lost this turn
   | { readonly kind: 'lifeLostThisTurn'; readonly span: Span }
+  | { readonly kind: 'lifeGainedThisTurn'; readonly span: Span }
+  | {
+      readonly kind: 'enteredThisTurn';
+      readonly types?: readonly string[];
+      readonly token?: boolean;
+      readonly controller: 'you' | 'any';
+      readonly span: Span;
+    }
+  | {
+      readonly kind: 'diedThisTurn';
+      readonly types?: readonly string[];
+      readonly token?: boolean;
+      readonly controller: 'you' | 'any';
+      readonly span: Span;
+    }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
   | { readonly kind: 'cardsDrawnThisTurn'; readonly span: Span }
   // Stage P28 (D-131): "equal to that creature's toughness", "for each +1/+1 counter on ~"
@@ -500,7 +515,12 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'controlCommander'; readonly yours?: true }
     // Stage P29 (D-133): "you have 30 or more life", "you have at least 7 life more than your starting life total"
     // (`aboveStarting`, CR 119.1, 903.7)
-    | { readonly kind: 'lifeTotal'; readonly compare: IrComparison; readonly aboveStarting?: true }
+    | {
+        readonly kind: 'lifeTotal';
+        readonly compare: IrComparison;
+        readonly aboveStarting?: true;
+        readonly player?: 'opponent';
+      }
     // D-252 (the Bruna deck): "you gained 3 or more life this turn" (CR 119.3)
     | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
     // D-318 (the Niv-Mizzet deck): "you've cast three or more spells this turn" (CR 601.2i)
@@ -551,6 +571,7 @@ export interface IrCondition extends IrNode {
     // a filter that says what it is (no zone, controller or owner)
     // `zone` 'hand' (Danitha deck group 2, D-412): "you put a Town card into your hand this way" says where the card went; absent for the battlefield.
     | { readonly kind: 'putThisWay'; readonly filter: IrFilter; readonly zone?: 'hand' }
+    | { readonly kind: 'exiledThisWay'; readonly filter: IrFilter }
     // "If you don't, put a +1/+1 counter on ~" (Danitha deck group 2, D-411, CR 608.2c): the player did not put a card from among the cards the sentence before it milled into their hand
     | { readonly kind: 'youDont' }
     // "if the gift was promised" (CR 702.174k, stage P30)
@@ -1522,6 +1543,9 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'timesKicked',
   'lifeLostThisWay',
   'lifeLostThisTurn',
+  'lifeGainedThisTurn',
+  'enteredThisTurn',
+  'diedThisTurn',
   'cardsDrawnThisTurn',
   'toughnessOf',
   'countersOn',

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 102,
+  "parserVersion": 103,
   "cards": {
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -108,6 +108,14 @@
         "Unknown mana symbol \"G/U/P\" (hybrid Phyrexian symbols (CR 107.4f) are not representable in ManaCost yet)"
       ],
       "ast": "c808457c"
+    },
+    "02be0b99-d40b-4287-989b-12eb2701115c": {
+      "name": "Pest Rescuer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7743c7c6"
     },
     "02f46271-c90d-4318-9004-74e7bee64a89": {
       "name": "Angel of Destiny",
@@ -432,6 +440,14 @@
       "reasons": [],
       "ast": "a535fe90"
     },
+    "0f1b5cea-2035-444c-9f63-87dcb9782c74": {
+      "name": "Gyome, Master Chef",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ce7641fb"
+    },
     "0fd114c4-092b-4e28-b0dc-ef529f3bc73e": {
       "name": "Jeska's Will",
       "group": "holdout",
@@ -464,6 +480,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d1880795"
+    },
+    "12397dbf-99a9-40c3-aa7c-76d09baad008": {
+      "name": "Teacher's Pest",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "01cb628b"
     },
     "126a5d0b-e7d6-458e-87af-47d845678014": {
       "name": "Cyberdrive Awakener",
@@ -538,6 +562,14 @@
       ],
       "reasons": [],
       "ast": "5dd824a2"
+    },
+    "15e5136e-ed15-49a8-b027-e09436673fb4": {
+      "name": "Culling Ritual",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e5501284"
     },
     "16c39265-72d9-4c86-a961-8dd38ff9adcd": {
       "name": "Consign to Memory",
@@ -634,6 +666,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c85559dd"
+    },
+    "1b704798-0c69-4c18-ac7e-42933ce90028": {
+      "name": "Pest Infestation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2486ecdc"
     },
     "1b882a0e-0ede-4d1a-bd1a-9b7cffbcde8e": {
       "name": "Three Visits",
@@ -803,6 +843,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5734b310"
+    },
+    "25877c41-39a4-4cc3-ac4b-8f3dd06d579b": {
+      "name": "Stensian Sanguinist // Exsanguinate",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fedde59a"
     },
     "25c983e0-a8c9-4784-91a4-8fe04c6df882": {
       "name": "Tocasia's Welcome",
@@ -1013,6 +1061,14 @@
       "reasons": [],
       "ast": "ec3ac047"
     },
+    "30f3c3be-0fe9-463d-a245-e44701aec7f2": {
+      "name": "Blossoming Bogbeast",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "028731df"
+    },
     "3127ae9b-a7a7-43ec-89d7-688f8445b33d": {
       "name": "Garruk's Uprising",
       "group": "holdout",
@@ -1076,6 +1132,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d40567b2"
+    },
+    "335a6c6a-030f-45d4-806c-467a22962eed": {
+      "name": "Final Act",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8cbf83ec"
     },
     "33e3793c-098f-4897-88f3-9f9ce9081e0f": {
       "name": "Pompous Battlemage // Improvised Act",
@@ -1763,6 +1827,14 @@
       "reasons": [],
       "ast": "e43806b4"
     },
+    "544acde0-850d-4c4f-8389-e22930d87345": {
+      "name": "Mortality Spear",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9e8374f4"
+    },
     "5548ff43-e5f6-4a63-8562-a2b1de06d6f5": {
       "name": "Riveteers Overlook",
       "group": "acceptance",
@@ -2277,19 +2349,10 @@
     "6cb8b8c4-0674-4f14-9d89-010969fbb80e": {
       "name": "Grave Researcher // Reanimate",
       "group": "holdout",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of your upkeep, surveil 1. Then if there are three or more creature cards in your graveyard, ~ becomes prepared.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.becomes"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "0dbd4f38"
+      "ast": "8f33c1d4"
     },
     "6e64f1e0-ddd6-4ee7-8797-086e234b02e8": {
       "name": "Steel Hellkite",
@@ -2298,6 +2361,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "021d1482"
+    },
+    "6f16c3ac-a9b8-47e6-b18b-ae37c74d44a0": {
+      "name": "Nether Traitor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1389e1bf"
     },
     "6fa7229d-18b6-43d8-aa57-a56cdb815767": {
       "name": "Dawnbreak Reclaimer",
@@ -2534,6 +2605,14 @@
       "reasons": [],
       "ast": "56215ff3"
     },
+    "76bc6518-dea4-4a5c-a8a7-352cd297197b": {
+      "name": "Ominous Harvest",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5637da21"
+    },
     "77216636-f76d-4c5e-b1ac-ab1844753f05": {
       "name": "Excava, the Risen Past",
       "group": "acceptance",
@@ -2614,6 +2693,14 @@
       "reasons": [],
       "ast": "f632ebc5"
     },
+    "7ad97dd9-1342-4ed4-bea9-1bb21d748e04": {
+      "name": "Witch of the Moors",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4868aea9"
+    },
     "7b1a59db-0ffc-490b-a881-c8192f3747db": {
       "name": "Gift of the Viper",
       "group": "acceptance",
@@ -2653,6 +2740,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "22db2399"
+    },
+    "7cc81fb3-495c-47cd-8c56-96197d87e9e0": {
+      "name": "Witherbloom Command",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7016284b"
     },
     "7cec9021-6f25-4fd8-b40e-adf4ffd3a7b8": {
       "name": "Garruk Relentless // Garruk, the Veil-Cursed",
@@ -2923,6 +3018,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f4df9a2d"
+    },
+    "86c55fe5-98b5-4e53-8828-a7f04ee3e985": {
+      "name": "Ribtruss Roaster",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "108f1570"
     },
     "86d76078-9af3-45a7-90d6-72946afdc78b": {
       "name": "Goldlust Triad",
@@ -3670,6 +3773,14 @@
       "reasons": [],
       "ast": "a9546bd9"
     },
+    "adf731a1-fc4d-4260-bb85-535edb1d82e9": {
+      "name": "Feral Appetite",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e3b999db"
+    },
     "ae120613-97d6-4393-b39d-c3e6c076f5d6": {
       "name": "Deflecting Swat",
       "group": "training",
@@ -3686,6 +3797,14 @@
       ],
       "reasons": [],
       "ast": "f2ffbec6"
+    },
+    "ae5f30cc-a22e-4fbb-9510-e9429de3623c": {
+      "name": "Gorma, the Gullet",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e5a367f6"
     },
     "aebfdcc0-c5b9-4737-8498-764a5021b087": {
       "name": "Graaz, Unstoppable Juggernaut",
@@ -3810,6 +3929,14 @@
       "reasons": [],
       "ast": "6a419354"
     },
+    "b831d3f8-07ce-4172-ba29-213cac414c9a": {
+      "name": "Deadly Brew",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "11b5a0e9"
+    },
     "b91b65b3-b35c-460e-a49b-333000a9a519": {
       "name": "Serra Avenger",
       "group": "training",
@@ -3825,6 +3952,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e67ea787"
+    },
+    "b99ada26-9a61-4175-9fb8-15a106960220": {
+      "name": "Ohran Frostfang",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "adae07f7"
     },
     "b9cec31a-9891-414f-b528-954612168832": {
       "name": "Tangleweave Armor",
@@ -4019,6 +4154,14 @@
       "reasons": [],
       "ast": "9394df3a"
     },
+    "c4fe854e-8783-492e-bb2e-9f242ada8a5b": {
+      "name": "Blight Mound",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "938a5384"
+    },
     "c51ed6e3-813b-49c4-b1de-7f92a77f8f6e": {
       "name": "Galvanic Iteration",
       "group": "acceptance",
@@ -4066,6 +4209,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b132c698"
+    },
+    "c82cc78b-ffd6-4f72-881d-85913830feb2": {
+      "name": "Immoral Bargain",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bf8ebf3d"
     },
     "c8b143ad-43ec-4e0d-a440-e348daa31391": {
       "name": "Swiftfoot Boots",
@@ -4292,6 +4443,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d1def719"
+    },
+    "d3f7095a-b287-4858-9d08-242cf18e87cb": {
+      "name": "Defiling Daemogoth",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fcafaf06"
     },
     "d416a4ed-9f16-4a8b-8aee-03c630e1eb6c": {
       "name": "Ivory Tower",
@@ -4590,6 +4749,14 @@
       "reasons": [],
       "ast": "abf2e6df"
     },
+    "dfaa02d4-4f3c-4e5d-b9e5-283a45395a53": {
+      "name": "Eccentric Pestfinder // Turn Stones",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "76ac9b2b"
+    },
     "e05abb6b-e9f4-4d9e-ad1e-7805ebc09914": {
       "name": "Fists of Flame",
       "group": "acceptance",
@@ -4710,6 +4877,14 @@
       "reasons": [],
       "ast": "f3becf11"
     },
+    "e97f9c2b-b41e-4f36-9245-77c0ac125647": {
+      "name": "Bloodghast",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "dd5c5499"
+    },
     "e9b6a394-691c-425a-9307-76d8edc7375e": {
       "name": "Otawara, Soaring City",
       "group": "holdout",
@@ -4821,6 +4996,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "db3fc478"
+    },
+    "ee1db746-f5c1-4dce-82eb-24b273cc9507": {
+      "name": "Witherbloom Charm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fc02ddcc"
     },
     "ee57fba8-e68b-4c52-8de7-9b9873d84506": {
       "name": "Homesickness",
@@ -5369,12 +5552,12 @@
       "total": 192
     },
     "holdout": {
-      "supported": 54,
+      "supported": 55,
       "total": 61
     },
     "acceptance": {
-      "supported": 322,
-      "total": 339
+      "supported": 346,
+      "total": 363
     }
   }
 }

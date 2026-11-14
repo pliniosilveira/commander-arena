@@ -45,6 +45,17 @@ export function cardsInLibraryHolds(
  * the comparison.
  */
 export function lifeTotalHolds(state: GameState, seat: SeatId, condition: LifeCondition): boolean {
+  if (condition.player === 'opponent') {
+    return state.seats.some(
+      (other) =>
+        other.id !== seat &&
+        lifeTotalHolds(state, other.id, {
+          kind: 'lifeTotal',
+          compare: condition.compare,
+          ...(condition.aboveStarting === true ? { aboveStarting: true } : {}),
+        }),
+    );
+  }
   const life = getSeat(state, seat).life;
   const n = condition.aboveStarting === true ? life - state.settings.startingLife : life;
   const { cmp, value } = condition.compare;

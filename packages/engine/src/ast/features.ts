@@ -160,6 +160,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tap',
     'untap',
     'removeAllCounters',
+    'removeAllPlayerCounters',
     // D-209: "You get {E}{E}" (`gainEnergy`) and "connives" (`connive`).
     'gainEnergy',
     'connive',
@@ -232,6 +233,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manifest',
     // D-128: an effect that creates a delayed triggered ability (CR 603.7): "at the beginning of the next turn's upkeep".
     'delayedTrigger',
+    'prepare',
+    'delayedCombatDamage',
+    'forEachPlayer',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
     'delayedCast',
     // D-128: the engine's own abilities of Suspend (CR 702.62a) and Madness (CR 702.35a), found from exile.
@@ -444,6 +448,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-129: Storm (CR 702.40a) and Replicate (CR 702.56a).
     'storm',
     'replicate',
+    'gravestorm',
     // D-135: Gift (CR 702.174), "Gift a card".
     'gift',
     // D-139: Living weapon (CR 702.92).
@@ -893,6 +898,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeLostThisWay',
     // D-365: "the life that player lost this turn" (CR 119.3), read for each player a `loseLife` affects.
     'lifeLostThisTurn',
+    'lifeGainedThisTurn',
+    'enteredThisTurn',
+    'diedThisTurn',
     // D-131: counts, aggregates and arithmetic.
     'toughnessOf',
     'countersOn',
@@ -1486,6 +1494,9 @@ export const AMOUNT_KINDS = [
   'lifeLostThisWay',
   /** "The life that player lost this turn" (CR 119.3, D-365): the engine's `lifeLostThisTurn`, the whole amount of a `loseLife`. */
   'lifeLostThisTurn',
+  'lifeGainedThisTurn',
+  'enteredThisTurn',
+  'diedThisTurn',
   /** "-X/-X", "+2/+2 for each ..." (D-115): a multiple of an amount, only as a power or toughness. */
   'times',
   /** "That creature's toughness" (D-131): the engine's `toughnessOf`. */
@@ -1651,6 +1662,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   tap: true,
   untap: true,
   removeAllCounters: true,
+  removeAllPlayerCounters: true,
   gainEnergy: true,
   connive: true,
   createCopies: true,
@@ -1697,6 +1709,9 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   cumulativeUpkeep: true,
   becomeMonarch: true,
   delayedTrigger: true,
+  prepare: true,
+  delayedCombatDamage: true,
+  forEachPlayer: true,
   delayedCast: true,
   removeTimeCounter: true,
   castExiled: true,
@@ -1845,6 +1860,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   cumulativeUpkeep: true,
   suspend: true,
   storm: true,
+  gravestorm: true,
   replicate: true,
   gift: true,
   livingWeapon: true,

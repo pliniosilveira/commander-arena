@@ -37,6 +37,7 @@ import { possessedNoun } from '../noun/controller';
 import { BOUNDARY } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
 import { countAmount, counted } from './count';
+import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
 import { MANA_SPENT_AMOUNT } from './mana-spent';
 import { VOTES_AMOUNT } from './votes';
@@ -250,6 +251,7 @@ const MANA_VALUE_OF =
 /** One number read from the game: what "plus", "half" and "twice" combine. */
 const ATOM = (rule: string): Parser<IrAmount> =>
   choice(
+    HISTORY_VALUE,
     // Stage P44 (D-195): "the number of profit votes" (the words "votes" end it, so no count of objects is mistaken for it).
     VOTES_AMOUNT,
     NUMBER_OF_COUNTERS(rule),
@@ -391,6 +393,8 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'CR 608.2c (Resolving Spells and Abilities)',
   ],
   examples: [
+    'equal to the amount of life you gained this turn',
+    'equal to the number of nontoken creatures you had enter the battlefield under your control this turn',
     'equal to the greatest power among creatures you control',
     'equal to the total power of creatures you control',
     'equal to the greatest mana value among artifacts you control',

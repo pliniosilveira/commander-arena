@@ -719,7 +719,7 @@ export function declareTargets(
           "only a slot of a spell's own text (not an ability or a mode) takes as many targets as the X announced",
         );
       } else if (
-        spec.min !== undefined ||
+        (spec.min !== undefined && spec.min !== 0) ||
         spec.max !== undefined ||
         spec.divide !== undefined ||
         spec.onePerOpponent !== undefined ||
@@ -1114,6 +1114,7 @@ function checkDamageSource(ref: ObjectRef, path: string, scope: Scope, out: Out)
 /** The effect each `thisWay` count is made of (D-131). */
 const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   sacrificed: 'a sacrifice effect',
+  sacrificedOwn: 'a sacrifice effect',
   destroyed: 'a destroy effect',
   destroyedOwnNontoken: 'a destroy effect',
   exiledNonland: 'an exileOwnGraveyardCard effect',
@@ -1133,7 +1134,7 @@ const THIS_WAY_KINDS = Object.keys(THIS_WAY_SOURCES);
 function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'sequence')
     return Array.isArray(e.effects) ? e.effects.flatMap(thisWayProduced) : [];
-  if (e?.kind === 'sacrifice') return ['sacrificed'];
+  if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn'];
   if (e?.kind === 'destroy') return ['destroyed', 'destroyedOwnNontoken'];
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
   if (e?.kind === 'draw') return ['playersDrew'];
@@ -1223,6 +1224,9 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'commanderManaValue':
     case 'commanderCasts':
     case 'opponentsWithMore':
+    case 'lifeGainedThisTurn':
+    case 'enteredThisTurn':
+    case 'diedThisTurn':
       checkAmount(a, path, NO_SCOPE, out);
       break;
     case 'countersOn':
@@ -1326,6 +1330,26 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
+      break;
+    case 'lifeGainedThisTurn':
+      if (Object.keys(a).some((key) => key !== 'kind')) {
+        issue(out, path, 'life gained this turn reads only the controller; no extra fields');
+      }
+      break;
+    case 'enteredThisTurn':
+    case 'diedThisTurn':
+      checkEnumList(out, `${path}.types`, a.types, CARD_TYPES, 'card type');
+      if (!isOneOf(a.controller, ['you', 'any'])) {
+        issue(out, `${path}.controller`, 'history controller is you or any');
+      }
+      if (a.token !== undefined && typeof a.token !== 'boolean') {
+        issue(out, `${path}.token`, 'history token filter is a boolean');
+      }
+      for (const key of Object.keys(a)) {
+        if (!['kind', 'types', 'controller', 'token'].includes(key)) {
+          issue(out, `${path}.${key}`, 'history does not record this property');
+        }
+      }
       break;
     case 'sacrificedAsCost':
       // D-491 (CR 118.8): what the spell sacrificed for its additional cost; the face is checked as a whole (`checkSacrificedAsCost`: only a spell's own cast trigger and text).
@@ -2016,6 +2040,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'giftPromised': // D-135: the face must have the Gift keyword (`checkCastFace`)
       break;
     case 'lifeTotal':
+      if (c.player !== undefined && c.player !== 'opponent') {
+        issue(out, `${path}.player`, 'player must be opponent when present');
+      }
       // D-133, CR 119.1: a life total (or how far it is above the starting life total) against a whole number.
       if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
         issue(out, `${path}.compare.cmp`, `unknown comparison ${JSON.stringify(c.compare?.cmp)}`);
@@ -2499,6 +2526,22 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   if (sel.optional !== undefined && sel.optional !== true) {
     issue(out, `${path}.optional`, 'optional must be true when present');
   }
+  if (sel.exceptSacrificed !== undefined) {
+    if (sel.exceptSacrificed !== true || sel.fromMoved === true) {
+      issue(
+        out,
+        `${path}.exceptSacrificed`,
+        'exceptSacrificed must be true and not combined with fromMoved',
+      );
+    }
+    if (sel.filter?.zone !== 'graveyard' || !(scope.thisWay ?? []).includes('sacrificed')) {
+      issue(
+        out,
+        `${path}.exceptSacrificed`,
+        'excluding sacrificed cards needs a prior sacrifice and a graveyard choice',
+      );
+    }
+  }
   // D-411: "You may put a land card from among them into your hand": only the cards the effect before it moved (`moved`) are the candidates.
   if (sel.fromMoved !== undefined) {
     if (sel.fromMoved !== true)
@@ -2959,8 +3002,8 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         );
       }
       // D-412: "If you put a Town card into your hand this way": the card is where the earlier instruction put it.
-      if (c.inZone !== undefined && c.inZone !== 'hand') {
-        issue(out, `${path}.inZone`, "inZone is only 'hand' (D-412)");
+      if (c.inZone !== undefined && c.inZone !== 'hand' && c.inZone !== 'exile') {
+        issue(out, `${path}.inZone`, "inZone is only 'hand' or 'exile'");
       }
       break;
     }
@@ -3052,6 +3095,19 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
 }
 
 export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): void {
+  if (
+    e !== undefined &&
+    'objects' in e &&
+    e.objects?.kind === 'choose' &&
+    e.objects.exceptSacrificed !== undefined &&
+    e.kind !== 'moveToZone'
+  ) {
+    issue(
+      out,
+      `${path}.objects.exceptSacrificed`,
+      'excluding sacrificed cards is only read by a moveToZone choice',
+    );
+  }
   switch (e?.kind) {
     case 'sequence':
       if (!Array.isArray(e.effects) || e.effects.length === 0) {
@@ -3361,6 +3417,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 603.7 (D-128): an effect that creates a delayed triggered ability.
       checkDelayedTrigger(e, path, out, scope.movedAvailable === true, scope.diesTrigger === true);
       break;
+    case 'prepare':
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
+    case 'forEachPlayer':
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      checkEffect(e.effect, `${path}.effect`, scope, out);
+      break;
+    case 'delayedCombatDamage':
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
+      break;
     case 'delayedCast': {
       // CR 603.7 (D-336): an effect that creates a delayed triggered ability on the controller's next cast of a spell the filter names.
       checkFilter(e.filter, `${path}.filter`, out);
@@ -3656,6 +3723,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       } else {
         checkObjectSelector(e.objects as ObjectSelector, `${path}.objects`, scope, out);
       }
+      break;
+    case 'removeAllPlayerCounters':
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
     case 'counter':
     case 'removeAllCounters':
@@ -4261,6 +4331,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkEffect(e.effect, `${path}.effect`, scope, out);
       break;
     case 'chooseOne': {
+      if (e.times !== undefined) checkAmount(e.times, `${path}.times`, scope, out);
       if (e.chooser !== undefined) checkPlayerSelector(e.chooser, `${path}.chooser`, scope, out);
       // CR 608.2d (D-175): two to eight offered instructions, each with the words the player is shown (distinct, so the answer names one).
       const options = Array.isArray(e.options) ? e.options : [];

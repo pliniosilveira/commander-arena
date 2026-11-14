@@ -44,6 +44,7 @@ const CLAUSES: Parser<{ items: (readonly IrClause[])[]; joins: string[] }> = lis
  * object an earlier instruction moved is) and "If the gift was promised, return target creature card ..." (CR 702.174k).
  */
 const RECURSION_LEAD_CONDITIONS = [
+  'condition.exiled-this-way',
   'condition.it-matches',
   // D-298: "If its mana value was 3 or less, scry 1."
   'condition.its-mana-value',
@@ -391,7 +392,7 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
             map(
               (c, p) => {
                 const ahead = pattern(
-                  /(?=you may (?:discard |shuffle\.|put it onto the battlefield))/iu,
+                  /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield))/iu,
                 )(c, p);
                 return ahead.ok ? literal('you may ')(c, p) : ahead;
               },

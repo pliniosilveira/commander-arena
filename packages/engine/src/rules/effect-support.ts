@@ -172,6 +172,7 @@ export function moveInstructions(
     commanderChoice: null,
     ...(controller === undefined ? {} : { controller }),
     ...(withCounters === undefined ? {} : { withCounters }),
+    ...(to === 'battlefield' && ids.length > 1 ? { together: true as const } : {}),
   }));
 }
 

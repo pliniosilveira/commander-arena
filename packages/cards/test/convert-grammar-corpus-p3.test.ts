@@ -435,10 +435,7 @@ const GROUPS: readonly Line[] = [
   {
     kind: 'enchantment',
     text: 'Attacking creatures you control have deathtouch.',
-    // Read since stage P31 ("attacking", D-140); a static ability's subject does not read combat in the engine.
-    expect: no('Attacking creatures you control have deathtouch.', 'noun.plain-permanents', {
-      reason: 'notRunnable',
-    }),
+    expect: OK,
     note: 'backlog: 2 cards',
   },
   {

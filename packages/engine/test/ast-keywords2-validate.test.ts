@@ -275,7 +275,7 @@ describe('what is refused', () => {
     expect(destroy(false).length).toBeGreaterThan(0);
   });
 
-  test('"attacking" and "power less than the source" are flags, and static abilities cannot read them', () => {
+  test('"attacking" is a valid static subject flag; source power remains resolution-only', () => {
     const target = (filter: unknown) =>
       issues(
         spell({ kind: 'dealDamage', amount: 1, to: { kind: 'target', id: 't1' } }, [
@@ -301,7 +301,7 @@ describe('what is refused', () => {
         ] as never),
       );
     expect(lord({ types: ['creature'] })).toEqual([]);
-    expect(lord({ types: ['creature'], attacking: true }).length).toBeGreaterThan(0);
+    expect(lord({ types: ['creature'], attacking: true })).toEqual([]);
     const counted = issues(
       creature([
         {

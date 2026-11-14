@@ -142,6 +142,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.foretell': asIs,
   // Stage P27: Storm and Replicate are lines of their own.
   'keyword.storm': asIs,
+  'keyword.gravestorm': asIs,
+  'effect.delayed-combat-prepare': permanent(
+    (e) => `Whenever you attack, target creature gains deathtouch until end of turn. ${cap(e)}.`,
+  ),
+  'trigger.dies-own-graveyard': whenever,
   'keyword.replicate': asIs,
   'keyword.ward': asIs,
   'keyword.crew': asIs,
@@ -170,6 +175,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `If ${e}, you may cast ~ without paying its mana cost.`,
   ),
   'amount.for-each': spell((e) => `Draw a card ${e}.`),
+  'amount.for-each-died': permanent(
+    (e) => `Nontoken creatures you control enter with an additional +1/+1 counter on them ${e}.`,
+  ),
   'amount.number-of': spell((e) => `You gain life ${e}.`),
   'cost.tap': { face: 'permanent', line: (e) => `${e}: Add {G}.` },
   'cost.mana': permanent((e) => `${e}, {T}: Add {G}.`),
@@ -504,6 +512,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'condition.put-this-way': spell(
     (e) => `You may put a land card from your hand onto the battlefield. If ${e}, you gain 4 life.`,
+  ),
+  'condition.exiled-this-way': spell(
+    (e) => `Exile target card from a graveyard. If ${e}, draw a card.`,
   ),
   'noun.player-or-planeswalker': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.each-permanent-of-player': spell((e) => `~ deals 1 damage to target player and ${e}.`),

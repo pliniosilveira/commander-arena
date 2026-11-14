@@ -92,10 +92,11 @@ const LIFE_COMPARE: Parser<LifeCompare> = choice<LifeCompare>(
 export const CONDITION_LIFE_TOTAL = defineRule<IrCondition>({
   id: 'condition.life-total',
   family: 'condition',
-  leading: ['you'],
+  leading: ['you', 'an'],
   cites: ['CR 119.1 (Life)', 'CR 903.7 (Commander)', 'CR 611.3a (Continuous Effects)'],
   examples: [
     'you have 30 or more life',
+    'an opponent has 10 or less life',
     'you have at least 30 life',
     'you have five or less life',
     'you have 5 or fewer life',
@@ -109,13 +110,15 @@ export const CONDITION_LIFE_TOTAL = defineRule<IrCondition>({
     'you have at least 7 life more than your starting life',
     'you have 0 or more life',
     'you have at most 30 life',
-    'an opponent has 30 or more life',
+    'each opponent has 30 or more life',
     'you have 30 or more life.',
     'you have seven or more creature cards in your graveyard',
     'you have at least 7 life more than your starting life total or more',
   ],
   parse: (ctx, pos) => {
-    const r = spanned(sequence(literal('you have '), LIFE_COMPARE))(ctx, pos);
+    const r = spanned(
+      sequence(choice(literal('you have '), literal('an opponent has ')), LIFE_COMPARE),
+    )(ctx, pos);
     if (!r.ok) return r;
     const { compare, aboveStarting } = r.value.value[1];
     return {
@@ -123,6 +126,9 @@ export const CONDITION_LIFE_TOTAL = defineRule<IrCondition>({
       value: condition('condition.life-total', pos, r.pos, {
         kind: 'lifeTotal',
         compare,
+        ...(r.value.value[0].toLowerCase().startsWith('an ')
+          ? { player: 'opponent' as const }
+          : {}),
         ...(aboveStarting ? { aboveStarting: true as const } : {}),
       }),
       pos: r.pos,

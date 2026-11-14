@@ -2,13 +2,14 @@
  * "Each other Angel you control enters with an additional +1/+1 counter on it for each Angel you already control." (D-149, CR 614.1c,
  * 614.12, 122.6): a replacement effect of a permanent on the battlefield (`othersEnterWithCounters`) for every permanent that enters the
  * battlefield, a card put there from any zone, a token, or a copy of a spell that becomes a token. The effect is read from the permanents on
- * the battlefield as the new one enters (CR 614.12: looking at the game without it), so a permanent never affects its own entering, and
- * two that enter at the same time do not see each other. `what` is read for the controller of the permanent with the ability ("you control",
+ * the battlefield as the new one enters (CR 614.12: looking at the game without it); its own replacement effects also apply unless they say
+ * "other". Two that enter at the same time do not see each other. `what` is read for the controller of the permanent with the ability ("you control",
  * "other" leaves that permanent out), against the characteristics the entering permanent has as it would be on the battlefield; a count is
  * made without the entering permanent, which is not there yet ("for each Angel you already control").
  */
 import type { Replacement } from '../ast/types';
 import type { GameObject, GameState } from '../state/types';
+import { historyCount } from './amounts';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { derive } from './derive';
@@ -23,10 +24,15 @@ export function groupEntryCounters(state: GameState, entering: GameObject): Reco
   const sources = [...state.battlefield].sort(
     (a, b) => (state.objects[a]?.timestamp ?? 0) - (state.objects[b]?.timestamp ?? 0),
   );
-  for (const id of sources) {
-    const permanent = state.objects[id];
+  for (const id of [...sources, entering.id]) {
+    const permanent = id === entering.id ? entering : state.objects[id];
     if (permanent === undefined) continue;
-    for (const ability of derive(state, permanent).abilities) {
+    // CR 614.12: the entering permanent's own replacement effects also apply to itself.
+    const abilities =
+      id === entering.id
+        ? copiableValues(state, entering).abilities
+        : derive(state, permanent).abilities;
+    for (const ability of abilities) {
       if (
         ability.kind !== 'replacement' ||
         ability.replacement.kind !== 'othersEnterWithCounters'
@@ -42,7 +48,9 @@ export function groupEntryCounters(state: GameState, entering: GameObject): Reco
           ? r.count
           : r.count.kind === 'manaSpent'
             ? manaSpentOf(entering, r.count.fromType, r.count.snow === true)
-            : countMatching(state, r.count.filter, ctx);
+            : r.count.kind === 'enteredThisTurn' || r.count.kind === 'diedThisTurn'
+              ? historyCount(state, r.count, ctx.controller)
+              : countMatching(state, r.count.filter, ctx);
       if (count > 0) added[r.counter] = (added[r.counter] ?? 0) + count;
     }
   }

@@ -83,7 +83,11 @@ function effectsOf(
 function destroyAura(
   state: GameState,
   aura: GameObject,
-): { readonly state: GameState; readonly events: GameEvent[] } {
+): {
+  readonly state: GameState;
+  readonly events: GameEvent[];
+  readonly destroyed?: readonly ObjectId[];
+} {
   if (aura.zone !== 'battlefield' || hasIndestructible(state, aura)) return { state, events: [] };
   const regenerated = regenerateInstead(state, aura.id);
   if (regenerated !== null) return regenerated;
@@ -93,7 +97,7 @@ function destroyAura(
     replacers: replacementSources(state),
   });
   return moved.kind === 'done'
-    ? { state: moved.state, events: [...moved.events] }
+    ? { state: moved.state, events: [...moved.events], destroyed: [aura.id] }
     : { state, events: [] };
 }
 
@@ -102,7 +106,11 @@ function applyEffect(
   state: GameState,
   id: ObjectId,
   effect: DestroyEffect,
-): { readonly state: GameState; readonly events: GameEvent[] } {
+): {
+  readonly state: GameState;
+  readonly events: GameEvent[];
+  readonly destroyed?: readonly ObjectId[];
+} {
   if (effect.kind === 'regenerate') {
     return regenerateInstead(state, id) ?? { state, events: [] };
   }
@@ -112,13 +120,23 @@ function applyEffect(
   const cleared = patchObject(state, id, { damage: 0, damagedByDeathtouch: false });
   const used: GameEvent = { kind: 'umbraArmorUsed', object: id, aura: aura.id };
   const gone = destroyAura(cleared, aura);
-  return { state: gone.state, events: [used, ...gone.events] };
+  return {
+    state: gone.state,
+    events: [used, ...gone.events],
+    ...(gone.destroyed === undefined ? {} : { destroyed: gone.destroyed }),
+  };
 }
 
 /** What settling a destruction gives: nothing replaces it, or it was replaced (the state and events after the effect applied). */
 export type Destruction =
   | { readonly kind: 'destroyed' }
-  | { readonly kind: 'replaced'; readonly state: GameState; readonly events: GameEvent[] };
+  | {
+      readonly kind: 'replaced';
+      readonly state: GameState;
+      readonly events: GameEvent[];
+      /** Other permanents actually destroyed by the replacement (Umbra armor), counted by the original effect. */
+      readonly destroyed?: readonly ObjectId[];
+    };
 
 /** The decision of the question, before the engine gives it its id. */
 export type DestroyDecision = Omit<ChooseOptionDecision, 'id' | 'replacement'> & {
@@ -184,7 +202,7 @@ export function settleDestruction(
   during: 'resolution' | 'sba',
 ): Destruction | DestroyAsked {
   const obj = state.objects[id];
-  if (obj?.zone !== 'battlefield') return { kind: 'destroyed' };
+  if (obj?.zone !== 'battlefield') return { kind: 'replaced', state, events: [] };
   const effects = effectsOf(state, id, cantBeRegenerated);
   const [first] = effects;
   if (first === undefined) return { kind: 'destroyed' };
@@ -199,7 +217,7 @@ export function settleDestruction(
     pick = effects.find((e) => e.key === answer) ?? first;
   }
   const applied = applyEffect(state, id, pick);
-  return { kind: 'replaced', state: applied.state, events: applied.events };
+  return { kind: 'replaced', ...applied };
 }
 
 /**

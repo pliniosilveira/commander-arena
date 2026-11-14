@@ -77,6 +77,9 @@ describe('amounts that read an object', () => {
       'times',
       'lifeLostThisWay',
       'lifeLostThisTurn',
+      'lifeGainedThisTurn',
+      'enteredThisTurn',
+      'diedThisTurn',
       // D-131.
       'toughnessOf',
       'countersOn',

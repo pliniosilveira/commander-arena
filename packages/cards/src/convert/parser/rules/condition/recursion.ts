@@ -13,6 +13,7 @@ import {
   optional,
   type Parser,
   pattern,
+  quiet,
   satisfy,
   separatedBy1,
   sequence,
@@ -92,6 +93,37 @@ export const WHAT_IT_IS: Parser<IrFilter> = (ctx, pos) => {
     pos: r.pos,
   };
 };
+
+export const CONDITION_EXILED_THIS_WAY = defineRule<IrCondition>({
+  id: 'condition.exiled-this-way',
+  family: 'condition',
+  leading: ['a', 'an'],
+  cites: ['CR 608.2c (Resolving Spells and Abilities)', 'CR 400.7j (General)'],
+  examples: ['a creature card is exiled this way', 'an artifact card is exiled this way'],
+  rejects: [
+    'a card is exiled this way',
+    'a creature card was discarded this way',
+    'a creature card is exiled',
+    'a creature card is exiled this way or another way',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      quiet(sequence(pattern(/an? /iu), WHAT_IT_IS)),
+      pattern(/ is exiled this way(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'exiledThisWay', filter: r.value[0][1] },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.exiled-this-way',
+      },
+      pos: r.pos,
+    };
+  },
+});
 
 /**
  * `condition.it-matches`: "it's a Zombie card", "it's an Angel", "it's a creature card" (CR 608.2c, 113.7a: an instruction later
@@ -369,6 +401,7 @@ export const CONDITION_OPPONENT_CONTROLS_AT_LEAST = defineRule<IrCondition>({
 });
 
 export const RECURSION_CONDITION_RULES = [
+  CONDITION_EXILED_THIS_WAY,
   CONDITION_IT_MATCHES,
   CONDITION_ITS_MANA_VALUE,
   CONDITION_GIFT_PROMISED,

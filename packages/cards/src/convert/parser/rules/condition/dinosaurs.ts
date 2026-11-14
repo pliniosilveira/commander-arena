@@ -25,6 +25,7 @@ export const CONDITION_DONT_CONTROL_A = defineRule<IrCondition>({
     "you don't control a creature with power 4 or greater",
     "you don't control a Dragon",
     "you don't control another creature",
+    "you don't control a Pest creature token",
   ],
   rejects: [
     "you don't control",
@@ -41,7 +42,7 @@ export const CONDITION_DONT_CONTROL_A = defineRule<IrCondition>({
       pattern(/you don['’]t control /iu),
       pattern(/(?:an? |another )/iu),
       satisfy(
-        map(permanentPhrase(false, 'notBasicLand'), withoutZone),
+        map(permanentPhrase(false, 'notBasicLand', true), withoutZone),
         (filter) => filter.controller === undefined,
       ),
     )(ctx, pos);

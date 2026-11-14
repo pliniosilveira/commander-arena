@@ -128,7 +128,7 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       if (typeof r.counter !== 'string' || r.counter === '') {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
-      if (kindOf(r.count) === 'countOf') {
+      if (['countOf', 'enteredThisTurn', 'diedThisTurn'].includes(kindOf(r.count))) {
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
       } else if (kindOf(r.count) === 'manaSpent') {
         // D-183: the mana spent to cast the entering permanent, all of it or from sources of a card type.

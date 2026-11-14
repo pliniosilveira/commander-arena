@@ -1072,6 +1072,25 @@ describe('"You may cast target <type> card from your graveyard this turn" (CR 60
 });
 
 describe('an ability of the card that works from the graveyard (CR 113.6b)', () => {
+  test('a self-return from the graveyard enters the battlefield tapped', () => {
+    expect(
+      abilities('{2}: Return this card from your graveyard to the battlefield tapped.'),
+    ).toEqual([
+      {
+        kind: 'activated',
+        cost: [{ kind: 'mana', symbols: ['2'] }],
+        functionsIn: 'graveyard',
+        effect: {
+          kind: 'moveToZone',
+          objects: THIS,
+          to: 'battlefield',
+          controller: 'owner',
+          tapped: true,
+        },
+      },
+    ]);
+  });
+
   test.each([
     [
       'battlefield',
@@ -1132,10 +1151,6 @@ describe('an ability of the card that works from the graveyard (CR 113.6b)', () 
     [
       '{2}: Draw a card. Return this card from your graveyard to the battlefield.',
       'more than one instruction',
-    ],
-    [
-      '{2}: Return this card from your graveyard to the battlefield tapped.',
-      'tapped is not a part of the words read',
     ],
     ['{2}: Return this card from a graveyard to the battlefield.', 'not your graveyard'],
     [

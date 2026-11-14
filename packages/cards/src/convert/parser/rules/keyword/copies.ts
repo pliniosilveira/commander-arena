@@ -85,4 +85,21 @@ export const KEYWORD_REPLICATE = defineRule<readonly IrKeyword[]>({
   ),
 });
 
-export const COPY_KEYWORD_RULES = [KEYWORD_STORM, KEYWORD_REPLICATE];
+export const KEYWORD_GRAVESTORM = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.gravestorm',
+  family: 'keyword',
+  leading: ['gravestorm'],
+  cites: ['CR 603.3b (Handling Triggered Abilities)', 'CR 707.10 (Copying Objects)'],
+  examples: ['Gravestorm'],
+  rejects: ['Gravestorm 2', 'Storm'],
+  parse: map(
+    node<null, IrKeyword>(
+      'keyword.gravestorm',
+      map(literal('gravestorm'), () => null),
+      () => ({ kind: 'keyword', name: 'gravestorm', params: [] }),
+    ),
+    (keyword): readonly IrKeyword[] => [keyword],
+  ),
+});
+
+export const COPY_KEYWORD_RULES = [KEYWORD_STORM, KEYWORD_REPLICATE, KEYWORD_GRAVESTORM];

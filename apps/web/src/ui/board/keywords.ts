@@ -72,6 +72,10 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   cumulativeUpkeep: ['CU', 'Cumulative upkeep'],
   // Copies of spells (D-129).
   storm: ['Stm', 'Storm'],
+  gravestorm: [
+    'GSt',
+    'Gravestorm (When you cast this spell, copy it for each permanent put into a graveyard from the battlefield this turn.)',
+  ],
   replicate: ['Rep', 'Replicate'],
   // Gift a card (D-135).
   gift: ['Gft', 'Gift a card'],
