@@ -2637,6 +2637,75 @@ export const DANITHA_G3_LANDS = supported([
 ]);
 
 /**
+ * The SYNTHETIC cards of group 6 of the Danitha deck (D-1260, D-1261, provisional): a batch combat damage trigger and a look-back trigger over creatures with power greater than their
+ * base power, a spell that destroys one, and spells that put keyword counters (reach, deathtouch, flying, first strike, double strike, exalted) on a creature. They change which
+ * creatures have which keywords during a game, which the generic pools are not built to follow.
+ */
+export const DANITHA_G6_NAMES = [
+  'SYNTHETIC Base Power Batch Watcher',
+  'SYNTHETIC Surge Mourner',
+  'SYNTHETIC Viper Boon',
+  'SYNTHETIC Strike Boon',
+  'SYNTHETIC Exalting Boon',
+  'SYNTHETIC Overgrowth Snare',
+] as const;
+
+/** The danithaG6 style: every card of the group twice, and bodies to put the counters on. */
+export const DANITHA_G6_SPELLS = [
+  ...supported(DANITHA_G6_NAMES),
+  ...supported(DANITHA_G6_NAMES),
+  ...supported(['Lightning Bolt', 'Murder']),
+  ...supported(['SYNTHETIC Might Aura', 'SYNTHETIC Growth Spurt']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Green, white and black for the counters, a little red for the removal. */
+export const DANITHA_G6_LANDS = supported([
+  'Forest',
+  'Forest',
+  'Forest',
+  'Plains',
+  'Plains',
+  'Swamp',
+  'Swamp',
+  'Mountain',
+]);
+
+/**
+ * The SYNTHETIC cards of group 7 of the Danitha deck (D-1270, provisional): modal spells whose modes have a cost listed before the effect (Tiered): a "choose one" with three tiers
+ * (one costing {0}), a "choose one or more" whose modes all cost something, and a "choose one" with one costed mode. They put a `chooseModes` question in front of every cast whose
+ * mana the caster can only partly spend, which games-100 expects only from dedicated styles.
+ */
+export const DANITHA_G7_NAMES = [
+  'SYNTHETIC Tiered Ward',
+  'SYNTHETIC Costed Pair',
+  'SYNTHETIC Half Costed Choice',
+] as const;
+
+/** The danithaG7 style: every card of the group three times, bodies to protect and aim at, and a burn spell to respond to. */
+export const DANITHA_G7_SPELLS = [
+  ...supported(DANITHA_G7_NAMES),
+  ...supported(DANITHA_G7_NAMES),
+  ...supported(DANITHA_G7_NAMES),
+  ...supported(['Lightning Bolt', 'Murder']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** White, red and blue for the three cards, a little black for the removal. */
+export const DANITHA_G7_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Mountain',
+  'Island',
+  'Island',
+  'Swamp',
+]);
+
+/**
  * The SYNTHETIC cards of group 9 of the Hashaton deck (D-390 to D-395): an activated ability with a Phyrexian symbol in its cost (paid with mana or 2 life), the
  * transforming double-faced creature that has it, the exile of a random card from a hand, and the 5/5 whose damage trigger exiles a card from the hand of the controller of the source
  * and then asks "you may put it onto the battlefield" or "you may cast it without paying its mana cost" (a `confirmOptional` or a `chooseCards` of purpose `cast`, in the middle of a
@@ -3389,6 +3458,10 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(SUBJECT_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(RECURSION_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ARTIFACT_NAMES as readonly string[]).includes(card.name))
+  // The Danitha group 6 cards (D-1260, D-1261) read base power and put keyword counters on creatures: a style of their own.
+  .filter((card) => !(DANITHA_G6_NAMES as readonly string[]).includes(card.name))
+  // The Danitha group 7 cards (D-1270) have modes with a cost of their own, which ask the modes of every cast: a style of their own.
+  .filter((card) => !(DANITHA_G7_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ANGEL_NAMES as readonly string[]).includes(card.name))
@@ -3597,6 +3670,8 @@ export type DeckStyle =
   | 'food'
   | 'layers'
   | 'ward'
+  | 'danithaG6'
+  | 'danithaG7'
   | 'vehicles'
   | 'prevention'
   | 'layouts'
@@ -3616,6 +3691,8 @@ export type DeckStyle =
   | 'pt'
   | 'altCosts'
   | 'playRules'
+  if (style === 'danithaG6' && DANITHA_G6_SPELLS.length > 0) return DANITHA_G6_SPELLS;
+  if (style === 'danithaG7' && DANITHA_G7_SPELLS.length > 0) return DANITHA_G7_SPELLS;
   | 'upkeep'
   | 'later'
   | 'miracle'
@@ -3799,6 +3876,8 @@ export function landSlots(style: DeckStyle): readonly string[] {
   // Basic lands of every color: the coverage creatures need green, black and others.
   if (style === 'combat' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'search' && BASIC_LANDS.length > 0) return BASIC_LANDS;
+  if (style === 'danithaG6' && BASIC_LANDS.length > 0) return DANITHA_G6_LANDS;
+  if (style === 'danithaG7' && BASIC_LANDS.length > 0) return DANITHA_G7_LANDS;
   if (style === 'activated' && ACTIVATED_LANDS.length > 0) return ACTIVATED_LANDS;
   if (style === 'attachments' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'kicker' && BASIC_LANDS.length > 0) return BASIC_LANDS;
@@ -4343,6 +4422,20 @@ export const DANITHA_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
   ['danithaG3', 'danithaG3'],
   ['danithaG3', 'spells'],
   ['spells', 'danithaG3'],
+];
+
+/** Style pairs of the Danitha group 6 soak test (D-1260, D-1261): a mirror match and both mixed ways. */
+export const DANITHA_G6_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['danithaG6', 'danithaG6'],
+  ['danithaG6', 'spells'],
+  ['spells', 'danithaG6'],
+];
+
+/** Style pairs of the Danitha group 7 soak test (D-1270): a mirror match and both mixed ways. */
+export const DANITHA_G7_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['danithaG7', 'danithaG7'],
+  ['danithaG7', 'spells'],
+  ['spells', 'danithaG7'],
 ];
 
 /** Style pairs of the repeatable-mode soak test (D-344): a mirror match and both mixed ways. */

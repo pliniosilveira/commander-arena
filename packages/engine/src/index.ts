@@ -45,6 +45,7 @@ export type * from './rng/types';
 export { defaultDivision } from './rules/combat-flow';
 export type { ControlEnd } from './rules/control';
 export { faceDownLabel } from './rules/face-down';
+export { KEYWORD_COUNTERS, UNSUPPORTED_KEYWORD_COUNTERS } from './rules/keyword-counters';
 export { baseSpecId } from './rules/modes';
 export type { DeckConfig, GameConfig } from './rules/setup';
 export { createGame } from './rules/setup';

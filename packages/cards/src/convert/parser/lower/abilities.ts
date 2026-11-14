@@ -770,7 +770,7 @@ export function lowerModalSpell(
   ability: Extract<IrAbility, { kind: 'modal' }>,
   ctx: LowerContext,
 ): LowerResult<SpellParts> {
-  const lowered = lowerModes(ability, ctx);
+  const lowered = lowerModes(ability, ctx, true);
   if (!lowered.ok) return lowered;
   const { modes, chooseModes, usesX } = lowered.value;
   return {

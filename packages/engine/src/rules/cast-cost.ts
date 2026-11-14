@@ -37,6 +37,7 @@ import {
   flashbackCostOf,
   kickerLikeCostOf,
   manaSymbolsOf,
+  modeCostsOf,
   namedAlternativeCostOf,
   replicateCostOf,
 } from './alt-costs';
@@ -232,6 +233,11 @@ export interface CostRequest {
    */
   readonly modes?: number;
   /**
+   * Which modes were chosen (their indexes, CR 700.2, 700.2h, D-1270), for the costs a mode lists before its effect: left out, the modes the spell on the stack has chosen. Where
+   * a caller has `modes` for the escalate cost it passes the set too.
+   */
+  readonly modeSet?: readonly number[];
+  /**
    * Which way the caster pays the face's additional cost choice (`CardFace.additionalCostChoice`, D-181): left out, the one the spell on the stack
    * has chosen (`StackData.costOption`); with none chosen yet the cost has neither (`canPayRequest` asks about both).
    */
@@ -315,6 +321,10 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;
     for (let i = 1; i < modes; i += 1) symbols.push(...manaSymbolsOf(escalate));
   }
+  // CR 700.2h, 702.183a (D-1270): a mode with a cost before its effect is an additional cost if the mode is chosen; all the costs of the modes chosen are paid.
+  symbols.push(
+    ...manaSymbolsOf(modeCostsOf(face, request.modeSet ?? spell.stack?.chosenModes ?? [])),
+  );
   // CR 118.8, 601.2b (D-181): one of the two ways of the additional cost choice, the one the caster announced.
   const option = request.costOption ?? spell.stack?.costOption;
   const additional: readonly Cost[] = [

@@ -41,6 +41,8 @@ import { SYNTHETIC_DANITHA_G2_LIST } from './synthetic-danitha-g2';
 import { SYNTHETIC_DANITHA_G3_LIST } from './synthetic-danitha-g3';
 import { SYNTHETIC_DANITHA_G4_LIST } from './synthetic-danitha-g4';
 import { SYNTHETIC_DANITHA_G5_LIST } from './synthetic-danitha-g5';
+import { SYNTHETIC_DANITHA_G6_LIST } from './synthetic-danitha-g6';
+import { SYNTHETIC_DANITHA_G7_LIST } from './synthetic-danitha-g7';
 import { SYNTHETIC_DAWNBREAK_LIST } from './synthetic-dawnbreak';
 import { SYNTHETIC_DELAYED_RETURN_LIST } from './synthetic-delayed-return';
 import { SYNTHETIC_DESTROY_PER_OPPONENT_LIST } from './synthetic-destroy-per-opponent';
@@ -391,6 +393,8 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_HASHATON_GROUP_4_LIST,
   ...SYNTHETIC_DANITHA_G4_LIST,
   ...SYNTHETIC_DANITHA_G5_LIST,
+  ...SYNTHETIC_DANITHA_G6_LIST,
+  ...SYNTHETIC_DANITHA_G7_LIST,
   ...SYNTHETIC_HASHATON_G10_LIST,
   ...SYNTHETIC_HASHATON_G9_LIST,
   ...SYNTHETIC_DANITHA_G1A_LIST,

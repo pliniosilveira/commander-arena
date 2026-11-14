@@ -8,13 +8,27 @@
  * ("put a +1/+1 counter on ~ for each creature destroyed this way"), and a quantity above one multiplies it. The count
  * may be what the sentence defines X as: "put X +1/+1 counters on target creature, where X is that creature's power".
  */
-import { literal, map, optional, pattern, satisfy, sequence } from '../../combinators';
+import {
+  literal,
+  map,
+  optional,
+  pattern,
+  satisfy,
+  separatedBy1,
+  sequence,
+} from '../../combinators';
 import type { IrAmount, IrCounterSpec } from '../../ir/types';
 import { EQUAL_AMOUNTS, FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
-import { type Clauses, operands, single } from './operands';
+import { type Clauses, LIST_SEPARATOR, makeClause, operands, single } from './operands';
 
 // Stage P69 (D-256): "that many", the life a life gain trigger names (the lowering refuses it where no such trigger or instruction gives it a meaning).
+/**
+ * The name of a kind of counter: "+1/+1", "-1/-1", the keyword counters of two words (CR 122.1b: first strike, double strike) and any other word ("charge").
+ * Read at the lowering, where the names the engine runs as keyword counters (D-1260) are told from the ones it cannot run (decayed).
+ */
+const COUNTER_NAME = /[+-]\d+\/[+-]\d+|first strike|double strike|[a-z]+/i;
+
 const COUNT_ONLY = ['amount.number', 'amount.article', 'amount.x', 'amount.that-many'] as const;
 
 /** The objects counters can be put on: this permanent, "it", a target, or each of a kind. */
@@ -87,7 +101,7 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
         family<IrAmount>('amount', { only: COUNT_ONLY }),
         literal(' '),
         map(
-          spanned(pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i)),
+          spanned(pattern(COUNTER_NAME)),
           ({ value, span }): IrCounterSpec => ({
             kind: 'counterSpec',
             name: value[0].toLowerCase(),
@@ -141,7 +155,7 @@ export const EFFECT_ADD_COUNTERS_NUMBER_OF = defineRule<Clauses>({
     sequence(
       literal('put a number of '),
       map(
-        spanned(pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i)),
+        spanned(pattern(COUNTER_NAME)),
         ({ value, span }): IrCounterSpec => ({
           kind: 'counterSpec',
           name: value[0].toLowerCase(),
@@ -161,4 +175,71 @@ export const EFFECT_ADD_COUNTERS_NUMBER_OF = defineRule<Clauses>({
   ),
 });
 
-export const COUNTER_RULES = [EFFECT_ADD_COUNTERS, EFFECT_ADD_COUNTERS_NUMBER_OF];
+/**
+ * `effect.add-counters-kinds`: "Put a +1/+1 counter, a reach counter, and a deathtouch counter on target creature" (D-1260, CR 122.6, 122.1b): one counter of each of
+ * two or more kinds on the same object, put in the order written (CR 608.2c), each its own instruction. The object is one noun (a target, "~" or "it"), which every
+ * instruction shares: a target is chosen once (CR 115.1). Only "a" or "an" before each counter: "two +1/+1 counters and a reach counter" is not read.
+ */
+export const EFFECT_ADD_COUNTERS_KINDS = defineRule<Clauses>({
+  id: 'effect.add-counters-kinds',
+  family: 'effect',
+  leading: ['put'],
+  cites: [
+    'CR 122.6 (Counters)',
+    'CR 122.1b (Counters)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'put a +1/+1 counter, a reach counter, and a deathtouch counter on target creature',
+    'put a flying counter and a lifelink counter on ~',
+    'put a first strike counter, a double strike counter, and a trample counter on it',
+    'put a +1/+1 counter and a vigilance counter on target creature',
+    'put an exalted counter and a shield counter on target creature',
+  ],
+  rejects: [
+    'put a +1/+1 counter on target creature',
+    'put a reach counter and a deathtouch counter',
+    'put a reach counter, a deathtouch counter on target creature and draw a card',
+    'put two reach counters and a deathtouch counter on target creature',
+    'put a reach counter and deathtouch counter on target creature',
+    'put a reach counter and a card on target creature',
+    'put a reach counter, and a deathtouch counter on each creature you control',
+    'put a reach counter and a deathtouch counter on target creature and ~',
+  ],
+  parse: (ctx, pos) => {
+    const item = map(
+      spanned(sequence(pattern(/an? /i), pattern(COUNTER_NAME), literal(' counter'))),
+      ({ value, span }): IrCounterSpec => ({
+        kind: 'counterSpec',
+        name: value[1][0].toLowerCase(),
+        span,
+        rule: 'effect.add-counters-kinds',
+      }),
+    );
+    const r = sequence(
+      literal('put '),
+      satisfy(separatedBy1(item, LIST_SEPARATOR), (items) => items.length >= 2),
+      literal(' on '),
+      operands(['noun.self', 'noun.it', 'noun.target-permanent'], 'effect.add-counters-kinds'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, counters, , objects] = r.value;
+    // A list of objects ("on target creature and ~") is a different sentence: one noun only.
+    if (objects.kind !== 'noun') return { ok: false };
+    const span = { start: pos, end: r.pos };
+    const one = (counter: IrCounterSpec) =>
+      makeClause(
+        'effect.add-counters-kinds',
+        'addCounters',
+        { count: { kind: 'number', value: 1, span: counter.span }, counter, objects },
+        span,
+      );
+    return { ok: true, value: counters.map(one), pos: r.pos };
+  },
+});
+
+export const COUNTER_RULES = [
+  EFFECT_ADD_COUNTERS,
+  EFFECT_ADD_COUNTERS_NUMBER_OF,
+  EFFECT_ADD_COUNTERS_KINDS,
+];

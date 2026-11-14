@@ -1466,6 +1466,8 @@ function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
       path,
       (targets) => ({ owner: 'spell', targets, xAllowed, ...HOOKS }),
       out,
+      false,
+      true,
     );
     return;
   }

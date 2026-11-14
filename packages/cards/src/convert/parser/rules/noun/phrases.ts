@@ -400,6 +400,20 @@ const DAMAGED_BY_SOURCE: Parser<boolean> = map(
 );
 
 /**
+ * " with power greater than its base power" (D-1261, CR 208.4b): the object's power as it is now is more than its base power, the power before
+ * counters and the effects that only modify it (the engine's `powerAboveBase`). Said of a creature only; "greater than" any other number or value is
+ * not read (`comparisonSuffix` reads "with power 4 or greater").
+ */
+function powerAboveBase(plural: boolean): Parser<boolean> {
+  // "creatures you control each with power greater than its base power": the plural says "each" (Kutzil).
+  const each = plural ? '(?: each)?' : '';
+  return map(
+    pattern(new RegExp(`${each} with power greater than its base power${BOUNDARY}`, 'iu')),
+    () => true,
+  );
+}
+
+/**
  * " with a counter on it", " with a +1/+1 counter on it", " with a stun counter on it" and, in the plural, " with counters on them",
  * " with +1/+1 counters on them" (stage P32, D-147, CR 122.1): the object has a counter, of any kind (`true`) or of the kind named.
  */
@@ -477,6 +491,7 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
     manaValueX: boolean;
     damaged: boolean;
     counter: true | string | undefined;
+    aboveBase: boolean;
   }> = (ctx, pos) => {
     const control = optional(EVENT_CONTROL_SUFFIX, undefined)(ctx, pos);
     if (!control.ok) return control;
@@ -499,15 +514,19 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
     // "creatures you control with a counter on it" (stage P32).
     const counter = optional(quiet(counterSuffix(plural)), undefined)(ctx, damaged.pos);
     if (!counter.ok) return counter;
+    // "creatures you control with power greater than its base power" (D-1261).
+    const aboveBase = optional(quiet(powerAboveBase(plural)), false)(ctx, counter.pos);
+    if (!aboveBase.ok) return aboveBase;
     let controller = control.value;
-    let end = counter.pos;
+    let end = aboveBase.pos;
     // "creature of the chosen type you control", "creature with power 4 or greater you control".
     if (
       controller === undefined &&
       (chosen.value !== undefined ||
         compared.value !== undefined ||
         keyword.value !== undefined ||
-        counter.value !== undefined)
+        counter.value !== undefined ||
+        aboveBase.value)
     ) {
       const late = optional(EVENT_CONTROL_SUFFIX, undefined)(ctx, end);
       if (!late.ok) return late;
@@ -524,6 +543,7 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
         manaValueX: manaValueX.value,
         damaged: damaged.value,
         counter: counter.value,
+        aboveBase: aboveBase.value,
       },
       pos: end,
     };
@@ -534,7 +554,7 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
     const [
       modifiers,
       noun,
-      { controller, chosen, compared, keyword, manaValueX, damaged, counter },
+      { controller, chosen, compared, keyword, manaValueX, damaged, counter, aboveBase },
     ] = r.value;
     const parts = modifiers.reduce<FilterParts>((acc, m) => m(acc), {
       ...NO_PARTS,
@@ -557,6 +577,7 @@ export function permanentPhrase(plural: boolean, subtypes: SubtypeMode = false):
           ...(manaValueX ? { manaValueX: true as const } : {}),
           ...(damaged ? { controllerDamagedBySource: true as const } : {}),
           ...(counter === undefined ? {} : { hasCounter: counter }),
+          ...(aboveBase ? { powerAboveBase: true as const } : {}),
         },
         compared,
       ),

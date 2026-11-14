@@ -206,6 +206,24 @@ export function applyAbilityLayer(
 // ---- Layer 7 (CR 613.4)
 
 /**
+ * The base power and toughness of a creature (CR 208.4b, 613.4b): what its printed or characteristic-defining values are after the effects that set
+ * them (layer 7b, the last by timestamp wins), before any counter or "+N/+N" effect (layer 7c). "A creature with power greater than its base power"
+ * compares the power `applyPtLayers` gives with this.
+ */
+export function basePtOf(
+  base: { readonly power: number | null; readonly toughness: number | null },
+  effects: readonly ContinuousEffect[],
+): { readonly power: number | null; readonly toughness: number | null } {
+  let power = base.power;
+  let toughness = base.toughness;
+  for (const e of ofKind(effects, 'setPt')) {
+    power = e.change.power;
+    toughness = e.change.toughness;
+  }
+  return { power, toughness };
+}
+
+/**
  * Layers 7b and 7c (CR 613.4b, 613.4c). Effects that set power and toughness apply first, in
  * timestamp order, and the last one wins; they apply even to an object with no power and toughness
  * yet (CR 208.3a). Then everything that modifies them is added: counters (CR 122.1b),
@@ -220,12 +238,7 @@ export function applyPtLayers(
   staticPower: number,
   staticToughness: number,
 ): { readonly power: number | null; readonly toughness: number | null } {
-  let power = base.power;
-  let toughness = base.toughness;
-  for (const e of ofKind(effects, 'setPt')) {
-    power = e.change.power;
-    toughness = e.change.toughness;
-  }
+  const { power, toughness } = basePtOf(base, effects);
   if (power === null || toughness === null) return { power, toughness };
   let addPower = counterBonus + staticPower;
   let addToughness = counterBonus + staticToughness;

@@ -80,6 +80,8 @@ const SAYABLE: ReadonlySet<string> = new Set([
   'zone',
   'attacking',
   'powerLessThanSource',
+  // D-1261: "with power greater than its base power".
+  'powerAboveBase',
   // D-133: nontoken, non-Zombie, colorless, with and without a keyword.
   'token',
   'notSubtypes',
@@ -176,6 +178,8 @@ export function withText(filter: ObjectFilter): string {
     filter.hasCounter === undefined ? '' : counterOnIt(filter.hasCounter),
     // Mentor (CR 702.134a): "target attacking creature with power less than this creature's power".
     filter.powerLessThanSource === true ? "power less than this creature's power" : '',
+    // CR 208.4b (D-1261): the power it has now is more than the base power it has before counters and effects that only modify it.
+    filter.powerAboveBase === true ? 'power greater than its base power' : '',
     (filter.keywords ?? []).map(keywordWords).join(' and '),
   ].filter((p) => p !== '');
   const without = (filter.notKeywords ?? []).map(keywordWords).join(' or ');

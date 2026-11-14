@@ -9,6 +9,7 @@ import type { Effect, ModeChoice, SpellMode } from './types';
 import {
   type AstIssue,
   checkCondition,
+  checkCosts,
   checkEffect,
   declareTargets,
   isCount,
@@ -41,6 +42,8 @@ export function checkModes(
   out: AstIssue[],
   /** True for a triggered ability: with no mode chosen it is removed from the stack (CR 700.2b), which a choice of 0 modes would need (D-346). */
   triggered = false,
+  /** True for a spell: only its modes may have a cost listed before the effect (CR 700.2h, D-1270). */
+  spell = false,
 ): void {
   const list = modes ?? [];
   if (!Array.isArray(list) || list.length < 2) {
@@ -72,6 +75,37 @@ export function checkModes(
       seen.add(id);
     }
     checkEffect(mode.effect, `${p}.effect`, scopeOf(targets), out);
+    if (mode.cost !== undefined) checkModeCost(mode, choose, p, spell, out);
+  });
+}
+
+/** CR 700.2h (D-1270): a mode's cost is an additional cost to cast the spell: mana, no X, not with a repeatable choice, and only on a spell. */
+function checkModeCost(
+  mode: SpellMode,
+  choose: ModeChoice | undefined,
+  p: string,
+  spell: boolean,
+  out: AstIssue[],
+): void {
+  if (!spell) {
+    issue(out, `${p}.cost`, 'only a spell has modes with a cost (CR 700.2h)');
+    return;
+  }
+  if (choose?.repeatable === true) {
+    issue(out, `${p}.cost`, 'a mode with a cost cannot be chosen more than once in this engine');
+  }
+  const cost = mode.cost ?? [];
+  checkCosts(cost, `${p}.cost`, out);
+  if (!Array.isArray(cost) || cost.length === 0) {
+    issue(out, `${p}.cost`, 'a mode cost needs a cost to pay');
+    return;
+  }
+  cost.forEach((c, i) => {
+    if (c?.kind !== 'mana') {
+      issue(out, `${p}.cost[${i}]`, 'a mode cost may be mana only in this engine');
+    } else if (c.symbols?.includes('X')) {
+      issue(out, `${p}.cost[${i}]`, 'X in a mode cost is not supported');
+    }
   });
 }
 

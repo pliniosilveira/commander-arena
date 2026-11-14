@@ -509,6 +509,13 @@ export interface ObjectFilter {
    */
   readonly hostOfSource?: true;
   /**
+   * "Creatures you control each with power greater than its base power" (CR 208.4, 208.4b, D-1261): the object's power as it is now is more than its base power,
+   * the power layer 7b leaves (what a characteristic-defining ability or an effect that sets power gives it), before counters and "+N/+N" effects (layer 7c).
+   * An object with no power matches nothing. Read from the object as it is, or as it last was when it has left (CR 113.7a). Refused where `derive` matches filters
+   * (a static ability's subject, a count a static ability reads), as `powerLessThanSource` is.
+   */
+  readonly powerAboveBase?: true;
+  /**
    * "Of the chosen type" (D-100): the object has the creature type that the source of the ability or
    * static ability chose as it entered (`GameObject.chosen.creatureType`, CR 607.2d). Matches nothing
    * when the source has made no such choice. `validateCard` requires the card to ask for it with an
@@ -4744,6 +4751,13 @@ export interface ModeChoice {
 
 export interface SpellMode {
   readonly text: string;
+  /**
+   * "Cure — {0} — Target permanent gains hexproof and indestructible until end of turn." (CR 700.2h, 702.183a, D-1270): the mode has a cost listed before its effect, an
+   * additional cost paid as the spell is cast if the mode is chosen; with several such modes chosen, all their costs are paid (CR 700.2h). Added to the total cost of the spell
+   * (CR 601.2f) with the others. Mana only, no X, and only the modes of a spell (`validateCard`), never of a repeatable choice. A set of modes whose costs the caster could not pay
+   * is not offered.
+   */
+  readonly cost?: readonly Cost[];
   readonly targets?: readonly TargetSpec[];
   readonly effect: Effect;
 }

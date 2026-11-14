@@ -7,7 +7,12 @@
  * the sentence rules of a spell, in a context of its own; everything one mode needs is checked as it is
  * lowered, so a mode the engine cannot run refuses the whole text, with the feature it needs.
  */
-import type { Effect, ModeChoice, SpellMode } from '@commander-arena/engine';
+import {
+  type Effect,
+  isValidManaSymbol,
+  type ModeChoice,
+  type SpellMode,
+} from '@commander-arena/engine';
 import type { IrModes } from '../ir/types';
 import { lowerCondition } from './conditions';
 import { type FeatureRef, missingFeatures } from './features';
@@ -28,6 +33,9 @@ export interface LoweredModes {
 /** The ability-level feature a modal spell or ability needs, for the dimension test. */
 export const MODAL_NEEDS: readonly FeatureRef[] = ['ability:modal'];
 
+/** What a mode with a cost listed before its effect needs (D-1270): the engine's `SpellMode.cost`. */
+export const MODE_COST_NEEDS: readonly FeatureRef[] = ['ability:modeCost'];
+
 function refuse(modal: IrModes, needs: readonly FeatureRef[] = []): LowerFailure {
   return { ok: false, needs, at: modal.span, rule: modal.rule };
 }
@@ -42,7 +50,12 @@ function textOf(text: string, ctx: LowerContext): string {
  * knows (`selfGone`, `itIsSelf`, `thatPlayer`) is shared by every mode, while targets, the removed
  * objects and X are tracked per mode (the mode's own context), and X is reported in `usesX`.
  */
-export function lowerModes(modal: IrModes, ctx: LowerContext): LowerResult<LoweredModes> {
+export function lowerModes(
+  modal: IrModes,
+  ctx: LowerContext,
+  /** True for a spell: only its modes may have a cost listed before the effect (Tiered, D-1270, CR 700.2h). */
+  allowModeCosts = false,
+): LowerResult<LoweredModes> {
   const count = modal.modes.length;
   const { choose } = modal;
   if (count < MIN_MODES || count > MAX_MODES) return refuse(modal);
@@ -59,6 +72,16 @@ export function lowerModes(modal: IrModes, ctx: LowerContext): LowerResult<Lower
   if (choose.widenTo !== undefined && (widened <= max || widened > count)) return refuse(modal);
   const blocked = missingFeatures(MODAL_NEEDS);
   if (blocked.length > 0) return refuse(modal, blocked);
+  // Tiered (D-1270, CR 702.183a, 700.2h): the cost of each mode is an additional cost of the spell, mana only, one mode chosen (the engine's `SpellMode.cost`).
+  if (modal.costs !== undefined) {
+    if (!allowModeCosts || modal.costs.length !== count) return refuse(modal);
+    const unrunnable = missingFeatures(MODE_COST_NEEDS);
+    if (unrunnable.length > 0) return refuse(modal, unrunnable);
+    if (modal.costs.some((symbols) => symbols.some((s) => s === 'X' || !isValidManaSymbol(s)))) {
+      return refuse(modal);
+    }
+    if (choose.repeatable === true) return refuse(modal);
+  }
 
   let maxIf: ModeChoice['maxIf'];
   if (choose.widen !== undefined) {
@@ -85,8 +108,10 @@ export function lowerModes(modal: IrModes, ctx: LowerContext): LowerResult<Lower
     const effect: Effect =
       lowered.value.length === 1 ? only : { kind: 'sequence', effects: [...lowered.value] };
     usesX = usesX || mode.usesX;
+    const cost = modal.costs?.[i];
     modes.push({
       text: textOf(modal.texts[i] ?? '', ctx),
+      ...(cost === undefined ? {} : { cost: [{ kind: 'mana' as const, symbols: [...cost] }] }),
       ...(mode.targets.length > 0 ? { targets: [...mode.targets] } : {}),
       effect,
     });

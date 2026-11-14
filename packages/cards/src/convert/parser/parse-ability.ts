@@ -165,6 +165,15 @@ function best(failures: readonly ParseFailure[]): ParseFailure {
   return chosen;
 }
 
+/** "Cure — {0} — ": the name of a mode of a Tiered spell and its cost before the effect (D-1270, CR 702.183a, 700.2h); group 1 is the cost, in braces. */
+const MODE_COST_LEAD = /^\p{Lu}[\p{L}'’ -]* — ((?:\{[^{}]+\})+) — (?=\S)/u;
+
+/** The symbols of "{3}{W}" as written, without braces; the lowering checks that the engine runs each in a mode cost. */
+function modeCostSymbols(braced: string): readonly string[] | null {
+  const symbols = [...braced.matchAll(/\{([^{}]+)\}/gu)].map((m) => m[1] ?? '');
+  return symbols.length === 0 ? null : symbols;
+}
+
 /**
  * The modes of a modal text (stage P19, CR 700.2): the header ("Choose one —") is read by the `modal`
  * rules and each bullet as a spell of its own, sentence by sentence, with the spell sentence reading
@@ -191,8 +200,25 @@ function readModes(
   const seen = unique([...before, ...header.recognised]);
   const bodies: IrBody[] = [];
   const texts: string[] = [];
+  const costs: (readonly string[])[] = [];
   for (const mode of sk.modes) {
-    const sentences = splitSentences(sk.text, mode.start, mode.end);
+    // Tiered (D-1270, CR 702.183a, 700.2h): "Cure — {0} — Target permanent ...": the name and the cost of the mode come off the bullet, the cost is kept.
+    let from = mode.start;
+    if (header.value.costed === true) {
+      const lead = MODE_COST_LEAD.exec(sk.text.slice(mode.start, mode.end));
+      const symbols = lead === null ? null : modeCostSymbols(lead[1] ?? '');
+      if (lead === null || symbols === null) {
+        const failure = {
+          progress: mode.start,
+          closestRule: header.value.rule,
+          slot: 'modal' as const,
+        };
+        return { ok: false, failure: { ...failure, recognised: seen } };
+      }
+      costs.push(symbols);
+      from = mode.start + lead[0].length;
+    }
+    const sentences = splitSentences(sk.text, from, mode.end);
     const body = readSentences(sk.text, sentences, rules, seen, 'modal.choose', SPELL_SENTENCE);
     if (!body.ok) return body;
     seen.push(...body.recognised);
@@ -204,6 +230,7 @@ function readModes(
     choose: header.value.choose,
     modes: bodies,
     texts,
+    ...(header.value.costed === true ? { costs } : {}),
     span: { start: headerSpan.start, end: last.end },
     rule: header.value.rule,
   };

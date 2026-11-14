@@ -103,6 +103,7 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
         colors: c.colors,
         power: lki.power,
         toughness: lki.toughness,
+        basePower: lki.basePower ?? null,
         // Only a filter that names a keyword reads them.
         get keywords() {
           return keywordKindsOf(lki.abilities);
@@ -124,6 +125,7 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
     colors: d.colors,
     power: d.power,
     toughness: d.toughness,
+    basePower: d.basePower,
     get keywords() {
       return keywordKindsOf(d.abilities);
     },

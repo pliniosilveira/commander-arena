@@ -260,10 +260,50 @@ export const MODAL_CHOOSE_REPEATABLE = defineRule<IrModeHeader>({
   },
 });
 
+/**
+ * `modal.tiered`: "Tiered" (D-1270, CR 702.183a, 700.2h; the reminder text "(Choose one additional cost.)" is dropped before the rules read the line). One mode is chosen,
+ * and "as an additional cost to cast this spell, pay the cost associated with that mode": each bullet names its mode and its cost before the effect, "Cure — {0} — Target
+ * permanent gains hexproof and indestructible until end of turn." The modal reading takes the cost off the bullets (`IrModes.costs`).
+ */
+export const MODAL_TIERED = defineRule<IrModeHeader>({
+  id: 'modal.tiered',
+  family: 'modal',
+  leading: ['tiered'],
+  cites: [
+    'CR 702.183a (Tiered)',
+    'CR 700.2 (General)',
+    'CR 700.2h (General)',
+    'CR 601.2f (Casting Spells)',
+  ],
+  examples: ['Tiered', 'tiered'],
+  rejects: [
+    'Tiered {1}',
+    'Tiered —',
+    'Tiered (Choose one additional cost.)',
+    'Tiered, flying',
+    'Tiers',
+    'Choose one —',
+    'Tiered two',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/tiered$/i)(ctx, pos);
+    if (!r.ok) return r;
+    const header: IrModeHeader = {
+      kind: 'modeHeader',
+      choose: { min: 1, max: 1 },
+      costed: true,
+      span: { start: pos, end: r.pos },
+      rule: 'modal.tiered',
+    };
+    return { ok: true, value: header, pos: r.pos };
+  },
+});
+
 export const MODAL_RULES = [
   MODAL_CHOOSE,
   MODAL_CHOOSE_COMMANDER,
   MODAL_CHOOSE_WIDEN,
   MODAL_CHOOSE_NOT_REPEATED,
   MODAL_CHOOSE_REPEATABLE,
+  MODAL_TIERED,
 ];

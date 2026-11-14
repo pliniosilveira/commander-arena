@@ -9,7 +9,7 @@ import type { CardFace } from '../cards/definition';
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, getSeat, opponentsOf, printedCard, zoneList } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
-import { alternativeOf, flashbackCostOf } from './alt-costs';
+import { alternativeOf, flashbackCostOf, hasModeCosts } from './alt-costs';
 import { auraTargetSpec } from './attach';
 import {
   type CastAlternative,
@@ -545,21 +545,44 @@ export function canCast(
   if (!timing.allowed) return false;
   // CR 702.33g, 601.2c (D-181): a spell whose targets depend on the kicker can be cast either way; it is castable if one way has its targets and its cost.
   const kickedWays = hasKickedTargets(faceOf(state, spell)) ? [false, true] : [false];
+  const payments = modePayments(state, seat, spell);
   return kickedWays.some(
     (kicked) =>
       targetsPossible(state, seat, spell, alternative === 'overload', kicked, timing.onlyTargets) &&
-      canPayRequest(state, seat, spell, {
-        seat,
-        spell,
-        zone,
-        alternative,
-        kicked,
-        excluded: obj.id,
-        x: least,
-        // CR 702.120a (D-145): a modal spell with escalate needs at least the mana for the fewest modes it must choose.
-        modes: modalOfSpellText(faceOf(state, spell)?.spell)?.choose.min ?? 0,
-      }),
+      payments.some((modes) =>
+        canPayRequest(state, seat, spell, {
+          seat,
+          spell,
+          zone,
+          alternative,
+          kicked,
+          excluded: obj.id,
+          x: least,
+          // CR 702.120a (D-145): a modal spell with escalate needs at least the mana for the fewest modes it must choose; with modes that have a cost (D-1270) the set chosen.
+          ...modes,
+        }),
+      ),
   );
+}
+
+/**
+ * What a spell's modes add to its cost, for the check that it can be cast at all (CR 601.2f, 700.2h): one request for each way of choosing the modes. A spell that is not modal
+ * has none to add; one whose modes have no cost of their own needs the mana of the fewest modes it must choose (escalate, CR 702.120a, D-145); one with modes that cost something
+ * (Tiered, D-1270) can be cast if some legal choice of modes can be paid, whatever it costs.
+ */
+function modePayments(
+  state: GameState,
+  seat: SeatId,
+  spell: GameObject,
+): readonly { readonly modes: number; readonly modeSet?: readonly number[] }[] {
+  const face = faceOf(state, spell);
+  const modal = modalOfSpellText(face?.spell);
+  if (modal === null) return [{ modes: 0 }];
+  if (!hasModeCosts(face)) return [{ modes: modal.choose.min }];
+  return legalModeSets(state, modal, { controller: seat, source: spell.id }).map((set) => ({
+    modes: set.length,
+    modeSet: set,
+  }));
 }
 
 /**
@@ -610,21 +633,24 @@ export function canCastDuringResolution(
   if (castForbiddenByOpponentsPermanent(state, seat, spell)) return false; // CR 101.2 (D-179, D-282: a free cast has X 0, CR 107.3b)
   const kickedWays = hasKickedTargets(faceOf(state, spell)) ? [false, true] : [false];
   const from = obj.zone;
+  const payments = modePayments(state, seat, spell);
   return kickedWays.some(
     (kicked) =>
       targetsPossible(state, seat, spell, false, kicked) &&
-      canPayRequest(state, seat, spell, {
-        seat,
-        spell,
-        zone: from,
-        // D-350: a cast that pays the mana cost has no alternative cost.
-        alternative: alternative === 'normal' ? undefined : alternative,
-        kicked,
-        excluded: obj.id,
-        // CR 702.120a, 118.9 (D-145): a free cast still pays the escalate cost of the fewest modes it must choose.
-        modes: modalOfSpellText(faceOf(state, spell)?.spell)?.choose.min ?? 0,
-        ...(anyManaType ? { anyType: true as const } : {}),
-      }),
+      payments.some((modes) =>
+        canPayRequest(state, seat, spell, {
+          seat,
+          spell,
+          zone: from,
+          // D-350: a cast that pays the mana cost has no alternative cost.
+          alternative: alternative === 'normal' ? undefined : alternative,
+          kicked,
+          excluded: obj.id,
+          // CR 702.120a, 118.9 (D-145): a free cast still pays the escalate cost of the fewest modes it must choose, and the cost of the modes chosen (D-1270).
+          ...modes,
+          ...(anyManaType ? { anyType: true as const } : {}),
+        }),
+      ),
   );
 }
 

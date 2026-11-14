@@ -240,6 +240,7 @@ function recordLki(state: GameState, obj: GameObject): GameState {
     abilities: d.abilities,
     power: d.power,
     toughness: d.toughness,
+    basePower: d.basePower,
   };
   return { ...state, lki: { ...state.lki, [obj.id]: info } };
 }
