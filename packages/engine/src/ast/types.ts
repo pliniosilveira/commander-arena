@@ -451,7 +451,8 @@ export interface ObjectFilter {
   /**
    * Only permanents the selector's players control ("each creature that player controls", with the player a target, CR 109.4, D-179): as `owner`,
    * for the controller of a permanent instead of the owner of a card. Read where the filter is the `each` selector of an effect, which knows
-   * its targets; refused anywhere else by `validateCard`.
+   * its targets, and (Hylda group 3, D-1520: "for each tapped creature target opponent controls") in a `countOf` of an effect, where the player must be a `target`;
+   * refused anywhere else by `validateCard`.
    */
   readonly controlledBy?: PlayerSelector;
   readonly tapped?: boolean;

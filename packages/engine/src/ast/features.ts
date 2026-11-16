@@ -889,8 +889,6 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   amountKinds: [
     'number',
     'x',
-    // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
-    'enteredX',
     'powerOf',
     'manaValueOf',
     // D-151: "create a number of tapped Treasure tokens equal to the difference" (Discover).
@@ -937,6 +935,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsDrawnThisTurn',
     // D-491: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
     'sacrificedAsCost',
+    // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
+    'enteredX',
   ],
   // D-405: 'library' is "then shuffle and put that card on top".
   searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library'],
@@ -1140,7 +1140,7 @@ export const SELECTOR_KINDS = [
   'ownerRef',
   /**
    * "Each creature that player controls" (CR 109.4, D-179): the engine's `ObjectFilter.controlledBy`, a player the filter names by reference,
-   * run where an effect's `each` selector is read.
+   * run where an effect's `each` selector is read, and (Hylda group 3, D-1520) in a `countOf` of an effect whose player is a target.
    */
   'controllerRef',
   /** "That was put there from the battlefield this turn" (CR 700.4, D-179): the engine's `ObjectFilter.putFromBattlefieldThisTurn`. */
