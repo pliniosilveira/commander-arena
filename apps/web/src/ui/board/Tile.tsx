@@ -26,6 +26,8 @@ import {
   type CombatRole,
   cornerStat,
   counterChips,
+  frameColors,
+  frameImage,
   isCreatureView,
   isCrewedVehicle,
   PRINTED_TITLE,
@@ -104,11 +106,15 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
   const alternative = alternativeBadge(o);
   const chosen = chosenLabel(o);
   const rotatedMargin = o.tapped ? Math.max(0, (h - w) / 2) : 0;
+  const framed = !isFaceDownPermanent(o) && o.support !== 'unsupported';
   const style = {
     '--w': `${w}px`,
     '--h': `${h}px`,
     // The generic token frame (SPEC 6.2): a token has no card image, so its colours tint the frame.
     ...(o.isToken ? { '--token-tint': bandBackground(o.colors) } : {}),
+    // Issue 22: the border is the card's colours (a land's: its mana). Not for a face-down
+    // permanent, and not for an unsupported card, whose dashed red border says so.
+    ...(framed ? { '--frame': frameImage(frameColors(o)) } : {}),
     marginInline: `${rotatedMargin}px`,
   } as CSSProperties;
   const classes = [
@@ -128,6 +134,7 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
     o.isToken ? 'is-token' : '',
     count > 1 ? 'is-group' : '',
     h < 64 ? 'is-compact' : '',
+    framed ? 'has-frame' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -170,7 +177,10 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
     >
       {count > 1 && <span className="board-tile-stack" aria-hidden="true" />}
       <span className="board-tile-inner">
-        <span className="board-tile-band" style={{ background: bandBackground(o.colors) }} />
+        <span
+          className="board-tile-band"
+          style={{ background: bandBackground(framed ? frameColors(o) : o.colors) }}
+        />
         {isFaceDownPermanent(o) ? (
           // D-315: a face-down permanent is drawn with the picture of the Manifest token (the same for every card); the tile stays a plain card back without it.
           <FaceDownArt version="art_crop" className="board-tile-art" />

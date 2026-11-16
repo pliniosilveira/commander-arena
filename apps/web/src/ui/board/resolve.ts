@@ -241,6 +241,31 @@ export function bandBackground(colors: readonly Color[]): string {
   return `linear-gradient(90deg, ${BAND_VAR[a]} 50%, ${BAND_VAR[b]} 50%)`;
 }
 
+/**
+ * Issue 22: the colours a card is framed in. Its own colours; a land, which has none, takes the
+ * colours of the mana it could produce (`ObjectView.landMana`, colourless left out).
+ */
+export function frameColors(
+  o: Pick<ObjectView, 'colors' | 'types' | 'landMana'>,
+): readonly Color[] {
+  if (o.colors.length > 0 || !o.types.includes('land')) return o.colors;
+  return (o.landMana ?? []).filter((c): c is Color => c !== 'C');
+}
+
+/**
+ * The border of a frame as a CSS image (it is painted under a transparent border, so it must be
+ * an image even for one colour): one colour, two colours split on the diagonal, gold for more,
+ * grey for none.
+ */
+export function frameImage(colors: readonly Color[]): string {
+  const [a, b, ...rest] = colors;
+  const flat = (c: string) => `linear-gradient(${c}, ${c})`;
+  if (a === undefined) return flat('var(--card-colorless)');
+  if (b === undefined) return flat(BAND_VAR[a]);
+  if (rest.length > 0) return flat('var(--card-multi)');
+  return `linear-gradient(135deg, ${BAND_VAR[a]} 50%, ${BAND_VAR[b]} 50%)`;
+}
+
 export function isCreatureView(o: ObjectView): boolean {
   return o.types.includes('creature');
 }
