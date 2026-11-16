@@ -50,7 +50,9 @@ describe('Sleep and Tempest Caller: "all creatures target player controls" (D-15
   });
 
   test('the real line of Tempest Caller: an opponent only', () => {
-    expect(readAll('When ~ enters, tap all creatures target opponent controls.', 'creature').abilities).toEqual([
+    expect(
+      readAll('When ~ enters, tap all creatures target opponent controls.', 'creature').abilities,
+    ).toEqual([
       {
         kind: 'triggered',
         trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
@@ -61,7 +63,9 @@ describe('Sleep and Tempest Caller: "all creatures target player controls" (D-15
   });
 
   test('other kinds of permanent and an untap of them (SYNTHETIC)', () => {
-    expect(readAll('Tap all nonland permanents target player controls.', 'sorcery').spell).toMatchObject({
+    expect(
+      readAll('Tap all nonland permanents target player controls.', 'sorcery').spell,
+    ).toMatchObject({
       effect: { kind: 'tap', objects: { kind: 'each', filter: { notTypes: ['land'] } } },
     });
     expect(readAll('Untap all creatures target player controls.', 'instant').spell).toMatchObject({
@@ -170,7 +174,8 @@ describe('"Doesn\'t untap during its controller\'s next untap step" (D-1510, CR 
 
   test('a target on its own (the mode of Dreamshackle Geist), one or several creatures', () => {
     expect(
-      readAll("Target creature doesn't untap during its controller's next untap step.", 'sorcery').spell,
+      readAll("Target creature doesn't untap during its controller's next untap step.", 'sorcery')
+        .spell,
     ).toMatchObject({ targets: [{ id: 't1' }], effect: KEEP(T1) });
     expect(
       readAll(
@@ -179,7 +184,8 @@ describe('"Doesn\'t untap during its controller\'s next untap step" (D-1510, CR 
       ).spell,
     ).toMatchObject({ targets: [{ id: 't1', min: 0, max: 2 }], effect: KEEP(T1) });
     expect(
-      readAll("Target creature doesn't untap during that player's next untap step.", 'sorcery').spell,
+      readAll("Target creature doesn't untap during that player's next untap step.", 'sorcery')
+        .spell,
     ).toMatchObject({ effect: KEEP(T1) });
   });
 
@@ -233,14 +239,18 @@ describe('Narcolepsy: "if enchanted creature is untapped, tap it" (D-1513, CR 60
 
   test('tapped, and an Equipment (SYNTHETIC)', () => {
     expect(
-      readAll('At the beginning of your upkeep, if enchanted creature is tapped, you gain 1 life.', 'enchantment', [
-        'Aura',
-      ]).abilities,
+      readAll(
+        'At the beginning of your upkeep, if enchanted creature is tapped, you gain 1 life.',
+        'enchantment',
+        ['Aura'],
+      ).abilities,
     ).toMatchObject([{ interveningIf: { filter: { tapped: true } } }]);
     expect(
-      readAll('At the beginning of each upkeep, if equipped creature is untapped, tap it.', 'artifact', [
-        'Equipment',
-      ]).abilities,
+      readAll(
+        'At the beginning of each upkeep, if equipped creature is untapped, tap it.',
+        'artifact',
+        ['Equipment'],
+      ).abilities,
     ).toMatchObject([{ effect: { kind: 'tap', objects: { kind: 'attached' } } }]);
   });
 
@@ -256,8 +266,10 @@ describe('Narcolepsy: "if enchanted creature is untapped, tap it" (D-1513, CR 60
 
   test('on a permanent that is no Aura the condition is not lowered (the word says what the permanent is)', () => {
     expect(
-      readFace('At the beginning of each upkeep, if enchanted creature is untapped, tap it.', 'artifact')
-        .abilities,
+      readFace(
+        'At the beginning of each upkeep, if enchanted creature is untapped, tap it.',
+        'artifact',
+      ).abilities,
     ).toEqual([]);
   });
 });
@@ -316,7 +328,9 @@ describe('Cone of Cold: a d20 table (D-1518, CR 706.3a, 706.3b)', () => {
 
   test('a table of another die and other rows (SYNTHETIC): every result has one row', () => {
     const parsed = readAll(
-      ['Roll a d6.', '1 | You gain 1 life.', '2—5 | You gain 2 life.', '6 | You gain 3 life.'].join('\n'),
+      ['Roll a d6.', '1 | You gain 1 life.', '2—5 | You gain 2 life.', '6 | You gain 3 life.'].join(
+        '\n',
+      ),
       'sorcery',
     );
     expect(parsed.spell).toMatchObject({
@@ -350,12 +364,15 @@ describe('Cone of Cold: a d20 table (D-1518, CR 706.3a, 706.3b)', () => {
   });
 
   test('a table of an ability of a permanent is not read', () => {
-    expect(readFace(['Roll a d6.', '1—6 | You gain 1 life.'].join('\n'), 'creature').abilities).toEqual([]);
+    expect(
+      readFace(['Roll a d6.', '1—6 | You gain 1 life.'].join('\n'), 'creature').abilities,
+    ).toEqual([]);
   });
 
   test('"Until your next turn, creatures your opponents control enter tapped" alone (SYNTHETIC)', () => {
     expect(
-      readAll('Until your next turn, creatures your opponents control enter tapped.', 'sorcery').spell,
+      readAll('Until your next turn, creatures your opponents control enter tapped.', 'sorcery')
+        .spell,
     ).toEqual({
       effect: {
         kind: 'permanentsEnterTapped',
@@ -393,7 +410,9 @@ describe('Dreamshackle Geist: "choose up to one —" (D-1517, CR 700.2b)', () =>
   });
 
   test('only a triggered ability may choose no mode: a spell and an activated ability are not read', () => {
-    expect(readFace('Choose up to one —\n• Draw a card.\n• Gain 3 life.', 'sorcery').spell).toBeNull();
+    expect(
+      readFace('Choose up to one —\n• Draw a card.\n• Gain 3 life.', 'sorcery').spell,
+    ).toBeNull();
     expect(
       readFace('{T}: Choose up to one —\n• Draw a card.\n• You gain 3 life.', 'creature').abilities,
     ).toEqual([]);
@@ -420,7 +439,10 @@ describe('Citadel Siege: "at the beginning of combat on each opponent\'s turn" (
         'enchantment',
       ).abilities,
     ).toMatchObject([
-      { kind: 'replacement', replacement: { kind: 'asEntersChoose', options: ['Khans', 'Dragons'] } },
+      {
+        kind: 'replacement',
+        replacement: { kind: 'asEntersChoose', options: ['Khans', 'Dragons'] },
+      },
       { trigger: { kind: 'step', step: 'beginCombat', whose: 'you' } },
       {
         kind: 'triggered',
@@ -517,7 +539,7 @@ describe('Topplegeist: "four or more card types among cards in your graveyard" (
   });
 });
 
-describe("Hylda's Crown of Winter: \"This ability costs {1} less to activate during your turn.\" (D-1516, CR 601.2f)", () => {
+describe('Hylda\'s Crown of Winter: "This ability costs {1} less to activate during your turn." (D-1516, CR 601.2f)', () => {
   test('the real line: the generic reduction while it is your turn', () => {
     expect(
       readAll(
@@ -546,8 +568,10 @@ describe("Hylda's Crown of Winter: \"This ability costs {1} less to activate dur
 
   test('a mana ability has no cost reduction of this kind', () => {
     expect(
-      readFace('{T}: Add {G}. This ability costs {1} less to activate during your turn.', 'artifact')
-        .abilities,
+      readFace(
+        '{T}: Add {G}. This ability costs {1} less to activate during your turn.',
+        'artifact',
+      ).abilities,
     ).toEqual([]);
   });
 });

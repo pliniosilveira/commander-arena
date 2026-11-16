@@ -53,7 +53,11 @@ export const RESTRICTION_COST_REDUCTION_YOUR_TURN = defineRule<IrRestriction>({
     const restriction: IrRestriction = {
       kind: 'restriction',
       costReduction: {
-        amount: { kind: 'number', value: Number(digits[0]), span: { start, end: start + digits[0].length } },
+        amount: {
+          kind: 'number',
+          value: Number(digits[0]),
+          span: { start, end: start + digits[0].length },
+        },
         condition: {
           kind: 'condition',
           test: { kind: 'yourTurn' },

@@ -221,6 +221,11 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
         ? `the greatest ${stat} among ${things}`
         : `the total ${stat} of ${things}`;
     }
+    case 'cardTypesAmong': {
+      // D-1511 (CR 205.2a): "the number of card types among cards in your graveyard" (Delirium).
+      const cards = thingsPhrase(amount.filter, true);
+      return cards === null ? UNKNOWN_AMOUNT : `the number of card types among ${cards}`;
+    }
     case 'devotion':
       return `your devotion to ${colorList(amount.colors)}`;
     case 'commanderColors':

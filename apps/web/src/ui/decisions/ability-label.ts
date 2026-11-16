@@ -73,6 +73,12 @@ import {
 import { pluralSubtype, thingsPhrase } from '../../game/filter-text';
 import { delayedSacrificeText } from '../../game/gisa-g5-text';
 import { copiesOfTokensText } from '../../game/hashaton-g5-text';
+import {
+  entersTappedText,
+  groupOfTargetPlayerText,
+  isSeveral,
+  keepTappedText,
+} from '../../game/hylda-text';
 import { ENCORE_EFFECT_TEXT } from '../../game/keywords-text';
 import { controlDurationText, requireAttackText } from '../../game/korvold-text';
 import { playRuleWordings, staticWording } from '../../game/play-rule-text';
@@ -264,9 +270,19 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       return 'this spell';
     case 'target':
       return targetText(ability.targets?.find((t) => t.id === what.id));
-    case 'each':
+    case 'each': {
+      // D-1510: "all creatures target player controls", the group of a player chosen as a target.
+      const chosen = what.filter.controlledBy;
+      if (chosen?.kind === 'target' && what.except === undefined) {
+        const spec = ability.targets?.find((t) => t.id === chosen.id);
+        return (
+          groupOfTargetPlayerText(what.filter, targetText(spec).replace(/^target /u, 'target ')) ??
+          UNSAID
+        );
+      }
       // D-151: "each other creature", the one the effect names is left out.
       return eachText(what.except === undefined ? what.filter : { ...what.filter, other: true });
+    }
     case 'moved':
       return 'it';
     case 'triggerSubject':
@@ -1051,6 +1067,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // D-187: "up to that many target creatures gain double strike": several targets, the plural verb.
       return `${capital(object(effect.objects))} ${object(effect.objects).startsWith('up to ') ? 'gain' : 'gains'} ${grantedKeywordWords(effect.keyword)}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
     case 'restrict':
+      // D-1510 (CR 502.3, 611.2a): "Target creature doesn't untap during its controller's next untap step".
+      if (effect.duration === 'untilNextUntapStep') {
+        const who = object(effect.objects);
+        return keepTappedText(who, isSeveral(who));
+      }
       // "Target creature can't be blocked this turn" (CR 613.11).
       return `${capital(object(effect.objects))} ${RESTRICTION_EFFECT[effect.restriction]}${effect.duration === 'untilEndOfTurn' ? ' this turn' : effect.duration === 'forAsLongAsYouControlThis' ? ' for as long as you control this' : ''}`;
     case 'gainControl':
@@ -1059,6 +1080,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'requireAttack':
       // D-179 (CR 508.1d): "Until your next turn, creatures your opponents control attack each combat if able".
       return requireAttackText(effect) ?? UNSAID;
+    case 'permanentsEnterTapped':
+      // D-1512 (CR 614.1c, 614.12): "Until your next turn, creatures your opponents control enter tapped".
+      return entersTappedText(effect) ?? UNSAID;
     case 'addMana': {
       // "Add {C}" for a fixed amount (D-139: a triggered mana ability's "add an additional {C}"), else the gist.
       if (effect.mana.kind === 'fixed') {

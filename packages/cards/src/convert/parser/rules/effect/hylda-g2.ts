@@ -121,7 +121,12 @@ export const EFFECT_GROUP_ENTERS_TAPPED = defineRule<Clauses>({
       if (!subject.ok) return subject;
       const noun = subject.value;
       // A plural group with a controller of the words ("your opponents control"), and nothing else about it but its kind.
-      if (!noun.plural || noun.det !== 'each' || noun.other || noun.filter.controller === undefined) {
+      if (
+        !noun.plural ||
+        noun.det !== 'each' ||
+        noun.other ||
+        noun.filter.controller === undefined
+      ) {
         return fail(ctx, pos);
       }
       const words = spanned(literal(' enter tapped'))(ctx, subject.pos);
@@ -145,4 +150,3 @@ export const EFFECT_GROUP_ENTERS_TAPPED = defineRule<Clauses>({
 });
 
 export const HYLDA_G2_EFFECT_RULES = [EFFECT_DOESNT_UNTAP_NEXT, EFFECT_GROUP_ENTERS_TAPPED];
-

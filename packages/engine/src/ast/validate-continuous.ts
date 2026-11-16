@@ -289,7 +289,11 @@ export function checkContinuousEffect(
       if (e.restriction === 'doesntUntap') {
         // D-1510: only with the duration that ends at the next untap step.
         if (e.duration !== 'untilNextUntapStep') {
-          issue(out, `${path}.duration`, 'doesntUntap as an effect lasts until the next untap step');
+          issue(
+            out,
+            `${path}.duration`,
+            'doesntUntap as an effect lasts until the next untap step',
+          );
         }
       } else if (!isOneOf(e.restriction, RESTRICTABLE_BY_EFFECT)) {
         issue(

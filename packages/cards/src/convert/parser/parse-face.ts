@@ -72,7 +72,10 @@ export function parseFaceText(
 ): FaceParse {
   const face = spellRules.length > 0 ? 'spell' : 'permanent';
   const split = splitAbilities(normalizeOracleText(oracleText, options));
-  const lines = face === 'spell' ? joinDieTableLines(joinUntapLines(joinReferenceLines(joinInsteadLines(split)))) : split;
+  const lines =
+    face === 'spell'
+      ? joinDieTableLines(joinUntapLines(joinReferenceLines(joinInsteadLines(split))))
+      : split;
   const ruleSet = buildRuleSet(rules);
   const namedInQuotes = namesItselfInQuotes(oracleText, options);
   const selfName = tokenSelfName(oracleText, options);

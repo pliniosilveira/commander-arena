@@ -67,4 +67,3 @@ export const HYLDA_G2_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DOESNT_UNTAP_NEXT,
   GROUP_ENTERS_TAPPED,
 ];
-

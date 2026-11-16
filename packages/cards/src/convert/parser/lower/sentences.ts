@@ -1763,7 +1763,10 @@ function lowerDieTable(
     expected = range.to + 1;
     const row = lowerSentences(sentences.slice(i, end).map(withoutRow), ctx);
     if (!row.ok) return row;
-    const atLeast: Condition = { kind: 'dieResult', compare: { cmp: 'atLeast', value: range.from } };
+    const atLeast: Condition = {
+      kind: 'dieResult',
+      compare: { cmp: 'atLeast', value: range.from },
+    };
     const atMost: Condition = { kind: 'dieResult', compare: { cmp: 'atMost', value: range.to } };
     const condition: Condition =
       range.from === range.to

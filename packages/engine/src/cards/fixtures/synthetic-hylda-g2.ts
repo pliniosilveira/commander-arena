@@ -92,7 +92,10 @@ export const SYNTHETIC_HYLDA_G2_LIST: readonly CardDefinition[] = [
       "Tap all creatures target player controls. Those creatures don't untap during that player's next untap step.",
     spell: {
       targets: [{ id: 't1', what: { kind: 'player', filter: 'any' } }],
-      effect: { kind: 'sequence', effects: [{ kind: 'tap', objects: THEIR_CREATURES }, KEEP_TAPPED(THEIR_CREATURES)] },
+      effect: {
+        kind: 'sequence',
+        effects: [{ kind: 'tap', objects: THEIR_CREATURES }, KEEP_TAPPED(THEIR_CREATURES)],
+      },
     },
   }),
   // "When this creature enters, tap all creatures target opponent controls."
@@ -204,7 +207,8 @@ export const SYNTHETIC_HYLDA_G2_LIST: readonly CardDefinition[] = [
     subtypes: ['Aura'],
     colors: ['U'],
     colorIdentity: ['U'],
-    oracleText: 'Enchant creature. At the beginning of each upkeep, if enchanted creature is untapped, tap it.',
+    oracleText:
+      'Enchant creature. At the beginning of each upkeep, if enchanted creature is untapped, tap it.',
     abilities: [
       { kind: 'keyword', keyword: { kind: 'enchant', filter: { types: ['creature'] } } },
       {
@@ -382,7 +386,8 @@ export const SYNTHETIC_HYLDA_G2_LIST: readonly CardDefinition[] = [
     types: ['artifact'],
     colors: [],
     colorIdentity: [],
-    oracleText: '{1}, {T}: Tap target creature. This ability costs {1} less to activate during your turn.',
+    oracleText:
+      '{1}, {T}: Tap target creature. This ability costs {1} less to activate during your turn.',
     abilities: [
       {
         kind: 'activated',

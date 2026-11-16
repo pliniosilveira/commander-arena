@@ -162,7 +162,8 @@ function checkRules(t: Tally, step: StepInfo): void {
       if (name === SENTINEL && obj.controller !== active) {
         const delirium = graveyardTypes(after, obj.controller).size >= 4;
         const targets = after.battlefield.some(
-          (other) => other !== id && after.objects[other]?.controller === active && isCreature(after, other),
+          (other) =>
+            other !== id && after.objects[other]?.controller === active && isCreature(after, other),
         );
         const triggered = events.some(
           (e) => e.kind === 'abilityTriggered' && e.source === id && e.abilityIndex === 2,
@@ -212,7 +213,10 @@ test(
   async () => {
     const total = newTally();
     for (let g = 1; g <= GAMES; g += 1) {
-      const styles = HYLDA_G2_STYLE_PAIRS[g % HYLDA_G2_STYLE_PAIRS.length] ?? ['hyldaG2', 'hyldaG2'];
+      const styles = HYLDA_G2_STYLE_PAIRS[g % HYLDA_G2_STYLE_PAIRS.length] ?? [
+        'hyldaG2',
+        'hyldaG2',
+      ];
       const config = smallGameConfig(g, styles);
       const casual = new Set<number>([[0], [1], [0, 1], []][g % 4] ?? []);
       const make = (seat: number): Agent & { fallbacks: readonly unknown[] } =>

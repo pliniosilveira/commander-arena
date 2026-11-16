@@ -27,12 +27,7 @@ import { changeTargetInstructions } from './change-source';
 import { runChooseOne } from './choose-one';
 import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
-import {
-  runBecomeCopy,
-  runContinuous,
-  runEntersTappedGroup,
-  runRequireAttack,
-} from './continuous';
+import { runBecomeCopy, runContinuous, runEntersTappedGroup, runRequireAttack } from './continuous';
 import { controllerOf } from './control';
 import { runGainControl } from './control-effects';
 import { copiableValues } from './copiable';

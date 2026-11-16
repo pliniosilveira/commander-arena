@@ -61,7 +61,8 @@ describe('every card is valid and has the AST of its SYNTHETIC sibling', () => {
     const twin = syntheticCard(sibling).faces[0];
     expect(face?.spell).toEqual(twin?.spell);
     // The second ability of the Crown (sacrifice, draw for each tapped creature) is another group's.
-    const own = card.name === "Hylda's Crown of Winter" ? face?.abilities.slice(0, 1) : face?.abilities;
+    const own =
+      card.name === "Hylda's Crown of Winter" ? face?.abilities.slice(0, 1) : face?.abilities;
     expect(own).toEqual(twin?.abilities);
   });
 });
@@ -227,7 +228,13 @@ describe('Cone of Cold', () => {
     [15, 1, false],
     [20, 1, true],
   ] as const)('a roll of %i: %i kept tapped, enters tapped %s', (wanted, kept, enters) => {
-    const seed = SEEDS.find((s) => (wanted === 5 ? result(s) <= 9 : wanted === 15 ? result(s) >= 10 && result(s) <= 19 : result(s) === 20));
+    const seed = SEEDS.find((s) =>
+      wanted === 5
+        ? result(s) <= 9
+        : wanted === 15
+          ? result(s) >= 10 && result(s) <= 19
+          : result(s) === 20,
+    );
     if (seed === undefined) throw new Error('no seed');
     const g = game(seed);
     g.act(0).cast(cone.name, { pay: true });

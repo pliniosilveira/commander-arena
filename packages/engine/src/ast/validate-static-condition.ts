@@ -234,7 +234,7 @@ function checkStaticTerm(c: Condition, path: string, out: AstIssue[]): void {
 export function checkAttachedIf(c: Condition, path: string, out: AstIssue[]): void {
   if (c?.kind !== 'objectMatches') return;
   if (c.inZone !== undefined) {
-    issue(out, `${path}.inZone`, "an intervening if does not read inZone (D-412)");
+    issue(out, `${path}.inZone`, 'an intervening if does not read inZone (D-412)');
   }
   checkStaticTerm(c, path, out);
 }

@@ -1326,15 +1326,29 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.filter`, 'cardTypesAmong needs a filter');
       } else {
         checkFilter(a.filter, `${path}.filter`, out);
-        if (filterSome(a.filter, (f) => f.zone === undefined || f.zone === 'battlefield' || f.zone === 'stack')) {
+        if (
+          filterSome(
+            a.filter,
+            (f) => f.zone === undefined || f.zone === 'battlefield' || f.zone === 'stack',
+          )
+        ) {
           issue(
             out,
             `${path}.filter.zone`,
             'cardTypesAmong counts the card types of cards in a zone (a graveyard, exile, the hand or the library)',
           );
         }
-        if (filterSome(a.filter, (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined)) {
-          issue(out, `${path}.filter`, 'cardTypesAmong cannot read the combat, the source power, power or toughness');
+        if (
+          filterSome(
+            a.filter,
+            (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'cardTypesAmong cannot read the combat, the source power, power or toughness',
+          );
         }
       }
       break;

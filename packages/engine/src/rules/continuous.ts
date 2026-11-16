@@ -24,8 +24,8 @@ import type {
   GameObject,
   GameState,
 } from '../state/types';
-import { dropEffects, endOf } from './control-effects';
 import { controllerOf } from './control';
+import { dropEffects, endOf } from './control-effects';
 import { copiableValues } from './copiable';
 import { derive } from './derive';
 import { ptAmountOf } from './effect-support';
