@@ -598,6 +598,7 @@ export function lowerDefinedPt(
 export const AMOUNT_NEEDS = [
   'amount:x',
   'amount:enteredX',
+  'amount:dieResult',
   'amount:powerOf',
   'amount:manaValueOf',
   'amount:countOf',
