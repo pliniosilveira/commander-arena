@@ -441,7 +441,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 ## The Hylda deck, group 1 (issue 42, D-1500 to D-1506)
 
 - `becomesTapped` with `by` reads the player who taps: a tap by an effect, an ability cost, a mana ability, a crew or other tap cost, a convoke-style cost, an attack declaration and a regeneration. A permanent tapped by no player (none exists today) would have no `by`. "An opponent taps" is built (SYNTHETIC) but no real card is read for it.
-- "Whenever you tap one or more untapped creatures ..." is one occurrence for the events of one engine step (one resolution, one declaration); two taps by two separate effects are two occurrences, as CR 603.2c has it. Two effects that resolve in the same step cannot happen.
+- "Whenever you tap one or more untapped creatures ..." is one occurrence for the events of one engine step (one resolution, one declaration); two taps by two separate effects are two occurrences, as CR 603.2c has it.
 - A trigger whose number is 0 (`scries` of an empty library with "up to X targets") is not put on the stack: it would do nothing either way.
 - "Whenever you scry" reads the cards the library held up to the number scried; the Scryfall rulings of Elvish Mariner, Hylda, Sharae, Verity Circle, Icewrought Sentry, Hammers of Moradin and Pippin were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
 - "You may pay {1}. When you do, ..." is read for a triggered ability with one offer sentence and a reflexive sentence or modal text; a payment of life or another cost beyond the costs `mayPay` has, a reflexive ability with an "or" of costs and a reflexive ability followed by other sentences are not read.
