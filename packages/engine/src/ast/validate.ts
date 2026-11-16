@@ -909,10 +909,15 @@ function checkBecomesTapped(
     issue(out, `${path}.by`, `unknown player ${String(t.by)}: you or opponent`);
   }
   for (const key of ['notAsAttacker', 'batch'] as const) {
-    if (t[key] !== undefined && t[key] !== true) issue(out, `${path}.${key}`, `${key} must be true when present`);
+    if (t[key] !== undefined && t[key] !== true)
+      issue(out, `${path}.${key}`, `${key} must be true when present`);
   }
   if (t.batch === true && 'kind' in (t.what ?? {})) {
-    issue(out, `${path}.batch`, 'a batch of tapped permanents needs a filter for them, not this or attached');
+    issue(
+      out,
+      `${path}.batch`,
+      'a batch of tapped permanents needs a filter for them, not this or attached',
+    );
   }
 }
 

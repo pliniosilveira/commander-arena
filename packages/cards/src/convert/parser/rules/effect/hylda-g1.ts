@@ -46,7 +46,11 @@ export const EFFECT_TAP_PER_OPPONENT = defineRule<Clauses>({
     const noun = perOpponentNoun(ctx, pos, 'tap', head.pos, id);
     if (!noun.ok) return noun;
     const span = { start: pos, end: noun.pos };
-    return { ok: true, value: [makeClause(id, 'tap', { objects: noun.value }, span)], pos: noun.pos };
+    return {
+      ok: true,
+      value: [makeClause(id, 'tap', { objects: noun.value }, span)],
+      pos: noun.pos,
+    };
   },
 });
 

@@ -4417,7 +4417,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // resolution that created it chose or moved (the source is the same, "it" the card the source became).
       if (e.afterPayment !== undefined) {
         // D-1501 (CR 603.12): "you may pay {1}. When you do, ...": the payment of the `mayPay` this is the effect of.
-        if (e.afterPayment !== true) issue(out, `${path}.afterPayment`, 'afterPayment must be true when present');
+        if (e.afterPayment !== true)
+          issue(out, `${path}.afterPayment`, 'afterPayment must be true when present');
         if (scope.paidAvailable !== true) {
           issue(
             out,
@@ -4469,7 +4470,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.modes !== undefined || e.chooseModes !== undefined) {
         // D-1501 (CR 603.12, 700.2b): "When you do, choose one —": a modal reflexive ability keeps its effects in the modes.
         if (e.effect?.kind !== 'sequence' || e.effect.effects.length !== 0) {
-          issue(out, `${path}.effect`, 'a modal reflexive ability puts its effects in the modes: effect is the empty sequence');
+          issue(
+            out,
+            `${path}.effect`,
+            'a modal reflexive ability puts its effects in the modes: effect is the empty sequence',
+          );
         }
         if (e.targets !== undefined && e.targets.length > 0) {
           issue(out, `${path}.targets`, 'a modal reflexive ability declares targets on each mode');

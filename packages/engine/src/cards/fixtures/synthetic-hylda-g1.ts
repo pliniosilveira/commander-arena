@@ -38,7 +38,10 @@ const OPPONENT_CREATURE: ObjectFilter = { types: ['creature'], controller: 'oppo
 
 const TAP_TARGET_OPPONENT_CREATURE = {
   id: 't1',
-  what: { kind: 'object', filter: { zone: 'battlefield', types: ['creature'], controller: 'opponent' } },
+  what: {
+    kind: 'object',
+    filter: { zone: 'battlefield', types: ['creature'], controller: 'opponent' },
+  },
 } as const;
 
 /** "You may pay {1}. When you do, choose one — ..." (the three modes of the real card). */
@@ -51,7 +54,10 @@ const HYLDA_MODES: readonly SpellMode[] = [
     text: 'Put a +1/+1 counter on each creature you control.',
     effect: {
       kind: 'addCounters',
-      objects: { kind: 'each', filter: { zone: 'battlefield', types: ['creature'], controller: 'you' } },
+      objects: {
+        kind: 'each',
+        filter: { zone: 'battlefield', types: ['creature'], controller: 'you' },
+      },
       counter: '+1/+1',
       count: 1,
     },
@@ -161,7 +167,12 @@ export const SYNTHETIC_HYLDA_G1_LIST: readonly CardDefinition[] = [
           kind: 'sequence',
           effects: [
             { kind: 'tap', objects: { kind: 'target', id: 't1' } },
-            { kind: 'addCounters', objects: { kind: 'target', id: 't1' }, counter: 'stun', count: 1 },
+            {
+              kind: 'addCounters',
+              objects: { kind: 'target', id: 't1' },
+              counter: 'stun',
+              count: 1,
+            },
           ],
         },
       },
@@ -317,7 +328,10 @@ export const SYNTHETIC_HYLDA_G1_LIST: readonly CardDefinition[] = [
     oracleText: 'Tap target creature.',
     spell: {
       targets: [
-        { id: 't1', what: { kind: 'object', filter: { zone: 'battlefield', types: ['creature'] } } },
+        {
+          id: 't1',
+          what: { kind: 'object', filter: { zone: 'battlefield', types: ['creature'] } },
+        },
       ],
       effect: { kind: 'tap', objects: { kind: 'target', id: 't1' } },
     },

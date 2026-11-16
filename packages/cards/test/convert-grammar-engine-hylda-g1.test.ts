@@ -43,10 +43,7 @@ const pippin = real('Pippin, Guard of the Citadel');
 
 /** Every helper spell and creature the scenarios use. */
 const helpers = () =>
-  scenario()
-    .define(syntheticCard(TOUCH))
-    .define(syntheticCard(HUSH))
-    .define(syntheticCard(SIGHT));
+  scenario().define(syntheticCard(TOUCH)).define(syntheticCard(HUSH)).define(syntheticCard(SIGHT));
 
 describe('every card is valid and has the abilities of its SYNTHETIC sibling', () => {
   test.each([

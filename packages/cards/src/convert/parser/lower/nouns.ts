@@ -597,13 +597,13 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
             : noun.upToTriggerAmount === true
               ? { id, what: { kind: 'object', filter: filter.value }, upToTriggerAmount: true }
               : noun.upToThatMany === true
-              ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }
-              : {
-                  id,
-                  what: { kind: 'object', filter: filter.value },
-                  ...boundsOf(noun),
-                  ...(apart === undefined ? {} : { differentFrom: apart }),
-                };
+                ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }
+                : {
+                    id,
+                    what: { kind: 'object', filter: filter.value },
+                    ...boundsOf(noun),
+                    ...(apart === undefined ? {} : { differentFrom: apart }),
+                  };
     }
     ctx.targets.push(spec);
   }

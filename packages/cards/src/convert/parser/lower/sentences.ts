@@ -445,7 +445,10 @@ function lowerMayPay(
     return refuse(sentence);
   }
   if (next === undefined || next.clauses.some((c) => c.optional)) return refuse(sentence);
-  if (paidReflexive && (next.instead === true || next.where !== undefined || next.condition !== undefined)) {
+  if (
+    paidReflexive &&
+    (next.instead === true || next.where !== undefined || next.condition !== undefined)
+  ) {
     return refuse(next);
   }
   const cost: Cost[] = [];
