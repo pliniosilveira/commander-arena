@@ -588,6 +588,18 @@
   transform: rotate(90deg);
 }
 
+/* Issue 22: a card is framed in its colours (a land in the colours of its mana). The colours are an
+   image under a transparent border, so two colours can split it; the states further down (clickable,
+   selected, attacking) set a border colour of their own and win. */
+.board-tile.has-frame .board-tile-inner,
+.board-card.has-frame {
+  border-width: 2px;
+  border-color: transparent;
+  background:
+    linear-gradient(var(--bg-raised), var(--bg-raised)) padding-box,
+    var(--frame) border-box;
+}
+
 /* The generic token frame (SPEC 6.2): no card image exists for a token, so the frame is tinted by
    the token's colours, double-bordered, and its second line says it is a token. */
 .board-tile.is-token .board-tile-inner {

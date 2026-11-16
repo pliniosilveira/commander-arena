@@ -13,7 +13,7 @@ import type {
 import type { CardLayout } from './cards/definition';
 import type { CardType, Characteristics, Color, Subtype, Supertype } from './characteristics';
 import type { ObjectId, SeatId } from './ids';
-import type { ManaObject } from './mana/types';
+import type { ManaColor, ManaObject } from './mana/types';
 import { activatedAbilitiesOf } from './rules/activate-legality';
 import { alternativeCostsOf, castCostOf } from './rules/cast-cost';
 import { type ControlEnd, controlEndOf, controllerOf } from './rules/control';
@@ -25,6 +25,7 @@ import { INHERENT_TEXT, inherentName } from './rules/inherent';
 import { keywordsOf } from './rules/keywords';
 import { loyaltyActivatedThisTurn } from './rules/loyalty';
 import { isSummoningSick, wouldBeSummoningSick } from './rules/mana-engine';
+import { landManaTypes } from './rules/mana-outcomes';
 import { manaValueOfCost } from './rules/mana-value';
 import { cardsOf, commanderCardOf } from './rules/melded';
 import { modalOfObject } from './rules/modes';
@@ -169,6 +170,11 @@ export interface ObjectView {
    * for every other object.
    */
   readonly abilitySource?: ObjectId;
+  /**
+   * For a land the viewer can see (issue 22): the types of mana it could produce (CR 106.7), in the order W, U, B, R, G, C, so the board can frame it in the
+   * colours of its mana (a land is colourless itself). Absent for anything that is not a land and for a land that makes no mana.
+   */
+  readonly landMana?: readonly ManaColor[];
   /**
    * For a triggered ability on the stack that reads the object whose event caused it ("that card":
    * `triggerSubject`, #44): that object, so a question about the ability can say which card it is
@@ -658,6 +664,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
   // CR 708.2, 708.5 (D-312): a face-down permanent is shown to every viewer as what it is face down; only the player who controls it (also while it is phased out) sees the
   // card behind it. Everything that comes from the card instead of the characteristics (the commander status, the support badge, the faces) is left out for the others.
   const down = faceDownBy(obj);
+  const landMana = d.types.includes('land') ? landManaTypes(state, obj) : [];
   const tokenSource = abilitySource === null ? obj : objectOrLki(state, abilitySource);
   const token =
     down === null &&
@@ -754,6 +761,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
         }),
     targets: obj.stack?.chosenTargets ?? [],
     ...(abilitySource === null ? {} : { abilitySource }),
+    ...(landMana.length === 0 ? {} : { landMana }),
     ...(obj.stack?.kind === 'ability' && obj.stack.triggerSubject !== undefined
       ? { triggerSubject: obj.stack.triggerSubject }
       : {}),

@@ -338,3 +338,21 @@ export function productionOutcomes(
   if (p.kind === 'couldProduce') return couldProduceOutcomes(state, obj, p);
   return plainOutcomes(state, obj, p);
 }
+
+/**
+ * The types of mana a land could produce (CR 106.7), in the order W, U, B, R, G, C, for its view (issue 22: the board frames a land in the colours of its mana,
+ * as a land is colourless itself). On the battlefield it is what `couldProduceTypes` says, "could produce" abilities included; anywhere else it is what the
+ * card's own mana abilities make, read for its owner, and an ability that looks at other permanents ("any type that a land you control could produce") adds
+ * nothing, since the card is not there to look.
+ */
+export function landManaTypes(state: GameState, obj: GameObject): ManaColor[] {
+  if (obj.zone === 'battlefield') return inTypeOrder(couldProduceTypes(state).get(obj.id) ?? []);
+  const found = new Set<ManaColor>();
+  for (const a of manaAbilities(state, obj)) {
+    if (a.production.kind === 'couldProduce') continue;
+    for (const outcome of plainOutcomes(state, obj, a.production)) {
+      for (const m of outcome) found.add(m);
+    }
+  }
+  return inTypeOrder(found);
+}
