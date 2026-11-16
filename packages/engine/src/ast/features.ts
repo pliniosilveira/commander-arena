@@ -1140,7 +1140,7 @@ export const SELECTOR_KINDS = [
   'ownerRef',
   /**
    * "Each creature that player controls" (CR 109.4, D-179): the engine's `ObjectFilter.controlledBy`, a player the filter names by reference,
-   * run where an effect's `each` selector is read, and (Hylda group 3, D-1520) in a `countOf` of an effect whose player is a target.
+   * run where an effect's `each` selector is read, and (Hylda group 3, D-499) in a `countOf` of an effect whose player is a target.
    */
   'controllerRef',
   /** "That was put there from the battlefield this turn" (CR 700.4, D-179): the engine's `ObjectFilter.putFromBattlefieldThisTurn`. */

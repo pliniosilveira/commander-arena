@@ -103,7 +103,7 @@ const REPLAY: readonly Line[] = [
     expect: no('~ attacks, each creature gets -X/-X until end of turn.', 'ability.triggered', {
       reason: 'notRunnable',
     }),
-    note: 'SYNTHETIC variant of a replay line (the real "When ~ enters" reads since Hylda group 3, D-1521: the X of the spell, CR 107.3m); X in another triggered ability is 0 (CR 107.3j), so it is not read',
+    note: 'SYNTHETIC variant of a replay line (the real "When ~ enters" reads since Hylda group 3, D-500: the X of the spell, CR 107.3m); X in another triggered ability is 0 (CR 107.3j), so it is not read',
   },
   {
     kind: 'enchantment',

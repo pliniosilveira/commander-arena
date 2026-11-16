@@ -438,7 +438,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - "Partner with" reveals the card, as CR 702.124j says; today's reminder text says "put into their hand from their library" without a reveal. The search is offered even when the library holds no such card (a player may search for a card that is not there).
 - "You add {B}{B}" is read only with fixed symbols and only where it does not make a mana ability.
 
-## The Hylda deck, group 3 (issue 42, D-1520 to D-1530, provisional)
+## The Hylda deck, group 3 (issue 42, D-499 to D-509)
 
 - `countOf` names the player whose objects it counts only by a target of the ability or spell ("for each tapped creature target opponent controls"); "that player controls" (a trigger's player), "each opponent controls" and a count in a static ability or a condition are not read.
 - `enteredX` is read by the enters trigger of the permanent itself on a card with an {X} in its mana cost. Another ability that reads an X ("Whenever you cast a spell, draw X cards"), a modal enters trigger and a delayed trigger created by a spell with X (CR 107.3n) are not read. A copy of a permanent spell (CR 707.10) is not tested for `castX`.
