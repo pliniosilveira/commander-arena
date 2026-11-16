@@ -318,6 +318,18 @@ function occurrences(
             },
           ]
         : [];
+    case 'surveils':
+      // CR 701.25 (Galadriel group 1): the player who surveilled, as for a scry; the cards looked at are those put into the graveyard and those put back on top.
+      return event.kind === 'surveiled'
+        ? [
+            {
+              subject: null,
+              seat: event.seat,
+              player: event.seat,
+              damage: event.top + event.toGraveyard,
+            },
+          ]
+        : [];
     case 'becomesUntapped':
       // CR 603.2e (D-206): a permanent that untaps (the untap step or an effect); a stun counter that stops it (CR 122.1d) makes no `untapped` event.
       return event.kind === 'untapped' ? [{ subject: event.object, seat: null }] : [];
@@ -417,8 +429,15 @@ function occurrences(
         : [];
     case 'ringTempted':
       // CR 701.54d (D-196): each time the Ring tempts a player, whatever they could choose.
+      // Galadriel group 1: the creature chosen is the subject, for "if you chose a creature other than ~ as your Ring-bearer" (`ringBearerChosen`); no other ability reads it.
       return event.kind === 'ringTempted'
-        ? [{ subject: null, seat: event.seat, player: event.seat }]
+        ? [
+            {
+              subject: event.bearer,
+              seat: event.seat,
+              player: event.seat,
+            },
+          ]
         : [];
     case 'chapter':
       // CR 714.2b, 714.2c: once for each chapter number the lore counters newly reached.
@@ -594,7 +613,8 @@ function matches(
       if (trigger.notAsAttacker === true && occ.attacker === true) return false;
       return matchesWhat(state, trigger.what, subject, candidate);
     case 'scries':
-      // CR 701.22 (D-513): the player who scried, relative to the controller of this ability.
+    case 'surveils':
+      // CR 701.22, 701.25 (D-513): the player who scried or surveilled, relative to the controller of this ability.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
       return true;
@@ -755,6 +775,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'damageDealt':
       return true; // CR 510.2 (combat damage), 120.3 (D-133: "is dealt damage" reads any damage)
     case 'scried':
+    case 'surveiled':
     case 'tokenCreated':
     case 'died':
     case 'sacrificed':

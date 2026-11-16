@@ -1712,13 +1712,18 @@ export type Effect =
    * the battlefield" (CR 701.20 Reveal, D-151): each player `player` names reveals the top card of their own library (nothing for an empty library, and no
    * card is revealed for a player who has none), and when `ifMatches` describes it (`filter` for cards in a library: no zone, controller or owner, nothing
    * read from the game) puts it onto the battlefield under their control, `tapped` or not, or into their hand (`to`); otherwise it stays on top.
+   * Galadriel group 1 (Track Down: "Scry 3, then reveal the top card of your library. If it's a creature or land card, draw a card."; Galadriel of Lothlorien:
+   * "you may reveal the top card of your library. If a land card is revealed this way, put it onto the battlefield tapped"): instead of `to`, `then` is what
+   * is done when the filter matches the card revealed: the effect runs once for each player who revealed a matching card, as that player ("you" is the player who revealed),
+   * and the card stays on top. Exactly one of `to` and `then` is written. "You may reveal" is a `may` effect around it (the choice is made before anything is shown).
    */
   | {
       readonly kind: 'revealTop';
       readonly player: PlayerSelector;
       readonly ifMatches: ObjectFilter;
-      readonly to: 'battlefield' | 'hand';
+      readonly to?: 'battlefield' | 'hand';
       readonly tapped?: true;
+      readonly then?: Effect;
     }
   /**
    * "Put a Dragon creature card from your hand onto the battlefield tapped and attacking" (CR 508.4, 506.3, D-151): the second half, after an
@@ -3044,6 +3049,11 @@ export type Trigger =
    */
   | { readonly kind: 'scries'; readonly who: 'you' | 'opponent' | 'any' }
   /**
+   * "Whenever you surveil" (CR 701.25, 603.2; Galadriel group 1): once each time the player `who` names (relative to the controller of this ability) surveils (the event `surveiled`:
+   * also a surveil of a library with no card, CR 701.25d; never "surveil 0", CR 701.25c). "Whenever you scry or surveil" is two abilities with one body, as every "or" of events is.
+   */
+  | { readonly kind: 'surveils'; readonly who: 'you' | 'opponent' | 'any' }
+  /**
    * "Whenever this artifact becomes untapped" (CR 701.26a, 603.2e, D-206): a permanent that untaps, in the untap step or by an effect. A permanent that a
    * stun counter keeps tapped (CR 122.1d) does not untap, so it triggers nothing; a permanent that enters untapped does not "become" untapped.
    */
@@ -3858,6 +3868,21 @@ export type Condition =
    * `not` of this. Valid only in the effect of an `attackBatch` trigger (`validateCard`).
    */
   | { readonly kind: 'attackersAttackedYou' }
+  /**
+   * "If this is the second time this ability has resolved this turn" (Galadriel group 1, Elrond, Lord of Rivendell; CR 608.2c, 603.4): the triggered ability this
+   * effect belongs to, counted with every other time it has begun to resolve this turn for the same permanent (a resolution is counted as it begins, so this one is
+   * included: the second resolution reads 2; a countered ability never resolves and is not counted), has resolved exactly `times` times. Two abilities of one
+   * permanent that have the same effect count together (the engine writes "~ or another creature enters" as one ability for each of its two events, and they are one
+   * printed ability). Only in a `conditional` effect of a triggered ability (`validateCard`); the engine keeps the count (`TurnLog.resolved`) only for an ability that reads it.
+   */
+  | { readonly kind: 'abilityResolvedTimes'; readonly times: number }
+  /**
+   * "If you chose a creature other than ~ as your Ring-bearer" (Galadriel group 1, Galadriel of Lothlorien; CR 701.54a, 701.54d): the creature the Ring tempted its
+   * controller to choose, the event of this `ringTempted` trigger, is a creature (the player chose one: with no creature to choose nothing was chosen) and, with `other`,
+   * is not the permanent with this ability. Read as the ability triggers and again as it resolves (CR 603.4), from the choice of that tempting. Only the intervening "if"
+   * of a `ringTempted` trigger (`validateCard`).
+   */
+  | { readonly kind: 'ringBearerChosen'; readonly other?: true }
   /**
    * "If you do" (CR 603.12, 608.2c, D-135, as Learn reads in CR 701.48a): the player did what the nearest `may` effect before it in the same sequence
    * offered (it was accepted and the doing happened). False when it was declined or could not be done. Only in a

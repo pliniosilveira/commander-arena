@@ -611,6 +611,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'crimeCommitted':
     case 'tokenCreated':
     case 'scries':
+    case 'surveils':
       // D-464, D-465, D-513: the player who commits the crime, creates the token or scries, relative to the controller of this ability.
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -892,7 +893,8 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'noncombatDamageDealt' ||
     t?.kind === 'lifeGained' ||
     // D-513: the cards looked at while scrying are "that many".
-    t?.kind === 'scries'
+    t?.kind === 'scries' ||
+    t?.kind === 'surveils'
   );
 }
 
@@ -1221,6 +1223,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(a.trigger?.kind === 'attackBatch' ? { triggerAttacked: true } : {}),
+        triggeredAbility: true,
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
         ...(a.trigger?.kind === 'step' && a.trigger.step === 'main2'
@@ -1335,6 +1338,16 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             out,
             `${path}.interveningIf`,
             'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
+          );
+        }
+        if (
+          conditionHas(a.interveningIf, 'ringBearerChosen') &&
+          a.trigger?.kind !== 'ringTempted'
+        ) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'ringBearerChosen reads the creature the Ring tempted its controller to choose: it needs a ringTempted trigger',
           );
         }
         if (

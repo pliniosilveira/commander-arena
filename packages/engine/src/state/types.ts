@@ -1941,6 +1941,12 @@ export interface TurnLog {
     readonly seat: SeatId;
   }[];
   /**
+   * Each time a triggered ability that counts its resolutions (the effect has the condition `abilityResolvedTimes`, Galadriel group 1) began to resolve this turn: the
+   * source permanent and the effect of the ability as text (the abilities written for the events of one printed "or" share it). Absent until one was recorded, so the
+   * state of a game with no such ability is as it was.
+   */
+  readonly resolved?: readonly { readonly object: ObjectId; readonly key: string }[];
+  /**
    * Each permanent that entered the battlefield this turn (D-151, Celebration: "two or more nonland permanents entered the battlefield under your
    * control this turn"), in order: who controlled it as it entered, its card types as it entered and whether it is a token. It stays when the
    * permanent leaves (CR 400.7: a new object is a new entry).

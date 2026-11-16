@@ -136,6 +136,8 @@ export interface Scope {
   readonly triggerDamage?: boolean;
   /** True in the effect of a triggered ability whose trigger is a batch of attackers (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: boolean;
+  /** True in the effect of any triggered ability: `abilityResolvedTimes` counts the resolutions of the ability it belongs to (Galadriel group 1). */
+  readonly triggeredAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
   /** True in the effect of a triggered ability whose intervening "if" is `yourMainPhase`: an `extraCombat` follows a main phase (D-187). */
@@ -2402,6 +2404,19 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
     case 'subjectGreaterPt': // D-120: where it may stand is checked with the trigger (validate.ts)
       break;
+    case 'ringBearerChosen':
+      // Galadriel group 1 (CR 701.54a): the creature chosen by the tempting of this trigger; where it may stand is checked with the trigger (validate.ts).
+      if (c.other !== undefined && c.other !== true) {
+        issue(out, `${path}.other`, 'other must be true when present');
+      }
+      break;
+    case 'abilityResolvedTimes':
+      issue(
+        out,
+        path,
+        'abilityResolvedTimes reads the resolution of a triggered ability: it is only valid in a conditional effect of one',
+      );
+      break;
     case 'amountIs':
       // D-131: an amount that reads the game now, compared with a whole number.
       checkStateAmount(c.amount, `${path}.amount`, out, 'a condition');
@@ -3090,6 +3105,8 @@ export const MAY_EFFECT_KINDS = [
   'copySpell',
   // D-232: "you may have this creature become a copy of an artifact or creature card from among those cards".
   'becomeCopyOfCard',
+  // Galadriel group 1: "you may reveal the top card of your library. If a land card is revealed this way, ...".
+  'revealTop',
 ];
 
 /**
@@ -3142,6 +3159,26 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       }
       break;
     }
+    case 'ringBearerChosen':
+      issue(
+        out,
+        path,
+        'ringBearerChosen is the intervening "if" of a ringTempted trigger, read as it triggers and again as it resolves',
+      );
+      break;
+    case 'abilityResolvedTimes':
+      // Galadriel group 1 (CR 608.2c): "if this is the second time this ability has resolved this turn": a whole number from 1, in the effect of a triggered ability.
+      if (scope.triggeredAbility !== true) {
+        issue(
+          out,
+          path,
+          'abilityResolvedTimes counts the resolutions of a triggered ability: it is only valid in the effect of one',
+        );
+      }
+      if (!isCount(c.times) || c.times < 1) {
+        issue(out, `${path}.times`, 'times is a whole number from 1');
+      }
+      break;
     case 'attackersAttackedYou':
       if (scope.triggerAttacked !== true) {
         issue(

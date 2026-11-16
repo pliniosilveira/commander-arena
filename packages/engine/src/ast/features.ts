@@ -356,6 +356,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tokenCreated',
     // D-513: "Whenever you scry" (CR 701.22).
     'scries',
+    // Galadriel group 1: "Whenever you surveil" (CR 701.25).
+    'surveils',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -783,6 +785,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-149: "if none of those creatures attacked you" (`not` of `attackersAttackedYou`), "during your first, second, or third turn",
     // "you control three or more lands with the same name".
     'attackersAttackedYou',
+    // Galadriel group 1: "if this is the second time this ability has resolved this turn", "if you chose a creature other than ~ as your Ring-bearer".
+    'abilityResolvedTimes',
+    'ringBearerChosen',
     'ownTurnNumber',
     'sameNameAtLeast',
     // D-151: "two or more nonland permanents entered the battlefield under your control this turn", "an opponent was dealt 7 or more damage".
@@ -1349,6 +1354,10 @@ export const CONDITION_KINDS = [
   'duringStep',
   /** "None of those creatures attacked you" (CR 508.1b, D-149): the engine's `attackersAttackedYou`. */
   'attackersAttackedYou',
+  /** "If this is the second time this ability has resolved this turn" (CR 608.2c, Galadriel group 1): the engine's `abilityResolvedTimes`. */
+  'abilityResolvedTimes',
+  /** "If you chose a creature other than ~ as your Ring-bearer" (CR 701.54a, Galadriel group 1): the engine's `ringBearerChosen`. */
+  'ringBearerChosen',
   /** "During your first, second, or third turn of the game" (CR 500.1, D-149): the engine's `ownTurnNumber`. */
   'ownTurnNumber',
   /** "You control three or more lands with the same name" (D-149): the engine's `sameNameAtLeast`. */
@@ -1830,6 +1839,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   crimeCommitted: true,
   tokenCreated: true,
   scries: true,
+  surveils: true,
   interveningIf: true,
   alone: true,
   attacksAt: true,

@@ -45,16 +45,21 @@ export function runRevealTop(
         { controller: seat, source: res.source },
       )
     ) {
-      // The player who revealed it puts it onto the battlefield, so it is under their control (CR 110.2a): its owner, the library being theirs.
-      moves.push(
-        ...moveInstructions(
-          [top],
-          effect.to,
-          'top',
-          effect.to === 'battlefield' && effect.tapped === true,
-          effect.to === 'battlefield' ? 'owner' : undefined,
-        ),
-      );
+      if (effect.then !== undefined) {
+        // "If it's a creature or land card, draw a card": the effect is the revealing player's own ("you" is that player), and the card stays on top.
+        moves.push({ kind: 'effect', effect: effect.then, as: seat });
+      } else if (effect.to !== undefined) {
+        // The player who revealed it puts it onto the battlefield, so it is under their control (CR 110.2a): its owner, the library being theirs.
+        moves.push(
+          ...moveInstructions(
+            [top],
+            effect.to,
+            'top',
+            effect.to === 'battlefield' && effect.tapped === true,
+            effect.to === 'battlefield' ? 'owner' : undefined,
+          ),
+        );
+      }
     }
   }
   return done(state, events, moves);

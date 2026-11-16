@@ -15,7 +15,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getObject, getSeat } from '../state/ops';
 import type { ChosenValues, GameState, Instruction, ResolutionContext } from '../state/types';
-import { recordActionTaken } from './action-taken';
+import { recordActionTaken, recordResolution } from './action-taken';
 import { attachEntered, auraTargetSpec, ENCHANT_TARGET_ID } from './attach';
 import { runCascade } from './cascade';
 import { runCastCard } from './cast-card';
@@ -135,8 +135,10 @@ export function resolveTop(input: GameState): ResolveOutcome {
   if (ability?.kind === 'triggered' && ability.optional)
     queue.unshift({ kind: 'confirmOptional', answer: null });
   // CR 603.2h (D-256): "Do this only once each turn": the action is taken as the ability begins, or, with "you may", when it is accepted.
-  const begun: GameState =
-    ability?.kind === 'triggered' && ability.optional ? input : recordActionTaken(input, id);
+  const begun: GameState = recordResolution(
+    ability?.kind === 'triggered' && ability.optional ? input : recordActionTaken(input, id),
+    id,
+  );
   const state: GameState = {
     ...begun,
     resolution: {

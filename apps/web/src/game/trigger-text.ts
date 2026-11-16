@@ -442,6 +442,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'scries':
       // D-513 (CR 701.22): once each time the player scries.
       return `Whenever ${trigger.who === 'you' ? 'you scry' : `${BY_WORDS[trigger.who]} scries`}`;
+    case 'surveils':
+      // CR 701.25 (Galadriel group 1): once each time the player surveils.
+      return `Whenever ${trigger.who === 'you' ? 'you surveil' : `${BY_WORDS[trigger.who]} surveils`}`;
     case 'becomesUntapped': {
       // D-206 (CR 701.26a): "Whenever this artifact becomes untapped".
       const what = subjectPhrase(trigger.what, ctx);
