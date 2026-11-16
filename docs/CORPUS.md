@@ -31,6 +31,10 @@ Exit codes: 0 done; 1 `--check` found a drop; 2 bad arguments, unreadable input 
 
 The `Coverage report` workflow runs every Monday (and on demand from the Actions tab) on a GitHub runner, which can reach Scryfall. It runs `pnpm coverage:cards --download --out .coverage --update-baseline`, then `node tools/corpus/coverage-badge-cli.ts` turns the new baseline into a site (badge JSONs for shields.io, `coverage.svg`, `index.html`, `backlog.txt`) that it deploys to GitHub Pages; the README draws its badge from there. The committed `reports/` are not touched.
 
+## Issues for the Archidekt precons (the workflow `Precon issues`, D-532)
+
+Started by hand from the Actions tab. It reads https://archidekt.com/commander-precons, checks every deck against the engine on the runner (which can reach Archidekt and Scryfall) and opens one issue per deck: "deck support <name>" when a card is unsupported, "precon <name>" when the engine already runs the deck. Every issue also asks for the deck to be added to the ready-made decks. Run it first with `dry_run` on (the default): the job summary lists the issues it would open and the artifact `precon-issues` holds the decklists and the issue texts. `limit` reads only the first decks and `ids` reads the given Archidekt deck ids instead of the page. A title that already exists is never opened again.
+
 ## Replaying templates.json offline (`pnpm corpus:replay`)
 
 `pnpm coverage:cards` needs Scryfall's bulk file, which the cloud sessions cannot reach. `reports/templates.json` (the owner's run) keeps the 1,000 heaviest unparsed shapes, each with one real Oracle example line. `pnpm corpus:replay` runs the current parser over those example lines and writes `reports/template-replay.md`, so the next grammar work can be chosen without a new bulk file. It needs no network and reads no card data other than `templates.json`.
