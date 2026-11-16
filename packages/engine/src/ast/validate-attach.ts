@@ -147,8 +147,8 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
           if (!isOneOf(c, COLORS)) issue(out, `${path}.colors[${i}]`, `unknown color ${String(c)}`);
         });
       }
-    } else if (k.from === 'colorOfChoice') {
-      // D-451: asked as an effect resolves; a static ability or a printed keyword has nothing to ask.
+    } else if (k.from === 'colorOfChoice' || k.from === 'cardTypeOfChoice') {
+      // D-451, D-514: asked as an effect resolves; a static ability or a printed keyword has nothing to ask.
       issue(
         out,
         `${path}.from`,

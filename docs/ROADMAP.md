@@ -437,3 +437,37 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `sparePermanents.own` has each opponent keep a permanent of each type; "each player" is built (SYNTHETIC) but not read; whether one artifact creature may be chosen for both the artifact and the creature follows the independent choices of the text (D-231 does the same). The Scryfall rulings of Liliana, Dreadhorde General, Krav, Priest of Forgotten Gods and Plumb the Forbidden were not fetched (blocked in a cloud session): marked unverified.
 - "Partner with" reveals the card, as CR 702.124j says; today's reminder text says "put into their hand from their library" without a reveal. The search is offered even when the library holds no such card (a player may search for a card that is not there).
 - "You add {B}{B}" is read only with fixed symbols and only where it does not make a mana ability.
+
+## The Hylda deck, group 3 (issue 42, D-499 to D-509)
+
+- `countOf` names the player whose objects it counts only by a target of the ability or spell ("for each tapped creature target opponent controls"); "that player controls" (a trigger's player), "each opponent controls" and a count in a static ability or a condition are not read.
+- `enteredX` is read by the enters trigger of the permanent itself on a card with an {X} in its mana cost. Another ability that reads an X ("Whenever you cast a spell, draw X cards"), a modal enters trigger and a delayed trigger created by a spell with X (CR 107.3n) are not read. A copy of a permanent spell (CR 707.10) is not tested for `castX`.
+- `differentControllers` is read for permanents on the battlefield and a slot of any number of targets; "with different owners", "different names" and a slot of cards in graveyards are not read. A target whose controller changes after the choice stays legal (CR 608.2b reads the filter only).
+- `grantPlayerHexproof` is hexproof and "until end of turn" only: shroud for a player (CR 702.18) and "until your next turn" are not built. A permanent that enters later has no hexproof (CR 611.2c), as the card says.
+- `chooseOne.optional` adds the answer "Do nothing"; the casual AI never picks it. Other "you may choose ..." instructions still use `may` or the reflexive machinery.
+- `effect.shuffle-into-libraries` reads the permanent itself and single targets; "shuffle each creature ..." and a count are not read. `effect.you-and-permanents-gain-hexproof` reads one group ("you control") and hexproof only. `effect.prevent-all-by-color` reads colors joined by "or" and "and/or"; "sources of the color of your choice", a number ("the next 3") and another duration are not read.
+- The mode name before the dash is read as a flavor word only when the mode reads without it; a name with a cost is Tiered (D-433).
+- The rulings of the ten cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Borrowing 100,000 Arrows has the same text as Theft of Dreams in the corpus (`golden.jsonl`, from the issue); no second part was found in it.
+
+## The Hylda deck, group 1 (issue 42, D-510 to D-516)
+
+- `becomesTapped` with `by` reads the player who taps: a tap by an effect, an ability cost, a mana ability, a crew or other tap cost, a convoke-style cost, an attack declaration and a regeneration. A permanent tapped by no player (none exists today) would have no `by`. "An opponent taps" is built (SYNTHETIC) but no real card is read for it.
+- "Whenever you tap one or more untapped creatures ..." is one occurrence for the events of one engine step (one resolution, one declaration); two taps by two separate effects are two occurrences, as CR 603.2c has it.
+- A trigger whose number is 0 (`scries` of an empty library with "up to X targets") is not put on the stack: it would do nothing either way.
+- "Whenever you scry" reads the cards the library held up to the number scried; the Scryfall rulings of Elvish Mariner, Hylda, Sharae, Verity Circle, Icewrought Sentry, Hammers of Moradin and Pippin were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
+- "You may pay {1}. When you do, ..." is read for a triggered ability with one offer sentence and a reflexive sentence or modal text; a payment of life or another cost beyond the costs `mayPay` has, a reflexive ability with an "or" of costs and a reflexive ability followed by other sentences are not read.
+- A modal reflexive ability has no targets of its own besides those of its modes, and an X in a mode is refused (a triggered ability has no X, CR 107.3j).
+- Protection from the card type of your choice is read for one object for the turn (not a group, not another duration); the view tells that a creature has protection, not from what (as for the color of D-451).
+- The agents choose the card type by the threat and pay for the reflexive abilities as they pay for any "you may pay"; they do not plan the taps of the group (the casual agent does not look for a way to tap an untapped creature of an opponent to trigger Hylda).
+- A legendary creature "<Name> of <Title>" is called by its first word only when the face is a creature.
+
+## The Hylda deck, group 2 (issue 42, D-517 to D-527)
+
+- "Doesn't untap during its controller's next untap step" is read per permanent at the untap step of its controller as it is then (D-517): the rulings of the cards were not fetched (cloud session), so a control change between the effect and the step is unverified. The static form "unless that player ..." and a stun counter are other readings.
+- `permanentsEnterTapped` reads a plain group (a kind of permanent with a controller); "this turn" for it is built (SYNTHETIC) but the text of no real card was read.
+- `cardTypesAmong` counts the cards of one zone filter; "among cards in all graveyards", "among permanents you control" and Descend (the permanent cards in your graveyard) are not read.
+- A "choose up to one" with no mode is read for a triggered ability only; a spell or an activated ability that may choose no mode is not built, nor "choose up to two" or "any number".
+- A results table is read for the text of a spell, with rows "N" and "N—M" that cover the die exactly once: "N+" rows, a roll that is modified, "roll again" and the tables of an ability of a permanent are not read.
+- "Target creature that player controls" is read only for the player of the event of the trigger (D-521); with an earlier player target in the same ability the text stays unread.
+- The cost reduction "during your turn" takes a plain number of generic mana off the first mana cost, never below zero; other turns ("during an opponent's turn") and a reduction of a mana ability are not read.
+- The rulings of the eleven cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.

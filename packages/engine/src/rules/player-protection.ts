@@ -63,6 +63,13 @@ export function playerHasProtectionFrom(
   return sourceTypes(state, source).some((t) => mine.includes(t));
 }
 
+/** Whether a continuous effect of this turn gives the player hexproof (CR 702.11b; `grantPlayerHexproof`, Hylda group 3, `rules/player-hexproof.ts`). */
+function hasGrantedHexproof(state: GameState, seat: SeatId): boolean {
+  return state.continuousEffects.some(
+    (e) => e.change.kind === 'playerHexproof' && (e.players ?? []).includes(seat),
+  );
+}
+
 /**
  * CR 702.11b: whether a spell or ability controlled by `by` may target the player `seat`. `source` is the spell or ability's source: the player's
  * protection from a card type (CR 702.16b, D-376) stops a source of that type, even one the player controls.
@@ -74,7 +81,10 @@ export function playerCanBeTargetedBy(
   source: ObjectId | null = null,
 ): boolean {
   if (playerHasProtectionFrom(state, seat, source)) return false;
-  return seat === by || !hasStaticOf(state, seat, 'playerHexproof');
+  // CR 702.11b (Hylda group 3): "You gain hexproof until end of turn" gives the same protection for the rest of the turn.
+  return (
+    seat === by || !(hasStaticOf(state, seat, 'playerHexproof') || hasGrantedHexproof(state, seat))
+  );
 }
 
 /** CR 104.3: whether the state-based actions leave the player in the game whatever their life total and counters. */

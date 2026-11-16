@@ -49,6 +49,8 @@ export const EFFECT_FLICKER = defineRule<Clauses>({
     'exile target creature you control, then return that card to the battlefield under your control',
     "exile target nonland permanent you control, then return it to the battlefield under its owner's control",
     "exile target creature, then return it to the battlefield tapped under its owner's control",
+    "exile ~, then return it to the battlefield tapped under its owner's control",
+    "exile ~, then return it to the battlefield under its owner's control",
   ],
   rejects: [
     "exile target creature, then return it to the battlefield under its owner's control at the beginning of the next end step",
@@ -63,6 +65,8 @@ export const EFFECT_FLICKER = defineRule<Clauses>({
     "exile target creature. return it to the battlefield under its owner's control",
     "exile target creature, return it to the battlefield under its owner's control",
     "exile target card from a graveyard, then return it to the battlefield under its owner's control",
+    'exile ~, then return it to your hand',
+    "exile ~ and target creature, then return them to the battlefield under their owners' control",
   ],
   parse: (ctx, pos) => {
     const r = sequence(
@@ -70,9 +74,12 @@ export const EFFECT_FLICKER = defineRule<Clauses>({
       // One noun that is one object. The graveyard nouns are tried first, as `effect.exile` does,
       // so a diagnostic about a noun this rule refuses is the same one; a graveyard card, "each"
       // and "two target creatures" (whose "those cards" is plural) are not read.
+      // Hylda group 3 (Ojutai Exemplars): "Exile ~, then return it to the battlefield tapped under its owner's control." names the permanent with the ability.
       satisfy(
-        family<IrNoun>('noun', { only: [...GRAVEYARD_OPERANDS, 'noun.target-permanent'] }),
-        (n) => n.rule === 'noun.target-permanent' && !n.plural,
+        family<IrNoun>('noun', {
+          only: [...GRAVEYARD_OPERANDS, 'noun.target-permanent', 'noun.self'],
+        }),
+        (n) => (n.rule === 'noun.target-permanent' || n.rule === 'noun.self') && !n.plural,
       ),
       RETURN_BACK,
     )(ctx, pos);

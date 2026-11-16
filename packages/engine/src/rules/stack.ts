@@ -23,6 +23,7 @@ import { runCastExiled } from './cast-exiled';
 import { runCastFree } from './cast-free';
 import { giftEffectOf } from './cast-gift';
 import { runChangeTarget } from './change-target';
+import { DECLINE_OPTION } from './choose-one';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { runCopySpell } from './copy-spell';
@@ -43,7 +44,7 @@ import {
   runCounterUnlessPays,
   type UnlessAnswer,
 } from './pay-unless';
-import { colorOfAnswer } from './protection-choice';
+import { cardTypeOfAnswer, colorOfAnswer } from './protection-choice';
 import { stillLegalTargets } from './select';
 import { setPending } from './set-pending';
 import { collectTriggers } from './triggers';
@@ -793,7 +794,10 @@ export function answerResolutionChooseOne(state: GameState, option: string): Res
   const res = state.resolution;
   const head = res?.queue[0];
   if (!res || head?.kind !== 'chooseOne') return null;
-  const index = head.options.findIndex((o) => o.label === option);
+  const found = head.options.findIndex((o) => o.label === option);
+  // An optional choice (Hylda group 3) also takes "Do nothing", the index past the offered instructions.
+  const index =
+    found < 0 && head.optional === true && option === DECLINE_OPTION ? head.options.length : found;
   if (index < 0) return null;
   const updated: Instruction = { ...head, chosen: index };
   return continueResolution(
@@ -816,6 +820,26 @@ export function answerResolutionProtectionColor(
   const color = colorOfAnswer(option);
   if (color === null) return null;
   const updated: Instruction = { ...head, chosen: color };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/**
+ * Records the answer to "gains protection from the card type of your choice" (CR 702.16a, 608.2d, D-514) on the instruction that asked: the card type chosen. Then continues.
+ * Null when no such question is waiting or the answer is not one of the nine card types.
+ */
+export function answerResolutionProtectionCardType(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'protectionCardType') return null;
+  const type = cardTypeOfAnswer(option);
+  if (type === null) return null;
+  const updated: Instruction = { ...head, chosen: type };
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
     [],

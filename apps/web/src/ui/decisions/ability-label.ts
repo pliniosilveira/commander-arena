@@ -73,6 +73,12 @@ import {
 import { pluralSubtype, thingsPhrase } from '../../game/filter-text';
 import { delayedSacrificeText } from '../../game/gisa-g5-text';
 import { copiesOfTokensText } from '../../game/hashaton-g5-text';
+import {
+  entersTappedText,
+  groupOfTargetPlayerText,
+  isSeveral,
+  keepTappedText,
+} from '../../game/hylda-text';
 import { ENCORE_EFFECT_TEXT } from '../../game/keywords-text';
 import { controlDurationText, requireAttackText } from '../../game/korvold-text';
 import { playRuleWordings, staticWording } from '../../game/play-rule-text';
@@ -160,8 +166,11 @@ function nounOf(filter: ObjectFilter): string {
         ? 'permanent'
         : types.join(' or ');
   const named = subtypes === '' ? noun : `${subtypes} ${noun}`;
+  // D-513 (CR 205.2): "target nonland permanent": the card types the object is not.
+  const without = (filter.notTypes ?? []).map((t) => `non${t}`).join(' ');
   // D-139: "target nontoken creature" (CR 111.1).
-  const core = filter.token === false ? `nontoken ${named}` : named;
+  const typed = without === '' ? named : `${without} ${named}`;
+  const core = filter.token === false ? `nontoken ${typed}` : typed;
   // Mentor and Battle cry (CR 702.134a, 702.91a): "attacking creature".
   return filter.attacking === true ? `attacking ${core}` : core;
 }
@@ -219,8 +228,16 @@ function targetText(spec: TargetSpec | undefined): string {
         // Group 4 of the Vraska deck (CR 400.7): "target commander that entered this turn".
         (spec.what.filter.enteredThisTurn === true ? ' that entered this turn' : '');
       // D-187 (CR 603.12, 115.2): "up to that many target creatures" (the number not fixed yet), "up to two target creatures": several targets, the noun plural.
-      if (spec.upToThatMany === true || ((spec.max ?? 1) > 1 && (spec.min ?? 1) === 0)) {
-        const count = spec.upToThatMany === true ? 'that many' : numberWord(spec.max ?? 1);
+      // D-513 (CR 603.3d, 701.22): "tap up to X target nonland permanents, where X is the number of cards looked at": the number is the event's.
+      if (
+        spec.upToThatMany === true ||
+        spec.upToTriggerAmount === true ||
+        ((spec.max ?? 1) > 1 && (spec.min ?? 1) === 0)
+      ) {
+        const count =
+          spec.upToThatMany === true || spec.upToTriggerAmount === true
+            ? 'that many'
+            : numberWord(spec.max ?? 1);
         return `up to ${count} target ${pluralNounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
       }
       return `target ${nounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
@@ -264,9 +281,19 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       return 'this spell';
     case 'target':
       return targetText(ability.targets?.find((t) => t.id === what.id));
-    case 'each':
+    case 'each': {
+      // D-517: "all creatures target player controls", the group of a player chosen as a target.
+      const chosen = what.filter.controlledBy;
+      if (chosen?.kind === 'target' && what.except === undefined) {
+        const spec = ability.targets?.find((t) => t.id === chosen.id);
+        return (
+          groupOfTargetPlayerText(what.filter, targetText(spec).replace(/^target /u, 'target ')) ??
+          UNSAID
+        );
+      }
       // D-151: "each other creature", the one the effect names is left out.
       return eachText(what.except === undefined ? what.filter : { ...what.filter, other: true });
+    }
     case 'moved':
       return 'it';
     case 'triggerSubject':
@@ -816,6 +843,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     }
     case 'chooseOne': {
       const choices = effect.options.map((option) => option.label).join('; ');
+      // Hylda group 3: "You may tap or untap target creature" is a choice that may also be declined.
+      if (effect.optional === true && effect.times === undefined) {
+        return `You may choose one: ${choices}`;
+      }
       return effect.times === undefined
         ? `Choose one: ${choices}`
         : `Repeat this choice ${defs.say(effect.times, { self })} times (choose independently): ${choices}`;
@@ -926,6 +957,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // Extort (CR 702.101a): "You may pay {W/B}. If you do, each opponent loses 1 life. You gain life ...".
       const inner = effectText(effect.effect, ability, self, defs);
       const pay = `You may ${unlessCostPhrase(effect.cost)}`;
+      // D-511 (CR 603.12): "You may pay {1}. When you do, choose one — ...": the reflexive ability says its own "When you do".
+      if (effect.effect.kind === 'reflexive' && effect.effect.afterPayment === true) {
+        return inner === '' ? pay : `${pay}. ${inner}`;
+      }
       return inner === ''
         ? pay
         : `${pay}. If you do, ${inner.charAt(0).toLowerCase()}${inner.slice(1)}`;
@@ -958,6 +993,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         self,
         defs,
       );
+      // D-511 (CR 603.12, 700.2b): "When you do, choose one — Create a token; Put a counter on each creature you control": the modes as the card words them.
+      if (effect.modes !== undefined) {
+        const how = effect.chooseModes?.max === 1 ? 'one' : 'one or more';
+        return `When you do, choose ${how} — ${effect.modes.map((m) => m.text.replace(/\.$/, '')).join('; ')}`;
+      }
       return inner === '' ? '' : `When you do, ${lower(inner)}`;
     }
     case 'mayCast':
@@ -1050,7 +1090,15 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // "Each Zombie gains menace until end of turn" (CR 613.1f, 611.2c).
       // D-187: "up to that many target creatures gain double strike": several targets, the plural verb.
       return `${capital(object(effect.objects))} ${object(effect.objects).startsWith('up to ') ? 'gain' : 'gains'} ${grantedKeywordWords(effect.keyword)}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
+    case 'grantPlayerHexproof':
+      // CR 702.11b (Hylda group 3): "You gain hexproof until end of turn".
+      return `${playerVerb(effect.player, ability, 'gain')} hexproof until end of turn`;
     case 'restrict':
+      // D-517 (CR 502.3, 611.2a): "Target creature doesn't untap during its controller's next untap step".
+      if (effect.duration === 'untilNextUntapStep') {
+        const who = object(effect.objects);
+        return keepTappedText(who, isSeveral(who));
+      }
       // "Target creature can't be blocked this turn" (CR 613.11).
       return `${capital(object(effect.objects))} ${RESTRICTION_EFFECT[effect.restriction]}${effect.duration === 'untilEndOfTurn' ? ' this turn' : effect.duration === 'forAsLongAsYouControlThis' ? ' for as long as you control this' : ''}`;
     case 'gainControl':
@@ -1059,6 +1107,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'requireAttack':
       // D-179 (CR 508.1d): "Until your next turn, creatures your opponents control attack each combat if able".
       return requireAttackText(effect) ?? UNSAID;
+    case 'permanentsEnterTapped':
+      // D-519 (CR 614.1c, 614.12): "Until your next turn, creatures your opponents control enter tapped".
+      return entersTappedText(effect) ?? UNSAID;
     case 'addMana': {
       // "Add {C}" for a fixed amount (D-139: a triggered mana ability's "add an additional {C}"), else the gist.
       if (effect.mana.kind === 'fixed') {

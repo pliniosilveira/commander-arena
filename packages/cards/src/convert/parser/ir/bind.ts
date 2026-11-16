@@ -29,6 +29,7 @@ import {
   type IrArg,
   type IrBody,
   type IrClause,
+  type IrCondition,
   type IrFilter,
   type IrModes,
   type IrNoun,
@@ -176,6 +177,27 @@ class Binder {
     return bound;
   }
 
+  /**
+   * The permanent an Aura or an Equipment enchants or equips when the intervening "if" of its triggered ability named it ("if enchanted creature is untapped, tap it", D-520,
+   * CR 603.4, 303.4b): "it" of the body is that permanent, which the engine names `attached`, as "tap enchanted creature" is.
+   */
+  seedHost(condition: IrCondition | undefined): void {
+    const test = condition?.test;
+    if (test?.kind !== 'attachedTo' || test.via === undefined) return;
+    const host: IrNoun = {
+      kind: 'noun',
+      det: test.via,
+      filter: { types: ['creature'], raw: `${test.via} creature` },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: condition?.span ?? { start: 0, end: 0 },
+      rule: condition?.rule ?? 'condition.host-is-tapped',
+      ref: 'host',
+    };
+    this.antecedents.push({ noun: host, kind: 'object' });
+  }
+
   /** The target of the spell line before this one, the antecedent of a "that creature" of this line and of no other pronoun (stage P35, D-176). */
   seedLine(noun: IrNoun): void {
     this.antecedents.push({ noun, kind: 'object', previousLine: true });
@@ -320,6 +342,7 @@ class Binder {
       case 'countersOn':
       case 'aggregate':
       case 'colorsAmong':
+      case 'cardTypesAmong':
         return { ...amount, of: this.noun(amount.of) };
       case 'half':
       case 'multiple':
@@ -650,6 +673,7 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
     }
     case 'triggered': {
       const trigger = seedTrigger(binder, ability.trigger);
+      binder.seedHost(ability.interveningIf);
       if (ability.modal !== undefined) {
         // Each mode starts from the antecedents a body would: the trigger's subject and actor.
         const modal = bindModes(ability.modal, scope, verbs, (b) =>
@@ -660,6 +684,20 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
           ok: true,
           ability: { ...ability, trigger, modal: modal.modes },
           targets: modal.targets,
+        };
+      }
+      if (ability.reflexiveModal !== undefined) {
+        // D-511 (CR 603.12): the body is the offer; the modes are those of the reflexive ability, which knows what the trigger's event is about, nothing of the offer.
+        const body = binder.body(ability.body);
+        const modal = bindModes(ability.reflexiveModal, scope, verbs, (b) =>
+          seedTrigger(b, ability.trigger),
+        );
+        if (!modal.ok) return modal.failure;
+        if (binder.failure !== null) return binder.failure;
+        return {
+          ok: true,
+          ability: { ...ability, trigger, body, reflexiveModal: modal.modes },
+          targets: [...binder.targets, ...modal.targets],
         };
       }
       return done({ ...ability, trigger, body: binder.body(ability.body) });

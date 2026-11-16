@@ -244,10 +244,10 @@ export const CONDITION_TOTAL_STAT = defineRule<IrCondition>({
 });
 
 const OPPONENT_HAS_MORE =
-  /an opponent (?:has more (life|cards in hand)|controls more (creatures)) than you(?![\p{L}\p{N}])/iu;
+  /an opponent (?:has more (life|cards in hand)|controls more (creatures|lands)) than you(?![\p{L}\p{N}])/iu;
 
 /**
- * `condition.opponent-has-more`: "an opponent controls more creatures than you", "an opponent has more life than
+ * `condition.opponent-has-more`: "an opponent controls more creatures than you", "an opponent controls more lands than you" (Hylda group 3, Loyal Warhound), "an opponent has more life than
  * you", "an opponent has more cards in hand than you" (CR 102.2, 603.4): at least one opponent has more than the
  * controller of the ability, now. The engine's `amountIs` of `opponentsWithMore` that is at least 1.
  */
@@ -258,6 +258,7 @@ export const CONDITION_OPPONENT_HAS_MORE = defineRule<IrCondition>({
   cites: ['CR 102.2 (Players)', 'CR 603.4 (Handling Triggered Abilities)'],
   examples: [
     'an opponent controls more creatures than you',
+    'an opponent controls more lands than you',
     'an opponent has more life than you',
     'an opponent has more cards in hand than you',
   ],
@@ -265,6 +266,7 @@ export const CONDITION_OPPONENT_HAS_MORE = defineRule<IrCondition>({
     'an opponent controls more creatures',
     'an opponent has more life',
     'an opponent has more lands than you',
+    'an opponent controls more lands than each other player',
     'each opponent has more life than you',
     'an opponent has fewer cards in hand than you',
     'an opponent controls more creatures than each other player',
@@ -274,7 +276,14 @@ export const CONDITION_OPPONENT_HAS_MORE = defineRule<IrCondition>({
     const r = spanned(pattern(OPPONENT_HAS_MORE))(ctx, pos);
     if (!r.ok) return r;
     const word = (r.value.value[1] ?? r.value.value[2] ?? '').toLowerCase();
-    const stat = word === 'life' ? 'life' : word === 'creatures' ? 'creatures' : 'cardsInHand';
+    const stat =
+      word === 'life'
+        ? 'life'
+        : word === 'creatures'
+          ? 'creatures'
+          : word === 'lands'
+            ? 'lands'
+            : 'cardsInHand';
     const amount: IrAmount = { kind: 'opponentsWithMore', stat, span: r.value.span };
     return {
       ok: true,

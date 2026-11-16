@@ -40,6 +40,12 @@ export type Amount =
    */
   | { readonly kind: 'x' }
   /**
+   * "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the X the spell had that became the permanent with the ability, read as the enters
+   * trigger resolves (from last-known information when the permanent has left); 0 for a permanent that was not cast (CR 107.3g: put onto the battlefield by an
+   * effect, a flicker included). Valid only in a triggered ability whose trigger is `entersBattlefield` of `this`, on a card whose mana cost has an {X}.
+   */
+  | { readonly kind: 'enteredX' }
+  /**
    * The power of an object a reference names, including a chosen target (`target`) or what an
    * earlier instruction moved (`moved`). Read as it is now when the object is where the effect
    * expected it, and from last-known information if it left (CR 608.2h, 113.7a): "Its controller
@@ -153,6 +159,14 @@ export type Amount =
       readonly stat: 'power' | 'toughness' | 'manaValue';
       readonly filter: ObjectFilter;
     }
+  /**
+   * "The number of card types among cards in your graveyard" (CR 205.2a, Delirium, an ability word: CR 207.2c, D-518): how many of the card types (artifact, battle, creature, enchantment,
+   * instant, kindred, land, planeswalker, sorcery) the objects `filter` matches have between them, each counted once however many have it; supertypes and subtypes are not
+   * card types. The filter names a zone other than the battlefield and the stack ("cards in your graveyard": `zone: 'graveyard'`, `controller: 'you'` for the graveyard of the
+   * controller of the ability) and reads no power, toughness, combat or source: the types are those of the cards as they are there, read as the effect runs or the condition
+   * is read (an `amountIs` condition, so as an intervening "if" it is read when the event happens and again as the ability resolves).
+   */
+  | { readonly kind: 'cardTypesAmong'; readonly filter: ObjectFilter }
   /**
    * "Your devotion to black", "your devotion to white and blue" (CR 700.5, D-131): the number of mana symbols that
    * are one of the `colors` (a hybrid symbol counts for each of its colors, once; a symbol that is generic or
@@ -445,7 +459,8 @@ export interface ObjectFilter {
   /**
    * Only permanents the selector's players control ("each creature that player controls", with the player a target, CR 109.4, D-179): as `owner`,
    * for the controller of a permanent instead of the owner of a card. Read where the filter is the `each` selector of an effect, which knows
-   * its targets; refused anywhere else by `validateCard`.
+   * its targets, and (Hylda group 3, D-499: "for each tapped creature target opponent controls") in a `countOf` of an effect, where the player must be a `target`;
+   * refused anywhere else by `validateCard`.
    */
   readonly controlledBy?: PlayerSelector;
   readonly tapped?: boolean;
@@ -834,6 +849,13 @@ export interface TargetSpec {
    */
   readonly onePerOpponent?: true;
   /**
+   * "Destroy any number of target tapped creatures with different controllers" (CR 115.1, 601.2c, 603.3d, Hylda group 3): no two targets of this slot are controlled by the same
+   * player (the controllers may include the controller of the spell, unlike `onePerOpponent`). The slot takes any number of targets (`anyNumber`) or `max` of them, and the
+   * most that can be chosen is one for each player still in the game. `what` is an `object` filter (permanents on the battlefield); with `onePerOpponent`, `divide`, `countX`
+   * or `upToThatMany` it is refused. The controllers are read as the targets are chosen; a later change of control does not make a target illegal (CR 608.2b reads only the filter).
+   */
+  readonly differentControllers?: true;
+  /**
    * "Deals 4 damage to any target and 3 damage to each of up to two other targets" (CR 115.3, D-151): none of the targets of this slot may be a target
    * of the slot `differentFrom` names (an earlier slot of the same ability). The word "other" is what makes them different: two slots of an ability may
    * otherwise share a target.
@@ -846,6 +868,12 @@ export interface TargetSpec {
    * `sacrifice`, with `min` and `max` left out.
    */
   readonly upToThatMany?: true;
+  /**
+   * "Tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (CR 603.3d, 701.22, D-513): the slot takes up to as many targets as
+   * the number the trigger event carries (`triggerDamage`: the cards looked at by the scry), none to that many; the number is fixed as the ability is put on the stack, and the
+   * engine writes it into `max` (and a `min` of 0) of the ability that goes on the stack. Only a slot of a triggered ability whose trigger is `scries`, with `min` and `max` left out.
+   */
+  readonly upToTriggerAmount?: true;
   /**
    * "Return X target creature cards from your graveyard to your hand" (CR 107.3a, 601.2b, 601.2c, D-386): the slot takes exactly as many
    * targets as the X the caster announced for the spell. X is announced before the targets (CR 601.2b), so `chooseX` offers no X larger than the
@@ -1336,7 +1364,7 @@ export type Effect =
        * dealt by a source that matches the filter. It is read as each damage event would happen (a prevention effect changes the rules
        * of the game, so a creature that enters later is covered), with the controller of the spell or ability as "you", against the
        * source as it is (or, if it has left the battlefield, as it last was). A spell or ability that is not a permanent never matches a
-       * filter that names a type of permanent. Not with `by`. The filter names no zone, owner or X.
+       * filter that names a type of permanent; a filter of colors only matches a spell on the stack as well (Hylda group 3: "black and/or red sources"). Not with `by`. The filter names no zone, owner or X.
        */
       readonly byFilter?: ObjectFilter;
       /** `forAsLongAsThisRemains` (D-207, CR 611.2b, 615): the shield ends when the permanent with the ability leaves the battlefield; only in an ability of a permanent. */
@@ -1453,6 +1481,11 @@ export type Effect =
       /** Repeat the choice independently this many times, read once when the effect starts. */
       readonly times?: Amount;
       /**
+       * "You may tap or untap target creature" (CR 608.2d, 701.26, Hylda group 3): the chooser may also choose none of the offered instructions: one more option,
+       * `DECLINE_OPTION` ("Do nothing"), comes after the labels and does nothing. Left out, one of the instructions is chosen.
+       */
+      readonly optional?: true;
+      /**
        * "Target player adds one mana of any color" (D-229, CR 608.2d, 106.1b): the one player this selector names (a target) makes the choice, not the
        * controller of the effect. Left out, the controller chooses. A chooser that is no longer there (the target was illegal) is skipped with the effect.
        */
@@ -1488,6 +1521,18 @@ export type Effect =
        * not when it merely did something, and `thisWay` of that kind in its effect is the number counted (fixed as the ability is created).
        */
       readonly ifThisWay?: ThisWayKind;
+      /**
+       * "You may pay {1}. When you do, choose one —" (D-511, CR 603.12, 700.2b, 603.3c): the reflexive ability is modal, as a triggered ability with `modes` is: its `effect` is
+       * then the empty sequence and `targets` is absent, the modes (two to eight, each with its own targets) are chosen as the ability goes on the stack, and the
+       * controller of this spell or ability chooses them.
+       */
+      readonly modes?: readonly SpellMode[];
+      readonly chooseModes?: ModeChoice;
+      /**
+       * "You may pay {1}. When you do, ..." (D-511, CR 603.12, 118.1): what makes the reflexive ability trigger is the payment itself, not an earlier instruction that did
+       * something: the ability is created whenever this effect runs, which is when the cost of the `mayPay` it is the effect of was paid. Only the `effect` of a `mayPay`.
+       */
+      readonly afterPayment?: true;
     }
   /**
    * "You may cast target [filter] card from your graveyard this turn" (D-135, CR 601.2, 113.6, 611.2a): until end of turn
@@ -2235,9 +2280,10 @@ export type Effect =
    * rules-modifying continuous effect (CR 613.11) that gives each object `objects` names the
    * restriction until the duration ends. It is not an ability, so "loses all abilities" does not
    * remove it (CR 613.11 applies it after the layers); the set is fixed when it begins (CR 611.2c).
-   * Only `cantBlock`, `cantBeBlocked` and `attacksEachCombat`, with `untilEndOfTurn`, run; "doesn't
-   * untap during its controller's next untap step" needs a duration that ends at that step and
-   * "can't be countered" is about a spell, so neither is accepted here. With `forAsLongAsYouControlThis` (D-196, "Up to one target creature can't
+   * `cantBlock`, `cantBeBlocked` and `attacksEachCombat` run with `untilEndOfTurn`. "Doesn't untap during its controller's next untap step"
+   * (D-517, CR 502.3, 611.2a) is `restriction: 'doesntUntap'` with `duration: 'untilNextUntapStep'`, the only pair for that restriction: each
+   * permanent the effect named keeps the restriction until the next untap step of its controller (as it is then) has come, and is let go as that step
+   * ends, whether or not it was tapped. "Can't be countered" is about a spell, so it is not accepted here. With `forAsLongAsYouControlThis` (D-196, "Up to one target creature can't
    * block for as long as you control this Saga", CR 611.2b): as for `gainControl`, the effect does nothing when the permanent with the ability is not
    * on the battlefield under its controller's control as it would begin, and otherwise ends, for good, as that stops being so. Only in the ability
    * of a permanent, with `cantBlock`, `cantBeBlocked` or `attacksEachCombat`.
@@ -2246,7 +2292,17 @@ export type Effect =
       readonly kind: 'restrict';
       readonly objects: ObjectSelector;
       readonly restriction: Restriction;
-      readonly duration: Duration | 'forAsLongAsYouControlThis';
+      readonly duration: Duration | 'forAsLongAsYouControlThis' | 'untilNextUntapStep';
+    }
+  /**
+   * "You gain hexproof until end of turn" (CR 702.11b, 611.2, 514.2; Hylda group 3): each player the selector names has hexproof until end of turn: spells and abilities their
+   * opponents control can't target them. The players are fixed as the effect begins (CR 611.2c). `player` names players ("you", "each opponent"; never an object); the
+   * duration is until end of turn only, and shroud for a player is not built.
+   */
+  | {
+      readonly kind: 'grantPlayerHexproof';
+      readonly player: PlayerSelector;
+      readonly duration: 'untilEndOfTurn';
     }
   /**
    * "The Ring tempts you" (CR 701.54a, 701.54c, 701.54d, D-196): the controller of the effect gets the emblem named The Ring if they have none, the
@@ -2321,6 +2377,18 @@ export type Effect =
       readonly creatures: ObjectFilter;
       readonly duration: 'untilEndOfTurn' | 'untilYourNextTurn';
       readonly awayFromYou?: true;
+    }
+  /**
+   * "Until your next turn, creatures your opponents control enter tapped." (CR 614.1c, 614.12, 611.2a, D-519): a replacement effect of the game for a group of
+   * permanents that is not a set fixed as the effect resolves (CR 611.2c is about changes to characteristics): every permanent `permanents` matches as it would enter the
+   * battlefield (a card put there from any zone, a token) enters tapped while the effect lasts, read for the controller of the effect ("your opponents" is
+   * `controller: 'opponent'`) and with no zone. `duration` is `untilEndOfTurn` or `untilYourNextTurn` (it ends as the next turn of the controller of the effect begins,
+   * the turn it resolves in not counted, CR 500.1). A permanent that enters untapped by a stronger effect ("Lands you control enter untapped", CR 616.1) does so.
+   */
+  | {
+      readonly kind: 'permanentsEnterTapped';
+      readonly permanents: ObjectFilter;
+      readonly duration: 'untilEndOfTurn' | 'untilYourNextTurn';
     }
   /**
    * "Gain control of target creature until end of turn", "Gain control of that artifact until the end of your next turn", "Gain control of target
@@ -2952,8 +3020,29 @@ export type Trigger =
       readonly by: 'you' | 'any';
       readonly filter?: ObjectFilter;
     }
-  /** "Whenever this becomes tapped" (CR 603.2e): not when it enters tapped. */
-  | { readonly kind: 'becomesTapped'; readonly what: TriggerSubject }
+  /**
+   * "Whenever this becomes tapped" (CR 603.2e): not when it enters tapped.
+   * D-510 (CR 701.26a, 603.2c, 508.1f): "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker" and "Whenever you tap an
+   * untapped creature an opponent controls": one occurrence for each permanent that changes from untapped to tapped (a permanent already tapped is not tapped again, so
+   * an effect that taps it triggers nothing). `by` limits who tapped it, relative to the controller of this ability: `you` (the controller of the effect or the player who paid
+   * the cost, `GameEvent` `tapped`'s `by`), or `opponent`; left out, whoever and however it was tapped, a permanent that no player tapped included. `notAsAttacker` leaves out a
+   * permanent tapped as it was declared as an attacker (CR 508.1f; the event's `attacker`): it is part of the trigger event, read as it happens, not an intervening "if". `batch`
+   * ("Whenever you tap one or more untapped creatures your opponents control", CR 603.2c) makes the permanents tapped in one run of events one occurrence, however many
+   * `what` names; `triggerSubject` is the first of them. A `by` of `you` and a `batch` need a `what` that is a filter, not `this` or `attached`.
+   */
+  | {
+      readonly kind: 'becomesTapped';
+      readonly what: TriggerSubject;
+      readonly by?: 'you' | 'opponent';
+      readonly notAsAttacker?: true;
+      readonly batch?: true;
+    }
+  /**
+   * "Whenever you scry" (CR 701.22, 603.2, D-513): once each time the player `who` names (relative to the controller of this ability) scries (the event `scried`: also a scry
+   * of a library with no card, CR 701.22d; never "scry 0", CR 701.22b). `triggerDamage` is the number of cards looked at while scrying (the cards put back on top and on
+   * the bottom, so at most the cards the library held), which `TargetSpec.upToTriggerAmount` and "that many" read.
+   */
+  | { readonly kind: 'scries'; readonly who: 'you' | 'opponent' | 'any' }
   /**
    * "Whenever this artifact becomes untapped" (CR 701.26a, 603.2e, D-206): a permanent that untaps, in the untap step or by an effect. A permanent that a
    * stun counter keeps tapped (CR 122.1d) does not untap, so it triggers nothing; a permanent that enters untapped does not "become" untapped.
@@ -3252,6 +3341,12 @@ export type Keyword =
    * a printed keyword or a static `grantKeyword` cannot, since nothing there asks.
    */
   | { readonly kind: 'protection'; readonly from: 'colorOfChoice' }
+  /**
+   * "Another target creature you control gains protection from the card type of your choice until end of turn" (CR 702.16a, 608.2d, D-514): as `colorOfChoice`, but the
+   * controller chooses one of the nine card types (`CARD_TYPES`) as the effect resolves, with a `chooseOption` decision (purpose `protectionCardType`), and the permanents the
+   * grant affects gain protection from that card type. Only a `grantKeyword` effect may carry it.
+   */
+  | { readonly kind: 'protection'; readonly from: 'cardTypeOfChoice' }
   /**
    * CR 702.73a (Changeling): a characteristic-defining ability, "This object is every creature type"
    * (CR 604.3), in layer 4 first (CR 613.3), working in every zone, also in a hand or a library. The

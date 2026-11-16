@@ -22,7 +22,12 @@ import type { GameState, PhaseId, StepId } from '../state/types';
 import { EMPTY_TURN_LOG } from '../state/types';
 import { endCombat } from './combat';
 import { beginCombatStep, nextCombatStep } from './combat-flow';
-import { expireEndOfTurnEffects, expireEndStepEffects, expireTurnStartEffects } from './continuous';
+import {
+  expireEndOfTurnEffects,
+  expireEndStepEffects,
+  expireTurnStartEffects,
+  expireUntapStepEffects,
+} from './continuous';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { drawCard } from './effect-support';
@@ -185,6 +190,8 @@ export function beginStep(input: GameState, step: StepId): Outcome {
       const others = untapForOthers(state, active);
       state = others.state;
       events.push(...others.events);
+      // CR 502.3, 611.2a (D-517): "doesn't untap during its controller's next untap step" ends as that step has run.
+      state = expireUntapStepEffects(state, active);
       const first = optional[0];
       if (first !== undefined) {
         return {

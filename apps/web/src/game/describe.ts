@@ -762,8 +762,14 @@ export function describeEvent(
       // there; the source may have left the battlefield, so its name is its last-known one.
       // CR 603.3c, 700.2b: a modal one whose modes cannot be chosen (no set is legal) is removed too.
       const chapter = chapterWord(event.chapter);
-      const noMode = event.reason === 'noLegalModes';
-      const why = noMode ? 'has no legal mode' : 'has no legal target';
+      // D-524 (CR 700.2b): "choose up to one" and no mode chosen: the ability is removed.
+      const none = event.reason === 'noModeChosen';
+      const noMode = event.reason === 'noLegalModes' || none;
+      const why = none
+        ? 'had no mode chosen'
+        : noMode
+          ? 'has no legal mode'
+          : 'has no legal target';
       return line(
         'major',
         chapter === null
@@ -1049,6 +1055,16 @@ export function describeEvent(
         return line(
           'major',
           `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${optionText(event.purpose, event.option)} for ${label(event.source)} (protection from that color until end of turn).`,
+          event.seat,
+          [],
+          'CR 702.16a',
+        );
+      }
+      // CR 702.16a, 608.2d (D-514): "You choose Instant for Pippin (protection from that card type until end of turn)." The choice is public, as the color's is.
+      if (event.purpose === 'protectionCardType') {
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${event.option} for ${label(event.source)} (protection from that card type until end of turn).`,
           event.seat,
           [],
           'CR 702.16a',

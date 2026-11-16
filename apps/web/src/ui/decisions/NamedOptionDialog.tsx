@@ -6,6 +6,7 @@ import {
   isChapterChoice,
   isEffectChoice,
   isMeldOrderChoice,
+  isProtectionCardTypeChoice,
   isProtectionColorChoice,
   isReplacementChoice,
   isRiotChoice,
@@ -51,7 +52,9 @@ export function NamedOptionDialog({
                   ? 'Choose one'
                   : isProtectionColorChoice(d)
                     ? 'Choose a color'
-                    : 'Choose an option'
+                    : isProtectionCardTypeChoice(d)
+                      ? 'Choose a card type'
+                      : 'Choose an option'
       }
       className="dec-option dec-named"
     >

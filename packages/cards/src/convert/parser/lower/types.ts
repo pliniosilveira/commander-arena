@@ -6,6 +6,7 @@ import type {
   Effect,
   ModeChoice,
   ObjectFilter,
+  ObjectSelector,
   PlayerSelector,
   SpellMode,
   TargetSpec,
@@ -24,6 +25,11 @@ export interface LowerContext {
   readonly targets: TargetSpec[];
   /** True when an amount was X (the spell then needs {X} in its cost, CR 107.3). */
   usesX: boolean;
+  /**
+   * True in the body of "When ~ enters, ..." (every event of the trigger is the permanent itself entering, Hylda group 3, CR 107.3m): an X there is the X of the spell the
+   * permanent came from (the engine's `enteredX`), which `validateCard` checks against the {X} of the card's mana cost; it does not make the ability read an announced X.
+   */
+  entersX: boolean;
   /**
    * True when the permanent the ability is on is gone by the time the effect runs: a "dies"
    * trigger of `~` itself, or an ability whose cost sacrifices `~` (CR 400.7: it is a new object
@@ -100,6 +106,12 @@ export interface LowerContext {
    */
   dieSides: number | null;
   /**
+   * The groups of "each" a text named so far, by the reference the binding pass gave them (D-517, CR 608.2c): "Tap all creatures target player controls. Those creatures don't
+   * untap during that player's next untap step." reads "those creatures" as the same group, which the engine names by the selector again (the group is the same one as the
+   * effect runs). Only a clause that says it reads it (`RefOptions.eachMention`).
+   */
+  readonly eachMentions: Map<string, ObjectSelector>;
+  /**
    * The normalized text of the ability the spans of the IR point into (D-287): the one place a lowering can tell the "you" the text says (the controller) from the "you"
    * the engine reads for a player asked who acts (`runsAs: 'chooser'`). Empty where the lowering has no text (a quotation lowered on its own): a rule that needs it refuses then.
    */
@@ -160,6 +172,8 @@ export interface LowerContext {
   thisWay: 'sacrificed' | 'discarded';
   /** True in the body of a triggered ability whose every event is life being gained (D-256, CR 119.9): `triggerDamage` is the life gained. */
   lifeGainTrigger: boolean;
+  /** True in the body of a triggered ability whose every event is a player scrying (D-513, CR 701.22): the cards looked at are the number its event carries. */
+  scryTrigger: boolean;
   /**
    * What "it" and "that land" mean after a search (stage P36, D-178, CR 400.7j, 701.23): the reference of the noun the last search looked for, which
    * the engine's `moved` names (the cards that search put somewhere). Null before a search and after any other move, destroy or exile.
@@ -220,6 +234,7 @@ export function newContext(
     faceSubtypes,
     targets: [],
     usesX: false,
+    entersX: false,
     selfGone: false,
     staticSubjectIsSelf: false,
     itIsSelf: false,
@@ -235,6 +250,7 @@ export function newContext(
     exiledFaceDown: false,
     thisWay: 'sacrificed',
     lifeGainTrigger: false,
+    scryTrigger: false,
     searched: null,
     sacrificedRef: null,
     madeToken: null,
@@ -248,6 +264,7 @@ export function newContext(
     graveyardSource: false,
     usedGraveyardSource: false,
     dieSides: null,
+    eachMentions: new Map(),
     staticCondition: false,
     text: '',
     interveningCondition: false,

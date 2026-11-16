@@ -21,7 +21,13 @@ import { commandersCastCount, commandersManaValue } from './derive-count';
 import { timesKickedOf } from './kicks';
 import { manaSpentOf } from './mana-spent';
 import { manaValueOfCost } from './mana-value';
-import { countMatching, matchesFilter, resolveObjects, type SelectContext } from './select';
+import {
+  countMatching,
+  matchesFilter,
+  resolveObjects,
+  resolvePlayers,
+  type SelectContext,
+} from './select';
 import { objectOrLki } from './source-info';
 
 type StateAmount = Extract<
@@ -39,7 +45,8 @@ type StateAmount = Extract<
       | 'opponentsWithMore'
       | 'cardsStillExiled'
       | 'cardsDrawnThisTurn'
-      | 'sacrificedAsCost';
+      | 'sacrificedAsCost'
+      | 'cardTypesAmong';
   }
 >;
 
@@ -72,7 +79,8 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'opponentsWithMore' ||
     amount.kind === 'cardsStillExiled' ||
     amount.kind === 'cardsDrawnThisTurn' ||
-    amount.kind === 'sacrificedAsCost'
+    amount.kind === 'sacrificedAsCost' ||
+    amount.kind === 'cardTypesAmong'
   );
 }
 
@@ -147,6 +155,22 @@ function aggregateOf(
   return amount.how === 'greatest' ? Math.max(0, best) : Math.max(0, total);
 }
 
+/**
+ * CR 205.2a, (D-518): "the number of card types among cards in your graveyard": the card types the objects the filter matches have between them, each once.
+ * The types are those of the cards where they are (`derive` of an object in a graveyard or exile is its printed types); a supertype or subtype is no card type.
+ */
+function cardTypesAmongOf(state: GameState, filter: ObjectFilter, ctx: SelectContext): number {
+  const zone = filter.zone ?? 'graveyard';
+  const seen = new Set<string>();
+  for (const id of objectsInZone(state, zone)) {
+    if (id === ctx.excluded) continue;
+    const obj = state.objects[id];
+    if (obj === undefined || !matchesFilter(state, obj, filter, ctx)) continue;
+    for (const type of derive(state, obj).types) seen.add(type);
+  }
+  return seen.size;
+}
+
 /** The value a player has for "more life / cards in hand / creatures than you" (D-131). */
 export function playerStatOf(state: GameState, seat: SeatId, stat: PlayerStat): number {
   const s = getSeat(state, seat);
@@ -191,6 +215,12 @@ export function amountOf(
   if (amount.kind === 'enteredThisTurn' || amount.kind === 'diedThisTurn') {
     return historyCount(state, amount, ctx.controller);
   }
+  if (amount.kind === 'enteredX') {
+    // CR 107.3m, 107.3g (Hylda group 3): the X of the spell the permanent resolved from, which the permanent remembers (`GameObject.castX`), or last-known information
+    // when it has left; a permanent that was not cast has none.
+    const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+    return source?.castX ?? 0;
+  }
   if (amount.kind === 'x') {
     // CR 107.3a: the X announced for the spell or ability on the stack; 0 anywhere else (CR 107.3g).
     if (ctx.x !== undefined) return ctx.x;
@@ -199,7 +229,17 @@ export function amountOf(
   }
 
   // D-095: "for each creature on the battlefield": counted now, as the instruction runs.
-  if (amount.kind === 'countOf') return countMatching(state, amount.filter, ctx);
+  if (amount.kind === 'countOf') {
+    // CR 109.4, 608.2c (Hylda group 3): "for each tapped creature target opponent controls": the player is a target, read now, with the targets.
+    const controlled = amount.filter.controlledBy;
+    return countMatching(
+      state,
+      amount.filter,
+      controlled === undefined
+        ? ctx
+        : { ...ctx, controllers: resolvePlayers(state, controlled, ctx, targets) },
+    );
+  }
   // D-120: "the total life lost this way": what the earlier `loseLife` of this resolution made players lose.
   if (amount.kind === 'lifeLostThisWay') return ctx.lifeLost ?? 0;
   // D-365: "the life that player lost this turn" is read for each player the `loseLife` effect affects (`lifeAmountFor`), never here: `validateCard` allows it
@@ -290,6 +330,8 @@ export function stateAmountOf(
     }
     case 'aggregate':
       return aggregateOf(state, amount, ctx);
+    case 'cardTypesAmong':
+      return cardTypesAmongOf(state, amount.filter, ctx);
     case 'devotion':
       return devotionOf(state, ctx.controller, amount.colors);
     case 'commanderColors':

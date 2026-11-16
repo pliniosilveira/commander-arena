@@ -220,7 +220,8 @@ describe('amount.where-x: "..., where X is ..." defines X (CR 107.3c)', () => {
   });
 
   test('X in a triggered ability that no sentence defines is still not read (CR 107.3j)', () => {
-    expect(dropped('When ~ enters, draw X cards.', 'creature')).toMatchObject({
+    // "When ~ enters" reads the X of its spell since Hylda group 3 (CR 107.3m); another trigger still has none.
+    expect(dropped('Whenever ~ attacks, draw X cards.', 'creature')).toMatchObject({
       reason: 'notRunnable',
     });
   });

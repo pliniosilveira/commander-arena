@@ -96,6 +96,8 @@ interface Occurrence {
   readonly gainNth?: number;
   /** For `countersAdded`: the kind of the counters put on (D-149). */
   readonly counter?: string;
+  /** For `becomesTapped`: the permanent was tapped as it was declared as an attacker (CR 508.1f, D-510). */
+  readonly attacker?: true;
   /** For `attackBatch`: the creatures declared as attackers and the players they were declared as attacking (D-149). */
   readonly attackers?: readonly ObjectId[];
   readonly attacked?: readonly SeatId[];
@@ -118,6 +120,23 @@ function eventPlayer(ability: Ability, occ: Occurrence): { readonly player?: Sea
   return occ.player === undefined || (ofStep && !readsTriggerPlayer(ability))
     ? {}
     : { player: occ.player };
+}
+
+/**
+ * CR 603.3d (D-513): a target slot that takes "up to X" targets, X being the number the trigger event carries (`TargetSpec.upToTriggerAmount`), is written as
+ * the bounds it has this time (none to `amount`). Null when `amount` is 0: an ability with up to 0 targets and nothing else to do does nothing, so it is not put on the stack.
+ */
+function withTriggerAmount(ability: TriggeredAbility, amount: number): TriggeredAbility | null {
+  if (!ability.targets?.some((spec) => spec.upToTriggerAmount === true)) return ability;
+  if (amount <= 0) return null;
+  return {
+    ...ability,
+    targets: ability.targets.map((spec) => {
+      if (spec.upToTriggerAmount !== true) return spec;
+      const { upToTriggerAmount: _fixed, ...rest } = spec;
+      return { ...rest, min: 0, max: amount };
+    }),
+  };
 }
 
 /** The trigger occurrences an event contains for a trigger kind. */
@@ -277,7 +296,28 @@ function occurrences(
         ? [{ subject: event.permanent, seat: event.controller, player: event.controller }]
         : [];
     case 'becomesTapped':
-      return event.kind === 'tapped' ? [{ subject: event.object, seat: null }] : [];
+      // CR 701.26a, 508.1f (D-510): the permanent that went from untapped to tapped, the player who tapped it (none when no player did) and whether it was declared as an attacker.
+      return event.kind === 'tapped'
+        ? [
+            {
+              subject: event.object,
+              seat: event.by ?? null,
+              ...(event.attacker === true ? { attacker: true as const } : {}),
+            },
+          ]
+        : [];
+    case 'scries':
+      // CR 701.22 (D-513): the player who scried; the cards looked at are what the number of the trigger is.
+      return event.kind === 'scried'
+        ? [
+            {
+              subject: null,
+              seat: event.seat,
+              player: event.seat,
+              damage: event.top + event.bottom,
+            },
+          ]
+        : [];
     case 'becomesUntapped':
       // CR 603.2e (D-206): a permanent that untaps (the untap step or an effect); a stun counter that stops it (CR 122.1d) makes no `untapped` event.
       return event.kind === 'untapped' ? [{ subject: event.object, seat: null }] : [];
@@ -545,8 +585,20 @@ function matches(
     case 'dies':
       if (trigger.graveyardOwner === 'you' && subject?.owner !== candidate.controller) return false;
       return matchesWhat(state, trigger.what, subject, candidate);
-    case 'dealtDamage':
     case 'becomesTapped':
+      // CR 701.26a, 508.1f (D-510): who tapped it, relative to the controller of this ability, and "if it isn't being declared as an attacker".
+      if (trigger.by === 'you' && occ.seat !== candidate.controller) return false;
+      if (trigger.by === 'opponent' && (occ.seat === null || occ.seat === candidate.controller)) {
+        return false;
+      }
+      if (trigger.notAsAttacker === true && occ.attacker === true) return false;
+      return matchesWhat(state, trigger.what, subject, candidate);
+    case 'scries':
+      // CR 701.22 (D-513): the player who scried, relative to the controller of this ability.
+      if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
+      if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      return true;
+    case 'dealtDamage':
     case 'becomesUntapped':
     case 'blocks':
     case 'becomesBlocked':
@@ -702,6 +754,7 @@ function isRelevant(event: GameEvent): boolean {
       );
     case 'damageDealt':
       return true; // CR 510.2 (combat damage), 120.3 (D-133: "is dealt damage" reads any damage)
+    case 'scried':
     case 'tokenCreated':
     case 'died':
     case 'sacrificed':
@@ -881,6 +934,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
           if (
             ability.trigger.kind === 'diesBatch' ||
             ability.trigger.kind === 'entersBatch' ||
+            (ability.trigger.kind === 'becomesTapped' && ability.trigger.batch === true) ||
             ability.trigger.kind === 'leftGraveyard' ||
             ability.trigger.kind === 'exiledFromLibraryOrGraveyard'
           ) {
@@ -922,11 +976,14 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
           ) {
             continue;
           }
+          // CR 603.3d, 701.22 (D-513): "tap up to X target nonland permanents, where X is the number of cards looked at": fixed as the ability triggers.
+          const fixed = withTriggerAmount(ability, occ.damage ?? 0);
+          if (fixed === null) continue;
           found.push({
             source: id,
             controller: candidate.controller,
             abilityIndex: index,
-            ability,
+            ability: fixed,
             subject: occ.subject,
             ...eventPlayer(ability, occ),
             ...(occ.damage === undefined ? {} : { damage: occ.damage }),

@@ -1,6 +1,14 @@
 {
-  "parserVersion": 103,
+  "parserVersion": 104,
   "cards": {
+    "008011e2-7b82-4962-af6e-be627112f37f": {
+      "name": "Theft of Dreams",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7a487dbf"
+    },
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
       "group": "training",
@@ -278,6 +286,14 @@
       "reasons": [],
       "ast": "94786650"
     },
+    "0828d891-f7c3-4e51-b42e-6ce88d48ac8b": {
+      "name": "Icewrought Sentry",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e60884ce"
+    },
     "0895c9b7-ae7d-4bb3-af17-3b75deb50a25": {
       "name": "Command Tower",
       "group": "training",
@@ -317,6 +333,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "05b3bde9"
+    },
+    "0a836332-5905-4afa-a442-47d0bcf8acea": {
+      "name": "Timin, Youthful Geist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "09685792"
     },
     "0acc9372-58b4-43bf-ab82-1f95831c81d4": {
       "name": "Nesting Dragon",
@@ -418,7 +442,7 @@
           "text": "Until your next turn, your life total can't change and you gain protection from everything. All permanents you control phase out.",
           "reason": "unrecognised",
           "slot": "noun",
-          "closestRule": "effect.require-attack"
+          "closestRule": "effect.group-enters-tapped"
         }
       ],
       "reasons": [],
@@ -587,6 +611,14 @@
       "reasons": [],
       "ast": "e3af3d22"
     },
+    "1733c71b-fd28-48dd-8a3d-41afd4b22f0e": {
+      "name": "Hylda of the Icy Crown",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d3bef44a"
+    },
     "180eda7c-fca2-403b-85cd-8ffebaf9f408": {
       "name": "Palace Jailer",
       "group": "acceptance",
@@ -674,6 +706,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2486ecdc"
+    },
+    "1b80b910-c0e6-42e3-929c-2b4c85c850fe": {
+      "name": "Verity Circle",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "88692be9"
     },
     "1b882a0e-0ede-4d1a-bd1a-9b7cffbcde8e": {
       "name": "Three Visits",
@@ -852,6 +892,14 @@
       "reasons": [],
       "ast": "fedde59a"
     },
+    "25afddd2-6e48-4742-b34e-e3b5def7c0fd": {
+      "name": "Pippin, Guard of the Citadel",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f2f44380"
+    },
     "25c983e0-a8c9-4784-91a4-8fe04c6df882": {
       "name": "Tocasia's Welcome",
       "group": "acceptance",
@@ -971,6 +1019,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "17a3ed9e"
+    },
+    "2c595ccb-6703-4670-a1e5-0e74d4b8d3c8": {
+      "name": "Elvish Mariner",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "15f24ab3"
     },
     "2e2ace5b-4018-43af-8e72-ebafec1a7739": {
       "name": "Harmonic Prodigy",
@@ -1441,6 +1497,14 @@
       "reasons": [],
       "ast": "b916a4d2"
     },
+    "3da1412e-a72c-4da1-8848-37145ca6614a": {
+      "name": "Narcolepsy",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ffd3bd2b"
+    },
     "3f4e300a-ec5c-42f3-a97b-d58e62abe22b": {
       "name": "Season of Growth",
       "group": "acceptance",
@@ -1472,6 +1536,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0a62fcba"
+    },
+    "40f66e21-5b60-4e42-927d-65397e7ad544": {
+      "name": "Citadel Siege",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "36b1e8b0"
     },
     "4262a726-d1da-4bdc-ab14-73212aa83f9c": {
       "name": "Tune the Narrative",
@@ -1512,6 +1584,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "643d1a98"
+    },
+    "43c69d19-c06c-470a-bdba-a0335ff2d655": {
+      "name": "Floodpits Drowner",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5ec25026"
+    },
+    "4405db13-7b36-4dc2-9a5d-1d31d568abf5": {
+      "name": "Ojutai Exemplars",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6508505d"
     },
     "446db5a4-21b0-44c1-b12b-d365313dd67a": {
       "name": "Clifftop Lookout",
@@ -1593,6 +1681,14 @@
       "reasons": [],
       "ast": "7f6775ef"
     },
+    "49aa87c7-034b-409d-b37f-50db6a42e533": {
+      "name": "You See a Guard Approach",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4988b0e0"
+    },
     "49b9a3ac-d245-431a-bf40-64d1b8dc2b91": {
       "name": "Keeper of the Accord",
       "group": "acceptance",
@@ -1608,6 +1704,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a98d6e8c"
+    },
+    "4a71f404-e48d-4c86-882e-4e21c8210dea": {
+      "name": "Topplegeist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5f95d697"
     },
     "4b1befff-48fa-47a3-832e-bdaf43495c02": {
       "name": "Ram Through",
@@ -1851,6 +1955,14 @@
       "reasons": [],
       "ast": "01c5c12c"
     },
+    "56fd0752-9fb0-4c05-90e5-c3b268b57c6f": {
+      "name": "Cone of Cold",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f4670082"
+    },
     "580996d4-db9a-4b57-a0e1-a2dbb524121a": {
       "name": "Razorlash Transmogrant",
       "group": "training",
@@ -1902,7 +2014,7 @@
           "text": "+1: Up to one target creature gets -2/-0 until your next turn.",
           "reason": "unrecognised",
           "slot": "noun",
-          "closestRule": "effect.gain-keyword-targets"
+          "closestRule": "effect.doesnt-untap-next"
         },
         {
           "face": 1,
@@ -2768,7 +2880,7 @@
           "text": "0: ~ deals 3 damage to target creature. That creature deals damage equal to its power to him.",
           "reason": "unrecognised",
           "slot": "noun",
-          "closestRule": "effect.gain-each-of-two"
+          "closestRule": "effect.doesnt-untap-next"
         }
       ],
       "reasons": [
@@ -3268,6 +3380,14 @@
       "reasons": [],
       "ast": "907586e9"
     },
+    "93df61b5-6abe-4603-9a6e-cba90a834173": {
+      "name": "Cloud's Limit Break",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ca25ff73"
+    },
     "9464ddf2-4bcb-44f6-b945-89a132544de6": {
       "name": "Maestros Theater",
       "group": "acceptance",
@@ -3315,6 +3435,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ffff24f4"
+    },
+    "97e260c9-3e78-402b-8d97-af4b515b278b": {
+      "name": "Hammers of Moradin",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "68892c31"
     },
     "981298e6-ddee-49c0-9377-f47f019b4138": {
       "name": "Currency Converter",
@@ -3372,6 +3500,14 @@
       "reasons": [],
       "ast": "0dab19c0"
     },
+    "9b93ff69-f195-4d72-8e1d-574c3e53bca8": {
+      "name": "Sleep",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "efbbb092"
+    },
     "9c36760b-57c5-488b-afc9-ef141942c6ab": {
       "name": "Archfiend of Despair",
       "group": "acceptance",
@@ -3419,6 +3555,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b8707a22"
+    },
+    "9e3fd1e9-7db6-40de-b1de-cd8cc9f60590": {
+      "name": "Send to Sleep",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "49f61e6e"
     },
     "9e96d12b-8381-4706-8089-3521aa2b5422": {
       "name": "Gau, Feral Youth",
@@ -3499,6 +3643,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "987374ea"
+    },
+    "a3f10772-d055-419d-a535-4f094eaf437c": {
+      "name": "Borrowing 100,000 Arrows",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b328329f"
     },
     "a41e632f-9d36-44d2-b1dd-e17df0d2486e": {
       "name": "Breathkeeper Seraph",
@@ -3613,6 +3765,14 @@
       "reasons": [],
       "ast": "362294f7"
     },
+    "a8291d04-240e-456b-8c86-1fb4eb460476": {
+      "name": "Hylda's Crown of Winter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f8288700"
+    },
     "a8dba58b-2956-492e-ae30-49db2ae68e53": {
       "name": "Mana Geyser",
       "group": "training",
@@ -3644,6 +3804,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1d65ce6f"
+    },
+    "aa40d270-63d7-4022-ade9-67c1ab65ef70": {
+      "name": "Dreamshackle Geist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "844655b9"
     },
     "aa913409-7a7a-4e74-82ff-7ff8195585ad": {
       "name": "Roll-Roll-Roll-Roll",
@@ -3913,6 +4081,14 @@
       "reasons": [],
       "ast": "bf33267c"
     },
+    "b6ec5a5c-144d-4ac3-bd05-2dc360c670fd": {
+      "name": "Tempest Caller",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c7c592b1"
+    },
     "b81eaa2f-0554-41c6-bdf6-d1cb73b8f56f": {
       "name": "Realmwalker",
       "group": "holdout",
@@ -3960,6 +4136,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "adae07f7"
+    },
+    "b9a62c6b-5848-44b1-932b-8d5de2560976": {
+      "name": "Surge of Salvation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a9341526"
     },
     "b9cec31a-9891-414f-b528-954612168832": {
       "name": "Tangleweave Armor",
@@ -4154,6 +4338,14 @@
       "reasons": [],
       "ast": "9394df3a"
     },
+    "c450f6b7-bb2a-4b8c-aec7-d27555137b63": {
+      "name": "Retreat to Coralhelm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "21093119"
+    },
     "c4fe854e-8783-492e-bb2e-9f242ada8a5b": {
       "name": "Blight Mound",
       "group": "acceptance",
@@ -4193,6 +4385,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e53d1d54"
+    },
+    "c736935a-e006-4a67-b942-e8ccf1cd9abb": {
+      "name": "Sharae of Numbing Depths",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "44844338"
+    },
+    "c7530ecd-e22f-41e7-a76b-de32809901c8": {
+      "name": "Gadwick, the Wizened",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b989839b"
     },
     "c7aecca5-2f67-4245-ab2d-e723d8b23a67": {
       "name": "Expressive Iteration",
@@ -4347,6 +4555,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e8228ba9"
+    },
+    "cc6a83c7-e645-4a53-9550-be79b42cd851": {
+      "name": "Loyal Warhound",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e0321e5a"
     },
     "cd2c90ac-2b04-461c-92f3-939871b6b6a3": {
       "name": "Sunken Hollow",
@@ -4973,6 +5189,14 @@
       "reasons": [],
       "ast": "5ef9c253"
     },
+    "ed2f3339-5c3e-473f-b08e-58288c4ad9c2": {
+      "name": "Niblis of Frost",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c2acfd5b"
+    },
     "ed7300f4-831a-4ba4-b5e6-ceba8d079eaa": {
       "name": "Cosmos Elixir",
       "group": "acceptance",
@@ -5160,6 +5384,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b8bc1bbf"
+    },
+    "f49302c5-8510-4360-841c-a59f53f87e0b": {
+      "name": "Icy Blast",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "49aa019f"
     },
     "f4ce6078-8c7b-4f68-b324-13130c63a983": {
       "name": "Angel of Serenity",
@@ -5556,8 +5788,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 346,
-      "total": 363
+      "supported": 375,
+      "total": 392
     }
   }
 }

@@ -58,7 +58,11 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
       const protection = word.protection;
       let keyword: Keyword;
       if ('choice' in protection) {
-        keyword = { kind: 'protection', from: 'colorOfChoice' };
+        // D-514 (CR 702.16a, 608.2d): the card type of the controller's choice, asked as the effect resolves, as the color is.
+        keyword = {
+          kind: 'protection',
+          from: protection.choice === 'cardType' ? 'cardTypeOfChoice' : 'colorOfChoice',
+        };
       } else {
         const colors = protection.colors.map(colorLetter);
         if (colors.some((c) => c === undefined) || colors.length === 0) return failure(clause);
@@ -309,6 +313,9 @@ export const FLICKER: Lowering<IrClause, Effects> = {
     const to = arg(clause, 'to');
     if (what?.kind !== 'noun' || to?.kind !== 'zoneSpec') return failure(clause);
     if (to.zone !== 'battlefield' || to.whose === undefined) return failure(clause);
+    // Hylda group 3 (Ojutai Exemplars): "Exile ~, then return it ...": the permanent with the ability, which must still be there to be exiled; a spell, or an ability whose
+    // permanent is gone by now (a "dies" trigger), has nothing to flicker.
+    if (what.det === 'self' && (ctx.owner === 'spell' || ctx.selfGone)) return failure(clause);
     const objects = objectSelectorOf(what, ctx);
     if (!objects.ok) return objects;
     const back: Effect = {

@@ -152,6 +152,11 @@ export interface TargetChoiceSpec {
    * Absent for every other slot.
    */
   readonly onePerGroup?: true;
+  /**
+   * With `onePerGroup` (`TargetSpec.differentControllers`, Hylda group 3: "any number of target tapped creatures with different controllers"): the groups are the controllers
+   * of the targets, any player's, the controller of the spell included, so the slot is not "for each opponent". Absent otherwise.
+   */
+  readonly eachController?: true;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
   readonly differentFrom?: string;
   /** Every legal target for this slot, computed by the engine (CR 115, 608.2b). */
@@ -740,12 +745,14 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'vote'
     | 'meldOrder'
     | 'pile'
-    | 'protectionColor';
+    | 'protectionColor'
+    | 'protectionCardType';
   readonly options: readonly string[];
   /**
    * For purpose `'protectionColor'` (D-451, CR 702.16, 608.2d, "gains protection from the color of your choice"): the controller of the resolving spell or
    * ability chooses one of the five colors (`options` are `W`, `U`, `B`, `R`, `G`, in that order) and the permanents in `protects` gain protection from it
-   * until end of turn. `source` is the spell or ability that resolves. Absent for the other purposes.
+   * until end of turn. `source` is the spell or ability that resolves. For purpose `'protectionCardType'` (D-514, CR 702.16a, "gains protection from the card type of
+   * your choice") the same, with the nine card types as `options` (the names of `CARD_TYPES`). Absent for the other purposes.
    */
   readonly protects?: readonly ObjectId[];
   /**

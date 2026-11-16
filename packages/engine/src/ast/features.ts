@@ -119,6 +119,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificeX',
     // D-491: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
     'optionalSacrifice',
+    // D-511: "You may pay {1}. When you do, choose one —" (a `reflexive` effect with `modes`, and with `afterPayment` inside a `mayPay`, CR 603.12, 700.2b).
+    'reflexiveModal',
+    'reflexivePaid',
   ],
   effectKinds: [
     'sequence',
@@ -182,8 +185,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // opponentsCantWin given for the rest of the game (`duration: 'permanent'`).
     'grantAbility',
     'restrict',
+    // Hylda group 3 (CR 702.11b): "You gain hexproof until end of turn", a player's hexproof for the turn.
+    'grantPlayerHexproof',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".
     'requireAttack',
+    // D-519: "Until your next turn, creatures your opponents control enter tapped".
+    'permanentsEnterTapped',
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
     'gainControl',
     'shuffle',
@@ -347,6 +354,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
     'crimeCommitted',
     'tokenCreated',
+    // D-513: "Whenever you scry" (CR 701.22).
+    'scries',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -362,6 +371,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomesTargetSpell',
     // D-229: "casts their second spell each turn" (`castSpell` with `nth`).
     'castNth',
+    // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
+    // (`notAsAttacker`) and "Whenever you tap one or more untapped creatures" (`batch`).
+    'tappedBy',
+    'notAsAttacker',
+    'tapBatch',
   ],
   keywordKinds: [
     'flying',
@@ -686,8 +700,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-187: "you may sacrifice one or more Treasures" (`ChooseSelector.atLeastOne`) and "up to that many target creatures" (`TargetSpec.upToThatMany`).
     'atLeastOne',
     'upToThatMany',
+    // D-513: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
+    'upToTriggerAmount',
     // D-386 (provisional): "Return X target creature cards from your graveyard to your hand" (`TargetSpec.countX`).
     'countX',
+    // Hylda group 3 (CR 115.1, 601.2c): "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
+    'differentControllers',
     'greatest',
     'giftRecipient',
     // D-210: "each player who discarded a card this way" (`PlayerSelector` `discardedThisWay`).
@@ -805,6 +823,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'untilYourNextTurn',
     'forAsLongAsYouControlThis',
     'forAsLongAsThisRemains',
+    'untilNextUntapStep',
   ],
   // CR 611.3, 613.1f, 613.4c: "+N/+N" in layer 7c and keyword grants in layer 6, from `derive`.
   // D-094: `restriction` ("can't block", "can't be blocked", "attacks each combat if able",
@@ -913,6 +932,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'commanderCasts',
     // D-179: "for each color among permanents you control" (a static ability's +N/+N).
     'colorsAmong',
+    // D-518: "the number of card types among cards in your graveyard" (Delirium).
+    'cardTypesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
     'timesAttacked',
     'affected',
@@ -931,6 +952,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsDrawnThisTurn',
     // D-491: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
     'sacrificedAsCost',
+    // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
+    'enteredX',
   ],
   // D-405: 'library' is "then shuffle and put that card on top".
   searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library'],
@@ -1080,6 +1103,10 @@ export const ABILITY_FEATURES = [
   'sacrificeX',
   /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-491, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
   'optionalSacrifice',
+  /** "When you do, choose one —" (CR 603.12, 700.2b, 603.3c, D-511): a `reflexive` effect with `modes` and `chooseModes`. */
+  'reflexiveModal',
+  /** "You may pay {1}. When you do, ..." (CR 603.12, 118.1, D-511): a `reflexive` effect with `afterPayment`, the `effect` of a `mayPay`. */
+  'reflexivePaid',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 
@@ -1096,6 +1123,12 @@ export const TRIGGER_FEATURES = [
   'becomesTargetSpell',
   /** "Whenever an opponent casts their second spell each turn" (CR 601.2i, D-229): the engine's `castSpell` with `nth`. */
   'castNth',
+  /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
+  'tappedBy',
+  /** "Whenever a creature becomes tapped, if it isn't being declared as an attacker" (CR 508.1f, D-510): the engine's `becomesTapped` with `notAsAttacker`. */
+  'notAsAttacker',
+  /** "Whenever you tap one or more untapped creatures" (CR 603.2c, D-510): the engine's `becomesTapped` with `batch`. */
+  'tapBatch',
 ] as const;
 export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 
@@ -1134,7 +1167,7 @@ export const SELECTOR_KINDS = [
   'ownerRef',
   /**
    * "Each creature that player controls" (CR 109.4, D-179): the engine's `ObjectFilter.controlledBy`, a player the filter names by reference,
-   * run where an effect's `each` selector is read.
+   * run where an effect's `each` selector is read, and (Hylda group 3, D-499) in a `countOf` of an effect whose player is a target.
    */
   'controllerRef',
   /** "That was put there from the battlefield this turn" (CR 700.4, D-179): the engine's `ObjectFilter.putFromBattlefieldThisTurn`. */
@@ -1224,8 +1257,12 @@ export const SELECTOR_KINDS = [
   'atLeastOne',
   /** "Up to that many target creatures" after a sacrifice (CR 603.12, D-187): the engine's `TargetSpec.upToThatMany`. */
   'upToThatMany',
+  /** "Up to X target nonland permanents" where X is the cards looked at while scrying (CR 603.3d, 701.22, D-513): the engine's `TargetSpec.upToTriggerAmount`. */
+  'upToTriggerAmount',
   /** "X target creature cards" (CR 601.2b, 601.2c, D-386): the engine's `TargetSpec.countX`, as many targets as the X announced. */
   'countX',
+  /** "Any number of target tapped creatures with different controllers" (CR 115.1, 601.2c, Hylda group 3): the engine's `TargetSpec.differentControllers`. */
+  'differentControllers',
   /** "A creature with the greatest power among creatures they control" (D-135): the engine's `ChooseSelector.greatest`. */
   'greatest',
   /** "The chosen player" of a gift (CR 702.174a, D-135): the engine's `PlayerSelector` `giftRecipient`. */
@@ -1367,6 +1404,8 @@ export const DURATION_KINDS = [
   'forAsLongAsYouControlThis',
   /** "For as long as this Saga remains on the battlefield" (CR 611.2b, D-207): the duration of a `grantKeyword` and a `preventDamage` in an ability of a permanent. */
   'forAsLongAsThisRemains',
+  /** "Doesn't untap during its controller's next untap step" (CR 502.3, D-517): the duration of a `restrict` of `doesntUntap`. */
+  'untilNextUntapStep',
 ] as const;
 export type DurationKind = (typeof DURATION_KINDS)[number];
 
@@ -1515,6 +1554,8 @@ export const AMOUNT_KINDS = [
   'commanderCasts',
   /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N. */
   'colorsAmong',
+  /** "The number of card types among cards in your graveyard" (CR 205.2a, D-518): the engine's `cardTypesAmong`. */
+  'cardTypesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
   'timesAttacked',
   /** "Double the power and toughness of each creature you control" (CR 701.10, D-145): the engine's `affected` power or toughness amount. */
@@ -1539,6 +1580,8 @@ export const AMOUNT_KINDS = [
   'cardsDrawnThisTurn',
   /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
+  /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
+  'enteredX',
   'bound',
 ] as const;
 export type AmountKind = (typeof AMOUNT_KINDS)[number];
@@ -1622,6 +1665,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   modeCost: true,
   sacrificeX: true,
   optionalSacrifice: true,
+  reflexiveModal: true,
+  reflexivePaid: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,
@@ -1634,6 +1679,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
 };
 const EFFECT_TABLE: KindTable<Effect['kind']> = {
   sequence: true,
+  grantPlayerHexproof: true,
   mill: true,
   manifest: true,
   dealDamage: true,
@@ -1678,6 +1724,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   grantAbility: true,
   restrict: true,
   requireAttack: true,
+  permanentsEnterTapped: true,
   gainControl: true,
   shuffle: true,
   rollDie: true,
@@ -1782,6 +1829,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   ringTempted: true,
   crimeCommitted: true,
   tokenCreated: true,
+  scries: true,
   interveningIf: true,
   alone: true,
   attacksAt: true,
@@ -1790,6 +1838,9 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   triggerCondition: true,
   becomesTargetSpell: true,
   castNth: true,
+  tappedBy: true,
+  notAsAttacker: true,
+  tapBatch: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flying: true,

@@ -226,6 +226,12 @@ interface SentenceOptions {
    */
   readonly reflexive?: boolean;
   /**
+   * "1—9 | Tap all creatures your opponents control." (Hylda deck, group 2, D-525, CR 706.3a): a row of the results table of a die roll starts the sentence with its range
+   * ("N", "N—M", "N+") and a bar. The sentence is read after the bar and carries the range (`IrSentence.dieRow`); the sentences after it, up to the next row, are the same row. Only the
+   * text of a spell asks for it, where the lowering of the whole text (`lowerSentences`) joins the roll and its rows.
+   */
+  readonly dieRows?: boolean;
+  /**
    * "At the beginning of your next end step, ..." may start the sentence (stage P34, D-152, CR 603.7): what a delayed triggered ability does.
    * Only the bodies whose lowering wraps the sentence in the engine's `delayedTrigger` ask for it.
    */
@@ -325,11 +331,36 @@ const UNLESS_PAYS: Parser<IrCondition> = map(
  * words stay unread. With `conditional`, a leading "If ~ was kicked, " is the sentence's condition
  * and a trailing " instead" says that it replaces the sentence before it.
  */
+/** "1—9 | ", "20 | ": the range of a row of a results table (CR 706.3a: "a single number" or "a range of numbers with two endpoints in the form N1–N2"). */
+const DIE_ROW: Parser<{ from: number; to: number }> = (ctx, pos) => {
+  const r = pattern(/(\d+)(?:[—–-](\d+))? \| /u)(ctx, pos);
+  if (!r.ok) return r;
+  const from = Number(r.value[1]);
+  const to = r.value[2] === undefined ? from : Number(r.value[2]);
+  return { ok: true, value: { from, to }, pos: r.pos };
+};
+
 function sentenceParser(options: SentenceOptions): Parser<IrSentence> {
   const plain = plainSentence(options);
   // "Then discard two cards unless ..." (stage P31, D-140): "then" at the start of a sentence says only that it comes after the one
   // before, which every sentence does (CR 608.2c). A sentence that does not read after it stops where it always did, at "Then".
   return (ctx, pos) => {
+    // D-525 (CR 706.3a): a row of the results table of a die roll.
+    if (options.dieRows === true) {
+      const row = DIE_ROW(ctx, pos);
+      if (row.ok) {
+        const read = plain(ctx, row.pos);
+        if (!read.ok) return read;
+        return {
+          ...read,
+          value: {
+            ...read.value,
+            dieRow: row.value,
+            span: { start: pos, end: read.pos },
+          },
+        };
+      }
+    }
     const then = literal('then ')(ctx, pos);
     if (then.ok) {
       const read = quiet(plain)(ctx, then.pos);
@@ -494,6 +525,8 @@ export const SPELL_SENTENCE: Parser<IrSentence> = sentenceParser({
   // that player pays {3}" stays as it was.
   unless: 'energy',
   delayed: true,
+  // D-525 (CR 706.3): the rows of a results table.
+  dieRows: true,
 });
 
 /**

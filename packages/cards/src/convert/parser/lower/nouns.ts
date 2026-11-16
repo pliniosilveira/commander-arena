@@ -90,8 +90,12 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:sacrificedCost',
   'selector:thisCard',
   'selector:anyNumber',
+  // Hylda group 3: "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
+  'selector:differentControllers',
   'selector:atLeastOne',
   'selector:upToThatMany',
+  // D-513: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
+  'selector:upToTriggerAmount',
   // D-386: "X target creature cards from your graveyard" (`TargetSpec.countX`).
   'selector:countX',
   'selector:greatest',
@@ -396,6 +400,17 @@ function lowerFilterAt(
 
 /** An IR filter as the engine's ObjectFilter. */
 export function lowerFilter(noun: IrNoun): LowerResult<ObjectFilter> {
+  // D-521 (CR 603.2, 102.1): "target creature that player controls" in a trigger about a player (the active player of a step): the player the binding pass found for "that
+  // player" is the player of the event (`trigActor`), which a target slot names as the engine's `controller: 'triggerPlayer'`. Any other player is not read.
+  const bound = noun.filter.controller;
+  if (noun.det === 'target' && typeof bound === 'object') {
+    if (bound.noun.ref !== 'trigActor' || bound.orPlaneswalkerController === true) {
+      return failure(noun, ['selector:controllerRef']);
+    }
+    const { controller: _player, ...rest } = noun.filter;
+    void _player;
+    return lowerFilterAt({ ...rest, controller: 'triggerPlayer' }, noun, false);
+  }
   return lowerFilterAt(noun.filter, noun, false);
 }
 
@@ -495,6 +510,8 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         ...boundsOf(noun),
       };
     } else if (noun.filter.player !== undefined) {
+      // "with different controllers" is said of permanents, never of players.
+      if (noun.differentControllers === true) return failure(noun, []);
       if (anyNumberTarget) {
         const blocked = missingFeatures(['selector:anyNumber']);
         if (blocked.length > 0) return failure(noun, blocked);
@@ -561,12 +578,25 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         const blocked = missingFeatures(['selector:upToThatMany']);
         if (blocked.length > 0) return failure(noun, blocked);
       }
+      // "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (D-513, CR 603.3d, 701.22): the number of the scry event, so
+      // only the body of a trigger of a scry reads it, and the noun has no other count.
+      if (noun.upToTriggerAmount === true) {
+        const blocked = missingFeatures(['selector:upToTriggerAmount']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        if (!ctx.scryTrigger || noun.det !== 'target') return failure(noun, []);
+      }
       // "another target artifact or creature you control" after a first target (stage P64, D-217, CR 115.3): not the target of the slot before it.
       const apart = noun.otherTarget === true ? ctx.targets[ctx.targets.length - 1]?.id : undefined;
       if (noun.otherTarget === true && apart === undefined) return failure(noun, []);
       if (anyNumberTarget) {
         const blocked = missingFeatures(['selector:anyNumber']);
         if (blocked.length > 0) return failure(noun, blocked);
+      }
+      if (noun.differentControllers === true) {
+        const blocked = missingFeatures(['selector:differentControllers']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        // Only a slot of any number of objects says "with different controllers".
+        if (!anyNumberTarget) return failure(noun, []);
       }
       if (countX) {
         const blocked = missingFeatures(['selector:countX']);
@@ -582,17 +612,26 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
             ...(noun.upTo ? { min: 0 } : {}),
           }
         : anyNumberTarget
-          ? { id, what: { kind: 'object', filter: filter.value }, anyNumber: true }
+          ? {
+              id,
+              what: { kind: 'object', filter: filter.value },
+              anyNumber: true,
+              ...(noun.differentControllers === true
+                ? { differentControllers: true as const }
+                : {}),
+            }
           : noun.perOpponent === true
             ? { id, what: { kind: 'object', filter: filter.value }, onePerOpponent: true }
-            : noun.upToThatMany === true
-              ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }
-              : {
-                  id,
-                  what: { kind: 'object', filter: filter.value },
-                  ...boundsOf(noun),
-                  ...(apart === undefined ? {} : { differentFrom: apart }),
-                };
+            : noun.upToTriggerAmount === true
+              ? { id, what: { kind: 'object', filter: filter.value }, upToTriggerAmount: true }
+              : noun.upToThatMany === true
+                ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }
+                : {
+                    id,
+                    what: { kind: 'object', filter: filter.value },
+                    ...boundsOf(noun),
+                    ...(apart === undefined ? {} : { differentFrom: apart }),
+                  };
     }
     ctx.targets.push(spec);
   }
@@ -641,6 +680,11 @@ export interface RefOptions {
    * read in an amount ("deals damage equal to that creature's power").
    */
   readonly sacrificed?: boolean;
+  /**
+   * "Those creatures" may be a group of "each" an earlier clause of the text named (D-517, CR 608.2c): the selector that clause lowered, read again as this effect runs (the
+   * same group, since nothing between them changes who is in it). Only for the clauses that say it ("those creatures don't untap during ...").
+   */
+  readonly eachMention?: boolean;
 }
 
 export function objectRefOf(
@@ -775,6 +819,23 @@ export function objectRefOf(
 
 /** The objects a noun names: an `ObjectRef`, or "each" of a filter. */
 export function objectSelectorOf(
+  noun: IrNoun,
+  ctx: LowerContext,
+  options: RefOptions = {},
+): LowerResult<ObjectSelector> {
+  // D-517: "those creatures" after "tap all creatures target player controls": the group the text named, as it was lowered.
+  if (options.eachMention === true && noun.det === 'anaphor') {
+    const mentioned = noun.ref === undefined ? undefined : ctx.eachMentions.get(noun.ref);
+    if (mentioned !== undefined) return { ok: true, value: mentioned, rule: noun.rule };
+  }
+  const selector = selectorOf(noun, ctx, options);
+  if (selector.ok && noun.det === 'each' && noun.ref !== undefined) {
+    ctx.eachMentions.set(noun.ref, selector.value);
+  }
+  return selector;
+}
+
+function selectorOf(
   noun: IrNoun,
   ctx: LowerContext,
   options: RefOptions = {},

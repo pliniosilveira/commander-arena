@@ -351,7 +351,7 @@ function tapChosen(
   });
   for (const id of chosen) {
     next = patchObject(next, id, { tapped: true });
-    events.push({ kind: 'tapped', object: id });
+    events.push({ kind: 'tapped', object: id, by: casting.seat });
   }
   return payBlight(next, events, paySacrifice);
 }
@@ -465,7 +465,7 @@ function crewChosen(
   });
   for (const id of chosen) {
     next = patchObject(next, id, { tapped: true });
-    events.push({ kind: 'tapped', object: id });
+    events.push({ kind: 'tapped', object: id, by: casting.seat });
   }
   return finishActivation(next, events);
 }

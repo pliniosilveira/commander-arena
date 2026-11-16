@@ -257,7 +257,8 @@ describe('X and its sign in a pump (CR 107.3a, 611.2c)', () => {
   });
 
   test.each([
-    ['When ~ enters, each creature gets -X/-X until end of turn.', 'creature'],
+    // "When ~ enters" reads the X of its spell since Hylda group 3 (CR 107.3m); another trigger has none.
+    ['Whenever ~ attacks, each creature gets -X/-X until end of turn.', 'creature'],
     ['{R}: ~ gets +X/+0 until end of turn.', 'creature'],
     ['Creatures you control get +X/+X.', 'enchantment'],
   ] as const)(

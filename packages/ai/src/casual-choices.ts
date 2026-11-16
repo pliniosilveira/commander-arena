@@ -155,6 +155,20 @@ function chooseTargetsOf(view: GameView, d: TargetsDecision): Action {
       .sort((a, b) => b.score - a.score || a.index - b.index);
     const hostile = ranked.filter((r) => r.score > 0).length;
     const count = Math.min(spec.max, spec.legal.length, Math.max(spec.min, hostile));
+    if (spec.onePerGroup === true) {
+      // D-149, Hylda group 3: "for each opponent" and "with different controllers": at most one target of each controller, the best-scored one first.
+      const seen = new Set<number>();
+      let taken = 0;
+      for (const r of ranked) {
+        if (taken >= count) break;
+        const group = r.t.kind === 'object' ? r.t.group : undefined;
+        if (group !== undefined && seen.has(group)) continue;
+        if (group !== undefined) seen.add(group);
+        targets.push(r.t);
+        taken += 1;
+      }
+      continue;
+    }
     for (const r of ranked.slice(0, count)) targets.push(r.t);
   }
   return { kind: 'chooseTargets', targets };

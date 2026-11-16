@@ -73,12 +73,27 @@ export const PREVENT_DAMAGE: Lowering<IrClause, Effects> = {
     // engine reads as the filter of the source (`byFilter`, never with a recipient or a source of its own).
     const groupArg = arg(clause, 'byFilter');
     if (groupArg !== undefined) {
-      if (groupArg.kind !== 'noun' || to !== undefined || byArg !== undefined)
-        return failure(clause);
+      if (groupArg.kind !== 'noun' || byArg !== undefined) return failure(clause);
       const { zone: _zone, ...filter } = groupArg.filter;
       void _zone;
       const byFilter = lowerFilter({ ...groupArg, det: 'each', filter });
       if (!byFilter.ok) return byFilter;
+      // Hylda group 3 (CR 615.1, 609.7a): "Prevent all damage that black and/or red sources would deal to creatures you control": a shield for each recipient the text names,
+      // with the sources as a filter checked as the damage would be dealt.
+      if (to !== undefined) {
+        const shields: Effect[] = [];
+        for (const item of itemsOf(to)) {
+          const lowered = recipient(item, ctx);
+          if (!lowered.ok) return lowered;
+          shields.push({
+            kind: 'preventDamage',
+            ...base,
+            to: lowered.value,
+            byFilter: byFilter.value,
+          });
+        }
+        return { ok: true, value: shields, rule: clause.rule };
+      }
       return {
         ok: true,
         value: [{ kind: 'preventDamage', ...base, to: { kind: 'any' }, byFilter: byFilter.value }],

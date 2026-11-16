@@ -335,7 +335,8 @@ describe('what stays unread: X where the engine has no X (CR 107.3, 107.3j)', ()
   test.each([
     ['{T}: Draw X cards.', 'creature', 'ability.activated'],
     ['{1}, {T}: ~ deals X damage to any target.', 'creature', 'ability.activated'],
-    ['When ~ enters, draw X cards.', 'creature', 'ability.triggered'],
+    // Hylda group 3 (CR 107.3m) reads the X of "When ~ enters"; another trigger has no X to read.
+    ['Whenever ~ attacks, draw X cards.', 'creature', 'ability.triggered'],
     ['Whenever ~ attacks, ~ deals X damage to any target.', 'creature', 'ability.triggered'],
     ['{X}, {T}: Add {G}{G}.', 'artifact', 'cost.mana-x'],
     ['{T}: Add {G}. ~ deals X damage to you.', 'artifact', 'ability.activated'],

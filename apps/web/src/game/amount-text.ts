@@ -171,8 +171,21 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
   switch (amount.kind) {
     case 'x':
       return 'X';
-    case 'countOf':
+    case 'enteredX':
+      // CR 107.3m (Hylda group 3): "When this creature enters, draw X cards": the X the spell had, said as X.
+      return 'X';
+    case 'countOf': {
+      // CR 109.4 (Hylda group 3): "for each tapped creature target opponent controls": the player is a target of the ability, said as "that player".
+      const { controlledBy, ...rest } = amount.filter;
+      if (controlledBy !== undefined) {
+        if (controlledBy.kind !== 'target') return UNKNOWN_AMOUNT;
+        const things = thingsPhrase(rest, true);
+        return things === null || !things.endsWith(' on the battlefield')
+          ? UNKNOWN_AMOUNT
+          : `the number of ${things.replace(/ on the battlefield$/, '')} that player controls`;
+      }
       return countPhrase(amount.filter) ?? UNKNOWN_AMOUNT;
+    }
     case 'powerOf':
       return `${possessive(amount.of, ctx)} power`;
     case 'toughnessOf':
@@ -220,6 +233,11 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return amount.how === 'greatest'
         ? `the greatest ${stat} among ${things}`
         : `the total ${stat} of ${things}`;
+    }
+    case 'cardTypesAmong': {
+      // D-518 (CR 205.2a): "the number of card types among cards in your graveyard" (Delirium).
+      const cards = thingsPhrase(amount.filter, true);
+      return cards === null ? UNKNOWN_AMOUNT : `the number of card types among ${cards}`;
     }
     case 'devotion':
       return `your devotion to ${colorList(amount.colors)}`;
@@ -291,7 +309,7 @@ export function createDefinitions(): Definitions {
   return {
     say(amount, ctx = {}) {
       if (typeof amount === 'number') return String(amount);
-      if (amount.kind === 'x') return 'X';
+      if (amount.kind === 'x' || amount.kind === 'enteredX') return 'X';
       // D-151: "deals that much damage": the number the reflexive ability reads is said as it is, never as a letter.
       if (amount.kind === 'triggerDamage') return 'that much';
       const phrase = amountPhrase(amount, ctx);

@@ -83,7 +83,11 @@ export function convertFace(
     characteristics.types.includes('instant') || characteristics.types.includes('sorcery');
   const parsed = parseFaceText(
     stored.oracleText,
-    { name: stored.name, legendary: characteristics.supertypes.includes('legendary') },
+    {
+      name: stored.name,
+      legendary: characteristics.supertypes.includes('legendary'),
+      creature: characteristics.types.includes('creature'),
+    },
     faceIndex,
     rules,
     isSpellCard ? spellRules : [],

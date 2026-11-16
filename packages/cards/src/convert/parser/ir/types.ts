@@ -170,6 +170,8 @@ export interface IrNoun extends IrNode {
   readonly minTargets?: number;
   /** "any number of other permanents" (stage P30, CR 701.21): the player chooses none, some or all of them. */
   readonly anyNumber?: true;
+  /** "any number of target tapped creatures with different controllers" (Hylda group 3, CR 115.1, 601.2c): with `anyNumber` on a target, no two of them have the same controller. */
+  readonly differentControllers?: true;
   /** "one or more Treasures" (stage P41, D-188, CR 701.21): with `anyNumber`, the player chooses at least one of them. */
   readonly atLeastOne?: true;
   /**
@@ -177,6 +179,11 @@ export interface IrNoun extends IrNode {
    * resolution that created it sacrificed permanents (the engine's `upToThatMany`); it has no count of its own.
    */
   readonly upToThatMany?: true;
+  /**
+   * "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (Hylda deck group 1, D-513, CR 603.3d): a target noun of a
+   * triggered ability with as many targets, at most, as the number its event carries (the engine's `upToTriggerAmount`); it has no count of its own.
+   */
+  readonly upToTriggerAmount?: true;
   /**
    * "a creature with the greatest power among creatures they control" (stage P30, D-135): the player chooses among the permanents
    * of the filter that have the greatest value of this stat among them.
@@ -361,6 +368,8 @@ export type IrAmount =
   | { readonly kind: 'manaValueOf'; readonly of: IrNoun; readonly span: Span }
   // "for each color among permanents you control" (stage P37, D-180, CR 105.2): the colors the permanents have between them, each once
   | { readonly kind: 'colorsAmong'; readonly of: IrNoun; readonly span: Span }
+  // "the number of card types among cards in your graveyard" (Hylda deck group 2, D-518, CR 205.2a): the card types the cards of the group have between them, each once
+  | { readonly kind: 'cardTypesAmong'; readonly of: IrNoun; readonly span: Span }
   // "for each time it was kicked" (CR 702.33c), stage P17; `who` is the word that says which object
   | { readonly kind: 'timesKicked'; readonly who: 'self' | 'it'; readonly span: Span }
   // "equal to the total life lost this way" (CR 702.101a), stage P21: what an earlier loss of life in the same text lost
@@ -432,7 +441,7 @@ export type IrAmount =
   // "for each opponent who has more cards in hand than you"
   | {
       readonly kind: 'opponentsWithMore';
-      readonly stat: 'life' | 'cardsInHand' | 'creatures';
+      readonly stat: 'life' | 'cardsInHand' | 'creatures' | 'lands';
       readonly span: Span;
     }
   // "for each creature sacrificed this way", "for each opponent who drew a card this way": what an earlier
@@ -511,6 +520,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'opponentsAtLeast'; readonly atLeast: IrAmount }
     // "~ was kicked", "it was kicked" (CR 702.33d); `who` is the word the text used for the object
     | { readonly kind: 'kicked'; readonly who: 'self' | 'it' }
+    // "it isn't being declared as an attacker" (Hylda deck group 1, D-510, CR 508.1f): part of the event of "becomes tapped", read by the trigger's lowering
+    | { readonly kind: 'notDeclaredAttacker' }
     // "you control a commander" (CR 903.3d), stage P13; stage P29: "you control your commander" (`yours`, CR 903.3)
     | { readonly kind: 'controlCommander'; readonly yours?: true }
     // Stage P29 (D-133): "you have 30 or more life", "you have at least 7 life more than your starting life total"
@@ -798,7 +809,9 @@ export interface IrKeywordArg extends IrNode {
    * Feather deck group 1 (D-451, D-452, CR 702.16): the quality of a protection the clause grants ("gains protection from red", "gains protection from the color
    * of your choice"): the color words, lowercase, or `choice` for the color the controller chooses as the effect resolves. `name` is then `protection`.
    */
-  readonly protection?: { readonly colors: readonly string[] } | { readonly choice: 'color' };
+  readonly protection?:
+    | { readonly colors: readonly string[] }
+    | { readonly choice: 'color' | 'cardType' };
 }
 
 /** Keywords as the words spell them ("haste", "first strike"), the grant of "except it has haste" (stage P34, D-152, CR 707.9b). */
@@ -1018,6 +1031,11 @@ export interface IrSentence extends IrNode {
    * not `optional`: the question is this node's. Only in the body of a triggered ability.
    */
   readonly mayBy?: { readonly who: IrNoun; readonly haveYou: boolean };
+  /**
+   * "1—9 | Tap all creatures your opponents control." (D-525, CR 706.3a): the sentence starts a row of the results table of the die roll before it, for the results from `from` to
+   * `to` (a single number has both the same). The sentences after it, up to the next sentence with a `dieRow`, belong to the row. Read only in the text of a spell.
+   */
+  readonly dieRow?: { readonly from: number; readonly to: number };
 }
 export interface IrBody extends IrNode {
   readonly kind: 'body';
@@ -1101,6 +1119,11 @@ export interface IrTrigger extends IrNode {
    * read once as it happens (not an intervening "if", CR 603.4, which is read again as the ability resolves).
    */
   readonly whileCondition?: IrCondition;
+  /**
+   * 'becomesTapped' (Hylda deck group 1, D-510, CR 603.2c): "Whenever you tap one or more untapped creatures your opponents control": one trigger for the permanents
+   * tapped together, whatever their number. The player who taps is the `actor` ("you tap").
+   */
+  readonly batch?: true;
 }
 
 export interface IrRestriction extends IrNode {
@@ -1508,6 +1531,11 @@ export type IrAbility =
       /** "When ~ enters, choose one —" and its bullets (stage P19, CR 700.2b). */
       readonly modal?: IrModes;
       /**
+       * "..., you may pay {1}. When you do, choose one —" and its bullets (Hylda deck group 1, D-511, CR 603.12, 700.2b): the body is the sentences before "When you do" (the
+       * offer to pay) and these are the modes of the reflexive ability the payment creates.
+       */
+      readonly reflexiveModal?: IrModes;
+      /**
        * "• Khans — At the beginning of your upkeep, ..." (stage P34, D-152, CR 607.2d): the name of the option of the choice "As ~ enters,
        * choose Khans or Dragons" that the ability is linked to; it works only while the permanent has that option chosen.
        */
@@ -1540,6 +1568,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'countOf',
   'powerOf',
   'manaValueOf',
+  'cardTypesAmong',
   'timesKicked',
   'lifeLostThisWay',
   'lifeLostThisTurn',
@@ -1582,6 +1611,7 @@ export function nounsOfAmount(amount: IrAmount): IrNoun[] {
     case 'countersOn':
     case 'aggregate':
     case 'colorsAmong':
+    case 'cardTypesAmong':
       return [amount.of];
     case 'half':
     case 'multiple':

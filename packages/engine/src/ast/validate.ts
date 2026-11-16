@@ -90,7 +90,7 @@ import {
   checkRedirectStatic,
   redirectFaceIssues,
 } from './validate-redirect';
-import { checkStaticCondition } from './validate-static-condition';
+import { checkAttachedIf, checkStaticCondition } from './validate-static-condition';
 import { checkUmbraReplacement, umbraFaceIssues } from './validate-umbra';
 
 export type { AstIssue } from './validate-parts';
@@ -548,6 +548,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'blocks':
     case 'becomesBlocked':
       checkTriggerSubject(t.what, t.kind !== 'entersBattlefield', `${path}.what`, out);
+      if (t.kind === 'becomesTapped') checkBecomesTapped(t, path, out);
       // D-135: "enters untapped" / "enters tapped" belongs to the enters trigger.
       if (
         t.kind === 'entersBattlefield' &&
@@ -609,7 +610,8 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'crimeCommitted':
     case 'tokenCreated':
-      // D-464, D-465: the player who commits the crime or creates the token, relative to the controller of this ability.
+    case 'scries':
+      // D-464, D-465, D-513: the player who commits the crime, creates the token or scries, relative to the controller of this ability.
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
       }
@@ -888,8 +890,35 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'dealtDamage' ||
     t?.kind === 'dealsCombatDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
-    t?.kind === 'lifeGained'
+    t?.kind === 'lifeGained' ||
+    // D-513: the cards looked at while scrying are "that many".
+    t?.kind === 'scries'
   );
+}
+
+/**
+ * D-510 (CR 701.26a, 508.1f, 603.2c): the fields of a `becomesTapped` trigger besides its subject: who tapped the permanent, "if it isn't being declared as an attacker" and
+ * the batch ("one or more"). Who tapped it and a batch need a filter for the permanent (a trigger on `this` or on what is attached has one permanent and no batch to make).
+ */
+function checkBecomesTapped(
+  t: Extract<Trigger, { kind: 'becomesTapped' }>,
+  path: string,
+  out: AstIssue[],
+): void {
+  if (t.by !== undefined && !isOneOf(t.by, ['you', 'opponent'])) {
+    issue(out, `${path}.by`, `unknown player ${String(t.by)}: you or opponent`);
+  }
+  for (const key of ['notAsAttacker', 'batch'] as const) {
+    if (t[key] !== undefined && t[key] !== true)
+      issue(out, `${path}.${key}`, `${key} must be true when present`);
+  }
+  if (t.batch === true && 'kind' in (t.what ?? {})) {
+    issue(
+      out,
+      `${path}.batch`,
+      'a batch of tapped permanents needs a filter for them, not this or attached',
+    );
+  }
 }
 
 /** Whether the effect, or one of a sequence or a "may" inside it, adds mana (D-189). */
@@ -1162,7 +1191,16 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
     case 'triggered': {
       checkTrigger(a.trigger, `${path}.trigger`, out);
       checkGraveyardAbility(a, path, out);
-      const targets = declareTargets(a.targets, `${path}.targets`, out, false, false, true);
+      const targets = declareTargets(
+        a.targets,
+        `${path}.targets`,
+        out,
+        false,
+        false,
+        true,
+        false,
+        a.trigger?.kind === 'scries',
+      );
       // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
       checkCrossZoneSlots(
         a,
@@ -1190,6 +1228,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           : {}),
         ...(selfCast ? { selfCast: true } : {}),
         ...(a.trigger?.kind === 'dies' ? { diesTrigger: true } : {}),
+        // CR 107.3m (Hylda group 3): the enters trigger of the permanent itself may refer to the X of the spell it came from.
+        ...(a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this'
+          ? { entersX: true }
+          : {}),
         ...HOOKS,
       });
       if (a.modes !== undefined || a.chooseModes !== undefined) {
@@ -1271,7 +1313,12 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       // CR 603.4: the intervening "if" is an ordinary condition, checked twice by the engine.
       if (a.interveningIf !== undefined) {
-        checkCondition(a.interveningIf, `${path}.interveningIf`, out);
+        // D-520: "if enchanted creature is untapped": the permanent an Aura is attached to against a filter.
+        if (a.interveningIf.kind === 'objectMatches' && kindOf(a.interveningIf.of) === 'attached') {
+          checkAttachedIf(a.interveningIf, `${path}.interveningIf`, out);
+        } else {
+          checkCondition(a.interveningIf, `${path}.interveningIf`, out);
+        }
         // D-120: Evolve's comparison reads the creature that entered, so only an enters trigger has one.
         if (
           conditionHas(a.interveningIf, 'subjectControllerHasMore') &&
@@ -1486,6 +1533,14 @@ const HOOKS = {
   checkAbility,
   checkContinuous: checkContinuousEffect,
   checkEffectExt: checkDragonsEffect,
+  // D-511: the modes of "When you do, choose one —" are those of a triggered ability.
+  checkModes: (
+    modes: Parameters<typeof checkModes>[0],
+    choose: Parameters<typeof checkModes>[1],
+    path: string,
+    scopeOf: Parameters<typeof checkModes>[3],
+    out: AstIssue[],
+  ) => checkModes(modes, choose, path, scopeOf, out, true),
 };
 
 /** True if the effect, or a step of a top-level sequence, is a `may` or a `payAnyAmount` (a choice of the player inside the effect). */
@@ -1721,6 +1776,21 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
         out,
         `${path}.abilities[${i}].replacement.count`,
         'enters with X counters but the mana cost has no {X}',
+      );
+    }
+  });
+
+  // CR 107.3m (Hylda group 3): "When this creature enters, draw X cards" reads the X of the spell's mana cost; without an {X} there is nothing to read.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'triggered' &&
+      JSON.stringify(a.effect ?? null).includes('"enteredX"') &&
+      !(face.manaCost ?? []).includes('X')
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].effect`,
+        'enteredX is the X of the spell the permanent came from, but the mana cost has no {X}',
       );
     }
   });

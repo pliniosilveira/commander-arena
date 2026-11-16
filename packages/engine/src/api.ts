@@ -97,6 +97,7 @@ import {
   answerResolutionEntersPaid,
   answerResolutionOptional,
   answerResolutionPayAmount,
+  answerResolutionProtectionCardType,
   answerResolutionProtectionColor,
   answerResolutionReplacement,
   answerResolutionReselect,
@@ -471,6 +472,11 @@ function answerChooseOption(
     // CR 702.16, 608.2d (D-451): the color the controller chose for "gains protection from the color of your choice".
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionProtectionColor(state, option));
+  }
+  if (d.purpose === 'protectionCardType') {
+    // CR 702.16a, 608.2d (D-514): the card type the controller chose for "gains protection from the card type of your choice".
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionProtectionCardType(state, option));
   }
   if (d.purpose === 'pile') {
     // CR 700.3 (D-303): the pile the chooser picked.

@@ -72,7 +72,10 @@ export function parseFaceText(
 ): FaceParse {
   const face = spellRules.length > 0 ? 'spell' : 'permanent';
   const split = splitAbilities(normalizeOracleText(oracleText, options));
-  const lines = face === 'spell' ? joinReferenceLines(joinInsteadLines(split)) : split;
+  const lines =
+    face === 'spell'
+      ? joinDieTableLines(joinUntapLines(joinReferenceLines(joinInsteadLines(split))))
+      : split;
   const ruleSet = buildRuleSet(rules);
   const namedInQuotes = namesItselfInQuotes(oracleText, options);
   const selfName = tokenSelfName(oracleText, options);
@@ -212,6 +215,44 @@ function joinReferenceLines(lines: readonly string[]): string[] {
   for (const line of lines) {
     const last = out.length - 1;
     if (last >= 0 && REFERENCE_LINE.test(line) && /\.$/u.test(out[last] ?? '')) {
+      out[last] = `${out[last]} ${line}`;
+    } else out.push(line);
+  }
+  return out;
+}
+
+/**
+ * A line of a spell that is a test and the "doesn't untap" of the creatures the line before it chose (Hylda deck, group 2, D-517, CR 608.2c, 502.3): "Tap X target creatures." and
+ * "Ferocious — If you control a creature with power 4 or greater, those creatures don't untap during their controllers' next untap steps." (Icy Blast) are two paragraphs of one spell,
+ * and "those creatures" are the ones the first targeted. As for `REFERENCE_LINE`, the pair is read as one text, and only when the second line says "it", "that creature" or "those
+ * creatures" before "doesn't untap" or "don't untap"; a pair that does not read as one is unread as a whole, as the line was alone.
+ */
+const UNTAP_LINE =
+  /^If [^\n]+?, (?:it|that creature|those creatures) (?:doesn't|don't) untap during [^\n]*? next untap steps?\.$/u;
+
+function joinUntapLines(lines: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const line of lines) {
+    const last = out.length - 1;
+    if (last >= 0 && UNTAP_LINE.test(line) && /\.$/u.test(out[last] ?? '')) {
+      out[last] = `${out[last]} ${line}`;
+    } else out.push(line);
+  }
+  return out;
+}
+
+/**
+ * The rows of the results table of a die roll (Hylda deck, group 2, D-525, CR 706.3a, 706.3b): "Roll a d20." and the lines "1—9 | Tap all creatures your opponents control." that
+ * follow it are one ability, so they are read as one text, the roll and then each row (`IrSentence.dieRow`). A row line that does not follow the roll line is not joined (and is not read).
+ */
+const DIE_ROLL_LINE = /^Roll a d\d+\.(?: |$)/u;
+const DIE_ROW_LINE = /^\d+(?:[—–-]\d+)? \| /u;
+
+function joinDieTableLines(lines: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const line of lines) {
+    const last = out.length - 1;
+    if (last >= 0 && DIE_ROW_LINE.test(line) && DIE_ROLL_LINE.test(out[last] ?? '')) {
       out[last] = `${out[last]} ${line}`;
     } else out.push(line);
   }

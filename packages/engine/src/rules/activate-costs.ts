@@ -292,7 +292,7 @@ export function payImmediateCosts(
   const events: GameEvent[] = [];
   if (costs.tap) {
     state = patchObject(state, source, { tapped: true });
-    events.push({ kind: 'tapped', object: source });
+    events.push({ kind: 'tapped', object: source, by: seat });
   }
   if (costs.life > 0) {
     const life = getSeat(state, seat).life;

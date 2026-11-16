@@ -112,10 +112,13 @@ export function targetChoiceSpecs(
     const bounds = targetBounds(spec);
     const total = divideTotal(state, spec, ctx);
     // D-149: one target for each opponent still in the game, at most.
+    // Hylda group 3: "with different controllers": one target for each player still in the game, at most.
     const opponents =
       spec.onePerOpponent === true
         ? state.seats.filter((s) => s.id !== ctx.controller && !s.hasLost).length
-        : Number.MAX_SAFE_INTEGER;
+        : spec.differentControllers === true
+          ? state.seats.filter((s) => !s.hasLost).length
+          : Number.MAX_SAFE_INTEGER;
     const flashLegal = matchingOnly(
       state,
       legalTargets(state, spec, ctx),
@@ -147,7 +150,10 @@ export function targetChoiceSpecs(
         spec.anyNumber === true ? legal.length : Number.MAX_SAFE_INTEGER,
       ),
       ...(total === null ? {} : { divide: total }),
-      ...(spec.onePerOpponent === true ? { onePerGroup: true as const } : {}),
+      ...(spec.onePerOpponent === true || spec.differentControllers === true
+        ? { onePerGroup: true as const }
+        : {}),
+      ...(spec.differentControllers === true ? { eachController: true as const } : {}),
       ...(spec.differentFrom === undefined ? {} : { differentFrom: spec.differentFrom }),
       legal,
       ...(slotMode === undefined ? {} : { mode: slotMode.mode }),

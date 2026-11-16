@@ -81,6 +81,9 @@ import { SYNTHETIC_HASHATON_G9_LIST } from './synthetic-hashaton-g9';
 import { SYNTHETIC_HASHATON_G10_LIST } from './synthetic-hashaton-g10';
 import { SYNTHETIC_HASHATON_GROUP_4_LIST } from './synthetic-hashaton-group-4';
 import { SYNTHETIC_HOFRI_LIST } from './synthetic-hofri';
+import { SYNTHETIC_HYLDA_G1_LIST } from './synthetic-hylda-g1';
+import { SYNTHETIC_HYLDA_G2_LIST } from './synthetic-hylda-g2';
+import { SYNTHETIC_HYLDA_G3_LIST } from './synthetic-hylda-g3';
 import { SYNTHETIC_KEYWORD_LIST } from './synthetic-keywords';
 import { SYNTHETIC_KEYWORD2_LIST } from './synthetic-keywords-2';
 import { SYNTHETIC_KICKER_LIST } from './synthetic-kicker';
@@ -405,8 +408,10 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_DANITHA_G7_LIST,
   ...SYNTHETIC_FEATHER_G2_LIST,
   ...SYNTHETIC_GISA_G5_LIST,
+  ...SYNTHETIC_HYLDA_G2_LIST,
   ...SYNTHETIC_HASHATON_G10_LIST,
   ...SYNTHETIC_HASHATON_G9_LIST,
+  ...SYNTHETIC_HYLDA_G1_LIST,
   ...SYNTHETIC_DANITHA_G1A_LIST,
   ...SYNTHETIC_DANITHA_G1B_LIST,
   ...SYNTHETIC_DANITHA_G2_LIST,
@@ -417,6 +422,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_FEATHER_G1_LIST,
   ...SYNTHETIC_GISA_G4_LIST,
   ...SYNTHETIC_GISA_G2_LIST,
+  ...SYNTHETIC_HYLDA_G3_LIST,
   ...SYNTHETIC_UNTIL_LEAVES_LIST,
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
   ...SYNTHETIC_HOFRI_LIST,

@@ -39,6 +39,7 @@ import {
   PERMANENT_TYPES,
   permanentPhrase,
   toFilter,
+  typeChoice,
   typeWords,
 } from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
@@ -46,6 +47,13 @@ import { defineRule, spanned } from '../registry';
 
 const ON_THE_BATTLEFIELD = pattern(new RegExp(` on the battlefield${BOUNDARY}`, 'iu'));
 const ATTACKING_YOU = pattern(new RegExp(` attacking you${BOUNDARY}`, 'iu'));
+/**
+ * " target opponent controls", " target player controls" (Hylda group 3, CR 109.4, 115.1): the permanents a player the text targets controls, "Draw a card for each tapped
+ * creature target opponent controls". The player is a target of the ability, declared where the count is lowered (the engine's `controlledBy` of a target).
+ */
+const TARGET_PLAYER_CONTROLS = pattern(
+  new RegExp(` (target (?:player|opponent)) controls${BOUNDARY}`, 'iu'),
+);
 
 /** The words a list of kinds is joined with, in the shapes English has: "A or B", "A, B, or C". */
 const CONNECTORS = ['and/or', 'and', 'or'] as const;
@@ -155,9 +163,27 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       filter = { ...filter, attackingYou: true };
       end = attacking.pos;
     } else if (filter.controller === undefined) {
-      const suffix = ON_THE_BATTLEFIELD(ctx, end);
-      if (!suffix.ok) return suffix;
-      end = suffix.pos;
+      const targeted = TARGET_PLAYER_CONTROLS(ctx, end);
+      if (targeted.ok) {
+        const word = targeted.value[1] ?? '';
+        const start = end + 1;
+        const player: IrNoun = {
+          kind: 'noun',
+          det: 'target',
+          filter: { player: /opponent$/iu.test(word) ? 'opponent' : 'any', raw: word },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: { start, end: start + word.length },
+          rule: 'noun.player',
+        };
+        filter = { ...filter, controller: { noun: player } };
+        end = targeted.pos;
+      } else {
+        const suffix = ON_THE_BATTLEFIELD(ctx, end);
+        if (!suffix.ok) return suffix;
+        end = suffix.pos;
+      }
     }
     return {
       ok: true,
@@ -205,7 +231,23 @@ function cards(plural: boolean): Parser<IrFilter> {
     ),
     ([subtypes, types]) => ({ subtypes, types }),
   );
-  return (ctx, pos) => {
+  // D-518 (Hylda deck, group 2): "two or more instant and/or sorcery cards in your graveyard": one card is any of the card types, joined by "or" or "and/or".
+  const union: Parser<IrFilter> = (ctx, pos) => {
+    const r = sequence(
+      choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)),
+      literal(' '),
+      pattern(new RegExp(`cards${BOUNDARY}`, 'iu')),
+      where,
+      pattern(new RegExp(BOUNDARY, 'u')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [kinds, , , place] = r.value;
+    const raw = ctx.text.slice(pos, r.pos);
+    const base = toFilter(place.zone, { ...NO_PARTS, controller: place.controller }, raw);
+    const anyOf = kinds.map((t): IrFilter => ({ types: [t], raw: t }));
+    return { ok: true, value: { ...base, anyOf, card: true }, pos: r.pos };
+  };
+  const single: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
       words,
       pattern(new RegExp(`card${plural ? 's' : ''}${BOUNDARY}`, 'iu')),
@@ -222,6 +264,7 @@ function cards(plural: boolean): Parser<IrFilter> {
       pos: r.pos,
     };
   };
+  return plural ? choice(union, single) : single;
 }
 
 /** What a count is of, as the group noun it is: `det` `each`, the filter and `other`. */
@@ -299,6 +342,8 @@ export const AMOUNT_FOR_EACH = defineRule<IrAmount>({
     'for each Zombie card in your graveyard',
     'for each creature you control with power 4 or greater',
     'for each creature card in your opponents’ graveyards',
+    'for each tapped creature target opponent controls',
+    'for each creature target player controls',
   ],
   rejects: [
     'for each',
@@ -315,6 +360,10 @@ export const AMOUNT_FOR_EACH = defineRule<IrAmount>({
     'for each artifact and/or enchantment',
     'for each creature you control attacking you',
     'for each creature card in your opponent’s graveyard',
+    'for each creature target opponents control',
+    'for each creature target creature controls',
+    'for each creature target opponent controls on the battlefield',
+    'for each tapped creatures target opponent controls',
   ],
   parse: countAmount('amount.for-each', literal('for each '), false),
 });
@@ -350,6 +399,7 @@ export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
     'equal to the number of creatures with flying you control',
     'equal to the number of Zombies you control',
     'equal to the number of nontoken creatures you control',
+    'equal to the number of tapped creatures target opponent controls',
   ],
   rejects: [
     'equal to the number of',

@@ -14,12 +14,14 @@ import type {
   Condition,
   Cost,
   Effect,
+  ModeChoice,
   ObjectFilter,
   ObjectRef,
   ObjectSelector,
   PlayerSelector,
   PtAmount,
   SacrificeSelector,
+  SpellMode,
   TargetSpec,
   ThisWayKind,
   TokenDefinition,
@@ -75,6 +77,16 @@ export interface Scope {
   ) => void;
   /** Validates the effect kinds of the Dragons slice (D-151, `validate-dragons.ts`, set by validate.ts); true when it knew the kind. */
   readonly checkEffectExt: (e: Effect, path: string, scope: Scope, out: AstIssue[]) => boolean;
+  /** Validates the modes of a modal reflexive ability (D-511, `validate-modes.ts`, set by validate.ts); absent where no ability of the engine has one. */
+  readonly checkModes?: (
+    modes: readonly SpellMode[] | undefined,
+    choose: ModeChoice | undefined,
+    path: string,
+    scopeOf: (targets: Scope['targets']) => Scope,
+    out: AstIssue[],
+  ) => void;
+  /** True in the `effect` of a `mayPay`: the cost has been paid, which `reflexive` with `afterPayment` reads (D-511, CR 603.12). */
+  readonly paidAvailable?: boolean;
   /**
    * True after an effect that moves objects (`exile`, `destroy`, `moveToZone`) in the same
    * sequence: the `moved` reference has something to mean (CR 400.7j).
@@ -116,6 +128,8 @@ export interface Scope {
    * reference `sacrificed` has a permanent to read (D-177).
    */
   readonly sacrificedEarlier?: boolean;
+  /** True in the effect of the triggered ability "When this permanent enters": `enteredX` reads the X of the spell it came from (CR 107.3m, Hylda group 3). */
+  readonly entersX?: boolean;
   /** True in the effect of a triggered ability whose trigger has a player (`triggerPlayer`, D-133). */
   readonly triggerPlayer?: boolean;
   /** True in the effect of a triggered ability whose trigger deals damage (`triggerDamage`, D-133). */
@@ -571,6 +585,8 @@ export function declareTargets(
   crossZoneAllowed = false,
   /** D-386: only the targets of a spell's own text can take as many targets as the X announced (CR 601.2b, 601.2c). */
   countXAllowed = false,
+  /** D-513: only the targets of a triggered ability whose event carries a number (a scry) can take up to as many targets as it (CR 603.3d). */
+  triggerAmountAllowed = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
@@ -708,6 +724,28 @@ export function declareTargets(
         issue(out, p, 'up to that many targets is not one for each opponent');
       }
     }
+    if (spec.upToTriggerAmount !== undefined) {
+      // D-513, CR 603.3d, 701.22: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way".
+      if (spec.upToTriggerAmount !== true) {
+        issue(out, `${p}.upToTriggerAmount`, 'upToTriggerAmount must be true when present');
+      } else if (!triggerAmountAllowed) {
+        issue(
+          out,
+          `${p}.upToTriggerAmount`,
+          'only a slot of a triggered ability whose event carries a number (whenever you scry) takes up to as many targets as that number',
+        );
+      } else if (
+        spec.min !== undefined ||
+        spec.max !== undefined ||
+        spec.divide !== undefined ||
+        spec.onePerOpponent !== undefined ||
+        spec.upToThatMany !== undefined ||
+        spec.anyNumber !== undefined ||
+        spec.countX !== undefined
+      ) {
+        issue(out, p, 'up to as many targets as the trigger says has no min, max or other count');
+      }
+    }
     if (spec.countX !== undefined) {
       // D-386, CR 107.3a, 601.2b, 601.2c: "X target creature cards": exactly as many targets as the X announced for the spell.
       if (spec.countX !== true) {
@@ -724,6 +762,7 @@ export function declareTargets(
         spec.divide !== undefined ||
         spec.onePerOpponent !== undefined ||
         spec.upToThatMany !== undefined ||
+        spec.upToTriggerAmount !== undefined ||
         spec.anyNumber !== undefined ||
         spec.ifKicked !== undefined ||
         spec.unlessKicked !== undefined ||
@@ -747,7 +786,8 @@ export function declareTargets(
         spec.max !== undefined ||
         spec.divide !== undefined ||
         spec.onePerOpponent !== undefined ||
-        spec.upToThatMany !== undefined
+        spec.upToThatMany !== undefined ||
+        spec.upToTriggerAmount !== undefined
       ) {
         issue(
           out,
@@ -790,6 +830,37 @@ export function declareTargets(
       }
       if (isCount(spec.min) && spec.min > 0) {
         issue(out, `${p}.min`, '"up to one for each opponent" has no minimum');
+      }
+    }
+    if (spec.differentControllers !== undefined) {
+      // Hylda group 3 (CR 115.1, 601.2c): "any number of target tapped creatures with different controllers".
+      if (spec.differentControllers !== true) {
+        issue(out, `${p}.differentControllers`, 'differentControllers must be true when present');
+      }
+      if (what?.kind !== 'object') {
+        issue(
+          out,
+          `${p}.what`,
+          'a slot of targets with different controllers names objects (permanents), not players',
+        );
+      } else if ((what.filter.zone ?? 'battlefield') !== 'battlefield') {
+        issue(
+          out,
+          `${p}.what`,
+          'targets with different controllers are permanents on the battlefield',
+        );
+      }
+      if (
+        spec.onePerOpponent !== undefined ||
+        spec.divide !== undefined ||
+        spec.countX !== undefined ||
+        spec.upToThatMany !== undefined
+      ) {
+        issue(
+          out,
+          p,
+          'targets with different controllers have no onePerOpponent, divide, countX or upToThatMany',
+        );
       }
     }
     if (spec.differentFrom !== undefined) {
@@ -1223,6 +1294,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'commanderColors':
     case 'commanderManaValue':
     case 'commanderCasts':
+    case 'cardTypesAmong':
     case 'opponentsWithMore':
     case 'lifeGainedThisTurn':
     case 'enteredThisTurn':
@@ -1283,6 +1355,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (!scope.xAllowed)
         issue(out, path, 'X is used but nothing in this ability or spell has an X');
       break;
+    case 'enteredX':
+      // CR 107.3m (Hylda group 3): only the enters trigger of the permanent itself reads the X of the spell it came from (the card's {X} is checked with the face).
+      if (scope.entersX !== true) {
+        issue(
+          out,
+          path,
+          "'enteredX' needs a triggered ability whose trigger is this permanent entering the battlefield",
+        );
+      }
+      break;
     case 'manaValueOf':
       checkAmountObject(a.of, `${path}.of`, scope, out, true);
       break;
@@ -1317,6 +1399,38 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.filter`, 'an aggregate needs a filter');
       } else {
         checkFilter(a.filter, `${path}.filter`, out);
+      }
+      break;
+    case 'cardTypesAmong':
+      // D-518: the distinct card types among the cards a filter matches in a zone outside the battlefield and the stack.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'cardTypesAmong needs a filter');
+      } else {
+        checkFilter(a.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            a.filter,
+            (f) => f.zone === undefined || f.zone === 'battlefield' || f.zone === 'stack',
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter.zone`,
+            'cardTypesAmong counts the card types of cards in a zone (a graveyard, exile, the hand or the library)',
+          );
+        }
+        if (
+          filterSome(
+            a.filter,
+            (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'cardTypesAmong cannot read the combat, the source power, power or toughness',
+          );
+        }
       }
       break;
     case 'devotion':
@@ -1478,6 +1592,27 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // D-095: a count of the objects the filter matches; `owner` is not read here (checkFilter).
       if (a.filter === undefined || a.filter === null) {
         issue(out, `${path}.filter`, 'countOf needs a filter');
+      } else if (a.filter.controlledBy !== undefined) {
+        // Hylda group 3 (CR 109.4, 608.2c): "for each tapped creature target opponent controls": the player is a target the effect declared, read as the amount is
+        // counted (with the targets); a player named any other way is not read here, and the other fields are those of any count.
+        const { controlledBy, ...rest } = a.filter;
+        if (kindOf(controlledBy) !== 'target') {
+          issue(
+            out,
+            `${path}.filter.controlledBy`,
+            'a count names the player whose objects it counts by a target of the ability or spell (controlledBy: target)',
+          );
+        } else {
+          checkPlayerSelector(controlledBy, `${path}.filter.controlledBy`, scope, out);
+        }
+        if (rest.controller !== undefined) {
+          issue(
+            out,
+            `${path}.filter.controller`,
+            'controlledBy replaces controller: set one of them',
+          );
+        }
+        checkFilter(rest, `${path}.filter`, out);
       } else {
         checkFilter(a.filter, `${path}.filter`, out);
       }
@@ -3305,6 +3440,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.optional`, 'optional must be true when present');
       }
       break;
+    case 'grantPlayerHexproof': {
+      // CR 702.11b (Hylda group 3): players named by a selector ("you", "each opponent", a target player), until end of turn.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'a player has hexproof until end of turn only');
+      }
+      break;
+    }
     case 'gainControl': {
       // CR 613.1b (D-189): a layer 2 effect for one named permanent: a target or the permanent that caused the trigger.
       const named = kindOf(e.objects);
@@ -3389,7 +3532,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         `${path}.cost`,
         out,
       );
-      checkEffect(e.effect, `${path}.effect`, scope, out);
+      // D-511 (CR 603.12): "you may pay {1}. When you do, ...": the effect runs when the payment was made.
+      checkEffect(e.effect, `${path}.effect`, { ...scope, paidAvailable: true }, out);
       break;
     case 'cumulativeUpkeep':
       // CR 702.24a (D-127): the cost for each age counter; the effect of an ability of a permanent, never a spell.
@@ -4271,6 +4415,36 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'preventDamage':
       scope.checkContinuous(e, path, scope, out);
       break;
+    case 'permanentsEnterTapped':
+      // D-519: a replacement of the game read as a permanent enters: a filter relative to the controller, with no zone, owner, stack kind, combat or trigger player.
+      checkFilter(e.permanents, `${path}.permanents`, out);
+      if (
+        filterSome(
+          e.permanents,
+          (f) =>
+            f.zone !== undefined ||
+            f.stackKind !== undefined ||
+            f.owner !== undefined ||
+            f.controlledBy !== undefined ||
+            readsCombatOrSource(f) ||
+            f.controller === 'triggerPlayer' ||
+            f.controller === 'defendingPlayer',
+        )
+      ) {
+        issue(
+          out,
+          `${path}.permanents`,
+          'a permanent that enters tapped is named by type, color, controller and the like: no zone, owner, stackKind, combat or trigger player',
+        );
+      }
+      if (!isOneOf(e.duration, ['untilEndOfTurn', 'untilYourNextTurn'])) {
+        issue(
+          out,
+          `${path}.duration`,
+          `enters tapped lasts until end of turn or until your next turn, not ${JSON.stringify(e.duration)}`,
+        );
+      }
+      break;
     case 'requireAttack':
       // D-179: a group requirement read when attackers are declared: a filter of creatures, relative to the controller, with no zone and nothing
       // that needs a target, an X, a trigger or the combat.
@@ -4333,6 +4507,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'chooseOne': {
       if (e.times !== undefined) checkAmount(e.times, `${path}.times`, scope, out);
       if (e.chooser !== undefined) checkPlayerSelector(e.chooser, `${path}.chooser`, scope, out);
+      if (e.optional !== undefined && e.optional !== true) {
+        issue(out, `${path}.optional`, 'optional must be true when present');
+      }
       // CR 608.2d (D-175): two to eight offered instructions, each with the words the player is shown (distinct, so the answer names one).
       const options = Array.isArray(e.options) ? e.options : [];
       if (!Array.isArray(e.options) || options.length < 2 || options.length > 8) {
@@ -4376,7 +4553,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'reflexive': {
       // CR 603.12 (D-135): a triggered ability of its own: its targets are its own, and it knows nothing of what the
       // resolution that created it chose or moved (the source is the same, "it" the card the source became).
-      if (scope.mayAvailable !== true) {
+      if (e.afterPayment !== undefined) {
+        // D-511 (CR 603.12): "you may pay {1}. When you do, ...": the payment of the `mayPay` this is the effect of.
+        if (e.afterPayment !== true)
+          issue(out, `${path}.afterPayment`, 'afterPayment must be true when present');
+        if (scope.paidAvailable !== true) {
+          issue(
+            out,
+            `${path}.afterPayment`,
+            'a reflexive trigger after a payment is the effect of a mayPay',
+          );
+        }
+        if (e.ifThisWay !== undefined) {
+          issue(out, `${path}.afterPayment`, 'what triggers it is the payment: no ifThisWay');
+        }
+      } else if (scope.mayAvailable !== true) {
         issue(
           out,
           path,
@@ -4401,9 +4592,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         false,
         scope.sacrificedEarlier === true,
       );
-      const inner: Scope = {
+      const innerOf = (declared: Scope['targets']): Scope => ({
         owner: scope.owner,
-        targets: own,
+        targets: declared,
         xAllowed: false,
         // D-177: the reflexive ability reads the permanent the resolution that created it sacrificed.
         ...(scope.sacrificedEarlier === true ? { sacrificedEarlier: true } : {}),
@@ -4412,8 +4603,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkAbility: scope.checkAbility,
         checkContinuous: scope.checkContinuous,
         checkEffectExt: scope.checkEffectExt,
-      };
-      checkEffect(e.effect, `${path}.effect`, inner, out);
+        ...(scope.checkModes === undefined ? {} : { checkModes: scope.checkModes }),
+      });
+      if (e.modes !== undefined || e.chooseModes !== undefined) {
+        // D-511 (CR 603.12, 700.2b): "When you do, choose one —": a modal reflexive ability keeps its effects in the modes.
+        if (e.effect?.kind !== 'sequence' || e.effect.effects.length !== 0) {
+          issue(
+            out,
+            `${path}.effect`,
+            'a modal reflexive ability puts its effects in the modes: effect is the empty sequence',
+          );
+        }
+        if (e.targets !== undefined && e.targets.length > 0) {
+          issue(out, `${path}.targets`, 'a modal reflexive ability declares targets on each mode');
+        }
+        if (scope.checkModes === undefined) {
+          issue(out, path, 'a modal reflexive ability is not supported here');
+        } else {
+          scope.checkModes(e.modes, e.chooseModes, path, innerOf, out);
+        }
+      } else {
+        checkEffect(e.effect, `${path}.effect`, innerOf(own), out);
+      }
       break;
     }
     case 'mayCast':

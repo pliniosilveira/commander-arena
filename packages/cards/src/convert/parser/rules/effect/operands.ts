@@ -66,6 +66,8 @@ export const PERMANENT_OPERANDS = [
   'noun.each-permanent',
   // D-268: "each artifact and creature your opponents control".
   'noun.each-type-union',
+  // Hylda group 3: "any number of target tapped creatures with different controllers".
+  'noun.any-number-targets-controllers',
 ] as const;
 
 /** What a verb that acts on a permanent can also say of the permanent it is on: "untap ~". */

@@ -249,6 +249,7 @@ describe('attacking taps the attacker unless it has vigilance (CR 508.1f, 702.20
     const mark = g.mark();
     g.act(0).attack([BEARS, 'Serra Angel']);
     const tapped = g.eventsSince(mark).filter((e) => e.kind === 'tapped');
-    expect(tapped).toEqual([{ kind: 'tapped', object: g.id(BEARS) }]);
+    // D-510: the attacking player taps it as it is declared (CR 508.1f), which the event says.
+    expect(tapped).toEqual([{ kind: 'tapped', object: g.id(BEARS), by: 0, attacker: true }]);
   });
 });

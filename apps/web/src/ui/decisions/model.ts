@@ -321,7 +321,7 @@ function handlers(
         ...slots.map((s, i) =>
           d.specs.length > 1
             ? `${slotLabel(d.specs, i)}: ${s.count} of ${rangeText(s.spec.min, s.spec.max)}`
-            : `${s.count} of ${rangeText(s.spec.min, s.spec.max)} chosen${s.spec.onePerGroup === true ? ', at most one for each opponent' : ''}`,
+            : `${s.count} of ${rangeText(s.spec.min, s.spec.max)} chosen${s.spec.onePerGroup === true ? (s.spec.eachController === true ? ', at most one for each controller' : ', at most one for each opponent') : ''}`,
         ),
         // D-149 (CR 707.10, 115.7f): a copy of a divided spell keeps the shares of the original.
         ...(kept === null ? [] : [kept]),

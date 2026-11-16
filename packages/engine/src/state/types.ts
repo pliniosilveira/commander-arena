@@ -184,6 +184,11 @@ export interface GameObject {
    */
   readonly kicks?: number;
   /**
+   * The X the spell this permanent came from had (CR 107.3m, Hylda group 3): "When this creature enters, draw X cards" reads it, though the value of X of the permanent
+   * itself is 0. Present only when X was at least 1; absent for a permanent that was not cast, for one cast with X 0 and for a token (CR 107.3g).
+   */
+  readonly castX?: number;
+  /**
    * The opponent a spell's gift was promised to (CR 702.174a, D-135), kept by the permanent the spell became: "when it enters,
    * if its gift cost was paid, they draw a card" and "if the gift was promised" read it. Absent when no gift was promised.
    */
@@ -1435,6 +1440,8 @@ export type Instruction =
   | {
       readonly kind: 'chooseOne';
       readonly options: readonly InlineChoice[];
+      /** `ChooseOne.optional` (Hylda group 3): the decision has one more option, `DECLINE_OPTION`, which does nothing (index `options.length`). */
+      readonly optional?: true;
       readonly chosen: number | null;
       /** D-229: the player who chooses, when it is not the controller ("Target player adds one mana of any color"). */
       readonly chooser?: SeatId;
@@ -1448,6 +1455,15 @@ export type Instruction =
       readonly kind: 'protectionColor';
       readonly effect: Extract<Effect, { readonly kind: 'grantKeyword' }>;
       readonly chosen: Color | null;
+    }
+  /**
+   * "Another target creature you control gains protection from the card type of your choice until end of turn" (CR 702.16a, 608.2d; D-514): as `protectionColor`, with
+   * the nine card types as options (`purpose` 'protectionCardType'); `effect` runs with `protection` from `cardType` of the one chosen in its place.
+   */
+  | {
+      readonly kind: 'protectionCardType';
+      readonly effect: Extract<Effect, { readonly kind: 'grantKeyword' }>;
+      readonly chosen: CardType | null;
     }
   /**
    * "Starting with you, each player votes for profit or security" (`vote`, CR 701.38a, D-194): `cast` is the votes so far, in the order they were
@@ -1749,6 +1765,11 @@ export type ContinuousChange =
    */
   | { readonly kind: 'restrict'; readonly restriction: Restriction }
   /**
+   * "You gain hexproof until end of turn" (`grantPlayerHexproof`, CR 702.11b, Hylda group 3): the effect's `players` have hexproof while it lasts. No layer: read where a
+   * player is targeted (`rules/player-protection.ts`).
+   */
+  | { readonly kind: 'playerHexproof' }
+  /**
    * "Creatures your opponents control attack each combat if able [and attack a player other than you if able]" (`requireAttack`, CR 508.1d, 611.2c,
    * D-179): no layer and no fixed set (`objects` is empty): the requirement is read where attackers are declared (`rules/combat-legality.ts`), for
    * each creature `filter` matches then, with `controller` as "you". `awayFrom` is the controller of the effect when it also says "attack a player
@@ -1766,6 +1787,11 @@ export type ContinuousChange =
    * A requirement of the rules, not a characteristic: read in `rules/combat-legality.ts`, not in a layer.
    */
   | { readonly kind: 'mustAttackPlayer'; readonly seat: SeatId }
+  /**
+   * "Until your next turn, creatures your opponents control enter tapped" (`permanentsEnterTapped`, CR 614.1c, 614.12, D-519): no layer and no fixed set (`objects` is
+   * empty): read as a permanent enters the battlefield (`rules/enters-group.ts`, `enteredTappedByEffect`), for each permanent `filter` matches then, with `controller` as "you".
+   */
+  | { readonly kind: 'entersTapped'; readonly filter: ObjectFilter; readonly controller: SeatId }
   /** Either list may be absent: the part left out is not changed. See the `setTypes` effect. */
   | {
       readonly kind: 'setTypes';
@@ -1848,6 +1874,11 @@ export interface ContinuousEffect {
 export type EffectEnd =
   | 'endOfTurn'
   | 'permanent'
+  /**
+   * "Doesn't untap during its controller's next untap step" (D-517, CR 502.3): each permanent of `objects` is let go, one by one, as the untap step of
+   * its controller (as it is then) has run; the effect ends with its last permanent (`expireUntapStepEffects`).
+   */
+  | 'nextUntapStep'
   | {
       readonly kind: 'turnEnd' | 'endStep' | 'turnStart';
       readonly seat: SeatId;

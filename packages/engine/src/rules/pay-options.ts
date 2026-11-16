@@ -270,7 +270,11 @@ export function usePayOptions(
       events.push(...moved.events);
     } else {
       next = patchObject(next, id, { tapped: true });
-      events.push({ kind: 'tapped', object: id });
+      events.push({
+        kind: 'tapped',
+        object: id,
+        ...(state.casting === null ? {} : { by: state.casting.seat }),
+      });
     }
   }
   return { state: next, events };

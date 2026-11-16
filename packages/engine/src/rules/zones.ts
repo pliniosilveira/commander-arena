@@ -69,7 +69,12 @@ import {
   lifeOf,
 } from './enters';
 import { becomeCopyAsItEnters, copyCandidates } from './enters-copy';
-import { addCounterMaps, groupEntersUntapped, groupEntryCounters } from './enters-group';
+import {
+  addCounterMaps,
+  enteredTappedByEffect,
+  groupEntersUntapped,
+  groupEntryCounters,
+} from './enters-group';
 import {
   devourCandidates,
   devourDecision,
@@ -723,6 +728,20 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     }
   }
 
+  // CR 614.1c, 614.12 (D-519): "Until your next turn, creatures your opponents control enter tapped".
+  if (
+    to === 'battlefield' &&
+    !tapped &&
+    enteredTappedByEffect(before, {
+      ...old,
+      ...downEntry,
+      zone: 'battlefield',
+      controller: enterController,
+      face: faceIndex,
+    })
+  ) {
+    tapped = true;
+  }
   // CR 614.12, 616.1 (D-179): "Lands you control enter untapped" beats an "enters tapped" and a "put onto the battlefield tapped".
   if (untappedByEffect) tapped = false;
   const controller =
@@ -776,6 +795,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     // CR 702.33d: a permanent that came from a kicked spell remembers it ("if it was kicked").
     ...(to === 'battlefield' && old.stack?.kicked === true ? { kicked: true as const } : {}),
     ...(to === 'battlefield' && old.stack?.kicks !== undefined ? { kicks: old.stack.kicks } : {}),
+    // CR 107.3m (Hylda group 3): an enters-the-battlefield trigger that refers to X reads the X of the spell the permanent resolved from.
+    ...(to === 'battlefield' && old.stack?.kind === 'spell' && (old.stack.x ?? 0) > 0
+      ? { castX: old.stack.x ?? 0 }
+      : {}),
     // CR 702.174 (D-135): a permanent remembers the opponent its spell's gift was promised to.
     ...(to === 'battlefield' && old.stack?.giftTo !== undefined
       ? { giftTo: old.stack.giftTo }

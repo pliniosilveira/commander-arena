@@ -170,6 +170,13 @@ function best(failures: readonly ParseFailure[]): ParseFailure {
 /** "Cure — {0} — ": the name of a mode of a Tiered spell and its cost before the effect (D-433, CR 702.183a, 700.2h); group 1 is the cost, in braces. */
 const MODE_COST_LEAD = /^\p{Lu}[\p{L}'’ -]* — ((?:\{[^{}]+\})+) — (?=\S)/u;
 
+/**
+ * "Distract the Guard — Tap target creature.": the name a mode gives itself before an em dash, with no cost (Hylda group 3, CR 207.2d: a flavor word has no rules meaning). It is
+ * taken off only when the bullet did not read as written, as the flavor word of a line is (D-204), so a bullet that reads today never changes and a wrong strip can only
+ * turn an unread mode into a read one.
+ */
+const MODE_NAME_LEAD = /^\p{Lu}[\p{L}'’ -]* — (?=\S)/u;
+
 /** The symbols of "{3}{W}" as written, without braces; the lowering checks that the engine runs each in a mode cost. */
 function modeCostSymbols(braced: string): readonly string[] | null {
   const symbols = [...braced.matchAll(/\{([^{}]+)\}/gu)].map((m) => m[1] ?? '');
@@ -221,7 +228,15 @@ function readModes(
       from = mode.start + lead[0].length;
     }
     const sentences = splitSentences(sk.text, from, mode.end);
-    const body = readSentences(sk.text, sentences, rules, seen, 'modal.choose', SPELL_SENTENCE);
+    let body = readSentences(sk.text, sentences, rules, seen, 'modal.choose', SPELL_SENTENCE);
+    if (!body.ok && header.value.costed !== true) {
+      const name = MODE_NAME_LEAD.exec(sk.text.slice(from, mode.end));
+      if (name !== null) {
+        const bare = splitSentences(sk.text, from + name[0].length, mode.end);
+        const retry = readSentences(sk.text, bare, rules, seen, 'modal.choose', SPELL_SENTENCE);
+        if (retry.ok) body = retry;
+      }
+    }
     if (!body.ok) return body;
     seen.push(...body.recognised);
     bodies.push(body.value);
@@ -432,12 +447,25 @@ function readTriggered(sk: AbilitySkeleton, rules: RuleLookup): ParseOutcome {
     body = readBody(sk, rules, seen, 'ability.triggered', TRIGGER_SENTENCE);
   }
   if (!body.ok) return body;
+  // "..., you may pay {1}. When you do, choose one —" and its bullets (D-511, CR 603.12): the modes of the reflexive ability the payment creates.
+  let reflexiveModal: IrModes | undefined;
+  if (sk.reflexiveModalHeader !== undefined) {
+    const modes = readModes(
+      { ...sk, modalHeader: sk.reflexiveModalHeader, modes: sk.reflexiveModes ?? [] },
+      rules,
+      [...seen, ...body.recognised],
+    );
+    if (!modes.ok) return modes;
+    reflexiveModal = modes.value;
+    body = { ...body, recognised: modes.recognised };
+  }
   const ability: IrAbility = {
     kind: 'triggered',
     trigger: trigger.value,
     ...(interveningIf === undefined ? {} : { interveningIf }),
     body: body.value,
     ...(modal === undefined ? {} : { modal }),
+    ...(reflexiveModal === undefined ? {} : { reflexiveModal }),
     span: { start: slot.start, end: body.value.span.end },
     rule: 'ability.triggered',
   };

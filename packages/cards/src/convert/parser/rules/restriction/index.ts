@@ -9,6 +9,7 @@ import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, node } from '../registry';
 import { FEATHER_G2_RESTRICTION_RULES } from './feather-g2';
 import { GISA_G4_RESTRICTION_RULES } from './gisa-g4';
+import { HYLDA_G2_RESTRICTION_RULES } from './hylda-g2';
 
 /**
  * `restriction.sorcery`: "Activate only as a sorcery." means the player must follow the timing
@@ -241,4 +242,6 @@ export const RESTRICTION_RULES = [
   ...FEATHER_G2_RESTRICTION_RULES,
   // Gisa deck, group 4 (D-462): "Activate only during your turn."
   ...GISA_G4_RESTRICTION_RULES,
+  // D-523 (Hylda deck, group 2): "This ability costs {1} less to activate during your turn."
+  ...HYLDA_G2_RESTRICTION_RULES,
 ];

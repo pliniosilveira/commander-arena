@@ -96,9 +96,14 @@ export function modesSelectionLegal(
   return d.sets.some((set) => set.length === sorted.length && set.every((m, i) => m === sorted[i]));
 }
 
-/** True for "choose one": its modes behave like radio buttons. A choice that repeats modes is counted, never "one". */
-export function isPickOne(d: Pick<ChooseModesDecision, 'max' | 'repeatable'>): boolean {
-  return d.max === 1 && d.repeatable !== true;
+/**
+ * True for "choose one": its modes behave like radio buttons. A choice that repeats modes is counted, never "one"; "choose up to one" (D-524: a minimum of 0, a triggered
+ * ability that may choose no mode) toggles, so that the pick can be taken back and no mode chosen.
+ */
+export function isPickOne(
+  d: Pick<ChooseModesDecision, 'max' | 'repeatable'> & { readonly min?: number },
+): boolean {
+  return d.max === 1 && d.repeatable !== true && (d.min ?? 1) >= 1;
 }
 
 /** True when the same mode may be chosen more than once (D-344, CR 700.2d): the dialog counts each mode instead of checking it. */
@@ -134,7 +139,7 @@ export function removeMode(picks: readonly number[], index: number): readonly nu
  * never changes the picks.
  */
 export function toggleMode(
-  d: Pick<ChooseModesDecision, 'modes' | 'max' | 'repeatable'>,
+  d: Pick<ChooseModesDecision, 'modes' | 'max' | 'repeatable'> & { readonly min?: number },
   picks: readonly number[],
   index: number,
 ): readonly number[] {

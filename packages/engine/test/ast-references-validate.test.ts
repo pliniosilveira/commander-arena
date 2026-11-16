@@ -90,6 +90,8 @@ describe('amounts that read an object', () => {
       'commanderCasts',
       // D-179: "for each color among permanents you control".
       'colorsAmong',
+      // D-518: "the number of card types among cards in your graveyard".
+      'cardTypesAmong',
       'timesAttacked',
       'affected',
       'half',
@@ -105,6 +107,8 @@ describe('amounts that read an object', () => {
       // D-450: "for each card you've drawn this turn" (CR 121.1).
       'cardsDrawnThisTurn',
       'sacrificedAsCost',
+      // Hylda group 3 (CR 107.3m): the X of the spell an enters trigger reads.
+      'enteredX',
     ]);
   });
 });

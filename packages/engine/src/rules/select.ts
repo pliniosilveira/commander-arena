@@ -472,8 +472,9 @@ export function legalTargets(
       canBeTargetedBy(state, obj, ctx.controller, ctx.source)
     ) {
       // D-149: a slot with one target for each opponent says whose each target is.
+      // Hylda group 3: "with different controllers" says whose each target is as well.
       out.push(
-        spec.onePerOpponent === true
+        spec.onePerOpponent === true || spec.differentControllers === true
           ? { kind: 'object', id, specId, group: controllerOf(state, obj) }
           : { kind: 'object', id, specId },
       );

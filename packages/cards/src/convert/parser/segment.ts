@@ -45,6 +45,12 @@ export interface AbilitySkeleton {
   /** modal: the "Choose one —" header and one span per bullet. */
   readonly modalHeader?: Span;
   readonly modes: readonly Span[];
+  /**
+   * triggered: "..., you may pay {1}. When you do, choose one —" and its bullets (D-511, CR 603.12, 700.2b): the `sentences` are those before "When you do," and these
+   * are the header of the reflexive ability's modal text and one span per bullet.
+   */
+  readonly reflexiveModalHeader?: Span;
+  readonly reflexiveModes?: readonly Span[];
   /** replacement: the whole statement. */
   readonly whole: Span;
   /**
@@ -503,6 +509,27 @@ function modalBody(text: string, from: number): { header: Span; modes: Span[] } 
   return { header: trimmed(text, from, from + first.length), modes };
 }
 
+/**
+ * "You may pay {1}. When you do, choose one —" and its bullets (D-511, CR 603.12, 700.2b): the sentences of a triggered ability's body up to a sentence that starts "When you do,
+ * choose" and the modal text it holds (header and bullets). Null when the body has no such sentence, or it is the first (a body of nothing but the reflexive ability has nothing
+ * that creates it).
+ */
+function reflexiveModal(
+  text: string,
+  from: number,
+): { sentences: Span[]; header: Span; modes: Span[] } | null {
+  const lead = /\. When you do, (?=choose\b)/i.exec(text.slice(from));
+  if (lead === null) return null;
+  const headerStart = from + lead.index + lead[0].length;
+  const modal = modalBody(text, headerStart);
+  if (modal === null) return null;
+  return {
+    sentences: splitSentences(text, from, from + lead.index + 1),
+    header: modal.header,
+    modes: modal.modes,
+  };
+}
+
 const EMPTY = { costs: [], restrictions: [], sentences: [], modes: [] } as const;
 
 /** "• Khans — ": the bullet of a choice among named options and the name (stage P34, D-152). */
@@ -528,6 +555,10 @@ function shifted(sk: AbilitySkeleton, text: string, by: number): AbilitySkeleton
     ...optional('trigger'),
     ...optional('interveningIf'),
     ...optional('modalHeader'),
+    ...optional('reflexiveModalHeader'),
+    ...(sk.reflexiveModes === undefined
+      ? {}
+      : { reflexiveModes: sk.reflexiveModes.map((s) => shiftSpan(s, by)) }),
   };
 }
 
@@ -623,6 +654,8 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     }
     // "When ~ enters, choose one —" and its bullets (stage P19, CR 700.2b): the body is the modes.
     const modal = modalBody(text, bodyStart);
+    // "..., you may pay {1}. When you do, choose one —" and its bullets (D-511, CR 603.12, 700.2b): the sentences before it, and the modes of the reflexive ability.
+    const reflexive = modal === null ? reflexiveModal(text, bodyStart) : null;
     return {
       ...base,
       head: 'triggered',
@@ -630,7 +663,13 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
       trigger,
       ...(interveningIf === undefined ? {} : { interveningIf }),
       ...(modal === null
-        ? { sentences: splitSentences(text, bodyStart, text.length) }
+        ? reflexive === null
+          ? { sentences: splitSentences(text, bodyStart, text.length) }
+          : {
+              sentences: reflexive.sentences,
+              reflexiveModalHeader: reflexive.header,
+              reflexiveModes: reflexive.modes,
+            }
         : { modalHeader: modal.header, modes: modal.modes }),
     };
   }
