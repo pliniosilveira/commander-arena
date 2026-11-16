@@ -1,7 +1,17 @@
 // The Archidekt reader (workflow "Precon issues"). Every page, answer and name here is SYNTHETIC: nothing was fetched.
 
 import { describe, expect, test } from 'vitest';
-import { clean, deckFromApi, deckIdsFromListing, preconId, preconIssue } from './archidekt.ts';
+import {
+  clean,
+  deckFromApi,
+  deckIdsFromListing,
+  isSameList,
+  listDiff,
+  listHash,
+  preconId,
+  preconIssue,
+  sameDeck,
+} from './archidekt.ts';
 
 describe('the ids of a listing page', () => {
   test('are the deck links, once each, in order, whatever follows the id', () => {
@@ -87,5 +97,67 @@ describe('the issue', () => {
     expect(issue.body).not.toContain('Unsupported cards');
     expect(issue.body).toContain('already supports every card');
     expect(issue.body).toContain('Names not found: Odd Name');
+  });
+});
+
+describe('the same deck', () => {
+  const deck = Array.from({ length: 100 }, (_, i) => `Card ${i}`);
+
+  test('is a list that shares at least four fifths of its names, whatever the case', () => {
+    expect(
+      sameDeck(
+        deck,
+        deck.map((n) => n.toUpperCase()),
+      ),
+    ).toBe(true);
+    expect(
+      sameDeck(deck, [...deck.slice(0, 91), ...Array.from({ length: 9 }, (_, i) => `Other ${i}`)]),
+    ).toBe(true);
+  });
+
+  test('is not another precon that shares some staples, or an empty list', () => {
+    expect(
+      sameDeck(deck, [...deck.slice(0, 60), ...Array.from({ length: 40 }, (_, i) => `Other ${i}`)]),
+    ).toBe(false);
+    expect(sameDeck(deck, [])).toBe(false);
+    expect(sameDeck([], [])).toBe(false);
+  });
+});
+
+describe('what differs between two lists', () => {
+  const ours = [
+    { name: 'Alpha', count: 1 },
+    { name: 'Beta', count: 2 },
+    { name: 'Gamma', count: 1 },
+  ];
+  const theirs = [
+    { name: 'alpha', count: 1 },
+    { name: 'Beta', count: 3 },
+    { name: 'Delta', count: 1 },
+  ];
+
+  test('is what to add, what to remove and the counts that changed, by name without case', () => {
+    const diff = listDiff(ours, theirs);
+    expect(diff.added).toEqual([{ name: 'Delta', count: 1 }]);
+    expect(diff.removed).toEqual([{ name: 'Gamma', count: 1 }]);
+    expect(diff.changed).toEqual([{ name: 'Beta', ours: 2, theirs: 3 }]);
+    expect(isSameList(diff)).toBe(false);
+    expect(
+      isSameList(
+        listDiff(
+          ours,
+          ours.map((e) => ({ ...e, name: e.name.toUpperCase() })),
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  test('has a six digit fingerprint that ignores order and case and changes with the list', () => {
+    const hash = listHash(ours);
+    expect(hash).toMatch(/^[0-9a-f]{6}$/);
+    expect(listHash([...ours].reverse().map((e) => ({ ...e, name: e.name.toLowerCase() })))).toBe(
+      hash,
+    );
+    expect(listHash(theirs)).not.toBe(hash);
   });
 });
