@@ -17,6 +17,9 @@ export interface ScanOptions {
   readonly anySize?: boolean;
 }
 
+/** A precon is 100 cards; some come with a planar deck of up to ten more, which `issues.ts` sets apart once the card types are known. */
+export const MAX_CARDS = 130;
+
 const HEADERS = {
   'User-Agent': 'commander-arena-precon-scan (+https://github.com/pliniosilveira/commander-arena)',
   Accept: 'application/json, text/html;q=0.9',
@@ -55,9 +58,9 @@ export async function scanArchidekt(options: ScanOptions): Promise<ArchidektDeck
       const deck = deckFromApi(id, answer);
       if (typeof deck === 'string') {
         options.log(`skipped: ${deck}`);
-      } else if (options.anySize !== true && deck.cards !== 100) {
+      } else if (options.anySize !== true && (deck.cards < 100 || deck.cards > MAX_CARDS)) {
         options.log(
-          `skipped: deck ${id} "${deck.name}" has ${deck.cards} cards, a precon has 100 (${deck.breakdown})`,
+          `skipped: deck ${id} "${deck.name}" has ${deck.cards} cards, a precon has 100 (up to ${MAX_CARDS} with a planar deck) (${deck.breakdown})`,
         );
       } else {
         options.log(`deck ${id}: "${deck.name}", ${deck.cards} cards`);

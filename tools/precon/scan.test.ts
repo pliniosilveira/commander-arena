@@ -47,7 +47,7 @@ describe('the Archidekt scan', () => {
     const decks = await scanArchidekt(run.options);
     expect(decks.map((d) => d.name)).toEqual(['Deck One']);
     expect(run.log.join('\n')).toContain(
-      'has 10 cards, a precon has 100 (Commander 1, no category 9)',
+      'has 10 cards, a precon has 100 (up to 130 with a planar deck) (Commander 1, no category 9)',
     );
     expect(run.log.join('\n')).toContain('deck 3: the answer has no name');
     expect(run.log.join('\n')).toContain('answered HTTP 404');

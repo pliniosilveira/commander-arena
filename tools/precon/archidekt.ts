@@ -215,6 +215,8 @@ export interface IssueInput {
   readonly why: readonly string[];
   /** Names the card list did not match. */
   readonly notFound: readonly string[];
+  /** Cards that came with the deck but are not part of a Commander deck (the planar deck: Plane and Phenomenon cards, and the like), left out of the decklist for now. */
+  readonly leftOut?: readonly string[];
   /** Set when the app already offers this deck: its precon id and name, and how its list differs from the one on Archidekt. */
   readonly installed?: {
     readonly id: string;
@@ -248,7 +250,7 @@ const entryLine = (e: Entry): string => `${e.count}x ${clean(e.name)}`;
  * card the engine cannot run.
  */
 export function preconIssue(input: IssueInput): PreconIssue {
-  const { deck, unsupported, why, notFound, installed } = input;
+  const { deck, unsupported, why, notFound, installed, leftOut = [] } = input;
   const needsSupport = unsupported.length > 0;
   const id = installed?.id ?? preconId(deck.name);
   const name = installed?.name ?? deck.name;
@@ -287,6 +289,17 @@ export function preconIssue(input: IssueInput): PreconIssue {
     parts.push('The game already supports every card of this deck.');
   }
   if (notFound.length > 0) parts.push(`Names not found: ${notFound.join('; ')}`);
+  if (leftOut.length > 0) {
+    parts.push(
+      [
+        `## Left out for now: ${leftOut.length} cards that are not part of the 100`,
+        '',
+        'The box also has cards that are not played in a Commander deck (a planar deck: Plane and Phenomenon cards). The game cannot play them yet, so they are not in the decklist above and not in the count of unsupported cards. Support the deck as normal without them; they are for a second round.',
+        '',
+        ...leftOut.map((n) => `- ${clean(n)}`),
+      ].join('\n'),
+    );
+  }
   if (installed === undefined) {
     parts.push(
       [
