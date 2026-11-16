@@ -75,8 +75,8 @@ describe('restrict: doesntUntap until the next untap step (D-1510)', () => {
   });
 
   test('doesntUntap with any other duration is refused', () => {
-    has(full(keep('untilEndOfTurn')), 'doesntUntap as an effect lasts until the next untap step');
-    has(full(keep('permanent')), 'doesntUntap as an effect lasts until the next untap step');
+    has(full(keep('untilEndOfTurn')), 'or doesntUntap with the duration untilNextUntapStep');
+    has(full(keep('permanent')), 'or doesntUntap with the duration untilNextUntapStep');
   });
 
   test('the duration of another restriction is refused', () => {

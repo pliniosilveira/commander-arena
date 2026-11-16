@@ -292,7 +292,7 @@ export function checkContinuousEffect(
           issue(
             out,
             `${path}.duration`,
-            'doesntUntap as an effect lasts until the next untap step',
+            `an effect can give only ${RESTRICTABLE_BY_EFFECT.join(', ')} or doesntUntap with the duration untilNextUntapStep, not doesntUntap with ${JSON.stringify(e.duration)}`,
           );
         }
       } else if (!isOneOf(e.restriction, RESTRICTABLE_BY_EFFECT)) {
