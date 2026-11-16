@@ -15,6 +15,12 @@ import {
   keepTappedText,
 } from '../src/game/hylda-text';
 import { conditionText, triggerGist } from '../src/ui/decisions/ability-label';
+import {
+  isPickOne,
+  modesCountWords,
+  modesSelectionLegal,
+  toggleMode,
+} from '../src/ui/decisions/modes-picker';
 
 const triggered = (name: string): readonly StackAbility[] =>
   (syntheticCard(name).faces[0]?.abilities ?? []).flatMap((a) =>
@@ -115,6 +121,34 @@ describe('the effect words', () => {
         {},
       ),
     ).toBe('the number of card types among cards in your graveyard');
+  });
+});
+
+describe('"choose up to one" in the modes dialog (D-1517)', () => {
+  const modes = [
+    { index: 0, text: 'a', legal: true },
+    { index: 1, text: 'b', legal: true },
+  ];
+
+  test('a minimum of 0 toggles, so that the pick can be taken back and no mode chosen', () => {
+    const d = { min: 0, max: 1, modes };
+    expect(isPickOne(d)).toBe(false);
+    expect(toggleMode(d, [], 0)).toEqual([0]);
+    expect(toggleMode(d, [0], 0)).toEqual([]);
+    expect(toggleMode(d, [0], 1)).toEqual([0]);
+    expect(modesCountWords({ min: 0, max: 1 })).toBe('up to one');
+  });
+
+  test('"choose one" is still a radio button', () => {
+    const d = { min: 1, max: 1, modes };
+    expect(isPickOne(d)).toBe(true);
+    expect(toggleMode(d, [0], 0)).toEqual([0]);
+    expect(toggleMode(d, [0], 1)).toEqual([1]);
+  });
+
+  test('with no mode picked, Confirm is allowed when the empty set is legal', () => {
+    expect(modesSelectionLegal({ sets: [[], [0], [1]] }, [])).toBe(true);
+    expect(modesSelectionLegal({ sets: [[0], [1]] }, [])).toBe(false);
   });
 });
 

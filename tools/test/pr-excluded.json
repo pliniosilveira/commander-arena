@@ -39,6 +39,7 @@
   "hashaton-g6-games.test.ts",
   "heuristic-games.test.ts",
   "hofri-games.test.ts",
+  "hylda-g2-games.test.ts",
   "keyword-batch-games.test.ts",
   "keyword-batch2-games.test.ts",
   "kicker-games.test.ts",
