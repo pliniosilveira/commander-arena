@@ -140,6 +140,33 @@ describe('"Exchange control of this enchantment and target nonland permanent" (C
     g.expect.noEvent({ kind: 'controlChanged' });
   });
 
+  test('the same player controlling both makes no effect: when the earlier one ends, the permanent goes back to its owner (CR 701.12b, 611.2b)', () => {
+    const g = defs()
+      .define(syntheticCard('SYNTHETIC Borrow Creature'))
+      .seat(0)
+      .library(...FILLER)
+      .hand('SYNTHETIC Borrow Creature')
+      .battlefield(EYES)
+      .battlefield('Island', { count: 6 })
+      .battlefield('Mountain', { count: 3 })
+      .seat(1)
+      .library(...FILLER)
+      .battlefield(BEARS)
+      .at('precombatMain')
+      .build();
+    g.act(0).cast('SYNTHETIC Borrow Creature', { targets: [{ name: BEARS, seat: 1 }], pay: true });
+    g.passAll();
+    expect(controller(g, BEARS)).toBe(0);
+    // Eyes and the Bears have one controller now: the exchange does nothing, so it does not keep the Bears
+    g.act(0).activate(EYES, { targets: [{ name: BEARS, seat: 0 }], pay: true });
+    g.passAll();
+    g.expect.noEvent({ kind: 'controlChanged', from: 0, to: 1 });
+    g.advanceTo('end');
+    g.advanceTo('upkeep', { turn: 'next' });
+    expect(controller(g, BEARS)).toBe(1);
+    g.expect.invariants();
+  });
+
   test('a target that is gone as the ability resolves: no part of the exchange occurs (CR 701.12a)', () => {
     const g = defs()
       .seat(0)

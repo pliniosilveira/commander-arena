@@ -69,3 +69,24 @@ The seven cards of the group are Defend the Rider, Eyes Everywhere, Jace Mirror 
 - Decision: the rulings of the seven cards are not verified. The behavior above follows the Oracle text of the golden fixtures and the CR rules cited in the code. The lead, or the owner through the `Scryfall lookup` workflow, should check `cards/<id>/rulings` of the seven cards, in particular for Eyes Everywhere (exchange when the nonland permanent has the same controller), Jace (loyalty cost of the 0 ability when the card has an {X} in its mana cost, which counts as 0 in the hand: CR 202.3e) and Netherese Puzzle-Ward (a die that is rolled more than once in a turn).
 - Alternatives: writing rulings from memory (forbidden: never invent data).
 - Consequences: none for the code; the list is the work order for the check.
+
+## Mutation checks
+
+Run on the working tree, each with the focused test file named, and restored after (`git status` clean). All were killed; one first survived and a test was added.
+
+| Mechanic | Mutation | Killed by |
+| --- | --- | --- |
+| Exchange control | the permanents of one controller still make an effect | "the same player controlling both makes no effect: when the earlier one ends, the permanent goes back to its owner" (added after the first run left this mutant alive: the old test only looked for events) |
+| Exchange control | the second permanent goes to its own controller | the exchange, duration and exchange-back tests of `scenario-xx-galadriel-g3-control.test.ts` |
+| Buyback | the card goes to the graveyard; the answer is never kept | the buyback tests of `scenario-xx-galadriel-g3-spells.test.ts` |
+| Die | the result as an amount is always 1; the highest result is the one below the highest too | the scry and draw tests of `scenario-xx-galadriel-g3-spells.test.ts` |
+| Restriction | an activated ability, or a mana ability, is still offered | the lock tests of `scenario-xx-galadriel-g3-control.test.ts` |
+| Counter unless pays | an amount of 0 still asks | the 0 power test |
+| Crew bonus | the bonus counts for nothing | the crew tests |
+| Draw and reveal, remove counters | "that card" is not named; more counters than it has are removed | the Walker 0 ability tests |
+| Copy exceptions | the starting loyalty is ignored; the copy is still legendary | the kicker tests |
+| Parser | the crew bonus amount is 0; the draw drops its reveal; the loyalty counts another card | `parser-galadriel-g3.test.ts` and `convert-grammar-engine-galadriel-g3.test.ts` |
+
+## Checks run
+
+`pnpm format`, `pnpm typecheck` and `pnpm lint` are clean; `pnpm test:pr` passes except five tests that the lead regenerates or that depend on the environment: the three golden snapshot tests (`test/golden.test.ts`: the seven cards of group 3 and the cards of groups 1 and 2 that changed status), the derive differential (`test/derive-differential.test.ts`: the digests) and, only when `COMMANDER_ARENA_CR_FILE` is set, `tools/rules/rule-cli.test.ts` (it passes without the variable). The 100-game soak `packages/ai/test/galadriel-g3-games.test.ts` passes with `SOAK_GAMES=100`.
