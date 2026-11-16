@@ -52,7 +52,7 @@ jobs:
         run: |
           case "$LIMIT" in ''|*[!0-9]*) echo "limit must be a number"; exit 2;; esac
           case "$IDS" in *[!0-9,\ ]*) echo "ids must be numbers separated by commas"; exit 2;; esac
-          node tools/precon/scan-cli.ts --out .precons --limit "$LIMIT" --ids "$IDS"
+          node tools/precon/scan-cli.ts --out precon-work --limit "$LIMIT" --ids "$IDS"
       - id: day
         run: echo "day=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
@@ -61,7 +61,7 @@ jobs:
           key: scryfall-oracle-cards-${{ steps.day.outputs.day }}
           restore-keys: scryfall-oracle-cards-
       - name: Check each deck against the engine and write the issues
-        run: node tools/precon/issues-cli.ts --decks .precons --download --out .precons/issues.json
+        run: node tools/precon/issues-cli.ts --decks precon-work --download --out precon-work/issues.json
       - name: What it found
         run: |
           {
@@ -69,12 +69,13 @@ jobs:
             echo
             echo "Dry run: ${{ inputs.dry_run }}"
             echo
-            jq -r '.[] | "- " + .title + (if .needsSupport then "" else " (the engine already runs every card)" end)' .precons/issues.json
+            jq -r '.[] | "- " + .title + (if .needsSupport then "" else " (the engine already runs every card)" end)' precon-work/issues.json
           } >> "$GITHUB_STEP_SUMMARY"
+      # The folder has no leading dot: the upload skips hidden files and folders.
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: precon-issues
-          path: .precons
+          path: precon-work
           retention-days: 30
       - name: Open the issues
         if: ${{ !inputs.dry_run }}
@@ -82,19 +83,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh label create precon-request --color 1d76db --description "A Commander precon to support and add to the ready-made decks" || true
-          gh issue list --state all --limit 2000 --json title --jq '.[].title' > .precons/existing.txt
-          count=$(jq length .precons/issues.json)
+          gh issue list --state all --limit 2000 --json title --jq '.[].title' > precon-work/existing.txt
+          count=$(jq length precon-work/issues.json)
           opened=0
           for i in $(seq 0 $((count - 1))); do
-            jq -r ".[$i].title" .precons/issues.json > .precons/title.txt
-            jq -r ".[$i].body" .precons/issues.json > .precons/body.md
-            needs=$(jq -r ".[$i].needsSupport" .precons/issues.json)
-            title=$(cat .precons/title.txt)
-            if grep -Fxq -- "$title" .precons/existing.txt; then
+            jq -r ".[$i].title" precon-work/issues.json > precon-work/title.txt
+            jq -r ".[$i].body" precon-work/issues.json > precon-work/body.md
+            needs=$(jq -r ".[$i].needsSupport" precon-work/issues.json)
+            title=$(cat precon-work/title.txt)
+            if grep -Fxq -- "$title" precon-work/existing.txt; then
               echo "already there: $title"
               continue
             fi
-            url=$(gh issue create --title "$title" --body-file .precons/body.md --label precon-request)
+            url=$(gh issue create --title "$title" --body-file precon-work/body.md --label precon-request)
             echo "opened: $url"
             opened=$((opened + 1))
             if [ "$needs" = "true" ]; then
