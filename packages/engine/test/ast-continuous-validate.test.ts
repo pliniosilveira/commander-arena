@@ -105,6 +105,8 @@ describe('the continuous-effect nodes that are valid and supported', () => {
       'untilYourNextTurn',
       'forAsLongAsYouControlThis',
       'forAsLongAsThisRemains',
+      // D-1510: "doesn't untap during its controller's next untap step", the duration of a `restrict` of `doesntUntap` only.
+      'untilNextUntapStep',
     ]);
     const forever: Effect = {
       kind: 'loseAllAbilities',

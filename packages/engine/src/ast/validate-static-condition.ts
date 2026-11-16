@@ -236,13 +236,6 @@ export function checkAttachedIf(c: Condition, path: string, out: AstIssue[]): vo
   if (c.inZone !== undefined) {
     issue(out, `${path}.inZone`, "an intervening if does not read inZone (D-412)");
   }
-  if (kindOf(c.of) !== 'attached') {
-    issue(
-      out,
-      `${path}.of`,
-      'an intervening if of a trigger reads the permanent the source is attached to (attached), not another object',
-    );
-  }
   checkStaticTerm(c, path, out);
 }
 

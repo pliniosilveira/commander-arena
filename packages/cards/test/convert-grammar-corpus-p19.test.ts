@@ -71,10 +71,10 @@ const REPLAY: readonly Line[] = [
     kind: 'creature',
     text: "Whenever you cast a spell, choose up to one —\n• Return target spell you don't control to its owner's hand.\n• Return target nonland permanent to its owner's hand.",
     expect: no(
-      "choose up to one —\n• Return target spell you don't control to its owner's hand.\n• Return target nonland permanent to its owner's hand.",
-      'modal.choose',
+      "spell you don't control to its owner's hand.\n• Return target nonland permanent to its owner's hand.",
+      'noun.target-permanent',
     ),
-    note: 'replay: 1 card; "choose up to one" has no minimum of one, which the engine\'s modal choice needs',
+    note: 'replay: 1 card; "choose up to one" is read since D-1517 (a triggered ability may choose no mode, CR 700.2b); the first mode, "return target spell ... to its owner\'s hand", has no rule',
   },
   {
     kind: 'instant',
@@ -97,8 +97,8 @@ const REPLAY: readonly Line[] = [
   {
     kind: 'creature',
     text: 'Whenever a land you control enters, choose one —\n• Create a 2/2 white Cat Beast creature token.\n• Put a +1/+1 counter on each creature you control. Those creatures gain vigilance until end of turn.',
-    expect: no('Those creatures gain vigilance until end of turn.', 'modal.choose'),
-    note: 'replay: 1 card; the second mode says "Those creatures gain vigilance"',
+    expect: no('gain vigilance until end of turn.', 'effect.doesnt-untap-next'),
+    note: 'replay: 1 card; the second mode says "Those creatures gain vigilance": "those creatures" is a noun since D-1510, but no gain-keyword rule takes it as its subject',
   },
   {
     kind: 'instant',

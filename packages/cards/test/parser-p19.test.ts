@@ -368,9 +368,9 @@ describe('a modal triggered ability (CR 603.3c, 700.2b)', () => {
     });
   });
 
-  test('"choose up to one —" and the other wordings of the lead line are not read', () => {
+  test('"choose up to two —" and the other wordings of the lead line are not read ("choose up to one" is, D-1517)', () => {
     const u = dropped(
-      "Whenever you cast a spell, choose up to one —\n• Return target spell you don't control to its owner's hand.\n• Draw a card.",
+      "Whenever you cast a spell, choose up to two —\n• Return target spell you don't control to its owner's hand.\n• Draw a card.",
       'creature',
     );
     expect(u).toMatchObject({ reason: 'unrecognised', slot: 'modal' });

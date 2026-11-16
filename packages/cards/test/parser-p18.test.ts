@@ -84,8 +84,8 @@ describe('the beginning of a step or phase (CR 603.2b, 500.2)', () => {
     ],
     ['At the beginning of combat, you gain 1 life.', 'combat, you gain 1 life.'],
     [
-      "At the beginning of combat on each opponent's turn, you gain 1 life.",
-      "combat on each opponent's turn, you gain 1 life.",
+      "At the beginning of combat on each player's turn, you gain 1 life.",
+      "combat on each player's turn, you gain 1 life.",
     ],
     ['At the beginning of your main phase, you gain 1 life.', 'main phase, you gain 1 life.'],
     [
