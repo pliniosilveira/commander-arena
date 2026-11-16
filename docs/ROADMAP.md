@@ -437,3 +437,15 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `sparePermanents.own` has each opponent keep a permanent of each type; "each player" is built (SYNTHETIC) but not read; whether one artifact creature may be chosen for both the artifact and the creature follows the independent choices of the text (D-231 does the same). The Scryfall rulings of Liliana, Dreadhorde General, Krav, Priest of Forgotten Gods and Plumb the Forbidden were not fetched (blocked in a cloud session): marked unverified.
 - "Partner with" reveals the card, as CR 702.124j says; today's reminder text says "put into their hand from their library" without a reveal. The search is offered even when the library holds no such card (a player may search for a card that is not there).
 - "You add {B}{B}" is read only with fixed symbols and only where it does not make a mana ability.
+
+## The Hylda deck, group 1 (issue 42, D-1500 to D-1506)
+
+- `becomesTapped` with `by` reads the player who taps: a tap by an effect, an ability cost, a mana ability, a crew or other tap cost, a convoke-style cost, an attack declaration and a regeneration. A permanent tapped by no player (none exists today) would have no `by`. "An opponent taps" is built (SYNTHETIC) but no real card is read for it.
+- "Whenever you tap one or more untapped creatures ..." is one occurrence for the events of one engine step (one resolution, one declaration); two taps by two separate effects are two occurrences, as CR 603.2c has it. Two effects that resolve in the same step cannot happen.
+- A trigger whose number is 0 (`scries` of an empty library with "up to X targets") is not put on the stack: it would do nothing either way.
+- "Whenever you scry" reads the cards the library held up to the number scried; the Scryfall rulings of Elvish Mariner, Hylda, Sharae, Verity Circle, Icewrought Sentry, Hammers of Moradin and Pippin were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
+- "You may pay {1}. When you do, ..." is read for a triggered ability with one offer sentence and a reflexive sentence or modal text; a payment of life or another cost beyond the costs `mayPay` has, a reflexive ability with an "or" of costs and a reflexive ability followed by other sentences are not read.
+- A modal reflexive ability has no targets of its own besides those of its modes, and an X in a mode is refused (a triggered ability has no X, CR 107.3j).
+- Protection from the card type of your choice is read for one object for the turn (not a group, not another duration); the view tells that a creature has protection, not from what (as for the color of D-451).
+- The agents choose the card type by the threat and pay for the reflexive abilities as they pay for any "you may pay"; they do not plan the taps of the group (the casual agent does not look for a way to tap an untapped creature of an opponent to trigger Hylda).
+- A legendary creature "<Name> of <Title>" is called by its first word only when the face is a creature.
