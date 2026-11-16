@@ -438,7 +438,7 @@ describe('"Sacrifice another Serpent: Choose one — tap target permanent and st
       .library(...FILLER)
       .at('precombatMain')
       .build();
-    expect(g.act(0).try.activate(TITAN, { modes: [1] }).ok).toBe(false);
+    expect(() => g.act(0).activate(TITAN, { modes: [1] })).toThrow(/nothing to sacrifice/);
   });
 
   test("at the beginning of each upkeep it makes a Serpent token: on either player's upkeep, for its controller", () => {

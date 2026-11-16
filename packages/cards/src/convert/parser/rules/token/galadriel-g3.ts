@@ -57,10 +57,7 @@ export const TOKEN_COPY_NOT_LEGENDARY = defineRule<IrToken>({
         COPY_SOURCE,
         pattern(/, except it['’]s not legendary(?![\p{L}\p{N}])/iu),
         optional(
-          map(
-            pattern(/ and its starting loyalty is (\d+)(?![\p{L}\p{N}])/iu),
-            (m) => Number(m[1]),
-          ),
+          map(pattern(/ and its starting loyalty is (\d+)(?![\p{L}\p{N}])/iu), (m) => Number(m[1])),
           null,
         ),
       ),

@@ -148,8 +148,7 @@ describe('"Roll a d4. Scry X, where X is the result." and "Whenever you roll a d
   });
 
   test('the lines name the features the engine lacks (D-068)', () => {
-    const roll =
-      'At the beginning of your upkeep, roll a d4. Scry X, where X is the result.';
+    const roll = 'At the beginning of your upkeep, roll a d4. Scry X, where X is the result.';
     for (const [feature, line] of [
       ['amount:dieResult', roll],
       ['trigger:rollsHighest', 'Whenever you roll a die’s highest natural result, draw a card.'],
@@ -163,7 +162,8 @@ describe('"Roll a d4. Scry X, where X is the result." and "Whenever you roll a d
 });
 
 describe('"Exchange control of ~ and target nonland permanent." (CR 701.12)', () => {
-  const ABILITY = '{5}{U}: Exchange control of ~ and target nonland permanent. Activate only as a sorcery.';
+  const ABILITY =
+    '{5}{U}: Exchange control of ~ and target nonland permanent. Activate only as a sorcery.';
 
   test('the real ability of Eyes Everywhere: the permanent itself and one target, at sorcery speed', () => {
     expect(readAll(ABILITY, 'enchantment').abilities).toEqual([
@@ -171,7 +171,10 @@ describe('"Exchange control of ~ and target nonland permanent." (CR 701.12)', ()
         kind: 'activated',
         cost: [{ kind: 'mana', symbols: ['5', 'U'] }],
         targets: [
-          { id: 't1', what: { kind: 'object', filter: { zone: 'battlefield', notTypes: ['land'] } } },
+          {
+            id: 't1',
+            what: { kind: 'object', filter: { zone: 'battlefield', notTypes: ['land'] } },
+          },
         ],
         effect: { kind: 'exchangeControl', first: THIS, second: T1 },
         timing: 'sorcery',
@@ -372,11 +375,16 @@ describe('"Tap target permanent. Its activated abilities can\'t be activated thi
 
   test('as the text of a spell, with another kind of permanent (SYNTHETIC)', () => {
     expect(
-      readAll("Tap target creature. Its activated abilities can't be activated this turn.", 'instant')
-        .spell,
+      readAll(
+        "Tap target creature. Its activated abilities can't be activated this turn.",
+        'instant',
+      ).spell,
     ).toEqual({
       targets: [
-        { id: 't1', what: { kind: 'object', filter: { zone: 'battlefield', types: ['creature'] } } },
+        {
+          id: 't1',
+          what: { kind: 'object', filter: { zone: 'battlefield', types: ['creature'] } },
+        },
       ],
       effect: {
         kind: 'sequence',
@@ -438,7 +446,12 @@ describe('"Counter up to one target spell unless its controller pays mana equal 
             filter: { zone: 'battlefield', types: ['creature'], controller: 'you' },
           },
         },
-        { id: 't2', what: { kind: 'object', filter: { zone: 'stack', stackKind: 'spell' } }, min: 0, max: 1 },
+        {
+          id: 't2',
+          what: { kind: 'object', filter: { zone: 'stack', stackKind: 'spell' } },
+          min: 0,
+          max: 1,
+        },
       ],
       effect: {
         kind: 'sequence',
@@ -463,7 +476,9 @@ describe('"Counter up to one target spell unless its controller pays mana equal 
         'instant',
       ).spell,
     ).toMatchObject({
-      targets: [{ id: 't1', what: { kind: 'object', filter: { zone: 'stack', stackKind: 'spell' } } }],
+      targets: [
+        { id: 't1', what: { kind: 'object', filter: { zone: 'stack', stackKind: 'spell' } } },
+      ],
       effect: { kind: 'counterUnlessPays', cost: [], genericAmount: POWER },
     });
     expect(
@@ -515,7 +530,9 @@ describe('"Counter up to one target spell unless its controller pays mana equal 
   });
 
   test('the older "unless its controller pays {3}" and "up to one target" are read as before', () => {
-    expect(readAll('Counter target spell unless its controller pays {3}.', 'instant').spell).toMatchObject({
+    expect(
+      readAll('Counter target spell unless its controller pays {3}.', 'instant').spell,
+    ).toMatchObject({
       effect: { kind: 'counterUnlessPays', cost: [{ kind: 'mana', symbols: ['3'] }] },
     });
     NOT_READ('Counter up to one target spell unless its controller pays {3}.', 'instant');
@@ -530,7 +547,8 @@ describe('"Counter up to one target spell unless its controller pays mana equal 
 });
 
 describe('"~ saddles Mounts and crews Vehicles as though its power were 2 greater." and the Pilot token (CR 702.122a, 702.171a)', () => {
-  const PILOT = 'Create a 1/1 colorless Pilot creature token with "~ saddles Mounts and crews Vehicles as though its power were 2 greater."';
+  const PILOT =
+    'Create a 1/1 colorless Pilot creature token with "~ saddles Mounts and crews Vehicles as though its power were 2 greater."';
 
   test('the real token of Defend the Rider: a 1/1 colorless Pilot with the bonus as its own static ability', () => {
     expect(readAll(PILOT, 'instant').spell).toEqual({
@@ -587,8 +605,15 @@ describe('"~ saddles Mounts and crews Vehicles as though its power were 2 greate
     ]) {
       const type = line.startsWith('Create') ? 'instant' : 'creature';
       const parsed = readFace(line, type);
-      expect(parsed.spell?.effect?.kind === 'createToken' && JSON.stringify(parsed.spell).includes('crewSaddleBonus'), line).toBe(false);
-      expect(parsed.abilities.some((a) => JSON.stringify(a).includes('crewSaddleBonus')), line).toBe(false);
+      expect(
+        parsed.spell?.effect?.kind === 'createToken' &&
+          JSON.stringify(parsed.spell).includes('crewSaddleBonus'),
+        line,
+      ).toBe(false);
+      expect(
+        parsed.abilities.some((a) => JSON.stringify(a).includes('crewSaddleBonus')),
+        line,
+      ).toBe(false);
     }
   });
 

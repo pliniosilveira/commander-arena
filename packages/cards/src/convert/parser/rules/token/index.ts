@@ -23,10 +23,7 @@ import { article, positiveCount, quantity } from '../amount/index';
 import { EQUAL_AMOUNTS } from '../amount/scaled';
 import { KEYWORD_WORD, KEYWORD_WORDS } from '../keyword/list';
 import { defineRule, family, node, spanned } from '../registry';
-import {
-  namedTokenQuotedAbility,
-  TOKEN_QUOTED_ABILITY_OR_CREW_BONUS,
-} from '../static/quoted';
+import { namedTokenQuotedAbility, TOKEN_QUOTED_ABILITY_OR_CREW_BONUS } from '../static/quoted';
 import { TOKEN_COPY_EXCEPT } from './copy-except';
 import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
 

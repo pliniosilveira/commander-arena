@@ -3241,6 +3241,65 @@ export const GALADRIEL_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle]
 ];
 
 /**
+ * The SYNTHETIC cards of group 3 of the Galadriel deck (issue 43, D-1620 and later): a modal instant that shields a permanent or makes a Pilot token that crews as though its power
+ * were 2 greater, an enchantment that exchanges control of itself and a nonland permanent, a sorcery that exchanges control of two creatures, a planeswalker with kicker whose copy is not
+ * legendary and starts with loyalty 1 and whose 0 ability draws and reveals a card and loses loyalty equal to its mana value, a legendary Serpent that makes a token each upkeep and
+ * sacrifices a Serpent to tap a permanent and stop its abilities or to be indestructible, a sorcery with buyback, an enchantment that rolls a d4 at upkeep and scries that many cards, an
+ * instant that puts X counters and counters a spell unless its controller pays the greatest power, an instant that stops the abilities of a permanent, an instant that destroys an
+ * enchantment and the Serpent to sacrifice. They ask a kicker, a buyback, X, modes, a payment, a scry of a number of cards and two targets of different controllers, which the generic pools
+ * are not built to follow: a style of their own.
+ */
+export const GALADRIEL_G3_NAMES = [
+  'SYNTHETIC Rider Shield',
+  'SYNTHETIC Swap Eyes',
+  'SYNTHETIC Swap Pair',
+  'SYNTHETIC Mirror Walker',
+  'SYNTHETIC Coil Titan',
+  'SYNTHETIC Buyback Peek',
+  'SYNTHETIC Die Ward',
+  'SYNTHETIC Mutation Counter',
+  'SYNTHETIC Lock Abilities',
+  'SYNTHETIC Break Enchantment',
+  'SYNTHETIC Garden Serpent',
+] as const;
+
+/** The galadrielG3 style: every card of the group twice, bodies to hold the exchanged permanents and to crew with, a Vehicle, a counterspell and burn. */
+export const GALADRIEL_G3_SPELLS = [
+  ...supported(GALADRIEL_G3_NAMES),
+  ...supported(GALADRIEL_G3_NAMES),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Rattle Wagon', 'SYNTHETIC Scout Skiff', 'Sol Ring']),
+  ...supported(['Counterspell', 'Lightning Bolt', 'Divination']),
+  // The Mutation counters a spell only when one is on the stack, and asks its controller only when they have mana left: more of it, and cheap spells to answer.
+  ...supported(['SYNTHETIC Mutation Counter', 'SYNTHETIC Mutation Counter']),
+  ...supported(['Lightning Bolt', 'Unsummon', 'Llanowar Elves']),
+  // The exchanges need a creature or permanent on each side, and the Walker a turn to be used.
+  ...supported(['SYNTHETIC Swap Eyes', 'SYNTHETIC Swap Pair', 'SYNTHETIC Swap Pair']),
+  ...supported(['SYNTHETIC Mirror Walker', 'SYNTHETIC Swap Eyes']),
+];
+
+/** Blue and green for the cards, a few Mountains for the burn and the destruction. */
+export const GALADRIEL_G3_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Mountain',
+]);
+
+/** Style pairs of the Galadriel group 3 soak test: a mirror match and both mixed ways. */
+export const GALADRIEL_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['galadrielG3', 'galadrielG3'],
+  ['galadrielG3', 'spells'],
+  ['spells', 'galadrielG3'],
+];
+
+/**
  * The SYNTHETIC cards of group 3 of the Gisa deck (D-484 to D-492): a planeswalker whose minus nine has each opponent choose a permanent of each type and sacrifice the rest (and a
  * sorcery that does it for each player), a creature that sacrifices two other creatures as a cost and has any number of target players lose life and sacrifice, a creature that sacrifices
  * X creatures as a cost (an X announced before the targets), a creature with "partner with" and the card it searches for, and an instant with an optional sacrifice of any number of creatures
@@ -4066,6 +4125,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(HYLDA_G2_NAMES as readonly string[]).includes(card.name))
   // The Galadriel group 2 cards (D-538 to D-546) search by a creature type, choose up to two cards, return lands as a cost and choose a land from two places: a style of their own.
   .filter((card) => !(GALADRIEL_G2_NAMES as readonly string[]).includes(card.name))
+  // The Galadriel group 3 cards (issue 43) ask a kicker, a buyback, X, modes, a scry of a rolled number and the targets of an exchange: a style of their own.
+  .filter((card) => !(GALADRIEL_G3_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 2 cards (D-464 to D-468) ask to pay {B} to return a card from the graveyard and put tokens, ward payments and drawing into games: a style of their own.
   .filter((card) => !(GISA_G2_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 3 cards (issue 42) ask X, modes, tap-or-untap choices and targets with different controllers, and fetch a land: a style of their own.
@@ -4290,6 +4351,7 @@ export type DeckStyle =
   | 'danithaG6'
   | 'hyldaG2'
   | 'galadrielG2'
+  | 'galadrielG3'
   | 'danithaG7'
   | 'gisaG5'
   | 'featherG3'
@@ -4380,6 +4442,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG7' && DANITHA_G7_SPELLS.length > 0) return DANITHA_G7_SPELLS;
   if (style === 'hyldaG2' && HYLDA_G2_SPELLS.length > 0) return HYLDA_G2_SPELLS;
   if (style === 'galadrielG2' && GALADRIEL_G2_SPELLS.length > 0) return GALADRIEL_G2_SPELLS;
+  if (style === 'galadrielG3' && GALADRIEL_G3_SPELLS.length > 0) return GALADRIEL_G3_SPELLS;
   if (style === 'gisaG4' && GISA_G4_SPELLS.length > 0) return GISA_G4_SPELLS;
   if (style === 'featherG3' && FEATHER_G3_SPELLS.length > 0) return FEATHER_G3_SPELLS;
   if (style === 'gisaG5' && GISA_G5_SPELLS.length > 0) return GISA_G5_SPELLS;
@@ -4579,6 +4642,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG5' && BASIC_LANDS.length > 0) return DANITHA_G5_LANDS;
   if (style === 'hyldaG2' && BASIC_LANDS.length > 0) return HYLDA_G2_LANDS;
   if (style === 'galadrielG2' && BASIC_LANDS.length > 0) return GALADRIEL_G2_LANDS;
+  if (style === 'galadrielG3' && BASIC_LANDS.length > 0) return GALADRIEL_G3_LANDS;
   if (style === 'danithaG6' && BASIC_LANDS.length > 0) return DANITHA_G6_LANDS;
   if (style === 'danithaG7' && BASIC_LANDS.length > 0) return DANITHA_G7_LANDS;
   if (style === 'gisaG4' && BASIC_LANDS.length > 0) return GISA_G4_LANDS;

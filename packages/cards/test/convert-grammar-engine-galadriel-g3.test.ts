@@ -67,7 +67,7 @@ describe('every card is valid and has the AST of its SYNTHETIC sibling', () => {
     expect(mutation.faces[0]?.manaCost).toEqual(['X', 'G', 'U']);
   });
 
-  test('Defend the Rider: the modes (the words of a mode are the card\'s own)', () => {
+  test("Defend the Rider: the modes (the words of a mode are the card's own)", () => {
     expect(validateCard(rider)).toEqual([]);
     expect(plain(rider.faces[0]?.spell)).toEqual(
       plain(syntheticCard('SYNTHETIC Rider Shield').faces[0]?.spell),
@@ -87,7 +87,16 @@ describe('every card is valid and has the AST of its SYNTHETIC sibling', () => {
   });
 });
 
-const LIB = ['Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains'] as const;
+const LIB = [
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+] as const;
 
 describe('Mystic Speculation (real text)', () => {
   test('buyback {2}: with three lands the card is cast for {U}{2} and is back in the hand; scry 3', () => {
@@ -284,7 +293,8 @@ describe('Netherese Puzzle-Ward (real text)', () => {
       if (roll?.kind !== 'dieRolled') throw new Error('no roll');
       expect(roll.sides).toBe(4);
       const decision = g.state.pending;
-      if (decision?.kind !== 'arrangeCards') throw new Error(`expected a scry, got ${decision?.kind}`);
+      if (decision?.kind !== 'arrangeCards')
+        throw new Error(`expected a scry, got ${decision?.kind}`);
       expect(decision.cards).toHaveLength(roll.result);
       g.act(0).arrange({ top: decision.cards });
       if (g.state.stack.length > 0) g.passAll();

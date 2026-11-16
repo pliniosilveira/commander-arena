@@ -567,7 +567,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.buyback': asIs,
   'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
   'noun.up-to-one-target-spell': spell(
-    (e) => `Counter ${e} unless its controller pays mana equal to the greatest power among creatures you control.`,
+    (e) =>
+      `Counter ${e} unless its controller pays mana equal to the greatest power among creatures you control.`,
   ),
   'static.crew-saddle-bonus': asIs,
   'condition.resolved-times': permanent(
