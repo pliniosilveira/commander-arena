@@ -740,12 +740,14 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'vote'
     | 'meldOrder'
     | 'pile'
-    | 'protectionColor';
+    | 'protectionColor'
+    | 'protectionCardType';
   readonly options: readonly string[];
   /**
    * For purpose `'protectionColor'` (D-451, CR 702.16, 608.2d, "gains protection from the color of your choice"): the controller of the resolving spell or
    * ability chooses one of the five colors (`options` are `W`, `U`, `B`, `R`, `G`, in that order) and the permanents in `protects` gain protection from it
-   * until end of turn. `source` is the spell or ability that resolves. Absent for the other purposes.
+   * until end of turn. `source` is the spell or ability that resolves. For purpose `'protectionCardType'` (D-1504, CR 702.16a, "gains protection from the card type of
+   * your choice") the same, with the nine card types as `options` (the names of `CARD_TYPES`). Absent for the other purposes.
    */
   readonly protects?: readonly ObjectId[];
   /**

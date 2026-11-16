@@ -209,7 +209,18 @@ export type GameEvent =
     }
   | { readonly kind: 'manaAdded'; readonly seat: SeatId; readonly count: number }
   | { readonly kind: 'manaEmptied'; readonly seat: SeatId; readonly count: number }
-  | { readonly kind: 'tapped'; readonly object: ObjectId }
+  /**
+   * A permanent became tapped (CR 701.26a): only an untapped one is tapped, so the event is the change from untapped to tapped. `by` is the player who tapped it
+   * (D-1500, CR 701.26a: "you tap"): the controller of the effect that tapped it, the player who paid the cost that tapped it (an ability's {T}, a crew or other tap
+   * cost, a mana ability) or declared it as an attacker (CR 508.1f), the controller of a permanent regenerated (CR 701.19a: "its controller taps it"); nothing for a
+   * permanent that no player tapped. `attacker` is true when it was tapped as it was declared as an attacker.
+   */
+  | {
+      readonly kind: 'tapped';
+      readonly object: ObjectId;
+      readonly by?: SeatId;
+      readonly attacker?: true;
+    }
   /**
    * A player tapped a permanent for mana: activated a mana ability of it with {T} in its cost (CR 106.12), right after its `tapped` (D-189). `object` is
    * the permanent as it was tapped; it may be gone by the end of the same ability (a sacrifice is part of it). "Whenever an opponent taps an artifact for
@@ -559,7 +570,8 @@ export type GameEvent =
         | 'effect'
         | 'riot'
         | 'vote'
-        | 'protectionColor';
+        | 'protectionColor'
+        | 'protectionCardType';
       readonly option: string;
     }
   /**

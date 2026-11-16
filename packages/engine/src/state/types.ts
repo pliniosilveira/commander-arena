@@ -1450,6 +1450,15 @@ export type Instruction =
       readonly chosen: Color | null;
     }
   /**
+   * "Another target creature you control gains protection from the card type of your choice until end of turn" (CR 702.16a, 608.2d; D-1504): as `protectionColor`, with
+   * the nine card types as options (`purpose` 'protectionCardType'); `effect` runs with `protection` from `cardType` of the one chosen in its place.
+   */
+  | {
+      readonly kind: 'protectionCardType';
+      readonly effect: Extract<Effect, { readonly kind: 'grantKeyword' }>;
+      readonly chosen: CardType | null;
+    }
+  /**
    * "Starting with you, each player votes for profit or security" (`vote`, CR 701.38a, D-194): `cast` is the votes so far, in the order they were
    * cast. The next voter is the first player still in the game, in turn order from the controller of the effect, who is not in `cast`; a
    * `chooseOption` decision (`purpose` 'vote', the words as options) asks them. When everyone has voted the tally goes to `ResolutionContext.votes`.

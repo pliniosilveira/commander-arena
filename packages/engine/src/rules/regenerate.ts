@@ -22,6 +22,7 @@ import type { GameEvent } from '../state/events';
 import { allocateTimestamp, patchObject } from '../state/ops';
 import type { ChosenTarget, ContinuousEffect, GameState } from '../state/types';
 import { removeFromCombat } from './combat-removal';
+import { controllerOf } from './control';
 import { resolveObjects, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
@@ -96,7 +97,8 @@ export function regenerateInstead(
   next = patchObject(next, id, { damage: 0, damagedByDeathtouch: false });
   if (!obj.tapped) {
     next = patchObject(next, id, { tapped: true });
-    events.push({ kind: 'tapped', object: id });
+    // CR 701.19a: "its controller taps it".
+    events.push({ kind: 'tapped', object: id, by: controllerOf(state, obj) });
   }
   const left = removeFromCombat(next, id);
   next = left.state;

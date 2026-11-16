@@ -14,12 +14,14 @@ import type {
   Condition,
   Cost,
   Effect,
+  ModeChoice,
   ObjectFilter,
   ObjectRef,
   ObjectSelector,
   PlayerSelector,
   PtAmount,
   SacrificeSelector,
+  SpellMode,
   TargetSpec,
   ThisWayKind,
   TokenDefinition,
@@ -75,6 +77,16 @@ export interface Scope {
   ) => void;
   /** Validates the effect kinds of the Dragons slice (D-151, `validate-dragons.ts`, set by validate.ts); true when it knew the kind. */
   readonly checkEffectExt: (e: Effect, path: string, scope: Scope, out: AstIssue[]) => boolean;
+  /** Validates the modes of a modal reflexive ability (D-1501, `validate-modes.ts`, set by validate.ts); absent where no ability of the engine has one. */
+  readonly checkModes?: (
+    modes: readonly SpellMode[] | undefined,
+    choose: ModeChoice | undefined,
+    path: string,
+    scopeOf: (targets: Scope['targets']) => Scope,
+    out: AstIssue[],
+  ) => void;
+  /** True in the `effect` of a `mayPay`: the cost has been paid, which `reflexive` with `afterPayment` reads (D-1501, CR 603.12). */
+  readonly paidAvailable?: boolean;
   /**
    * True after an effect that moves objects (`exile`, `destroy`, `moveToZone`) in the same
    * sequence: the `moved` reference has something to mean (CR 400.7j).
@@ -571,6 +583,8 @@ export function declareTargets(
   crossZoneAllowed = false,
   /** D-386: only the targets of a spell's own text can take as many targets as the X announced (CR 601.2b, 601.2c). */
   countXAllowed = false,
+  /** D-1503: only the targets of a triggered ability whose event carries a number (a scry) can take up to as many targets as it (CR 603.3d). */
+  triggerAmountAllowed = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
@@ -708,6 +722,28 @@ export function declareTargets(
         issue(out, p, 'up to that many targets is not one for each opponent');
       }
     }
+    if (spec.upToTriggerAmount !== undefined) {
+      // D-1503, CR 603.3d, 701.22: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way".
+      if (spec.upToTriggerAmount !== true) {
+        issue(out, `${p}.upToTriggerAmount`, 'upToTriggerAmount must be true when present');
+      } else if (!triggerAmountAllowed) {
+        issue(
+          out,
+          `${p}.upToTriggerAmount`,
+          'only a slot of a triggered ability whose event carries a number (whenever you scry) takes up to as many targets as that number',
+        );
+      } else if (
+        spec.min !== undefined ||
+        spec.max !== undefined ||
+        spec.divide !== undefined ||
+        spec.onePerOpponent !== undefined ||
+        spec.upToThatMany !== undefined ||
+        spec.anyNumber !== undefined ||
+        spec.countX !== undefined
+      ) {
+        issue(out, p, 'up to as many targets as the trigger says has no min, max or other count');
+      }
+    }
     if (spec.countX !== undefined) {
       // D-386, CR 107.3a, 601.2b, 601.2c: "X target creature cards": exactly as many targets as the X announced for the spell.
       if (spec.countX !== true) {
@@ -724,6 +760,7 @@ export function declareTargets(
         spec.divide !== undefined ||
         spec.onePerOpponent !== undefined ||
         spec.upToThatMany !== undefined ||
+        spec.upToTriggerAmount !== undefined ||
         spec.anyNumber !== undefined ||
         spec.ifKicked !== undefined ||
         spec.unlessKicked !== undefined ||
@@ -747,7 +784,8 @@ export function declareTargets(
         spec.max !== undefined ||
         spec.divide !== undefined ||
         spec.onePerOpponent !== undefined ||
-        spec.upToThatMany !== undefined
+        spec.upToThatMany !== undefined ||
+        spec.upToTriggerAmount !== undefined
       ) {
         issue(
           out,
@@ -3389,7 +3427,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         `${path}.cost`,
         out,
       );
-      checkEffect(e.effect, `${path}.effect`, scope, out);
+      // D-1501 (CR 603.12): "you may pay {1}. When you do, ...": the effect runs when the payment was made.
+      checkEffect(e.effect, `${path}.effect`, { ...scope, paidAvailable: true }, out);
       break;
     case 'cumulativeUpkeep':
       // CR 702.24a (D-127): the cost for each age counter; the effect of an ability of a permanent, never a spell.
@@ -4376,7 +4415,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'reflexive': {
       // CR 603.12 (D-135): a triggered ability of its own: its targets are its own, and it knows nothing of what the
       // resolution that created it chose or moved (the source is the same, "it" the card the source became).
-      if (scope.mayAvailable !== true) {
+      if (e.afterPayment !== undefined) {
+        // D-1501 (CR 603.12): "you may pay {1}. When you do, ...": the payment of the `mayPay` this is the effect of.
+        if (e.afterPayment !== true) issue(out, `${path}.afterPayment`, 'afterPayment must be true when present');
+        if (scope.paidAvailable !== true) {
+          issue(
+            out,
+            `${path}.afterPayment`,
+            'a reflexive trigger after a payment is the effect of a mayPay',
+          );
+        }
+        if (e.ifThisWay !== undefined) {
+          issue(out, `${path}.afterPayment`, 'what triggers it is the payment: no ifThisWay');
+        }
+      } else if (scope.mayAvailable !== true) {
         issue(
           out,
           path,
@@ -4401,9 +4453,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         false,
         scope.sacrificedEarlier === true,
       );
-      const inner: Scope = {
+      const innerOf = (declared: Scope['targets']): Scope => ({
         owner: scope.owner,
-        targets: own,
+        targets: declared,
         xAllowed: false,
         // D-177: the reflexive ability reads the permanent the resolution that created it sacrificed.
         ...(scope.sacrificedEarlier === true ? { sacrificedEarlier: true } : {}),
@@ -4412,8 +4464,24 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkAbility: scope.checkAbility,
         checkContinuous: scope.checkContinuous,
         checkEffectExt: scope.checkEffectExt,
-      };
-      checkEffect(e.effect, `${path}.effect`, inner, out);
+        ...(scope.checkModes === undefined ? {} : { checkModes: scope.checkModes }),
+      });
+      if (e.modes !== undefined || e.chooseModes !== undefined) {
+        // D-1501 (CR 603.12, 700.2b): "When you do, choose one —": a modal reflexive ability keeps its effects in the modes.
+        if (e.effect?.kind !== 'sequence' || e.effect.effects.length !== 0) {
+          issue(out, `${path}.effect`, 'a modal reflexive ability puts its effects in the modes: effect is the empty sequence');
+        }
+        if (e.targets !== undefined && e.targets.length > 0) {
+          issue(out, `${path}.targets`, 'a modal reflexive ability declares targets on each mode');
+        }
+        if (scope.checkModes === undefined) {
+          issue(out, path, 'a modal reflexive ability is not supported here');
+        } else {
+          scope.checkModes(e.modes, e.chooseModes, path, innerOf, out);
+        }
+      } else {
+        checkEffect(e.effect, `${path}.effect`, innerOf(own), out);
+      }
       break;
     }
     case 'mayCast':

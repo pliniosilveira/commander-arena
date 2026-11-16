@@ -142,6 +142,8 @@ function walkEffect(
       }
       return;
     case 'reflexive':
+      // D-1501 (CR 603.12, 700.2b): "When you do, choose one —": each mode is walked as a mode of any modal ability.
+      if (effect.modes !== undefined) walkModes(effect.modes, effect.chooseModes, path, out);
       // CR 603.12 (D-135): a triggered ability of its own: its own targets, and nothing carried over from the sequence.
       walkEffect(
         effect.effect,

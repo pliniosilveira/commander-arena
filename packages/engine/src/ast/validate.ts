@@ -548,6 +548,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'blocks':
     case 'becomesBlocked':
       checkTriggerSubject(t.what, t.kind !== 'entersBattlefield', `${path}.what`, out);
+      if (t.kind === 'becomesTapped') checkBecomesTapped(t, path, out);
       // D-135: "enters untapped" / "enters tapped" belongs to the enters trigger.
       if (
         t.kind === 'entersBattlefield' &&
@@ -609,7 +610,8 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'crimeCommitted':
     case 'tokenCreated':
-      // D-464, D-465: the player who commits the crime or creates the token, relative to the controller of this ability.
+    case 'scries':
+      // D-464, D-465, D-1503: the player who commits the crime, creates the token or scries, relative to the controller of this ability.
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
       }
@@ -888,8 +890,30 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'dealtDamage' ||
     t?.kind === 'dealsCombatDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
-    t?.kind === 'lifeGained'
+    t?.kind === 'lifeGained' ||
+    // D-1503: the cards looked at while scrying are "that many".
+    t?.kind === 'scries'
   );
+}
+
+/**
+ * D-1500 (CR 701.26a, 508.1f, 603.2c): the fields of a `becomesTapped` trigger besides its subject: who tapped the permanent, "if it isn't being declared as an attacker" and
+ * the batch ("one or more"). Who tapped it and a batch need a filter for the permanent (a trigger on `this` or on what is attached has one permanent and no batch to make).
+ */
+function checkBecomesTapped(
+  t: Extract<Trigger, { kind: 'becomesTapped' }>,
+  path: string,
+  out: AstIssue[],
+): void {
+  if (t.by !== undefined && !isOneOf(t.by, ['you', 'opponent'])) {
+    issue(out, `${path}.by`, `unknown player ${String(t.by)}: you or opponent`);
+  }
+  for (const key of ['notAsAttacker', 'batch'] as const) {
+    if (t[key] !== undefined && t[key] !== true) issue(out, `${path}.${key}`, `${key} must be true when present`);
+  }
+  if (t.batch === true && 'kind' in (t.what ?? {})) {
+    issue(out, `${path}.batch`, 'a batch of tapped permanents needs a filter for them, not this or attached');
+  }
 }
 
 /** Whether the effect, or one of a sequence or a "may" inside it, adds mana (D-189). */
@@ -1162,7 +1186,16 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
     case 'triggered': {
       checkTrigger(a.trigger, `${path}.trigger`, out);
       checkGraveyardAbility(a, path, out);
-      const targets = declareTargets(a.targets, `${path}.targets`, out, false, false, true);
+      const targets = declareTargets(
+        a.targets,
+        `${path}.targets`,
+        out,
+        false,
+        false,
+        true,
+        false,
+        a.trigger?.kind === 'scries',
+      );
       // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
       checkCrossZoneSlots(
         a,
@@ -1486,6 +1519,14 @@ const HOOKS = {
   checkAbility,
   checkContinuous: checkContinuousEffect,
   checkEffectExt: checkDragonsEffect,
+  // D-1501: the modes of "When you do, choose one —" are those of a triggered ability.
+  checkModes: (
+    modes: Parameters<typeof checkModes>[0],
+    choose: Parameters<typeof checkModes>[1],
+    path: string,
+    scopeOf: Parameters<typeof checkModes>[3],
+    out: AstIssue[],
+  ) => checkModes(modes, choose, path, scopeOf, out, true),
 };
 
 /** True if the effect, or a step of a top-level sequence, is a `may` or a `payAnyAmount` (a choice of the player inside the effect). */

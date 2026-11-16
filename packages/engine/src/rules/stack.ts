@@ -43,7 +43,7 @@ import {
   runCounterUnlessPays,
   type UnlessAnswer,
 } from './pay-unless';
-import { colorOfAnswer } from './protection-choice';
+import { cardTypeOfAnswer, colorOfAnswer } from './protection-choice';
 import { stillLegalTargets } from './select';
 import { setPending } from './set-pending';
 import { collectTriggers } from './triggers';
@@ -816,6 +816,26 @@ export function answerResolutionProtectionColor(
   const color = colorOfAnswer(option);
   if (color === null) return null;
   const updated: Instruction = { ...head, chosen: color };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/**
+ * Records the answer to "gains protection from the card type of your choice" (CR 702.16a, 608.2d, D-1504) on the instruction that asked: the card type chosen. Then continues.
+ * Null when no such question is waiting or the answer is not one of the nine card types.
+ */
+export function answerResolutionProtectionCardType(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'protectionCardType') return null;
+  const type = cardTypeOfAnswer(option);
+  if (type === null) return null;
+  const updated: Instruction = { ...head, chosen: type };
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
     [],
