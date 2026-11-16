@@ -80,6 +80,10 @@ describe('Elvish Mariner: "Whenever you scry, tap up to X target nonland permane
     g.act(0).cast(SIGHT, { pay: true });
     g.passAll();
     g.act(0).arrange({ top: ['Island[0]'], other: ['Island[1]'] });
+    // Two cards were looked at (one stays on top, one goes to the bottom): up to two targets.
+    const d = g.state.pending;
+    if (d?.kind !== 'targets') throw new Error(`expected targets, got ${d?.kind}`);
+    expect(d.specs[0]?.max).toBe(2);
     g.act(0).chooseTargets();
     g.passAll();
     g.expect.tapped('spider', false);
