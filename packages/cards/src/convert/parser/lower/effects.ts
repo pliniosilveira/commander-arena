@@ -50,6 +50,7 @@ import { PUMP, SEARCH } from './effects-more';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
+import { GRANT_ABILITY } from './granted-ability';
 import { GAIN_STATIC_ABILITY } from './granted-static';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
@@ -362,6 +363,16 @@ const RETURN: Lowering<IrClause, Effects> = {
     const refused = selfRefusal(clause, ctx);
     if (refused !== null) return refused;
     const chosen = operand(clause, 'objects');
+    // "Return it to the battlefield" of a dies or leaves trigger (D-538): `it` is the card the
+    // permanent became. The same words in a spell or an unrelated trigger do not establish a card to return.
+    if (
+      zone === 'battlefield' &&
+      chosen?.kind === 'noun' &&
+      /^it$/iu.test(chosen.filter.raw.trim()) &&
+      !ctx.itIsCard
+    ) {
+      return failure(clause);
+    }
     if (chosen?.kind === 'noun' && chosen.det === 'a') {
       return lowerChosenReturn(clause, chosen, zone);
     }
@@ -429,7 +440,7 @@ const RETURN: Lowering<IrClause, Effects> = {
             }
           : { kind: 'moveToZone', objects, to: zone },
       'objects',
-      zone === 'hand' ? { thisCard: true } : {},
+      zone === 'hand' || zone === 'battlefield' ? { thisCard: true } : {},
     );
   },
 };
@@ -1452,6 +1463,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   LOOK_TAKE_ONE_BOTTOM,
   PUMP,
   GRANT_KEYWORD,
+  GRANT_ABILITY,
   RESTRICT,
   LOSE_ALL_ABILITIES,
   BECOMES,

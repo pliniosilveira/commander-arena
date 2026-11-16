@@ -653,6 +653,7 @@ describe('unmatched abilities', () => {
       'effect.gain-keyword',
       'effect.gain-keyword-all',
       'effect.gain-keyword-each',
+      'effect.lead-granted-ability',
       'effect.lead-gain',
       'effect.lead-gain-all',
       'effect.restrict',

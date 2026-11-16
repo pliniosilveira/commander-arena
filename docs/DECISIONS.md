@@ -3325,3 +3325,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: emit one trigger per attacking Bird (would trigger multiple times for one declaration); add a card-specific override (duplicates existing batch machinery).
 - Consequences: this wording and future filtered versions use the existing declaration event; engine behavior and `ENGINE_VERSION` do not change.
 
+## D-538: A resolving effect grants a triggered ability until end of turn (2026-11-16, issue 57)
+- Context: Feign Death and Supernatural Stamina grant a targeted creature a dies trigger until end of turn; the engine already creates and expires layer-6 `grantAbility` effects, but `validateCard` reserved temporary grants for Backup and the return parser did not read "return it to the battlefield" from a dies trigger.
+- Decision: permit a temporary `grantAbility` effect to give activated, triggered or mana abilities, validating each nested ability; keep the permanent-duration grant restricted to the two static player-protection abilities of D-275. Reuse the existing quoted-ability lowerer for a targeted creature and read "return it to the battlefield" as the card the creature became when a dies trigger resolves (`thisCard`, CR 400.7). The existing `moveToZone` carries tapped and enters-with counters.
+- Alternatives: add separate effects for granted death triggers or one-off rules for the two cards; both would duplicate the continuous-effect and quoted-ability paths.
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The scenario test covers granting, dying, returning tapped and receiving a +1/+1 counter; parser acceptance tests cover both real cards from issue 57. Other text in a quoted ability is still supported only when its own parser and engine rules can lower it.
+

@@ -11,6 +11,7 @@
  */
 import {
   choice,
+  fail,
   literal,
   map,
   optional,
@@ -34,6 +35,7 @@ import type {
 import { FOR_EACH_TAIL } from '../amount/scaled';
 import { KEYWORD_WORDS } from '../keyword/list';
 import { defineRule, family, spanned } from '../registry';
+import { readQuotedAbility } from '../static/quoted';
 import { type Clauses, makeClause } from './operands';
 import { GAIN_SUBJECTS, PLURAL_STARTS, ptChange } from './pump';
 
@@ -403,6 +405,73 @@ function leadParser(rule: string, subjects: readonly string[], plural: boolean):
   );
 }
 
+/** A temporary ability grant, optionally preceded by a pump: "target creature gains \"When ~ dies, ...\"". */
+const LEAD_GRANTED_ABILITY: Parser<Clauses> = (ctx, pos) => {
+  const rule = 'effect.lead-granted-ability';
+  const duration = family<IrDuration>('duration')(ctx, pos);
+  if (!duration.ok) return duration;
+  if (duration.value.scope !== 'untilEndOfTurn') return fail(ctx, pos);
+  const comma = literal(', ')(ctx, duration.pos);
+  if (!comma.ok) return comma;
+  const subject = family<IrNoun>('noun', { only: ['noun.target-permanent'] })(ctx, comma.pos);
+  if (!subject.ok) return subject;
+  if (subject.value.filter.types?.includes('creature') !== true) return fail(ctx, comma.pos);
+
+  let cursor = subject.pos;
+  let pt: IrPtChange | null = null;
+  const pumpVerb = literal(' gets ')(ctx, cursor);
+  if (pumpVerb.ok) {
+    const change = ptChange(rule)(ctx, pumpVerb.pos);
+    if (!change.ok) return change;
+    const andGain = literal(' and gains ')(ctx, change.pos);
+    if (!andGain.ok) return andGain;
+    pt = change.value;
+    cursor = andGain.pos;
+  } else {
+    const gain = literal(' gains ')(ctx, cursor);
+    if (!gain.ok) return gain;
+    cursor = gain.pos;
+  }
+  const quoted = readQuotedAbility(ctx, cursor, { mana: false });
+  if (!quoted.ok) return quoted;
+  if (quoted.value.ability.kind !== 'triggered') return fail(ctx, cursor);
+
+  const out: IrClause[] = [];
+  if (pt !== null) {
+    out.push({
+      ...makeClause(rule, 'modifyPt', { objects: subject.value, pt }, pt.span),
+      duration: duration.value,
+      connector: 'and',
+    });
+  }
+  out.push({
+    ...makeClause(
+      rule,
+      'grantAbility',
+      { objects: subject.value, ability: quoted.value },
+      quoted.value.span,
+    ),
+    duration: duration.value,
+  });
+  return { ok: true, value: out, pos: quoted.pos };
+};
+
+export const EFFECT_LEAD_GRANTED_ABILITY = defineRule<Clauses>({
+  id: 'effect.lead-granted-ability',
+  family: 'effect',
+  leading: ['until'],
+  cites: ['CR 611.2a (Continuous Effects)', 'CR 613.1f (Interaction of Continuous Effects)'],
+  examples: [
+    'Until end of turn, target creature gains "When ~ dies, return it to the battlefield tapped under its owner\'s control."',
+    'Until end of turn, target creature gets +2/+0 and gains "When ~ dies, return it to the battlefield tapped under its owner\'s control."',
+  ],
+  rejects: [
+    'Until end of turn, target creature gains flying',
+    'Until end of turn, creatures you control gain "When ~ dies, draw a card."',
+  ],
+  parse: LEAD_GRANTED_ABILITY,
+});
+
 /**
  * `effect.lead-gain`: "Until end of turn, target creature gets +2/+2 and gains first strike.", "Until end of turn, ~
  * gains trample.": the duration first, then one object that gets a pump, keywords, or both in either order (stage P28:
@@ -484,6 +553,7 @@ export const GAIN_RULES = [
   EFFECT_GAIN_KEYWORD,
   EFFECT_GAIN_KEYWORD_ALL,
   EFFECT_GAIN_KEYWORD_EACH,
+  EFFECT_LEAD_GRANTED_ABILITY,
   EFFECT_LEAD_GAIN,
   EFFECT_LEAD_GAIN_ALL,
 ];

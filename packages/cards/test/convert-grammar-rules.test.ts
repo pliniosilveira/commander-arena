@@ -507,7 +507,7 @@ describe('diagnostics point at the clause that did not parse', () => {
     ['Counter target spell unless its controller pays {X}.', '{X}.', 'effect.counter-unless'],
     [
       'Exile target creature, then return it to the battlefield.',
-      'it to the battlefield.',
+      'return it to the battlefield.',
       'effect.return',
     ],
     ['Draw a card, then discard your hands.', 'your hands.', 'effect.discard'],

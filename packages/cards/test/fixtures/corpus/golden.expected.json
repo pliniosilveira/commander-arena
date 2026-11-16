@@ -1,5 +1,5 @@
 {
-  "parserVersion": 111,
+  "parserVersion": 112,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1322,7 +1322,7 @@
           "ability": 1,
           "text": "Whenever a land you control enters, if you control seven or more lands, exile ~, then return her to the battlefield transformed under her owner's control.",
           "reason": "unrecognised",
-          "slot": "noun",
+          "slot": "effect",
           "closestRule": "effect.return"
         },
         {
@@ -2097,7 +2097,7 @@
           "ability": 0,
           "text": "{T}: Draw a card, then discard a card. If there are five or more cards in your graveyard, exile ~, then return him to the battlefield transformed under his owner's control.",
           "reason": "unrecognised",
-          "slot": "noun",
+          "slot": "effect",
           "closestRule": "effect.return"
         },
         {
@@ -2400,19 +2400,10 @@
     "65756e6d-9825-4ed6-91c4-79f1e3bd4ae5": {
       "name": "Supernatural Stamina",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Until end of turn, target creature gets +2/+0 and gains \"When ~ dies, return it to the battlefield tapped under its owner's control.\"",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "spell.effect"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "8cfe34a4"
+      "ast": "6412d950"
     },
     "657a4500-4b47-4c78-945b-a7791af7d10e": {
       "name": "Adelbert Steiner",
@@ -5760,19 +5751,10 @@
     "f718e507-296b-4f22-842b-5fb91322069b": {
       "name": "Feign Death",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Until end of turn, target creature gains \"When ~ dies, return it to the battlefield tapped under its owner's control with a +1/+1 counter on it.\"",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.lead-gain"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d950b775"
+      "ast": "34f415d5"
     },
     "f76bcbfe-483f-4e63-8425-76feca1abf3e": {
       "name": "Pyromancer's Goggles",
@@ -6138,7 +6120,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 391,
+      "supported": 393,
       "total": 420
     }
   }

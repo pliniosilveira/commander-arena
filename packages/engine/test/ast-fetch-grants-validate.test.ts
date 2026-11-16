@@ -193,3 +193,44 @@ describe('abilities given to a group', () => {
     ).toEqual([]);
   });
 });
+
+describe('abilities granted until end of turn by a spell', () => {
+  test('a creature may gain a triggered ability for the turn', () => {
+    const card = singleFaceCard({
+      name: 'SYNTHETIC Temporary Grant',
+      manaCost: ['1'],
+      types: ['instant'],
+      colors: [],
+      colorIdentity: [],
+      oracleText: '',
+      spell: {
+        targets: [
+          {
+            id: 't1',
+            what: { kind: 'object', filter: { zone: 'battlefield', types: ['creature'] } },
+          },
+        ],
+        effect: {
+          kind: 'grantAbility',
+          objects: { kind: 'target', id: 't1' },
+          abilities: [
+            {
+              kind: 'triggered',
+              trigger: { kind: 'dies', what: THIS },
+              effect: {
+                kind: 'moveToZone',
+                objects: { kind: 'thisCard' },
+                to: 'battlefield',
+                controller: 'owner',
+                tapped: true,
+              },
+            },
+          ],
+          duration: 'untilEndOfTurn',
+        },
+      },
+    });
+
+    expect(validateCard(card)).toEqual([]);
+  });
+});

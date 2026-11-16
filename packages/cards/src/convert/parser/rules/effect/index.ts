@@ -559,6 +559,14 @@ const TO_THE_BATTLEFIELD: Parser<IrZoneSpec> = map(
     }),
 );
 
+/** A creature's dies trigger may return the card that creature became to the battlefield. */
+const RETURN_IT_TO_BATTLEFIELD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }> = quiet(
+  map(
+    sequence(literal('return '), operands(['noun.it'], 'effect.return'), TO_THE_BATTLEFIELD),
+    ([, objects, to]): { objects: IrNoun | IrNounList; to: IrZoneSpec } => ({ objects, to }),
+  ),
+);
+
 /**
  * "return that nonland permanent card to the battlefield", "return that card to your hand" (stage P33, D-150, CR 608.2c): the card an earlier
  * instruction of the text chose from a graveyard, which the lowering checks it is.
@@ -663,6 +671,8 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return ~ to its owner's hand",
     // Stage P35 (D-176): "it", the card a permanent became when it went to its owner's graveyard.
     "return it to its owner's hand",
+    "return it to the battlefield tapped under its owner's control",
+    "return it to the battlefield tapped under its owner's control with a +1/+1 counter on it",
     "return a land you control to its owner's hand",
     'return an artifact you control to its owner’s hand',
     "return a nonland permanent you control to its owner's hand",
@@ -714,6 +724,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     choice<{ objects: IrNoun | IrNounList; to: IrZoneSpec }>(
       RETURN_TO_HAND,
       RETURN_IT_TO_HAND,
+      RETURN_IT_TO_BATTLEFIELD,
       RETURN_CHOSEN,
       RETURN_FROM_GRAVEYARD,
       RETURN_THAT_CARD,
