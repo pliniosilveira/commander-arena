@@ -42,6 +42,10 @@ function triggerPrompt(decision: TargetsDecision, index: Index, slot: SlotStatus
  * target for each player who controls the permanents; `min` 0 is "up to").
  */
 export function targetsWord(spec: TargetChoiceSpec): string {
+  // Hylda group 3: "any number of target tapped creatures with different controllers": any player's, one target for each controller.
+  if (spec.onePerGroup === true && spec.eachController === true) {
+    return 'any number of targets, no two with the same controller';
+  }
   if (spec.onePerGroup === true) {
     return `${spec.min === 0 ? 'up to one target' : 'one target'} for each opponent`;
   }

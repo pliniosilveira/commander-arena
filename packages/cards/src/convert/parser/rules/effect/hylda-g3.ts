@@ -2,7 +2,7 @@
  * Effect rules of the Hylda deck, group 3 (issue 42): shuffling permanents into their owners' libraries, "tap or untap", and a player and the permanents they control gaining
  * hexproof.
  */
-import { fail, literal, optional, pattern, sequence } from '../../combinators';
+import { fail, literal, pattern, sequence } from '../../combinators';
 import type { IrDuration, IrKeywordArg, IrNoun } from '../../ir/types';
 import { permanentPhrase } from '../noun/phrases';
 import { defineRule, family, spanned } from '../registry';
@@ -45,12 +45,14 @@ export const EFFECT_SHUFFLE_INTO_LIBRARIES = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const r = sequence(
+      // Looked at first, so that a line that does not say so stops where it always did.
+      pattern(/(?=shuffle [^.]*? into (?:its owner['’]s library|their owners['’] libraries)(?![\p{L}\p{N}]))/iu),
       literal('shuffle '),
       operands(SELF_OR_PERMANENT_OPERANDS, 'effect.shuffle-into-libraries'),
       pattern(/ into (its owner['’]s library|their owners['’] libraries)(?![\p{L}\p{N}])/iu),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [, objects, tail] = r.value;
+    const [, , objects, tail] = r.value;
     // One object goes into "its owner's library", two or more into "their owners' libraries".
     const many = objects.kind === 'nounList';
     const plural = /libraries/iu.test(tail[1] ?? '');
@@ -96,12 +98,13 @@ export const EFFECT_TAP_OR_UNTAP = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const r = sequence(
-      optional(literal('you may '), null),
-      literal('tap or untap '),
+      // One pattern, so that "you may draw a card" and the like stop where they always did.
+      pattern(/(you may )?tap or untap (?=[~t])/iu),
       operands(['noun.self', 'noun.target-permanent'], 'effect.tap-or-untap'),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [may, , objects] = r.value;
+    const [head, objects] = r.value;
+    const may = head[1];
     // One permanent: "two target creatures" and "up to one" are other instructions.
     if (objects.kind !== 'noun' || objects.plural || objects.upTo || objects.count !== undefined) {
       return fail(ctx, pos);
@@ -112,7 +115,7 @@ export const EFFECT_TAP_OR_UNTAP = defineRule<Clauses>({
       'tapOrUntap',
       {
         objects,
-        optional: { kind: 'flag', value: may !== null, span, rule: 'effect.tap-or-untap' },
+        optional: { kind: 'flag', value: may !== undefined, span, rule: 'effect.tap-or-untap' },
       },
       span,
     );
@@ -157,6 +160,8 @@ export const EFFECT_YOU_AND_PERMANENTS_GAIN_HEXPROOF = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const r = sequence(
+      // Looked at first, so that "you and ..." of another instruction stops where it always did.
+      pattern(/(?=you and [^.,]*? gain hexproof(?![\p{L}\p{N}]))/iu),
       literal('you and '),
       spanned(permanentPhrase(true, 'all')),
       spanned(pattern(/ gain hexproof(?![\p{L}\p{N}])/iu)),
@@ -164,7 +169,7 @@ export const EFFECT_YOU_AND_PERMANENTS_GAIN_HEXPROOF = defineRule<Clauses>({
       family<IrDuration>('duration'),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [, group, gains, , duration] = r.value;
+    const [, , group, gains, , duration] = r.value;
     const filter = group.value;
     if (filter.anyOf !== undefined || filter.controller !== 'you') return fail(ctx, pos);
     const rule = 'effect.you-and-permanents-gain-hexproof';

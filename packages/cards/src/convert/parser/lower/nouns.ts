@@ -90,6 +90,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:sacrificedCost',
   'selector:thisCard',
   'selector:anyNumber',
+  // Hylda group 3: "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
+  'selector:differentControllers',
   'selector:atLeastOne',
   'selector:upToThatMany',
   // D-386: "X target creature cards from your graveyard" (`TargetSpec.countX`).
@@ -495,6 +497,8 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         ...boundsOf(noun),
       };
     } else if (noun.filter.player !== undefined) {
+      // "with different controllers" is said of permanents, never of players.
+      if (noun.differentControllers === true) return failure(noun, []);
       if (anyNumberTarget) {
         const blocked = missingFeatures(['selector:anyNumber']);
         if (blocked.length > 0) return failure(noun, blocked);
@@ -567,6 +571,12 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       if (anyNumberTarget) {
         const blocked = missingFeatures(['selector:anyNumber']);
         if (blocked.length > 0) return failure(noun, blocked);
+      }
+      if (noun.differentControllers === true) {
+        const blocked = missingFeatures(['selector:differentControllers']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        // Only a slot of any number of objects says "with different controllers".
+        if (!anyNumberTarget) return failure(noun, []);
       }
       if (countX) {
         const blocked = missingFeatures(['selector:countX']);

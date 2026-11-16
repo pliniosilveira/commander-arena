@@ -816,6 +816,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     }
     case 'chooseOne': {
       const choices = effect.options.map((option) => option.label).join('; ');
+      // Hylda group 3: "You may tap or untap target creature" is a choice that may also be declined.
+      if (effect.optional === true && effect.times === undefined) {
+        return `You may choose one: ${choices}`;
+      }
       return effect.times === undefined
         ? `Choose one: ${choices}`
         : `Repeat this choice ${defs.say(effect.times, { self })} times (choose independently): ${choices}`;
@@ -1050,6 +1054,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // "Each Zombie gains menace until end of turn" (CR 613.1f, 611.2c).
       // D-187: "up to that many target creatures gain double strike": several targets, the plural verb.
       return `${capital(object(effect.objects))} ${object(effect.objects).startsWith('up to ') ? 'gain' : 'gains'} ${grantedKeywordWords(effect.keyword)}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
+    case 'grantPlayerHexproof':
+      // CR 702.11b (Hylda group 3): "You gain hexproof until end of turn".
+      return `${playerVerb(effect.player, ability, 'gain')} hexproof until end of turn`;
     case 'restrict':
       // "Target creature can't be blocked this turn" (CR 613.11).
       return `${capital(object(effect.objects))} ${RESTRICTION_EFFECT[effect.restriction]}${effect.duration === 'untilEndOfTurn' ? ' this turn' : effect.duration === 'forAsLongAsYouControlThis' ? ' for as long as you control this' : ''}`;

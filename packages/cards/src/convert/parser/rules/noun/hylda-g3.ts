@@ -38,12 +38,14 @@ export const NOUN_ANY_NUMBER_TARGETS_CONTROLLERS = defineRule<IrNoun>({
   ],
   parse: (ctx, pos) => {
     const r = sequence(
+      // Looked at first, so that "any number of target ..." without the words stops where it always did.
+      pattern(/(?=any number of target [^.,]*? with different controllers(?![\p{L}\p{N}]))/iu),
       pattern(/any number of target /iu),
       permanentPhrase(true, 'all'),
       pattern(new RegExp(` with different controllers${BOUNDARY}`, 'iu')),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [, filter] = r.value;
+    const [, , filter] = r.value;
     // A union of kinds is not one filter; a stated controller says who controls them all.
     if (filter.anyOf !== undefined || filter.controller !== undefined) return fail(ctx, pos);
     const noun: IrNoun = {

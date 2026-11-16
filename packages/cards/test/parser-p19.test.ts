@@ -177,9 +177,10 @@ describe('a mode that does not read stops the whole text, and the diagnostic nam
     expect(read('Choose one —\n• Draw a card.\n• Fly away.', 'instant').spell).toBeNull();
   });
 
-  test('a label before a bullet ("Sell Contraband — ...") is not read', () => {
+  // Hylda group 3 (CR 207.2d): a name before the dash is read as a flavor word when the mode reads without it; a name before an effect that does not read stops the text.
+  test('a label before a bullet ("Sell Contraband — ...") does not make an unread mode read', () => {
     const u = dropped(
-      'Choose one or more —\n• Sell Contraband — Create a Treasure token. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.',
+      'Choose one or more —\n• Sell Contraband — Fly away. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.',
       'instant',
     );
     expect(u).toMatchObject({ reason: 'unrecognised', closestRule: 'modal.choose' });

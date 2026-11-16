@@ -402,6 +402,13 @@ export const EFFECT_PREVENT_ALL_BY_COLOR = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const r = sequence(
+      // Looked at first, so that a prevention of another kind stops where it always did.
+      pattern(
+        new RegExp(
+          `(?=prevent all (?:noncombat |combat )?damage that ${COLOR_WORD}[^.]*? sources would deal to)`,
+          'iu',
+        ),
+      ),
       spanned(sequence(literal('prevent all '), DAMAGE_WORDS)),
       literal(' that '),
       spanned(
@@ -417,7 +424,7 @@ export const EFFECT_PREVENT_ALL_BY_COLOR = defineRule<Clauses>({
       thisTurn('effect.prevent-all-by-color'),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [head, , colorsRead, , to, duration] = r.value;
+    const [, head, , colorsRead, , to, duration] = r.value;
     const words = (colorsRead.value[0].match(new RegExp(COLOR_WORD, 'giu')) ?? []).map((w) =>
       w.toLowerCase(),
     );

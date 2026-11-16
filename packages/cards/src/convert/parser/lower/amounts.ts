@@ -572,6 +572,7 @@ export function lowerDefinedPt(
 /** The feature refs of the amounts this module can produce, for the dimension test. */
 export const AMOUNT_NEEDS = [
   'amount:x',
+  'amount:enteredX',
   'amount:powerOf',
   'amount:manaValueOf',
   'amount:countOf',

@@ -18,12 +18,12 @@ const REPLAY: readonly Line[] = [
   },
   {
     kind: 'creature',
-    text: 'At the beginning of your first main phase, choose one or more —\n• Sell Contraband — Create a Treasure token. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.\n• Hire a Mercenary — Create a 3/2 colorless Shapeshifter creature token with changeling. You lose 3 life.',
+    text: 'At the beginning of your first main phase, choose one or more —\n• Sell Contraband — Fly away. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.\n• Hire a Mercenary — Create a 3/2 colorless Shapeshifter creature token with changeling. You lose 3 life.',
     expect: no(
-      'Sell Contraband — Create a Treasure token. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.\n• Hire a Mercenary — Create a 3/2 colorless Shapeshifter creature token with changeling. You lose 3 life.',
+      'Sell Contraband — Fly away. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.\n• Hire a Mercenary — Create a 3/2 colorless Shapeshifter creature token with changeling. You lose 3 life.',
       'modal.choose',
     ),
-    note: 'replay: 1 card; the labels before the bullets are not rules text the grammar reads',
+    note: 'SYNTHETIC variant of a replay line (the real one reads since Hylda group 3, D-1527: a name before the dash is a flavor word, CR 207.2d): a label does not make an unread mode read',
   },
   {
     kind: 'instant',

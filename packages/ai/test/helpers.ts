@@ -2952,6 +2952,56 @@ export const FEATHER_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[
 ];
 
 /**
+ * The SYNTHETIC cards of group 3 of the Hylda deck (issue 42): a sorcery that draws for each tapped creature a target opponent controls, a creature with X in its cost that draws X
+ * cards as it enters (the X of the spell, CR 107.3m) and taps a permanent when its controller casts a blue spell, a creature that fetches a basic Plains when an opponent controls more
+ * lands, a creature that shuffles itself and a stunned creature into their owners' libraries, a Tiered instant (one tapped creature, any number of tapped creatures with different
+ * controllers, all of them), a creature with a modal trigger of noncreature spells (tap, first strike and lifelink, flicker), a landfall enchantment whose mode may tap or untap, an
+ * instant with two named modes and an instant that gives a player and their permanents hexproof and prevents the damage of black and red sources. They ask `chooseX`, `chooseModes`,
+ * `chooseOption` of purpose `effect` (tap, untap or neither), the targets of a slot with different controllers and a search: questions games-100 expects only from dedicated styles.
+ */
+export const HYLDA_G3_NAMES = [
+  'SYNTHETIC Dream Raider',
+  'SYNTHETIC Mana Scholar',
+  'SYNTHETIC Landless Hound',
+  'SYNTHETIC Tide Shuffler',
+  'SYNTHETIC Tiered Smiter',
+  'SYNTHETIC Spellcast Monk',
+  'SYNTHETIC Tide Keeper',
+  'SYNTHETIC Sentry Slip',
+  'SYNTHETIC Warding Prayer',
+] as const;
+
+/** The hyldaG3 style: every card of the group three times, bodies to tap, shuffle and destroy, and burn for the noncreature spells. */
+export const HYLDA_G3_SPELLS = [
+  ...supported(HYLDA_G3_NAMES),
+  ...supported(HYLDA_G3_NAMES),
+  ...supported(HYLDA_G3_NAMES),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Divination']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** White and blue for the cards of the group (a basic Plains to fetch), a little red for the burn. */
+export const HYLDA_G3_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Mountain',
+]);
+
+/** Style pairs of the Hylda group 3 soak test (issue 42): a mirror match and both mixed ways. */
+export const HYLDA_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hyldaG3', 'hyldaG3'],
+  ['hyldaG3', 'spells'],
+  ['spells', 'hyldaG3'],
+];
+
+/**
  * The SYNTHETIC cards of group 2 of the Gisa deck (D-464 to D-468): a lord with ward that costs mana and life and a trigger on committing a crime (two Zombie Rogue tokens, once
  * each turn), a creature card that comes back from the graveyard when its controller commits a crime and pays {B} (a `confirmOptional` question from the graveyard), a creature that
  * drains when its controller creates or sacrifices a token, a creature that draws when others die (once each turn), two helpers that commit a crime (an activated ability and a
@@ -3822,6 +3872,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 2 cards (D-464 to D-468) ask to pay {B} to return a card from the graveyard and put tokens, ward payments and drawing into games: a style of their own.
   .filter((card) => !(GISA_G2_NAMES as readonly string[]).includes(card.name))
+  // The Hylda group 3 cards (issue 42) ask X, modes, tap-or-untap choices and targets with different controllers, and fetch a land: a style of their own.
+  .filter((card) => !(HYLDA_G3_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 1 cards (D-472 to D-476) ask which Zombies to tap, which card to return from the graveyard and the targets of their abilities: a style of their own.
   .filter((card) => !(GISA_G1_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 4 cards (D-459 to D-462) have abilities that work from the hand and from graveyards, targets in graveyards and delayed exiles: a style of their own.
@@ -4040,6 +4092,7 @@ export type DeckStyle =
   | 'gisaG5'
   | 'featherG3'
   | 'gisaG2'
+  | 'hyldaG3'
   | 'gisaG1'
   | 'featherG2'
   | 'featherG1'
@@ -4127,6 +4180,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'featherG2' && FEATHER_G2_SPELLS.length > 0) return FEATHER_G2_SPELLS;
   if (style === 'featherG1' && FEATHER_G1_SPELLS.length > 0) return FEATHER_G1_SPELLS;
   if (style === 'gisaG2' && GISA_G2_SPELLS.length > 0) return GISA_G2_SPELLS;
+  if (style === 'hyldaG3' && HYLDA_G3_SPELLS.length > 0) return HYLDA_G3_SPELLS;
   if (style === 'gisaG1' && GISA_G1_SPELLS.length > 0) return GISA_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
@@ -4323,6 +4377,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'featherG2' && BASIC_LANDS.length > 0) return FEATHER_G2_LANDS;
   if (style === 'featherG1' && BASIC_LANDS.length > 0) return FEATHER_G1_LANDS;
   if (style === 'gisaG2' && BASIC_LANDS.length > 0) return GISA_G2_LANDS;
+  if (style === 'hyldaG3' && BASIC_LANDS.length > 0) return HYLDA_G3_LANDS;
   if (style === 'gisaG1' && BASIC_LANDS.length > 0) return GISA_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
