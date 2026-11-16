@@ -49,6 +49,7 @@ import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
 import { GALADRIEL_G2_EFFECT_RULES } from './galadriel-g2';
+import { GALADRIEL_G3_EFFECT_RULES } from './galadriel-g3';
 import { GISA_G3_EFFECT_RULES } from './gisa-g3';
 import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
@@ -883,6 +884,9 @@ export const EFFECT_RULES = [
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
   // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
   ...GALADRIEL_G1_EFFECT_RULES,
+  // Galadriel deck, group 3 (issue 43): "Exchange control of ~ and target nonland permanent", "counter ... unless its controller pays mana equal to ...", "Draw a card and reveal it.
+  // Remove ..." and "Its activated abilities can't be activated this turn." start like the plain counter, draw and pronoun rules, and are tried first.
+  ...GALADRIEL_G3_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,

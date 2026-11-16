@@ -50,6 +50,7 @@ import { PUMP, SEARCH } from './effects-more';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
+import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
 import { GAIN_STATIC_ABILITY } from './granted-static';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
@@ -1435,6 +1436,9 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HYLDA_G2_LOWERINGS,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If it's a creature or land card, draw a card."
   ...GALADRIEL_G1_LOWERINGS,
+  // Galadriel deck, group 3 (issue 43): an exchange of control, a counter unless the controller pays an amount, "draw a card and reveal it" with counters removed, "its activated
+  // abilities can't be activated this turn".
+  ...GALADRIEL_G3_LOWERINGS,
   ...GRAVEYARD_CHOICE_LOWERINGS,
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,

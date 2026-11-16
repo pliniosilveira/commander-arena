@@ -103,6 +103,26 @@ export const QUOTED_ABILITY: Parser<readonly IrStaticEffect[]> = (ctx, pos) => {
 export const TOKEN_QUOTED_ABILITY: Parser<IrQuotedAbility> = (ctx, pos) =>
   readQuotedAbility(ctx, pos, { mana: true });
 
+/**
+ * The ability of a token in quotes for a token with no name of its own, or the one static ability of "~ saddles Mounts and crews Vehicles as though its power were 2 greater."
+ * (the Pilot of Defend the Rider; Galadriel deck, group 3, CR 702.122a). No other static ability of a token is read.
+ */
+export const TOKEN_QUOTED_ABILITY_OR_CREW_BONUS: Parser<IrQuotedAbility> = (ctx, pos) => {
+  const plain = TOKEN_QUOTED_ABILITY(ctx, pos);
+  if (plain.ok) return plain;
+  const withStatics = readQuotedAbility(ctx, pos, { mana: true, statics: true });
+  if (!withStatics.ok) return withStatics;
+  const { ability } = withStatics.value;
+  if (
+    ability.kind !== 'static' ||
+    ability.statement.effects.length === 0 ||
+    !ability.statement.effects.every((e) => e.kind === 'crewSaddleBonus')
+  ) {
+    return fail(ctx, pos);
+  }
+  return withStatics;
+};
+
 /** The same for a token with a name of its own: the name inside the quotes is the token (stage P45, D-197). */
 export const namedTokenQuotedAbility =
   (self: string, statics = false): Parser<IrQuotedAbility> =>

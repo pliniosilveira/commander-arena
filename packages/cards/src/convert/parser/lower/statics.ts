@@ -471,6 +471,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'lookAtTopOfLibrary':
     case 'attackTax':
     case 'optionalUntap':
+    case 'crewSaddleBonus':
     case 'untapInOthersStep':
       return playRuleNeeds(effect);
     case 'additionalCost':

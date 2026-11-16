@@ -8,6 +8,7 @@ import { CASTING_KEYWORD_RULES } from './casting';
 import { COMMANDER_KEYWORD_RULES } from './commander';
 import { COPY_KEYWORD_RULES } from './copies';
 import { ESCALATE_KEYWORD_RULES } from './escalate';
+import { GALADRIEL_G3_KEYWORD_RULES } from './galadriel-g3';
 import { GIFT_KEYWORD_RULES } from './gift';
 import { LATER_KEYWORD_RULES } from './later';
 import { LIVING_WEAPON_KEYWORD_RULES } from './living-weapon';
@@ -361,4 +362,6 @@ export const KEYWORD_RULES = [
   ...COMMANDER_KEYWORD_RULES,
   ...ESCALATE_KEYWORD_RULES,
   ...WARD_CREW_RULES,
+  // Galadriel deck, group 3 (D-1620): "Buyback {2}".
+  ...GALADRIEL_G3_KEYWORD_RULES,
 ];

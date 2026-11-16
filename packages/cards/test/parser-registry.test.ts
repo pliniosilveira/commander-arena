@@ -562,6 +562,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.scry': whenever,
   // Galadriel deck, group 1 (issue 43): "you scry or surveil" follows "Whenever"; the conditions follow a trigger's comma or a sentence of its body.
   'trigger.scry-or-surveil': whenever,
+  // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result" follows "Whenever"; the copy is the token of an enters trigger; "up to one target spell" is the noun of a counter.
+  'trigger.roll-highest': whenever,
+  'keyword.buyback': asIs,
+  'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
+  'noun.up-to-one-target-spell': spell(
+    (e) => `Counter ${e} unless its controller pays mana equal to the greatest power among creatures you control.`,
+  ),
+  'static.crew-saddle-bonus': asIs,
   'condition.resolved-times': permanent(
     (e) => `Whenever a creature you control enters, scry 1. If ${e}, you gain 1 life.`,
   ),

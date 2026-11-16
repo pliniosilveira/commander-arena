@@ -19,7 +19,7 @@ const T1 = { kind: 'target', id: 't1' } as const;
 
 /** "The Pilot": a 1/1 colorless Pilot creature token that crews Vehicles as though its power were 2 greater. */
 export const PILOT_TOKEN_TEXT =
-  'This token saddles Mounts and crews Vehicles as though its power were 2 greater.';
+  'This creature saddles Mounts and crews Vehicles as though its power were 2 greater.';
 
 /** "Target permanent you control gains hexproof and indestructible until end of turn." */
 export const SHIELD_MODE: SpellMode = {
@@ -49,9 +49,9 @@ export const SHIELD_MODE: SpellMode = {
   },
 };
 
-/** "Create a 1/1 colorless Pilot creature token with \"This token saddles Mounts and crews Vehicles as though its power were 2 greater.\"" */
+/** "Create a 1/1 colorless Pilot creature token with \"This creature saddles Mounts and crews Vehicles as though its power were 2 greater.\"" */
 export const PILOT_MODE: SpellMode = {
-  text: 'Create a 1/1 colorless Pilot creature token with "This token saddles Mounts and crews Vehicles as though its power were 2 greater."',
+  text: 'Create a 1/1 colorless Pilot creature token with "This creature saddles Mounts and crews Vehicles as though its power were 2 greater."',
   effect: {
     kind: 'createToken',
     token: {

@@ -259,6 +259,13 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:surveils']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'surveils', who });
     }
+    case 'rollsHighest': {
+      // "Whenever you roll a die's highest natural result" (Galadriel deck, group 3, CR 706.1a, 706.2): the player is relative to the controller of the ability.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:rollsHighest']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'rollsHighest', who });
+    }
     case 'dies':
     case 'blocks':
     case 'becomesBlocked':
@@ -577,6 +584,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'tokenCreated',
       'scries',
       'surveils',
+      'rollsHighest',
     ].includes(only.event) &&
       only.actor !== undefined) ||
     ((only.event === 'dealsCombatDamage' ||
@@ -1287,6 +1295,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:notAsAttacker',
   'trigger:scries',
   'trigger:surveils',
+  'trigger:rollsHighest',
   'ability:oncePerTurn',
   'ability:doOnlyOnceEachTurn',
   'condition:duringStep',

@@ -34,6 +34,7 @@ import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
 import { EVENT_TRIGGER_RULES } from './events';
 import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
+import { GALADRIEL_G3_TRIGGER_RULES } from './galadriel-g3';
 import { GISA_G2_TRIGGER_RULES } from './gisa-g2';
 import { HASHATON_G1_TRIGGER_RULES } from './hashaton';
 import { HASHATON_G9_TRIGGER_RULES } from './hashaton-g9';
@@ -1135,5 +1136,7 @@ export const TRIGGER_RULES = [
   ...HYLDA_G1_TRIGGER_RULES,
   // Galadriel deck, group 1 (issue 43): "you scry or surveil", "you surveil".
   ...GALADRIEL_G1_TRIGGER_RULES,
+  // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result".
+  ...GALADRIEL_G3_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];

@@ -23,8 +23,12 @@ import { article, positiveCount, quantity } from '../amount/index';
 import { EQUAL_AMOUNTS } from '../amount/scaled';
 import { KEYWORD_WORD, KEYWORD_WORDS } from '../keyword/list';
 import { defineRule, family, node, spanned } from '../registry';
-import { namedTokenQuotedAbility, TOKEN_QUOTED_ABILITY } from '../static/quoted';
+import {
+  namedTokenQuotedAbility,
+  TOKEN_QUOTED_ABILITY_OR_CREW_BONUS,
+} from '../static/quoted';
 import { TOKEN_COPY_EXCEPT } from './copy-except';
+import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
 
 export type Bare = Omit<IrToken, 'span' | 'rule'>;
 
@@ -167,7 +171,7 @@ const tokenWith = (
     map(quoted, (one) => ({ keywords: [] as string[], abilities: [one] })),
   );
 
-const TOKEN_WITH = tokenWith(TOKEN_QUOTED_ABILITY);
+const TOKEN_WITH = tokenWith(TOKEN_QUOTED_ABILITY_OR_CREW_BONUS);
 
 const COLOR_WORD = pattern(/(white|blue|black|red|green)(?![\p{L}\p{N}])/iu);
 
@@ -606,5 +610,7 @@ export const TOKEN_RULES = [
   TOKEN_NUMBER_OF,
   // Before `token.copy`: a family takes the first rule that reads, and the plain copy would stop short of ", except it's ...".
   TOKEN_COPY_EXCEPT,
+  // Galadriel deck, group 3: "..., except it's not legendary and its starting loyalty is 1", for the same reason.
+  ...GALADRIEL_G3_TOKEN_RULES,
   TOKEN_COPY,
 ];

@@ -464,6 +464,8 @@ export type IrAmount =
     }
   // Stage P29 (D-133): "you gain that much life": the damage of the event that caused the trigger
   | { readonly kind: 'triggerDamage'; readonly span: Span }
+  // Galadriel deck, group 3 (CR 706.2): "Scry X, where X is the result": the natural result of the die rolled earlier in the text
+  | { readonly kind: 'dieResult'; readonly span: Span }
   // Stage P34 (D-152, CR 701.57): "a number of tapped Treasure tokens equal to the difference" between 10 and the mana value of the card discovered
   | { readonly kind: 'shortfall'; readonly limit: number; readonly span: Span }
   // Stage P39 (D-184, CR 601.2h): "the amount of mana spent to cast it", "for each mana from an artifact source spent to cast it"; `fromType` is the
@@ -902,6 +904,12 @@ export interface IrToken extends IrNode {
     readonly colors: readonly string[];
     readonly subtypes: readonly string[];
   };
+  /**
+   * "..., except it's not legendary and its starting loyalty is 1" (Galadriel deck group 3, CR 707.9b, 205.4a, 306.5b): with `copyOf`, the copy has no legendary supertype
+   * (`copyNotLegendary`) and the loyalty it enters with (`copyStartingLoyalty`, a copiable value of a planeswalker).
+   */
+  readonly copyNotLegendary?: true;
+  readonly copyStartingLoyalty?: number;
   /** "create two tapped Treasure tokens" (stage P28, CR 110.5b): the tokens enter tapped. */
   readonly tapped?: true;
   readonly count: IrAmount;
@@ -1279,6 +1287,8 @@ export type IrStaticEffect =
   | { readonly kind: 'attackTax'; readonly cost: IrCost; readonly planeswalkers?: true }
   /** "You may choose not to untap ~ during your untap step." (stage P24, D-125, CR 502.3). The subject is `~`. */
   | { readonly kind: 'optionalUntap' }
+  /** "~ saddles Mounts and crews Vehicles as though its power were 2 greater." (Galadriel deck group 3, CR 702.122a, 702.171a). The subject is `~`. */
+  | { readonly kind: 'crewSaddleBonus'; readonly amount: number }
   /**
    * "Untap all creatures you control during each other player's untap step." (stage P68, D-229, CR 502.3). The subject is `you`; with `self` (D-320,
    * "Untap ~ during each other player's untap step.") the permanent itself untaps and the subject is `~`.
@@ -1601,6 +1611,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'opponentsWithMore',
   'thisWay',
   'triggerDamage',
+  'dieResult',
   'shortfall',
   'exiledStillThere',
   'manaSpent',

@@ -174,6 +174,15 @@ const COMMANDER_MANA_VALUE: Parser<IrAmount> = (ctx, pos) => {
     : r;
 };
 
+/**
+ * "the result" (Galadriel deck group 3, CR 706.2, 706.3b): the natural result of the die the text rolled before ("Roll a d4. Scry X, where X is the result."). Only the
+ * words "the result" followed by the end of the phrase; whether a die was rolled is the lowering's check.
+ */
+const DIE_RESULT: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(pattern(/the result(?![\p{L}\p{N}'’])/iu))(ctx, pos);
+  return r.ok ? { ok: true, value: { kind: 'dieResult', span: r.value.span }, pos: r.pos } : r;
+};
+
 const STAT_OF_HEAD =
   /(its|that (?:creature|permanent)['’]s|the sacrificed (?:creature|permanent)['’]s|the exiled card['’]s|~['’]s) (power|toughness)(?![\p{L}\p{N}])/iu;
 
@@ -266,6 +275,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     MANA_SPENT_AMOUNT,
     // Stage P68 (D-230): "the amount of damage ~ dealt to that player".
     DAMAGE_DEALT_AMOUNT,
+    // Galadriel deck group 3 (CR 706.2): "the result" of a die rolled earlier in the text.
+    DIE_RESULT,
   );
 
 /** "half <atom>, rounded down" (CR 107.1a: the text always says how it rounds). */
@@ -495,8 +506,12 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     // Stage P32 (D-147): the commanders' mana value, and a total read as the spell is cast.
     'where X is the greatest mana value among your commanders',
     'where X is the greatest power among creatures you control as you cast ~',
+    // Galadriel deck group 3 (CR 706.2): the die rolled before.
+    'where X is the result',
   ],
   rejects: [
+    'where X is the results',
+    'where X is the result of',
     'where X is',
     'where X is 3',
     'where X is the number of creatures',

@@ -151,6 +151,14 @@ export function lowerAmount(
       }
       return { ok: true, value: { kind: 'manaValueOf', of: of.value }, rule };
     }
+    case 'dieResult': {
+      // "Scry X, where X is the result" (Galadriel deck group 3, CR 706.2, 706.3b): the natural result of the die the text rolled before, read by the instructions after the roll in
+      // the same sequence; a result with no roll before it in the text is refused, as `validateCard` does.
+      const blocked = needs('dieResult');
+      if (blocked !== null) return blocked;
+      if (ctx.dieSides === null) return { ok: false, needs: [], at: amount.span, rule };
+      return { ok: true, value: { kind: 'dieResult' }, rule };
+    }
     case 'triggerDamage': {
       // "You gain that much life" (stage P29, D-133): the damage of the event that caused the trigger; `validateCard`
       // checks the trigger is one that has it.
