@@ -470,15 +470,28 @@ export function permanentPhrase(
       // "artifact, enchantment, or creature with power 4 or greater" (stage P33, D-150): a power or a toughness belongs to the creature
       // among the types, the only one that has either; it is said of the last one only.
       optional(quiet(comparisonSuffix(['power', 'toughness'])), undefined),
+      // "artifact, enchantment, or creature with flying" (Galadriel deck, group 1, Shower of Arrows): a keyword belongs to the creature among the types too, said of the last one only.
+      optional(quiet(KEYWORD_SUFFIX), undefined),
       optional(CONTROL_SUFFIX, undefined),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [types, compared, controller] = r.value;
+    const [types, compared, keyword, controller] = r.value;
     const last = types[types.length - 1];
     if (compared !== undefined && (types.length < 2 || last !== 'creature')) return fail(ctx, pos);
+    if (keyword !== undefined && (types.length < 2 || last !== 'creature' || compared !== undefined)) {
+      return fail(ctx, pos);
+    }
     const base = toFilter('battlefield', { ...NO_PARTS, controller }, ctx.text.slice(pos, r.pos));
     const anyOf = types.map((t): IrFilter => {
-      const member: IrFilter = { types: [t], raw: t };
+      const member: IrFilter = {
+        types: [t],
+        raw: t,
+        ...(t === last && keyword !== undefined
+          ? keyword.has
+            ? { keywords: [keyword.keyword] }
+            : { notKeywords: [keyword.keyword] }
+          : {}),
+      };
       return t === last ? withComparison(member, compared) : member;
     });
     return { ok: true, value: { ...base, anyOf }, pos: r.pos };

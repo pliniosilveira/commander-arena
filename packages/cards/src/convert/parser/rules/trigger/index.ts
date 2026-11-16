@@ -37,6 +37,7 @@ import { GISA_G2_TRIGGER_RULES } from './gisa-g2';
 import { HASHATON_G1_TRIGGER_RULES } from './hashaton';
 import { HASHATON_G9_TRIGGER_RULES } from './hashaton-g9';
 import { HOFRI_TRIGGER_RULES } from './hofri';
+import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
 import { HYLDA_G1_TRIGGER_RULES } from './hylda-g1';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
@@ -1132,5 +1133,7 @@ export const TRIGGER_RULES = [
   ...GISA_G2_TRIGGER_RULES,
   // Hylda deck, group 1 (issue 42, D-510, D-513): "you tap an untapped creature an opponent controls", "you scry".
   ...HYLDA_G1_TRIGGER_RULES,
+  // Galadriel deck, group 1 (issue 43): "you scry or surveil", "you surveil".
+  ...GALADRIEL_G1_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];

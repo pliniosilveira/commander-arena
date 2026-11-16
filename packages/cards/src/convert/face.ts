@@ -1,4 +1,4 @@
-import type { CardFace, Characteristics, Color } from '@commander-arena/engine';
+import type { Ability, CardFace, Characteristics, Color } from '@commander-arena/engine';
 import type { StoredFace, UnparsedAbility } from '../types';
 import { convertManaCost } from './mana-cost';
 import { convertCount, convertPt } from './numbers';
@@ -25,7 +25,12 @@ export function convertCharacteristics(face: StoredFace): ConvertedCharacteristi
   reasons.push(...cost.problems);
   const power = convertPt(face.power, 'power');
   const toughness = convertPt(face.toughness, 'toughness');
-  const loyalty = convertCount(face.loyalty, 'loyalty');
+  // Galadriel deck, group 1 (Nissa, Steward of Elements; CR 306.5b, 107.3m): a planeswalker whose printed loyalty is X enters with X loyalty counters, X being the one announced for
+  // its spell. Its printed loyalty is 0 and `convertFace` gives it the replacement "enters with X loyalty counters" (the engine's `entersWithCounters`).
+  const loyalty =
+    face.loyalty === 'X' && typeLine.types.includes('planeswalker')
+      ? { value: 0, problems: [] }
+      : convertCount(face.loyalty, 'loyalty');
   const defense = convertCount(face.defense, 'defense');
   reasons.push(...power.problems, ...toughness.problems, ...loyalty.problems, ...defense.problems);
   const colors: Color[] = [...face.colors];
@@ -58,6 +63,12 @@ function finalChapterOf(subtypes: readonly string[], lines: readonly string[]): 
   const numbers = lines.flatMap((line) => chapterNumbers(line) ?? []);
   return numbers.length === 0 ? null : Math.max(...numbers);
 }
+
+/** "This permanent enters with a number of loyalty counters on it equal to its printed loyalty number" where that number is X (CR 306.5b, 107.3m). */
+const X_LOYALTY_REPLACEMENT: Ability = {
+  kind: 'replacement',
+  replacement: { kind: 'entersWithCounters', counter: 'loyalty', count: { kind: 'x' } },
+};
 
 export interface ConvertedFace {
   readonly face: CardFace;
@@ -96,6 +107,10 @@ export function convertFace(
   );
   const abilities = [
     ...intrinsicAbilities(characteristics.types, characteristics.subtypes),
+    // CR 306.5b, 107.3m: the intrinsic ability of a planeswalker with an X in its loyalty.
+    ...(stored.loyalty === 'X' && characteristics.types.includes('planeswalker')
+      ? [X_LOYALTY_REPLACEMENT]
+      : []),
     ...parsed.abilities,
   ];
   const finalChapter = finalChapterOf(characteristics.subtypes, parsed.lines);

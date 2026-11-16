@@ -252,6 +252,13 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:scries']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'scries', who });
     }
+    case 'surveils': {
+      // "Whenever you scry or surveil" (Galadriel deck, group 1, CR 701.25): the player is relative to the controller of the ability.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:surveils']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'surveils', who });
+    }
     case 'dies':
     case 'blocks':
     case 'becomesBlocked':
@@ -569,6 +576,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'crimeCommitted',
       'tokenCreated',
       'scries',
+      'surveils',
     ].includes(only.event) &&
       only.actor !== undefined) ||
     ((only.event === 'dealsCombatDamage' ||
@@ -1271,6 +1279,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:tapBatch',
   'trigger:notAsAttacker',
   'trigger:scries',
+  'trigger:surveils',
   'ability:oncePerTurn',
   'ability:doOnlyOnceEachTurn',
   'condition:duringStep',

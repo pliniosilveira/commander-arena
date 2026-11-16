@@ -558,6 +558,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,
   'trigger.scry': whenever,
+  // Galadriel deck, group 1 (issue 43): "you scry or surveil" follows "Whenever"; the conditions follow a trigger's comma or a sentence of its body.
+  'trigger.scry-or-surveil': whenever,
+  'condition.resolved-times': permanent(
+    (e) => `Whenever a creature you control enters, scry 1. If ${e}, you gain 1 life.`,
+  ),
+  'condition.chose-ring-bearer': permanent((e) => `Whenever the Ring tempts you, if ${e}, scry 3.`),
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),

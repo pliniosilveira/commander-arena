@@ -341,6 +341,24 @@ const PUT_ONE_PILE = /^put one pile into your hand and the other into your grave
  * the second sentence of the same instruction after `REVEAL_THE_TOP` (the cards are revealed, so "reveal" is not said again), kept together with the rest for `effect.reveal-take`.
  */
 const PUT_FROM_AMONG_REVEALED = /^you may put [^.]* from among them into your hand\.$/i;
+/**
+ * "Scry 3, then reveal the top card of your library. If it's a creature or land card, draw a card." and "Whenever you scry, you may reveal the top card of your library. If a land card
+ * is revealed this way, put it onto the battlefield tapped." (Galadriel deck, group 1, CR 701.20): the second sentence says what the card revealed by the first one does, so the two
+ * are read as one instruction (`effect.reveal-top-then`; the first may follow the comma of a trigger or of "scry N, then").
+ */
+const REVEAL_TOP_CARD = /(?:^|, )(?:then )?(?:you may )?reveal the top card of your library\.$/i;
+const IF_REVEALED_CARD =
+  /^if (?:it['’]s an? [^.,]* card|an? [^.,]* card is revealed this way), [^.]*\.$/i;
+/**
+ * "Look at the top card of your library. If it's a land card or a creature card with mana value less than or equal to the number of loyalty counters on ~, you may put that card onto
+ * the battlefield." (Galadriel deck, group 1, CR 401.2): the second sentence of the instruction of `LOOK_AT_TOP_CARD` that puts the card onto the battlefield (`effect.look-top-put`).
+ */
+const LOOK_AT_TOP_CARD_COST = /^(?:[+\-−]?\d+: )?look at the top card of your library\.$/i;
+const IF_ITS_LAND_OR_MAY_PUT =
+  /^if it['’]s a land card or an? [^.,]* card with mana value less than or equal to [^.,]*, you may put that card onto the battlefield\.$/i;
+/** "They become 5/5 Elemental creatures with flying and haste until end of turn. They're still lands." (Galadriel deck, group 1, CR 205.1b): the second sentence keeps the old types. */
+const THEY_BECOME = /^they become [^.]*\.$/i;
+const THEY_ARE_STILL = /^they['’]re still [^.]*\.$/i;
 const CREATE_TOKENS = /^create [^.]* tokens(?: [^.]*)?\.$/i;
 const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
 
@@ -374,6 +392,9 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       ((said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
         (said(a, CREATE_TOKENS) && said(b, TOKENS_HAVE_QUOTED_ABILITY)) ||
         (said(a, LOOK_AT_TOP_CARD) && said(b, IF_ITS_CARD_MAY_TAKE)) ||
+        (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_LAND_OR_MAY_PUT)) ||
+        (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
+        (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||

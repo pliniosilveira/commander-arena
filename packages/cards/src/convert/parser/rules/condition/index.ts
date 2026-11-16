@@ -36,6 +36,7 @@ import { CONDITION_UNLESS_ESCAPED } from './escaped';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
 import { GISA_G1_CONDITION_RULES } from './gisa-g1';
 import { HOFRI_CONDITION_RULES } from './hofri';
+import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { HYLDA_G1_CONDITION_RULES } from './hylda-g1';
 import { HYLDA_G2_CONDITION_RULES } from './hylda-g2';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
@@ -446,6 +447,8 @@ export const CONDITION_RULES = [
   ...HYLDA_G1_CONDITION_RULES,
   // D-518, D-520 (Hylda deck, group 2): "there are four or more card types among cards in your graveyard", "enchanted creature is untapped".
   ...HYLDA_G2_CONDITION_RULES,
+  // Galadriel deck, group 1 (issue 43): "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
+  ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,

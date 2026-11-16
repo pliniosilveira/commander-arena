@@ -91,8 +91,8 @@ function countersOn(rule: string, head: Parser<unknown>, plural: boolean): Parse
 const NUMBER_OF = (rule: string): Parser<IrAmount> =>
   countAmount(rule, literal('the number of '), true);
 
-/** "the number of +1/+1 counters on ~". */
-const NUMBER_OF_COUNTERS = (rule: string): Parser<IrAmount> =>
+/** "the number of +1/+1 counters on ~". Exported for the rules of effects that read it as a limit (Galadriel deck, group 1: "mana value less than or equal to the number of loyalty counters on ~"). */
+export const NUMBER_OF_COUNTERS = (rule: string): Parser<IrAmount> =>
   countersOn(rule, literal('the number of '), true);
 
 const AGGREGATE_HEAD = /the (greatest|total) (power|toughness|mana value) (among|of) /iu;

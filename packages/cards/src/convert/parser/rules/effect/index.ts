@@ -58,6 +58,7 @@ import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
 import { HASHATON_G9_EFFECT_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_EFFECT_RULES } from './hashaton-group-4';
 import { HOFRI_EFFECT_RULES } from './hofri';
+import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
 import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
@@ -878,6 +879,9 @@ export const EFFECT_RULES = [
   ...HYLDA_G1_EFFECT_RULES,
   // D-517, D-519 (Hylda deck, group 2): "Those creatures don't untap during ... next untap step" and "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_EFFECT_RULES,
+  // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
+  // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
+  ...GALADRIEL_G1_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
