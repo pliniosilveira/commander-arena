@@ -20,6 +20,29 @@ const PRICE = 'SYNTHETIC Blood Price'; // {B}, pay 3 life, draw two
 const TAX = 'SYNTHETIC Extra Mana Tax'; // {R}, pay {1}, draw one
 const KICK = 'SYNTHETIC Sacrifice Kicker'; // {R}, kicker {2}, sacrifice a creature, 2 or 5 damage
 const SCOUT = 'SYNTHETIC Doomed Scout'; // artifact creature, dies: gain 2
+const BEHOLD_OR_PAY = singleFace({
+  name: 'SYNTHETIC Behold or Pay',
+  manaCost: ['U'],
+  types: ['instant'],
+  colors: ['U'],
+  colorIdentity: ['U'],
+  oracleText: 'As an additional cost to cast this spell, behold a Jace or pay {1}. Draw a card.',
+  additionalCostChoice: [
+    [{ kind: 'behold', filter: { types: ['planeswalker'], subtypes: ['Jace'] } }],
+    [{ kind: 'mana', symbols: ['1'] }],
+  ],
+  spell: { effect: { kind: 'draw', player: { kind: 'you' }, count: 1 } },
+});
+const SYNTHETIC_JACE = singleFace({
+  name: 'SYNTHETIC Jace',
+  manaCost: ['2', 'U'],
+  types: ['planeswalker'],
+  subtypes: ['Jace'],
+  colors: ['U'],
+  colorIdentity: ['U'],
+  loyalty: 3,
+  oracleText: '',
+});
 
 describe('a sacrifice paid with the spell (CR 118.8, 701.21)', () => {
   const drawer = (...creatures: string[]) =>
@@ -373,6 +396,96 @@ describe('a discard paid with the spell (CR 118.8, 701.9)', () => {
 });
 
 describe('several additional costs, life and mana', () => {
+  test('behold as an additional cost may choose a Jace permanent', () => {
+    const g = scenario()
+      .define(BEHOLD_OR_PAY)
+      .define(SYNTHETIC_JACE)
+      .seat(0)
+      .hand(BEHOLD_OR_PAY.name)
+      .battlefield('Island', { count: 2 })
+      .battlefield(SYNTHETIC_JACE.name)
+      .seat(1)
+      .build();
+    g.act(0).cast(BEHOLD_OR_PAY.name);
+    g.expect.pending('confirmOptional', 0);
+    g.act(0).accept();
+    g.act(0).payAuto();
+    expect(chooseCardsDecision(g)).toMatchObject({
+      purpose: 'behold',
+      forCost: true,
+      min: 1,
+      max: 1,
+      reveal: true,
+    });
+    expect(chooseCardsDecision(g).legal).toContain(g.id(SYNTHETIC_JACE.name));
+    g.act(0).chooseCards(SYNTHETIC_JACE.name);
+    g.expect.zone(SYNTHETIC_JACE.name, 'battlefield', { seat: 0 });
+    g.expect.stack([BEHOLD_OR_PAY.name]);
+  });
+
+  test('behold as an additional cost may reveal a Jace card from hand', () => {
+    const g = scenario()
+      .define(BEHOLD_OR_PAY)
+      .define(SYNTHETIC_JACE)
+      .seat(0)
+      .hand(BEHOLD_OR_PAY.name, SYNTHETIC_JACE.name)
+      .battlefield('Island', { count: 2 })
+      .seat(1)
+      .build();
+    g.act(0).cast(BEHOLD_OR_PAY.name);
+    g.act(0).accept();
+    g.act(0).payAuto();
+    expect(chooseCardsDecision(g).legal).toContain(g.id(SYNTHETIC_JACE.name));
+    g.act(0).chooseCards(SYNTHETIC_JACE.name);
+    g.expect.zone(SYNTHETIC_JACE.name, 'hand', { seat: 0 });
+    g.expect.eventLog([{ kind: 'cardsRevealed', from: 'hand' }, { kind: 'spellCast' }]);
+  });
+
+  test('a Jace alone can make the behold option payable when the mana option cannot be paid', () => {
+    const g = scenario()
+      .define(BEHOLD_OR_PAY)
+      .define(SYNTHETIC_JACE)
+      .seat(0)
+      .hand(BEHOLD_OR_PAY.name)
+      .battlefield('Island')
+      .battlefield(SYNTHETIC_JACE.name)
+      .seat(1)
+      .build();
+    g.act(0).cast(BEHOLD_OR_PAY.name);
+    g.expect.pending('payMana', 0);
+    g.act(0).payAuto();
+    expect(chooseCardsDecision(g).purpose).toBe('behold');
+  });
+
+  test('neither way to pay is offered without a Jace or enough mana', () => {
+    const g = scenario()
+      .define(BEHOLD_OR_PAY)
+      .seat(0)
+      .hand(BEHOLD_OR_PAY.name)
+      .battlefield('Island')
+      .seat(1)
+      .build();
+    g.expect.illegal(0, { cast: BEHOLD_OR_PAY.name });
+  });
+
+  test('cancelling the behold choice rewinds the cast and its mana payment', () => {
+    const g = scenario()
+      .define(BEHOLD_OR_PAY)
+      .define(SYNTHETIC_JACE)
+      .seat(0)
+      .hand(BEHOLD_OR_PAY.name)
+      .battlefield('Island')
+      .battlefield(SYNTHETIC_JACE.name)
+      .seat(1)
+      .build();
+    const before = g.positionHash();
+    g.act(0).cast(BEHOLD_OR_PAY.name, { pay: true });
+    g.act(0).cancel();
+    g.expect.position(before);
+    g.expect.tapped('Island', false);
+    g.expect.zone(BEHOLD_OR_PAY.name, 'hand', { seat: 0 });
+  });
+
   test('sacrifice, then discard: cancelling at the discard undoes the sacrifice too', () => {
     const g = scenario()
       .seat(0)

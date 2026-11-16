@@ -54,6 +54,37 @@ describe('the real planeswalkers that read completely', () => {
 });
 
 describe('the cards of the Vraska deck that need planeswalkers', () => {
+  test('Way of the Cryomancer grants its delayed-copy loyalty ability to planeswalkers', () => {
+    const imported = real('Way of the Cryomancer');
+    expect(imported.support.unparsed).toEqual([]);
+    expect(imported.support.status).toBe('supported');
+    expect(imported.definition.faces[0]?.abilities).toEqual([
+      {
+        kind: 'static',
+        static: {
+          kind: 'grantAbility',
+          subject: {
+            kind: 'filter',
+            filter: { types: ['planeswalker'], controller: 'you' },
+          },
+          ability: {
+            kind: 'activated',
+            cost: [{ kind: 'loyalty', change: -3 }],
+            effect: {
+              kind: 'delayedCast',
+              filter: { stackKind: 'spell', types: ['instant', 'sorcery'] },
+              effect: {
+                kind: 'copySpell',
+                spell: { kind: 'triggerSubject' },
+                newTargets: 'may',
+              },
+            },
+          },
+        },
+      },
+    ]);
+  });
+
   test("Protege's Awakening: Empower Jace 6, then draw a card", () => {
     const imported = real("Protege's Awakening");
     expect(imported.support.status).toBe('supported');
