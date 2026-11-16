@@ -1349,7 +1349,7 @@ export type Effect =
        * dealt by a source that matches the filter. It is read as each damage event would happen (a prevention effect changes the rules
        * of the game, so a creature that enters later is covered), with the controller of the spell or ability as "you", against the
        * source as it is (or, if it has left the battlefield, as it last was). A spell or ability that is not a permanent never matches a
-       * filter that names a type of permanent. Not with `by`. The filter names no zone, owner or X.
+       * filter that names a type of permanent; a filter of colors only matches a spell on the stack as well (Hylda group 3: "black and/or red sources"). Not with `by`. The filter names no zone, owner or X.
        */
       readonly byFilter?: ObjectFilter;
       /** `forAsLongAsThisRemains` (D-207, CR 611.2b, 615): the shield ends when the permanent with the ability leaves the battlefield; only in an ability of a permanent. */

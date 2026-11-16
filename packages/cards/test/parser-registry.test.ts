@@ -556,6 +556,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.commit-crime': whenever,
   'trigger.create-token': whenever,
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
+  // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers".
+  'noun.any-number-targets-controllers': spell((e) => `Destroy ${e}.`),
   'trigger.discarded': whenever,
   'trigger.cycled-or-discarded': whenever,
   'condition.mana-spent-at-least': permanent(

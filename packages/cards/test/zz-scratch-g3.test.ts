@@ -1,18 +1,36 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { test } from 'vitest';
 import { fromGoldenCard, type GoldenCard, importCard, parseGolden } from '../src/index';
 import { NO_OVERRIDES } from './convert-grammar-helpers';
 
-const NAMES = ['Theft of Dreams','Borrowing 100,000 Arrows','Gadwick, the Wizened','Loyal Warhound','Floodpits Drowner',"Cloud's Limit Break",'Ojutai Exemplars','Retreat to Coralhelm','You See a Guard Approach','Surge of Salvation'];
-import { writeFileSync } from 'node:fs';
-const out: string[] = [];
+const NAMES = [
+  'Theft of Dreams',
+  'Borrowing 100,000 Arrows',
+  'Gadwick, the Wizened',
+  'Loyal Warhound',
+  'Floodpits Drowner',
+  "Cloud's Limit Break",
+  'Ojutai Exemplars',
+  'Retreat to Coralhelm',
+  'You See a Guard Approach',
+  'Surge of Salvation',
+];
 test('scratch', () => {
-  const cards: readonly GoldenCard[] = parseGolden(readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'));
+  const cards: readonly GoldenCard[] = parseGolden(
+    readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
+  );
+  const out: string[] = [];
   for (const n of NAMES) {
     const c = cards.find((x) => x.name === n);
-    if (!c) { console.log('MISSING', n); continue; }
+    if (!c) continue;
     const imp = importCard(fromGoldenCard(c), undefined, NO_OVERRIDES);
-    out.push([n, imp.support.status, JSON.stringify(imp.support.unparsed.map((u) => ({ text: u.text, reason: u.reason, closestRule: u.closestRule, needs: u.needs, stoppedAt: (u as any).stoppedAt })), null, 1)].join(' '));
+    const f = imp.definition.faces[0];
+    out.push(
+      `=== ${n} ${imp.support.status}\n${JSON.stringify({ manaCost: f?.manaCost, abilities: f?.abilities, spell: f?.spell, additionalCosts: f?.additionalCosts }, null, 1)}`,
+    );
   }
-  writeFileSync('/tmp/claude-0/-workspace/51c020a4-0411-53c3-9337-2f52b4848542/scratchpad/diag.txt', out.join('\n'));
+  writeFileSync(
+    '/tmp/claude-0/-workspace/51c020a4-0411-53c3-9337-2f52b4848542/scratchpad/asts.txt',
+    out.join('\n'),
+  );
 });

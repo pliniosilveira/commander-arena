@@ -192,9 +192,15 @@ export function shieldApplies(
   if (c.sourceFilter !== undefined) {
     // CR 609.7a (D-145): the source as it is, or as it last was when it has left (CR 113.7a).
     const obj = objectOrLki(state, source);
+    // CR 609.7, 109.1 (Hylda group 3): a source is any object, a spell on the stack as well as a permanent ("black and/or red sources"), so a filter that names no zone is read in
+    // the zone the source is in; the types the filter names still keep a spell that is not of them out.
+    const sourceFilter =
+      obj === null || c.sourceFilter.filter.zone !== undefined
+        ? c.sourceFilter.filter
+        : { ...c.sourceFilter.filter, zone: obj.zone };
     if (
       obj === null ||
-      !matchesFilter(state, obj, c.sourceFilter.filter, {
+      !matchesFilter(state, obj, sourceFilter, {
         controller: c.sourceFilter.controller,
         source: null,
       })

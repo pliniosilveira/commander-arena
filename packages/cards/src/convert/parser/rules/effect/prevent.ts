@@ -41,7 +41,7 @@ import type {
   Span,
 } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
-import { type Clauses, LIST_SEPARATOR, single } from './operands';
+import { type Clauses, LIST_SEPARATOR, makeClause, single } from './operands';
 
 const ALL = 'effect.prevent-all';
 const NEXT = 'effect.prevent-next';
@@ -360,4 +360,100 @@ export const EFFECT_PREVENT_NEXT = defineRule<Clauses>({
   ),
 });
 
-export const PREVENT_RULES = [EFFECT_PREVENT_ALL, EFFECT_PREVENT_NEXT];
+const COLOR_WORD = '(?:white|blue|black|red|green)';
+
+/**
+ * `effect.prevent-all-by-color`: "Prevent all damage that black and/or red sources would deal to creatures you control this turn." (Hylda group 3, CR 615.1, 609.7a, 105.1,
+ * 611.2c): a shield for all the damage of a scope that a source of one of the colors named would deal to the recipients, read as each damage event would happen (a creature
+ * that enters later is covered). "And/or" and "or" say that a source of any one of the colors is meant; the colors of the source are those it has as the damage is dealt,
+ * a spell's or a permanent's. The recipients are those of `effect.prevent-all`. Not read: "and" alone (a source of both colors), a color twice, a source of the player's
+ * choice, a number ("the next 3"), another duration, a source that is not named by color ("creatures", the Dragons rule says those).
+ */
+export const EFFECT_PREVENT_ALL_BY_COLOR = defineRule<Clauses>({
+  id: 'effect.prevent-all-by-color',
+  family: 'effect',
+  leading: ['prevent'],
+  cites: [
+    'CR 615.1 (Prevention Effects)',
+    'CR 609.7a (Damage)',
+    'CR 105.1 (Colors)',
+    'CR 611.2c (Continuous Effects)',
+    'CR 514.2 (Cleanup Step)',
+  ],
+  examples: [
+    'prevent all damage that black and/or red sources would deal to creatures you control this turn',
+    'prevent all damage that red sources would deal to you this turn',
+    'prevent all combat damage that black or red sources would deal to you and creatures you control this turn',
+    'prevent all damage that white, blue, and/or green sources would deal to target creature this turn',
+    'prevent all noncombat damage that blue sources would deal to each creature you control this turn',
+  ],
+  rejects: [
+    'prevent all damage that black and red sources would deal to creatures you control this turn',
+    'prevent all damage that black and/or black sources would deal to creatures you control this turn',
+    'prevent all damage that black and/or red sources would deal to creatures you control',
+    'prevent all damage that black and/or red sources would deal this turn',
+    'prevent all damage that black and/or red sources would deal to creatures you control until end of turn',
+    'prevent the next 3 damage that black and/or red sources would deal to creatures you control this turn',
+    'prevent all damage that sources of the color of your choice would deal to you this turn',
+    'prevent all damage that black and/or red creatures would deal to creatures you control this turn',
+    'prevent all damage that black and/or red sources would deal to two target creatures this turn',
+    'prevent all damage that black and/or red sources would deal to creatures you control this turn instead',
+    'prevent all damage that black and/or red sources would deal to creatures you control for as long as ~ remains on the battlefield',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(sequence(literal('prevent all '), DAMAGE_WORDS)),
+      literal(' that '),
+      spanned(
+        pattern(
+          new RegExp(
+            `${COLOR_WORD}(?:(?:, and/or | and/or |, or | or |, )${COLOR_WORD})* sources would deal to`,
+            'iu',
+          ),
+        ),
+      ),
+      literal(' '),
+      ALL_TO,
+      thisTurn('effect.prevent-all-by-color'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [head, , colorsRead, , to, duration] = r.value;
+    const words = (colorsRead.value[0].match(new RegExp(COLOR_WORD, 'giu')) ?? []).map((w) =>
+      w.toLowerCase(),
+    );
+    // A color twice is not a list of colors, and "and" alone says both at once.
+    if (new Set(words).size !== words.length || /\band (?!\/or)/iu.test(colorsRead.value[0])) {
+      return fail(ctx, pos);
+    }
+    const rule = 'effect.prevent-all-by-color';
+    const group: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter:
+        words.length === 1
+          ? { colors: words, raw: colorsRead.value[0] }
+          : {
+              anyOf: words.map((w) => ({ colors: [w], raw: w })),
+              raw: colorsRead.value[0],
+            },
+      upTo: false,
+      plural: true,
+      other: false,
+      span: colorsRead.span,
+      rule,
+    };
+    const clause = makeClause(
+      rule,
+      'preventDamage',
+      {
+        scope: scopeNode(rule, head.span, head.value[1], 'all'),
+        to,
+        byFilter: group,
+      },
+      { start: pos, end: r.pos },
+    );
+    return { ok: true, value: [{ ...clause, duration }], pos: r.pos };
+  },
+});
+
+export const PREVENT_RULES = [EFFECT_PREVENT_ALL, EFFECT_PREVENT_NEXT, EFFECT_PREVENT_ALL_BY_COLOR];

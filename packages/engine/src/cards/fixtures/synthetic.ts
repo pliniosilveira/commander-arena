@@ -68,6 +68,7 @@ import { SYNTHETIC_GISA_G2_LIST } from './synthetic-gisa-g2';
 import { SYNTHETIC_GISA_G3_LIST } from './synthetic-gisa-g3';
 import { SYNTHETIC_GISA_G4_LIST } from './synthetic-gisa-g4';
 import { SYNTHETIC_GISA_G5_LIST } from './synthetic-gisa-g5';
+import { SYNTHETIC_HYLDA_G3_LIST } from './synthetic-hylda-g3';
 import { SYNTHETIC_GRAVEYARD_LIST } from './synthetic-graveyard';
 import { SYNTHETIC_GREATEST_LIST } from './synthetic-greatest';
 import { SYNTHETIC_HASHATON_G1_LIST } from './synthetic-hashaton-g1';
@@ -417,6 +418,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_FEATHER_G1_LIST,
   ...SYNTHETIC_GISA_G4_LIST,
   ...SYNTHETIC_GISA_G2_LIST,
+  ...SYNTHETIC_HYLDA_G3_LIST,
   ...SYNTHETIC_UNTIL_LEAVES_LIST,
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
   ...SYNTHETIC_HOFRI_LIST,

@@ -102,7 +102,10 @@ export const EFFECT_TAP_OR_UNTAP = defineRule<Clauses>({
     )(ctx, pos);
     if (!r.ok) return r;
     const [may, , objects] = r.value;
-    if (objects.kind !== 'noun') return fail(ctx, pos);
+    // One permanent: "two target creatures" and "up to one" are other instructions.
+    if (objects.kind !== 'noun' || objects.plural || objects.upTo || objects.count !== undefined) {
+      return fail(ctx, pos);
+    }
     const span = { start: pos, end: r.pos };
     const clause = makeClause(
       'effect.tap-or-untap',
