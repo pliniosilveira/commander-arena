@@ -1,9 +1,9 @@
 /**
  * Noun rules of group 2 of the Hylda deck (issue 42, D-1510 to D-1518): "all creatures target player controls" (Sleep, Tempest Caller), "those creatures" (Sleep, Send to Sleep, Icy
- * Blast, Cone of Cold) and "X target creatures" (Icy Blast).
+ * Blast, Cone of Cold) and "target creature that player controls" (Topplegeist, Citadel Siege).
  */
-import { fail, literal, map, pattern, satisfy, sequence } from '../../combinators';
-import type { IrFilter, IrNoun } from '../../ir/types';
+import { fail, literal, pattern, sequence } from '../../combinators';
+import type { IrNoun } from '../../ir/types';
 import { defineRule, node, spanned } from '../registry';
 import { BOUNDARY, permanentPhrase } from './phrases';
 
@@ -31,7 +31,6 @@ export const NOUN_ALL_PERMANENTS_OF_TARGET_PLAYER = defineRule<IrNoun>({
     'all creatures target opponent controls',
     'all nonland permanents target player controls',
     'all artifacts target opponent controls',
-    'all creatures target player controls,',
   ],
   rejects: [
     'all creatures',
@@ -107,7 +106,6 @@ export const NOUN_TARGET_PERMANENT_OF_THAT_PLAYER = defineRule<IrNoun>({
     'target creature that player controls',
     'target nonland permanent that player controls',
     'target artifact that player controls',
-    'target creature that player controls,',
   ],
   rejects: [
     'target creature',
@@ -192,66 +190,8 @@ export const NOUN_THOSE_CREATURES = defineRule<IrNoun>({
   ),
 });
 
-/**
- * `noun.x-target-creatures`: "X target creatures", "X target creatures you control" (CR 107.3a, 601.2b-c, 115.1): as many targets as the X announced for the spell (the engine's
- * `countX`, as `noun.x-target-graveyard-cards` reads "X target creature cards from your graveyard"). Its own rule, so the phrase "X target ..." is read only where an effect asks for
- * this noun by its id (`effect.tap`); the lowering reads the X as `countX` and only in the text of a spell. Not read: "X target creature", "up to X target creatures", "X creatures",
- * "Y target creatures", "{X} target creatures", "X target creature cards".
- */
-export const NOUN_X_TARGET_CREATURES = defineRule<IrNoun>({
-  id: 'noun.x-target-creatures',
-  family: 'noun',
-  leading: ['x'],
-  cites: [
-    'CR 107.3a (Numbers and Symbols)',
-    'CR 601.2b (Casting Spells)',
-    'CR 601.2c (Casting Spells)',
-    'CR 115.1 (Targets)',
-  ],
-  examples: [
-    'X target creatures',
-    'x target creatures',
-    'X target creatures you control',
-    'X target creatures your opponents control',
-  ],
-  rejects: [
-    'X target creature',
-    'up to X target creatures',
-    'X creatures',
-    'Y target creatures',
-    '{X} target creatures',
-    'X target creature cards',
-    'two target creatures',
-    'X target creatures or planeswalkers',
-  ],
-  parse: node<{ count: { span: { start: number; end: number } }; filter: IrFilter }, IrNoun>(
-    'noun.x-target-creatures',
-    map(
-      sequence(
-        spanned(literal('X')),
-        literal(' target '),
-        satisfy(
-          permanentPhrase(true, 'all'),
-          (filter) =>
-            filter.anyOf === undefined && filter.types?.length === 1 && filter.types[0] === 'creature',
-        ),
-      ),
-      ([count, , filter]) => ({ count, filter }),
-    ),
-    ({ count, filter }): Bare => ({
-      kind: 'noun',
-      det: 'target',
-      filter,
-      count: { kind: 'x', span: count.span },
-      upTo: false,
-      plural: true,
-      other: false,
-    }),
-  ),
-});
-
 /** Before `noun.all-permanents`, whose phrase ("all creatures") is the first words of the first. */
 export const HYLDA_G2_EARLY_NOUN_RULES = [NOUN_ALL_PERMANENTS_OF_TARGET_PLAYER];
 /** Before `noun.target-permanent`, whose phrase ("target creature") is the first words of the first. */
 export const HYLDA_G2_TARGET_NOUN_RULES = [NOUN_TARGET_PERMANENT_OF_THAT_PLAYER];
-export const HYLDA_G2_NOUN_RULES = [NOUN_THOSE_CREATURES, NOUN_X_TARGET_CREATURES];
+export const HYLDA_G2_NOUN_RULES = [NOUN_THOSE_CREATURES];

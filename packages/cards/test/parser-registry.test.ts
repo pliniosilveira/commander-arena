@@ -710,6 +710,20 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.partner-with': asIs,
   // D-492: the optional sacrifice and the copies are one statement of a spell.
   'static.additional-cost-sacrifice-copies': spell((e) => e),
+  // Hylda deck, group 2 (D-1510, D-1511, D-1513, D-1514, D-1516): the group of a target player, the group "those creatures" says, a target of the player of the event, the card types of
+  // a graveyard, the state of the permanent an Aura enchants and the cost of an ability that depends on the turn.
+  'noun.all-permanents-of-target-player': spell((e) => `Tap ${e}.`),
+  'noun.those-creatures': spell(
+    (e) => `Tap up to two target creatures. ${cap(e)} don't untap during their controllers' next untap steps.`,
+  ),
+  'noun.target-permanent-of-that-player': permanent(
+    (e) => `At the beginning of each opponent's upkeep, tap ${e}.`,
+  ),
+  'condition.card-types-among': permanent(
+    (e) => `At the beginning of each opponent's upkeep, if ${e}, tap target creature that player controls.`,
+  ),
+  'condition.host-is-tapped': permanent((e) => `At the beginning of each upkeep, if ${e}, tap it.`),
+  'restriction.cost-reduction-your-turn': permanent((e) => `{1}, {T}: Tap target creature. ${cap(e)}`),
   'noun.that-token': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,
