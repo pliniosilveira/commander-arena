@@ -13,7 +13,7 @@ import type { ChosenValues, GameObject, GameState } from '../state/types';
 import { withoutBlockedCounters } from './counter-prevention';
 import { quietFlow } from './damage-order';
 import { entersAsSaga, entersTapped, entersWithCounters } from './enters';
-import { addCounterMaps, groupEntryCounters } from './enters-group';
+import { addCounterMaps, enteredTappedByEffect, groupEntryCounters } from './enters-group';
 import { becomePrepared } from './prepare';
 import { countMatching } from './select';
 import { settleTokens, type TokenBatch } from './token-replacement';
@@ -152,7 +152,14 @@ export function makeTokens(
         groupEntryCounters(state, token),
       ),
     );
-    state = addToZone(setObject(s2, { ...token, counters }), 'battlefield', null, id);
+    // CR 614.1c, 614.12 (D-1512): "Until your next turn, creatures your opponents control enter tapped", read as the token enters.
+    const tappedByEffect = !token.tapped && enteredTappedByEffect(state, token);
+    state = addToZone(
+      setObject(s2, { ...token, counters, ...(tappedByEffect ? { tapped: true } : {}) }),
+      'battlefield',
+      null,
+      id,
+    );
     // D-151: a permanent that entered this turn (Celebration), as it entered.
     state = {
       ...state,

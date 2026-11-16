@@ -49,6 +49,7 @@ import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
 import { GISA_G3_EFFECT_RULES } from './gisa-g3';
 import { GISA_G4_EFFECT_RULES } from './gisa-g4';
+import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
@@ -113,6 +114,9 @@ const TAP_OPERANDS = [
   'noun.attached-permanent',
   // Stage P36 (D-178): "Then if you control four or more lands, untap that land." (the permanent an earlier instruction named).
   'noun.that-object',
+  // D-1510 (Hylda deck, group 2): "tap all creatures target player controls" and "tap X target creatures".
+  'noun.all-permanents-of-target-player',
+  'noun.x-target-creatures',
 ] as const;
 
 /** `effect.damage`: "~ deals 3 damage to any target" (CR 120.2: damage to an object or a player). */
@@ -866,6 +870,8 @@ export const EFFECT_RULES = [
   // Gisa deck, group 4 (issue 41, D-459, D-460): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
   // exile and a plain put, and "It gains haste." like a gain: tried first.
   ...GISA_G4_EFFECT_RULES,
+  // D-1510, D-1512 (Hylda deck, group 2): "Those creatures don't untap during ... next untap step" and "Until your next turn, creatures ... enter tapped".
+  ...HYLDA_G2_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,

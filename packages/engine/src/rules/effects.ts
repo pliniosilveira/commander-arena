@@ -27,7 +27,12 @@ import { changeTargetInstructions } from './change-source';
 import { runChooseOne } from './choose-one';
 import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
-import { runBecomeCopy, runContinuous, runRequireAttack } from './continuous';
+import {
+  runBecomeCopy,
+  runContinuous,
+  runEntersTappedGroup,
+  runRequireAttack,
+} from './continuous';
 import { controllerOf } from './control';
 import { runGainControl } from './control-effects';
 import { copiableValues } from './copiable';
@@ -2190,6 +2195,10 @@ function runEffect(
     case 'requireAttack':
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.
       return runRequireAttack(state, effect, ctx);
+
+    case 'permanentsEnterTapped':
+      // CR 614.1c, 614.12 (D-1512): "creatures your opponents control enter tapped", read as a permanent enters.
+      return runEntersTappedGroup(state, effect, ctx);
 
     case 'gainControl':
       // CR 613.1b, 611.2 (D-189): a layer 2 effect (`rules/control-effects.ts`).

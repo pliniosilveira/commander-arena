@@ -90,7 +90,7 @@ import {
   checkRedirectStatic,
   redirectFaceIssues,
 } from './validate-redirect';
-import { checkStaticCondition } from './validate-static-condition';
+import { checkAttachedIf, checkStaticCondition } from './validate-static-condition';
 import { checkUmbraReplacement, umbraFaceIssues } from './validate-umbra';
 
 export type { AstIssue } from './validate-parts';
@@ -1271,7 +1271,12 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       // CR 603.4: the intervening "if" is an ordinary condition, checked twice by the engine.
       if (a.interveningIf !== undefined) {
-        checkCondition(a.interveningIf, `${path}.interveningIf`, out);
+        // D-1513: "if enchanted creature is untapped": the permanent an Aura is attached to against a filter.
+        if (a.interveningIf.kind === 'objectMatches') {
+          checkAttachedIf(a.interveningIf, `${path}.interveningIf`, out);
+        } else {
+          checkCondition(a.interveningIf, `${path}.interveningIf`, out);
+        }
         // D-120: Evolve's comparison reads the creature that entered, so only an enters trigger has one.
         if (
           conditionHas(a.interveningIf, 'subjectControllerHasMore') &&

@@ -69,7 +69,12 @@ import {
   lifeOf,
 } from './enters';
 import { becomeCopyAsItEnters, copyCandidates } from './enters-copy';
-import { addCounterMaps, groupEntersUntapped, groupEntryCounters } from './enters-group';
+import {
+  addCounterMaps,
+  enteredTappedByEffect,
+  groupEntersUntapped,
+  groupEntryCounters,
+} from './enters-group';
 import {
   devourCandidates,
   devourDecision,
@@ -723,6 +728,20 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     }
   }
 
+  // CR 614.1c, 614.12 (D-1512): "Until your next turn, creatures your opponents control enter tapped".
+  if (
+    to === 'battlefield' &&
+    !tapped &&
+    enteredTappedByEffect(before, {
+      ...old,
+      ...downEntry,
+      zone: 'battlefield',
+      controller: enterController,
+      face: faceIndex,
+    })
+  ) {
+    tapped = true;
+  }
   // CR 614.12, 616.1 (D-179): "Lands you control enter untapped" beats an "enters tapped" and a "put onto the battlefield tapped".
   if (untappedByEffect) tapped = false;
   const controller =

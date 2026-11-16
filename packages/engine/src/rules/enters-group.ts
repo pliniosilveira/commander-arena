@@ -82,6 +82,22 @@ export function groupEntersUntapped(state: GameState, entering: GameObject): boo
   return false;
 }
 
+/**
+ * CR 614.1c, 614.12 (D-1512): whether a continuous effect of the game ("Until your next turn, creatures your opponents control enter tapped",
+ * `permanentsEnterTapped`) makes `entering` enter tapped: some effect whose filter the permanent matches as it would be on the battlefield, for the controller of the
+ * effect.
+ */
+export function enteredTappedByEffect(state: GameState, entering: GameObject): boolean {
+  for (const e of state.continuousEffects) {
+    if (e.change.kind !== 'entersTapped') continue;
+    const ctx = { controller: e.change.controller, source: null };
+    if (matchesFilter(state, entering, { ...e.change.filter, zone: 'battlefield' }, ctx)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /** False only when the permanent certainly has no `groupEntersUntapped` ability in any layer (its copiable abilities hold none). */
 function mayHaveReplacement(state: GameState, obj: GameObject): boolean {
   if (obj.card === null && obj.token === null && obj.copyOf === undefined) return false;

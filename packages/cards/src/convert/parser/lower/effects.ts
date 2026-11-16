@@ -50,6 +50,7 @@ import { PUMP, SEARCH } from './effects-more';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
+import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { GAIN_STATIC_ABILITY } from './granted-static';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
@@ -1415,6 +1416,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...FEATHER_G2_LOWERINGS,
   // D-459, D-460: "It gains haste.", "Exile it at the beginning of the next end step.", "If it would leave the battlefield, exile it instead ...", "Put each creature card exiled with ~ onto the battlefield ...".
   ...GISA_G4_LOWERINGS,
+  // D-1510, D-1512: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
+  ...HYLDA_G2_LOWERINGS,
   ...GRAVEYARD_CHOICE_LOWERINGS,
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,

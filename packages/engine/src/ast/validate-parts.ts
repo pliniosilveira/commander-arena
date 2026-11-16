@@ -1223,6 +1223,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'commanderColors':
     case 'commanderManaValue':
     case 'commanderCasts':
+    case 'cardTypesAmong':
     case 'opponentsWithMore':
     case 'lifeGainedThisTurn':
     case 'enteredThisTurn':
@@ -1317,6 +1318,24 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.filter`, 'an aggregate needs a filter');
       } else {
         checkFilter(a.filter, `${path}.filter`, out);
+      }
+      break;
+    case 'cardTypesAmong':
+      // D-1511: the distinct card types among the cards a filter matches in a zone outside the battlefield and the stack.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'cardTypesAmong needs a filter');
+      } else {
+        checkFilter(a.filter, `${path}.filter`, out);
+        if (filterSome(a.filter, (f) => f.zone === undefined || f.zone === 'battlefield' || f.zone === 'stack')) {
+          issue(
+            out,
+            `${path}.filter.zone`,
+            'cardTypesAmong counts the card types of cards in a zone (a graveyard, exile, the hand or the library)',
+          );
+        }
+        if (filterSome(a.filter, (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined)) {
+          issue(out, `${path}.filter`, 'cardTypesAmong cannot read the combat, the source power, power or toughness');
+        }
       }
       break;
     case 'devotion':
@@ -4270,6 +4289,36 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'restrict':
     case 'preventDamage':
       scope.checkContinuous(e, path, scope, out);
+      break;
+    case 'permanentsEnterTapped':
+      // D-1512: a replacement of the game read as a permanent enters: a filter relative to the controller, with no zone, owner, stack kind, combat or trigger player.
+      checkFilter(e.permanents, `${path}.permanents`, out);
+      if (
+        filterSome(
+          e.permanents,
+          (f) =>
+            f.zone !== undefined ||
+            f.stackKind !== undefined ||
+            f.owner !== undefined ||
+            f.controlledBy !== undefined ||
+            readsCombatOrSource(f) ||
+            f.controller === 'triggerPlayer' ||
+            f.controller === 'defendingPlayer',
+        )
+      ) {
+        issue(
+          out,
+          `${path}.permanents`,
+          'a permanent that enters tapped is named by type, color, controller and the like: no zone, owner, stackKind, combat or trigger player',
+        );
+      }
+      if (!isOneOf(e.duration, ['untilEndOfTurn', 'untilYourNextTurn'])) {
+        issue(
+          out,
+          `${path}.duration`,
+          `enters tapped lasts until end of turn or until your next turn, not ${JSON.stringify(e.duration)}`,
+        );
+      }
       break;
     case 'requireAttack':
       // D-179: a group requirement read when attackers are declared: a filter of creatures, relative to the controller, with no zone and nothing

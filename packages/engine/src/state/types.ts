@@ -1766,6 +1766,11 @@ export type ContinuousChange =
    * A requirement of the rules, not a characteristic: read in `rules/combat-legality.ts`, not in a layer.
    */
   | { readonly kind: 'mustAttackPlayer'; readonly seat: SeatId }
+  /**
+   * "Until your next turn, creatures your opponents control enter tapped" (`permanentsEnterTapped`, CR 614.1c, 614.12, D-1512): no layer and no fixed set (`objects` is
+   * empty): read as a permanent enters the battlefield (`rules/enters-group.ts`, `enteredTappedByEffect`), for each permanent `filter` matches then, with `controller` as "you".
+   */
+  | { readonly kind: 'entersTapped'; readonly filter: ObjectFilter; readonly controller: SeatId }
   /** Either list may be absent: the part left out is not changed. See the `setTypes` effect. */
   | {
       readonly kind: 'setTypes';
@@ -1848,6 +1853,11 @@ export interface ContinuousEffect {
 export type EffectEnd =
   | 'endOfTurn'
   | 'permanent'
+  /**
+   * "Doesn't untap during its controller's next untap step" (D-1510, CR 502.3): each permanent of `objects` is let go, one by one, as the untap step of
+   * its controller (as it is then) has run; the effect ends with its last permanent (`expireUntapStepEffects`).
+   */
+  | 'nextUntapStep'
   | {
       readonly kind: 'turnEnd' | 'endStep' | 'turnStart';
       readonly seat: SeatId;

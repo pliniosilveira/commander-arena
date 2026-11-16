@@ -208,6 +208,15 @@ export function checkContinuousEffect(
         '"for as long as this remains on the battlefield" is the effect of an ability of a permanent',
       );
     }
+  } else if (e.kind === 'restrict' && e.duration === 'untilNextUntapStep') {
+    // D-1510, CR 502.3: the one duration of "doesn't untap during its controller's next untap step".
+    if (e.restriction !== 'doesntUntap') {
+      issue(
+        out,
+        `${path}.duration`,
+        '"until the next untap step" is the duration of doesntUntap only',
+      );
+    }
   } else if (!isOneOf(e.duration, DURATIONS)) {
     issue(out, `${path}.duration`, `unknown duration ${JSON.stringify(e.duration)}`);
   }
@@ -277,7 +286,12 @@ export function checkContinuousEffect(
     case 'restrict':
       // D-094: "can't block", "can't be blocked" and "attacks each combat if able" last until end of
       // turn; "doesn't untap" and "can't be countered" are not effects the engine runs.
-      if (!isOneOf(e.restriction, RESTRICTABLE_BY_EFFECT)) {
+      if (e.restriction === 'doesntUntap') {
+        // D-1510: only with the duration that ends at the next untap step.
+        if (e.duration !== 'untilNextUntapStep') {
+          issue(out, `${path}.duration`, 'doesntUntap as an effect lasts until the next untap step');
+        }
+      } else if (!isOneOf(e.restriction, RESTRICTABLE_BY_EFFECT)) {
         issue(
           out,
           `${path}.restriction`,
