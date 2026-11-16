@@ -68,4 +68,18 @@ describe('withinBlockBudget adds the blocks a requirement asks for (CR 509.1c)',
     const d = decision([{ id: 1 }], [{ blocker: 2, canBlock: [1], must: true }]);
     expect(withinBlockBudget(d, [])).toEqual([{ blocker: id(2), attacker: id(1) }]);
   });
+
+  test('competing requirements are both met when separate blockers can satisfy them', () => {
+    const d = decision(
+      [{ id: 1, must: true }, { id: 3 }],
+      [
+        { blocker: 2, canBlock: [3], must: true },
+        { blocker: 4, canBlock: [1] },
+      ],
+    );
+    expect(withinBlockBudget(d, [])).toEqual([
+      { blocker: id(2), attacker: id(3) },
+      { blocker: id(4), attacker: id(1) },
+    ]);
+  });
 });

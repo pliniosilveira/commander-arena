@@ -67,43 +67,67 @@ export function withinAttackBudget(
 }
 
 /**
- * CR 509.1c (D-206): an attacker that must be blocked if able is blocked by as many creatures as it needs (one, two for menace), added to the
- * declaration first, from the creatures that can block it and are not blocking yet. Every agent's declaration goes through here.
+ * CR 509.1c (D-206), 509.1b (D-542): maximize the satisfiable attacker and blocker requirements together. The decision sets are small, so
+ * enumerate legal assignments for the free blockers while keeping the agent's existing choices fixed.
  */
 export function withRequiredBlocks(
   d: DeclareBlockersDecision,
   blocks: readonly { blocker: ObjectId; attacker: ObjectId }[],
 ): { blocker: ObjectId; attacker: ObjectId }[] {
-  const out = [...blocks];
-  const used = new Set(out.map((b) => b.blocker));
-  const added: { blocker: ObjectId; attacker: ObjectId }[] = [];
-  for (const a of d.attackers) {
-    if (a.mustBeBlocked !== true) continue;
-    const have = out.filter((b) => b.attacker === a.attacker).length;
-    if (have >= a.minBlockers) continue;
-    const free = d.candidates.filter(
-      (c) => !used.has(c.blocker) && c.canBlock.includes(a.attacker),
-    );
-    if (have + free.length < a.minBlockers) continue;
-    // A creature that blocks something else already is not moved: the ones that were free are used.
-    for (const c of free.slice(0, a.minBlockers - have)) {
-      used.add(c.blocker);
-      added.push({ blocker: c.blocker, attacker: a.attacker });
-    }
+  if (
+    !d.attackers.some((a) => a.mustBeBlocked === true) &&
+    !d.candidates.some((c) => c.mustBlock === true)
+  ) {
+    return [...blocks];
   }
-  for (const c of d.candidates) {
-    if (c.mustBlock !== true || used.has(c.blocker)) continue;
-    const attacker = c.canBlock.find((id) => {
-      const target = d.attackers.find((a) => a.attacker === id);
-      if (target === undefined || target.minBlockers > 1) return false;
-      return out.filter((b) => b.attacker === id).length === 0;
+  const fixed = [...blocks];
+  const used = new Set(fixed.map((b) => b.blocker));
+  const requiredAttackers = new Set(
+    d.attackers.filter((a) => a.mustBeBlocked === true).map((a) => a.attacker),
+  );
+  const free = d.candidates.filter(
+    (c) =>
+      !used.has(c.blocker) &&
+      (c.mustBlock === true || c.canBlock.some((attacker) => requiredAttackers.has(attacker))),
+  );
+  const score = (assignment: readonly { blocker: ObjectId; attacker: ObjectId }[]) =>
+    d.attackers.filter(
+      (a) =>
+        a.mustBeBlocked === true &&
+        assignment.filter((b) => b.attacker === a.attacker).length >= a.minBlockers,
+    ).length +
+    d.candidates.filter(
+      (c) => c.mustBlock === true && assignment.some((b) => b.blocker === c.blocker),
+    ).length;
+  const valid = (assignment: readonly { blocker: ObjectId; attacker: ObjectId }[]) =>
+    d.attackers.every((a) => {
+      const count = assignment.filter((b) => b.attacker === a.attacker).length;
+      return (
+        count === 0 ||
+        (count >= a.minBlockers && (a.maxBlockers === undefined || count <= a.maxBlockers))
+      );
     });
-    if (attacker !== undefined) {
-      used.add(c.blocker);
-      added.push({ blocker: c.blocker, attacker });
+  let best = [...fixed];
+  let bestScore = score(best);
+  const search = (index: number, assignment: { blocker: ObjectId; attacker: ObjectId }[]) => {
+    if (index === free.length) {
+      if (valid(assignment) && score(assignment) > bestScore) {
+        best = [...assignment];
+        bestScore = score(assignment);
+      }
+      return;
     }
-  }
-  return [...added, ...out];
+    const candidate = free[index];
+    if (candidate === undefined) return;
+    search(index + 1, assignment);
+    for (const attacker of candidate.canBlock) {
+      assignment.push({ blocker: candidate.blocker, attacker });
+      search(index + 1, assignment);
+      assignment.pop();
+    }
+  };
+  search(0, fixed);
+  return [...best.filter((b) => !used.has(b.blocker)), ...fixed];
 }
 
 /**

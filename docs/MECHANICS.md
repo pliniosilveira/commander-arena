@@ -4003,7 +4003,7 @@ One section for the whole program, a block for each group. The real texts are in
 - Agents: `withRequiredBlocks` in `packages/ai/src/legal.ts`, applied by `withinBlockBudget`, which every agent's declaration goes through.
 - Web: wording of the three triggers, `yourTurn`, `mustBeBlocked` and the Job select reminder (`trigger-text.ts`, `condition-text.ts`, `static-text.ts`, `artifacts-text.ts`, `ui/board/keywords.ts`).
 - Cards unlocked: Dragoon's Lance, White Mage's Staff, Magitek Scythe, Gau, Feral Youth, G'raha Tia, Sahagin, Inkshape Demonstrator, Key to the City, Retrieve the Esper.
-- Limits: the "must be blocked" search tries every assignment (a handful of attackers and blockers); a creature that must block (CR 509.1c's other requirement) is not built. A granted ability given to an attached permanent is read for a triggered ability only.
+- Limits: the requirement search enumerates legal assignments of blockers and should stay bounded to the small combat decision set. The distinct `mustBlock` requirement is added in D-542. A granted ability given to an attached permanent is read for a triggered ability only.
 
 ### Group 3 (D-207; `ENGINE_VERSION` 51, `PARSER_VERSION` 55)
 

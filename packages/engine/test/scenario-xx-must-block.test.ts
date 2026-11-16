@@ -9,6 +9,10 @@ const MUST_BLOCK: Ability = {
   kind: 'static',
   static: { kind: 'restriction', subject: { kind: 'this' }, restriction: 'mustBlock' },
 };
+const MUST_BE_BLOCKED: Ability = {
+  kind: 'static',
+  static: { kind: 'restriction', subject: { kind: 'this' }, restriction: 'mustBeBlocked' },
+};
 const BLOCKER = singleFace({
   name: 'SYNTHETIC Must Block Bear',
   manaCost: ['1', 'G'],
@@ -19,6 +23,17 @@ const BLOCKER = singleFace({
   toughness: 2,
   oracleText: 'test',
   abilities: [MUST_BLOCK],
+});
+const MUST_BE_BLOCKED_ATTACKER = singleFace({
+  name: 'SYNTHETIC Must Be Blocked Bear',
+  manaCost: ['1', 'G'],
+  types: ['creature'],
+  colors: ['G'],
+  colorIdentity: ['G'],
+  power: 2,
+  toughness: 2,
+  oracleText: 'test',
+  abilities: [MUST_BE_BLOCKED],
 });
 
 describe('must block if able (CR 509.1b)', () => {
@@ -57,6 +72,29 @@ describe('must block if able (CR 509.1b)', () => {
     g.act(0).attack('SYNTHETIC Flier 1/1');
     g.advanceTo('postcombatMain');
     g.expect.life(1, 39);
+    g.expect.invariants();
+  });
+
+  test('maximizes must-block and must-be-blocked requirements together', () => {
+    const g = scenario()
+      .define(BLOCKER)
+      .define(MUST_BE_BLOCKED_ATTACKER)
+      .seat(0)
+      .battlefield(MUST_BE_BLOCKED_ATTACKER.name, 'Grizzly Bears')
+      .seat(1)
+      .battlefield(BLOCKER.name, 'Grizzly Bears')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([MUST_BE_BLOCKED_ATTACKER.name, 'Grizzly Bears']);
+    g.advanceTo('declareBlockers');
+    expect(
+      g.act(1).try.declareBlockers([{ blocker: BLOCKER.name, attacker: 'Grizzly Bears' }]),
+    ).toMatchObject({ ok: false });
+    g.act(1).declareBlockers([
+      { blocker: BLOCKER.name, attacker: 'Grizzly Bears' },
+      { blocker: 'Grizzly Bears', attacker: MUST_BE_BLOCKED_ATTACKER.name },
+    ]);
     g.expect.invariants();
   });
 });
