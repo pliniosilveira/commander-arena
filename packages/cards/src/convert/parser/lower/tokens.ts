@@ -61,7 +61,9 @@ export function lowerTokenAbility(
   ctx: LowerContext,
 ): LowerResult<Ability> {
   const inner = quoted.ability;
-  if (inner.kind !== 'activated' && inner.kind !== 'triggered') return failure(quoted);
+  if (inner.kind !== 'activated' && inner.kind !== 'triggered' && inner.kind !== 'static') {
+    return failure(quoted);
+  }
   const bound = bind(inner, {});
   if (!bound.ok) return failure(quoted);
   const late = lateLowerers();
@@ -72,11 +74,19 @@ export function lowerTokenAbility(
       ? late.triggered(bound.ability, own)
       : bound.ability.kind === 'activated'
         ? late.activated(bound.ability, own)
-        : null;
+        : bound.ability.kind === 'static'
+          ? late.static(bound.ability, own)
+          : null;
   if (lowered === null) return failure(quoted);
   if (!lowered.ok) return failure(quoted, lowered.needs);
   const [only, ...more] = lowered.value;
   if (only === undefined || more.length > 0) return failure(quoted);
+  // D-543 (CR 208.2a, 604.3): the one static ability a token reads is its own characteristic-defining ability of power and toughness.
+  if (only.kind === 'static') {
+    return only.static.kind === 'characteristicPt'
+      ? { ok: true, value: only, rule: quoted.rule }
+      : failure(quoted);
+  }
   if (only.kind !== 'activated' && only.kind !== 'triggered' && only.kind !== 'mana') {
     return failure(quoted);
   }

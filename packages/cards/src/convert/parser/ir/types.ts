@@ -1290,8 +1290,15 @@ export type IrStaticEffect =
   | { readonly kind: 'cantBeBlockedBy'; readonly blockers: IrFilter }
   /** "have base power and toughness 5/3" (stage P31, CR 613.4b): the subject's power and toughness are set in layer 7b. */
   | { readonly kind: 'basePt'; readonly power: number; readonly toughness: number }
-  /** "are Juggernauts in addition to their other creature types" (stage P31, CR 205.1b, 613.1d): creature types added in layer 4. */
-  | { readonly kind: 'addTypes'; readonly subtypes: readonly string[] }
+  /**
+   * "are Juggernauts in addition to their other creature types" (stage P31, CR 205.1b, 613.1d): creature types added in layer 4. `types`
+   * (Galadriel deck, group 2, D-541, "Nontoken creatures you control are Forest lands in addition to their other types"): card types added with them.
+   */
+  | {
+      readonly kind: 'addTypes';
+      readonly subtypes: readonly string[];
+      readonly types?: readonly string[];
+    }
   /** "You may cast artifact spells as though they had flash." (stage P31, CR 601.3b, 702.8a). The subject is `you`. */
   | { readonly kind: 'castAsThoughFlash'; readonly spells: IrFilter }
   /** "Your opponents can't cast spells with mana value 3 or less." (stage P70, D-282, CR 101.2, 601.2). The subject is `you`. */

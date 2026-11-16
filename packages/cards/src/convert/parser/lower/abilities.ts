@@ -457,7 +457,11 @@ export function lowerKeyword(
     };
   }
   if (ability.name === 'protection') return lowerProtection(ability);
-  const typeSearch = typecyclingFilter(ability.name);
+  // A creature type ("Halflingcycling {4}", D-538) names its type in `quality`; the five land types and "basic land" are in the table.
+  const typeSearch: ObjectFilter | undefined =
+    ability.quality !== undefined && ability.name.endsWith('cycling')
+      ? { subtypes: [ability.quality] }
+      : typecyclingFilter(ability.name);
   if (typeSearch !== undefined) return lowerTypecycling(ability, typeSearch);
   const landType = landwalkOf(ability.name);
   if (landType !== undefined && ability.params.length === 0) {

@@ -1288,6 +1288,12 @@ export interface ChooseSelector {
    * card was put into the hand, not the cards the mill moved.
    */
   readonly fromMoved?: true;
+  /**
+   * "Put a land card from your hand or graveyard onto the battlefield" (Galadriel deck, group 2, D-544, CR 608.2d, 110.2a): the candidates are the matching cards of the
+   * controller's hand and of their graveyard together (the filter's `zone` is `hand`, the graveyard is the one added). Only for `moveToZone` onto the battlefield, with
+   * `filter.zone` `hand` and no `fromMoved`. The question is the `chooseCards` of purpose `move`, which lists both places.
+   */
+  readonly alsoGraveyard?: true;
   /** Excludes the cards the permanents you sacrificed earlier in this resolution became. */
   readonly exceptSacrificed?: true;
 }

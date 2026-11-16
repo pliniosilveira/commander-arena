@@ -3197,6 +3197,50 @@ export const HYLDA_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
+ * The SYNTHETIC cards of group 2 of the Galadriel deck (D-538 to D-546): a creature that makes the nontoken creatures of its controller Forest lands, a creature that grows with the lands
+ * and the land cards in the graveyard and comes back from the graveyard for two lands, a sorcery that mills four and puts up to two land cards among them into the hand, a creature that
+ * makes a token as big as the lands and puts a land from the hand or the graveyard onto the battlefield when its controller attacks, a land with Halflingcycling {4} and the creature it
+ * finds. They ask `chooseCards` of a search and of "up to two", `choosePermanent` for the lands a cost returns and the question of the land from two places, which the generic pools are not
+ * built to follow: a style of their own (GALADRIEL_G2_NAMES).
+ */
+export const GALADRIEL_G2_NAMES = [
+  'SYNTHETIC Forest Heart',
+  'SYNTHETIC Land Avatar',
+  'SYNTHETIC Mill Four Take Two',
+  'SYNTHETIC Land Giant',
+  'SYNTHETIC Halfling Hole',
+  'SYNTHETIC Halfling Scout',
+] as const;
+
+/** The galadrielG2 style: every card of the group three times, bodies to attack with and burn that sends the big creatures to the graveyard. */
+export const GALADRIEL_G2_SPELLS = [
+  ...supported(GALADRIEL_G2_NAMES),
+  ...supported(GALADRIEL_G2_NAMES),
+  ...supported(GALADRIEL_G2_NAMES),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'SYNTHETIC Vanilla 3/3']),
+];
+
+/** Green for most of the group, blue for the Giant. */
+export const GALADRIEL_G2_LANDS = supported([
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Island',
+  'Island',
+  'Island',
+]);
+
+/** Style pairs of the Galadriel group 2 soak test (D-538 to D-546): a mirror match and both mixed ways. */
+export const GALADRIEL_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['galadrielG2', 'galadrielG2'],
+  ['galadrielG2', 'spells'],
+  ['spells', 'galadrielG2'],
+];
+
+/**
  * The SYNTHETIC cards of group 3 of the Gisa deck (D-484 to D-492): a planeswalker whose minus nine has each opponent choose a permanent of each type and sacrifice the rest (and a
  * sorcery that does it for each player), a creature that sacrifices two other creatures as a cost and has any number of target players lose life and sacrifice, a creature that sacrifices
  * X creatures as a cost (an X announced before the targets), a creature with "partner with" and the card it searches for, and an instant with an optional sacrifice of any number of creatures
@@ -4020,6 +4064,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 2 cards (D-517 to D-525) ask a number for X, a named option as a siege enters and "choose up to one" with no mode allowed: a style of their own.
   .filter((card) => !(HYLDA_G2_NAMES as readonly string[]).includes(card.name))
+  // The Galadriel group 2 cards (D-538 to D-546) search by a creature type, choose up to two cards, return lands as a cost and choose a land from two places: a style of their own.
+  .filter((card) => !(GALADRIEL_G2_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 2 cards (D-464 to D-468) ask to pay {B} to return a card from the graveyard and put tokens, ward payments and drawing into games: a style of their own.
   .filter((card) => !(GISA_G2_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 3 cards (issue 42) ask X, modes, tap-or-untap choices and targets with different controllers, and fetch a land: a style of their own.
@@ -4243,6 +4289,7 @@ export type DeckStyle =
   | 'ward'
   | 'danithaG6'
   | 'hyldaG2'
+  | 'galadrielG2'
   | 'danithaG7'
   | 'gisaG5'
   | 'featherG3'
@@ -4332,6 +4379,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG6' && DANITHA_G6_SPELLS.length > 0) return DANITHA_G6_SPELLS;
   if (style === 'danithaG7' && DANITHA_G7_SPELLS.length > 0) return DANITHA_G7_SPELLS;
   if (style === 'hyldaG2' && HYLDA_G2_SPELLS.length > 0) return HYLDA_G2_SPELLS;
+  if (style === 'galadrielG2' && GALADRIEL_G2_SPELLS.length > 0) return GALADRIEL_G2_SPELLS;
   if (style === 'gisaG4' && GISA_G4_SPELLS.length > 0) return GISA_G4_SPELLS;
   if (style === 'featherG3' && FEATHER_G3_SPELLS.length > 0) return FEATHER_G3_SPELLS;
   if (style === 'gisaG5' && GISA_G5_SPELLS.length > 0) return GISA_G5_SPELLS;
@@ -4530,6 +4578,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaMill' && BASIC_LANDS.length > 0) return DANITHA_G2_LANDS;
   if (style === 'danithaG5' && BASIC_LANDS.length > 0) return DANITHA_G5_LANDS;
   if (style === 'hyldaG2' && BASIC_LANDS.length > 0) return HYLDA_G2_LANDS;
+  if (style === 'galadrielG2' && BASIC_LANDS.length > 0) return GALADRIEL_G2_LANDS;
   if (style === 'danithaG6' && BASIC_LANDS.length > 0) return DANITHA_G6_LANDS;
   if (style === 'danithaG7' && BASIC_LANDS.length > 0) return DANITHA_G7_LANDS;
   if (style === 'gisaG4' && BASIC_LANDS.length > 0) return GISA_G4_LANDS;

@@ -8,14 +8,15 @@
  * type reads right (`pluralSubtype`), never from a card name. A shape the words do not cover gives `null`, and
  * the card's Oracle text stays the only description (AGENTS.md "Honesty"). Pure.
  */
-import type {
-  Ability,
-  Condition,
-  ObjectFilter,
-  Replacement,
-  Restriction,
-  StaticEffect,
-  StaticSubject,
+import {
+  type Ability,
+  BASIC_LAND_TYPES,
+  type Condition,
+  type ObjectFilter,
+  type Replacement,
+  type Restriction,
+  type StaticEffect,
+  type StaticSubject,
 } from '@commander-arena/engine';
 import {
   angelsStaticWording,
@@ -175,6 +176,15 @@ function spellsPhrase(spells: ObjectFilter): string | null {
 function addedTypes(
   effect: Extract<StaticEffect, { kind: 'setTypes'; chosenType?: undefined }>,
 ): string | null {
+  // D-541: "Forest lands": the land card type with a basic land type is said as a card says it, the type after the land type.
+  if (
+    effect.types?.length === 1 &&
+    effect.types[0] === 'land' &&
+    (effect.subtypes ?? []).length > 0 &&
+    (effect.subtypes ?? []).every((s) => Object.hasOwn(BASIC_LAND_TYPES, s))
+  ) {
+    return `${joinAnd(effect.subtypes ?? [])} lands`;
+  }
   const subtypes = (effect.subtypes ?? []).map(pluralSubtype);
   const types = (effect.types ?? []).map((t) => `${t}s`);
   const all = [...types, ...subtypes];

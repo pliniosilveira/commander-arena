@@ -504,6 +504,8 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'pair'
     | 'separate';
   readonly zone: 'library' | 'hand' | 'graveyard' | 'exile';
+  /** "From your hand or graveyard" (D-544): with `zone` `hand`, the cards of `legal` may also be in the graveyard of `seat`. Absent for every other question. */
+  readonly alsoGraveyard?: true;
   readonly legal: readonly ObjectId[];
   readonly min: number;
   readonly max: number;

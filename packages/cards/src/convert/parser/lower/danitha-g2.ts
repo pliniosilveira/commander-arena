@@ -23,6 +23,9 @@ const PUT_FROM_AMONG: Lowering<IrClause, Effects> = {
     if (!filter.ok) return filter;
     const may = arg(clause, 'may');
     const optional = clause.optional || (may?.kind === 'flag' && may.value);
+    // D-542 (CR 608.2d): "put up to two land cards from among them into your hand": a number of cards, none to that many.
+    const count = objects.count;
+    if (count !== undefined && count.kind !== 'number') return failure(clause);
     return {
       ok: true,
       value: [
@@ -31,6 +34,7 @@ const PUT_FROM_AMONG: Lowering<IrClause, Effects> = {
           objects: {
             kind: 'choose',
             filter: { ...filter.value, zone: 'graveyard', controller: 'you' },
+            ...(count === undefined ? {} : { count: count.value }),
             ...(optional ? { optional: true as const } : {}),
             fromMoved: true,
           },

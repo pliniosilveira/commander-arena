@@ -48,6 +48,7 @@ import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
+import { GALADRIEL_G2_EFFECT_RULES } from './galadriel-g2';
 import { GISA_G3_EFFECT_RULES } from './gisa-g3';
 import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
@@ -951,6 +952,8 @@ export const EFFECT_RULES = [
   ...DANITHA_G1B_EFFECT_RULES,
   // Issue 26 (D-411): "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_EFFECT_RULES,
+  // Galadriel deck, group 2 (D-542): "put up to two land cards from among them into your hand".
+  ...GALADRIEL_G2_EFFECT_RULES,
   ...DANITHA_G4_EFFECT_RULES,
   // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
   ...FEATHER_G2_EFFECT_RULES,

@@ -371,6 +371,8 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
     'Dead Knight of Doom, a legendary 3/3 black Zombie Knight creature token with menace',
     'Hero, a legendary 2/2 white Soldier creature token with "When Hero dies, you gain 1 life."',
     'Hero, a legendary 2/2 white Soldier creature token with flying and "When Hero dies, you gain 1 life."',
+    'Beau, a legendary blue Ox creature token with "Beau\'s power and toughness are each equal to the number of lands you control."',
+    'Hero, a legendary green Wolf creature token with "Hero\'s power is equal to the number of creatures you control."',
   ],
   rejects: [
     'Smaug, a 6/6 red Dragon creature token',
@@ -386,6 +388,15 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
     'Smaug, a legendary 6/6 red Dragon creature token with "When Smaug dies, create fourteen Treasure tokens"',
     'Smaug, a legendary 6/6 red Dragon creature token with flying, haste and "When Smaug dies, create fourteen Treasure tokens." and more',
     'Smaug, a legendary 6/6 red Dragon creature token tapped',
+    'Beau, a legendary blue Ox creature token',
+    'Beau, a legendary blue Ox creature token with flying',
+    'Beau, a legendary blue Ox creature token with flying and "Beau\'s power and toughness are each equal to the number of lands you control."',
+    'Beau, a legendary blue Ox creature token with "Beau gets +1/+1 for each land you control."',
+    'Beau, a legendary blue Ox creature token with "Creatures you control get +1/+1."',
+    'Beau, a legendary blue Ox creature token with "Beau\'s power and toughness are each equal to the number of lands you control"',
+    'Beau, a legendary blue Ox creature tokens with "Beau\'s power and toughness are each equal to the number of lands you control."',
+    'Beau, a legendary 2/2 blue Ox creature token with "Beau\'s power and toughness are each equal to the number of lands you control."',
+    'Beau, a legendary blue Ox artifact creature token with "Beau\'s power and toughness are each equal to the number of lands you control."',
   ],
   parse: node<Bare, IrToken>(
     'token.named-legendary',
@@ -393,41 +404,74 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
       const named = spanned(TOKEN_NAME)(ctx, pos);
       if (!named.ok) return named;
       const name = named.value.value;
-      const rest = map(
-        sequence(
-          literal(', a legendary '),
-          pattern(/(\d+)\/(\d+) /),
-          COLORS,
-          literal(' '),
-          SUBTYPES,
-          choice(
-            map(literal(' artifact creature'), () => ['artifact', 'creature']),
-            map(literal(' creature'), () => ['creature']),
-          ),
-          satisfy(TOKEN_WORD, (plural) => !plural),
-          optional(
-            quiet(
-              map(
-                sequence(literal(' with '), tokenWith(namedTokenQuotedAbility(name))),
-                ([, w]) => w,
-              ),
+      const rest = choice(
+        map(
+          sequence(
+            literal(', a legendary '),
+            pattern(/(\d+)\/(\d+) /),
+            COLORS,
+            literal(' '),
+            SUBTYPES,
+            choice(
+              map(literal(' artifact creature'), () => ['artifact', 'creature']),
+              map(literal(' creature'), () => ['creature']),
             ),
-            { keywords: [] as string[], abilities: [] as IrQuotedAbility[] },
+            satisfy(TOKEN_WORD, (plural) => !plural),
+            optional(
+              quiet(
+                map(
+                  sequence(literal(' with '), tokenWith(namedTokenQuotedAbility(name))),
+                  ([, w]) => w,
+                ),
+              ),
+              { keywords: [] as string[], abilities: [] as IrQuotedAbility[] },
+            ),
           ),
+          ([, pt, colors, , subtypes, types, , { keywords, abilities }]): Bare => ({
+            kind: 'token',
+            named: name,
+            legendary: true,
+            power: Number(pt[1]),
+            toughness: Number(pt[2]),
+            colors,
+            types,
+            subtypes,
+            count: { kind: 'number', value: 1, span: named.value.span },
+            ...(keywords.length > 0 ? { keywords } : {}),
+            ...(abilities.length > 0 ? { abilities } : {}),
+          }),
         ),
-        ([, pt, colors, , subtypes, types, , { keywords, abilities }]): Bare => ({
-          kind: 'token',
-          named: name,
-          legendary: true,
-          power: Number(pt[1]),
-          toughness: Number(pt[2]),
-          colors,
-          types,
-          subtypes,
-          count: { kind: 'number', value: 1, span: named.value.span },
-          ...(keywords.length > 0 ? { keywords } : {}),
-          ...(abilities.length > 0 ? { abilities } : {}),
-        }),
+        // Galadriel deck, group 2 (D-543): "Beau, a legendary blue Ox creature token with \"Beau's power and toughness are each equal to the number of lands you control.\"":
+        // no numbers of power and toughness, a characteristic-defining ability in the quotes defines them (CR 208.2a, 604.3). The quote is a static ability, the one
+        // kind a token with a stated power and toughness never reads.
+        map(
+          sequence(
+            literal(', a legendary '),
+            COLORS,
+            literal(' '),
+            SUBTYPES,
+            literal(' creature'),
+            satisfy(TOKEN_WORD, (plural) => !plural),
+            literal(' with '),
+            // Only a characteristic-defining ability of power and toughness: another static ability of a token is not read.
+            satisfy(
+              namedTokenQuotedAbility(name, true),
+              (quoted) =>
+                quoted.ability.kind === 'static' &&
+                quoted.ability.statement.effects.some((e) => e.kind === 'definesPt'),
+            ),
+          ),
+          ([, colors, , subtypes, , , , ability]): Bare => ({
+            kind: 'token',
+            named: name,
+            legendary: true,
+            colors,
+            types: ['creature'],
+            subtypes,
+            count: { kind: 'number', value: 1, span: named.value.span },
+            abilities: [ability],
+          }),
+        ),
       )(ctx, named.pos);
       return rest;
     },

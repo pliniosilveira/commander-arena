@@ -2711,6 +2711,19 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
       );
     }
   }
+  // D-544: "from your hand or graveyard": the graveyard is added to a choice among the cards of the hand; the destination (the battlefield) is checked with the move.
+  if (sel.alsoGraveyard !== undefined) {
+    if (sel.alsoGraveyard !== true) {
+      issue(out, `${path}.alsoGraveyard`, 'alsoGraveyard must be true when present');
+    }
+    if (sel.filter?.zone !== 'hand' || sel.fromMoved === true) {
+      issue(
+        out,
+        `${path}.alsoGraveyard`,
+        'a choice from the hand or the graveyard (D-544) names the hand as its zone and is not a choice among moved cards',
+      );
+    }
+  }
   if (sel.count !== undefined) {
     if (typeof sel.count === 'number' && (!isCount(sel.count) || sel.count < 1)) {
       issue(out, `${path}.count`, 'count must be a positive integer');
@@ -2778,7 +2791,8 @@ function checkTokenDefinition(def: TokenDefinition, path: string, scope: Scope, 
   for (const key of ['power', 'toughness'] as const) {
     const v = def[key];
     if (def.types?.includes('creature')) {
-      if (typeof v !== 'number' || !Number.isSafeInteger(v)) {
+      // D-543 (CR 208.2a, 604.3): a '*' is the power or toughness its own characteristic-defining ability sets (`checkStarPairing` below pairs the two).
+      if (v !== '*' && (typeof v !== 'number' || !Number.isSafeInteger(v))) {
         issue(out, `${path}.${key}`, `a creature token needs a numeric ${key}`);
       }
     } else if (v !== null) {
@@ -3945,6 +3959,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
         if (fromCards && e.to === zone) {
           issue(out, `${path}.to`, `the cards chosen are already in the ${zone}`);
+        }
+        if ((e.objects as ChooseSelector).alsoGraveyard === true && e.to !== 'battlefield') {
+          issue(
+            out,
+            `${path}.to`,
+            'a card chosen from the hand or the graveyard is put onto the battlefield (D-544)',
+          );
         }
         // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand).
         if ((e.objects as ChooseSelector).fromMoved === true && e.to !== 'hand') {

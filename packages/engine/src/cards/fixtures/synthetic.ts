@@ -63,6 +63,7 @@ import { SYNTHETIC_FIGHT_LIST } from './synthetic-fight';
 import { SYNTHETIC_FOLLOWUP_LIST } from './synthetic-followups';
 import { SYNTHETIC_FREE_CAST_LIST } from './synthetic-free-cast';
 import { SYNTHETIC_GALADRIEL_G1_LIST } from './synthetic-galadriel-g1';
+import { SYNTHETIC_GALADRIEL_G2_LIST } from './synthetic-galadriel-g2';
 import { SYNTHETIC_GIFT_LIST } from './synthetic-gift';
 import { SYNTHETIC_GISA_G1_LIST } from './synthetic-gisa-g1';
 import { SYNTHETIC_GISA_G2_LIST } from './synthetic-gisa-g2';
@@ -410,6 +411,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_FEATHER_G2_LIST,
   ...SYNTHETIC_GISA_G5_LIST,
   ...SYNTHETIC_HYLDA_G2_LIST,
+  ...SYNTHETIC_GALADRIEL_G2_LIST,
   ...SYNTHETIC_HASHATON_G10_LIST,
   ...SYNTHETIC_HASHATON_G9_LIST,
   ...SYNTHETIC_HYLDA_G1_LIST,

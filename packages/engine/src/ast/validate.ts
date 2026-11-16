@@ -1075,7 +1075,11 @@ function checkActivationCosts(
       kind === 'removeCounters' ||
       kind === 'loyalty' ||
       kind === 'putCounters' ||
-      kind === 'returnToHand' ||
+      // D-540 (CR 602.2, 118.3): returning other permanents you control is paid wherever the ability works ("Return two lands you control to their owner's hand: Return this card from your graveyard to your hand"); returning the source itself needs it on the battlefield.
+      (c?.kind === 'returnToHand' &&
+        typeof c.what === 'object' &&
+        c.what !== null &&
+        'kind' in c.what) ||
       kind === 'sacrifice' ||
       kind === 'discard' ||
       kind === 'tapCreatures';

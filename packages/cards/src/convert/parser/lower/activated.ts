@@ -612,12 +612,17 @@ function lowerOrdinary(ability: Activated, ctx: LowerContext): LowerResult<reado
   ctx.graveyardSource = false;
   if (!sentenced.ok) return sentenced;
   // An ability that works from the graveyard has one instruction and costs only mana: nothing of the battlefield (tapping, a
-  // sacrifice) can be paid from there (`validateCard`, D-124 Unearth).
+  // sacrifice) can be paid from there (`validateCard`, D-124 Unearth). D-540 (CR 602.2): returning other permanents you control to their owner's hand is also
+  // paid wherever the ability works ("Return two lands you control to their owner's hand: Return this card from your graveyard to your hand").
   if (
     ctx.usedGraveyardSource &&
     (ability.body.sentences.length !== 1 ||
       sentenced.value.length !== 1 ||
-      !costs.every((c) => c.kind === 'mana'))
+      !costs.every(
+        (c) =>
+          c.kind === 'mana' ||
+          (c.kind === 'returnToHand' && typeof c.what === 'object' && !('kind' in c.what)),
+      ))
   ) {
     return failure(ability);
   }
