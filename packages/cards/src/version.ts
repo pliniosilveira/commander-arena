@@ -8,4 +8,6 @@
  * (one entry per slice) and `docs/MECHANICS.md`.
  */
 // 106: Read one-card look-and-take effects with the remaining cards ordered on top or bottom.
-export const PARSER_VERSION = 106;
+// 107: Bind "it phases out" to the earlier targeted creature.
+// 108: Read repeated colored spell subjects in cost reductions.
+export const PARSER_VERSION = 108;

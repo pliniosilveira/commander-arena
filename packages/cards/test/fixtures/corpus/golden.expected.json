@@ -1,5 +1,5 @@
 {
-  "parserVersion": 106,
+  "parserVersion": 108,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -2059,18 +2059,10 @@
     "57296ea3-3c0d-49b7-bc08-0d0d8414e9ad": {
       "name": "Nightscape Familiar",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Blue spells and red spells you cast cost {1} less to cast.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "83494c2e"
+      "ast": "bdf7e65d"
     },
     "580996d4-db9a-4b57-a0e1-a2dbb524121a": {
       "name": "Razorlash Transmogrant",
@@ -3188,19 +3180,10 @@
     "82506e51-3fe1-446f-83c9-69e67583cefc": {
       "name": "Slip Out the Back",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Put a +1/+1 counter on target creature. It phases out.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.fight"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "4fb39770"
+      "ast": "0e1d8632"
     },
     "82bdf9cb-61fe-4eaf-8762-c32002403d96": {
       "name": "Magnificent End",
@@ -6191,7 +6174,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 385,
+      "supported": 387,
       "total": 420
     }
   }

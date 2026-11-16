@@ -3301,3 +3301,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: treating either as scry (would emit the wrong event), or revealing the card (the text does not say to reveal).
 - Consequences: these two lines are supported; other counts, another player's library, and different destinations remain unread. The CR text was not available in this workspace; the existing code cites CR 401.2, 401.4 and 701.20a, and the implementation follows those existing engine primitives.
 
+## D-534: Spell cost reductions may name a union of colors (issue 57)
+- Context: `Nightscape Familiar` reduces the cost of blue spells and red spells its controller casts. The engine already applies generic cost reductions to a filter with `anyOf`, but the parser's repeated spell-subject grammar only listed card types and subtypes.
+- Decision: parse repeated color spell subjects into an `anyOf` filter and pass it through the existing cost-reduction path. Do not alter engine cost calculation.
+- Alternatives: use two static abilities in card-specific data (duplicates the same printed ability and adds a card-name route); apply two reductions when either color matches (would incorrectly reduce twice for a multicolored spell).
+- Consequences: one matching color reduces generic mana once, including for multicolored spells; the repeated-subject grammar remains limited to a list where each member says "spells".
+

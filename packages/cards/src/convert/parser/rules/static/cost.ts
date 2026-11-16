@@ -241,7 +241,7 @@ const isSpellSubtype = (word: string): boolean =>
 /**
  * The spells a statement is about, as the filter of a spell being cast: "spells", "noncreature
  * spells", "Artifact spells", "Black creature spells", "Instant and sorcery spells", "Dragon
- * spells", "Aura and Equipment spells". A list of types or of subtypes is joined with "and" and takes
+ * spells", "Aura and Equipment spells", "Blue spells and red spells". A list of types, subtypes or colors is joined with "and" and takes
  * no modifier, as a list of permanent types does for a target (CR 205.2a, 205.3).
  */
 export function spellSubject(): Parser<IrFilter> {
@@ -304,6 +304,10 @@ export function spellSubject(): Parser<IrFilter> {
           map(pattern(new RegExp(`(${CARD_TYPES})${BOUNDARY}`, 'iu')), (m): IrFilter => {
             const word = (m[1] ?? '').toLowerCase();
             return { types: [word], raw: word };
+          }),
+          map(pattern(/(white|blue|black|red|green)(?![\p{L}\p{N}])/iu), (m): IrFilter => {
+            const word = (m[1] ?? '').toLowerCase();
+            return { colors: [word], raw: word };
           }),
           map(
             satisfy(
@@ -408,6 +412,7 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Dragon spells you cast cost {2} less to cast.',
     'Red spells you cast cost {1} less to cast.',
     'Black creature spells you cast cost {1} less to cast.',
+    'Blue spells and red spells you cast cost {1} less to cast.',
     'Aura and Equipment spells you cast cost {1} less to cast.',
     'Spells you cast cost {1} less to cast.',
     'Creature spells you cast of the chosen type cost {1} less to cast.',
@@ -430,6 +435,7 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
   ],
   rejects: [
     'Angel spells and Angel spells you cast cost {1} less to cast.',
+    'Blue spells and blue spells you cast cost {1} less to cast.',
     'Angel spells and Human you cast cost {1} less to cast.',
     'Artifact spells you cast cost {1} less to cast',
     'Artifact spells cost {1} less to cast.',

@@ -625,12 +625,13 @@ export const EFFECT_BECOME_COPY_OF_THOSE_CARDS = defineRule<Clauses>({
 export const EFFECT_PHASE_OUT = defineRule<Clauses>({
   id: 'effect.phase-out',
   family: 'effect',
-  leading: ['any', 'target'],
+  leading: ['any', 'it', 'target'],
   cites: ['CR 702.26 (Phasing)', 'CR 702.26a (Phasing)', 'CR 702.26g (Phasing)'],
   examples: [
     'any number of other target creatures you control phase out',
     'target creature phases out',
     'target creature you control phases out',
+    'it phases out',
     'any number of target creatures phase out',
   ],
   rejects: [
@@ -645,7 +646,10 @@ export const EFFECT_PHASE_OUT = defineRule<Clauses>({
     'effect.phase-out',
     satisfy(
       sequence(
-        operands(['noun.any-number-targets', 'noun.target-permanent'], 'effect.phase-out'),
+        operands(
+          ['noun.any-number-targets', 'noun.target-permanent', 'noun.it'],
+          'effect.phase-out',
+        ),
         pattern(/ phases? out(?![\p{L}\p{N}])/iu),
       ),
       // The verb agrees with its subject: "phase out" of several, "phases out" of one.
