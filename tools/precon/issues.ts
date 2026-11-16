@@ -121,7 +121,13 @@ export async function buildIssues(
     });
     issues.push(
       preconIssue({
-        deck: { id: entry.id, name: entry.name, text: text.trimEnd(), cards: entry.cards },
+        deck: {
+          id: entry.id,
+          name: entry.name,
+          text: text.trimEnd(),
+          cards: entry.cards,
+          breakdown: '',
+        },
         unsupported: report.blocked.map((card) => clean(card.name)),
         why,
         notFound: report.unresolved.map((card) => clean(card.name)),

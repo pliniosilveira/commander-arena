@@ -56,7 +56,9 @@ export async function scanArchidekt(options: ScanOptions): Promise<ArchidektDeck
       if (typeof deck === 'string') {
         options.log(`skipped: ${deck}`);
       } else if (options.anySize !== true && deck.cards !== 100) {
-        options.log(`skipped: deck ${id} "${deck.name}" has ${deck.cards} cards, a precon has 100`);
+        options.log(
+          `skipped: deck ${id} "${deck.name}" has ${deck.cards} cards, a precon has 100 (${deck.breakdown})`,
+        );
       } else {
         options.log(`deck ${id}: "${deck.name}", ${deck.cards} cards`);
         decks.push(deck);
