@@ -14,7 +14,6 @@ import type { ObjectId, SeatId } from '../ids';
 import type { GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
-import { hasGrantedHexproof } from './player-hexproof';
 import { mayHaveStatic } from './printed-statics';
 import { sourceTypes } from './protection';
 
@@ -62,6 +61,13 @@ export function playerHasProtectionFrom(
   const mine = playerProtectedTypes(state, seat);
   if (mine.length === 0) return false;
   return sourceTypes(state, source).some((t) => mine.includes(t));
+}
+
+/** Whether a continuous effect of this turn gives the player hexproof (CR 702.11b; `grantPlayerHexproof`, Hylda group 3, `rules/player-hexproof.ts`). */
+function hasGrantedHexproof(state: GameState, seat: SeatId): boolean {
+  return state.continuousEffects.some(
+    (e) => e.change.kind === 'playerHexproof' && (e.players ?? []).includes(seat),
+  );
 }
 
 /**

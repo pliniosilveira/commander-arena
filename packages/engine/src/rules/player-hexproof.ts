@@ -4,7 +4,6 @@
  * begins (CR 611.2c); a player who has hexproof can't be the target of spells or abilities their opponents control, and still can be of their own.
  */
 import type { Effect } from '../ast/types';
-import type { SeatId } from '../ids';
 import { allocateTimestamp } from '../state/ops';
 import type { ChosenTarget, GameState } from '../state/types';
 import { resolvePlayers, type SelectContext } from './select';
@@ -35,11 +34,4 @@ export function runGrantPlayerHexproof(
       },
     ],
   });
-}
-
-/** Whether a continuous effect of this turn gives the player hexproof (CR 702.11b). */
-export function hasGrantedHexproof(state: GameState, seat: SeatId): boolean {
-  return state.continuousEffects.some(
-    (e) => e.change.kind === 'playerHexproof' && (e.players ?? []).includes(seat),
-  );
 }
