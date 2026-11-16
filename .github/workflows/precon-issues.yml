@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: Only list the issues that would be opened (off by default: the issues are opened)
+        description: 'Only list the issues that would be opened (off by default, so the issues are opened)'
         type: boolean
         default: false
       limit:
