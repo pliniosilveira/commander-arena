@@ -1,5 +1,5 @@
 {
-  "parserVersion": 105,
+  "parserVersion": 106,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -197,6 +197,14 @@
       "reasons": [],
       "ast": "1ec32949"
     },
+    "05a039ad-1689-4d13-b393-6c1219583b5d": {
+      "name": "Sleight of Hand",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f84c4ad1"
+    },
     "05e6b243-48a6-4a42-bc5f-413441de9c33": {
       "name": "Elspeth, Sun's Champion",
       "group": "acceptance",
@@ -268,14 +276,6 @@
       "unparsed": [
         {
           "face": 0,
-          "ability": 0,
-          "text": "+1: Look at the top two cards of your library. Put one of them into your hand and the other on the bottom of your library.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.look-reorder"
-        },
-        {
-          "face": 0,
           "ability": 2,
           "text": "−10: You get an emblem with \"You may activate loyalty abilities of planeswalkers you control on any player's turn any time you could cast an instant.\"",
           "reason": "unrecognised",
@@ -284,7 +284,7 @@
         }
       ],
       "reasons": [],
-      "ast": "94786650"
+      "ast": "7c12731f"
     },
     "0828d891-f7c3-4e51-b42e-6ce88d48ac8b": {
       "name": "Icewrought Sentry",
@@ -471,6 +471,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ce7641fb"
+    },
+    "0f264e5b-264e-4e97-9a8d-8ae1d6a286ce": {
+      "name": "Drown in the Loch",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose one —\n• Counter target spell with mana value less than or equal to the number of cards in its controller's graveyard.\n• Destroy target creature with mana value less than or equal to the number of cards in its controller's graveyard.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.target-spell"
+        }
+      ],
+      "reasons": [],
+      "ast": "2e50e4bc"
     },
     "0fd114c4-092b-4e28-b0dc-ef529f3bc73e": {
       "name": "Jeska's Will",
@@ -1012,6 +1029,23 @@
       "reasons": [],
       "ast": "9491d3d2"
     },
+    "2c438ecb-b127-4450-9395-2d1eea294f30": {
+      "name": "Domineering Will",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Target player gains control of up to three target nonattacking creatures until end of turn. Untap those creatures. They block this turn if able.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.player.life"
+        }
+      ],
+      "reasons": [],
+      "ast": "d1029f75"
+    },
     "2c49d24a-98a4-43c2-bb59-1ef13d4214c2": {
       "name": "Untimely Malfunction",
       "group": "acceptance",
@@ -1051,6 +1085,31 @@
       "unparsed": [],
       "reasons": [],
       "ast": "37ea74ef"
+    },
+    "2e94bfb2-9f7d-43af-8995-6cd5ffb15b21": {
+      "name": "Lord of the Nazgûl",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Wraiths you control have protection from Ring-bearers.",
+          "reason": "unrecognised",
+          "slot": "static",
+          "closestRule": "static.permanents"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Whenever you cast an instant or sorcery spell, create a 3/3 black Wraith creature token with menace. Then if you control nine or more Wraiths, Wraiths you control have base power and toughness 9/9 until end of turn.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.pump-all"
+        }
+      ],
+      "reasons": [],
+      "ast": "cdf8dcbc"
     },
     "2ef797ef-c05f-4309-85c7-1bd151dac3fa": {
       "name": "Far Wanderings",
@@ -1204,6 +1263,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2e6a31ca"
+    },
+    "3405c8a9-a8d6-4b45-9b64-94141076603b": {
+      "name": "Wavebreak Hippocamp",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever you cast your first spell during each opponent's turn, draw a card.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.cast"
+        }
+      ],
+      "reasons": [],
+      "ast": "b870e741"
     },
     "3407fe41-fdd3-4119-8f70-4bc4590a379f": {
       "name": "Negate",
@@ -1383,6 +1459,23 @@
       ],
       "reasons": [],
       "ast": "6b248b78"
+    },
+    "3909ff79-2103-407c-a812-a5a5a996fce2": {
+      "name": "Fandaniel, Telophoroi Ascian",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "At the beginning of your end step, each opponent may sacrifice a nontoken creature of their choice. Each opponent who doesn't loses 2 life for each instant and sorcery card in your graveyard.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.a-permanent"
+        }
+      ],
+      "reasons": [],
+      "ast": "6833a9e4"
     },
     "399cd159-7376-421c-b001-c26f1cbadced": {
       "name": "Mirkwood Meditator",
@@ -1963,6 +2056,22 @@
       "reasons": [],
       "ast": "f4670082"
     },
+    "57296ea3-3c0d-49b7-bc08-0d0d8414e9ad": {
+      "name": "Nightscape Familiar",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Blue spells and red spells you cast cost {1} less to cast.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "83494c2e"
+    },
     "580996d4-db9a-4b57-a0e1-a2dbb524121a": {
       "name": "Razorlash Transmogrant",
       "group": "training",
@@ -2265,6 +2374,23 @@
       "reasons": [],
       "ast": "92c24290"
     },
+    "63e2cba7-ec1a-44bf-b915-d2ae75851430": {
+      "name": "Hermes, Overseer of Elpis",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever you attack with one or more Birds, scry 2.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.cast"
+        }
+      ],
+      "reasons": [],
+      "ast": "679b529d"
+    },
     "64883ef2-c536-42e2-b52f-cfd1984fcdfd": {
       "name": "Fading Hope",
       "group": "acceptance",
@@ -2296,6 +2422,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9b4c079b"
+    },
+    "65756e6d-9825-4ed6-91c4-79f1e3bd4ae5": {
+      "name": "Supernatural Stamina",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Until end of turn, target creature gets +2/+0 and gains \"When ~ dies, return it to the battlefield tapped under its owner's control.\"",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "spell.effect"
+        }
+      ],
+      "reasons": [],
+      "ast": "8cfe34a4"
     },
     "657a4500-4b47-4c78-945b-a7791af7d10e": {
       "name": "Adelbert Steiner",
@@ -2449,6 +2592,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8729dee6"
+    },
+    "6b7b1a71-812d-4ff5-b38b-94d1cf634143": {
+      "name": "Diabolic Vision",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ac28c41a"
     },
     "6bae00e8-06cf-4ac4-a1cc-757e454109fe": {
       "name": "Ketria Triome",
@@ -3034,6 +3185,23 @@
       "reasons": [],
       "ast": "10f94d5f"
     },
+    "82506e51-3fe1-446f-83c9-69e67583cefc": {
+      "name": "Slip Out the Back",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Put a +1/+1 counter on target creature. It phases out.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.fight"
+        }
+      ],
+      "reasons": [],
+      "ast": "4fb39770"
+    },
     "82bdf9cb-61fe-4eaf-8762-c32002403d96": {
       "name": "Magnificent End",
       "group": "acceptance",
@@ -3283,6 +3451,25 @@
       "reasons": [],
       "ast": "08c3f7ef"
     },
+    "8cb36a67-9206-4665-a03f-64f52ba559c4": {
+      "name": "Into the Flood Maw",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Gift a tapped Fish",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [
+        "faces[0]: the gift conditions and \"the chosen player\" need a gift ability (CR 702.174a)"
+      ],
+      "ast": "a71703e8"
+    },
     "8cc7e418-cc5e-4aef-9757-874223fccd74": {
       "name": "Phoenix Down",
       "group": "acceptance",
@@ -3395,6 +3582,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8047fe32"
+    },
+    "9270eb03-4600-40cc-83a5-ea987d5d4978": {
+      "name": "Gix's Command",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose two —\n• Put two +1/+1 counters on up to one creature. It gains lifelink until end of turn.\n• Destroy each creature with power 2 or less.\n• Return up to two creature cards from your graveyard to your hand.\n• Each opponent sacrifices a creature with the greatest power among creatures they control.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.target-permanent"
+        }
+      ],
+      "reasons": [],
+      "ast": "9aa47a32"
     },
     "92d95e12-fa51-4360-88e4-9078ccc5d8d3": {
       "name": "Cindervines",
@@ -3531,6 +3735,31 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8b9bfe78"
+    },
+    "9b2cdbed-c733-409b-b0e4-2c8960c25111": {
+      "name": "Maskwood Nexus",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Creatures you control are every creature type. The same is true for creature spells you control and creature cards you own that aren't on the battlefield.",
+          "reason": "unrecognised",
+          "slot": "static",
+          "closestRule": "static.permanents"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{3}, {T}: Create a 2/2 blue Shapeshifter creature token with changeling.",
+          "reason": "unrecognised",
+          "slot": "token",
+          "closestRule": "token.custom"
+        }
+      ],
+      "reasons": [],
+      "ast": "1fed547a"
     },
     "9b598025-80a3-4144-be9a-863165161594": {
       "name": "Shield of the Oversoul",
@@ -3941,6 +4170,23 @@
       "reasons": [],
       "ast": "01e000d6"
     },
+    "ac6c5852-71c7-4f19-8c87-ccb345052862": {
+      "name": "Distant Melody",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose a creature type. Draw a card for each permanent you control of that type.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.choose-graveyard-cards"
+        }
+      ],
+      "reasons": [],
+      "ast": "229a1ba0"
+    },
     "ac8952c9-bd30-48cd-b964-7e6271f9cbc8": {
       "name": "Sephara, Sky's Blade",
       "group": "training",
@@ -4200,6 +4446,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "bbb61b0b"
+    },
+    "ba0082fb-2d4c-489e-8140-93a6fa693fd0": {
+      "name": "Lazotep Plating",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "811ae435"
     },
     "bad6a5a9-7010-418d-b042-182926aa999d": {
       "name": "Norn's Choirmaster",
@@ -4957,6 +5211,23 @@
       "reasons": [],
       "ast": "29f9bec0"
     },
+    "dcc323d6-ddae-4fd9-9c9e-466b07895d73": {
+      "name": "Voracious Bibliophile",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever you cast a spell with one or more targets, draw that many cards.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.cast"
+        }
+      ],
+      "reasons": [],
+      "ast": "29090aee"
+    },
     "dd6601c6-810d-4883-89d2-5d31419fb1cc": {
       "name": "Relm's Sketching",
       "group": "acceptance",
@@ -5004,6 +5275,31 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4bca248c"
+    },
+    "debc69ea-372a-4720-838a-16856cd50b07": {
+      "name": "March of Swirling Mist",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "As an additional cost to cast ~, you may exile any number of blue cards from your hand. ~ costs {2} less to cast for each card exiled this way.",
+          "reason": "unrecognised",
+          "slot": "cost",
+          "closestRule": "static.additional-cost"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Up to X target creatures phase out.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.doesnt-untap-next"
+        }
+      ],
+      "reasons": [],
+      "ast": "1bbcb8a0"
     },
     "df0b5995-117b-4ba8-964d-ea3c592621ef": {
       "name": "The Warring Triad",
@@ -5449,6 +5745,23 @@
       "reasons": [],
       "ast": "70e67d39"
     },
+    "f55a3781-fe33-4301-9bb5-6a54b9c13c4f": {
+      "name": "Raise the Palisade",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose a creature type. Return all creatures that aren't of the chosen type to their owners' hands.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.choose-graveyard-cards"
+        }
+      ],
+      "reasons": [],
+      "ast": "ec6a24e4"
+    },
     "f61680da-606e-4d16-b0a0-361aa5210901": {
       "name": "Chandra's Ignition",
       "group": "training",
@@ -5496,6 +5809,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0c5085da"
+    },
+    "f718e507-296b-4f22-842b-5fb91322069b": {
+      "name": "Feign Death",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Until end of turn, target creature gains \"When ~ dies, return it to the battlefield tapped under its owner's control with a +1/+1 counter on it.\"",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.lead-gain"
+        }
+      ],
+      "reasons": [],
+      "ast": "d950b775"
     },
     "f76bcbfe-483f-4e63-8425-76feca1abf3e": {
       "name": "Pyromancer's Goggles",
@@ -5632,6 +5962,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "052f1ee9"
+    },
+    "fe04a81b-413c-4bc8-bb83-29978da9a43d": {
+      "name": "Sauron's Ransom",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose an opponent. They look at the top four cards of your library and separate them into a face-down pile and a face-up pile. Put one pile into your hand and the other into your graveyard. The Ring tempts you.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.choose-graveyard-cards"
+        }
+      ],
+      "reasons": [],
+      "ast": "d6b21f8c"
     },
     "ff5caed4-0276-476d-8fae-edae2536df7f": {
       "name": "Archangel of Tithes",
@@ -5844,8 +6191,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 382,
-      "total": 399
+      "supported": 385,
+      "total": 420
     }
   }
 }

@@ -3294,3 +3294,10 @@ Numbers are references; entries are never deleted. D-118 and D-119 are cited as 
 
 Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with a deck of ten Plane and Phenomenon cards, which Archidekt lists with the 100. `issues.ts` sets apart every card whose type line (before the dash) is Plane, Phenomenon, Scheme, Vanguard or Conspiracy, once the card types are known from the bulk file; the deck is then supported and added as its 100 cards, as any other precon, and the issue lists the cards left out in a section ("Left out for now") for a second round. A deck that is not 100 cards without them is skipped and the log says so.
 
+## D-533: Take one card from the top of the library and order the rest (issue 57)
+
+- Context: `Diabolic Vision` and `Sleight of Hand` use `lookAtTop`, which already supports a hidden card choice and arranging library cards, but the parser did not read their two wordings.
+- Decision: read the two exact shapes as `lookAtTop` with one required hidden card in hand. `topChosen` queues the existing `arrangeCards` decision with purpose `reorder`; the two-card bottom form uses `bottomRandom`, whose order is immaterial when one card remains. The sentence segmenter keeps each pair together. No new decision kind or engine state field is needed.
+- Alternatives: treating either as scry (would emit the wrong event), or revealing the card (the text does not say to reveal).
+- Consequences: these two lines are supported; other counts, another player's library, and different destinations remain unread. The CR text was not available in this workspace; the existing code cites CR 401.2, 401.4 and 701.20a, and the implementation follows those existing engine primitives.
+

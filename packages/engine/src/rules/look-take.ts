@@ -137,7 +137,9 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
             ? 'stay on top of your library'
             : ins.rest === 'bottomChosen'
               ? 'go on the bottom of your library in an order you choose'
-              : 'go on the bottom of your library in a random order'
+              : ins.rest === 'topChosen'
+                ? 'go on top of your library in an order you choose'
+                : 'go on the bottom of your library in a random order'
       }`,
     };
     return { state, events: [], front: [], needs: decision };
@@ -181,6 +183,22 @@ function putRest(state: GameState, ins: LookTake): StepOutcome {
   // D-151: "look at the top card": what was not taken stays where it is.
   if (ins.rest === 'top') return done(state);
   if (ins.rest === 'graveyard') return done(state, [], moveInstructions(left, 'graveyard'));
+  // CR 401.4: cards put on top at the same time are arranged by their owner.
+  if (ins.rest === 'topChosen') {
+    return done(
+      state,
+      [],
+      [
+        {
+          kind: 'arrange',
+          purpose: 'reorder',
+          seat: ins.seat,
+          count: left.length,
+          arranged: null,
+        },
+      ],
+    );
+  }
   // CR 401.4 (D-324): the owner of the cards chooses the order they go on the bottom in (rules/arrange.ts).
   if (ins.rest === 'bottomChosen') {
     return done(

@@ -1041,6 +1041,52 @@ const LOOK_TAKE_BOTTOM: Lowering<IrClause, Effects> = {
   },
 };
 
+/** One chosen card goes to the hand without reveal; the remaining cards are ordered on top (CR 401.4). */
+const LOOK_TAKE_ONE_TOP: Lowering<IrClause, Effects> = {
+  head: 'lookTakeOneTop',
+  id: 'lower.look-take-one-top',
+  needs: ['effect:lookAtTop'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          take: { filter: {}, max: 1, min: 1, hidden: true },
+          rest: 'topChosen',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/** One of two looked-at cards goes to the hand, the other to the bottom (CR 401.4). */
+const LOOK_TAKE_ONE_BOTTOM: Lowering<IrClause, Effects> = {
+  head: 'lookTakeOneBottom',
+  id: 'lower.look-take-one-bottom',
+  needs: ['effect:lookAtTop'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          take: { filter: {}, max: 1, min: 1, hidden: true },
+          rest: 'bottomRandom',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** "Sacrifice ~" or "sacrifice another permanent / a creature" (CR 701.21). */
 const SACRIFICE: Lowering<IrClause, Effects> = {
   head: 'sacrifice',
@@ -1390,6 +1436,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   libraryVerb('putFromHandOnTop'),
   LOOK_TAKE,
   LOOK_TAKE_BOTTOM,
+  LOOK_TAKE_ONE_TOP,
+  LOOK_TAKE_ONE_BOTTOM,
   PUMP,
   GRANT_KEYWORD,
   RESTRICT,

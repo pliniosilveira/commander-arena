@@ -2529,7 +2529,7 @@ export type Effect =
        * (D-324, "the rest on the bottom of your library in any order", CR 401.4): the bottom of the library in the order the controller (who owns the cards
        * looked at) chooses, an `arrangeCards` decision of purpose `bottom`; the order stays hidden.
        */
-      readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen';
+      readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen' | 'topChosen';
     }
   /**
    * "Proliferate" (CR 701.34a, D-149): the controller chooses any number of permanents and/or players that have a counter, and each chosen

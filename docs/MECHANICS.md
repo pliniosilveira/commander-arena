@@ -4460,6 +4460,16 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Web: the arrange dialog has one pile, "Bottom", for this purpose (badges count from the bottom card); the log says "You put 3 cards on the bottom of your library in an order you chose." and, for the other seat, the same with "Opponent" and no card.
 - Limits: the cards taken are any card (the empty filter); a filtered form ("put two creature cards from among them into your hand") and a number that is not fixed are not read.
 
+## Lord of the Nazgûl deck (issue 57): one card from the top (D-533)
+
+- CR: 401.2 (Library), 401.4 (Library), 701.20a (Reveal)
+- Gap class: T (grammar) plus a `lookAtTop.rest` value using the existing arrange decision
+- Code: `packages/cards/src/convert/parser/rules/effect/library.ts` (`effect.look-take-one-top`, `effect.look-take-one-bottom`), `segment.ts` (keeps each two-sentence line together), `lower/effects.ts` (`LOOK_TAKE_ONE_TOP`, `LOOK_TAKE_ONE_BOTTOM`), `packages/engine/src/rules/look-take.ts` (`topChosen` queues the existing `reorder` arrangement), `apps/web/src/game/artifacts-text.ts` (Oracle wording)
+- AST: `lookAtTop` takes one hidden card (`min: 1`, `max: 1`); `Diabolic Vision` orders the remaining cards on top, while `Sleight of Hand` puts its one remaining card on the bottom in a random order. The hidden choice emits no reveal event.
+- Tests: `packages/cards/test/convert-grammar-engine-look-top-take.test.ts` and `packages/cards/test/parser-registry.test.ts`
+- Supported cards: `Diabolic Vision`, `Sleight of Hand`
+- Limits: only these wordings are read; arbitrary counts, target players' libraries, and other destinations remain unsupported. The deck-wide coverage run needs the owner's Scryfall bulk file.
+
 ## The Niv-Mizzet deck (issue 25), group 2b-b: Tablet of Discovery and Pyromancer's Goggles (D-327 to D-330)
 
 - Cards (real text, from `golden.jsonl`, the issue's data, not checked against Scryfall): Tablet of Discovery ("When this artifact enters, mill a card. You may play that card this turn. {T}: Add {R}. {T}: Add {R}{R}. Spend this mana only to cast instant and sorcery spells.") and Pyromancer's Goggles ("{T}: Add {R}. When that mana is spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy."). Both are class P; both read as supported. Decisions: D-327 to D-330.

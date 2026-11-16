@@ -7,5 +7,5 @@
  * What each version added: `git log -p -- packages/cards/src/version.ts`, `docs/DECISIONS.md`
  * (one entry per slice) and `docs/MECHANICS.md`.
  */
-// 105: Behold costs, granted loyalty abilities and graveyard self-exile activation costs (D-529 to D-531).
-export const PARSER_VERSION = 105;
+// 106: Read one-card look-and-take effects with the remaining cards ordered on top or bottom.
+export const PARSER_VERSION = 106;

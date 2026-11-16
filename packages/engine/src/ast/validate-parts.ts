@@ -4092,7 +4092,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'revealAll is true, and not with cards taken unrevealed (take.hidden) or exiled face down',
         );
       }
-      if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top', 'bottomChosen'])) {
+      if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top', 'bottomChosen', 'topChosen'])) {
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }
       break;

@@ -676,6 +676,8 @@ describe('unmatched abilities', () => {
       'effect.look-reorder',
       'effect.look-take',
       'effect.look-take-bottom',
+      'effect.look-take-one-top',
+      'effect.look-take-one-bottom',
       'effect.look-split',
       'effect.put-hand-top',
       'effect.put-library',
