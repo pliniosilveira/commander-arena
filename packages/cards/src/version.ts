@@ -10,4 +10,5 @@
 // 106: Read one-card look-and-take effects with the remaining cards ordered on top or bottom.
 // 107: Bind "it phases out" to the earlier targeted creature.
 // 108: Read repeated colored spell subjects in cost reductions.
-export const PARSER_VERSION = 108;
+// 109: Read a first-spell trigger during each opponent's turn.
+export const PARSER_VERSION = 109;

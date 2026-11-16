@@ -371,6 +371,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomesTargetSpell',
     // D-229: "casts their second spell each turn" (`castSpell` with `nth`).
     'castNth',
+    // D-535: "your first spell during each opponent's turn" (`castSpell` with `duringTurn`).
+    'castDuringOpponentTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
     // (`notAsAttacker`) and "Whenever you tap one or more untapped creatures" (`batch`).
     'tappedBy',
@@ -1123,6 +1125,8 @@ export const TRIGGER_FEATURES = [
   'becomesTargetSpell',
   /** "Whenever an opponent casts their second spell each turn" (CR 601.2i, D-229): the engine's `castSpell` with `nth`. */
   'castNth',
+  /** "Whenever you cast your first spell during each opponent's turn" (D-535): `castSpell` with `duringTurn`. */
+  'castDuringOpponentTurn',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
   'tappedBy',
   /** "Whenever a creature becomes tapped, if it isn't being declared as an attacker" (CR 508.1f, D-510): the engine's `becomesTapped` with `notAsAttacker`. */
@@ -1838,6 +1842,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   triggerCondition: true,
   becomesTargetSpell: true,
   castNth: true,
+  castDuringOpponentTurn: true,
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,

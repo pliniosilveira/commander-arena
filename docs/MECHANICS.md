@@ -4881,3 +4881,12 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - AI: no new decision kind; the SYNTHETIC cards are kept out of the generic soak pools (`HYLDA_G2_NAMES`), the style `hyldaG2`.
 - Tests: engine `scenario-xx-hylda-g2-untap.test.ts`, `scenario-xx-hylda-g2-cards.test.ts`, `ast-hylda-g2-validate.test.ts`; cards `parser-hylda-g2.test.ts` and `convert-grammar-engine-hylda-g2.test.ts`; web `hylda-g2-text.test.ts`; AI soak `hylda-g2-games.test.ts`. Mutation checks: see `docs/proposals/hylda-g2-decisions.md`.
 - Limits: see `docs/ROADMAP.md`.
+
+## The Lord of the Nazgûl deck, issue 57 (D-533 to D-535)
+
+- Engine slices implemented: one-card library selections with ordered remainder (`lookAtTop.rest: 'topChosen'`), the existing one-shot `phaseOut` effect bound to the pronoun `it`, and a spell-cast trigger filtered by `nth: 1` and active opponent turn.
+- Parser slices implemented: `effect.look-take-one-top` and `effect.look-take-one-bottom`; `effect.phase-out` now accepts `noun.it`; `static.spells-cost-reduction` accepts a repeated union of color spell subjects; `trigger.cast-nth` reads "your first spell during each opponent's turn".
+- Engine state and decisions: no new state fields or decision kinds. Spell counts already reset for every player as a new turn starts; the trigger compares the active player with the ability's current controller when the cast event is matched.
+- Tests: `packages/cards/test/convert-grammar-engine-look-top-take.test.ts`, `convert-grammar-engine-slip-out-the-back.test.ts`, `convert-grammar-engine-nightscape-familiar.test.ts`, `convert-grammar-engine-wavebreak-hippocamp.test.ts`; parser registry and golden corpus tests. The two look-at-top tests also exercise the engine through the scenario DSL.
+- Support count: 6 of the 21 issue cards are now supported on the current parser; 15 remain. No deck-wide coverage result is claimed because the Scryfall bulk file is unavailable.
+- Rules text note: the Comprehensive Rules file was not available in this workspace; rule citations were not independently verified for this slice.

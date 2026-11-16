@@ -1,5 +1,5 @@
 {
-  "parserVersion": 108,
+  "parserVersion": 109,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1267,19 +1267,10 @@
     "3405c8a9-a8d6-4b45-9b64-94141076603b": {
       "name": "Wavebreak Hippocamp",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever you cast your first spell during each opponent's turn, draw a card.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.cast"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "b870e741"
+      "ast": "be6ead5a"
     },
     "3407fe41-fdd3-4119-8f70-4bc4590a379f": {
       "name": "Negate",
@@ -6174,7 +6165,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 387,
+      "supported": 388,
       "total": 420
     }
   }

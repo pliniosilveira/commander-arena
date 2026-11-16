@@ -3307,3 +3307,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: use two static abilities in card-specific data (duplicates the same printed ability and adds a card-name route); apply two reductions when either color matches (would incorrectly reduce twice for a multicolored spell).
 - Consequences: one matching color reduces generic mana once, including for multicolored spells; the repeated-subject grammar remains limited to a list where each member says "spells".
 
+## D-535: Count the first spell cast during an opponent's turn (2026-11-16, issue 57)
+- Context: `Wavebreak Hippocamp` triggers on its controller's first spell during each opponent's turn. The existing spell-cast event already records the caster's spell number for the turn, and triggered abilities already inspect that event.
+- Decision: add an optional active-turn restriction to the existing `castSpell` trigger and match it relative to the ability's current controller. Pair it with `nth: 1`; the turn's spell count already resets for every player when a new turn begins.
+- Alternatives: add a new trigger kind and event; keep a separate per-opponent-turn spell counter (duplicates the existing count and reset path).
+- Consequences: the trigger reuses the existing spell event and turn state. The new field is only valid for a controller's first spell and is evaluated from the active player at the cast event.
+

@@ -611,6 +611,12 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           issue(out, `${path}.nth`, 'nth must be a positive integer');
         if (t.self !== undefined) issue(out, `${path}.nth`, 'a self cast trigger has no count');
       }
+      if (t.duringTurn !== undefined && t.duringTurn !== 'opponent') {
+        issue(out, `${path}.duringTurn`, 'unknown active player condition');
+      }
+      if (t.duringTurn !== undefined && (t.nth !== 1 || t.by !== 'you')) {
+        issue(out, `${path}.duringTurn`, 'opponent-turn first-spell trigger must be you and nth 1');
+      }
       break;
     case 'landfall':
       break;

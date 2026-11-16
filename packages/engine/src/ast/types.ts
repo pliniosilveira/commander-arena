@@ -2874,6 +2874,8 @@ export type Trigger =
        * (a spell cast this turn counts, whoever it was cast by, whatever it is: the filter reads the spell that triggers, not the count). Not with `self`.
        */
       readonly nth?: number;
+      /** For "during each opponent's turn", only while the active player is an opponent of this ability's controller. */
+      readonly duringTurn?: 'opponent';
       /**
        * "When you cast this spell" (CR 702.85a Cascade, 603.2, D-120): the ability of a spell that works while
        * the spell is on the stack and triggers only for that very spell (so `by` is 'you' and the filter is

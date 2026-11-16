@@ -1061,6 +1061,8 @@ export interface IrTrigger extends IrNode {
   readonly step?: 'draw' | 'main1' | 'beginCombat' | 'combatEnd' | 'main2' | 'upkeep' | 'endStep';
   /** 'drawn': the nth card the player draws each turn ("your second card each turn", CR 121.1). */
   readonly nth?: number;
+  /** 'cast': only while the active player is an opponent of this ability's controller. */
+  readonly duringTurn?: 'opponent';
   /** 'attacks' alone (stage P21, CR 506.5): it triggers only when the creature is the only one declared as an attacker. */
   readonly alone?: true;
   /** 'becomesTarget' (stage P36, D-178, CR 603.2): "becomes the target of a spell", only a spell triggers it, not an ability. */

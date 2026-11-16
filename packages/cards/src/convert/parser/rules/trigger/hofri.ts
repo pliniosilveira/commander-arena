@@ -1,6 +1,6 @@
 /**
  * Trigger rules of the Hofri Ghostforge deck (stage P68, D-229): "Whenever one or more cards leave your graveyard" (CR 400.7, 603.2c), "Whenever one or more
- * cards are put into exile from your library and/or your graveyard", "an opponent casts their second spell each turn" (CR 601.2i), "one or more creatures
+ * cards are put into exile from your library and/or your graveyard", "an opponent casts their second spell each turn" and "you cast your first spell during each opponent's turn" (CR 601.2i), "one or more creatures
  * you control with mana value 3 or less enter" (CR 603.2c, 603.6a) and "you create one or more creature tokens" (CR 111.1, 701.7a: a token is created as it
  * enters the battlefield).
  */
@@ -96,12 +96,16 @@ export const TRIGGER_CARDS_EXILED_LIBRARY_GRAVEYARD = defineRule<IrTrigger>({
   },
 });
 
-const ORDINALS: Readonly<Record<string, number>> = { second: 2, third: 3, fourth: 4 };
+const ORDINALS: Readonly<Record<string, number>> = {
+  first: 1,
+  second: 2,
+  third: 3,
+  fourth: 4,
+};
 
 /**
  * `trigger.cast-nth`: "an opponent casts their second spell each turn", "you cast your second spell each turn" (CR 601.2i, 603.2: the ability triggers as the
- * caster casts the spell that is their nth of the turn). The engine's `castSpell` with `nth`. "First" is not read here: a different count (the engine would
- * need to tell a first spell from a spell cast with nothing before it, which `nth: 1` does, but no card of the corpus asks yet). Not read: a kind of spell, a
+ * caster casts the spell that is their nth of the turn). The engine's `castSpell` with `nth`. "During each opponent's turn" also checks the active player. Not read: a kind of spell, a
  * number the text spells with digits, another player, a missing "each turn".
  */
 export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
@@ -117,9 +121,11 @@ export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
     'an opponent casts their second spell each turn',
     'you cast your second spell each turn',
     'a player casts their third spell each turn',
+    "you cast your first spell during each opponent's turn",
   ],
   rejects: [
     'an opponent casts their first spell each turn',
+    'you cast your first spell each turn',
     'an opponent casts their second spell',
     'an opponent casts their second creature spell each turn',
     'an opponent casts your second spell each turn',
@@ -147,12 +153,18 @@ export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
     );
     const r = sequence(
       who,
-      pattern(/(second|third|fourth) /iu),
+      pattern(/(first|second|third|fourth) /iu),
       spanned(map(spellPhrase(), withoutZone)),
-      pattern(/ each turn(?![\p{L}\p{N}])(?!\s+and)/iu),
+      choice(
+        map(
+          pattern(/ during each opponent's turn(?![\p{L}\p{N}])(?!\s+and)/iu),
+          () => 'opponent' as const,
+        ),
+        map(pattern(/ each turn(?![\p{L}\p{N}])(?!\s+and)/iu), () => undefined),
+      ),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [actor, ordinal, spell] = r.value;
+    const [actor, ordinal, spell, duringTurn] = r.value;
     const filter: IrFilter = spell.value;
     // A kind of spell ("creature spell") is another trigger; only a plain "spell" is counted here.
     if (Object.keys(filter).some((k) => k !== 'raw' && k !== 'zone' && k !== 'stackKind')) {
@@ -160,6 +172,8 @@ export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
     }
     const n = ORDINALS[(ordinal[1] ?? '').toLowerCase()];
     if (n === undefined) return fail(ctx, pos);
+    if (n === 1 && (actor.det !== 'you' || duringTurn !== 'opponent')) return fail(ctx, pos);
+    if (n !== 1 && duringTurn !== undefined) return fail(ctx, pos);
     const subject = makeNoun(id, spell.span, 'a', filter);
     return {
       ok: true,
@@ -169,6 +183,7 @@ export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
         subject,
         actor,
         nth: n,
+        ...(duringTurn === undefined ? {} : { duringTurn }),
         args: {},
         span: { start: pos, end: r.pos },
         rule: id,
