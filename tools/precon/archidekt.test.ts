@@ -54,6 +54,35 @@ describe('a deck from the API', () => {
     expect(deck.text).toBe('Commander\n1x Zed the Test\n\nMainboard\n1x Plain Card\n3x Forest');
   });
 
+  test('leaves out the categories the deck itself says are not in it, and tokens, and says what it counted', () => {
+    const extra = (category: string, quantity: number, name: string) => ({
+      quantity,
+      categories: [category],
+      card: { oracleCard: { name } },
+    });
+    const deck = deckFromApi(9, {
+      name: 'Box Deck',
+      categories: [
+        { name: 'Ramp', includedInDeck: true },
+        { name: 'Side Stuff', includedInDeck: false },
+      ],
+      cards: [
+        extra('Commander', 1, 'Zed the Test'),
+        extra('Ramp', 98, 'Forest'),
+        extra('Side Stuff', 4, 'Spare One'),
+        extra('Sideboard', 5, 'Spare Two'),
+        extra('Tokens', 6, 'Test Token'),
+      ],
+    });
+    if (typeof deck === 'string') throw new Error(deck);
+    expect(deck.cards).toBe(99);
+    expect(deck.text).not.toContain('Spare');
+    expect(deck.text).not.toContain('Token');
+    expect(deck.breakdown).toBe(
+      'Commander 1, Ramp 98, Side Stuff 4 (left out), Sideboard 5 (left out), Tokens 6 (left out)',
+    );
+  });
+
   test('says what is wrong with an answer it cannot use', () => {
     expect(deckFromApi(1, null)).toMatch(/not an object/);
     expect(deckFromApi(1, { cards: [] })).toMatch(/no name/);
@@ -71,7 +100,13 @@ describe('an id for a ready-made deck', () => {
 });
 
 describe('the issue', () => {
-  const deck = { id: 7, name: 'Fake Precon Deck', text: 'Commander\n1x Zed the Test', cards: 1 };
+  const deck = {
+    id: 7,
+    name: 'Fake Precon Deck',
+    text: 'Commander\n1x Zed the Test',
+    cards: 1,
+    breakdown: '',
+  };
 
   test('of a deck with an unsupported card is a deck support issue the app button would write, plus the precon request', () => {
     const issue = preconIssue({

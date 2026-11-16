@@ -4,7 +4,7 @@
 
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { analyzeDeck, indexCards, readDeck, wantedKeys } from '../corpus/decks.ts';
+import { analyzeDeck, indexCards, lookup, readDeck, wantedKeys } from '../corpus/decks.ts';
 import { readCardObjects } from '../corpus/read-cards.ts';
 import {
   clean,
@@ -22,6 +22,26 @@ interface IndexEntry {
   readonly name: string;
   readonly file: string;
   readonly cards: number;
+}
+
+/** The card types that are not played in a Commander deck: the planar deck of a box (Plane, Phenomenon) and the other cards of their own decks. */
+const OUTSIDE_TYPES = new Set(['Plane', 'Phenomenon', 'Scheme', 'Vanguard', 'Conspiracy']);
+
+/** True when a type line names such a type (before the dash; a Planeswalker is not a Plane). */
+export function isOutsideTheDeck(typeLine: string): boolean {
+  const types = (typeLine.split('—')[0] ?? '').split(/\s+/).filter((w) => w !== '');
+  return types.some((w) => OUTSIDE_TYPES.has(w));
+}
+
+/** The decklist as the files hold it: the commander, then the main deck, one "Nx Name" line each. */
+function decklistOf(lines: readonly { name: string; count: number; section: string }[]): string {
+  const render = (section: string) =>
+    lines
+      .filter((l) => l.section === section)
+      .map((l) => `${l.count}x ${l.name}`)
+      .join('\n');
+  const commander = render('commander');
+  return `${commander === '' ? '' : `Commander\n${commander}\n\n`}Mainboard\n${render('main')}`;
 }
 
 export interface InstalledDeck {
@@ -52,6 +72,8 @@ export async function installedDecks(dir: string): Promise<InstalledDeck[]> {
 
 export interface BuiltIssues {
   readonly issues: PreconIssue[];
+  /** Decks left out, with why (a count that is not 100 once the planar cards are set apart). */
+  readonly skipped: readonly string[];
   /** Decks the app already offers with the same list: no issue. */
   readonly upToDate: readonly { readonly deck: string; readonly precon: string }[];
 }
@@ -104,7 +126,23 @@ export async function buildIssues(
     throw new Error('no card could be read: is this the oracle_cards bulk file?');
   const issues: PreconIssue[] = [];
   const upToDate: { deck: string; precon: string }[] = [];
-  for (const { entry, deck, text } of decks) {
+  const skipped: string[] = [];
+  for (const { entry, deck: scanned } of decks) {
+    // The cards that are not played in a Commander deck (a planar deck) are set apart: the deck is supported as the 100 that are.
+    const outside: string[] = [];
+    const kept = scanned.lines.filter((line) => {
+      const typeLine = lookup(index, line.name)?.stored.faces[0]?.typeLine ?? '';
+      if (!isOutsideTheDeck(typeLine)) return true;
+      outside.push(line.name);
+      return false;
+    });
+    const total = kept.reduce((sum, l) => sum + l.count, 0);
+    if (total !== 100) {
+      skipped.push(`"${entry.name}" has ${total} cards without the planar cards, a precon has 100`);
+      continue;
+    }
+    const deck = { ...scanned, lines: kept };
+    const text = decklistOf(kept);
     const list = deck.lines.map((l) => ({ name: l.name, count: l.count }));
     const match = matchInstalled(list, installed);
     const diff = match === undefined ? undefined : listDiff(match.entries, list);
@@ -121,17 +159,24 @@ export async function buildIssues(
     });
     issues.push(
       preconIssue({
-        deck: { id: entry.id, name: entry.name, text: text.trimEnd(), cards: entry.cards },
+        deck: {
+          id: entry.id,
+          name: entry.name,
+          text: text.trimEnd(),
+          cards: entry.cards,
+          breakdown: '',
+        },
         unsupported: report.blocked.map((card) => clean(card.name)),
         why,
         notFound: report.unresolved.map((card) => clean(card.name)),
+        leftOut: outside.map(clean),
         ...(match === undefined || diff === undefined
           ? {}
           : { installed: { id: match.id, name: match.name, diff, hash: listHash(list) } }),
       }),
     );
   }
-  return { issues, upToDate };
+  return { issues, upToDate, skipped };
 }
 
 export async function writeIssues(issues: readonly PreconIssue[], out: string): Promise<void> {

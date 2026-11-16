@@ -49,26 +49,55 @@ export interface ArchidektDeck {
   readonly text: string;
   /** The cards of the commander and main deck, counting quantities. */
   readonly cards: number;
+  /** Every card of the answer by category ("Commander 1, Sideboard 10 (left out), ..."), so a count that is not 100 can be explained in the log. */
+  readonly breakdown: string;
 }
 
-const OUTSIDE = /^(sideboard|maybeboard|considering)$/i;
+/** Categories that are not part of the deck: the boards a player keeps beside it, and the tokens and extras that come in the box. */
+const OUTSIDE = /^(sideboard|maybeboard|considering|tokens?|extras?|attractions?|stickers?)$/i;
 
 /** The deck of an API answer (`/api/decks/<id>/`), or a message that says what is wrong with it. */
 export function deckFromApi(id: number, answer: unknown): ArchidektDeck | string {
   if (typeof answer !== 'object' || answer === null)
     return `deck ${id}: the answer is not an object`;
-  const { name, cards } = answer as { name?: unknown; cards?: unknown };
+  const {
+    name,
+    cards,
+    categories: deckCategories,
+  } = answer as {
+    name?: unknown;
+    cards?: unknown;
+    categories?: unknown;
+  };
   if (typeof name !== 'string' || name.trim() === '') return `deck ${id}: the answer has no name`;
   if (!Array.isArray(cards)) return `deck ${id}: the answer has no cards`;
+  // Archidekt says for each category of the deck whether it counts towards the deck (`includedInDeck`): the sideboard and the maybeboard do not.
+  const notInDeck = new Set<string>();
+  if (Array.isArray(deckCategories)) {
+    for (const c of deckCategories as { name?: unknown; includedInDeck?: unknown }[]) {
+      if (typeof c?.name === 'string' && c.includedInDeck === false)
+        notInDeck.add(c.name.toLowerCase());
+    }
+  }
+  const outside = (category: string): boolean =>
+    OUTSIDE.test(category) || notInDeck.has(category.toLowerCase());
   const commander: string[] = [];
   const main: string[] = [];
+  const byCategory = new Map<string, { count: number; left: boolean }>();
   let count = 0;
   for (const raw of cards as ApiCard[]) {
     const cardName = raw.card?.oracleCard?.name ?? raw.card?.name;
     const quantity = raw.quantity;
     if (typeof cardName !== 'string' || typeof quantity !== 'number' || quantity < 1) continue;
     const categories = Array.isArray(raw.categories) ? raw.categories.map(String) : [];
-    if (categories.some((c) => OUTSIDE.test(c))) continue;
+    const left = categories.some(outside);
+    const label = clean(categories[0] ?? 'no category');
+    const held = byCategory.get(label);
+    byCategory.set(label, {
+      count: (held?.count ?? 0) + quantity,
+      left: held?.left === true || left,
+    });
+    if (left) continue;
     const line = `${quantity}x ${clean(cardName)}`;
     (categories.some((c) => /^commander$/i.test(c)) ? commander : main).push(line);
     count += quantity;
@@ -78,7 +107,11 @@ export function deckFromApi(id: number, answer: unknown): ArchidektDeck | string
   const parts: string[] = [];
   if (commander.length > 0) parts.push(`Commander\n${sort(commander).join('\n')}`);
   parts.push(`Mainboard\n${sort(main).join('\n')}`);
-  return { id, name: clean(name), text: parts.join('\n\n'), cards: count };
+  const breakdown = [...byCategory]
+    .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+    .map(([label, v]) => `${label} ${v.count}${v.left ? ' (left out)' : ''}`)
+    .join(', ');
+  return { id, name: clean(name), text: parts.join('\n\n'), cards: count, breakdown };
 }
 
 /** A card of a decklist: the name and how many. */
@@ -182,6 +215,8 @@ export interface IssueInput {
   readonly why: readonly string[];
   /** Names the card list did not match. */
   readonly notFound: readonly string[];
+  /** Cards that came with the deck but are not part of a Commander deck (the planar deck: Plane and Phenomenon cards, and the like), left out of the decklist for now. */
+  readonly leftOut?: readonly string[];
   /** Set when the app already offers this deck: its precon id and name, and how its list differs from the one on Archidekt. */
   readonly installed?: {
     readonly id: string;
@@ -215,7 +250,7 @@ const entryLine = (e: Entry): string => `${e.count}x ${clean(e.name)}`;
  * card the engine cannot run.
  */
 export function preconIssue(input: IssueInput): PreconIssue {
-  const { deck, unsupported, why, notFound, installed } = input;
+  const { deck, unsupported, why, notFound, installed, leftOut = [] } = input;
   const needsSupport = unsupported.length > 0;
   const id = installed?.id ?? preconId(deck.name);
   const name = installed?.name ?? deck.name;
@@ -254,6 +289,17 @@ export function preconIssue(input: IssueInput): PreconIssue {
     parts.push('The game already supports every card of this deck.');
   }
   if (notFound.length > 0) parts.push(`Names not found: ${notFound.join('; ')}`);
+  if (leftOut.length > 0) {
+    parts.push(
+      [
+        `## Left out for now: ${leftOut.length} cards that are not part of the 100`,
+        '',
+        'The box also has cards that are not played in a Commander deck (a planar deck: Plane and Phenomenon cards). The game cannot play them yet, so they are not in the decklist above and not in the count of unsupported cards. Support the deck as normal without them; they are for a second round.',
+        '',
+        ...leftOut.map((n) => `- ${clean(n)}`),
+      ].join('\n'),
+    );
+  }
   if (installed === undefined) {
     parts.push(
       [

@@ -30,9 +30,10 @@ try {
   const { downloadOracleCards } = await import('../corpus/download.ts');
   const { buildIssues, writeIssues } = await import('./issues.ts');
   const cards = values.file ?? (await downloadOracleCards({ cacheDir: '.cache/corpus', log }));
-  const { issues, upToDate } = await buildIssues(values.decks, cards, values.installed);
+  const { issues, upToDate, skipped } = await buildIssues(values.decks, cards, values.installed);
   for (const skip of upToDate)
     log(`up to date: "${skip.deck}" is the precon "${skip.precon}" of the app`);
+  for (const why of skipped) log(`skipped: ${why}`);
   await writeIssues(issues, values.out);
   const needs = issues.filter((i) => i.needsSupport).length;
   const updates = issues.filter((i) => i.marker.includes(':update:')).length;
