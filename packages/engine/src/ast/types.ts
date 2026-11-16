@@ -265,7 +265,9 @@ export type Amount =
    * information once it has left (CR 113.7a). 0 when none was. Only in the abilities of a spell that name `castSpell` with `self` and in its own text, of a face whose additional
    * cost sacrifices any number of permanents (`validateCard`).
    */
-  | { readonly kind: 'sacrificedAsCost' };
+  | { readonly kind: 'sacrificedAsCost' }
+  /** "For each card exiled this way" as an additional spell cost: the chosen cards for the cast, read at CR 601.2f. */
+  | { readonly kind: 'exiledAsCost' };
 
 /** What a `thisWay` amount counts (D-131). */
 export type ThisWayKind =
@@ -920,6 +922,8 @@ export type Cost =
    * (CR 601.2h), after the targets were chosen, so a discarded card is no target of the spell. Not in the cost of an ability.
    */
   | { readonly kind: 'discardX' }
+  /** "As an additional cost, you may exile any number of cards from your hand" (D-545). */
+  | { readonly kind: 'exileFromHand'; readonly filter: ObjectFilter }
   | {
       readonly kind: 'sacrifice';
       readonly what: { readonly kind: 'this' } | ObjectFilter;

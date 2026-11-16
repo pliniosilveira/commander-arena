@@ -578,6 +578,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'payXLife',
     // D-386 (provisional): "Discard X cards" as an additional cost to cast a spell (an activated ability's cost refuses it).
     'discardX',
+    // D-545: optional exiling of any number of cards from hand as a spell's additional cost.
+    'exileFromHand',
     'sacrifice',
     'removeCounters',
     'discardThis',
@@ -961,6 +963,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsDrawnThisTurn',
     // D-491: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
     'sacrificedAsCost',
+    // D-545: "for each card exiled this way" for a spell's additional cost.
+    'exiledAsCost',
     // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
     'enteredX',
   ],
@@ -1601,6 +1605,8 @@ export const AMOUNT_KINDS = [
   'cardsDrawnThisTurn',
   /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
+  /** "For each card exiled this way" for a spell's additional cost (D-545): the engine's `exiledAsCost`. */
+  'exiledAsCost',
   /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
   'enteredX',
   'bound',
@@ -1983,6 +1989,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   payLife: true,
   payXLife: true,
   discardX: true,
+  exileFromHand: true,
   sacrifice: true,
   discard: true,
   behold: true,

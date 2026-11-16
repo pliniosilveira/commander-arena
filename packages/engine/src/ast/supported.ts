@@ -926,7 +926,8 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
     for (const [i, c] of way.entries()) {
       if (
         (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
-        c.kind === 'exileFromGraveyard'
+        c.kind === 'exileFromGraveyard' ||
+        c.kind === 'exileFromHand'
       ) {
         out.push({
           path: `${base}.additionalCostChoice[${w}][${i}]`,

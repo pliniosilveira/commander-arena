@@ -198,6 +198,9 @@ describe('words for costs', () => {
     expect(additionalCostsText([{ kind: 'payLife', amount: 3 }])).toBe('Pay 3 life');
     expect(additionalCostsText([{ kind: 'mana', symbols: ['1'] }])).toBe('{1}');
     expect(additionalCostsText([discard(2)])).toBe('Discard 2 cards');
+    expect(
+      additionalCostsText([{ kind: 'exileFromHand', filter: { zone: 'hand', colors: ['U'] } }]),
+    ).toBe('Exile any number of blue cards from your hand (optional)');
   });
 
   test('the cost of a "pay or it is countered" question reads with its own verb', () => {

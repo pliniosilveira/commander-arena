@@ -20,4 +20,5 @@
 // 116: Read "They block this turn if able" for the preceding plural creature group (D-542).
 // 117: Read player-directed control of target groups and nonattacking creature filters (D-543).
 // 118: Read "with one or more targets" and "draw that many" for a cast trigger (D-544).
-export const PARSER_VERSION = 118;
+// 119: Read optional exile-from-hand costs and reductions based on cards exiled that way (D-545).
+export const PARSER_VERSION = 119;

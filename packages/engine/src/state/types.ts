@@ -797,6 +797,7 @@ export interface CastingContext {
     | 'payOptions'
     | 'payment'
     | 'behold'
+    | 'additionalExile'
     | 'sacrifice'
     | 'discard'
     | 'exile'
@@ -831,6 +832,8 @@ export interface CastingContext {
     readonly behold?: ObjectFilter | null;
     /** How many other cards of the caster's graveyard to exile (Escape, CR 702.138a, D-124); 0 for none. */
     readonly exile: number;
+    /** Cards selected from hand for an optional exile additional cost, moved after mana is paid. */
+    readonly exileFromHand?: ObjectId[];
     /** The untapped permanents to tap as part of the cost (the `tapPermanents` alternative cost, D-149), or null. */
     readonly tap?: { readonly filter: ObjectFilter; readonly count: number } | null;
   };

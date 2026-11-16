@@ -4917,3 +4917,10 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Engine:** `spellCast` carries the chosen target count into cast triggers; `targetCountAtLeast` filters spells with targets, and `triggerTargetCount` reads the count fixed when the trigger was found.
 - **Parser:** "with one or more targets" selects that trigger filter; the first "draw that many cards" reads the count of targets on the spell that triggered.
 - **Proof:** `scenario-xx-trigger-target-count.test.ts` checks targeted and untargeted spells, while `convert-grammar-engine-voracious-bibliophile.test.ts` plays the real card with a spell that has two targets.
+
+## The Lord of the Nazgûl deck, issue 57, group 10: March of Swirling Mist (D-545)
+
+- **Engine:** an optional hand-exile selection is made before X, recorded on the spell for its own cost reduction, and paid after mana. The new exile objects are retained in `StackData.exiledAsCost`.
+- **Parser:** reads the optional blue-card cost, the reduction for each card exiled this way, and the up-to-X phasing targets. When one Oracle line produces both face costs and static abilities, the compiler preserves both.
+- **Proof:** `convert-grammar-engine-march-of-swirling-mist.test.ts` covers selection and decline, cost reduction, X, up-to-X targets, exile and phasing.
+- **Regression:** the same mixed-output compiler fix preserves `Plumb the Forbidden`'s existing additional-cost and cast-trigger behavior (D-492); its parser and real-card engine integration regressions pass.

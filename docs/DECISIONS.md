@@ -3367,3 +3367,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: Count legal targets when the trigger resolves (targets can become illegal in response), or count target slots (one slot can choose multiple targets and two slots can choose the same object).
 - Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The engine scenario tests one and two targets and a spell with none; the real card integration plays a two-target spell and checks that two cards are drawn.
 
+## D-545: Count cards chosen for an optional spell exile cost (2026-11-17, issue 57)
+- Context: `March of Swirling Mist` may exile any number of blue cards from its caster's hand and reduces its generic cost by {2} for each card exiled this way. The number chosen affects the cost determined before X and targets, while the cards must still be paid as a cost.
+- Decision: Ask for the optional hand-card selection before announcing X, record the selected object IDs on the spell so its own reduction can read their count, and move them to exile after mana is paid. Update the spell's `exiledAsCost` with the new exile objects for later instructions. Preserve both face costs and static abilities when a single Oracle line lowers to both.
+- Alternatives: Ask for cards after locking the total cost (the reduction would be too late); exile them before the cost is determined (the additional cost would be paid at the wrong time); or add card-specific data.
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The real-card scenario covers choosing and declining the optional exile, the cost reduction, X, up-to-X targets and the final exile/phasing result. Preserving the combined compiler output also restores the existing mixed-cost/cast-trigger line for `Plumb the Forbidden` (D-492), whose card integration already has acceptance tests. The CR text and Scryfall rulings were unavailable for independent verification.
+

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 118,
+  "parserVersion": 119,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -5179,27 +5179,10 @@
     "debc69ea-372a-4720-838a-16856cd50b07": {
       "name": "March of Swirling Mist",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "As an additional cost to cast ~, you may exile any number of blue cards from your hand. ~ costs {2} less to cast for each card exiled this way.",
-          "reason": "unrecognised",
-          "slot": "cost",
-          "closestRule": "static.additional-cost"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Up to X target creatures phase out.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.doesnt-untap-next"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "1bbcb8a0"
+      "ast": "e99a2316"
     },
     "df0b5995-117b-4ba8-964d-ea3c592621ef": {
       "name": "The Warring Triad",
@@ -6073,7 +6056,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 398,
+      "supported": 399,
       "total": 420
     }
   }

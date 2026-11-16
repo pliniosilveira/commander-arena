@@ -335,6 +335,11 @@ export function lowerAmount(
       if (!of.ok) return of;
       return { ok: true, value: { kind: 'multiple', factor: amount.factor, of: of.value }, rule };
     }
+    case 'exiledAsCost': {
+      const blocked = needs('exiledAsCost');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'exiledAsCost' }, rule };
+    }
     case 'minus': {
       // CR 107.1b (D-321): `of` less a whole number of 1 or more, a negative result counting as 0.
       const blocked = needs('minus');
@@ -600,6 +605,7 @@ export const AMOUNT_NEEDS = [
   'amount:enteredThisTurn',
   'amount:diedThisTurn',
   'amount:cardsDrawnThisTurn',
+  'amount:exiledAsCost',
   'amount:times',
   'amount:toughnessOf',
   'amount:countersOn',

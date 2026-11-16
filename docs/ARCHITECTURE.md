@@ -429,4 +429,9 @@ Four mechanisms, all run by CI (`pnpm typecheck`, `pnpm lint`, `pnpm test`):
 ## Cast-trigger target counts (REAL; D-544)
 - A `spellCast` event records the number of chosen targets. Cast triggers can require a minimum number and carry the event's target count into `triggerTargetCount` amounts.
 - A count is fixed when the trigger is found; later illegal targets do not change how many were chosen.
+
+## Optional additional exile from hand (REAL; D-545)
+- `CastingContext.stage` adds `additionalExile` before X. The chosen hand object IDs are stored on the spell so `amountOf(exiledAsCost)` can calculate its own cost reduction.
+- `CastingContext.extra.exileFromHand` carries the choice to cost payment. After mana, `rules/cast-additional.ts` moves each card to exile and replaces the temporary IDs on the spell with their new exile object IDs.
+- `compileLine` preserves lowered abilities when the same Oracle line also produces face costs.
 - `DeclareBlockersDecision.candidates` marks creatures carrying the requirement. The parser's exact cross-sentence binding for “They block this turn if able” and the acceptance-card proof are not implemented yet.

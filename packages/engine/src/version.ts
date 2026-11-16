@@ -9,4 +9,5 @@
 // 105: Add temporary must-block requirements and compare them jointly with must-be-blocked attackers.
 // 106: Let an effect give control of targeted objects to one targeted player; filter nonattacking objects.
 // 107: Preserve the target count that a cast trigger reads when the spell is cast.
-export const ENGINE_VERSION = 107;
+// 108: Pay an optional hand-exile spell cost after mana and expose its chosen count to cost reductions (D-545).
+export const ENGINE_VERSION = 108;

@@ -1873,6 +1873,12 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
     case 'payXLife':
     case 'discardX':
       break;
+    case 'exileFromHand':
+      checkFilter(cost.filter, `${path}.filter`, out);
+      if (cost.filter.zone !== 'hand') {
+        issue(out, `${path}.filter.zone`, 'an additional exile cost selects cards from hand');
+      }
+      break;
     case 'payLife':
       // D-135: a number, or an amount that reads the game as the ability is activated (only an activated ability's cost
       // takes the latter: `unsupportedFeatureIssues`).

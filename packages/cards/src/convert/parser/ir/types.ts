@@ -486,7 +486,9 @@ export type IrAmount =
       readonly span: Span;
     }
   // Stage P34 (D-152, CR 400.7): "for each of those cards that are still exiled", the cards an earlier instruction of the same text exiled
-  | { readonly kind: 'exiledStillThere'; readonly span: Span };
+  | { readonly kind: 'exiledStillThere'; readonly span: Span }
+  /** Number of cards selected for the spell's optional additional exile cost (D-545). */
+  | { readonly kind: 'exiledAsCost'; readonly span: Span };
 
 export interface IrDuration extends IrNode {
   readonly kind: 'duration';
@@ -696,6 +698,7 @@ export type IrCost = IrNode &
         readonly named?: true;
       }
     | { readonly kind: 'exile'; readonly what: IrNoun }
+    | { readonly kind: 'exileFromHand'; readonly what: IrNoun }
     // "Discard this card" (stage P68, D-229, CR 701.9, 113.6b): the card itself, from the hand; "Exile ~" (CR 118.1): the permanent itself
     | { readonly kind: 'discardThis' }
     // "Reveal this card from your hand" (Gisa deck, group 4, D-462, CR 701.20a, 113.6b): the card itself is shown, from the hand
@@ -1254,6 +1257,7 @@ export type IrStaticEffect =
   | {
       readonly kind: 'additionalCost';
       readonly costs: readonly IrCost[];
+      readonly optional?: true;
       /**
        * "..., sacrifice an artifact or creature or pay {4}." (stage P38, D-182, CR 118.8, 601.2b): the second way the cost is paid, when the line
        * says two ("A or B"); `costs` is then the first way, of one cost.

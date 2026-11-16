@@ -109,6 +109,8 @@ describe('amounts that read an object', () => {
       // D-450: "for each card you've drawn this turn" (CR 121.1).
       'cardsDrawnThisTurn',
       'sacrificedAsCost',
+      // D-545: the cards selected for a spell's optional hand-exile cost.
+      'exiledAsCost',
       // Hylda group 3 (CR 107.3m): the X of the spell an enters trigger reads.
       'enteredX',
     ]);

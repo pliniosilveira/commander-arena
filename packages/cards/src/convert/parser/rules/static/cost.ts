@@ -73,14 +73,33 @@ const GENERIC = map(
 
 /**
  * "{N} less to cast", with "for each ..." after it when the reduction is counted. The count stands
- * for a reduction of {1} per object, so only {1} may be written in front of it (CR 118.7a; the
- * engine's count is of one for each).
+ * for a reduction per object. A larger generic number multiplies that count (CR 118.7a).
  */
 function reduction(): Parser<IrAmount> {
+  const exiledCount = map(
+    sequence(GENERIC, literal(' less to cast for each card exiled this way')),
+    ([amount]) => ({
+      kind: 'multiple' as const,
+      factor: amount.kind === 'number' ? amount.value : 1,
+      of: { kind: 'exiledAsCost' as const, span: amount.span },
+      span: amount.span,
+    }),
+  );
   const head = sequence(GENERIC, literal(' less to cast'));
   const each = sequence(
     literal(' '),
-    family<IrAmount>('amount', { only: ['amount.for-each', 'amount.for-each-counter'] }),
+    choice(
+      map(
+        spanned(literal('for each card exiled this way')),
+        ({ span }): IrAmount => ({
+          kind: 'exiledAsCost',
+          span,
+        }),
+      ),
+      family<IrAmount>('amount', {
+        only: ['amount.for-each', 'amount.for-each-counter', 'amount.for-each-this-way'],
+      }),
+    ),
   );
   // "{X} less to cast, where X is the total power of creatures you control" (stage P28, D-131, CR 107.3c, 118.7a): X is
   // what the text defines, read as the cost is determined (CR 601.2f). {X} with no definition is not read.
@@ -92,6 +111,8 @@ function reduction(): Parser<IrAmount> {
     ([, amount]) => amount,
   );
   return (ctx, pos) => {
+    const exiled = exiledCount(ctx, pos);
+    if (exiled.ok) return exiled;
     const x = defined(ctx, pos);
     if (x.ok) return x;
     const h = head(ctx, pos);
@@ -99,9 +120,13 @@ function reduction(): Parser<IrAmount> {
     const base = h.value[0];
     const counted = each(ctx, h.pos);
     if (!counted.ok) return { ok: true, value: base, pos: h.pos };
-    // "costs {2} less for each ...": the engine's count is one for each, not a step of two.
     if (base.kind !== 'number' || base.value !== 1) return fail(ctx, h.pos);
-    return { ok: true, value: counted.value[1], pos: counted.pos };
+    const of = counted.value[1];
+    return {
+      ok: true,
+      value: of,
+      pos: counted.pos,
+    };
   };
 }
 
@@ -152,6 +177,7 @@ export const STATIC_SELF_COST_REDUCTION = defineRule<IrStatic>({
     '~ costs {2} less to cast if you gained life this turn.',
     '~ costs {1} less to cast for each creature on the battlefield.',
     '~ costs {2} less to cast.',
+    '~ costs {2} less to cast for each card exiled this way.',
     '~ costs {1} less to cast for each card in your hand.',
     '~ costs {1} less to cast for each other creature you control.',
     '~ costs {X} less to cast, where X is the total power of creatures you control.',
@@ -514,6 +540,7 @@ const ADDITIONAL_COST: Parser<IrCost> = choice(
       'cost.discard-x',
       'cost.pay-life',
       'cost.pay-x-life',
+      'cost.exile-any-hand',
     ],
   }),
   map(
@@ -558,6 +585,7 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, sacrifice a creature and discard a card.',
     'As an additional cost to cast ~, pay X life.',
     'As an additional cost to cast ~, pay X life and discard a card.',
+    'As an additional cost to cast ~, you may exile any number of blue cards from your hand.',
     // Hashaton group 10 (D-386): "discard X cards", announced like "pay X life".
     'As an additional cost to cast ~, discard X cards.',
     // Stage P38 (D-182): a choice of two ways.
@@ -590,8 +618,17 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'Additional cost to cast ~, sacrifice a creature.',
   ],
   parse: (ctx, pos) => {
+    const prefix = 'as an additional cost to cast ~, ';
+    const optionalAt = pos + prefix.length;
+    if (
+      ctx.text.startsWith('you may ', optionalAt) &&
+      !ctx.text.startsWith('you may exile any number of ', optionalAt)
+    ) {
+      return fail(ctx, optionalAt);
+    }
     const r = sequence(
-      literal('as an additional cost to cast ~, '),
+      literal(prefix),
+      optional(literal('you may '), undefined),
       separatedBy1(ADDITIONAL_COST, literal(' and ')),
       optional(
         map(sequence(literal(' or '), ADDITIONAL_COST), ([, cost]) => cost),
@@ -601,12 +638,16 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     )(ctx, pos);
     if (!r.ok) return r;
     const castAt = pos + 'as an additional cost to cast '.length;
-    const [, costs, other] = r.value;
+    const [, may, costs, other] = r.value;
+    if (may !== undefined && (costs.length !== 1 || costs[0]?.kind !== 'exileFromHand')) {
+      return fail(ctx, pos);
+    }
     // "A or B" is one cost for each way (stage P38, D-182): a way of several costs ("A and B or C") is not read.
     if (other !== undefined && costs.length > 1) return fail(ctx, pos);
     const effect = {
       kind: 'additionalCost' as const,
       costs,
+      ...(may === undefined ? {} : { optional: true as const }),
       ...(other === undefined ? {} : { orCosts: [other] }),
     };
     return {

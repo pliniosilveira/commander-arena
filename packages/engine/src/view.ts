@@ -518,6 +518,7 @@ export interface GameView {
       | 'separate'
       | 'pile'
       | 'behold'
+      | 'additionalExile'
       | 'reveal'
       | 'split'
       | 'copy'

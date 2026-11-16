@@ -46,6 +46,7 @@ type StateAmount = Extract<
       | 'cardsStillExiled'
       | 'cardsDrawnThisTurn'
       | 'sacrificedAsCost'
+      | 'exiledAsCost'
       | 'cardTypesAmong';
   }
 >;
@@ -80,6 +81,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'cardsStillExiled' ||
     amount.kind === 'cardsDrawnThisTurn' ||
     amount.kind === 'sacrificedAsCost' ||
+    amount.kind === 'exiledAsCost' ||
     amount.kind === 'cardTypesAmong'
   );
 }
@@ -363,6 +365,10 @@ export function stateAmountOf(
       // or, once it has left the stack, from its last-known information (CR 113.7a).
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return source?.stack?.sacrificedAsCost?.length ?? 0;
+    }
+    case 'exiledAsCost': {
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return source?.stack?.exiledAsCost?.length ?? 0;
     }
     default: {
       const unreachable: never = amount;

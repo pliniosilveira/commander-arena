@@ -213,6 +213,7 @@ export interface CastHandle {
     | 'payOptions'
     | 'payment'
     | 'behold'
+    | 'additionalExile'
     | 'sacrifice'
     | 'discard'
     | 'exile'

@@ -625,7 +625,7 @@ export const EFFECT_BECOME_COPY_OF_THOSE_CARDS = defineRule<Clauses>({
 export const EFFECT_PHASE_OUT = defineRule<Clauses>({
   id: 'effect.phase-out',
   family: 'effect',
-  leading: ['any', 'it', 'target'],
+  leading: ['any', 'it', 'target', 'up'],
   cites: ['CR 702.26 (Phasing)', 'CR 702.26a (Phasing)', 'CR 702.26g (Phasing)'],
   examples: [
     'any number of other target creatures you control phase out',

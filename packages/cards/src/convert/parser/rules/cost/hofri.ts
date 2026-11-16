@@ -162,9 +162,55 @@ export const COST_EXILE_GRAVEYARD_CARDS = defineRule<IrCost>({
   },
 });
 
+/** `cost.exile-any-hand`: "exile any number of blue cards from your hand" as an optional spell additional cost. */
+export const COST_EXILE_ANY_HAND = defineRule<IrCost>({
+  id: 'cost.exile-any-hand',
+  family: 'cost',
+  leading: ['exile'],
+  cites: ['CR 118.8 (Costs)', 'CR 406.1 (Exile)', 'CR 701.13a (Exile)'],
+  examples: ['exile any number of blue cards from your hand'],
+  rejects: [
+    'exile any number of blue cards from your graveyard',
+    'exile any number of creatures from your hand',
+    'exile any number of blue cards from your hand and',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        /exile any number of (?:(white|blue|black|red|green) )?cards from your hand(?![\p{L}\p{N}'’])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const color = r.value.value[1]?.toLowerCase();
+    const span = r.value.span;
+    const what: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter: {
+        ...(color === undefined ? {} : { colors: [color] }),
+        zone: 'hand',
+        card: true,
+        raw: ctx.text.slice(pos, r.pos),
+      },
+      anyNumber: true,
+      upTo: false,
+      plural: true,
+      other: false,
+      span,
+      rule: 'cost.exile-any-hand',
+    };
+    return {
+      ok: true,
+      value: { kind: 'exileFromHand', what, span, rule: 'cost.exile-any-hand' },
+      pos: r.pos,
+    };
+  },
+});
+
 export const HOFRI_COST_RULES = [
   COST_DISCARD_THIS,
   COST_EXILE_THIS_FROM_GRAVEYARD,
   COST_EXILE_THIS,
   COST_EXILE_GRAVEYARD_CARDS,
+  COST_EXILE_ANY_HAND,
 ];

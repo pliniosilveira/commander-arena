@@ -35,6 +35,7 @@ import { sacrificeCandidates, sacrificePermanent, tapCandidates } from './sacrif
 import { setPending } from './set-pending';
 import { recordObjectsTogether } from './simultaneous';
 import { collectTriggers } from './triggers';
+import { moveObject } from './zones';
 
 /** What happens once every cost is paid: the spell becomes cast (CR 601.2i). */
 export type Finish = (state: GameState, events: GameEvent[]) => Result;
@@ -335,7 +336,7 @@ function payExile(state: GameState, events: GameEvent[], finish: Finish): Result
   const casting = state.casting;
   if (!casting) return fail('No cast in progress');
   const count = casting.extra?.exile ?? 0;
-  if (count === 0) return finish(state, events);
+  if (count === 0) return payAdditionalExile(state, events, finish);
   const graveyard = exilable(state, casting.seat, casting.object);
   if (graveyard.length < count) return fail('You do not have enough other cards to exile');
   // Exactly as many cards as asked: there is nothing to choose.
@@ -357,7 +358,34 @@ function exileChosen(
   if (!casting) return fail('No cast in progress');
   const moved = exileObjects(state, chosen);
   if (moved === null) return fail('Those cards cannot be exiled');
-  return finish(moved.state, [...events, ...moved.events]);
+  return payAdditionalExile(moved.state, [...events, ...moved.events], finish);
+}
+
+/** Exiles the optional cards selected before X, then records their new exile objects on the spell. */
+function payAdditionalExile(state: GameState, events: GameEvent[], finish: Finish): Result {
+  const casting = state.casting;
+  if (!casting) return fail('No cast in progress');
+  const ids = casting.extra?.exileFromHand ?? [];
+  if (ids.length === 0) return finish(state, events);
+  let next = state;
+  const exiled: ObjectId[] = [];
+  const out = [...events];
+  for (const id of ids) {
+    if (next.objects[id]?.zone !== 'hand') return fail('A chosen card is no longer in your hand');
+    const moved = moveObject(next, { object: id, to: 'exile' });
+    if (moved.kind !== 'done' || moved.newObject === null)
+      return fail('A chosen card cannot be exiled');
+    next = moved.state;
+    exiled.push(moved.newObject);
+    out.push(...moved.events);
+  }
+  const spell = next.objects[casting.object];
+  if (spell?.stack !== null && spell?.stack !== undefined) {
+    next = patchObject(next, casting.object, {
+      stack: { ...spell.stack, exiledAsCost: exiled },
+    });
+  }
+  return finish(next, out);
 }
 
 /** The answer to the exile question of an escape cost; the caller checked it against the decision. */

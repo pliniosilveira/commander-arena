@@ -42,6 +42,6 @@ These proposals use only the card text supplied in issue 57 and existing reposit
 
 **Proof:** cover every split shape (including an empty pile if rules permit), pile selection, library exhaustion, card ownership, public versus private views/logs, replay determinism and the subsequent Ring temptation. The scenario must assert both each seat's view and the final zones.
 
-## Approval
+## Approval record
 
-These are separate subsystems and should be approved individually or together before implementation. Work may proceed on another card only when its gap is independent of these designs. Once approved, move the relevant proposal into `docs/design/` and record the implementation decision in `docs/DECISIONS.md`.
+The owner approved all five designs on 2026-11-17. They were moved from `docs/proposals/` to `docs/design/`; each implementation is recorded in `docs/DECISIONS.md` as its work is completed.

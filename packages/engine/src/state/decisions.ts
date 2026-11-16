@@ -499,6 +499,7 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'lookTake'
     | 'cast'
     | 'behold'
+    | 'additionalExile'
     | 'lookSplit'
     | 'reveal'
     | 'split'
