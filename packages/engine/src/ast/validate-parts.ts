@@ -4428,11 +4428,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // Galadriel group 3: "Draw a card and reveal it": one card, drawn (not "up to"); `moved` names it afterwards.
       if (e.kind === 'draw' && e.reveal !== undefined) {
         if (e.reveal !== true || e.count !== 1 || e.upTo !== undefined) {
-          issue(
-            out,
-            `${path}.reveal`,
-            'reveal is true, with a count of exactly 1 and no "up to"',
-          );
+          issue(out, `${path}.reveal`, 'reveal is true, with a count of exactly 1 and no "up to"');
         }
       }
       // D-151: "Discard any number of cards": the player chooses how many, so `count` is 0 and nothing else narrows the choice.

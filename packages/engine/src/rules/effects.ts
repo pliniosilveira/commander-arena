@@ -848,7 +848,10 @@ function runEffect(
       );
       // CR 118.12a, 608.2c (Galadriel group 3): "... unless its controller pays mana equal to the greatest power among creatures you control": the generic mana is read now, as
       // this resolves. Paying {0} is paying nothing, so a spell whose controller owes none is not countered.
-      const owed = effect.genericAmount === undefined ? null : amountOf(state, effect.genericAmount, ctx, targets);
+      const owed =
+        effect.genericAmount === undefined
+          ? null
+          : amountOf(state, effect.genericAmount, ctx, targets);
       if (owed === 0) return done(state);
       const cost: typeof effect.cost =
         owed === null ? effect.cost : [{ kind: 'mana', symbols: [String(owed)] }];

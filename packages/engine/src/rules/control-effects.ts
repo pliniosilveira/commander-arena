@@ -147,7 +147,12 @@ export function runExchangeControl(
   const [first, ...moreFirst] = named(node.first);
   const [second, ...moreSecond] = named(node.second);
   // CR 701.12a: if the entire exchange can't be completed, no part of it occurs.
-  if (first === undefined || second === undefined || moreFirst.length > 0 || moreSecond.length > 0) {
+  if (
+    first === undefined ||
+    second === undefined ||
+    moreFirst.length > 0 ||
+    moreSecond.length > 0
+  ) {
     return done(state);
   }
   const a = state.objects[first];

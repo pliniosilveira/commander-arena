@@ -58,6 +58,7 @@ const EXECUTABLE_KEYWORDS = [
   'splitSecond', // scenario-xx-split-second
   'typecycling', // scenario-xx-typecycling
   'multikicker', // scenario-xx-multikicker
+  'buyback', // scenario-xx-galadriel-g3-spells
   'skulk', // scenario-xx-keywords2-combat
   'battleCry', // scenario-xx-keywords2-combat
   'mentor', // scenario-xx-keywords2-combat
@@ -155,6 +156,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
     cost: [{ kind: 'mana', symbols: ['2'] }],
   },
   multikicker: { kind: 'multikicker', cost: [{ kind: 'mana', symbols: ['2'] }] },
+  buyback: { kind: 'buyback', cost: [{ kind: 'mana', symbols: ['2'] }] },
   skulk: { kind: 'skulk' },
   battleCry: { kind: 'battleCry' },
   mentor: { kind: 'mentor' },
@@ -235,21 +237,24 @@ describe('supported feature gate', () => {
           ? syntheticCard('SYNTHETIC Wings Aura')
           : kind === 'flashback'
             ? syntheticCard('SYNTHETIC Flash Gain')
-            : // Only an Equipment has living weapon (CR 702.92a).
-              kind === 'livingWeapon'
-              ? syntheticCard('SYNTHETIC Husk Blade')
-              : // Job select (CR 702.182a) is an Equipment's too.
-                kind === 'jobSelect'
-                ? syntheticCard('SYNTHETIC Job Blade')
-                : // D-145: escalate belongs to a modal spell, Hideaway to a permanent (CR 702.120a, 702.75a).
-                  kind === 'escalate'
-                  ? syntheticCard('SYNTHETIC Escalating Charm')
-                  : kind === 'hideaway'
-                    ? syntheticCard('SYNTHETIC Hidden Cache')
-                    : // D-151: read ahead belongs to a Saga with chapter abilities (CR 702.155b).
-                      kind === 'readAhead'
-                      ? syntheticCard('SYNTHETIC Reading Rite')
-                      : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
+            : // Only an instant or a sorcery has buyback (CR 702.27a).
+              kind === 'buyback'
+              ? syntheticCard('SYNTHETIC Buyback Peek')
+              : // Only an Equipment has living weapon (CR 702.92a).
+                kind === 'livingWeapon'
+                ? syntheticCard('SYNTHETIC Husk Blade')
+                : // Job select (CR 702.182a) is an Equipment's too.
+                  kind === 'jobSelect'
+                  ? syntheticCard('SYNTHETIC Job Blade')
+                  : // D-145: escalate belongs to a modal spell, Hideaway to a permanent (CR 702.120a, 702.75a).
+                    kind === 'escalate'
+                    ? syntheticCard('SYNTHETIC Escalating Charm')
+                    : kind === 'hideaway'
+                      ? syntheticCard('SYNTHETIC Hidden Cache')
+                      : // D-151: read ahead belongs to a Saga with chapter abilities (CR 702.155b).
+                        kind === 'readAhead'
+                        ? syntheticCard('SYNTHETIC Reading Rite')
+                        : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
       expect(validateCard(card), kind).toEqual([]);
     }
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {
@@ -314,6 +319,8 @@ describe('supported feature gate', () => {
         'noncombatDamageDealt',
         'permanentSacrificed',
         'ringTempted',
+        // Galadriel group 3: "Whenever you roll a die's highest natural result".
+        'rollsHighest',
         // D-513: "Whenever you scry".
         'scries',
         'state',

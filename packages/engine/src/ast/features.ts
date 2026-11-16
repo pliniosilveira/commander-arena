@@ -1051,7 +1051,6 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'mustBeBlocked',
   'doesntUntap',
   'cantBeCountered',
-  'cantActivateAbilities',
 ];
 
 /**

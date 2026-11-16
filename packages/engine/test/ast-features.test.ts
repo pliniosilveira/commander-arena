@@ -165,6 +165,7 @@ describe('the dimensions', () => {
       'lookAtTopOfLibrary',
       'attackTax',
       'optionalUntap',
+      'crewSaddleBonus',
       'untapInOthersUntapStep',
       'modifyPt',
       'characteristicPt',
