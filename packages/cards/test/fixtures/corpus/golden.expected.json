@@ -157,6 +157,23 @@
       "reasons": [],
       "ast": "6b872738"
     },
+    "04b35e95-2963-4a0a-bd1c-d516cda2dd37": {
+      "name": "Elven Farsight",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Scry 3, then you may reveal the top card of your library. If a creature card is revealed this way, draw a card.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "773d8606"
+    },
     "04b7362d-0490-4cb0-b5d7-2a7732f659ce": {
       "name": "Bojuka Bog",
       "group": "holdout",
@@ -317,6 +334,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "de520104"
+    },
+    "099ae8f2-5c84-43ab-aaa1-ea69f2bba784": {
+      "name": "Elrond, Lord of Rivendell",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever ~ or another creature you control enters, scry 1. If this is the second time this ability has resolved this turn, the Ring tempts you.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "30e88cc5"
     },
     "09dd85aa-47bc-4713-a9b9-8b52ff2285ed": {
       "name": "Misty Rainforest",
@@ -595,6 +629,23 @@
       "reasons": [],
       "ast": "e5501284"
     },
+    "162572f2-1757-42e9-bd97-e6bd9a762c0e": {
+      "name": "Ashaya, Soul of the Wild",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Nontoken creatures you control are Forest lands in addition to their other types.",
+          "reason": "unrecognised",
+          "slot": "static",
+          "closestRule": "static.permanents"
+        }
+      ],
+      "reasons": [],
+      "ast": "2919b7b4"
+    },
     "16c39265-72d9-4c86-a961-8dd38ff9adcd": {
       "name": "Consign to Memory",
       "group": "acceptance",
@@ -618,6 +669,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d3bef44a"
+    },
+    "17492186-9814-4c41-8111-1f000a96c212": {
+      "name": "Hobbit Hole",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Halflingcycling {4}",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "bfc999ad"
     },
     "180eda7c-fca2-403b-85cd-8ffebaf9f408": {
       "name": "Palace Jailer",
@@ -1729,6 +1796,30 @@
       "reasons": [],
       "ast": "0dfcc154"
     },
+    "4b8bf64b-4800-45ff-81c6-2857f34999b5": {
+      "name": "Multani, Yavimaya's Avatar",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "~ gets +1/+1 for each land you control and each land card in your graveyard.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "static.pt-count"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{1}{G}, Return two lands you control to their owner's hand: Return this card from your graveyard to your hand.",
+          "reason": "notRunnable",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "3f7f55b9"
+    },
     "4baa7847-dfcc-4aa3-aa64-2deeaa3f013b": {
       "name": "Murmuring Volume",
       "group": "acceptance",
@@ -1954,6 +2045,48 @@
       "unparsed": [],
       "reasons": [],
       "ast": "01c5c12c"
+    },
+    "561af57d-d43d-4d98-9ef6-18a0843f22ae": {
+      "name": "Defend the Rider",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose one —\n• Target permanent you control gains hexproof and indestructible until end of turn.\n• Create a 1/1 colorless Pilot creature token with \"~ saddles Mounts and crews Vehicles as though its power were 2 greater.\"",
+          "reason": "unrecognised",
+          "slot": "token",
+          "closestRule": "token.custom"
+        }
+      ],
+      "reasons": [],
+      "ast": "e683c277"
+    },
+    "561e8ecc-1f2b-4fd4-8f92-a0acea449816": {
+      "name": "Netherese Puzzle-Ward",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Focus Beam — At the beginning of your upkeep, roll a d4. Scry X, where X is the result.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "amount.x"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Perfect Illumination — Whenever you roll a die's highest natural result, draw a card.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.cast"
+        }
+      ],
+      "reasons": [],
+      "ast": "d164e56d"
     },
     "56fd0752-9fb0-4c05-90e5-c3b268b57c6f": {
       "name": "Cone of Cold",
@@ -2183,6 +2316,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0b2fab39"
+    },
+    "611bfaa6-b098-48d9-9e49-1e7dc8687f15": {
+      "name": "Repulsive Mutation",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Put X +1/+1 counters on target creature you control. Then counter up to one target spell unless its controller pays mana equal to the greatest power among creatures you control.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "spell.effect"
+        }
+      ],
+      "reasons": [],
+      "ast": "c501e9da"
     },
     "619173f4-0403-49cd-9659-2fedd5028a90": {
       "name": "Shire Terrace",
@@ -2441,6 +2591,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8729dee6"
+    },
+    "6ba0656f-e0d2-4735-9c66-3a00afa9fc23": {
+      "name": "Koma, Cosmos Serpent",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Sacrifice another Serpent: Choose one —\n• Tap target permanent. Its activated abilities can't be activated this turn.\n• ~ gains indestructible until end of turn.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "modal.choose"
+        }
+      ],
+      "reasons": [],
+      "ast": "2190df7d"
     },
     "6bae00e8-06cf-4ac4-a1cc-757e454109fe": {
       "name": "Ketria Triome",
@@ -2837,6 +3004,31 @@
       "reasons": [],
       "ast": "c26d86e5"
     },
+    "7ca99e2f-faf2-4301-a0ae-7cb880ba965b": {
+      "name": "Jace, Mirror Mage",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "When ~ enters, if ~ was kicked, create a token that's a copy of ~, except it's not legendary and its starting loyalty is 1.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "token.copy-except"
+        },
+        {
+          "face": 0,
+          "ability": 3,
+          "text": "0: Draw a card and reveal it. Remove a number of loyalty counters equal to that card's mana value from ~.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "0af1bd4b"
+    },
     "7cab62dc-a256-4da8-a3ea-b3903ec37077": {
       "name": "Griffin Aerie",
       "group": "acceptance",
@@ -2904,6 +3096,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "822ff66e"
+    },
+    "7d0a1ae5-cd93-4789-9666-fc7bbbc6b613": {
+      "name": "Eyes Everywhere",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{5}{U}: Exchange control of ~ and target nonland permanent. Activate only as a sorcery.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "73ca6484"
     },
     "7d881c57-0bd9-4c57-aa4a-b10808b86143": {
       "name": "Dimir Signet",
@@ -3291,6 +3500,31 @@
       "reasons": [],
       "ast": "7206efa3"
     },
+    "8d3c9646-2b6b-4315-939d-5a920efc0a60": {
+      "name": "Galadriel of Lothlórien",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever the Ring tempts you, if you chose a creature other than ~ as your Ring-bearer, scry 3.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "ability.triggered"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever you scry, you may reveal the top card of your library. If a land card is revealed this way, put it onto the battlefield tapped.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.reveal-separate-piles"
+        }
+      ],
+      "reasons": [],
+      "ast": "8e1a7a96"
+    },
     "8dd5f5af-d2d8-4356-8617-8381081b930c": {
       "name": "Yavimaya, Cradle of Growth",
       "group": "holdout",
@@ -3339,6 +3573,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "fa12f890"
+    },
+    "8f28b65b-4b73-4080-9cdc-d236ad99f39c": {
+      "name": "Track Down",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Scry 3, then reveal the top card of your library. If it's a creature or land card, draw a card.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.reveal-separate-piles"
+        }
+      ],
+      "reasons": [],
+      "ast": "3240c43c"
     },
     "90194ff1-db61-463f-b5a3-15cd85311d0e": {
       "name": "Beledros Witherbloom",
@@ -3716,6 +3967,23 @@
       ],
       "reasons": [],
       "ast": "fc17eb59"
+    },
+    "a58adf82-d9e2-4b47-933e-68180f280ba2": {
+      "name": "Mystic Speculation",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Buyback {2}",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "64329c3a"
     },
     "a5cbd257-c836-493e-bb1a-76242619dea2": {
       "name": "Big Score",
@@ -5262,6 +5530,23 @@
       "reasons": [],
       "ast": "ea59a6f1"
     },
+    "ef6c0054-3a89-4fac-b822-37c7d2514489": {
+      "name": "Matoya, Archon Elder",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever you scry or surveil, draw a card.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.cast"
+        }
+      ],
+      "reasons": [],
+      "ast": "5a22a0fa"
+    },
     "ef833546-f755-4ac5-867a-3926984e68a0": {
       "name": "Archaeomancer's Map",
       "group": "acceptance",
@@ -5277,6 +5562,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f8c33c33"
+    },
+    "efcbca5a-743c-4b16-a7cf-b07335b31ced": {
+      "name": "Shower of Arrows",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Destroy target artifact, enchantment, or creature with flying. Scry 1.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.target-permanent"
+        }
+      ],
+      "reasons": [],
+      "ast": "63e5c18a"
     },
     "f00bc101-8082-4459-b987-f0c4b7a12344": {
       "name": "Advanced Reconstruction",
@@ -5425,6 +5727,23 @@
       "reasons": [],
       "ast": "b61e0a93"
     },
+    "f6771d32-395e-4832-b33d-cbc12dff1516": {
+      "name": "Thranduil, Sindarin Liege // Silvan Rally",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 1,
+          "ability": 0,
+          "text": "Mill four cards, then put up to two land cards from among them into your hand.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.target-permanent"
+        }
+      ],
+      "reasons": [],
+      "ast": "bd27514a"
+    },
     "f6791df0-a37b-44dc-8bf3-40ac2304d188": {
       "name": "Dragonologist",
       "group": "acceptance",
@@ -5569,6 +5888,31 @@
       "reasons": [],
       "ast": "24559ea5"
     },
+    "fcb811a8-c6e6-4bc4-b64b-8963a7183669": {
+      "name": "Bonny Pall, Clearcutter",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "When ~ enters, create Beau, a legendary blue Ox creature token with \"Beau's power and toughness are each equal to the number of lands you control.\"",
+          "reason": "unrecognised",
+          "slot": "token",
+          "closestRule": "token.named-legendary"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Whenever you attack, draw a card, then you may put a land card from your hand or graveyard onto the battlefield.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "6edb3cc1"
+    },
     "fcc9f3bc-0bc3-4189-a4d0-9698594b99a8": {
       "name": "Enchanted River's Grasp",
       "group": "acceptance",
@@ -5576,6 +5920,34 @@
       "unparsed": [],
       "reasons": [],
       "ast": "052f1ee9"
+    },
+    "fdb96b5c-ecac-4db3-8b9a-24f824149f91": {
+      "name": "Nissa, Steward of Elements",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "0: Look at the top card of your library. If it's a land card or a creature card with mana value less than or equal to the number of loyalty counters on ~, you may put that card onto the battlefield.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.look-reorder"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "−6: Untap up to two target lands you control. They become 5/5 Elemental creatures with flying and haste until end of turn. They're still lands.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [
+        "unsupported loyalty value \"X\"",
+        "faces[0].loyalty: a planeswalker needs a non-negative loyalty"
+      ],
+      "ast": "65914968"
     },
     "ff5caed4-0276-476d-8fae-edae2536df7f": {
       "name": "Archangel of Tithes",
@@ -5789,7 +6161,7 @@
     },
     "acceptance": {
       "supported": 375,
-      "total": 392
+      "total": 411
     }
   }
 }
