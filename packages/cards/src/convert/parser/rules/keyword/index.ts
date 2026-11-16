@@ -362,6 +362,6 @@ export const KEYWORD_RULES = [
   ...COMMANDER_KEYWORD_RULES,
   ...ESCALATE_KEYWORD_RULES,
   ...WARD_CREW_RULES,
-  // Galadriel deck, group 3 (D-1620): "Buyback {2}".
+  // Galadriel deck, group 3 (D-548): "Buyback {2}".
   ...GALADRIEL_G3_KEYWORD_RULES,
 ];

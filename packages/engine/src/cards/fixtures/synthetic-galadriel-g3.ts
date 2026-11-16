@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 3 OF THE GALADRIEL DECK (issue 43, D-1620 to D-1629 numbers). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 3 OF THE GALADRIEL DECK (issue 43, D-548 to D-557 numbers). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the real cards of the group need from the engine, written out by hand (the cards package checks that the grammar lowers the real Oracle text to
  * these same nodes): a modal instant that gives a permanent hexproof and indestructible or makes a Pilot token that counts more for crewing, an enchantment that exchanges control of

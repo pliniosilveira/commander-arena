@@ -3241,7 +3241,7 @@ export const GALADRIEL_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle]
 ];
 
 /**
- * The SYNTHETIC cards of group 3 of the Galadriel deck (issue 43, D-1620 and later): a modal instant that shields a permanent or makes a Pilot token that crews as though its power
+ * The SYNTHETIC cards of group 3 of the Galadriel deck (issue 43, D-548 and later): a modal instant that shields a permanent or makes a Pilot token that crews as though its power
  * were 2 greater, an enchantment that exchanges control of itself and a nonland permanent, a sorcery that exchanges control of two creatures, a planeswalker with kicker whose copy is not
  * legendary and starts with loyalty 1 and whose 0 ability draws and reveals a card and loses loyalty equal to its mana value, a legendary Serpent that makes a token each upkeep and
  * sacrifices a Serpent to tap a permanent and stop its abilities or to be indestructible, a sorcery with buyback, an enchantment that rolls a d4 at upkeep and scries that many cards, an

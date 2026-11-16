@@ -495,12 +495,12 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - "from your hand or graveyard" onto the battlefield is read (D-544); a third place ("or library"), "graveyard or hand", more than one card, and the battlefield attached to a creature (an Aura card) are not. The agents take the first cards of the legal list (a land has no mana value), so a land of the hand is taken before one of the graveyard.
 - The rulings of the five cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
 
-## The Galadriel deck, group 3 (issue 43, D-1620 to D-1630, provisional)
+## The Galadriel deck, group 3 (issue 43, D-548 to D-558, provisional)
 
-- Saddle (CR 702.171) is not built: "saddles Mounts" in the text of the Pilot is accepted but does nothing until a supported card has Saddle; `crewPowerOf` is the function a Saddle cost will read (D-1628).
-- "Its activated abilities can't be activated" is read after a tap in the same sequence ("Tap target permanent. Its activated abilities can't be activated this turn"), until end of turn; a static form and other durations are not read, and the validator does not forbid the static form (D-1624).
-- The die: a roll that an effect modifies (a bonus or a penalty to the roll, a reroll) is not built, so the natural result is the result; "highest natural result" counts a die whose result equals its sides (D-1623).
-- Exchange control: only two permanents (CR 701.12b) and for as long as the game lasts; an exchange of other things (life totals, hands) is not read (D-1620).
-- Buyback is read on an instant or a sorcery whose cost is mana; a buyback cost that is not mana is not read (D-1621).
-- The "pay mana equal to ..." of a counterspell is read for the greatest power among creatures you control; another amount needs only its amount rule (D-1625).
-- The Scryfall rulings of the seven cards were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md` (D-1630).
+- Saddle (CR 702.171) is not built: "saddles Mounts" in the text of the Pilot is accepted but does nothing until a supported card has Saddle; `crewPowerOf` is the function a Saddle cost will read (D-556).
+- "Its activated abilities can't be activated" is read after a tap in the same sequence ("Tap target permanent. Its activated abilities can't be activated this turn"), until end of turn; a static form and other durations are not read, and the validator does not forbid the static form (D-552).
+- The die: a roll that an effect modifies (a bonus or a penalty to the roll, a reroll) is not built, so the natural result is the result; "highest natural result" counts a die whose result equals its sides (D-551).
+- Exchange control: only two permanents (CR 701.12b) and for as long as the game lasts; an exchange of other things (life totals, hands) is not read (D-548).
+- Buyback is read on an instant or a sorcery whose cost is mana; a buyback cost that is not mana is not read (D-549).
+- The "pay mana equal to ..." of a counterspell is read for the greatest power among creatures you control; another amount needs only its amount rule (D-553).
+- The Scryfall rulings of the seven cards were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md` (D-558).

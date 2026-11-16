@@ -1,4 +1,4 @@
-// The Galadriel deck (issue 43), group 3 (D-1620 to D-1629 numbers): the REAL Oracle text of Defend the Rider, Eyes Everywhere, Jace, Mirror Mage, Koma, Cosmos Serpent, Mystic Speculation,
+// The Galadriel deck (issue 43), group 3 (D-548 to D-557 numbers): the REAL Oracle text of Defend the Rider, Eyes Everywhere, Jace, Mirror Mage, Koma, Cosmos Serpent, Mystic Speculation,
 // Netherese Puzzle-Ward and Repulsive Mutation (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is defined in an engine scenario and is
 // played through applyAction, so the nodes the parser writes for the real text are what the engine runs. The abilities of each real card are also the ones of its SYNTHETIC sibling of the
 // engine fixtures (`synthetic-galadriel-g3.ts`), which the engine tests and the AI soak play. Pins: CR 701.12 (exchange), 702.27a (buyback), 702.33 (kicker), 707.9b (a copy's exceptions),
