@@ -664,7 +664,9 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * and its trigger goes on the stack; declining reveals nothing. `'miracle'`: "you may cast it by paying [its miracle cost]": `subject` is
    * the card in the hand, `cost` its miracle cost, `source` the trigger on the stack; declining leaves the card in the hand.
    * `'castCard'` (D-350, CR 608.2g): "you may cast target instant or sorcery card from a graveyard": `subject` is the card (in a graveyard, public), `source` the ability on
-   * the stack; declining leaves the card in its graveyard.
+   * the stack; declining leaves the card in its graveyard. `'buyback'` (CR 702.27a, 601.2b; Galadriel group 3): the spell being cast has buyback and the total with the buyback
+   * cost can be paid; `source` is the spell on the stack, `cost` the buyback cost, accepting pays it (the card returns to the hand as the spell resolves) and declining casts the
+   * spell without it, and `cancel` rewinds the cast, as for the kicker.
    */
   readonly purpose?:
     | 'kicker'
@@ -681,7 +683,8 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'gift'
     | 'costChoice'
     | 'pairReturn'
-    | 'castCard';
+    | 'castCard'
+    | 'buyback';
   /**
    * For purpose `'pairReturn'` (D-272, "You may return those cards to the battlefield under their owners' control", Dawnbreak Reclaimer): the cards that would return, which are in
    * graveyards and public: `theirs` the card chosen in an opponent's graveyard (it returns under its owner's control, the opponent's), `mine` the card chosen in the graveyard of

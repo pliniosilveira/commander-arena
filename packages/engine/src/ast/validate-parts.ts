@@ -1357,6 +1357,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (!scope.xAllowed)
         issue(out, path, 'X is used but nothing in this ability or spell has an X');
       break;
+    case 'dieResult':
+      // CR 706.2 (Galadriel group 3): "Scry X, where X is the result": the die rolled earlier in the same sequence (`scope.dieSides` is set after a `rollDie`).
+      if (scope.dieSides === undefined) {
+        issue(
+          out,
+          path,
+          'dieResult needs a rollDie before it in the same sequence (the result of the roll is what it reads)',
+        );
+      }
+      break;
     case 'enteredX':
       // CR 107.3m (Hylda group 3): only the enters trigger of the permanent itself reads the X of the spell it came from (the card's {X} is checked with the face).
       if (scope.entersX !== true) {
@@ -2485,7 +2495,9 @@ function movesObjects(e: Effect): boolean {
     // D-216: the card a `lookAndSplit` exiled is "the exiled card" ("You may play the exiled card this turn").
     (e?.kind === 'lookAndSplit' && e.exile > 0) ||
     // D-327: the cards a `mill` put into a graveyard are "that card" ("Mill a card. You may play that card this turn.").
-    e?.kind === 'mill'
+    e?.kind === 'mill' ||
+    // Galadriel group 3: the card a `draw` with `reveal` drew is "that card" ("Draw a card and reveal it. ... that card's mana value").
+    (e?.kind === 'draw' && e.reveal === true)
   );
 }
 
@@ -2926,6 +2938,13 @@ function checkCopyExceptions(
   }
   if (spec.noManaCost !== undefined && spec.noManaCost !== true) {
     issue(out, `${path}.noManaCost`, 'noManaCost must be true when present');
+  }
+  // Galadriel group 3: "except it's not legendary and its starting loyalty is 1".
+  if (spec.notLegendary !== undefined && spec.notLegendary !== true) {
+    issue(out, `${path}.notLegendary`, 'notLegendary must be true when present');
+  }
+  if (spec.startingLoyalty !== undefined && !isCount(spec.startingLoyalty)) {
+    issue(out, `${path}.startingLoyalty`, 'startingLoyalty is a whole number from 0');
   }
 }
 
@@ -3470,7 +3489,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'counterUnlessPays names a target spell or ability, or the triggering one (triggerSubject)',
         );
       }
-      checkCosts(e.cost, `${path}.cost`, out);
+      if (e.genericAmount !== undefined) {
+        // Galadriel group 3 (CR 118.12a): "unless its controller pays mana equal to ...": the whole cost is that much generic mana, of a target spell.
+        if (kindOf(e.objects) !== 'target') {
+          issue(out, `${path}.genericAmount`, 'a generic amount to pay is for a target spell');
+        }
+        if (!Array.isArray(e.cost) || e.cost.length !== 0) {
+          issue(out, `${path}.cost`, 'the cost is empty when the amount to pay is generic');
+        }
+        checkAmount(e.genericAmount, `${path}.genericAmount`, scope, out);
+      } else {
+        checkCosts(e.cost, `${path}.cost`, out);
+      }
       break;
     case 'playersMay': {
       // D-210 (CR 608.2d): each player named is asked whether to do the effect; the effect and what is done otherwise are ordinary effects.
@@ -3530,6 +3560,44 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'exchangeControl': {
+      // CR 701.12a (Galadriel group 3): two permanents, each the permanent with the ability or a target; never the same one twice.
+      const sides = [
+        ['first', e.first],
+        ['second', e.second],
+      ] as const;
+      for (const [name, selector] of sides) {
+        const named = kindOf(selector);
+        if (named === 'target' || named === 'this') {
+          checkObjectSelector(selector, `${path}.${name}`, scope, out);
+        } else {
+          issue(
+            out,
+            `${path}.${name}`,
+            'exchangeControl names the permanent with the ability (this) or a target',
+          );
+        }
+      }
+      if (kindOf(e.first) === kindOf(e.second) && kindOf(e.first) === 'this') {
+        issue(out, path, 'exchangeControl names two different permanents');
+      }
+      if (
+        kindOf(e.first) === 'target' &&
+        kindOf(e.second) === 'target' &&
+        (e.first as { id?: string }).id === (e.second as { id?: string }).id
+      ) {
+        issue(out, path, 'exchangeControl names two different permanents');
+      }
+      break;
+    }
+    case 'removeCounters':
+      // CR 122.1 (Galadriel group 3): counters of one kind come off the permanents the selector names, a number read as the effect resolves.
+      checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
+      if (typeof e.counter !== 'string' || e.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
+      checkAmount(e.count, `${path}.count`, scope, out);
+      break;
     case 'becomeCopy':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       checkCopySource(e.of, `${path}.of`, scope, out);
@@ -4357,6 +4425,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'discard':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       checkAmount(e.count, `${path}.count`, scope, out);
+      // Galadriel group 3: "Draw a card and reveal it": one card, drawn (not "up to"); `moved` names it afterwards.
+      if (e.kind === 'draw' && e.reveal !== undefined) {
+        if (e.reveal !== true || e.count !== 1 || e.upTo !== undefined) {
+          issue(
+            out,
+            `${path}.reveal`,
+            'reveal is true, with a count of exactly 1 and no "up to"',
+          );
+        }
+      }
       // D-151: "Discard any number of cards": the player chooses how many, so `count` is 0 and nothing else narrows the choice.
       if (e.kind === 'discard' && e.anyNumber !== undefined) {
         if (e.anyNumber !== true || e.count !== 0 || e.unless !== undefined) {

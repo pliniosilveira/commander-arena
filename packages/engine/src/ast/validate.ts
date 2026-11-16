@@ -352,6 +352,12 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'lookAtTopOfLibrary':
     case 'optionalUntap':
       break;
+    case 'crewSaddleBonus':
+      // Galadriel group 3 (CR 702.122a): the power a creature counts more as it is tapped for a crew cost: a positive whole number.
+      if (!Number.isSafeInteger(s.amount) || s.amount < 1) {
+        issue(out, `${path}.amount`, 'the bonus is a positive whole number');
+      }
+      break;
     case 'untapInOthersUntapStep':
       // D-320: the permanent itself (`self`), or (D-229) the permanents a filter names: exactly one of the two.
       if (s.self !== undefined && s.self !== true) {
@@ -612,6 +618,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'tokenCreated':
     case 'scries':
     case 'surveils':
+    case 'rollsHighest':
       // D-464, D-465, D-513: the player who commits the crime, creates the token or scries, relative to the controller of this ability.
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);

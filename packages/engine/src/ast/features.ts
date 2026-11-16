@@ -166,6 +166,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'untap',
     'removeAllCounters',
     'removeAllPlayerCounters',
+    // Galadriel group 3: "Remove a number of loyalty counters equal to that card's mana value from ~" (CR 122.1).
+    'removeCounters',
     // D-209: "You get {E}{E}" (`gainEnergy`) and "connives" (`connive`).
     'gainEnergy',
     'connive',
@@ -195,6 +197,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'permanentsEnterTapped',
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
     'gainControl',
+    // Galadriel group 3: "Exchange control of this enchantment and target nonland permanent" (CR 701.12a, 701.12b).
+    'exchangeControl',
     'shuffle',
     // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
     'rollDie',
@@ -360,6 +364,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'scries',
     // Galadriel group 1: "Whenever you surveil" (CR 701.25).
     'surveils',
+    // Galadriel group 3: "Whenever you roll a die's highest natural result" (CR 706.1a, 706.2).
+    'rollsHighest',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -466,6 +472,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-129: Storm (CR 702.40a) and Replicate (CR 702.56a).
     'storm',
     'replicate',
+    // Galadriel group 3: Buyback (CR 702.27a).
+    'buyback',
     'gravestorm',
     // D-135: Gift (CR 702.174), "Gift a card".
     'gift',
@@ -847,6 +855,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackTax',
     // D-125: "You may choose not to untap ~ during your untap step."
     'optionalUntap',
+    // Galadriel group 3: "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a).
+    'crewSaddleBonus',
     // D-229: "Untap all creatures you control during each other player's untap step."
     'untapInOthersUntapStep',
     'modifyPt',
@@ -961,6 +971,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificedAsCost',
     // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
     'enteredX',
+    // Galadriel group 3: "Scry X, where X is the result" (CR 706.2): the natural result of the die rolled earlier in the same resolution.
+    'dieResult',
   ],
   // D-405: 'library' is "then shuffle and put that card on top".
   searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library'],
@@ -1039,6 +1051,7 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'mustBeBlocked',
   'doesntUntap',
   'cantBeCountered',
+  'cantActivateAbilities',
 ];
 
 /**
@@ -1052,6 +1065,8 @@ export const RESTRICTABLE_BY_EFFECT: readonly Restriction[] = [
   'cantBeBlocked',
   'attacksEachCombat',
   'mustBeBlocked',
+  // Galadriel group 3: "Its activated abilities can't be activated this turn."
+  'cantActivateAbilities',
 ];
 
 /**
@@ -1441,6 +1456,8 @@ export const STATIC_KINDS = [
   'attackTax',
   /** "You may choose not to untap ~ during your untap step." (CR 502.3, D-125). */
   'optionalUntap',
+  /** "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a, Galadriel group 3). */
+  'crewSaddleBonus',
   /** "Untap all creatures you control during each other player's untap step." (CR 502.3, D-229). */
   'untapInOthersUntapStep',
   /** "~ costs {1} less to cast for each ...", "Artifact spells you cast cost {1} less" (D-095): the engine's `costReduction`. */
@@ -1595,6 +1612,8 @@ export const AMOUNT_KINDS = [
   'sacrificedAsCost',
   /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
   'enteredX',
+  /** "Scry X, where X is the result" (CR 706.2, Galadriel group 3): the engine's `dieResult` amount, the natural result of the die rolled earlier in the resolution. */
+  'dieResult',
   'bound',
 ] as const;
 export type AmountKind = (typeof AMOUNT_KINDS)[number];
@@ -1722,6 +1741,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   tap: true,
   untap: true,
   removeAllCounters: true,
+  removeCounters: true,
   removeAllPlayerCounters: true,
   gainEnergy: true,
   connive: true,
@@ -1740,6 +1760,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   requireAttack: true,
   permanentsEnterTapped: true,
   gainControl: true,
+  exchangeControl: true,
   shuffle: true,
   rollDie: true,
   scry: true,
@@ -1845,6 +1866,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tokenCreated: true,
   scries: true,
   surveils: true,
+  rollsHighest: true,
   interveningIf: true,
   alone: true,
   attacksAt: true,
@@ -1877,6 +1899,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   enchant: true,
   equip: true,
   kicker: true,
+  buyback: true,
   flashback: true,
   prowess: true,
   ward: true,

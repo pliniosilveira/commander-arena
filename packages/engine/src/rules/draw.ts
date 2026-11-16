@@ -11,6 +11,7 @@
  */
 import type { GameEvent } from '../state/events';
 import type { GameState, Instruction } from '../state/types';
+import { derive } from './derive';
 import { drawReplacementOf } from './draw-replace';
 import { drawCard } from './effect-support';
 import { miracleOffer } from './miracle';
@@ -64,7 +65,30 @@ export function runDraw(state: GameState, input: DrawInstruction): StepOutcome {
     offer === null
       ? rest
       : [{ kind: 'miracleReveal', seat: instruction.seat, card: offer, answer: null }, ...rest];
+  // CR 701.20a, 400.7j (Galadriel group 3): "Draw a card and reveal it": the card drawn is shown to every player and is what `moved` names for the rest of the resolution (a draw
+  // that drew no card reveals nothing and leaves `moved` empty).
+  const drawn = r.events.find((e) => e.kind === 'cardDrawn');
+  const revealed: GameEvent[] = [];
+  if (instruction.reveal === true && drawn?.kind === 'cardDrawn') {
+    const card = r.state.objects[drawn.object];
+    if (card?.card != null) {
+      revealed.push({
+        kind: 'cardsRevealed',
+        seat: instruction.seat,
+        cards: [card.card],
+        names: [derive(r.state, card).name],
+        from: 'hand',
+      });
+    }
+  }
   // D-135: "if you do" counts the cards actually drawn (an empty library draws none).
-  const outcome = { ...done(r.state, [...marked, ...r.events], queue), performed: drew ? 1 : 0 };
+  const base = done(r.state, [...marked, ...r.events, ...revealed], queue);
+  const outcome = {
+    ...base,
+    performed: drew ? 1 : 0,
+    ...(instruction.reveal === true
+      ? { lastMoved: drawn?.kind === 'cardDrawn' ? [drawn.object] : [] }
+      : {}),
+  };
   return first ? { ...outcome, thisWay: { playersDrew: 1 } } : outcome;
 }

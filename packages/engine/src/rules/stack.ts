@@ -327,9 +327,25 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
     const adventure = isAdventureSpell(next, obj);
     // CR 614.1a, 608.2n (D-439): "exile that card instead of putting it into your graveyard as it resolves": an instant or sorcery that carries the mark is exiled.
     const exiled = exiledAsItResolves(obj, permanent, adventure);
+    // CR 702.27a (Galadriel group 3): "If the buyback cost was paid, put this spell into its owner's hand instead of into that player's graveyard as it resolves": an instant
+    // or sorcery card; not a permanent, an Adventure, a flashback spell or one another effect sends to exile (those keep their own place).
+    const boughtBack =
+      obj.stack?.boughtBack === true &&
+      obj.card !== null &&
+      !permanent &&
+      !adventure &&
+      !exiled &&
+      obj.stack.flashback !== true &&
+      obj.stack.exileInstead !== true;
     const moved = moveObject(next, {
       object: res.object,
-      to: permanent ? 'battlefield' : adventure || exiled ? 'exile' : 'graveyard',
+      to: permanent
+        ? 'battlefield'
+        : adventure || exiled
+          ? 'exile'
+          : boughtBack
+            ? 'hand'
+            : 'graveyard',
       // CR 400.3 (D-353): an instant or sorcery that resolves goes to its OWNER's graveyard, whoever cast it (a card cast from another player's graveyard); a
       // permanent enters under its controller's control (CR 110.2), and an Adventure is exiled for its caster (CR 715.3d).
       toSeat: permanent || adventure ? controllerOf(state, obj) : obj.owner,

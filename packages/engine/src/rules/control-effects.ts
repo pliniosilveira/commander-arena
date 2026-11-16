@@ -128,6 +128,58 @@ export function runGainControl(
 }
 
 /**
+ * Runs `exchangeControl` (CR 701.12a, 701.12b, 613.1b, 611.2a; Galadriel group 3): the two permanents swap controllers. The whole exchange is made or none of it: both selectors must
+ * name a permanent on the battlefield, and two different players must control them (CR 701.12b: "if those permanents are controlled by the same player, the exchange effect does
+ * nothing"). Each player gains control of the permanent the other controlled as the exchange begins, at the same moment: two layer 2 effects with no duration, made together (each
+ * has a timestamp, CR 613.7b, and the later one decides when several give control of the same permanent). Their controllers are fixed now (CR 611.2c), so a later change of
+ * control of one of them does not move the other.
+ */
+export function runExchangeControl(
+  state: GameState,
+  node: Extract<Effect, { kind: 'exchangeControl' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): StepOutcome {
+  const named = (selector: Extract<Effect, { kind: 'exchangeControl' }>['first']) =>
+    resolveObjects(state, selector, ctx, targets).filter(
+      (id) => state.objects[id]?.zone === 'battlefield',
+    );
+  const [first, ...moreFirst] = named(node.first);
+  const [second, ...moreSecond] = named(node.second);
+  // CR 701.12a: if the entire exchange can't be completed, no part of it occurs.
+  if (first === undefined || second === undefined || moreFirst.length > 0 || moreSecond.length > 0) {
+    return done(state);
+  }
+  const a = state.objects[first];
+  const b = state.objects[second];
+  if (a === undefined || b === undefined || first === second) return done(state);
+  const seatA = controllerOf(state, a);
+  const seatB = controllerOf(state, b);
+  // CR 701.12b: the same player controls both.
+  if (seatA === seatB) return done(state);
+  const before = controllersOf(state, [first, second]);
+  const [stampA, stampedA] = allocateTimestamp(state);
+  const [stampB, stampedB] = allocateTimestamp(stampedA);
+  const give = (id: ObjectId, seat: SeatId, timestamp: number): ContinuousEffect => ({
+    id: `ce${timestamp}`,
+    timestamp,
+    objects: [id],
+    until: 'permanent',
+    change: { kind: 'control', seat },
+  });
+  const next: GameState = {
+    ...stampedB,
+    continuousEffects: [
+      ...stampedB.continuousEffects,
+      give(first, seatB, stampA),
+      give(second, seatA, stampB),
+    ],
+  };
+  const changed = controlChanges(next, before);
+  return done(changed.state, changed.events);
+}
+
+/**
  * Removes the continuous effects `ends` names. A permanent whose controller changes because a control effect ended goes back to who had it: it is
  * summoning sick for them again (`controlChangedAt`, CR 302.6) and leaves combat (CR 506.4). Returns the state and the events.
  */

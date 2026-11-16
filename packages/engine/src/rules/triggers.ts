@@ -330,6 +330,11 @@ function occurrences(
             },
           ]
         : [];
+    case 'rollsHighest':
+      // CR 706.1a, 706.2 (Galadriel group 3): a die rolled whose natural result is the highest its sides allow (the engine has no modifier of a roll, so the result is natural).
+      return event.kind === 'dieRolled' && event.result === event.sides
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
+        : [];
     case 'becomesUntapped':
       // CR 603.2e (D-206): a permanent that untaps (the untap step or an effect); a stun counter that stops it (CR 122.1d) makes no `untapped` event.
       return event.kind === 'untapped' ? [{ subject: event.object, seat: null }] : [];
@@ -614,7 +619,8 @@ function matches(
       return matchesWhat(state, trigger.what, subject, candidate);
     case 'scries':
     case 'surveils':
-      // CR 701.22, 701.25 (D-513): the player who scried or surveilled, relative to the controller of this ability.
+    case 'rollsHighest':
+      // CR 701.22, 701.25 (D-513): the player who scried or surveilled, relative to the controller of this ability. CR 706.1a: the player who rolled the die.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
       return true;
@@ -776,6 +782,7 @@ function isRelevant(event: GameEvent): boolean {
       return true; // CR 510.2 (combat damage), 120.3 (D-133: "is dealt damage" reads any damage)
     case 'scried':
     case 'surveiled':
+    case 'dieRolled': // CR 706.2 (Galadriel group 3): "whenever you roll a die's highest natural result"
     case 'tokenCreated':
     case 'died':
     case 'sacrificed':

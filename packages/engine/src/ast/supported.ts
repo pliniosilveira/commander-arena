@@ -800,8 +800,8 @@ function walkAbility(
       } else if (a.keyword.kind === 'escalate') {
         // CR 702.120a: an additional cost paid as the spell is cast (rules/cast.ts); mana only, no X (D-145).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
-      } else if (a.keyword.kind === 'replicate') {
-        // CR 702.56a: an additional cost paid as the spell is cast (rules/cast.ts); mana only, no X (D-129).
+      } else if (a.keyword.kind === 'replicate' || a.keyword.kind === 'buyback') {
+        // CR 702.56a: an additional cost paid as the spell is cast (rules/cast.ts); mana only, no X (D-129). CR 702.27a: the same for the buyback cost (Galadriel group 3).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
       } else if (a.keyword.kind === 'suspend') {
         // CR 702.62a: paid as the special action is taken (rules/special-actions.ts); mana only, no X (D-128).
@@ -999,6 +999,15 @@ export function unsupportedFeatureIssues(def: CardDefinition): AstIssue[] {
       out.push({
         path: `${base}.abilities`,
         message: 'more than one kicker or multikicker ability is not implemented by the engine yet',
+      });
+    }
+    // CR 702.27a (Galadriel group 3): one buyback question and cost: one instance is run.
+    if (
+      face.abilities.filter((a) => a.kind === 'keyword' && a.keyword.kind === 'buyback').length > 1
+    ) {
+      out.push({
+        path: `${base}.abilities`,
+        message: 'more than one buyback ability is not implemented by the engine yet',
       });
     }
     // CR 702.56b (D-129): each instance of replicate is paid and triggers separately; the engine asks one count, so
