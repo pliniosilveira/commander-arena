@@ -758,6 +758,7 @@ function runEffect(
                 to: effect.to,
                 position: effect.position ?? 'top',
                 ...(effect.objects.optional === true ? { optional: true as const } : {}),
+                ...(effect.objects.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
                 // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
                 ...(effect.objects.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
                 ...(effect.objects.exceptSacrificed === true

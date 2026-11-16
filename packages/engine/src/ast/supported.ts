@@ -367,12 +367,6 @@ function walkEffect(
           });
         }
       }
-      if (def.power === '*' || def.toughness === '*') {
-        out.push({
-          path: `${path}.token.definition.power`,
-          message: 'characteristic-defining power/toughness (*) is not implemented yet',
-        });
-      }
       for (const [i, a] of def.abilities.entries()) {
         walkAbility(a, `${path}.token.definition.abilities[${i}]`, out, 'token');
         if (a.kind === 'static' && 'subject' in a.static && a.static.subject.kind === 'attached') {

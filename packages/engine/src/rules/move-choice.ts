@@ -29,6 +29,7 @@ function cardCandidates(
   seat: SeatId,
   source: ObjectId | null,
   filter: ObjectFilter,
+  alsoGraveyard = false,
 ): ObjectId[] {
   // CR 607.2a (D-207): "a card exiled with this artifact": the cards the permanent exiled with its linked ability that are still in exile.
   if (filter.zone === 'exile') {
@@ -45,13 +46,18 @@ function cardCandidates(
   const zone = filter.zone === 'graveyard' ? 'graveyard' : 'hand';
   // The zone belongs to the player ("your hand"), so whose the card is does not need saying again.
   const { controller: _you, ...described } = filter;
-  return zoneList(state, zone, seat).filter((id) => {
-    const obj = state.objects[id];
-    return (
-      obj !== undefined &&
-      matchesFilter(state, obj, { ...described, zone }, { controller: seat, source })
-    );
-  });
+  // D-1616: "from your hand or graveyard": the hand first, then the graveyard (the order of the words).
+  const zones: readonly ('hand' | 'graveyard')[] =
+    alsoGraveyard && zone === 'hand' ? ['hand', 'graveyard'] : [zone];
+  return zones.flatMap((z) =>
+    zoneList(state, z, seat).filter((id) => {
+      const obj = state.objects[id];
+      return (
+        obj !== undefined &&
+        matchesFilter(state, obj, { ...described, zone: z }, { controller: seat, source })
+      );
+    }),
+  );
 }
 
 const WHERE: Readonly<Record<ChooseMoveInstruction['to'], string>> = {
@@ -107,7 +113,13 @@ export function runChooseMove(
   if (instruction.chosen !== null) return run(instruction.chosen, false);
   const fromCards = isCardZoneChoice(instruction.filter);
   const legal = fromCards
-    ? cardCandidates(state, chooser, res.source, instruction.filter).filter(
+    ? cardCandidates(
+        state,
+        chooser,
+        res.source,
+        instruction.filter,
+        instruction.alsoGraveyard === true,
+      ).filter(
         // D-411: only the cards the effect before it moved.
         (id) => instruction.among === undefined || instruction.among.includes(id),
       )
@@ -134,6 +146,7 @@ export function runChooseMove(
         source: res.object,
         purpose: 'move',
         zone,
+        ...(instruction.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
         legal,
         min,
         max,
@@ -143,7 +156,9 @@ export function runChooseMove(
             ? 'from among the cards put into your graveyard'
             : zone === 'exile'
               ? 'exiled with this permanent'
-              : `from your ${zone}`
+              : instruction.alsoGraveyard === true
+                ? 'from your hand or graveyard'
+                : `from your ${zone}`
         } to put ${WHERE[instruction.to]}`,
       },
     };

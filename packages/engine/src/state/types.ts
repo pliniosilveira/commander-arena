@@ -1061,6 +1061,8 @@ export type Instruction =
       readonly position: 'top' | 'bottom' | number;
       /** "You may ..." (`ChooseSelector.optional`, D-139): none up to `count` are chosen. */
       readonly optional?: true;
+      /** "From your hand or graveyard" (`ChooseSelector.alsoGraveyard`, D-1616): the cards of the graveyard are candidates besides those of the hand `filter` names. */
+      readonly alsoGraveyard?: true;
       /** Moving a card chosen from the hand or the graveyard onto the battlefield (D-139): how it enters. */
       readonly tapped?: boolean;
       readonly controller?: 'owner' | 'you';

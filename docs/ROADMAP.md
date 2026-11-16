@@ -471,3 +471,14 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - "Target creature that player controls" is read only for the player of the event of the trigger (D-521); with an earlier player target in the same ability the text stays unread.
 - The cost reduction "during your turn" takes a plain number of generic mana off the first mana cost, never below zero; other turns ("during an opponent's turn") and a reduction of a mana ability are not read.
 - The rulings of the eleven cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
+
+## The Galadriel deck, group 2 (issue 43, D-1610 to D-1618)
+
+- "[Creature type]cycling {N}" is read (D-1610); the supertype and card type forms of CR 702.29e ("Snow-covered landcycling", "artifact landcycling") are not.
+- "for each X and each Y" is read in a static +N/+N only (D-1611): in a spell ("Draw a card for each ... and each ...") the callers' lists do not name the rule; three counts and a step other than +1/+1 of a sum are not read.
+- A graveyard ability may return other permanents to the hand as a cost (D-1612); a sacrifice of another permanent, a discard or any other cost of an ability that works from the graveyard is still refused.
+- "are Forest lands in addition to their other types" is read for a plural group with the five basic land types (D-1613); "Lands you control are Forests in addition to their other land types" (Yavimaya, Cradle of Growth) and the singular for a permanent an Aura is attached to are not. The older creature type rule also reads "Creatures you control are Forests in addition to their other types" as a creature type Forest with no land card type (CR 205.3d would not allow it): no card of a deck needs it, not touched. Dependencies between layer 4 effects (CR 613.8) are not modelled.
+- "up to N <kind> cards from among them" reads a number of two or more after a mill (D-1614); other places than "them" and "the cards milled this way" ("among the cards exiled this way") are not read.
+- A token with a power and toughness defined by its own ability is read with a legendary name and one defining ability only (D-1615): keywords with it, a token with no name, an artifact creature and another static ability are not.
+- "from your hand or graveyard" onto the battlefield is read (D-1616); a third place ("or library"), "graveyard or hand", more than one card, and the battlefield attached to a creature (an Aura card) are not. The agents take the first cards of the legal list (a land has no mana value), so a land of the hand is taken before one of the graveyard.
+- The rulings of the five cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.

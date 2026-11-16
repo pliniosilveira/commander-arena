@@ -323,7 +323,15 @@ export function pickerCards(view: GameView, decision: ChooseCardsDecision): read
     const { hand, battlefield } = beholdCards(view, decision);
     return [...hand, ...battlefield];
   }
-  if (decision.zone === 'hand') return myHand(view).filter((o) => decision.legal.includes(o.id));
+  if (decision.zone === 'hand') {
+    const inHand = myHand(view).filter((o) => decision.legal.includes(o.id));
+    // D-1616: "a land card from your hand or graveyard": the legal cards of the graveyards are listed after those of the hand (a graveyard is public, CR 404.2).
+    if (decision.alsoGraveyard !== true) return inHand;
+    const inGraveyard = view.seats
+      .flatMap((seat) => seat.graveyard)
+      .filter((o) => decision.legal.includes(o.id));
+    return [...inHand, ...inGraveyard];
+  }
   if (decision.zone === 'graveyard') {
     // D-272: the cards may be in the graveyard of another player ("a creature card in an opponent's graveyard"); every graveyard is public (CR 404.2).
     return view.seats

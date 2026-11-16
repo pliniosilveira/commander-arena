@@ -126,6 +126,9 @@ describe('typecycling (CR 702.29e)', () => {
     ['Swampcycling {2}', { subtypes: ['Swamp'] }, mana('2')],
     ['Mountaincycling {1}{R}', { subtypes: ['Mountain'] }, mana('1', 'R')],
     ['Forestcycling {2}', { subtypes: ['Forest'] }, mana('2')],
+    // Galadriel deck group 2 (D-1610): CR 702.29e names any type, and a creature type is a subtype.
+    ['Halflingcycling {4}', { subtypes: ['Halfling'] }, mana('4')],
+    ['Wizardcycling {2}', { subtypes: ['Wizard'] }, mana('2')],
   ])('%s', (text, filter, cost) => {
     expect(abilities(text)).toEqual([keyword({ kind: 'typecycling', filter, cost: [cost] })]);
   });
@@ -136,7 +139,9 @@ describe('typecycling (CR 702.29e)', () => {
 
   test.each([
     ['Landcycling {2}', 'Landcycling {2}'],
-    ['Wizardcycling {2}', 'Wizardcycling {2}'],
+    ['Wizzardcycling {2}', 'Wizzardcycling {2}'],
+    ['Halflingcycling {X}', '{X}'],
+    ['halflingcycling {4}', 'halflingcycling {4}'],
     ['Basic landcycling', 'landcycling'],
     ['Islandcycling {X}', '{X}'],
     ['Islandcycling—Pay 2 life', 'Islandcycling—Pay 2 life'],

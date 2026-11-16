@@ -296,7 +296,7 @@ describe('a characteristic-defining ability and the "*" it needs (CR 208.2a, 604
     );
   });
 
-  test('a token prints numbers: a token with a star, or a definition on a numeric token, is refused', () => {
+  test('a token prints a star only when its own ability defines it (D-1615), and numbers when none does', () => {
     const token = (power: PtValue, abilities: Ability[]): CardDefinition =>
       singleFace({
         name: 'SYNTHETIC Pt Probe Maker',
@@ -329,8 +329,15 @@ describe('a characteristic-defining ability and the "*" it needs (CR 208.2a, 604
           },
         },
       });
-    expectIssue(issues(token('*', [defines(HAND)])), 'a creature token needs a numeric power');
+    // D-1615 (CR 208.2a, 604.3): a star with the ability that defines it is valid, as for a card face (Beau of Bonny Pall's enters trigger).
+    expect(issues(token('*', [defines(HAND)]))).toEqual([]);
+    expectIssue(issues(token('*', [])), 'needs a characteristic-defining ability');
     expectIssue(issues(token(1, [defines(HAND)])), "which the card must print as '*'");
+    // Only a number or a star: anything else is not a power.
+    expectIssue(
+      issues(token('X' as unknown as PtValue, [])),
+      'a creature token needs a numeric power',
+    );
   });
 
   test('the fixtures that use them validate', () => {

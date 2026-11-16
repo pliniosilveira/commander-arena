@@ -175,6 +175,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `If ${e}, you may cast ~ without paying its mana cost.`,
   ),
   'amount.for-each': spell((e) => `Draw a card ${e}.`),
+  // Galadriel deck, group 2 (D-1611): two counts added.
+  'amount.for-each-and-each': permanent((e) => `~ gets +1/+1 ${e}.`),
   'amount.for-each-died': permanent(
     (e) => `Nontoken creatures you control enter with an additional +1/+1 counter on them ${e}.`,
   ),

@@ -105,6 +105,6 @@ export const TOKEN_QUOTED_ABILITY: Parser<IrQuotedAbility> = (ctx, pos) =>
 
 /** The same for a token with a name of its own: the name inside the quotes is the token (stage P45, D-197). */
 export const namedTokenQuotedAbility =
-  (self: string): Parser<IrQuotedAbility> =>
+  (self: string, statics = false): Parser<IrQuotedAbility> =>
   (ctx, pos) =>
-    readQuotedAbility(ctx, pos, { mana: true, self });
+    readQuotedAbility(ctx, pos, { mana: true, self, ...(statics ? { statics: true } : {}) });

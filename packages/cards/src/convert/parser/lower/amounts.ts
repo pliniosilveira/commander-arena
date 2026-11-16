@@ -540,6 +540,12 @@ export function lowerStaticPtStep(
       ? { ok: true, value: { kind: 'colorsAmong', filter: filter.value }, rule }
       : filter;
   }
+  // D-1611 (CR 613.4c): "+1/+1 for each land you control and each land card in your graveyard": the sum of counts; a step other than 1 of a sum is not a multiple the engine reads.
+  if (count.kind === 'sum') {
+    return step === 1
+      ? sumInStatic(count, ctx, rule)
+      : { ok: false, needs: [], at: count.span, rule };
+  }
   const counted = countInStatic(count, ctx, rule);
   if (!counted.ok || step === 1) return counted;
   const missing = missingFeatures(['amount:times']);
