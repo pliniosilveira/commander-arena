@@ -65,6 +65,11 @@ export function isProtectionColorChoice(d: Asked): boolean {
   return d.purpose === 'protectionColor';
 }
 
+/** True for "gains protection from the card type of your choice" (CR 702.16a, 608.2d, D-1504): the options are the nine card types, chosen as the effect resolves. */
+export function isProtectionCardTypeChoice(d: Asked): boolean {
+  return d.purpose === 'protectionCardType';
+}
+
 /** True for the choice of a name the card gives ("Khans or Dragons"). */
 export function isNamedChoice(d: Asked): boolean {
   return d.purpose === 'option' && !isChapterChoice(d);
@@ -110,6 +115,10 @@ export function namedOptionPrompt(
   // D-451 (CR 702.16, 608.2d): asked as the spell resolves, so there is no "enters".
   if (isProtectionColorChoice(d)) {
     return `Choose a color for ${d.sourceName}: protection from it until end of turn.`;
+  }
+  // D-1504 (CR 702.16a, 608.2d): asked as the ability resolves, so there is no "enters".
+  if (isProtectionCardTypeChoice(d)) {
+    return `Choose a card type for ${d.sourceName}: protection from it until end of turn.`;
   }
   return isChapterChoice(d)
     ? `Choose a chapter to start with for ${d.sourceName}.`
@@ -253,7 +262,12 @@ export function namedOptionRows(
       return { option, label: choice?.text ?? option, detail };
     });
   }
-  if (isEffectChoice(d) || isVoteChoice(d) || isCardTypeChoice(d)) {
+  if (
+    isEffectChoice(d) ||
+    isVoteChoice(d) ||
+    isCardTypeChoice(d) ||
+    isProtectionCardTypeChoice(d)
+  ) {
     return d.options.map((option) => ({ option, label: capitalised(option), detail: null }));
   }
   if (isProtectionColorChoice(d)) {
