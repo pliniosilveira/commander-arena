@@ -784,10 +784,10 @@ export type PlayerSelector =
 export interface TargetSpec {
   readonly id: string;
   /**
-   * The slot exists only if the spell's gift was promised (CR 702.174m, D-135): "If the gift was promised, return target creature
-   * card from your graveyard to your hand" chooses that target only when it was. Only a spell's slot of a face with Gift.
+   * The slot exists only in the named branch of the spell's gift decision (D-135): a `true` slot is chosen only if it was promised,
+   * a `false` slot only if it was not. Only a spell's slot of a face with Gift.
    */
-  readonly ifGiftPromised?: true;
+  readonly ifGiftPromised?: boolean;
   /**
    * "Draw a card. If this spell was kicked, destroy target creature." (CR 702.33g, 601.2c, D-181): the slot exists only if the spell was kicked
    * (with `kicker`): a spell that was not kicked is cast as if it did not have it. Only a slot of a spell's own text, not of a modal one, of a
@@ -3628,10 +3628,9 @@ export type Keyword =
    * permanent: "When this permanent enters, if its gift cost was paid, the chosen player draws a card"; of an instant or sorcery:
    * "if its gift cost was paid, the chosen player draws a card", before the other effects, and not at all if the spell is
    * countered or leaves the stack (CR 702.174j). The engine writes both abilities itself (`giftRecipient`, `giftPromised`);
-   * the card adds its own text that reads `giftPromised`. `gift` names what is given: only `card` is built (a Food, a tapped
-   * Fish, an extra turn, a Treasure, an Octopus are not).
+   * the card adds its own text that reads `giftPromised`. `gift` names what is given: this engine supports `card` and `tappedFish`.
    */
-  | { readonly kind: 'gift'; readonly gift: 'card' }
+  | { readonly kind: 'gift'; readonly gift: 'card' | 'tappedFish' }
   /**
    * CR 702.75a (Hideaway, D-145): "Hideaway N" means "When this permanent enters, look at the top N cards of your library. Exile one of them face
    * down and put the rest on the bottom of your library in a random order. The exiled card gains 'The player who controls the permanent that

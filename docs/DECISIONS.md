@@ -3331,3 +3331,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: add separate effects for granted death triggers or one-off rules for the two cards; both would duplicate the continuous-effect and quoted-ability paths.
 - Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The scenario test covers granting, dying, returning tapped and receiving a +1/+1 counter; parser acceptance tests cover both real cards from issue 57. Other text in a quoted ability is still supported only when its own parser and engine rules can lower it.
 
+## D-539: Give a tapped Fish for a promised Gift (2026-11-16, issue 57)
+- Context: `Into the Flood Maw` says `Gift a tapped Fish`, then has different target and return instructions depending on whether the gift was promised. Gift already supported the casting choice and the card gift, but its keyword value and target slots only represented the promised branch.
+- Decision: represent `tappedFish` as a Gift kind and use one shared effect to create the 1/1 blue Fish token tapped under the chosen opponent's control, before an instant or sorcery's other effects or as a permanent enters. Let `TargetSpec.ifGiftPromised` be boolean so a spell can select targets only in the promised or unpromised branch; the parser marks both sides of an `instead` sentence. No new decision kind or card-specific route.
+- Alternatives: model the token with a card-specific override (duplicates Gift and token creation); leave one target set active regardless of the promise (would make the printed spell choose the wrong target).
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The real issue card is played through `applyAction` with both choices, and an engine fixture checks the generic permanent Gift path. The reminder text came from the issue's card data; the comprehensive-rules text and card rulings were unavailable for independent verification in this session.
+

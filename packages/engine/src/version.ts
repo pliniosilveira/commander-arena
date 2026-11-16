@@ -3,4 +3,5 @@
 // 99: Restrict a first-spell trigger to opponent turns (D-535).
 // 100: Carry a resolving creature-type choice into the remaining instructions (D-536).
 // 101: Let a resolving effect grant activated, triggered or mana abilities until end of turn (D-538).
-export const ENGINE_VERSION = 101;
+// 102: Give the promised tapped Fish Gift and select targets for the matching gift branch (D-539).
+export const ENGINE_VERSION = 102;

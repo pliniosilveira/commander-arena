@@ -233,7 +233,7 @@ function lowerStorm(ability: IrKeyword): LowerResult<readonly Ability[]> {
 }
 
 /**
- * "Gift a card" (CR 702.174, stage P30, D-135): the keyword with what is given. The engine asks the question as the spell is cast and
+ * "Gift a card" or "Gift a tapped Fish" (CR 702.174, stage P30, D-135): the keyword with what is given. The engine asks the question as the spell is cast and
  * writes the two abilities the keyword stands for (the card the chosen opponent draws, as the permanent enters or before an instant's
  * or a sorcery's other effects); whether the face can have it (one, not on a land, not on a modal spell) is `validateCard`'s refusal.
  */
@@ -243,7 +243,7 @@ function lowerGift(ability: IrKeyword): LowerResult<readonly Ability[]> {
   if (blocked !== null) return blocked;
   return {
     ok: true,
-    value: [{ kind: 'keyword', keyword: { kind: 'gift', gift: 'card' } }],
+    value: [{ kind: 'keyword', keyword: { kind: 'gift', gift: ability.gift ?? 'card' } }],
     rule: 'keyword.gift',
   };
 }

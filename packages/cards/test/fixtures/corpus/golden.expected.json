@@ -1,5 +1,5 @@
 {
-  "parserVersion": 112,
+  "parserVersion": 113,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -3410,21 +3410,10 @@
     "8cb36a67-9206-4665-a03f-64f52ba559c4": {
       "name": "Into the Flood Maw",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Gift a tapped Fish",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        }
-      ],
-      "reasons": [
-        "faces[0]: the gift conditions and \"the chosen player\" need a gift ability (CR 702.174a)"
-      ],
-      "ast": "a71703e8"
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9ac07743"
     },
     "8cc7e418-cc5e-4aef-9757-874223fccd74": {
       "name": "Phoenix Down",
@@ -6120,7 +6109,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 393,
+      "supported": 394,
       "total": 420
     }
   }

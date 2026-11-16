@@ -692,8 +692,8 @@ export function declareTargets(
       default:
         issue(out, `${p}.what`, `unknown target kind ${kindOf(what)}`);
     }
-    if (spec.ifGiftPromised !== undefined && spec.ifGiftPromised !== true) {
-      issue(out, `${p}.ifGiftPromised`, 'ifGiftPromised must be true when present');
+    if (spec.ifGiftPromised !== undefined && typeof spec.ifGiftPromised !== 'boolean') {
+      issue(out, `${p}.ifGiftPromised`, 'ifGiftPromised must be boolean when present');
     }
     // D-181, CR 702.33g, 601.2c: a slot chosen only if the spell was kicked, or only if it was not.
     for (const key of ['ifKicked', 'unlessKicked'] as const) {

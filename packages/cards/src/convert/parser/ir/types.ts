@@ -1471,6 +1471,8 @@ export interface IrKeyword extends IrNode {
   readonly kind: 'keyword';
   readonly name: string;
   readonly params: readonly IrArg[];
+  /** What Gift gives when its line names the gift. */
+  readonly gift?: 'card' | 'tappedFish';
   /** The cost of a keyword that has one: "Cycling {2}" (CR 702.29a). */
   readonly cost?: readonly IrCost[];
   /** "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type of the creature the equip ability attaches to. */

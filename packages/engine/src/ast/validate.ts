@@ -1758,12 +1758,12 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
 
   if (face.spell !== null) {
     checkSpellText(face.spell, `${path}.spell`, out);
-    // D-135, CR 702.174m: a target chosen only if the gift was promised is used only under that condition.
+    // D-135: a gift-conditioned target is used only in the matching promised or unpromised branch.
     for (const id of giftTargetsUsedUnguarded(face.spell)) {
       issue(
         out,
         `${path}.spell.targets`,
-        `target "${id}" exists only if the gift was promised: use it only in the effect of a giftPromised conditional`,
+        `target "${id}" exists only in the matching gift branch: use it only in that branch`,
       );
     }
     // D-181, CR 702.33g, 601.2c: a target chosen only if the spell was kicked (or only if it was not) is used only in that case.

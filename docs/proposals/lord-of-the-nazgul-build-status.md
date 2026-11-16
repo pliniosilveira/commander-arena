@@ -15,9 +15,10 @@ Issue data is from the author's description. The 21 cards below were added to th
 - [x] Group 2b: `Raise the Palisade` returns creatures outside the chosen type using the inverse filter (D-536).
 - [x] Group 3: `Hermes, Overseer of Elpis` uses the existing attack-batch trigger for "you attack with one or more Birds" (D-537, `PARSER_VERSION` 111).
 - [x] Group 4: `Feign Death` and `Supernatural Stamina` grant the target creature a triggered ability until end of turn; the dies trigger returns the card tapped and, for Feign Death, with a +1/+1 counter (D-538, `ENGINE_VERSION` 101, `PARSER_VERSION` 112).
+- [x] Group 5: `Into the Flood Maw` uses the generic tapped Fish Gift effect and selects the return target from the matching promised or unpromised branch (D-539, `ENGINE_VERSION` 102, `PARSER_VERSION` 113).
 - [ ] Remaining independent parser and engine gaps: `Domineering Will`, `Drown in the Loch`, `Fandaniel, Telophoroi Ascian`, `Gix's Command`, `Lord of the Nazgûl`, `Maskwood Nexus`, `Sauron's Ransom`, `Voracious Bibliophile`.
-- [ ] `Into the Flood Maw` extends the existing Gift support to a tapped Fish token; `March of Swirling Mist` uses the existing one-shot phasing machinery but needs X target handling and its exile cost. Assess each as its own engine/parser slice.
+- [ ] `March of Swirling Mist` uses the existing one-shot phasing machinery but needs X target handling and its exile cost. Assess it as its own engine/parser slice.
 - [ ] Rerun `UPDATE_GOLDEN=1 pnpm exec vitest run packages/cards/test/golden.test.ts` after each parser group.
 - [ ] Run `pnpm corpus:decks --deck decks/lord-of-the-nazgul.txt` with the owner's bulk file; unavailable in this workspace.
 
-At intake, current `main` already supported `Lazotep Plating`. The completed groups through 4 bring the count to 11 of the 21 issue cards supported; the other 10 remain unsupported. No deck-wide coverage result is claimed.
+At intake, current `main` already supported `Lazotep Plating`. The completed groups through 5 bring the count to 12 of the 21 issue cards supported; the other 9 remain unsupported. No deck-wide coverage result is claimed.

@@ -13,8 +13,21 @@ import { singleFace } from './helpers';
 
 const YOU = { kind: 'you' } as const;
 const GIFT: Ability = { kind: 'keyword', keyword: { kind: 'gift', gift: 'card' } };
+const FISH_GIFT: Ability = { kind: 'keyword', keyword: { kind: 'gift', gift: 'tappedFish' } };
 
 export const SYNTHETIC_GIFT_LIST: readonly CardDefinition[] = [
+  singleFace({
+    name: 'SYNTHETIC Gifted Fishmaker',
+    manaCost: ['2', 'U'],
+    types: ['creature'],
+    subtypes: ['Wizard'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    power: 2,
+    toughness: 2,
+    oracleText: 'Gift a tapped Fish',
+    abilities: [FISH_GIFT],
+  }),
   // "Gift a card. When this creature enters, if the gift was promised, destroy target artifact or enchantment an opponent controls."
   singleFace({
     name: 'SYNTHETIC Gifted Ranger',
