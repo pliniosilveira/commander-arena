@@ -1713,9 +1713,9 @@ export type Effect =
    * card is revealed for a player who has none), and when `ifMatches` describes it (`filter` for cards in a library: no zone, controller or owner, nothing
    * read from the game) puts it onto the battlefield under their control, `tapped` or not, or into their hand (`to`); otherwise it stays on top.
    * Galadriel group 1 (Track Down: "Scry 3, then reveal the top card of your library. If it's a creature or land card, draw a card."; Galadriel of Lothlorien:
-   * "you may reveal the top card of your library. If a land card is revealed this way, put it onto the battlefield tapped"): instead of `to`, `then` is what
+   * "you may reveal the top card of your library. If a land card is revealed this way, put it onto the battlefield tapped"): instead of `to`, `onMatch` is what
    * is done when the filter matches the card revealed: the effect runs once for each player who revealed a matching card, as that player ("you" is the player who revealed),
-   * and the card stays on top. Exactly one of `to` and `then` is written. "You may reveal" is a `may` effect around it (the choice is made before anything is shown).
+   * and the card stays on top. Exactly one of `to` and `onMatch` is written. "You may reveal" is a `may` effect around it (the choice is made before anything is shown).
    */
   | {
       readonly kind: 'revealTop';
@@ -1723,7 +1723,7 @@ export type Effect =
       readonly ifMatches: ObjectFilter;
       readonly to?: 'battlefield' | 'hand';
       readonly tapped?: true;
-      readonly then?: Effect;
+      readonly onMatch?: Effect;
     }
   /**
    * "Put a Dragon creature card from your hand onto the battlefield tapped and attacking" (CR 508.4, 506.3, D-151): the second half, after an

@@ -18,11 +18,7 @@ export const TRIGGER_SCRY_OR_SURVEIL = defineRule<IrTrigger>({
   id: 'trigger.scry-or-surveil',
   family: 'trigger',
   leading: ['you', 'an', 'a'],
-  cites: [
-    'CR 701.22 (Scry)',
-    'CR 701.25 (Surveil)',
-    'CR 603.2c (Handling Triggered Abilities)',
-  ],
+  cites: ['CR 701.22 (Scry)', 'CR 701.25 (Surveil)', 'CR 603.2c (Handling Triggered Abilities)'],
   examples: [
     'you scry or surveil',
     'you surveil',

@@ -184,6 +184,17 @@ export function lookAtTopText(
   if (rest === 'top' && count === 1 && one && (take.min ?? 0) === 0 && take.to !== 'battlefield') {
     return `${look}. If it's ${what}, you may reveal it and put it into your hand. If you don't, it stays on top of your library`;
   }
+  // Galadriel group 1 (Nissa, Steward of Elements): one card looked at, put onto the battlefield when it is of the kind, or left on top; it is not revealed.
+  if (
+    rest === 'top' &&
+    count === 1 &&
+    one &&
+    (take.min ?? 0) === 0 &&
+    take.to === 'battlefield' &&
+    effect.revealAll !== true
+  ) {
+    return `${look}. If it's ${what}, you may put it onto the battlefield${take.tapped === true ? ' tapped' : ''}. If you don't, it stays on top of your library`;
+  }
   // `min` 1 or more: no "you may", the card is taken whenever there is one.
   const may = (take.min ?? 0) > 0 ? '' : 'You may ';
   const reveal = `${may}${may === '' ? 'Reveal' : 'reveal'} ${taken} from among them`;

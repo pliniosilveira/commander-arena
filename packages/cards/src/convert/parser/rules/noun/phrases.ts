@@ -478,7 +478,10 @@ export function permanentPhrase(
     const [types, compared, keyword, controller] = r.value;
     const last = types[types.length - 1];
     if (compared !== undefined && (types.length < 2 || last !== 'creature')) return fail(ctx, pos);
-    if (keyword !== undefined && (types.length < 2 || last !== 'creature' || compared !== undefined)) {
+    if (
+      keyword !== undefined &&
+      (types.length < 2 || last !== 'creature' || compared !== undefined)
+    ) {
       return fail(ctx, pos);
     }
     const base = toFilter('battlefield', { ...NO_PARTS, controller }, ctx.text.slice(pos, r.pos));

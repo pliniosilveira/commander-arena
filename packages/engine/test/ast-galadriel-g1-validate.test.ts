@@ -66,26 +66,24 @@ describe('the trigger "surveils"', () => {
 
 describe('revealTop: exactly one of "to" and "then"', () => {
   test('either one is valid', () => {
-    expect(
-      messages(withSpell(RUN, { ...REVEAL, then: DRAW })),
-      'then',
-    ).toEqual([]);
+    expect(messages(withSpell(RUN, { ...REVEAL, onMatch: DRAW })), 'onMatch').toEqual([]);
     expect(messages(withSpell(RUN, { ...REVEAL, to: 'hand' })), 'to').toEqual([]);
-    expect(messages(withSpell(RUN, { ...REVEAL, to: 'battlefield', tapped: true })), 'tapped').toEqual(
-      [],
-    );
+    expect(
+      messages(withSpell(RUN, { ...REVEAL, to: 'battlefield', tapped: true })),
+      'tapped',
+    ).toEqual([]);
   });
 
   test('both, or neither, is refused', () => {
-    expect(messages(withSpell(RUN, { ...REVEAL, to: 'hand', then: DRAW })).join(' | ')).toContain(
-      'exactly one of to',
-    );
+    expect(
+      messages(withSpell(RUN, { ...REVEAL, to: 'hand', onMatch: DRAW })).join(' | '),
+    ).toContain('exactly one of to');
     expect(messages(withSpell(RUN, REVEAL)).join(' | ')).toContain('exactly one of to');
   });
 
   test('tapped goes with a card put onto the battlefield, not with a then', () => {
     expect(
-      messages(withSpell(RUN, { ...REVEAL, then: DRAW, tapped: true })).join(' | '),
+      messages(withSpell(RUN, { ...REVEAL, onMatch: DRAW, tapped: true })).join(' | '),
     ).toContain('tapped is true, and only for a card put onto the battlefield');
   });
 
@@ -94,14 +92,14 @@ describe('revealTop: exactly one of "to" and "then"', () => {
       messages(
         withSpell(RUN, {
           ...REVEAL,
-          then: { kind: 'destroy', objects: { kind: 'target', id: 'nope' } },
+          onMatch: { kind: 'destroy', objects: { kind: 'target', id: 'nope' } },
         }),
       ).length,
     ).toBeGreaterThan(0);
   });
 
   test('a may of a reveal is valid ("you may reveal the top card")', () => {
-    expect(messages(withSpell(RUN, { kind: 'may', effect: { ...REVEAL, then: DRAW } }))).toEqual(
+    expect(messages(withSpell(RUN, { kind: 'may', effect: { ...REVEAL, onMatch: DRAW } }))).toEqual(
       [],
     );
   });
@@ -118,9 +116,9 @@ describe('the condition "abilityResolvedTimes"', () => {
       condition: { kind: 'abilityResolvedTimes', times },
       effect: RING,
     };
-    expect(messages(withAbility(WARDEN, triggered({ kind: 'ringTempted' }, { effect }))).join(' | ')).toContain(
-      'times is a whole number from 1',
-    );
+    expect(
+      messages(withAbility(WARDEN, triggered({ kind: 'ringTempted' }, { effect }))).join(' | '),
+    ).toContain('times is a whole number from 1');
   });
 
   test('in a spell it is refused: only a triggered ability resolves again and again from one source', () => {
@@ -155,9 +153,9 @@ describe('the condition "ringBearerChosen"', () => {
       { kind: 'ringBearerChosen' },
       { kind: 'ringBearerChosen', other: true },
     ]) {
-      expect(messages(withAbility(LADY, triggered({ kind: 'ringTempted' }, { interveningIf })))).toEqual(
-        [],
-      );
+      expect(
+        messages(withAbility(LADY, triggered({ kind: 'ringTempted' }, { interveningIf }))),
+      ).toEqual([]);
     }
   });
 
@@ -181,9 +179,9 @@ describe('the condition "ringBearerChosen"', () => {
       condition: { kind: 'ringBearerChosen', other: true },
       effect: DRAW,
     };
-    expect(messages(withAbility(LADY, triggered({ kind: 'ringTempted' }, { effect }))).join(' | ')).toContain(
-      'intervening "if" of a ringTempted trigger',
-    );
+    expect(
+      messages(withAbility(LADY, triggered({ kind: 'ringTempted' }, { effect }))).join(' | '),
+    ).toContain('intervening "if" of a ringTempted trigger');
   });
 
   test('"other" is true or left out', () => {

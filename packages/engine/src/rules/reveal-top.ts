@@ -45,9 +45,9 @@ export function runRevealTop(
         { controller: seat, source: res.source },
       )
     ) {
-      if (effect.then !== undefined) {
+      if (effect.onMatch !== undefined) {
         // "If it's a creature or land card, draw a card": the effect is the revealing player's own ("you" is that player), and the card stays on top.
-        moves.push({ kind: 'effect', effect: effect.then, as: seat });
+        moves.push({ kind: 'effect', effect: effect.onMatch, as: seat });
       } else if (effect.to !== undefined) {
         // The player who revealed it puts it onto the battlefield, so it is under their control (CR 110.2a): its owner, the library being theirs.
         moves.push(

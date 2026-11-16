@@ -93,8 +93,8 @@ export function checkDragonsEffect(
           'the card is in the library: no zone, controller, owner, stackKind, other, or anything read from the game',
         );
       }
-      if ((e.to === undefined) === (e.then === undefined)) {
-        issue(out, path, 'a revealTop writes exactly one of to (where the card goes) and then');
+      if ((e.to === undefined) === (e.onMatch === undefined)) {
+        issue(out, path, 'a revealTop writes exactly one of to (where the card goes) and onMatch');
       }
       if (e.to !== undefined && !isOneOf(e.to, ['battlefield', 'hand'])) {
         issue(
@@ -103,9 +103,9 @@ export function checkDragonsEffect(
           `a revealed card is put onto the battlefield or into the hand, not ${JSON.stringify(e.to)}`,
         );
       }
-      if (e.then !== undefined) {
+      if (e.onMatch !== undefined) {
         // Galadriel group 1: what is done when the card revealed matches. It reads nothing of the card (the engine does not name it), so no target and no "it".
-        checkEffect(e.then, `${path}.then`, { ...scope, xAllowed: false }, out);
+        checkEffect(e.onMatch, `${path}.onMatch`, { ...scope, xAllowed: false }, out);
       }
       if (e.tapped !== undefined && (e.tapped !== true || e.to !== 'battlefield')) {
         issue(

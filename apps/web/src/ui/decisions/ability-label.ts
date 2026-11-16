@@ -864,7 +864,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       const until = effect.duration === 'untilEndOfTurn' ? ' until end of turn' : '';
       const at = words.indexOf(', where ');
       const said = at < 0 ? `${words}${until}` : `${words.slice(0, at)}${until}${words.slice(at)}`;
-      return `${capital(object(effect.objects))} ${said}`;
+      // Galadriel group 1: "up to two target lands you control have base power and toughness 5/5": several targets, the plural verb.
+      const several = object(effect.objects).startsWith('up to ');
+      const verbed = several ? said.replace(/^gets /u, 'get ').replace(/^has /u, 'have ') : said;
+      return `${capital(object(effect.objects))} ${verbed}`;
     }
     case 'draw':
       // D-135: "draw that many cards" after "sacrifice any number of ...": the count of the instruction before.
@@ -1043,6 +1046,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return effect.partner === 'choose'
         ? 'You may pair this creature with another unpaired creature you control'
         : 'You may pair this creature with the creature that entered';
+    case 'scry':
+    case 'surveil':
+      // CR 701.22, 701.25 (Galadriel group 1): "Scry 3", "Surveil X"; always the controller's own library.
+      return effect.player === undefined || effect.player.kind === 'you'
+        ? `${effect.kind === 'scry' ? 'Scry' : 'Surveil'} ${defs.say(effect.count, { self })}`
+        : UNSAID;
     case 'ringTempts':
       // D-196 (CR 701.54a): the Ring tempts the controller.
       return 'The Ring tempts you';
@@ -1271,6 +1280,16 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         return `${capital(object(effect.objects))} is a ${size} ${noun} in addition to its other types`;
       }
       const until = effect.duration === 'untilEndOfTurn' ? ' until end of turn' : '';
+      // Galadriel group 1: "Up to two target lands you control become Elemental creatures in addition to their other types": several targets, the plural verb and noun.
+      if (object(effect.objects).startsWith('up to ')) {
+        const plural = [
+          ...(effect.types === undefined && effect.subtypes !== undefined
+            ? [...effect.subtypes.slice(0, -1), pluralSubtype(effect.subtypes.at(-1) ?? '')]
+            : (effect.subtypes ?? [])),
+          ...(effect.types ?? []).map((type) => `${type}s`),
+        ].join(' ');
+        return `${capital(object(effect.objects))} become ${plural} in addition to their other types${until}`;
+      }
       return `${capital(object(effect.objects))} becomes ${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun} in addition to its other types${until}`;
     }
     case 'proliferate':

@@ -170,10 +170,9 @@ export const EFFECT_LOOK_TOP_PUT = defineRule<Clauses>({
     if (!middle.ok) return middle;
     const amount = NUMBER_OF_COUNTERS(id)(ctx, middle.pos);
     if (!amount.ok) return amount;
-    const tail = pattern(new RegExp(`, you may put that card onto the battlefield${BOUNDARY}`, 'iu'))(
-      ctx,
-      amount.pos,
-    );
+    const tail = pattern(
+      new RegExp(`, you may put that card onto the battlefield${BOUNDARY}`, 'iu'),
+    )(ctx, amount.pos);
     if (!tail.ok) return tail;
     if (MORE_AFTER.test(ctx.text.slice(tail.pos))) return fail(ctx, pos);
     const span = { start: pos, end: tail.pos };

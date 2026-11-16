@@ -100,8 +100,8 @@ export function revealTopTail(
   const card = revealedCard(effect.ifMatches);
   if (card === null) return null;
   // Galadriel group 1 (Track Down): "If it's a creature or land card, draw a card".
-  if (effect.then !== undefined) {
-    const then = effect.then;
+  if (effect.onMatch !== undefined) {
+    const then = effect.onMatch;
     return then.kind === 'draw' && then.count === 1 && then.player.kind === 'you'
       ? `If it's ${card}, ${me ? 'draw' : 'they draw'} a card`
       : null;

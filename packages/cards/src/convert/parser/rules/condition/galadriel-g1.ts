@@ -87,7 +87,10 @@ export const CONDITION_CHOSE_RING_BEARER = defineRule<IrCondition>({
   ],
   parse: (ctx, pos) => {
     const r = pattern(
-      new RegExp(`you chose a creature other than ~ as your Ring-bearer${BOUNDARY}(?! and\\b)`, 'iu'),
+      new RegExp(
+        `you chose a creature other than ~ as your Ring-bearer${BOUNDARY}(?! and\\b)`,
+        'iu',
+      ),
     )(ctx, pos);
     if (!r.ok) return r;
     return {

@@ -23,7 +23,11 @@ const WARDEN_EFFECT: Effect = {
   kind: 'sequence',
   effects: [
     { kind: 'scry', count: 1 },
-    { kind: 'conditional', condition: { kind: 'abilityResolvedTimes', times: 2 }, effect: { kind: 'ringTempts' } },
+    {
+      kind: 'conditional',
+      condition: { kind: 'abilityResolvedTimes', times: 2 },
+      effect: { kind: 'ringTempts' },
+    },
   ],
 };
 
@@ -101,8 +105,8 @@ export const SYNTHETIC_GALADRIEL_G1_LIST: readonly CardDefinition[] = [
     supertypes: ['legendary'],
     types: ['creature'],
     subtypes: ['Elf', 'Noble'],
-    colors: ['G', 'U'],
-    colorIdentity: ['G', 'U'],
+    colors: ['U', 'G'],
+    colorIdentity: ['U', 'G'],
     power: 3,
     toughness: 3,
     oracleText:
@@ -173,7 +177,7 @@ export const SYNTHETIC_GALADRIEL_G1_LIST: readonly CardDefinition[] = [
               kind: 'revealTop',
               player: YOU,
               ifMatches: { types: ['creature'] },
-              then: { kind: 'draw', player: YOU, count: 1 },
+              onMatch: { kind: 'draw', player: YOU, count: 1 },
             },
           },
         ],
@@ -198,7 +202,7 @@ export const SYNTHETIC_GALADRIEL_G1_LIST: readonly CardDefinition[] = [
             kind: 'revealTop',
             player: YOU,
             ifMatches: { anyOf: [{ types: ['creature'] }, { types: ['land'] }] },
-            then: { kind: 'draw', player: YOU, count: 1 },
+            onMatch: { kind: 'draw', player: YOU, count: 1 },
           },
         ],
       },
@@ -214,8 +218,8 @@ export const SYNTHETIC_GALADRIEL_G1_LIST: readonly CardDefinition[] = [
     supertypes: ['legendary'],
     types: ['planeswalker'],
     subtypes: ['Nissa'],
-    colors: ['G', 'U'],
-    colorIdentity: ['G', 'U'],
+    colors: ['U', 'G'],
+    colorIdentity: ['U', 'G'],
     loyalty: 0,
     oracleText:
       "+2: Scry 2.\n0: Look at the top card of your library. If it's a land card or a creature card with mana value less than or equal to the number of loyalty counters on this planeswalker, you may put that card onto the battlefield.\n−6: Untap up to two target lands you control. They become 5/5 Elemental creatures with flying and haste until end of turn. They're still lands.",
@@ -276,7 +280,10 @@ export const SYNTHETIC_GALADRIEL_G1_LIST: readonly CardDefinition[] = [
       ],
       effect: {
         kind: 'sequence',
-        effects: [{ kind: 'destroy', objects: T1 }, { kind: 'scry', count: 1 }],
+        effects: [
+          { kind: 'destroy', objects: T1 },
+          { kind: 'scry', count: 1 },
+        ],
       },
     },
   }),

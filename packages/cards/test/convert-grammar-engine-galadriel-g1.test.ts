@@ -40,10 +40,7 @@ const nissa = real('Nissa, Steward of Elements');
 const shower = real('Shower of Arrows');
 
 const helpers = () =>
-  scenario()
-    .define(syntheticCard(RITE))
-    .define(syntheticCard(SIGHT))
-    .define(syntheticCard(QUIET));
+  scenario().define(syntheticCard(RITE)).define(syntheticCard(SIGHT)).define(syntheticCard(QUIET));
 
 describe('every card is valid and has the abilities of its SYNTHETIC sibling', () => {
   test.each([

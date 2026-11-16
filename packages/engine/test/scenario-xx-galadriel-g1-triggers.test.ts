@@ -161,7 +161,7 @@ describe('Elrond: "If this is the second time this ability has resolved this tur
     g.expect.pending('choosePermanent', 0);
   });
 
-  test("the count starts again in the next turn", () => {
+  test('the count starts again in the next turn', () => {
     const g = board();
     castBears(g);
     g.advanceTo('precombatMain', { turn: 3 });
@@ -282,9 +282,12 @@ describe('Galadriel: the Ring tempts you and you scry', () => {
     g.act(0).arrange({ top: ['Grizzly Bears[0]', 'Island[0]', 'Island[1]'] });
     g.passAll();
     g.act(0).accept();
-    g.expect.eventLog([{ kind: 'cardsRevealed', seat: 0, names: ['Grizzly Bears'], from: 'library' }], {
-      since: 0,
-    });
+    g.expect.eventLog(
+      [{ kind: 'cardsRevealed', seat: 0, names: ['Grizzly Bears'], from: 'library' }],
+      {
+        since: 0,
+      },
+    );
     g.expect.librarySize(0, 4);
     g.expect.zone('Grizzly Bears', 'library', { seat: 0 });
   });

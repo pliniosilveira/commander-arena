@@ -3099,6 +3099,55 @@ export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
+ * The SYNTHETIC cards of group 1 of the Galadriel deck (issue 43, D-1600 and later): a creature that scries when a creature of its controller enters and makes the Ring tempt its
+ * controller the second time that ability resolves in a turn, a creature that scries 3 when the Ring tempts its controller (another creature chosen) and may reveal the top card
+ * whenever its controller scries, a creature that draws whenever its controller scries or surveils, two sorceries that scry 3 and reveal the top card, a planeswalker with X loyalty, an
+ * instant that destroys an artifact, an enchantment or a creature with flying, and a surveil. The "you may" of the reveal, the X, the Ring-bearer to choose, the cards to put and the
+ * lands to animate change which answers the generic pools ask for, which games-100 expects only from dedicated styles. 'SYNTHETIC Ring Rite' (the other source of the Ring) is left out
+ * of the deck, so that every tempt of the Ring in a game is the Rivendell Warden's.
+ */
+export const GALADRIEL_G1_NAMES = [
+  'SYNTHETIC Rivendell Warden',
+  'SYNTHETIC Lorien Lady',
+  'SYNTHETIC Archon Seer',
+  'SYNTHETIC Far Sight',
+  'SYNTHETIC Run Down',
+  'SYNTHETIC Seer of Elements',
+  'SYNTHETIC Arrow Rain',
+  'SYNTHETIC Quiet Look',
+] as const;
+
+/** The galadrielG1 style: every card of the group twice, bodies that enter in a row, fliers and an artifact to destroy, and the scry spell of the Hylda group. */
+export const GALADRIEL_G1_SPELLS = [
+  ...supported(GALADRIEL_G1_NAMES),
+  ...supported(GALADRIEL_G1_NAMES),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['Sol Ring', 'SYNTHETIC Clear Sight']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Green and blue for the creatures and the X, the rest for the colorless costs. */
+export const GALADRIEL_G1_LANDS = supported([
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Plains',
+  'Plains',
+]);
+
+/** Style pairs of the Galadriel group 1 soak test (issue 43): a mirror match and both mixed ways. */
+export const GALADRIEL_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['galadrielG1', 'galadrielG1'],
+  ['galadrielG1', 'spells'],
+  ['spells', 'galadrielG1'],
+];
+
+/**
  * The SYNTHETIC cards of group 2 of the Hylda deck (D-517 to D-525): a sorcery that taps everything a chosen player controls and keeps it tapped, a creature that taps what a chosen
  * opponent controls, an instant that does it for up to two creatures, an X instant, a creature that does it when its controller casts an instant or sorcery, an Aura that taps its
  * creature at every upkeep, a d20 table, a creature with a "choose up to one" trigger, a siege that asks for Khans or Dragons as it enters, a creature with a trigger that needs four
@@ -3981,6 +4030,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(GISA_G4_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 1 cards (D-510 to D-514) ask to pay for reflexive abilities, the modes of one, targets of taps, the card type to protect from and what to do with a scry: a style of their own.
   .filter((card) => !(HYLDA_G1_NAMES as readonly string[]).includes(card.name))
+  // The Galadriel group 1 cards (issue 43) ask a "you may" before a reveal, an X for a planeswalker, which permanent the Ring chooses and what to put onto the battlefield: a style of their own.
+  .filter((card) => !(GALADRIEL_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ANGEL_NAMES as readonly string[]).includes(card.name))
@@ -4202,6 +4253,7 @@ export type DeckStyle =
   | 'featherG1'
   | 'gisaG4'
   | 'hyldaG1'
+  | 'galadrielG1'
   | 'vehicles'
   | 'prevention'
   | 'layouts'
@@ -4289,6 +4341,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'hyldaG3' && HYLDA_G3_SPELLS.length > 0) return HYLDA_G3_SPELLS;
   if (style === 'gisaG1' && GISA_G1_SPELLS.length > 0) return GISA_G1_SPELLS;
   if (style === 'hyldaG1' && HYLDA_G1_SPELLS.length > 0) return HYLDA_G1_SPELLS;
+  if (style === 'galadrielG1' && GALADRIEL_G1_SPELLS.length > 0) return GALADRIEL_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
@@ -4488,6 +4541,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'hyldaG3' && BASIC_LANDS.length > 0) return HYLDA_G3_LANDS;
   if (style === 'gisaG1' && BASIC_LANDS.length > 0) return GISA_G1_LANDS;
   if (style === 'hyldaG1' && BASIC_LANDS.length > 0) return HYLDA_G1_LANDS;
+  if (style === 'galadrielG1' && BASIC_LANDS.length > 0) return GALADRIEL_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;

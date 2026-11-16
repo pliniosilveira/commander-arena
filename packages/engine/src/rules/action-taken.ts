@@ -47,7 +47,10 @@ export function recordActionTaken(state: GameState, object: ObjectId): GameState
 }
 
 /** The text two triggered abilities of one permanent share when they are one printed ability (`abilityResolvedTimes`, Galadriel group 1). */
-export function resolutionKey(ability: { readonly effect: unknown; readonly modes?: unknown }): string {
+export function resolutionKey(ability: {
+  readonly effect: unknown;
+  readonly modes?: unknown;
+}): string {
   return JSON.stringify([ability.effect, ability.modes ?? null]);
 }
 
@@ -88,6 +91,5 @@ export function resolutionCount(state: GameState, object: ObjectId): number {
   if (ability === null || stack?.source === null || stack?.source === undefined) return 0;
   const key = resolutionKey(ability);
   const source = stack.source;
-  return (state.turnLog.resolved ?? []).filter((r) => r.object === source && r.key === key)
-    .length;
+  return (state.turnLog.resolved ?? []).filter((r) => r.object === source && r.key === key).length;
 }

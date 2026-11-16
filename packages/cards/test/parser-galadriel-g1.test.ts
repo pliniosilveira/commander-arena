@@ -38,7 +38,9 @@ describe('"Whenever you scry or surveil" (CR 701.22, 701.25, 603.2c)', () => {
     expect(readAll('Whenever you surveil, you gain 1 life.').abilities).toMatchObject([
       { kind: 'triggered', trigger: { kind: 'surveils', who: 'you' } },
     ]);
-    expect(readAll('Whenever an opponent scries or surveils, you gain 1 life.').abilities).toMatchObject([
+    expect(
+      readAll('Whenever an opponent scries or surveils, you gain 1 life.').abilities,
+    ).toMatchObject([
       { trigger: { kind: 'scries', who: 'opponent' } },
       { trigger: { kind: 'surveils', who: 'opponent' } },
     ]);
@@ -48,9 +50,7 @@ describe('"Whenever you scry or surveil" (CR 701.22, 701.25, 603.2c)', () => {
   });
 
   test('"that many" of a surveil is the cards looked at (the engine writes it for the amount of the trigger)', () => {
-    expect(
-      readAll('Whenever you surveil, you gain 1 life.').abilities,
-    ).toHaveLength(1);
+    expect(readAll('Whenever you surveil, you gain 1 life.').abilities).toHaveLength(1);
   });
 
   test('the old "whenever you scry" is untouched', () => {
@@ -96,7 +96,11 @@ describe('"If this is the second time this ability has resolved this turn" (Elro
 
   test('the real line: one body for the permanent itself and for another creature you control', () => {
     expect(readAll(LINE).abilities).toEqual([
-      { kind: 'triggered', trigger: { kind: 'entersBattlefield', what: { kind: 'this' } }, effect: BODY },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        effect: BODY,
+      },
       {
         kind: 'triggered',
         trigger: {
@@ -209,7 +213,7 @@ describe('"reveal the top card of your library. If ... draw a card" (Track Down,
             kind: 'revealTop',
             player: YOU,
             ifMatches: { anyOf: [{ types: ['creature'] }, { types: ['land'] }] },
-            then: DRAW,
+            onMatch: DRAW,
           },
         ],
       },
@@ -233,7 +237,7 @@ describe('"reveal the top card of your library. If ... draw a card" (Track Down,
               kind: 'revealTop',
               player: YOU,
               ifMatches: { types: ['creature'] },
-              then: DRAW,
+              onMatch: DRAW,
             },
           },
         ],
@@ -267,7 +271,7 @@ describe('"reveal the top card of your library. If ... draw a card" (Track Down,
   });
 
   test.each([
-    'Reveal the top card of your library. If it\'s a land card, exile it.',
+    "Reveal the top card of your library. If it's a land card, exile it.",
     "Reveal the top card of your library. If it's a land card, draw two cards.",
     "Reveal the top card of your library. If it's a land card, draw a card and gain 1 life.",
     "Reveal the top card of target player's library. If it's a land card, draw a card.",
@@ -377,8 +381,18 @@ describe('"They become 5/5 Elemental creatures with flying and haste until end o
           duration: 'untilEndOfTurn',
         },
         { kind: 'setPt', objects: T1, power: 5, toughness: 5, duration: 'untilEndOfTurn' },
-        { kind: 'grantKeyword', objects: T1, keyword: { kind: 'flying' }, duration: 'untilEndOfTurn' },
-        { kind: 'grantKeyword', objects: T1, keyword: { kind: 'haste' }, duration: 'untilEndOfTurn' },
+        {
+          kind: 'grantKeyword',
+          objects: T1,
+          keyword: { kind: 'flying' },
+          duration: 'untilEndOfTurn',
+        },
+        {
+          kind: 'grantKeyword',
+          objects: T1,
+          keyword: { kind: 'haste' },
+          duration: 'untilEndOfTurn',
+        },
       ],
     });
   });
@@ -436,7 +450,10 @@ describe('"Destroy target artifact, enchantment, or creature with flying" (Showe
     ]);
     expect(spell?.effect).toEqual({
       kind: 'sequence',
-      effects: [{ kind: 'destroy', objects: T1 }, { kind: 'scry', count: 1 }],
+      effects: [
+        { kind: 'destroy', objects: T1 },
+        { kind: 'scry', count: 1 },
+      ],
     });
   });
 
