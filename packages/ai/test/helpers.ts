@@ -3099,7 +3099,7 @@ export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
- * The SYNTHETIC cards of group 2 of the Hylda deck (D-1510 to D-1518): a sorcery that taps everything a chosen player controls and keeps it tapped, a creature that taps what a chosen
+ * The SYNTHETIC cards of group 2 of the Hylda deck (D-517 to D-525): a sorcery that taps everything a chosen player controls and keeps it tapped, a creature that taps what a chosen
  * opponent controls, an instant that does it for up to two creatures, an X instant, a creature that does it when its controller casts an instant or sorcery, an Aura that taps its
  * creature at every upkeep, a d20 table, a creature with a "choose up to one" trigger, a siege that asks for Khans or Dragons as it enters, a creature with a trigger that needs four
  * card types in the graveyard, and an artifact that taps a creature for less during its controller's turn. They ask `chooseX`, `chooseOption` and `chooseModes` (with no mode
@@ -3140,7 +3140,7 @@ export const HYLDA_G2_LANDS = supported([
   'Plains',
 ]);
 
-/** Style pairs of the Hylda group 2 soak test (D-1510 to D-1518): a mirror match and both mixed ways. */
+/** Style pairs of the Hylda group 2 soak test (D-517 to D-525): a mirror match and both mixed ways. */
 export const HYLDA_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['hyldaG2', 'hyldaG2'],
   ['hyldaG2', 'spells'],
@@ -3969,7 +3969,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
   // The Feather group 1 cards (D-451) ask which color to protect from as a spell resolves: a style of their own.
   .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
-  // The Hylda group 2 cards (D-1510 to D-1518) ask a number for X, a named option as a siege enters and "choose up to one" with no mode allowed: a style of their own.
+  // The Hylda group 2 cards (D-517 to D-525) ask a number for X, a named option as a siege enters and "choose up to one" with no mode allowed: a style of their own.
   .filter((card) => !(HYLDA_G2_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 2 cards (D-464 to D-468) ask to pay {B} to return a card from the graveyard and put tokens, ward payments and drawing into games: a style of their own.
   .filter((card) => !(GISA_G2_NAMES as readonly string[]).includes(card.name))

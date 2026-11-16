@@ -1,5 +1,5 @@
 /**
- * Restriction rules of group 2 of the Hylda deck (issue 42, D-1516): "This ability costs {1} less to activate during your turn." (Hylda's Crown of Winter). The other cost
+ * Restriction rules of group 2 of the Hylda deck (issue 42, D-523): "This ability costs {1} less to activate during your turn." (Hylda's Crown of Winter). The other cost
  * reductions of an ability are `restriction.cost-reduction` (a condition after "if") and `restriction.cost-reduced-by` (for each).
  */
 import { literal, pattern, sequence } from '../../combinators';

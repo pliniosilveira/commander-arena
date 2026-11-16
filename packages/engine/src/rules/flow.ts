@@ -190,7 +190,7 @@ export function beginStep(input: GameState, step: StepId): Outcome {
       const others = untapForOthers(state, active);
       state = others.state;
       events.push(...others.events);
-      // CR 502.3, 611.2a (D-1510): "doesn't untap during its controller's next untap step" ends as that step has run.
+      // CR 502.3, 611.2a (D-517): "doesn't untap during its controller's next untap step" ends as that step has run.
       state = expireUntapStepEffects(state, active);
       const first = optional[0];
       if (first !== undefined) {

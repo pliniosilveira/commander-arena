@@ -1,4 +1,4 @@
-// "Doesn't untap during its controller's next untap step" (Hylda deck, group 2, D-1510): the `restrict` effect of `doesntUntap` with the duration `untilNextUntapStep`, and the
+// "Doesn't untap during its controller's next untap step" (Hylda deck, group 2, D-517): the `restrict` effect of `doesntUntap` with the duration `untilNextUntapStep`, and the
 // cards that use it (SYNTHETIC `synthetic-hylda-g2.ts`: Lullaby Wave, Drowse Pair, Cold Table).
 // Pins: CR 502.3 (the active player untaps all their permanents, except the ones an effect keeps from untapping), CR 611.2a (a continuous effect of a resolving spell lasts as long
 // as it says), CR 701.43b (an effect that stops a permanent from untapping in the next untap step ends in that step, however many there are), CR 109.4 (the controller of a

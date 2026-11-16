@@ -242,6 +242,6 @@ export const RESTRICTION_RULES = [
   ...FEATHER_G2_RESTRICTION_RULES,
   // Gisa deck, group 4 (D-462): "Activate only during your turn."
   ...GISA_G4_RESTRICTION_RULES,
-  // D-1516 (Hylda deck, group 2): "This ability costs {1} less to activate during your turn."
+  // D-523 (Hylda deck, group 2): "This ability costs {1} less to activate during your turn."
   ...HYLDA_G2_RESTRICTION_RULES,
 ];

@@ -116,9 +116,9 @@ const TAP_OPERANDS = [
   'noun.attached-permanent',
   // Stage P36 (D-178): "Then if you control four or more lands, untap that land." (the permanent an earlier instruction named).
   'noun.that-object',
-  // D-1514 (Hylda deck, group 2): "tap target creature that player controls".
+  // D-521 (Hylda deck, group 2): "tap target creature that player controls".
   'noun.target-permanent-of-that-player',
-  // D-1510 (Hylda deck, group 2): "tap all creatures target player controls".
+  // D-517 (Hylda deck, group 2): "tap all creatures target player controls".
   'noun.all-permanents-of-target-player',
 ] as const;
 
@@ -876,7 +876,7 @@ export const EFFECT_RULES = [
   // Hylda deck, group 1 (issue 42, D-512, D-513): "for each opponent, tap up to one target creature that player controls" and "tap up to X target nonland permanents, where X is ...
   // scrying this way" start like a plain tap and like the "for each" rules, and are tried first.
   ...HYLDA_G1_EFFECT_RULES,
-  // D-1510, D-1512 (Hylda deck, group 2): "Those creatures don't untap during ... next untap step" and "Until your next turn, creatures ... enter tapped".
+  // D-517, D-519 (Hylda deck, group 2): "Those creatures don't untap during ... next untap step" and "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,

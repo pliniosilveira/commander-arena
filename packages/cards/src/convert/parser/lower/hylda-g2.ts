@@ -1,5 +1,5 @@
 /**
- * Lowerings of group 2 of the Hylda deck (issue 42, D-1510 to D-1518): "doesn't untap during its controller's next untap step", "until your next turn, creatures your opponents
+ * Lowerings of group 2 of the Hylda deck (issue 42, D-517 to D-525): "doesn't untap during its controller's next untap step", "until your next turn, creatures your opponents
  * control enter tapped".
  */
 import type { Effect } from '@commander-arena/engine';

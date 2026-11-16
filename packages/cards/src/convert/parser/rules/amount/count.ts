@@ -231,7 +231,7 @@ function cards(plural: boolean): Parser<IrFilter> {
     ),
     ([subtypes, types]) => ({ subtypes, types }),
   );
-  // D-1511 (Hylda deck, group 2): "two or more instant and/or sorcery cards in your graveyard": one card is any of the card types, joined by "or" or "and/or".
+  // D-518 (Hylda deck, group 2): "two or more instant and/or sorcery cards in your graveyard": one card is any of the card types, joined by "or" or "and/or".
   const union: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
       choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)),

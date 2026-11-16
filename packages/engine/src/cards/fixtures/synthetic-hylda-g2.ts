@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 2 OF THE HYLDA DECK (issue 42, D-1510 to D-1518). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 2 OF THE HYLDA DECK (issue 42, D-517 to D-525). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the real cards of the group need from the engine, written out by hand (the cards package checks that the grammar lowers the real Oracle text to
  * these same nodes): a sorcery that taps every creature a chosen player controls and keeps them tapped through their next untap step, a creature that does it as it enters

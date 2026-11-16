@@ -1402,7 +1402,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'cardTypesAmong':
-      // D-1511: the distinct card types among the cards a filter matches in a zone outside the battlefield and the stack.
+      // D-518: the distinct card types among the cards a filter matches in a zone outside the battlefield and the stack.
       if (a.filter === undefined || a.filter === null) {
         issue(out, `${path}.filter`, 'cardTypesAmong needs a filter');
       } else {
@@ -4416,7 +4416,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       scope.checkContinuous(e, path, scope, out);
       break;
     case 'permanentsEnterTapped':
-      // D-1512: a replacement of the game read as a permanent enters: a filter relative to the controller, with no zone, owner, stack kind, combat or trigger player.
+      // D-519: a replacement of the game read as a permanent enters: a filter relative to the controller, with no zone, owner, stack kind, combat or trigger player.
       checkFilter(e.permanents, `${path}.permanents`, out);
       if (
         filterSome(

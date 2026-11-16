@@ -156,7 +156,7 @@ function aggregateOf(
 }
 
 /**
- * CR 205.2a, (D-1511): "the number of card types among cards in your graveyard": the card types the objects the filter matches have between them, each once.
+ * CR 205.2a, (D-518): "the number of card types among cards in your graveyard": the card types the objects the filter matches have between them, each once.
  * The types are those of the cards where they are (`derive` of an object in a graveyard or exile is its printed types); a supertype or subtype is no card type.
  */
 function cardTypesAmongOf(state: GameState, filter: ObjectFilter, ctx: SelectContext): number {

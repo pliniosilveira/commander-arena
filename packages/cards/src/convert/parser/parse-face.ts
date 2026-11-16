@@ -222,7 +222,7 @@ function joinReferenceLines(lines: readonly string[]): string[] {
 }
 
 /**
- * A line of a spell that is a test and the "doesn't untap" of the creatures the line before it chose (Hylda deck, group 2, D-1510, CR 608.2c, 502.3): "Tap X target creatures." and
+ * A line of a spell that is a test and the "doesn't untap" of the creatures the line before it chose (Hylda deck, group 2, D-517, CR 608.2c, 502.3): "Tap X target creatures." and
  * "Ferocious — If you control a creature with power 4 or greater, those creatures don't untap during their controllers' next untap steps." (Icy Blast) are two paragraphs of one spell,
  * and "those creatures" are the ones the first targeted. As for `REFERENCE_LINE`, the pair is read as one text, and only when the second line says "it", "that creature" or "those
  * creatures" before "doesn't untap" or "don't untap"; a pair that does not read as one is unread as a whole, as the line was alone.
@@ -242,7 +242,7 @@ function joinUntapLines(lines: readonly string[]): string[] {
 }
 
 /**
- * The rows of the results table of a die roll (Hylda deck, group 2, D-1518, CR 706.3a, 706.3b): "Roll a d20." and the lines "1—9 | Tap all creatures your opponents control." that
+ * The rows of the results table of a die roll (Hylda deck, group 2, D-525, CR 706.3a, 706.3b): "Roll a d20." and the lines "1—9 | Tap all creatures your opponents control." that
  * follow it are one ability, so they are read as one text, the roll and then each row (`IrSentence.dieRow`). A row line that does not follow the roll line is not joined (and is not read).
  */
 const DIE_ROLL_LINE = /^Roll a d\d+\.(?: |$)/u;

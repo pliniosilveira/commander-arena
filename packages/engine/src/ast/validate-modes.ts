@@ -128,7 +128,7 @@ function checkChoice(
   if (
     !isCount(choose.min) ||
     !isCount(choose.max) ||
-    // D-1517 (CR 700.2b): "choose up to one" of a triggered ability may choose no mode, and the ability is removed from the stack.
+    // D-524 (CR 700.2b): "choose up to one" of a triggered ability may choose no mode, and the ability is removed from the stack.
     choose.min < (repeatable || triggered ? 0 : 1) ||
     choose.max < 1 ||
     choose.min > choose.max ||

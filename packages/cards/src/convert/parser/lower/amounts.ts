@@ -258,7 +258,7 @@ export function lowerAmount(
       return { ok: true, value: { kind: 'countOf', filter: filter.value }, rule };
     }
     case 'cardTypesAmong': {
-      // "The number of card types among cards in your graveyard" (D-1511, CR 205.2a): the engine's `cardTypesAmong`, of a zone outside the battlefield.
+      // "The number of card types among cards in your graveyard" (D-518, CR 205.2a): the engine's `cardTypesAmong`, of a zone outside the battlefield.
       const blocked = needs('cardTypesAmong');
       if (blocked !== null) return blocked;
       if (amount.of.filter.zone === undefined || amount.of.filter.zone === 'battlefield') {

@@ -1,4 +1,4 @@
-// Slice soak (D-1510 to D-1518): whole games with the 'hyldaG2' deck style (SYNTHETIC cards of the engine fixtures `synthetic-hylda-g2.ts`: the sorcery that taps all the creatures of a
+// Slice soak (D-517 to D-525): whole games with the 'hyldaG2' deck style (SYNTHETIC cards of the engine fixtures `synthetic-hylda-g2.ts`: the sorcery that taps all the creatures of a
 // chosen player and keeps them tapped, the creature that taps those of an opponent as it enters, the instant for up to two creatures with spell mastery, the X instant with ferocious, the
 // creature that does it when its controller casts an instant or sorcery, the Aura that taps its creature at every upkeep, the d20 table, the creature with "choose up to one", the siege that
 // asks for Khans or Dragons as it enters, the creature with four card types in the graveyard, and the artifact that taps a creature for less during its controller's turn) between random

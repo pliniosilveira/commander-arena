@@ -227,7 +227,7 @@ function runQueue(input: GameState): PutResult {
     if (modal !== null) {
       const sets = legalModeSets(state, modal, select);
       const only = sets[0];
-      // D-1517 (CR 700.2b): "choose up to one" with nothing to choose but no mode: the ability is removed, as with no legal choice at all.
+      // D-524 (CR 700.2b): "choose up to one" with nothing to choose but no mode: the ability is removed, as with no legal choice at all.
       if (only === undefined || (only.length === 0 && sets.length === 1)) {
         events.push({
           kind: 'abilityRemoved',
@@ -483,7 +483,7 @@ export function answerTriggerModes(
       automatic: false,
     },
   ];
-  // CR 700.2b, 603.3c (D-1517): "choose up to one" and no mode chosen: the ability is removed from the stack.
+  // CR 700.2b, 603.3c (D-524): "choose up to one" and no mode chosen: the ability is removed from the stack.
   if (chosen.length === 0) {
     const gone = state.objects[stackObject];
     let removed: GameState = { ...answered, triggering: { ...ctx, awaiting: null } };

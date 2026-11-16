@@ -1750,7 +1750,7 @@ export function lowerMayInstead(
  * for its own clauses (stage P28, CR 107.3c); a definition that no clause reads is refused, and so is one on the
  * sentence an offer to pay takes along ("If you do, ..."), which would need two meanings of X.
  */
-/** The sentence without the range of its row (D-1518): what the lowering of a row reads. */
+/** The sentence without the range of its row (D-525): what the lowering of a row reads. */
 function withoutRow(sentence: IrSentence): IrSentence {
   const { dieRow: _row, ...rest } = sentence;
   void _row;
@@ -1758,7 +1758,7 @@ function withoutRow(sentence: IrSentence): IrSentence {
 }
 
 /**
- * The text of a die roll with its results table (D-1518, CR 706.3, 706.3a, 706.3b): "Roll a d20. 1—9 | Tap all creatures your opponents control. 10—19 | ..." The sentences before
+ * The text of a die roll with its results table (D-525, CR 706.3, 706.3a, 706.3b): "Roll a d20. 1—9 | Tap all creatures your opponents control. 10—19 | ..." The sentences before
  * the first row are the roll, whose effect is the last of them (`rollDie`: the die this table reads); each row is the sentences from its range up to the next one, lowered as the
  * text of a spell of their own, and becomes the `conditional` of the engine whose condition is the result being in the row's range. The rows must be exactly the table of the die: the first
  * starts at 1, each starts right after the one before it, and the last ends at the sides of the die, so that every result has one row (a table with a gap or an overlap is
@@ -1815,7 +1815,7 @@ export function lowerSentences(
   sentences: readonly IrSentence[],
   ctx: LowerContext,
 ): LowerResult<Effects> {
-  // D-1518 (CR 706.3): the rows of a results table make the whole text of the roll one ability.
+  // D-525 (CR 706.3): the rows of a results table make the whole text of the roll one ability.
   const firstRow = sentences.findIndex((s) => s.dieRow !== undefined);
   if (firstRow >= 0) return lowerDieTable(sentences, firstRow, ctx);
   const steps: Step[] = [];

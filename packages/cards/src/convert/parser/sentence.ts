@@ -226,7 +226,7 @@ interface SentenceOptions {
    */
   readonly reflexive?: boolean;
   /**
-   * "1—9 | Tap all creatures your opponents control." (Hylda deck, group 2, D-1518, CR 706.3a): a row of the results table of a die roll starts the sentence with its range
+   * "1—9 | Tap all creatures your opponents control." (Hylda deck, group 2, D-525, CR 706.3a): a row of the results table of a die roll starts the sentence with its range
    * ("N", "N—M", "N+") and a bar. The sentence is read after the bar and carries the range (`IrSentence.dieRow`); the sentences after it, up to the next row, are the same row. Only the
    * text of a spell asks for it, where the lowering of the whole text (`lowerSentences`) joins the roll and its rows.
    */
@@ -345,7 +345,7 @@ function sentenceParser(options: SentenceOptions): Parser<IrSentence> {
   // "Then discard two cards unless ..." (stage P31, D-140): "then" at the start of a sentence says only that it comes after the one
   // before, which every sentence does (CR 608.2c). A sentence that does not read after it stops where it always did, at "Then".
   return (ctx, pos) => {
-    // D-1518 (CR 706.3a): a row of the results table of a die roll.
+    // D-525 (CR 706.3a): a row of the results table of a die roll.
     if (options.dieRows === true) {
       const row = DIE_ROW(ctx, pos);
       if (row.ok) {
@@ -525,7 +525,7 @@ export const SPELL_SENTENCE: Parser<IrSentence> = sentenceParser({
   // that player pays {3}" stays as it was.
   unless: 'energy',
   delayed: true,
-  // D-1518 (CR 706.3): the rows of a results table.
+  // D-525 (CR 706.3): the rows of a results table.
   dieRows: true,
 });
 

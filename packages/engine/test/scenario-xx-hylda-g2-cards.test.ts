@@ -1,4 +1,4 @@
-// The other SYNTHETIC cards of group 2 of the Hylda deck (D-1510 to D-1518, `synthetic-hylda-g2.ts`): Gale Binder (tap everything a chosen opponent controls), Frost Gust (X targets),
+// The other SYNTHETIC cards of group 2 of the Hylda deck (D-517 to D-525, `synthetic-hylda-g2.ts`): Gale Binder (tap everything a chosen opponent controls), Frost Gust (X targets),
 // Chill Spirit (a trigger of casting an instant or sorcery), Drowsy Aura (an intervening "if" about the permanent the Aura enchants), Slumber Geist ("choose up to one"),
 // Dawn Siege (a choice of a named option as it enters and a trigger of the opponent's combat), Ghost Sentinel (four card types in the graveyard), Winter Crown (a cost reduction
 // that depends on the turn).

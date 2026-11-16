@@ -83,7 +83,7 @@ export function groupEntersUntapped(state: GameState, entering: GameObject): boo
 }
 
 /**
- * CR 614.1c, 614.12 (D-1512): whether a continuous effect of the game ("Until your next turn, creatures your opponents control enter tapped",
+ * CR 614.1c, 614.12 (D-519): whether a continuous effect of the game ("Until your next turn, creatures your opponents control enter tapped",
  * `permanentsEnterTapped`) makes `entering` enter tapped: some effect whose filter the permanent matches as it would be on the battlefield, for the controller of the
  * effect.
  */

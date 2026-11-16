@@ -1,5 +1,5 @@
 /**
- * Conditions of group 2 of the Hylda deck (issue 42, D-1511, D-1513): the card types among the cards of a graveyard ("if there are four or more card types among cards in your
+ * Conditions of group 2 of the Hylda deck (issue 42, D-518, D-520): the card types among the cards of a graveyard ("if there are four or more card types among cards in your
  * graveyard", Delirium, Topplegeist) and the state of the permanent an Aura enchants ("if enchanted creature is untapped", Narcolepsy). Both are read after the "if" of an
  * intervening "if" (CR 603.4: checked as the ability triggers and again as it resolves).
  */

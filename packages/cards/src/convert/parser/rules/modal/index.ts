@@ -22,7 +22,7 @@ const CHOICES: ReadonlyMap<string, IrModeChoice> = new Map([
   // "both" are the two modes of a spell that has exactly two (CR 700.2).
   ['one or both', { min: 1, max: 2, exactly: 2 }],
   ['one or more', { min: 1, max: 'all' }],
-  // D-1517 (CR 700.2b): "choose up to one": no mode is allowed, which removes a triggered ability from the stack; only a triggered ability may say it (the lowering).
+  // D-524 (CR 700.2b): "choose up to one": no mode is allowed, which removes a triggered ability from the stack; only a triggered ability may say it (the lowering).
   ['up to one', { min: 0, max: 1 }],
 ]);
 
@@ -49,7 +49,7 @@ export const MODAL_CHOOSE = defineRule<IrModeHeader>({
     'Choose one or both —',
     'Choose one or more —',
     'choose one —',
-    // D-1517: Dreamshackle Geist.
+    // D-524: Dreamshackle Geist.
     'choose up to one —',
   ],
   rejects: [

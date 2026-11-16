@@ -178,7 +178,7 @@ class Binder {
   }
 
   /**
-   * The permanent an Aura or an Equipment enchants or equips when the intervening "if" of its triggered ability named it ("if enchanted creature is untapped, tap it", D-1513,
+   * The permanent an Aura or an Equipment enchants or equips when the intervening "if" of its triggered ability named it ("if enchanted creature is untapped, tap it", D-520,
    * CR 603.4, 303.4b): "it" of the body is that permanent, which the engine names `attached`, as "tap enchanted creature" is.
    */
   seedHost(condition: IrCondition | undefined): void {

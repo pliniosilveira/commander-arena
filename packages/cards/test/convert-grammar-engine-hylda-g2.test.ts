@@ -1,4 +1,4 @@
-// The Hylda deck (issue 42), group 2 (D-1510 to D-1518): the REAL Oracle text of Sleep, Tempest Caller, Send to Sleep, Icy Blast, Niblis of Frost, Narcolepsy, Cone of Cold,
+// The Hylda deck (issue 42), group 2 (D-517 to D-525): the REAL Oracle text of Sleep, Tempest Caller, Send to Sleep, Icy Blast, Niblis of Frost, Narcolepsy, Cone of Cold,
 // Dreamshackle Geist, Citadel Siege, Topplegeist and Hylda's Crown of Winter (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a card with no override,
 // is defined in an engine scenario and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs. The abilities of each real card are
 // also the ones of its SYNTHETIC sibling of the engine fixtures (`synthetic-hylda-g2.ts`), which the engine tests and the AI soak play. Pins: CR 502.3 (the untap step),

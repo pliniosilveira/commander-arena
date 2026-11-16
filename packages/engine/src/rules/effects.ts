@@ -2206,7 +2206,7 @@ function runEffect(
       return runRequireAttack(state, effect, ctx);
 
     case 'permanentsEnterTapped':
-      // CR 614.1c, 614.12 (D-1512): "creatures your opponents control enter tapped", read as a permanent enters.
+      // CR 614.1c, 614.12 (D-519): "creatures your opponents control enter tapped", read as a permanent enters.
       return runEntersTappedGroup(state, effect, ctx);
 
     case 'gainControl':

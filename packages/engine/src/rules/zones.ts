@@ -728,7 +728,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     }
   }
 
-  // CR 614.1c, 614.12 (D-1512): "Until your next turn, creatures your opponents control enter tapped".
+  // CR 614.1c, 614.12 (D-519): "Until your next turn, creatures your opponents control enter tapped".
   if (
     to === 'battlefield' &&
     !tapped &&

@@ -84,7 +84,7 @@ describe('the dimensions', () => {
       'forAsLongAsYouControlThis',
       // D-207: "for as long as this Saga remains on the battlefield".
       'forAsLongAsThisRemains',
-      // D-1510: "doesn't untap during its controller's next untap step".
+      // D-517: "doesn't untap during its controller's next untap step".
       'untilNextUntapStep',
     ]);
     // Only what the interpreter runs: replacement and `conditional` conditions, and "was kicked".

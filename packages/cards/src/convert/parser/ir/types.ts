@@ -368,7 +368,7 @@ export type IrAmount =
   | { readonly kind: 'manaValueOf'; readonly of: IrNoun; readonly span: Span }
   // "for each color among permanents you control" (stage P37, D-180, CR 105.2): the colors the permanents have between them, each once
   | { readonly kind: 'colorsAmong'; readonly of: IrNoun; readonly span: Span }
-  // "the number of card types among cards in your graveyard" (Hylda deck group 2, D-1511, CR 205.2a): the card types the cards of the group have between them, each once
+  // "the number of card types among cards in your graveyard" (Hylda deck group 2, D-518, CR 205.2a): the card types the cards of the group have between them, each once
   | { readonly kind: 'cardTypesAmong'; readonly of: IrNoun; readonly span: Span }
   // "for each time it was kicked" (CR 702.33c), stage P17; `who` is the word that says which object
   | { readonly kind: 'timesKicked'; readonly who: 'self' | 'it'; readonly span: Span }
@@ -1032,7 +1032,7 @@ export interface IrSentence extends IrNode {
    */
   readonly mayBy?: { readonly who: IrNoun; readonly haveYou: boolean };
   /**
-   * "1—9 | Tap all creatures your opponents control." (D-1518, CR 706.3a): the sentence starts a row of the results table of the die roll before it, for the results from `from` to
+   * "1—9 | Tap all creatures your opponents control." (D-525, CR 706.3a): the sentence starts a row of the results table of the die roll before it, for the results from `from` to
    * `to` (a single number has both the same). The sentences after it, up to the next sentence with a `dieRow`, belong to the row. Read only in the text of a spell.
    */
   readonly dieRow?: { readonly from: number; readonly to: number };

@@ -97,7 +97,7 @@ export function modesSelectionLegal(
 }
 
 /**
- * True for "choose one": its modes behave like radio buttons. A choice that repeats modes is counted, never "one"; "choose up to one" (D-1517: a minimum of 0, a triggered
+ * True for "choose one": its modes behave like radio buttons. A choice that repeats modes is counted, never "one"; "choose up to one" (D-524: a minimum of 0, a triggered
  * ability that may choose no mode) toggles, so that the pick can be taken back and no mode chosen.
  */
 export function isPickOne(

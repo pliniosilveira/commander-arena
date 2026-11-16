@@ -282,7 +282,7 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'target':
       return targetText(ability.targets?.find((t) => t.id === what.id));
     case 'each': {
-      // D-1510: "all creatures target player controls", the group of a player chosen as a target.
+      // D-517: "all creatures target player controls", the group of a player chosen as a target.
       const chosen = what.filter.controlledBy;
       if (chosen?.kind === 'target' && what.except === undefined) {
         const spec = ability.targets?.find((t) => t.id === chosen.id);
@@ -1094,7 +1094,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // CR 702.11b (Hylda group 3): "You gain hexproof until end of turn".
       return `${playerVerb(effect.player, ability, 'gain')} hexproof until end of turn`;
     case 'restrict':
-      // D-1510 (CR 502.3, 611.2a): "Target creature doesn't untap during its controller's next untap step".
+      // D-517 (CR 502.3, 611.2a): "Target creature doesn't untap during its controller's next untap step".
       if (effect.duration === 'untilNextUntapStep') {
         const who = object(effect.objects);
         return keepTappedText(who, isSeveral(who));
@@ -1108,7 +1108,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // D-179 (CR 508.1d): "Until your next turn, creatures your opponents control attack each combat if able".
       return requireAttackText(effect) ?? UNSAID;
     case 'permanentsEnterTapped':
-      // D-1512 (CR 614.1c, 614.12): "Until your next turn, creatures your opponents control enter tapped".
+      // D-519 (CR 614.1c, 614.12): "Until your next turn, creatures your opponents control enter tapped".
       return entersTappedText(effect) ?? UNSAID;
     case 'addMana': {
       // "Add {C}" for a fixed amount (D-139: a triggered mana ability's "add an additional {C}"), else the gist.

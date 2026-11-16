@@ -293,7 +293,7 @@ export function runRequireAttack(
 }
 
 /**
- * "Until your next turn, creatures your opponents control enter tapped" (D-1512, CR 614.1c, 614.12, 611.2a): one continuous effect with no set of objects, read where a
+ * "Until your next turn, creatures your opponents control enter tapped" (D-519, CR 614.1c, 614.12, 611.2a): one continuous effect with no set of objects, read where a
  * permanent enters the battlefield (`enteredTappedByEffect`), for the permanents its filter matches then. `until` as for `runRequireAttack`.
  */
 export function runEntersTappedGroup(
@@ -336,7 +336,7 @@ export function expireTurnStartEffects(
 }
 
 /**
- * "Doesn't untap during its controller's next untap step" (D-1510, CR 502.3, 611.2a): as the untap step of `active` has run, each permanent the
+ * "Doesn't untap during its controller's next untap step" (D-517, CR 502.3, 611.2a): as the untap step of `active` has run, each permanent the
  * effects of that duration named is let go if `active` controls it (it was tapped or not: the step has come), and an effect with no permanent left ends.
  */
 export function expireUntapStepEffects(state: GameState, active: SeatId): GameState {

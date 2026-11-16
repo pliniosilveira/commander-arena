@@ -1,5 +1,5 @@
 /**
- * The words of group 2 of the Hylda deck (D-1510 to D-1518) as pure models: the gists of the triggered abilities of the SYNTHETIC cards (read from the engine's fixtures, so a wording that
+ * The words of group 2 of the Hylda deck (D-517 to D-525) as pure models: the gists of the triggered abilities of the SYNTHETIC cards (read from the engine's fixtures, so a wording that
  * drifts from the AST fails here), the effect words of "doesn't untap during its controller's next untap step" and "creatures your opponents control enter tapped", the amount of
  * card types among cards in a graveyard, and the log line of a "choose up to one" that chose no mode. No DOM.
  */
@@ -124,7 +124,7 @@ describe('the effect words', () => {
   });
 });
 
-describe('"choose up to one" in the modes dialog (D-1517)', () => {
+describe('"choose up to one" in the modes dialog (D-524)', () => {
   const modes = [
     { index: 0, text: 'a', legal: true },
     { index: 1, text: 'b', legal: true },

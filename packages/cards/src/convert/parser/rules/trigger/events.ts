@@ -67,7 +67,7 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
     'the beginning of your first main phase',
     'the beginning of your second main phase',
     'the beginning of combat on your turn',
-    // D-1515 (Hylda deck, group 2, Citadel Siege): the beginning of combat of a turn of an opponent.
+    // D-522 (Hylda deck, group 2, Citadel Siege): the beginning of combat of a turn of an opponent.
     'the beginning of combat on each opponent’s turn',
     "the beginning of combat on each opponent's turn",
     'the beginning of each combat',

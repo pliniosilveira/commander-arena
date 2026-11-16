@@ -235,7 +235,7 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
         : `the total ${stat} of ${things}`;
     }
     case 'cardTypesAmong': {
-      // D-1511 (CR 205.2a): "the number of card types among cards in your graveyard" (Delirium).
+      // D-518 (CR 205.2a): "the number of card types among cards in your graveyard" (Delirium).
       const cards = thingsPhrase(amount.filter, true);
       return cards === null ? UNKNOWN_AMOUNT : `the number of card types among ${cards}`;
     }

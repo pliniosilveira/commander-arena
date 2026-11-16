@@ -1313,7 +1313,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       // CR 603.4: the intervening "if" is an ordinary condition, checked twice by the engine.
       if (a.interveningIf !== undefined) {
-        // D-1513: "if enchanted creature is untapped": the permanent an Aura is attached to against a filter.
+        // D-520: "if enchanted creature is untapped": the permanent an Aura is attached to against a filter.
         if (a.interveningIf.kind === 'objectMatches' && kindOf(a.interveningIf.of) === 'attached') {
           checkAttachedIf(a.interveningIf, `${path}.interveningIf`, out);
         } else {

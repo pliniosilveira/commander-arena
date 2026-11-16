@@ -444,7 +444,7 @@ export const CONDITION_RULES = [
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".
   ...HYLDA_G1_CONDITION_RULES,
-  // D-1511, D-1513 (Hylda deck, group 2): "there are four or more card types among cards in your graveyard", "enchanted creature is untapped".
+  // D-518, D-520 (Hylda deck, group 2): "there are four or more card types among cards in your graveyard", "enchanted creature is untapped".
   ...HYLDA_G2_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_UNLESS_PAYS,

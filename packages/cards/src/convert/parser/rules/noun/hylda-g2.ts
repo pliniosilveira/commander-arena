@@ -1,5 +1,5 @@
 /**
- * Noun rules of group 2 of the Hylda deck (issue 42, D-1510 to D-1518): "all creatures target player controls" (Sleep, Tempest Caller), "those creatures" (Sleep, Send to Sleep, Icy
+ * Noun rules of group 2 of the Hylda deck (issue 42, D-517 to D-525): "all creatures target player controls" (Sleep, Tempest Caller), "those creatures" (Sleep, Send to Sleep, Icy
  * Blast, Cone of Cold) and "target creature that player controls" (Topplegeist, Citadel Siege).
  */
 import { fail, literal, pattern, sequence } from '../../combinators';

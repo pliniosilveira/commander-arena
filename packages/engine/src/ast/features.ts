@@ -189,7 +189,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantPlayerHexproof',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".
     'requireAttack',
-    // D-1512: "Until your next turn, creatures your opponents control enter tapped".
+    // D-519: "Until your next turn, creatures your opponents control enter tapped".
     'permanentsEnterTapped',
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
     'gainControl',
@@ -932,7 +932,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'commanderCasts',
     // D-179: "for each color among permanents you control" (a static ability's +N/+N).
     'colorsAmong',
-    // D-1511: "the number of card types among cards in your graveyard" (Delirium).
+    // D-518: "the number of card types among cards in your graveyard" (Delirium).
     'cardTypesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
     'timesAttacked',
@@ -1404,7 +1404,7 @@ export const DURATION_KINDS = [
   'forAsLongAsYouControlThis',
   /** "For as long as this Saga remains on the battlefield" (CR 611.2b, D-207): the duration of a `grantKeyword` and a `preventDamage` in an ability of a permanent. */
   'forAsLongAsThisRemains',
-  /** "Doesn't untap during its controller's next untap step" (CR 502.3, D-1510): the duration of a `restrict` of `doesntUntap`. */
+  /** "Doesn't untap during its controller's next untap step" (CR 502.3, D-517): the duration of a `restrict` of `doesntUntap`. */
   'untilNextUntapStep',
 ] as const;
 export type DurationKind = (typeof DURATION_KINDS)[number];
@@ -1554,7 +1554,7 @@ export const AMOUNT_KINDS = [
   'commanderCasts',
   /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N. */
   'colorsAmong',
-  /** "The number of card types among cards in your graveyard" (CR 205.2a, D-1511): the engine's `cardTypesAmong`. */
+  /** "The number of card types among cards in your graveyard" (CR 205.2a, D-518): the engine's `cardTypesAmong`. */
   'cardTypesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
   'timesAttacked',

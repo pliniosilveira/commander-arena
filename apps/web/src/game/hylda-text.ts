@@ -1,5 +1,5 @@
 /**
- * The words of group 2 of the Hylda deck (D-1510 to D-1518), as pure functions of the AST: "doesn't untap during its controller's next untap step", "creatures your opponents
+ * The words of group 2 of the Hylda deck (D-517 to D-525), as pure functions of the AST: "doesn't untap during its controller's next untap step", "creatures your opponents
  * control enter tapped", "all creatures target player controls". Nothing here reads a card's Oracle text: a wording that drifts from the AST fails the tests
  * (`apps/web/test/hylda-g2-text.test.ts`).
  */

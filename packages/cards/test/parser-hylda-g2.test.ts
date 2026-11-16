@@ -1,4 +1,4 @@
-// The Hylda deck (issue 42), group 2 (D-1510 to D-1518): the lines of Sleep, Tempest Caller, Send to Sleep, Icy Blast, Niblis of Frost, Narcolepsy, Cone of Cold, Dreamshackle Geist,
+// The Hylda deck (issue 42), group 2 (D-517 to D-525): the lines of Sleep, Tempest Caller, Send to Sleep, Icy Blast, Niblis of Frost, Narcolepsy, Cone of Cold, Dreamshackle Geist,
 // Citadel Siege, Topplegeist and Hylda's Crown of Winter. The first lines of each block are the real Oracle text of the acceptance cards of the golden corpus read through the
 // whole pipeline; the other lines are SYNTHETIC variants and the near misses the grammar must not read. The engine runs what is lowered in
 // convert-grammar-engine-hylda-g2.test.ts.
@@ -36,7 +36,7 @@ const KEEP = (objects: unknown) => ({
   duration: 'untilNextUntapStep',
 });
 
-describe('Sleep and Tempest Caller: "all creatures target player controls" (D-1510, CR 109.4, 115.1)', () => {
+describe('Sleep and Tempest Caller: "all creatures target player controls" (D-517, CR 109.4, 115.1)', () => {
   test('the real lines of Sleep: the group of the target player, then the same group again', () => {
     expect(
       readAll(
@@ -104,7 +104,7 @@ describe('Sleep and Tempest Caller: "all creatures target player controls" (D-15
   });
 });
 
-describe('"Doesn\'t untap during its controller\'s next untap step" (D-1510, CR 502.3, 611.2a, 701.43b)', () => {
+describe('"Doesn\'t untap during its controller\'s next untap step" (D-517, CR 502.3, 611.2a, 701.43b)', () => {
   test('the real lines of Niblis of Frost: the target, then the same creature', () => {
     expect(
       readAll(
@@ -215,7 +215,7 @@ describe('"Doesn\'t untap during its controller\'s next untap step" (D-1510, CR 
   });
 });
 
-describe('Narcolepsy: "if enchanted creature is untapped, tap it" (D-1513, CR 603.4, 303.4b)', () => {
+describe('Narcolepsy: "if enchanted creature is untapped, tap it" (D-520, CR 603.4, 303.4b)', () => {
   test('the real line: the permanent the Aura enchants, against a filter, and the same permanent as "it"', () => {
     expect(
       readAll(
@@ -274,7 +274,7 @@ describe('Narcolepsy: "if enchanted creature is untapped, tap it" (D-1513, CR 60
   });
 });
 
-describe('Cone of Cold: a d20 table (D-1518, CR 706.3a, 706.3b)', () => {
+describe('Cone of Cold: a d20 table (D-525, CR 706.3a, 706.3b)', () => {
   const ROW1 = '1—9 | Tap all creatures your opponents control.';
   const ROW2 =
     "10—19 | Tap all creatures your opponents control. Those creatures don't untap during their controllers' next untap steps.";
@@ -394,7 +394,7 @@ describe('Cone of Cold: a d20 table (D-1518, CR 706.3a, 706.3b)', () => {
   });
 });
 
-describe('Dreamshackle Geist: "choose up to one —" (D-1517, CR 700.2b)', () => {
+describe('Dreamshackle Geist: "choose up to one —" (D-524, CR 700.2b)', () => {
   const LINE =
     "At the beginning of combat on your turn, choose up to one —\n• Tap target creature.\n• Target creature doesn't untap during its controller's next untap step.";
 
@@ -431,7 +431,7 @@ describe('Dreamshackle Geist: "choose up to one —" (D-1517, CR 700.2b)', () =>
   });
 });
 
-describe('Citadel Siege: "at the beginning of combat on each opponent\'s turn" (D-1515, CR 507.1)', () => {
+describe('Citadel Siege: "at the beginning of combat on each opponent\'s turn" (D-522, CR 507.1)', () => {
   test('the real lines: the choice and both options, the second with the player of the turn', () => {
     expect(
       readAll(
@@ -473,7 +473,7 @@ describe('Citadel Siege: "at the beginning of combat on each opponent\'s turn" (
   });
 });
 
-describe('Topplegeist: "four or more card types among cards in your graveyard" (D-1511, CR 205.2a, 207.2c, 603.4)', () => {
+describe('Topplegeist: "four or more card types among cards in your graveyard" (D-518, CR 205.2a, 207.2c, 603.4)', () => {
   test('the real line: an intervening "if" on the count of card types of the graveyard, and a target of the player of the step', () => {
     expect(
       readAll(
@@ -539,7 +539,7 @@ describe('Topplegeist: "four or more card types among cards in your graveyard" (
   });
 });
 
-describe('Hylda\'s Crown of Winter: "This ability costs {1} less to activate during your turn." (D-1516, CR 601.2f)', () => {
+describe('Hylda\'s Crown of Winter: "This ability costs {1} less to activate during your turn." (D-523, CR 601.2f)', () => {
   test('the real line: the generic reduction while it is your turn', () => {
     expect(
       readAll(

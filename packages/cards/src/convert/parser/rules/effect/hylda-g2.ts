@@ -1,5 +1,5 @@
 /**
- * Effect rules of group 2 of the Hylda deck (issue 42, D-1510 to D-1518): "doesn't untap during its controller's next untap step" (Sleep, Send to Sleep, Icy Blast, Niblis of Frost,
+ * Effect rules of group 2 of the Hylda deck (issue 42, D-517 to D-525): "doesn't untap during its controller's next untap step" (Sleep, Send to Sleep, Icy Blast, Niblis of Frost,
  * Cone of Cold, Dreamshackle Geist) and "until your next turn, creatures your opponents control enter tapped" (Cone of Cold).
  */
 import { fail, literal, pattern } from '../../combinators';

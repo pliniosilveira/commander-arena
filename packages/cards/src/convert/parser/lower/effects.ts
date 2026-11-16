@@ -1417,7 +1417,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...FEATHER_G2_LOWERINGS,
   // D-459, D-460: "It gains haste.", "Exile it at the beginning of the next end step.", "If it would leave the battlefield, exile it instead ...", "Put each creature card exiled with ~ onto the battlefield ...".
   ...GISA_G4_LOWERINGS,
-  // D-1510, D-1512: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
+  // D-517, D-519: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_LOWERINGS,
   ...GRAVEYARD_CHOICE_LOWERINGS,
   ...PILES_LOWERINGS,

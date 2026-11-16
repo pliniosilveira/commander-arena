@@ -1,4 +1,4 @@
-// validateCard for the nodes of group 2 of the Hylda deck (D-1510 to D-1518): `restrict` of `doesntUntap` with the duration `untilNextUntapStep`, `permanentsEnterTapped`,
+// validateCard for the nodes of group 2 of the Hylda deck (D-517 to D-525): `restrict` of `doesntUntap` with the duration `untilNextUntapStep`, `permanentsEnterTapped`,
 // the amount `cardTypesAmong`, a "choose up to one" of a triggered ability, and the intervening "if" about the permanent an Aura enchants.
 // Cards are SYNTHETIC and defined here.
 import { describe, expect, test } from 'vitest';
@@ -69,7 +69,7 @@ const keep = (
     effect: { kind: 'restrict', objects: T1, restriction, duration },
   });
 
-describe('restrict: doesntUntap until the next untap step (D-1510)', () => {
+describe('restrict: doesntUntap until the next untap step (D-517)', () => {
   test('the pair is valid', () => {
     expect(full(keep('untilNextUntapStep'))).toEqual([]);
   });
@@ -84,7 +84,7 @@ describe('restrict: doesntUntap until the next untap step (D-1510)', () => {
   });
 });
 
-describe('permanentsEnterTapped (D-1512)', () => {
+describe('permanentsEnterTapped (D-519)', () => {
   const enters = (permanents: object, duration = 'untilYourNextTurn') =>
     sorcery({
       effect: { kind: 'permanentsEnterTapped', permanents, duration } as unknown as Effect,
@@ -106,7 +106,7 @@ describe('permanentsEnterTapped (D-1512)', () => {
   });
 });
 
-describe('cardTypesAmong (D-1511)', () => {
+describe('cardTypesAmong (D-518)', () => {
   const drawIfTypes = (filter: object) =>
     creature([
       {
@@ -139,7 +139,7 @@ describe('cardTypesAmong (D-1511)', () => {
   });
 });
 
-describe('"choose up to one" of a triggered ability (D-1517, CR 700.2b)', () => {
+describe('"choose up to one" of a triggered ability (D-524, CR 700.2b)', () => {
   const modal = (min: number): Ability => ({
     kind: 'triggered',
     trigger: { kind: 'upkeep', whose: 'you' },
@@ -169,7 +169,7 @@ describe('"choose up to one" of a triggered ability (D-1517, CR 700.2b)', () => 
   });
 });
 
-describe('the intervening "if" about the permanent an Aura enchants (D-1513, CR 603.4)', () => {
+describe('the intervening "if" about the permanent an Aura enchants (D-520, CR 603.4)', () => {
   const withCondition = (condition: unknown): CardDefinition =>
     aura([
       {
