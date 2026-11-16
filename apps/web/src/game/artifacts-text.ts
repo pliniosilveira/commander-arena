@@ -22,7 +22,7 @@ import {
 } from '@commander-arena/engine';
 import { amountPhrase, UNKNOWN_AMOUNT } from './amount-text';
 import { COMBAT_STEP_WORDS, gameConditionWords } from './condition-text';
-import { tappedWhat } from './cost-text';
+import { tappedWhat } from './cost-words';
 import { thingsPhrase } from './filter-text';
 import { filterPhrase, type TriggerContext, triggerWording, withText } from './trigger-text';
 

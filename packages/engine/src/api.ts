@@ -23,6 +23,7 @@ import { isArrangement } from './rules/arrange';
 import { acceptCascade, declineCascade } from './rules/cascade-cast';
 import {
   answerBuyback,
+  answerCastBehold,
   answerCastDiscard,
   answerCastExile,
   answerCastSacrifice,
@@ -919,6 +920,7 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       if (action.kind !== 'chooseCards') return fail('Choose cards');
       if (!validCardsChoice(action.objects, d)) return fail('That is not a legal choice');
       if (d.forCost === true) {
+        if (d.purpose === 'behold') return answerCastBehold(state, action.objects);
         // CR 702.138a (D-124): the other cards an escape cost exiles are chosen as the spell is cast.
         if (d.purpose === 'exile') {
           // D-232: "Exile two creature cards from your graveyard" as the cost of an activated ability.

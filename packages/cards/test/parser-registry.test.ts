@@ -698,6 +698,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'cost.discard-this': permanent((e) => `{1}, ${e}: Draw a card.`),
   'cost.exile-this': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
+  // The card exiles itself from the graveyard as the cost of an ability it has there; Behold is an additional cost of a spell.
+  'cost.exile-this-from-graveyard': permanent((e) => `{1}, ${e}: Draw a card.`),
+  'cost.behold': spell((e) => `As an additional cost to cast ~, ${e}. Draw a card.`),
   // Group 5 (D-233): the exile of cards of the graveyard as a cost.
   'cost.exile-graveyard-cards': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
   'effect.mana-rider-scry-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),

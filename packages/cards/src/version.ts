@@ -7,4 +7,6 @@
  * What each version added: `git log -p -- packages/cards/src/version.ts`, `docs/DECISIONS.md`
  * (one entry per slice) and `docs/MECHANICS.md`.
  */
-export const PARSER_VERSION = 105;
+// 105: Behold costs, granted loyalty abilities and graveyard self-exile activation costs (D-559 to D-561).
+// 106: Galadriel deck: scry, the Ring, lands as creatures, exchange of control, buyback, dice (D-528 to D-558).
+export const PARSER_VERSION = 106;

@@ -900,7 +900,10 @@ function copiesThisIssues(face: CardFace, base: string, out: AstIssue[]): void {
  */
 function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): void {
   for (const [i, c] of (face.additionalCosts ?? []).entries()) {
-    if (!SUPPORTED_FEATURES.costKinds.includes(c.kind) || c.kind === 'exileFromGraveyard') {
+    if (
+      (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
+      c.kind === 'exileFromGraveyard'
+    ) {
       out.push({
         path: `${base}.additionalCosts[${i}]`,
         message: `cost "${c.kind}" is not implemented by the engine yet`,
@@ -915,7 +918,10 @@ function additionalCostIssues(face: CardFace, base: string, out: AstIssue[]): vo
   // D-181: the costs of each way of a choice are held to the same rules.
   for (const [w, way] of (face.additionalCostChoice ?? []).entries()) {
     for (const [i, c] of way.entries()) {
-      if (!SUPPORTED_FEATURES.costKinds.includes(c.kind) || c.kind === 'exileFromGraveyard') {
+      if (
+        (!SUPPORTED_FEATURES.costKinds.includes(c.kind) && c.kind !== 'behold') ||
+        c.kind === 'exileFromGraveyard'
+      ) {
         out.push({
           path: `${base}.additionalCostChoice[${w}][${i}]`,
           message: `cost "${c.kind}" is not implemented by the engine yet`,

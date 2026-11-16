@@ -88,6 +88,9 @@ export function activationRefusal(
   }
   // CR 606.3: a loyalty ability is activated only any time you could cast a sorcery, ...
   const loyalty = isLoyaltyAbility(ability.cost);
+  if (loyalty && !derive(state, obj).types.includes('planeswalker')) {
+    return 'A loyalty ability can be activated only from a planeswalker';
+  }
   if ((ability.timing === 'sorcery' || loyalty) && !hasSorceryTiming(state, seat)) {
     return 'That ability can be activated only at sorcery speed';
   }

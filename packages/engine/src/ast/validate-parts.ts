@@ -1915,6 +1915,31 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         }
       }
       break;
+    case 'behold':
+      // CR 701.4 (D-151): the filter is a quality shared by hand cards and permanents, not a zone or controller restriction.
+      checkFilter(cost.filter, `${path}.filter`, out);
+      if (
+        filterSome(
+          cost.filter,
+          (f) =>
+            f.zone !== undefined ||
+            f.controller !== undefined ||
+            f.owner !== undefined ||
+            f.controlledBy !== undefined ||
+            f.stackKind !== undefined ||
+            f.other !== undefined ||
+            f.tapped !== undefined ||
+            f.attacking !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.filter`,
+          'the quality of a card or permanent: no zone, controller, owner, stackKind, other, or game state',
+        );
+      }
+      break;
     case 'exileThis':
       // D-185: no operand; where it may stand is checked with the ability (`checkActivationCosts`).
       break;

@@ -35,6 +35,8 @@ export interface CostOptions {
   readonly eventLife?: boolean;
   /** "Discard X cards" (Hashaton group 10, D-386, provisional, CR 107.3a, 701.9): an additional cost of a spell, where X is announced; nowhere else. */
   readonly discardX?: boolean;
+  /** A spell's additional cost (CR 118.8), where Behold is paid; not a cost of an activated ability. */
+  readonly additional?: boolean;
 }
 
 /**
@@ -137,8 +139,16 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     case 'revealThis':
       // CR 701.20a, 113.6b (Gisa deck, group 4, D-462): the card itself is shown from the hand: the cost of an ordinary activated ability, which then works from the hand.
       return options.ordinary === true ? ok({ kind: 'revealThis' }) : failure(cost);
+    case 'behold': {
+      if (options.additional !== true) return failure(cost);
+      const filter = lowerFilter(cost.what);
+      return filter.ok ? ok({ kind: 'behold', filter: filter.value }) : filter;
+    }
     case 'exileThis':
       // CR 118.1, 406.1 (stage P68, D-229): the permanent with the ability exiles itself, a cost of an ordinary activated ability.
+      return options.ordinary === true ? ok({ kind: 'exileThis' }) : failure(cost);
+    case 'exileThisFromGraveyard':
+      // CR 118.1: the source card exiles itself as an ordinary activation cost from its graveyard.
       return options.ordinary === true ? ok({ kind: 'exileThis' }) : failure(cost);
     case 'energy':
       // CR 107.14 (stage P51, D-209): paid by the player an "unless you pay" asks, and nowhere else.

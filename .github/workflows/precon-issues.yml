@@ -1,0 +1,116 @@
+name: Precon issues
+
+# D-562: by hand only. Reads Archidekt's list of Commander precons (https://archidekt.com/commander-precons), reads each deck, checks its cards with the same
+# pipeline as `pnpm corpus:decks`, and opens one issue for each deck: "deck support <name>" when the engine cannot run every card (in the shape of the issue the
+# app's "Ask for support on GitHub" button writes, so the triage workflow and the deck support routine take it from there), "precon <name>" when it can. Every
+# issue also asks for the deck to be added to the ready-made decks of the app, so that everyone can play it.
+# What it opens: for a deck the app does not have, "deck support <name>" (a card the engine cannot run) or "precon <name>" (every card supported), asking for the
+# deck to be added as a ready-made deck; for a deck the app has with another list than Archidekt's, "update precon <name> (list <hash>)" (or "deck support" when the
+# new list has an unsupported card), with the cards to add, remove and change; for a deck the app has with the same list, nothing. The app's decks are the
+# snapshots of the checked-out branch (`apps/web/src/precons/snapshots/`, main for a normal run). An issue is never opened twice: a title (open or closed) or a
+# marker in a body that is already there is skipped, and a list that changed again gets a new hash and so a new issue.
+# It opens the issues unless `dry_run` is ticked: then nothing is opened, and the decks and the issues it would open are in the job summary and the artifact.
+# The page is untrusted input: the names that reach an issue pass `clean` (tools/precon/archidekt.ts) and every value goes into a file or the environment, never into a script.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Only list the issues that would be opened (off by default, so the issues are opened)'
+        type: boolean
+        default: false
+      limit:
+        description: Read at most this many decks (0 reads every deck of the page)
+        type: string
+        default: '0'
+      ids:
+        description: 'Archidekt deck ids to read instead of the page (comma separated, for example 1234,5678)'
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  issues: write
+  actions: write
+
+concurrency:
+  group: precon-issues
+  cancel-in-progress: false
+
+jobs:
+  precon-issues:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Read the precons of Archidekt
+        env:
+          LIMIT: ${{ inputs.limit }}
+          IDS: ${{ inputs.ids }}
+        run: |
+          case "$LIMIT" in ''|*[!0-9]*) echo "limit must be a number"; exit 2;; esac
+          case "$IDS" in *[!0-9,\ ]*) echo "ids must be numbers separated by commas"; exit 2;; esac
+          node tools/precon/scan-cli.ts --out precon-work --limit "$LIMIT" --ids "$IDS"
+      - id: day
+        run: echo "day=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .cache/corpus
+          key: scryfall-oracle-cards-${{ steps.day.outputs.day }}
+          restore-keys: scryfall-oracle-cards-
+      - name: Check each deck against the engine and write the issues
+        run: node tools/precon/issues-cli.ts --decks precon-work --download --installed apps/web/src/precons/snapshots --out precon-work/issues.json
+      - name: What it found
+        run: |
+          {
+            echo "## Precon issues"
+            echo
+            echo "Dry run: ${{ inputs.dry_run }}"
+            echo
+            jq -r '.[] | "- " + .title + (if .needsSupport then "" else " (the engine already runs every card)" end)' precon-work/issues.json
+          } >> "$GITHUB_STEP_SUMMARY"
+      # The folder has no leading dot: the upload skips hidden files and folders.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: precon-issues
+          path: precon-work
+          retention-days: 30
+      - name: Open the issues
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create precon-request --color 1d76db --description "A Commander precon to support and add to the ready-made decks" || true
+          # What is already there, one line each: every title (open or closed) and every marker an earlier run left in a body ("precon-issues:deck=<id>:add",
+          # "precon-issues:deck=<id>:update:<list>"), so an issue is not opened twice even if its title was edited. Titles and markers of this run are added as it goes.
+          gh issue list --state all --limit 2000 --json title,body > precon-work/existing.json
+          jq -r '.[] | .title, ((.body // "") | scan("<!-- (precon-issues:[^ ]*) -->") | .[0])' precon-work/existing.json > precon-work/existing.txt
+          count=$(jq length precon-work/issues.json)
+          opened=0
+          for i in $(seq 0 $((count - 1))); do
+            jq -r ".[$i].title" precon-work/issues.json > precon-work/title.txt
+            jq -r ".[$i].body" precon-work/issues.json > precon-work/body.md
+            needs=$(jq -r ".[$i].needsSupport" precon-work/issues.json)
+            marker=$(jq -r ".[$i].marker" precon-work/issues.json)
+            title=$(cat precon-work/title.txt)
+            if grep -Fixq -- "$title" precon-work/existing.txt || grep -Fxq -- "$marker" precon-work/existing.txt; then
+              echo "already there: $title"
+              continue
+            fi
+            url=$(gh issue create --title "$title" --body-file precon-work/body.md --label precon-request)
+            echo "opened: $url"
+            printf '%s\n%s\n' "$title" "$marker" >> precon-work/existing.txt
+            opened=$((opened + 1))
+            if [ "$needs" = "true" ]; then
+              # An issue opened with the workflow's token does not start other workflows by itself, so the triage is started the way D-292 allows, by its issue number.
+              gh workflow run deck-support-triage.yml -f issue="${url##*/}" || echo "the triage could not be started for $url"
+            fi
+            sleep 3
+          done
+          echo "$opened issue(s) opened" >> "$GITHUB_STEP_SUMMARY"

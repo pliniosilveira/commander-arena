@@ -9,6 +9,7 @@ import type { IrAmount, IrCost, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, node, spanned } from '../registry';
+import { COST_BEHOLD } from './behold';
 import { DANITHA_G5_COST_RULES } from './danitha-group-5';
 import { GISA_G4_COST_RULES } from './gisa-g4';
 import { HASHATON_G2_COST_RULES } from './hashaton-group-2';
@@ -814,6 +815,7 @@ export const COST_ENERGY = defineRule<IrCost>({
 });
 
 export const COST_RULES = [
+  COST_BEHOLD,
   COST_TAP,
   COST_TAP_PERMANENTS,
   // Before the plain mana cost, which would take the plain prefix of "{1}{R/W}" and stop there.

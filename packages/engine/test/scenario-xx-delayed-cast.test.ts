@@ -19,6 +19,8 @@ const BOLT = 'SYNTHETIC Copy Bolt'; // {R} instant: 2 damage to any target
 const SPLIT = 'SYNTHETIC Split Bolt'; // {1}{R} sorcery
 const BEARS = 'Grizzly Bears';
 const COMMANDER = 'SYNTHETIC Echo Commander'; // {3} creature, in the command zone
+const WAY = 'SYNTHETIC Cryomancer Way';
+const JACE = 'SYNTHETIC Granted Jace';
 const FILLER = Array.from({ length: 12 }, () => 'Plains');
 
 const commanderCard = singleFaceCard({
@@ -30,6 +32,57 @@ const commanderCard = singleFaceCard({
   colorIdentity: [],
   power: 3,
   toughness: 3,
+  oracleText: '',
+});
+
+function loyaltyGrantCard(name: string, types: readonly ('creature' | 'planeswalker')[]) {
+  return singleFaceCard({
+    name,
+    manaCost: ['2', 'U'],
+    supertypes: ['legendary'],
+    types: ['enchantment'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText: '',
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'grantAbility',
+          subject: { kind: 'filter', filter: { types, controller: 'you' } },
+          ability: {
+            kind: 'activated',
+            cost: [{ kind: 'loyalty', change: -3 }],
+            effect: {
+              kind: 'delayedCast',
+              filter: {
+                stackKind: 'spell',
+                anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }],
+              },
+              effect: {
+                kind: 'copySpell',
+                spell: { kind: 'triggerSubject' },
+                newTargets: 'may',
+              },
+            },
+          },
+        },
+      },
+    ],
+  });
+}
+
+const wayCard = loyaltyGrantCard(WAY, ['planeswalker']);
+const creatureLoyaltyGrant = loyaltyGrantCard('SYNTHETIC Creature Loyalty Grant', ['creature']);
+
+const jaceCard = singleFaceCard({
+  name: JACE,
+  manaCost: ['2', 'U'],
+  types: ['planeswalker'],
+  subtypes: ['Jace'],
+  colors: ['U'],
+  colorIdentity: ['U'],
+  loyalty: 4,
   oracleText: '',
 });
 
@@ -72,6 +125,10 @@ const castBolt = (g: ScenarioGame, seat = 0): void => {
 describe('the cards are valid', () => {
   test.each([ECHO, EXACT, DRAKE])('%s', (name) => {
     expect(validateCard(syntheticCard(name))).toEqual([]);
+  });
+
+  test('the granted loyalty ability is valid', () => {
+    expect(validateCard(wayCard)).toEqual([]);
   });
 
   test('a delayed cast trigger copies the spell cast, and nothing else', () => {
@@ -449,5 +506,44 @@ describe('"{2}{U}, Sacrifice this creature: When you next cast an instant or sor
     resolveTop(g);
     g.advanceTo('upkeep', { turn: 'next' });
     expect(g.state.delayedTriggers).toHaveLength(0);
+  });
+});
+
+describe('Way of the Cryomancer grants a loyalty ability that copies your next instant or sorcery', () => {
+  test('a granted loyalty ability cannot be activated from a creature', () => {
+    const g = game((b) =>
+      b.define(creatureLoyaltyGrant).seat(0).battlefield('SYNTHETIC Creature Loyalty Grant', BEARS),
+    );
+    expect(
+      getView(g.state, 0).battlefield.find((obj) => obj.name === BEARS)?.activated?.[0]?.ability
+        .cost,
+    ).toEqual([{ kind: 'loyalty', change: -3 }]);
+    g.expect.illegal(0, { activate: BEARS, ability: 0 });
+  });
+
+  test('the granted ability is activated on a planeswalker and copies the next spell with new targets', () => {
+    const g = game((b) =>
+      b.define(wayCard).define(jaceCard).seat(0).battlefield(WAY, JACE, BEARS).hand(BOLT),
+    );
+    expect(
+      getView(g.state, 0).battlefield.find((obj) => obj.name === JACE)?.activated?.[0]?.ability
+        .cost,
+    ).toEqual([{ kind: 'loyalty', change: -3 }]);
+    expect(
+      getView(g.state, 0).battlefield.find((obj) => obj.name === BEARS)?.activated,
+    ).toBeUndefined();
+
+    g.act(0).activate(JACE, { pay: true });
+    resolveTop(g);
+    expect(g.state.delayedTriggers).toHaveLength(1);
+    castBolt(g);
+    g.expect.stack([`${JACE} (ability)`, BOLT]);
+    resolveTop(g);
+    g.expect.pending('targets', 0);
+    g.act(0).chooseTargets({ player: 0 });
+    g.passAll();
+    g.expect.life(0, 18);
+    g.expect.life(1, 18);
+    g.expect.invariants();
   });
 });

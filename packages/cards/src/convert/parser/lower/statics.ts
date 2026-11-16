@@ -158,7 +158,14 @@ function lowerGrantedAbility(
   }
   const bound = bind(inner, {});
   if (!bound.ok) return failure(at);
-  const own = newContext('ability', ctx.faceTypes, ctx.faceSubtypes, ctx.cardName);
+  const grantedToPlaneswalkers =
+    subject.kind === 'filter' && subject.filter.types?.includes('planeswalker') === true;
+  const own = newContext(
+    'ability',
+    grantedToPlaneswalkers ? ['planeswalker'] : ctx.faceTypes,
+    ctx.faceSubtypes,
+    ctx.cardName,
+  );
   const lowered =
     bound.ability.kind === 'triggered'
       ? lowerTriggered(bound.ability, own)

@@ -984,6 +984,12 @@ export type Cost =
       readonly named?: true;
     }
   /**
+   * "Behold a Jace" (CR 701.4, D-151): as an additional cost to cast a spell, reveal a matching
+   * card from the caster's hand or choose a matching permanent they control. The filter describes
+   * the card or permanent, with no zone or controller; not a cost of an activated ability.
+   */
+  | { readonly kind: 'behold'; readonly filter: ObjectFilter }
+  /**
    * "Discard this card" (CR 702.29a, Cycling): the source itself goes from the hand to the
    * graveyard, so there is no choice to make. Only valid on an ability that functions in the hand. `cycling` (D-179) marks the cost of a cycling
    * ability, which the engine writes itself when it expands Cycling and typecycling: paying it is cycling the card (CR 702.29c, 702.29f), which triggers
