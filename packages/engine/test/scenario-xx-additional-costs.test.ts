@@ -418,7 +418,7 @@ describe('several additional costs, life and mana', () => {
       reveal: true,
     });
     expect(chooseCardsDecision(g).legal).toContain(g.id(SYNTHETIC_JACE.name));
-    g.act(0).chooseCards(SYNTHETIC_JACE.name);
+    g.act(0).chooseCards({ name: SYNTHETIC_JACE.name, zone: 'battlefield', seat: 0 });
     g.expect.zone(SYNTHETIC_JACE.name, 'battlefield', { seat: 0 });
     g.expect.stack([BEHOLD_OR_PAY.name]);
   });

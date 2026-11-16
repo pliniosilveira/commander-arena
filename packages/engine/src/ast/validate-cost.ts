@@ -16,6 +16,7 @@ import {
 
 /** The costs a spell may have besides its mana cost (`CardFace.additionalCosts`). */
 export const ADDITIONAL_COST_KINDS: readonly Cost['kind'][] = [
+  'behold',
   'sacrifice',
   'discard',
   'payLife',
@@ -39,6 +40,7 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
   let discards = 0;
   let xLife = 0;
   let xDiscard = 0;
+  let beholds = 0;
   costs.forEach((cost, i) => {
     const p = `${path}[${i}]`;
     checkCost(cost, p, out);
@@ -47,6 +49,9 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
       return;
     }
     switch (cost.kind) {
+      case 'behold':
+        beholds += 1;
+        break;
       case 'sacrifice':
         sacrifices += 1;
         // "Sacrifice this" is a cost of a permanent's ability: a spell sacrifices something else.
@@ -106,6 +111,7 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
   if (sacrifices > 1) issue(out, path, 'more than one sacrifice cost is not supported');
   if (discards > 1) issue(out, path, 'more than one discard cost is not supported');
   if (xLife > 1) issue(out, path, 'more than one "pay X life" cost is not supported');
+  if (beholds > 1) issue(out, path, 'more than one behold cost is not supported');
   // D-386: "discard X cards" is the one discard cost of the spell (the discard of N cards pays into the same cards).
   if (xDiscard > 1 || (xDiscard === 1 && discards > 0)) {
     issue(out, path, 'discard X cards is the only discard cost of a spell (D-386)');

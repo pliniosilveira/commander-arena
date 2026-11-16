@@ -3268,3 +3268,20 @@ Numbers are references; entries are never deleted. D-118 and D-119 are cited as 
 - Alternatives: reading the mana of a land from its rules text in the web (guessing; the engine knows); tinting the whole card background (it fights the card picture); a border of the first colour only for two-colour cards (hides a colour).
 - Consequences: one more field for a land in every view, so the derive digests were regenerated. A land that makes mana of any colour is gold; one that only makes colourless is grey. The small attachment and commander chips keep their band and have no colour border.
 
+## D-529: Behold as a spell's additional cost (2026-11-16)
+- Context: Countersculpt can be cast by revealing a Jace from hand or among permanents the caster controls, or by paying {1}; the existing Behold primitive handled effect instructions but not spell costs.
+- Decision: allow one `behold` among spell additional costs and their cost-choice alternatives. Affordability checks for a matching card or permanent before offering the spell; payment uses the existing Behold choice, reveals a hand card, and handles a controlled permanent as its own zone.
+- Alternatives: treat Behold as an effect after casting (the extra cost would not be paid before the spell is cast); model it as an activated-ability cost (the card uses it as a spell cost).
+- Consequences: other spells may use the same additional-cost primitive, while activated-ability Behold costs remain unsupported. `ENGINE_VERSION` and `PARSER_VERSION` are bumped; corpus snapshots and derive digests must be regenerated.
+
+## D-530: A granted loyalty ability is activated only from a planeswalker (2026-11-16)
+- Context: Way of the Cryomancer grants a loyalty ability to planeswalkers a player controls. The parser previously rejected a loyalty ability when the granting source was not itself a planeswalker.
+- Decision: permit a static ability to grant a loyalty ability to its selected permanents; at activation, require the ability's source to be a planeswalker. Keep the existing loyalty timing, cost, and once-per-turn rules.
+- Alternatives: reject the grant based on the enchantment source's type (fails to model the ability granted to its recipients); allow any permanent with the granted ability to activate it (violates the planeswalker restriction).
+- Consequences: granted loyalty abilities work through the existing loyalty activation machinery; no card-name special case is added.
+
+## D-531: Exile this card as a graveyard activation cost (2026-11-16)
+- Context: Cryotheory Adept has an activated ability in its graveyard that exiles itself as a cost. Its existing effect and the engine's cost primitive were already available, but this wording was not parsed or marked as a graveyard ability.
+- Decision: parse "Exile this card from your graveyard" as the existing self-exile cost and set the ability's functioning zone to the graveyard. The cost is paid before the ability's effects resolve.
+- Alternatives: interpret the ability as functioning on the battlefield (wrong zone); add a dedicated card override (duplicates the parser's general cost and zone model).
+- Consequences: other graveyard abilities using this cost wording can use the same path; no new engine cost kind is needed.

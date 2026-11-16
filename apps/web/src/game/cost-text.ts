@@ -1,6 +1,7 @@
 /** Words for the costs of an "As this enters, you may pay ..." question (the engine's `Cost[]`). */
 import type { Cost, ObjectFilter } from '@commander-arena/engine';
 import { amountPhrase } from './amount-text';
+import { beholdQuality } from './dragons-text';
 import { thingsPhrase } from './filter-text';
 import { COLOR_NAMES } from './words';
 
@@ -173,6 +174,10 @@ const countText = (n: number, one: string, many: string): string =>
  */
 export function activationCostPart(cost: Cost, self = 'permanent'): string {
   switch (cost.kind) {
+    case 'behold': {
+      const quality = beholdQuality(cost.filter);
+      return quality === null ? 'Behold' : `Behold ${quality}`;
+    }
     case 'mana':
       return cost.symbols.map((s) => `{${s}}`).join('');
     case 'tap':

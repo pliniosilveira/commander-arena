@@ -35,38 +35,45 @@ const commanderCard = singleFaceCard({
   oracleText: '',
 });
 
-const wayCard = singleFaceCard({
-  name: WAY,
-  manaCost: ['2', 'U'],
-  supertypes: ['legendary'],
-  types: ['enchantment'],
-  colors: ['U'],
-  colorIdentity: ['U'],
-  oracleText:
-    'Planeswalkers you control have "[-3]: When you next cast an instant or sorcery spell this turn, copy that spell. You may choose new targets for the copy."',
-  abilities: [
-    {
-      kind: 'static',
-      static: {
-        kind: 'grantAbility',
-        subject: { kind: 'filter', filter: { types: ['planeswalker'], controller: 'you' } },
-        ability: {
-          kind: 'activated',
-          cost: [{ kind: 'loyalty', change: -3 }],
-          effect: {
-            kind: 'delayedCast',
-            filter: { stackKind: 'spell', types: ['instant', 'sorcery'] },
+function loyaltyGrantCard(name: string, types: readonly ('creature' | 'planeswalker')[]) {
+  return singleFaceCard({
+    name,
+    manaCost: ['2', 'U'],
+    supertypes: ['legendary'],
+    types: ['enchantment'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText: '',
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'grantAbility',
+          subject: { kind: 'filter', filter: { types, controller: 'you' } },
+          ability: {
+            kind: 'activated',
+            cost: [{ kind: 'loyalty', change: -3 }],
             effect: {
-              kind: 'copySpell',
-              spell: { kind: 'triggerSubject' },
-              newTargets: 'may',
+              kind: 'delayedCast',
+              filter: {
+                stackKind: 'spell',
+                anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }],
+              },
+              effect: {
+                kind: 'copySpell',
+                spell: { kind: 'triggerSubject' },
+                newTargets: 'may',
+              },
             },
           },
         },
       },
-    },
-  ],
-});
+    ],
+  });
+}
+
+const wayCard = loyaltyGrantCard(WAY, ['planeswalker']);
+const creatureLoyaltyGrant = loyaltyGrantCard('SYNTHETIC Creature Loyalty Grant', ['creature']);
 
 const jaceCard = singleFaceCard({
   name: JACE,
@@ -503,23 +510,28 @@ describe('"{2}{U}, Sacrifice this creature: When you next cast an instant or sor
 });
 
 describe('Way of the Cryomancer grants a loyalty ability that copies your next instant or sorcery', () => {
-  test('the granted ability is activated on a planeswalker and copies the next spell with new targets', () => {
+  test('a granted loyalty ability cannot be activated from a creature', () => {
     const g = game((b) =>
-      b
-        .define(wayCard)
-        .define(jaceCard)
-        .seat(0)
-        .battlefield(WAY, JACE, BEARS)
-        .hand(BOLT),
-    );
-    expect(derive(g.state, g.object(JACE)).abilities).toContainEqual(
-      expect.objectContaining({ kind: 'activated', cost: [{ kind: 'loyalty', change: -3 }] }),
+      b.define(creatureLoyaltyGrant).seat(0).battlefield('SYNTHETIC Creature Loyalty Grant', BEARS),
     );
     expect(
-      derive(g.state, g.object(BEARS)).abilities.some(
-        (ability) => ability.kind === 'activated' && ability.cost.some((cost) => cost.kind === 'loyalty'),
-      ),
-    ).toBe(false);
+      getView(g.state, 0).battlefield.find((obj) => obj.name === BEARS)?.activated?.[0]?.ability
+        .cost,
+    ).toEqual([{ kind: 'loyalty', change: -3 }]);
+    g.expect.illegal(0, { activate: BEARS, ability: 0 });
+  });
+
+  test('the granted ability is activated on a planeswalker and copies the next spell with new targets', () => {
+    const g = game((b) =>
+      b.define(wayCard).define(jaceCard).seat(0).battlefield(WAY, JACE, BEARS).hand(BOLT),
+    );
+    expect(
+      getView(g.state, 0).battlefield.find((obj) => obj.name === JACE)?.activated?.[0]?.ability
+        .cost,
+    ).toEqual([{ kind: 'loyalty', change: -3 }]);
+    expect(
+      getView(g.state, 0).battlefield.find((obj) => obj.name === BEARS)?.activated,
+    ).toBeUndefined();
 
     g.act(0).activate(JACE, { pay: true });
     resolveTop(g);

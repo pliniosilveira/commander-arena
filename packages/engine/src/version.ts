@@ -1,2 +1,3 @@
 /** Bump whenever engine behavior changes. Every game state records it (`GameState.engineVersion`). */
-export const ENGINE_VERSION = 97;
+// 98: Behold as a spell cost, granted loyalty activation legality (D-529 to D-531).
+export const ENGINE_VERSION = 98;

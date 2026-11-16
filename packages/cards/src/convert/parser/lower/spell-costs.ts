@@ -44,7 +44,7 @@ function additional(cost: IrCost): LowerResult<Cost> {
   }
   // An {X} in an additional mana cost is not run (the engine's `checkAdditionalCosts`).
   if (cost.kind === 'mana' && cost.symbols.includes('X')) return failure(cost);
-  return lowerCost(cost, { x: true, discardX: true });
+  return lowerCost(cost, { x: true, discardX: true, additional: true });
 }
 
 /**
@@ -72,7 +72,7 @@ function lowerChoice(
   const costs = [...one, ...other];
   if (costs.some((c) => c.kind === 'payXLife' || c.kind === 'discardX')) return failure(ability);
   const missing = missingFeatures([
-    ...costs.map((c): FeatureRef => `cost:${c.kind}`),
+    ...costs.filter((c) => c.kind !== 'behold').map((c): FeatureRef => `cost:${c.kind}`),
     'ability:additionalCostChoice',
   ]);
   if (missing.length > 0) return failure(ability, missing);
@@ -99,7 +99,7 @@ function lowerAdditional(
     if (!cost.ok) return cost;
     lowered.push(cost.value);
   }
-  const needs = lowered.map((c): FeatureRef => `cost:${c.kind}`);
+  const needs = lowered.filter((c) => c.kind !== 'behold').map((c): FeatureRef => `cost:${c.kind}`);
   // "Pay X life": the caster announces X as the spell is cast (CR 107.3a, D-103).
   if (lowered.some((c) => c.kind === 'payXLife')) needs.push('ability:xCost');
   // "Discard X cards" (D-386): X is announced the same way, and the engine pays it as the one discard cost of the spell.

@@ -449,13 +449,6 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         checkAbility(s.ability, `${path}.ability`, out);
         if (
           s.ability.kind === 'activated' &&
-          Array.isArray(s.ability.cost) &&
-          s.ability.cost.some((c) => c?.kind === 'loyalty')
-        ) {
-          issue(out, `${path}.ability.cost`, 'a granted loyalty ability is not supported');
-        }
-        if (
-          s.ability.kind === 'activated' &&
           s.ability.functionsIn !== undefined &&
           s.ability.functionsIn !== 'battlefield'
         ) {

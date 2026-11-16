@@ -4,7 +4,8 @@
  * they control; a card of the hand is revealed (`cardsRevealed`), a permanent is only chosen. Doing it is what "If you do" reads (`performed`). When
  * nothing matches, nothing is asked and nothing was beheld.
  */
-import type { ObjectId } from '../ids';
+import type { ObjectFilter } from '../ast/types';
+import type { ObjectId, SeatId } from '../ids';
 import type { ChooseCardsDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import { getSeat } from '../state/ops';
@@ -17,18 +18,23 @@ import { done, type StepOutcome } from './step-outcome';
 type Behold = Extract<Instruction, { kind: 'behold' }>;
 
 /** The cards in `seat`'s hand and the permanents they control that match the filter. */
-function candidates(state: GameState, res: ResolutionContext, ins: Behold): ObjectId[] {
-  const ctx = { controller: ins.seat, source: res.source };
-  const hand = getSeat(state, ins.seat).hand.filter((id) => {
+export function beholdCandidates(
+  state: GameState,
+  seat: SeatId,
+  source: ObjectId,
+  filter: ObjectFilter,
+): ObjectId[] {
+  const ctx = { controller: seat, source };
+  const hand = getSeat(state, seat).hand.filter((id) => {
     const card = state.objects[id];
-    return card !== undefined && matchesFilter(state, card, { ...ins.filter, zone: 'hand' }, ctx);
+    return card !== undefined && matchesFilter(state, card, { ...filter, zone: 'hand' }, ctx);
   });
   const permanents = state.battlefield.filter((id) => {
     const obj = state.objects[id];
     return (
       obj !== undefined &&
-      controllerOf(state, obj) === ins.seat &&
-      matchesFilter(state, obj, { ...ins.filter, zone: 'battlefield', controller: 'you' }, ctx)
+      controllerOf(state, obj) === seat &&
+      matchesFilter(state, obj, { ...filter, zone: 'battlefield', controller: 'you' }, ctx)
     );
   });
   return [...hand, ...permanents];
@@ -36,7 +42,7 @@ function candidates(state: GameState, res: ResolutionContext, ins: Behold): Obje
 
 export function runBehold(state: GameState, res: ResolutionContext, ins: Behold): StepOutcome {
   if (ins.chosen === null) {
-    const legal = candidates(state, res, ins);
+    const legal = beholdCandidates(state, ins.seat, res.source, ins.filter);
     if (legal.length === 0) return done(state);
     const decision: Omit<ChooseCardsDecision, 'id'> = {
       kind: 'chooseCards',

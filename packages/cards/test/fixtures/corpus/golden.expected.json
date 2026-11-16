@@ -1,5 +1,5 @@
 {
-  "parserVersion": 104,
+  "parserVersion": 105,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -2916,18 +2916,10 @@
     "7d32c63d-aa9e-4f5d-a3e6-51377a786009": {
       "name": "Way of the Cryomancer",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Planeswalkers you control have \"[−3]: When you next cast an instant or sorcery spell this turn, copy that spell. You may choose new targets for the copy.\"",
-          "reason": "notRunnable",
-          "closestRule": "static.permanents"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "75eaaf73"
+      "ast": "c824a37a"
     },
     "7d6641e7-4d14-4a06-b588-0c752af529bd": {
       "name": "Shatterwing Pegasus",
@@ -3840,19 +3832,10 @@
     "a9b3ee21-1af1-4e7e-8e48-d7c90d056f5c": {
       "name": "Cryotheory Adept",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{3}{U}, Exile this card from your graveyard: Tap target creature and put a stun counter on it. Activate only as a sorcery.",
-          "reason": "unrecognised",
-          "slot": "cost",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f0c1f88a"
+      "ast": "c937b8ff"
     },
     "aa1a6646-c1e6-4bff-9092-43ee3e137914": {
       "name": "Archon of Cruelty",
@@ -5636,8 +5619,8 @@
           "ability": 0,
           "text": "As an additional cost to cast ~, behold a Jace or pay {1}.",
           "reason": "unrecognised",
-          "slot": "cost",
-          "closestRule": "static.additional-cost"
+          "slot": "noun",
+          "closestRule": "noun.a-greatest-permanent"
         }
       ],
       "reasons": [],
@@ -5870,7 +5853,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 379,
+      "supported": 381,
       "total": 399
     }
   }

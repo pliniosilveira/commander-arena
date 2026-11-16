@@ -793,6 +793,7 @@ export interface CastingContext {
     | 'targets'
     | 'payOptions'
     | 'payment'
+    | 'behold'
     | 'sacrifice'
     | 'discard'
     | 'exile'
@@ -823,6 +824,8 @@ export interface CastingContext {
     readonly sacrificeAny?: ObjectFilter | null;
     readonly sacrificeAnyAsked?: true;
     readonly discard: number;
+    /** The filter of a Behold additional cost, or null. */
+    readonly behold?: ObjectFilter | null;
     /** How many other cards of the caster's graveyard to exile (Escape, CR 702.138a, D-124); 0 for none. */
     readonly exile: number;
     /** The untapped permanents to tap as part of the cost (the `tapPermanents` alternative cost, D-149), or null. */

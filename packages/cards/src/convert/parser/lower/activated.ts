@@ -603,6 +603,10 @@ function lowerOrdinary(ability: Activated, ctx: LowerContext): LowerResult<reado
   const prepared = prepare(ability, ctx, []);
   if (!prepared.ok) return prepared;
   const { costs, hasX, restrictions } = prepared.value;
+  const previousGraveyardSource = ctx.usedGraveyardSource;
+  if (ability.costs.some((cost) => cost.kind === 'exileThisFromGraveyard')) {
+    ctx.usedGraveyardSource = true;
+  }
   // "Return this card from your graveyard to the battlefield" (stage P30, D-135, CR 113.6b): an ability of the card itself that works
   // from the graveyard, which only an ordinary activation can be.
   ctx.graveyardSource = true;
@@ -610,14 +614,15 @@ function lowerOrdinary(ability: Activated, ctx: LowerContext): LowerResult<reado
   // the number of creatures you control", stage P28) and what "this way" counts are read as they are everywhere.
   const sentenced = lowerSentences(ability.body.sentences, ctx);
   ctx.graveyardSource = false;
+  const functionsInGraveyard = ctx.usedGraveyardSource;
+  ctx.usedGraveyardSource = previousGraveyardSource;
   if (!sentenced.ok) return sentenced;
-  // An ability that works from the graveyard has one instruction and costs only mana: nothing of the battlefield (tapping, a
-  // sacrifice) can be paid from there (`validateCard`, D-124 Unearth).
+  // An ability that works from the graveyard is one sentence and costs only mana or exiles itself:
+  // nothing of the battlefield (tapping, a sacrifice) can be paid from there (`validateCard`, D-124 Unearth).
   if (
-    ctx.usedGraveyardSource &&
+    functionsInGraveyard &&
     (ability.body.sentences.length !== 1 ||
-      sentenced.value.length !== 1 ||
-      !costs.every((c) => c.kind === 'mana'))
+      !costs.every((c) => c.kind === 'mana' || c.kind === 'exileThis'))
   ) {
     return failure(ability);
   }
@@ -645,7 +650,7 @@ function lowerOrdinary(ability: Activated, ctx: LowerContext): LowerResult<reado
     cost: [...costs],
     ...(ctx.targets.length > 0 ? { targets: [...ctx.targets] } : {}),
     effect,
-    ...(ctx.usedGraveyardSource
+    ...(functionsInGraveyard
       ? { functionsIn: 'graveyard' as const }
       : // CR 113.6b (stage P68, D-229): "Discard this card" is paid from the hand, so the ability works from there.
         costs.some((c) => c.kind === 'discardThis' || c.kind === 'revealThis')

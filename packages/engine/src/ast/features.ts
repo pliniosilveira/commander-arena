@@ -1961,6 +1961,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   discardX: true,
   sacrifice: true,
   discard: true,
+  behold: true,
   discardThis: true,
   revealThis: true,
   exileThis: true,

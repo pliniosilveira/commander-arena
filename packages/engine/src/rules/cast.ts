@@ -58,6 +58,7 @@ import {
 } from './alt-costs';
 import { becameTargetEvents } from './becomes-target';
 import {
+  answerBehold,
   answerDiscard,
   answerExile,
   answerSacrifice,
@@ -777,6 +778,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
         ...(cost.sacrificeCount === undefined ? {} : { sacrificeCount: cost.sacrificeCount }),
         ...(cost.sacrificeAny === undefined ? {} : { sacrificeAny: cost.sacrificeAny }),
         discard: cost.discard,
+        behold: cost.behold,
         exile: cost.exile,
         tap: cost.tap,
       },
@@ -988,6 +990,11 @@ export function answerCastTap(state: GameState, chosen: readonly ObjectId[]): Re
 
 export function answerCastDiscard(state: GameState, chosen: readonly ObjectId[]): Result {
   return answerDiscard(state, chosen, finishCast);
+}
+
+/** The answer to Behold as an additional cost of a spell. */
+export function answerCastBehold(state: GameState, chosen: readonly ObjectId[]): Result {
+  return answerBehold(state, chosen, finishCast);
 }
 
 /** The answer to the question of which other cards an escape cost exiles (CR 702.138a, D-124). */

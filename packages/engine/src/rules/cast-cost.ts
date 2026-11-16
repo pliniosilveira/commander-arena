@@ -41,6 +41,7 @@ import {
   namedAlternativeCostOf,
   replicateCostOf,
 } from './alt-costs';
+import { beholdCandidates } from './behold';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
@@ -81,6 +82,8 @@ export interface SpellCost {
   readonly sacrificeAny?: ObjectFilter | null;
   /** How many cards to discard. */
   readonly discard: number;
+  /** The filter of the single Behold cost, or null. */
+  readonly behold: ObjectFilter | null;
   /** How many other cards of the caster's graveyard are exiled (Escape, CR 702.138a, D-124). */
   readonly exile: number;
   /** The permanents tapped as part of the cost, or null (the `tapPermanents` alternative cost, D-149). */
@@ -339,6 +342,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   let sacrificeAny: ObjectFilter | null = null;
   let sacrificeCount = 1;
   let discard = 0;
+  let behold: ObjectFilter | null = null;
   for (const c of additional) {
     if (c.kind === 'sacrifice' && !('kind' in c.what)) {
       // D-491: "you may sacrifice one or more creatures" is no requirement for casting the spell: it is asked as the cost is paid.
@@ -348,6 +352,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
         if (sacrificeCount > 0) sacrifice = c.what;
       }
     } else if (c.kind === 'discard') discard += c.count;
+    else if (c.kind === 'behold') behold = c.filter;
   }
   const life = lifeOf(additional) + (kicker === null ? 0 : lifeOf(kicker) * kicks) + perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
@@ -378,6 +383,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     ...(sacrificeCount === 1 ? {} : { sacrificeCount }),
     ...(sacrificeAny === null ? {} : { sacrificeAny }),
     discard,
+    behold,
     exile,
     tap,
     ...(anyType ? { anyType: true as const } : {}),
@@ -509,6 +515,9 @@ export function canPaySpellCost(
   if (cost.life > 0 && life < cost.life) return false;
   if (cost.discard > discardable(state, seat, spell.id).length) return false;
   if (cost.exile > exilable(state, seat, spell.id).length) return false;
+  if (cost.behold !== null && beholdCandidates(state, seat, spell.id, cost.behold).length === 0) {
+    return false;
+  }
   if (
     cost.sacrifice !== null &&
     sacrificeCandidates(state, seat, spell.id, cost.sacrifice).length < (cost.sacrificeCount ?? 1)

@@ -25,7 +25,9 @@ import type { NewDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import { patchObject } from '../state/ops';
 import type { GameState } from '../state/types';
+import { beholdCandidates } from './behold';
 import { discardable, exilable } from './cast-cost';
+import { derive } from './derive';
 import { discardCostDecision, discardObjects } from './discard-cost';
 import { exileCostDecision, exileObjects } from './exile-cost';
 import { fail, ok, type Result } from './result';
@@ -42,14 +44,14 @@ function pause(state: GameState, events: GameEvent[], decision: NewDecision): Re
 }
 
 /**
- * After the mana: the permanents a `tapPermanents` alternative cost taps (D-149), then the sacrifice, the discard and the exile, then the
+ * After the mana: the permanents a `tapPermanents` alternative cost taps (D-149), then Behold, the sacrifice, the discard and the exile, then the
  * spell is cast. The mana was planned to leave enough permanents to tap (`castManaPlan`).
  */
 export function payAdditionalCosts(state: GameState, events: GameEvent[], finish: Finish): Result {
   const casting = state.casting;
   if (!casting) return fail('No cast in progress');
   const tap = casting.extra?.tap;
-  if (tap == null) return paySacrifice(state, events, finish);
+  if (tap == null) return payBehold(state, events, finish);
   const legal = tapCandidates(state, casting.seat, casting.object, tap.filter);
   if (legal.length < tap.count) return fail('You cannot tap enough permanents');
   if (legal.length === tap.count) return tapChosen(state, events, legal, true, finish);
@@ -88,7 +90,7 @@ function tapChosen(
     next = patchObject(next, id, { tapped: true });
     events.push({ kind: 'tapped', object: id, by: casting.seat });
   }
-  return paySacrifice(next, events, finish);
+  return payBehold(next, events, finish);
 }
 
 /** The answer to the tap question of a spell's alternative cost; the caller checked it against the decision. */
@@ -97,6 +99,64 @@ export function answerTap(state: GameState, chosen: readonly ObjectId[], finish:
     return fail('No permanents are being tapped for a spell');
   }
   return tapChosen({ ...state, pending: null }, [], chosen, false, finish);
+}
+
+/** As an additional cost, behold one matching card or permanent; a hand card is revealed. */
+function payBehold(state: GameState, events: GameEvent[], finish: Finish): Result {
+  const casting = state.casting;
+  if (!casting) return fail('No cast in progress');
+  const filter = casting.extra?.behold ?? null;
+  if (filter === null) return paySacrifice(state, events, finish);
+  const legal = beholdCandidates(state, casting.seat, casting.object, filter);
+  if (legal.length === 0) return fail('You cannot behold a matching card or permanent');
+  return pause({ ...state, casting: { ...casting, stage: 'behold' } }, events, {
+    kind: 'chooseCards',
+    seat: casting.seat,
+    source: casting.object,
+    purpose: 'behold',
+    zone: 'hand',
+    legal,
+    min: 1,
+    max: 1,
+    reveal: true,
+    prompt: 'Behold: reveal a card from your hand or choose a permanent you control',
+    forCost: true,
+  });
+}
+
+function beholdChosen(
+  state: GameState,
+  events: GameEvent[],
+  chosen: readonly ObjectId[],
+  finish: Finish,
+): Result {
+  const casting = state.casting;
+  if (!casting) return fail('No cast in progress');
+  const [id] = chosen;
+  const object = id === undefined ? undefined : state.objects[id];
+  if (object === undefined) return fail('That card or permanent cannot be beheld');
+  if (object.zone === 'hand' && object.card !== null) {
+    events.push({
+      kind: 'cardsRevealed',
+      seat: casting.seat,
+      cards: [object.card],
+      names: [derive(state, object).name],
+      from: 'hand',
+    });
+  }
+  return paySacrifice(state, events, finish);
+}
+
+/** The answer to the Behold question of a spell's additional cost. */
+export function answerBehold(
+  state: GameState,
+  chosen: readonly ObjectId[],
+  finish: Finish,
+): Result {
+  if (state.casting?.stage !== 'behold' || state.casting.activation !== null) {
+    return fail('No card or permanent is being beheld for a spell');
+  }
+  return beholdChosen({ ...state, pending: null }, [], chosen, finish);
 }
 
 /** The sacrifice, then the discard and the exile, then the spell is cast. */

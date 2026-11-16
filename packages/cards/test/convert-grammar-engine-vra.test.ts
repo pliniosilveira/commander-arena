@@ -1,7 +1,7 @@
-import { type ScenarioGame, scenario } from '@commander-arena/engine/testing';
 import { readFileSync } from 'node:fs';
+import { type ScenarioGame, scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { fromGoldenCard, importCard, parseGolden, type GoldenCard } from '../src/index';
+import { fromGoldenCard, type GoldenCard, importCard, parseGolden } from '../src/index';
 import { NO_OVERRIDES } from './convert-grammar-helpers';
 
 const CORPUS = new URL('./fixtures/corpus/golden.jsonl', import.meta.url);
