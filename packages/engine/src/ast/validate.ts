@@ -911,6 +911,11 @@ function hasDamage(t: Trigger): boolean {
   );
 }
 
+/** Whether a cast trigger records the number of chosen targets for its effect (`triggerTargetCount`, D-544). */
+function hasTargetCount(t: Trigger): boolean {
+  return t?.kind === 'castSpell' && t.filter.targetCountAtLeast !== undefined;
+}
+
 /**
  * D-510 (CR 701.26a, 508.1f, 603.2c): the fields of a `becomesTapped` trigger besides its subject: who tapped the permanent, "if it isn't being declared as an attacker" and
  * the batch ("one or more"). Who tapped it and a batch need a filter for the permanent (a trigger on `this` or on what is attached has one permanent and no batch to make).
@@ -1235,6 +1240,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(a.trigger.kind === 'leftGraveyard' ? { triggerCards: true } : {}),
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
+        ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),
         ...(a.trigger?.kind === 'attackBatch' ? { triggerAttacked: true } : {}),
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),

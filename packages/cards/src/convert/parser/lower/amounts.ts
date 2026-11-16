@@ -158,6 +158,11 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'triggerDamage' }, rule };
     }
+    case 'triggerTargetCount': {
+      const blocked = needs('triggerTargetCount');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'triggerTargetCount' }, rule };
+    }
     case 'timesKicked': {
       // CR 702.33c: the engine counts the kicks of the source, the spell or the permanent. "It" is the
       // source only in an ability about the source itself (an enters trigger of ~), as for the
@@ -612,5 +617,6 @@ export const AMOUNT_NEEDS = [
   'amount:opponentsWithMore',
   'amount:thisWay',
   'amount:triggerDamage',
+  'amount:triggerTargetCount',
   'amount:votesFor',
 ] as const;

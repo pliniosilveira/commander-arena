@@ -645,6 +645,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sharedLandType',
     // D-181: "target spell or ability with a single target" (`ObjectFilter.singleTarget`).
     'singleTarget',
+    'targetCountAtLeast',
     // D-206: "an instant or sorcery spell that targets a creature" (`ObjectFilter.targetsObject`).
     'targetsObject',
     // D-437: "a spell that targets only this creature" and "a spell that targets this creature" (`ObjectFilter.targetsOnly`, `isSource`).
@@ -953,6 +954,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'thisWay',
     // D-133: "that much" for the damage that caused a trigger.
     'triggerDamage',
+    'triggerTargetCount',
     // D-194: "the number of profit votes" (CR 701.38a).
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
@@ -1206,6 +1208,8 @@ export const SELECTOR_KINDS = [
   'copyForEach',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
   'singleTarget',
+  /** "with one or more targets" on a cast trigger (D-544). */
+  'targetCountAtLeast',
   /** "Spells you cast from anywhere other than your hand" (CR 601.2a, D-235): the engine's `ObjectFilter.notCastFromHand`. */
   'notCastFromHand',
   'triggerSubject',
@@ -1589,6 +1593,8 @@ export const AMOUNT_KINDS = [
   'opponentsWithMore',
   /** "That much" for the damage that caused a trigger (D-133): the engine's `triggerDamage`. */
   'triggerDamage',
+  /** Number of targets chosen for a spell in a cast trigger (D-544). */
+  'triggerTargetCount',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */

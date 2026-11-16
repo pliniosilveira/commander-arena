@@ -102,6 +102,8 @@ describe('amounts that read an object', () => {
       'thisWay',
       // D-133.
       'triggerDamage',
+      // D-544: the number of targets on a spell that caused a cast trigger.
+      'triggerTargetCount',
       // D-194: "the number of profit votes" (CR 701.38a).
       'votesFor',
       // D-450: "for each card you've drawn this turn" (CR 121.1).

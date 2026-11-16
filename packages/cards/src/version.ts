@@ -19,4 +19,5 @@
 // 115: Read a target mana-value limit from its controller's graveyard count (D-541).
 // 116: Read "They block this turn if able" for the preceding plural creature group (D-542).
 // 117: Read player-directed control of target groups and nonattacking creature filters (D-543).
-export const PARSER_VERSION = 117;
+// 118: Read "with one or more targets" and "draw that many" for a cast trigger (D-544).
+export const PARSER_VERSION = 118;

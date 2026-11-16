@@ -136,6 +136,8 @@ export interface Scope {
   readonly triggerPlayer?: boolean;
   /** True in the effect of a triggered ability whose trigger deals damage (`triggerDamage`, D-133). */
   readonly triggerDamage?: boolean;
+  /** True in the effect of a cast trigger that requires targets (`triggerTargetCount`, D-544). */
+  readonly triggerTargetCount?: boolean;
   /** True in the effect of a triggered ability whose trigger is a batch of attackers (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
@@ -394,6 +396,14 @@ export function checkFilter(
       `${path}.singleTarget`,
       "only a spell or ability on the stack has targets chosen: the filter's zone is 'stack'",
     );
+  }
+  if (f.targetCountAtLeast !== undefined) {
+    if (!Number.isInteger(f.targetCountAtLeast) || f.targetCountAtLeast < 1) {
+      issue(out, `${path}.targetCountAtLeast`, 'target count must be a positive integer');
+    }
+    if (f.zone !== 'stack' && f.stackKind === undefined && where.onStack !== true) {
+      issue(out, `${path}.targetCountAtLeast`, "target count requires a stack object's filter");
+    }
   }
   // CR 115.1 (D-206): "that targets a creature" is about a spell or ability on the stack, and its filter describes a permanent or an object it targets.
   // D-437: "a spell that targets only this creature" (CR 115.9c) is read as `targetsObject` is; a member of a disjunction of such a filter is read with the outer filter's stack.
@@ -1611,6 +1621,15 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           out,
           path,
           "'triggerDamage' needs a triggered ability whose trigger is damage being dealt (dealtDamage, dealsCombatDamage or noncombatDamageDealt) or life being gained (lifeGained)",
+        );
+      }
+      break;
+    case 'triggerTargetCount':
+      if (scope.triggerTargetCount !== true) {
+        issue(
+          out,
+          path,
+          "'triggerTargetCount' needs a cast trigger whose filter requires one or more targets",
         );
       }
       break;

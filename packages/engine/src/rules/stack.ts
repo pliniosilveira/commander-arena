@@ -96,6 +96,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
     ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
     // D-230: "mana value X or less, where X is the damage dealt" is read again as the ability resolves.
     ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
+    ...(obj.stack?.triggerTargetCount === undefined
+      ? {}
+      : { triggerTargetCount: obj.stack.triggerTargetCount }),
   };
   const legal = stillLegalTargets(input, specs, chosen, ctx);
 
@@ -159,6 +162,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.thisWayBefore === undefined ? {} : { thisWay: obj.stack.thisWayBefore }),
       ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
       ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
+      ...(obj.stack?.triggerTargetCount === undefined
+        ? {}
+        : { triggerTargetCount: obj.stack.triggerTargetCount }),
       ...(obj.stack?.triggerAttacked === undefined
         ? {}
         : { triggerAttacked: obj.stack.triggerAttacked }),

@@ -44,6 +44,9 @@ export function runPayAmount(
               controller: res.controller,
               source: res.source,
               ...(res.triggerDamage === undefined ? {} : { triggerDamage: res.triggerDamage }),
+              ...(res.triggerTargetCount === undefined
+                ? {}
+                : { triggerTargetCount: res.triggerTargetCount }),
             },
             [],
           );

@@ -808,18 +808,21 @@ function paysThatMuchLife(clause: IrClause): boolean {
  */
 function eventAmountThatMany(ability: Triggered): Triggered {
   const events = [ability.trigger, ...(ability.trigger.alternatives ?? [])];
-  if (
-    ability.modal !== undefined ||
-    !events.every((e) => e.event === 'lifeGained' || e.event === 'noncombatDamageDealt')
-  ) {
-    return ability;
-  }
+  if (ability.modal !== undefined) return ability;
+  const castTargetCount = events.every(
+    (e) => e.event === 'cast' && e.subject?.filter.targetCountAtLeast !== undefined,
+  );
+  const eventDamage = events.every(
+    (e) => e.event === 'lifeGained' || e.event === 'noncombatDamageDealt',
+  );
+  if (!castTargetCount && !eventDamage) return ability;
+  const eventAmount = castTargetCount ? 'triggerTargetCount' : 'triggerDamage';
   let counted = false;
   const retarget = (amount: IrAmount): IrAmount => {
     switch (amount.kind) {
       case 'thisWay':
         return amount.thatMany === true && !counted
-          ? { kind: 'triggerDamage', span: amount.span }
+          ? { kind: eventAmount, span: amount.span }
           : amount;
       case 'half':
       case 'multiple':

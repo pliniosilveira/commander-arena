@@ -1303,6 +1303,7 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
     fromZone: casting.fromZone,
     commanderTax: casting.commanderTax,
     nth: getSeat(next, casting.seat).spellsCastThisTurn,
+    targetCount: obj.stack?.chosenTargets.length ?? 0,
     ...(obj.stack?.kicked ? { kicked: true as const } : {}),
     ...(obj.stack?.kicks === undefined ? {} : { kicks: obj.stack.kicks }),
     ...(obj.stack?.replicated === undefined ? {} : { replicas: obj.stack.replicated }),

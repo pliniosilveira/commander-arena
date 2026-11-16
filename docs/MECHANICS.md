@@ -4911,3 +4911,9 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Control and targets:** `gainControl` can name the targeted player, the target filter excludes creatures already attacking, and untap/restriction effects reuse the same selected group.
 - **Parser slice:** `They block this turn if able` lowers to the generic `restrict` effect and binds to the preceding plural target group.
 - **Proof:** `convert-grammar-engine-domineering-will.test.ts` plays the real golden card through target selection, control change, untap, and a required block. CR text was unavailable for independent verification.
+
+## The Lord of the Nazgûl deck, issue 57, group 9: Voracious Bibliophile (D-544)
+
+- **Engine:** `spellCast` carries the chosen target count into cast triggers; `targetCountAtLeast` filters spells with targets, and `triggerTargetCount` reads the count fixed when the trigger was found.
+- **Parser:** "with one or more targets" selects that trigger filter; the first "draw that many cards" reads the count of targets on the spell that triggered.
+- **Proof:** `scenario-xx-trigger-target-count.test.ts` checks targeted and untargeted spells, while `convert-grammar-engine-voracious-bibliophile.test.ts` plays the real card with a spell that has two targets.

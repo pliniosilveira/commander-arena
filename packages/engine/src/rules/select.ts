@@ -53,6 +53,7 @@ export interface SelectContext {
   /** What `triggerPlayer` ("that player") and `triggerDamage` ("that much") mean in this resolution (D-133). */
   readonly triggerPlayer?: SeatId;
   readonly triggerDamage?: number;
+  readonly triggerTargetCount?: number;
   /** Targets already chosen for this spell or ability, including a candidate being checked. */
   readonly targets?: readonly ChosenTarget[];
   /** The players the attack event of this trigger was declared at (`attackersAttackedYou`, D-149). */

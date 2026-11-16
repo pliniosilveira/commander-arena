@@ -123,6 +123,7 @@ function pushTrigger(
     ...(trigger.damage !== undefined && readsTriggerDamage(trigger.ability)
       ? { damage: trigger.damage }
       : {}),
+    ...(trigger.targetCount === undefined ? {} : { targetCount: trigger.targetCount }),
     ...(trigger.attacked !== undefined && readsTriggerAttacked(trigger.ability)
       ? { attacked: trigger.attacked }
       : {}),
@@ -221,6 +222,7 @@ function runQueue(input: GameState): PutResult {
       source: trigger.source,
       ...(trigger.player === undefined ? {} : { triggerPlayer: trigger.player }),
       ...(trigger.damage === undefined ? {} : { triggerDamage: trigger.damage }),
+      ...(trigger.targetCount === undefined ? {} : { triggerTargetCount: trigger.targetCount }),
     };
     const modal = modalOfAbility(trigger.ability);
     let modes: readonly number[] = [];
@@ -469,6 +471,9 @@ export function answerTriggerModes(
     source: stack.source,
     ...(stack.triggerPlayer === undefined ? {} : { triggerPlayer: stack.triggerPlayer }),
     ...(stack.triggerDamage === undefined ? {} : { triggerDamage: stack.triggerDamage }),
+    ...(stack.triggerTargetCount === undefined
+      ? {}
+      : { triggerTargetCount: stack.triggerTargetCount }),
   };
   const patched = patchObject({ ...state, pending: null }, stackObject, {
     stack: { ...stack, chosenModes: chosen },

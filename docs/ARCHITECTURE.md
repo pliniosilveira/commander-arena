@@ -425,4 +425,8 @@ Four mechanisms, all run by CI (`pnpm typecheck`, `pnpm lint`, `pnpm test`):
 ## Targeted player control and nonattacking filter (REAL; D-543)
 - A `gainControl` effect may name one target player; control-layer evaluation uses that seat for the selected objects.
 - `ObjectFilter.notAttacking` filters battlefield objects absent from the current combat's attackers list. It is evaluated when targets are selected and checked again as the spell resolves.
+
+## Cast-trigger target counts (REAL; D-544)
+- A `spellCast` event records the number of chosen targets. Cast triggers can require a minimum number and carry the event's target count into `triggerTargetCount` amounts.
+- A count is fixed when the trigger is found; later illegal targets do not change how many were chosen.
 - `DeclareBlockersDecision.candidates` marks creatures carrying the requirement. The parser's exact cross-sentence binding for “They block this turn if able” and the acceptance-card proof are not implemented yet.

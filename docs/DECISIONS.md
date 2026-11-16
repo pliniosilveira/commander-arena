@@ -3361,3 +3361,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: Treat the selected player as the spell's controller (incorrect when they differ), use a card-specific override, or select a fresh group for each sentence (does not preserve the chosen targets).
 - Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The acceptance test checks the player who gets control, untapping, the mandatory block, and the nonattacking target filter; the CR text file was unavailable for direct lookup in this session.
 
+## D-544: Count targets of a cast trigger (2026-11-16, issue 57)
+- Context: `Voracious Bibliophile` triggers only when a spell with one or more targets is cast, then draws one card for each target that spell had. Cast events did not record target counts, and event amounts could not represent them.
+- Decision: Record the number of chosen targets on `spellCast` events and pending cast triggers. Add a target-count filter for stack objects and a `triggerTargetCount` amount for the triggered effect.
+- Alternatives: Count legal targets when the trigger resolves (targets can become illegal in response), or count target slots (one slot can choose multiple targets and two slots can choose the same object).
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The engine scenario tests one and two targets and a spell with none; the real card integration plays a two-target spell and checks that two cards are drawn.
+

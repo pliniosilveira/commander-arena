@@ -8,4 +8,5 @@
 // 104: Read a target's mana-value limit from the graveyard of that target's controller.
 // 105: Add temporary must-block requirements and compare them jointly with must-be-blocked attackers.
 // 106: Let an effect give control of targeted objects to one targeted player; filter nonattacking objects.
-export const ENGINE_VERSION = 106;
+// 107: Preserve the target count that a cast trigger reads when the spell is cast.
+export const ENGINE_VERSION = 107;

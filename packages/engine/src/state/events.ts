@@ -130,6 +130,8 @@ export type GameEvent =
       readonly fromZone: Zone;
       /** How many spells the caster has cast this turn, this one included (D-229, "their second spell each turn"). */
       readonly nth: number;
+      /** Number of targets chosen for this spell as it was cast (D-544). */
+      readonly targetCount: number;
       readonly commanderTax: number;
       /** Present (true) when a kicker cost was paid, at least once (CR 702.33d). */
       readonly kicked?: true;

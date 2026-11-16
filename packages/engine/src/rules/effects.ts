@@ -559,6 +559,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.sacrificed === undefined ? {} : { sacrificed: res.sacrificed }),
     ...(res.triggerPlayer === undefined ? {} : { triggerPlayer: res.triggerPlayer }),
     ...(res.triggerDamage === undefined ? {} : { triggerDamage: res.triggerDamage }),
+    ...(res.triggerTargetCount === undefined ? {} : { triggerTargetCount: res.triggerTargetCount }),
     ...(res.triggerAttacked === undefined ? {} : { triggerAttacked: res.triggerAttacked }),
     ...(res.lifeLost === undefined ? {} : { lifeLost: res.lifeLost }),
     ...(res.thisWay === undefined ? {} : { thisWay: res.thisWay }),

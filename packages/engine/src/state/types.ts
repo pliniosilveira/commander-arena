@@ -451,6 +451,8 @@ export interface StackData {
    */
   readonly triggerPlayer?: SeatId;
   readonly triggerDamage?: number;
+  /** The target count read by a cast trigger (D-544). */
+  readonly triggerTargetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
   readonly triggerAttacked?: readonly SeatId[];
   /**
@@ -687,6 +689,7 @@ export interface PendingTrigger {
   /** The player the event is about (`triggerPlayer`, D-133) and the damage it dealt (`triggerDamage`), when it has them. */
   readonly player?: SeatId;
   readonly damage?: number;
+  readonly targetCount?: number;
   /** For a reflexive ability (D-177): the permanents the resolution that created it had sacrificed (`StackData.sacrificedBefore`). */
   readonly sacrificedBefore?: readonly ObjectId[];
   /** For a reflexive ability (D-231): what the resolution that created it had counted (`ThisWayCounts`), read by its `thisWay` amounts. */
@@ -1629,6 +1632,7 @@ export interface ResolutionContext {
   /** What `triggerPlayer` and `triggerDamage` mean for a triggered ability that reads them (D-133): `StackData.triggerPlayer`, `triggerDamage`. */
   readonly triggerPlayer?: SeatId;
   readonly triggerDamage?: number;
+  readonly triggerTargetCount?: number;
   /** What `attackersAttackedYou` reads (D-149): `StackData.triggerAttacked`. */
   readonly triggerAttacked?: readonly SeatId[];
   /** What `sacrificedCost` means (D-133): `StackData.sacrificedAsCost`. */

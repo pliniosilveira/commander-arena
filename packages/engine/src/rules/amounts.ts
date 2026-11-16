@@ -251,6 +251,7 @@ export function amountOf(
   if (amount.kind === 'votesFor') return ctx.votes?.[amount.option] ?? 0;
   // D-133: "that much" for the damage that caused the trigger (CR 120.3).
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
+  if (amount.kind === 'triggerTargetCount') return ctx.triggerTargetCount ?? 0;
   // D-110: "for each time it was kicked": the source's own count, or what its last-known information says.
   if (amount.kind === 'timesKicked') {
     return ctx.source === null ? 0 : timesKickedOf(objectOrLki(state, ctx.source));

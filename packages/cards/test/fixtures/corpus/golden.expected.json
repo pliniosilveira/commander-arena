@@ -1,5 +1,5 @@
 {
-  "parserVersion": 117,
+  "parserVersion": 118,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -5123,19 +5123,10 @@
     "dcc323d6-ddae-4fd9-9c9e-466b07895d73": {
       "name": "Voracious Bibliophile",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever you cast a spell with one or more targets, draw that many cards.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.cast"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "29090aee"
+      "ast": "0bd17adb"
     },
     "dd6601c6-810d-4883-89d2-5d31419fb1cc": {
       "name": "Relm's Sketching",
@@ -6082,7 +6073,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 397,
+      "supported": 398,
       "total": 420
     }
   }

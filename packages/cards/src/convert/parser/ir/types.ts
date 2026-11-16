@@ -262,6 +262,8 @@ export interface IrFilter {
   /** "aren't of the chosen type" after a resolving creature-type choice (D-536). */
   readonly notChosenType?: true;
   readonly stackKind?: 'spell' | 'ability' | 'triggeredAbility';
+  /** A cast trigger that counts any chosen targets (D-544). */
+  readonly targetCountAtLeast?: number;
   /** "with a single target" (stage P38, D-182, CR 115.9a): a spell or ability that was put on the stack with exactly one target. */
   readonly singleTarget?: true;
   /** "that targets a creature" (stage P49, D-206, CR 115.1, 601.2c): a spell with a chosen target that is an object of this kind (a card type). */
@@ -470,6 +472,7 @@ export type IrAmount =
     }
   // Stage P29 (D-133): "you gain that much life": the damage of the event that caused the trigger
   | { readonly kind: 'triggerDamage'; readonly span: Span }
+  | { readonly kind: 'triggerTargetCount'; readonly span: Span }
   // Stage P34 (D-152, CR 701.57): "a number of tapped Treasure tokens equal to the difference" between 10 and the mana value of the card discovered
   | { readonly kind: 'shortfall'; readonly limit: number; readonly span: Span }
   // Stage P39 (D-184, CR 601.2h): "the amount of mana spent to cast it", "for each mana from an artifact source spent to cast it"; `fromType` is the
@@ -1605,6 +1608,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'opponentsWithMore',
   'thisWay',
   'triggerDamage',
+  'triggerTargetCount',
   'shortfall',
   'exiledStillThere',
   'manaSpent',

@@ -19,12 +19,13 @@ Issue data is from the author's description. The 21 cards below were added to th
 - [x] Group 6: `Gix's Command` carries the resolving choice of a creature into its lifelink instruction and returns up to two creature cards from the graveyard (D-540, `ENGINE_VERSION` 103, `PARSER_VERSION` 114).
 - [x] Group 7: `Drown in the Loch` limits each target's mana value by the number of cards in that target controller's graveyard (D-541, `ENGINE_VERSION` 104, `PARSER_VERSION` 115).
 - [x] Group 8: `Domineering Will` gives its targeted player control of up to three target nonattacking creatures, untaps those targets, and requires them to block if able (D-542, D-543, `ENGINE_VERSION` 106, `PARSER_VERSION` 117).
-- [ ] Remaining independent parser and engine gaps: `Fandaniel, Telophoroi Ascian`, `Lord of the Nazgûl`, `Maskwood Nexus`, `Sauron's Ransom`, `Voracious Bibliophile`.
+- [x] Group 9: `Voracious Bibliophile` draws one card per target of the spell that triggered it (D-544, `ENGINE_VERSION` 107, `PARSER_VERSION` 118).
+- [ ] Remaining independent parser and engine gaps: `Fandaniel, Telophoroi Ascian`, `Lord of the Nazgûl`, `Maskwood Nexus`, `Sauron's Ransom`.
 - [ ] `March of Swirling Mist` uses the existing one-shot phasing machinery but needs X target handling and its exile cost. Assess it as its own engine/parser slice.
 - [ ] Rerun `UPDATE_GOLDEN=1 pnpm exec vitest run packages/cards/test/golden.test.ts` after each parser group.
 - [ ] Run `pnpm corpus:decks --deck decks/lord-of-the-nazgul.txt` with the owner's bulk file; unavailable in this workspace.
 
-At intake, current `main` already supported `Lazotep Plating`. The completed groups through 8 bring the count to 15 of the 21 issue cards supported; the other 6 remain unsupported. No deck-wide coverage result is claimed.
+At intake, current `main` already supported `Lazotep Plating`. The completed groups through 9 bring the count to 16 of the 21 issue cards supported; the other 5 remain unsupported. No deck-wide coverage result is claimed.
 
 ## The Lord of the Nazgûl deck, issue 57, group 7: Drown in the Loch (D-541)
 
@@ -37,3 +38,9 @@ At intake, current `main` already supported `Lazotep Plating`. The completed gro
 - **Engine.** A targeted player can gain control of a chosen target group; temporary `mustBlock` requirements are evaluated jointly with attacker requirements.
 - **Parser.** Targeted nonattacking creatures are filtered at selection and resolution. The control, untap and must-block instructions all name the same target group.
 - **Proof.** `convert-grammar-engine-domineering-will.test.ts` checks support, control, untapping, and the mandatory block. The Comprehensive Rules text was unavailable in this workspace; citations were not independently verified.
+
+## The Lord of the Nazgûl deck, issue 57, group 9: Voracious Bibliophile (D-544)
+
+- **Engine.** Cast events preserve the chosen target count and the triggered ability reads that fixed number when it resolves.
+- **Parser.** "With one or more targets" filters the cast trigger; "draw that many" refers to the spell's target count.
+- **Proof.** The synthetic engine test checks two targets and no targets; the real-card scenario checks the two-target case. The Comprehensive Rules text was unavailable in this workspace; citations were not independently verified.

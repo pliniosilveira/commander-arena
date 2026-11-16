@@ -373,6 +373,9 @@ function lowerFilterAt(
     ...(filter.controller !== undefined ? { controller: filter.controller } : {}),
     ...(filter.tapped !== undefined ? { tapped: filter.tapped } : {}),
     ...(filter.stackKind !== undefined ? { stackKind: filter.stackKind } : {}),
+    ...(filter.targetCountAtLeast !== undefined
+      ? { targetCountAtLeast: filter.targetCountAtLeast }
+      : {}),
     ...(filter.attackingYou === true && !inner ? { attackingYou: true as const } : {}),
     ...(filter.attackingOpponents === true && !inner ? { attackingOpponents: true as const } : {}),
     ...(filter.attackingOrBlocking === true ? { attackingOrBlocking: true as const } : {}),

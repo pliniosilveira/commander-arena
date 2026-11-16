@@ -230,6 +230,8 @@ export type Amount =
    * life"). Valid only in the effect of a triggered ability with one of those triggers.
    */
   | { readonly kind: 'triggerDamage' }
+  /** Number of targets chosen for the spell that caused a cast trigger (D-544). */
+  | { readonly kind: 'triggerTargetCount' }
   /**
    * "For each opponent who has more life / cards in hand / creatures than you" (D-131): the number of opponents still
    * in the game whose `stat` is greater than the controller's, now.
@@ -596,6 +598,8 @@ export interface ObjectFilter {
    * Only for a target slot (a stack object), read where `stackKind` is; refused anywhere `derive` matches filters.
    */
   readonly singleTarget?: true;
+  /** A spell was cast with at least this many chosen targets (D-544). */
+  readonly targetCountAtLeast?: number;
   /**
    * "An instant or sorcery spell that targets a creature" (CR 115.1, 601.2c, D-206): a spell or ability on the stack with at least one chosen target that
    * is an object matching this filter (a player target never does). Read where a filter is matched against the game with the spell on the stack (a

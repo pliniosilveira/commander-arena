@@ -555,7 +555,8 @@ export const TRIGGER_OR_SUBJECTS = defineRule<IrTrigger>({
 /** What a cast trigger's spell targets: "that targets a creature [you control]" (the object's kind and, for "you control", its controller) or the source itself. */
 type Aimed =
   | { readonly kind: 'object'; readonly what: string; readonly yours: boolean }
-  | { readonly kind: 'self'; readonly only: boolean };
+  | { readonly kind: 'self'; readonly only: boolean }
+  | { readonly kind: 'any' };
 
 const AIMED: Parser<Aimed> = map(
   pattern(
@@ -570,8 +571,15 @@ const AIMED_SELF: Parser<Aimed> = map(
   (m): Aimed => ({ kind: 'self', only: m[1] !== undefined }),
 );
 
+/** "With one or more targets": any target type counts. */
+const AIMED_ANY: Parser<Aimed> = map(
+  pattern(/\swith one or more targets(?![\p{L}\p{N}])/iu),
+  (): Aimed => ({ kind: 'any' }),
+);
+
 /** D-400 (CR 109.4, 115.1): the filter of the object the spell targets; "you control" says whose it is. */
 function aimedFilter(aimed: Aimed): IrFilter {
+  if (aimed.kind === 'any') return { targetCountAtLeast: 1, raw: 'with one or more targets' };
   if (aimed.kind !== 'object') throw new Error('aimedFilter: an object');
   const yours = aimed.yours ? { controller: 'you' as const } : {};
   return aimed.what === 'permanent'
@@ -611,6 +619,7 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     'an opponent casts a noncreature spell',
     'an opponent casts an instant or sorcery spell',
     'an opponent casts a spell with mana value 3 or less',
+    'you cast a spell with one or more targets',
     // Stage P49 (D-206): what the spell targets.
     'you cast an instant or sorcery spell that targets a creature',
     'you cast a spell that targets a permanent',
@@ -684,7 +693,7 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       spanned(sequence(pattern(/an? /i), map(spellPhrase(), withoutZone))),
       // Stage P49 (D-206, CR 115.1, 601.2c): "an instant or sorcery spell that targets a creature".
       // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~", the source of the ability.
-      optional(choice(AIMED, AIMED_SELF), null),
+      optional(choice(AIMED, AIMED_SELF, AIMED_ANY), null),
       // D-437: "an Equipment spell or a spell that targets a creature you control": a second kind of spell, which is the one that targets.
       optional(sequence(literal(' or '), pattern(/a spell\s/iu), AIMED), null),
     )(ctx, pos);
@@ -705,6 +714,8 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       filter = base;
     } else if (aimed.kind === 'self') {
       filter = aimed.only ? { ...base, targetsOnlySelf: true } : { ...base, targetsSelf: true };
+    } else if (aimed.kind === 'any') {
+      filter = { ...base, targetCountAtLeast: 1 };
     } else {
       filter = { ...base, targets: aimedFilter(aimed) };
     }
