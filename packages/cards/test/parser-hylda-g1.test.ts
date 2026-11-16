@@ -189,7 +189,8 @@ describe('"Whenever you scry" and "up to X target nonland permanents" (D-513, CR
 
   test.each([
     'Whenever you scry 2, you gain 1 life.',
-    'Whenever you scry or surveil, you gain 1 life.',
+    // Galadriel group 1 reads "you scry or surveil" (two events); a number after it is an instruction's, not an event's.
+    'Whenever you scry or surveil 2, you gain 1 life.',
     'Whenever you surveil, tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way.',
     // The number is the event's of a scry: any other trigger has none to read.
     'Whenever ~ attacks, tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way.',

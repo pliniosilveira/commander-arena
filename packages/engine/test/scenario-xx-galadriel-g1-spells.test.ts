@@ -294,7 +294,7 @@ describe('Nissa, Steward of Elements: a planeswalker with X loyalty', () => {
     const g = board();
     g.act(0).cast(SEER, { x: 5, pay: true });
     g.passAll();
-    expect(g.act(0).try.activate(SEER, { ability: 3, targets: ['Forest'] }).ok).toBe(false);
+    expect(g.act(0).try.activate(SEER, { ability: 3 }).ok).toBe(false);
   });
 });
 

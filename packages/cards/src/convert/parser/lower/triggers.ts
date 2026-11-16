@@ -934,6 +934,13 @@ export function lowerTriggered(
     ctx.interveningCondition = false;
     if (!lowered.ok) return lowered;
     interveningIf = lowered.value;
+    // "if you chose a creature other than ~ as your Ring-bearer" (Galadriel deck, group 1, CR 701.54a): only the tempting of the Ring chooses a creature; the engine reads it from that event.
+    if (
+      interveningIf.kind === 'ringBearerChosen' &&
+      !triggers.every((t) => t.kind === 'ringTempted')
+    ) {
+      return failure(ifWritten, []);
+    }
   }
   // "When ~ enters during the declare attackers step" (stage P31, D-140, CR 603.4): the step is checked as the event happens and as the
   // ability resolves, which is the engine's intervening `duringStep`, joined with any "if" the text has.

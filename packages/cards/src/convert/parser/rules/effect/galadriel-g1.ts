@@ -4,7 +4,16 @@
  * ... They're still lands." (Nissa). The engine runs `revealTop`, `lookAtTop` and the additive `setTypes` (rules/reveal-top.ts, rules/look-take.ts, rules/continuous.ts); only the words are
  * new. A sentence the text splits in two is kept together by the segmenter (`segment.ts`).
  */
-import { choice, literal, map, optional, type Parser, pattern, sequence } from '../../combinators';
+import {
+  choice,
+  fail,
+  literal,
+  map,
+  optional,
+  type Parser,
+  pattern,
+  sequence,
+} from '../../combinators';
 import type { IrArg, IrBasePt, IrClause, IrDuration, IrFilter, IrNoun } from '../../ir/types';
 import { NUMBER_OF_COUNTERS } from '../amount/value';
 import { KEYWORD_WORDS } from '../keyword/list';
@@ -14,6 +23,12 @@ import { CREATURE_TYPE_LIST } from './becomes';
 import { flag } from './dragons';
 import { TAKEN_CARD } from './library';
 import { type Clauses, makeClause } from './operands';
+
+/**
+ * What may follow the end of one of these rules' phrases: nothing that joins another instruction to it ("..., draw a card and gain 1 life", "... then ..."): the instruction the
+ * text adds would be done whether or not the card was of the kind, which is not what it says, so the whole line is left unread.
+ */
+const MORE_AFTER = /^(?:,| and\b| then\b)/iu;
 
 /** What is done when the card revealed is of the kind: the effects of `effect.reveal-top-then`. */
 type Then = 'draw' | 'battlefield' | 'battlefieldTapped' | 'hand';
@@ -88,6 +103,7 @@ export const EFFECT_REVEAL_TOP_THEN = defineRule<Clauses>({
     if (!middle.ok) return middle;
     const then = THEN(ctx, middle.pos);
     if (!then.ok) return then;
+    if (MORE_AFTER.test(ctx.text.slice(then.pos))) return fail(ctx, pos);
     const span = { start: pos, end: then.pos };
     const args: Record<string, IrArg> = {
       what: card.value,
@@ -159,6 +175,7 @@ export const EFFECT_LOOK_TOP_PUT = defineRule<Clauses>({
       amount.pos,
     );
     if (!tail.ok) return tail;
+    if (MORE_AFTER.test(ctx.text.slice(tail.pos))) return fail(ctx, pos);
     const span = { start: pos, end: tail.pos };
     const otherType = (other.value[1] ?? '').toLowerCase();
     const filter: IrFilter = {
@@ -254,6 +271,7 @@ export const EFFECT_THEY_BECOME_CREATURES = defineRule<Clauses>({
       pattern(new RegExp(`\\. they['’]re still (?:${STILL_TYPES})${BOUNDARY}`, 'iu')),
     )(ctx, pos);
     if (!r.ok) return r;
+    if (MORE_AFTER.test(ctx.text.slice(r.pos))) return fail(ctx, pos);
     const [, pt, types, , keywords, , duration] = r.value;
     // The permanents the text names are the ones the sentence before it did (the binding pass reads the plural "they").
     const subject: IrNoun = {

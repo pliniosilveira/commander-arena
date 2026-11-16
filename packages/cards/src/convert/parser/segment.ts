@@ -353,7 +353,7 @@ const IF_REVEALED_CARD =
  * "Look at the top card of your library. If it's a land card or a creature card with mana value less than or equal to the number of loyalty counters on ~, you may put that card onto
  * the battlefield." (Galadriel deck, group 1, CR 401.2): the second sentence of the instruction of `LOOK_AT_TOP_CARD` that puts the card onto the battlefield (`effect.look-top-put`).
  */
-const LOOK_AT_TOP_CARD_COST = /^(?:[+\-−]?\d+: )?look at the top card of your library\.$/i;
+const LOOK_AT_TOP_CARD_COST = /(?:^[+\-−]?\d+: |^|, )look at the top card of your library\.$/i;
 const IF_ITS_LAND_OR_MAY_PUT =
   /^if it['’]s a land card or an? [^.,]* card with mana value less than or equal to [^.,]*, you may put that card onto the battlefield\.$/i;
 /** "They become 5/5 Elemental creatures with flying and haste until end of turn. They're still lands." (Galadriel deck, group 1, CR 205.1b): the second sentence keeps the old types. */

@@ -318,6 +318,8 @@ describe('supported feature gate', () => {
         'scries',
         'state',
         'step',
+        // Galadriel group 1: "Whenever you surveil".
+        'surveils',
         'tappedForMana',
         'tapsForMana',
         'tokenCreated',
