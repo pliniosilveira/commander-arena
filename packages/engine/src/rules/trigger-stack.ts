@@ -31,7 +31,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { ChosenTarget } from '../state/chosen';
 import type { NewDecision, TargetChoiceSpec, TriggerChoice } from '../state/decisions';
 import type { GameEvent } from '../state/events';
-import { patchObject, seatsInOrder } from '../state/ops';
+import { patchObject, removeFromZone, seatsInOrder } from '../state/ops';
 import type { GameState, PendingTrigger } from '../state/types';
 import { pushAbilityObject } from './ability-object';
 import { becameTargetEvents } from './becomes-target';
@@ -227,7 +227,8 @@ function runQueue(input: GameState): PutResult {
     if (modal !== null) {
       const sets = legalModeSets(state, modal, select);
       const only = sets[0];
-      if (only === undefined) {
+      // D-1517 (CR 700.2b): "choose up to one" with nothing to choose but no mode: the ability is removed, as with no legal choice at all.
+      if (only === undefined || (only.length === 0 && sets.length === 1)) {
         events.push({
           kind: 'abilityRemoved',
           seat: trigger.controller,
@@ -482,6 +483,32 @@ export function answerTriggerModes(
       automatic: false,
     },
   ];
+  // CR 700.2b, 603.3c (D-1517): "choose up to one" and no mode chosen: the ability is removed from the stack.
+  if (chosen.length === 0) {
+    const gone = state.objects[stackObject];
+    let removed: GameState = { ...answered, triggering: { ...ctx, awaiting: null } };
+    if (gone !== undefined) {
+      removed = removeFromZone(removed, gone);
+      const { [stackObject]: _removed, ...rest } = removed.objects;
+      removed = { ...removed, objects: rest };
+    }
+    const next = putTriggersOnStack(removed);
+    return {
+      state: next.state,
+      events: [
+        {
+          kind: 'abilityRemoved',
+          seat: pending.seat,
+          source: stack.source ?? stackObject,
+          abilityIndex: stack.abilityIndex ?? 0,
+          reason: 'noModeChosen',
+          ...(stack.chapter === undefined ? {} : { chapter: stack.chapter }),
+        },
+        ...next.events,
+      ],
+      decision: next.decision,
+    };
+  }
   const specs = chosenModeSpecs(modal, chosen).map((e) => e.spec);
   const choices = targetChoiceSpecs(answered, specs, select, specModes(modal, chosen));
   if (choices.length > 0 && !isForced(choices)) {

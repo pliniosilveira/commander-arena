@@ -35,7 +35,11 @@ import { HASHATON_G9_NOUN_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_NOUN_RULES } from './hashaton-group-4';
 import { HASHATON_G10_NOUN_RULES } from './hashaton-group-10';
 import { HOFRI_NOUN_RULES } from './hofri';
-import { HYLDA_G2_EARLY_NOUN_RULES, HYLDA_G2_NOUN_RULES } from './hylda-g2';
+import {
+  HYLDA_G2_EARLY_NOUN_RULES,
+  HYLDA_G2_NOUN_RULES,
+  HYLDA_G2_TARGET_NOUN_RULES,
+} from './hylda-g2';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
 import { ONE_OR_TWO_NOUN_RULES } from './one-or-two';
@@ -658,6 +662,8 @@ export const NOUN_RULES = [
   NOUN_PLAYER_GRAVEYARD,
   NOUN_ALL_GRAVEYARD_CARDS,
   NOUN_ALL_GRAVEYARDS,
+  // D-1514 (Hylda deck, group 2): "target creature that player controls", whose first words are those of `noun.target-permanent`.
+  ...HYLDA_G2_TARGET_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,

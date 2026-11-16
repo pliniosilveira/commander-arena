@@ -114,6 +114,8 @@ const TAP_OPERANDS = [
   'noun.attached-permanent',
   // Stage P36 (D-178): "Then if you control four or more lands, untap that land." (the permanent an earlier instruction named).
   'noun.that-object',
+  // D-1514 (Hylda deck, group 2): "tap target creature that player controls".
+  'noun.target-permanent-of-that-player',
   // D-1510 (Hylda deck, group 2): "tap all creatures target player controls" and "tap X target creatures".
   'noun.all-permanents-of-target-player',
   'noun.x-target-creatures',

@@ -403,8 +403,11 @@ export type GameEvent =
       readonly seat: SeatId;
       readonly source: ObjectId;
       readonly abilityIndex: number;
-      /** `noLegalModes`: a modal ability with no legal choice of modes (CR 603.3c, 700.2b). */
-      readonly reason: 'noLegalTargets' | 'noLegalModes';
+      /**
+       * `noLegalModes`: a modal ability with no legal choice of modes (CR 603.3c, 700.2b). `noModeChosen` (D-1517): "choose up to one" and the controller chose none
+       * (CR 700.2b: the ability is removed from the stack, after it was put there to choose).
+       */
+      readonly reason: 'noLegalTargets' | 'noLegalModes' | 'noModeChosen';
       readonly chapter?: number;
     }
   /**

@@ -568,7 +568,7 @@ function lowerModalTriggered(
   interveningIf: Condition | undefined,
   ctx: LowerContext,
 ): LowerResult<readonly Ability[]> {
-  const lowered = lowerModes(modal, ctx);
+  const lowered = lowerModes(modal, ctx, false, true);
   if (!lowered.ok) return lowered;
   if (lowered.value.usesX) return failure(ability);
   const { modes, chooseModes } = lowered.value;

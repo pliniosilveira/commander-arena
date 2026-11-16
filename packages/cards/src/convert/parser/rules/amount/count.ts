@@ -39,6 +39,7 @@ import {
   PERMANENT_TYPES,
   permanentPhrase,
   toFilter,
+  typeChoice,
   typeWords,
 } from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
@@ -205,7 +206,23 @@ function cards(plural: boolean): Parser<IrFilter> {
     ),
     ([subtypes, types]) => ({ subtypes, types }),
   );
-  return (ctx, pos) => {
+  // D-1511 (Hylda deck, group 2): "two or more instant and/or sorcery cards in your graveyard": one card is any of the card types, joined by "or" or "and/or".
+  const union: Parser<IrFilter> = (ctx, pos) => {
+    const r = sequence(
+      choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)),
+      literal(' '),
+      pattern(new RegExp(`cards${BOUNDARY}`, 'iu')),
+      where,
+      pattern(new RegExp(BOUNDARY, 'u')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [kinds, , , place] = r.value;
+    const raw = ctx.text.slice(pos, r.pos);
+    const base = toFilter(place.zone, { ...NO_PARTS, controller: place.controller }, raw);
+    const anyOf = kinds.map((t): IrFilter => ({ types: [t], raw: t }));
+    return { ok: true, value: { ...base, anyOf, card: true }, pos: r.pos };
+  };
+  const single: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
       words,
       pattern(new RegExp(`card${plural ? 's' : ''}${BOUNDARY}`, 'iu')),
@@ -222,6 +239,7 @@ function cards(plural: boolean): Parser<IrFilter> {
       pos: r.pos,
     };
   };
+  return plural ? choice(union, single) : single;
 }
 
 /** What a count is of, as the group noun it is: `det` `each`, the filter and `other`. */

@@ -86,6 +86,76 @@ export const NOUN_ALL_PERMANENTS_OF_TARGET_PLAYER = defineRule<IrNoun>({
 });
 
 /**
+ * `noun.target-permanent-of-that-player`: "target creature that player controls", "target nonland permanent that player controls" (CR 115.1, 109.4, 603.2): a target chosen among the
+ * permanents of "that player", the player the text already named. The words say it, as `noun.each-permanent-of-player` does for "each creature that player controls": the
+ * controller of the filter is the pronoun, which the binding pass points at the most recent player of the text (in a trigger about a player, the player of the event). The lowering
+ * names a target slot of that player only for the player of the event of the trigger (the engine's `controller: 'triggerPlayer'`); another player is not read. Not read: "each",
+ * "target creatures", "that opponent controls" (read by the permanent phrase), "that player's creature", a controller said twice, "that players control", "target creature that
+ * player".
+ */
+export const NOUN_TARGET_PERMANENT_OF_THAT_PLAYER = defineRule<IrNoun>({
+  id: 'noun.target-permanent-of-that-player',
+  family: 'noun',
+  leading: ['target'],
+  cites: [
+    'CR 115.1 (Targets)',
+    'CR 109.4 (Objects)',
+    'CR 603.2 (Handling Triggered Abilities)',
+    'CR 102.1 (Players)',
+  ],
+  examples: [
+    'target creature that player controls',
+    'target nonland permanent that player controls',
+    'target artifact that player controls',
+    'target creature that player controls,',
+  ],
+  rejects: [
+    'target creature',
+    'target creatures that player controls',
+    'each creature that player controls',
+    'target creature that opponent controls',
+    'target creature that players control',
+    'target creature that player',
+    'target creature you control that player controls',
+    'target creature an opponent controls that player controls',
+    "target creature that player's",
+    'target card that player controls',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('target '),
+      permanentPhrase(false, 'all'),
+      spanned(pattern(new RegExp(` that player controls${BOUNDARY}`, 'iu'))),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, filter, suffix] = r.value;
+    if (filter.controller !== undefined) return fail(ctx, pos);
+    const start = suffix.span.start + 1;
+    const player: IrNoun = {
+      kind: 'noun',
+      det: 'anaphor',
+      filter: { raw: 'that player' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start, end: start + 'that player'.length },
+      rule: 'noun.target-permanent-of-that-player',
+    };
+    const noun: IrNoun = {
+      kind: 'noun',
+      det: 'target',
+      filter: { ...filter, controller: { noun: player }, raw: ctx.text.slice(pos, r.pos) },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule: 'noun.target-permanent-of-that-player',
+    };
+    return { ok: true, value: noun, pos: r.pos };
+  },
+});
+
+/**
  * `noun.those-creatures`: "those creatures", "those permanents" (CR 608.2c, 109.1): the group an earlier instruction of the text named, as "that creature" is the one. Like every
  * pronoun it says nothing about the objects: the binding pass makes it the most recent plural noun of the text (the targets of the sentence before, or the group it tapped), and a
  * text with none is an unbound reference. Not read: "those" alone, "those cards", "those players", "those creature", "that creatures", "them" (`noun.each-of-them` and the others).
@@ -182,4 +252,6 @@ export const NOUN_X_TARGET_CREATURES = defineRule<IrNoun>({
 
 /** Before `noun.all-permanents`, whose phrase ("all creatures") is the first words of the first. */
 export const HYLDA_G2_EARLY_NOUN_RULES = [NOUN_ALL_PERMANENTS_OF_TARGET_PLAYER];
+/** Before `noun.target-permanent`, whose phrase ("target creature") is the first words of the first. */
+export const HYLDA_G2_TARGET_NOUN_RULES = [NOUN_TARGET_PERMANENT_OF_THAT_PLAYER];
 export const HYLDA_G2_NOUN_RULES = [NOUN_THOSE_CREATURES, NOUN_X_TARGET_CREATURES];

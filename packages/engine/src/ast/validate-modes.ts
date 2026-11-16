@@ -128,7 +128,8 @@ function checkChoice(
   if (
     !isCount(choose.min) ||
     !isCount(choose.max) ||
-    choose.min < (repeatable ? 0 : 1) ||
+    // D-1517 (CR 700.2b): "choose up to one" of a triggered ability may choose no mode, and the ability is removed from the stack.
+    choose.min < (repeatable || triggered ? 0 : 1) ||
     choose.max < 1 ||
     choose.min > choose.max ||
     (!repeatable && choose.max > count)
@@ -138,7 +139,7 @@ function checkChoice(
       p,
       repeatable
         ? 'a repeatable chooseModes needs 0 <= min <= max, with at least 1 mode to choose'
-        : 'chooseModes needs 1 <= min <= max <= number of modes',
+        : 'chooseModes needs 1 <= min <= max <= number of modes (a triggered ability may have min 0, "choose up to one")',
     );
   } else if (repeatable) {
     // CR 700.2d (D-344): the engine lists every multiset between min and max, so the count is bounded.

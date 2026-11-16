@@ -396,6 +396,17 @@ function lowerFilterAt(
 
 /** An IR filter as the engine's ObjectFilter. */
 export function lowerFilter(noun: IrNoun): LowerResult<ObjectFilter> {
+  // D-1514 (CR 603.2, 102.1): "target creature that player controls" in a trigger about a player (the active player of a step): the player the binding pass found for "that
+  // player" is the player of the event (`trigActor`), which a target slot names as the engine's `controller: 'triggerPlayer'`. Any other player is not read.
+  const bound = noun.filter.controller;
+  if (noun.det === 'target' && typeof bound === 'object') {
+    if (bound.noun.ref !== 'trigActor' || bound.orPlaneswalkerController === true) {
+      return failure(noun, ['selector:controllerRef']);
+    }
+    const { controller: _player, ...rest } = noun.filter;
+    void _player;
+    return lowerFilterAt({ ...rest, controller: 'triggerPlayer' }, noun, false);
+  }
   return lowerFilterAt(noun.filter, noun, false);
 }
 

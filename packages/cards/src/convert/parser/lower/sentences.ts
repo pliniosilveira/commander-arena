@@ -7,7 +7,7 @@
  * replaced as a whole, so it must be one instruction, and what is dropped when the condition holds
  * must be everything it said.
  */
-import type { Cost, Effect } from '@commander-arena/engine';
+import type { Condition, Cost, Effect } from '@commander-arena/engine';
 import {
   type IrAmount,
   type IrArg,
@@ -1722,10 +1722,71 @@ export function lowerMayInstead(
  * for its own clauses (stage P28, CR 107.3c); a definition that no clause reads is refused, and so is one on the
  * sentence an offer to pay takes along ("If you do, ..."), which would need two meanings of X.
  */
+/** The sentence without the range of its row (D-1518): what the lowering of a row reads. */
+function withoutRow(sentence: IrSentence): IrSentence {
+  const { dieRow: _row, ...rest } = sentence;
+  void _row;
+  return rest;
+}
+
+/**
+ * The text of a die roll with its results table (D-1518, CR 706.3, 706.3a, 706.3b): "Roll a d20. 1—9 | Tap all creatures your opponents control. 10—19 | ..." The sentences before
+ * the first row are the roll, whose effect is the last of them (`rollDie`: the die this table reads); each row is the sentences from its range up to the next one, lowered as the
+ * text of a spell of their own, and becomes the `conditional` of the engine whose condition is the result being in the row's range. The rows must be exactly the table of the die: the first
+ * starts at 1, each starts right after the one before it, and the last ends at the sides of the die, so that every result has one row (a table with a gap or an overlap is
+ * not read).
+ */
+function lowerDieTable(
+  sentences: readonly IrSentence[],
+  first: number,
+  ctx: LowerContext,
+): LowerResult<Effects> {
+  const preface = sentences.slice(0, first);
+  const lead = preface[0];
+  if (lead === undefined) return refuse(sentences[first] as IrSentence);
+  const roll = lowerSentences(preface, ctx);
+  if (!roll.ok) return roll;
+  const sides = ctx.dieSides;
+  if (sides === null || roll.value[roll.value.length - 1]?.kind !== 'rollDie') return refuse(lead);
+  const blocked = missingFeatures(['effect:conditional', 'condition:dieResult', 'condition:and']);
+  if (blocked.length > 0) return { ...refuse(lead), needs: blocked };
+  const effects: Effect[] = [...roll.value];
+  let expected = 1;
+  let i = first;
+  while (i < sentences.length) {
+    const head = sentences[i];
+    const range = head?.dieRow;
+    if (head === undefined || range === undefined) return refuse(sentences[i] ?? lead);
+    let end = i + 1;
+    while (end < sentences.length && sentences[end]?.dieRow === undefined) end += 1;
+    if (range.from !== expected || range.to < range.from || range.to > sides) return refuse(head);
+    expected = range.to + 1;
+    const row = lowerSentences(sentences.slice(i, end).map(withoutRow), ctx);
+    if (!row.ok) return row;
+    const atLeast: Condition = { kind: 'dieResult', compare: { cmp: 'atLeast', value: range.from } };
+    const atMost: Condition = { kind: 'dieResult', compare: { cmp: 'atMost', value: range.to } };
+    const condition: Condition =
+      range.from === range.to
+        ? { kind: 'dieResult', compare: { cmp: 'equal', value: range.from } }
+        : range.from === 1
+          ? atMost
+          : range.to === sides
+            ? atLeast
+            : { kind: 'and', terms: [atLeast, atMost] };
+    effects.push({ kind: 'conditional', condition, effect: oneEffect(row.value) });
+    i = end;
+  }
+  if (expected !== sides + 1) return refuse(sentences[sentences.length - 1] ?? lead);
+  return { ok: true, value: effects, rule: 'body.sentence' };
+}
+
 export function lowerSentences(
   sentences: readonly IrSentence[],
   ctx: LowerContext,
 ): LowerResult<Effects> {
+  // D-1518 (CR 706.3): the rows of a results table make the whole text of the roll one ability.
+  const firstRow = sentences.findIndex((s) => s.dieRow !== undefined);
+  if (firstRow >= 0) return lowerDieTable(sentences, firstRow, ctx);
   const steps: Step[] = [];
   const unordered = thisWaysAreSupported(sentences);
   if (unordered !== null) return refuse(unordered);
