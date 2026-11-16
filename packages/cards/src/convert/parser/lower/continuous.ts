@@ -58,7 +58,11 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
       const protection = word.protection;
       let keyword: Keyword;
       if ('choice' in protection) {
-        keyword = { kind: 'protection', from: 'colorOfChoice' };
+        // D-1504 (CR 702.16a, 608.2d): the card type of the controller's choice, asked as the effect resolves, as the color is.
+        keyword = {
+          kind: 'protection',
+          from: protection.choice === 'cardType' ? 'cardTypeOfChoice' : 'colorOfChoice',
+        };
       } else {
         const colors = protection.colors.map(colorLetter);
         if (colors.some((c) => c === undefined) || colors.length === 0) return failure(clause);

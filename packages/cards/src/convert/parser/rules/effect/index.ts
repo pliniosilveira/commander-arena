@@ -49,6 +49,7 @@ import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
 import { GISA_G3_EFFECT_RULES } from './gisa-g3';
 import { GISA_G4_EFFECT_RULES } from './gisa-g4';
+import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
@@ -866,6 +867,9 @@ export const EFFECT_RULES = [
   // Gisa deck, group 4 (issue 41, D-459, D-460): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
   // exile and a plain put, and "It gains haste." like a gain: tried first.
   ...GISA_G4_EFFECT_RULES,
+  // Hylda deck, group 1 (issue 42, D-1502, D-1503): "for each opponent, tap up to one target creature that player controls" and "tap up to X target nonland permanents, where X is ...
+  // scrying this way" start like a plain tap and like the "for each" rules, and are tried first.
+  ...HYLDA_G1_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,

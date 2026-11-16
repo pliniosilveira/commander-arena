@@ -432,12 +432,25 @@ function readTriggered(sk: AbilitySkeleton, rules: RuleLookup): ParseOutcome {
     body = readBody(sk, rules, seen, 'ability.triggered', TRIGGER_SENTENCE);
   }
   if (!body.ok) return body;
+  // "..., you may pay {1}. When you do, choose one —" and its bullets (D-1501, CR 603.12): the modes of the reflexive ability the payment creates.
+  let reflexiveModal: IrModes | undefined;
+  if (sk.reflexiveModalHeader !== undefined) {
+    const modes = readModes(
+      { ...sk, modalHeader: sk.reflexiveModalHeader, modes: sk.reflexiveModes ?? [] },
+      rules,
+      [...seen, ...body.recognised],
+    );
+    if (!modes.ok) return modes;
+    reflexiveModal = modes.value;
+    body = { ...body, recognised: modes.recognised };
+  }
   const ability: IrAbility = {
     kind: 'triggered',
     trigger: trigger.value,
     ...(interveningIf === undefined ? {} : { interveningIf }),
     body: body.value,
     ...(modal === undefined ? {} : { modal }),
+    ...(reflexiveModal === undefined ? {} : { reflexiveModal }),
     span: { start: slot.start, end: body.value.span.end },
     rule: 'ability.triggered',
   };

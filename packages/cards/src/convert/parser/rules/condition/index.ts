@@ -36,6 +36,7 @@ import { CONDITION_UNLESS_ESCAPED } from './escaped';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
 import { GISA_G1_CONDITION_RULES } from './gisa-g1';
 import { HOFRI_CONDITION_RULES } from './hofri';
+import { HYLDA_G1_CONDITION_RULES } from './hylda-g1';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
@@ -440,6 +441,8 @@ export const CONDITION_RULES = [
   ...DANITHA_G3_CONDITION_RULES,
   // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".
   ...GISA_G1_CONDITION_RULES,
+  // Issue 42 (the Hylda deck, D-1500): "it isn't being declared as an attacker".
+  ...HYLDA_G1_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,

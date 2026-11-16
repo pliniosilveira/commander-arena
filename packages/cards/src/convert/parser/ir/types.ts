@@ -178,6 +178,11 @@ export interface IrNoun extends IrNode {
    */
   readonly upToThatMany?: true;
   /**
+   * "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (Hylda deck group 1, D-1503, CR 603.3d): a target noun of a
+   * triggered ability with as many targets, at most, as the number its event carries (the engine's `upToTriggerAmount`); it has no count of its own.
+   */
+  readonly upToTriggerAmount?: true;
+  /**
    * "a creature with the greatest power among creatures they control" (stage P30, D-135): the player chooses among the permanents
    * of the filter that have the greatest value of this stat among them.
    */
@@ -511,6 +516,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'opponentsAtLeast'; readonly atLeast: IrAmount }
     // "~ was kicked", "it was kicked" (CR 702.33d); `who` is the word the text used for the object
     | { readonly kind: 'kicked'; readonly who: 'self' | 'it' }
+    // "it isn't being declared as an attacker" (Hylda deck group 1, D-1500, CR 508.1f): part of the event of "becomes tapped", read by the trigger's lowering
+    | { readonly kind: 'notDeclaredAttacker' }
     // "you control a commander" (CR 903.3d), stage P13; stage P29: "you control your commander" (`yours`, CR 903.3)
     | { readonly kind: 'controlCommander'; readonly yours?: true }
     // Stage P29 (D-133): "you have 30 or more life", "you have at least 7 life more than your starting life total"
@@ -798,7 +805,9 @@ export interface IrKeywordArg extends IrNode {
    * Feather deck group 1 (D-451, D-452, CR 702.16): the quality of a protection the clause grants ("gains protection from red", "gains protection from the color
    * of your choice"): the color words, lowercase, or `choice` for the color the controller chooses as the effect resolves. `name` is then `protection`.
    */
-  readonly protection?: { readonly colors: readonly string[] } | { readonly choice: 'color' };
+  readonly protection?:
+    | { readonly colors: readonly string[] }
+    | { readonly choice: 'color' | 'cardType' };
 }
 
 /** Keywords as the words spell them ("haste", "first strike"), the grant of "except it has haste" (stage P34, D-152, CR 707.9b). */
@@ -1101,6 +1110,11 @@ export interface IrTrigger extends IrNode {
    * read once as it happens (not an intervening "if", CR 603.4, which is read again as the ability resolves).
    */
   readonly whileCondition?: IrCondition;
+  /**
+   * 'becomesTapped' (Hylda deck group 1, D-1500, CR 603.2c): "Whenever you tap one or more untapped creatures your opponents control": one trigger for the permanents
+   * tapped together, whatever their number. The player who taps is the `actor` ("you tap").
+   */
+  readonly batch?: true;
 }
 
 export interface IrRestriction extends IrNode {
@@ -1507,6 +1521,11 @@ export type IrAbility =
       readonly body: IrBody;
       /** "When ~ enters, choose one —" and its bullets (stage P19, CR 700.2b). */
       readonly modal?: IrModes;
+      /**
+       * "..., you may pay {1}. When you do, choose one —" and its bullets (Hylda deck group 1, D-1501, CR 603.12, 700.2b): the body is the sentences before "When you do" (the
+       * offer to pay) and these are the modes of the reflexive ability the payment creates.
+       */
+      readonly reflexiveModal?: IrModes;
       /**
        * "• Khans — At the beginning of your upkeep, ..." (stage P34, D-152, CR 607.2d): the name of the option of the choice "As ~ enters,
        * choose Khans or Dragons" that the ability is linked to; it works only while the permanent has that option chosen.

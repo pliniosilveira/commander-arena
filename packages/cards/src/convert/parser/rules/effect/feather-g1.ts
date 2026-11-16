@@ -28,6 +28,11 @@ const PROTECTION_QUALITY: Parser<NonNullable<IrKeywordArg['protection']>> = choi
     pattern(/protection from the color of your choice(?![\p{L}\p{N}])/iu),
     (): NonNullable<IrKeywordArg['protection']> => ({ choice: 'color' }),
   ),
+  // D-1504 (CR 702.16a): "protection from the card type of your choice", one of the nine card types, chosen as the effect resolves.
+  map(
+    pattern(/protection from the card type of your choice(?![\p{L}\p{N}])/iu),
+    (): NonNullable<IrKeywordArg['protection']> => ({ choice: 'cardType' }),
+  ),
   map(PROTECTION_COLORS, (colors): NonNullable<IrKeywordArg['protection']> => ({ colors })),
 );
 
@@ -51,6 +56,8 @@ export const EFFECT_GAIN_PROTECTION = defineRule<Clauses>({
   ],
   examples: [
     'target creature you control gains protection from the color of your choice until end of turn',
+    'another target creature you control gains protection from the card type of your choice until end of turn',
+    'target creature gains protection from the card type of your choice until end of turn',
     'target creature gains protection from red until end of turn',
     'target creature gains protection from red and from blue until end of turn',
     '~ gains protection from the color of your choice until end of turn',
@@ -61,6 +68,10 @@ export const EFFECT_GAIN_PROTECTION = defineRule<Clauses>({
     'target creature you control gains protection from the color of your choice',
     'target creature you control gains protection from the color of your choice until your next turn',
     'target creature you control gains protection from the colors of your choice until end of turn',
+    'target creature you control gains protection from the card types of your choice until end of turn',
+    'target creature you control gains protection from a card type of your choice until end of turn',
+    'target creature you control gains protection from the card type of your choice',
+    'target creature you control gains protection from the card type of your choice until your next turn',
     'target creature you control gains protection from a color of your choice until end of turn',
     'target creature you control gains protection from the color of your choice until end of turn and draw a card',
     'target creature gains protection from artifacts until end of turn',

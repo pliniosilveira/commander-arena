@@ -7,6 +7,7 @@
 import type {
   Ability,
   Condition,
+  Cost,
   Effect,
   ObjectFilter,
   Trigger,
@@ -25,6 +26,7 @@ import {
   nounsOfClause,
 } from '../ir/types';
 import { lowerCondition } from './conditions';
+import { lowerCost } from './costs';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
 import { lowerFilter } from './nouns';
@@ -221,10 +223,38 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
           })
         : what;
     }
+    case 'becomesTapped': {
+      const what = whatOf(t, ctx);
+      if (!what.ok) return what;
+      // "Whenever you tap an untapped creature an opponent controls" (Hylda deck, D-1500, CR 701.26a): the player who taps it, and "one or more" of them as one event.
+      // The player is read only for a trigger about a filter (a trigger on `this` has one permanent and nothing a player taps to name).
+      if (t.actor === undefined && t.batch !== true) {
+        return ok({ kind: 'becomesTapped', what: what.value });
+      }
+      const by = whoOf(t.actor);
+      if (by === null || by === 'any' || 'kind' in what.value) return failure(t);
+      const blocked = missingFeatures([
+        'trigger:tappedBy',
+        ...(t.batch === true ? (['trigger:tapBatch'] as const) : []),
+      ]);
+      if (blocked.length > 0) return failure(t, blocked);
+      return ok({
+        kind: 'becomesTapped',
+        what: what.value,
+        by,
+        ...(t.batch === true ? { batch: true as const } : {}),
+      });
+    }
+    case 'scries': {
+      // "Whenever you scry" (Hylda deck, D-1503, CR 701.22): the player is relative to the controller of the ability.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:scries']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'scries', who });
+    }
     case 'dies':
     case 'blocks':
     case 'becomesBlocked':
-    case 'becomesTapped':
     case 'becomesUntapped': {
       const what = whatOf(t, ctx);
       if (!what.ok) return what;
@@ -538,6 +568,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'dealtDamage',
       'crimeCommitted',
       'tokenCreated',
+      'scries',
     ].includes(only.event) &&
       only.actor !== undefined) ||
     ((only.event === 'dealsCombatDamage' ||
@@ -581,6 +612,84 @@ function lowerModalTriggered(
       modes: [...modes],
       chooseModes,
       ...(interveningIf === undefined ? {} : { interveningIf }),
+    })),
+    rule: ability.trigger.rule,
+  };
+}
+
+/**
+ * "..., you may pay {1}. When you do, choose one —" and its bullets (Hylda deck, D-1501, CR 603.12, 700.2b, 603.3c): the offer of the payment and the modal reflexive ability the
+ * payment creates, which is the engine's `mayPay` whose effect is a `reflexive` ability with `afterPayment` and the modes. The body is the one sentence of the offer; the modes are
+ * chosen as the reflexive ability goes on the stack, and an X in a mode has nothing to read (CR 107.3j), as for any triggered ability.
+ */
+function lowerPaidModalTriggered(
+  ability: Triggered,
+  modal: IrModes,
+  triggers: readonly Trigger[],
+  own: {
+    readonly interveningIf: Condition | undefined;
+    readonly triggerCondition: Condition | undefined;
+    readonly once: boolean;
+  },
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const [sentence, ...rest] = ability.body.sentences;
+  const [clause, ...more] = sentence?.clauses ?? [];
+  const offer = clause?.args.cost;
+  if (
+    sentence === undefined ||
+    rest.length > 0 ||
+    clause === undefined ||
+    more.length > 0 ||
+    clause.verb !== 'pay' ||
+    !clause.optional ||
+    clause.condition !== undefined ||
+    clause.duration !== undefined ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    offer?.kind !== 'costList'
+  ) {
+    return failure(ability);
+  }
+  const cost: Cost[] = [];
+  for (const item of offer.costs) {
+    const lowered = lowerCost(item, { hybrid: true });
+    if (!lowered.ok) return lowered;
+    cost.push(lowered.value);
+  }
+  const blocked = missingFeatures([
+    'effect:mayPay',
+    'effect:reflexive',
+    'ability:reflexiveModal',
+    'ability:reflexivePaid',
+    ...cost.map((c): FeatureRef => `cost:${c.kind}`),
+  ]);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const lowered = lowerModes(modal, ctx);
+  if (!lowered.ok) return lowered;
+  if (lowered.value.usesX) return failure(ability);
+  const { modes, chooseModes } = lowered.value;
+  const effect: Effect = {
+    kind: 'mayPay',
+    cost,
+    effect: {
+      kind: 'reflexive',
+      afterPayment: true,
+      effect: NO_EFFECT,
+      modes: [...modes],
+      chooseModes,
+    },
+  };
+  return {
+    ok: true,
+    value: triggers.map((trigger) => ({
+      kind: 'triggered',
+      trigger,
+      effect,
+      ...(own.interveningIf === undefined ? {} : { interveningIf: own.interveningIf }),
+      ...(own.triggerCondition === undefined ? {} : { triggerCondition: own.triggerCondition }),
+      ...(own.once ? { oncePerTurn: true as const } : {}),
     })),
     rule: ability.trigger.rule,
   };
@@ -779,6 +888,7 @@ export function lowerTriggered(
   }
   ctx.thatPlayer = thatPlayerOf(events);
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
+  ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.
   ctx.selfCast = triggers.every((t) => t.kind === 'castSpell' && t.self === true);
   // Issue 25: "that spell" of "if five or more mana was spent to cast that spell" is the spell of a cast trigger (`castSpell` of another spell).
@@ -801,6 +911,14 @@ export function lowerTriggered(
     if (folded === null) return failure(ifWritten, []);
     triggers[0] = folded;
     foldedCounters = true;
+  } else if (ifWritten?.test.kind === 'notDeclaredAttacker') {
+    // "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, ..." (Hylda deck, D-1500, CR 508.1f): a part of the event of the one
+    // `becomesTapped` trigger, read as it happens (the engine's `notAsAttacker`), not an intervening "if" of its own.
+    const [only] = triggers;
+    if (events.length !== 1 || only?.kind !== 'becomesTapped') return failure(ifWritten, []);
+    const blocked = missingFeatures(['trigger:notAsAttacker']);
+    if (blocked.length > 0) return failure(ifWritten, blocked);
+    triggers[0] = { ...only, notAsAttacker: true };
   } else if (ifWritten !== undefined) {
     // D-271: "if ~ is in your graveyard" is read only here, as the intervening "if" (CR 603.4), and only for an ability that works from the graveyard (below).
     ctx.interveningCondition = true;
@@ -908,6 +1026,15 @@ export function lowerTriggered(
     )
   ) {
     return failure(ability);
+  }
+  if (ability.reflexiveModal !== undefined) {
+    return lowerPaidModalTriggered(
+      ability,
+      ability.reflexiveModal,
+      triggers,
+      { interveningIf, triggerCondition, once },
+      ctx,
+    );
   }
   if (ability.modal !== undefined)
     return lowerModalTriggered(ability, ability.modal, triggers, interveningIf, ctx);
@@ -1136,6 +1263,10 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:castNth',
   'trigger:crimeCommitted',
   'trigger:tokenCreated',
+  'trigger:tappedBy',
+  'trigger:tapBatch',
+  'trigger:notAsAttacker',
+  'trigger:scries',
   'ability:oncePerTurn',
   'ability:doOnlyOnceEachTurn',
   'condition:duringStep',

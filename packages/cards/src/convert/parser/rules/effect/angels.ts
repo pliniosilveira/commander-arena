@@ -68,10 +68,10 @@ export const UNTIL_SOURCE_LEAVES = pattern(
  * for each opponent (CR 115.1, 601.2c). The permanent is whatever phrase of the permanent family names no controller ("that player controls"
  * is the controller). `from` is where the sentence began, for the spans.
  */
-function perOpponentNoun(
+export function perOpponentNoun(
   ctx: ParseContext,
   from: number,
-  verb: 'exile' | 'destroy',
+  verb: 'exile' | 'destroy' | 'tap',
   at: number,
   id: string,
 ) {

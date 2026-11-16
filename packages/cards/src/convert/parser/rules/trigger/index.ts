@@ -34,6 +34,7 @@ import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
 import { EVENT_TRIGGER_RULES } from './events';
 import { GISA_G2_TRIGGER_RULES } from './gisa-g2';
+import { HYLDA_G1_TRIGGER_RULES } from './hylda-g1';
 import { HASHATON_G1_TRIGGER_RULES } from './hashaton';
 import { HASHATON_G9_TRIGGER_RULES } from './hashaton-g9';
 import { HOFRI_TRIGGER_RULES } from './hofri';
@@ -1129,5 +1130,7 @@ export const TRIGGER_RULES = [
   ...HASHATON_G1_TRIGGER_RULES,
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token".
   ...GISA_G2_TRIGGER_RULES,
+  // Hylda deck, group 1 (issue 42, D-1500, D-1503): "you tap an untapped creature an opponent controls", "you scry".
+  ...HYLDA_G1_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];
