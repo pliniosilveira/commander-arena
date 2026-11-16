@@ -10,6 +10,19 @@ That address always runs the latest version of the game.
 
 The picture shows how many Commander cards the game can play today. It is updated every Monday. If it does not load, the report is at <https://pliniosilveira.github.io/commander-arena/>.
 
+## Status
+
+Playable and still growing. You can play a full two-player Commander game against a computer opponent in the browser, from **Quick start** with one of the ready-made decks. Their card data ships with the game, so they start without a connection (card pictures load from Scryfall). You can also import your own Commander list from Moxfield, Archidekt, Arena or MTGO: the cards are looked up on Scryfall, checked against the Commander rules, and a report says which cards the game can play and why it cannot play the others. Only decks that follow the Commander rules and use cards the game fully supports can be played.
+
+What exists today:
+
+- **The rules.** The stack, the turn structure and combat, triggered, activated and static abilities, replacement and prevention effects, tokens, copies, the common keywords, commander tax and commander damage, and split, Adventure, double-faced, meld and Saga cards.
+- **The opponent.** It plans its attacks and blocks by looking ahead, plans its mana and holds instants for a good moment.
+- **The table.** The board, your hand, a large card preview, the stack with arrows to what each spell targets, a game log, and a question on screen for every decision the rules ask of you. Cards and tokens show their real pictures, and every card is framed in its colours (a land in the colours of its mana).
+- **Six ready-made decks**, listed below, which you can also edit.
+
+What does not exist yet: games with more than two players, play against other people online, an opponent that plans several turns ahead, and animation beyond combat damage and deaths. `docs/ROADMAP.md` has the full list.
+
 ## How to start a game
 
 1. Open the game with the link above.
