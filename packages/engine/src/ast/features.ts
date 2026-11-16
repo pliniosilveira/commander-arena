@@ -182,6 +182,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // opponentsCantWin given for the rest of the game (`duration: 'permanent'`).
     'grantAbility',
     'restrict',
+    // Hylda group 3 (CR 702.11b): "You gain hexproof until end of turn", a player's hexproof for the turn.
+    'grantPlayerHexproof',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".
     'requireAttack',
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
@@ -688,6 +690,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'upToThatMany',
     // D-386 (provisional): "Return X target creature cards from your graveyard to your hand" (`TargetSpec.countX`).
     'countX',
+    // Hylda group 3 (CR 115.1, 601.2c): "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
+    'differentControllers',
     'greatest',
     'giftRecipient',
     // D-210: "each player who discarded a card this way" (`PlayerSelector` `discardedThisWay`).
@@ -885,6 +889,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   amountKinds: [
     'number',
     'x',
+    // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
+    'enteredX',
     'powerOf',
     'manaValueOf',
     // D-151: "create a number of tapped Treasure tokens equal to the difference" (Discover).
@@ -1226,6 +1232,8 @@ export const SELECTOR_KINDS = [
   'upToThatMany',
   /** "X target creature cards" (CR 601.2b, 601.2c, D-386): the engine's `TargetSpec.countX`, as many targets as the X announced. */
   'countX',
+  /** "Any number of target tapped creatures with different controllers" (CR 115.1, 601.2c, Hylda group 3): the engine's `TargetSpec.differentControllers`. */
+  'differentControllers',
   /** "A creature with the greatest power among creatures they control" (D-135): the engine's `ChooseSelector.greatest`. */
   'greatest',
   /** "The chosen player" of a gift (CR 702.174a, D-135): the engine's `PlayerSelector` `giftRecipient`. */
@@ -1539,6 +1547,8 @@ export const AMOUNT_KINDS = [
   'cardsDrawnThisTurn',
   /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
+  /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
+  'enteredX',
   'bound',
 ] as const;
 export type AmountKind = (typeof AMOUNT_KINDS)[number];
@@ -1634,6 +1644,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
 };
 const EFFECT_TABLE: KindTable<Effect['kind']> = {
   sequence: true,
+  grantPlayerHexproof: true,
   mill: true,
   manifest: true,
   dealDamage: true,

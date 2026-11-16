@@ -46,6 +46,7 @@ import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FLICKER_RULES } from './flicker';
+import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
 import { GAIN_RULES } from './gain';
 import { GISA_G3_EFFECT_RULES } from './gisa-g3';
 import { GISA_G4_EFFECT_RULES } from './gisa-g4';
@@ -877,6 +878,8 @@ export const EFFECT_RULES = [
   ...KORVOLD_EFFECT_RULES,
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
   ...NIV_EFFECT_RULES,
+  // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
+  ...HYLDA_G3_EFFECT_RULES,
   ...NIV_GROUP_2B_B_EFFECT_RULES,
   // D-337: "copy it for each time you've cast your commander from the command zone this game".
   ...NIV_GROUP_3_A_EFFECT_RULES,

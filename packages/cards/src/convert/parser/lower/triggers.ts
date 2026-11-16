@@ -870,6 +870,10 @@ export function lowerTriggered(
   const missing = missingFeatures(needs);
   if (missing.length > 0) return failure(ability, missing);
 
+  // CR 107.3m (Hylda group 3): "When ~ enters, draw X cards": the X is the one of the spell the permanent came from.
+  ctx.entersX = triggers.every(
+    (t) => t.kind === 'entersBattlefield' && 'kind' in t.what && t.what.kind === 'this',
+  );
   // A "dies" trigger of `~` itself: by the time the effect runs it is a card in a graveyard.
   // The same for "~ leaves the battlefield" (stage P18): it has left when the effect runs.
   ctx.selfGone = triggers.some(

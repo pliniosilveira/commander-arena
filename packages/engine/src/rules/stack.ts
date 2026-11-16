@@ -9,6 +9,7 @@
  *   becomes a permanent (CR 608.3). An Adventure that resolves is exiled instead (CR 715.3d).
  */
 
+import { DECLINE_OPTION } from './choose-one';
 import { overloadedText } from '../ast/overload';
 import { isPermanentType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
@@ -793,7 +794,9 @@ export function answerResolutionChooseOne(state: GameState, option: string): Res
   const res = state.resolution;
   const head = res?.queue[0];
   if (!res || head?.kind !== 'chooseOne') return null;
-  const index = head.options.findIndex((o) => o.label === option);
+  const found = head.options.findIndex((o) => o.label === option);
+  // An optional choice (Hylda group 3) also takes "Do nothing", the index past the offered instructions.
+  const index = found < 0 && head.optional === true && option === DECLINE_OPTION ? head.options.length : found;
   if (index < 0) return null;
   const updated: Instruction = { ...head, chosen: index };
   return continueResolution(

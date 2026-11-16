@@ -10,7 +10,7 @@ import type {
 } from '@commander-arena/engine';
 import type { IrAmount, IrNoun, IrPtTerm, Span } from '../ir/types';
 import { missingFeatures } from './features';
-import { colorLetter, lowerFilter, objectRefOf } from './nouns';
+import { colorLetter, lowerFilter, objectRefOf, playerSelectorOf } from './nouns';
 import type { LowerContext, LowerResult } from './types';
 
 /**
@@ -101,6 +101,11 @@ export function lowerAmount(
         } finally {
           ctx.xIs = defined;
         }
+      }
+      // CR 107.3m (Hylda group 3): in the enters trigger of the permanent itself X is the X of the spell it came from, which no announcement of the ability gives.
+      if (ctx.entersX) {
+        const blockedEntered = needs('enteredX');
+        return blockedEntered ?? { ok: true, value: { kind: 'enteredX' }, rule };
       }
       const blocked = needs('x');
       if (blocked !== null) return blocked;
@@ -227,6 +232,27 @@ export function lowerAmount(
     case 'countOf': {
       const blocked = needs('countOf');
       if (blocked !== null) return blocked;
+      // "for each tapped creature target opponent controls" (Hylda group 3, CR 109.4, 608.2c): the player is a target the ability declares, read as the count is made
+      // (the engine's `controlledBy` of a target, in a count). Only a target: "that player" names a player the counting phrase never says.
+      const controller = amount.of.filter.controller;
+      if (typeof controller === 'object') {
+        const missingRef = missingFeatures(['selector:controllerRef']);
+        if (missingRef.length > 0) return { ok: false, needs: missingRef, at: amount.span, rule };
+        if (controller.orPlaneswalkerController === true || controller.noun.det !== 'target') {
+          return { ok: false, needs: [], at: amount.span, rule };
+        }
+        const named = playerSelectorOf(controller.noun, ctx);
+        if (!named.ok) return named;
+        if (named.value.kind !== 'target') return { ok: false, needs: [], at: amount.span, rule };
+        const { controller: _named, ...rest } = amount.of.filter;
+        const plain = countFilter({ ...amount.of, filter: rest });
+        if (!plain.ok) return plain;
+        return {
+          ok: true,
+          value: { kind: 'countOf', filter: { ...plain.value, controlledBy: named.value } },
+          rule,
+        };
+      }
       const filter = countFilter(amount.of);
       if (!filter.ok) return filter;
       return { ok: true, value: { kind: 'countOf', filter: filter.value }, rule };

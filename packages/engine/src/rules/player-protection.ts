@@ -14,6 +14,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
+import { hasGrantedHexproof } from './player-hexproof';
 import { mayHaveStatic } from './printed-statics';
 import { sourceTypes } from './protection';
 
@@ -74,7 +75,10 @@ export function playerCanBeTargetedBy(
   source: ObjectId | null = null,
 ): boolean {
   if (playerHasProtectionFrom(state, seat, source)) return false;
-  return seat === by || !hasStaticOf(state, seat, 'playerHexproof');
+  // CR 702.11b (Hylda group 3): "You gain hexproof until end of turn" gives the same protection for the rest of the turn.
+  return (
+    seat === by || !(hasStaticOf(state, seat, 'playerHexproof') || hasGrantedHexproof(state, seat))
+  );
 }
 
 /** CR 104.3: whether the state-based actions leave the player in the game whatever their life total and counters. */

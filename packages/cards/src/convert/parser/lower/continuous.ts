@@ -309,6 +309,9 @@ export const FLICKER: Lowering<IrClause, Effects> = {
     const to = arg(clause, 'to');
     if (what?.kind !== 'noun' || to?.kind !== 'zoneSpec') return failure(clause);
     if (to.zone !== 'battlefield' || to.whose === undefined) return failure(clause);
+    // Hylda group 3 (Ojutai Exemplars): "Exile ~, then return it ...": the permanent with the ability, which must still be there to be exiled; a spell, or an ability whose
+    // permanent is gone by now (a "dies" trigger), has nothing to flicker.
+    if (what.det === 'self' && (ctx.owner === 'spell' || ctx.selfGone)) return failure(clause);
     const objects = objectSelectorOf(what, ctx);
     if (!objects.ok) return objects;
     const back: Effect = {

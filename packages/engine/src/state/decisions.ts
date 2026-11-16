@@ -152,6 +152,11 @@ export interface TargetChoiceSpec {
    * Absent for every other slot.
    */
   readonly onePerGroup?: true;
+  /**
+   * With `onePerGroup` (`TargetSpec.differentControllers`, Hylda group 3: "any number of target tapped creatures with different controllers"): the groups are the controllers
+   * of the targets, any player's, the controller of the spell included, so the slot is not "for each opponent". Absent otherwise.
+   */
+  readonly eachController?: true;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
   readonly differentFrom?: string;
   /** Every legal target for this slot, computed by the engine (CR 115, 608.2b). */

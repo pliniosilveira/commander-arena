@@ -582,7 +582,12 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
             ...(noun.upTo ? { min: 0 } : {}),
           }
         : anyNumberTarget
-          ? { id, what: { kind: 'object', filter: filter.value }, anyNumber: true }
+          ? {
+              id,
+              what: { kind: 'object', filter: filter.value },
+              anyNumber: true,
+              ...(noun.differentControllers === true ? { differentControllers: true as const } : {}),
+            }
           : noun.perOpponent === true
             ? { id, what: { kind: 'object', filter: filter.value }, onePerOpponent: true }
             : noun.upToThatMany === true

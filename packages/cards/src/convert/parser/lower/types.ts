@@ -25,6 +25,11 @@ export interface LowerContext {
   /** True when an amount was X (the spell then needs {X} in its cost, CR 107.3). */
   usesX: boolean;
   /**
+   * True in the body of "When ~ enters, ..." (every event of the trigger is the permanent itself entering, Hylda group 3, CR 107.3m): an X there is the X of the spell the
+   * permanent came from (the engine's `enteredX`), which `validateCard` checks against the {X} of the card's mana cost; it does not make the ability read an announced X.
+   */
+  entersX: boolean;
+  /**
    * True when the permanent the ability is on is gone by the time the effect runs: a "dies"
    * trigger of `~` itself, or an ability whose cost sacrifices `~` (CR 400.7: it is a new object
    * in the graveyard). An effect that acts on `~` as a permanent (tap, untap, exile, return it to
@@ -220,6 +225,7 @@ export function newContext(
     faceSubtypes,
     targets: [],
     usesX: false,
+    entersX: false,
     selfGone: false,
     staticSubjectIsSelf: false,
     itIsSelf: false,

@@ -33,6 +33,7 @@ import { GISA_G3_NOUN_RULES } from './gisa-g3';
 import { HASHATON_G8_NOUN_RULES } from './hashaton-g8';
 import { HASHATON_G9_NOUN_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_NOUN_RULES } from './hashaton-group-4';
+import { HYLDA_G3_NOUN_RULES } from './hylda-g3';
 import { HASHATON_G10_NOUN_RULES } from './hashaton-group-10';
 import { HOFRI_NOUN_RULES } from './hofri';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
@@ -639,6 +640,8 @@ export const NOUN_RULES = [
   ...PAIR_NOUN_RULES,
   NOUN_PLAYER,
   NOUN_TARGET_SPELL,
+  // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers", before `noun.any-number-targets`, which would stop at "creatures".
+  ...HYLDA_G3_NOUN_RULES,
   // Stage P32 (D-147): "target commander" before `noun.target-permanent`, whose phrase would stop at "commander".
   ...DINOSAUR_NOUN_RULES,
   // Stage P34 (D-152): "each other opponent" and "each of up to two other targets".

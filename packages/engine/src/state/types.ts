@@ -184,6 +184,11 @@ export interface GameObject {
    */
   readonly kicks?: number;
   /**
+   * The X the spell this permanent came from had (CR 107.3m, Hylda group 3): "When this creature enters, draw X cards" reads it, though the value of X of the permanent
+   * itself is 0. Present only when X was at least 1; absent for a permanent that was not cast, for one cast with X 0 and for a token (CR 107.3g).
+   */
+  readonly castX?: number;
+  /**
    * The opponent a spell's gift was promised to (CR 702.174a, D-135), kept by the permanent the spell became: "when it enters,
    * if its gift cost was paid, they draw a card" and "if the gift was promised" read it. Absent when no gift was promised.
    */
@@ -1435,6 +1440,8 @@ export type Instruction =
   | {
       readonly kind: 'chooseOne';
       readonly options: readonly InlineChoice[];
+      /** `ChooseOne.optional` (Hylda group 3): the decision has one more option, `DECLINE_OPTION`, which does nothing (index `options.length`). */
+      readonly optional?: true;
       readonly chosen: number | null;
       /** D-229: the player who chooses, when it is not the controller ("Target player adds one mana of any color"). */
       readonly chooser?: SeatId;
@@ -1748,6 +1755,11 @@ export type ContinuousChange =
    * abilities" leaves it. `derive` lists it in `restrictions`.
    */
   | { readonly kind: 'restrict'; readonly restriction: Restriction }
+  /**
+   * "You gain hexproof until end of turn" (`grantPlayerHexproof`, CR 702.11b, Hylda group 3): the effect's `players` have hexproof while it lasts. No layer: read where a
+   * player is targeted (`rules/player-protection.ts`).
+   */
+  | { readonly kind: 'playerHexproof' }
   /**
    * "Creatures your opponents control attack each combat if able [and attack a player other than you if able]" (`requireAttack`, CR 508.1d, 611.2c,
    * D-179): no layer and no fixed set (`objects` is empty): the requirement is read where attackers are declared (`rules/combat-legality.ts`), for

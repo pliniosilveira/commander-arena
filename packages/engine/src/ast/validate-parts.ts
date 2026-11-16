@@ -116,6 +116,8 @@ export interface Scope {
    * reference `sacrificed` has a permanent to read (D-177).
    */
   readonly sacrificedEarlier?: boolean;
+  /** True in the effect of the triggered ability "When this permanent enters": `enteredX` reads the X of the spell it came from (CR 107.3m, Hylda group 3). */
+  readonly entersX?: boolean;
   /** True in the effect of a triggered ability whose trigger has a player (`triggerPlayer`, D-133). */
   readonly triggerPlayer?: boolean;
   /** True in the effect of a triggered ability whose trigger deals damage (`triggerDamage`, D-133). */
@@ -792,6 +794,33 @@ export function declareTargets(
         issue(out, `${p}.min`, '"up to one for each opponent" has no minimum');
       }
     }
+    if (spec.differentControllers !== undefined) {
+      // Hylda group 3 (CR 115.1, 601.2c): "any number of target tapped creatures with different controllers".
+      if (spec.differentControllers !== true) {
+        issue(out, `${p}.differentControllers`, 'differentControllers must be true when present');
+      }
+      if (what?.kind !== 'object') {
+        issue(
+          out,
+          `${p}.what`,
+          'a slot of targets with different controllers names objects (permanents), not players',
+        );
+      } else if ((what.filter.zone ?? 'battlefield') !== 'battlefield') {
+        issue(out, `${p}.what`, 'targets with different controllers are permanents on the battlefield');
+      }
+      if (
+        spec.onePerOpponent !== undefined ||
+        spec.divide !== undefined ||
+        spec.countX !== undefined ||
+        spec.upToThatMany !== undefined
+      ) {
+        issue(
+          out,
+          p,
+          'targets with different controllers have no onePerOpponent, divide, countX or upToThatMany',
+        );
+      }
+    }
     if (spec.differentFrom !== undefined) {
       // CR 115.3 (D-151): "other targets": an earlier slot of the ability, not this one.
       if (typeof spec.differentFrom !== 'string' || !declared.has(spec.differentFrom)) {
@@ -1283,6 +1312,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (!scope.xAllowed)
         issue(out, path, 'X is used but nothing in this ability or spell has an X');
       break;
+    case 'enteredX':
+      // CR 107.3m (Hylda group 3): only the enters trigger of the permanent itself reads the X of the spell it came from (the card's {X} is checked with the face).
+      if (scope.entersX !== true) {
+        issue(
+          out,
+          path,
+          "'enteredX' needs a triggered ability whose trigger is this permanent entering the battlefield",
+        );
+      }
+      break;
     case 'manaValueOf':
       checkAmountObject(a.of, `${path}.of`, scope, out, true);
       break;
@@ -1478,6 +1517,23 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // D-095: a count of the objects the filter matches; `owner` is not read here (checkFilter).
       if (a.filter === undefined || a.filter === null) {
         issue(out, `${path}.filter`, 'countOf needs a filter');
+      } else if (a.filter.controlledBy !== undefined) {
+        // Hylda group 3 (CR 109.4, 608.2c): "for each tapped creature target opponent controls": the player is a target the effect declared, read as the amount is
+        // counted (with the targets); a player named any other way is not read here, and the other fields are those of any count.
+        const { controlledBy, ...rest } = a.filter;
+        if (kindOf(controlledBy) !== 'target') {
+          issue(
+            out,
+            `${path}.filter.controlledBy`,
+            'a count names the player whose objects it counts by a target of the ability or spell (controlledBy: target)',
+          );
+        } else {
+          checkPlayerSelector(controlledBy, `${path}.filter.controlledBy`, scope, out);
+        }
+        if (rest.controller !== undefined) {
+          issue(out, `${path}.filter.controller`, 'controlledBy replaces controller: set one of them');
+        }
+        checkFilter(rest, `${path}.filter`, out);
       } else {
         checkFilter(a.filter, `${path}.filter`, out);
       }
@@ -3305,6 +3361,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.optional`, 'optional must be true when present');
       }
       break;
+    case 'grantPlayerHexproof': {
+      // CR 702.11b (Hylda group 3): players named by a selector ("you", "each opponent", a target player), until end of turn.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'a player has hexproof until end of turn only');
+      }
+      break;
+    }
     case 'gainControl': {
       // CR 613.1b (D-189): a layer 2 effect for one named permanent: a target or the permanent that caused the trigger.
       const named = kindOf(e.objects);
@@ -4333,6 +4397,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'chooseOne': {
       if (e.times !== undefined) checkAmount(e.times, `${path}.times`, scope, out);
       if (e.chooser !== undefined) checkPlayerSelector(e.chooser, `${path}.chooser`, scope, out);
+      if (e.optional !== undefined && e.optional !== true) {
+        issue(out, `${path}.optional`, 'optional must be true when present');
+      }
       // CR 608.2d (D-175): two to eight offered instructions, each with the words the player is shown (distinct, so the answer names one).
       const options = Array.isArray(e.options) ? e.options : [];
       if (!Array.isArray(e.options) || options.length < 2 || options.length > 8) {

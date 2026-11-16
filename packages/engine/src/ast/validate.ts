@@ -1190,6 +1190,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           : {}),
         ...(selfCast ? { selfCast: true } : {}),
         ...(a.trigger?.kind === 'dies' ? { diesTrigger: true } : {}),
+        // CR 107.3m (Hylda group 3): the enters trigger of the permanent itself may refer to the X of the spell it came from.
+        ...(a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this'
+          ? { entersX: true }
+          : {}),
         ...HOOKS,
       });
       if (a.modes !== undefined || a.chooseModes !== undefined) {
@@ -1721,6 +1725,21 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
         out,
         `${path}.abilities[${i}].replacement.count`,
         'enters with X counters but the mana cost has no {X}',
+      );
+    }
+  });
+
+  // CR 107.3m (Hylda group 3): "When this creature enters, draw X cards" reads the X of the spell's mana cost; without an {X} there is nothing to read.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'triggered' &&
+      JSON.stringify(a.effect ?? null).includes('"enteredX"') &&
+      !(face.manaCost ?? []).includes('X')
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].effect`,
+        'enteredX is the X of the spell the permanent came from, but the mana cost has no {X}',
       );
     }
   });

@@ -776,6 +776,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     // CR 702.33d: a permanent that came from a kicked spell remembers it ("if it was kicked").
     ...(to === 'battlefield' && old.stack?.kicked === true ? { kicked: true as const } : {}),
     ...(to === 'battlefield' && old.stack?.kicks !== undefined ? { kicks: old.stack.kicks } : {}),
+    // CR 107.3m (Hylda group 3): an enters-the-battlefield trigger that refers to X reads the X of the spell the permanent resolved from.
+    ...(to === 'battlefield' && old.stack?.kind === 'spell' && (old.stack.x ?? 0) > 0
+      ? { castX: old.stack.x ?? 0 }
+      : {}),
     // CR 702.174 (D-135): a permanent remembers the opponent its spell's gift was promised to.
     ...(to === 'battlefield' && old.stack?.giftTo !== undefined
       ? { giftTo: old.stack.giftTo }

@@ -40,6 +40,12 @@ export type Amount =
    */
   | { readonly kind: 'x' }
   /**
+   * "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the X the spell had that became the permanent with the ability, read as the enters
+   * trigger resolves (from last-known information when the permanent has left); 0 for a permanent that was not cast (CR 107.3g: put onto the battlefield by an
+   * effect, a flicker included). Valid only in a triggered ability whose trigger is `entersBattlefield` of `this`, on a card whose mana cost has an {X}.
+   */
+  | { readonly kind: 'enteredX' }
+  /**
    * The power of an object a reference names, including a chosen target (`target`) or what an
    * earlier instruction moved (`moved`). Read as it is now when the object is where the effect
    * expected it, and from last-known information if it left (CR 608.2h, 113.7a): "Its controller
@@ -834,6 +840,13 @@ export interface TargetSpec {
    */
   readonly onePerOpponent?: true;
   /**
+   * "Destroy any number of target tapped creatures with different controllers" (CR 115.1, 601.2c, 603.3d, Hylda group 3): no two targets of this slot are controlled by the same
+   * player (the controllers may include the controller of the spell, unlike `onePerOpponent`). The slot takes any number of targets (`anyNumber`) or `max` of them, and the
+   * most that can be chosen is one for each player still in the game. `what` is an `object` filter (permanents on the battlefield); with `onePerOpponent`, `divide`, `countX`
+   * or `upToThatMany` it is refused. The controllers are read as the targets are chosen; a later change of control does not make a target illegal (CR 608.2b reads only the filter).
+   */
+  readonly differentControllers?: true;
+  /**
    * "Deals 4 damage to any target and 3 damage to each of up to two other targets" (CR 115.3, D-151): none of the targets of this slot may be a target
    * of the slot `differentFrom` names (an earlier slot of the same ability). The word "other" is what makes them different: two slots of an ability may
    * otherwise share a target.
@@ -1452,6 +1465,11 @@ export type Effect =
       readonly options: readonly InlineChoice[];
       /** Repeat the choice independently this many times, read once when the effect starts. */
       readonly times?: Amount;
+      /**
+       * "You may tap or untap target creature" (CR 608.2d, 701.26, Hylda group 3): the chooser may also choose none of the offered instructions: one more option,
+       * `DECLINE_OPTION` ("Do nothing"), comes after the labels and does nothing. Left out, one of the instructions is chosen.
+       */
+      readonly optional?: true;
       /**
        * "Target player adds one mana of any color" (D-229, CR 608.2d, 106.1b): the one player this selector names (a target) makes the choice, not the
        * controller of the effect. Left out, the controller chooses. A chooser that is no longer there (the target was illegal) is skipped with the effect.
@@ -2247,6 +2265,16 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly restriction: Restriction;
       readonly duration: Duration | 'forAsLongAsYouControlThis';
+    }
+  /**
+   * "You gain hexproof until end of turn" (CR 702.11b, 611.2, 514.2; Hylda group 3): each player the selector names has hexproof until end of turn: spells and abilities their
+   * opponents control can't target them. The players are fixed as the effect begins (CR 611.2c). `player` names players ("you", "each opponent"; never an object); the
+   * duration is until end of turn only, and shroud for a player is not built.
+   */
+  | {
+      readonly kind: 'grantPlayerHexproof';
+      readonly player: PlayerSelector;
+      readonly duration: 'untilEndOfTurn';
     }
   /**
    * "The Ring tempts you" (CR 701.54a, 701.54c, 701.54d, D-196): the controller of the effect gets the emblem named The Ring if they have none, the

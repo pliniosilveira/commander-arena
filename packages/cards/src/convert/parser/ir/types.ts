@@ -170,6 +170,8 @@ export interface IrNoun extends IrNode {
   readonly minTargets?: number;
   /** "any number of other permanents" (stage P30, CR 701.21): the player chooses none, some or all of them. */
   readonly anyNumber?: true;
+  /** "any number of target tapped creatures with different controllers" (Hylda group 3, CR 115.1, 601.2c): with `anyNumber` on a target, no two of them have the same controller. */
+  readonly differentControllers?: true;
   /** "one or more Treasures" (stage P41, D-188, CR 701.21): with `anyNumber`, the player chooses at least one of them. */
   readonly atLeastOne?: true;
   /**
@@ -432,7 +434,7 @@ export type IrAmount =
   // "for each opponent who has more cards in hand than you"
   | {
       readonly kind: 'opponentsWithMore';
-      readonly stat: 'life' | 'cardsInHand' | 'creatures';
+      readonly stat: 'life' | 'cardsInHand' | 'creatures' | 'lands';
       readonly span: Span;
     }
   // "for each creature sacrificed this way", "for each opponent who drew a card this way": what an earlier

@@ -11,6 +11,9 @@ import { done, type StepOutcome } from './step-outcome';
 
 type ChooseOneInstruction = Extract<Instruction, { kind: 'chooseOne' }>;
 
+/** The words of the one more option of an optional choice (`ChooseOne.optional`, "You may tap or untap target creature"): nothing is done. */
+export const DECLINE_OPTION = 'Do nothing';
+
 export function runChooseOne(
   state: GameState,
   res: ResolutionContext,
@@ -19,7 +22,17 @@ export function runChooseOne(
   const { options, chosen } = instruction;
   if (chosen !== null) {
     const picked = options[chosen];
-    if (picked === undefined) return done(state);
+    // An optional choice (Hylda group 3) answered "Do nothing" is the index past the offered instructions: nothing runs.
+    if (picked === undefined) {
+      const declined: GameEvent = {
+        kind: 'optionChosen',
+        seat: instruction.chooser ?? res.controller,
+        source: res.object,
+        purpose: 'effect',
+        option: DECLINE_OPTION,
+      };
+      return done(state, instruction.optional === true ? [declined] : []);
+    }
     const event: GameEvent = {
       kind: 'optionChosen',
       seat: instruction.chooser ?? res.controller,
@@ -38,7 +51,10 @@ export function runChooseOne(
       kind: 'chooseOption',
       seat: instruction.chooser ?? res.controller,
       purpose: 'effect',
-      options: options.map((option) => option.label),
+      options: [
+        ...options.map((option) => option.label),
+        ...(instruction.optional === true ? [DECLINE_OPTION] : []),
+      ],
       source: res.object,
       sourceName: info?.name ?? '',
       sourceOracleText: info?.oracleText ?? '',

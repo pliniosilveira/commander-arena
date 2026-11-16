@@ -78,6 +78,7 @@ import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
+import { runGrantPlayerHexproof } from './player-hexproof';
 import { runProliferate } from './proliferate';
 import { givesProtectionOfChoice, runProtectionColor } from './protection-choice';
 import { runRegenerate } from './regenerate';
@@ -1245,6 +1246,7 @@ function runEffect(
           () => ({
             kind: 'chooseOne',
             options: effect.options,
+            ...(effect.optional === true ? { optional: true as const } : {}),
             chosen: null,
             // D-229: "Target player adds one mana of any color": the target player chooses.
             ...(effect.chooser === undefined
@@ -2186,6 +2188,10 @@ function runEffect(
     case 'preventDamage':
       // CR 615: a prevention shield, read where damage is dealt (`rules/prevention.ts`).
       return runPreventDamage(state, effect, ctx, targets);
+
+    case 'grantPlayerHexproof':
+      // CR 702.11b, 611.2 (Hylda group 3): the players have hexproof until end of turn (`rules/player-hexproof.ts`).
+      return runGrantPlayerHexproof(state, effect, ctx, targets);
 
     case 'requireAttack':
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.
