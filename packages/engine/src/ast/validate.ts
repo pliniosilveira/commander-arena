@@ -447,12 +447,21 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         checkManaAbility(s.ability, `${path}.ability`, out);
       } else if (s.ability?.kind === 'activated' || s.ability?.kind === 'triggered') {
         checkAbility(s.ability, `${path}.ability`, out);
+        // D-530: a granted loyalty ability is activated only from a planeswalker, so it is granted to planeswalkers (CR 606.1).
         if (
           s.ability.kind === 'activated' &&
           Array.isArray(s.ability.cost) &&
-          s.ability.cost.some((c) => c?.kind === 'loyalty')
+          s.ability.cost.some((c) => c?.kind === 'loyalty') &&
+          !(
+            s.subject.kind === 'filter' &&
+            filterSome(s.subject.filter, (f) => f.types?.includes('planeswalker') === true)
+          )
         ) {
-          issue(out, `${path}.ability.cost`, 'a granted loyalty ability is not supported');
+          issue(
+            out,
+            `${path}.ability.cost`,
+            'a granted loyalty ability is granted to planeswalkers only',
+          );
         }
         if (
           s.ability.kind === 'activated' &&

@@ -54,6 +54,67 @@ describe('the real planeswalkers that read completely', () => {
 });
 
 describe('the cards of the Vraska deck that need planeswalkers', () => {
+  test('Way of the Cryomancer grants its delayed-copy loyalty ability to planeswalkers', () => {
+    const imported = real('Way of the Cryomancer');
+    expect(imported.support.unparsed).toEqual([]);
+    expect(imported.support.status).toBe('supported');
+    expect(imported.definition.faces[0]?.abilities).toContainEqual(
+      expect.objectContaining({
+        kind: 'static',
+        static: expect.objectContaining({
+          kind: 'grantAbility',
+          subject: {
+            kind: 'filter',
+            filter: { types: ['planeswalker'], controller: 'you' },
+          },
+          ability: expect.objectContaining({
+            kind: 'activated',
+            cost: [{ kind: 'loyalty', change: -3 }],
+            effect: expect.objectContaining({
+              kind: 'delayedCast',
+              filter: expect.objectContaining({ stackKind: 'spell' }),
+              effect: {
+                kind: 'copySpell',
+                spell: { kind: 'triggerSubject' },
+                newTargets: 'may',
+              },
+            }),
+          }),
+        }),
+      }),
+    );
+  });
+
+  test('Cryotheory Adept has a graveyard-only self-exile activation cost', () => {
+    const imported = real('Cryotheory Adept');
+    expect(imported.support.unparsed).toEqual([]);
+    expect(imported.support.status).toBe('supported');
+    expect(imported.definition.faces[0]?.abilities).toContainEqual({
+      kind: 'activated',
+      cost: [{ kind: 'mana', symbols: ['3', 'U'] }, { kind: 'exileThis' }],
+      targets: [
+        {
+          id: 't1',
+          what: { kind: 'object', filter: { zone: 'battlefield', types: ['creature'] } },
+        },
+      ],
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'tap', objects: { kind: 'target', id: 't1' } },
+          {
+            kind: 'addCounters',
+            objects: { kind: 'target', id: 't1' },
+            counter: 'stun',
+            count: 1,
+          },
+        ],
+      },
+      functionsIn: 'graveyard',
+      timing: 'sorcery',
+    });
+  });
+
   test("Protege's Awakening: Empower Jace 6, then draw a card", () => {
     const imported = real("Protege's Awakening");
     expect(imported.support.status).toBe('supported');

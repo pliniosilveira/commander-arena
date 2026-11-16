@@ -2,6 +2,14 @@
 
 One entry per mechanic the engine or the card grammar supports: the rules, the AST nodes, the tests. Entries from different slices are separate sections; add yours as a new section.
 
+## Vraska request (issue 70, D-529 to D-531)
+
+- **Spell cost.** A spell may have one Behold additional cost, also as one way of an additional-cost choice. The caster must have a matching card in hand or a matching permanent they control; the cost is paid after mana and a card from hand is revealed. The existing Behold decision supports the cross-zone choice; spell cost legality checks it before casting is offered.
+- **Granted loyalty ability.** A static ability may grant a loyalty ability to the permanents it selects. The existing loyalty timing, counter costs and once-per-turn rule apply, and activation legality requires the ability's source to be a planeswalker.
+- **Graveyard activation.** The parser recognizes the card's self-exile cost from its graveyard and marks that ability as functioning there. The engine's existing self-exile cost and ordinary activation flow handle payment and resolution.
+- **Parser and proof.** `behold` additional costs, quoted loyalty abilities granted to planeswalkers and graveyard self-exile costs use general parser rules, not card-name branches. Regressions are in `scenario-xx-additional-costs.test.ts`, `scenario-xx-delayed-cast.test.ts`, `convert-grammar-engine-vra.test.ts` and `parser-p47.test.ts`. Ruric Thar, Biomagus, Dauntless Veteran, Shatterwing Pegasus and Strix Lookout were already supported; Cryotheory Adept was an additional parser gap. The real card records and golden acceptance status are the support gate.
+- **Verification limits.** The Comprehensive Rules source was unavailable for this session; the existing rule references were not extended from memory. The five additional cards' card data were checked through the approved Scryfall lookup workflow.
+
 ## Witherbloom Pestilence (issue 58, D-497)
 
 - **History.** `lifeGainedThisTurn` reads actual life gained, not the net life-total change. `enteredThisTurn` and `diedThisTurn` amounts filter event-time types, controller and token status. The turn log retains permanent-to-graveyard events, including tokens, after objects leave their destinations. These amounts drive end-step Food production, life-gain scaling and additional entry counters; entry replacements include the entering permanent's own applicable ability.

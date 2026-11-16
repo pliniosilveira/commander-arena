@@ -692,6 +692,10 @@ export type IrCost = IrNode &
     // "Reveal this card from your hand" (Gisa deck, group 4, D-462, CR 701.20a, 113.6b): the card itself is shown, from the hand
     | { readonly kind: 'revealThis' }
     | { readonly kind: 'exileThis' }
+    // "Exile this card from your graveyard" marks the activated ability as functioning there.
+    | { readonly kind: 'exileThisFromGraveyard' }
+    // "Behold a Jace" (CR 701.4, D-151): as an additional cost of a spell, reveal a matching hand card or choose a matching permanent.
+    | { readonly kind: 'behold'; readonly what: IrNoun }
     // "Mill a card" (stage P51, D-208, CR 701.17): the cost of a mana ability
     | { readonly kind: 'mill'; readonly amount: IrAmount }
     // "{E}{E}" (stage P51, D-209, CR 107.14): energy counters paid by the player that an "unless you pay" asks

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 104,
+  "parserVersion": 105,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -2038,6 +2038,14 @@
       "reasons": [],
       "ast": "c375aa82"
     },
+    "5a6d01c8-47b6-43e5-a6e9-c48088286007": {
+      "name": "Strix Lookout",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e419492b"
+    },
     "5aa3abf1-d56b-4f42-8c84-7e5a2c15ee0f": {
       "name": "Nissa, Who Shakes the World",
       "group": "acceptance",
@@ -2905,6 +2913,22 @@
       "reasons": [],
       "ast": "822ff66e"
     },
+    "7d32c63d-aa9e-4f5d-a3e6-51377a786009": {
+      "name": "Way of the Cryomancer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c824a37a"
+    },
+    "7d6641e7-4d14-4a06-b588-0c752af529bd": {
+      "name": "Shatterwing Pegasus",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c00662fa"
+    },
     "7d881c57-0bd9-4c57-aa4a-b10808b86143": {
       "name": "Dimir Signet",
       "group": "training",
@@ -3154,6 +3178,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b50a16ee"
+    },
+    "873fa095-5662-407a-bd24-9a1c4712a428": {
+      "name": "Ruric Thar, Biomagus",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7b6fbc9c"
     },
     "88d0a394-79e2-42ac-9a37-1a7b78231941": {
       "name": "Thunderclap Drake",
@@ -3435,6 +3467,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ffff24f4"
+    },
+    "97b2fb8b-0c69-4ed2-b2d0-8a780f9b5b97": {
+      "name": "Dauntless Veteran",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "124087ac"
     },
     "97e260c9-3e78-402b-8d97-af4b515b278b": {
       "name": "Hammers of Moradin",
@@ -3788,6 +3828,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4113ccd2"
+    },
+    "a9b3ee21-1af1-4e7e-8e48-d7c90d056f5c": {
+      "name": "Cryotheory Adept",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c937b8ff"
     },
     "aa1a6646-c1e6-4bff-9092-43ee3e137914": {
       "name": "Archon of Cruelty",
@@ -5561,6 +5609,14 @@
       "reasons": [],
       "ast": "72f5780f"
     },
+    "fc3353e9-fe24-4ca7-bff8-9da767f2903a": {
+      "name": "Countersculpt",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5388b483"
+    },
     "fc9ec820-4245-4a96-b009-5308a818ca58": {
       "name": "Watery Grave",
       "group": "training",
@@ -5788,8 +5844,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 375,
-      "total": 392
+      "supported": 382,
+      "total": 399
     }
   }
 }

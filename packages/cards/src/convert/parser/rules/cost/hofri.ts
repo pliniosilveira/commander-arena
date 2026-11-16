@@ -65,6 +65,34 @@ export const COST_EXILE_THIS = defineRule<IrCost>({
   },
 });
 
+/** `cost.exile-this-from-graveyard`: the source card exiles itself as an activation cost from its graveyard. */
+export const COST_EXILE_THIS_FROM_GRAVEYARD = defineRule<IrCost>({
+  id: 'cost.exile-this-from-graveyard',
+  family: 'cost',
+  leading: ['exile'],
+  cites: ['CR 113.6b (Abilities)', 'CR 118.1 (Costs)', 'CR 400.7 (Zones)'],
+  examples: ['Exile this card from your graveyard'],
+  rejects: [
+    'Exile ~ from your graveyard and',
+    'Exile a card from your graveyard',
+    'Exile this card from an opponent’s graveyard',
+    'Exile this card from your hand',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(/exile this card from your graveyard(?![\p{L}\p{N}'’])/iu))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'exileThisFromGraveyard',
+        span: r.value.span,
+        rule: 'cost.exile-this-from-graveyard',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 /**
  * `cost.exile-graveyard-cards`: "Exile two creature cards from your graveyard" (CR 118.1, 406.1, 701.13a: the player exiles that many cards of the kind from their own
  * graveyard as a cost; the cards are chosen as the ability is activated). The engine's `exileFromGraveyard` cost, of an ordinary activated ability. Not read: another zone
@@ -134,4 +162,9 @@ export const COST_EXILE_GRAVEYARD_CARDS = defineRule<IrCost>({
   },
 });
 
-export const HOFRI_COST_RULES = [COST_DISCARD_THIS, COST_EXILE_THIS, COST_EXILE_GRAVEYARD_CARDS];
+export const HOFRI_COST_RULES = [
+  COST_DISCARD_THIS,
+  COST_EXILE_THIS_FROM_GRAVEYARD,
+  COST_EXILE_THIS,
+  COST_EXILE_GRAVEYARD_CARDS,
+];

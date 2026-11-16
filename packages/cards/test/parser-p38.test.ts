@@ -14,6 +14,23 @@ const drop = (text: string, type: FaceType = 'instant', subtypes: readonly strin
 const EXILE = (id: string) => ({ kind: 'exile', objects: { kind: 'target', id } });
 
 describe('the three real cards of the slice read as the engine runs them (D-181, D-182)', () => {
+  test('Countersculpt: behold a Jace or pay {1} as an additional cost', () => {
+    const name = 'SYNTHETIC Parsed Countersculpt';
+    const imported = parseOnly(
+      spellCard(
+        name,
+        `As an additional cost to cast ${name}, behold a Jace or pay {1}.\nCounter target spell.\nEmpower Jace 1.`,
+        { type: 'Instant', manaCost: '{U}{U}' },
+      ),
+    );
+    expect(imported.support.unparsed).toEqual([]);
+    expect(imported.support.status).toBe('supported');
+    expect(imported.definition.faces[0]?.additionalCostChoice).toEqual([
+      [{ kind: 'behold', filter: { types: ['planeswalker'], subtypes: ['Jace'] } }],
+      [{ kind: 'mana', symbols: ['1'] }],
+    ]);
+  });
+
   test('Tear Asunder: the kicked target and the unkicked one are separate slots', () => {
     const parsed = readAll(
       'Kicker {1}{B} (You may pay an additional {1}{B} as you cast this spell.)\nExile target artifact or enchantment. If this spell was kicked, exile target nonland permanent instead.',

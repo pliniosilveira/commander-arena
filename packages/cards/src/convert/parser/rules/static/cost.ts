@@ -498,10 +498,17 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
   },
 });
 
-/** One cost of an additional cost: a sacrifice, a discard, life, or mana after "pay". */
+/** One cost of an additional cost: Behold, a sacrifice, a discard, life, or mana after "pay". */
 const ADDITIONAL_COST: Parser<IrCost> = choice(
   family<IrCost>('cost', {
-    only: ['cost.sacrifice', 'cost.discard', 'cost.discard-x', 'cost.pay-life', 'cost.pay-x-life'],
+    only: [
+      'cost.behold',
+      'cost.sacrifice',
+      'cost.discard',
+      'cost.discard-x',
+      'cost.pay-life',
+      'cost.pay-x-life',
+    ],
   }),
   map(
     sequence(literal('pay '), family<IrCost>('cost', { only: ['cost.mana'] })),
@@ -553,6 +560,7 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, sacrifice an artifact or discard a card.',
     'As an additional cost to cast ~, sacrifice a creature or discard a card.',
     'As an additional cost to cast ~, discard a card or pay 3 life.',
+    'As an additional cost to cast ~, behold a Jace or pay {1}.',
   ],
   rejects: [
     'As an additional cost to cast ~, sacrifice a creature',
@@ -567,6 +575,7 @@ export const STATIC_ADDITIONAL_COST = defineRule<IrStatic>({
     'As an additional cost to cast ~, discard a creature card.',
     'As an additional cost to cast ~, discard X cards at random.',
     'As an additional cost to cast ~, discard Y cards.',
+    'As an additional cost to cast ~, behold another Jace or pay {1}.',
     'As an additional cost to cast ~, exile a card from your graveyard.',
     'As an additional cost to cast ~, tap an untapped creature you control.',
     'As an additional cost to cast spells, sacrifice a creature.',
