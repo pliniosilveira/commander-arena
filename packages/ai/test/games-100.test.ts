@@ -136,12 +136,7 @@ t('100 random-vs-random games all finish with a result and no faults', async () 
   // style of this mix plays either (D-103; x-games.test.ts), and so do the modes of a modal spell or
   // ability (D-114; modal-games.test.ts). The same holds for the pay options of Convoke, Improvise and
   // Delve (D-120; keyword-batch2-games.test.ts).
-  const askedElsewhere: readonly DecisionKind[] = [
-    'chooseOption',
-    'chooseX',
-    'chooseModes',
-    'choosePayOptions',
-  ];
+  const askedElsewhere: readonly DecisionKind[] = ['chooseX', 'chooseModes', 'choosePayOptions'];
   expect([...decisionKinds].sort()).toEqual(
     [...DECISION_KINDS].filter((kind) => !askedElsewhere.includes(kind)).sort(),
   );

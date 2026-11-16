@@ -3228,6 +3228,7 @@ export type Trigger =
  *   one creature"; with menace nothing can block it, CR 702.111b);
  * - `attacksEachCombat`: it attacks each combat if able (CR 508.1d, a requirement);
  * - `mustBeBlocked`: it must be blocked if able (CR 509.1c, a requirement on the defending player, D-206);
+ * - `mustBlock`: it must block this turn if able (CR 509.1b, a requirement on its controller);
  * - `doesntUntap`: it doesn't untap during its controller's untap step (CR 502.3);
  * - `cantBeCountered`: a spell that can't be countered (CR 101.2, 701.6, 113.6g).
  * An object gets one from a static ability (`StaticEffect` `restriction`, which "loses all abilities"
@@ -3239,6 +3240,7 @@ export type Restriction =
   | 'cantBeBlocked'
   | 'cantBeBlockedByMoreThanOne'
   | 'mustBeBlocked'
+  | 'mustBlock'
   | 'attacksEachCombat'
   | 'doesntUntap'
   | 'cantBeCountered';

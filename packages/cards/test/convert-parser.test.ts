@@ -659,6 +659,7 @@ describe('unmatched abilities', () => {
       'effect.restrict',
       'effect.restrict-all',
       'effect.restrict-self',
+      'effect.restrict-those',
       'effect.restrict-while-controlling',
       'effect.loses-abilities',
       'effect.becomes',

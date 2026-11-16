@@ -1036,6 +1036,7 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'cantBeBlockedByMoreThanOne',
   'attacksEachCombat',
   'mustBeBlocked',
+  'mustBlock',
   'doesntUntap',
   'cantBeCountered',
 ];
@@ -1051,6 +1052,7 @@ export const RESTRICTABLE_BY_EFFECT: readonly Restriction[] = [
   'cantBeBlocked',
   'attacksEachCombat',
   'mustBeBlocked',
+  'mustBlock',
 ];
 
 /**

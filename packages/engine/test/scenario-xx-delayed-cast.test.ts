@@ -510,15 +510,13 @@ describe('"{2}{U}, Sacrifice this creature: When you next cast an instant or sor
 });
 
 describe('Way of the Cryomancer grants a loyalty ability that copies your next instant or sorcery', () => {
-  test('a granted loyalty ability cannot be activated from a creature', () => {
-    const g = game((b) =>
-      b.define(creatureLoyaltyGrant).seat(0).battlefield('SYNTHETIC Creature Loyalty Grant', BEARS),
+  test('a card cannot grant a loyalty ability to creatures', () => {
+    expect(validateCard(creatureLoyaltyGrant)).toContainEqual(
+      expect.objectContaining({
+        path: 'faces[0].abilities[0].static.ability.cost',
+        message: 'a granted loyalty ability is granted to planeswalkers only',
+      }),
     );
-    expect(
-      getView(g.state, 0).battlefield.find((obj) => obj.name === BEARS)?.activated?.[0]?.ability
-        .cost,
-    ).toEqual([{ kind: 'loyalty', change: -3 }]);
-    g.expect.illegal(0, { activate: BEARS, ability: 0 });
   });
 
   test('the granted ability is activated on a planeswalker and copies the next spell with new targets', () => {

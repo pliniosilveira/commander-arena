@@ -14,7 +14,7 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrFilter, IrNoun } from '../../ir/types';
+import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { defineRule, family, node, spanned } from '../registry';
 import { AJANI_NOUN_RULES } from './ajani';
@@ -75,12 +75,30 @@ function targetOf(
   phrase: (plural: boolean) => Parser<IrFilter>,
   allowX = false,
 ): Parser<IrNoun> {
+  const limitedPhrase =
+    (plural: boolean): Parser<IrFilter> =>
+    (ctx, pos) => {
+      const found = phrase(plural)(ctx, pos);
+      if (!found.ok) return found;
+      const suffix = sequence(
+        literal(' with mana value less than or equal to '),
+        family<IrAmount>('amount'),
+      )(ctx, found.pos);
+      if (!suffix.ok) return { ...found, pos: found.pos };
+      return {
+        ok: true,
+        value: { ...found.value, manaValueAtMostAmount: suffix.value[1] },
+        pos: suffix.pos,
+      };
+    };
+  // Graveyard targets have their own card-object semantics and are not the battlefield target filter Drown uses.
+  const targetPhrase = id === ID.targetGraveyard ? phrase : limitedPhrase;
   const xTargets: Parser<Bare> = map(
     sequence(
       optional(literal('up to '), null),
       spanned(literal('X')),
       literal(' target '),
-      phrase(true),
+      targetPhrase(true),
     ),
     ([upTo, count, , filter]) =>
       bare('target', filter, {
@@ -90,7 +108,7 @@ function targetOf(
       }),
   );
   const counted: Parser<Bare> = map(
-    sequence(spanned(satisfy(quantity, (n) => n >= 2)), literal(' target '), phrase(true)),
+    sequence(spanned(satisfy(quantity, (n) => n >= 2)), literal(' target '), targetPhrase(true)),
     ([count, , filter]) =>
       bare('target', filter, {
         count: { kind: 'number', value: count.value, span: count.span },
@@ -99,7 +117,7 @@ function targetOf(
   );
   // "one or two target creatures" (D-295, CR 115.1, 601.2c): at least one target and at most two. No other pair of numbers is a phrase of the text.
   const oneOrTwo: Parser<Bare> = map(
-    sequence(spanned(literal('one or two')), literal(' target '), phrase(true)),
+    sequence(spanned(literal('one or two')), literal(' target '), targetPhrase(true)),
     ([count, , filter]) =>
       bare('target', filter, {
         count: { kind: 'number', value: 2, span: count.span },
@@ -116,7 +134,7 @@ function targetOf(
     if (!head.ok) return head;
     const count = head.value[1];
     const plural = count.value >= 2;
-    const filter = phrase(plural)(ctx, head.pos);
+    const filter = targetPhrase(plural)(ctx, head.pos);
     if (!filter.ok) return filter;
     const value = bare('target', filter.value, {
       count: { kind: 'number', value: count.value, span: count.span },
@@ -128,14 +146,14 @@ function targetOf(
   // "up to that many target creatures" (stage P41, D-188, CR 603.12): the number is what a sacrifice before a reflexive ability made; always plural,
   // with no count of its own.
   const upToThatMany: Parser<Bare> = map(
-    sequence(literal('up to that many target '), phrase(true)),
+    sequence(literal('up to that many target '), targetPhrase(true)),
     ([, filter]) => bare('target', filter, { plural: true, upTo: true, upToThatMany: true }),
   );
   // "another target creature": one target that is not the source of the ability (CR 115.1, 109.1).
-  const another = map(sequence(literal('another target '), phrase(false)), ([, filter]) =>
+  const another = map(sequence(literal('another target '), targetPhrase(false)), ([, filter]) =>
     bare('target', filter, { other: true }),
   );
-  const single = map(sequence(literal('target '), phrase(false)), ([, filter]) =>
+  const single = map(sequence(literal('target '), targetPhrase(false)), ([, filter]) =>
     bare('target', filter),
   );
   // "each of up to two target creatures": the counters of a spell that puts one on each (the engine's
@@ -265,7 +283,23 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
   ],
   parse: node<IrFilter, IrNoun>(
     ID.targetSpell,
-    map(sequence(literal('target '), spellPhrase()), ([, filter]) => filter),
+    (ctx, pos) => {
+      const head = sequence(literal('target '), spellPhrase())(ctx, pos);
+      if (!head.ok) return head;
+      const suffix = sequence(
+        literal(' with mana value less than or equal to '),
+        family<IrAmount>('amount'),
+      )(ctx, head.pos);
+      if (!suffix.ok) return { ...head, value: head.value[1] };
+      return {
+        ok: true,
+        value: {
+          ...head.value[1],
+          manaValueAtMostAmount: suffix.value[1],
+        },
+        pos: suffix.pos,
+      };
+    },
     (filter) => bare('target', filter),
   ),
 });

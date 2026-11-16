@@ -53,6 +53,8 @@ export interface SelectContext {
   /** What `triggerPlayer` ("that player") and `triggerDamage` ("that much") mean in this resolution (D-133). */
   readonly triggerPlayer?: SeatId;
   readonly triggerDamage?: number;
+  /** Targets already chosen for this spell or ability, including a candidate being checked. */
+  readonly targets?: readonly ChosenTarget[];
   /** The players the attack event of this trigger was declared at (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: readonly SeatId[];
   /** The seats an `owner` selector of the filter names (see `FilterContext.owners`). */
@@ -318,6 +320,14 @@ function manaValueLimitOf(
 ): number {
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
+  if (amount.kind === 'countOf') {
+    const owner = amount.filter.owner;
+    const countedContext =
+      owner === undefined
+        ? ctx
+        : { ...ctx, owners: resolvePlayers(state, owner, ctx, ctx.targets ?? []) };
+    return countMatching(state, amount.filter, countedContext);
+  }
   if (amount.kind === 'powerOf' && ctx.source !== null) {
     return Math.max(0, powerOfObject(state, ctx.source) ?? 0);
   }
@@ -469,8 +479,15 @@ export function legalTargets(
     const obj = getObject(state, id);
     // A spell or ability on the stack never targets itself while it is being put there.
     if (obj.zone === 'stack' && (id === ctx.source || id === ctx.stackObject)) continue;
+    const matchingContext =
+      filter.manaValueAtMost === undefined
+        ? ctx
+        : {
+            ...ctx,
+            targets: [...(ctx.targets ?? []), { kind: 'object' as const, id, specId }],
+          };
     if (
-      matchesFilter(state, obj, filter, ctx) &&
+      matchesFilter(state, obj, filter, matchingContext) &&
       canBeTargetedBy(state, obj, ctx.controller, ctx.source)
     ) {
       // D-149: a slot with one target for each opponent says whose each target is.
@@ -517,7 +534,9 @@ export function stillLegalTargets(
   ctx: SelectContext,
 ): ChosenTarget[] {
   const legalBySpec = new Map<string, ChosenTarget[]>();
-  for (const spec of specs) legalBySpec.set(spec.id, legalTargets(state, spec, ctx));
+  for (const spec of specs) {
+    legalBySpec.set(spec.id, legalTargets(state, spec, { ...ctx, targets: chosen }));
+  }
   return chosen.filter((t) => (legalBySpec.get(t.specId) ?? []).some((l) => sameTarget(l, t)));
 }
 

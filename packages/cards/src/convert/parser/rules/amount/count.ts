@@ -30,6 +30,7 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
+import { possessedNoun } from '../noun/controller';
 import { ATTACHMENT_SUFFIX } from '../noun/danitha-g3';
 import {
   BOUNDARY,
@@ -199,7 +200,34 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
  * the object of its owner, CR 400.3, so "your opponents'" is the opponents as owners).
  */
 function cards(plural: boolean): Parser<IrFilter> {
-  const where = choice<{ zone: 'hand' | 'graveyard'; controller?: 'you' | 'opponent' }>(
+  const itsControllerGraveyard: Parser<{
+    zone: 'graveyard';
+    controller: { readonly noun: IrNoun; readonly orPlaneswalkerController?: true };
+  }> = (ctx, pos) => {
+    const r = pattern(/ in its controller['’]s graveyard/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const start = pos + 4;
+    const of = possessedNoun('noun.its-controller', 'its', start);
+    const controller: IrNoun = {
+      kind: 'noun',
+      det: 'controllerOf',
+      filter: { raw: "its controller's" },
+      upTo: false,
+      plural: false,
+      other: false,
+      of,
+      span: { start, end: start + 14 },
+      rule: 'noun.its-controller',
+    };
+    return { ok: true, value: { zone: 'graveyard', controller: { noun: controller } }, pos: r.pos };
+  };
+  const where = choice<{
+    zone: 'hand' | 'graveyard';
+    controller?:
+      | 'you'
+      | 'opponent'
+      | { readonly noun: IrNoun; readonly orPlaneswalkerController?: true };
+  }>(
     map(literal(' in your hand'), () => ({ zone: 'hand' as const, controller: 'you' as const })),
     map(literal(' in your graveyard'), () => ({
       zone: 'graveyard' as const,
@@ -211,6 +239,7 @@ function cards(plural: boolean): Parser<IrFilter> {
       zone: 'graveyard' as const,
       controller: 'opponent' as const,
     })),
+    itsControllerGraveyard,
   );
   // Creature types before the card types ("Zombie creature card"), each in the singular.
   const words = map(
@@ -243,9 +272,21 @@ function cards(plural: boolean): Parser<IrFilter> {
     if (!r.ok) return r;
     const [kinds, , , place] = r.value;
     const raw = ctx.text.slice(pos, r.pos);
-    const base = toFilter(place.zone, { ...NO_PARTS, controller: place.controller }, raw);
+    const simpleController = typeof place.controller === 'object' ? undefined : place.controller;
+    const base = toFilter(place.zone, { ...NO_PARTS, controller: simpleController }, raw);
     const anyOf = kinds.map((t): IrFilter => ({ types: [t], raw: t }));
-    return { ok: true, value: { ...base, anyOf, card: true }, pos: r.pos };
+    return {
+      ok: true,
+      value: {
+        ...base,
+        ...(place.controller === undefined || typeof place.controller !== 'object'
+          ? {}
+          : { controller: place.controller }),
+        anyOf,
+        card: true,
+      },
+      pos: r.pos,
+    };
   };
   const single: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
@@ -257,10 +298,18 @@ function cards(plural: boolean): Parser<IrFilter> {
     if (!r.ok) return r;
     const [{ subtypes, types }, , place] = r.value;
     const raw = ctx.text.slice(pos, r.pos);
-    const base = toFilter(place.zone, { ...NO_PARTS, types, controller: place.controller }, raw);
+    const simpleController = typeof place.controller === 'object' ? undefined : place.controller;
+    const base = toFilter(place.zone, { ...NO_PARTS, types, controller: simpleController }, raw);
     return {
       ok: true,
-      value: { ...base, ...(subtypes.length > 0 ? { subtypes } : {}), card: true },
+      value: {
+        ...base,
+        ...(place.controller === undefined || typeof place.controller !== 'object'
+          ? {}
+          : { controller: place.controller }),
+        ...(subtypes.length > 0 ? { subtypes } : {}),
+        card: true,
+      },
       pos: r.pos,
     };
   };
@@ -369,7 +418,7 @@ export const AMOUNT_FOR_EACH = defineRule<IrAmount>({
 });
 
 /**
- * `amount.number-of`: "equal to the number of lands you control", "equal to the number of creatures
+ * `amount.number-of`: "the number of cards in its controller's graveyard", "equal to the number of lands you control", "equal to the number of creatures
  * on the battlefield", "equal to the number of cards in your hand", "equal to the number of creature
  * cards in your graveyard", "equal to the number of creatures attacking you". After "gain life",
  * "lose life" and "deals damage to ...": the amount is the count (CR 119.3, 120.3; counted as the
@@ -378,13 +427,14 @@ export const AMOUNT_FOR_EACH = defineRule<IrAmount>({
 export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
   id: 'amount.number-of',
   family: 'amount',
-  leading: ['equal'],
+  leading: ['equal', 'the'],
   cites: [
     'CR 608.2c (Resolving Spells and Abilities)',
     'CR 109.1 (Objects)',
     'CR 205.2a (Card Types)',
   ],
   examples: [
+    "the number of cards in its controller's graveyard",
     'equal to the number of lands you control',
     'equal to the number of creatures on the battlefield',
     'equal to the number of cards in your hand',
@@ -409,9 +459,13 @@ export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
     'equal to the number of colors in your commanders’ color identity',
     'equal to the number of cards in target opponent’s hand',
     'equal to its power',
-    'the number of lands you control',
+    'the number of',
   ],
-  parse: countAmount('amount.number-of', literal('equal to the number of '), true),
+  parse: countAmount(
+    'amount.number-of',
+    choice(literal('equal to the number of '), literal('the number of ')),
+    true,
+  ),
 });
 
 export const COUNT_AMOUNT_RULES = [AMOUNT_FOR_EACH, AMOUNT_NUMBER_OF];

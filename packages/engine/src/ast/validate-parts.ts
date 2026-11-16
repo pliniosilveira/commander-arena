@@ -324,11 +324,21 @@ export function checkFilter(
   }
   // D-230: "mana value X or less, where X is ...": an amount that reads no target and no earlier instruction.
   if (f.manaValueAtMost !== undefined) {
-    const a = f.manaValueAtMost as { kind?: string; of?: { kind?: string } };
+    const a = f.manaValueAtMost as {
+      kind?: string;
+      of?: { kind?: string };
+      filter?: ObjectFilter;
+    };
+    const countOfTargetControllerGraveyard =
+      a?.kind === 'countOf' &&
+      a.filter?.zone === 'graveyard' &&
+      a.filter.owner?.kind === 'controllerOf' &&
+      kindOf(a.filter.owner.of) === 'target';
     const ok =
       typeof a === 'number' ||
       (a?.kind === 'powerOf' && a.of?.kind === 'this') ||
-      a?.kind === 'triggerDamage';
+      a?.kind === 'triggerDamage' ||
+      countOfTargetControllerGraveyard;
     if (!ok) {
       issue(
         out,
@@ -603,6 +613,25 @@ export function declareTargets(
     switch (what?.kind) {
       case 'object':
         checkFilter(what.filter, `${p}.what.filter`, out);
+        if (
+          what.filter.manaValueAtMost !== undefined &&
+          typeof what.filter.manaValueAtMost === 'object' &&
+          what.filter.manaValueAtMost.kind === 'countOf' &&
+          what.filter.manaValueAtMost.filter.owner !== undefined
+        ) {
+          const owner = what.filter.manaValueAtMost.filter.owner;
+          if (
+            owner.kind !== 'controllerOf' ||
+            owner.of.kind !== 'target' ||
+            owner.of.id !== spec.id
+          ) {
+            issue(
+              out,
+              `${p}.what.filter.manaValueAtMost`,
+              'the graveyard count must use the controller of this target',
+            );
+          }
+        }
         break;
       case 'player':
         if (!isOneOf(what.filter, ['any', 'opponent'])) {
@@ -1598,6 +1627,18 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // D-095: a count of the objects the filter matches; `owner` is not read here (checkFilter).
       if (a.filter === undefined || a.filter === null) {
         issue(out, `${path}.filter`, 'countOf needs a filter');
+      } else if (a.filter.owner !== undefined) {
+        const { owner: _owner, ...rest } = a.filter;
+        void _owner;
+        issue(
+          out,
+          `${path}.filter.owner`,
+          "owner is only read in an effect's each selector, except for a target mana-value limit",
+        );
+        if (rest.controlledBy !== undefined) {
+          issue(out, `${path}.filter.controlledBy`, 'owner and controlledBy cannot both be set');
+        }
+        checkFilter(rest, `${path}.filter`, out);
       } else if (a.filter.controlledBy !== undefined) {
         // Hylda group 3 (CR 109.4, 608.2c): "for each tapped creature target opponent controls": the player is a target the effect declared, read as the amount is
         // counted (with the targets); a player named any other way is not read here, and the other fields are those of any count.

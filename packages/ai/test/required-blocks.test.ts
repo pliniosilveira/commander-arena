@@ -8,7 +8,7 @@ const id = (n: number) => `o${n}` as ObjectId;
 
 function decision(
   attackers: readonly { id: number; must?: true; min?: number }[],
-  candidates: readonly { blocker: number; canBlock: readonly number[] }[],
+  candidates: readonly { blocker: number; canBlock: readonly number[]; must?: true }[],
 ): DeclareBlockersDecision {
   return {
     kind: 'declareBlockers',
@@ -19,7 +19,11 @@ function decision(
       minBlockers: a.min ?? 1,
       ...(a.must === true ? { mustBeBlocked: true as const } : {}),
     })),
-    candidates: candidates.map((c) => ({ blocker: id(c.blocker), canBlock: c.canBlock.map(id) })),
+    candidates: candidates.map((c) => ({
+      blocker: id(c.blocker),
+      canBlock: c.canBlock.map(id),
+      ...(c.must === true ? { mustBlock: true as const } : {}),
+    })),
   } as unknown as DeclareBlockersDecision;
 }
 
@@ -58,5 +62,10 @@ describe('withinBlockBudget adds the blocks a requirement asks for (CR 509.1c)',
   test('an attacker with no requirement is not blocked by the helper', () => {
     const d = decision([{ id: 1 }], [{ blocker: 2, canBlock: [1] }]);
     expect(withinBlockBudget(d, [])).toEqual([]);
+  });
+
+  test('a creature that must block is assigned a legal attacker', () => {
+    const d = decision([{ id: 1 }], [{ blocker: 2, canBlock: [1], must: true }]);
+    expect(withinBlockBudget(d, [])).toEqual([{ blocker: id(2), attacker: id(1) }]);
   });
 });

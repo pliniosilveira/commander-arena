@@ -321,6 +321,8 @@ export interface DeclareBlockersDecision extends DecisionBase {
   readonly candidates: readonly {
     readonly blocker: ObjectId;
     readonly canBlock: readonly ObjectId[];
+    /** This creature must block this turn if able (D-542). */
+    readonly mustBlock?: true;
   }[];
   /**
    * What blocking costs (D-149, CR 509.1d), present only when some permanent taxes it ("As long as this creature is attacking, creatures can't block

@@ -232,13 +232,15 @@ export function amountOf(
   if (amount.kind === 'countOf') {
     // CR 109.4, 608.2c (Hylda group 3): "for each tapped creature target opponent controls": the player is a target, read now, with the targets.
     const controlled = amount.filter.controlledBy;
-    return countMatching(
-      state,
-      amount.filter,
-      controlled === undefined
-        ? ctx
-        : { ...ctx, controllers: resolvePlayers(state, controlled, ctx, targets) },
-    );
+    const owner = amount.filter.owner;
+    const filterContext = {
+      ...ctx,
+      ...(controlled === undefined
+        ? {}
+        : { controllers: resolvePlayers(state, controlled, ctx, targets) }),
+      ...(owner === undefined ? {} : { owners: resolvePlayers(state, owner, ctx, targets) }),
+    };
+    return countMatching(state, amount.filter, filterContext);
   }
   // D-120: "the total life lost this way": what the earlier `loseLife` of this resolution made players lose.
   if (amount.kind === 'lifeLostThisWay') return ctx.lifeLost ?? 0;

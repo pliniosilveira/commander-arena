@@ -540,6 +540,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         noun.atLeastOne === true ||
         noun.greatest !== undefined ||
         noun.filter.manaValueAtMostX === true ||
+        noun.filter.manaValueAtMostAmount !== undefined ||
         noun.upTo !== true
       ) {
         return failure(noun, []);
@@ -560,6 +561,28 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       // the X the sentence defines becomes the limit of the filter, read as the targets are chosen.
       let atMost: ObjectFilter['manaValueAtMost'];
       let subject: IrNoun = noun;
+      if (noun.filter.manaValueAtMostAmount !== undefined) {
+        const missing = missingFeatures(['selector:manaValueAtMost']);
+        if (missing.length > 0) return failure(noun, missing);
+        const dynamic = noun.filter.manaValueAtMostAmount;
+        if (dynamic.kind !== 'countOf' || typeof dynamic.of.filter.controller !== 'object') {
+          return failure(noun, []);
+        }
+        const ownerNoun = dynamic.of.filter.controller.noun;
+        if (ownerNoun.det !== 'controllerOf' || ownerNoun.of?.ref !== noun.ref) {
+          return failure(noun, []);
+        }
+        const owner = playerSelectorOf(ownerNoun, ctx);
+        if (!owner.ok) return owner;
+        const { controller: _controller, ...countFilter } = dynamic.of.filter;
+        void _controller;
+        const counted = lowerFilter({ ...dynamic.of, filter: countFilter });
+        if (!counted.ok) return counted;
+        atMost = { kind: 'countOf', filter: { ...counted.value, owner: owner.value } };
+        const { manaValueAtMostAmount: _amount, ...rest } = noun.filter;
+        void _amount;
+        subject = { ...noun, filter: rest };
+      }
       if (noun.filter.manaValueAtMostX === true) {
         const defined = ctx.xIs;
         if (defined === null) return failure(noun, []);
@@ -975,7 +998,18 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       // "Its controller": the controller of the object the pronoun stands for (CR 109.4), read
       // from its last known information when it has left (CR 608.2h).
       if (noun.of === undefined) return failure(noun, []);
-      const blocked = gate(noun, need === undefined ? [] : [need]);
+      const blocked = gate(
+        noun,
+        noun.det === 'controllerOf'
+          ? [
+              ...(need === undefined ? [] : [need]),
+              'selector:controllerOf',
+              'selector:controllerRef',
+            ]
+          : need === undefined
+            ? []
+            : [need],
+      );
       if (blocked !== null) return blocked;
       // D-111: "its controller", "that creature's owner" in a trigger: the object whose event caused it,
       // read from last-known information when it is gone (CR 608.2h).

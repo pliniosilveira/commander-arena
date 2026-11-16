@@ -411,3 +411,13 @@ Four mechanisms, all run by CI (`pnpm typecheck`, `pnpm lint`, `pnpm test`):
 - `Effect.chooseObjects` queues `Instruction.chooseObjects`, which asks the existing `choosePermanent` decision for up to the declared count. The answer, including an empty selection, is stored in `ResolutionContext.chosenObjects` under the parser-bound text id.
 - `ObjectRef.chosen` reads that answer through `rules/select.ts`; AST validation only permits it after the matching choice in the same effect sequence. `moveToZone`'s existing optional card choice handles up-to-count selections from a graveyard.
 - The cards parser lowers "up to one creature" and a matching following "It" into this flow; no card-specific engine path is involved. The web's amount and ability text formatters call the selected object "the chosen creature" or "the chosen permanent".
+
+## Target-dependent mana-value limits (REAL; D-541)
+
+- `ObjectFilter.manaValueAtMost` may read a graveyard `countOf` owned by `controllerOf` the target whose filter carries the limit. `legalTargets` adds each candidate object to the target context before evaluating the amount; `stillLegalTargets` evaluates it against the chosen targets again on resolution.
+- The parser binds "its controller" inside the count to that exact target. Validation rejects a count that names another target or a non-graveyard amount.
+
+## Must-block requirements (PARTIAL; D-542)
+
+- `Restriction.mustBlock` is represented in the same temporary restriction path as other turn-long rules changes. `validateBlocks` searches legal assignments and jointly scores `mustBeBlocked` attackers and `mustBlock` creatures, so competing requirements are compared together.
+- `DeclareBlockersDecision.candidates` marks creatures carrying the requirement. The parser's exact cross-sentence binding for “They block this turn if able” and the acceptance-card proof are not implemented yet.

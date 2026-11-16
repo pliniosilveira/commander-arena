@@ -5,4 +5,6 @@
 // 101: Let a resolving effect grant activated, triggered or mana abilities until end of turn (D-538).
 // 102: Give the promised tapped Fish Gift and select targets for the matching gift branch (D-539).
 // 103: Carry resolving choices of objects into later instructions of the same sequence (D-540).
-export const ENGINE_VERSION = 103;
+// 104: Read a target's mana-value limit from the graveyard of that target's controller.
+// 105: Add temporary must-block requirements and compare them jointly with must-be-blocked attackers.
+export const ENGINE_VERSION = 105;

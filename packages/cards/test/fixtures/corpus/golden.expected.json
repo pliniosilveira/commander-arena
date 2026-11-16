@@ -1,5 +1,5 @@
 {
-  "parserVersion": 114,
+  "parserVersion": 116,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -475,19 +475,10 @@
     "0f264e5b-264e-4e97-9a8d-8ae1d6a286ce": {
       "name": "Drown in the Loch",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Choose one —\n• Counter target spell with mana value less than or equal to the number of cards in its controller's graveyard.\n• Destroy target creature with mana value less than or equal to the number of cards in its controller's graveyard.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.target-spell"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "2e50e4bc"
+      "ast": "b7a70624"
     },
     "0fd114c4-092b-4e28-b0dc-ef529f3bc73e": {
       "name": "Jeska's Will",
@@ -6100,7 +6091,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 395,
+      "supported": 396,
       "total": 420
     }
   }

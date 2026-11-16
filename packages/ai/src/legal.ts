@@ -91,6 +91,18 @@ export function withRequiredBlocks(
       added.push({ blocker: c.blocker, attacker: a.attacker });
     }
   }
+  for (const c of d.candidates) {
+    if (c.mustBlock !== true || used.has(c.blocker)) continue;
+    const attacker = c.canBlock.find((id) => {
+      const target = d.attackers.find((a) => a.attacker === id);
+      if (target === undefined || target.minBlockers > 1) return false;
+      return out.filter((b) => b.attacker === id).length === 0;
+    });
+    if (attacker !== undefined) {
+      used.add(c.blocker);
+      added.push({ blocker: c.blocker, attacker });
+    }
+  }
   return [...added, ...out];
 }
 

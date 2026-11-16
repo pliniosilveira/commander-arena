@@ -287,6 +287,8 @@ export interface IrFilter {
   readonly manaValueX?: true;
   /** "with mana value X or less" (stage P68, D-230, CR 202.3): at most the X the sentence defines ("..., where X is this creature's power"). Only a target reads it. */
   readonly manaValueAtMostX?: true;
+  /** A target's mana value is at most an amount read as the spell resolves (Drown in the Loch, CR 202.3). */
+  readonly manaValueAtMostAmount?: IrAmount;
   /** "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga. */
   readonly historic?: true;
   /** "modified" (D-416, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls (the engine's `modified`). */
@@ -1165,7 +1167,8 @@ export type IrRestrictionKind =
   | 'cantBeCountered'
   // "can't be blocked by more than one creature" (stage P29, D-133, CR 509.1b)
   | 'cantBeBlockedByMoreThanOne'
-  | 'mustBeBlocked';
+  | 'mustBeBlocked'
+  | 'mustBlock';
 
 export type IrStaticEffect =
   | { readonly kind: 'pt'; readonly power: number; readonly toughness: number }

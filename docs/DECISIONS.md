@@ -3343,3 +3343,15 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: treat the creature as a target (changes the card's targeting rules); resolve lifelink on all creatures; add card-name data (duplicates general rules); or build another decision/action path for graveyard returns.
 - Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The engine remembers an empty answer as well as selected objects; the parser only binds the following pronoun to an earlier choice when its reference matches. The issue's card data supplies the Oracle text; the Comprehensive Rules text was unavailable for independent verification.
 
+## D-541: Read a target's mana-value limit from its controller's graveyard (2026-11-16, issue 57)
+- Context: `Drown in the Loch` chooses a spell or creature target whose mana value must be no greater than the number of cards in that target's controller's graveyard. Existing target filters could read numeric limits and a few simple amounts, while `countOf` could follow a targeted player but not the controller of the target object itself.
+- Decision: allow a target's `manaValueAtMost` filter to read a graveyard `countOf` owned by `controllerOf` that same target. When checking a candidate, add that candidate to the target context so the controller and graveyard count are known; repeat the check against the chosen targets as they resolve. Reject counts whose owner reference is not the target in that filter.
+- Alternatives: check the limit only when resolving the counter/destroy effect (would allow casting at an illegal target); hard-code Drown's two modes; count the spell controller's graveyard (wrong player when the target is controlled by an opponent).
+- Consequences: both parser and engine versions change. The same amount can support future target restrictions that compare mana value with the target controller's graveyard count; `Drown in the Loch` tests cover counter, destroy, and an illegal over-limit target.
+
+## D-542: Model creatures that must block this turn (2026-11-16, issue 57)
+- Context: `Domineering Will` gives its selected creatures a temporary requirement to block if able. The existing `mustBeBlocked` requirement applies to attackers and cannot represent this behavior. The owner approved `docs/proposals/domineering-will-block-requirement.md`.
+- Decision: Add `mustBlock` as a separate temporary restriction. At blocker declaration, maximize the number of satisfiable attacker and blocker requirements together; a creature with no legal attacker is not a candidate requirement. Keep its target-ref binding and card-text parsing in the approved implementation work.
+- Alternatives: Reuse `mustBeBlocked`, which reverses which player has the requirement; process the creature requirement independently, which can fail where requirements compete for blockers.
+- Consequences: The combat model and requirement maximizer support the generic mechanic. The exact `They block this turn if able` parser binding and acceptance-card proof remain in progress; the CR text file was unavailable for direct lookup in this session.
+

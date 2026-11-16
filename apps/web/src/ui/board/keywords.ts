@@ -204,6 +204,7 @@ const RESTRICTIONS: Readonly<Record<Restriction, readonly [short: string, full: 
   cantBeBlockedByMoreThanOne: ['Blk≤1', "Can't be blocked by more than one creature"],
   attacksEachCombat: ['Atk!', 'Attacks each combat'],
   mustBeBlocked: ['Blk!', 'Must be blocked if able'],
+  mustBlock: ['Blk!', 'Must block this turn if able'],
   doesntUntap: ['NoUnt', "Doesn't untap"],
   cantBeCountered: ['NoCtr', "Can't be countered"],
 };

@@ -16,4 +16,6 @@
 // 112: Read temporary grants of a quoted triggered ability and return the card a creature became to the battlefield.
 // 113: Read the tapped Fish form of Gift and condition target slots on whether Gift was promised.
 // 114: Read optional resolving choices of permanents and graveyard cards (D-540).
-export const PARSER_VERSION = 114;
+// 115: Read a target mana-value limit from its controller's graveyard count (D-541).
+// 116: Read "They block this turn if able" for the preceding plural creature group (D-542).
+export const PARSER_VERSION = 116;

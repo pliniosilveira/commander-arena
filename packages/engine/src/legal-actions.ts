@@ -391,9 +391,11 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
     case 'declareBlockers': {
       // Any legal assignment is accepted; the list holds no block and each single block.
       const minBlockers = new Map(d.attackers.map((a) => [a.attacker, a.minBlockers] as const));
+      const required = d.candidates.filter((c) => c.mustBlock === true);
       const single = d.candidates.flatMap((c) =>
         c.canBlock
           .filter((attacker) => (minBlockers.get(attacker) ?? 1) <= 1)
+          .filter(() => required.length === 0 || c.mustBlock === true)
           .map((attacker) => ({
             kind: 'declareBlockers' as const,
             blocks: [{ blocker: c.blocker, attacker }],
@@ -402,7 +404,7 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
       // D-149: a block costs mana when something taxes it; with nothing affordable only "no block" is listed.
       const canPay = d.blockCost === undefined || d.blockCost.affordable >= 1;
       return [
-        { kind: 'declareBlockers', blocks: [] },
+        ...(required.length === 0 ? [{ kind: 'declareBlockers' as const, blocks: [] }] : []),
         ...(canPay ? single : []),
         { kind: 'concede' },
       ];

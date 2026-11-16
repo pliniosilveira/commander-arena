@@ -309,6 +309,7 @@ The CR source was unavailable for a fresh rule-number audit. Existing references
 | 603.2c, 603.2g, 510.2 | "One or more" combat damage triggers | Implemented | `Trigger` `combatDamageBatch`: once for each player damaged in an event by sources of the filter; the first strike and regular damage steps are two events; prevented damage is not in the batch. |
 | 602.5b | "Activate only once each turn" | Implemented | `activated.oncePerTurn`, counted for the object's own ability in `GameState.turnLog` when the activation is complete. |
 | 107.3a, 202.3 | "Mana value X" | Implemented (an effect's `each` selector) | `ObjectFilter.manaValueX`: the mana value is the X announced for the ability that resolves. |
+| 108.3, 202.3, 601.2c, 608.2b | A target's mana value is at most the number of cards in its controller's graveyard | Implemented (D-541, Drown in the Loch) | A target filter's `manaValueAtMost` can read a `countOf` with `owner: controllerOf` that same target; the candidate is supplied during target choice and the chosen target is checked again as the spell resolves. `test/convert-grammar-engine-drown-in-the-loch.test.ts`. |
 | 510.2 | "Was dealt combat damage by this creature this turn" | Implemented | `ObjectFilter.controllerDealtDamageBySource` and the turn log; refused in static abilities. |
 | 701.26a, 302.6 | Tapping chosen permanents by an effect | Implemented | `tap` with a `choose` selector (`anyNumber` or `count`); summoning sickness does not matter; `thisWay` `tapped` counts what was tapped. |
 | 508.1b, 506.3 | The player, planeswalker or battle a creature attacks | Implemented | `dealDamage.to` `attackedBy`. |
@@ -419,6 +420,7 @@ The CR source was unavailable for a fresh rule-number audit. Existing references
 | 207.2d | Flavor words (an ability word or a flavor word before a dash) taken off a line that does not read as written | Implemented (D-204) | `parser/normalize.ts` `stripFlavorWord`, `parse-face.ts` |
 | 702.182 | Job select (a Hero token is created and the Equipment attached) | Implemented (D-206) | the keyword `jobSelect`, `rules/derive-keywords.ts` |
 | 509.1c, 508.1d | "Must be blocked if able" (the requirement of a defender; a small exhaustive search of the blocks) | Implemented (D-206) | `rules/combat-legality.ts`, `packages/ai/src/legal.ts` |
+| 509.1b | "Must block this turn if able" (a blocker requirement; jointly maximizes satisfiable attacker and blocker requirements) | Engine behavior in progress (D-542) | `Restriction.mustBlock`, `rules/combat-legality.ts`; parser binding and full card proof remain open |
 | 603.2c, 603.10a, 701.9a | "Whenever you discard", "whenever one or more creatures die", the untap step trigger | Implemented (D-206) | `rules/triggers.ts`, `rules/flow.ts` |
 | 601.2h | The mana spent on a spell and where it was cast from, read by conditions | Implemented (D-206) | `rules/mana-spent.ts`, `Condition` `manaSpentAtLeast`, `castFromZone` |
 | 701.9, 118.8 | Discard as a cost with a card kind or "another card named ~" | Implemented (D-207) | `rules/discard-cost.ts` |
