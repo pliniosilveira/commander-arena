@@ -257,6 +257,17 @@ export function lowerAmount(
       if (!filter.ok) return filter;
       return { ok: true, value: { kind: 'countOf', filter: filter.value }, rule };
     }
+    case 'cardTypesAmong': {
+      // "The number of card types among cards in your graveyard" (D-1511, CR 205.2a): the engine's `cardTypesAmong`, of a zone outside the battlefield.
+      const blocked = needs('cardTypesAmong');
+      if (blocked !== null) return blocked;
+      if (amount.of.filter.zone === undefined || amount.of.filter.zone === 'battlefield') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const filter = countFilter(amount.of);
+      if (!filter.ok) return filter;
+      return { ok: true, value: { kind: 'cardTypesAmong', filter: filter.value }, rule };
+    }
     case 'aggregate': {
       const blocked = needs('aggregate');
       if (blocked !== null) return blocked;
@@ -593,6 +604,7 @@ export const AMOUNT_NEEDS = [
   'amount:commanderManaValue',
   'amount:commanderCasts',
   'amount:colorsAmong',
+  'amount:cardTypesAmong',
   'amount:half',
   'amount:multiple',
   'amount:minus',

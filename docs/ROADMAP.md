@@ -460,3 +460,14 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - Protection from the card type of your choice is read for one object for the turn (not a group, not another duration); the view tells that a creature has protection, not from what (as for the color of D-451).
 - The agents choose the card type by the threat and pay for the reflexive abilities as they pay for any "you may pay"; they do not plan the taps of the group (the casual agent does not look for a way to tap an untapped creature of an opponent to trigger Hylda).
 - A legendary creature "<Name> of <Title>" is called by its first word only when the face is a creature.
+
+## The Hylda deck, group 2 (issue 42, D-1510 to D-1520, provisional)
+
+- "Doesn't untap during its controller's next untap step" is read per permanent at the untap step of its controller as it is then (D-1510): the rulings of the cards were not fetched (cloud session), so a control change between the effect and the step is unverified. The static form "unless that player ..." and a stun counter are other readings.
+- `permanentsEnterTapped` reads a plain group (a kind of permanent with a controller); "this turn" for it is built (SYNTHETIC) but the text of no real card was read.
+- `cardTypesAmong` counts the cards of one zone filter; "among cards in all graveyards", "among permanents you control" and Descend (the permanent cards in your graveyard) are not read.
+- A "choose up to one" with no mode is read for a triggered ability only; a spell or an activated ability that may choose no mode is not built, nor "choose up to two" or "any number".
+- A results table is read for the text of a spell, with rows "N" and "N—M" that cover the die exactly once: "N+" rows, a roll that is modified, "roll again" and the tables of an ability of a permanent are not read.
+- "Target creature that player controls" is read only for the player of the event of the trigger (D-1514); with an earlier player target in the same ability the text stays unread.
+- The cost reduction "during your turn" takes a plain number of generic mana off the first mana cost, never below zero; other turns ("during an opponent's turn") and a reduction of a mana ability are not read.
+- The rulings of the eleven cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.

@@ -35,6 +35,11 @@ import { HASHATON_G9_NOUN_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_NOUN_RULES } from './hashaton-group-4';
 import { HASHATON_G10_NOUN_RULES } from './hashaton-group-10';
 import { HOFRI_NOUN_RULES } from './hofri';
+import {
+  HYLDA_G2_EARLY_NOUN_RULES,
+  HYLDA_G2_NOUN_RULES,
+  HYLDA_G2_TARGET_NOUN_RULES,
+} from './hylda-g2';
 import { HYLDA_G3_NOUN_RULES } from './hylda-g3';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
@@ -655,12 +660,18 @@ export const NOUN_RULES = [
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
   // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.
   ...HASHATON_G10_NOUN_RULES,
+  // D-1510 (Hylda deck, group 2): "those creatures" and "X target creatures".
+  ...HYLDA_G2_NOUN_RULES,
   NOUN_PLAYER_GRAVEYARD,
   NOUN_ALL_GRAVEYARD_CARDS,
   NOUN_ALL_GRAVEYARDS,
+  // D-1514 (Hylda deck, group 2): "target creature that player controls", whose first words are those of `noun.target-permanent`.
+  ...HYLDA_G2_TARGET_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,
+  // D-1510 (Hylda deck, group 2): "all creatures target player controls", whose first words are those of `noun.all-permanents`.
+  ...HYLDA_G2_EARLY_NOUN_RULES,
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.
   ...HOFRI_NOUN_RULES,

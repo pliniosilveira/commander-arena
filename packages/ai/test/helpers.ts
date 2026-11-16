@@ -3099,6 +3099,55 @@ export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
+ * The SYNTHETIC cards of group 2 of the Hylda deck (D-1510 to D-1518): a sorcery that taps everything a chosen player controls and keeps it tapped, a creature that taps what a chosen
+ * opponent controls, an instant that does it for up to two creatures, an X instant, a creature that does it when its controller casts an instant or sorcery, an Aura that taps its
+ * creature at every upkeep, a d20 table, a creature with a "choose up to one" trigger, a siege that asks for Khans or Dragons as it enters, a creature with a trigger that needs four
+ * card types in the graveyard, and an artifact that taps a creature for less during its controller's turn. They ask `chooseX`, `chooseOption` and `chooseModes` (with no mode
+ * allowed), which the generic pools are not built to follow: a style of their own (HYLDA_G2_NAMES).
+ */
+export const HYLDA_G2_NAMES = [
+  'SYNTHETIC Lullaby Wave',
+  'SYNTHETIC Gale Binder',
+  'SYNTHETIC Drowse Pair',
+  'SYNTHETIC Frost Gust',
+  'SYNTHETIC Chill Spirit',
+  'SYNTHETIC Drowsy Aura',
+  'SYNTHETIC Cold Table',
+  'SYNTHETIC Slumber Geist',
+  'SYNTHETIC Dawn Siege',
+  'SYNTHETIC Ghost Sentinel',
+  'SYNTHETIC Winter Crown',
+] as const;
+
+/** The hyldaG2 style: every card of the group three times, bodies to aim them at (a 4/4 flier for the ferocious of Frost Gust) and burn to fill the graveyard. */
+export const HYLDA_G2_SPELLS = [
+  ...supported(HYLDA_G2_NAMES),
+  ...supported(HYLDA_G2_NAMES),
+  ...supported(HYLDA_G2_NAMES),
+  ...supported(['Serra Angel', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'SYNTHETIC Vanilla 3/3']),
+];
+
+/** Blue for most of the group, white for the siege and the sentinel. */
+export const HYLDA_G2_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Plains',
+  'Plains',
+  'Plains',
+]);
+
+/** Style pairs of the Hylda group 2 soak test (D-1510 to D-1518): a mirror match and both mixed ways. */
+export const HYLDA_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hyldaG2', 'hyldaG2'],
+  ['hyldaG2', 'spells'],
+  ['spells', 'hyldaG2'],
+];
+
+/**
  * The SYNTHETIC cards of group 3 of the Gisa deck (D-484 to D-492): a planeswalker whose minus nine has each opponent choose a permanent of each type and sacrifice the rest (and a
  * sorcery that does it for each player), a creature that sacrifices two other creatures as a cost and has any number of target players lose life and sacrifice, a creature that sacrifices
  * X creatures as a cost (an X announced before the targets), a creature with "partner with" and the card it searches for, and an instant with an optional sacrifice of any number of creatures
@@ -3920,6 +3969,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(FEATHER_G2_NAMES as readonly string[]).includes(card.name))
   // The Feather group 1 cards (D-451) ask which color to protect from as a spell resolves: a style of their own.
   .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
+  // The Hylda group 2 cards (D-1510 to D-1518) ask a number for X, a named option as a siege enters and "choose up to one" with no mode allowed: a style of their own.
+  .filter((card) => !(HYLDA_G2_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 2 cards (D-464 to D-468) ask to pay {B} to return a card from the graveyard and put tokens, ward payments and drawing into games: a style of their own.
   .filter((card) => !(GISA_G2_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 3 cards (issue 42) ask X, modes, tap-or-untap choices and targets with different controllers, and fetch a land: a style of their own.
@@ -4140,6 +4191,7 @@ export type DeckStyle =
   | 'layers'
   | 'ward'
   | 'danithaG6'
+  | 'hyldaG2'
   | 'danithaG7'
   | 'gisaG5'
   | 'featherG3'
@@ -4227,6 +4279,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG5' && DANITHA_G5_SPELLS.length > 0) return DANITHA_G5_SPELLS;
   if (style === 'danithaG6' && DANITHA_G6_SPELLS.length > 0) return DANITHA_G6_SPELLS;
   if (style === 'danithaG7' && DANITHA_G7_SPELLS.length > 0) return DANITHA_G7_SPELLS;
+  if (style === 'hyldaG2' && HYLDA_G2_SPELLS.length > 0) return HYLDA_G2_SPELLS;
   if (style === 'gisaG4' && GISA_G4_SPELLS.length > 0) return GISA_G4_SPELLS;
   if (style === 'featherG3' && FEATHER_G3_SPELLS.length > 0) return FEATHER_G3_SPELLS;
   if (style === 'gisaG5' && GISA_G5_SPELLS.length > 0) return GISA_G5_SPELLS;
@@ -4423,6 +4476,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaReveal' && BASIC_LANDS.length > 0) return DANITHA_G1A_LANDS;
   if (style === 'danithaMill' && BASIC_LANDS.length > 0) return DANITHA_G2_LANDS;
   if (style === 'danithaG5' && BASIC_LANDS.length > 0) return DANITHA_G5_LANDS;
+  if (style === 'hyldaG2' && BASIC_LANDS.length > 0) return HYLDA_G2_LANDS;
   if (style === 'danithaG6' && BASIC_LANDS.length > 0) return DANITHA_G6_LANDS;
   if (style === 'danithaG7' && BASIC_LANDS.length > 0) return DANITHA_G7_LANDS;
   if (style === 'gisaG4' && BASIC_LANDS.length > 0) return GISA_G4_LANDS;

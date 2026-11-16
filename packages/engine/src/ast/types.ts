@@ -160,6 +160,14 @@ export type Amount =
       readonly filter: ObjectFilter;
     }
   /**
+   * "The number of card types among cards in your graveyard" (CR 205.2a, Delirium, an ability word: CR 207.2c, D-1511): how many of the card types (artifact, battle, creature, enchantment,
+   * instant, kindred, land, planeswalker, sorcery) the objects `filter` matches have between them, each counted once however many have it; supertypes and subtypes are not
+   * card types. The filter names a zone other than the battlefield and the stack ("cards in your graveyard": `zone: 'graveyard'`, `controller: 'you'` for the graveyard of the
+   * controller of the ability) and reads no power, toughness, combat or source: the types are those of the cards as they are there, read as the effect runs or the condition
+   * is read (an `amountIs` condition, so as an intervening "if" it is read when the event happens and again as the ability resolves).
+   */
+  | { readonly kind: 'cardTypesAmong'; readonly filter: ObjectFilter }
+  /**
    * "Your devotion to black", "your devotion to white and blue" (CR 700.5, D-131): the number of mana symbols that
    * are one of the `colors` (a hybrid symbol counts for each of its colors, once; a symbol that is generic or
    * colorless counts for none) among the mana costs of the permanents the controller of the ability controls. The
@@ -2272,9 +2280,10 @@ export type Effect =
    * rules-modifying continuous effect (CR 613.11) that gives each object `objects` names the
    * restriction until the duration ends. It is not an ability, so "loses all abilities" does not
    * remove it (CR 613.11 applies it after the layers); the set is fixed when it begins (CR 611.2c).
-   * Only `cantBlock`, `cantBeBlocked` and `attacksEachCombat`, with `untilEndOfTurn`, run; "doesn't
-   * untap during its controller's next untap step" needs a duration that ends at that step and
-   * "can't be countered" is about a spell, so neither is accepted here. With `forAsLongAsYouControlThis` (D-196, "Up to one target creature can't
+   * `cantBlock`, `cantBeBlocked` and `attacksEachCombat` run with `untilEndOfTurn`. "Doesn't untap during its controller's next untap step"
+   * (D-1510, CR 502.3, 611.2a) is `restriction: 'doesntUntap'` with `duration: 'untilNextUntapStep'`, the only pair for that restriction: each
+   * permanent the effect named keeps the restriction until the next untap step of its controller (as it is then) has come, and is let go as that step
+   * ends, whether or not it was tapped. "Can't be countered" is about a spell, so it is not accepted here. With `forAsLongAsYouControlThis` (D-196, "Up to one target creature can't
    * block for as long as you control this Saga", CR 611.2b): as for `gainControl`, the effect does nothing when the permanent with the ability is not
    * on the battlefield under its controller's control as it would begin, and otherwise ends, for good, as that stops being so. Only in the ability
    * of a permanent, with `cantBlock`, `cantBeBlocked` or `attacksEachCombat`.
@@ -2283,7 +2292,7 @@ export type Effect =
       readonly kind: 'restrict';
       readonly objects: ObjectSelector;
       readonly restriction: Restriction;
-      readonly duration: Duration | 'forAsLongAsYouControlThis';
+      readonly duration: Duration | 'forAsLongAsYouControlThis' | 'untilNextUntapStep';
     }
   /**
    * "You gain hexproof until end of turn" (CR 702.11b, 611.2, 514.2; Hylda group 3): each player the selector names has hexproof until end of turn: spells and abilities their
@@ -2368,6 +2377,18 @@ export type Effect =
       readonly creatures: ObjectFilter;
       readonly duration: 'untilEndOfTurn' | 'untilYourNextTurn';
       readonly awayFromYou?: true;
+    }
+  /**
+   * "Until your next turn, creatures your opponents control enter tapped." (CR 614.1c, 614.12, 611.2a, D-1512): a replacement effect of the game for a group of
+   * permanents that is not a set fixed as the effect resolves (CR 611.2c is about changes to characteristics): every permanent `permanents` matches as it would enter the
+   * battlefield (a card put there from any zone, a token) enters tapped while the effect lasts, read for the controller of the effect ("your opponents" is
+   * `controller: 'opponent'`) and with no zone. `duration` is `untilEndOfTurn` or `untilYourNextTurn` (it ends as the next turn of the controller of the effect begins,
+   * the turn it resolves in not counted, CR 500.1). A permanent that enters untapped by a stronger effect ("Lands you control enter untapped", CR 616.1) does so.
+   */
+  | {
+      readonly kind: 'permanentsEnterTapped';
+      readonly permanents: ObjectFilter;
+      readonly duration: 'untilEndOfTurn' | 'untilYourNextTurn';
     }
   /**
    * "Gain control of target creature until end of turn", "Gain control of that artifact until the end of your next turn", "Gain control of target

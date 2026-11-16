@@ -59,6 +59,7 @@ import { HASHATON_G9_EFFECT_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_EFFECT_RULES } from './hashaton-group-4';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
+import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
@@ -115,6 +116,10 @@ const TAP_OPERANDS = [
   'noun.attached-permanent',
   // Stage P36 (D-178): "Then if you control four or more lands, untap that land." (the permanent an earlier instruction named).
   'noun.that-object',
+  // D-1514 (Hylda deck, group 2): "tap target creature that player controls".
+  'noun.target-permanent-of-that-player',
+  // D-1510 (Hylda deck, group 2): "tap all creatures target player controls".
+  'noun.all-permanents-of-target-player',
 ] as const;
 
 /** `effect.damage`: "~ deals 3 damage to any target" (CR 120.2: damage to an object or a player). */
@@ -871,6 +876,8 @@ export const EFFECT_RULES = [
   // Hylda deck, group 1 (issue 42, D-512, D-513): "for each opponent, tap up to one target creature that player controls" and "tap up to X target nonland permanents, where X is ...
   // scrying this way" start like a plain tap and like the "for each" rules, and are tried first.
   ...HYLDA_G1_EFFECT_RULES,
+  // D-1510, D-1512 (Hylda deck, group 2): "Those creatures don't untap during ... next untap step" and "Until your next turn, creatures ... enter tapped".
+  ...HYLDA_G2_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,

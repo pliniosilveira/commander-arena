@@ -55,6 +55,8 @@ export function lowerModes(
   ctx: LowerContext,
   /** True for a spell: only its modes may have a cost listed before the effect (Tiered, D-433, CR 700.2h). */
   allowModeCosts = false,
+  /** True for a triggered ability: only it may choose no mode ("choose up to one", D-1517, CR 700.2b: the ability is removed from the stack). */
+  triggered = false,
 ): LowerResult<LoweredModes> {
   const count = modal.modes.length;
   const { choose } = modal;
@@ -64,7 +66,11 @@ export function lowerModes(
   const max = choose.max === 'all' ? count : choose.max;
   // CR 700.2d (D-344): a repeatable choice may be for more modes than there are, and "up to" has a minimum of 0.
   const repeatable = choose.repeatable === true;
-  if (choose.min < (repeatable ? 0 : 1) || choose.min > max || (!repeatable && max > count)) {
+  if (
+    choose.min < (repeatable || triggered ? 0 : 1) ||
+    choose.min > max ||
+    (!repeatable && max > count)
+  ) {
     return refuse(modal);
   }
   // "You may choose two instead" (D-297): the widened maximum is more than the usual one and no more than the number of modes.

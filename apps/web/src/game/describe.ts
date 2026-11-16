@@ -762,8 +762,14 @@ export function describeEvent(
       // there; the source may have left the battlefield, so its name is its last-known one.
       // CR 603.3c, 700.2b: a modal one whose modes cannot be chosen (no set is legal) is removed too.
       const chapter = chapterWord(event.chapter);
-      const noMode = event.reason === 'noLegalModes';
-      const why = noMode ? 'has no legal mode' : 'has no legal target';
+      // D-1517 (CR 700.2b): "choose up to one" and no mode chosen: the ability is removed.
+      const none = event.reason === 'noModeChosen';
+      const noMode = event.reason === 'noLegalModes' || none;
+      const why = none
+        ? 'had no mode chosen'
+        : noMode
+          ? 'has no legal mode'
+          : 'has no legal target';
       return line(
         'major',
         chapter === null

@@ -57,6 +57,7 @@ import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
 import { HASHATON_G9_LOWERINGS } from './hashaton-g9';
 import { HASHATON_GROUP_4_LOWERINGS } from './hashaton-group-4';
 import { HOFRI_LOWERINGS } from './hofri';
+import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { MELD_LOWERINGS } from './meld';
@@ -1416,6 +1417,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...FEATHER_G2_LOWERINGS,
   // D-459, D-460: "It gains haste.", "Exile it at the beginning of the next end step.", "If it would leave the battlefield, exile it instead ...", "Put each creature card exiled with ~ onto the battlefield ...".
   ...GISA_G4_LOWERINGS,
+  // D-1510, D-1512: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
+  ...HYLDA_G2_LOWERINGS,
   ...GRAVEYARD_CHOICE_LOWERINGS,
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,

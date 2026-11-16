@@ -24,6 +24,7 @@ import type {
   GameObject,
   GameState,
 } from '../state/types';
+import { controllerOf } from './control';
 import { dropEffects, endOf } from './control-effects';
 import { copiableValues } from './copiable';
 import { derive } from './derive';
@@ -111,7 +112,9 @@ export function runContinuous(
       ? endOf(state, node.duration, ctx)
       : node.duration === 'untilEndOfTurn'
         ? ('endOfTurn' as const)
-        : ('permanent' as const);
+        : node.duration === 'untilNextUntapStep'
+          ? ('nextUntapStep' as const)
+          : ('permanent' as const);
   if (until === null) return done(state);
   // CR 613.1f, 702.165a (D-230): Backup's grant: one effect for each ability, in the order they are written (one timestamp each).
   if (node.kind === 'grantAbility') {
@@ -290,6 +293,30 @@ export function runRequireAttack(
 }
 
 /**
+ * "Until your next turn, creatures your opponents control enter tapped" (D-1512, CR 614.1c, 614.12, 611.2a): one continuous effect with no set of objects, read where a
+ * permanent enters the battlefield (`enteredTappedByEffect`), for the permanents its filter matches then. `until` as for `runRequireAttack`.
+ */
+export function runEntersTappedGroup(
+  state: GameState,
+  node: Extract<Effect, { kind: 'permanentsEnterTapped' }>,
+  ctx: SelectContext,
+): StepOutcome {
+  const [timestamp, stamped] = allocateTimestamp(state);
+  const taken = state.seats[ctx.controller]?.turnsTaken ?? 0;
+  const created: ContinuousEffect = {
+    id: `ce${timestamp}`,
+    timestamp,
+    objects: [],
+    until:
+      node.duration === 'untilEndOfTurn'
+        ? 'endOfTurn'
+        : { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
+    change: { kind: 'entersTapped', filter: node.permanents, controller: ctx.controller },
+  };
+  return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
+}
+
+/**
  * "Until your next turn" (D-179, CR 500.1): the effects waiting for a turn of `seat` end as that turn begins, when it is the turn they were
  * waiting for (numbered as they say or later).
  */
@@ -306,6 +333,28 @@ export function expireTurnStartEffects(
       e.until.seat === seat &&
       e.until.turnsTaken <= taken,
   );
+}
+
+/**
+ * "Doesn't untap during its controller's next untap step" (D-1510, CR 502.3, 611.2a): as the untap step of `active` has run, each permanent the
+ * effects of that duration named is let go if `active` controls it (it was tapped or not: the step has come), and an effect with no permanent left ends.
+ */
+export function expireUntapStepEffects(state: GameState, active: SeatId): GameState {
+  let changed = false;
+  const kept: ContinuousEffect[] = [];
+  for (const e of state.continuousEffects) {
+    if (e.until !== 'nextUntapStep') {
+      kept.push(e);
+      continue;
+    }
+    const left = e.objects.filter((id) => {
+      const obj = state.objects[id];
+      return obj !== undefined && obj.zone === 'battlefield' && controllerOf(state, obj) !== active;
+    });
+    if (left.length !== e.objects.length) changed = true;
+    if (left.length > 0) kept.push(left.length === e.objects.length ? e : { ...e, objects: left });
+  }
+  return changed ? { ...state, continuousEffects: kept } : state;
 }
 
 /**

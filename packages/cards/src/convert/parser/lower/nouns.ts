@@ -400,6 +400,17 @@ function lowerFilterAt(
 
 /** An IR filter as the engine's ObjectFilter. */
 export function lowerFilter(noun: IrNoun): LowerResult<ObjectFilter> {
+  // D-1514 (CR 603.2, 102.1): "target creature that player controls" in a trigger about a player (the active player of a step): the player the binding pass found for "that
+  // player" is the player of the event (`trigActor`), which a target slot names as the engine's `controller: 'triggerPlayer'`. Any other player is not read.
+  const bound = noun.filter.controller;
+  if (noun.det === 'target' && typeof bound === 'object') {
+    if (bound.noun.ref !== 'trigActor' || bound.orPlaneswalkerController === true) {
+      return failure(noun, ['selector:controllerRef']);
+    }
+    const { controller: _player, ...rest } = noun.filter;
+    void _player;
+    return lowerFilterAt({ ...rest, controller: 'triggerPlayer' }, noun, false);
+  }
   return lowerFilterAt(noun.filter, noun, false);
 }
 
@@ -669,6 +680,11 @@ export interface RefOptions {
    * read in an amount ("deals damage equal to that creature's power").
    */
   readonly sacrificed?: boolean;
+  /**
+   * "Those creatures" may be a group of "each" an earlier clause of the text named (D-1510, CR 608.2c): the selector that clause lowered, read again as this effect runs (the
+   * same group, since nothing between them changes who is in it). Only for the clauses that say it ("those creatures don't untap during ...").
+   */
+  readonly eachMention?: boolean;
 }
 
 export function objectRefOf(
@@ -803,6 +819,23 @@ export function objectRefOf(
 
 /** The objects a noun names: an `ObjectRef`, or "each" of a filter. */
 export function objectSelectorOf(
+  noun: IrNoun,
+  ctx: LowerContext,
+  options: RefOptions = {},
+): LowerResult<ObjectSelector> {
+  // D-1510: "those creatures" after "tap all creatures target player controls": the group the text named, as it was lowered.
+  if (options.eachMention === true && noun.det === 'anaphor') {
+    const mentioned = noun.ref === undefined ? undefined : ctx.eachMentions.get(noun.ref);
+    if (mentioned !== undefined) return { ok: true, value: mentioned, rule: noun.rule };
+  }
+  const selector = selectorOf(noun, ctx, options);
+  if (selector.ok && noun.det === 'each' && noun.ref !== undefined) {
+    ctx.eachMentions.set(noun.ref, selector.value);
+  }
+  return selector;
+}
+
+function selectorOf(
   noun: IrNoun,
   ctx: LowerContext,
   options: RefOptions = {},

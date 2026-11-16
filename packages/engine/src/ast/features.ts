@@ -189,6 +189,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantPlayerHexproof',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".
     'requireAttack',
+    // D-1512: "Until your next turn, creatures your opponents control enter tapped".
+    'permanentsEnterTapped',
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
     'gainControl',
     'shuffle',
@@ -821,6 +823,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'untilYourNextTurn',
     'forAsLongAsYouControlThis',
     'forAsLongAsThisRemains',
+    'untilNextUntapStep',
   ],
   // CR 611.3, 613.1f, 613.4c: "+N/+N" in layer 7c and keyword grants in layer 6, from `derive`.
   // D-094: `restriction` ("can't block", "can't be blocked", "attacks each combat if able",
@@ -929,6 +932,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'commanderCasts',
     // D-179: "for each color among permanents you control" (a static ability's +N/+N).
     'colorsAmong',
+    // D-1511: "the number of card types among cards in your graveyard" (Delirium).
+    'cardTypesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
     'timesAttacked',
     'affected',
@@ -1399,6 +1404,8 @@ export const DURATION_KINDS = [
   'forAsLongAsYouControlThis',
   /** "For as long as this Saga remains on the battlefield" (CR 611.2b, D-207): the duration of a `grantKeyword` and a `preventDamage` in an ability of a permanent. */
   'forAsLongAsThisRemains',
+  /** "Doesn't untap during its controller's next untap step" (CR 502.3, D-1510): the duration of a `restrict` of `doesntUntap`. */
+  'untilNextUntapStep',
 ] as const;
 export type DurationKind = (typeof DURATION_KINDS)[number];
 
@@ -1547,6 +1554,8 @@ export const AMOUNT_KINDS = [
   'commanderCasts',
   /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N. */
   'colorsAmong',
+  /** "The number of card types among cards in your graveyard" (CR 205.2a, D-1511): the engine's `cardTypesAmong`. */
+  'cardTypesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
   'timesAttacked',
   /** "Double the power and toughness of each creature you control" (CR 701.10, D-145): the engine's `affected` power or toughness amount. */
@@ -1715,6 +1724,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   grantAbility: true,
   restrict: true,
   requireAttack: true,
+  permanentsEnterTapped: true,
   gainControl: true,
   shuffle: true,
   rollDie: true,

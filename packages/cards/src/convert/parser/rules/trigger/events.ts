@@ -67,6 +67,9 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
     'the beginning of your first main phase',
     'the beginning of your second main phase',
     'the beginning of combat on your turn',
+    // D-1515 (Hylda deck, group 2, Citadel Siege): the beginning of combat of a turn of an opponent.
+    'the beginning of combat on each opponent’s turn',
+    "the beginning of combat on each opponent's turn",
     'the beginning of each combat',
     'the beginning of the end of combat step',
     'end of combat',
@@ -77,7 +80,8 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
     'the beginning of your upkeep',
     'the beginning of your end step',
     'the beginning of combat',
-    'the beginning of combat on each opponent’s turn',
+    'the beginning of combat on each opponent’s turns',
+    'the beginning of combat on each player’s turn',
     'the beginning of your next draw step',
     'the beginning of your main phase',
     'the beginning of each of your main phases',
@@ -127,6 +131,10 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
       literal('the beginning of '),
       choice(
         map(pattern(new RegExp(`combat on your turn${NOT_IN_WORD}`, 'iu')), () => 'you' as const),
+        map(
+          pattern(new RegExp(`combat on each opponent['’]s turn${NOT_IN_WORD}`, 'iu')),
+          () => 'eachOpponent' as const,
+        ),
         map(pattern(new RegExp(`each combat${NOT_IN_WORD}`, 'iu')), () => 'eachPlayer' as const),
       ),
     )(ctx, pos);

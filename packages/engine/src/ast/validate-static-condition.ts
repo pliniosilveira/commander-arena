@@ -226,6 +226,19 @@ function checkStaticTerm(c: Condition, path: string, out: AstIssue[]): void {
   }
 }
 
+/**
+ * D-1513: the intervening "if" of a triggered ability of an Aura or an Equipment that reads the permanent it is attached to ("At the beginning of each upkeep, if
+ * enchanted creature is untapped, tap it", CR 603.4, 303.4b, 301.5a): `objectMatches` of `attached`, as a static ability's condition reads it (`checkStaticTerm`). The
+ * filter describes the object (type, subtype, color, tapped): it is read as the ability triggers and again as it resolves, with the game as it is.
+ */
+export function checkAttachedIf(c: Condition, path: string, out: AstIssue[]): void {
+  if (c?.kind !== 'objectMatches') return;
+  if (c.inZone !== undefined) {
+    issue(out, `${path}.inZone`, 'an intervening if does not read inZone (D-412)');
+  }
+  checkStaticTerm(c, path, out);
+}
+
 /** The condition of the static ability `s`, if it has one. */
 export function checkStaticCondition(
   s: StaticEffect,

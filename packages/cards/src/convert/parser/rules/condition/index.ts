@@ -37,6 +37,7 @@ import { GAME_STATE_CONDITION_RULES } from './game-state';
 import { GISA_G1_CONDITION_RULES } from './gisa-g1';
 import { HOFRI_CONDITION_RULES } from './hofri';
 import { HYLDA_G1_CONDITION_RULES } from './hylda-g1';
+import { HYLDA_G2_CONDITION_RULES } from './hylda-g2';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
@@ -443,6 +444,8 @@ export const CONDITION_RULES = [
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".
   ...HYLDA_G1_CONDITION_RULES,
+  // D-1511, D-1513 (Hylda deck, group 2): "there are four or more card types among cards in your graveyard", "enchanted creature is untapped".
+  ...HYLDA_G2_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,

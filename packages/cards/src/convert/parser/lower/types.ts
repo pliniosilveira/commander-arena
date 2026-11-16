@@ -6,6 +6,7 @@ import type {
   Effect,
   ModeChoice,
   ObjectFilter,
+  ObjectSelector,
   PlayerSelector,
   SpellMode,
   TargetSpec,
@@ -104,6 +105,12 @@ export interface LowerContext {
    * reads it. Null before any roll; a second roll in one text is refused.
    */
   dieSides: number | null;
+  /**
+   * The groups of "each" a text named so far, by the reference the binding pass gave them (D-1510, CR 608.2c): "Tap all creatures target player controls. Those creatures don't
+   * untap during that player's next untap step." reads "those creatures" as the same group, which the engine names by the selector again (the group is the same one as the
+   * effect runs). Only a clause that says it reads it (`RefOptions.eachMention`).
+   */
+  readonly eachMentions: Map<string, ObjectSelector>;
   /**
    * The normalized text of the ability the spans of the IR point into (D-287): the one place a lowering can tell the "you" the text says (the controller) from the "you"
    * the engine reads for a player asked who acts (`runsAs: 'chooser'`). Empty where the lowering has no text (a quotation lowered on its own): a rule that needs it refuses then.
@@ -257,6 +264,7 @@ export function newContext(
     graveyardSource: false,
     usedGraveyardSource: false,
     dieSides: null,
+    eachMentions: new Map(),
     staticCondition: false,
     text: '',
     interveningCondition: false,
