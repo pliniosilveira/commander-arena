@@ -10,6 +10,7 @@
  * nothing here adds anything to it.
  */
 import type { ObjectView } from '@commander-arena/engine';
+import type { CSSProperties } from 'react';
 import { abilityTypeLine } from '../../game/activation';
 import { alternativeBadge } from '../../game/alt-cost';
 import { withAnnouncedX } from '../../game/amount-text';
@@ -36,7 +37,14 @@ import { useAppIfPresent, useDefinedPt } from '../store-context';
 import { Art, artOf } from './art';
 import { FaceDownArt } from './face-down-art';
 import './later.css';
-import { bandBackground, cornerStat, isCrewedVehicle, PRINTED_TITLE } from './resolve';
+import {
+  bandBackground,
+  cornerStat,
+  frameColors,
+  frameImage,
+  isCrewedVehicle,
+  PRINTED_TITLE,
+} from './resolve';
 
 export type CardVariant = 'full' | 'hand';
 
@@ -315,9 +323,12 @@ export function CardFace({
       ? withAnnouncedX(object.oracleText, object.x)
       : object.oracleText;
   const paragraphs = text === '' ? [] : text.split('\n');
+  const colors = down ? object.colors : frameColors(object);
   return (
     <div
-      className={`board-card board-card-${variant}${object.isToken ? ' board-card-token' : ''}${down ? ' board-card-facedown-permanent' : ''}`}
+      className={`board-card board-card-${variant}${object.isToken ? ' board-card-token' : ''}${down ? ' board-card-facedown-permanent' : ' has-frame'}`}
+      // Issue 22: the border is the card's colours (a land's: its mana); a face-down card has none.
+      {...(down ? {} : { style: { '--frame': frameImage(colors) } as CSSProperties })}
       {...(down ? { 'data-face-down-permanent': object.faceDownBy } : {})}
     >
       {variant === 'full' &&
@@ -341,7 +352,7 @@ export function CardFace({
         <span className="board-card-name">{stackLabel(object)}</span>
         <CostDisplay object={object} />
       </div>
-      <div className="board-card-art" style={{ background: bandBackground(object.colors) }}>
+      <div className="board-card-art" style={{ background: bandBackground(colors) }}>
         {down ? (
           <FaceDownArt version="art_crop" className="board-card-art-img" />
         ) : (

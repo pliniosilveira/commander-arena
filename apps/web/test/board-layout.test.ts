@@ -10,6 +10,8 @@ import {
   commanderDamageTaken,
   cornerStat,
   counterChips,
+  frameColors,
+  frameImage,
   rowKindOf,
 } from '../src/ui/board/resolve';
 
@@ -385,5 +387,32 @@ describe('attachments are drawn under their host (CR 301.5, 303.4)', () => {
     expect(entries.map((e) => e.kind)).toEqual(['single', 'single']);
     // Two tokens with nothing attached still group.
     expect(groupTokens([obj(), obj()])).toHaveLength(1);
+  });
+});
+
+describe('the colours a card is framed in (issue 22)', () => {
+  const of = (colors: string[], types: string[], landMana?: string[]) =>
+    frameColors({ colors, types, ...(landMana === undefined ? {} : { landMana }) } as never);
+
+  test('a card has its own colours; a land the colours of its mana, colourless left out', () => {
+    expect(of(['G'], ['creature'])).toEqual(['G']);
+    expect(of([], ['artifact'], ['C'])).toEqual([]);
+    expect(of([], ['land'], ['U'])).toEqual(['U']);
+    expect(of([], ['land'], ['W', 'U', 'C'])).toEqual(['W', 'U']);
+    expect(of([], ['land'], ['C'])).toEqual([]);
+    expect(of([], ['land'])).toEqual([]);
+    // A land with a colour of its own (Dryad Arbor) keeps it.
+    expect(of(['G'], ['land', 'creature'], ['G'])).toEqual(['G']);
+  });
+
+  test('the border is always an image: one colour, two on the diagonal, gold, grey', () => {
+    expect(frameImage(['R'])).toBe('linear-gradient(var(--card-r), var(--card-r))');
+    expect(frameImage(['W', 'U'])).toBe(
+      'linear-gradient(135deg, var(--card-w) 50%, var(--card-u) 50%)',
+    );
+    expect(frameImage(['W', 'U', 'B'])).toBe(
+      'linear-gradient(var(--card-multi), var(--card-multi))',
+    );
+    expect(frameImage([])).toBe('linear-gradient(var(--card-colorless), var(--card-colorless))');
   });
 });
