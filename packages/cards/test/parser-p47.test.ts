@@ -85,6 +85,39 @@ describe('the cards of the Vraska deck that need planeswalkers', () => {
     ]);
   });
 
+  test('Cryotheory Adept has a graveyard-only self-exile activation cost', () => {
+    const imported = real('Cryotheory Adept');
+    expect(imported.support.unparsed).toEqual([]);
+    expect(imported.support.status).toBe('supported');
+    expect(imported.definition.faces[0]?.abilities).toContainEqual({
+      kind: 'activated',
+      cost: [
+        { kind: 'mana', symbols: ['3', 'U'] },
+        { kind: 'exileThis' },
+      ],
+      targets: [
+        {
+          id: 't1',
+          what: { kind: 'object', filter: { zone: 'battlefield', types: ['creature'] } },
+        },
+      ],
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'tap', objects: { kind: 'target', id: 't1' } },
+          {
+            kind: 'addCounters',
+            objects: { kind: 'target', id: 't1' },
+            counter: 'stun',
+            amount: 1,
+          },
+        ],
+      },
+      functionsIn: 'graveyard',
+      timing: 'sorcery',
+    });
+  });
+
   test("Protege's Awakening: Empower Jace 6, then draw a card", () => {
     const imported = real("Protege's Awakening");
     expect(imported.support.status).toBe('supported');
