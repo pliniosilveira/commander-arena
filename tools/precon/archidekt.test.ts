@@ -1,7 +1,14 @@
 // The Archidekt reader (workflow "Precon issues"). Every page, answer and name here is SYNTHETIC: nothing was fetched.
 
 import { describe, expect, test } from 'vitest';
-import { clean, deckFromApi, deckIdsFromListing, preconId, preconIssue } from './archidekt.ts';
+import {
+  clean,
+  deckFromApi,
+  deckIdsFromListing,
+  preconId,
+  preconIssue,
+  sameDeck,
+} from './archidekt.ts';
 
 describe('the ids of a listing page', () => {
   test('are the deck links, once each, in order, whatever follows the id', () => {
@@ -87,5 +94,29 @@ describe('the issue', () => {
     expect(issue.body).not.toContain('Unsupported cards');
     expect(issue.body).toContain('already supports every card');
     expect(issue.body).toContain('Names not found: Odd Name');
+  });
+});
+
+describe('the same deck', () => {
+  const deck = Array.from({ length: 100 }, (_, i) => `Card ${i}`);
+
+  test('is a list that shares at least nine tenths of its names, whatever the case', () => {
+    expect(
+      sameDeck(
+        deck,
+        deck.map((n) => n.toUpperCase()),
+      ),
+    ).toBe(true);
+    expect(
+      sameDeck(deck, [...deck.slice(0, 91), ...Array.from({ length: 9 }, (_, i) => `Other ${i}`)]),
+    ).toBe(true);
+  });
+
+  test('is not another precon that shares some staples, or an empty list', () => {
+    expect(
+      sameDeck(deck, [...deck.slice(0, 60), ...Array.from({ length: 40 }, (_, i) => `Other ${i}`)]),
+    ).toBe(false);
+    expect(sameDeck(deck, [])).toBe(false);
+    expect(sameDeck([], [])).toBe(false);
   });
 });

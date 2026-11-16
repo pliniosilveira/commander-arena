@@ -81,6 +81,21 @@ export function deckFromApi(id: number, answer: unknown): ArchidektDeck | string
   return { id, name: clean(name), text: parts.join('\n\n'), cards: count };
 }
 
+/**
+ * True when two decklists are the same deck: at least 90 percent of the larger list's distinct card names are in both (two different precons share a few
+ * staples, never nine tenths of a deck). Names are compared without case; the lists are the names only, however each source writes the lines.
+ */
+export function sameDeck(a: readonly string[], b: readonly string[]): boolean {
+  const key = (name: string) => name.trim().toLowerCase();
+  const left = new Set(a.map(key));
+  const right = new Set(b.map(key));
+  const larger = Math.max(left.size, right.size);
+  if (larger === 0) return false;
+  let shared = 0;
+  for (const name of left) if (right.has(name)) shared += 1;
+  return shared / larger >= 0.9;
+}
+
 /** An id for a ready-made deck: lower-case letters, digits and single dashes. */
 export function preconId(name: string): string {
   const id = name

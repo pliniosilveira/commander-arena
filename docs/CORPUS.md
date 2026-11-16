@@ -33,7 +33,7 @@ The `Coverage report` workflow runs every Monday (and on demand from the Actions
 
 ## Issues for the Archidekt precons (the workflow `Precon issues`, D-532)
 
-Started by hand from the Actions tab. It reads https://archidekt.com/commander-precons, checks every deck against the engine on the runner (which can reach Archidekt and Scryfall) and opens one issue per deck: "deck support <name>" when a card is unsupported, "precon <name>" when the engine already runs the deck. Every issue also asks for the deck to be added to the ready-made decks. Run it first with `dry_run` on (the default): the job summary lists the issues it would open and the artifact `precon-issues` holds the decklists and the issue texts. `limit` reads only the first decks and `ids` reads the given Archidekt deck ids instead of the page. A title that already exists is never opened again.
+Started by hand from the Actions tab. It reads https://archidekt.com/commander-precons, checks every deck against the engine on the runner (which can reach Archidekt and Scryfall) and opens one issue per deck: "deck support <name>" when a card is unsupported, "precon <name>" when the engine already runs the deck. Every issue also asks for the deck to be added to the ready-made decks. It opens the issues unless `dry_run` is ticked: then the job summary lists the issues it would open and the artifact `precon-issues` holds the decklists and the issue texts. A deck that is the same as a precon of `apps/web/src/precons/snapshots/` (nine tenths of its card names) gets no issue. `limit` reads only the first decks and `ids` reads the given Archidekt deck ids instead of the page. A title that already exists is never opened again.
 
 ## Replaying templates.json offline (`pnpm corpus:replay`)
 

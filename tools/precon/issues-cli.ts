@@ -1,4 +1,4 @@
-// `node tools/precon/issues-cli.ts --decks <dir> (--file <oracle_cards file> | --download) --out <issues.json>`: the issues the workflow "Precon issues"
+// `node tools/precon/issues-cli.ts --decks <dir> (--file <oracle_cards file> | --download) --out <issues.json> [--installed <snapshots dir>]`: the issues the workflow "Precon issues"
 // opens, as JSON ([{ title, body, deckName, deckId, needsSupport }]). `--download` fetches Scryfall's bulk file into `.cache/corpus/` (a runner can reach it).
 // The workspace packages are written for a bundler: the hooks of tools/corpus/register.ts must be in place before the card pipeline is imported.
 
@@ -12,6 +12,7 @@ const { values } = parseArgs({
     file: { type: 'string' },
     download: { type: 'boolean' },
     out: { type: 'string' },
+    installed: { type: 'string' },
   },
 });
 if (
@@ -29,7 +30,9 @@ try {
   const { downloadOracleCards } = await import('../corpus/download.ts');
   const { buildIssues, writeIssues } = await import('./issues.ts');
   const cards = values.file ?? (await downloadOracleCards({ cacheDir: '.cache/corpus', log }));
-  const issues = await buildIssues(values.decks, cards);
+  const { issues, installed } = await buildIssues(values.decks, cards, values.installed);
+  for (const skip of installed)
+    log(`already in the app: "${skip.deck}" is the precon "${skip.precon}"`);
   await writeIssues(issues, values.out);
   const needs = issues.filter((i) => i.needsSupport).length;
   log(`${issues.length} issue(s): ${needs} deck support, ${issues.length - needs} precon only`);

@@ -4,7 +4,8 @@ name: Precon issues
 # pipeline as `pnpm corpus:decks`, and opens one issue for each deck: "deck support <name>" when the engine cannot run every card (in the shape of the issue the
 # app's "Ask for support on GitHub" button writes, so the triage workflow and the deck support routine take it from there), "precon <name>" when it can. Every
 # issue also asks for the deck to be added to the ready-made decks of the app, so that everyone can play it.
-# It starts with a dry run (`dry_run` true): nothing is opened, the decks and the issues it would open are in the job summary and the artifact. An issue whose title
+# It opens the issues unless `dry_run` is ticked: then nothing is opened, and the decks and the issues it would open are in the job summary and the artifact. A deck
+# that is the same as a precon the app already offers (`sameDeck`, the cards of `apps/web/src/precons/snapshots/`) gets no issue. An issue whose title
 # already exists (open or closed) is not opened again, so the workflow can be run again safely. The page is untrusted input: the names that reach an issue pass
 # `clean` (tools/precon/archidekt.ts) and every value goes into a file or the environment, never into a script.
 
@@ -12,9 +13,9 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: Only list the issues that would be opened
+        description: Only list the issues that would be opened (off by default: the issues are opened)
         type: boolean
-        default: true
+        default: false
       limit:
         description: Read at most this many decks (0 reads every deck of the page)
         type: string
@@ -61,7 +62,7 @@ jobs:
           key: scryfall-oracle-cards-${{ steps.day.outputs.day }}
           restore-keys: scryfall-oracle-cards-
       - name: Check each deck against the engine and write the issues
-        run: node tools/precon/issues-cli.ts --decks precon-work --download --out precon-work/issues.json
+        run: node tools/precon/issues-cli.ts --decks precon-work --download --installed apps/web/src/precons/snapshots --out precon-work/issues.json
       - name: What it found
         run: |
           {
