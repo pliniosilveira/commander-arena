@@ -254,6 +254,7 @@ export function matchesFilter(
 function readsGame(f: ObjectFilter): boolean {
   return (
     f.attacking === true ||
+    f.notAttacking === true ||
     f.attackingYou === true ||
     f.attackingOpponents === true ||
     f.attackingOrBlocking === true ||

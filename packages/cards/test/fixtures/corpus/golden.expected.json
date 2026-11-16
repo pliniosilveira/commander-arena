@@ -1,5 +1,5 @@
 {
-  "parserVersion": 116,
+  "parserVersion": 117,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1023,19 +1023,10 @@
     "2c438ecb-b127-4450-9395-2d1eea294f30": {
       "name": "Domineering Will",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Target player gains control of up to three target nonattacking creatures until end of turn. Untap those creatures. They block this turn if able.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.player.life"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d1029f75"
+      "ast": "10058099"
     },
     "2c49d24a-98a4-43c2-bb59-1ef13d4214c2": {
       "name": "Untimely Malfunction",
@@ -6091,7 +6082,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 396,
+      "supported": 397,
       "total": 420
     }
   }

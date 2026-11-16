@@ -1,10 +1,10 @@
 # Proposal: creatures must block this turn if able (issue 57)
 
-**Status: approved by the owner on 2026-11-16; implementation in progress.**
+**Status: approved by the owner on 2026-11-16; implementation complete.**
 
 ## Card text that needs it
 
-`Domineering Will` says: "Target player gains control of up to three target nonattacking creatures until end of turn. Untap those creatures. They block this turn if able." The control-change and untap instructions have existing engine paths. The final sentence does not: it gives each selected creature a requirement to block during the turn.
+`Domineering Will` says: "Target player gains control of up to three target nonattacking creatures until end of turn. Untap those creatures. They block this turn if able." The selected creatures may be controlled by someone other than the caster, so the control effect must take its seat from the targeted player. All following instructions reuse the same target group.
 
 ## Proposed shape
 
@@ -19,4 +19,4 @@ Keep this distinct from `mustBeBlocked`, which is a requirement on the defending
 - Extend blocker-legality validation and AI choice generation to respect the requirement. Add parser support for the printed phrase and prove `Domineering Will` through the golden corpus.
 - Update engine version, rules coverage and mechanics documentation after the approved behavior is implemented.
 
-This is independent of the other unsupported cards in issue 57. Those cards can continue while this proposal waits.
+The real golden card imports as supported. Its integration scenario checks target selection, the targeted player's control, untapping, rejection of an empty block declaration, and the legal mandatory block.

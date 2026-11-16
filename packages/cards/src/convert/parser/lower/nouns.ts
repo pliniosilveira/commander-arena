@@ -231,6 +231,7 @@ function lowerFilterAt(
   if (keywords.length > 0 || notKeywords.length > 0) parts.push('selector:keywords');
   // D-139 (stage P31): "attacking creatures" (CR 508.1k), a number of colors (CR 105.2).
   if (filter.attacking === true) parts.push('selector:attacking');
+  if (filter.notAttacking === true) parts.push('selector:notAttacking');
   if (filter.colorCount !== undefined) parts.push('selector:colorCount');
   // "With mana value X" and "whose controller was dealt combat damage by ~ this turn" read the ability that resolves (its X, its
   // source): the engine reads them in the `each` selector of an effect only, so a target or a member of a choice is not lowered.
@@ -376,6 +377,7 @@ function lowerFilterAt(
     ...(filter.attackingOpponents === true && !inner ? { attackingOpponents: true as const } : {}),
     ...(filter.attackingOrBlocking === true ? { attackingOrBlocking: true as const } : {}),
     ...(filter.attacking === true ? { attacking: true as const } : {}),
+    ...(filter.notAttacking === true ? { notAttacking: true as const } : {}),
     ...(filter.colorCount === undefined
       ? {}
       : { colorCount: { cmp: filter.colorCount.cmp, value: filter.colorCount.value } }),

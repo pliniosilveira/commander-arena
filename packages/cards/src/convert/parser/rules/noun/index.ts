@@ -498,9 +498,11 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'target creature with flying',
     'target nontoken creature',
     'target creature without flying',
+    'up to three target nonattacking creatures',
     'target creature an opponent controls with mana value 3 or greater',
     'target nonland permanent with mana value 2 or less',
     'target creature you control with toughness 5 or greater',
+    'target nonattacking creature',
   ],
   rejects: [
     'up to one target creatures',
@@ -550,8 +552,18 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
   // Stage P48 (D-205): one target may say which colors it has, "target creature or planeswalker that's green or blue".
   parse: targetOf(
     ID.targetPermanent,
-    (plural) =>
-      plural ? permanentPhrase(true, 'all') : withColorList(permanentPhrase(false, 'all')),
+    (plural) => {
+      const base = plural
+        ? permanentPhrase(true, 'all')
+        : withColorList(permanentPhrase(false, 'all'));
+      return choice(
+        map(sequence(literal('nonattacking '), base), ([, filter]) => ({
+          ...filter,
+          notAttacking: true as const,
+        })),
+        base,
+      );
+    },
     true,
   ),
 });

@@ -672,6 +672,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attached',
     // D-120: `ObjectFilter.attacking` and `powerLessThanSource`.
     'attacking',
+    'notAttacking',
     'powerLessThanSource',
     // D-431: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
     'powerAboveBase',
@@ -1230,6 +1231,8 @@ export const SELECTOR_KINDS = [
   'attached',
   /** "Attacking creature" (CR 506.4, D-120): the engine's `ObjectFilter.attacking`. */
   'attacking',
+  /** "Nonattacking creatures" (CR 508.1k, D-543): the engine's `ObjectFilter.notAttacking`. */
+  'notAttacking',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
   /** "With power greater than its base power" (CR 208.4b, D-431): the engine's `ObjectFilter.powerAboveBase`. */

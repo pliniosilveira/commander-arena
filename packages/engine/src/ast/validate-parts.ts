@@ -356,13 +356,18 @@ export function checkFilter(
   }
   if (
     (f.attacking === true ||
+      f.notAttacking === true ||
       f.attackingYou === true ||
       f.attackingOpponents === true ||
       f.attackingOrBlocking === true) &&
     f.zone !== undefined &&
     f.zone !== 'battlefield'
   ) {
-    issue(out, `${path}.attacking`, 'only a permanent on the battlefield can be attacking');
+    issue(
+      out,
+      `${path}.attacking`,
+      'attacking status only applies to a permanent on the battlefield',
+    );
   }
   // CR 700.9 (D-416): only a permanent is modified.
   if (f.modified === true && f.zone !== undefined && f.zone !== 'battlefield') {
@@ -3557,6 +3562,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.objects`,
           'gainControl names a target or the permanent that caused the trigger',
         );
+      if (e.player !== undefined) {
+        checkPlayerSelector(e.player, `${path}.player`, scope, out);
+        if (!SINGLE_PLAYER_KINDS.includes(e.player.kind)) {
+          issue(out, `${path}.player`, 'gainControl names one player who gains control');
+        }
+      }
       if (
         !isOneOf(e.duration, [
           'untilEndOfTurn',

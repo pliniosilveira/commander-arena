@@ -547,6 +547,7 @@ describe('unmatched abilities', () => {
       'effect.extra-beginning-phase',
       'effect.amass',
       'effect.gain-control',
+      'effect.gain-control-for-player',
       'effect.vote',
       'effect.ring-tempts',
       'effect.life-total-becomes',

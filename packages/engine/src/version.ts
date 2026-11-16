@@ -7,4 +7,5 @@
 // 103: Carry resolving choices of objects into later instructions of the same sequence (D-540).
 // 104: Read a target's mana-value limit from the graveyard of that target's controller.
 // 105: Add temporary must-block requirements and compare them jointly with must-be-blocked attackers.
-export const ENGINE_VERSION = 105;
+// 106: Let an effect give control of targeted objects to one targeted player; filter nonattacking objects.
+export const ENGINE_VERSION = 106;

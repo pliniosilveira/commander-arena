@@ -4905,8 +4905,9 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Parser:** `amount.number-of` accepts the bare "the number of" form. The count phrase "cards in its controller's graveyard" binds `its` to the target being limited. No card-name branch is used.
 - **Proof:** `convert-grammar-engine-drown-in-the-loch.test.ts` imports the real golden card and plays both modes; it also checks that a target whose mana value exceeds its controller's graveyard count is illegal.
 
-## The Lord of the Nazgûl deck, issue 57, group 8: Domineering Will (D-542, in progress)
+## The Lord of the Nazgûl deck, issue 57, group 8: Domineering Will (D-542, D-543)
 
 - **Engine slice:** a temporary `mustBlock` requirement is distinct from `mustBeBlocked`; the blocker legality search jointly maximizes the two kinds of requirements. A creature with no legal block is not a candidate. Legal action suggestions omit passing when a must-block creature can block.
-- **Parser slice:** `They block this turn if able` lowers to the generic `restrict` effect, and the binder chooses the latest compatible player or plural-object antecedent for Oracle's "they".
-- **Proof gap:** the first sentence's chosen player gaining control of up to three target creatures, followed by untapping those same targets, still needs general parser/engine support and a complete card test. The golden corpus continues to flag Domineering Will unsupported. CR text was unavailable for independent verification.
+- **Control and targets:** `gainControl` can name the targeted player, the target filter excludes creatures already attacking, and untap/restriction effects reuse the same selected group.
+- **Parser slice:** `They block this turn if able` lowers to the generic `restrict` effect and binds to the preceding plural target group.
+- **Proof:** `convert-grammar-engine-domineering-will.test.ts` plays the real golden card through target selection, control change, untap, and a required block. CR text was unavailable for independent verification.

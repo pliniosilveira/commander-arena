@@ -420,7 +420,7 @@ The CR source was unavailable for a fresh rule-number audit. Existing references
 | 207.2d | Flavor words (an ability word or a flavor word before a dash) taken off a line that does not read as written | Implemented (D-204) | `parser/normalize.ts` `stripFlavorWord`, `parse-face.ts` |
 | 702.182 | Job select (a Hero token is created and the Equipment attached) | Implemented (D-206) | the keyword `jobSelect`, `rules/derive-keywords.ts` |
 | 509.1c, 508.1d | "Must be blocked if able" (the requirement of a defender; a small exhaustive search of the blocks) | Implemented (D-206) | `rules/combat-legality.ts`, `packages/ai/src/legal.ts` |
-| 509.1b | "Must block this turn if able" (a blocker requirement; jointly maximizes satisfiable attacker and blocker requirements) | Engine behavior in progress (D-542) | `Restriction.mustBlock`, `rules/combat-legality.ts`; parser binding and full card proof remain open |
+| 509.1b | "Must block this turn if able" (a blocker requirement; jointly maximizes satisfiable attacker and blocker requirements) | Implemented (D-542) | `Restriction.mustBlock`, `rules/combat-legality.ts`; `convert-grammar-engine-domineering-will.test.ts` |
 | 603.2c, 603.10a, 701.9a | "Whenever you discard", "whenever one or more creatures die", the untap step trigger | Implemented (D-206) | `rules/triggers.ts`, `rules/flow.ts` |
 | 601.2h | The mana spent on a spell and where it was cast from, read by conditions | Implemented (D-206) | `rules/mana-spent.ts`, `Condition` `manaSpentAtLeast`, `castFromZone` |
 | 701.9, 118.8 | Discard as a cost with a card kind or "another card named ~" | Implemented (D-207) | `rules/discard-cost.ts` |

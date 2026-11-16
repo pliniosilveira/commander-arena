@@ -670,7 +670,9 @@ function lowerUntapThose(sentence: IrSentence, before: Step | undefined): LowerR
   const group = before?.effects.map((e) =>
     (e.kind === 'modifyPt' || e.kind === 'grantKeyword') && e.objects.kind === 'each'
       ? e.objects
-      : null,
+      : e.kind === 'gainControl' && e.objects.kind === 'target'
+        ? e.objects
+        : null,
   );
   const [first] = group ?? [];
   if (

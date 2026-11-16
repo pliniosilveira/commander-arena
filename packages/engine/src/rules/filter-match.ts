@@ -221,6 +221,7 @@ export function matchesFilterWith(
   }
   // CR 506.4 (D-120): an attacking creature is one declared as an attacker that is still in combat.
   if (filter.attacking === true && !(ctx.attackers ?? []).includes(obj.id)) return false;
+  if (filter.notAttacking === true && (ctx.attackers ?? []).includes(obj.id)) return false;
   // CR 506.4, 509.1g (D-229): "attacking or blocking" is a creature declared as an attacker or a blocker that is still in combat.
   if (filter.attackingOrBlocking === true && !(ctx.inCombat ?? []).includes(obj.id)) return false;
   // D-131: "attacking you" is an attacker whose attack target is the controller as a player.

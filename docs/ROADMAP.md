@@ -1,9 +1,9 @@
 # Roadmap: deferred work and known limitations
 
-## Lord of the Nazgûl deck leftovers (issue 57, D-533 to D-542)
+## Lord of the Nazgûl deck leftovers (issue 57, D-533 to D-543)
 
-- `Lazotep Plating` was already supported on current `main`; `Diabolic Vision`, `Sleight of Hand`, `Slip Out the Back`, `Nightscape Familiar`, `Wavebreak Hippocamp`, `Distant Melody`, `Raise the Palisade`, `Hermes, Overseer of Elpis`, `Feign Death`, `Supernatural Stamina`, `Into the Flood Maw`, `Gix's Command`, and `Drown in the Loch` now read and run. The current corpus records 14 of the 21 issue cards supported and 7 unsupported.
-- Remaining cards: `Domineering Will`, `Fandaniel, Telophoroi Ascian`, `Lord of the Nazgûl`, `March of Swirling Mist`, `Maskwood Nexus`, `Sauron's Ransom`, and `Voracious Bibliophile`. `Domineering Will` remains unsupported because the chosen-player control change and target-group binding are not implemented, although its `mustBlock` requirement is in progress (D-542). The measured support status is the acceptance-card section of `packages/cards/test/fixtures/corpus/golden.expected.json`.
+- `Lazotep Plating` was already supported on current `main`; `Diabolic Vision`, `Sleight of Hand`, `Slip Out the Back`, `Nightscape Familiar`, `Wavebreak Hippocamp`, `Distant Melody`, `Raise the Palisade`, `Hermes, Overseer of Elpis`, `Feign Death`, `Supernatural Stamina`, `Into the Flood Maw`, `Gix's Command`, `Drown in the Loch`, and `Domineering Will` now read and run. The current corpus records 15 of the 21 issue cards supported and 6 unsupported.
+- Remaining cards: `Fandaniel, Telophoroi Ascian`, `Lord of the Nazgûl`, `March of Swirling Mist`, `Maskwood Nexus`, `Sauron's Ransom`, and `Voracious Bibliophile`. The measured support status is the acceptance-card section of `packages/cards/test/fixtures/corpus/golden.expected.json`.
 - `March of Swirling Mist` uses the existing one-shot `phaseOut` effect, but its up-to-X target count and additional exile cost need their own rules and tests; the unbuilt Phasing keyword is not needed. `Into the Flood Maw` now uses the generic tapped Fish Gift path (D-539).
 - The whole deck was not measured by `pnpm corpus:decks`: the Scryfall bulk file is not in this workspace. The card data is from the issue author's description; no rulings were independently checked.
 

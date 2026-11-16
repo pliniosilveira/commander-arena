@@ -508,6 +508,8 @@ export interface ObjectFilter {
    * and a characteristic-defining ability, which `derive` reads without the combat.
    */
   readonly attacking?: true;
+  /** "Nonattacking creatures" (D-543): battlefield permanents not in the attackers of the combat in progress. */
+  readonly notAttacking?: true;
   /**
    * Only creatures attacking the controller of this ability as a player (CR 508.1b, D-131): "creatures attacking
    * you" counts the attackers whose attack target is that player, not one attacking a planeswalker or battle they
@@ -2418,11 +2420,12 @@ export type Effect =
    * when this is the turn of the controller, D-151), `forAsLongAsYouControlThis` (CR 611.2b: ends as the permanent with the ability, this one, leaves the
    * battlefield or is no longer controlled by the controller of the effect; the effect does nothing at all when that is already so as it would begin;
    * only in the ability of a permanent) and `permanent` (no duration stated, CR 611.2a: until the game ends or something else changes control).
-   * The controller of the effect is the player who gains control; a permanent is not given to another player here.
+   * Unless `player` is present, the controller of the effect gains control. `player` names the one player who will control the permanents.
    */
   | {
       readonly kind: 'gainControl';
       readonly objects: ObjectSelector;
+      readonly player?: PlayerSelector;
       readonly duration: ControlDuration;
     }
   /**

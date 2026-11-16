@@ -3351,7 +3351,13 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 
 ## D-542: Model creatures that must block this turn (2026-11-16, issue 57)
 - Context: `Domineering Will` gives its selected creatures a temporary requirement to block if able. The existing `mustBeBlocked` requirement applies to attackers and cannot represent this behavior. The owner approved `docs/proposals/domineering-will-block-requirement.md`.
-- Decision: Add `mustBlock` as a separate temporary restriction. At blocker declaration, maximize the number of satisfiable attacker and blocker requirements together; a creature with no legal attacker is not a candidate requirement. Keep its target-ref binding and card-text parsing in the approved implementation work.
+- Decision: Add `mustBlock` as a separate temporary restriction. At blocker declaration, maximize the number of satisfiable attacker and blocker requirements together; a creature with no legal attacker is not a candidate requirement. Bind "They" to the chosen creature target group.
 - Alternatives: Reuse `mustBeBlocked`, which reverses which player has the requirement; process the creature requirement independently, which can fail where requirements compete for blockers.
-- Consequences: The combat model and requirement maximizer support the generic mechanic. The exact `They block this turn if able` parser binding and acceptance-card proof remain in progress; the CR text file was unavailable for direct lookup in this session.
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The real issue card is played through `applyAction` with a legal blocking choice and an illegal no-block choice; the CR text file was unavailable for direct lookup in this session.
+
+## D-543: Give targeted creatures to the targeted player (2026-11-16, issue 57)
+- Context: `Domineering Will` gives the targeted player control of up to three targeted nonattacking creatures, untaps those same creatures, and requires them to block if able. The engine's control-changing effect could only return control to the spell's controller, and target filters could not exclude creatures already attacking.
+- Decision: Extend `gainControl` with a single-player selector and let `ObjectFilter.notAttacking` read whether a battlefield object is in the current attackers list. Reuse the same target references for control, untap and the subsequent restriction.
+- Alternatives: Treat the selected player as the spell's controller (incorrect when they differ), use a card-specific override, or select a fresh group for each sentence (does not preserve the chosen targets).
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The acceptance test checks the player who gets control, untapping, the mandatory block, and the nonattacking target filter; the CR text file was unavailable for direct lookup in this session.
 

@@ -278,6 +278,8 @@ export interface IrFilter {
   readonly attackingOrBlocking?: true;
   /** "attacking creatures" (stage P31, CR 508.1k): creatures that are attacking, whoever they attack. */
   readonly attacking?: true;
+  /** "nonattacking creatures" (D-543): battlefield creatures not declared as attackers now. */
+  readonly notAttacking?: true;
   /**
    * "monocolored", "multicolored", "that are one or more colors" (stage P31, CR 105.2): the number of colors the object has, compared
    * with a whole number.
