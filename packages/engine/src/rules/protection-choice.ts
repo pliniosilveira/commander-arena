@@ -7,7 +7,7 @@
  * Nothing is asked when no permanent is left for the effect to affect (a target that is gone, CR 608.2b): there is nothing to protect.
  */
 import type { Effect } from '../ast/types';
-import { COLORS, type Color } from '../characteristics';
+import { CARD_TYPES, type CardType, COLORS, type Color } from '../characteristics';
 import type { ChosenTarget } from '../state/chosen';
 import type { GameEvent } from '../state/events';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
@@ -81,4 +81,75 @@ export function runProtectionColor(
 /** The color a `chooseOption` answer names, or null when it is not one of the five. */
 export function colorOfAnswer(option: string): Color | null {
   return COLORS.find((c) => c === option) ?? null;
+}
+
+type ProtectionCardTypeInstruction = Extract<Instruction, { kind: 'protectionCardType' }>;
+
+/** Whether the effect gives protection from the card type of the controller's choice (D-1504): the one `grantKeyword` `runProtectionCardType` runs. */
+export function givesProtectionOfCardTypeChoice(
+  effect: Effect,
+): effect is ProtectionCardTypeInstruction['effect'] {
+  return (
+    effect.kind === 'grantKeyword' &&
+    effect.keyword.kind === 'protection' &&
+    effect.keyword.from === 'cardTypeOfChoice'
+  );
+}
+
+/**
+ * "Another target creature you control gains protection from the card type of your choice until end of turn" (CR 702.16a, 608.2d; D-1504): as `runProtectionColor`, with
+ * the nine card types as the options (`purpose` `protectionCardType`); the grant then runs as protection from that card type (`from: 'cardType'`).
+ */
+export function runProtectionCardType(
+  state: GameState,
+  res: ResolutionContext,
+  instruction: ProtectionCardTypeInstruction,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): StepOutcome {
+  const { effect, chosen } = instruction;
+  const protects = resolveObjects(state, effect.objects, ctx, targets).filter(
+    (id) => state.objects[id]?.zone === 'battlefield',
+  );
+  if (protects.length === 0) return done(state);
+  if (chosen !== null) {
+    const event: GameEvent = {
+      kind: 'optionChosen',
+      seat: res.controller,
+      source: res.object,
+      purpose: 'protectionCardType',
+      option: chosen,
+    };
+    return done(
+      state,
+      [event],
+      [
+        {
+          kind: 'effect',
+          effect: { ...effect, keyword: { kind: 'protection', from: 'cardType', types: [chosen] } },
+        },
+      ],
+    );
+  }
+  const info = sourceInfo(state, res.source);
+  return {
+    state,
+    events: [],
+    front: [],
+    needs: {
+      kind: 'chooseOption',
+      seat: res.controller,
+      purpose: 'protectionCardType',
+      options: [...CARD_TYPES],
+      protects,
+      source: res.object,
+      sourceName: info?.name ?? '',
+      sourceOracleText: info?.oracleText ?? '',
+    },
+  };
+}
+
+/** The card type a `chooseOption` answer names, or null when it is not one of the nine. */
+export function cardTypeOfAnswer(option: string): CardType | null {
+  return CARD_TYPES.find((t) => t === option) ?? null;
 }

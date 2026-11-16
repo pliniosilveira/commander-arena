@@ -16,7 +16,7 @@ import { untapPermanent } from './untap';
 type ChooseTapInstruction = Extract<Instruction, { kind: 'chooseTap' }>;
 
 /** Taps the chosen permanents that are still untapped on the battlefield; what was tapped is what the outcome reports. */
-function tapAll(state: GameState, objects: readonly ObjectId[]): StepOutcome {
+function tapAll(state: GameState, objects: readonly ObjectId[], by: SeatId): StepOutcome {
   let next = state;
   const events: GameEvent[] = [];
   let tapped = 0;
@@ -24,7 +24,7 @@ function tapAll(state: GameState, objects: readonly ObjectId[]): StepOutcome {
     const obj = next.objects[id];
     if (obj?.zone !== 'battlefield' || obj.tapped) continue;
     next = patchObject(next, id, { tapped: true });
-    events.push({ kind: 'tapped', object: id });
+    events.push({ kind: 'tapped', object: id, by });
     tapped += 1;
   }
   return { ...done(next, events), thisWay: { tapped }, performed: tapped };
@@ -99,13 +99,13 @@ export function runChooseTap(
     };
   }
   if (instruction.chosen !== null) {
-    const r = tapAll(state, instruction.chosen);
+    const r = tapAll(state, instruction.chosen, res.controller);
     return { ...r, events: [chosenEvent(instruction.chosen, false), ...r.events] };
   }
   const legal = tapCandidates(state, res.controller, res.source, instruction.filter);
   if (legal.length === 0) return done(state);
   if (instruction.anyNumber !== true && legal.length <= instruction.count) {
-    const r = tapAll(state, legal);
+    const r = tapAll(state, legal, res.controller);
     return { ...r, events: [chosenEvent(legal, true), ...r.events] };
   }
   const max = instruction.anyNumber === true ? legal.length : instruction.count;

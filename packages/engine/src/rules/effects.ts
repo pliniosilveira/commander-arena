@@ -80,7 +80,12 @@ import { runGrantPlayerHexproof } from './player-hexproof';
 import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
-import { givesProtectionOfChoice, runProtectionColor } from './protection-choice';
+import {
+  givesProtectionOfCardTypeChoice,
+  givesProtectionOfChoice,
+  runProtectionCardType,
+  runProtectionColor,
+} from './protection-choice';
 import { runRegenerate } from './regenerate';
 import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
@@ -163,6 +168,9 @@ export function runInstruction(
   if (instruction.kind === 'chooseOne') return runChooseOne(state, res, instruction);
   if (instruction.kind === 'protectionColor') {
     return runProtectionColor(state, res, instruction, contextOf(state, res), targets);
+  }
+  if (instruction.kind === 'protectionCardType') {
+    return runProtectionCardType(state, res, instruction, contextOf(state, res), targets);
   }
   if (instruction.kind === 'vote') return runVote(state, res, instruction);
   if (instruction.kind === 'ringTempts') return runRingTempts(state, res, instruction);
@@ -1506,7 +1514,7 @@ function runEffect(
           continue;
         }
         next = patchObject(next, id, { tapped });
-        events.push({ kind: 'tapped', object: id });
+        events.push({ kind: 'tapped', object: id, by: res.controller });
         changed += 1;
       }
       // D-139: "the number tapped this way" and "if you do" read what a `tap` effect did.
@@ -2212,6 +2220,10 @@ function runEffect(
       // D-451 (CR 702.16, 608.2d): "gains protection from the color of your choice": the controller chooses the color first (rules/protection-choice.ts).
       if (givesProtectionOfChoice(effect)) {
         return done(state, [], [{ kind: 'protectionColor', effect, chosen: null }]);
+      }
+      // D-1504 (CR 702.16a, 608.2d): "gains protection from the card type of your choice": the same, with a card type.
+      if (givesProtectionOfCardTypeChoice(effect)) {
+        return done(state, [], [{ kind: 'protectionCardType', effect, chosen: null }]);
       }
       // CR 611.2, 613: "gets +N/+N until end of turn", "loses all abilities", "becomes a Frog" and
       // the rest are continuous effects in the game state, applied by `derive` in their layers.

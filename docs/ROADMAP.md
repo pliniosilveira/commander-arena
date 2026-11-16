@@ -448,3 +448,15 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `effect.shuffle-into-libraries` reads the permanent itself and single targets; "shuffle each creature ..." and a count are not read. `effect.you-and-permanents-gain-hexproof` reads one group ("you control") and hexproof only. `effect.prevent-all-by-color` reads colors joined by "or" and "and/or"; "sources of the color of your choice", a number ("the next 3") and another duration are not read.
 - The mode name before the dash is read as a flavor word only when the mode reads without it; a name with a cost is Tiered (D-433).
 - The rulings of the ten cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Borrowing 100,000 Arrows has the same text as Theft of Dreams in the corpus (`golden.jsonl`, from the issue); no second part was found in it.
+
+## The Hylda deck, group 1 (issue 42, D-1500 to D-1506)
+
+- `becomesTapped` with `by` reads the player who taps: a tap by an effect, an ability cost, a mana ability, a crew or other tap cost, a convoke-style cost, an attack declaration and a regeneration. A permanent tapped by no player (none exists today) would have no `by`. "An opponent taps" is built (SYNTHETIC) but no real card is read for it.
+- "Whenever you tap one or more untapped creatures ..." is one occurrence for the events of one engine step (one resolution, one declaration); two taps by two separate effects are two occurrences, as CR 603.2c has it.
+- A trigger whose number is 0 (`scries` of an empty library with "up to X targets") is not put on the stack: it would do nothing either way.
+- "Whenever you scry" reads the cards the library held up to the number scried; the Scryfall rulings of Elvish Mariner, Hylda, Sharae, Verity Circle, Icewrought Sentry, Hammers of Moradin and Pippin were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
+- "You may pay {1}. When you do, ..." is read for a triggered ability with one offer sentence and a reflexive sentence or modal text; a payment of life or another cost beyond the costs `mayPay` has, a reflexive ability with an "or" of costs and a reflexive ability followed by other sentences are not read.
+- A modal reflexive ability has no targets of its own besides those of its modes, and an X in a mode is refused (a triggered ability has no X, CR 107.3j).
+- Protection from the card type of your choice is read for one object for the turn (not a group, not another duration); the view tells that a creature has protection, not from what (as for the color of D-451).
+- The agents choose the card type by the threat and pay for the reflexive abilities as they pay for any "you may pay"; they do not plan the taps of the group (the casual agent does not look for a way to tap an untapped creature of an opponent to trigger Hylda).
+- A legendary creature "<Name> of <Title>" is called by its first word only when the face is a creature.

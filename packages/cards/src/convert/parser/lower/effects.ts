@@ -1490,6 +1490,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'declined' ||
         kind === 'notPutOntoBattlefield' ||
         kind === 'youDont' ||
+        kind === 'notDeclaredAttacker' ||
         kind === 'unlessReturn'
         ? []
         : missingFeatures([`condition:${kind}`]),

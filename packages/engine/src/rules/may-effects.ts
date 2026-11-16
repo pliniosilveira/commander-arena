@@ -36,7 +36,7 @@ export function runReflexive(
   // CR 603.12 (D-231): "When one or more nonland cards are exiled this way": created when this resolution counted one, not when it merely did something.
   if (effect.ifThisWay !== undefined) {
     if ((res.thisWay?.[effect.ifThisWay] ?? 0) <= 0) return done(state);
-  } else if ((res.performed ?? 0) <= 0) return done(state);
+  } else if (effect.afterPayment !== true && (res.performed ?? 0) <= 0) return done(state);
   // CR 603.12, 601.2c (D-187): "up to that many target creatures": the number is the permanents this resolution sacrificed, fixed now.
   const sacrificedCount = res.sacrificed?.length ?? 0;
   if (sacrificedCount === 0 && effect.targets?.some((spec) => spec.upToThatMany === true)) {
@@ -52,6 +52,9 @@ export function runReflexive(
     trigger: REFLEXIVE_TRIGGER,
     ...(targets === undefined ? {} : { targets }),
     effect: effect.effect,
+    // D-1501 (CR 603.12, 700.2b): "When you do, choose one —": the modes are chosen as the reflexive ability goes on the stack (CR 603.3c).
+    ...(effect.modes === undefined ? {} : { modes: effect.modes }),
+    ...(effect.chooseModes === undefined ? {} : { chooseModes: effect.chooseModes }),
   };
   const pending: PendingTrigger = {
     source: res.source,

@@ -49,7 +49,7 @@ export function declareAttackers(
     const obj = getObject(state, a.attacker);
     if (!hasKeyword(state, obj, 'vigilance') && !obj.tapped) {
       state = patchObject(state, a.attacker, { tapped: true });
-      events.push({ kind: 'tapped', object: a.attacker });
+      events.push({ kind: 'tapped', object: a.attacker, by: seat, attacker: true });
     }
   }
   if (attacks.length === 0) return { state: { ...state, combat: null }, events };

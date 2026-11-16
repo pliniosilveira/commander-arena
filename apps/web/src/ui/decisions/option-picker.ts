@@ -26,6 +26,7 @@ export function optionPrompt(
       d.purpose === 'replacement' ||
       d.purpose === 'meldOrder' ||
       d.purpose === 'protectionColor' ||
+      d.purpose === 'protectionCardType' ||
       d.purpose === 'vote') &&
     d.options !== undefined
   ) {

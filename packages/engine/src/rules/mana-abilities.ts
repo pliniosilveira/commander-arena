@@ -242,7 +242,7 @@ export function payManaAbilityCosts(
   const events: GameEvent[] = [];
   if (hasCost(ability, 'tap')) {
     next = patchObject(next, id, { tapped: true });
-    events.push({ kind: 'tapped', object: id });
+    events.push({ kind: 'tapped', object: id, by: seat });
     // CR 106.12 (D-189): tapping a permanent for mana is activating its mana ability with {T} in the cost; "whenever an opponent taps an artifact
     // for mana" reads it (the sacrifice below, as a Treasure's, is part of the same ability).
     events.push({ kind: 'tappedForMana', object: id, seat });

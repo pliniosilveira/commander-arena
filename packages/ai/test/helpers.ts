@@ -3049,6 +3049,56 @@ export const GISA_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] =
 ];
 
 /**
+ * The SYNTHETIC cards of group 1 of the Hylda deck (D-1500 to D-1504): a creature that makes a modal reflexive ability when its controller pays {1} after tapping an untapped creature of
+ * an opponent, a creature that pays {1}{U} when it attacks to tap a creature (and grows when its controller taps one), a creature that taps and stuns on entering and draws once each turn,
+ * an enchantment that draws when a creature of an opponent becomes tapped but not as an attacker, a creature that taps one creature of each opponent when it attacks, a creature that taps
+ * permanents when its controller scries, a creature that gives protection from a card type of its controller's choice, and three tap and scry helpers. The payment and mode questions, the
+ * targets of the reflexive abilities and the card type choice change which answers the generic pools ask for, which games-100 expects only from dedicated styles.
+ */
+export const HYLDA_G1_NAMES = [
+  'SYNTHETIC Frost Warlock',
+  'SYNTHETIC Chill Sentry',
+  'SYNTHETIC Numbing Merfolk',
+  'SYNTHETIC Watchful Circle',
+  'SYNTHETIC Hammer Dwarf',
+  'SYNTHETIC Tide Pilot',
+  'SYNTHETIC Citadel Halfling',
+  'SYNTHETIC Frost Touch',
+  'SYNTHETIC Tidal Hush',
+  'SYNTHETIC Clear Sight',
+] as const;
+
+/** The hyldaG1 style: every card of the group twice, and bodies to tap and to protect. */
+export const HYLDA_G1_SPELLS = [
+  ...supported(HYLDA_G1_NAMES),
+  ...supported(HYLDA_G1_NAMES),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+  ...supported(['Lightning Bolt', 'Lightning Bolt']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** White and blue for the creatures and the payments, a little red for the burn the protection answers. */
+export const HYLDA_G1_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Mountain',
+  'Mountain',
+]);
+
+/** Style pairs of the Hylda group 1 soak test (D-1500 to D-1504): a mirror match and both mixed ways. */
+export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['hyldaG1', 'hyldaG1'],
+  ['hyldaG1', 'spells'],
+  ['spells', 'hyldaG1'],
+];
+
+/**
  * The SYNTHETIC cards of group 3 of the Gisa deck (D-484 to D-492): a planeswalker whose minus nine has each opponent choose a permanent of each type and sacrifice the rest (and a
  * sorcery that does it for each player), a creature that sacrifices two other creatures as a cost and has any number of target players lose life and sacrifice, a creature that sacrifices
  * X creatures as a cost (an X announced before the targets), a creature with "partner with" and the card it searches for, and an instant with an optional sacrifice of any number of creatures
@@ -3878,6 +3928,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(GISA_G1_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 4 cards (D-459 to D-462) have abilities that work from the hand and from graveyards, targets in graveyards and delayed exiles: a style of their own.
   .filter((card) => !(GISA_G4_NAMES as readonly string[]).includes(card.name))
+  // The Hylda group 1 cards (D-1500 to D-1504) ask to pay for reflexive abilities, the modes of one, targets of taps, the card type to protect from and what to do with a scry: a style of their own.
+  .filter((card) => !(HYLDA_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ANGEL_NAMES as readonly string[]).includes(card.name))
@@ -4097,6 +4149,7 @@ export type DeckStyle =
   | 'featherG2'
   | 'featherG1'
   | 'gisaG4'
+  | 'hyldaG1'
   | 'vehicles'
   | 'prevention'
   | 'layouts'
@@ -4182,6 +4235,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'gisaG2' && GISA_G2_SPELLS.length > 0) return GISA_G2_SPELLS;
   if (style === 'hyldaG3' && HYLDA_G3_SPELLS.length > 0) return HYLDA_G3_SPELLS;
   if (style === 'gisaG1' && GISA_G1_SPELLS.length > 0) return GISA_G1_SPELLS;
+  if (style === 'hyldaG1' && HYLDA_G1_SPELLS.length > 0) return HYLDA_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
@@ -4379,6 +4433,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'gisaG2' && BASIC_LANDS.length > 0) return GISA_G2_LANDS;
   if (style === 'hyldaG3' && BASIC_LANDS.length > 0) return HYLDA_G3_LANDS;
   if (style === 'gisaG1' && BASIC_LANDS.length > 0) return GISA_G1_LANDS;
+  if (style === 'hyldaG1' && BASIC_LANDS.length > 0) return HYLDA_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;

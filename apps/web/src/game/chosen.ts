@@ -30,7 +30,8 @@ export function optionText(
     | 'effect'
     | 'riot'
     | 'vote'
-    | 'protectionColor',
+    | 'protectionColor'
+    | 'protectionCardType',
   option: string,
 ): string {
   // D-451: "gains protection from the color of your choice", answered with a color letter.
@@ -57,10 +58,12 @@ export function purposeNoun(
     | 'replacement'
     | 'vote'
     | 'meldOrder'
-    | 'protectionColor',
+    | 'protectionColor'
+    | 'protectionCardType',
 ): string {
   if (purpose === 'meldOrder') return 'order of the two cards';
   if (purpose === 'protectionColor') return 'color';
+  if (purpose === 'protectionCardType') return 'card type';
   if (purpose === 'riot') return 'riot choice';
   if (purpose === 'vote') return 'vote';
   if (purpose === 'replacement') return 'effect to apply first';

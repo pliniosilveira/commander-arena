@@ -482,6 +482,10 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'playerDealtDamage', player: test.who, atLeast: test.atLeast });
     }
+    case 'notDeclaredAttacker':
+      // D-1500 (CR 508.1f): "if it isn't being declared as an attacker" is part of the event of a "becomes tapped" trigger, which the lowering of the trigger reads (`lowerTriggered`);
+      // as a condition of anything else there is nothing to read it from.
+      return failure(c, []);
     case 'combatDamagedBy': {
       // CR 120.2a (issue 41, D-475): the engine's turn log keeps the card types, the subtypes and the controller of the source of combat damage to a player.
       const blocked = missingFeatures(['condition:combatDamagedBy']);

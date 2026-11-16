@@ -307,6 +307,27 @@ function subjectPhrase(what: TriggerSubject, ctx: TriggerContext): string | null
   return filterPhrase(what);
 }
 
+/** The card nouns whose plural is the noun and an "s": the only ones a batch of tapped permanents is worded for (D-1500). */
+const REGULAR_NOUNS = new Set([
+  'creature',
+  'artifact',
+  'enchantment',
+  'land',
+  'planeswalker',
+  'permanent',
+  'battle',
+]);
+
+/** "creature an opponent controls" or, plural, "creatures an opponent controls": the permanents a tap trigger is about, without the article (D-1500). */
+function tappedThings(filter: ObjectFilter, plural: boolean): string | null {
+  const phrase = filterPhrase(filter);
+  if (phrase === null) return null;
+  const body = phrase.replace(/^(?:an?|the) /, '');
+  if (!plural) return body;
+  const [noun = '', ...rest] = body.split(' ');
+  return REGULAR_NOUNS.has(noun) ? [`${noun}s`, ...rest].join(' ') : null;
+}
+
 const WHOSE_STEP: Readonly<Record<'you' | 'each' | 'opponent', string>> = {
   you: 'your',
   each: "each player's",
@@ -402,9 +423,25 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       return what === null ? null : `Whenever ${what} becomes blocked`;
     }
     case 'becomesTapped': {
+      // D-1500 (CR 701.26a, 603.2c): "Whenever you tap an untapped creature an opponent controls", "Whenever you tap one or more untapped creatures ...".
+      if (trigger.by !== undefined || trigger.batch === true) {
+        if ('kind' in trigger.what) return null;
+        const things = tappedThings(trigger.what, trigger.batch === true);
+        if (things === null) return null;
+        const who = trigger.by === 'opponent' ? 'an opponent taps' : 'you tap';
+        const kind = trigger.batch === true ? 'one or more untapped' : 'an untapped';
+        return `Whenever ${who} ${kind} ${things}`;
+      }
       const what = subjectPhrase(trigger.what, ctx);
-      return what === null ? null : `Whenever ${what} becomes tapped`;
+      if (what === null) return null;
+      // D-1500 (CR 508.1f): "if it isn't being declared as an attacker" is part of the event.
+      return trigger.notAsAttacker === true
+        ? `Whenever ${what} becomes tapped, if it isn't being declared as an attacker`
+        : `Whenever ${what} becomes tapped`;
     }
+    case 'scries':
+      // D-1503 (CR 701.22): once each time the player scries.
+      return `Whenever ${trigger.who === 'you' ? 'you scry' : `${BY_WORDS[trigger.who]} scries`}`;
     case 'becomesUntapped': {
       // D-206 (CR 701.26a): "Whenever this artifact becomes untapped".
       const what = subjectPhrase(trigger.what, ctx);

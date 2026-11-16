@@ -40,6 +40,7 @@
   "heuristic-games.test.ts",
   "hofri-games.test.ts",
   "hylda-g3-games.test.ts",
+  "hylda-g1-games.test.ts",
   "keyword-batch-games.test.ts",
   "keyword-batch2-games.test.ts",
   "kicker-games.test.ts",

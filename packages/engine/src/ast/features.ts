@@ -119,6 +119,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificeX',
     // D-491: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
     'optionalSacrifice',
+    // D-1501: "You may pay {1}. When you do, choose one —" (a `reflexive` effect with `modes`, and with `afterPayment` inside a `mayPay`, CR 603.12, 700.2b).
+    'reflexiveModal',
+    'reflexivePaid',
   ],
   effectKinds: [
     'sequence',
@@ -349,6 +352,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
     'crimeCommitted',
     'tokenCreated',
+    // D-1503: "Whenever you scry" (CR 701.22).
+    'scries',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -364,6 +369,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomesTargetSpell',
     // D-229: "casts their second spell each turn" (`castSpell` with `nth`).
     'castNth',
+    // D-1500: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
+    // (`notAsAttacker`) and "Whenever you tap one or more untapped creatures" (`batch`).
+    'tappedBy',
+    'notAsAttacker',
+    'tapBatch',
   ],
   keywordKinds: [
     'flying',
@@ -688,6 +698,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-187: "you may sacrifice one or more Treasures" (`ChooseSelector.atLeastOne`) and "up to that many target creatures" (`TargetSpec.upToThatMany`).
     'atLeastOne',
     'upToThatMany',
+    // D-1503: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
+    'upToTriggerAmount',
     // D-386 (provisional): "Return X target creature cards from your graveyard to your hand" (`TargetSpec.countX`).
     'countX',
     // Hylda group 3 (CR 115.1, 601.2c): "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
@@ -1086,6 +1098,10 @@ export const ABILITY_FEATURES = [
   'sacrificeX',
   /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-491, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
   'optionalSacrifice',
+  /** "When you do, choose one —" (CR 603.12, 700.2b, 603.3c, D-1501): a `reflexive` effect with `modes` and `chooseModes`. */
+  'reflexiveModal',
+  /** "You may pay {1}. When you do, ..." (CR 603.12, 118.1, D-1501): a `reflexive` effect with `afterPayment`, the `effect` of a `mayPay`. */
+  'reflexivePaid',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 
@@ -1102,6 +1118,12 @@ export const TRIGGER_FEATURES = [
   'becomesTargetSpell',
   /** "Whenever an opponent casts their second spell each turn" (CR 601.2i, D-229): the engine's `castSpell` with `nth`. */
   'castNth',
+  /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-1500): the engine's `becomesTapped` with `by`. */
+  'tappedBy',
+  /** "Whenever a creature becomes tapped, if it isn't being declared as an attacker" (CR 508.1f, D-1500): the engine's `becomesTapped` with `notAsAttacker`. */
+  'notAsAttacker',
+  /** "Whenever you tap one or more untapped creatures" (CR 603.2c, D-1500): the engine's `becomesTapped` with `batch`. */
+  'tapBatch',
 ] as const;
 export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 
@@ -1230,6 +1252,8 @@ export const SELECTOR_KINDS = [
   'atLeastOne',
   /** "Up to that many target creatures" after a sacrifice (CR 603.12, D-187): the engine's `TargetSpec.upToThatMany`. */
   'upToThatMany',
+  /** "Up to X target nonland permanents" where X is the cards looked at while scrying (CR 603.3d, 701.22, D-1503): the engine's `TargetSpec.upToTriggerAmount`. */
+  'upToTriggerAmount',
   /** "X target creature cards" (CR 601.2b, 601.2c, D-386): the engine's `TargetSpec.countX`, as many targets as the X announced. */
   'countX',
   /** "Any number of target tapped creatures with different controllers" (CR 115.1, 601.2c, Hylda group 3): the engine's `TargetSpec.differentControllers`. */
@@ -1632,6 +1656,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   modeCost: true,
   sacrificeX: true,
   optionalSacrifice: true,
+  reflexiveModal: true,
+  reflexivePaid: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,
@@ -1793,6 +1819,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   ringTempted: true,
   crimeCommitted: true,
   tokenCreated: true,
+  scries: true,
   interveningIf: true,
   alone: true,
   attacksAt: true,
@@ -1801,6 +1828,9 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   triggerCondition: true,
   becomesTargetSpell: true,
   castNth: true,
+  tappedBy: true,
+  notAsAttacker: true,
+  tapBatch: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flying: true,

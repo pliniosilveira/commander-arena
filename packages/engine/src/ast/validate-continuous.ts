@@ -250,7 +250,7 @@ export function checkContinuousEffect(
           } else {
             checkEnumList(out, `${path}.keyword.colors`, e.keyword.colors, COLORS, 'color');
           }
-        } else if (e.keyword.from !== 'colorOfChoice') {
+        } else if (e.keyword.from !== 'colorOfChoice' && e.keyword.from !== 'cardTypeOfChoice') {
           issue(
             out,
             `${path}.keyword`,

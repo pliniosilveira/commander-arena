@@ -49,6 +49,8 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'discarded':
     case 'crimeCommitted':
     case 'tokenCreated':
+    // D-1503: the player who scried.
+    case 'scries':
       return true;
     // The active player of the step (CR 102.1, 603.2b): "that player" in "at the beginning of each opponent's end step".
     case 'step':

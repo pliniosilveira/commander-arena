@@ -160,8 +160,11 @@ function nounOf(filter: ObjectFilter): string {
         ? 'permanent'
         : types.join(' or ');
   const named = subtypes === '' ? noun : `${subtypes} ${noun}`;
+  // D-1503 (CR 205.2): "target nonland permanent": the card types the object is not.
+  const without = (filter.notTypes ?? []).map((t) => `non${t}`).join(' ');
   // D-139: "target nontoken creature" (CR 111.1).
-  const core = filter.token === false ? `nontoken ${named}` : named;
+  const typed = without === '' ? named : `${without} ${named}`;
+  const core = filter.token === false ? `nontoken ${typed}` : typed;
   // Mentor and Battle cry (CR 702.134a, 702.91a): "attacking creature".
   return filter.attacking === true ? `attacking ${core}` : core;
 }
@@ -219,8 +222,16 @@ function targetText(spec: TargetSpec | undefined): string {
         // Group 4 of the Vraska deck (CR 400.7): "target commander that entered this turn".
         (spec.what.filter.enteredThisTurn === true ? ' that entered this turn' : '');
       // D-187 (CR 603.12, 115.2): "up to that many target creatures" (the number not fixed yet), "up to two target creatures": several targets, the noun plural.
-      if (spec.upToThatMany === true || ((spec.max ?? 1) > 1 && (spec.min ?? 1) === 0)) {
-        const count = spec.upToThatMany === true ? 'that many' : numberWord(spec.max ?? 1);
+      // D-1503 (CR 603.3d, 701.22): "tap up to X target nonland permanents, where X is the number of cards looked at": the number is the event's.
+      if (
+        spec.upToThatMany === true ||
+        spec.upToTriggerAmount === true ||
+        ((spec.max ?? 1) > 1 && (spec.min ?? 1) === 0)
+      ) {
+        const count =
+          spec.upToThatMany === true || spec.upToTriggerAmount === true
+            ? 'that many'
+            : numberWord(spec.max ?? 1);
         return `up to ${count} target ${pluralNounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
       }
       return `target ${nounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
@@ -930,6 +941,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // Extort (CR 702.101a): "You may pay {W/B}. If you do, each opponent loses 1 life. You gain life ...".
       const inner = effectText(effect.effect, ability, self, defs);
       const pay = `You may ${unlessCostPhrase(effect.cost)}`;
+      // D-1501 (CR 603.12): "You may pay {1}. When you do, choose one — ...": the reflexive ability says its own "When you do".
+      if (effect.effect.kind === 'reflexive' && effect.effect.afterPayment === true) {
+        return inner === '' ? pay : `${pay}. ${inner}`;
+      }
       return inner === ''
         ? pay
         : `${pay}. If you do, ${inner.charAt(0).toLowerCase()}${inner.slice(1)}`;
@@ -962,6 +977,11 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         self,
         defs,
       );
+      // D-1501 (CR 603.12, 700.2b): "When you do, choose one — Create a token; Put a counter on each creature you control": the modes as the card words them.
+      if (effect.modes !== undefined) {
+        const how = effect.chooseModes?.max === 1 ? 'one' : 'one or more';
+        return `When you do, choose ${how} — ${effect.modes.map((m) => m.text.replace(/\.$/, '')).join('; ')}`;
+      }
       return inner === '' ? '' : `When you do, ${lower(inner)}`;
     }
     case 'mayCast':

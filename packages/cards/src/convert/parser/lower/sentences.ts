@@ -439,10 +439,18 @@ function lowerMayPay(
   ) {
     return refuse(sentence);
   }
-  if (next?.condition?.test.kind !== 'didPrevious' || next.instead === true) {
+  // "You may pay {1}{U}. When you do, tap target creature an opponent controls." (Hylda deck, D-1501, CR 603.12, 118.1): the reflexive ability is created by the payment itself.
+  const paidReflexive = next?.reflexive === true;
+  if (!paidReflexive && (next?.condition?.test.kind !== 'didPrevious' || next.instead === true)) {
     return refuse(sentence);
   }
-  if (next.clauses.some((c) => c.optional)) return refuse(next);
+  if (next === undefined || next.clauses.some((c) => c.optional)) return refuse(sentence);
+  if (
+    paidReflexive &&
+    (next.instead === true || next.where !== undefined || next.condition !== undefined)
+  ) {
+    return refuse(next);
+  }
   const cost: Cost[] = [];
   for (const item of offer.costs) {
     // D-364 (CR 119.4): "you may pay that much life" is the life of a life gain trigger, which only the ability of such a trigger can offer.
@@ -450,9 +458,29 @@ function lowerMayPay(
     if (!lowered.ok) return lowered;
     cost.push(lowered.value);
   }
-  const needs: FeatureRef[] = ['effect:mayPay', ...cost.map((c): FeatureRef => `cost:${c.kind}`)];
+  const needs: FeatureRef[] = [
+    'effect:mayPay',
+    ...cost.map((c): FeatureRef => `cost:${c.kind}`),
+    ...(paidReflexive ? (['effect:reflexive', 'ability:reflexivePaid'] as const) : []),
+  ];
   const blocked = missingFeatures(needs);
   if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  if (paidReflexive) {
+    const reflexive = lowerReflexive(next, ctx);
+    if (!reflexive.ok) return reflexive;
+    if (reflexive.value.kind !== 'reflexive') return refuse(next);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'mayPay',
+          cost,
+          effect: { ...reflexive.value, afterPayment: true },
+        },
+      ],
+      rule: clause.rule,
+    };
+  }
   const inner = lowerClauses(next.clauses, ctx);
   if (!inner.ok) return inner;
   if (!lossReadsAreOrdered(inner.value)) return refuse(next);

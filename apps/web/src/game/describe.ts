@@ -1054,6 +1054,16 @@ export function describeEvent(
           'CR 702.16a',
         );
       }
+      // CR 702.16a, 608.2d (D-1504): "You choose Instant for Pippin (protection from that card type until end of turn)." The choice is public, as the color's is.
+      if (event.purpose === 'protectionCardType') {
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${event.option} for ${label(event.source)} (protection from that card type until end of turn).`,
+          event.seat,
+          [],
+          'CR 702.16a',
+        );
+      }
       // CR 702.136a (D-185): "You choose a +1/+1 counter for Riot Goblin (riot)." or "... haste ...".
       if (event.purpose === 'riot') {
         const subject =

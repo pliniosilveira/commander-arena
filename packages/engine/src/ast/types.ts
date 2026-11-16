@@ -861,6 +861,12 @@ export interface TargetSpec {
    */
   readonly upToThatMany?: true;
   /**
+   * "Tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (CR 603.3d, 701.22, D-1503): the slot takes up to as many targets as
+   * the number the trigger event carries (`triggerDamage`: the cards looked at by the scry), none to that many; the number is fixed as the ability is put on the stack, and the
+   * engine writes it into `max` (and a `min` of 0) of the ability that goes on the stack. Only a slot of a triggered ability whose trigger is `scries`, with `min` and `max` left out.
+   */
+  readonly upToTriggerAmount?: true;
+  /**
    * "Return X target creature cards from your graveyard to your hand" (CR 107.3a, 601.2b, 601.2c, D-386): the slot takes exactly as many
    * targets as the X the caster announced for the spell. X is announced before the targets (CR 601.2b), so `chooseX` offers no X larger than the
    * number of legal targets, and with X = 0 the slot has no target (the spell is cast and does nothing for it). Only a slot of a spell's own text (not an
@@ -1507,6 +1513,18 @@ export type Effect =
        * not when it merely did something, and `thisWay` of that kind in its effect is the number counted (fixed as the ability is created).
        */
       readonly ifThisWay?: ThisWayKind;
+      /**
+       * "You may pay {1}. When you do, choose one —" (D-1501, CR 603.12, 700.2b, 603.3c): the reflexive ability is modal, as a triggered ability with `modes` is: its `effect` is
+       * then the empty sequence and `targets` is absent, the modes (two to eight, each with its own targets) are chosen as the ability goes on the stack, and the
+       * controller of this spell or ability chooses them.
+       */
+      readonly modes?: readonly SpellMode[];
+      readonly chooseModes?: ModeChoice;
+      /**
+       * "You may pay {1}. When you do, ..." (D-1501, CR 603.12, 118.1): what makes the reflexive ability trigger is the payment itself, not an earlier instruction that did
+       * something: the ability is created whenever this effect runs, which is when the cost of the `mayPay` it is the effect of was paid. Only the `effect` of a `mayPay`.
+       */
+      readonly afterPayment?: true;
     }
   /**
    * "You may cast target [filter] card from your graveyard this turn" (D-135, CR 601.2, 113.6, 611.2a): until end of turn
@@ -2981,8 +2999,29 @@ export type Trigger =
       readonly by: 'you' | 'any';
       readonly filter?: ObjectFilter;
     }
-  /** "Whenever this becomes tapped" (CR 603.2e): not when it enters tapped. */
-  | { readonly kind: 'becomesTapped'; readonly what: TriggerSubject }
+  /**
+   * "Whenever this becomes tapped" (CR 603.2e): not when it enters tapped.
+   * D-1500 (CR 701.26a, 603.2c, 508.1f): "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker" and "Whenever you tap an
+   * untapped creature an opponent controls": one occurrence for each permanent that changes from untapped to tapped (a permanent already tapped is not tapped again, so
+   * an effect that taps it triggers nothing). `by` limits who tapped it, relative to the controller of this ability: `you` (the controller of the effect or the player who paid
+   * the cost, `GameEvent` `tapped`'s `by`), or `opponent`; left out, whoever and however it was tapped, a permanent that no player tapped included. `notAsAttacker` leaves out a
+   * permanent tapped as it was declared as an attacker (CR 508.1f; the event's `attacker`): it is part of the trigger event, read as it happens, not an intervening "if". `batch`
+   * ("Whenever you tap one or more untapped creatures your opponents control", CR 603.2c) makes the permanents tapped in one run of events one occurrence, however many
+   * `what` names; `triggerSubject` is the first of them. A `by` of `you` and a `batch` need a `what` that is a filter, not `this` or `attached`.
+   */
+  | {
+      readonly kind: 'becomesTapped';
+      readonly what: TriggerSubject;
+      readonly by?: 'you' | 'opponent';
+      readonly notAsAttacker?: true;
+      readonly batch?: true;
+    }
+  /**
+   * "Whenever you scry" (CR 701.22, 603.2, D-1503): once each time the player `who` names (relative to the controller of this ability) scries (the event `scried`: also a scry
+   * of a library with no card, CR 701.22d; never "scry 0", CR 701.22b). `triggerDamage` is the number of cards looked at while scrying (the cards put back on top and on
+   * the bottom, so at most the cards the library held), which `TargetSpec.upToTriggerAmount` and "that many" read.
+   */
+  | { readonly kind: 'scries'; readonly who: 'you' | 'opponent' | 'any' }
   /**
    * "Whenever this artifact becomes untapped" (CR 701.26a, 603.2e, D-206): a permanent that untaps, in the untap step or by an effect. A permanent that a
    * stun counter keeps tapped (CR 122.1d) does not untap, so it triggers nothing; a permanent that enters untapped does not "become" untapped.
@@ -3281,6 +3320,12 @@ export type Keyword =
    * a printed keyword or a static `grantKeyword` cannot, since nothing there asks.
    */
   | { readonly kind: 'protection'; readonly from: 'colorOfChoice' }
+  /**
+   * "Another target creature you control gains protection from the card type of your choice until end of turn" (CR 702.16a, 608.2d, D-1504): as `colorOfChoice`, but the
+   * controller chooses one of the nine card types (`CARD_TYPES`) as the effect resolves, with a `chooseOption` decision (purpose `protectionCardType`), and the permanents the
+   * grant affects gain protection from that card type. Only a `grantKeyword` effect may carry it.
+   */
+  | { readonly kind: 'protection'; readonly from: 'cardTypeOfChoice' }
   /**
    * CR 702.73a (Changeling): a characteristic-defining ability, "This object is every creature type"
    * (CR 604.3), in layer 4 first (CR 613.3), working in every zone, also in a hand or a library. The

@@ -314,6 +314,8 @@ describe('supported feature gate', () => {
         'noncombatDamageDealt',
         'permanentSacrificed',
         'ringTempted',
+        // D-1503: "Whenever you scry".
+        'scries',
         'state',
         'step',
         'tappedForMana',
@@ -339,6 +341,10 @@ describe('supported feature gate', () => {
       // D-177: "becomes the target of a spell".
       'becomesTargetSpell',
       'castNth',
+      // D-1500: "Whenever you tap an untapped creature an opponent controls", "if it isn't being declared as an attacker", "one or more".
+      'tappedBy',
+      'notAsAttacker',
+      'tapBatch',
     ]);
     expect(SUPPORTED_FEATURES.manaAbilityCostKinds).toEqual([
       'tap',
