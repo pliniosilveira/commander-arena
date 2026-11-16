@@ -16,7 +16,11 @@ export const NOUN_ANY_NUMBER_TARGETS_CONTROLLERS = defineRule<IrNoun>({
   id: 'noun.any-number-targets-controllers',
   family: 'noun',
   leading: ['any'],
-  cites: ['CR 115.1 (Targets)', 'CR 601.2c (Casting Spells)', 'CR 603.3d (Handling Triggered Abilities)'],
+  cites: [
+    'CR 115.1 (Targets)',
+    'CR 601.2c (Casting Spells)',
+    'CR 603.3d (Handling Triggered Abilities)',
+  ],
   examples: [
     'any number of target tapped creatures with different controllers',
     'any number of target creatures with different controllers',

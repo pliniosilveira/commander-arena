@@ -65,7 +65,7 @@ export const EFFECT_FLICKER = defineRule<Clauses>({
     "exile target creature. return it to the battlefield under its owner's control",
     "exile target creature, return it to the battlefield under its owner's control",
     "exile target card from a graveyard, then return it to the battlefield under its owner's control",
-    "exile ~, then return it to your hand",
+    'exile ~, then return it to your hand',
     "exile ~ and target creature, then return them to the battlefield under their owners' control",
   ],
   parse: (ctx, pos) => {

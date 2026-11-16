@@ -57,9 +57,9 @@ import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
 import { HASHATON_G9_LOWERINGS } from './hashaton-g9';
 import { HASHATON_GROUP_4_LOWERINGS } from './hashaton-group-4';
 import { HOFRI_LOWERINGS } from './hofri';
+import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { MELD_LOWERINGS } from './meld';
-import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { NIV_LOWERINGS } from './niv';
 import { NIV_GROUP_3_C_LOWERINGS } from './niv-group-3-c';
 import {

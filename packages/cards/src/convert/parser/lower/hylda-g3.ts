@@ -52,7 +52,10 @@ const SHUFFLE_INTO_LIBRARIES: Lowering<IrClause, Effects> = {
         // A player named twice acts once, and one owner needs no list.
         {
           kind: 'shuffle',
-          player: owners.length === 1 && owners[0] !== undefined ? owners[0] : { kind: 'all', of: owners },
+          player:
+            owners.length === 1 && owners[0] !== undefined
+              ? owners[0]
+              : { kind: 'all', of: owners },
         },
       ],
       rule: clause.rule,

@@ -43,7 +43,10 @@ describe('the amounts', () => {
 
   test('a count whose player is not a target is not worded as one', () => {
     expect(
-      amountPhrase({ kind: 'countOf', filter: { types: ['creature'], controlledBy: { kind: 'you' } } }),
+      amountPhrase({
+        kind: 'countOf',
+        filter: { types: ['creature'], controlledBy: { kind: 'you' } },
+      }),
     ).toBe('a number');
   });
 

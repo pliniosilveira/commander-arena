@@ -77,25 +77,30 @@ describe('every card is valid and has the AST of its SYNTHETIC sibling', () => {
 });
 
 describe('Theft of Dreams and Borrowing 100,000 Arrows', () => {
-  test.each([theft, arrows])('$name draws a card for each tapped creature of the targeted opponent', (card) => {
-    const g = scenario()
-      .define(card)
-      .seat(0)
-      .library(...LIBRARY)
-      .hand(card.name)
-      .battlefield('Island', 'Island', 'Island')
-      .battlefield(BEARS, { tapped: true })
-      .seat(1)
-      .library(...LIBRARY)
-      .battlefield(BEARS, { tapped: true, count: 3 })
-      .battlefield(RATS)
-      .at('precombatMain', { active: 0 })
-      .build();
-    g.act(0).cast(card.name, { targets: [{ player: 1 }] }).pay();
-    g.passAll();
-    g.expect.handSize(0, 3);
-    g.expect.invariants();
-  });
+  test.each([theft, arrows])(
+    '$name draws a card for each tapped creature of the targeted opponent',
+    (card) => {
+      const g = scenario()
+        .define(card)
+        .seat(0)
+        .library(...LIBRARY)
+        .hand(card.name)
+        .battlefield('Island', 'Island', 'Island')
+        .battlefield(BEARS, { tapped: true })
+        .seat(1)
+        .library(...LIBRARY)
+        .battlefield(BEARS, { tapped: true, count: 3 })
+        .battlefield(RATS)
+        .at('precombatMain', { active: 0 })
+        .build();
+      g.act(0)
+        .cast(card.name, { targets: [{ player: 1 }] })
+        .pay();
+      g.passAll();
+      g.expect.handSize(0, 3);
+      g.expect.invariants();
+    },
+  );
 });
 
 describe('Gadwick, the Wizened', () => {
@@ -170,7 +175,7 @@ describe('Loyal Warhound', () => {
 });
 
 describe('Floodpits Drowner', () => {
-  test('shuffles itself and the stunned creature into their owners\' libraries', () => {
+  test("shuffles itself and the stunned creature into their owners' libraries", () => {
     const g = scenario()
       .define(drowner)
       .seat(0)
@@ -267,7 +272,9 @@ describe('Ojutai Exemplars', () => {
 
   test('mode 3: it is exiled and returns tapped', () => {
     const g = board();
-    g.act(0).cast(BOLT, { targets: [{ player: 1 }] }).pay();
+    g.act(0)
+      .cast(BOLT, { targets: [{ player: 1 }] })
+      .pay();
     g.act(0).chooseModes(2);
     g.passAll();
     g.expect.zone(exemplars.name, 'battlefield', { seat: 0 });
@@ -276,7 +283,9 @@ describe('Ojutai Exemplars', () => {
 
   test('mode 2: first strike and lifelink', () => {
     const g = board();
-    g.act(0).cast(BOLT, { targets: [{ player: 1 }] }).pay();
+    g.act(0)
+      .cast(BOLT, { targets: [{ player: 1 }] })
+      .pay();
     g.act(0).chooseModes(1);
     g.passAll();
     g.expect.derived('monk', { keywords: ['firstStrike', 'lifelink'] });

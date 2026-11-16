@@ -67,7 +67,10 @@ describe('enteredX: the X of the spell the permanent came from (CR 107.3m)', () 
 
   test.each([
     ['another trigger', { kind: 'dies', what: { kind: 'this' } }],
-    ['the enters trigger of another permanent', { kind: 'entersBattlefield', what: { types: ['creature'] } }],
+    [
+      'the enters trigger of another permanent',
+      { kind: 'entersBattlefield', what: { types: ['creature'] } },
+    ],
     ['an attack', { kind: 'attacks', what: { kind: 'this' } }],
   ] as const)('%s does not read it', (_name, trigger) => {
     const ability: Ability = { kind: 'triggered', trigger, effect: DRAW({ kind: 'enteredX' }) };
@@ -87,8 +90,14 @@ describe('enteredX: the X of the spell the permanent came from (CR 107.3m)', () 
       spell: { effect: DRAW({ kind: 'enteredX' }) },
     });
     expect(messages(spell).join('|')).toContain("'enteredX' needs a triggered ability");
-    const activated: Ability = { kind: 'activated', cost: [{ kind: 'tap' }], effect: DRAW({ kind: 'enteredX' }) };
-    expect(messages(creature(['X', 'U'], [activated])).join('|')).toContain("'enteredX' needs a triggered ability");
+    const activated: Ability = {
+      kind: 'activated',
+      cost: [{ kind: 'tap' }],
+      effect: DRAW({ kind: 'enteredX' }),
+    };
+    expect(messages(creature(['X', 'U'], [activated])).join('|')).toContain(
+      "'enteredX' needs a triggered ability",
+    );
   });
 });
 
@@ -111,9 +120,14 @@ describe('countOf with a player named by a target (CR 109.4, 608.2c)', () => {
   });
 
   test('a target that is an object is refused: it names a player', () => {
-    const object: TargetSpec = { id: 't1', what: { kind: 'object', filter: { types: ['creature'] } } };
+    const object: TargetSpec = {
+      id: 't1',
+      what: { kind: 'object', filter: { types: ['creature'] } },
+    };
     expect(
-      messages(sorcery({ targets: [object], effect: DRAW(count({ kind: 'target', id: 't1' })) })).join('|'),
+      messages(
+        sorcery({ targets: [object], effect: DRAW(count({ kind: 'target', id: 't1' })) }),
+      ).join('|'),
     ).toContain('is an object but a player is required here');
   });
 
@@ -167,12 +181,30 @@ describe('differentControllers: any number of targets, no two of one controller 
 
   test('any number of permanents is valid, and so is a number of at most', () => {
     expect(validateCard(slot({}))).toEqual([]);
-    expect(validateCard(slot({ anyNumber: undefined, max: 2 }))).toEqual([]);
+    const bounded = sorcery({
+      targets: [
+        {
+          id: 't1',
+          what: { kind: 'object', filter: { zone: 'battlefield', ...TAPPED } },
+          max: 2,
+          differentControllers: true,
+        },
+      ],
+      effect: { kind: 'destroy', objects: { kind: 'target', id: 't1' } },
+    });
+    expect(validateCard(bounded)).toEqual([]);
   });
 
   test('it is not a slot of players', () => {
     const players = sorcery({
-      targets: [{ id: 't1', what: { kind: 'player', filter: 'any' }, anyNumber: true, differentControllers: true }],
+      targets: [
+        {
+          id: 't1',
+          what: { kind: 'player', filter: 'any' },
+          anyNumber: true,
+          differentControllers: true,
+        },
+      ],
       effect: { kind: 'loseLife', player: { kind: 'target', id: 't1' }, amount: 1 },
     });
     expect(messages(players).join('|')).toContain('names objects (permanents), not players');
@@ -198,7 +230,9 @@ describe('differentControllers: any number of targets, no two of one controller 
     { divide: { total: 3 } },
     { upToThatMany: true as const },
   ])('it is not combined with %j', (extra) => {
-    expect(messages(slot(extra as Partial<TargetSpec>)).join('|')).toContain('different controllers');
+    expect(messages(slot(extra as Partial<TargetSpec>)).join('|')).toContain(
+      'different controllers',
+    );
   });
 
   test('it must be true when present', () => {
@@ -235,7 +269,11 @@ describe('grantPlayerHexproof (CR 702.11b)', () => {
   test('another duration is refused', () => {
     expect(
       messages(
-        grant({ kind: 'grantPlayerHexproof', player: YOU, duration: 'permanent' as 'untilEndOfTurn' }),
+        grant({
+          kind: 'grantPlayerHexproof',
+          player: YOU,
+          duration: 'permanent' as 'untilEndOfTurn',
+        }),
       ),
     ).toContain('a player has hexproof until end of turn only');
   });
@@ -262,7 +300,7 @@ describe('chooseOne with optional (CR 608.2d)', () => {
         { label: 'Draw', effect: DRAW(1) },
       ],
       ...(optional === undefined ? {} : { optional }),
-    }) as Effect;
+    }) as unknown as Effect;
 
   test('true is valid, and so is leaving it out', () => {
     expect(validateCard(sorcery({ effect: choice(true) }))).toEqual([]);
@@ -270,6 +308,8 @@ describe('chooseOne with optional (CR 608.2d)', () => {
   });
 
   test('false is refused', () => {
-    expect(messages(sorcery({ effect: choice(false) }))).toContain('optional must be true when present');
+    expect(messages(sorcery({ effect: choice(false) }))).toContain(
+      'optional must be true when present',
+    );
   });
 });

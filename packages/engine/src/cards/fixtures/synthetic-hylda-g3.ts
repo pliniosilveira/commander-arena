@@ -259,7 +259,7 @@ export const SYNTHETIC_HYLDA_G3_LIST: readonly CardDefinition[] = [
     power: 4,
     toughness: 4,
     oracleText:
-      'Whenever you cast a noncreature spell, choose one —\n• Tap target creature.\n• This creature gains first strike and lifelink until end of turn.\n• Exile this creature, then return it to the battlefield tapped under its owner\'s control.',
+      "Whenever you cast a noncreature spell, choose one —\n• Tap target creature.\n• This creature gains first strike and lifelink until end of turn.\n• Exile this creature, then return it to the battlefield tapped under its owner's control.",
     abilities: [
       {
         kind: 'triggered',

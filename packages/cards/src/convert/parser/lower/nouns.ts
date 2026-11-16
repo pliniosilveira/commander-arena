@@ -596,7 +596,9 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
               id,
               what: { kind: 'object', filter: filter.value },
               anyNumber: true,
-              ...(noun.differentControllers === true ? { differentControllers: true as const } : {}),
+              ...(noun.differentControllers === true
+                ? { differentControllers: true as const }
+                : {}),
             }
           : noun.perOpponent === true
             ? { id, what: { kind: 'object', filter: filter.value }, onePerOpponent: true }

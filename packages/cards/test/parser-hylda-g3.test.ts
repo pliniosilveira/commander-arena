@@ -45,20 +45,29 @@ describe('"Draw a card for each tapped creature target opponent controls." (CR 1
   });
 
   test('another kind of permanent and any player (SYNTHETIC)', () => {
-    expect(readAll('Draw a card for each artifact target player controls.', 'sorcery').spell).toMatchObject({
+    expect(
+      readAll('Draw a card for each artifact target player controls.', 'sorcery').spell,
+    ).toMatchObject({
       targets: [{ id: 't1', what: { kind: 'player', filter: 'any' } }],
       effect: {
-        count: { kind: 'countOf', filter: { types: ['artifact'], controlledBy: { kind: 'target', id: 't1' } } },
+        count: {
+          kind: 'countOf',
+          filter: { types: ['artifact'], controlledBy: { kind: 'target', id: 't1' } },
+        },
       },
     });
   });
 
   test('the plural count of a number (SYNTHETIC)', () => {
     expect(
-      readAll('You gain life equal to the number of creatures target opponent controls.', 'sorcery').spell,
+      readAll('You gain life equal to the number of creatures target opponent controls.', 'sorcery')
+        .spell,
     ).toMatchObject({
       targets: [TARGET_OPPONENT],
-      effect: { kind: 'gainLife', amount: { kind: 'countOf', filter: { controlledBy: { kind: 'target' } } } },
+      effect: {
+        kind: 'gainLife',
+        amount: { kind: 'countOf', filter: { controlledBy: { kind: 'target' } } },
+      },
     });
   });
 
@@ -73,7 +82,10 @@ describe('"Draw a card for each tapped creature target opponent controls." (CR 1
   });
 
   test('a static ability does not read it (the player is a target)', () => {
-    NOT_READ('Creatures you control get +1/+1 for each creature target opponent controls.', 'creature' as Type);
+    NOT_READ(
+      'Creatures you control get +1/+1 for each creature target opponent controls.',
+      'creature' as Type,
+    );
   });
 
   test('the line names the feature the engine lacks (D-068)', () => {
@@ -99,7 +111,10 @@ describe('Gadwick: "When ~ enters, draw X cards." (CR 107.3m)', () => {
 
   test('another amount of X (SYNTHETIC)', () => {
     expect(readAll('When ~ enters, you gain X life.', 'creature').abilities).toMatchObject([
-      { trigger: { kind: 'entersBattlefield' }, effect: { kind: 'gainLife', amount: { kind: 'enteredX' } } },
+      {
+        trigger: { kind: 'entersBattlefield' },
+        effect: { kind: 'gainLife', amount: { kind: 'enteredX' } },
+      },
     ]);
   });
 
@@ -142,9 +157,13 @@ describe('Loyal Warhound: "if an opponent controls more lands than you" (CR 603.
 
   test('the old counts are untouched', () => {
     expect(
-      readAll('When ~ enters, if an opponent controls more creatures than you, you gain 2 life.', 'creature')
-        .abilities,
-    ).toMatchObject([{ interveningIf: { amount: { kind: 'opponentsWithMore', stat: 'creatures' } } }]);
+      readAll(
+        'When ~ enters, if an opponent controls more creatures than you, you gain 2 life.',
+        'creature',
+      ).abilities,
+    ).toMatchObject([
+      { interveningIf: { amount: { kind: 'opponentsWithMore', stat: 'creatures' } } },
+    ]);
   });
 
   test.each([
@@ -162,7 +181,7 @@ describe('Floodpits Drowner: "Shuffle ~ and target creature with a stun counter 
   const LINE =
     "{1}{U}, {T}: Shuffle ~ and target creature with a stun counter on it into their owners' libraries.";
 
-  test('the real line: both go to their owners\' libraries, then each owner shuffles', () => {
+  test("the real line: both go to their owners' libraries, then each owner shuffles", () => {
     expect(readAll(LINE, 'creature').abilities).toEqual([
       {
         kind: 'activated',
@@ -198,7 +217,9 @@ describe('Floodpits Drowner: "Shuffle ~ and target creature with a stun counter 
   });
 
   test("one target into its owner's library (SYNTHETIC)", () => {
-    expect(readAll("{2}, {T}: Shuffle target creature into its owner's library.", 'creature').abilities).toMatchObject([
+    expect(
+      readAll("{2}, {T}: Shuffle target creature into its owner's library.", 'creature').abilities,
+    ).toMatchObject([
       {
         effect: {
           kind: 'sequence',
@@ -211,10 +232,12 @@ describe('Floodpits Drowner: "Shuffle ~ and target creature with a stun counter 
     ]);
   });
 
-  test("the Niv-Mizzet shuffle with a graveyard is still its own rule", () => {
+  test('the Niv-Mizzet shuffle with a graveyard is still its own rule', () => {
     expect(
-      readAll("Whenever you draw your second card each turn, shuffle ~ and your graveyard into their owner's library.", 'creature')
-        .abilities,
+      readAll(
+        "Whenever you draw your second card each turn, shuffle ~ and your graveyard into their owner's library.",
+        'creature',
+      ).abilities,
     ).toMatchObject([{ kind: 'triggered' }]);
   });
 
@@ -238,7 +261,7 @@ describe('Floodpits Drowner: "Shuffle ~ and target creature with a stun counter 
   });
 });
 
-describe("Cloud's Limit Break: \"any number of target tapped creatures with different controllers\" (CR 115.1, 601.2c)", () => {
+describe('Cloud\'s Limit Break: "any number of target tapped creatures with different controllers" (CR 115.1, 601.2c)', () => {
   const BLADE_BEAM = 'Destroy any number of target tapped creatures with different controllers.';
 
   test('the real line of the mode: a slot of any number of targets, one for each controller', () => {
@@ -259,8 +282,12 @@ describe("Cloud's Limit Break: \"any number of target tapped creatures with diff
   });
 
   test('another verb and another kind of permanent (SYNTHETIC)', () => {
-    expect(readAll('Tap any number of target artifacts with different controllers.', 'instant').spell).toMatchObject({
-      targets: [{ anyNumber: true, differentControllers: true, what: { filter: { types: ['artifact'] } } }],
+    expect(
+      readAll('Tap any number of target artifacts with different controllers.', 'instant').spell,
+    ).toMatchObject({
+      targets: [
+        { anyNumber: true, differentControllers: true, what: { filter: { types: ['artifact'] } } },
+      ],
       effect: { kind: 'tap' },
     });
   });
@@ -329,7 +356,12 @@ describe('Ojutai Exemplars: "Exile ~, then return it to the battlefield tapped u
           kind: 'sequence',
           effects: [
             { kind: 'exile', objects: { kind: 'this' } },
-            { kind: 'moveToZone', objects: { kind: 'moved' }, to: 'battlefield', controller: 'owner' },
+            {
+              kind: 'moveToZone',
+              objects: { kind: 'moved' },
+              to: 'battlefield',
+              controller: 'owner',
+            },
           ],
         },
       },
@@ -357,7 +389,10 @@ describe('Retreat to Coralhelm: "You may tap or untap target creature." (CR 701.
             kind: 'chooseOne',
             options: [
               { label: 'Tap it', effect: { kind: 'tap', objects: { kind: 'target', id: 't1' } } },
-              { label: 'Untap it', effect: { kind: 'untap', objects: { kind: 'target', id: 't1' } } },
+              {
+                label: 'Untap it',
+                effect: { kind: 'untap', objects: { kind: 'target', id: 't1' } },
+              },
             ],
             optional: true,
           },
@@ -374,8 +409,12 @@ describe('Retreat to Coralhelm: "You may tap or untap target creature." (CR 701.
   });
 
   test('the old taps are untouched', () => {
-    expect(readAll('Tap target creature.', 'instant').spell).toMatchObject({ effect: { kind: 'tap' } });
-    expect(readAll('Untap target creature.', 'instant').spell).toMatchObject({ effect: { kind: 'untap' } });
+    expect(readAll('Tap target creature.', 'instant').spell).toMatchObject({
+      effect: { kind: 'tap' },
+    });
+    expect(readAll('Untap target creature.', 'instant').spell).toMatchObject({
+      effect: { kind: 'untap' },
+    });
   });
 
   test.each([
@@ -408,7 +447,9 @@ describe('You See a Guard Approach: modes with a name before the dash (CR 207.2d
       'instant',
     ).spell;
     expect(named?.chooseModes).toEqual({ min: 1, max: 1 });
-    expect(named?.modes?.map((m) => ({ ...m, text: '' }))).toEqual(plain?.modes?.map((m) => ({ ...m, text: '' })));
+    expect(named?.modes?.map((m) => ({ ...m, text: '' }))).toEqual(
+      plain?.modes?.map((m) => ({ ...m, text: '' })),
+    );
   });
 
   test('the text of a mode keeps its name', () => {
@@ -419,8 +460,14 @@ describe('You See a Guard Approach: modes with a name before the dash (CR 207.2d
   });
 
   test('a mode that reads as written is never stripped', () => {
-    const spell = readAll('Choose one —\n• Tap target creature.\n• Untap target creature.', 'instant').spell;
-    expect(spell?.modes?.map((m) => m.text)).toEqual(['Tap target creature.', 'Untap target creature.']);
+    const spell = readAll(
+      'Choose one —\n• Tap target creature.\n• Untap target creature.',
+      'instant',
+    ).spell;
+    expect(spell?.modes?.map((m) => m.text)).toEqual([
+      'Tap target creature.',
+      'Untap target creature.',
+    ]);
   });
 
   test.each([
@@ -453,7 +500,9 @@ describe('Surge of Salvation: a player and their permanents gain hexproof (CR 70
   });
 
   test('another group (SYNTHETIC)', () => {
-    expect(readAll('You and creatures you control gain hexproof until end of turn.', 'instant').spell).toMatchObject({
+    expect(
+      readAll('You and creatures you control gain hexproof until end of turn.', 'instant').spell,
+    ).toMatchObject({
       effect: {
         effects: [
           { kind: 'grantPlayerHexproof' },
@@ -499,7 +548,10 @@ describe('Surge of Salvation: a player and their permanents gain hexproof (CR 70
 
   test('one color, a target and a scope (SYNTHETIC)', () => {
     expect(
-      readAll('Prevent all combat damage that red sources would deal to target creature this turn.', 'instant').spell,
+      readAll(
+        'Prevent all combat damage that red sources would deal to target creature this turn.',
+        'instant',
+      ).spell,
     ).toMatchObject({
       targets: [{ id: 't1' }],
       effect: {
@@ -512,8 +564,10 @@ describe('Surge of Salvation: a player and their permanents gain hexproof (CR 70
 
   test('the old source filter of creatures is untouched', () => {
     expect(
-      readAll("Prevent all combat damage that would be dealt by creatures you don't control this turn.", 'instant')
-        .spell,
+      readAll(
+        "Prevent all combat damage that would be dealt by creatures you don't control this turn.",
+        'instant',
+      ).spell,
     ).toMatchObject({ effect: { kind: 'preventDamage', to: { kind: 'any' } } });
   });
 

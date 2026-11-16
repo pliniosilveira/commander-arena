@@ -272,7 +272,10 @@ export function checkInvariants(state: GameState): string[] {
       problems.push(`${id} remembers ${obj.kicks} kicks without having been kicked`);
     }
     // CR 107.3m (Hylda group 3): the X of the spell a permanent came from is remembered by a permanent only, and only when it was at least 1.
-    if (obj.castX !== undefined && (obj.zone !== 'battlefield' || !Number.isSafeInteger(obj.castX) || obj.castX < 1)) {
+    if (
+      obj.castX !== undefined &&
+      (obj.zone !== 'battlefield' || !Number.isSafeInteger(obj.castX) || obj.castX < 1)
+    ) {
       problems.push(`${id} remembers the X ${obj.castX} of a spell it cannot have come from`);
     }
     // CR 712.8a, 715.4: a face other than the front one is up only on the stack and the battlefield (or phased out, CR 702.26b: a phased-out permanent is

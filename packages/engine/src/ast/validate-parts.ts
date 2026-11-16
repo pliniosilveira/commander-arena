@@ -806,7 +806,11 @@ export function declareTargets(
           'a slot of targets with different controllers names objects (permanents), not players',
         );
       } else if ((what.filter.zone ?? 'battlefield') !== 'battlefield') {
-        issue(out, `${p}.what`, 'targets with different controllers are permanents on the battlefield');
+        issue(
+          out,
+          `${p}.what`,
+          'targets with different controllers are permanents on the battlefield',
+        );
       }
       if (
         spec.onePerOpponent !== undefined ||
@@ -1531,7 +1535,11 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           checkPlayerSelector(controlledBy, `${path}.filter.controlledBy`, scope, out);
         }
         if (rest.controller !== undefined) {
-          issue(out, `${path}.filter.controller`, 'controlledBy replaces controller: set one of them');
+          issue(
+            out,
+            `${path}.filter.controller`,
+            'controlledBy replaces controller: set one of them',
+          );
         }
         checkFilter(rest, `${path}.filter`, out);
       } else {

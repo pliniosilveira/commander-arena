@@ -46,7 +46,9 @@ export const EFFECT_SHUFFLE_INTO_LIBRARIES = defineRule<Clauses>({
   parse: (ctx, pos) => {
     const r = sequence(
       // Looked at first, so that a line that does not say so stops where it always did.
-      pattern(/(?=shuffle [^.]*? into (?:its owner['’]s library|their owners['’] libraries)(?![\p{L}\p{N}]))/iu),
+      pattern(
+        /(?=shuffle [^.]*? into (?:its owner['’]s library|their owners['’] libraries)(?![\p{L}\p{N}]))/iu,
+      ),
       literal('shuffle '),
       operands(SELF_OR_PERMANENT_OPERANDS, 'effect.shuffle-into-libraries'),
       pattern(/ into (its owner['’]s library|their owners['’] libraries)(?![\p{L}\p{N}])/iu),
@@ -76,7 +78,11 @@ export const EFFECT_TAP_OR_UNTAP = defineRule<Clauses>({
   id: 'effect.tap-or-untap',
   family: 'effect',
   leading: ['tap', 'you'],
-  cites: ['CR 701.26a (Tap and Untap)', 'CR 701.26b (Tap and Untap)', 'CR 608.2d (Resolving Spells and Abilities)'],
+  cites: [
+    'CR 701.26a (Tap and Untap)',
+    'CR 701.26b (Tap and Untap)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+  ],
   examples: [
     'tap or untap target creature',
     'you may tap or untap target creature',

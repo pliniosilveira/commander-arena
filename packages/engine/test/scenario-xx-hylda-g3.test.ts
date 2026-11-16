@@ -58,7 +58,9 @@ describe('Dream Raider: a count of the tapped creatures a target opponent contro
 
   test('draws one card for each tapped creature of that opponent, not for untapped ones or their own', () => {
     const g = board(2, 1);
-    g.act(0).cast(RAIDER, { targets: [{ player: 1 }] }).pay();
+    g.act(0)
+      .cast(RAIDER, { targets: [{ player: 1 }] })
+      .pay();
     g.passAll();
     g.expect.handSize(0, 2);
     g.expect.librarySize(0, 6);
@@ -67,7 +69,9 @@ describe('Dream Raider: a count of the tapped creatures a target opponent contro
 
   test('no tapped creature of theirs: nothing is drawn', () => {
     const g = board(0, 2);
-    g.act(0).cast(RAIDER, { targets: [{ player: 1 }] }).pay();
+    g.act(0)
+      .cast(RAIDER, { targets: [{ player: 1 }] })
+      .pay();
     g.passAll();
     g.expect.handSize(0, 0);
   });
@@ -114,7 +118,9 @@ describe('Mana Scholar: "When this creature enters, draw X cards" reads the X of
     // The permanent placed by the scenario was never cast: its castX is absent.
     const b = scenario();
     b.define(syntheticCard(SCHOLAR));
-    b.seat(0).library(...LIBRARY).battlefield(SCHOLAR, { label: 'scholar' });
+    b.seat(0)
+      .library(...LIBRARY)
+      .battlefield(SCHOLAR, { label: 'scholar' });
     b.seat(1).library(...LIBRARY);
     const g = b.at('precombatMain', { active: 0 }).build();
     expect(g.object('scholar').castX).toBeUndefined();
@@ -164,7 +170,7 @@ describe('Landless Hound: an intervening "if" about the lands (CR 603.4)', () =>
   });
 });
 
-describe('Tide Shuffler: shuffle itself and a creature with a stun counter into their owners\' libraries (CR 701.24, 108.3)', () => {
+describe("Tide Shuffler: shuffle itself and a creature with a stun counter into their owners' libraries (CR 701.24, 108.3)", () => {
   const board = () => {
     const b = scenario();
     b.define(syntheticCard(SHUFFLER));
@@ -187,7 +193,7 @@ describe('Tide Shuffler: shuffle itself and a creature with a stun counter into 
     ]);
   });
 
-  test('both go into their owners\' libraries', () => {
+  test("both go into their owners' libraries", () => {
     const g = board();
     g.act(0).activate(SHUFFLER).targets(['stunned']).pay();
     g.passAll();
@@ -300,7 +306,9 @@ describe('Spellcast Monk: a modal trigger of noncreature spells (CR 700.2, 603.3
 
   test('tap target creature', () => {
     const g = board();
-    g.act(0).cast(BOLT, { targets: [{ player: 1 }] }).pay();
+    g.act(0)
+      .cast(BOLT, { targets: [{ player: 1 }] })
+      .pay();
     g.act(0).chooseModes(0);
     g.act(0).chooseTargets('theirs');
     g.passAll();
@@ -310,15 +318,19 @@ describe('Spellcast Monk: a modal trigger of noncreature spells (CR 700.2, 603.3
 
   test('first strike and lifelink until end of turn', () => {
     const g = board();
-    g.act(0).cast(BOLT, { targets: [{ player: 1 }] }).pay();
+    g.act(0)
+      .cast(BOLT, { targets: [{ player: 1 }] })
+      .pay();
     g.act(0).chooseModes(1);
     g.passAll();
     g.expect.derived('monk', { keywords: ['firstStrike', 'lifelink'] });
   });
 
-  test('exile it, then return it to the battlefield tapped under its owner\'s control', () => {
+  test("exile it, then return it to the battlefield tapped under its owner's control", () => {
     const g = board();
-    g.act(0).cast(BOLT, { targets: [{ player: 1 }] }).pay();
+    g.act(0)
+      .cast(BOLT, { targets: [{ player: 1 }] })
+      .pay();
     g.act(0).chooseModes(2);
     g.passAll();
     g.expect.zone(MONK, 'battlefield', { seat: 0 });
@@ -510,8 +522,12 @@ describe('Warding Prayer: hexproof for a player and their permanents, and the da
     const g = board(0);
     g.act(0).cast(PRAYER).pay();
     g.passAll();
-    expect(g.state.continuousEffects.filter((e) => e.change.kind === 'playerHexproof')).toHaveLength(1);
+    expect(
+      g.state.continuousEffects.filter((e) => e.change.kind === 'playerHexproof'),
+    ).toHaveLength(1);
     g.advanceTo('precombatMain', { turn: 'next' });
-    expect(g.state.continuousEffects.filter((e) => e.change.kind === 'playerHexproof')).toHaveLength(0);
+    expect(
+      g.state.continuousEffects.filter((e) => e.change.kind === 'playerHexproof'),
+    ).toHaveLength(0);
   });
 });
