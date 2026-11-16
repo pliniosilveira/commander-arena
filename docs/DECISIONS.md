@@ -3270,7 +3270,7 @@ Numbers are references; entries are never deleted. D-118 and D-119 are cited as 
 
 ## D-529: Behold as a spell's additional cost (2026-11-16)
 - Context: Countersculpt can be cast by revealing a Jace from hand or among permanents the caster controls, or by paying {1}; the existing Behold primitive handled effect instructions but not spell costs.
-- Decision: allow one `behold` among spell additional costs and their cost-choice alternatives. Affordability checks for a matching card or permanent before offering the spell; payment uses the existing Behold choice, reveals a hand card, and handles a controlled permanent as its own zone.
+- Decision: allow one `behold` among spell additional costs and their cost-choice alternatives. Affordability checks for a matching card or permanent before offering the spell; payment uses the existing Behold choice, reveals a hand card, and handles a controlled permanent as its own zone. The parser reads "behold a Jace" (a planeswalker type alone, CR 205.3j, 701.4) in `cost.behold` itself, as a planeswalker with that subtype, because the noun grammar leaves a bare planeswalker type unread (it names no group of permanents), which is what stopped the whole line at "or pay {1}.".
 - Alternatives: treat Behold as an effect after casting (the extra cost would not be paid before the spell is cast); model it as an activated-ability cost (the card uses it as a spell cost).
 - Consequences: other spells may use the same additional-cost primitive, while activated-ability Behold costs remain unsupported. `ENGINE_VERSION` and `PARSER_VERSION` are bumped; corpus snapshots and derive digests must be regenerated.
 

@@ -1,9 +1,8 @@
 /** Words for the costs of an "As this enters, you may pay ..." question (the engine's `Cost[]`). */
-import type { Cost, ObjectFilter } from '@commander-arena/engine';
+import type { Cost } from '@commander-arena/engine';
 import { amountPhrase } from './amount-text';
+import { NUMBER_WORDS, nounsOf, plural, tappedWhat } from './cost-words';
 import { beholdQuality } from './dragons-text';
-import { thingsPhrase } from './filter-text';
-import { COLOR_NAMES } from './words';
 
 /**
  * One cost as it reads after "Pay": "2 life". Only paying life reaches the page today; any other
@@ -91,21 +90,6 @@ export function unlessCostText(cost: readonly Cost[]): string {
     .join(' and ');
 }
 
-/** "artifact or creature", "red creature", "nonland permanent": the nouns of a filter (no article). */
-function nounsOf(filter: ObjectFilter): string {
-  if (filter.anyOf !== undefined && filter.anyOf.length > 0) {
-    const alternatives = filter.anyOf.map(nounsOf);
-    return [...new Set(alternatives)].join(' or ');
-  }
-  const kinds = filter.types ?? [];
-  const base = kinds.length === 0 ? 'permanent' : kinds.join(' or ');
-  const not = (filter.notTypes ?? []).map((t) => `non${t}`).join(' ');
-  const colors = (filter.colors ?? []).map((c) => COLOR_NAMES[c] ?? c).join(' or ');
-  const supers = (filter.supertypes ?? []).join(' ');
-  const subtypes = (filter.subtypes ?? []).join(' ');
-  return [not, colors, supers, subtypes, base].filter((w) => w !== '').join(' ');
-}
-
 const capitalize = (text: string): string => `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
 /**
@@ -128,39 +112,6 @@ export function sacrificeWhat(
   }
   if (what.other === true) return `another ${words}`;
   return /^[aeiou]/i.test(words) ? `an ${words}` : `a ${words}`;
-}
-
-const NUMBER_WORDS: Readonly<Record<number, string>> = {
-  2: 'two',
-  3: 'three',
-  4: 'four',
-  5: 'five',
-  6: 'six',
-};
-
-/** The plural of a noun phrase: "artifact" is "artifacts", "Zombie creature" "Zombie creatures". */
-const plural = (words: string): string => (words.endsWith('s') ? words : `${words}s`);
-
-/**
- * "two untapped artifacts you control", "an untapped Zombie you control", "another untapped creature you
- * control", "three untapped Elves you control" (digits with `numeral`): what a tap cost names (D-133), composed from the filter with the
- * words of `filter-text.ts` (so the plural of any creature type reads right). A filter those words cannot say
- * (an `anyOf`) falls back to its nouns.
- */
-export function tappedWhat(filter: ObjectFilter, count: number, numeral = false): string {
-  const amount = (n: number): string => (numeral ? String(n) : (NUMBER_WORDS[n] ?? String(n)));
-  const things = thingsPhrase({ ...filter, tapped: false, controller: 'you' }, count !== 1);
-  if (things === null) {
-    const words = nounsOf(filter);
-    if (count === 1) {
-      const other = filter.other === true ? 'another' : /^[aeiou]/i.test(words) ? 'an' : 'a';
-      return `${other} untapped ${words} you control`;
-    }
-    return `${amount(count)} untapped ${plural(words)} you control`;
-  }
-  if (count !== 1) return `${amount(count)} ${things}`;
-  if (things.startsWith('other ')) return `another ${things.slice('other '.length)}`;
-  return /^[aeiou]/i.test(things) ? `an ${things}` : `a ${things}`;
 }
 
 const countText = (n: number, one: string, many: string): string =>
@@ -287,3 +238,5 @@ export function additionalCostChoiceText(
   const first = additionalWayText(choice[0]);
   return `${first.replace(/^./, (c) => c.toUpperCase())}, or ${additionalWayText(choice[1])}`;
 }
+
+export { tappedWhat };

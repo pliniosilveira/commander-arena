@@ -5612,19 +5612,10 @@
     "fc3353e9-fe24-4ca7-bff8-9da767f2903a": {
       "name": "Countersculpt",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "As an additional cost to cast ~, behold a Jace or pay {1}.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.a-greatest-permanent"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "1dd12079"
+      "ast": "5388b483"
     },
     "fc9ec820-4245-4a96-b009-5308a818ca58": {
       "name": "Watery Grave",
@@ -5853,7 +5844,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 381,
+      "supported": 382,
       "total": 399
     }
   }
