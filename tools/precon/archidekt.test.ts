@@ -5,6 +5,9 @@ import {
   clean,
   deckFromApi,
   deckIdsFromListing,
+  isSameList,
+  listDiff,
+  listHash,
   preconId,
   preconIssue,
   sameDeck,
@@ -100,7 +103,7 @@ describe('the issue', () => {
 describe('the same deck', () => {
   const deck = Array.from({ length: 100 }, (_, i) => `Card ${i}`);
 
-  test('is a list that shares at least nine tenths of its names, whatever the case', () => {
+  test('is a list that shares at least four fifths of its names, whatever the case', () => {
     expect(
       sameDeck(
         deck,
@@ -118,5 +121,43 @@ describe('the same deck', () => {
     ).toBe(false);
     expect(sameDeck(deck, [])).toBe(false);
     expect(sameDeck([], [])).toBe(false);
+  });
+});
+
+describe('what differs between two lists', () => {
+  const ours = [
+    { name: 'Alpha', count: 1 },
+    { name: 'Beta', count: 2 },
+    { name: 'Gamma', count: 1 },
+  ];
+  const theirs = [
+    { name: 'alpha', count: 1 },
+    { name: 'Beta', count: 3 },
+    { name: 'Delta', count: 1 },
+  ];
+
+  test('is what to add, what to remove and the counts that changed, by name without case', () => {
+    const diff = listDiff(ours, theirs);
+    expect(diff.added).toEqual([{ name: 'Delta', count: 1 }]);
+    expect(diff.removed).toEqual([{ name: 'Gamma', count: 1 }]);
+    expect(diff.changed).toEqual([{ name: 'Beta', ours: 2, theirs: 3 }]);
+    expect(isSameList(diff)).toBe(false);
+    expect(
+      isSameList(
+        listDiff(
+          ours,
+          ours.map((e) => ({ ...e, name: e.name.toUpperCase() })),
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  test('has a six digit fingerprint that ignores order and case and changes with the list', () => {
+    const hash = listHash(ours);
+    expect(hash).toMatch(/^[0-9a-f]{6}$/);
+    expect(listHash([...ours].reverse().map((e) => ({ ...e, name: e.name.toLowerCase() })))).toBe(
+      hash,
+    );
+    expect(listHash(theirs)).not.toBe(hash);
   });
 });

@@ -81,19 +81,86 @@ export function deckFromApi(id: number, answer: unknown): ArchidektDeck | string
   return { id, name: clean(name), text: parts.join('\n\n'), cards: count };
 }
 
+/** A card of a decklist: the name and how many. */
+export interface Entry {
+  readonly name: string;
+  readonly count: number;
+}
+
+const keyOf = (name: string): string => name.trim().toLowerCase();
+
 /**
- * True when two decklists are the same deck: at least 90 percent of the larger list's distinct card names are in both (two different precons share a few
- * staples, never nine tenths of a deck). Names are compared without case; the lists are the names only, however each source writes the lines.
+ * True when two decklists are the same deck, possibly one revision apart: at least 80 percent of the larger list's distinct card names are in both (two
+ * different precons share a few staples, never four fifths of a deck). Names are compared without case.
  */
 export function sameDeck(a: readonly string[], b: readonly string[]): boolean {
-  const key = (name: string) => name.trim().toLowerCase();
-  const left = new Set(a.map(key));
-  const right = new Set(b.map(key));
+  const left = new Set(a.map(keyOf));
+  const right = new Set(b.map(keyOf));
   const larger = Math.max(left.size, right.size);
   if (larger === 0) return false;
   let shared = 0;
   for (const name of left) if (right.has(name)) shared += 1;
-  return shared / larger >= 0.9;
+  return shared / larger >= 0.8;
+}
+
+export interface ListDiff {
+  /** On Archidekt, not in the app. */
+  readonly added: readonly Entry[];
+  /** In the app, not on Archidekt. */
+  readonly removed: readonly Entry[];
+  /** In both with another count: the count in the app, then the count on Archidekt. */
+  readonly changed: readonly {
+    readonly name: string;
+    readonly ours: number;
+    readonly theirs: number;
+  }[];
+}
+
+const merged = (entries: readonly Entry[]): Map<string, Entry> => {
+  const map = new Map<string, Entry>();
+  for (const e of entries) {
+    const key = keyOf(e.name);
+    const held = map.get(key);
+    map.set(key, { name: held?.name ?? e.name, count: (held?.count ?? 0) + e.count });
+  }
+  return map;
+};
+
+/** What differs between the list the app has and the list on Archidekt, by name and count; every list sorted by name. */
+export function listDiff(ours: readonly Entry[], theirs: readonly Entry[]): ListDiff {
+  const mine = merged(ours);
+  const other = merged(theirs);
+  const byName = (x: { name: string }, y: { name: string }) =>
+    x.name < y.name ? -1 : x.name > y.name ? 1 : 0;
+  const added: Entry[] = [];
+  const removed: Entry[] = [];
+  const changed: { name: string; ours: number; theirs: number }[] = [];
+  for (const [key, entry] of other) {
+    const have = mine.get(key);
+    if (have === undefined) added.push(entry);
+    else if (have.count !== entry.count)
+      changed.push({ name: entry.name, ours: have.count, theirs: entry.count });
+  }
+  for (const [key, entry] of mine) if (!other.has(key)) removed.push(entry);
+  return {
+    added: added.sort(byName),
+    removed: removed.sort(byName),
+    changed: changed.sort(byName),
+  };
+}
+
+export const isSameList = (diff: ListDiff): boolean =>
+  diff.added.length === 0 && diff.removed.length === 0 && diff.changed.length === 0;
+
+/** Six hex digits that name a decklist (names and counts, in any order): a changed list gets a new one, so an update issue is not opened twice for the same list. */
+export function listHash(entries: readonly Entry[]): string {
+  const lines = [...merged(entries).values()].map((e) => `${e.count} ${keyOf(e.name)}`).sort();
+  let hash = 0x811c9dc5;
+  for (const char of lines.join('\n')) {
+    hash ^= char.codePointAt(0) ?? 0;
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0').slice(0, 6);
 }
 
 /** An id for a ready-made deck: lower-case letters, digits and single dashes. */
@@ -115,6 +182,13 @@ export interface IssueInput {
   readonly why: readonly string[];
   /** Names the card list did not match. */
   readonly notFound: readonly string[];
+  /** Set when the app already offers this deck: its precon id and name, and how its list differs from the one on Archidekt. */
+  readonly installed?: {
+    readonly id: string;
+    readonly name: string;
+    readonly diff: ListDiff;
+    readonly hash: string;
+  };
 }
 
 export interface PreconIssue {
@@ -124,19 +198,55 @@ export interface PreconIssue {
   readonly deckId: number;
   /** True when the title starts with "deck support": the triage workflow checks it and the routine builds it. */
   readonly needsSupport: boolean;
+  /**
+   * What the issue is, as a stable key: "precon-issues:deck=<id>:add" for a deck the app lacks, "precon-issues:deck=<id>:update:<hash>" for one list of a deck
+   * the app has. It is in the body as an HTML comment, so a later run finds an issue it opened before even if the title was edited, and opens none twice.
+   */
+  readonly marker: string;
 }
+
+const entryLine = (e: Entry): string => `${e.count}x ${clean(e.name)}`;
 
 /**
  * The issue for one deck. A deck with an unsupported card is a "deck support" issue in the shape of the one the app's button writes (the decklist, then
  * `Unsupported cards (N): a; b`), so the triage workflow fetches the cards' data and the routine builds them. A deck the engine already runs completely
- * only asks for its place among the ready-made decks, under a title that does not start the routine.
+ * only asks for its place among the ready-made decks, under a title that does not start the routine. A deck the app already offers but whose list differs
+ * from Archidekt's asks for the precon to be updated (`installed` is set): "update precon <name> (list <hash>)", or "deck support" when the new list has a
+ * card the engine cannot run.
  */
 export function preconIssue(input: IssueInput): PreconIssue {
-  const { deck, unsupported, why, notFound } = input;
+  const { deck, unsupported, why, notFound, installed } = input;
   const needsSupport = unsupported.length > 0;
-  const title = `${needsSupport ? 'deck support' : 'precon'} ${deck.name}`;
-  const id = preconId(deck.name);
+  const id = installed?.id ?? preconId(deck.name);
+  const name = installed?.name ?? deck.name;
+  const title =
+    installed === undefined
+      ? `${needsSupport ? 'deck support' : 'precon'} ${deck.name}`
+      : `${needsSupport ? 'deck support' : 'update precon'} ${name} (list ${installed.hash})`;
+  const marker =
+    installed === undefined
+      ? `precon-issues:deck=${deck.id}:add`
+      : `precon-issues:deck=${deck.id}:update:${installed.hash}`;
   const parts: string[] = [`${deck.text}`, '---'];
+  if (installed !== undefined) {
+    const { diff } = installed;
+    const list = (heading: string, lines: readonly string[]) =>
+      lines.length === 0 ? [] : [`${heading}:`, ...lines.map((l) => `- ${l}`), ''];
+    parts.push(
+      [
+        `## Update the precon "${name}"`,
+        '',
+        `The app already offers this deck (id \`${id}\`), but its list differs from the one on Archidekt, so the precon is out of date (or the other way round: check ${ARCHIDEKT}/decks/${deck.id}).`,
+        '',
+        ...list('Cards to add', diff.added.map(entryLine)),
+        ...list('Cards to remove', diff.removed.map(entryLine)),
+        ...list(
+          'Count changes (in the app, then on Archidekt)',
+          diff.changed.map((c) => `${clean(c.name)}: ${c.ours} -> ${c.theirs}`),
+        ),
+      ].join('\n'),
+    );
+  }
   if (needsSupport) {
     parts.push(`Unsupported cards (${unsupported.length}): ${unsupported.join('; ')}`);
     parts.push(`Unsupported cards, and why each is blocked:\n\n${why.join('\n\n')}`);
@@ -144,19 +254,40 @@ export function preconIssue(input: IssueInput): PreconIssue {
     parts.push('The game already supports every card of this deck.');
   }
   if (notFound.length > 0) parts.push(`Names not found: ${notFound.join('; ')}`);
+  if (installed === undefined) {
+    parts.push(
+      [
+        '## Add it to the ready-made decks',
+        '',
+        'This is a Commander precon. Once every card is supported, please also **add the deck as a prebuilt deck (a precon) in the app, so everyone can play it** from Quick start:',
+        '',
+        `- id \`${id}\`, name "${deck.name}", and a one-sentence blurb about the deck;`,
+        '- the decklist above goes to `decks/` and the card data to a snapshot, the way `apps/web/src/precons/snapshots/README.md` and `docs/CORPUS.md` ("Precon snapshots") describe;',
+        `- the snapshot is made with \`pnpm precon:snapshot --file <oracle_cards file> --deck decks/${id}.txt --id ${id} --name "${deck.name}" --blurb "<one sentence>"\`, which needs Scryfall's bulk file (the owner runs it, or a runner does).`,
+      ].join('\n'),
+    );
+  } else {
+    parts.push(
+      [
+        '## How to update it',
+        '',
+        `Once every card is supported, change \`decks/${id}.txt\` (if the deck has one) to the list above and make the snapshot again, keeping the id, the name and the blurb of the precon:`,
+        '',
+        `\`pnpm precon:snapshot --file <oracle_cards file> --deck decks/${id}.txt --id ${id} --name "${name}" --blurb "<the blurb it has now>"\``,
+        '',
+        "The snapshot needs Scryfall's bulk file (the owner runs it, or a runner does). The tests over the shipped snapshots fail until the list is a valid Commander deck of supported cards.",
+      ].join('\n'),
+    );
+  }
   parts.push(
-    [
-      '## Add it to the ready-made decks',
-      '',
-      'This is a Commander precon. Once every card is supported, please also **add the deck as a prebuilt deck (a precon) in the app, so everyone can play it** from Quick start:',
-      '',
-      `- id \`${id}\`, name "${deck.name}", and a one-sentence blurb about the deck;`,
-      '- the decklist above goes to `decks/` and the card data to a snapshot, the way `apps/web/src/precons/snapshots/README.md` and `docs/CORPUS.md` ("Precon snapshots") describe;',
-      `- the snapshot is made with \`pnpm precon:snapshot --file <oracle_cards file> --deck decks/${id}.txt --id ${id} --name "${deck.name}" --blurb "<one sentence>"\`, which needs Scryfall's bulk file (the owner runs it, or a runner does).`,
-    ].join('\n'),
+    `Source: ${ARCHIDEKT}/decks/${deck.id} (a precon listed on ${ARCHIDEKT}/commander-precons). Opened by the "Precon issues" workflow.\n\n<!-- ${marker} -->`,
   );
-  parts.push(
-    `Source: ${ARCHIDEKT}/decks/${deck.id} (a precon listed on ${ARCHIDEKT}/commander-precons). Opened by the "Precon issues" workflow.`,
-  );
-  return { title, body: parts.join('\n\n'), deckName: deck.name, deckId: deck.id, needsSupport };
+  return {
+    title,
+    body: parts.join('\n\n'),
+    deckName: deck.name,
+    deckId: deck.id,
+    needsSupport,
+    marker,
+  };
 }
