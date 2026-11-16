@@ -1,5 +1,5 @@
 /**
- * Conditions of group 1 of the Hylda deck (issue 42, D-1500): "it isn't being declared as an attacker" (Verity Circle), the part of the event "a creature an opponent controls becomes
+ * Conditions of group 1 of the Hylda deck (issue 42, D-510): "it isn't being declared as an attacker" (Verity Circle), the part of the event "a creature an opponent controls becomes
  * tapped" that leaves out the tapping of attackers as they are declared (CR 508.1f). It is read after the "if" of the "if" that follows the trigger (the segmenter's intervening "if",
  * CR 603.4), and the lowering of the trigger turns it into a part of the engine's trigger, which is read once as the event happens (it cannot be read later: nothing says afterwards how
  * the permanent became tapped).

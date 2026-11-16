@@ -14,7 +14,7 @@ export interface NormalizeOptions {
    */
   readonly legendary: boolean;
   /**
-   * The face is a creature (D-1505): a legendary creature named "<Name> of <Title>" calls itself by its first word ("Sharae of Numbing Depths" is "Sharae"). Left out for any other
+   * The face is a creature (D-515): a legendary creature named "<Name> of <Title>" calls itself by its first word ("Sharae of Numbing Depths" is "Sharae"). Left out for any other
    * face: a planeswalker "Gideon of the Trials" is not "Gideon" in its text, where "a Gideon planeswalker" is a type of permanent.
    */
   readonly creature?: boolean;
@@ -254,7 +254,7 @@ function givenName(name: string): string | undefined {
 
 /**
  * "<Name> of <Title>": a legendary creature named for a person and the place or thing it is of, which Oracle text shortens to the first word ("When Sharae enters": Sharae of Numbing
- * Depths, D-1505). The title starts with a capital (a "of the" is a place of the plane, not a name: "Liliana of the Veil"), and the word is no possessive and no type of permanent.
+ * Depths, D-515). The title starts with a capital (a "of the" is a place of the plane, not a name: "Liliana of the Veil"), and the word is no possessive and no type of permanent.
  */
 function creatureOfName(name: string): string | undefined {
   const m = /^(\p{Lu}[\p{L}'’-]{2,}) of \p{Lu}/u.exec(name);

@@ -77,7 +77,7 @@ export interface Scope {
   ) => void;
   /** Validates the effect kinds of the Dragons slice (D-151, `validate-dragons.ts`, set by validate.ts); true when it knew the kind. */
   readonly checkEffectExt: (e: Effect, path: string, scope: Scope, out: AstIssue[]) => boolean;
-  /** Validates the modes of a modal reflexive ability (D-1501, `validate-modes.ts`, set by validate.ts); absent where no ability of the engine has one. */
+  /** Validates the modes of a modal reflexive ability (D-511, `validate-modes.ts`, set by validate.ts); absent where no ability of the engine has one. */
   readonly checkModes?: (
     modes: readonly SpellMode[] | undefined,
     choose: ModeChoice | undefined,
@@ -85,7 +85,7 @@ export interface Scope {
     scopeOf: (targets: Scope['targets']) => Scope,
     out: AstIssue[],
   ) => void;
-  /** True in the `effect` of a `mayPay`: the cost has been paid, which `reflexive` with `afterPayment` reads (D-1501, CR 603.12). */
+  /** True in the `effect` of a `mayPay`: the cost has been paid, which `reflexive` with `afterPayment` reads (D-511, CR 603.12). */
   readonly paidAvailable?: boolean;
   /**
    * True after an effect that moves objects (`exile`, `destroy`, `moveToZone`) in the same
@@ -585,7 +585,7 @@ export function declareTargets(
   crossZoneAllowed = false,
   /** D-386: only the targets of a spell's own text can take as many targets as the X announced (CR 601.2b, 601.2c). */
   countXAllowed = false,
-  /** D-1503: only the targets of a triggered ability whose event carries a number (a scry) can take up to as many targets as it (CR 603.3d). */
+  /** D-513: only the targets of a triggered ability whose event carries a number (a scry) can take up to as many targets as it (CR 603.3d). */
   triggerAmountAllowed = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
@@ -725,7 +725,7 @@ export function declareTargets(
       }
     }
     if (spec.upToTriggerAmount !== undefined) {
-      // D-1503, CR 603.3d, 701.22: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way".
+      // D-513, CR 603.3d, 701.22: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way".
       if (spec.upToTriggerAmount !== true) {
         issue(out, `${p}.upToTriggerAmount`, 'upToTriggerAmount must be true when present');
       } else if (!triggerAmountAllowed) {
@@ -3499,7 +3499,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         `${path}.cost`,
         out,
       );
-      // D-1501 (CR 603.12): "you may pay {1}. When you do, ...": the effect runs when the payment was made.
+      // D-511 (CR 603.12): "you may pay {1}. When you do, ...": the effect runs when the payment was made.
       checkEffect(e.effect, `${path}.effect`, { ...scope, paidAvailable: true }, out);
       break;
     case 'cumulativeUpkeep':
@@ -4491,7 +4491,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 603.12 (D-135): a triggered ability of its own: its targets are its own, and it knows nothing of what the
       // resolution that created it chose or moved (the source is the same, "it" the card the source became).
       if (e.afterPayment !== undefined) {
-        // D-1501 (CR 603.12): "you may pay {1}. When you do, ...": the payment of the `mayPay` this is the effect of.
+        // D-511 (CR 603.12): "you may pay {1}. When you do, ...": the payment of the `mayPay` this is the effect of.
         if (e.afterPayment !== true)
           issue(out, `${path}.afterPayment`, 'afterPayment must be true when present');
         if (scope.paidAvailable !== true) {
@@ -4543,7 +4543,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         ...(scope.checkModes === undefined ? {} : { checkModes: scope.checkModes }),
       });
       if (e.modes !== undefined || e.chooseModes !== undefined) {
-        // D-1501 (CR 603.12, 700.2b): "When you do, choose one —": a modal reflexive ability keeps its effects in the modes.
+        // D-511 (CR 603.12, 700.2b): "When you do, choose one —": a modal reflexive ability keeps its effects in the modes.
         if (e.effect?.kind !== 'sequence' || e.effect.effects.length !== 0) {
           issue(
             out,

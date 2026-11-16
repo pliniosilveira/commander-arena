@@ -148,7 +148,7 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
         });
       }
     } else if (k.from === 'colorOfChoice' || k.from === 'cardTypeOfChoice') {
-      // D-451, D-1504: asked as an effect resolves; a static ability or a printed keyword has nothing to ask.
+      // D-451, D-514: asked as an effect resolves; a static ability or a printed keyword has nothing to ask.
       issue(
         out,
         `${path}.from`,

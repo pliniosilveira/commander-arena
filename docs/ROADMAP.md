@@ -449,7 +449,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The mode name before the dash is read as a flavor word only when the mode reads without it; a name with a cost is Tiered (D-433).
 - The rulings of the ten cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Borrowing 100,000 Arrows has the same text as Theft of Dreams in the corpus (`golden.jsonl`, from the issue); no second part was found in it.
 
-## The Hylda deck, group 1 (issue 42, D-1500 to D-1506)
+## The Hylda deck, group 1 (issue 42, D-510 to D-516)
 
 - `becomesTapped` with `by` reads the player who taps: a tap by an effect, an ability cost, a mana ability, a crew or other tap cost, a convoke-style cost, an attack declaration and a regeneration. A permanent tapped by no player (none exists today) would have no `by`. "An opponent taps" is built (SYNTHETIC) but no real card is read for it.
 - "Whenever you tap one or more untapped creatures ..." is one occurrence for the events of one engine step (one resolution, one declaration); two taps by two separate effects are two occurrences, as CR 603.2c has it.

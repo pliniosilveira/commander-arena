@@ -1,5 +1,5 @@
 /**
- * The words of group 1 of the Hylda deck (D-1500 to D-1504) as pure models: the triggers of tapping (by you, one or more, not as an attacker) and of scrying, the gist of the
+ * The words of group 1 of the Hylda deck (D-510 to D-514) as pure models: the triggers of tapping (by you, one or more, not as an attacker) and of scrying, the gist of the
  * reflexive abilities (a modal one, a targeted one, "up to that many targets"), and the question of the card type of "gains protection from the card type of your choice" (a
  * `chooseOption` decision of purpose 'protectionCardType', which goes through the dialog of the named options) with its log line. Read from the engine's SYNTHETIC cards, so a wording
  * that drifts from the AST fails here. No DOM.

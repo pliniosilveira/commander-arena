@@ -28,7 +28,7 @@ const PROTECTION_QUALITY: Parser<NonNullable<IrKeywordArg['protection']>> = choi
     pattern(/protection from the color of your choice(?![\p{L}\p{N}])/iu),
     (): NonNullable<IrKeywordArg['protection']> => ({ choice: 'color' }),
   ),
-  // D-1504 (CR 702.16a): "protection from the card type of your choice", one of the nine card types, chosen as the effect resolves.
+  // D-514 (CR 702.16a): "protection from the card type of your choice", one of the nine card types, chosen as the effect resolves.
   map(
     pattern(/protection from the card type of your choice(?![\p{L}\p{N}])/iu),
     (): NonNullable<IrKeywordArg['protection']> => ({ choice: 'cardType' }),

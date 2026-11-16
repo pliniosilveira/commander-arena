@@ -2221,7 +2221,7 @@ function runEffect(
       if (givesProtectionOfChoice(effect)) {
         return done(state, [], [{ kind: 'protectionColor', effect, chosen: null }]);
       }
-      // D-1504 (CR 702.16a, 608.2d): "gains protection from the card type of your choice": the same, with a card type.
+      // D-514 (CR 702.16a, 608.2d): "gains protection from the card type of your choice": the same, with a card type.
       if (givesProtectionOfCardTypeChoice(effect)) {
         return done(state, [], [{ kind: 'protectionCardType', effect, chosen: null }]);
       }

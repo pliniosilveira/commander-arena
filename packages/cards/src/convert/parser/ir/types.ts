@@ -180,7 +180,7 @@ export interface IrNoun extends IrNode {
    */
   readonly upToThatMany?: true;
   /**
-   * "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (Hylda deck group 1, D-1503, CR 603.3d): a target noun of a
+   * "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (Hylda deck group 1, D-513, CR 603.3d): a target noun of a
    * triggered ability with as many targets, at most, as the number its event carries (the engine's `upToTriggerAmount`); it has no count of its own.
    */
   readonly upToTriggerAmount?: true;
@@ -518,7 +518,7 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'opponentsAtLeast'; readonly atLeast: IrAmount }
     // "~ was kicked", "it was kicked" (CR 702.33d); `who` is the word the text used for the object
     | { readonly kind: 'kicked'; readonly who: 'self' | 'it' }
-    // "it isn't being declared as an attacker" (Hylda deck group 1, D-1500, CR 508.1f): part of the event of "becomes tapped", read by the trigger's lowering
+    // "it isn't being declared as an attacker" (Hylda deck group 1, D-510, CR 508.1f): part of the event of "becomes tapped", read by the trigger's lowering
     | { readonly kind: 'notDeclaredAttacker' }
     // "you control a commander" (CR 903.3d), stage P13; stage P29: "you control your commander" (`yours`, CR 903.3)
     | { readonly kind: 'controlCommander'; readonly yours?: true }
@@ -1113,7 +1113,7 @@ export interface IrTrigger extends IrNode {
    */
   readonly whileCondition?: IrCondition;
   /**
-   * 'becomesTapped' (Hylda deck group 1, D-1500, CR 603.2c): "Whenever you tap one or more untapped creatures your opponents control": one trigger for the permanents
+   * 'becomesTapped' (Hylda deck group 1, D-510, CR 603.2c): "Whenever you tap one or more untapped creatures your opponents control": one trigger for the permanents
    * tapped together, whatever their number. The player who taps is the `actor` ("you tap").
    */
   readonly batch?: true;
@@ -1524,7 +1524,7 @@ export type IrAbility =
       /** "When ~ enters, choose one —" and its bullets (stage P19, CR 700.2b). */
       readonly modal?: IrModes;
       /**
-       * "..., you may pay {1}. When you do, choose one —" and its bullets (Hylda deck group 1, D-1501, CR 603.12, 700.2b): the body is the sentences before "When you do" (the
+       * "..., you may pay {1}. When you do, choose one —" and its bullets (Hylda deck group 1, D-511, CR 603.12, 700.2b): the body is the sentences before "When you do" (the
        * offer to pay) and these are the modes of the reflexive ability the payment creates.
        */
       readonly reflexiveModal?: IrModes;

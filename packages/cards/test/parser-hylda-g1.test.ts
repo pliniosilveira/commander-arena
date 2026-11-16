@@ -1,4 +1,4 @@
-// The Hylda deck (issue 42), group 1 (D-1500 to D-1504): the lines of Hylda of the Icy Crown, Icewrought Sentry, Sharae of Numbing Depths, Verity Circle, Hammers of Moradin, Elvish Mariner
+// The Hylda deck (issue 42), group 1 (D-510 to D-514): the lines of Hylda of the Icy Crown, Icewrought Sentry, Sharae of Numbing Depths, Verity Circle, Hammers of Moradin, Elvish Mariner
 // and Pippin, Guard of the Citadel. The real lines are the Oracle text of the acceptance cards of the golden corpus read through the whole pipeline; the other lines are SYNTHETIC siblings
 // and the near misses the grammar must not read. The engine runs what is lowered in convert-grammar-engine-hylda-g1.test.ts.
 import { describe, expect, test, vi } from 'vitest';
@@ -26,7 +26,7 @@ const NOT_READ = (text: string, type: Parameters<typeof read>[1] = 'creature') =
 
 const OPPONENT_CREATURE = { types: ['creature'], controller: 'opponent' };
 
-describe('"Whenever you tap an untapped creature an opponent controls" (D-1500, CR 701.26a)', () => {
+describe('"Whenever you tap an untapped creature an opponent controls" (D-510, CR 701.26a)', () => {
   test('the real line of Icewrought Sentry: +2/+1 until end of turn', () => {
     expect(
       readAll(
@@ -118,7 +118,7 @@ describe('"Whenever you tap an untapped creature an opponent controls" (D-1500, 
   });
 });
 
-describe('"Whenever a creature an opponent controls becomes tapped, if it isn\'t being declared as an attacker" (D-1500, CR 508.1f)', () => {
+describe('"Whenever a creature an opponent controls becomes tapped, if it isn\'t being declared as an attacker" (D-510, CR 508.1f)', () => {
   const LINE =
     "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, you may draw a card.";
 
@@ -157,7 +157,7 @@ describe('"Whenever a creature an opponent controls becomes tapped, if it isn\'t
   });
 });
 
-describe('"Whenever you scry" and "up to X target nonland permanents" (D-1503, CR 701.22, 603.3d)', () => {
+describe('"Whenever you scry" and "up to X target nonland permanents" (D-513, CR 701.22, 603.3d)', () => {
   const LINE =
     'Whenever you scry, tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way.';
 
@@ -208,7 +208,7 @@ describe('"Whenever you scry" and "up to X target nonland permanents" (D-1503, C
   });
 });
 
-describe('"for each opponent, tap up to one target creature that player controls" (D-1502, CR 115.1)', () => {
+describe('"for each opponent, tap up to one target creature that player controls" (D-512, CR 115.1)', () => {
   test('the real line of Hammers of Moradin: one slot, at most one target of each opponent', () => {
     expect(
       readAll(
@@ -244,7 +244,7 @@ describe('"for each opponent, tap up to one target creature that player controls
   });
 });
 
-describe('"you may pay {1}. When you do, ..." (D-1501, CR 603.12)', () => {
+describe('"you may pay {1}. When you do, ..." (D-511, CR 603.12)', () => {
   const SENTRY_LINE =
     'Whenever ~ attacks, you may pay {1}{U}. When you do, tap target creature an opponent controls.';
   const HYLDA_LINE =
@@ -350,7 +350,7 @@ describe('"you may pay {1}. When you do, ..." (D-1501, CR 603.12)', () => {
   });
 });
 
-describe('"gains protection from the card type of your choice" (D-1504, CR 702.16a, 608.2d)', () => {
+describe('"gains protection from the card type of your choice" (D-514, CR 702.16a, 608.2d)', () => {
   const LINE =
     '{T}: Another target creature you control gains protection from the card type of your choice until end of turn.';
 
@@ -413,7 +413,7 @@ describe('"gains protection from the card type of your choice" (D-1504, CR 702.1
   });
 });
 
-describe('a legendary creature named for a person and a place (D-1505)', () => {
+describe('a legendary creature named for a person and a place (D-515)', () => {
   const NAME = 'Sharae of Numbing Depths';
   const TEXT = 'When Sharae enters, tap target creature an opponent controls.';
 

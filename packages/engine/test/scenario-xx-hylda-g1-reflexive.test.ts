@@ -1,4 +1,4 @@
-// "You may pay {1}. When you do, choose one — ..." and "Whenever this creature attacks, you may pay {1}{U}. When you do, tap target creature an opponent controls." (D-1501, group 1 of the
+// "You may pay {1}. When you do, choose one — ..." and "Whenever this creature attacks, you may pay {1}{U}. When you do, tap target creature an opponent controls." (D-511, group 1 of the
 // Hylda deck): a reflexive ability that the payment itself creates, with its modes or its target chosen as it goes on the stack.
 // Pins: CR 603.12 (a reflexive triggered ability triggers because of what happened earlier in the resolution that created it, here the payment), CR 603.3c and 700.2b (the modes of a modal
 // triggered ability are chosen as it is put on the stack), CR 603.3d (its targets are chosen then), CR 118.3 (a cost that cannot be paid is not paid, so nobody is asked), CR 701.22 (scry).

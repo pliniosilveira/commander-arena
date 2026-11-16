@@ -611,7 +611,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'crimeCommitted':
     case 'tokenCreated':
     case 'scries':
-      // D-464, D-465, D-1503: the player who commits the crime, creates the token or scries, relative to the controller of this ability.
+      // D-464, D-465, D-513: the player who commits the crime, creates the token or scries, relative to the controller of this ability.
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
       }
@@ -891,13 +891,13 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'dealsCombatDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
     t?.kind === 'lifeGained' ||
-    // D-1503: the cards looked at while scrying are "that many".
+    // D-513: the cards looked at while scrying are "that many".
     t?.kind === 'scries'
   );
 }
 
 /**
- * D-1500 (CR 701.26a, 508.1f, 603.2c): the fields of a `becomesTapped` trigger besides its subject: who tapped the permanent, "if it isn't being declared as an attacker" and
+ * D-510 (CR 701.26a, 508.1f, 603.2c): the fields of a `becomesTapped` trigger besides its subject: who tapped the permanent, "if it isn't being declared as an attacker" and
  * the batch ("one or more"). Who tapped it and a batch need a filter for the permanent (a trigger on `this` or on what is attached has one permanent and no batch to make).
  */
 function checkBecomesTapped(
@@ -1528,7 +1528,7 @@ const HOOKS = {
   checkAbility,
   checkContinuous: checkContinuousEffect,
   checkEffectExt: checkDragonsEffect,
-  // D-1501: the modes of "When you do, choose one —" are those of a triggered ability.
+  // D-511: the modes of "When you do, choose one —" are those of a triggered ability.
   checkModes: (
     modes: Parameters<typeof checkModes>[0],
     choose: Parameters<typeof checkModes>[1],

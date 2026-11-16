@@ -1,4 +1,4 @@
-// The Hylda deck (issue 42), group 1 (D-1500 to D-1505): the REAL Oracle text of Hylda of the Icy Crown, Icewrought Sentry, Sharae of Numbing Depths, Verity Circle, Hammers of Moradin,
+// The Hylda deck (issue 42), group 1 (D-510 to D-515): the REAL Oracle text of Hylda of the Icy Crown, Icewrought Sentry, Sharae of Numbing Depths, Verity Circle, Hammers of Moradin,
 // Elvish Mariner and Pippin, Guard of the Citadel (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is defined in an engine scenario
 // and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs. The abilities of each real card are also the ones of its SYNTHETIC sibling
 // of the engine fixtures (`synthetic-hylda-g1.ts`), which the engine tests and the AI soak play. Pins: CR 701.26a (tap), CR 508.1f (declaring attackers taps them), CR 603.2c (one or more),

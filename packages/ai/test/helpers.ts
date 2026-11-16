@@ -3049,7 +3049,7 @@ export const GISA_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] =
 ];
 
 /**
- * The SYNTHETIC cards of group 1 of the Hylda deck (D-1500 to D-1504): a creature that makes a modal reflexive ability when its controller pays {1} after tapping an untapped creature of
+ * The SYNTHETIC cards of group 1 of the Hylda deck (D-510 to D-514): a creature that makes a modal reflexive ability when its controller pays {1} after tapping an untapped creature of
  * an opponent, a creature that pays {1}{U} when it attacks to tap a creature (and grows when its controller taps one), a creature that taps and stuns on entering and draws once each turn,
  * an enchantment that draws when a creature of an opponent becomes tapped but not as an attacker, a creature that taps one creature of each opponent when it attacks, a creature that taps
  * permanents when its controller scries, a creature that gives protection from a card type of its controller's choice, and three tap and scry helpers. The payment and mode questions, the
@@ -3091,7 +3091,7 @@ export const HYLDA_G1_LANDS = supported([
   'Mountain',
 ]);
 
-/** Style pairs of the Hylda group 1 soak test (D-1500 to D-1504): a mirror match and both mixed ways. */
+/** Style pairs of the Hylda group 1 soak test (D-510 to D-514): a mirror match and both mixed ways. */
 export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
   ['hyldaG1', 'hyldaG1'],
   ['hyldaG1', 'spells'],
@@ -3928,7 +3928,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(GISA_G1_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 4 cards (D-459 to D-462) have abilities that work from the hand and from graveyards, targets in graveyards and delayed exiles: a style of their own.
   .filter((card) => !(GISA_G4_NAMES as readonly string[]).includes(card.name))
-  // The Hylda group 1 cards (D-1500 to D-1504) ask to pay for reflexive abilities, the modes of one, targets of taps, the card type to protect from and what to do with a scry: a style of their own.
+  // The Hylda group 1 cards (D-510 to D-514) ask to pay for reflexive abilities, the modes of one, targets of taps, the card type to protect from and what to do with a scry: a style of their own.
   .filter((card) => !(HYLDA_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))

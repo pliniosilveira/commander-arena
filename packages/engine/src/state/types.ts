@@ -1457,7 +1457,7 @@ export type Instruction =
       readonly chosen: Color | null;
     }
   /**
-   * "Another target creature you control gains protection from the card type of your choice until end of turn" (CR 702.16a, 608.2d; D-1504): as `protectionColor`, with
+   * "Another target creature you control gains protection from the card type of your choice until end of turn" (CR 702.16a, 608.2d; D-514): as `protectionColor`, with
    * the nine card types as options (`purpose` 'protectionCardType'); `effect` runs with `protection` from `cardType` of the one chosen in its place.
    */
   | {

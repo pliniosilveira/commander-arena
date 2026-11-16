@@ -1130,7 +1130,7 @@ export const TRIGGER_RULES = [
   ...HASHATON_G1_TRIGGER_RULES,
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token".
   ...GISA_G2_TRIGGER_RULES,
-  // Hylda deck, group 1 (issue 42, D-1500, D-1503): "you tap an untapped creature an opponent controls", "you scry".
+  // Hylda deck, group 1 (issue 42, D-510, D-513): "you tap an untapped creature an opponent controls", "you scry".
   ...HYLDA_G1_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];

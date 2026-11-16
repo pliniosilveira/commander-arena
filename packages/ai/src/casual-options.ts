@@ -134,7 +134,7 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   if (d.purpose === 'cardType') return chooseCardType(view, d);
   // D-451 (CR 702.16, 608.2d): "gains protection from the color of your choice", the color that threatens the protected permanents (casual-protection.ts).
   if (d.purpose === 'protectionColor') return chooseProtectionColor(view, d);
-  // D-1504 (CR 702.16a, 608.2d): "gains protection from the card type of your choice", the card type that threatens the protected permanents (casual-protection.ts).
+  // D-514 (CR 702.16a, 608.2d): "gains protection from the card type of your choice", the card type that threatens the protected permanents (casual-protection.ts).
   if (d.purpose === 'protectionCardType') return chooseProtectionCardType(view, d);
   const spelled = new Map(d.options.map((o) => [o.replaceAll('’', "'"), o] as const));
   const mine = view.battlefield.filter((o) => o.controller === view.viewer);

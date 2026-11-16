@@ -96,7 +96,7 @@ interface Occurrence {
   readonly gainNth?: number;
   /** For `countersAdded`: the kind of the counters put on (D-149). */
   readonly counter?: string;
-  /** For `becomesTapped`: the permanent was tapped as it was declared as an attacker (CR 508.1f, D-1500). */
+  /** For `becomesTapped`: the permanent was tapped as it was declared as an attacker (CR 508.1f, D-510). */
   readonly attacker?: true;
   /** For `attackBatch`: the creatures declared as attackers and the players they were declared as attacking (D-149). */
   readonly attackers?: readonly ObjectId[];
@@ -123,7 +123,7 @@ function eventPlayer(ability: Ability, occ: Occurrence): { readonly player?: Sea
 }
 
 /**
- * CR 603.3d (D-1503): a target slot that takes "up to X" targets, X being the number the trigger event carries (`TargetSpec.upToTriggerAmount`), is written as
+ * CR 603.3d (D-513): a target slot that takes "up to X" targets, X being the number the trigger event carries (`TargetSpec.upToTriggerAmount`), is written as
  * the bounds it has this time (none to `amount`). Null when `amount` is 0: an ability with up to 0 targets and nothing else to do does nothing, so it is not put on the stack.
  */
 function withTriggerAmount(ability: TriggeredAbility, amount: number): TriggeredAbility | null {
@@ -296,7 +296,7 @@ function occurrences(
         ? [{ subject: event.permanent, seat: event.controller, player: event.controller }]
         : [];
     case 'becomesTapped':
-      // CR 701.26a, 508.1f (D-1500): the permanent that went from untapped to tapped, the player who tapped it (none when no player did) and whether it was declared as an attacker.
+      // CR 701.26a, 508.1f (D-510): the permanent that went from untapped to tapped, the player who tapped it (none when no player did) and whether it was declared as an attacker.
       return event.kind === 'tapped'
         ? [
             {
@@ -307,7 +307,7 @@ function occurrences(
           ]
         : [];
     case 'scries':
-      // CR 701.22 (D-1503): the player who scried; the cards looked at are what the number of the trigger is.
+      // CR 701.22 (D-513): the player who scried; the cards looked at are what the number of the trigger is.
       return event.kind === 'scried'
         ? [
             {
@@ -586,7 +586,7 @@ function matches(
       if (trigger.graveyardOwner === 'you' && subject?.owner !== candidate.controller) return false;
       return matchesWhat(state, trigger.what, subject, candidate);
     case 'becomesTapped':
-      // CR 701.26a, 508.1f (D-1500): who tapped it, relative to the controller of this ability, and "if it isn't being declared as an attacker".
+      // CR 701.26a, 508.1f (D-510): who tapped it, relative to the controller of this ability, and "if it isn't being declared as an attacker".
       if (trigger.by === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.by === 'opponent' && (occ.seat === null || occ.seat === candidate.controller)) {
         return false;
@@ -594,7 +594,7 @@ function matches(
       if (trigger.notAsAttacker === true && occ.attacker === true) return false;
       return matchesWhat(state, trigger.what, subject, candidate);
     case 'scries':
-      // CR 701.22 (D-1503): the player who scried, relative to the controller of this ability.
+      // CR 701.22 (D-513): the player who scried, relative to the controller of this ability.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
       return true;
@@ -976,7 +976,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
           ) {
             continue;
           }
-          // CR 603.3d, 701.22 (D-1503): "tap up to X target nonland permanents, where X is the number of cards looked at": fixed as the ability triggers.
+          // CR 603.3d, 701.22 (D-513): "tap up to X target nonland permanents, where X is the number of cards looked at": fixed as the ability triggers.
           const fixed = withTriggerAmount(ability, occ.damage ?? 0);
           if (fixed === null) continue;
           found.push({

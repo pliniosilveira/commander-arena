@@ -1,5 +1,5 @@
 /**
- * Trigger rules of group 1 of the Hylda deck (issue 42, D-1500, D-1503): "whenever you tap an untapped creature an opponent controls" and "whenever you tap one or more
+ * Trigger rules of group 1 of the Hylda deck (issue 42, D-510, D-513): "whenever you tap an untapped creature an opponent controls" and "whenever you tap one or more
  * untapped creatures your opponents control" (CR 701.26a: only an untapped permanent is tapped; CR 603.2c: one or more is one event) and "whenever you scry" (CR 701.22).
  * Each says what the text says; what the engine can run is the lowering's business (`lower/triggers.ts`).
  */

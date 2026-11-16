@@ -211,7 +211,7 @@ export type GameEvent =
   | { readonly kind: 'manaEmptied'; readonly seat: SeatId; readonly count: number }
   /**
    * A permanent became tapped (CR 701.26a): only an untapped one is tapped, so the event is the change from untapped to tapped. `by` is the player who tapped it
-   * (D-1500, CR 701.26a: "you tap"): the controller of the effect that tapped it, the player who paid the cost that tapped it (an ability's {T}, a crew or other tap
+   * (D-510, CR 701.26a: "you tap"): the controller of the effect that tapped it, the player who paid the cost that tapped it (an ability's {T}, a crew or other tap
    * cost, a mana ability) or declared it as an attacker (CR 508.1f), the controller of a permanent regenerated (CR 701.19a: "its controller taps it"); nothing for a
    * permanent that no player tapped. `attacker` is true when it was tapped as it was declared as an attacker.
    */

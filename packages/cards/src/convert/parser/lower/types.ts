@@ -165,7 +165,7 @@ export interface LowerContext {
   thisWay: 'sacrificed' | 'discarded';
   /** True in the body of a triggered ability whose every event is life being gained (D-256, CR 119.9): `triggerDamage` is the life gained. */
   lifeGainTrigger: boolean;
-  /** True in the body of a triggered ability whose every event is a player scrying (D-1503, CR 701.22): the cards looked at are the number its event carries. */
+  /** True in the body of a triggered ability whose every event is a player scrying (D-513, CR 701.22): the cards looked at are the number its event carries. */
   scryTrigger: boolean;
   /**
    * What "it" and "that land" mean after a search (stage P36, D-178, CR 400.7j, 701.23): the reference of the noun the last search looked for, which

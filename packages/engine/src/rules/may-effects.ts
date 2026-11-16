@@ -52,7 +52,7 @@ export function runReflexive(
     trigger: REFLEXIVE_TRIGGER,
     ...(targets === undefined ? {} : { targets }),
     effect: effect.effect,
-    // D-1501 (CR 603.12, 700.2b): "When you do, choose one —": the modes are chosen as the reflexive ability goes on the stack (CR 603.3c).
+    // D-511 (CR 603.12, 700.2b): "When you do, choose one —": the modes are chosen as the reflexive ability goes on the stack (CR 603.3c).
     ...(effect.modes === undefined ? {} : { modes: effect.modes }),
     ...(effect.chooseModes === undefined ? {} : { chooseModes: effect.chooseModes }),
   };

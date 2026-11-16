@@ -37,7 +37,7 @@ export function chooseProtectionColor(view: GameView, d: ChooseOptionDecision): 
 }
 
 /**
- * CasualAgent's answer to "gains protection from the card type of your choice until end of turn" (`purpose` 'protectionCardType', D-1504, CR 702.16a, 608.2d): the card type
+ * CasualAgent's answer to "gains protection from the card type of your choice until end of turn" (`purpose` 'protectionCardType', D-514, CR 702.16a, 608.2d): the card type
  * that hurts the opponents most, from what the view shows (the stack and the battlefield are public):
  *   1. the card types of the spells and abilities on the stack that an opponent controls and that target one of the permanents about to gain the protection: 100 for each type of the
  *      object (an ability has the types of its source, which the view lists as the stack object's types);

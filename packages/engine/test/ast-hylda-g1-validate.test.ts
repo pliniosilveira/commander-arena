@@ -1,4 +1,4 @@
-// Validation of the nodes of group 1 of the Hylda deck (D-1500 to D-1504): the fields of the `becomesTapped` trigger, the `scries` trigger, the `reflexive` effect after a payment and with
+// Validation of the nodes of group 1 of the Hylda deck (D-510 to D-514): the fields of the `becomesTapped` trigger, the `scries` trigger, the `reflexive` effect after a payment and with
 // modes, the target slot `upToTriggerAmount` and the protection `cardTypeOfChoice`. A node that the engine does not run (or runs in one place only) is refused with a message, never
 // accepted and half run.
 import { describe, expect, test } from 'vitest';

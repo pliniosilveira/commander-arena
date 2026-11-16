@@ -1,5 +1,5 @@
-// "Whenever you scry, tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (D-1503), "Whenever this creature attacks, for each opponent, tap
-// up to one target creature that player controls" (D-1502) and "Another target creature you control gains protection from the card type of your choice until end of turn" (D-1504), group 1
+// "Whenever you scry, tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (D-513), "Whenever this creature attacks, for each opponent, tap
+// up to one target creature that player controls" (D-512) and "Another target creature you control gains protection from the card type of your choice until end of turn" (D-514), group 1
 // of the Hylda deck.
 // Pins: CR 701.22 (scry; the cards looked at are those the library held, CR 701.22d), CR 603.3d (targets are chosen as the ability goes on the stack: up to X), CR 115.1 (up to one target
 // for each opponent), CR 702.16a and 702.16b (protection from a card type: a source of that type cannot target it), CR 608.2d (the choice is made as the ability resolves).

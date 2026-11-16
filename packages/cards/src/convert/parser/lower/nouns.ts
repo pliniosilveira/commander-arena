@@ -94,7 +94,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:differentControllers',
   'selector:atLeastOne',
   'selector:upToThatMany',
-  // D-1503: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
+  // D-513: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
   'selector:upToTriggerAmount',
   // D-386: "X target creature cards from your graveyard" (`TargetSpec.countX`).
   'selector:countX',
@@ -567,7 +567,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         const blocked = missingFeatures(['selector:upToThatMany']);
         if (blocked.length > 0) return failure(noun, blocked);
       }
-      // "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (D-1503, CR 603.3d, 701.22): the number of the scry event, so
+      // "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (D-513, CR 603.3d, 701.22): the number of the scry event, so
       // only the body of a trigger of a scry reads it, and the noun has no other count.
       if (noun.upToTriggerAmount === true) {
         const blocked = missingFeatures(['selector:upToTriggerAmount']);

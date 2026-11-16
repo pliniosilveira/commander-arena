@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 1 OF THE HYLDA DECK (issue 42, D-1500 to D-1506). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 1 OF THE HYLDA DECK (issue 42, D-510 to D-516). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the real cards of the group need from the engine, written out by hand (the cards package checks that the grammar lowers the real Oracle text to
  * these same nodes): a creature that makes a modal reflexive ability when its controller pays after they tap an untapped creature of an opponent, a creature that taps with a

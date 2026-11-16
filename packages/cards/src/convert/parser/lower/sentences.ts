@@ -439,7 +439,7 @@ function lowerMayPay(
   ) {
     return refuse(sentence);
   }
-  // "You may pay {1}{U}. When you do, tap target creature an opponent controls." (Hylda deck, D-1501, CR 603.12, 118.1): the reflexive ability is created by the payment itself.
+  // "You may pay {1}{U}. When you do, tap target creature an opponent controls." (Hylda deck, D-511, CR 603.12, 118.1): the reflexive ability is created by the payment itself.
   const paidReflexive = next?.reflexive === true;
   if (!paidReflexive && (next?.condition?.test.kind !== 'didPrevious' || next.instead === true)) {
     return refuse(sentence);

@@ -85,7 +85,7 @@ export function colorOfAnswer(option: string): Color | null {
 
 type ProtectionCardTypeInstruction = Extract<Instruction, { kind: 'protectionCardType' }>;
 
-/** Whether the effect gives protection from the card type of the controller's choice (D-1504): the one `grantKeyword` `runProtectionCardType` runs. */
+/** Whether the effect gives protection from the card type of the controller's choice (D-514): the one `grantKeyword` `runProtectionCardType` runs. */
 export function givesProtectionOfCardTypeChoice(
   effect: Effect,
 ): effect is ProtectionCardTypeInstruction['effect'] {
@@ -97,7 +97,7 @@ export function givesProtectionOfCardTypeChoice(
 }
 
 /**
- * "Another target creature you control gains protection from the card type of your choice until end of turn" (CR 702.16a, 608.2d; D-1504): as `runProtectionColor`, with
+ * "Another target creature you control gains protection from the card type of your choice until end of turn" (CR 702.16a, 608.2d; D-514): as `runProtectionColor`, with
  * the nine card types as the options (`purpose` `protectionCardType`); the grant then runs as protection from that card type (`from: 'cardType'`).
  */
 export function runProtectionCardType(

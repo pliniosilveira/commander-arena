@@ -474,7 +474,7 @@ function answerChooseOption(
     return finishResolutionAnswer(answerResolutionProtectionColor(state, option));
   }
   if (d.purpose === 'protectionCardType') {
-    // CR 702.16a, 608.2d (D-1504): the card type the controller chose for "gains protection from the card type of your choice".
+    // CR 702.16a, 608.2d (D-514): the card type the controller chose for "gains protection from the card type of your choice".
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionProtectionCardType(state, option));
   }

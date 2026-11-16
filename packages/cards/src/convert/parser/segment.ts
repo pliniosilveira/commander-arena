@@ -46,7 +46,7 @@ export interface AbilitySkeleton {
   readonly modalHeader?: Span;
   readonly modes: readonly Span[];
   /**
-   * triggered: "..., you may pay {1}. When you do, choose one —" and its bullets (D-1501, CR 603.12, 700.2b): the `sentences` are those before "When you do," and these
+   * triggered: "..., you may pay {1}. When you do, choose one —" and its bullets (D-511, CR 603.12, 700.2b): the `sentences` are those before "When you do," and these
    * are the header of the reflexive ability's modal text and one span per bullet.
    */
   readonly reflexiveModalHeader?: Span;
@@ -510,7 +510,7 @@ function modalBody(text: string, from: number): { header: Span; modes: Span[] } 
 }
 
 /**
- * "You may pay {1}. When you do, choose one —" and its bullets (D-1501, CR 603.12, 700.2b): the sentences of a triggered ability's body up to a sentence that starts "When you do,
+ * "You may pay {1}. When you do, choose one —" and its bullets (D-511, CR 603.12, 700.2b): the sentences of a triggered ability's body up to a sentence that starts "When you do,
  * choose" and the modal text it holds (header and bullets). Null when the body has no such sentence, or it is the first (a body of nothing but the reflexive ability has nothing
  * that creates it).
  */
@@ -654,7 +654,7 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     }
     // "When ~ enters, choose one —" and its bullets (stage P19, CR 700.2b): the body is the modes.
     const modal = modalBody(text, bodyStart);
-    // "..., you may pay {1}. When you do, choose one —" and its bullets (D-1501, CR 603.12, 700.2b): the sentences before it, and the modes of the reflexive ability.
+    // "..., you may pay {1}. When you do, choose one —" and its bullets (D-511, CR 603.12, 700.2b): the sentences before it, and the modes of the reflexive ability.
     const reflexive = modal === null ? reflexiveModal(text, bodyStart) : null;
     return {
       ...base,

@@ -1,5 +1,5 @@
 /**
- * Effect rules of group 1 of the Hylda deck (issue 42, D-1502, D-1503): "for each opponent, tap up to one target creature that player controls" (Hammers of Moradin) and "tap up
+ * Effect rules of group 1 of the Hylda deck (issue 42, D-512, D-513): "for each opponent, tap up to one target creature that player controls" (Hammers of Moradin) and "tap up
  * to X target nonland permanents, where X is the number of cards looked at while scrying this way" (Elvish Mariner). The effects are the engine's `tap` of a target slot
  * (`onePerOpponent`, `upToTriggerAmount`); only the words are new.
  */

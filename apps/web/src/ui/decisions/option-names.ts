@@ -65,7 +65,7 @@ export function isProtectionColorChoice(d: Asked): boolean {
   return d.purpose === 'protectionColor';
 }
 
-/** True for "gains protection from the card type of your choice" (CR 702.16a, 608.2d, D-1504): the options are the nine card types, chosen as the effect resolves. */
+/** True for "gains protection from the card type of your choice" (CR 702.16a, 608.2d, D-514): the options are the nine card types, chosen as the effect resolves. */
 export function isProtectionCardTypeChoice(d: Asked): boolean {
   return d.purpose === 'protectionCardType';
 }
@@ -116,7 +116,7 @@ export function namedOptionPrompt(
   if (isProtectionColorChoice(d)) {
     return `Choose a color for ${d.sourceName}: protection from it until end of turn.`;
   }
-  // D-1504 (CR 702.16a, 608.2d): asked as the ability resolves, so there is no "enters".
+  // D-514 (CR 702.16a, 608.2d): asked as the ability resolves, so there is no "enters".
   if (isProtectionCardTypeChoice(d)) {
     return `Choose a card type for ${d.sourceName}: protection from it until end of turn.`;
   }

@@ -827,7 +827,7 @@ export function answerResolutionProtectionColor(
 }
 
 /**
- * Records the answer to "gains protection from the card type of your choice" (CR 702.16a, 608.2d, D-1504) on the instruction that asked: the card type chosen. Then continues.
+ * Records the answer to "gains protection from the card type of your choice" (CR 702.16a, 608.2d, D-514) on the instruction that asked: the card type chosen. Then continues.
  * Null when no such question is waiting or the answer is not one of the nine card types.
  */
 export function answerResolutionProtectionCardType(

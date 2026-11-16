@@ -663,7 +663,7 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
         };
       }
       if (ability.reflexiveModal !== undefined) {
-        // D-1501 (CR 603.12): the body is the offer; the modes are those of the reflexive ability, which knows what the trigger's event is about, nothing of the offer.
+        // D-511 (CR 603.12): the body is the offer; the modes are those of the reflexive ability, which knows what the trigger's event is about, nothing of the offer.
         const body = binder.body(ability.body);
         const modal = bindModes(ability.reflexiveModal, scope, verbs, (b) =>
           seedTrigger(b, ability.trigger),

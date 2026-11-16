@@ -226,7 +226,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'becomesTapped': {
       const what = whatOf(t, ctx);
       if (!what.ok) return what;
-      // "Whenever you tap an untapped creature an opponent controls" (Hylda deck, D-1500, CR 701.26a): the player who taps it, and "one or more" of them as one event.
+      // "Whenever you tap an untapped creature an opponent controls" (Hylda deck, D-510, CR 701.26a): the player who taps it, and "one or more" of them as one event.
       // The player is read only for a trigger about a filter (a trigger on `this` has one permanent and nothing a player taps to name).
       if (t.actor === undefined && t.batch !== true) {
         return ok({ kind: 'becomesTapped', what: what.value });
@@ -246,7 +246,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       });
     }
     case 'scries': {
-      // "Whenever you scry" (Hylda deck, D-1503, CR 701.22): the player is relative to the controller of the ability.
+      // "Whenever you scry" (Hylda deck, D-513, CR 701.22): the player is relative to the controller of the ability.
       const who = whoOf(t.actor);
       if (who === null) return failure(t);
       const blocked = missingFeatures(['trigger:scries']);
@@ -618,7 +618,7 @@ function lowerModalTriggered(
 }
 
 /**
- * "..., you may pay {1}. When you do, choose one —" and its bullets (Hylda deck, D-1501, CR 603.12, 700.2b, 603.3c): the offer of the payment and the modal reflexive ability the
+ * "..., you may pay {1}. When you do, choose one —" and its bullets (Hylda deck, D-511, CR 603.12, 700.2b, 603.3c): the offer of the payment and the modal reflexive ability the
  * payment creates, which is the engine's `mayPay` whose effect is a `reflexive` ability with `afterPayment` and the modes. The body is the one sentence of the offer; the modes are
  * chosen as the reflexive ability goes on the stack, and an X in a mode has nothing to read (CR 107.3j), as for any triggered ability.
  */
@@ -912,7 +912,7 @@ export function lowerTriggered(
     triggers[0] = folded;
     foldedCounters = true;
   } else if (ifWritten?.test.kind === 'notDeclaredAttacker') {
-    // "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, ..." (Hylda deck, D-1500, CR 508.1f): a part of the event of the one
+    // "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, ..." (Hylda deck, D-510, CR 508.1f): a part of the event of the one
     // `becomesTapped` trigger, read as it happens (the engine's `notAsAttacker`), not an intervening "if" of its own.
     const [only] = triggers;
     if (events.length !== 1 || only?.kind !== 'becomesTapped') return failure(ifWritten, []);

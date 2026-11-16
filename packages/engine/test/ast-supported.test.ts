@@ -314,7 +314,7 @@ describe('supported feature gate', () => {
         'noncombatDamageDealt',
         'permanentSacrificed',
         'ringTempted',
-        // D-1503: "Whenever you scry".
+        // D-513: "Whenever you scry".
         'scries',
         'state',
         'step',
@@ -341,7 +341,7 @@ describe('supported feature gate', () => {
       // D-177: "becomes the target of a spell".
       'becomesTargetSpell',
       'castNth',
-      // D-1500: "Whenever you tap an untapped creature an opponent controls", "if it isn't being declared as an attacker", "one or more".
+      // D-510: "Whenever you tap an untapped creature an opponent controls", "if it isn't being declared as an attacker", "one or more".
       'tappedBy',
       'notAsAttacker',
       'tapBatch',

@@ -1,4 +1,4 @@
-// CasualAgent and the Hylda deck's group 1 (D-1504): the card type it chooses for "gains protection from the card type of your choice until end of turn" (src/casual-protection.ts). The
+// CasualAgent and the Hylda deck's group 1 (D-514): the card type it chooses for "gains protection from the card type of your choice until end of turn" (src/casual-protection.ts). The
 // card is the SYNTHETIC one of src/cards/fixtures/synthetic-hylda-g1.ts, in states built with the scenario DSL and answered through the same decision handling the agent uses in a game.
 import { applyAction, getLegalActions } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';

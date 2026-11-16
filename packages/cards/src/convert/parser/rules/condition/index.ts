@@ -441,7 +441,7 @@ export const CONDITION_RULES = [
   ...DANITHA_G3_CONDITION_RULES,
   // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".
   ...GISA_G1_CONDITION_RULES,
-  // Issue 42 (the Hylda deck, D-1500): "it isn't being declared as an attacker".
+  // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".
   ...HYLDA_G1_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_UNLESS_PAYS,

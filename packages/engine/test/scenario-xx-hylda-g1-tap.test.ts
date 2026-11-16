@@ -1,5 +1,5 @@
 // "Whenever you tap an untapped creature an opponent controls", "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker", "Whenever you tap
-// one or more untapped creatures your opponents control" (D-1500, group 1 of the Hylda deck).
+// one or more untapped creatures your opponents control" (D-510, group 1 of the Hylda deck).
 // Pins: CR 701.26a (tap: only an untapped permanent is tapped, so an effect that taps a tapped one triggers nothing), CR 508.1f (the active player taps the attackers as they are
 // declared), CR 603.2c (one or more: an ability triggers once for the events together), CR 603.2 ("This ability triggers only once each turn"), CR 122.1d (a stun counter).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-hylda-g1.ts) or real fixtures.

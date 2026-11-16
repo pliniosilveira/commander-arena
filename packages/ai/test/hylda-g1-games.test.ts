@@ -1,4 +1,4 @@
-// Slice soak (D-1500 to D-1504): whole games with the 'hyldaG1' deck style (SYNTHETIC cards of the engine fixtures `synthetic-hylda-g1.ts`: the creature whose payment makes a modal
+// Slice soak (D-510 to D-514): whole games with the 'hyldaG1' deck style (SYNTHETIC cards of the engine fixtures `synthetic-hylda-g1.ts`: the creature whose payment makes a modal
 // reflexive ability when its controller taps an untapped creature of an opponent, the creature that pays {1}{U} when it attacks to tap a creature, the creature that taps and stuns and draws
 // once each turn, the enchantment that draws when a creature of an opponent becomes tapped but not as an attacker, the creature that taps one creature of each opponent, the creature that
 // taps permanents when its controller scries, the creature that gives protection from a card type, and the tap and scry helpers) between random agents, with CasualAgent and HeuristicAgent in
