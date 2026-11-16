@@ -784,3 +784,16 @@ Rule numbers and titles were read with `pnpm rule` from the CR copy of the owner
 | 608.2d, 701.17a | "Mill four cards, then put up to two land cards from among them into your hand." | Implemented (D-542): none up to the number among the cards the mill moved. | `effect.put-up-to-from-among`, `rules/move-choice.ts`. `test/scenario-xx-galadriel-g2.test.ts` |
 | 111.4, 208.2a, 604.3, 704.5j | "create Beau, a legendary blue Ox creature token with \"Beau's power and toughness are each equal to the number of lands you control.\"" | Implemented (D-543): a token whose star power and toughness its own characteristic-defining ability sets; legendary. | `token.named-legendary`, `ast/validate-parts.ts` (`checkTokenDefinition`). `test/scenario-xx-galadriel-g2.test.ts` |
 | 608.2d, 110.2a | "you may put a land card from your hand or graveyard onto the battlefield" | Implemented (D-544): the candidates are the matching cards of both places. | `ChooseSelector.alsoGraveyard`, `rules/move-choice.ts`. `test/scenario-xx-galadriel-g2.test.ts` |
+
+## Added by the Galadriel deck, group 3 (D-1620 to D-1630, provisional)
+
+| CR | Text | Status | Where |
+| --- | --- | --- | --- |
+| 701.12a, 701.12b, 613.7 | "Exchange control of this enchantment and target nonland permanent." | Implemented (D-1620): two layer 2 effects; nothing happens when both have one controller or one is gone. | `rules/control-effects.ts`. `test/scenario-xx-galadriel-g3-control.test.ts` |
+| 702.27a, 601.2b | "Buyback {2}" | Implemented (D-1621): the question as the spell is cast; the card goes to the hand as it resolves, to the graveyard when countered. | `rules/cast.ts`, `rules/stack.ts`. `test/scenario-xx-galadriel-g3-spells.test.ts` |
+| 701.20a, 400.7j | "Draw a card and reveal it. Remove a number of loyalty counters equal to that card's mana value from this planeswalker." | Implemented (D-1622, D-1626): `draw.reveal` and `removeCounters`. | `rules/draw.ts`, `rules/effects.ts`. `test/scenario-xx-galadriel-g3-spells.test.ts` |
+| 706.1a, 706.2 | "Roll a d4. Scry X, where X is the result." and "Whenever you roll a die's highest natural result" | Implemented (D-1623): `dieResult` and `rollsHighest`. | `rules/amounts.ts`, `rules/triggers.ts`. `test/scenario-xx-galadriel-g3-spells.test.ts` |
+| 602.5, 605.1a | "Its activated abilities can't be activated this turn." | Implemented (D-1624): no activated, loyalty or mana ability is offered. | `rules/activate-legality.ts`, `rules/mana-abilities.ts`. `test/scenario-xx-galadriel-g3-control.test.ts` |
+| 118.12a, 608.2c | "Counter up to one target spell unless its controller pays mana equal to the greatest power among creatures you control." | Implemented (D-1625): read as it resolves; none owed counters nothing. | `rules/effects.ts`. `test/scenario-xx-galadriel-g3-spells.test.ts` |
+| 707.9b, 306.5b | "a copy of Jace, except it's not legendary and its starting loyalty is 1" | Implemented (D-1627). | `rules/copy-exceptions.ts`. `test/scenario-xx-galadriel-g3-spells.test.ts` |
+| 702.122a | "This token saddles Mounts and crews Vehicles as though its power were 2 greater." | Implemented for Crew only (D-1628); Saddle is not built. | `rules/crew.ts`. `test/scenario-xx-galadriel-g3-control.test.ts` |

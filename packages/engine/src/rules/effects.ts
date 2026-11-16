@@ -2230,7 +2230,7 @@ function runEffect(
       return runExchangeControl(state, effect, ctx, targets);
 
     case 'removeCounters': {
-      // CR 122.1, 122.2 (Galadriel group 3): the permanent loses up to that many counters of the kind; one event for the number that came off.
+      // CR 122.1 (Galadriel group 3): the permanent loses up to that many counters of the kind; one event for the number that came off.
       const wanted = amountOf(state, effect.count, ctx, targets);
       if (wanted <= 0) return done(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
