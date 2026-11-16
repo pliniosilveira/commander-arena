@@ -90,6 +90,8 @@ describe('amounts that read an object', () => {
       'commanderCasts',
       // D-179: "for each color among permanents you control".
       'colorsAmong',
+      // D-1511: "the number of card types among cards in your graveyard".
+      'cardTypesAmong',
       'timesAttacked',
       'affected',
       'half',
