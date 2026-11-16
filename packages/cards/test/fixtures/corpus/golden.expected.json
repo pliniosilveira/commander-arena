@@ -1,6 +1,23 @@
 {
   "parserVersion": 103,
   "cards": {
+    "008011e2-7b82-4962-af6e-be627112f37f": {
+      "name": "Theft of Dreams",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Draw a card for each tapped creature target opponent controls.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "amount.for-each"
+        }
+      ],
+      "reasons": [],
+      "ast": "f31b3b4a"
+    },
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
       "group": "training",
@@ -278,6 +295,30 @@
       "reasons": [],
       "ast": "94786650"
     },
+    "0828d891-f7c3-4e51-b42e-6ce88d48ac8b": {
+      "name": "Icewrought Sentry",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever ~ attacks, you may pay {1}{U}. When you do, tap target creature an opponent controls.",
+          "reason": "notRunnable",
+          "closestRule": "effect.pay"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Whenever you tap an untapped creature an opponent controls, ~ gets +2/+1 until end of turn.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.tapped-for-mana"
+        }
+      ],
+      "reasons": [],
+      "ast": "46a8206f"
+    },
     "0895c9b7-ae7d-4bb3-af17-3b75deb50a25": {
       "name": "Command Tower",
       "group": "training",
@@ -317,6 +358,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "05b3bde9"
+    },
+    "0a836332-5905-4afa-a442-47d0bcf8acea": {
+      "name": "Timin, Youthful Geist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "09685792"
     },
     "0acc9372-58b4-43bf-ab82-1f95831c81d4": {
       "name": "Nesting Dragon",
@@ -587,6 +636,23 @@
       "reasons": [],
       "ast": "e3af3d22"
     },
+    "1733c71b-fd28-48dd-8a3d-41afd4b22f0e": {
+      "name": "Hylda of the Icy Crown",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever you tap an untapped creature an opponent controls, you may pay {1}. When you do, choose one —\n• Create a 4/4 white and blue Elemental creature token.\n• Put a +1/+1 counter on each creature you control.\n• Scry 2, then draw a card.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.tapped-for-mana"
+        }
+      ],
+      "reasons": [],
+      "ast": "cb1d30bf"
+    },
     "180eda7c-fca2-403b-85cd-8ffebaf9f408": {
       "name": "Palace Jailer",
       "group": "acceptance",
@@ -674,6 +740,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2486ecdc"
+    },
+    "1b80b910-c0e6-42e3-929c-2b4c85c850fe": {
+      "name": "Verity Circle",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, you may draw a card.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "c6181604"
     },
     "1b882a0e-0ede-4d1a-bd1a-9b7cffbcde8e": {
       "name": "Three Visits",
@@ -852,6 +935,23 @@
       "reasons": [],
       "ast": "fedde59a"
     },
+    "25afddd2-6e48-4742-b34e-e3b5def7c0fd": {
+      "name": "Pippin, Guard of the Citadel",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{T}: Another target creature you control gains protection from the card type of your choice until end of turn.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.gain-keyword"
+        }
+      ],
+      "reasons": [],
+      "ast": "f6707bff"
+    },
     "25c983e0-a8c9-4784-91a4-8fe04c6df882": {
       "name": "Tocasia's Welcome",
       "group": "acceptance",
@@ -971,6 +1071,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "17a3ed9e"
+    },
+    "2c595ccb-6703-4670-a1e5-0e74d4b8d3c8": {
+      "name": "Elvish Mariner",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever you scry, tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.cast"
+        }
+      ],
+      "reasons": [],
+      "ast": "bc739d47"
     },
     "2e2ace5b-4018-43af-8e72-ebafec1a7739": {
       "name": "Harmonic Prodigy",
@@ -1441,6 +1558,23 @@
       "reasons": [],
       "ast": "b916a4d2"
     },
+    "3da1412e-a72c-4da1-8848-37145ca6614a": {
+      "name": "Narcolepsy",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "At the beginning of each upkeep, if enchanted creature is untapped, tap it.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "9f6fdc77"
+    },
     "3f4e300a-ec5c-42f3-a97b-d58e62abe22b": {
       "name": "Season of Growth",
       "group": "acceptance",
@@ -1472,6 +1606,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0a62fcba"
+    },
+    "40f66e21-5b60-4e42-927d-65397e7ad544": {
+      "name": "Citadel Siege",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "• Dragons — At the beginning of combat on each opponent's turn, tap target creature that player controls.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.upkeep"
+        }
+      ],
+      "reasons": [],
+      "ast": "37fe9149"
     },
     "4262a726-d1da-4bdc-ab14-73212aa83f9c": {
       "name": "Tune the Narrative",
@@ -1512,6 +1663,40 @@
       "unparsed": [],
       "reasons": [],
       "ast": "643d1a98"
+    },
+    "43c69d19-c06c-470a-bdba-a0335ff2d655": {
+      "name": "Floodpits Drowner",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 3,
+          "text": "{1}{U}, {T}: Shuffle ~ and target creature with a stun counter on it into their owners' libraries.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "941ccfb8"
+    },
+    "4405db13-7b36-4dc2-9a5d-1d31d568abf5": {
+      "name": "Ojutai Exemplars",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever you cast a noncreature spell, choose one —\n• Tap target creature.\n• ~ gains first strike and lifelink until end of turn.\n• Exile ~, then return it to the battlefield tapped under its owner's control.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.return"
+        }
+      ],
+      "reasons": [],
+      "ast": "6ef045dc"
     },
     "446db5a4-21b0-44c1-b12b-d365313dd67a": {
       "name": "Clifftop Lookout",
@@ -1593,6 +1778,23 @@
       "reasons": [],
       "ast": "7f6775ef"
     },
+    "49aa87c7-034b-409d-b37f-50db6a42e533": {
+      "name": "You See a Guard Approach",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose one —\n• Distract the Guard — Tap target creature.\n• Hide — Target creature you control gains hexproof until end of turn.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "modal.choose"
+        }
+      ],
+      "reasons": [],
+      "ast": "329d1a69"
+    },
     "49b9a3ac-d245-431a-bf40-64d1b8dc2b91": {
       "name": "Keeper of the Accord",
       "group": "acceptance",
@@ -1608,6 +1810,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a98d6e8c"
+    },
+    "4a71f404-e48d-4c86-882e-4e21c8210dea": {
+      "name": "Topplegeist",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "At the beginning of each opponent's upkeep, if there are four or more card types among cards in your graveyard, tap target creature that player controls.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "condition.amount-count"
+        }
+      ],
+      "reasons": [],
+      "ast": "beff40d3"
     },
     "4b1befff-48fa-47a3-832e-bdaf43495c02": {
       "name": "Ram Through",
@@ -1850,6 +2069,39 @@
       "unparsed": [],
       "reasons": [],
       "ast": "01c5c12c"
+    },
+    "56fd0752-9fb0-4c05-90e5-c3b268b57c6f": {
+      "name": "Cone of Cold",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "1—9 | Tap all creatures your opponents control.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "10—19 | Tap all creatures your opponents control. Those creatures don't untap during their controllers' next untap steps.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        },
+        {
+          "face": 0,
+          "ability": 3,
+          "text": "20 | Tap all creatures your opponents control. Those creatures don't untap during their controllers' next untap steps. Until your next turn, creatures your opponents control enter tapped.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "a693dcfa"
     },
     "580996d4-db9a-4b57-a0e1-a2dbb524121a": {
       "name": "Razorlash Transmogrant",
@@ -3268,6 +3520,23 @@
       "reasons": [],
       "ast": "907586e9"
     },
+    "93df61b5-6abe-4603-9a6e-cba90a834173": {
+      "name": "Cloud's Limit Break",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Tiered\n• Cross-Slash — {0} — Destroy target tapped creature.\n• Blade Beam — {1} — Destroy any number of target tapped creatures with different controllers.\n• Omnislash — {3}{W} — Destroy all tapped creatures.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.destroy"
+        }
+      ],
+      "reasons": [],
+      "ast": "b25334c5"
+    },
     "9464ddf2-4bcb-44f6-b945-89a132544de6": {
       "name": "Maestros Theater",
       "group": "acceptance",
@@ -3315,6 +3584,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ffff24f4"
+    },
+    "97e260c9-3e78-402b-8d97-af4b515b278b": {
+      "name": "Hammers of Moradin",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever ~ attacks, for each opponent, tap up to one target creature that player controls.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "ec76f4cc"
     },
     "981298e6-ddee-49c0-9377-f47f019b4138": {
       "name": "Currency Converter",
@@ -3372,6 +3658,23 @@
       "reasons": [],
       "ast": "0dab19c0"
     },
+    "9b93ff69-f195-4d72-8e1d-574c3e53bca8": {
+      "name": "Sleep",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Tap all creatures target player controls. Those creatures don't untap during that player's next untap step.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.all-permanents"
+        }
+      ],
+      "reasons": [],
+      "ast": "ab0c5ae9"
+    },
     "9c36760b-57c5-488b-afc9-ef141942c6ab": {
       "name": "Archfiend of Despair",
       "group": "acceptance",
@@ -3419,6 +3722,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b8707a22"
+    },
+    "9e3fd1e9-7db6-40de-b1de-cd8cc9f60590": {
+      "name": "Send to Sleep",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "If there are two or more instant and/or sorcery cards in your graveyard, those creatures don't untap during their controllers' next untap steps.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "3d71b10d"
     },
     "9e96d12b-8381-4706-8089-3521aa2b5422": {
       "name": "Gau, Feral Youth",
@@ -3499,6 +3819,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "987374ea"
+    },
+    "a3f10772-d055-419d-a535-4f094eaf437c": {
+      "name": "Borrowing 100,000 Arrows",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Draw a card for each tapped creature target opponent controls.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "amount.for-each"
+        }
+      ],
+      "reasons": [],
+      "ast": "feb115aa"
     },
     "a41e632f-9d36-44d2-b1dd-e17df0d2486e": {
       "name": "Breathkeeper Seraph",
@@ -3613,6 +3950,23 @@
       "reasons": [],
       "ast": "362294f7"
     },
+    "a8291d04-240e-456b-8c86-1fb4eb460476": {
+      "name": "Hylda's Crown of Winter",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "{1}, {T}: Tap target creature. This ability costs {1} less to activate during your turn.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "restriction.cost-reduced-by"
+        }
+      ],
+      "reasons": [],
+      "ast": "ed1c5e09"
+    },
     "a8dba58b-2956-492e-ae30-49db2ae68e53": {
       "name": "Mana Geyser",
       "group": "training",
@@ -3644,6 +3998,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1d65ce6f"
+    },
+    "aa40d270-63d7-4022-ade9-67c1ab65ef70": {
+      "name": "Dreamshackle Geist",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "At the beginning of combat on your turn, choose up to one —\n• Tap target creature.\n• Target creature doesn't untap during its controller's next untap step.",
+          "reason": "unrecognised",
+          "slot": "modal",
+          "closestRule": "modal.choose"
+        }
+      ],
+      "reasons": [],
+      "ast": "905e6f84"
     },
     "aa913409-7a7a-4e74-82ff-7ff8195585ad": {
       "name": "Roll-Roll-Roll-Roll",
@@ -3913,6 +4284,23 @@
       "reasons": [],
       "ast": "bf33267c"
     },
+    "b6ec5a5c-144d-4ac3-bd05-2dc360c670fd": {
+      "name": "Tempest Caller",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When ~ enters, tap all creatures target opponent controls.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.all-permanents"
+        }
+      ],
+      "reasons": [],
+      "ast": "30cde40e"
+    },
     "b81eaa2f-0554-41c6-bdf6-d1cb73b8f56f": {
       "name": "Realmwalker",
       "group": "holdout",
@@ -3960,6 +4348,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "adae07f7"
+    },
+    "b9a62c6b-5848-44b1-932b-8d5de2560976": {
+      "name": "Surge of Salvation",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "You and permanents you control gain hexproof until end of turn. Prevent all damage that black and/or red sources would deal to creatures you control this turn.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.you-and-player"
+        }
+      ],
+      "reasons": [],
+      "ast": "fc08b2c9"
     },
     "b9cec31a-9891-414f-b528-954612168832": {
       "name": "Tangleweave Armor",
@@ -4154,6 +4559,23 @@
       "reasons": [],
       "ast": "9394df3a"
     },
+    "c450f6b7-bb2a-4b8c-aec7-d27555137b63": {
+      "name": "Retreat to Coralhelm",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever a land you control enters, choose one —\n• You may tap or untap target creature.\n• Scry 1.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "3b92a3f6"
+    },
     "c4fe854e-8783-492e-bb2e-9f242ada8a5b": {
       "name": "Blight Mound",
       "group": "acceptance",
@@ -4193,6 +4615,47 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e53d1d54"
+    },
+    "c736935a-e006-4a67-b942-e8ccf1cd9abb": {
+      "name": "Sharae of Numbing Depths",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When Sharae enters, tap target creature an opponent controls and put a stun counter on it.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "none"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever you tap one or more untapped creatures your opponents control, draw a card. This ability triggers only once each turn.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.tapped-for-mana"
+        }
+      ],
+      "reasons": [],
+      "ast": "a0f05231"
+    },
+    "c7530ecd-e22f-41e7-a76b-de32809901c8": {
+      "name": "Gadwick, the Wizened",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "When ~ enters, draw X cards.",
+          "reason": "notRunnable",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "ff6b7dc4"
     },
     "c7aecca5-2f67-4245-ab2d-e723d8b23a67": {
       "name": "Expressive Iteration",
@@ -4347,6 +4810,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e8228ba9"
+    },
+    "cc6a83c7-e645-4a53-9550-be79b42cd851": {
+      "name": "Loyal Warhound",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "When ~ enters, if an opponent controls more lands than you, search your library for a basic Plains card, put it onto the battlefield tapped, then shuffle.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "071a054e"
     },
     "cd2c90ac-2b04-461c-92f3-939871b6b6a3": {
       "name": "Sunken Hollow",
@@ -4973,6 +5453,23 @@
       "reasons": [],
       "ast": "5ef9c253"
     },
+    "ed2f3339-5c3e-473f-b08e-58288c4ad9c2": {
+      "name": "Niblis of Frost",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Whenever you cast an instant or sorcery spell, tap target creature an opponent controls. That creature doesn't untap during its controller's next untap step.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.gain-each-of-two"
+        }
+      ],
+      "reasons": [],
+      "ast": "f2d10717"
+    },
     "ed7300f4-831a-4ba4-b5e6-ceba8d079eaa": {
       "name": "Cosmos Elixir",
       "group": "acceptance",
@@ -5160,6 +5657,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b8bc1bbf"
+    },
+    "f49302c5-8510-4360-841c-a59f53f87e0b": {
+      "name": "Icy Blast",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "If you control a creature with power 4 or greater, those creatures don't untap during their controllers' next untap steps.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "spell.effect"
+        }
+      ],
+      "reasons": [],
+      "ast": "e315b7d9"
     },
     "f4ce6078-8c7b-4f68-b324-13130c63a983": {
       "name": "Angel of Serenity",
@@ -5556,8 +6070,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 346,
-      "total": 363
+      "supported": 347,
+      "total": 392
     }
   }
 }
