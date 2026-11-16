@@ -10,7 +10,7 @@ import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
 import type { GameEvent } from '../state/events';
-import { getSeat, patchObject, patchSeat, setSeat } from '../state/ops';
+import { getObject, getSeat, objectsInZone, patchObject, patchSeat, setSeat } from '../state/ops';
 import type {
   ChosenTarget,
   GameState,
@@ -97,7 +97,13 @@ import { rollDie } from './roll-die';
 import { controlledCandidates, sacrificeCandidates, sacrificePermanent } from './sacrifice';
 import { runChooseSacrifice, sacrificeInstructions } from './sacrifice-choice';
 import { runDiscard, runSearch } from './search';
-import { apnapOrder, resolveObjects, resolvePlayers, type SelectContext } from './select';
+import {
+  apnapOrder,
+  matchesFilter,
+  resolveObjects,
+  resolvePlayers,
+  type SelectContext,
+} from './select';
 import { recordTogether } from './simultaneous';
 import { runPair } from './soulbond';
 import { objectOrLki, sourceInfo } from './source-info';
@@ -152,6 +158,28 @@ export function runInstruction(
         source: res.object,
         sourceName: info?.name ?? '',
         sourceOracleText: info?.oracleText ?? '',
+      },
+    };
+  }
+  if (instruction.kind === 'chooseObjects') {
+    if (instruction.chosen !== null) return done(state);
+    const candidates = objectsInZone(state, instruction.filter.zone ?? 'battlefield').filter((id) =>
+      matchesFilter(state, getObject(state, id), instruction.filter, contextOf(state, res)),
+    );
+    if (candidates.length === 0) return { ...done(state), front: [{ ...instruction, chosen: [] }] };
+    const max = Math.min(instruction.count, candidates.length);
+    return {
+      state,
+      events: [],
+      front: [],
+      needs: {
+        kind: 'choosePermanent',
+        seat: res.controller,
+        source: res.object,
+        purpose: 'effect',
+        min: 0,
+        max,
+        legal: candidates,
       },
     };
   }
@@ -522,6 +550,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.chosenCreatureType === undefined
       ? {}
       : { sourceChosen: { creatureType: res.chosenCreatureType } }),
+    ...(res.chosenObjects === undefined ? {} : { chosenObjects: res.chosenObjects }),
     // CR 107.3a: the X announced for the spell or ability that is resolving.
     x: state.objects[res.object]?.stack?.x ?? 0,
     ...(res.lastMoved === undefined ? {} : { moved: res.lastMoved }),
@@ -549,6 +578,20 @@ function runEffect(
   let next = state;
 
   switch (effect.kind) {
+    case 'chooseObjects':
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseObjects',
+            id: effect.id,
+            filter: effect.filter,
+            count: effect.count,
+            chosen: null,
+          },
+        ],
+      );
     case 'chooseCreatureType':
       return done(state, [], [{ kind: 'chooseCreatureType', chosen: null }]);
     case 'sequence':

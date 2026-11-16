@@ -732,6 +732,8 @@ describe('unmatched abilities', () => {
       'noun.that-object',
       'noun.target-creatures-battlefield-or-graveyard',
       'noun.target-graveyard-card',
+      'noun.up-to-graveyard-cards',
+      'noun.up-to-one-permanent',
       'noun.target-cards-in-your-graveyard',
       'noun.x-target-graveyard-cards',
       'noun.those-creatures',

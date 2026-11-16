@@ -281,6 +281,8 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       return 'this spell';
     case 'target':
       return targetText(ability.targets?.find((t) => t.id === what.id));
+    case 'chosen':
+      return 'the chosen permanent';
     case 'each': {
       // D-517: "all creatures target player controls", the group of a player chosen as a target.
       const chosen = what.filter.controlledBy;
@@ -428,6 +430,7 @@ function recipientText(
     case 'all':
       return to.of.map((member) => recipientText(member, ability, self)).join(' and ');
     case 'target':
+    case 'chosen':
     case 'this':
     case 'thisSpell':
     case 'moved':

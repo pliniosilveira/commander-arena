@@ -125,6 +125,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   ],
   effectKinds: [
     'sequence',
+    'chooseObjects',
     'chooseCreatureType',
     'dealDamage',
     'destroy',
@@ -608,6 +609,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'this',
     'thisSpell',
     'target',
+    'chosen',
     'anyTarget',
     // D-200: "target player or planeswalker".
     'playerOrObject',
@@ -1145,6 +1147,7 @@ export const SELECTOR_KINDS = [
   'this',
   'thisSpell',
   'target',
+  'chosen',
   'anyTarget',
   /** "Target player or planeswalker" (D-200): the engine's `TargetSpec.what` `playerOrObject`. */
   'playerOrObject',
@@ -1686,6 +1689,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
 };
 const EFFECT_TABLE: KindTable<Effect['kind']> = {
   sequence: true,
+  chooseObjects: true,
   grantPlayerHexproof: true,
   mill: true,
   manifest: true,

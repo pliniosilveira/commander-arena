@@ -405,3 +405,9 @@ Four mechanisms, all run by CI (`pnpm typecheck`, `pnpm lint`, `pnpm test`):
 - Turning up: a special action like Suspend and Foretell (a priority option, an action, a `payMana` decision of purpose `turnFaceUp`); the object is patched, not moved.
 - View and agents: `ObjectView.faceDown`, `faceDownBy`, and for the controller `hiddenFace`, `turnFaceUpCost`, `ifFaceUp`; an agent sees only this, so it cannot peek; `determinize` deals the cards of other controllers' face-down permanents again.
 - Web: the page draws a card back with the Manifest token's picture (looked up at run time, never stored), the preview draws the real card for the controller, and the log of the host words the events without naming a hidden card.
+
+## Resolving choices referenced by later instructions (REAL; D-540)
+
+- `Effect.chooseObjects` queues `Instruction.chooseObjects`, which asks the existing `choosePermanent` decision for up to the declared count. The answer, including an empty selection, is stored in `ResolutionContext.chosenObjects` under the parser-bound text id.
+- `ObjectRef.chosen` reads that answer through `rules/select.ts`; AST validation only permits it after the matching choice in the same effect sequence. `moveToZone`'s existing optional card choice handles up-to-count selections from a graveyard.
+- The cards parser lowers "up to one creature" and a matching following "It" into this flow; no card-specific engine path is involved. The web's amount and ability text formatters call the selected object "the chosen creature" or "the chosen permanent".

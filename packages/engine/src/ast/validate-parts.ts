@@ -50,6 +50,8 @@ export interface Scope {
   readonly owner: 'ability' | 'spell';
   /** Target specs declared on the same ability or spell mode, by id. */
   readonly targets: ReadonlyMap<string, TargetKind>;
+  /** Resolving choices already made earlier in a sequence. */
+  readonly chosenObjects?: ReadonlySet<string>;
   /** Whether the kind 'x' amount has an X to read (an X in the cost or a spell with X). */
   readonly xAllowed: boolean;
   /** Validates an ability nested in the tree, such as one a token carries (set by validate.ts). */
@@ -932,6 +934,10 @@ export function checkRef(
       break;
     case 'target':
       checkTargetRef(ref.id, expect, path, scope, out);
+      break;
+    case 'chosen':
+      if (!scope.chosenObjects?.has(ref.id))
+        issue(out, path, "'chosen' needs an earlier chooseObjects instruction");
       break;
     case 'moved':
       if (scope.movedAvailable !== true) {
@@ -3269,6 +3275,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     );
   }
   switch (e?.kind) {
+    case 'chooseObjects':
+      if (typeof e.id !== 'string' || e.id.length === 0)
+        issue(out, `${path}.id`, 'chooseObjects needs an id');
+      if (!Number.isInteger(e.count) || e.count < 1)
+        issue(out, `${path}.count`, 'chooseObjects count must be positive');
+      if (e.filter.zone !== undefined && e.filter.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'chooseObjects selects permanents on the battlefield');
+      }
+      if (e.filter.controller !== 'you') {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          'chooseObjects must select permanents the controller controls',
+        );
+      }
+      checkFilter(e.filter, `${path}.filter`, out, scope);
+      break;
     case 'chooseCreatureType':
       break;
     case 'sequence':
@@ -3281,6 +3304,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkEffect(child, `${path}.effects[${i}]`, after, out);
           if (movesObjects(child) && after.movedAvailable !== true) {
             after = { ...after, movedAvailable: true };
+          }
+          if (child?.kind === 'chooseObjects') {
+            after = {
+              ...after,
+              chosenObjects: new Set([...(after.chosenObjects ?? []), child.id]),
+            };
           }
           // D-120: after a `loseLife`, "the total life lost this way" can be read.
           if (child?.kind === 'loseLife' && after.lossAvailable !== true) {

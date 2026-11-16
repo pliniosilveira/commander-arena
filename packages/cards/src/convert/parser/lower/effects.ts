@@ -290,10 +290,26 @@ function lowerChosenReturn(clause: IrClause, what: IrNoun, zone: string): LowerR
   if (blocked.length > 0) return failure(clause, blocked);
   const filter = lowerFilter(what);
   if (!filter.ok) return filter;
-  if (filter.value.controller !== 'you') return failure(clause);
+  if (filter.value.controller !== 'you' && filter.value.zone !== 'graveyard')
+    return failure(clause);
+  const count = what.count?.kind === 'number' ? what.count.value : undefined;
+  if (what.upTo === true && (count === undefined || filter.value.zone !== 'graveyard')) {
+    return failure(clause);
+  }
   return {
     ok: true,
-    value: [{ kind: 'moveToZone', objects: { kind: 'choose', filter: filter.value }, to: 'hand' }],
+    value: [
+      {
+        kind: 'moveToZone',
+        objects: {
+          kind: 'choose',
+          filter: filter.value,
+          ...(count === undefined ? {} : { count }),
+          ...(what.upTo === true ? { optional: true } : {}),
+        },
+        to: 'hand',
+      },
+    ],
     rule: clause.rule,
   };
 }
@@ -1212,10 +1228,41 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
   needs: ['effect:addCounters'],
   takesObjectTest: true,
   lower(clause, ctx) {
-    const count = amountArg(clause, 'count', ctx);
-    if (!count.ok) return count;
     const counter = arg(clause, 'counter');
     if (counter?.kind !== 'counterSpec') return failure(clause);
+    const objectsArg = arg(clause, 'objects');
+    if (
+      objectsArg?.kind === 'noun' &&
+      objectsArg.det === 'a' &&
+      objectsArg.upTo === true &&
+      objectsArg.ref !== undefined
+    ) {
+      const filter = lowerFilter(objectsArg);
+      if (!filter.ok) return filter;
+      const count = amountArg(clause, 'count', ctx);
+      if (!count.ok) return count;
+      ctx.chosenObjectRefs.add(objectsArg.ref);
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'chooseObjects',
+            id: objectsArg.ref,
+            filter: { ...filter.value, controller: 'you' },
+            count: 1,
+          },
+          {
+            kind: 'addCounters',
+            objects: { kind: 'chosen', id: objectsArg.ref },
+            counter: counter.name,
+            count: count.value,
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
     return eachObject(
       clause,
       ctx,

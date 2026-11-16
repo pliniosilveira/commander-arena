@@ -866,6 +866,13 @@ export interface ActivationContext {
 }
 
 export type Instruction =
+  | {
+      readonly kind: 'chooseObjects';
+      readonly id: string;
+      readonly filter: ObjectFilter;
+      readonly count: number;
+      readonly chosen: readonly ObjectId[] | null;
+    }
   | { readonly kind: 'chooseCreatureType'; readonly chosen: string | null }
   /** Run one effect node of the resolving spell or ability. */
   | { readonly kind: 'effect'; readonly effect: Effect; readonly as?: SeatId }
@@ -1580,6 +1587,8 @@ export interface ResolutionContext {
   readonly controller: SeatId;
   /** Creature type chosen by a resolving instruction such as "choose a creature type". */
   readonly chosenCreatureType?: string;
+  /** Objects chosen by resolving instructions, keyed by their bound text reference. */
+  readonly chosenObjects?: Readonly<Record<string, readonly ObjectId[]>>;
   readonly queue: readonly Instruction[];
   /** Targets that were still legal when resolution began (CR 608.2b). */
   readonly legalTargets: readonly ChosenTarget[];

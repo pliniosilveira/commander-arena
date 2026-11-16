@@ -1,5 +1,5 @@
 {
-  "parserVersion": 113,
+  "parserVersion": 114,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -3531,19 +3531,10 @@
     "9270eb03-4600-40cc-83a5-ea987d5d4978": {
       "name": "Gix's Command",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Choose two —\n• Put two +1/+1 counters on up to one creature. It gains lifelink until end of turn.\n• Destroy each creature with power 2 or less.\n• Return up to two creature cards from your graveyard to your hand.\n• Each opponent sacrifices a creature with the greatest power among creatures they control.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.target-permanent"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "9aa47a32"
+      "ast": "c3e6941a"
     },
     "92d95e12-fa51-4360-88e4-9078ccc5d8d3": {
       "name": "Cindervines",
@@ -5536,7 +5527,7 @@
           "text": "−10: You gain 7 life, draw seven cards, then put up to seven permanent cards from your hand onto the battlefield.",
           "reason": "unrecognised",
           "slot": "noun",
-          "closestRule": "noun.target-permanent"
+          "closestRule": "noun.up-to-graveyard-cards"
         }
       ],
       "reasons": [],
@@ -6109,7 +6100,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 394,
+      "supported": 395,
       "total": 420
     }
   }

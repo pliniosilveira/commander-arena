@@ -34,6 +34,8 @@ export interface SelectContext {
   readonly controller: SeatId;
   /** The spell or ability being cast or resolving, or the source of a static check. */
   readonly source: ObjectId | null;
+  /** The objects selected by resolving choices earlier in this spell or ability. */
+  readonly chosenObjects?: Readonly<Record<string, readonly ObjectId[]>>;
   /**
    * While an ability is being activated: the ability's own object on the stack, which never
    * targets itself. `source` is then the permanent the ability belongs to, so "another" and
@@ -536,6 +538,8 @@ export function resolveObjects(
       return ctx.source === null ? [] : [ctx.source];
     case 'target':
       return targetObjects(selector.id, targets);
+    case 'chosen':
+      return [...(ctx.chosenObjects?.[selector.id] ?? [])];
     case 'moved':
       // CR 400.7j: the new object, found through the effect that moved the old one (CR 400.7).
       return [...(ctx.moved ?? [])];

@@ -51,6 +51,8 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'target':
     case 'triggerSubject':
       return "that creature's";
+    case 'chosen':
+      return "the chosen creature's";
     case 'moved':
     case 'thisCard':
     case 'triggerCard':
@@ -80,6 +82,8 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
     case 'target':
     case 'triggerSubject':
       return 'that creature';
+    case 'chosen':
+      return 'the chosen creature';
     case 'moved':
     case 'thisCard':
     case 'triggerCard':

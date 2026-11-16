@@ -66,6 +66,7 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
 /** Features a noun can need beyond its selector kind. */
 export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:chosenType',
+  'selector:chosen',
   'selector:chosenColor',
   'selector:thisSpell',
   'selector:anyTarget',
@@ -746,6 +747,15 @@ export function objectRefOf(
     );
   }
   if (noun.det === 'anaphor' || noun.det === 'triggerSubject') {
+    if (noun.det === 'anaphor' && noun.ref !== undefined && ctx.chosenObjectRefs.has(noun.ref)) {
+      return (
+        gate(noun, ['selector:chosen']) ?? {
+          ok: true,
+          value: { kind: 'chosen', id: noun.ref },
+          rule: noun.rule,
+        }
+      );
+    }
     const to = followed(noun);
     if ('needs' in to) {
       if (options.triggerSubject === true && noun.det === 'triggerSubject') {

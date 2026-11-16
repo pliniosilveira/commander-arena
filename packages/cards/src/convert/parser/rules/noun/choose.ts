@@ -17,7 +17,7 @@ import {
 import type { IrComparison, IrFilter, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { defineRule, node, spanned } from '../registry';
-import { PLURAL_TYPE_UNION, permanentPhrase, withoutZone } from './phrases';
+import { graveyardPhrase, PLURAL_TYPE_UNION, permanentPhrase, withoutZone } from './phrases';
 
 type Bare = Omit<IrNoun, 'span' | 'rule'>;
 
@@ -51,7 +51,8 @@ function chosenPhrase(plural: boolean): Parser<IrFilter> {
 /**
  * `noun.a-permanent`: "a creature", "another permanent", "two lands": the acting player chooses
  * among the permanents that match (CR 608.2d), as in "sacrifice a creature" (CR 701.21). A count
- * is two or more (and may say "other": "two other creatures", D-485); "another" means any permanent but the source (CR 109.1).
+ * is two or more (and may say "other": "two other creatures", D-485); "another" means any permanent but the source (CR 109.1). "Up to one" is an
+ * optional resolving choice, not a target.
  */
 export const NOUN_A_PERMANENT = defineRule<IrNoun>({
   id: 'noun.a-permanent',
@@ -110,6 +111,51 @@ export const NOUN_A_PERMANENT = defineRule<IrNoun>({
         bare('a', filter, { other: true }),
       ),
       map(sequence(pattern(/an? /i), chosenPhrase(false)), ([, filter]) => bare('a', filter)),
+    ),
+    (b) => b,
+  ),
+});
+
+/** `noun.up-to-one-permanent`: one optional resolving selection, distinct from ordinary `a creature`. */
+export const NOUN_UP_TO_ONE_PERMANENT = defineRule<IrNoun>({
+  id: 'noun.up-to-one-permanent',
+  family: 'noun',
+  leading: ['up'],
+  cites: ['CR 608.2d (Resolving Spells and Abilities)'],
+  examples: ['up to one creature'],
+  rejects: ['up to two creatures', 'up to one target creature'],
+  parse: node<Bare, IrNoun>(
+    'noun.up-to-one-permanent',
+    map(sequence(literal('up to one '), chosenPhrase(false)), ([, filter]) =>
+      bare('a', filter, { upTo: true }),
+    ),
+    (b) => b,
+  ),
+});
+
+/** "Up to two creature cards from your graveyard": a resolving, optional choice (CR 608.2d). */
+export const NOUN_UP_TO_GRAVEYARD_CARDS = defineRule<IrNoun>({
+  id: 'noun.up-to-graveyard-cards',
+  family: 'noun',
+  leading: ['up'],
+  cites: ['CR 404.1 (Graveyard)', 'CR 608.2d (Resolving Spells and Abilities)'],
+  examples: ['up to two creature cards from your graveyard'],
+  rejects: ['up to two target creature cards from your graveyard'],
+  parse: node<Bare, IrNoun>(
+    'noun.up-to-graveyard-cards',
+    map(
+      sequence(
+        literal('up to '),
+        spanned(satisfy(quantity, (n) => n >= 2)),
+        literal(' '),
+        graveyardPhrase(true),
+      ),
+      ([, count, , filter]) =>
+        bare('a', filter, {
+          count: { kind: 'number', value: count.value, span: count.span },
+          plural: true,
+          upTo: true,
+        }),
     ),
     (b) => b,
   ),

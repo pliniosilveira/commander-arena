@@ -265,6 +265,9 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
           ? { entersPaid: null }
           : {}),
         ...(head.kind === 'move' && res.entersChosen != null ? { entersChosen: null } : {}),
+        ...(head.kind === 'chooseObjects' && head.chosen !== null
+          ? { chosenObjects: { ...res.chosenObjects, [head.id]: head.chosen } }
+          : {}),
       },
     };
     // D-191: the answers to the replacement questions of the damage belong to the one instruction that asked them.
@@ -402,6 +405,7 @@ export function answerResolutionChoice(
   if (!res || head === undefined) return null;
   if (
     head.kind !== 'chooseSacrifice' &&
+    head.kind !== 'chooseObjects' &&
     head.kind !== 'chooseMove' &&
     head.kind !== 'chooseTap' &&
     head.kind !== 'fightPairs' &&

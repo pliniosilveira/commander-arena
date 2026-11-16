@@ -1,9 +1,9 @@
 # Roadmap: deferred work and known limitations
 
-## Lord of the Nazgûl deck leftovers (issue 57, D-533 to D-538)
+## Lord of the Nazgûl deck leftovers (issue 57, D-533 to D-540)
 
-- `Lazotep Plating` was already supported on current `main`; `Diabolic Vision`, `Sleight of Hand`, `Slip Out the Back`, `Nightscape Familiar`, `Wavebreak Hippocamp`, `Distant Melody`, `Raise the Palisade`, `Hermes, Overseer of Elpis`, `Feign Death`, and `Supernatural Stamina` now read and run. The current corpus records 11 of the 21 issue cards supported and 10 unsupported.
-- Remaining cards: `Domineering Will`, `Drown in the Loch`, `Fandaniel, Telophoroi Ascian`, `Gix's Command`, `Into the Flood Maw`, `Lord of the Nazgûl`, `March of Swirling Mist`, `Maskwood Nexus`, `Sauron's Ransom`, and `Voracious Bibliophile`. The measured support status is the acceptance-card section of `packages/cards/test/fixtures/corpus/golden.expected.json`.
+- `Lazotep Plating` was already supported on current `main`; `Diabolic Vision`, `Sleight of Hand`, `Slip Out the Back`, `Nightscape Familiar`, `Wavebreak Hippocamp`, `Distant Melody`, `Raise the Palisade`, `Hermes, Overseer of Elpis`, `Feign Death`, `Supernatural Stamina`, `Into the Flood Maw`, and `Gix's Command` now read and run. The current corpus records 13 of the 21 issue cards supported and 8 unsupported.
+- Remaining cards: `Domineering Will`, `Drown in the Loch`, `Fandaniel, Telophoroi Ascian`, `Lord of the Nazgûl`, `March of Swirling Mist`, `Maskwood Nexus`, `Sauron's Ransom`, and `Voracious Bibliophile`. `Gix's Command` and `Into the Flood Maw` are supported. The measured support status is the acceptance-card section of `packages/cards/test/fixtures/corpus/golden.expected.json`.
 - `March of Swirling Mist` uses the existing one-shot `phaseOut` effect, but its up-to-X target count and additional exile cost need their own rules and tests; the unbuilt Phasing keyword is not needed. `Into the Flood Maw` now uses the generic tapped Fish Gift path (D-539).
 - The whole deck was not measured by `pnpm corpus:decks`: the Scryfall bulk file is not in this workspace. The card data is from the issue author's description; no rulings were independently checked.
 

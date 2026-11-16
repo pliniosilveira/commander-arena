@@ -4,4 +4,5 @@
 // 100: Carry a resolving creature-type choice into the remaining instructions (D-536).
 // 101: Let a resolving effect grant activated, triggered or mana abilities until end of turn (D-538).
 // 102: Give the promised tapped Fish Gift and select targets for the matching gift branch (D-539).
-export const ENGINE_VERSION = 102;
+// 103: Carry resolving choices of objects into later instructions of the same sequence (D-540).
+export const ENGINE_VERSION = 103;

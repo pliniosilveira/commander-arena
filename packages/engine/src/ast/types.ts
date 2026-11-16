@@ -638,6 +638,8 @@ export type ObjectRef =
   | { readonly kind: 'this' }
   | { readonly kind: 'thisSpell' }
   | { readonly kind: 'target'; readonly id: string }
+  /** "It" for the object chosen by an earlier resolving instruction (CR 608.2d). */
+  | { readonly kind: 'chosen'; readonly id: string }
   /**
    * "It", for what an earlier instruction of the same resolution moved (CR 400.7j): the new
    * object or objects that the previous `exile`, `destroy` or `moveToZone` effect produced, by
@@ -1339,6 +1341,13 @@ export interface InlineChoice {
   readonly effect: Effect;
 }
 export type Effect =
+  /** A resolving choice of up to `count` matching permanents, remembered by `id` for later instructions. */
+  | {
+      readonly kind: 'chooseObjects';
+      readonly id: string;
+      readonly filter: ObjectFilter;
+      readonly count: number;
+    }
   | { readonly kind: 'chooseCreatureType' }
   | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }
   | { readonly kind: 'prepare'; readonly objects: ObjectSelector }

@@ -15,4 +15,5 @@
 // 111: Read "you attack with one or more" through the existing attack-batch trigger.
 // 112: Read temporary grants of a quoted triggered ability and return the card a creature became to the battlefield.
 // 113: Read the tapped Fish form of Gift and condition target slots on whether Gift was promised.
-export const PARSER_VERSION = 113;
+// 114: Read optional resolving choices of permanents and graveyard cards (D-540).
+export const PARSER_VERSION = 114;
