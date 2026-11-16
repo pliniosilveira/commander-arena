@@ -375,6 +375,7 @@ describe('unmatched abilities', () => {
       'trigger.counters-added',
       'trigger.attack-batch',
       'trigger.attack-one-or-more',
+      'trigger.you-attack-with-one-or-more',
       'trigger.enters-one-or-more',
       'trigger.cast-or-copy',
       'trigger.cards-leave-graveyard',

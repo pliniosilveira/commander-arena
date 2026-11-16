@@ -1,5 +1,5 @@
 {
-  "parserVersion": 110,
+  "parserVersion": 111,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -2360,19 +2360,10 @@
     "63e2cba7-ec1a-44bf-b915-d2ae75851430": {
       "name": "Hermes, Overseer of Elpis",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever you attack with one or more Birds, scry 2.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.cast"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "679b529d"
+      "ast": "422686ad"
     },
     "64883ef2-c536-42e2-b52f-cfd1984fcdfd": {
       "name": "Fading Hope",
@@ -6147,7 +6138,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 390,
+      "supported": 391,
       "total": 420
     }
   }

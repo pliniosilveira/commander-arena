@@ -12,4 +12,5 @@
 // 108: Read repeated colored spell subjects in cost reductions.
 // 109: Read a first-spell trigger during each opponent's turn.
 // 110: Choose a creature type as a spell resolves and use it in the following instructions.
-export const PARSER_VERSION = 110;
+// 111: Read "you attack with one or more" through the existing attack-batch trigger.
+export const PARSER_VERSION = 111;

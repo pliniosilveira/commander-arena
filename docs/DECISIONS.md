@@ -3319,3 +3319,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: ask while casting (changes when the choice happens); represent the type as an object subtype filter (cannot represent every legal type choice dynamically).
 - Consequences: other spells can use the same choice instruction and the matching or inverse chosen-type filters (`of that type`, `that aren't of the chosen type`). The question is asked during resolution, before either filter is evaluated.
 
+## D-537: Read an attack trigger phrased from the attacking player (2026-11-16, issue 57)
+- Context: Hermes, Overseer of Elpis triggers when its controller attacks with one or more Birds. The engine already groups a player's declared attackers into one `attackBatch`, but the parser only read the alternate form "one or more creatures attack".
+- Decision: parse "you attack with one or more <creature filter>" as the existing `attackBatch` event with actor `you`, at least one matching creature, and the printed creature filter. Reuse the existing scry effect and decision.
+- Alternatives: emit one trigger per attacking Bird (would trigger multiple times for one declaration); add a card-specific override (duplicates existing batch machinery).
+- Consequences: this wording and future filtered versions use the existing declaration event; engine behavior and `ENGINE_VERSION` do not change.
+

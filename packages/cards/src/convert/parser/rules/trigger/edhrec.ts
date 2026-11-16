@@ -3,6 +3,8 @@
  * (CR 508.1, 603.2c), "Whenever one or more tokens you control enter" (CR 603.2c, 603.6a) and "Whenever you cast or copy an instant or sorcery spell"
  * (Magecraft, CR 707.10, 601.2i).
  */
+
+import { CREATURE_TYPES } from '@commander-arena/engine';
 import { fail, literal, map, pattern, sequence } from '../../combinators';
 import type { IrFilter, IrNoun, IrTrigger } from '../../ir/types';
 import { permanentPhrase, spellPhrase, withoutZone } from '../noun/phrases';
@@ -83,6 +85,61 @@ export const TRIGGER_ATTACK_ONE_OR_MORE = defineRule<IrTrigger>({
         rule: id,
       },
       pos: verb.pos,
+    };
+  },
+});
+
+/** `trigger.you-attack-with-one-or-more`: one trigger for the declared attackers matching a creature filter. */
+export const TRIGGER_YOU_ATTACK_WITH_ONE_OR_MORE = defineRule<IrTrigger>({
+  id: 'trigger.you-attack-with-one-or-more',
+  family: 'trigger',
+  leading: ['you'],
+  cites: [
+    'CR 508.1 (Declare Attackers Step)',
+    'CR 603.2 (Handling Triggered Abilities)',
+    'CR 603.2c (Handling Triggered Abilities)',
+  ],
+  examples: ['you attack with one or more Birds'],
+  rejects: [
+    'you attack with one or more noncreature permanents',
+    'you attack with one or more creatures',
+    'you attack with two or more Birds',
+    'you attack with one or more Birds or Elves',
+    'you attack with one or more Birds and gain life',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'trigger.you-attack-with-one-or-more';
+    const r = sequence(
+      youNoun(id),
+      literal(' attack with one or more '),
+      spanned(map(permanentPhrase(true, 'all'), withoutZone)),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [actor, , phrase] = r.value;
+    if (
+      phrase.value.types?.some((type) => type !== 'creature') ||
+      phrase.value.notTypes?.includes('creature') ||
+      (phrase.value.subtypes?.length ?? 0) === 0 ||
+      phrase.value.subtypes?.some((type) => !CREATURE_TYPES.includes(type))
+    ) {
+      return fail(ctx, pos);
+    }
+    const { zone: _zone, ...filter } = phrase.value;
+    void _zone;
+    const subject = makeNoun(id, phrase.span, 'a', { ...filter, types: ['creature'] });
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'attackBatch',
+        actor,
+        atLeast: 1,
+        subject: { ...subject, plural: true },
+        args: {},
+        span: { start: pos, end: r.pos },
+        rule: id,
+      },
+      pos: r.pos,
     };
   },
 });
@@ -195,6 +252,7 @@ export const TRIGGER_CAST_OR_COPY = defineRule<IrTrigger>({
 
 export const EDHREC_TRIGGER_RULES = [
   TRIGGER_ATTACK_ONE_OR_MORE,
+  TRIGGER_YOU_ATTACK_WITH_ONE_OR_MORE,
   TRIGGER_ENTERS_ONE_OR_MORE,
   TRIGGER_CAST_OR_COPY,
 ].map(quietly);

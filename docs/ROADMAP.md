@@ -1,9 +1,9 @@
 # Roadmap: deferred work and known limitations
 
-## Lord of the Nazgûl deck leftovers (issue 57, D-533 to D-536)
+## Lord of the Nazgûl deck leftovers (issue 57, D-533 to D-537)
 
-- `Lazotep Plating` was already supported on current `main`; `Diabolic Vision`, `Sleight of Hand`, `Slip Out the Back`, `Nightscape Familiar`, `Wavebreak Hippocamp`, `Distant Melody`, and `Raise the Palisade` now read and run. The issue's 21-card report was generated at an older parser version; the current corpus records 8 supported cards and 13 unsupported cards from the issue.
-- Remaining cards: `Domineering Will`, `Drown in the Loch`, `Fandaniel, Telophoroi Ascian`, `Feign Death`, `Gix's Command`, `Hermes, Overseer of Elpis`, `Into the Flood Maw`, `Lord of the Nazgûl`, `March of Swirling Mist`, `Maskwood Nexus`, `Sauron's Ransom`, `Supernatural Stamina`, `Voracious Bibliophile`. The measured support status is the acceptance-card section of `packages/cards/test/fixtures/corpus/golden.expected.json`.
+- `Lazotep Plating` was already supported on current `main`; `Diabolic Vision`, `Sleight of Hand`, `Slip Out the Back`, `Nightscape Familiar`, `Wavebreak Hippocamp`, `Distant Melody`, `Raise the Palisade`, and `Hermes, Overseer of Elpis` now read and run. The issue's 21-card report was generated at an older parser version; the current corpus records 9 supported cards and 12 unsupported cards from the issue.
+- Remaining cards: `Domineering Will`, `Drown in the Loch`, `Fandaniel, Telophoroi Ascian`, `Feign Death`, `Gix's Command`, `Into the Flood Maw`, `Lord of the Nazgûl`, `March of Swirling Mist`, `Maskwood Nexus`, `Sauron's Ransom`, `Supernatural Stamina`, `Voracious Bibliophile`. The measured support status is the acceptance-card section of `packages/cards/test/fixtures/corpus/golden.expected.json`.
 - `March of Swirling Mist` uses the existing one-shot `phaseOut` effect, but its up-to-X target count and additional exile cost need their own rules and tests; the unbuilt Phasing keyword is not needed. `Into the Flood Maw` needs Gift to create the specified tapped Fish token for the chosen player; the parser and engine already have the Gift a card path, so classify the extension before treating it as a new subsystem.
 - The whole deck was not measured by `pnpm corpus:decks`: the Scryfall bulk file is not in this workspace. The card data is from the issue author's description; no rulings were independently checked.
 
