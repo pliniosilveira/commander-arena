@@ -3313,3 +3313,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: add a new trigger kind and event; keep a separate per-opponent-turn spell counter (duplicates the existing count and reset path).
 - Consequences: the trigger reuses the existing spell event and turn state. The new field is only valid for a controller's first spell and is evaluated from the active player at the cast event.
 
+## D-536: Choose a creature type while a spell resolves (2026-11-16, issue 57)
+- Context: Distant Melody asks for a creature type as it resolves, then counts permanents of that type. The engine's existing chosen-type filter only read choices made as a permanent entered.
+- Decision: model the resolving choice as an instruction and store its answer on the resolution context, so later instructions and amount filters can read the selected type. Reuse the existing `chooseOption` decision and `CREATURE_TYPES` list.
+- Alternatives: ask while casting (changes when the choice happens); represent the type as an object subtype filter (cannot represent every legal type choice dynamically).
+- Consequences: other spells can use the same choice instruction and the matching or inverse chosen-type filters (`of that type`, `that aren't of the chosen type`). The question is asked during resolution, before either filter is evaluated.
+

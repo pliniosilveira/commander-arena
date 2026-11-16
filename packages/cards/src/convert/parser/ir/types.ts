@@ -259,6 +259,8 @@ export interface IrFilter {
    * creature type or the color that the source of the ability chose as it entered.
    */
   readonly chosen?: 'type' | 'color';
+  /** "aren't of the chosen type" after a resolving creature-type choice (D-536). */
+  readonly notChosenType?: true;
   readonly stackKind?: 'spell' | 'ability' | 'triggeredAbility';
   /** "with a single target" (stage P38, D-182, CR 115.9a): a spell or ability that was put on the stack with exactly one target. */
   readonly singleTarget?: true;

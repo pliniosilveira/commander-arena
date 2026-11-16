@@ -316,6 +316,10 @@ export function matchesFilterWith(
     const type = ctx.sourceChosen?.creatureType;
     if (type === undefined || !d.subtypes.some((s) => sameCreatureType(s, type))) return false;
   }
+  if (filter.notChosenType === true) {
+    const type = ctx.sourceChosen?.creatureType;
+    if (type === undefined || d.subtypes.some((s) => sameCreatureType(s, type))) return false;
+  }
   if (filter.chosenColor === true) {
     const color = ctx.sourceChosen?.color;
     if (color === undefined || !d.colors.includes(color)) return false;

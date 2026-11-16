@@ -628,6 +628,7 @@ describe('unmatched abilities', () => {
       'effect.add-additional-mana',
       'effect.add-mana',
       'effect.choose-color',
+      'effect.choose-creature-type',
       'effect.delayed-draw',
       'effect.delayed-draw-up-to',
       'effect.delayed-mana',

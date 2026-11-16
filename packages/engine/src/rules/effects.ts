@@ -6,6 +6,7 @@
  * path: a card using any other kind is rejected by validateCard before it can be supported.
  */
 import type { Effect, ObjectFilter, ObjectSelector } from '../ast/types';
+import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
 import type { GameEvent } from '../state/events';
@@ -136,6 +137,24 @@ export function runInstruction(
 ): StepOutcome {
   // D-191: the answers given so far to the replacement questions of the damage this instruction deals (rules/damage-effects.ts).
   const flow = askingFlow(res.damageAnswers);
+  if (instruction.kind === 'chooseCreatureType') {
+    if (instruction.chosen !== null) return done(state);
+    const info = sourceInfo(state, res.source);
+    return {
+      state,
+      events: [],
+      front: [],
+      needs: {
+        kind: 'chooseOption',
+        seat: res.controller,
+        purpose: 'creatureType',
+        options: CREATURE_TYPES,
+        source: res.object,
+        sourceName: info?.name ?? '',
+        sourceOracleText: info?.oracleText ?? '',
+      },
+    };
+  }
   if (instruction.kind === 'sacrifice') {
     // CR 701.21a: only a permanent its controller still controls can be sacrificed. One that
     // already left (an earlier instruction moved it) is skipped (CR 608.2c).
@@ -500,6 +519,9 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
   return {
     controller: res.controller,
     source: res.source,
+    ...(res.chosenCreatureType === undefined
+      ? {}
+      : { sourceChosen: { creatureType: res.chosenCreatureType } }),
     // CR 107.3a: the X announced for the spell or ability that is resolving.
     x: state.objects[res.object]?.stack?.x ?? 0,
     ...(res.lastMoved === undefined ? {} : { moved: res.lastMoved }),
@@ -527,6 +549,8 @@ function runEffect(
   let next = state;
 
   switch (effect.kind) {
+    case 'chooseCreatureType':
+      return done(state, [], [{ kind: 'chooseCreatureType', chosen: null }]);
     case 'sequence':
       return done(
         state,

@@ -827,7 +827,6 @@ describe('the choice made as a permanent enters and what reads it (D-100; CR 614
       'is the chosen type in addition to its other types.',
     ],
     ['Creatures you control of the chosen player get +1/+1.', 'of the chosen player get +1/+1.'],
-    ['Creatures you control of that type get +1/+1.', 'of that type get +1/+1.'],
   ])('%s stops at "%s"', (text, stoppedAt) => {
     expect(dropped(text, 'enchantment')).toMatchObject({ stoppedAt });
   });

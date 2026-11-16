@@ -728,6 +728,17 @@ const CHOOSE_COLOR: Lowering<IrClause, Effects> = {
   }),
 };
 
+const CHOOSE_CREATURE_TYPE: Lowering<IrClause, Effects> = {
+  head: 'chooseCreatureType',
+  id: 'lower.choose-creature-type',
+  needs: ['effect:chooseCreatureType'],
+  lower: (clause) => ({
+    ok: true,
+    value: [{ kind: 'chooseCreatureType' }],
+    rule: clause.rule,
+  }),
+};
+
 function playerVerb(
   verb: 'draw' | 'discard' | 'gainLife' | 'loseLife' | 'gainEnergy' | 'shuffle' | 'mill',
 ): Lowering<IrClause, Effects> {
@@ -1416,6 +1427,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   REGENERATE,
   ADD_MANA,
   CHOOSE_COLOR,
+  CHOOSE_CREATURE_TYPE,
   playerVerb('draw'),
   playerVerb('discard'),
   playerVerb('gainLife'),

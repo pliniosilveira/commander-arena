@@ -567,12 +567,13 @@ export interface ObjectFilter {
    */
   readonly powerAboveBase?: true;
   /**
-   * "Of the chosen type" (D-100): the object has the creature type that the source of the ability or
-   * static ability chose as it entered (`GameObject.chosen.creatureType`, CR 607.2d). Matches nothing
-   * when the source has made no such choice. `validateCard` requires the card to ask for it with an
-   * `asEntersChoose` of `creatureType` (linked abilities, CR 607.2d).
+   * "Of the chosen type" (D-100) or "of that type" after a resolving choice (D-536): the object has
+   * the creature type the source permanent chose as it entered, or the resolving instruction chose
+   * in this resolution. Matches nothing without either choice.
    */
   readonly chosenType?: true;
+  /** "Aren't of the chosen type" after a creature-type choice made as an effect resolves (D-536). */
+  readonly notChosenType?: true;
   /**
    * "that shares a creature type with it" (D-261, CR 205.3m, 603.10a, 113.7a): the object has at least one creature type that the creature the trigger is
    * about has (`triggerSubject`: the one that died), as that creature last was on the battlefield; a changeling has every creature type (CR 702.73a).
@@ -1338,6 +1339,7 @@ export interface InlineChoice {
   readonly effect: Effect;
 }
 export type Effect =
+  | { readonly kind: 'chooseCreatureType' }
   | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }
   | { readonly kind: 'prepare'; readonly objects: ObjectSelector }
   | {

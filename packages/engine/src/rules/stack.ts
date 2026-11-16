@@ -806,6 +806,45 @@ export function answerResolutionChooseOne(state: GameState, option: string): Res
   );
 }
 
+/** Records the creature type chosen by a resolving instruction and continues its spell. */
+export function answerResolutionCreatureType(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (
+    !res ||
+    head?.kind !== 'chooseCreatureType' ||
+    head.chosen !== null ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'creatureType' ||
+    !d.options.includes(option)
+  )
+    return null;
+  const updated: Instruction = { ...head, chosen: option };
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    {
+      ...state,
+      pending: null,
+      resolution: {
+        ...res,
+        chosenCreatureType: option,
+        queue: [updated, ...res.queue.slice(1)],
+      },
+    },
+    [event],
+  );
+}
+
 /**
  * Records the answer to "gains protection from the color of your choice" (CR 702.16, 608.2d, D-451) on the instruction that asked: the color chosen. Then continues.
  * Null when no such question is waiting or the answer is not one of the five colors.

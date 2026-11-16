@@ -341,6 +341,7 @@ describe('supported feature gate', () => {
       // D-177: "becomes the target of a spell".
       'becomesTargetSpell',
       'castNth',
+      'castDuringOpponentTurn',
       // D-510: "Whenever you tap an untapped creature an opponent controls", "if it isn't being declared as an attacker", "one or more".
       'tappedBy',
       'notAsAttacker',

@@ -11,4 +11,5 @@
 // 107: Bind "it phases out" to the earlier targeted creature.
 // 108: Read repeated colored spell subjects in cost reductions.
 // 109: Read a first-spell trigger during each opponent's turn.
-export const PARSER_VERSION = 109;
+// 110: Choose a creature type as a spell resolves and use it in the following instructions.
+export const PARSER_VERSION = 110;

@@ -63,7 +63,12 @@ import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
-import { EFFECT_ADD_ADDITIONAL_MANA, EFFECT_ADD_MANA, EFFECT_CHOOSE_COLOR } from './mana';
+import {
+  EFFECT_ADD_ADDITIONAL_MANA,
+  EFFECT_ADD_MANA,
+  EFFECT_CHOOSE_COLOR,
+  EFFECT_CHOOSE_CREATURE_TYPE,
+} from './mana';
 import { MELD_EFFECT_RULES } from './meld';
 import { NIV_EFFECT_RULES } from './niv';
 import { NIV_GROUP_2B_B_EFFECT_RULES } from './niv-group-2b-b';
@@ -966,6 +971,7 @@ export const EFFECT_RULES = [
   EFFECT_ADD_MANA,
   // The sentence before "Add an amount of mana of that color equal to your devotion to that color" (Nykthos, Shrine to Nyx).
   EFFECT_CHOOSE_COLOR,
+  EFFECT_CHOOSE_CREATURE_TYPE,
   // Before `effect.player` and `effect.draw`: "you draw a card" is a prefix of the delayed draw (stage P26).
   ...DELAYED_RULES,
   EFFECT_PLAYER,

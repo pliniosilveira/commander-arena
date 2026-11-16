@@ -1,5 +1,5 @@
 {
-  "parserVersion": 109,
+  "parserVersion": 110,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -4147,19 +4147,10 @@
     "ac6c5852-71c7-4f19-8c87-ccb345052862": {
       "name": "Distant Melody",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Choose a creature type. Draw a card for each permanent you control of that type.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.choose-graveyard-cards"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "229a1ba0"
+      "ast": "d9e15843"
     },
     "ac8952c9-bd30-48cd-b964-7e6271f9cbc8": {
       "name": "Sephara, Sky's Blade",
@@ -5722,19 +5713,10 @@
     "f55a3781-fe33-4301-9bb5-6a54b9c13c4f": {
       "name": "Raise the Palisade",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Choose a creature type. Return all creatures that aren't of the chosen type to their owners' hands.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.choose-graveyard-cards"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "ec6a24e4"
+      "ast": "be0487d5"
     },
     "f61680da-606e-4d16-b0a0-361aa5210901": {
       "name": "Chandra's Ignition",
@@ -6165,7 +6147,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 388,
+      "supported": 390,
       "total": 420
     }
   }

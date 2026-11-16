@@ -125,6 +125,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   ],
   effectKinds: [
     'sequence',
+    'chooseCreatureType',
     'dealDamage',
     'destroy',
     'exile',
@@ -653,6 +654,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
     'chosenType',
+    'notChosenType',
     'chosenColor',
     // D-110: "defending player" (CR 508.5) and "it" for the card the source became (CR 400.7, Persist).
     'defendingPlayer',
@@ -1203,8 +1205,9 @@ export const SELECTOR_KINDS = [
   'triggerSubject',
   'triggerActor',
   'bound',
-  /** "Of the chosen type" / "of the chosen color" (D-100, CR 607.2d): the engine's `ObjectFilter.chosenType` and `chosenColor`. */
+  /** The chosen type/color selectors (D-100, D-536), including the inverse chosen-type filter. */
   'chosenType',
+  'notChosenType',
   'chosenColor',
   /** "Defending player" (CR 508.5, Annihilator): the engine's `PlayerSelector` `defendingPlayer`. */
   'defendingPlayer',
@@ -1777,6 +1780,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   castCard: true,
   reselectAttack: true,
   chooseOne: true,
+  chooseCreatureType: true,
   vote: true,
   ringTempts: true,
   pair: true,

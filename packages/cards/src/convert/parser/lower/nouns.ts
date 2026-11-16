@@ -183,9 +183,17 @@ function lowerFilterAt(
       anyOf.push(lowered.value);
     }
   }
-  // D-100: "of the chosen type" reads the choice the source made as it entered (CR 607.2d).
-  let chosen: { chosenType: true } | { chosenColor: true } | Record<string, never> = {};
-  if (filter.chosen !== undefined) {
+  // D-100, D-536: chosen-type filters read an entry choice or a type selected as this resolves.
+  let chosen:
+    | { chosenType: true }
+    | { chosenColor: true }
+    | { notChosenType: true }
+    | Record<string, never> = {};
+  if (filter.notChosenType === true) {
+    const missing = missingFeatures(['selector:chosenType']);
+    if (missing.length > 0) return bad(missing);
+    chosen = { notChosenType: true };
+  } else if (filter.chosen !== undefined) {
     const feature = filter.chosen === 'type' ? 'selector:chosenType' : 'selector:chosenColor';
     const missing = missingFeatures([feature]);
     if (missing.length > 0) return bad(missing);

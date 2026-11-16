@@ -449,7 +449,7 @@ export function checkFilter(
     }
   }
   // D-100: "of the chosen type" / "of the chosen color" are flags; the card must ask for the choice.
-  for (const key of ['chosenType', 'chosenColor'] as const) {
+  for (const key of ['chosenType', 'chosenColor', 'notChosenType'] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
   }
@@ -3269,6 +3269,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     );
   }
   switch (e?.kind) {
+    case 'chooseCreatureType':
+      break;
     case 'sequence':
       if (!Array.isArray(e.effects) || e.effects.length === 0) {
         issue(out, `${path}.effects`, 'a sequence needs at least one effect');
