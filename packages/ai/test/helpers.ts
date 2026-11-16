@@ -3099,7 +3099,7 @@ export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
- * The SYNTHETIC cards of group 1 of the Galadriel deck (issue 43, D-1600 and later): a creature that scries when a creature of its controller enters and makes the Ring tempt its
+ * The SYNTHETIC cards of group 1 of the Galadriel deck (issue 43, D-528 and later): a creature that scries when a creature of its controller enters and makes the Ring tempt its
  * controller the second time that ability resolves in a turn, a creature that scries 3 when the Ring tempts its controller (another creature chosen) and may reveal the top card
  * whenever its controller scries, a creature that draws whenever its controller scries or surveils, two sorceries that scry 3 and reveal the top card, a planeswalker with X loyalty, an
  * instant that destroys an artifact, an enchantment or a creature with flying, and a surveil. The "you may" of the reveal, the X, the Ring-bearer to choose, the cards to put and the

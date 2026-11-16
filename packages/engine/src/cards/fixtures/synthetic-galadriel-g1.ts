@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 1 OF THE GALADRIEL DECK (issue 43, D-1600 and later). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 1 OF THE GALADRIEL DECK (issue 43, D-528 and later). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the real cards of the group need from the engine, written out by hand (the cards package checks that the grammar lowers the real Oracle text to these
  * same nodes): a creature that scries when a creature of its controller enters and makes the Ring tempt its controller the second time that ability resolves in a turn, a creature that

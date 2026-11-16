@@ -472,13 +472,13 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The cost reduction "during your turn" takes a plain number of generic mana off the first mana cost, never below zero; other turns ("during an opponent's turn") and a reduction of a mana ability are not read.
 - The rulings of the eleven cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
 
-## The Galadriel deck, group 1 (issue 43, D-1600 to D-1609)
+## The Galadriel deck, group 1 (issue 43, D-528 to D-537)
 
 - The Ring (CR 701.54) was already built (D-196, D-197); nothing of it is missing for this group. The Ring still tempts only "you" (no card of the engine's list says another player).
 - `abilityResolvedTimes` counts by the text of the effect of the ability, so two abilities of one permanent with the same text count together; the count is kept only for an ability that reads it. Only the second to fourth time is read ("first" is always true on a first resolution, a higher ordinal has no card). "Resolved" is the ability's resolution beginning: an ability that is countered or removed is not counted, one whose targets all became illegal never begins to resolve (CR 608.2b).
 - `ringBearerChosen` reads the creature the tempting chose, as the ability saw it when it triggered; it is checked again as the ability resolves with that same creature.
 - `revealTop` with `onMatch` runs an effect that does not name the card (draw a card, a put of the card itself): "exile it", "gain life equal to its mana value" and "put it into your graveyard" are not read. A reveal of more than the top card with a draw ("reveal the top two cards ... for each land card, draw a card") is not read.
-- "If it's a land card or a creature card with mana value less than or equal to N" is read only with "land card" first (its mana value 0 makes one limit for the whole filter exact, D-1606); a first kind with a mana value is not read.
+- "If it's a land card or a creature card with mana value less than or equal to N" is read only with "land card" first (its mana value 0 makes one limit for the whole filter exact, D-534); a first kind with a mana value is not read.
 - A planeswalker with X loyalty shows a loyalty of 0 in a hand and a library (its printed loyalty is stored as 0 and the X is the replacement "enters with X loyalty counters"); the web does not draw "X" for it. The agents announce the greatest X they can pay for it (the generic rule of `casual-x.ts`): a smaller X that keeps mana for other spells is not planned.
 - Nissa, Steward of Elements: the agents use her abilities as they use any loyalty ability (D-203); they do not plan to attack with the lands the −6 animates.
 - "They become 6/6 Elemental creatures. They're still lands." with no duration (the −7 of Nissa, Sage Animist) is not read by `effect.they-become-creatures`, which needs "until end of turn"; that card also needs the transform of a planeswalker back face (item 2 of the planeswalker line above).
