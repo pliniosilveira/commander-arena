@@ -5,6 +5,7 @@
 // CR 605.1a and 605.5a (an ability with a target is not a mana ability: it uses the stack and can be responded to), CR 106.4 (the mana goes to the pool of the player who adds it),
 // CR 608.2d (the color is chosen as the ability resolves, so not when it is put on the stack), CR 603.10a (a sacrificed permanent is gone when the effect resolves).
 import { describe, expect, test } from 'vitest';
+import { singleFace } from '../src/cards/fixtures/helpers';
 import { getLegalActions, syntheticCard, validateCard } from '../src/index';
 import { type ScenarioGame, scenario } from '../src/testing/index';
 
@@ -404,5 +405,51 @@ describe('a targeted ability is not a mana ability (CR 605.1a, 605.5a)', () => {
     expect(d.specs[0]?.legal).toHaveLength(2);
     g.act(0).chooseTargets({ player: 1 });
     sacrificeDecision(g);
+  });
+});
+
+describe('the condition "if you sacrificed one or more artifacts this way" of an activated ability reads its own cost', () => {
+  /** SYNTHETIC: "{T}, Sacrifice one or more artifacts: If you sacrificed an artifact this way, draw a card." */
+  const JUDGE = singleFace({
+    name: 'SYNTHETIC Lotus Judge',
+    manaCost: ['2'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText:
+      '{T}, Sacrifice one or more artifacts: If you sacrificed an artifact this way, draw a card.',
+    abilities: [
+      {
+        kind: 'activated',
+        cost: [
+          { kind: 'tap' },
+          { kind: 'sacrifice', what: { types: ['artifact'] }, anyNumber: true, atLeastOne: true },
+        ],
+        effect: {
+          kind: 'conditional',
+          condition: { kind: 'sacrificedAsCost' },
+          effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+        },
+      },
+    ],
+  });
+
+  test('is valid, and the condition holds: the cost sacrificed an artifact, though the Judge is not what resolves', () => {
+    expect(validateCard(JUDGE)).toEqual([]);
+    const g = scenario()
+      .define(JUDGE)
+      .seat(0)
+      .battlefield(JUDGE.name)
+      .battlefield(TRINKET, { label: 'a1' })
+      .library(...LIBRARY)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).activate(JUDGE.name);
+    g.act(0).choosePermanents('a1');
+    g.passAll();
+    g.expect.handSize(0, 1);
+    g.expect.invariants();
   });
 });

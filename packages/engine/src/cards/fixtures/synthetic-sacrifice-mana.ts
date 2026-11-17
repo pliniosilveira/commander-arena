@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR "SACRIFICE ONE OR MORE ARTIFACTS: CHOOSE A COLOR. TARGET PLAYER ADDS MANA" (issue 258, D-581 to D-586). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR "SACRIFICE ONE OR MORE ARTIFACTS: CHOOSE A COLOR. TARGET PLAYER ADDS MANA" (issue 258, D-581 to D-585). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the real card needs from the engine, written out by hand (the cards package checks that the grammar lowers the real Oracle text to these same nodes):
  * an artifact whose activated ability taps it and sacrifices one or more artifacts, has its controller choose a color as it resolves, and has a target player add three mana of that

@@ -1138,7 +1138,7 @@ function checkActivationCosts(
       issue(
         out,
         `${path}.cost[${i}].anyNumber`,
-        'an activated ability sacrifices a number it states or one or more permanents (atLeastOne): "any number" with none is an additional cost of a spell (D-491, D-581)',
+        'an activated ability sacrifices a number it states: "any number" is an additional cost of a spell (D-491); "one or more" needs atLeastOne (D-581)',
       );
     }
     if (offBattlefield && needsBattlefield) {
