@@ -203,6 +203,13 @@ describe('Underworld Connections', () => {
   });
 });
 
+describe('Tragic Slip', () => {
+  test('the Morbid replacement reads whether a creature died this turn', () => {
+    expect(real('Tragic Slip').support.unparsed).toEqual([]);
+    expect(real('Tragic Slip').support.status).toBe('supported');
+  });
+});
+
 describe('"That token gains haste until end of turn" and "then attach ~ to it": the token the text made (CR 111.2, 400.7j)', () => {
   const grantHaste = {
     kind: 'grantKeyword',

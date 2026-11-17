@@ -4,10 +4,10 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 
 ## Status
 
-- [x] 16 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, Liesa, Forgotten Archangel, Skrelv's Hive, Authority of the Consuls, and Underworld Connections.
+- [x] 17 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, Liesa, Forgotten Archangel, Skrelv's Hive, Authority of the Consuls, Underworld Connections, and Tragic Slip.
 - Current branch: `support-kambal`.
-- Current group: E — Authority of the Consuls and Underworld Connections are supported (D-595, D-596).
-- Next: Liesa, Shroud of Dusk.
+- Current group: F — Tragic Slip is supported (D-597).
+- Next: Ob Nixilis of the Black Oath. Liesa, Shroud of Dusk is awaiting owner approval of `docs/proposals/liesa-commander-tax-life.md`.
 
 ## Cards and initial gap groups
 
@@ -50,7 +50,7 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 - [ ] Liesa, Shroud of Dusk
 - [ ] Ob Nixilis of the Black Oath
 - [ ] Teferi's Reproach
-- [ ] Tragic Slip
+- [x] Tragic Slip — its Morbid replacement reads the creature-death history for the turn (D-597).
 
 ## Validation
 

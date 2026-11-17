@@ -5073,3 +5073,9 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Parser and engine:** An Aura may grant an activated ability to an enchanted land. The granted ability is lowered with the host's land type so tap costs and activation rules apply to the land; Underworld Connections' ability pays 1 life and draws a card.
 - **Proof:** `scenario-xx-underworld.test.ts` activates the granted ability and checks the life payment, tap and draw. `parser-p48.test.ts` checks complete import of the real card and golden acceptance support.
 - **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Tragic Slip (D-597)
+
+- **Parser and engine:** The condition "a creature died this turn" reads the turn's creature-death history. The spell parser joins Tragic Slip's following "That creature gets ... instead if ..." paragraph to its preceding pump instruction and lowers it as a conditional replacement.
+- **Proof:** `parser-registry.test.ts` exercises the condition through the full pipeline; `parser-p48.test.ts` checks complete real-card parsing; the golden corpus records support.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.

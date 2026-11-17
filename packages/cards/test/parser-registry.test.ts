@@ -768,6 +768,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.opponent-poison-at-least': permanent(
     (e) => `As long as ${e}, creatures you control with toxic have lifelink.`,
   ),
+  'condition.creature-died-this-turn': spell(
+    (e) =>
+      `Target creature gets -1/-1 until end of turn. That creature gets -13/-13 until end of turn instead if ${e}.`,
+  ),
   'condition.host-is-tapped': permanent((e) => `At the beginning of each upkeep, if ${e}, tap it.`),
   'restriction.cost-reduction-your-turn': permanent(
     (e) => `{1}, {T}: Tap target creature. ${cap(e)}`,

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 136,
+  "parserVersion": 137,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -6079,19 +6079,10 @@
     "fa6e2a47-a8cb-4224-ae3e-f61c90477285": {
       "name": "Tragic Slip",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "That creature gets -13/-13 until end of turn instead if a creature died this turn.",
-          "reason": "unrecognised",
-          "slot": "duration",
-          "closestRule": "duration.until-end-of-turn"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "8663f459"
+      "ast": "5691b2db"
     },
     "fab29bc7-1f0a-4df4-b8f1-c008ce5583d2": {
       "name": "Search for Glory",
@@ -6217,7 +6208,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 434,
+      "supported": 435,
       "total": 459
     }
   }

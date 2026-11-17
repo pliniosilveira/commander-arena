@@ -393,6 +393,42 @@ export const CONDITION_OPPONENT_POISON_AT_LEAST = defineRule<IrCondition>({
   },
 });
 
+/** Morbid: whether any creature died this turn. */
+export const CONDITION_CREATURE_DIED_THIS_TURN = defineRule<IrCondition>({
+  id: 'condition.creature-died-this-turn',
+  family: 'condition',
+  leading: ['a'],
+  cites: ['CR 700.4 (Dies)', 'CR 608.2c (Instructions in Order)'],
+  examples: ['a creature died this turn'],
+  rejects: [
+    'a creature died last turn',
+    'a creature will die this turn',
+    'a creature dies this turn',
+    'a creature card died this turn',
+    'a creature died this turn.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/a creature died this turn(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const amount: IrAmount = {
+      kind: 'diedThisTurn',
+      controller: 'any',
+      types: ['creature'],
+      span,
+    };
+    return {
+      ok: true,
+      value: condition('condition.creature-died-this-turn', span, {
+        kind: 'amountIs',
+        amount,
+        compare: { cmp: 'atLeast', value: 1 },
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 /**
  * `condition.control-commander`: "you control a commander" (stage P13, CR 903.3d: a commander is a
  * permanent on the battlefield that was designated as a commander; a token or a copy is not one
@@ -445,6 +481,7 @@ export const CONDITION_RULES = [
   CONDITION_CONTROL_NONE,
   CONDITION_CONTROL_LAND_TYPE,
   CONDITION_OPPONENT_POISON_AT_LEAST,
+  CONDITION_CREATURE_DIED_THIS_TURN,
   CONDITION_OPPONENTS_AT_LEAST,
   CONDITION_CONTROL_COMMANDER,
   ...GAME_STATE_CONDITION_RULES,

@@ -208,7 +208,7 @@ function joinInsteadLines(lines: readonly string[]): string[] {
  * is unread as a whole, as the line was alone.
  */
 const REFERENCE_LINE =
-  /^If [^\n]+?, (?:exile|destroy|return|sacrifice|tap|untap|put) (?:it|that (?:creature|permanent|artifact|land|enchantment|planeswalker))\.$/u;
+  /^(?:If [^\n]+?, (?:exile|destroy|return|sacrifice|tap|untap|put) (?:it|that (?:creature|permanent|artifact|land|enchantment|planeswalker))\.|That creature gets [^\n]+ instead if [^\n]+\.)$/u;
 
 function joinReferenceLines(lines: readonly string[]): string[] {
   const out: string[] = [];

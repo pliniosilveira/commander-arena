@@ -3738,3 +3738,10 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: Parse the ability as belonging to the Aura (would tap the wrong permanent and use the wrong controller), or add a card-specific override; rejected because the existing static grant mechanism can represent the correct host.
 - Consequences: Underworld Connections uses the ordinary ability-grant and activation paths. An engine scenario checks tapping the enchanted land, paying life and drawing; the parser test checks the complete real card.
 - Limit: CR text and Scryfall rulings were unavailable for independent verification.
+
+## D-597: Read Tragic Slip's Morbid replacement (2026-11-17, issue 255)
+- Context: Tragic Slip gives a target creature -1/-1, or -13/-13 instead if a creature died this turn. The parser already supports replaceable spell instructions and the engine already records deaths for turn-history amounts, but it did not read the Morbid condition or join its following paragraph to the instruction it replaces.
+- Decision: Read "a creature died this turn" as a condition over the turn's creature-death history, and join the specific "That creature gets ... instead if ..." paragraph to the preceding spell instruction so ordinary conditional replacement lowering handles it.
+- Alternatives: Add card-specific support or use current battlefield state as a proxy for a creature death; rejected because neither represents the printed history condition generically.
+- Consequences: Tragic Slip is fully parsed through the ordinary spell effect path. The parser registry and real-card integration test cover the condition and replacement; the golden corpus records the accepted card.
+- Limit: CR text and Scryfall rulings were unavailable for independent verification.
