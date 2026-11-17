@@ -3391,3 +3391,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: Expand the parser's battlefield-only filter into several zone-specific forms, or special-case Maskwood Nexus by name in derivation.
 - Consequences: `ENGINE_VERSION` changes. Scenarios cover a controlled permanent and an owned hand card; the card's full importer path uses its hand-written fixture because the grammar does not express these scopes. Issue text is used; the CR text and Scryfall rulings were unavailable for independent verification.
 
+## D-549: Keep a face-down separated pile private (2026-11-17, issue 57)
+- Context: `Sauron's Ransom` lets the opponent privately look at four library cards, divide them into a face-down and a face-up pile, and lets the spell's controller choose a pile without learning the hidden identities.
+- Decision: Extend the generic pile-separation effect with a face-down mode. Only the separator receives the library-card decision; the public separation event carries the face-up names and face-down count. The chooser's pending view and card preview omit the hidden pile's IDs, and choosing the hidden pile emits no names. Continue resolution into the Ring-temptation effect after both piles move.
+- Alternatives: Treat both piles as revealed (which defeats the face-down instruction), omit pile events (loses public information for the face-up pile), or add a Sauron-specific rules branch.
+- Consequences: `ENGINE_VERSION` changes. Scenarios check both seats' views, public events, hidden hand contents, final zones, and Ring temptation. The real card uses the fixture path because its wording is not fully parsed; the card text is from issue 57.
+

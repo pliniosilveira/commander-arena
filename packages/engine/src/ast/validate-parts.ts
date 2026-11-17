@@ -4833,6 +4833,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'revealAndSeparate':
       // D-303 (CR 700.3): who makes the piles is one of two players, and the two piles go to two different places of the controller.
       checkAmount(e.count, `${path}.count`, scope, out);
+      if (e.faceDownPile !== undefined && e.faceDownPile !== true) {
+        issue(out, `${path}.faceDownPile`, 'faceDownPile is true or absent');
+      }
       if (e.separator !== 'opponent' && e.separator !== 'you') {
         issue(out, `${path}.separator`, 'the piles are separated by an opponent or by you');
       }

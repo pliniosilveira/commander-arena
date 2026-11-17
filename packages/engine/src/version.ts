@@ -13,4 +13,5 @@
 // 109: Track the player who declined a playersMay choice for its otherwise effect (D-546).
 // 110: Support protection from the Ring-bearer designation and Lord of the Nazgûl's Wraith threshold (D-547).
 // 111: Apply Maskwood Nexus's all-creature-types effect to controlled and owned cards (D-548).
-export const ENGINE_VERSION = 111;
+// 112: Keep Sauron's Ransom's face-down pile identities private through resolution (D-549).
+export const ENGINE_VERSION = 112;

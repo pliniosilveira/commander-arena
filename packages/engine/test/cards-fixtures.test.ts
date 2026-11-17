@@ -241,6 +241,14 @@ const FACTS: Record<string, Facts> = {
     identity: [],
     text: "Creatures you control are every creature type. The same is true for creature spells you control and creature cards you own that aren't on the battlefield.\n{3}, {T}: Create a 2/2 blue Shapeshifter creature token with changeling. (It is every creature type.)",
   },
+  "Sauron's Ransom": {
+    cost: ['1', 'U', 'B'],
+    types: ['instant'],
+    subtypes: [],
+    colors: ['U', 'B'],
+    identity: ['U', 'B'],
+    text: 'Choose an opponent. They look at the top four cards of your library and separate them into a face-down pile and a face-up pile. Put one pile into your hand and the other into your graveyard. The Ring tempts you.',
+  },
   'Wall of Stone': {
     cost: ['1', 'R', 'R'],
     types: ['creature'],

@@ -1140,6 +1140,7 @@ export type Instruction =
       readonly cards: readonly ObjectId[];
       readonly chosenTo: 'hand' | 'graveyard';
       readonly otherTo: 'hand' | 'graveyard';
+      readonly faceDownPile?: true;
       readonly first?: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
       readonly pick?: 1 | 2;

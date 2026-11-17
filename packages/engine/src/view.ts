@@ -918,7 +918,12 @@ export function getView(state: GameState, viewer: SeatId): GameView {
               seat: pending.seat,
               source: pending.source,
               purpose: 'pile' as const,
-              cards: [...pending.piles.first, ...pending.piles.second],
+              cards:
+                pending.piles.faceDownPile === 1
+                  ? pending.piles.second
+                  : pending.piles.faceDownPile === 2
+                    ? pending.piles.first
+                    : [...pending.piles.first, ...pending.piles.second],
             }
           : null;
   return {
@@ -941,7 +946,20 @@ export function getView(state: GameState, viewer: SeatId): GameView {
       : { phasedOut: (state.phased ?? []).map((id) => objectView(state, id, viewer)) }),
     stack: state.stack.map((id) => objectView(state, id, viewer)),
     combat: combatView(state),
-    pending: pending !== null && pending.seat === viewer ? pending : null,
+    pending:
+      pending !== null && pending.seat === viewer
+        ? pending.kind === 'chooseOption' &&
+          pending.purpose === 'pile' &&
+          pending.piles?.faceDownPile !== undefined
+          ? {
+              ...pending,
+              piles: {
+                ...pending.piles,
+                ...(pending.piles.faceDownPile === 1 ? { first: [] } : { second: [] }),
+              },
+            }
+          : pending
+        : null,
     decidingSeat: pending?.seat ?? null,
     ...(choosing !== null && choosing.seat === viewer
       ? { pendingCards: choosing.cards.map((id) => objectView(state, id, viewer)) }

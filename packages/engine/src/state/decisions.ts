@@ -818,6 +818,9 @@ export interface ChooseOptionDecision extends DecisionBase {
     readonly otherTo: 'hand' | 'graveyard';
     readonly separator: SeatId;
     readonly receiver: SeatId;
+    /** Which pile is face down and its size; the chooser's view must omit its object IDs (D-549). */
+    readonly faceDownPile?: 1 | 2;
+    readonly faceDownCount?: number;
   };
   readonly source: ObjectId;
   readonly sourceName: string;

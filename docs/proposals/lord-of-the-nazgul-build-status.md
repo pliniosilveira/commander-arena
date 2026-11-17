@@ -25,11 +25,11 @@ Issue data is from the author's description. The 21 cards below were added to th
 - [x] Group 11: `Fandaniel, Telophoroi Ascian` runs from its hand-written engine fixture (D-546, `ENGINE_VERSION` 109). `playersMay.otherwise` identifies the player who declined, and an unavailable sacrifice choice declines automatically. The general parser still does not read the full may-sacrifice phrase.
 - [x] Group 12: `Lord of the Nazgûl` grants Wraiths protection from Ring-bearers, creates a 3/3 Wraith with menace for each instant or sorcery cast, and sets its Wraiths to base 9/9 through end of turn when the post-creation count reaches nine (D-547, `ENGINE_VERSION` 110). The full card uses its hand-written engine fixture because the general parser does not read its protection and base-power clauses.
 - [x] Group 13: `Maskwood Nexus` grants all creature types additively to creatures and creature spells its controller controls and to creature cards they own outside the battlefield; its activation creates the blue Shapeshifter with changeling (D-548, `ENGINE_VERSION` 111). The full card uses its hand-written fixture because the parser does not express these scopes.
+- [x] Group 14: `Sauron's Ransom` privately lets the opponent inspect and separate the top four cards into face-down and face-up piles; the controller chooses, receives one pile in hand and the other in the graveyard, then the Ring tempts them (D-549, `ENGINE_VERSION` 112). The full card uses its hand-written fixture.
 - [ ] Rerun `UPDATE_GOLDEN=1 pnpm exec vitest run packages/cards/test/golden.test.ts` after each parser group.
-- [ ] Implement the approved `Sauron's Ransom` subsystem.
 - [ ] Run `pnpm corpus:decks --deck decks/lord-of-the-nazgul.txt` with the owner's bulk file; unavailable in this workspace.
 
-At intake, current `main` already supported `Lazotep Plating`. Completed groups through 13 bring the app's default import path to 20 of the 21 issue cards supported; only `Sauron's Ransom` remains. The hand-written fixtures are supported on the app path while still reported unsupported by the grammar-only golden snapshot. No deck-wide coverage result is claimed.
+At intake, current `main` already supported `Lazotep Plating`. Completed groups through 14 bring the app's default import path to 21 of the 21 issue cards supported. Fandaniel, Lord of the Nazgûl, Maskwood Nexus and Sauron's Ransom use hand-written fixtures and remain unsupported by grammar-only import. No deck-wide coverage result is claimed.
 
 ## The Lord of the Nazgûl deck, issue 57, group 7: Drown in the Loch (D-541)
 

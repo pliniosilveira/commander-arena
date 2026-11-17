@@ -2664,6 +2664,8 @@ export type Effect =
       readonly separator: 'opponent' | 'you';
       readonly chosenTo: 'hand' | 'graveyard';
       readonly otherTo: 'hand' | 'graveyard';
+      /** The separator privately looks at the cards; pile 1 is face down, pile 2 face up (D-549). */
+      readonly faceDownPile?: true;
     }
   /**
    * "Put N cards from your hand on top of your library in any order" (Brainstorm's second half): the

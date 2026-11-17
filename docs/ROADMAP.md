@@ -1,9 +1,9 @@
 # Roadmap: deferred work and known limitations
 
-## Lord of the Nazgûl deck work and parser limits (issue 57, D-533 to D-548)
+## Lord of the Nazgûl deck work and parser limits (issue 57, D-533 to D-549)
 
-- `Lazotep Plating` was already supported on current `main`; groups through `Maskwood Nexus` now run through the app's default import path. Together these cover 20 of the 21 issue cards; `Sauron's Ransom` remains.
-- The cards with hand-written fixtures remain unsupported by grammar-only import: Fandaniel's full may-sacrifice clause (D-546), Lord of the Nazgûl's Ring-bearer protection and group base-power clause (D-547), and Maskwood Nexus's all-creature-types scopes (D-548). Their engine scenarios and default-import acceptance tests pass. `March of Swirling Mist` parses and runs (D-545); the Phasing keyword is still not built or needed. The last approved design is in `docs/design/lord-of-the-nazgul-remaining-subsystems.md`. `Into the Flood Maw` uses the generic tapped Fish Gift path (D-539).
+- `Lazotep Plating` was already supported on current `main`; groups through `Sauron's Ransom` now run through the app's default import path. All 21 issue cards are supported by the app's default import path.
+- The cards with hand-written fixtures remain unsupported by grammar-only import: Fandaniel's full may-sacrifice clause (D-546), Lord of the Nazgûl's Ring-bearer protection and group base-power clause (D-547), Maskwood Nexus's all-creature-types scopes (D-548), and Sauron's Ransom's hidden-pile clause (D-549). Their engine scenarios and default-import acceptance tests pass. `March of Swirling Mist` parses and runs (D-545); the Phasing keyword is still not built or needed. `Into the Flood Maw` uses the generic tapped Fish Gift path (D-539).
 - The whole deck was not measured by `pnpm corpus:decks`: the Scryfall bulk file is not in this workspace. The card data is from the issue author's description; no rulings were independently checked.
 
 What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the decisions are in `docs/DECISIONS.md`, the mechanics in `docs/MECHANICS.md`, the milestone reports in `docs/progress/`. For what is happening now, read `docs/STATUS.md`; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.

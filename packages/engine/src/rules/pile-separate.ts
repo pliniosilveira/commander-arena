@@ -1,7 +1,8 @@
 /**
  * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (Fact or Fiction,
- * D-303): the `revealAndSeparate` effect, run as one instruction that asks twice at most.
+ * D-303, D-549): the `revealAndSeparate` effect, run as one instruction that asks twice at most.
  *
+ * In face-down mode, the separator looks privately, pile 1 stays hidden from the chooser, and public events report only pile 2's names and pile 1's size.
  * CR 700.3 (General): objects grouped into piles stay where they are (700.3c: the cards are still in the library while they are sorted), each is in exactly one pile (700.3a) and a
  * pile may hold no card (700.3d). CR 701.20 (Reveal): the cards are shown to every player (`cardsRevealed`, public) and do not move (701.20b).
  *
@@ -47,31 +48,35 @@ export function startPileSeparate(
 ): StepOutcome {
   const cards = getSeat(state, res.controller).library.slice(0, Math.max(count, 0));
   if (cards.length === 0) return done(state);
-  const revealed = cards.flatMap((id) => {
-    const card = state.objects[id]?.card;
-    return card == null ? [] : [card];
-  });
-  const events: GameEvent[] = [
-    {
-      kind: 'cardsRevealed',
-      seat: res.controller,
-      cards: revealed,
-      names: namesOf(state, cards),
-      from: 'library',
-    },
-  ];
   const [opponent] = opponentsOf(state, res.controller);
-  if (opponent === undefined) return done(state, events);
+  if (opponent === undefined) return done(state);
   const byOpponent = effect.separator === 'opponent';
+  const separator = byOpponent ? opponent : res.controller;
+  const events: GameEvent[] =
+    effect.faceDownPile === true
+      ? [{ kind: 'topCardsLooked', seat: separator, count: cards.length }]
+      : [
+          {
+            kind: 'cardsRevealed',
+            seat: res.controller,
+            cards: cards.flatMap((id) => {
+              const card = state.objects[id]?.card;
+              return card == null ? [] : [card];
+            }),
+            names: namesOf(state, cards),
+            from: 'library',
+          },
+        ];
   return done(state, events, [
     {
       kind: 'pileSeparate',
       seat: res.controller,
-      separator: byOpponent ? opponent : res.controller,
+      separator,
       chooser: byOpponent ? res.controller : opponent,
       cards,
       chosenTo: effect.chosenTo,
       otherTo: effect.otherTo,
+      ...(effect.faceDownPile === true ? { faceDownPile: true as const } : {}),
       chosen: null,
     },
   ]);
@@ -88,7 +93,10 @@ export function runPileSeparate(
 
   // Step 2: the separator makes pile 1.
   if (ins.first === undefined) {
-    if (ins.chosen === null && cards.length >= 2) {
+    if (
+      ins.chosen === null &&
+      (cards.length >= 2 || (ins.faceDownPile === true && cards.length === 1))
+    ) {
       return {
         state,
         events: [],
@@ -109,14 +117,24 @@ export function runPileSeparate(
     }
     const chosen = ins.chosen;
     const first =
-      cards.length < 2 || chosen === null ? cards : cards.filter((id) => chosen.includes(id));
+      (cards.length < 2 && ins.faceDownPile !== true) || chosen === null
+        ? cards
+        : cards.filter((id) => chosen.includes(id));
     const second = cards.filter((id) => !first.includes(id));
-    const event: GameEvent = {
-      kind: 'pilesSeparated',
-      seat: ins.separator,
-      first: namesOf(state, first),
-      second: namesOf(state, second),
-    };
+    const event: GameEvent =
+      ins.faceDownPile === true
+        ? {
+            kind: 'faceDownPileSeparated',
+            seat: ins.separator,
+            faceUp: namesOf(state, second),
+            faceDownCount: first.length,
+          }
+        : {
+            kind: 'pilesSeparated',
+            seat: ins.separator,
+            first: namesOf(state, first),
+            second: namesOf(state, second),
+          };
     return done(state, [event], [{ ...ins, cards, first, chosen: null }]);
   }
 
@@ -141,6 +159,9 @@ export function runPileSeparate(
           otherTo: ins.otherTo,
           separator: ins.separator,
           receiver: ins.seat,
+          ...(ins.faceDownPile === true
+            ? { faceDownPile: 1 as const, faceDownCount: first.length }
+            : {}),
         },
         source: res.object,
         sourceName: info?.name ?? '',
@@ -156,7 +177,8 @@ export function runPileSeparate(
     kind: 'pileChosen',
     seat: ins.chooser,
     pile: ins.pick,
-    names: namesOf(state, chosenPile),
+    names: ins.faceDownPile === true && ins.pick === 1 ? [] : namesOf(state, chosenPile),
+    ...(ins.faceDownPile === true && ins.pick === 1 ? { faceDown: true as const } : {}),
   };
   return done(
     state,
