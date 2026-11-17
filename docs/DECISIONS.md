@@ -3642,3 +3642,15 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: Keep enumerating raw assignments and validate only the final answer (can stall and can score impossible outcomes), or expose hidden IDs to recover the count (violates the private-pile effect).
 - Consequences: Combat requirement comparisons and representative legal actions are correct for menace and maximum-block restrictions; the decision picker keeps private card identities hidden while showing public pile size. Regression scenarios and UI rendering tests cover these cases.
 
+
+## D-581: A cost of no life is payable at any life total (2026-11-17, issue 254)
+- Context: With a card such as Darksteel Angel in play, a player can sit at zero or negative life without losing. The checks for a life cost compared `cost > life`, so a cost of 0 (every land's mana ability) failed at a negative life total and the player could not tap lands or cast anything.
+- Decision: A life cost of 0 or less is always payable; the comparison against the life total applies only to a positive cost (CR 119.4, CR 104.3b). The same guard is applied in mana abilities, activation costs, pay-unless choices and the enter-with-payment paths of tokens and permanents.
+- Alternatives: Treat negative life as zero when comparing (hides the real total and still misreads costs that are paid in full); fix only the mana-ability check (leaves the other four sites with the same bug).
+- Consequences: A player who cannot lose the game can keep playing at negative life. The engine version is 114; the derive digests are regenerated.
+
+## D-582: A target slot carries the card's target words (2026-11-17, owner report)
+- Context: A spell or ability with several targets for different effects showed only "Slot 1", "Slot 2" in the targets question, so the player could not tell which target went with which effect.
+- Decision: Each `TargetChoiceSpec` of a casting or triggering targets decision carries the `TargetSpec` it came from (`target`, public like the card's text). The web app words it with its existing target text: "Slot 2: target creature you control", a prompt line "Slot 2 of 3: ...", and one list of legal targets under each slot's heading. Slots the engine builds on its own (a changed target, an Aura's host) carry none and keep the plain number.
+- Alternatives: Guess the slot from its legal targets in the interface (wrong when one object is the only legal one); write the text in the engine (the engine has no text renderer and must stay free of presentation).
+- Consequences: The decision shape grows by one optional field; the engine version stays 114 as the rules do not change, and the derive digests are regenerated.

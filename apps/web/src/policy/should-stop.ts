@@ -165,6 +165,10 @@ export function shouldStop(view: GameView, settings: StopSettings): boolean {
   // The steps between declaring attackers and combat damage: stop when there is something to do.
   if (relevant && inCombatWindow(view)) return true;
 
+  // Issue 56 (CR 513.1, 117.3d): the opponent's end step is the last time to cast an instant or a flash spell before cleanup, so the player
+  // gets the window when they have something to do, as in combat; with nothing to do it passes as before.
+  if (relevant && view.activeSeat !== view.viewer && view.step === 'end') return true;
+
   const mine = view.activeSeat === view.viewer;
   const stops = mine ? settings.myTurnStops : settings.opponentTurnStops;
   if (stops.includes(view.step)) return true;

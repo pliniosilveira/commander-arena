@@ -185,7 +185,10 @@ export function runEnterToken(
         },
       });
     }
-    if (payment !== null && getSeat(state, seat).life >= lifeOf(payment)) {
+    if (
+      payment !== null &&
+      (lifeOf(payment) <= 0 || getSeat(state, seat).life >= lifeOf(payment))
+    ) {
       return asked({
         kind: 'confirmOptional',
         seat,
@@ -202,7 +205,9 @@ export function runEnterToken(
   if (!alreadyTapped && (reveal !== null || payment !== null)) {
     const askedReveal = reveal !== null && canReveal(state, seat, reveal, res.object);
     const askedPay =
-      payment !== null && getSeat(state, seat).life >= lifeOf(payment) && !askedReveal;
+      payment !== null &&
+      (lifeOf(payment) <= 0 || getSeat(state, seat).life >= lifeOf(payment)) &&
+      !askedReveal;
     if (answered === true && askedReveal && reveal !== null) {
       // D-225 (CR 701.20a): with more than one card to reveal the player chooses which.
       if (
