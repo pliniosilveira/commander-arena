@@ -307,10 +307,7 @@ export const AMOUNT_MILLED_VALUE_THIS_WAY = defineRule<IrAmount>({
       pattern(
         /equal to the total mana value of (?:those cards|(?:the )?cards milled this way)(?![\p{L}\p{N}])/iu,
       ),
-    )(
-      ctx,
-      pos,
-    );
+    )(ctx, pos);
     if (!r.ok) return r;
     return {
       ok: true,

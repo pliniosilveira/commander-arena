@@ -422,7 +422,8 @@ export function castZone(
   // D-151: "You may play that card this turn": a card in exile with such a permission is cast as though it were in the hand.
   if (obj.zone === 'exile') {
     // Lorehold group 2 (CR 118.9): a permission to cast without paying the mana cost is the alternative cost `free`, and only that.
-    if (alternative === 'free') return mayPlayFromExile(state, seat, obj, false, true) ? 'exile' : null;
+    if (alternative === 'free')
+      return mayPlayFromExile(state, seat, obj, false, true) ? 'exile' : null;
     return alternative === undefined && mayPlayFromExile(state, seat, obj) ? 'exile' : null;
   }
   if (obj.zone === 'hand') return 'hand';

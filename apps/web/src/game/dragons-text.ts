@@ -36,6 +36,10 @@ export function exileTopText(
   const { count } = effect;
   const down = effect.faceDown === true ? ' face down' : '';
   if (count === 1) return `Exile the top card of ${library}${down}`;
+  // Lorehold group 2 (CR 701.38a): "Exile the top card of your library for each present vote".
+  if (typeof count === 'object' && count.kind === 'votesFor') {
+    return `Exile the top card of ${library}${down} for each ${count.option} vote`;
+  }
   const n = typeof count === 'number' ? numberWord(count) : say(count);
   return `Exile the top ${n} cards of ${library}${down}`;
 }

@@ -37,12 +37,13 @@ export const AMOUNT_FOR_EACH_VOTE = defineRule<IrAmount>({
   id: 'amount.for-each-vote',
   family: 'amount',
   leading: ['for'],
-  cites: [
-    'CR 701.38a (Vote)',
-    'CR 701.38b (Vote)',
-    'CR 608.2c (Resolving Spells and Abilities)',
+  cites: ['CR 701.38a (Vote)', 'CR 701.38b (Vote)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: [
+    'for each past vote',
+    'for each present vote',
+    'For each profit vote',
+    'for each left-handed vote',
   ],
-  examples: ['for each past vote', 'for each present vote', 'For each profit vote', 'for each left-handed vote'],
   rejects: [
     'for each vote',
     'for each past votes',

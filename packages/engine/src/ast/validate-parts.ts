@@ -4959,7 +4959,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // Lorehold group 2 (CR 118.9, 614.1a): "without paying its mana cost" and the library rider, of a card in exile.
       if (e.from !== undefined && e.from !== 'exile') {
-        issue(out, `${path}.from`, "a cast permission is of a graveyard card or, with from, 'exile'");
+        issue(
+          out,
+          `${path}.from`,
+          "a cast permission is of a graveyard card or, with from, 'exile'",
+        );
       }
       for (const key of ['free', 'bottomInstead'] as const) {
         if (e[key] !== undefined && e[key] !== true) {
@@ -4969,7 +4973,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       }
       if (e.from === 'exile' && e.exileInstead === true) {
-        issue(out, `${path}.exileInstead`, 'a card cast from exile has bottomInstead, not exileInstead');
+        issue(
+          out,
+          `${path}.exileInstead`,
+          'a card cast from exile has bottomInstead, not exileInstead',
+        );
       }
       break;
     case 'shuffle':

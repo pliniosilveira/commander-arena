@@ -247,8 +247,7 @@ export const EFFECT_DAMAGE_COUNT = defineRule<Clauses>({
         family<IrArg>('amount', { only: ['amount.number-of', 'amount.milled-value-this-way'] }),
       ),
       ([, to, , amount]) =>
-        to.det !== 'eachOpponent' ||
-        (amount.kind === 'thisWay' && amount.what === 'milledValue'),
+        to.det !== 'eachOpponent' || (amount.kind === 'thisWay' && amount.what === 'milledValue'),
     ),
     ([, to, , amount]) => ({ verb: 'dealDamage', args: { amount, to } }),
   ),

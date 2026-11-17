@@ -2,7 +2,7 @@
  * Lowerings of group 2 of the Lorehold Spirit deck (issue 86): the permission to cast a card exiled with this permanent without paying its mana cost.
  */
 import type { IrClause } from '../ir/types';
-import { arg, eachObject, type Effects, failure, operand } from './clauses';
+import { arg, type Effects, eachObject, failure, operand } from './clauses';
 import type { Lowering } from './types';
 
 /**

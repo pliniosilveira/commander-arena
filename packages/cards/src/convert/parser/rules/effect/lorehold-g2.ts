@@ -63,7 +63,10 @@ export const EFFECT_CAST_EXILED_WITH_SELF = defineRule<Clauses>({
       literal('choose '),
       family<IrNoun>('noun', { only: ['noun.target-card-exiled-with-self'] }),
       pattern(
-        new RegExp(`\\. you may cast that card this turn without paying its mana cost${BOUNDARY}`, 'iu'),
+        new RegExp(
+          `\\. you may cast that card this turn without paying its mana cost${BOUNDARY}`,
+          'iu',
+        ),
       ),
       optional(spanned(BOTTOM_INSTEAD), null),
     ),

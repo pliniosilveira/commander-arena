@@ -203,18 +203,30 @@ export function targetText(spec: TargetSpec | undefined): string {
         const whose =
           controller === 'you' ? 'your' : controller === 'opponent' ? "an opponent's" : 'a';
         // D-460: a card of any kind ("Exile target card from a graveyard", Ghost Vacuum) is "card", not "permanent card".
-        const { types, subtypes, anyOf, commander } = spec.what.filter;
+        const { types, subtypes, anyOf, commander, notTypes } = spec.what.filter;
         const any =
           types === undefined &&
           subtypes === undefined &&
           anyOf === undefined &&
           commander === undefined;
-        const kind = any ? 'card' : `${nounOf(spec.what.filter)} card`;
+        // Lorehold group 2 (CR 205.2a): "target noncreature, nonland card from your graveyard": the types it is not, each with its "non".
+        const without =
+          notTypes === undefined ? '' : `${notTypes.map((t) => `non${t}`).join(', ')} `;
+        const kind =
+          any && notTypes !== undefined
+            ? `${without}card`
+            : any
+              ? 'card'
+              : `${nounOf(spec.what.filter)} card`;
         // Lorehold group 1: "any number of target cards from your graveyard".
         if (spec.anyNumber === true) {
           return `any number of target ${kind}s from ${whose} graveyard${withText(spec.what.filter)}`;
         }
         return `target ${kind} from ${whose} graveyard${withText(spec.what.filter)}`;
+      }
+      // Lorehold group 2 (CR 607.2a): "target card exiled with this creature": a card in exile that the permanent exiled with its linked ability.
+      if (spec.what.filter.zone === 'exile' && spec.what.filter.exiledWithSource === true) {
+        return 'target card exiled with this permanent';
       }
       // "target creature an opponent controls": the controller is part of what the text promises.
       const { controller } = spec.what.filter;
@@ -627,11 +639,16 @@ function damageText(
     amount.kind === 'multiple' &&
     typeof amount.of === 'object' &&
     amount.of.kind === 'exiledStillThere';
+  // Lorehold group 2 (CR 202.3, 608.2c): "damage equal to the total mana value of the cards milled this way".
+  const milledValue =
+    typeof amount === 'object' && amount.kind === 'thisWay' && amount.what === 'milledValue';
   const damage = stat
     ? `damage equal to ${amountPhrase(amount, { self, ...(from === undefined ? {} : { same: from }) })}`
-    : perCard
-      ? `${amount.factor} damage`
-      : `${defs.say(amount, { self })} damage`;
+    : milledValue
+      ? `damage equal to ${amountPhrase(amount)}`
+      : perCard
+        ? `${amount.factor} damage`
+        : `${defs.say(amount, { self })} damage`;
   const perCardTail = perCard ? ' for each of those cards that are still exiled' : '';
   // D-151 (CR 115.3): "3 damage to each of up to two other targets".
   const each = to.startsWith('up to ') ? 'each of ' : '';
@@ -962,6 +979,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // D-139 (CR 701.20): look at the top cards and take some of a kind into the hand.
       return lookAtTopText(effect, (amount) => defs.say(amount, { self })) ?? UNSAID;
     case 'mill':
+      // Lorehold group 2 (CR 701.38a): "You mill a card for each past vote".
+      if (typeof effect.count === 'object' && effect.count.kind === 'votesFor') {
+        return `${playerVerb(effect.player, ability, 'mill')} a card for each ${effect.count.option} vote`;
+      }
       // CR 701.17a (D-131): the top cards of a library go to its owner's graveyard.
       return `${playerVerb(effect.player, ability, 'mill')} ${quantity(effect.count, defs, CARD)}`;
     case 'gainLife':
@@ -1062,6 +1083,15 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return inner === '' ? '' : `When you do, ${lower(inner)}`;
     }
     case 'mayCast':
+      // Lorehold group 2 (CR 601.2, 118.9, 614.1a): "Choose target card exiled with this creature. You may cast that card this turn without paying its mana cost. If that spell would be
+      // put into a graveyard, put it on the bottom of its owner's library instead."
+      if (effect.from === 'exile') {
+        const rider =
+          effect.bottomInstead === true
+            ? ". If that spell would be put into a graveyard, put it on the bottom of its owner's library instead"
+            : '';
+        return `You may cast ${object(effect.objects)} this turn${effect.free === true ? ' without paying its mana cost' : ''}${rider}`;
+      }
       // D-135 (CR 601.2, 611.2a): "You may cast target Zombie creature card from your graveyard this turn".
       // D-359 (CR 614.1a): the rider "If that spell would be put into your graveyard, exile it instead".
       return `You may cast ${object(effect.objects)} this turn${
