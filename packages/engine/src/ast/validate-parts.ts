@@ -4,7 +4,7 @@
  * cards. Nothing here mutates its input; every function appends to an issue list.
  */
 import { CARD_TYPES, COLORS, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
-import { GRANTABLE_KEYWORDS } from './features';
+import { FILTERABLE_KEYWORDS } from './features';
 import type {
   Ability,
   Amount,
@@ -253,8 +253,8 @@ export function checkFilter(
       'token must be a boolean (true: tokens only, false: nontokens only)',
     );
   }
-  checkEnumList(out, `${path}.keywords`, f.keywords, GRANTABLE_KEYWORDS, 'keyword');
-  checkEnumList(out, `${path}.notKeywords`, f.notKeywords, GRANTABLE_KEYWORDS, 'keyword');
+  checkEnumList(out, `${path}.keywords`, f.keywords, FILTERABLE_KEYWORDS, 'keyword');
+  checkEnumList(out, `${path}.notKeywords`, f.notKeywords, FILTERABLE_KEYWORDS, 'keyword');
   if (
     f.controller !== undefined &&
     !isOneOf(f.controller, ['you', 'opponent', 'any', 'triggerPlayer', 'defendingPlayer'])
@@ -2238,6 +2238,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!positive(c.count)) issue(out, `${path}.count`, 'count must be a positive integer');
       break;
     case 'opponentsAtLeast':
+      if (!positive(c.count)) issue(out, `${path}.count`, 'count must be a positive integer');
+      break;
+    case 'opponentPoisonAtLeast':
       if (!positive(c.count)) issue(out, `${path}.count`, 'count must be a positive integer');
       break;
     case 'opponentControlsAtLeast':

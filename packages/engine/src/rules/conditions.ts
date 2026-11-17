@@ -127,6 +127,10 @@ export function evaluateCondition(
     }
     case 'opponentsAtLeast':
       return opponentsOf(state, ctx.controller).length >= condition.count;
+    case 'opponentPoisonAtLeast':
+      return state.seats.some(
+        (seat) => seat.id !== ctx.controller && !seat.hasLost && seat.poison >= condition.count,
+      );
     case 'kicked': {
       // CR 702.33d: a spell that is resolving carries the fact on the stack; a permanent that
       // entered from a kicked spell keeps it (`GameObject.kicked`). Once either has left, its

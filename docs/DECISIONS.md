@@ -3717,3 +3717,10 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Decision: Parse `toxic N` as a numbered token keyword, lower it to the engine's existing Toxic keyword, and permit a quoted token static ability only when it is `cantBlock` or the already supported Crew bonus/characteristic definition.
 - Alternatives: Drop the quoted restriction or create the token without Toxic; rejected because that would misrepresent the token. Permit every static ability on a token; rejected because only the supported static forms are covered here.
 - Consequences: The token description can be represented and validated while the card remains unsupported until its independent corrupted static ability is implemented.
+
+## D-594: Read the corrupted poison threshold and Toxic filter (2026-11-17, issue 255)
+- Context: Skrelv's Hive grants lifelink to creatures its controller controls with Toxic while an opponent has three or more poison counters. The parser could read the token, but the condition and Toxic-presence filter were outside its supported static-ability path.
+- Decision: Add a plain `opponentPoisonAtLeast` condition, evaluated against opponents still in the game, and allow the static ability's subject filter to test for Toxic without granting or changing Toxic's value.
+- Alternatives: Treat the condition as a life-total threshold (incorrect counter type), or special-case Skrelv's Hive; rejected because both obscure reusable rules behavior.
+- Consequences: The engine evaluates the threshold in ordinary conditions and static abilities; the parser reads the threshold and Toxic subject filter. Scenarios cover below and at threshold, and Skrelv's Hive is included in the golden acceptance corpus.
+- Limit: The local Comprehensive Rules text and Scryfall rulings were unavailable for independent verification.

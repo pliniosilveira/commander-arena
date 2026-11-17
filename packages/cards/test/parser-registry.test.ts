@@ -764,6 +764,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `At the beginning of each opponent's upkeep, if ${e}, tap target creature that player controls.`,
   ),
+  'condition.opponent-poison-at-least': permanent(
+    (e) => `As long as ${e}, creatures you control with toxic have lifelink.`,
+  ),
   'condition.host-is-tapped': permanent((e) => `At the beginning of each upkeep, if ${e}, tap it.`),
   'restriction.cost-reduction-your-turn': permanent(
     (e) => `{1}, {T}: Tap target creature. ${cap(e)}`,

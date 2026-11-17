@@ -357,6 +357,42 @@ export const CONDITION_OPPONENTS_AT_LEAST = defineRule<IrCondition>({
   },
 });
 
+/** `condition.opponent-poison-at-least`: an opponent's poison counters cross a threshold (D-594). */
+export const CONDITION_OPPONENT_POISON_AT_LEAST = defineRule<IrCondition>({
+  id: 'condition.opponent-poison-at-least',
+  family: 'condition',
+  leading: ['an'],
+  cites: ['CR 122.1 (Counters)', 'CR 704.5c (State-Based Actions)'],
+  examples: [
+    'an opponent has three or more poison counters',
+    'an opponent has four or more poison counters',
+  ],
+  rejects: [
+    'an opponent has poison counters',
+    'an opponent has two poison counters',
+    'an opponent has three or fewer poison counters',
+    'you have three or more poison counters',
+    'an opponent controls three or more poison counters',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('an opponent has '),
+      spanned(satisfy(quantity, (n) => n >= 1)),
+      literal(' or more poison counters'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: condition('condition.opponent-poison-at-least', span, {
+        kind: 'opponentPoisonAtLeast',
+        atLeast: amountOf(r.value[1]),
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 /**
  * `condition.control-commander`: "you control a commander" (stage P13, CR 903.3d: a commander is a
  * permanent on the battlefield that was designated as a commander; a token or a copy is not one
@@ -408,6 +444,7 @@ export const CONDITION_RULES = [
   CONDITION_CONTROL_AT_MOST,
   CONDITION_CONTROL_NONE,
   CONDITION_CONTROL_LAND_TYPE,
+  CONDITION_OPPONENT_POISON_AT_LEAST,
   CONDITION_OPPONENTS_AT_LEAST,
   CONDITION_CONTROL_COMMANDER,
   ...GAME_STATE_CONDITION_RULES,

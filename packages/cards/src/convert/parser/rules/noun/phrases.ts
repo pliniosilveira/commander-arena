@@ -444,7 +444,7 @@ export interface KeywordSuffix {
  * more than one thing: what follows the first keyword is left unread, so the phrase around it does not read.
  */
 export const KEYWORD_SUFFIX: Parser<KeywordSuffix> = (ctx, pos) => {
-  for (const [word] of GRANTABLE_KEYWORDS) {
+  for (const word of [...GRANTABLE_KEYWORDS.map(([name]) => name), 'toxic']) {
     const r = pattern(new RegExp(` (with|without) ${word.replace(' ', '\\s+')}${BOUNDARY}`, 'iu'))(
       ctx,
       pos,

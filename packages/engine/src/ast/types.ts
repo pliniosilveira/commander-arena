@@ -3815,6 +3815,8 @@ export type Condition =
    */
   | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: CardType }
   | { readonly kind: 'opponentsAtLeast'; readonly count: number }
+  /** "An opponent has three or more poison counters" (D-594): true when any opponent meets the threshold. */
+  | { readonly kind: 'opponentPoisonAtLeast'; readonly count: number }
   /**
    * CR 702.33d (Kicker): the object was kicked. Read from the spell that is resolving, or, for an
    * ability of a permanent ("When this enters, if it was kicked"), from the permanent, which keeps

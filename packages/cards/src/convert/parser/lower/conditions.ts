@@ -50,6 +50,12 @@ export function lowerCondition(
       if (test.atLeast.kind !== 'number' || test.atLeast.value < 1) return failure(c, []);
       return ok({ kind: 'opponentsAtLeast', count: test.atLeast.value });
     }
+    case 'opponentPoisonAtLeast': {
+      const blocked = missingFeatures(['condition:opponentPoisonAtLeast']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (test.atLeast.kind !== 'number' || test.atLeast.value < 1) return failure(c, []);
+      return ok({ kind: 'opponentPoisonAtLeast', count: test.atLeast.value });
+    }
     case 'and':
     case 'or': {
       const blocked = missingFeatures([`condition:${test.kind}`]);
@@ -581,6 +587,7 @@ export function lowerCondition(
 export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:controlsAtLeast',
   'condition:opponentsAtLeast',
+  'condition:opponentPoisonAtLeast',
   'condition:kicked',
   'condition:controlCommander',
   'condition:lifeTotal',

@@ -754,6 +754,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   conditionKinds: [
     'controlsAtLeast',
     'opponentsAtLeast',
+    // D-594 (CR 122.1): "an opponent has three or more poison counters".
+    'opponentPoisonAtLeast',
     'kicked',
     // D-129: "if a replicate cost was paid for it" (CR 702.56a).
     'replicated',
@@ -1056,6 +1058,9 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'landwalk',
 ];
 
+/** Keyword kinds an object filter can test. Toxic is parameterized but filters only on its presence. */
+export const FILTERABLE_KEYWORDS: readonly Keyword['kind'][] = [...GRANTABLE_KEYWORDS, 'toxic'];
+
 /**
  * What a `restriction` static ability may name, by the subject kinds it accepts: every restriction
  * can belong to a permanent and reach it, an attached permanent or a filter; `cantBeCountered` is a
@@ -1343,6 +1348,8 @@ export const CONDITION_KINDS = [
   'controlsAtLeast',
   /** "You have two or more opponents": the engine's `opponentsAtLeast`. */
   'opponentsAtLeast',
+  /** "An opponent has three or more poison counters" (D-594). */
+  'opponentPoisonAtLeast',
   /** "If this spell was kicked", "if it was kicked" (CR 702.33d): the engine's `kicked`. */
   'kicked',
   /** "If a replicate cost was paid for it" (CR 702.56a): the engine's `replicated`. */

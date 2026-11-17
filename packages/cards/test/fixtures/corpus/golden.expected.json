@@ -1,5 +1,5 @@
 {
-  "parserVersion": 133,
+  "parserVersion": 134,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -256,19 +256,10 @@
     "06d219ff-0083-4c2a-b5b3-2b84bb58f57e": {
       "name": "Skrelv's Hive",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Corrupted — As long as an opponent has three or more poison counters, creatures you control with toxic have lifelink.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "condition.life-total"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "40819c9c"
+      "ast": "5b5e6f38"
     },
     "07617648-6490-4719-acec-7705671f7e01": {
       "name": "Protege's Awakening",
@@ -6243,7 +6234,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 431,
+      "supported": 432,
       "total": 459
     }
   }

@@ -5054,4 +5054,10 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 
 - **Parser:** custom token descriptions can include numbered Toxic and a quoted static `cantBlock` restriction, alongside the existing keyword list and quoted ability handling.
 - **Proof:** `parser-p48.test.ts` reads the full upkeep trigger and checks the Mite's types, Toxic value and blocking restriction.
-- **Limit:** Skrelv's Hive remains unsupported until the separate corrupted condition is implemented.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Skrelv's Hive corrupted ability (D-594)
+
+- **Engine and parser:** `opponentPoisonAtLeast` reads whether an opponent still in the game has the specified number of poison counters. Skrelv's Hive grants lifelink to creatures its controller controls with Toxic while that condition holds; Toxic is tested as a keyword presence and its value is unchanged.
+- **Proof:** `scenario-xx-corrupted.test.ts` checks that the grant is absent below three poison counters and present at three. `parser-p48.test.ts` checks complete real-card parsing and the golden corpus records its support.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.

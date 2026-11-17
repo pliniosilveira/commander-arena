@@ -24,4 +24,4 @@
 // 120: Distinguish Ring tempt events that chose a creature as Ring-bearer (D-590).
 // 121: Emit and match Class level reached triggers (D-591).
 // 122: Allow a dies trigger's delayed trigger to return its trigger card to its owner's hand (D-592).
-export const ENGINE_VERSION = 122;
+export const ENGINE_VERSION = 123;

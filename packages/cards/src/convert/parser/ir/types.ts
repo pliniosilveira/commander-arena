@@ -533,6 +533,7 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'unlessReturn'; readonly clause: IrClause }
     // "you have two or more opponents" (CR 102.1: the players you play against)
     | { readonly kind: 'opponentsAtLeast'; readonly atLeast: IrAmount }
+    | { readonly kind: 'opponentPoisonAtLeast'; readonly atLeast: IrAmount }
     // "~ was kicked", "it was kicked" (CR 702.33d); `who` is the word the text used for the object
     | { readonly kind: 'kicked'; readonly who: 'self' | 'it' }
     // "this is the second time this ability has resolved this turn" (Galadriel deck group 1, CR 608.2c): the resolutions of the triggered ability, this one included
