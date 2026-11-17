@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { openStartFlow, pickDeck, startDefaultGame, toOpponentStep } from './harness/menu';
 import { installedPrecons } from './harness/precons';
 import { fakeScryfall } from './harness/synthetic-scryfall';
 
@@ -56,6 +57,7 @@ async function saveMine(page: Page): Promise<void> {
 }
 
 async function saveDeck(page: Page, name: string, text: string): Promise<void> {
+  await page.getByRole('button', { name: 'Your decks' }).click();
   await page.getByRole('button', { name: 'Import a deck' }).click();
   await page.getByLabel('Deck name').fill(name);
   await page.getByLabel(/^Decklist/).fill(text);
@@ -114,7 +116,11 @@ test.describe('precons on the decks page', () => {
     await editPrecon(page, '1x SYNTHETIC Bear 01');
     await saveMine(page);
     await page.getByRole('button', { name: 'Back to menu' }).click();
-    await expect(page.locator('.scr-deck-tag')).toHaveCount(2);
+    // The edited precon is marked on both steps of the start-game flow.
+    await openStartFlow(page);
+    await expect(page.locator('.scr-deck-tag')).toHaveCount(1);
+    await toOpponentStep(page);
+    await expect(page.locator('.scr-deck-tag')).toHaveCount(1);
   });
 
   test('a precon with a card the engine cannot run is refused with the reason, and reset makes it playable', async ({
@@ -132,11 +138,15 @@ test.describe('precons on the decks page', () => {
     await page.getByRole('button', { name: 'Back to menu' }).click();
 
     const other = installed.find((id) => id !== PRECON);
-    const opponent = page.locator('fieldset', { hasText: "Opponent's deck" });
-    await opponent.locator(`input[value="${PRECON}"]`).check();
+    await openStartFlow(page);
     await page
       .locator('fieldset', { hasText: 'Your deck' })
       .locator(`input[value="${other}"]`)
+      .check();
+    await toOpponentStep(page);
+    await page
+      .locator('fieldset', { hasText: "Opponent's deck" })
+      .locator(`input[value="${PRECON}"]`)
       .check();
     await page.getByRole('button', { name: 'Start game' }).click();
     const alert = page.getByRole('alert');
@@ -148,7 +158,7 @@ test.describe('precons on the decks page', () => {
     await page.getByRole('button', { name: 'Reset to default Ghoulcaller Gisa Zombies' }).click();
     await page.getByRole('button', { name: 'Yes, reset Ghoulcaller Gisa Zombies' }).click();
     await page.getByRole('button', { name: 'Back to menu' }).click();
-    await page.getByRole('button', { name: 'Start game' }).click();
+    await startDefaultGame(page);
     await expect(page.getByText('Your opening hand')).toBeVisible({ timeout: 30_000 });
   });
 });
@@ -160,9 +170,9 @@ test.describe('a saved deck as the opponent', () => {
     await fakeScryfall(page);
     await page.goto('/');
     await saveDeck(page, 'SYNTHETIC Saved', supportedList());
-    await expect(page.getByText('Saved in this browser').first()).toBeVisible();
-    const opponent = page.locator('fieldset', { hasText: "Opponent's deck" });
-    await opponent.getByRole('radio', { name: /SYNTHETIC Saved/ }).check();
+    await openStartFlow(page);
+    await toOpponentStep(page);
+    await pickDeck(page, "Opponent's deck", 'Your decks', /SYNTHETIC Saved/);
     await page.getByLabel('Seed').fill('7');
     await page.getByRole('button', { name: 'Start game' }).click();
     await expect(page.getByText('Your opening hand')).toBeVisible({ timeout: 30_000 });
@@ -177,8 +187,9 @@ test.describe('a saved deck as the opponent', () => {
     await fakeScryfall(page);
     await page.goto('/');
     await saveDeck(page, 'SYNTHETIC Unsupported', unsupportedList());
-    const opponent = page.locator('fieldset', { hasText: "Opponent's deck" });
-    await opponent.getByRole('radio', { name: /SYNTHETIC Unsupported/ }).check();
+    await openStartFlow(page);
+    await toOpponentStep(page);
+    await pickDeck(page, "Opponent's deck", 'Your decks', /SYNTHETIC Unsupported/);
     await page.getByRole('button', { name: 'Start game' }).click();
     const alert = page.getByRole('alert');
     await expect(alert).toContainText('"SYNTHETIC Unsupported" cannot be played');

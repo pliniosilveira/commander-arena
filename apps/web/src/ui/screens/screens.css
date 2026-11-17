@@ -63,11 +63,6 @@
   font-size: 13px;
 }
 
-.scr-pickers {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
 .scr-decks {
   display: flex;
   flex-direction: column;
@@ -135,14 +130,6 @@
   font-size: 11px;
   font-weight: 600;
   vertical-align: 1px;
-}
-.scr-decks-group {
-  margin: 6px 0 0;
-  color: var(--text-dim);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .scr-start-row {
@@ -301,39 +288,60 @@
   white-space: nowrap;
 }
 
-/* Menu: entry points of the deck import (M4) */
-.scr-import {
+/* Menu: the home and the start-game flow (issue 53) */
+.scr-home {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--bg-raised);
-}
-.scr-import h2 {
-  margin: 0;
-  font-size: 15px;
-}
-.scr-import p {
-  margin: 0;
-}
-.scr-import-buttons {
-  display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 14px;
   flex-wrap: wrap;
 }
-
-/* Menu: the real precons (D-137) */
-.scr-quick {
+.scr-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.scr-flow h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.scr-flow p {
+  margin: 0;
+}
+.scr-flow-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.scr-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.scr-tab {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.scr-tab[aria-selected="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  font-weight: 700;
+}
+.scr-decks-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.scr-quick h2 {
-  margin: 0;
-  font-size: 15px;
-}
-.scr-quick p {
-  margin: 0;
+.scr-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }

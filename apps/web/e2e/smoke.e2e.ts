@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { openStartFlow, toOpponentStep } from './harness/menu';
 import { installedPrecons } from './harness/precons';
 import { untilHandPlayable } from './harness/resolve';
 
@@ -21,7 +22,12 @@ test('the menu starts the installed precon', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Commander Arena' })).toBeVisible();
   await expect(page.getByText(/No precon is installed yet/)).toHaveCount(0);
   await expect(page.getByText(/not real precons/i)).toHaveCount(0);
-  await expect(page.getByRole('radio')).toHaveCount(2 * installed.length);
+  // The home has no deck list: the decks are chosen in the start-game flow.
+  await expect(page.getByRole('radio')).toHaveCount(0);
+  await openStartFlow(page);
+  await expect(page.getByRole('radio')).toHaveCount(installed.length);
+  await toOpponentStep(page);
+  await expect(page.getByRole('radio')).toHaveCount(installed.length);
   await page.getByLabel('Seed').fill('7');
   await page.getByRole('button', { name: 'Start game' }).click();
   await expect(page.getByText('Your opening hand')).toBeVisible({ timeout: 30_000 });

@@ -11,6 +11,7 @@ import type {
 } from '../src/game/protocol';
 import { createAppStore } from '../src/store';
 import { PreconsProvider } from '../src/ui/precons-context';
+import { DeckStep } from '../src/ui/screens/DeckStep';
 import { GameOver } from '../src/ui/screens/GameOver';
 import { lossReason, outcomeFor } from '../src/ui/screens/game-over-model';
 import { HonestyBanner } from '../src/ui/screens/HonestyBanner';
@@ -72,7 +73,7 @@ describe('Menu', () => {
     expect(defaultDecks([])).toEqual({ humanDeck: '', aiDeck: '' });
   });
 
-  test('lists only the real precons for both seats, with the commander, and the start button', async () => {
+  test('the home has only the Start game and Your decks buttons and the how-to', async () => {
     const snapshot = await playableSnapshot('synthetic-a');
     const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
     const out = html(
@@ -81,27 +82,17 @@ describe('Menu', () => {
         <Menu />
       </PreconsProvider>,
     );
-    expect(out.split(snapshot.name).length - 1).toBe(2);
-    expect(out).toContain('Commander: Synthetic Commander');
-    expect(out).toContain('Quick start');
-    expect(out).toContain('Your deck');
-    expect(out).toContain('Opponent&#x27;s deck');
     expect(out).toContain('unofficial');
     expect(out).toContain('Start game');
-    expect(out).not.toMatch(/<button[^>]*disabled=""[^>]*>Start game/);
+    expect(out).toContain('Your decks');
+    expect(out).not.toContain('Import a deck');
+    expect(out).not.toContain('type="radio"');
+    expect(out).not.toContain(snapshot.name);
     expect(out).toContain('How to play this build');
     expect(out).not.toContain('<details open');
-    expect(out).toContain('name="human-deck"');
-    expect(out).toContain('name="ai-deck"');
-    expect(out).not.toContain('Test deck');
-    // The hidden test decks never show.
-    for (const hidden of ['Knights and Angels', 'Rats and Spiders', 'Bolts and Counterspells']) {
-      expect(out).not.toContain(hidden);
-    }
-    expect(out).not.toContain('No precon is installed yet');
   });
 
-  test('with no precon installed it says so and Start is disabled, without crashing', () => {
+  test('the home works with no precon installed, without crashing', () => {
     const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
     for (const out of [
       html(store, <Menu />),
@@ -112,11 +103,43 @@ describe('Menu', () => {
         </PreconsProvider>,
       ),
     ]) {
-      expect(out).toContain('No precon is installed yet');
-      expect(out).not.toContain('type="radio"');
-      expect(out).toMatch(/<button[^>]*disabled=""[^>]*>Start game/);
-      expect(out).toContain('Import a deck');
+      expect(out).toContain('Start game');
+      expect(out).toContain('Your decks');
     }
+  });
+
+  test('a deck step lists the precons in one tab and the saved decks in the other', () => {
+    const decks = [
+      {
+        id: 'p1',
+        kind: 'precon',
+        name: 'Precon One',
+        blurb: 'b',
+        commander: 'Cmd One',
+        edited: false,
+      },
+      { id: 's1', kind: 'saved', name: 'Saved One', blurb: 'b', commander: '', edited: false },
+    ] as const;
+    const step = (value: string) =>
+      renderToStaticMarkup(
+        <DeckStep
+          legend="Your deck"
+          name="human-deck"
+          value={value}
+          decks={decks}
+          onChange={() => undefined}
+          onImport={() => undefined}
+        />,
+      );
+    const onPrecons = step('p1');
+    expect(onPrecons).toContain('Precon One');
+    expect(onPrecons).toContain('Commander: Cmd One');
+    expect(onPrecons).not.toContain('Saved One');
+    expect(onPrecons).toContain('name="human-deck"');
+    const onSaved = step('s1');
+    expect(onSaved).toContain('Saved One');
+    expect(onSaved).toContain('No commander marked');
+    expect(onSaved).not.toContain('Precon One');
   });
 
   test('the seed rules', () => {
