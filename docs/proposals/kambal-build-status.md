@@ -4,10 +4,10 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 
 ## Status
 
-- [x] 2 of 20 unsupported cards are fully supported: Rhox Faithmender and The Wind Crystal.
+- [x] 3 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, and Archenemy's Charm.
 - Current branch: `support-kambal`.
-- Current group: A — life-gain replacements, implemented as D-581.
-- Next: Group B — modalities and split effects.
+- Current group: B — modalities and split effects; Archenemy's Charm is done.
+- Next: Kimoyo Beads and Revival // Revenge.
 
 ## Cards and initial gap groups
 
@@ -21,7 +21,7 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 
 ### Group B — modalities and split effects
 
-- [ ] Archenemy's Charm
+- [x] Archenemy's Charm — all three modes parse; its one-or-two target mode returns creature and/or planeswalker cards.
 - [ ] Kimoyo Beads
 - [ ] Revival // Revenge
 
@@ -58,3 +58,4 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 - Corpus additions: `pnpm corpus:from-issue --body <issue body> --issue 255` — added 20 new card records.
 - Golden snapshot regenerated after parser support; `pnpm test:focus -- packages/cards/test/golden.test.ts` passes.
 - The focused engine, parser, AI, web rendering and golden checks for group A pass; see the proposal for the command.
+- `Archenemy's Charm` now passes default import and golden support. Focused parser registry, real-card integration, and golden tests pass; the tests cover one target and two targets of different card types.

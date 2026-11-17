@@ -24,4 +24,5 @@
 // 119: Read "with one or more targets" and "draw that many" for a cast trigger (D-574).
 // 120: Read optional exile-from-hand costs and reductions based on cards exiled that way (D-575).
 // 121: Read life-gain doubling replacements (D-581).
-export const PARSER_VERSION = 121;
+// 122: Read and/or unions of card types in plural graveyard targets (D-582).
+export const PARSER_VERSION = 122;

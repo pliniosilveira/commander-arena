@@ -1004,7 +1004,10 @@ export function graveyardPhrase(
           ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
         );
   const choiceOfTypes: Parser<CardWords> = map(
-    sequence(typeChoice(CARD_TYPES), literal(' ')),
+    sequence(
+      choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)),
+      literal(' '),
+    ),
     ([words]): CardWords => ({ types: [], anyOf: words, subtypes: [] }),
   );
   const typed: Parser<CardWords> = map(
@@ -1097,7 +1100,7 @@ export function graveyardPhrase(
     };
   };
   const words: Parser<CardWords> = plural
-    ? choice(permanentCards, typed)
+    ? choice(permanentCards, choiceOfTypes, typed)
     : choice(permanentCards, withNonAura, choiceOfTypes, quiet(subtypeChoiceWords), typed);
   // "Dragon creature card or Ugin planeswalker card from your graveyard" (stage P34, D-152, CR 205.2a, 205.3j): one card that is either kind,
   // each kind a creature type and a card type ("Dragon creature card") or a planeswalker type ("Ugin planeswalker card"). Two or more kinds,

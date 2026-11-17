@@ -1,5 +1,5 @@
 {
-  "parserVersion": 121,
+  "parserVersion": 122,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -5808,19 +5808,10 @@
     "edcb0248-e7c9-4df9-8dba-982048654fd2": {
       "name": "Archenemy's Charm",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Choose one —\n• Exile target creature or planeswalker.\n• Return one or two target creature and/or planeswalker cards from your graveyard to your hand.\n• Put two +1/+1 counters on target creature you control. It gains lifelink until end of turn.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.target-graveyard-card"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "21fbb58c"
+      "ast": "f14cb948"
     },
     "ededbdae-d9dc-4206-9335-d7158f2d7700": {
       "name": "Vampiric Tutor",
@@ -6345,7 +6336,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 420,
+      "supported": 421,
       "total": 459
     }
   }

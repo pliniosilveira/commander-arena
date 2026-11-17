@@ -777,6 +777,7 @@ Rule numbers and titles were read with `pnpm rule` from the CR copy of the owner
 | 401.2, 701.20a, 202.3, 122.1 | "Look at the top card of your library. If it's a land card or a creature card with mana value less than or equal to the number of loyalty counters on ~, you may put that card onto the battlefield." | Implemented (D-534): the card stays on top unless it is put; a land card has mana value 0. | `Effect` `lookAtTop`, `effect.look-top-put`. `test/scenario-xx-galadriel-g1-spells.test.ts`. |
 | 205.1b, 613.1d, 613.4b, 611.2a | "They become 5/5 Elemental creatures with flying and haste until end of turn. They're still lands." | Implemented (D-535): the additive type change, the base power and toughness and the keywords over the targets of the effect before it. | `effect.they-become-creatures`. `test/scenario-xx-galadriel-g1-spells.test.ts`. |
 | 115.1, 702.9 | "Destroy target artifact, enchantment, or creature with flying." | Implemented (D-536): a keyword on the last type of a list of types. | `noun.target-permanent` (`permanentPhrase`). `test/scenario-xx-galadriel-g1-spells.test.ts`. |
+| 115.1, 205.2a, 404.1 | "Return one or two target creature and/or planeswalker cards from your graveyard to your hand." | Implemented (D-582): an `and/or` card-type union uses `ObjectFilter.anyOf` in the existing one-or-two target slot and move-to-hand effect. | `graveyardPhrase`, `noun.target-graveyard-card`; `test/convert-grammar-engine-archenemys-charm.test.ts`. |
 
 ## Added by the Galadriel deck, group 2 (D-538 to D-546)
 
