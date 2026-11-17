@@ -231,7 +231,9 @@ test('A card exiled to be played: a tile at the left of the battlefield says "Ca
   await page.mouse.move(700, 300);
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 
-  await expect(chip.first().locator('.board-exile-play-label')).toHaveText(/^(Cast|Play) from exile$/);
+  await expect(chip.first().locator('.board-exile-play-label')).toHaveText(
+    /^(Cast|Play) from exile$/,
+  );
   await expect(logText(page)).toContainText('is exiled from the top of your library.');
   // The card that was lifted under the pointer settles back (a transition).
   await page.waitForTimeout(700);
