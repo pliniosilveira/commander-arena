@@ -426,11 +426,28 @@
 /* A zero-width anchor at the right end of the field row: the column floats over the right side of the rows
    (issue 49), apart from the emblem strip at the left, so the rows keep the whole width and the permanents
    stay centred. */
-.board-exile-anchor {
+.board-exile-anchor,
+.board-emblems-anchor {
   position: relative;
   flex: none;
   width: 0;
   z-index: 3;
+}
+
+/* The emblem strip floats over the left side of the rows in the same way (it used to take a column of its own and
+   push the permanents to the right): no separator, clicks pass through the gaps, the tiles keep their hover. */
+.board-emblems-anchor > .board-emblems {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(45vw, 480px);
+  border-right: none;
+  pointer-events: none;
+}
+
+.board-emblems-anchor .board-emblem {
+  pointer-events: auto;
 }
 
 .board-exile-plays {
