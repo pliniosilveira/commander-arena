@@ -299,6 +299,7 @@ export function checkFilter(
     'putFromBattlefieldThisTurn',
     'notCastFromHand',
     'enteredThisTurn',
+    'exiledWithSource',
     'singleTarget',
     'modified',
   ] as const) {
@@ -384,6 +385,14 @@ export function checkFilter(
       out,
       `${path}.putFromBattlefieldThisTurn`,
       "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
+    );
+  }
+  // CR 607.2a (Lorehold group 2): "card exiled with this creature" is a card in exile.
+  if (f.exiledWithSource === true && f.zone !== 'exile') {
+    issue(
+      out,
+      `${path}.exiledWithSource`,
+      "only a card in exile was exiled with a permanent: the filter's zone is 'exile'",
     );
   }
   if (f.enteredThisTurn === true && f.zone !== undefined && f.zone !== 'battlefield') {
@@ -585,6 +594,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.controllerDealtDamageBySource !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
+  f.exiledWithSource !== undefined ||
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
   f.named !== undefined ||
@@ -4946,6 +4956,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (e.exileInstead !== undefined && e.exileInstead !== true) {
         issue(out, `${path}.exileInstead`, 'exileInstead must be true when present');
+      }
+      // Lorehold group 2 (CR 118.9, 614.1a): "without paying its mana cost" and the library rider, of a card in exile.
+      if (e.from !== undefined && e.from !== 'exile') {
+        issue(out, `${path}.from`, "a cast permission is of a graveyard card or, with from, 'exile'");
+      }
+      for (const key of ['free', 'bottomInstead'] as const) {
+        if (e[key] !== undefined && e[key] !== true) {
+          issue(out, `${path}.${key}`, `${key} must be true when present`);
+        } else if (e[key] === true && e.from !== 'exile') {
+          issue(out, `${path}.${key}`, `${key} is only for a card in exile (from: 'exile')`);
+        }
+      }
+      if (e.from === 'exile' && e.exileInstead === true) {
+        issue(out, `${path}.exileInstead`, 'a card cast from exile has bottomInstead, not exileInstead');
       }
       break;
     case 'shuffle':

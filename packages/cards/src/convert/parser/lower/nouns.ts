@@ -258,6 +258,11 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:enteredThisTurn');
   }
+  // Lorehold group 2: "target card exiled with ~" (CR 607.2a), read where the filter is matched against the game with the source (a target slot); never a member of a choice, and a card in exile.
+  if (filter.exiledWithSelf === true) {
+    if (inner || filter.zone !== 'exile') return bad([]);
+    parts.push('selector:exiledWithSource');
+  }
   // D-416 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice.
   if (filter.modified === true) {
     if (inner) return bad([]);
@@ -395,6 +400,7 @@ function lowerFilterAt(
       : {}),
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
+    ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),

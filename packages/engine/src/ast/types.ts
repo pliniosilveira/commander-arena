@@ -443,6 +443,13 @@ export interface ObjectFilter {
    */
   readonly enteredThisTurn?: true;
   /**
+   * "Target card exiled with this creature" (Lorehold group 2, CR 607.2a, 400.7): the object is a card in exile that the permanent the ability belongs to exiled with its linked
+   * ability (`exile.linked`, `GameObject.linkedExile`): a card another permanent exiled, or that this one exiled before it left the battlefield and came back (a new object, CR 400.7),
+   * does not match. Read where the filter is matched against the game with the source (a target slot, an `each` selector); the filter's zone is `exile`. Refused in a static ability,
+   * as `attacking` is, and in a face with no ability whose exile is linked.
+   */
+  readonly exiledWithSource?: true;
+  /**
    * "A card named Regna, the Redeemer" (CR 201.2, D-489): the object's name (the name of its front face outside the battlefield, CR 711.4 analogue) is exactly this text. Read where the
    * filter is matched against the game (a target slot, an `each` selector, a search of a library); refused in a static ability, as `attacking` is.
    */
@@ -1610,12 +1617,21 @@ export type Effect =
    * graveyard it is a new object (CR 400.7) and the permission is gone. `duration` is `untilEndOfTurn`.
    * `exileInstead` (D-359, CR 614.1a, "If that spell would be put into your graveyard, exile it instead"): the spell cast with this permission is exiled instead
    * of going to a graveyard when it would leave the stack for one (resolved, countered, fizzled); it is written onto the permission and read as the spell is cast.
+   * Lorehold group 2 (Quintorius, Loremaster; CR 601.2, 118.9, 614.1a, 400.7): `from: 'exile'` is the same permission for a card in exile that the target names ("Choose target card
+   * exiled with this creature. You may cast that card this turn without paying its mana cost."), whoever owns it: it is a `playPermission` that lets the card be cast (never played as a
+   * land) until end of turn, at the timing of its type. `free` ("without paying its mana cost", CR 118.9): the card is cast for no mana cost (X is 0, CR 107.3b; additional costs are paid, CR 118.9d),
+   * the one way to cast it with this permission. `bottomInstead` ("If that spell would be put into a graveyard, put it on the bottom of its owner's library instead", CR 614.1a): the spell
+   * cast with the permission goes to the bottom of its owner's library instead of a graveyard when it would leave the stack for one (resolved, countered, fizzled); a permanent spell that
+   * resolves is not put into a graveyard. Both only with `from: 'exile'`.
    */
   | {
       readonly kind: 'mayCast';
       readonly objects: ObjectSelector;
       readonly duration: 'untilEndOfTurn';
       readonly exileInstead?: true;
+      readonly from?: 'exile';
+      readonly free?: true;
+      readonly bottomInstead?: true;
     }
   /**
    * "Exile the top card of your library", "Exile the top two cards of your library", "Exile the top X cards of your library, where X is the

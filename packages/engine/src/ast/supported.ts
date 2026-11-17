@@ -156,7 +156,19 @@ function walkEffect(
       return;
     case 'mayCast': {
       // D-135: the permission is for a card in the graveyard (`runMayCast` skips any other).
-      const zone = selectedFilter(effect.objects, targets)?.zone;
+      const filter = selectedFilter(effect.objects, targets);
+      // Lorehold group 2 (CR 607.2a): `from: 'exile'` is for a card the permanent exiled with its linked ability, which only `exiledWithSource` names.
+      if (effect.from === 'exile') {
+        if (filter?.zone !== 'exile' || filter.exiledWithSource !== true) {
+          out.push({
+            path: `${path}.objects`,
+            message:
+              "a cast permission from exile is for a card exiled with this permanent: the target says zone 'exile' and exiledWithSource",
+          });
+        }
+        return;
+      }
+      const zone = filter?.zone;
       if (zone !== 'graveyard') {
         out.push({
           path: `${path}.objects`,

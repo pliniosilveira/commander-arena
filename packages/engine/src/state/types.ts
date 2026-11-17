@@ -424,6 +424,12 @@ export interface StackData {
    */
   readonly exileInstead?: true;
   /**
+   * True when an effect says "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" (Lorehold group 2, CR 614.1a): when this spell would
+   * leave the stack for a graveyard (it resolved, was countered, fizzled) the card goes to the bottom of its owner's library instead. It belongs to the spell, not to a permanent: it ends
+   * when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
+   */
+  readonly bottomInstead?: true;
+  /**
    * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (D-439,
    * CR 614.1a, 608.2n, 603.7): set on a spell by the effect `exileOnResolve`. When this instant or sorcery resolves and would be put into its owner's graveyard it is exiled instead, and
    * a delayed triggered ability of `by` (with `source` as its source) returns the card to its owner's hand at the beginning of the next end step. A spell that does not resolve is not
@@ -1794,6 +1800,16 @@ export type ContinuousChange =
       readonly seat: SeatId;
       /** "You may cast it this turn" (`mayPlay.castOnly`, Lorehold group 1): the card may be cast, not played as a land. */
       readonly castOnly?: true;
+      /**
+       * "You may cast that card this turn without paying its mana cost" (`mayCast.free`, Lorehold group 2, CR 118.9): the card is cast for no mana cost, as the alternative cost `free`
+       * (the plain cast, paying the mana cost, is not allowed by this permission). Only with `castOnly`.
+       */
+      readonly free?: true;
+      /**
+       * "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" (`mayCast.bottomInstead`, Lorehold group 2, CR 614.1a): the spell cast with
+       * this permission carries `StackData.bottomInstead` (`rules/cast.ts`, `beginCast`).
+       */
+      readonly bottomInstead?: true;
     }
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }

@@ -124,15 +124,36 @@ export function runMayCast(
   ctx: SelectContext,
   targets: readonly ChosenTarget[],
 ): StepOutcome {
+  // Lorehold group 2 (CR 601.2, 118.9, 614.1a): "Choose target card exiled with this creature. You may cast that card this turn without paying its mana cost": a card in
+  // exile, whoever owns it (the effect names it), is given a permission to be cast (never played as a land), free and with the library rider when the effect says so.
+  const fromExile = effect.from === 'exile';
   const cards = resolveObjects(state, effect.objects, ctx, targets).filter((id) => {
     const card = state.objects[id];
-    return card?.zone === 'graveyard' && card.owner === res.controller;
+    return fromExile
+      ? card?.zone === 'exile'
+      : card?.zone === 'graveyard' && card.owner === res.controller;
   });
   let next = state;
   const created: ContinuousEffect[] = [];
   for (const id of cards) {
     const [timestamp, stamped] = allocateTimestamp(next);
     next = stamped;
+    if (fromExile) {
+      created.push({
+        id: `ce${timestamp}`,
+        timestamp,
+        objects: [id],
+        until: 'endOfTurn',
+        change: {
+          kind: 'playPermission',
+          seat: res.controller,
+          castOnly: true,
+          ...(effect.free === true ? { free: true as const } : {}),
+          ...(effect.bottomInstead === true ? { bottomInstead: true as const } : {}),
+        },
+      });
+      continue;
+    }
     created.push({
       id: `ce${timestamp}`,
       timestamp,

@@ -15,6 +15,7 @@ import {
 } from '../../combinators';
 import type { IrAmount, IrDuration, IrFlag, IrToken, Span } from '../../ir/types';
 import { quantity } from '../amount/index';
+import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, quietly, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
 
@@ -43,6 +44,9 @@ export const EFFECT_EXILE_TOP = defineRule<Clauses>({
     'exile the top two cards of your library',
     'exile the top X cards of your library',
     'exile the top 3 cards of your library',
+    // Lorehold Spirit deck, group 2 (issue 86): the count of "for each", as "draw a card for each ..." has it.
+    'exile the top card of your library for each present vote',
+    'exile the top two cards of your library for each present vote',
   ],
   rejects: [
     'exile the top card of target player’s library',
@@ -55,6 +59,9 @@ export const EFFECT_EXILE_TOP = defineRule<Clauses>({
     'exile the top card of your graveyard',
     'exile the top 0 cards of your library',
     'exile the top card of your library and draw a card',
+    'exile the top X cards of your library for each present vote',
+    'exile the top card of your library for each',
+    'exile the top card of your library for each vote',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.exile-top';
@@ -77,11 +84,16 @@ export const EFFECT_EXILE_TOP = defineRule<Clauses>({
     const tail = pattern(new RegExp(` of your library${BOUNDARY}`, 'iu'))(ctx, counted.pos);
     if (!tail.ok) return tail;
     const { value, span } = counted.value;
-    const count: IrAmount = value === 'x' ? { kind: 'x', span } : number(value, span);
+    const base: IrAmount = value === 'x' ? { kind: 'x', span } : number(value, span);
+    // Lorehold group 2 (CR 608.2c): "... of your library for each present vote": the count of "for each" is the number, times the quantity when it is more than one. An X is not multiplied.
+    const each = optional(FOR_EACH_TAIL, null)(ctx, tail.pos);
+    if (!each.ok) return each;
+    const count = each.value === null ? base : scaled(base, each.value);
+    if (count === null) return fail(ctx, tail.pos);
     return {
       ok: true,
-      value: [makeClause(id, 'exileTop', { count }, { start: pos, end: tail.pos })],
-      pos: tail.pos,
+      value: [makeClause(id, 'exileTop', { count }, { start: pos, end: each.pos })],
+      pos: each.pos,
     };
   },
 });

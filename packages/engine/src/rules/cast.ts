@@ -95,6 +95,7 @@ import {
   hasKickedTargets,
   libraryCastPermission,
   mayCastFromGraveyard,
+  playPermissionBottoms,
   targetSpecsOf,
   targetsPossible,
 } from './legality';
@@ -222,6 +223,10 @@ export function beginCast(
       ...(riders.exileInstead === true ||
       (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj))
         ? { exileInstead: true as const }
+        : {}),
+      // Lorehold group 2 (CR 614.1a): "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" of the permission the card is cast with.
+      ...(zone === 'exile' && !resolving && playPermissionBottoms(state, seat, obj, alternative === 'free')
+        ? { bottomInstead: true as const }
         : {}),
       // D-151: "If you cast a creature spell this way, it gains haste until end of turn".
       ...(zone === 'library' && libraryCastPermission(state, seat, obj)?.gainsHaste === true
