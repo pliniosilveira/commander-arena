@@ -484,6 +484,16 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - Perpetual Timepiece: "any number of target cards" is read only for your own graveyard and into your library (the cards go to their owners' libraries, CR 701.24c, so a card of another graveyard needs another phrase); a commander shuffled in asks its owner where it goes as it moves, as any commander (CR 903.9a, 903.9b).
 - Wave of Reckoning: the damage is dealt by each creature one after the other from powers read first (CR 608.2h); a replacement or prevention effect that asks the player which applies asks once for each creature.
 - The Scryfall rulings of Claim Jumper, Containment Construct, Conspiracy Theorist, Perpetual Timepiece and Wave of Reckoning were not fetched (blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
+## The Lorehold Spirit deck, group 2 (issue 86, D-596 to D-599)
+
+- Voting keeps the limits of D-194 and D-195: one vote for each player (CR 701.38d, extra votes, is not built); the vote starts with the controller; a vote for objects or players is not built. Fateful Tempest is read for "past" and "present" as words; a text that counts the votes of a player ("votes for ... more than ...", ties between the options said in words) is not read.
+- "For each <option> vote" reads the votes of the vote before it in the same text (`votesFor`, kept for the resolution); a later spell or ability cannot ask what was voted.
+- "Each opponent" as the recipient of "damage equal to ..." is read only with the milled value (one number for everyone); "equal to the number of ..." for each opponent is not read (a count of objects would be counted again for each opponent).
+- `exiledWithSource` is the cards the ability of the permanent exiled (`linkedExile`); a face with more than one ability that exiles, or with none, leaves the reader unread. A permanent that left the battlefield has no linked card: an ability on the stack whose target was exiled with it does nothing when the permanent has left (unverified ruling: the Scryfall rulings of Quintorius, Loremaster could not be read).
+- "Cast without paying its mana cost" from exile with a permission is one cost option: the plain cast is not offered for a card with only that permission. Two replacement effects on one spell are not chosen by the player (CR 616.1): the one the engine applies first wins (the flashback exile before the rider); no card of the corpus has both.
+- A permanent spell cast with the permission that resolves is not put into a graveyard, so the rider does nothing to it (CR 614.1a): when that permanent dies later it goes to the graveyard as usual.
+- The Scryfall rulings of Fateful Tempest and Quintorius, Loremaster were not fetched (blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
+
 ## The Galadriel deck, group 1 (issue 43, D-528 to D-537)
 
 - The Ring (CR 701.54) was already built (D-196, D-197); nothing of it is missing for this group. The Ring still tempts only "you" (no card of the engine's list says another player).

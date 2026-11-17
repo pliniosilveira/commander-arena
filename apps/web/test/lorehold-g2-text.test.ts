@@ -30,7 +30,10 @@ describe('the targets', () => {
     expect(
       targetText({
         id: 't1',
-        what: { kind: 'object', filter: { zone: 'graveyard', notTypes: ['land'], controller: 'you' } },
+        what: {
+          kind: 'object',
+          filter: { zone: 'graveyard', notTypes: ['land'], controller: 'you' },
+        },
       }),
     ).toBe('target nonland card from your graveyard');
   });

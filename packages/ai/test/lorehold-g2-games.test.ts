@@ -325,7 +325,7 @@ function checkRules(t: Tally, step: StepInfo, memory: Memory): void {
       const name = cardNameOf(after, e.source);
       t.byCard.set(name, (t.byCard.get(name) ?? 0) + 1);
       if (name === ELEPHANT && e.abilityIndex === 1) {
-        // The beginning of the controller's end step, with a card to target in their graveyard (CR 603.3d: with none the ability is not put on the stack).
+        // The beginning of the controller's end step, with a card to target in their graveyard (CR 603.3d: with none the ability is removed from the stack).
         expect(after.turn.step, 'at the beginning of the end step').toBe('end');
         expect(after.turn.activeSeat, 'of its controller').toBe(e.seat);
         const graveyard = (after.seats[e.seat]?.graveyard ?? []).filter(

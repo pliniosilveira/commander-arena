@@ -3,7 +3,7 @@
 // If that spell would be put into a graveyard, put it on the bottom of its owner's library instead." (Quintorius, Loremaster: the `exile` with `linked`, the target filter `exiledWithSource`,
 // and `mayCast` from exile with `free` and `bottomInstead`.)
 // Pins: CR 607.2a (linked abilities: the cards exiled by this ability of this permanent), CR 400.7 (a permanent that left and came back is a new object with no link; a card that left a zone
-// is a new object), CR 603.3d (a trigger with no legal target is not put on the stack), CR 608.2b (an ability whose only target became illegal does nothing), CR 601.2, 118.9 and 107.3b (cast
+// is a new object), CR 603.3d (a trigger with no legal target is removed from the stack: it never resolves), CR 608.2b (an ability whose only target became illegal does nothing), CR 601.2, 118.9 and 107.3b (cast
 // without paying the mana cost: X is 0; additional costs are paid, CR 118.9d), CR 614.1a (the spell goes to the bottom of the library instead of a graveyard: resolved, countered or fizzled; a permanent
 // spell that resolves is not put into a graveyard), CR 602.2 (sacrifice as a cost), CR 611.2a (until end of turn).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-lorehold-g2.ts); the real card is played in packages/cards/test/convert-grammar-engine-lorehold-g2.test.ts.
@@ -90,7 +90,7 @@ describe('the end step trigger: "exile target noncreature, nonland card from you
     g.expect.invariants();
   });
 
-  test('with no legal target the ability is not put on the stack and no Spirit is created (CR 603.3d)', () => {
+  test('with no legal target the ability never resolves (CR 603.3d) and no Spirit is created', () => {
     const g = board([BEARS, 'Plains']).build();
     toEndStep(g);
     g.expect.pending('priority', 0);
