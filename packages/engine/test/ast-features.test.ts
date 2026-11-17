@@ -130,6 +130,9 @@ describe('the dimensions', () => {
       // D-207: "if it targets a tapped creature".
       'spellTargets',
       'attackersAttackedYou',
+      // Galadriel group 1: "if this is the second time this ability has resolved this turn", "if you chose a creature other than ~ as your Ring-bearer".
+      'abilityResolvedTimes',
+      'ringBearerChosen',
       'ownTurnNumber',
       'sameNameAtLeast',
       // D-151: what entered this turn, damage dealt this turn.
@@ -165,6 +168,7 @@ describe('the dimensions', () => {
       'lookAtTopOfLibrary',
       'attackTax',
       'optionalUntap',
+      'crewSaddleBonus',
       'untapInOthersUntapStep',
       'modifyPt',
       'characteristicPt',

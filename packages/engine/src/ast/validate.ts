@@ -358,6 +358,12 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'lookAtTopOfLibrary':
     case 'optionalUntap':
       break;
+    case 'crewSaddleBonus':
+      // Galadriel group 3 (CR 702.122a): the power a creature counts more as it is tapped for a crew cost: a positive whole number.
+      if (!Number.isSafeInteger(s.amount) || s.amount < 1) {
+        issue(out, `${path}.amount`, 'the bonus is a positive whole number');
+      }
+      break;
     case 'untapInOthersUntapStep':
       // D-320: the permanent itself (`self`), or (D-229) the permanents a filter names: exactly one of the two.
       if (s.self !== undefined && s.self !== true) {
@@ -453,7 +459,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         checkManaAbility(s.ability, `${path}.ability`, out);
       } else if (s.ability?.kind === 'activated' || s.ability?.kind === 'triggered') {
         checkAbility(s.ability, `${path}.ability`, out);
-        // D-530: a granted loyalty ability is activated only from a planeswalker, so it is granted to planeswalkers (CR 606.1).
+        // D-560: a granted loyalty ability is activated only from a planeswalker, so it is granted to planeswalkers (CR 606.1).
         if (
           s.ability.kind === 'activated' &&
           Array.isArray(s.ability.cost) &&
@@ -632,6 +638,8 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'crimeCommitted':
     case 'tokenCreated':
     case 'scries':
+    case 'surveils':
+    case 'rollsHighest':
       // D-464, D-465, D-513: the player who commits the crime, creates the token or scries, relative to the controller of this ability.
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -913,7 +921,8 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'noncombatDamageDealt' ||
     t?.kind === 'lifeGained' ||
     // D-513: the cards looked at while scrying are "that many".
-    t?.kind === 'scries'
+    t?.kind === 'scries' ||
+    t?.kind === 'surveils'
   );
 }
 
@@ -1099,7 +1108,11 @@ function checkActivationCosts(
       kind === 'removeCounters' ||
       kind === 'loyalty' ||
       kind === 'putCounters' ||
-      kind === 'returnToHand' ||
+      // D-540 (CR 602.2, 118.3): returning other permanents you control is paid wherever the ability works ("Return two lands you control to their owner's hand: Return this card from your graveyard to your hand"); returning the source itself needs it on the battlefield.
+      (c?.kind === 'returnToHand' &&
+        typeof c.what === 'object' &&
+        c.what !== null &&
+        'kind' in c.what) ||
       kind === 'sacrifice' ||
       kind === 'discard' ||
       kind === 'tapCreatures';
@@ -1248,6 +1261,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),
         ...(a.trigger?.kind === 'attackBatch' ? { triggerAttacked: true } : {}),
+        triggeredAbility: true,
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
         ...(a.trigger?.kind === 'step' && a.trigger.step === 'main2'
@@ -1362,6 +1376,16 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             out,
             `${path}.interveningIf`,
             'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
+          );
+        }
+        if (
+          conditionHas(a.interveningIf, 'ringBearerChosen') &&
+          a.trigger?.kind !== 'ringTempted'
+        ) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'ringBearerChosen reads the creature the Ring tempted its controller to choose: it needs a ringTempted trigger',
           );
         }
         if (

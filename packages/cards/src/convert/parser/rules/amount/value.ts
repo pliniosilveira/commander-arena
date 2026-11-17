@@ -91,8 +91,8 @@ function countersOn(rule: string, head: Parser<unknown>, plural: boolean): Parse
 const NUMBER_OF = (rule: string): Parser<IrAmount> =>
   countAmount(rule, literal('the number of '), true);
 
-/** "the number of +1/+1 counters on ~". */
-const NUMBER_OF_COUNTERS = (rule: string): Parser<IrAmount> =>
+/** "the number of +1/+1 counters on ~". Exported for the rules of effects that read it as a limit (Galadriel deck, group 1: "mana value less than or equal to the number of loyalty counters on ~"). */
+export const NUMBER_OF_COUNTERS = (rule: string): Parser<IrAmount> =>
   countersOn(rule, literal('the number of '), true);
 
 const AGGREGATE_HEAD = /the (greatest|total) (power|toughness|mana value) (among|of) /iu;
@@ -172,6 +172,15 @@ const COMMANDER_MANA_VALUE: Parser<IrAmount> = (ctx, pos) => {
   return r.ok
     ? { ok: true, value: { kind: 'commanderManaValue', span: r.value.span }, pos: r.pos }
     : r;
+};
+
+/**
+ * "the result" (Galadriel deck group 3, CR 706.2, 706.3b): the natural result of the die the text rolled before ("Roll a d4. Scry X, where X is the result."). Only the
+ * words "the result" followed by the end of the phrase; whether a die was rolled is the lowering's check.
+ */
+const DIE_RESULT: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(pattern(/the result(?![\p{L}\p{N}'’])/iu))(ctx, pos);
+  return r.ok ? { ok: true, value: { kind: 'dieResult', span: r.value.span }, pos: r.pos } : r;
 };
 
 const STAT_OF_HEAD =
@@ -266,6 +275,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     MANA_SPENT_AMOUNT,
     // Stage P68 (D-230): "the amount of damage ~ dealt to that player".
     DAMAGE_DEALT_AMOUNT,
+    // Galadriel deck group 3 (CR 706.2): "the result" of a die rolled earlier in the text.
+    DIE_RESULT,
   );
 
 /** "half <atom>, rounded down" (CR 107.1a: the text always says how it rounds). */
@@ -495,8 +506,12 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     // Stage P32 (D-147): the commanders' mana value, and a total read as the spell is cast.
     'where X is the greatest mana value among your commanders',
     'where X is the greatest power among creatures you control as you cast ~',
+    // Galadriel deck group 3 (CR 706.2): the die rolled before.
+    'where X is the result',
   ],
   rejects: [
+    'where X is the results',
+    'where X is the result of',
     'where X is',
     'where X is 3',
     'where X is the number of creatures',

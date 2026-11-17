@@ -113,6 +113,7 @@ describe('amounts that read an object', () => {
       'exiledAsCost',
       // Hylda group 3 (CR 107.3m): the X of the spell an enters trigger reads.
       'enteredX',
+      'dieResult',
     ]);
   });
 });

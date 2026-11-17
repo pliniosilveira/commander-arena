@@ -413,8 +413,8 @@ const CHOICES: readonly Line[] = [
   },
   {
     kind: 'instant',
-    text: 'Destroy target artifact or creature with flying.',
-    expect: no('with flying.', 'noun.target-permanent'),
+    text: 'Destroy target artifact or creature with flying or reach.',
+    expect: no('or reach.', 'noun.target-permanent'),
   },
   {
     kind: 'instant',

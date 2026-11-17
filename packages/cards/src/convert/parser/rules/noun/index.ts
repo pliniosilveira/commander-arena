@@ -28,6 +28,7 @@ import { DESTINY_EARLY_NOUN_RULES } from './destiny';
 import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_NOUN_RULES } from './edhrec';
+import { GALADRIEL_G3_NOUN_RULES } from './galadriel-g3';
 import { GISA_G2_NOUN_RULES } from './gisa-g2';
 import { GISA_G3_NOUN_RULES } from './gisa-g3';
 import { HASHATON_G8_NOUN_RULES } from './hashaton-g8';
@@ -691,6 +692,8 @@ export const NOUN_RULES = [
   ...PAIR_NOUN_RULES,
   NOUN_PLAYER,
   NOUN_TARGET_SPELL,
+  // Galadriel deck, group 3 (issue 43): "up to one target spell".
+  ...GALADRIEL_G3_NOUN_RULES,
   // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers", before `noun.any-number-targets`, which would stop at "creatures".
   ...HYLDA_G3_NOUN_RULES,
   // Stage P32 (D-147): "target commander" before `noun.target-permanent`, whose phrase would stop at "commander".

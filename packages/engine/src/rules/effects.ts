@@ -30,7 +30,7 @@ import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
 import { runBecomeCopy, runContinuous, runEntersTappedGroup, runRequireAttack } from './continuous';
 import { controllerOf } from './control';
-import { runGainControl } from './control-effects';
+import { runExchangeControl, runGainControl } from './control-effects';
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
@@ -601,6 +601,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.lifeLost === undefined ? {} : { lifeLost: res.lifeLost }),
     ...(res.thisWay === undefined ? {} : { thisWay: res.thisWay }),
     ...(res.votes === undefined ? {} : { votes: res.votes }),
+    ...(res.dieResult === undefined ? {} : { dieResult: res.dieResult }),
   };
 }
 
@@ -863,6 +864,7 @@ function runEffect(
                 to: effect.to,
                 position: effect.position ?? 'top',
                 ...(effect.objects.optional === true ? { optional: true as const } : {}),
+                ...(effect.objects.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
                 // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
                 ...(effect.objects.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
                 ...(effect.objects.exceptSacrificed === true
@@ -949,13 +951,22 @@ function runEffect(
       const ids = resolveObjects(state, effect.objects, ctx, targets).filter((id) =>
         canBeCountered(state, id),
       );
+      // CR 118.12a, 608.2c (Galadriel group 3): "... unless its controller pays mana equal to the greatest power among creatures you control": the generic mana is read now, as
+      // this resolves. Paying {0} is paying nothing, so a spell whose controller owes none is not countered.
+      const owed =
+        effect.genericAmount === undefined
+          ? null
+          : amountOf(state, effect.genericAmount, ctx, targets);
+      if (owed === 0) return done(state);
+      const cost: typeof effect.cost =
+        owed === null ? effect.cost : [{ kind: 'mana', symbols: [String(owed)] }];
       return done(
         state,
         [],
         ids.map((object) => ({
           kind: 'counterUnlessPays' as const,
           object,
-          cost: effect.cost,
+          cost,
           stage: 'ask' as const,
           // Ward's trigger asks as 'ward'; a target spell ("Counter target spell unless ...") as
           // 'counterUnlessPays' (rules/pay-unless.ts).
@@ -1482,6 +1493,7 @@ function runEffect(
               seat,
               count,
               commanderChoice: null,
+              ...(effect.reveal === true ? { reveal: true as const } : {}),
             })),
       );
     }
@@ -2317,6 +2329,35 @@ function runEffect(
     case 'gainControl':
       // CR 613.1b, 611.2 (D-189): a layer 2 effect (`rules/control-effects.ts`).
       return runGainControl(state, effect, ctx, targets);
+
+    case 'exchangeControl':
+      // CR 701.12a, 701.12b (Galadriel group 3): two layer 2 effects made together, or nothing (`rules/control-effects.ts`).
+      return runExchangeControl(state, effect, ctx, targets);
+
+    case 'removeCounters': {
+      // CR 122.1 (Galadriel group 3): the permanent loses up to that many counters of the kind; one event for the number that came off.
+      const wanted = amountOf(state, effect.count, ctx, targets);
+      if (wanted <= 0) return done(state);
+      for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
+        const obj = next.objects[id];
+        if (obj?.zone !== 'battlefield') continue;
+        const had = obj.counters[effect.counter] ?? 0;
+        const removed = Math.min(had, wanted);
+        if (removed <= 0) continue;
+        const left = had - removed;
+        const { [effect.counter]: _gone, ...rest } = obj.counters;
+        next = patchObject(next, id, {
+          counters: left > 0 ? { ...obj.counters, [effect.counter]: left } : rest,
+        });
+        events.push({
+          kind: 'counterRemoved',
+          object: id,
+          counter: effect.counter,
+          count: removed,
+        });
+      }
+      return done(next, events);
+    }
 
     case 'modifyPt':
     case 'setPt':

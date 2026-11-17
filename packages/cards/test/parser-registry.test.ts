@@ -175,6 +175,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `If ${e}, you may cast ~ without paying its mana cost.`,
   ),
   'amount.for-each': spell((e) => `Draw a card ${e}.`),
+  // Galadriel deck, group 2 (D-539): two counts added.
+  'amount.for-each-and-each': permanent((e) => `~ gets +1/+1 ${e}.`),
   'amount.for-each-died': permanent(
     (e) => `Nontoken creatures you control enter with an additional +1/+1 counter on them ${e}.`,
   ),
@@ -560,6 +562,21 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,
   'trigger.scry': whenever,
+  // Galadriel deck, group 1 (issue 43): "you scry or surveil" follows "Whenever"; the conditions follow a trigger's comma or a sentence of its body.
+  'trigger.scry-or-surveil': whenever,
+  // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result" follows "Whenever"; the copy is the token of an enters trigger; "up to one target spell" is the noun of a counter.
+  'trigger.roll-highest': whenever,
+  'keyword.buyback': asIs,
+  'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
+  'noun.up-to-one-target-spell': spell(
+    (e) =>
+      `Counter ${e} unless its controller pays mana equal to the greatest power among creatures you control.`,
+  ),
+  'static.crew-saddle-bonus': asIs,
+  'condition.resolved-times': permanent(
+    (e) => `Whenever a creature you control enters, scry 1. If ${e}, you gain 1 life.`,
+  ),
+  'condition.chose-ring-bearer': permanent((e) => `Whenever the Ring tempts you, if ${e}, scry 3.`),
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),

@@ -47,6 +47,9 @@ import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
+import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
+import { GALADRIEL_G2_EFFECT_RULES } from './galadriel-g2';
+import { GALADRIEL_G3_EFFECT_RULES } from './galadriel-g3';
 import { GISA_G3_EFFECT_RULES } from './gisa-g3';
 import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
@@ -894,6 +897,12 @@ export const EFFECT_RULES = [
   ...HYLDA_G1_EFFECT_RULES,
   // D-517, D-519 (Hylda deck, group 2): "Those creatures don't untap during ... next untap step" and "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_EFFECT_RULES,
+  // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
+  // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
+  ...GALADRIEL_G1_EFFECT_RULES,
+  // Galadriel deck, group 3 (issue 43): "Exchange control of ~ and target nonland permanent", "counter ... unless its controller pays mana equal to ...", "Draw a card and reveal it.
+  // Remove ..." and "Its activated abilities can't be activated this turn." start like the plain counter, draw and pronoun rules, and are tried first.
+  ...GALADRIEL_G3_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
@@ -963,6 +972,8 @@ export const EFFECT_RULES = [
   ...DANITHA_G1B_EFFECT_RULES,
   // Issue 26 (D-411): "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_EFFECT_RULES,
+  // Galadriel deck, group 2 (D-542): "put up to two land cards from among them into your hand".
+  ...GALADRIEL_G2_EFFECT_RULES,
   ...DANITHA_G4_EFFECT_RULES,
   // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
   ...FEATHER_G2_EFFECT_RULES,

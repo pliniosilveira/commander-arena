@@ -352,6 +352,12 @@ export interface StackData {
    */
   readonly replicated?: number;
   /**
+   * True when the buyback cost was paid as the spell was cast (CR 702.27a, Galadriel group 3): the card returns to its owner's hand instead of the graveyard as the spell
+   * resolves (`rules/stack.ts`). Absent for a spell with no buyback and for one whose caster did not pay it. A copy of the spell has it too (CR 707.10), which makes no
+   * difference to it: a copy is not a card and ceases to exist.
+   */
+  readonly boughtBack?: true;
+  /**
    * The opponent the caster promised a gift to as the spell was cast (CR 702.174a, 702.174k, D-135): "the chosen player". Absent
    * when the spell has no gift or the gift was not promised. A copy of the spell has it too (CR 707.10), which makes no
    * difference to it: the gift happens as the spell resolves, once, for the spell that was cast.
@@ -1084,6 +1090,8 @@ export type Instruction =
       readonly position: 'top' | 'bottom' | number;
       /** "You may ..." (`ChooseSelector.optional`, D-139): none up to `count` are chosen. */
       readonly optional?: true;
+      /** "From your hand or graveyard" (`ChooseSelector.alsoGraveyard`, D-544): the cards of the graveyard are candidates besides those of the hand `filter` names. */
+      readonly alsoGraveyard?: true;
       /** Moving a card chosen from the hand or the graveyard onto the battlefield (D-139): how it enters. */
       readonly tapped?: boolean;
       readonly controller?: 'owner' | 'you';
@@ -1523,6 +1531,8 @@ export type Instruction =
       readonly commanderChoice: boolean | null;
       /** An earlier card of this instruction was already counted for `thisWay` `playersDrew` (D-131). */
       readonly counted?: true;
+      /** "Draw a card and reveal it" (the effect `draw` with `reveal`, Galadriel group 3): the card drawn is revealed and is what `moved` names after it. Only a count of 1. */
+      readonly reveal?: true;
       /**
        * The next `replacedLeft` draws of this instruction are the ones a `drawInstead` replacement made in place of a draw (D-379, CR 614.5, 614.11a): the
        * effects that made them do not replace them again, and they go before the draws the replaced one was followed by. Absent when none are waiting.
@@ -1971,6 +1981,12 @@ export interface TurnLog {
     readonly abilityIndex: number;
     readonly seat: SeatId;
   }[];
+  /**
+   * Each time a triggered ability that counts its resolutions (the effect has the condition `abilityResolvedTimes`, Galadriel group 1) began to resolve this turn: the
+   * source permanent and the effect of the ability as text (the abilities written for the events of one printed "or" share it). Absent until one was recorded, so the
+   * state of a game with no such ability is as it was.
+   */
+  readonly resolved?: readonly { readonly object: ObjectId; readonly key: string }[];
   /**
    * Each permanent that entered the battlefield this turn (D-151, Celebration: "two or more nonland permanents entered the battlefield under your
    * control this turn"), in order: who controlled it as it entered, its card types as it entered and whether it is a token. It stays when the

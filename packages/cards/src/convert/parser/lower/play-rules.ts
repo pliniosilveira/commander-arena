@@ -24,6 +24,7 @@ export type PlayRuleEffect = Extract<
       | 'lookAtTopOfLibrary'
       | 'attackTax'
       | 'optionalUntap'
+      | 'crewSaddleBonus'
       | 'blockTax'
       | 'untapInOthersStep';
   }
@@ -36,6 +37,7 @@ export function isPlayRule(effect: IrStaticEffect): effect is PlayRuleEffect {
     effect.kind === 'attackTax' ||
     effect.kind === 'blockTax' ||
     effect.kind === 'optionalUntap' ||
+    effect.kind === 'crewSaddleBonus' ||
     effect.kind === 'untapInOthersStep'
   );
 }
@@ -54,6 +56,8 @@ export function playRuleNeeds(effect: PlayRuleEffect): FeatureRef[] {
       return ['static:blockTax', 'cost:mana'];
     case 'optionalUntap':
       return ['static:optionalUntap'];
+    case 'crewSaddleBonus':
+      return ['static:crewSaddleBonus'];
     case 'untapInOthersStep':
       return ['static:untapInOthersUntapStep'];
   }
@@ -83,6 +87,9 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
       return ok({ kind: 'static', static: { kind: 'lookAtTopOfLibrary' } });
     case 'optionalUntap':
       return ok({ kind: 'static', static: { kind: 'optionalUntap' } });
+    // "~ saddles Mounts and crews Vehicles as though its power were 2 greater." (Galadriel deck group 3, CR 702.122a): the creature itself, a bonus to the power it counts for the cost.
+    case 'crewSaddleBonus':
+      return ok({ kind: 'static', static: { kind: 'crewSaddleBonus', amount: effect.amount } });
     case 'untapInOthersStep':
       // "Untap all creatures you control during each other player's untap step." (stage P68, D-229): the creatures of the controller.
       // "Untap ~ during each other player's untap step." (D-320): the permanent itself.
@@ -130,5 +137,6 @@ export const PLAY_RULE_NEEDS: readonly FeatureRef[] = [
   'static:attackTax',
   'static:blockTax',
   'static:optionalUntap',
+  'static:crewSaddleBonus',
   'static:untapInOthersUntapStep',
 ];

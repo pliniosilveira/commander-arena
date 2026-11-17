@@ -50,6 +50,12 @@ export function kickerPrompt(cost: readonly Cost[]): string {
   return `Pay the kicker cost: ${parts.join(' and ')}?`;
 }
 
+/** The buyback question (CR 702.27a, 601.2b): "Pay the buyback cost {2}?", asked as the spell is cast. */
+export function buybackPrompt(cost: readonly Cost[]): string {
+  const parts = cost.map(kickerCostPart);
+  return parts.length === 0 ? 'Pay the buyback cost?' : `Pay the buyback cost ${parts.join('')}?`;
+}
+
 /**
  * The ward question (CR 702.21a): "Pay {2} or Lightning Bolt is countered?", "Pay 3 life or ...",
  * "Discard a card or ..." for Ward—Discard a card (D-095).
@@ -452,6 +458,16 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       prompt: kickerPrompt(d.cost ?? []),
       yes: 'Kick',
       no: "Don't kick",
+      cancellable: true,
+    };
+  }
+  if (d.purpose === 'buyback') {
+    // Buyback (CR 702.27a, 601.2b; Galadriel group 3): asked as the spell is cast, only when the whole cost with it can be paid. Declining casts the spell without it;
+    // Cancel rewinds the cast (CR 733).
+    return {
+      prompt: buybackPrompt(d.cost ?? []),
+      yes: 'Buy back',
+      no: "Don't buy back",
       cancellable: true,
     };
   }

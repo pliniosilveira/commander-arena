@@ -184,6 +184,14 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
         apply(seat, { kind: promise ? 'acceptOptional' : 'declineOptional' });
         return handle();
       },
+      buyback(pay) {
+        const d = pendingOf('confirmOptional');
+        if (d.kind !== 'confirmOptional' || d.purpose !== 'buyback') {
+          throw new ScenarioError('The engine is not asking the buyback question');
+        }
+        apply(seat, { kind: pay ? 'acceptOptional' : 'declineOptional' });
+        return handle();
+      },
       additionalCost(first) {
         const d = pendingOf('confirmOptional');
         if (d.kind !== 'confirmOptional' || d.purpose !== 'costChoice') {
@@ -296,6 +304,9 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
           if (state.pending.purpose === 'gift') h.gift(o.gift);
         }
         if (o.replicas !== undefined && state.casting?.stage === 'kicker') h.replicas(o.replicas);
+        if (o.bought !== undefined && state.pending?.kind === 'confirmOptional') {
+          if (state.pending.purpose === 'buyback') h.buyback(o.bought);
+        }
         if (o.additionalCost !== undefined && state.pending?.kind === 'confirmOptional') {
           if (state.pending.purpose === 'costChoice') h.additionalCost(o.additionalCost);
         }

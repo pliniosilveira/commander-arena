@@ -22,6 +22,7 @@ import { activationRefusal } from './rules/activate-legality';
 import { isArrangement } from './rules/arrange';
 import { acceptCascade, declineCascade } from './rules/cascade-cast';
 import {
+  answerBuyback,
   answerCastAdditionalExile,
   answerCastBehold,
   answerCastDiscard,
@@ -362,6 +363,8 @@ function answerConfirm(
   if (d.purpose === 'kicker') return answerKicker(state, accept);
   // CR 702.174a, 601.2b (D-135): "promise a gift to this opponent?" is asked while the spell is being cast.
   if (d.purpose === 'gift') return answerGiftChoice(state, accept);
+  // CR 702.27a, 601.2b (Galadriel group 3): "pay the buyback cost?" is asked while the spell is being cast.
+  if (d.purpose === 'buyback') return answerBuyback(state, accept);
   // CR 118.8, 601.2b (D-181): "sacrifice an artifact or creature or pay {4}": which way, asked while the spell is being cast.
   if (d.purpose === 'costChoice') return answerCostChoice(state, accept);
   // CR 702.21a: "pay [cost] or it is countered" (Ward), asked of the spell's controller as the
@@ -984,7 +987,10 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
     case 'confirmOptional': {
       // The kicker question can be taken back, which rewinds the cast (CR 733).
       if (
-        (d.purpose === 'kicker' || d.purpose === 'gift' || d.purpose === 'costChoice') &&
+        (d.purpose === 'kicker' ||
+          d.purpose === 'gift' ||
+          d.purpose === 'costChoice' ||
+          d.purpose === 'buyback') &&
         action.kind === 'cancel'
       ) {
         return cancelCast(state);

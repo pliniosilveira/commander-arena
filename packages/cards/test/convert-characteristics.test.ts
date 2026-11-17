@@ -142,11 +142,39 @@ describe('power, toughness, loyalty and defense', () => {
     expect(walker?.loyalty).toBe(4);
     const battle = face({ typeLine: 'Battle — Siege', defense: '5' });
     expect(battle?.defense).toBe(5);
+    // Galadriel group 1 (CR 306.5b, 107.3m): a planeswalker whose loyalty is X enters with X loyalty counters, the X of its spell, so it needs an {X} in its cost to be read; one that
+    // is not a planeswalker has no loyalty to be X, and any other word is not a number.
     const odd = importCard(
-      syntheticCard({ name: 'SYNTHETIC X', typeLine: 'Planeswalker — Test', loyalty: 'X' }),
+      syntheticCard({ name: 'SYNTHETIC X', typeLine: 'Creature — Test', loyalty: 'X' }),
     );
     expect(odd.support.reasons).toContain('unsupported loyalty value "X"');
     expect(odd.support.status).toBe('unsupported');
+    const noX = importCard(
+      syntheticCard({ name: 'SYNTHETIC X', typeLine: 'Planeswalker — Test', loyalty: 'X' }),
+    );
+    expect(noX.support.status).toBe('unsupported');
+    const withX = importCard(
+      syntheticCard({
+        name: 'SYNTHETIC X',
+        typeLine: 'Legendary Planeswalker — Test',
+        manaCost: '{X}{G}{U}',
+        loyalty: 'X',
+        colors: ['G', 'U'],
+      }),
+    );
+    expect(withX.support.reasons).toEqual([]);
+    expect(withX.support.status).toBe('supported');
+    expect(withX.definition.faces[0]?.loyalty).toBe(0);
+    expect(withX.definition.faces[0]?.abilities).toEqual([
+      {
+        kind: 'replacement',
+        replacement: { kind: 'entersWithCounters', counter: 'loyalty', count: { kind: 'x' } },
+      },
+    ]);
+    const odder = importCard(
+      syntheticCard({ name: 'SYNTHETIC X', typeLine: 'Planeswalker — Test', loyalty: 'Y' }),
+    );
+    expect(odder.support.reasons).toContain('unsupported loyalty value "Y"');
   });
 
   test('a creature without power is unsupported through engine validation', () => {

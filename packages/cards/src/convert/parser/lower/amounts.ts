@@ -151,6 +151,14 @@ export function lowerAmount(
       }
       return { ok: true, value: { kind: 'manaValueOf', of: of.value }, rule };
     }
+    case 'dieResult': {
+      // "Scry X, where X is the result" (Galadriel deck group 3, CR 706.2, 706.3b): the natural result of the die the text rolled before, read by the instructions after the roll in
+      // the same sequence; a result with no roll before it in the text is refused, as `validateCard` does.
+      const blocked = needs('dieResult');
+      if (blocked !== null) return blocked;
+      if (ctx.dieSides === null) return { ok: false, needs: [], at: amount.span, rule };
+      return { ok: true, value: { kind: 'dieResult' }, rule };
+    }
     case 'triggerDamage': {
       // "You gain that much life" (stage P29, D-133): the damage of the event that caused the trigger; `validateCard`
       // checks the trigger is one that has it.
@@ -550,6 +558,12 @@ export function lowerStaticPtStep(
       ? { ok: true, value: { kind: 'colorsAmong', filter: filter.value }, rule }
       : filter;
   }
+  // D-539 (CR 613.4c): "+1/+1 for each land you control and each land card in your graveyard": the sum of counts; a step other than 1 of a sum is not a multiple the engine reads.
+  if (count.kind === 'sum') {
+    return step === 1
+      ? sumInStatic(count, ctx, rule)
+      : { ok: false, needs: [], at: count.span, rule };
+  }
   const counted = countInStatic(count, ctx, rule);
   if (!counted.ok || step === 1) return counted;
   const missing = missingFeatures(['amount:times']);
@@ -594,6 +608,7 @@ export function lowerDefinedPt(
 export const AMOUNT_NEEDS = [
   'amount:x',
   'amount:enteredX',
+  'amount:dieResult',
   'amount:powerOf',
   'amount:manaValueOf',
   'amount:countOf',

@@ -8,6 +8,7 @@
 // last-known information when it has left the stack).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-niv-group-3-a.ts, synthetic-copies.ts) or real fixtures.
 import { describe, expect, test } from 'vitest';
+import { validateCardStructure } from '../src/ast/validate';
 import { checkInvariants, getView, syntheticCard, validateCard } from '../src/index';
 import { type ScenarioGame, scenario } from '../src/testing/index';
 import { singleFaceCard } from './dsl-helpers';
@@ -510,13 +511,11 @@ describe('"{2}{U}, Sacrifice this creature: When you next cast an instant or sor
 });
 
 describe('Way of the Cryomancer grants a loyalty ability that copies your next instant or sorcery', () => {
-  test('a card cannot grant a loyalty ability to creatures', () => {
-    expect(validateCard(creatureLoyaltyGrant)).toContainEqual(
-      expect.objectContaining({
-        path: 'faces[0].abilities[0].static.ability.cost',
-        message: 'a granted loyalty ability is granted to planeswalkers only',
-      }),
-    );
+  test('a loyalty ability granted to creatures is refused by the validator (D-560, CR 606.1)', () => {
+    // A loyalty ability is activated only from a planeswalker, so the grant names planeswalkers only.
+    const messages = validateCardStructure(creatureLoyaltyGrant).map((issue) => issue.message);
+    expect(messages).toContain('a granted loyalty ability is granted to planeswalkers only');
+    expect(validateCardStructure(wayCard)).toEqual([]);
   });
 
   test('the granted ability is activated on a planeswalker and copies the next spell with new targets', () => {

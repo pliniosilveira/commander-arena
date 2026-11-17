@@ -188,6 +188,15 @@ function thisWords(
   return phrase === null ? null : `it ${negate ? "isn't" : 'is'} ${phrase}`;
 }
 
+/** The ordinals the condition `abilityResolvedTimes` says ("the second time this ability has resolved this turn"). */
+const ORDINAL_TIMES: Readonly<Record<number, string>> = {
+  1: 'first',
+  2: 'second',
+  3: 'third',
+  4: 'fourth',
+  5: 'fifth',
+};
+
 /** The steps of the combat phase (CR 506.1) as the cards name them: "the declare attackers step". */
 export const COMBAT_STEP_WORDS: Readonly<Record<CombatStep, string>> = {
   beginningOfCombat: 'beginning of combat step',
@@ -343,6 +352,12 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
           ? 'this creature and another creature'
           : 'that creature and this one'
       } and both are unpaired`;
+    case 'abilityResolvedTimes':
+      // Galadriel group 1 (CR 608.2c): "if this is the second time this ability has resolved this turn".
+      return `this ${negate ? 'is not' : 'is'} the ${ORDINAL_TIMES[condition.times] ?? `${condition.times}th`} time this ability has resolved this turn`;
+    case 'ringBearerChosen':
+      // Galadriel group 1 (CR 701.54a): "if you chose a creature other than this creature as your Ring-bearer".
+      return `you ${negate ? "didn't choose" : 'chose'} a creature ${condition.other === true ? 'other than this creature ' : ''}as your Ring-bearer`;
     case 'controlsRingBearer':
       // D-196 (CR 701.54e): "if you control your Ring-bearer".
       return `you ${negate ? "don't control" : 'control'} your Ring-bearer`;

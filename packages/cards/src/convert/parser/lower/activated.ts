@@ -617,12 +617,19 @@ function lowerOrdinary(ability: Activated, ctx: LowerContext): LowerResult<reado
   const functionsInGraveyard = ctx.usedGraveyardSource;
   ctx.usedGraveyardSource = previousGraveyardSource;
   if (!sentenced.ok) return sentenced;
-  // An ability that works from the graveyard is one sentence and costs only mana or exiles itself:
-  // nothing of the battlefield (tapping, a sacrifice) can be paid from there (`validateCard`, D-124 Unearth).
+  // An ability that works from the graveyard is one sentence and costs only mana or exiles itself: nothing of the
+  // battlefield (tapping, a sacrifice) can be paid from there (`validateCard`, D-124 Unearth). D-540 (CR 602.2): returning other
+  // permanents you control to their owner's hand is also paid wherever the ability works ("Return two lands you control to their
+  // owner's hand: Return this card from your graveyard to your hand").
   if (
     functionsInGraveyard &&
     (ability.body.sentences.length !== 1 ||
-      !costs.every((c) => c.kind === 'mana' || c.kind === 'exileThis'))
+      !costs.every(
+        (c) =>
+          c.kind === 'mana' ||
+          c.kind === 'exileThis' ||
+          (c.kind === 'returnToHand' && typeof c.what === 'object' && !('kind' in c.what)),
+      ))
   ) {
     return failure(ability);
   }

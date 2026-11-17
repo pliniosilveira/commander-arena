@@ -178,6 +178,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'enteredX':
       // CR 107.3m (Hylda group 3): "When this creature enters, draw X cards": the X the spell had, said as X.
       return 'X';
+    case 'dieResult':
+      // CR 706.2 (Galadriel group 3): "Scry X, where X is the result": the natural result of the die rolled before.
+      return 'the result';
     case 'countOf': {
       // CR 109.4 (Hylda group 3): "for each tapped creature target opponent controls": the player is a target of the ability, said as "that player".
       const { controlledBy, ...rest } = amount.filter;

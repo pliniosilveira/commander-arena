@@ -349,7 +349,10 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
         { kind: 'declineOptional' },
         // The kicker question can be taken back (CR 733): the cast is rewound.
         // The gift question too (D-135).
-        ...(d.purpose === 'kicker' || d.purpose === 'gift' || d.purpose === 'costChoice'
+        ...(d.purpose === 'kicker' ||
+        d.purpose === 'gift' ||
+        d.purpose === 'costChoice' ||
+        d.purpose === 'buyback'
           ? [{ kind: 'cancel' as const }]
           : []),
         { kind: 'concede' },

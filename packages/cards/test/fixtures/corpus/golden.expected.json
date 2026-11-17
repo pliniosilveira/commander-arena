@@ -1,5 +1,5 @@
 {
-  "parserVersion": 119,
+  "parserVersion": 120,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -156,6 +156,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6b872738"
+    },
+    "04b35e95-2963-4a0a-bd1c-d516cda2dd37": {
+      "name": "Elven Farsight",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "328e7a12"
     },
     "04b7362d-0490-4cb0-b5d7-2a7732f659ce": {
       "name": "Bojuka Bog",
@@ -317,6 +325,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "de520104"
+    },
+    "099ae8f2-5c84-43ab-aaa1-ea69f2bba784": {
+      "name": "Elrond, Lord of Rivendell",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "46a770f8"
     },
     "09dd85aa-47bc-4713-a9b9-8b52ff2285ed": {
       "name": "Misty Rainforest",
@@ -603,6 +619,14 @@
       "reasons": [],
       "ast": "e5501284"
     },
+    "162572f2-1757-42e9-bd97-e6bd9a762c0e": {
+      "name": "Ashaya, Soul of the Wild",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "07985f6a"
+    },
     "16c39265-72d9-4c86-a961-8dd38ff9adcd": {
       "name": "Consign to Memory",
       "group": "acceptance",
@@ -626,6 +650,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d3bef44a"
+    },
+    "17492186-9814-4c41-8111-1f000a96c212": {
+      "name": "Hobbit Hole",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "63bacb23"
     },
     "180eda7c-fca2-403b-85cd-8ffebaf9f408": {
       "name": "Palace Jailer",
@@ -1311,9 +1343,8 @@
           "face": 1,
           "ability": 0,
           "text": "+1: Reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put it into your hand.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.reveal-separate-piles"
+          "reason": "notRunnable",
+          "closestRule": "effect.put-it-into-hand"
         },
         {
           "face": 1,
@@ -1795,6 +1826,14 @@
       "reasons": [],
       "ast": "0dfcc154"
     },
+    "4b8bf64b-4800-45ff-81c6-2857f34999b5": {
+      "name": "Multani, Yavimaya's Avatar",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "61589060"
+    },
     "4baa7847-dfcc-4aa3-aa64-2deeaa3f013b": {
       "name": "Murmuring Volume",
       "group": "acceptance",
@@ -2020,6 +2059,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "01c5c12c"
+    },
+    "561af57d-d43d-4d98-9ef6-18a0843f22ae": {
+      "name": "Defend the Rider",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "165eda67"
+    },
+    "561e8ecc-1f2b-4fd4-8f92-a0acea449816": {
+      "name": "Netherese Puzzle-Ward",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ff07c294"
     },
     "56fd0752-9fb0-4c05-90e5-c3b268b57c6f": {
       "name": "Cone of Cold",
@@ -2265,6 +2320,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0b2fab39"
+    },
+    "611bfaa6-b098-48d9-9e49-1e7dc8687f15": {
+      "name": "Repulsive Mutation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "42a23b9a"
     },
     "619173f4-0403-49cd-9659-2fedd5028a90": {
       "name": "Shire Terrace",
@@ -2547,6 +2610,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ac28c41a"
+    },
+    "6ba0656f-e0d2-4735-9c66-3a00afa9fc23": {
+      "name": "Koma, Cosmos Serpent",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "12fc0542"
     },
     "6bae00e8-06cf-4ac4-a1cc-757e454109fe": {
       "name": "Ketria Triome",
@@ -2943,6 +3014,14 @@
       "reasons": [],
       "ast": "c26d86e5"
     },
+    "7ca99e2f-faf2-4301-a0ae-7cb880ba965b": {
+      "name": "Jace, Mirror Mage",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9cd02b0f"
+    },
     "7cab62dc-a256-4da8-a3ea-b3903ec37077": {
       "name": "Griffin Aerie",
       "group": "acceptance",
@@ -3010,6 +3089,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "822ff66e"
+    },
+    "7d0a1ae5-cd93-4789-9666-fc7bbbc6b613": {
+      "name": "Eyes Everywhere",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "580b4031"
     },
     "7d32c63d-aa9e-4f5d-a3e6-51377a786009": {
       "name": "Way of the Cryomancer",
@@ -3437,6 +3524,14 @@
       "reasons": [],
       "ast": "7206efa3"
     },
+    "8d3c9646-2b6b-4315-939d-5a920efc0a60": {
+      "name": "Galadriel of Lothlórien",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9cc6363c"
+    },
     "8dd5f5af-d2d8-4356-8617-8381081b930c": {
       "name": "Yavimaya, Cradle of Growth",
       "group": "holdout",
@@ -3485,6 +3580,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "fa12f890"
+    },
+    "8f28b65b-4b73-4080-9cdc-d236ad99f39c": {
+      "name": "Track Down",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0d5f781f"
     },
     "90194ff1-db61-463f-b5a3-15cd85311d0e": {
       "name": "Beledros Witherbloom",
@@ -3903,6 +4006,14 @@
       ],
       "reasons": [],
       "ast": "fc17eb59"
+    },
+    "a58adf82-d9e2-4b47-933e-68180f280ba2": {
+      "name": "Mystic Speculation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "47885dd2"
     },
     "a5cbd257-c836-493e-bb1a-76242619dea2": {
       "name": "Big Score",
@@ -5489,6 +5600,14 @@
       "reasons": [],
       "ast": "ea59a6f1"
     },
+    "ef6c0054-3a89-4fac-b822-37c7d2514489": {
+      "name": "Matoya, Archon Elder",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1d437e7e"
+    },
     "ef833546-f755-4ac5-867a-3926984e68a0": {
       "name": "Archaeomancer's Map",
       "group": "acceptance",
@@ -5504,6 +5623,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f8c33c33"
+    },
+    "efcbca5a-743c-4b16-a7cf-b07335b31ced": {
+      "name": "Shower of Arrows",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9b9776e5"
     },
     "f00bc101-8082-4459-b987-f0c4b7a12344": {
       "name": "Advanced Reconstruction",
@@ -5659,6 +5786,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b61e0a93"
+    },
+    "f6771d32-395e-4832-b33d-cbc12dff1516": {
+      "name": "Thranduil, Sindarin Liege // Silvan Rally",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f1e0f2df"
     },
     "f6791df0-a37b-44dc-8bf3-40ac2304d188": {
       "name": "Dragonologist",
@@ -5820,6 +5955,14 @@
       "reasons": [],
       "ast": "24559ea5"
     },
+    "fcb811a8-c6e6-4bc4-b64b-8963a7183669": {
+      "name": "Bonny Pall, Clearcutter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "28d4986c"
+    },
     "fcc9f3bc-0bc3-4189-a4d0-9698594b99a8": {
       "name": "Enchanted River's Grasp",
       "group": "acceptance",
@@ -5827,6 +5970,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "052f1ee9"
+    },
+    "fdb96b5c-ecac-4db3-8b9a-24f824149f91": {
+      "name": "Nissa, Steward of Elements",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7e7ae5b4"
     },
     "fe04a81b-413c-4bc8-bb83-29978da9a43d": {
       "name": "Sauron's Ransom",
@@ -6056,8 +6207,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 399,
-      "total": 420
+      "supported": 418,
+      "total": 439
     }
   }
 }

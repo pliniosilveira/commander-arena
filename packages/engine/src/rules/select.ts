@@ -79,6 +79,8 @@ export interface SelectContext {
   readonly thisWay?: ThisWayCounts;
   /** The tally of the latest vote of this resolution, for `votesFor` amounts (D-194). */
   readonly votes?: Readonly<Record<string, number>>;
+  /** The natural result of the latest die the resolution rolled, for the amount `dieResult` (CR 706.2, Galadriel group 3). Absent where none was rolled: the amount is 0. */
+  readonly dieResult?: number;
   /**
    * Whether `targetsObject` assumes a target the spell has not chosen yet could match (D-424): the question "may this spell be cast at all?" asks it before any target is chosen
    * (the cost reduction of a permanent that names the spells that target a kind of permanent).

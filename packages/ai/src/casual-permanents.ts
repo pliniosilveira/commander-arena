@@ -333,6 +333,11 @@ export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Act
       ? { kind: 'declineOptional' }
       : { kind: 'acceptOptional' };
   }
+  if (d.purpose === 'buyback') {
+    // Buyback (CR 702.27a, Galadriel group 3): the engine asks only when the whole cost with the buyback can be paid, so the mana is there; the spell comes back to the hand, so the
+    // agent pays it (a mana cost only: `validateCard` has no other).
+    return { kind: 'acceptOptional' };
+  }
   if (d.purpose === 'costChoice') return chooseAdditionalCost(d, view);
   // D-272: "You may return those cards to the battlefield under their owners' control" (Dawnbreak Reclaimer).
   if (d.purpose === 'pairReturn') return answerPairReturn(view, d);

@@ -25,6 +25,8 @@ export function readsTriggerSubject(ability: Ability): boolean {
   // D-229: the intervening "if" of Archaeomancer's Map reads the controller of the land that entered, again as the ability resolves.
   return (
     condition.includes('"subjectGreaterPt"') ||
+    // Galadriel group 1: the creature the Ring tempted its controller to choose, read again as the ability resolves.
+    condition.includes('"ringBearerChosen"') ||
     condition.includes('"manaSpentAtLeast"') ||
     condition.includes('"subjectControllerHasMore"')
   );

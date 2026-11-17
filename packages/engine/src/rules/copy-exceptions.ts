@@ -13,7 +13,14 @@ type CopyToken = Extract<Extract<Effect, { kind: 'createToken' }>['token'], { ki
 /** The exceptions of a copy effect, as `copyOf` carries them. */
 export type CopyExceptions = Pick<
   CopyToken,
-  'addSubtypes' | 'setCreatureTypes' | 'setColors' | 'setPt' | 'noManaCost' | 'abilities'
+  | 'addSubtypes'
+  | 'setCreatureTypes'
+  | 'setColors'
+  | 'setPt'
+  | 'noManaCost'
+  | 'notLegendary'
+  | 'startingLoyalty'
+  | 'abilities'
 >;
 
 /**
@@ -70,6 +77,14 @@ export function withCopyExceptions(
         ? {}
         : { power: exceptions.setPt.power, toughness: exceptions.setPt.toughness }),
       ...(exceptions.noManaCost === true ? { manaCost: null } : {}),
+      // CR 707.9b, 205.4a (Galadriel group 3): "except it's not legendary": the other supertypes stay.
+      ...(exceptions.notLegendary === true
+        ? { supertypes: original.supertypes.filter((s) => s !== 'legendary') }
+        : {}),
+      // CR 707.9b, 306.5b (Galadriel group 3): "except its starting loyalty is 1": only a copy of a planeswalker has a loyalty to set.
+      ...(exceptions.startingLoyalty !== undefined && original.loyalty !== null
+        ? { loyalty: exceptions.startingLoyalty }
+        : {}),
     },
     abilities: [...copiedAbilities(values.abilities, exceptions), ...(exceptions.abilities ?? [])],
   };

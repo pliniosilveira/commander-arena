@@ -218,10 +218,14 @@ export function checkCastFace(
   if (devours.length > 1) {
     issue(out, `${path}.abilities`, 'more than one devour ability on a face is not supported');
   }
-  const has = (kind: 'kicker' | 'flashback' | 'multikicker') =>
+  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback') =>
     abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === kind);
   if (has('flashback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'flashback is on an instant or a sorcery (CR 702.34a)');
+  }
+  // Galadriel group 3, CR 702.27a: "put this spell into its owner's hand as it resolves" is said of an instant or a sorcery.
+  if (has('buyback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
+    issue(out, `${path}.abilities`, 'buyback is on an instant or a sorcery (CR 702.27a)');
   }
   // D-129: "if a replicate cost was paid for it" needs a replicate ability to pay.
   const replicable = abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'replicate');
