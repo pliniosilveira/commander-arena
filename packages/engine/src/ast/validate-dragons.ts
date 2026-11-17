@@ -478,7 +478,11 @@ export function checkDragonsFace(face: CardFace, path: string, out: AstIssue[]):
     }
     if (choose?.notRepeatedBySource !== undefined) {
       if (choose.notRepeatedBySource !== true) {
-        issue(out, `${p}.chooseModes.notRepeatedBySource`, 'notRepeatedBySource is true when present');
+        issue(
+          out,
+          `${p}.chooseModes.notRepeatedBySource`,
+          'notRepeatedBySource is true when present',
+        );
       }
       if (!triggered) {
         issue(

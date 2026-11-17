@@ -1577,7 +1577,8 @@ function runEffect(
     case 'setLifeTotal': {
       // CR 119.5 (D-201): the player gains or loses the life that takes their life total to the number; a player who has it already does neither.
       for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
-        const delta = effect.amount - getSeat(next, seat).life;
+        const amount = amountOf(next, effect.amount, ctx, targets);
+        const delta = amount - getSeat(next, seat).life;
         if (delta === 0) continue;
         const r =
           delta > 0

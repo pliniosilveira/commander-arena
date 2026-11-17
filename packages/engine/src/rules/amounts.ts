@@ -217,6 +217,10 @@ export function amountOf(
   if (amount.kind === 'enteredThisTurn' || amount.kind === 'diedThisTurn') {
     return historyCount(state, amount, ctx.controller);
   }
+  if (amount.kind === 'lifeTotalOf') {
+    const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
+    return seat === undefined ? 0 : getSeat(state, seat).life;
+  }
   if (amount.kind === 'enteredX') {
     // CR 107.3m, 107.3g (Hylda group 3): the X of the spell the permanent resolved from, which the permanent remembers (`GameObject.castX`), or last-known information
     // when it has left; a permanent that was not cast has none.

@@ -175,6 +175,25 @@ const discardAction: Action = (subject, you, rule) =>
  * and a quantity above one for each ("gain 2 life for each creature you control").
  */
 export const lifeAction: Action = (subject, you, rule) => {
+  const halfTheirLife: Parser<IrAmount> = map(
+    spanned(
+      sequence(
+        verbWord('lose', you),
+        pattern(/half their life, rounded (down|up)(?![\p{L}\p{N}])/iu),
+      ),
+    ),
+    ({ value, span }) => {
+      const words = value[1][0] ?? '';
+      const halfSpan = { start: span.start + words.length, end: span.end };
+      const total: IrAmount = { kind: 'lifeTotalOf', of: subject, span: halfSpan };
+      return {
+        kind: 'half',
+        of: total,
+        round: (value[1][1] ?? '').toLowerCase() as 'down' | 'up',
+        span,
+      };
+    },
+  );
   const life = (base: 'gain' | 'lose', verb: 'gainLife' | 'loseLife') =>
     map(
       spanned(
@@ -204,6 +223,7 @@ export const lifeAction: Action = (subject, you, rule) => {
             ),
             ([, , amount]) => amount,
           ),
+          ...(base === 'lose' ? [halfTheirLife] : []),
         ),
       ),
       ({ value, span }) => actionClause(rule, verb, { player: subject, amount: value }, span),

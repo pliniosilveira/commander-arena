@@ -246,9 +246,7 @@ describe('settleDamage with answers: the question, the answer and the default', 
     });
     expect(
       d.replacement.choices.flatMap((c) =>
-        'prevented' in c.outcome
-          ? [[c.option, c.outcome.amount, c.outcome.prevented]]
-          : [],
+        'prevented' in c.outcome ? [[c.option, c.outcome.amount, c.outcome.prevented]] : [],
       ),
     ).toEqual([
       ['shield:a', 0, 3],

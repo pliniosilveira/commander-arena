@@ -141,12 +141,7 @@ function pushTrigger(
   const logged =
     trigger.source === null
       ? next
-      : withModesChosen(
-          next,
-          trigger.source,
-          modes,
-          modal?.choose.notRepeatedBySource === true,
-        );
+      : withModesChosen(next, trigger.source, modes, modal?.choose.notRepeatedBySource === true);
   return {
     // A new object on the stack: earlier passes in succession no longer count (CR 117.4).
     state: { ...logged, turn: { ...logged.turn, passedInSuccession: [] } },
@@ -490,12 +485,7 @@ export function answerTriggerModes(
   const answered =
     stack.source === null
       ? patched
-      : withModesChosen(
-          patched,
-          stack.source,
-          chosen,
-          modal.choose.notRepeatedBySource === true,
-        );
+      : withModesChosen(patched, stack.source, chosen, modal.choose.notRepeatedBySource === true);
   const events: GameEvent[] = [
     {
       kind: 'modesChosen',

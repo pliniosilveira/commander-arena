@@ -27,10 +27,7 @@
  */
 import type { SeatId } from '../ids';
 import type { DamageRecipient } from '../state/combat-types';
-import type {
-  ChooseOptionDecision,
-  DamageReplacementChoice,
-} from '../state/decisions';
+import type { ChooseOptionDecision, DamageReplacementChoice } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import type { GameState } from '../state/types';
 import type { DamageEvent, DamageModifier } from './damage-modifier';

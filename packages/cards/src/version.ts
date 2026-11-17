@@ -26,4 +26,5 @@
 // 121: Read life-gain doubling replacements (D-581).
 // 122: Read and/or unions of card types in plural graveyard targets (D-582).
 // 123: Read a triggered mode choice that has no duration qualifier (D-583).
-export const PARSER_VERSION = 123;
+// 124: Read life total doubling and losing half a target player's life (D-584).
+export const PARSER_VERSION = 124;

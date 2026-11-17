@@ -959,6 +959,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'commanderManaValue',
     // D-229: "for each time you've cast your commander from the command zone this game".
     'commanderCasts',
+    'lifeTotalOf',
     // D-179: "for each color among permanents you control" (a static ability's +N/+N).
     'colorsAmong',
     // D-518: "the number of card types among cards in your graveyard" (Delirium).
@@ -1608,6 +1609,8 @@ export const AMOUNT_KINDS = [
   'commanderManaValue',
   /** "The number of times you've cast your commander from the command zone this game" (CR 903.8, D-229): the engine's `commanderCasts`. */
   'commanderCasts',
+  /** A player's current life total at resolution (CR 119.1). */
+  'lifeTotalOf',
   /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N. */
   'colorsAmong',
   /** "The number of card types among cards in your graveyard" (CR 205.2a, D-518): the engine's `cardTypesAmong`. */

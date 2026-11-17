@@ -1511,6 +1511,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'commanderManaValue':
     case 'commanderCasts':
       break;
+    case 'lifeTotalOf':
+      checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      break;
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
@@ -4650,13 +4653,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'setLifeTotal':
       // CR 119.5 (D-201): a whole number, 0 or more.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
-      if (!isCount(e.amount)) {
-        issue(
-          out,
-          `${path}.amount`,
-          'a life total that becomes a number is a whole number of 0 or more',
-        );
-      }
+      checkAmount(e.amount, `${path}.amount`, scope, out);
       break;
     case 'addMana':
       checkManaProduction(e.mana, `${path}.mana`, out);

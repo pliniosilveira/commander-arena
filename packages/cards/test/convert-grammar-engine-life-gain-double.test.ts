@@ -14,9 +14,12 @@ function real(name: string) {
 }
 
 describe('life-gain doubling replacements from issue #255', () => {
-  test.each(['Rhox Faithmender', 'The Wind Crystal'])('%s parses and lowers as supported', (name) => {
-    expect(real(name).support.status).toBe('supported');
-  });
+  test.each(['Rhox Faithmender', 'The Wind Crystal'])(
+    '%s parses and lowers as supported',
+    (name) => {
+      expect(real(name).support.status).toBe('supported');
+    },
+  );
 
   test('Rhox Faithmender doubles a life gain in a real-card game', () => {
     const faithmender = real('Rhox Faithmender');

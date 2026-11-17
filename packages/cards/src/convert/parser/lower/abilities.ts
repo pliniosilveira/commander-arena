@@ -528,7 +528,8 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     return built({ kind: 'lifeGainBonus', amount: amount.value });
   }
   if (event.verb === 'lifeGainDouble') {
-    if (event.condition !== undefined || Object.keys(event.args).length > 0) return failure(ability);
+    if (event.condition !== undefined || Object.keys(event.args).length > 0)
+      return failure(ability);
     const blocked = gate(ability, ['ability:replacement', 'replacement:lifeGainDouble']);
     if (blocked !== null) return blocked;
     return built({ kind: 'lifeGainDouble' });

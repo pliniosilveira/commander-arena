@@ -320,6 +320,13 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'commanderCasts' }, rule };
     }
+    case 'lifeTotalOf': {
+      const blocked = needs('lifeTotalOf');
+      if (blocked !== null) return blocked;
+      const player = playerSelectorOf(amount.of, ctx);
+      if (!player.ok) return player;
+      return { ok: true, value: { kind: 'lifeTotalOf', player: player.value }, rule };
+    }
     case 'commanderColors': {
       const blocked = needs('commanderColors');
       if (blocked !== null) return blocked;
@@ -629,6 +636,7 @@ export const AMOUNT_NEEDS = [
   'amount:commanderColors',
   'amount:commanderManaValue',
   'amount:commanderCasts',
+  'amount:lifeTotalOf',
   'amount:colorsAmong',
   'amount:cardTypesAmong',
   'amount:half',

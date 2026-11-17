@@ -17,4 +17,5 @@
 // 113: Keep Sauron's Ransom's face-down pile identities private through resolution (D-579).
 // 114: Order interacting life-gain replacements (D-581).
 // 115: Remember non-repeating modes for the source object's lifetime (D-583).
-export const ENGINE_VERSION = 115;
+// 116: Read current life totals as effect amounts and set a total from such an amount (D-584).
+export const ENGINE_VERSION = 116;

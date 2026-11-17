@@ -2960,6 +2960,16 @@ The engine half of the owner's Angels precon (23 cards). Each entry says what th
 - Web: `game/trigger-text.ts` words `lifeGained`; `ui/decisions/option-names.ts` names the replacement-order dialog and shows each resulting life total. `CasualAgent` picks the first legal replacement; `HeuristicAgent` chooses the order that gains more life.
 - What the parser must produce: the replacement and trigger shapes above. Needs `replacement:lifeGainBonus`, `replacement:lifeGainDouble`, `trigger:lifeGained`.
 
+### “Double your life total” and “lose half their life, rounded up” (D-584)
+
+- CR: 119.1, 119.3, 119.5, 107.1a.
+- Gap class: P (read a player's current life total as an effect amount and allow `setLifeTotal` to use an amount).
+- Code: `Amount.lifeTotalOf`, `Effect.setLifeTotal.amount`, `rules/amounts.ts`, `rules/effects.ts`, parser `amount.lifeTotalOf` lowering and the player and life-total effect rules.
+- Behaviour: amounts are read as each instruction resolves. Setting a higher total still proposes a life gain and passes through the existing replacement flow; setting a lower total loses the difference. “Half” uses the written rounding direction.
+- Tests: `scenario-xx-life-total-arithmetic.test.ts` checks doubling, odd-life rounding and a life-gain replacement; `convert-grammar-rules.test.ts` checks the target-bound half-life amount; `convert-grammar-engine-revival-revenge.test.ts` imports and plays the real split card.
+- Cards unlocked: Revival // Revenge's Revenge face through the ordinary importer; the Revival face was already supported.
+- Limit: this parser addition reads the Oracle forms used by this card, not arbitrary prose that refers to another player's life total.
+
 ### "Whenever you put one or more +1/+1 counters on this creature, draw a card. This ability triggers only once each turn."
 
 - CR: 122.6, 122.6a, 603.2

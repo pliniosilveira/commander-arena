@@ -38,7 +38,7 @@ export const SET_LIFE_TOTAL: Lowering<IrClause, Effects> = {
     if (!who.ok) return who;
     const amount = amountArg(clause, 'amount', ctx);
     if (!amount.ok) return amount;
-    if (typeof amount.value !== 'number' || amount.value < 0) return failure(clause);
+    if (typeof amount.value === 'number' && amount.value < 0) return failure(clause);
     return {
       ok: true,
       value: [{ kind: 'setLifeTotal', player: who.value, amount: amount.value }],

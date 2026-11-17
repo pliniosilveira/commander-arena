@@ -1,5 +1,5 @@
 {
-  "parserVersion": 123,
+  "parserVersion": 124,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -3394,19 +3394,10 @@
     "836ecd67-6487-4f3d-9e08-013746be829a": {
       "name": "Revival // Revenge",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 1,
-          "ability": 0,
-          "text": "Double your life total. Target opponent loses half their life, rounded up.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "2e2cd21b"
+      "ast": "cc592c04"
     },
     "83917116-d2d8-4701-a79f-af17486706ae": {
       "name": "Light the Way",
@@ -6327,7 +6318,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 422,
+      "supported": 423,
       "total": 459
     }
   }

@@ -138,9 +138,12 @@ describe('modal spells', () => {
         repeatable: true,
         maxIf: { condition: { kind: 'controlCommander' }, max: 3 },
       }),
-    ).toContain('no maxIf');
+    ).toContain('no widening or non-repeating restriction');
     expect(bad({ min: 1, max: 1, repeatable: true, notRepeatedThisTurn: true })).toContain(
-      'no maxIf and no notRepeatedThisTurn',
+      'no widening or non-repeating restriction',
+    );
+    expect(bad({ min: 1, max: 1, repeatable: true, notRepeatedBySource: true })).toContain(
+      'no widening or non-repeating restriction',
     );
     expect(bad({ min: 2, max: 2, repeatable: false as never })).toContain('repeatable is true');
     // Without the text a choice of 0 is still no choice, and more than the modes is still too many.

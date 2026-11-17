@@ -133,7 +133,7 @@ describe('"If you would gain life, you gain that much life plus N instead"', () 
       g.act(g.state.pending.seat).pass();
     }
     const q = chooseOptionDecision(g);
-    expect(q.replacement?.lifeGain?.amount).toBe(1);
+    expect(q.replacement).toMatchObject({ lifeGain: { amount: 1 } });
     g.act(0).chooseOption(q.options[1] as string);
     g.expect.pending('priority', 0);
     g.expect.life(0, 43);

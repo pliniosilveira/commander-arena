@@ -87,7 +87,10 @@ export const REPLACEMENT_LIFE_GAIN_DOUBLE = defineRule<IrAbility>({
     'If you would gain 1 life, you gain twice that much life instead.',
   ],
   parse: (ctx, pos) => {
-    const text = literal('if you would gain life, you gain twice that much life instead.')(ctx, pos);
+    const text = literal('if you would gain life, you gain twice that much life instead.')(
+      ctx,
+      pos,
+    );
     if (!text.ok) return text;
     const span = { start: pos, end: text.pos };
     const event: IrClause = {
@@ -98,7 +101,11 @@ export const REPLACEMENT_LIFE_GAIN_DOUBLE = defineRule<IrAbility>({
       span,
       rule: 'replacement.life-gain-double',
     };
-    return { ok: true, value: replacement('replacement.life-gain-double', span, event), pos: text.pos };
+    return {
+      ok: true,
+      value: replacement('replacement.life-gain-double', span, event),
+      pos: text.pos,
+    };
   },
 });
 

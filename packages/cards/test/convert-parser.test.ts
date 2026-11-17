@@ -326,6 +326,7 @@ describe('unmatched abilities', () => {
       'replacement.enters-with-counters-kicked',
       'replacement.would-die',
       'replacement.life-gain-bonus',
+      'replacement.life-gain-double',
       'replacement.enters-as-copy',
       'replacement.redirect-damage',
       'replacement.tokens-instead',
@@ -563,6 +564,7 @@ describe('unmatched abilities', () => {
       'effect.gain-control-for-player',
       'effect.vote',
       'effect.ring-tempts',
+      'effect.double-life-total',
       'effect.life-total-becomes',
       'effect.empower-jace',
       'effect.get-emblem',
@@ -877,6 +879,7 @@ describe('unmatched abilities', () => {
       'modal.choose-commander',
       'modal.choose-widen',
       'modal.choose-not-repeated',
+      'modal.choose-not-repeated-source',
       'modal.choose-repeatable',
       'modal.tiered',
     ]);

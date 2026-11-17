@@ -201,6 +201,8 @@ export type Amount =
    * "the number of times it's been cast from the command zone") was cast from the command zone.
    */
   | { readonly kind: 'commanderCasts'; readonly of?: 'triggerSubject' }
+  /** A player's current life total, read when the containing instruction resolves (CR 119.1). */
+  | { readonly kind: 'lifeTotalOf'; readonly player: PlayerSelector }
   /**
    * "Half the number of ..., rounded down" (D-131): `of` divided by two and rounded as `round` says (CR 107.1a:
    * the rounding is stated; a fraction is never left).
@@ -2167,9 +2169,9 @@ export type Effect =
   /**
    * "Target player's life total becomes 1." (CR 119.5, D-201): each player the selector names gains or loses the life that takes their life total
    * to `amount`, a whole number of 0 or more (the life gained or lost triggers what it triggers, CR 119.9; nothing happens to a player who already has
-   * that total). No other source of the number is supported (a life total that becomes a count is not read).
+   * that total). `amount` can read a current player life total and perform arithmetic on it.
    */
-  | { readonly kind: 'setLifeTotal'; readonly player: PlayerSelector; readonly amount: number }
+  | { readonly kind: 'setLifeTotal'; readonly player: PlayerSelector; readonly amount: Amount }
   /**
    * CR 701.26a (Tap). `objects` may (D-139) be a `choose` selector, "you may tap X untapped Myr you control" (`anyNumber`, the
    * controller chooses none, some or all of the untapped permanents they control that match, so the X is how many they chose) or

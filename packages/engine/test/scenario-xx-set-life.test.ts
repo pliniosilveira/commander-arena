@@ -41,6 +41,6 @@ describe('a life total that becomes a number', () => {
       validateCard(bad)
         .map((i) => i.message)
         .join('|'),
-    ).toContain('0 or more');
+    ).toContain('non-negative integer');
   });
 });

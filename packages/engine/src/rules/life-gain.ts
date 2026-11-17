@@ -12,12 +12,12 @@
  */
 import type { Replacement } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
-import type { GameEvent } from '../state/events';
 import type { ReplacementQuestion } from '../state/decisions';
+import type { GameEvent } from '../state/events';
 import { getSeat, patchSeat } from '../state/ops';
 import type { GameState } from '../state/types';
-import type { OrderFlow } from './damage-order';
 import { controllerOf } from './control';
+import type { OrderFlow } from './damage-order';
 import { derive } from './derive';
 import { cannotGainLife } from './player-protection';
 import { sourceInfo } from './source-info';
@@ -34,7 +34,10 @@ export type LifeGainResult =
   | { readonly kind: 'gained'; readonly state: GameState; readonly events: GameEvent[] }
   | {
       readonly kind: 'asked';
-      readonly decision: Omit<import('../state/decisions').ChooseOptionDecision, 'id' | 'replacement'> & {
+      readonly decision: Omit<
+        import('../state/decisions').ChooseOptionDecision,
+        'id' | 'replacement'
+      > & {
         readonly replacement: ReplacementQuestion;
       };
     };
@@ -138,7 +141,8 @@ export function gainLife(
   const totals = [...next.turnLog.lifeGainedTotal];
   for (let i = totals.length; i < state.seats.length; i += 1) totals[i] = 0;
   totals[seat] = (totals[seat] ?? 0) + gained;
-  return { kind: 'gained',
+  return {
+    kind: 'gained',
     state: {
       ...next,
       turnLog: {

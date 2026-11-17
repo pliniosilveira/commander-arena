@@ -1004,10 +1004,7 @@ export function graveyardPhrase(
           ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
         );
   const choiceOfTypes: Parser<CardWords> = map(
-    sequence(
-      choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)),
-      literal(' '),
-    ),
+    sequence(choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)), literal(' ')),
     ([words]): CardWords => ({ types: [], anyOf: words, subtypes: [] }),
   );
   const typed: Parser<CardWords> = map(
