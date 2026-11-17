@@ -1,5 +1,5 @@
 {
-  "parserVersion": 126,
+  "parserVersion": 128,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -322,19 +322,10 @@
     "0810983f-818a-43e6-a7b5-ebe0bc8b9f6a": {
       "name": "Wall of Reverence",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "At the beginning of your end step, you may gain life equal to the power of target creature you control.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.life"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "c12b0512"
+      "ast": "efef74b7"
     },
     "0828d891-f7c3-4e51-b42e-6ce88d48ac8b": {
       "name": "Icewrought Sentry",
@@ -4805,11 +4796,9 @@
     "c2e2f21a-0338-44d7-96a5-5a277f0ec419": {
       "name": "Moseo, Vein's New Dean",
       "group": "acceptance",
-      "status": "unsupported",
+      "status": "supported",
       "unparsed": [],
-      "reasons": [
-        "faces[0].abilities[2].targets[0].what.filter.manaValueAtMost: the limit is a number, the power of this or the damage that triggered the ability"
-      ],
+      "reasons": [],
       "ast": "d2ef975e"
     },
     "c3974ec7-7af0-4b65-baf6-4c1c4fe8a5c4": {
@@ -6298,7 +6287,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 425,
+      "supported": 427,
       "total": 459
     }
   }

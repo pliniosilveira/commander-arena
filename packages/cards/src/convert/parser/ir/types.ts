@@ -900,6 +900,8 @@ export interface IrToken extends IrNode {
   readonly predefined?: 'Treasure' | 'Food' | 'Clue' | 'Map' | 'Blood';
   readonly power?: number;
   readonly toughness?: number;
+  /** "X/X creature token": use the X value bound by the enclosing ability's where-X clause. */
+  readonly ptAmount?: true;
   readonly colors?: readonly string[];
   readonly types?: readonly string[];
   readonly subtypes?: readonly string[];

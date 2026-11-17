@@ -8,7 +8,7 @@
  * between two costs and no other cost ("sacrifice", "discard").
  */
 import { choice, literal, map, sequence } from '../../combinators';
-import type { IrCost } from '../../ir/types';
+import type { IrAmount, IrCost } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
 
@@ -55,6 +55,13 @@ export const EFFECT_PAY = defineRule<Clauses>({
             family<IrCost>('cost', { only: ['cost.mana', 'cost.mana-hybrid'] }),
           ),
           ([, cost]) => cost,
+        ),
+        map(
+          sequence(
+            literal('pay X life, '),
+            family<IrAmount>('amount', { only: ['amount.where-x'] }),
+          ),
+          ([, amount]): IrCost => ({ kind: 'payLife', amount }),
         ),
         // D-364: "pay that much life", the life that caused the trigger of a life gain.
         family<IrCost>('cost', { only: ['cost.pay-life', 'cost.pay-life-that-much'] }),

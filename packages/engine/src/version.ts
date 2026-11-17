@@ -20,4 +20,5 @@
 // 116: Read current life totals as effect amounts and set a total from such an amount (D-584).
 // 117: Read devotion in characteristic-defining toughness abilities (D-585).
 // 118: Check gained-and-lost-life turn history (D-586).
-export const ENGINE_VERSION = 118;
+// 119: Allow life gained this turn as a mana-value selector limit (D-588).
+export const ENGINE_VERSION = 119;

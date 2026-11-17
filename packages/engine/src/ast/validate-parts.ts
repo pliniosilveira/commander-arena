@@ -344,6 +344,7 @@ export function checkFilter(
       typeof a === 'number' ||
       (a?.kind === 'powerOf' && a.of?.kind === 'this') ||
       a?.kind === 'triggerDamage' ||
+      a?.kind === 'lifeGainedThisTurn' ||
       countOfTargetControllerGraveyard;
     if (!ok) {
       issue(

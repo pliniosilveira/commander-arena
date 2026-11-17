@@ -29,4 +29,6 @@
 // 124: Read life total doubling and losing half a target player's life (D-584).
 // 125: Parse characteristic-defining toughness equal to devotion (D-585).
 // 126: Parse the end-step condition that life was gained and lost (D-586).
-export const PARSER_VERSION = 126;
+// 127: Read the power of a target creature selected by the same ability (D-587).
+// 128: Support Moseo's history-based graveyard mana-value limit (D-588).
+export const PARSER_VERSION = 128;

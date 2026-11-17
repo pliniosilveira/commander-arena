@@ -1388,9 +1388,11 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
   // D-543 (CR 208.2a, 604.3): a token with no numbers has a characteristic-defining ability in its quotes that defines both ("Beau's power and toughness are each equal
   // to ..."); a token with numbers never has one (the star and the ability go together, `validateCard`).
   const definesPt =
-    (token.power === undefined) !== (token.toughness === undefined)
-      ? null
-      : token.power === undefined;
+    token.ptAmount === true
+      ? false
+      : (token.power === undefined) !== (token.toughness === undefined)
+        ? null
+        : token.power === undefined;
   if (!creature || definesPt === null) {
     return { ok: false, needs: [], ...at };
   }
@@ -1434,8 +1436,8 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     types,
     subtypes,
     colors,
-    power: token.power ?? '*',
-    toughness: token.toughness ?? '*',
+    power: token.power ?? (token.ptAmount === true ? 0 : '*'),
+    toughness: token.toughness ?? (token.ptAmount === true ? 0 : '*'),
     loyalty: null,
     defense: null,
     // The words of the token's abilities, which the card face prints (CR 111.4): its keywords on one line, then each ability in
@@ -1443,12 +1445,18 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     oracleText: tokenRulesText(token.keywords ?? [], token.abilities ?? [], named),
     abilities,
   };
+  let ptAmount: Amount | undefined;
+  if (token.ptAmount === true) {
+    const amount = lowerAmount({ kind: 'x', span: token.span, rule: token.rule }, ctx, clause.rule);
+    if (!amount.ok) return amount;
+    ptAmount = amount.value;
+  }
   return {
     ok: true,
     value: [
       {
         kind: 'createToken',
-        token: { kind: 'custom', definition },
+        token: { kind: 'custom', definition, ...(ptAmount === undefined ? {} : { ptAmount }) },
         count: count.value,
         ...entersTapped,
         ...by,

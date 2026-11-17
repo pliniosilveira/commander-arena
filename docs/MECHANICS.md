@@ -5013,3 +5013,15 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Engine:** `lifeGainedAndLostThisTurn` checks both the controller's accumulated life gain and `SeatState.lifeLostThisTurn`; the current life total is not used. The new condition works with existing condition conjunction and intervening-if timing.
 - **Proof:** parser coverage includes the exact token ability; an engine scenario gains life, loses life to a spell, and checks false before both events and true afterward. The golden acceptance corpus checks the complete card.
 - **Limit:** the local CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Wall of Reverence (D-587)
+
+- **Parser:** the generic power amount grammar accepts "the power of target creature you control" and carries that target into the `powerOf` amount, so targeting and amount calculation use the same chosen object.
+- **Proof:** `parser-p11.test.ts` checks the trigger target and the linked power reference; the golden corpus checks full card import.
+- **Limit:** CR text and rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Moseo (D-588)
+
+- **Engine and parser:** a graveyard target's `manaValueAtMost` may use `lifeGainedThisTurn`; the usual selector reads the turn log when it checks the object.
+- **Proof:** `parser-p18.test.ts` checks Moseo's target filter and amount; `ast-references-validate.test.ts` proves the engine accepts the generic selector shape; the golden corpus checks full card support.
+- **Limit:** CR text and rulings were unavailable for independent verification.

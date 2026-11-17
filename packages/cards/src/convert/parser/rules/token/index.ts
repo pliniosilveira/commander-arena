@@ -217,7 +217,7 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
         count,
         literal(' '),
         TAPPED,
-        pattern(/(\d+)\/(\d+) /),
+        pattern(/(\d+|X)\/(\d+|X) /),
         COLORS,
         literal(' '),
         SUBTYPES,
@@ -244,7 +244,10 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
           abilities: [] as IrQuotedAbility[],
         }),
       ),
-      ([amount, , , , , , , , plural]) => (amount.kind !== 'x' && !pluralOnly) || plural,
+      ([amount, , , pt, , , , , plural]) =>
+        ((amount.kind !== 'x' && !pluralOnly) || plural) &&
+        ((pt[1] === 'X' && pt[2] === 'X') ||
+          (pt[1] !== 'X' && pt[2] !== 'X')),
     ),
     ([
       amount,
@@ -262,8 +265,9 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
       kind: 'token',
       ...(tapped === null ? {} : { tapped }),
       ...(named === null ? {} : { named }),
-      power: Number(pt[1]),
-      toughness: Number(pt[2]),
+      ...(pt[1] === 'X'
+        ? { ptAmount: true as const }
+        : { power: Number(pt[1]), toughness: Number(pt[2]) }),
       colors,
       types,
       subtypes,

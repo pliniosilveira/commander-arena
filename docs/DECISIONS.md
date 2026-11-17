@@ -3676,3 +3676,15 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Decision: Add the reusable `lifeGainedAndLostThisTurn` condition, true only when the controller has at least one life gained and more than zero life lost this turn; parse the exact combined wording.
 - Alternatives: Infer the condition from the current life total (which misses equal gains and losses) or special-case Lunar Convocation.
 - Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. A scenario proves neither event alone suffices and both together do; parser and golden tests cover the issue card. Local CR text and rulings were unavailable for independent verification.
+
+## D-587: Read a targeted creature's power in a life instruction (2026-11-17, issue 255)
+- Context: Wall of Reverence targets a creature and gains life equal to that creature's power; the engine already reads target power, but the parser did not recognize the Oracle phrase "the power of target creature you control".
+- Decision: Extend the generic power-amount grammar to parse that target noun and preserve it as the amount's object reference.
+- Alternatives: Hard-code Wall of Reverence or treat the target noun as a non-target choice; both would misrepresent target legality and reuse.
+- Consequences: `PARSER_VERSION` changes. The parser test pins the target slot and the `powerOf` reference; the golden corpus checks full card support. CR text and rulings were unavailable for independent verification.
+
+## D-588: Use life gained as a graveyard mana-value limit (2026-11-17, issue 255)
+- Context: Moseo returns a target creature card from its controller's graveyard with mana value no greater than the life gained this turn. The parser already represents this amount and the selector resolves an `Amount`, but validation allowed only numeric, source-power, trigger-damage, and one target-controller count limits.
+- Decision: Allow `lifeGainedThisTurn` as a mana-value filter limit. The normal selector evaluates it from the turn log when the target is chosen or the effect resolves.
+- Alternatives: Store a snapshot or reduce the history amount to a printed number; either would not follow the current turn's recorded life gain.
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. Engine validation and parser tests cover the filter; the golden corpus checks Moseo's full import. CR text and rulings were unavailable for independent verification.
