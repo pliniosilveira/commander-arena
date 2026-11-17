@@ -118,9 +118,6 @@ interface Memory {
   sacrifices: { index: number; permanent: ObjectId; controller: number; spirit: boolean }[];
 }
 
-const controllerIn = (state: GameState, id: ObjectId) =>
-  (state.objects[id] ?? state.lki[id]?.object)?.controller;
-
 const typesOf = (state: GameState, id: ObjectId) => faceOf(state, id)?.types ?? [];
 
 /** CR 202.3: the mana value of a card as its face prints it ({X} is 0 outside the stack). */
@@ -167,9 +164,10 @@ function checkVote(t: Tally, memory: Memory, step: StepInfo, window: Window): vo
     )
     .flatMap((e) => [...e.objects]);
   // CR 701.17a: a card for each past vote, or as many as there are.
-  expect(milled.length, 'a card is milled for each past vote, or as many as the library holds').toBe(
-    Math.min(past, library),
-  );
+  expect(
+    milled.length,
+    'a card is milled for each past vote, or as many as the library holds',
+  ).toBe(Math.min(past, library));
   const value = milled.reduce((n, id) => n + manaValueOf(after, id), 0);
   const damage = window.events.filter(
     (e): e is Extract<GameEvent, { kind: 'damageDealt' }> =>
@@ -244,9 +242,11 @@ function checkEndStep(t: Tally, memory: Memory, step: StepInfo, window: Window, 
   expect(moved.from, 'the card that was targeted').toBe(target);
   expect(typesOf(before, target)).not.toContain('creature');
   expect(typesOf(before, target)).not.toContain('land');
-  expect(before.objects[target]?.owner, 'a card of the controller\'s graveyard').toBe(window.seat);
+  expect(before.objects[target]?.owner, "a card of the controller's graveyard").toBe(window.seat);
   // CR 607.2a: the Elephant remembers what it exiled.
-  expect(after.objects[elephant]?.linkedExile ?? [], 'exiled with the Elephant').toContain(moved.to);
+  expect(after.objects[elephant]?.linkedExile ?? [], 'exiled with the Elephant').toContain(
+    moved.to,
+  );
   memory.linked.set(moved.to, elephant);
   expect(spirits, 'one Spirit token').toHaveLength(1);
   for (const s of spirits) {
@@ -255,7 +255,7 @@ function checkEndStep(t: Tally, memory: Memory, step: StepInfo, window: Window, 
     expect(token?.characteristics.toughness).toBe(2);
     expect([...(token?.characteristics.colors ?? [])].sort()).toEqual(['R', 'W']);
     expect(token?.characteristics.subtypes).toContain('Spirit');
-    expect(s.seat, 'the token is the controller\'s').toBe(window.seat);
+    expect(s.seat, "the token is the controller's").toBe(window.seat);
     t.spirits += 1;
   }
   t.endStepExiles += 1;
@@ -281,7 +281,8 @@ function checkRules(t: Tally, step: StepInfo, memory: Memory): void {
   for (const e of events) {
     if (e.kind === 'sacrificed') {
       const gone = before.objects[e.permanent] ?? before.lki[e.permanent]?.object;
-      const subtypes = gone?.token?.characteristics.subtypes ?? faceOf(before, e.permanent)?.subtypes;
+      const subtypes =
+        gone?.token?.characteristics.subtypes ?? faceOf(before, e.permanent)?.subtypes;
       memory.sacrifices.push({
         index: step.index,
         permanent: e.permanent,
@@ -413,7 +414,9 @@ function checkRules(t: Tally, step: StepInfo, memory: Memory): void {
     ) {
       const permission = memory.voteExiled.get(e.from);
       if (permission !== undefined) {
-        expect(expired(before, permission), 'cast or played after the permission ended').toBe(false);
+        expect(expired(before, permission), 'cast or played after the permission ended').toBe(
+          false,
+        );
         if (e.toZone === 'stack') t.voteExiledCast += 1;
         else t.voteExiledPlayedLand += 1;
       }
@@ -440,7 +443,7 @@ function checkRules(t: Tally, step: StepInfo, memory: Memory): void {
       if (e.toZone === 'library') {
         const owner = after.objects[e.to]?.owner ?? 0;
         const library = after.seats[owner]?.library ?? [];
-        expect(library[library.length - 1], 'on the bottom of its owner\'s library').toBe(e.to);
+        expect(library[library.length - 1], "on the bottom of its owner's library").toBe(e.to);
         t.freeToLibrary += 1;
       }
       if (e.toZone === 'battlefield') t.freePermanents += 1;

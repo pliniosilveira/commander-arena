@@ -172,7 +172,7 @@ describe('present votes: "Exile the top card of your library for each present vo
     g.act(1).chooseOption('present');
     g.expect.zone(MURDER, 'graveyard', { seat: 0 });
     g.expect.life(1, 17);
-    expect(g.find({ zone: 'exile' })).toHaveLength(0);
+    expect(g.state.exile).toHaveLength(0);
     g.expect.illegal(0, { cast: MURDER });
   });
 
@@ -182,10 +182,10 @@ describe('present votes: "Exile the top card of your library for each present vo
     g.act(1).chooseOption('past');
     g.expect.zone(GOBLIN, 'graveyard', { seat: 0 });
     g.expect.illegal(0, { cast: GOBLIN });
-    expect(g.find({ zone: 'exile' })).toHaveLength(0);
+    expect(g.state.exile).toHaveLength(0);
   });
 
-  test('the permission lasts until the end of the controller\'s NEXT turn: this turn, the opponent\'s turn and the next one, then it is gone', () => {
+  test("the permission lasts until the end of the controller's NEXT turn: this turn, the opponent's turn and the next one, then it is gone", () => {
     const g = vote(GOBLIN, ...FILLER);
     g.act(0).chooseOption('present');
     g.act(1).chooseOption('present');
@@ -208,7 +208,7 @@ describe('present votes: "Exile the top card of your library for each present vo
     g.expect.zone(GOBLIN, 'exile', { seat: 0 });
   });
 
-  test('a card cast from the exile in the controller\'s next turn is cast normally, paying its mana cost', () => {
+  test("a card cast from the exile in the controller's next turn is cast normally, paying its mana cost", () => {
     const g = vote(GOBLIN, ...FILLER);
     g.act(0).chooseOption('present');
     g.act(1).chooseOption('present');

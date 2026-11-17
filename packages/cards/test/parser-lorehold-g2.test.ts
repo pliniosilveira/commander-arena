@@ -34,7 +34,7 @@ describe('the votes counted by "for each": "You mill a card for each past vote" 
   test('the real text of Fateful Tempest: the vote, the mill, the damage, the exile and the permission to play', () => {
     expect(
       readAll(
-        "Starting with you, each player votes for past or present. You mill a card for each past vote, then ~ deals damage to each opponent equal to the total mana value of cards milled this way. Exile the top card of your library for each present vote. Until the end of your next turn, you may play the exiled cards.",
+        'Starting with you, each player votes for past or present. You mill a card for each past vote, then ~ deals damage to each opponent equal to the total mana value of cards milled this way. Exile the top card of your library for each present vote. Until the end of your next turn, you may play the exiled cards.',
       ).spell,
     ).toEqual({
       effect: {
@@ -132,7 +132,9 @@ describe('damage to each opponent for the milled value (CR 120.3, 202.3, 608.2c)
       readAll(
         'Mill three cards, then ~ deals damage to each opponent equal to the total mana value of those cards.',
       ).spell,
-    ).toMatchObject({ effect: { effects: [{ kind: 'mill' }, { kind: 'dealDamage', to: EACH_OPPONENT }] } });
+    ).toMatchObject({
+      effect: { effects: [{ kind: 'mill' }, { kind: 'dealDamage', to: EACH_OPPONENT }] },
+    });
   });
 
   test.each([
@@ -196,7 +198,11 @@ describe('"exile target noncreature, nonland card from your graveyard" (CR 404.1
 describe('"choose target card exiled with ~. you may cast that card this turn without paying its mana cost" (CR 607.2a, 601.2, 118.9, 614.1a)', () => {
   const CAST = {
     kind: 'activated',
-    cost: [{ kind: 'mana', symbols: ['1', 'R', 'W'] }, { kind: 'tap' }, { kind: 'sacrifice', what: { subtypes: ['Spirit'] } }],
+    cost: [
+      { kind: 'mana', symbols: ['1', 'R', 'W'] },
+      { kind: 'tap' },
+      { kind: 'sacrifice', what: { subtypes: ['Spirit'] } },
+    ],
     targets: [
       { id: 't1', what: { kind: 'object', filter: { zone: 'exile', exiledWithSource: true } } },
     ],
@@ -273,8 +279,8 @@ describe('"choose target card exiled with ~. you may cast that card this turn wi
     '{1}{R}{W}, {T}: Choose target card exiled with ~. You may cast that card without paying its mana cost.',
     '{1}{R}{W}, {T}: Choose target card exiled with ~. You may cast that card this turn.',
     '{1}{R}{W}, {T}: Choose target card exiled with ~. You may play that card this turn without paying its mana cost.',
-    "{1}{R}{W}, {T}: Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. If that spell would be put into a graveyard, exile it instead.",
-    "{1}{R}{W}, {T}: Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. If that spell would be put into a graveyard, put it on the bottom of your library instead.",
+    '{1}{R}{W}, {T}: Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. If that spell would be put into a graveyard, exile it instead.',
+    '{1}{R}{W}, {T}: Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. If that spell would be put into a graveyard, put it on the bottom of your library instead.',
     '{1}{R}{W}, {T}: Choose target creature card exiled with ~. You may cast that card this turn without paying its mana cost.',
     '{1}{R}{W}, {T}: Choose up to one target card exiled with ~. You may cast that card this turn without paying its mana cost.',
   ])('near miss: %s', (text) => {

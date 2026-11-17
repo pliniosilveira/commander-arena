@@ -776,8 +776,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `At the beginning of your end step, exile ${e}.`,
   ),
   'noun.target-card-exiled-with-self': permanent(
-    (e) =>
-      `{1}, {T}: Choose ${e}. You may cast that card this turn without paying its mana cost.`,
+    (e) => `{1}, {T}: Choose ${e}. You may cast that card this turn without paying its mana cost.`,
   ),
   'effect.cast-exiled-with-self': permanent((e) => `{1}, {T}: ${cap(e)}.`),
   'amount.for-each-vote': spell(

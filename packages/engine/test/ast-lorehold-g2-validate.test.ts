@@ -42,9 +42,6 @@ const CAST = {
   free: true,
   bottomInstead: true,
 };
-const EXILED_WITH = [
-  { id: 't1', what: { kind: 'object', filter: { zone: 'exile', exiledWithSource: true } } },
-];
 
 describe('the cards are valid', () => {
   test.each([ELEPHANT, TEMPEST])('%s', (name) => {
@@ -68,9 +65,11 @@ describe('`mayCast` of a card in exile (CR 601.2, 118.9, 614.1a)', () => {
       expect(messages(activated({ targets })).join(' | '), JSON.stringify(targets)).not.toBe('');
     }
     expect(
-      messages(activated({ targets: [{ id: 't1', what: { kind: 'object', filter: { zone: 'graveyard' } } }] })).join(
-        ' | ',
-      ),
+      messages(
+        activated({
+          targets: [{ id: 't1', what: { kind: 'object', filter: { zone: 'graveyard' } } }],
+        }),
+      ).join(' | '),
     ).toContain('exiledWithSource');
   });
 
@@ -82,11 +81,13 @@ describe('`mayCast` of a card in exile (CR 601.2, 118.9, 614.1a)', () => {
       duration: 'untilEndOfTurn',
       ...extra,
     });
-    expect(messages(activated({ targets: graveyard, effect: grave({ free: true }) })).join(' | ')).toContain(
-      "free is only for a card in exile (from: 'exile')",
-    );
     expect(
-      messages(activated({ targets: graveyard, effect: grave({ bottomInstead: true }) })).join(' | '),
+      messages(activated({ targets: graveyard, effect: grave({ free: true }) })).join(' | '),
+    ).toContain("free is only for a card in exile (from: 'exile')");
+    expect(
+      messages(activated({ targets: graveyard, effect: grave({ bottomInstead: true }) })).join(
+        ' | ',
+      ),
     ).toContain('bottomInstead is only for a card in exile');
     expect(messages(activated({ effect: { ...CAST, free: false } })).join(' | ')).toContain(
       'free must be true when present',
@@ -164,7 +165,11 @@ describe('the count of a vote (CR 701.38a): `votesFor` as the amount of a mill a
   test('refused without a vote before it, or for an option the vote does not offer', () => {
     expect(
       messages(
-        withSpell(TEMPEST, { kind: 'mill', player: YOU, count: { kind: 'votesFor', option: 'past' } }),
+        withSpell(TEMPEST, {
+          kind: 'mill',
+          player: YOU,
+          count: { kind: 'votesFor', option: 'past' },
+        }),
       ).join(' | '),
     ).toContain('votesFor needs a vote effect before it');
     expect(
