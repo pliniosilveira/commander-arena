@@ -731,6 +731,10 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (t.another !== undefined && typeof t.another !== 'boolean') {
         issue(out, `${path}.another`, 'another must be a boolean');
       }
+      // CR 603.2c (Lorehold group 1): "one or more cards": a batch.
+      if (t.batch !== undefined && t.batch !== true) {
+        issue(out, `${path}.batch`, 'batch must be true when present');
+      }
       // D-383: "a creature card": read against the card where it went (a graveyard, or exile for madness), so no zone, controller or owner.
       if (t.filter !== undefined) {
         checkFilter(t.filter, `${path}.filter`, out);
@@ -1226,7 +1230,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         xAllowed: false,
         ...(subject === undefined ? {} : { triggerSubject: subject }),
         // D-232: "from among those cards" is read where the trigger is about the cards that left a graveyard.
-        ...(a.trigger.kind === 'leftGraveyard' ? { triggerCards: true } : {}),
+        ...(a.trigger.kind === 'leftGraveyard' ||
+        (a.trigger.kind === 'discarded' && a.trigger.batch === true)
+          ? { triggerCards: true }
+          : {}),
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(a.trigger?.kind === 'attackBatch' ? { triggerAttacked: true } : {}),

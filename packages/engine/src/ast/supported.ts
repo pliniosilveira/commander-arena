@@ -243,9 +243,26 @@ function walkEffect(
       }
       return;
     case 'mayPay':
-      // CR 702.101a (D-120): paid as Ward's cost is (rules/pay-unless.ts): mana and life, no X.
+      // CR 702.101a (D-120): paid as Ward's cost is (rules/pay-unless.ts): mana, life and (Lorehold group 1, "you may pay {1} and discard a card") discarding cards, no X.
       // D-364: the life may be an amount, worked out as the instruction resolves (`rules/life-amounts.ts`).
-      activationCostIssues(effect.cost, `${path}.cost`, out, ['mana', 'payLife'], false, true);
+      activationCostIssues(
+        effect.cost,
+        `${path}.cost`,
+        out,
+        ['mana', 'payLife', 'discard'],
+        false,
+        true,
+      );
+      // The cards are discarded as Ward's discard is (rules/pay-unless.ts): any cards of the hand, no filter and no name.
+      effect.cost.forEach((c, i) => {
+        if (c.kind === 'discard' && (c.filter !== undefined || c.named !== undefined)) {
+          out.push({
+            path: `${path}.cost[${i}]`,
+            message:
+              'a discard in the payment of a "you may pay" takes any cards: no filter, no name',
+          });
+        }
+      });
       walkEffect(effect.effect, `${path}.effect`, out, targets, moved, subject);
       return;
     case 'regenerate':

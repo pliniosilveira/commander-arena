@@ -158,12 +158,21 @@ export function canPlayLandByEffect(state: GameState, seat: SeatId, obj: GameObj
  * CR 601.2, 305.1, 611.2a (D-151): whether an effect ("You may play that card this turn") lets `seat` cast or play the card `obj` in exile: a
  * `playPermission` of the seat that names this very object (a card that left exile is a new one, CR 400.7) and has not ended.
  */
-export function mayPlayFromExile(state: GameState, seat: SeatId, obj: GameObject): boolean {
+export function mayPlayFromExile(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+  asLand = false,
+): boolean {
   return (
     obj.zone === 'exile' &&
     state.continuousEffects.some(
       (e) =>
-        e.change.kind === 'playPermission' && e.change.seat === seat && e.objects.includes(obj.id),
+        e.change.kind === 'playPermission' &&
+        e.change.seat === seat &&
+        e.objects.includes(obj.id) &&
+        // "You may cast it this turn" (Lorehold group 1): a permission to cast is none to play a land.
+        !(asLand && e.change.castOnly === true),
     )
   );
 }
@@ -173,13 +182,21 @@ export function mayPlayFromExile(state: GameState, seat: SeatId, obj: GameObject
  * graveyard: a `playPermission` of the seat that names this very object (a card that left the graveyard is a new one, CR 400.7) and has not ended.
  * The effect names only cards the seat owns (`runMayPlay`).
  */
-export function mayPlayFromGraveyard(state: GameState, seat: SeatId, obj: GameObject): boolean {
+export function mayPlayFromGraveyard(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+  asLand = false,
+): boolean {
   return (
     obj.zone === 'graveyard' &&
     obj.owner === seat &&
     state.continuousEffects.some(
       (e) =>
-        e.change.kind === 'playPermission' && e.change.seat === seat && e.objects.includes(obj.id),
+        e.change.kind === 'playPermission' &&
+        e.change.seat === seat &&
+        e.objects.includes(obj.id) &&
+        !(asLand && e.change.castOnly === true),
     )
   );
 }
@@ -187,11 +204,11 @@ export function mayPlayFromGraveyard(state: GameState, seat: SeatId, obj: GameOb
 export function canPlayLand(state: GameState, seat: SeatId, obj: GameObject, face = 0): boolean {
   if (obj.card === null) return false;
   // D-151: a land card in exile an effect lets the player play ("You may play that card this turn").
-  const fromExile = obj.zone === 'exile' && mayPlayFromExile(state, seat, obj);
+  const fromExile = obj.zone === 'exile' && mayPlayFromExile(state, seat, obj, true);
   // D-232: a land card in the graveyard a permanent lets its controller play once each turn; D-327: or an effect let them play this turn.
   const fromGraveyard =
     obj.zone === 'graveyard' &&
-    (mayPlayFromGraveyard(state, seat, obj) ||
+    (mayPlayFromGraveyard(state, seat, obj, true) ||
       graveyardPlayPermission(state, seat, obj, true) !== null);
   if (!fromExile && !fromGraveyard && (obj.zone !== 'hand' || obj.owner !== seat)) return false;
   if (!castableFaces(definitionOf(state, obj.card)).includes(face)) return false;
