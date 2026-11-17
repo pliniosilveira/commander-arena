@@ -472,7 +472,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The cost reduction "during your turn" takes a plain number of generic mana off the first mana cost, never below zero; other turns ("during an opponent's turn") and a reduction of a mana ability are not read.
 - The rulings of the eleven cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
 
-## The Lorehold Spirit deck, group 1 (issue 86, D-1700 to D-1707)
+## The Lorehold Spirit deck, group 1 (issue 86, D-563 to D-570)
 
 - "Repeat this process once" repeats the one instruction before it, which may not choose targets; a text that repeats several sentences ("this process" is more than one instruction), "twice", "for each" and a repeat with no instruction before it are not read. The process is done again as it was lowered, so a "you may" search is asked again.
 - `exileFromTriggerCards` is only for a batch `discarded` trigger and exiles one card from the graveyard of the controller (the cards a batch names are the controller's own discards); a batch trigger of another event ("whenever one or more creatures you control die, you may exile one of them") is not built, nor "exile two of them" or a choice among cards of several graveyards.

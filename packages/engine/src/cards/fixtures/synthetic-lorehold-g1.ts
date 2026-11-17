@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 1 OF THE LOREHOLD SPIRIT DECK (issue 86, D-1700 and later). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 1 OF THE LOREHOLD SPIRIT DECK (issue 86, D-563 and later). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the real cards of the group need from the engine, written out by hand (the cards package checks that the grammar lowers the real Oracle text to these
  * same nodes): a creature with vigilance whose enters ability, when an opponent controls more lands, searches for a Plains onto the battlefield tapped, twice at most, and shuffles

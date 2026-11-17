@@ -1,4 +1,4 @@
-// Validation of the nodes of group 1 of the Lorehold Spirit deck (D-1700 to D-1706, provisional): the batch `discarded` trigger, the effects `exileFromTriggerCards` and
+// Validation of the nodes of group 1 of the Lorehold Spirit deck (D-563 to D-569, provisional): the batch `discarded` trigger, the effects `exileFromTriggerCards` and
 // `dealDamageToSelf`, the `castOnly` flag of `mayPlay`, a discard in the payment of a `mayPay`, and the `thisWay` count `searched`. A node that the engine does not run (or runs in one
 // place only) is refused with a message, never accepted and half run.
 import { describe, expect, test } from 'vitest';
