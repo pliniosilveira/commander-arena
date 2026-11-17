@@ -635,6 +635,31 @@ describe('effect.pay and condition.if-you-do: "You may pay [cost]. If you do, ..
     ).toMatchObject([{ effect: mayPay([{ kind: 'payLife', amount: 2 }], draw) }]);
   });
 
+  test('Tivash may pay the life gained this turn and creates a token of that size', () => {
+    expect(
+      abilities(
+        'At the beginning of your end step, if you gained life this turn, you may pay X life, where X is the amount of life you gained this turn. If you do, create an X/X black Demon creature token with flying.',
+      ),
+    ).toMatchObject([
+      {
+        kind: 'triggered',
+        effect: {
+          kind: 'mayPay',
+          cost: [{ kind: 'payLife', amount: { kind: 'lifeGainedThisTurn' } }],
+          effect: {
+            kind: 'createToken',
+            count: 1,
+            token: {
+              kind: 'custom',
+              ptAmount: { kind: 'lifeGainedThisTurn' },
+              definition: { power: 0, toughness: 0 },
+            },
+          },
+        },
+      },
+    ]);
+  });
+
   test('what the payment buys may be several instructions, a target among them, and an intervening "if" stays', () => {
     expect(
       abilities('When ~ enters, you may pay {2}. If you do, destroy target creature.'),

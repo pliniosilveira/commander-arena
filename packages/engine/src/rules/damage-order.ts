@@ -27,11 +27,7 @@
  */
 import type { SeatId } from '../ids';
 import type { DamageRecipient } from '../state/combat-types';
-import type {
-  ChooseOptionDecision,
-  DamageReplacementChoice,
-  DamageReplacementQuestion,
-} from '../state/decisions';
+import type { ChooseOptionDecision, DamageReplacementChoice } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import type { GameState } from '../state/types';
 import type { DamageEvent, DamageModifier } from './damage-modifier';
@@ -379,7 +375,7 @@ export interface Settled {
 
 /** The decision of a replacement question, before the engine gives it its id. */
 export type ReplacementDecision = Omit<ChooseOptionDecision, 'id' | 'replacement'> & {
-  readonly replacement: DamageReplacementQuestion;
+  readonly replacement: import('../state/decisions').ReplacementQuestion;
 };
 
 /** A question the affected player must answer before the event can be settled. Nothing was changed. */

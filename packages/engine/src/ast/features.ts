@@ -195,6 +195,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'restrict',
     // Hylda group 3 (CR 702.11b): "You gain hexproof until end of turn", a player's hexproof for the turn.
     'grantPlayerHexproof',
+    'grantPlayerProtectionEverything',
+    'preventPlayerLifeTotalChange',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".
     'requireAttack',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
@@ -361,6 +363,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cycled',
     // D-196: "Whenever the Ring tempts you" (CR 701.54d).
     'ringTempted',
+    // D-598: "When this Class becomes level N" (CR 716.2).
+    'classLevel',
     // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
     'crimeCommitted',
     'tokenCreated',
@@ -511,11 +515,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-149: "If you would gain life, you gain that much life plus 1 instead", "each other Angel you control enters with an
     // additional +1/+1 counter on it".
     'lifeGainBonus',
+    'lifeGainDouble',
     'othersEnterWithCounters',
     // D-219: "If one or more artifact tokens would be created under your control, ... are created instead".
     'tokensInstead',
     // D-179: "Lands you control enter untapped".
     'groupEntersUntapped',
+    // D-602: "Creatures your opponents control enter tapped".
+    'groupEntersTapped',
     // D-151: "As this enters, you may have it become a copy of any creature on the battlefield until end of turn".
     'entersAsCopy',
     // D-192: "All damage that would be dealt to you and other permanents you control is dealt to this creature instead."
@@ -753,6 +760,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   conditionKinds: [
     'controlsAtLeast',
     'opponentsAtLeast',
+    // D-601 (CR 122.1): "an opponent has three or more poison counters".
+    'opponentPoisonAtLeast',
     'kicked',
     // D-129: "if a replicate cost was paid for it" (CR 702.56a).
     'replicated',
@@ -821,6 +830,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'combatDamagedBy',
     // D-252: "if you gained 3 or more life this turn".
     'lifeGainedThisTurn',
+    'lifeGainedAndLostThisTurn',
     // D-318: "Activate only if you've cast three or more spells this turn".
     'spellsCastThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
@@ -960,6 +970,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'commanderManaValue',
     // D-229: "for each time you've cast your commander from the command zone this game".
     'commanderCasts',
+    'lifeTotalOf',
     // D-179: "for each color among permanents you control" (a static ability's +N/+N).
     'colorsAmong',
     // D-518: "the number of card types among cards in your graveyard" (Delirium).
@@ -1052,6 +1063,9 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   // D-473: landwalk (CR 702.14): the land type is part of the keyword, and one kind twice is redundant (CR 702.14e).
   'landwalk',
 ];
+
+/** Keyword kinds an object filter can test. Toxic is parameterized but filters only on its presence. */
+export const FILTERABLE_KEYWORDS: readonly Keyword['kind'][] = [...GRANTABLE_KEYWORDS, 'toxic'];
 
 /**
  * What a `restriction` static ability may name, by the subject kinds it accepts: every restriction
@@ -1342,6 +1356,8 @@ export const CONDITION_KINDS = [
   'controlsAtLeast',
   /** "You have two or more opponents": the engine's `opponentsAtLeast`. */
   'opponentsAtLeast',
+  /** "An opponent has three or more poison counters" (D-601). */
+  'opponentPoisonAtLeast',
   /** "If this spell was kicked", "if it was kicked" (CR 702.33d): the engine's `kicked`. */
   'kicked',
   /** "If a replicate cost was paid for it" (CR 702.56a): the engine's `replicated`. */
@@ -1418,6 +1434,8 @@ export const CONDITION_KINDS = [
   'combatDamagedBy',
   /** "If you gained 3 or more life this turn" (D-252): the engine's `lifeGainedThisTurn`. */
   'lifeGainedThisTurn',
+  /** "If you gained and lost life this turn" (D-593). */
+  'lifeGainedAndLostThisTurn',
   /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
@@ -1593,6 +1611,7 @@ export const AMOUNT_KINDS = [
   /** "The life that player lost this turn" (CR 119.3, D-365): the engine's `lifeLostThisTurn`, the whole amount of a `loseLife`. */
   'lifeLostThisTurn',
   'lifeGainedThisTurn',
+  'lifeGainedAndLostThisTurn',
   'enteredThisTurn',
   'diedThisTurn',
   /** "-X/-X", "+2/+2 for each ..." (D-115): a multiple of an amount, only as a power or toughness. */
@@ -1611,6 +1630,8 @@ export const AMOUNT_KINDS = [
   'commanderManaValue',
   /** "The number of times you've cast your commander from the command zone this game" (CR 903.8, D-229): the engine's `commanderCasts`. */
   'commanderCasts',
+  /** A player's current life total at resolution (CR 119.1). */
+  'lifeTotalOf',
   /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N. */
   'colorsAmong',
   /** "The number of card types among cards in your graveyard" (CR 205.2a, D-518): the engine's `cardTypesAmong`. */
@@ -1748,6 +1769,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   sequence: true,
   chooseObjects: true,
   grantPlayerHexproof: true,
+  grantPlayerProtectionEverything: true,
+  preventPlayerLifeTotalChange: true,
   mill: true,
   manifest: true,
   dealDamage: true,
@@ -1898,6 +1921,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   attackBatch: true,
   cycled: true,
   ringTempted: true,
+  classLevel: true,
   crimeCommitted: true,
   tokenCreated: true,
   scries: true,
@@ -2007,9 +2031,11 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   asEntersChoose: true,
   wouldDie: true,
   lifeGainBonus: true,
+  lifeGainDouble: true,
   othersEnterWithCounters: true,
   tokensInstead: true,
   groupEntersUntapped: true,
+  groupEntersTapped: true,
   entersAsCopy: true,
   redirectDamage: true,
   skipDraw: true,

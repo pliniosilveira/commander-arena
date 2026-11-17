@@ -175,6 +175,25 @@ const discardAction: Action = (subject, you, rule) =>
  * and a quantity above one for each ("gain 2 life for each creature you control").
  */
 export const lifeAction: Action = (subject, you, rule) => {
+  const halfTheirLife: Parser<IrAmount> = map(
+    spanned(
+      sequence(
+        verbWord('lose', you),
+        pattern(/half their life, rounded (down|up)(?![\p{L}\p{N}])/iu),
+      ),
+    ),
+    ({ value, span }) => {
+      const words = value[1][0] ?? '';
+      const halfSpan = { start: span.start + words.length, end: span.end };
+      const total: IrAmount = { kind: 'lifeTotalOf', of: subject, span: halfSpan };
+      return {
+        kind: 'half',
+        of: total,
+        round: (value[1][1] ?? '').toLowerCase() as 'down' | 'up',
+        span,
+      };
+    },
+  );
   const life = (base: 'gain' | 'lose', verb: 'gainLife' | 'loseLife') =>
     map(
       spanned(
@@ -204,6 +223,7 @@ export const lifeAction: Action = (subject, you, rule) => {
             ),
             ([, , amount]) => amount,
           ),
+          ...(base === 'lose' ? [halfTheirLife] : []),
         ),
       ),
       ({ value, span }) => actionClause(rule, verb, { player: subject, amount: value }, span),
@@ -860,6 +880,39 @@ export const EFFECT_LIFE = defineRule<Clauses>({
       lifeAction(impliedYou('effect.life', pos), true, 'effect.life'),
       (clause): Clauses => [clause],
     )(ctx, pos),
+});
+
+/** "Until that player's next turn, they gain protection from everything and their life total can't change." */
+export const EFFECT_PLAYER_LOCK = defineRule<Clauses>({
+  id: 'effect.player-lock',
+  family: 'effect',
+  leading: ['until'],
+  cites: ['CR 702.16 (Protection)', 'CR 119 (Life)'],
+  examples: [
+    "until that player's next turn, they gain protection from everything and their life total can't change",
+  ],
+  rejects: [
+    "until that player's next turn, they gain protection from everything",
+    "until that player's next turn, their life total can't change",
+    'until your next turn, you gain protection from everything and your life total can’t change',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        /until that player['’]s next turn, they gain protection from everything and their life total can(?:not|'t|’t) change(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const player = family<IrNoun>('noun', { only: ['noun.they'] })(ctx, pos + 31);
+    if (!player.ok) return player;
+    return {
+      ok: true,
+      value: [
+        makeClause('effect.player-lock', 'playerLock', { player: player.value }, r.value.span),
+      ],
+      pos: r.pos,
+    };
+  },
 });
 
 /** `effect.shuffle`: "Shuffle your library." and, since stage P63 (D-216), "You may shuffle." (Ponder: the library is the controller's) (CR 701.24). */

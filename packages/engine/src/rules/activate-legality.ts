@@ -76,7 +76,7 @@ export function activationRefusal(
     return 'A spell with split second is on the stack: abilities cannot be activated (CR 702.61a)';
   }
   const { ability } = entry;
-  const zone = ability.functionsIn ?? 'battlefield';
+  const zone = obj.emblem === true ? 'command' : (ability.functionsIn ?? 'battlefield');
   if (obj.zone !== zone) return `That ability works only from the ${zone}`;
   // CR 602.5 (Galadriel group 3): "Its activated abilities can't be activated this turn": a permanent such an effect named has none to activate (a mana ability, a loyalty ability and
   // the abilities of a keyword included, CR 605.1a, 606.1).
@@ -151,8 +151,7 @@ function reducibleForSomeTarget(
 }
 
 /**
- * Every `activate` option `seat` has now: its battlefield permanents, then the cards in its hand (Cycling), then
- * the cards in its graveyard (Unearth, CR 702.84a, D-124).
+ * Every `activate` option `seat` has now: its battlefield permanents, command-zone emblems (CR 114.4), then the cards in its hand (Cycling) and graveyard (Unearth, CR 702.84a, D-124).
  */
 export function activatableAbilities(
   state: GameState,
@@ -161,6 +160,7 @@ export function activatableAbilities(
   const out: { object: ObjectId; abilityIndex: number }[] = [];
   const candidates = [
     ...state.battlefield.filter((id) => controllerOf(state, getObject(state, id)) === seat),
+    ...zoneList(state, 'command', seat).filter((id) => state.objects[id]?.emblem === true),
     ...zoneList(state, 'hand', seat),
     ...zoneList(state, 'graveyard', seat).filter((id) => hasGraveyardAbility(state, id)),
   ];

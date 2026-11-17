@@ -127,7 +127,7 @@ export function compileLine(text: string, options: CompileOptions): LineResult {
         ok: false,
         failure: {
           reason: 'notRunnable',
-          stoppedAt: from(text, lowered.at.start),
+          stoppedAt: from(text, lowered.at?.start ?? text.length),
           closestRule: lowered.rule,
           recognised,
           ...(lowered.needs.length > 0 ? { needs: lowered.needs } : {}),

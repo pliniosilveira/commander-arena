@@ -74,7 +74,7 @@ export interface ConditionContext {
    */
   readonly targets?: readonly ChosenTarget[];
   readonly moved?: readonly ObjectId[];
-  /** The permanents sacrificed to pay the cost of the activated ability that is resolving, for `sacrificedAsCost` (D-583, CR 602.2b). Absent for any other spell or ability. */
+  /** The permanents sacrificed to pay the cost of the activated ability that is resolving, for `sacrificedAsCost` (D-584, CR 602.2b). Absent for any other spell or ability. */
   readonly costSacrificed?: readonly ObjectId[];
   readonly performed?: number;
   /** The result of the latest die the resolution rolled, for `dieResult` (D-271). Absent where none was rolled, which fails that condition closed. */
@@ -129,6 +129,10 @@ export function evaluateCondition(
     }
     case 'opponentsAtLeast':
       return opponentsOf(state, ctx.controller).length >= condition.count;
+    case 'opponentPoisonAtLeast':
+      return state.seats.some(
+        (seat) => seat.id !== ctx.controller && !seat.hasLost && seat.poison >= condition.count,
+      );
     case 'kicked': {
       // CR 702.33d: a spell that is resolving carries the fact on the stack; a permanent that
       // entered from a kicked spell keeps it (`GameObject.kicked`). Once either has left, its
@@ -144,7 +148,7 @@ export function evaluateCondition(
     }
     case 'sacrificedAsCost': {
       // CR 118.8, 603.4 (D-491): "if you sacrificed one or more creatures to cast it": the spell carries the sacrificed permanents on the stack, or its last-known information
-      // does once it has left (CR 113.7a). D-583 (CR 602.2b): an activated ability reads what its own cost sacrificed from its resolution.
+      // does once it has left (CR 113.7a). D-584 (CR 602.2b): an activated ability reads what its own cost sacrificed from its resolution.
       if (ctx.costSacrificed !== undefined) return ctx.costSacrificed.length > 0;
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return (source?.stack?.sacrificedAsCost?.length ?? 0) > 0;
@@ -428,6 +432,13 @@ export function evaluateCondition(
     case 'lifeGainedThisTurn':
       // D-252, CR 119.3: the life the controller has gained this turn, from the turn log.
       return lifeGainedThisTurnHolds(state, ctx.controller, condition);
+    case 'lifeGainedAndLostThisTurn':
+      return (
+        lifeGainedThisTurnHolds(state, ctx.controller, {
+          kind: 'lifeGainedThisTurn',
+          atLeast: 1,
+        }) && getSeat(state, ctx.controller).lifeLostThisTurn > 0
+      );
     case 'spellsCastThisTurn':
       // D-318, CR 601.2i: the spells the controller has cast this turn (copies are not cast, CR 707.10).
       if (condition.ofTypes === undefined) {

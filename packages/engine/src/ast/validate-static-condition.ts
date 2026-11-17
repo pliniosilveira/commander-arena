@@ -40,11 +40,13 @@ const CONDITIONAL_STATICS: readonly StaticEffect['kind'][] = [
 /** The conditions a static ability that works in layer 4 or 5 may have: they read no characteristics, so they cannot depend on the layers (CR 613.8). */
 const PLAIN_CONDITIONS: readonly Condition['kind'][] = [
   'lifeTotal',
+  'opponentPoisonAtLeast',
   'ownTurnNumber',
   'enteredThisTurn',
   'thisEnteredThisTurn', // D-423: the turn log
   'playerDealtDamage',
   'lifeGainedThisTurn',
+  'lifeGainedAndLostThisTurn',
   'cardsInGraveyard',
   'cardsInLibrary',
   'controlCommander',
@@ -156,10 +158,12 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
     case 'thisEnteredThisTurn': // D-423: the turn log, which no layer changes
     case 'controlCommander':
     case 'lifeTotal':
+    case 'opponentPoisonAtLeast':
     case 'ownTurnNumber': // D-149: the turns the controller has had, which no layer changes
     case 'enteredThisTurn': // D-151: the turn log, which no layer changes
     case 'playerDealtDamage':
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
+    case 'lifeGainedAndLostThisTurn': // D-593: both turn-log reads
     case 'cardsInGraveyard': // D-229: the cards in a zone, which no layer changes
     case 'cardsInLibrary': // D-331: the cards in a zone, which no layer changes
     case 'chosenOption': // D-151: what the permanent chose as it entered

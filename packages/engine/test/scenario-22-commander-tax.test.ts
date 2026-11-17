@@ -5,11 +5,27 @@
 // CR 601.2f (Casting Spells): the total cost includes the tax. Isamaru costs {W}, so the exact
 // number of Plains needed is 1, 3, 5 for the first, second and third cast.
 import { describe, expect, test } from 'vitest';
+import { singleFace } from '../src/cards/fixtures/helpers';
 import { getView } from '../src/index';
 import { scenario } from '../src/testing/index';
 
 const ISAMARU = 'Isamaru, Hound of Konda';
 const YARGLE = 'Yargle, Glutton of Urborg';
+const LIESA_LIKE = 'SYNTHETIC Commander Tax Life';
+const LIESA_LIKE_CARD = singleFace({
+  name: LIESA_LIKE,
+  manaCost: ['2', 'W'],
+  types: ['creature'],
+  colors: ['W'],
+  colorIdentity: ['W'],
+  power: 2,
+  toughness: 2,
+  oracleText: 'SYNTHETIC fixture: pay 2 life for each previous command-zone cast.',
+  abilities: [
+    { kind: 'static', static: { kind: 'costReduction', spells: { kind: 'this' }, amount: 1 } },
+  ],
+  commanderTaxLife: 2,
+});
 
 /** Isamaru in the command zone, cast before `casts` times, with `plains` untapped Plains. */
 function withPlains(casts: number, plains: number) {
@@ -19,6 +35,65 @@ function withPlains(casts: number, plains: number) {
 }
 
 describe('CR 903.8 (Commander): the tax grows by {2} per cast from the command zone', () => {
+  test('a commander can replace each {2} of tax with life, without paying tax mana', () => {
+    const g = scenario()
+      .define(LIESA_LIKE_CARD)
+      .seat(0)
+      .commander(LIESA_LIKE, { casts: 2, label: 'cmd' })
+      .battlefield('Plains', { count: 2 })
+      .seat(1)
+      .build();
+    const card = g.object('cmd').card;
+    if (card === null) throw new Error('no commander card');
+    expect(getView(g.state, 0).seats[0]?.commanderTaxLife).toEqual({ [card]: 4 });
+    expect(getView(g.state, 0).seats[0]?.commanderTax).toEqual({ [card]: 0 });
+    expect(g.view(0).seats[0]?.command[0]?.castCostLife).toBe(4);
+    g.act(0).cast('cmd');
+    expect(g.state.seats[0]?.life).toBe(36);
+    expect(g.state.casting?.totalCost).toEqual(['1', 'W']);
+    g.act(0).payAuto();
+    g.expect.eventLog([
+      { kind: 'spellCast', fromZone: 'command', commanderTax: 0, commanderTaxLife: 4 },
+    ]);
+  });
+
+  test('a mana reduction does not reduce the replacement life, and cancel restores life', () => {
+    const g = scenario()
+      .define(LIESA_LIKE_CARD)
+      .seat(0)
+      .commander(LIESA_LIKE, { casts: 1, label: 'cmd' })
+      .battlefield('Plains', { count: 2 })
+      .seat(1)
+      .build();
+    const before = g.positionHash();
+    g.act(0).cast('cmd').cancel();
+    g.expect.position(before);
+    expect(g.state.seats[0]?.life).toBe(40);
+  });
+
+  test('the replacement does not apply to a commander cast from hand and life must be payable', () => {
+    const hand = scenario()
+      .define(LIESA_LIKE_CARD)
+      .seat(0)
+      .hand(LIESA_LIKE, { commander: true, casts: 2, label: 'cmd' })
+      .battlefield('Plains', { count: 2 })
+      .seat(1)
+      .build();
+    hand.act(0).cast('cmd', { pay: true });
+    hand.expect.life(0, 40);
+    hand.expect.eventLog([{ kind: 'spellCast', fromZone: 'hand', commanderTax: 0 }]);
+
+    const poor = scenario()
+      .define(LIESA_LIKE_CARD)
+      .seat(0)
+      .life(1)
+      .commander(LIESA_LIKE, { casts: 1, label: 'cmd' })
+      .battlefield('Plains', { count: 2 })
+      .seat(1)
+      .build();
+    poor.expect.illegal(0, { cast: 'cmd' });
+  });
+
   test.each([
     [0, 1],
     [1, 3],

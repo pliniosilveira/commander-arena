@@ -44,6 +44,35 @@ const copier = singleFace({
   },
 });
 const BANISH = 'SYNTHETIC Grave Banish';
+const ARCHANGEL = 'SYNTHETIC End-Step Hand Return';
+const archangel = singleFace({
+  name: ARCHANGEL,
+  manaCost: ['2', 'W', 'B'],
+  types: ['creature'],
+  colors: ['W', 'B'],
+  colorIdentity: ['W', 'B'],
+  power: 4,
+  toughness: 5,
+  oracleText: 'SYNTHETIC: return a nontoken creature that died to its owner’s hand next end step.',
+  abilities: [
+    {
+      kind: 'triggered',
+      trigger: {
+        kind: 'dies',
+        what: { types: ['creature'], controller: 'you', other: true, token: false },
+      },
+      effect: {
+        kind: 'delayedTrigger',
+        at: { step: 'endStep', whose: 'each' },
+        effect: {
+          kind: 'moveToZone',
+          objects: { kind: 'triggerCard' },
+          to: 'hand',
+        },
+      },
+    },
+  ],
+});
 const banish = singleFace({
   name: BANISH,
   manaCost: ['B'],
@@ -97,6 +126,38 @@ describe('the cards are valid', () => {
   test('validateCard finds nothing wrong', () => {
     expect(validateCard(syntheticCard(CUB))).toEqual([]);
     expect(validateCard(syntheticCard(THIEF))).toEqual([]);
+  });
+
+  test('a dies trigger may delay returning its trigger card to its owner’s hand', () => {
+    expect(validateCard(archangel)).toEqual([]);
+  });
+});
+
+describe('a delayed hand return from a dies trigger', () => {
+  test('the card is returned at the next end step', () => {
+    const g = scenario()
+      .define(archangel)
+      .seat(0)
+      .hand('Murder')
+      .battlefield(ARCHANGEL)
+      .battlefield('Swamp', { count: 2 })
+      .battlefield('Plains')
+      .battlefield('Grizzly Bears', { label: 'bears' })
+      .library('Island', { count: 15 })
+      .seat(1)
+      .library('Island', { count: 15 })
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast('Murder', { targets: ['bears'], pay: true });
+    resolveTop(g);
+    g.expect.stack([`${ARCHANGEL} (ability)`]);
+    resolveTop(g);
+    expect(g.state.delayedTriggers).toHaveLength(1);
+    g.advanceTo('end');
+    g.expect.stack([`${ARCHANGEL} (ability)`]);
+    resolveTop(g);
+    g.expect.zone('Grizzly Bears', 'hand', { seat: 0 });
+    g.expect.invariants();
   });
 });
 
@@ -404,11 +465,11 @@ describe('validation: what a delayed move may name (D-205, D-284)', () => {
     }
   });
 
-  test('a delayed move of triggerCard goes onto the battlefield and nowhere else', () => {
+  test('a delayed move of triggerCard may return it to hand', () => {
     const card = creatureWith('SYNTHETIC V6', [
       trigger('dies', delayedMove({ kind: 'triggerCard' }, 'hand')),
     ]);
-    expect(validateCard(card).length).toBeGreaterThan(0);
+    expect(validateCard(card)).toEqual([]);
   });
 });
 

@@ -482,7 +482,19 @@ function lowerMayPay(
   }
   const cost: Cost[] = [];
   for (const item of offer.costs) {
-    // D-364 (CR 119.4): "you may pay that much life" is the life of a life gain trigger, which only the ability of such a trigger can offer.
+    // D-596 (CR 107.3c, 119.4): Tivash's "pay X life, where X is ..." is an amount-defined
+    // life cost, not the announced-X cost `payXLife`; resolve it from the definition in this text.
+    const definedLife =
+      item.kind === 'payLife' && ctx.xIs !== null
+        ? (ctx.xIs.lower?.() ?? lowerAmount(ctx.xIs.amount, ctx, item.rule))
+        : null;
+    if (definedLife !== null) {
+      if (!definedLife.ok) return definedLife;
+      if (ctx.xIs !== null) ctx.xIs.used = true;
+      cost.push({ kind: 'payLife', amount: definedLife.value });
+      continue;
+    }
+    // D-364 (CR 119.4): "you may pay that much life" is the life of a life gain trigger.
     const lowered = lowerCost(item, { hybrid: true, eventLife: ctx.lifeGainTrigger === true });
     if (!lowered.ok) return lowered;
     cost.push(lowered.value);
@@ -1188,7 +1200,7 @@ function thisWaysAreSupported(
         if ((sentence.condition !== undefined && !otherwise) || clause.condition !== undefined) {
           return sentence;
         }
-        // D-583 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" in an ability whose cost sacrifices one or more artifacts counts that cost. An instruction
+        // D-586 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" in an ability whose cost sacrifices one or more artifacts counts that cost. An instruction
         // of the text that also sacrifices makes the words ambiguous, so it is refused, never guessed.
         if (isCostSacrificeCount(amount, ctx)) {
           if (before.some((earlier) => earlier.verb === 'sacrifice')) return sentence;
@@ -1877,10 +1889,19 @@ export function lowerSentences(
   const steps: Step[] = [];
   const unordered = thisWaysAreSupported(sentences, ctx);
   if (unordered !== null) return refuse(unordered);
+  let currentX: LowerContext['xIs'] = null;
   for (let i = 0; i < sentences.length; i += 1) {
     const sentence = sentences[i];
     if (sentence === undefined) break;
-    const whereAmount = sentence.where;
+    const definedXCost = sentence.clauses
+      .map((clause) => clause.args.cost)
+      .find((cost) => cost?.kind === 'costList');
+    const costAmount =
+      definedXCost?.kind === 'costList'
+        ? definedXCost.costs.find((cost) => cost.kind === 'payLife' && cost.definesX === true)
+        : undefined;
+    const whereAmount =
+      sentence.where ?? (costAmount?.kind === 'payLife' ? costAmount.amount : undefined);
     const defined =
       whereAmount === undefined
         ? null
@@ -1898,7 +1919,8 @@ export function lowerSentences(
               }
             },
           };
-    ctx.xIs = defined;
+    if (defined !== null) currentX = defined;
+    ctx.xIs = currentX;
     const result = lowerStep(sentences, i, steps, ctx);
     ctx.xIs = null;
     if ('stopped' in result) return result.stopped;

@@ -104,8 +104,7 @@ export const TOKEN_QUOTED_ABILITY: Parser<IrQuotedAbility> = (ctx, pos) =>
   readQuotedAbility(ctx, pos, { mana: true });
 
 /**
- * The ability of a token in quotes for a token with no name of its own, or the one static ability of "~ saddles Mounts and crews Vehicles as though its power were 2 greater."
- * (the Pilot of Defend the Rider; Galadriel deck, group 3, CR 702.122a). No other static ability of a token is read.
+ * The ability of a token in quotes for a token with no name of its own, or a supported static token ability: the crew bonus, or "~ can't block".
  */
 export const TOKEN_QUOTED_ABILITY_OR_CREW_BONUS: Parser<IrQuotedAbility> = (ctx, pos) => {
   const plain = TOKEN_QUOTED_ABILITY(ctx, pos);
@@ -116,7 +115,10 @@ export const TOKEN_QUOTED_ABILITY_OR_CREW_BONUS: Parser<IrQuotedAbility> = (ctx,
   if (
     ability.kind !== 'static' ||
     ability.statement.effects.length === 0 ||
-    !ability.statement.effects.every((e) => e.kind === 'crewSaddleBonus')
+    !ability.statement.effects.every(
+      (e) =>
+        e.kind === 'crewSaddleBonus' || (e.kind === 'restriction' && e.restriction === 'cantBlock'),
+    )
   ) {
     return fail(ctx, pos);
   }

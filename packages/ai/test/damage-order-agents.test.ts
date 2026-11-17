@@ -145,6 +145,36 @@ describe('the question is asked of the player who would take the damage, and is 
   });
 });
 
+test('the heuristic orders an additive and a multiplicative life replacement for the larger gain', () => {
+  const base = question(boltQuestion());
+  const d = {
+    ...base,
+    options: ['bonus-first', 'double-first'],
+    replacement: {
+      lifeGain: { seat: 1, amount: 3 },
+      choices: [
+        {
+          kind: 'lifeGain',
+          option: 'bonus-first',
+          text: 'Gain 1 more life',
+          outcome: { amount: 8 },
+        },
+        {
+          kind: 'lifeGain',
+          option: 'double-first',
+          text: 'Gain twice that much life',
+          outcome: { amount: 7 },
+        },
+      ],
+    },
+  } as unknown as ChooseOptionDecision;
+
+  expect(chooseReplacementByOutcome(d)).toEqual({
+    kind: 'chooseOption',
+    option: 'bonus-first',
+  });
+});
+
 describe('the heuristic agent chooses by what each choice leads to', () => {
   const decision = (
     choices: readonly { amount: number; prevented: number }[],

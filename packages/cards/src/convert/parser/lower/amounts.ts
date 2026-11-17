@@ -67,7 +67,7 @@ function statSource(
 }
 
 /**
- * D-583 (CR 602.2b, 701.21a): whether `amount` ("for each artifact sacrificed this way") counts what the cost of the activated ability sacrificed: the cost sacrifices one or more
+ * D-586 (CR 602.2b, 701.21a): whether `amount` ("for each artifact sacrificed this way") counts what the cost of the activated ability sacrificed: the cost sacrifices one or more
  * permanents of the kind the words name (or "permanent"), and the words are not "that many" (which counts what an instruction did).
  */
 export function isCostSacrificeCount(
@@ -335,6 +335,13 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'commanderCasts' }, rule };
     }
+    case 'lifeTotalOf': {
+      const blocked = needs('lifeTotalOf');
+      if (blocked !== null) return blocked;
+      const player = playerSelectorOf(amount.of, ctx);
+      if (!player.ok) return player;
+      return { ok: true, value: { kind: 'lifeTotalOf', player: player.value }, rule };
+    }
     case 'commanderColors': {
       const blocked = needs('commanderColors');
       if (blocked !== null) return blocked;
@@ -411,7 +418,7 @@ export function lowerAmount(
     case 'thisWay': {
       // CR 608.2c: what an earlier instruction of this resolution did; `lowerSentences` checks that one of that kind
       // comes before it in the same list of effects and that the words name what it did.
-      // D-583 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" of an activated ability whose cost sacrificed one or more artifacts counts that cost; `lowerSentences`
+      // D-586 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" of an activated ability whose cost sacrificed one or more artifacts counts that cost; `lowerSentences`
       // has refused the text if an instruction of it sacrifices too.
       if (isCostSacrificeCount(amount, ctx)) {
         const costBlocked = needs('sacrificedAsCost');
@@ -623,6 +630,18 @@ export function lowerDefinedPt(
   ctx: LowerContext,
   rule: string,
 ): LowerResult<DefinedPtAmount> {
+  if (count.kind === 'devotion') {
+    const lowered = lowerAmount(count, ctx, rule);
+    if (!lowered.ok) return lowered;
+    if (
+      lowered.value === null ||
+      typeof lowered.value !== 'object' ||
+      lowered.value.kind !== 'devotion'
+    ) {
+      return { ok: false, needs: [], at: count.span, rule };
+    }
+    return { ok: true, value: lowered.value, rule };
+  }
   return count.kind === 'sum' ? sumInStatic(count, ctx, rule) : countInStatic(count, ctx, rule);
 }
 
@@ -651,6 +670,7 @@ export const AMOUNT_NEEDS = [
   'amount:commanderColors',
   'amount:commanderManaValue',
   'amount:commanderCasts',
+  'amount:lifeTotalOf',
   'amount:colorsAmong',
   'amount:cardTypesAmong',
   'amount:half',

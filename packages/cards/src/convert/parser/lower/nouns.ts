@@ -219,6 +219,10 @@ function lowerFilterAt(
   const keywordsOf = (words: readonly string[] | undefined): Keyword['kind'][] | null => {
     const kinds: Keyword['kind'][] = [];
     for (const word of words ?? []) {
+      if (word === 'toxic') {
+        kinds.push('toxic');
+        continue;
+      }
       const kind = keywordKind(word);
       if (kind === undefined || !isGrantable(kind)) return null;
       kinds.push(kind);

@@ -2,7 +2,7 @@
 // Each case builds a tiny monorepo in a temp directory, with workspace packages linked the way
 // pnpm links them, runs dependency-cruiser with the real rules, and checks which rules fire.
 
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
@@ -46,7 +46,7 @@ function buildRepo(
     vitest?: boolean;
   },
 ) {
-  const root = mkdtempSync(join(tmpdir(), 'boundaries-'));
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'boundaries-')));
   roots.push(root);
   const dirs = [...PACKAGES.map((p) => `packages/${p}`), 'apps/web'];
   for (const dir of dirs) {

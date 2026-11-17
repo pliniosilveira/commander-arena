@@ -24,4 +24,21 @@
 // 119: Read "with one or more targets" and "draw that many" for a cast trigger (D-574).
 // 120: Read optional exile-from-hand costs and reductions based on cards exiled that way (D-575).
 // 121: Read "Sacrifice one or more artifacts" and "Choose a color. Target player adds N mana of the chosen color for each artifact sacrificed this way" (D-585, D-586, issue 258).
-export const PARSER_VERSION = 121;
+// 122: Read life-gain doubling replacements (D-588).
+// 123: Read and/or unions of card types in plural graveyard targets (D-589).
+// 124: Read a triggered mode choice that has no duration qualifier (D-590).
+// 125: Read life total doubling and losing half a target player's life (D-591).
+// 126: Parse characteristic-defining toughness equal to devotion (D-592).
+// 127: Parse the end-step condition that life was gained and lost (D-593).
+// 128: Read the power of a target creature selected by the same ability (D-594).
+// 129: Support Moseo's history-based graveyard mana-value limit (D-595).
+// 130: Use a defined life amount for a payment and an X/X token (D-596).
+// 131: Parse a trigger for choosing a creature as Ring-bearer (D-597).
+// 132: Parse "when this Class becomes level N" (D-598).
+// 133: Parse delayed hand returns of the card named by a dies trigger (D-599).
+// 134: Parse numbered toxic keywords and a quoted "can't block" token ability (D-600).
+// 135: Read the creature-death history condition and its spell replacement paragraph (D-604).
+// 136: Parse the commander-tax life replacement sentence (D-605).
+// 140: Parse activated abilities carried by emblems (D-606).
+// 141: Parse player locks, protection from everything, and phasing of a target player's nonlands (D-607).
+export const PARSER_VERSION = 141;

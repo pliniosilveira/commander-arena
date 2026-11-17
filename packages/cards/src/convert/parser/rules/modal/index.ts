@@ -201,6 +201,36 @@ export const MODAL_CHOOSE_NOT_REPEATED = defineRule<IrModeHeader>({
   },
 });
 
+/**
+ * `modal.choose-not-repeated-source`: "Choose one that hasn't been chosen —" (CR 700.2, 603.3c):
+ * keep the choices with the source permanent while that same object remains in the game. A zone
+ * change makes a new object, so a returned permanent has its choices available again.
+ */
+export const MODAL_CHOOSE_NOT_REPEATED_SOURCE = defineRule<IrModeHeader>({
+  id: 'modal.choose-not-repeated-source',
+  family: 'modal',
+  leading: ['choose'],
+  cites: ['CR 700.2 (General)', 'CR 700.2b (General)', 'CR 603.3c (Handling Triggered Abilities)'],
+  examples: ["Choose one that hasn't been chosen —", 'choose one that hasn’t been chosen —'],
+  rejects: [
+    "Choose one that hasn't been chosen",
+    "Choose one that hasn't been chosen this turn —",
+    "Choose two that haven't been chosen —",
+    'Choose one —',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/choose one that hasn['’]t been chosen —$/i)(ctx, pos);
+    if (!r.ok) return r;
+    const header: IrModeHeader = {
+      kind: 'modeHeader',
+      choose: { min: 1, max: 1, notRepeatedBySource: true },
+      span: { start: pos, end: r.pos },
+      rule: 'modal.choose-not-repeated-source',
+    };
+    return { ok: true, value: header, pos: r.pos };
+  },
+});
+
 /** The number words of a repeatable choice: "Choose three." (two to ten, the most the engine lists, D-344). */
 const NUMBER_WORDS: ReadonlyMap<string, number> = new Map([
   ['two', 2],
@@ -308,6 +338,7 @@ export const MODAL_RULES = [
   MODAL_CHOOSE_COMMANDER,
   MODAL_CHOOSE_WIDEN,
   MODAL_CHOOSE_NOT_REPEATED,
+  MODAL_CHOOSE_NOT_REPEATED_SOURCE,
   MODAL_CHOOSE_REPEATABLE,
   MODAL_TIERED,
 ];
