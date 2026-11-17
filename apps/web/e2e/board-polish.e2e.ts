@@ -210,7 +210,7 @@ test('issue 58: the active player is marked by the border alone, on all four sid
   expect(errors).toEqual([]);
 });
 
-test('issue 84: the monarch is a small card in a strip beside the battlefield, not a permanent', async ({
+test('issue 84: the monarch is a small card in a strip over the left of the battlefield, not a permanent', async ({
   page,
 }) => {
   test.setTimeout(240_000);
@@ -230,13 +230,21 @@ test('issue 84: the monarch is a small card in a strip beside the battlefield, n
   await expect(card).toHaveCount(1);
   await expect(card).toContainText('The Monarch');
   await expect(card).toContainText('draws a card');
-  // It is no permanent: no tile, not draggable, and the strip is beside the rows, not over them.
+  // It is no permanent: no tile, not draggable, and the strip floats over the left side of the rows without moving them (D-608):
+  // the rows start at the left edge of the field and keep its whole width, so the permanents stay centred.
   await expect(card).not.toHaveClass(/board-tile/);
   await expect(card).not.toHaveAttribute('draggable', 'true');
-  const rows = page.locator('[data-field-seat="0"] .board-field-rows');
-  const [s, r] = await Promise.all([strip.boundingBox(), rows.boundingBox()]);
-  if (s === null || r === null) throw new Error('no box');
-  expect(s.x + s.width).toBeLessThanOrEqual(r.x + 1);
+  const field = page.locator('[data-field-seat="0"]');
+  const rows = field.locator('.board-field-rows');
+  const [s, r, f] = await Promise.all([
+    strip.boundingBox(),
+    rows.boundingBox(),
+    field.boundingBox(),
+  ]);
+  if (s === null || r === null || f === null) throw new Error('no box');
+  expect(Math.abs(r.x - f.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(r.width - f.width)).toBeLessThanOrEqual(1);
+  expect(s.x).toBeGreaterThanOrEqual(f.x - 1);
   expect(s.y).toBeGreaterThanOrEqual(r.y - 1);
   expect(s.y + s.height).toBeLessThanOrEqual(r.y + r.height + 1);
   // The crown on the strip of the player stays too.
