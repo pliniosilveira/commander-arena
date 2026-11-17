@@ -183,12 +183,28 @@ describe('the log', () => {
     );
   });
 
+  test('the private-pile log exposes only the face-up names and the hidden pile size', () => {
+    const made = line({
+      kind: 'faceDownPileSeparated',
+      seat: 1,
+      faceUp: ['Serra Angel', 'Sol Ring'],
+      faceDownCount: 2,
+    });
+    expect(made?.text).toBe(
+      'Opponent separates the cards into a face-down pile of 2 and a face-up pile (Serra Angel and Sol Ring).',
+    );
+    expect(made?.text).not.toContain('Grizzly Bears');
+  });
+
   test('the choice names the pile and its cards', () => {
     expect(line({ kind: 'pileChosen', seat: 0, pile: 2, names: ['Giant Spider'] })?.text).toBe(
       'You choose pile 2 (Giant Spider).',
     );
     expect(line({ kind: 'pileChosen', seat: 1, pile: 1, names: [] })?.text).toBe(
       'Opponent chooses pile 1 (no cards).',
+    );
+    expect(line({ kind: 'pileChosen', seat: 0, pile: 1, names: [], faceDown: true })?.text).toBe(
+      'You choose the face-down pile.',
     );
   });
 });

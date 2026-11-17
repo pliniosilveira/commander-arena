@@ -419,6 +419,8 @@ function recipientText(
       return "the player or planeswalker it's attacking";
     case 'triggerPlayer':
       return 'that player';
+    case 'declinedPlayer':
+      return 'the player who declined';
     case 'giftRecipient':
       // CR 702.174a (D-135): the opponent the caster promised the gift to.
       return 'the chosen player';
@@ -580,6 +582,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the defending player', third: true };
     case 'triggerPlayer':
       return { who: 'that player', third: true };
+    case 'declinedPlayer':
+      return { who: 'the player who declined', third: true };
     case 'giftRecipient':
       return { who: 'the chosen player', third: true };
     case 'discardedThisWay':
