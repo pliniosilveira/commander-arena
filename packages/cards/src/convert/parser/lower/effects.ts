@@ -379,7 +379,7 @@ const RETURN: Lowering<IrClause, Effects> = {
     const refused = selfRefusal(clause, ctx);
     if (refused !== null) return refused;
     const chosen = operand(clause, 'objects');
-    // "Return it to the battlefield" of a dies or leaves trigger (D-538): `it` is the card the
+    // "Return it to the battlefield" of a dies or leaves trigger (D-568): `it` is the card the
     // permanent became. The same words in a spell or an unrelated trigger do not establish a card to return.
     if (
       zone === 'battlefield' &&

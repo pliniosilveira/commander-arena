@@ -259,10 +259,10 @@ export interface IrFilter {
    * creature type or the color that the source of the ability chose as it entered.
    */
   readonly chosen?: 'type' | 'color';
-  /** "aren't of the chosen type" after a resolving creature-type choice (D-536). */
+  /** "aren't of the chosen type" after a resolving creature-type choice (D-566). */
   readonly notChosenType?: true;
   readonly stackKind?: 'spell' | 'ability' | 'triggeredAbility';
-  /** A cast trigger that counts any chosen targets (D-544). */
+  /** A cast trigger that counts any chosen targets (D-574). */
   readonly targetCountAtLeast?: number;
   /** "with a single target" (stage P38, D-182, CR 115.9a): a spell or ability that was put on the stack with exactly one target. */
   readonly singleTarget?: true;
@@ -280,7 +280,7 @@ export interface IrFilter {
   readonly attackingOrBlocking?: true;
   /** "attacking creatures" (stage P31, CR 508.1k): creatures that are attacking, whoever they attack. */
   readonly attacking?: true;
-  /** "nonattacking creatures" (D-543): battlefield creatures not declared as attackers now. */
+  /** "nonattacking creatures" (D-573): battlefield creatures not declared as attackers now. */
   readonly notAttacking?: true;
   /**
    * "monocolored", "multicolored", "that are one or more colors" (stage P31, CR 105.2): the number of colors the object has, compared
@@ -487,7 +487,7 @@ export type IrAmount =
     }
   // Stage P34 (D-152, CR 400.7): "for each of those cards that are still exiled", the cards an earlier instruction of the same text exiled
   | { readonly kind: 'exiledStillThere'; readonly span: Span }
-  /** Number of cards selected for the spell's optional additional exile cost (D-545). */
+  /** Number of cards selected for the spell's optional additional exile cost (D-575). */
   | { readonly kind: 'exiledAsCost'; readonly span: Span };
 
 export interface IrDuration extends IrNode {

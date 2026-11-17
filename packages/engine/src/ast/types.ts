@@ -230,7 +230,7 @@ export type Amount =
    * life"). Valid only in the effect of a triggered ability with one of those triggers.
    */
   | { readonly kind: 'triggerDamage' }
-  /** Number of targets chosen for the spell that caused a cast trigger (D-544). */
+  /** Number of targets chosen for the spell that caused a cast trigger (D-574). */
   | { readonly kind: 'triggerTargetCount' }
   /**
    * "For each opponent who has more life / cards in hand / creatures than you" (D-131): the number of opponents still
@@ -512,7 +512,7 @@ export interface ObjectFilter {
    * and a characteristic-defining ability, which `derive` reads without the combat.
    */
   readonly attacking?: true;
-  /** "Nonattacking creatures" (D-543): battlefield permanents not in the attackers of the combat in progress. */
+  /** "Nonattacking creatures" (D-573): battlefield permanents not in the attackers of the combat in progress. */
   readonly notAttacking?: true;
   /**
    * Only creatures attacking the controller of this ability as a player (CR 508.1b, D-131): "creatures attacking
@@ -573,12 +573,12 @@ export interface ObjectFilter {
    */
   readonly powerAboveBase?: true;
   /**
-   * "Of the chosen type" (D-100) or "of that type" after a resolving choice (D-536): the object has
+   * "Of the chosen type" (D-100) or "of that type" after a resolving choice (D-566): the object has
    * the creature type the source permanent chose as it entered, or the resolving instruction chose
    * in this resolution. Matches nothing without either choice.
    */
   readonly chosenType?: true;
-  /** "Aren't of the chosen type" after a creature-type choice made as an effect resolves (D-536). */
+  /** "Aren't of the chosen type" after a creature-type choice made as an effect resolves (D-566). */
   readonly notChosenType?: true;
   /**
    * "that shares a creature type with it" (D-261, CR 205.3m, 603.10a, 113.7a): the object has at least one creature type that the creature the trigger is
@@ -600,7 +600,7 @@ export interface ObjectFilter {
    * Only for a target slot (a stack object), read where `stackKind` is; refused anywhere `derive` matches filters.
    */
   readonly singleTarget?: true;
-  /** A spell was cast with at least this many chosen targets (D-544). */
+  /** A spell was cast with at least this many chosen targets (D-574). */
   readonly targetCountAtLeast?: number;
   /**
    * "An instant or sorcery spell that targets a creature" (CR 115.1, 601.2c, D-206): a spell or ability on the stack with at least one chosen target that
@@ -766,7 +766,7 @@ export type PlayerSelector =
    * (a step, a death, an entering) has none.
    */
   | { readonly kind: 'triggerPlayer' }
-  /** The player whose `playersMay` answer declined the current `otherwise` effect (D-546). */
+  /** The player whose `playersMay` answer declined the current `otherwise` effect (D-576). */
   | { readonly kind: 'declinedPlayer' }
   /**
    * "The chosen player", "they" in the gift ability (CR 702.174a, D-135): the opponent the caster chose when they promised the
@@ -924,7 +924,7 @@ export type Cost =
    * (CR 601.2h), after the targets were chosen, so a discarded card is no target of the spell. Not in the cost of an ability.
    */
   | { readonly kind: 'discardX' }
-  /** "As an additional cost, you may exile any number of cards from your hand" (D-545). */
+  /** "As an additional cost, you may exile any number of cards from your hand" (D-575). */
   | { readonly kind: 'exileFromHand'; readonly filter: ObjectFilter }
   | {
       readonly kind: 'sacrifice';
@@ -2275,7 +2275,7 @@ export type Effect =
     }
   /**
    * "It also gains the non-backup abilities of this creature printed below this one until end of turn" (Backup, CR 702.165a, 613.1f, D-230), and a resolving spell that grants an activated,
-   * triggered or mana ability (D-538): layer 6, each permanent the selector
+   * triggered or mana ability (D-568): layer 6, each permanent the selector
    * names (a `target`, fixed now, CR 611.2c) has the abilities in `abilities` (any ability but a static one or a keyword that cannot be granted: keywords without parameters,
    * activated, triggered and mana abilities) until `duration`. A card may write the temporary form when its resolving effect grants one of those abilities.
    * D-275 (CR 611.2a, 613.1f): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration: `duration: 'permanent'`, for
@@ -2664,7 +2664,7 @@ export type Effect =
       readonly separator: 'opponent' | 'you';
       readonly chosenTo: 'hand' | 'graveyard';
       readonly otherTo: 'hand' | 'graveyard';
-      /** The separator privately looks at the cards; pile 1 is face down, pile 2 face up (D-549). */
+      /** The separator privately looks at the cards; pile 1 is face down, pile 2 face up (D-579). */
       readonly faceDownPile?: true;
     }
   /**
@@ -3370,7 +3370,7 @@ export type Keyword =
    */
   | { readonly kind: 'protection'; readonly from: 'cardType'; readonly types: readonly CardType[] }
   | { readonly kind: 'protection'; readonly from: 'chosenCardType' }
-  /** Protection from a creature that currently has the Ring-bearer designation (D-547). */
+  /** Protection from a creature that currently has the Ring-bearer designation (D-577). */
   | { readonly kind: 'protection'; readonly from: 'ringBearer' }
   /**
    * "Target creature you control gains protection from the color of your choice until end of turn" (CR 702.16, 608.2d; D-451, the Feather deck's Gods Willing
@@ -4362,7 +4362,7 @@ export type StaticSubject =
 
 /** What a static ability does while its permanent is on the battlefield (CR 604, 611.3). */
 export type StaticEffect =
-  /** CR 205.3a (D-548): a permanent gives every creature card in specified ownership/control scopes every creature subtype. */
+  /** CR 205.3a (D-578): a permanent gives every creature card in specified ownership/control scopes every creature subtype. */
   | { readonly kind: 'allCreatureTypes'; readonly scope: 'youControl' | 'youOwn' }
   | {
       /** CR 402.2: "You have no maximum hand size." */

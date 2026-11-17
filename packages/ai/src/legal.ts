@@ -67,7 +67,7 @@ export function withinAttackBudget(
 }
 
 /**
- * CR 509.1c (D-206), 509.1b (D-542): maximize the satisfiable attacker and blocker requirements together. The decision sets are small, so
+ * CR 509.1c (D-206), 509.1b (D-572): maximize the satisfiable attacker and blocker requirements together. The decision sets are small, so
  * enumerate legal assignments for the free blockers while keeping the agent's existing choices fixed.
  */
 export function withRequiredBlocks(

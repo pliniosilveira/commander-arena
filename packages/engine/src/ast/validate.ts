@@ -917,7 +917,7 @@ function hasDamage(t: Trigger): boolean {
   );
 }
 
-/** Whether a cast trigger records the number of chosen targets for its effect (`triggerTargetCount`, D-544). */
+/** Whether a cast trigger records the number of chosen targets for its effect (`triggerTargetCount`, D-574). */
 function hasTargetCount(t: Trigger): boolean {
   return t?.kind === 'castSpell' && t.filter.targetCountAtLeast !== undefined;
 }

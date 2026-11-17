@@ -674,7 +674,7 @@ function matches(
       if (trigger.by === 'opponent' && occ.seat === candidate.controller) return false;
       // D-229: "their second spell each turn": the caster's nth spell of the turn.
       if (trigger.nth !== undefined && occ.nth !== trigger.nth) return false;
-      // D-535: "during each opponent's turn" is relative to the controller of this ability.
+      // D-565: "during each opponent's turn" is relative to the controller of this ability.
       if (trigger.duringTurn === 'opponent' && state.turn.activeSeat === candidate.controller)
         return false;
       return matchesFilter(state, subject, trigger.filter, ctx);

@@ -282,7 +282,7 @@ const TYPE_CHOICE: Parser<string[]> = typeChoice(PERMANENT_TYPES);
 
 /**
  * "of the chosen type/color" (D-100) or "of that type" after a resolving creature-type choice
- * (D-536): the filter reads the answer carried by the resolution or by the source permanent.
+ * (D-566): the filter reads the answer carried by the resolution or by the source permanent.
  */
 export const CHOSEN_SUFFIX: Parser<'type' | 'color'> = map(
   pattern(new RegExp(` of (?:the chosen (type|color)|that type)${BOUNDARY}`, 'iu')),

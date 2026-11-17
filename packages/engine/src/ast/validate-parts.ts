@@ -138,7 +138,7 @@ export interface Scope {
   readonly triggerPlayer?: boolean;
   /** True in the effect of a triggered ability whose trigger deals damage (`triggerDamage`, D-133). */
   readonly triggerDamage?: boolean;
-  /** True in the effect of a cast trigger that requires targets (`triggerTargetCount`, D-544). */
+  /** True in the effect of a cast trigger that requires targets (`triggerTargetCount`, D-574). */
   readonly triggerTargetCount?: boolean;
   /** True in the effect of a triggered ability whose trigger is a batch of attackers (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: boolean;

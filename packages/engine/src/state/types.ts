@@ -451,7 +451,7 @@ export interface StackData {
    */
   readonly triggerPlayer?: SeatId;
   readonly triggerDamage?: number;
-  /** The target count read by a cast trigger (D-544). */
+  /** The target count read by a cast trigger (D-574). */
   readonly triggerTargetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
   readonly triggerAttacked?: readonly SeatId[];
@@ -885,7 +885,7 @@ export type Instruction =
       readonly kind: 'effect';
       readonly effect: Effect;
       readonly as?: SeatId;
-      /** The player whose `playersMay` answer declined this `otherwise` effect (D-546). */
+      /** The player whose `playersMay` answer declined this `otherwise` effect (D-576). */
       readonly declinedBy?: SeatId;
     }
   /**
@@ -1641,7 +1641,7 @@ export interface ResolutionContext {
   readonly triggerSubject?: ObjectId;
   /** What `triggerPlayer` and `triggerDamage` mean for a triggered ability that reads them (D-133): `StackData.triggerPlayer`, `triggerDamage`. */
   readonly triggerPlayer?: SeatId;
-  /** The player whose `playersMay` answer declined the current otherwise effect (D-546). */
+  /** The player whose `playersMay` answer declined the current otherwise effect (D-576). */
   readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
   readonly triggerTargetCount?: number;

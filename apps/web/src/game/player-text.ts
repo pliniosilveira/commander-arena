@@ -47,7 +47,7 @@ export function playerSubject(
       // D-133: the player the event that caused the trigger is about.
       return { text: 'that player', base: false };
     case 'declinedPlayer':
-      // D-546: a player who declined a choice, named in its `otherwise` effect.
+      // D-576: a player who declined a choice, named in its `otherwise` effect.
       return { text: 'the player who declined', base: false };
     case 'giftRecipient':
       // CR 702.174a (D-135): the opponent the gift was promised to.

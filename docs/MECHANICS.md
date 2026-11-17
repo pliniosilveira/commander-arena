@@ -4003,7 +4003,7 @@ One section for the whole program, a block for each group. The real texts are in
 - Agents: `withRequiredBlocks` in `packages/ai/src/legal.ts`, applied by `withinBlockBudget`, which every agent's declaration goes through.
 - Web: wording of the three triggers, `yourTurn`, `mustBeBlocked` and the Job select reminder (`trigger-text.ts`, `condition-text.ts`, `static-text.ts`, `artifacts-text.ts`, `ui/board/keywords.ts`).
 - Cards unlocked: Dragoon's Lance, White Mage's Staff, Magitek Scythe, Gau, Feral Youth, G'raha Tia, Sahagin, Inkshape Demonstrator, Key to the City, Retrieve the Esper.
-- Limits: the requirement search enumerates legal assignments of blockers and should stay bounded to the small combat decision set. The distinct `mustBlock` requirement is added in D-542. A granted ability given to an attached permanent is read for a triggered ability only.
+- Limits: the requirement search enumerates legal assignments of blockers and should stay bounded to the small combat decision set. The distinct `mustBlock` requirement is added in D-572. A granted ability given to an attached permanent is read for a triggered ability only.
 
 ### Group 3 (D-207; `ENGINE_VERSION` 51, `PARSER_VERSION` 55)
 
@@ -4460,7 +4460,7 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Web: the arrange dialog has one pile, "Bottom", for this purpose (badges count from the bottom card); the log says "You put 3 cards on the bottom of your library in an order you chose." and, for the other seat, the same with "Opponent" and no card.
 - Limits: the cards taken are any card (the empty filter); a filtered form ("put two creature cards from among them into your hand") and a number that is not fixed are not read.
 
-## Lord of the Nazgûl deck (issue 57): one card from the top (D-533)
+## Lord of the Nazgûl deck (issue 57): one card from the top (D-563)
 
 - CR: 401.2 (Library), 401.4 (Library), 701.20a (Reveal)
 - Gap class: T (grammar) plus a `lookAtTop.rest` value using the existing arrange decision
@@ -4882,22 +4882,22 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Tests: engine `scenario-xx-hylda-g2-untap.test.ts`, `scenario-xx-hylda-g2-cards.test.ts`, `ast-hylda-g2-validate.test.ts`; cards `parser-hylda-g2.test.ts` and `convert-grammar-engine-hylda-g2.test.ts`; web `hylda-g2-text.test.ts`; AI soak `hylda-g2-games.test.ts`. Mutation checks: see `docs/proposals/hylda-g2-decisions.md`.
 - Limits: see `docs/ROADMAP.md`.
 
-## The Lord of the Nazgûl deck, issue 57 (D-533 to D-540)
+## The Lord of the Nazgûl deck, issue 57 (D-563 to D-570)
 
-- Engine slices implemented: one-card library selections with ordered remainder (`lookAtTop.rest: 'topChosen'`), the existing one-shot `phaseOut` effect bound to the pronoun `it`, a spell-cast trigger filtered by `nth: 1` and active opponent turn, and temporary effect grants of activated, triggered or mana abilities (`grantAbility`, D-538). A dies trigger can return its new card object with tapped and enters-with-counter instructions (`thisCard`, CR 400.7).
+- Engine slices implemented: one-card library selections with ordered remainder (`lookAtTop.rest: 'topChosen'`), the existing one-shot `phaseOut` effect bound to the pronoun `it`, a spell-cast trigger filtered by `nth: 1` and active opponent turn, and temporary effect grants of activated, triggered or mana abilities (`grantAbility`, D-568). A dies trigger can return its new card object with tapped and enters-with-counter instructions (`thisCard`, CR 400.7).
 - Parser slices implemented: `effect.look-take-one-top` and `effect.look-take-one-bottom`; `effect.phase-out` now accepts `noun.it`; `static.spells-cost-reduction` accepts a repeated union of color spell subjects; `trigger.cast-nth` reads "your first spell during each opponent's turn"; `effect.choose-creature-type` and the matching/inverse chosen-type filters read Distant Melody and Raise the Palisade; `trigger.you-attack-with-one-or-more` maps Hermes's attack wording to the existing attack-batch event; `effect.lead-granted-ability` reads a temporary quoted triggered ability for a target creature.
 - Engine state and decisions: the creature-type choice uses `chooseOption` with the full `CREATURE_TYPES` list and carries the answer on `ResolutionContext` for later instructions. Spell counts already reset for every player as a new turn starts; the Wavebreak trigger compares the active player with the ability's current controller when the cast event is matched.
 - Tests: `packages/cards/test/convert-grammar-engine-look-top-take.test.ts`, `convert-grammar-engine-slip-out-the-back.test.ts`, `convert-grammar-engine-nightscape-familiar.test.ts`, `convert-grammar-engine-wavebreak-hippocamp.test.ts`, `convert-grammar-engine-creature-type-choice.test.ts`, `convert-grammar-engine-hermes.test.ts`, `convert-grammar-engine-death-return-spells.test.ts`, and `convert-grammar-engine-gixs-command.test.ts`; engine `scenario-xx-granted-trigger.test.ts` covers a granted dies trigger returning a tapped creature with a +1/+1 counter. Parser registry and golden corpus tests.
 - Support count before group 6: 12 of the 21 issue cards were supported, including `Lazotep Plating`, already supported at intake; group 6 added `Gix's Command` for 13 and group 7 adds `Drown in the Loch` for 14, with 7 remaining. No deck-wide coverage result is claimed because the Scryfall bulk file is unavailable.
 - Rules text note: the Comprehensive Rules file was not available in this workspace; rule citations were not independently verified for this slice.
 
-## The Lord of the Nazgûl deck, issue 57, group 6: Gix's Command (D-540)
+## The Lord of the Nazgûl deck, issue 57, group 6: Gix's Command (D-570)
 
 - **Engine.** `chooseObjects` is a resolving instruction. It asks the existing `choosePermanent` decision with a zero minimum for "up to", then stores the chosen object ids under a bound text reference in `ResolutionContext`; `ObjectRef.chosen` reads that set in later instructions. `moveToZone` already handles a zero-to-count choice of cards in the controller's graveyard.
 - **Parser.** Read "up to one creature" as an optional non-target choice and bind the following "It" to that selected object. Read "up to two creature cards from your graveyard" as an optional graveyard move choice. The same general grammar and AST apply to other cards.
 - **Proof.** `convert-grammar-engine-gixs-command.test.ts` exercises the chosen creature's counters and lifelink, the optional graveyard return, the small-creature destruction and greatest-power sacrifice modes. The Comprehensive Rules text was unavailable in this workspace; citations were not independently verified.
 
-## The Lord of the Nazgûl deck, issue 57, group 7: Drown in the Loch (D-541)
+## The Lord of the Nazgûl deck, issue 57, group 7: Drown in the Loch (D-571)
 
 - **CR:** 202.3 (Mana Value), 601.2c (announcing targets), 608.2b (checking targets as a spell resolves). The Comprehensive Rules source was unavailable in this workspace, so these existing references were not independently verified.
 - **Gap class:** P + T. The engine could count cards in a graveyard and read a target-dependent mana-value limit, but the count could not follow the controller of the target object.
@@ -4905,46 +4905,46 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Parser:** `amount.number-of` accepts the bare "the number of" form. The count phrase "cards in its controller's graveyard" binds `its` to the target being limited. No card-name branch is used.
 - **Proof:** `convert-grammar-engine-drown-in-the-loch.test.ts` imports the real golden card and plays both modes; it also checks that a target whose mana value exceeds its controller's graveyard count is illegal.
 
-## The Lord of the Nazgûl deck, issue 57, group 8: Domineering Will (D-542, D-543)
+## The Lord of the Nazgûl deck, issue 57, group 8: Domineering Will (D-572, D-573)
 
 - **Engine slice:** a temporary `mustBlock` requirement is distinct from `mustBeBlocked`; the blocker legality search jointly maximizes the two kinds of requirements over legal declarations, including minimum and maximum blockers per attacker. It includes supporting blockers needed to make a mandatory block legal and memoizes equivalent partial assignments. Legal action suggestions include a complete declaration with maximum attainable satisfaction when requirements apply.
 - **Control and targets:** `gainControl` can name the targeted player, the target filter excludes creatures already attacking, and untap/restriction effects reuse the same selected group.
 - **Parser slice:** `They block this turn if able` lowers to the generic `restrict` effect and binds to the preceding plural target group.
 - **Proof:** `convert-grammar-engine-domineering-will.test.ts` plays the real golden card through target selection, control change, untap, and a required block. CR text was unavailable for independent verification.
 
-## The Lord of the Nazgûl deck, issue 57, group 9: Voracious Bibliophile (D-544)
+## The Lord of the Nazgûl deck, issue 57, group 9: Voracious Bibliophile (D-574)
 
 - **Engine:** `spellCast` carries the chosen target count into cast triggers; `targetCountAtLeast` filters spells with targets, and `triggerTargetCount` reads the count fixed when the trigger was found.
 - **Parser:** "with one or more targets" selects that trigger filter; the first "draw that many cards" reads the count of targets on the spell that triggered.
 - **Proof:** `scenario-xx-trigger-target-count.test.ts` checks targeted and untargeted spells, while `convert-grammar-engine-voracious-bibliophile.test.ts` plays the real card with a spell that has two targets.
 
-## The Lord of the Nazgûl deck, issue 57, group 10: March of Swirling Mist (D-545)
+## The Lord of the Nazgûl deck, issue 57, group 10: March of Swirling Mist (D-575)
 
 - **Engine:** an optional hand-exile selection is made before X, recorded on the spell for its own cost reduction, and paid after mana. The new exile objects are retained in `StackData.exiledAsCost`.
 - **Parser:** reads the optional blue-card cost, the reduction for each card exiled this way, and the up-to-X phasing targets. When one Oracle line produces both face costs and static abilities, the compiler preserves both.
 - **Proof:** `convert-grammar-engine-march-of-swirling-mist.test.ts` covers selection and decline, cost reduction, X, up-to-X targets, exile and phasing.
 - **Regression:** the same mixed-output compiler fix preserves `Plumb the Forbidden`'s existing additional-cost and cast-trigger behavior (D-492); its parser and real-card engine integration regressions pass.
 
-## The Lord of the Nazgûl deck, issue 57, group 11: Fandaniel, Telophoroi Ascian (D-546)
+## The Lord of the Nazgûl deck, issue 57, group 11: Fandaniel, Telophoroi Ascian (D-576)
 
 - **Engine:** `playersMay.otherwise` can refer to the player who declined through `PlayerSelector` `declinedPlayer`. That seat is preserved through nested effects and paused selections. If a player has no legal candidate for an offered sacrifice choice, the choice is declined automatically; when `runsAs: 'chooser'` pauses, the chooser remains the player who sacrifices.
 - **Card data:** Fandaniel is supported through its hand-written engine fixture. Its triggered ability surveils after an instant or sorcery is cast; at its controller's end step, each opponent may sacrifice a nontoken creature, and only a decliner loses life based on the controller's instant and sorcery cards in their graveyard.
 - **Proof:** `scenario-xx-player-may-declined-player.test.ts` covers decline, acceptance, no eligible creature, graveyard counting, and fixture validation. `convert-grammar-engine-fandaniel.test.ts` verifies that the issue card loads as supported from the fixture.
 - **Limit:** the full may-sacrifice sentence is still not handled by the general parser, so parser-only import remains unsupported. The fixture uses the Oracle text supplied in issue 57; rulings and CR text were not independently available.
 
-## The Lord of the Nazgûl deck, issue 57, group 12: Lord of the Nazgûl (D-547)
+## The Lord of the Nazgûl deck, issue 57, group 12: Lord of the Nazgûl (D-577)
 
 - **Engine:** a static grant of `protection { from: 'ringBearer' }` uses the Ring-bearer designation already tracked by the Ring subsystem. The shared protection check makes targeting, damage, attachment and blocking read it. An instant or sorcery cast creates a 3/3 black Wraith token with menace; after creation, the trigger counts the controller's Wraiths, including Lord itself and the new token, and sets the matching group to base 9/9 through end of turn once the count reaches nine.
 - **Proof:** `scenario-xx-lord-of-the-nazgul.test.ts` checks the Wraith token and keywords, that a Ring-bearer can't block a protected Wraith, the eighth-cast threshold, the +1/+1 counter on Lord, and an unaffected Grizzly Bears. `convert-grammar-engine-lord-of-the-nazgul.test.ts` verifies that the issue card is loaded from its engine fixture.
 - **Limit:** the full text still uses the approved hand-written fixture route; the general parser does not read the Ring-bearer protection or group base-P/T clause. Oracle text came from issue 57; rulings and CR text were unavailable for independent verification.
 
-## The Lord of the Nazgûl deck, issue 57, group 13: Maskwood Nexus (D-548)
+## The Lord of the Nazgûl deck, issue 57, group 13: Maskwood Nexus (D-578)
 
 - **Engine:** the static `allCreatureTypes` effect adds the generated creature-type list in layer 4. Its `youControl` scope covers controlled creatures and creature spells; `youOwn` covers creature cards owned outside the battlefield. Printed subtypes remain. The token's printed changeling applies in every zone.
 - **Proof:** `scenario-xx-maskwood-nexus.test.ts` checks controlled creatures and owned hand cards; the fixture validator and cards importer acceptance test cover the full card and its custom token.
 - **Limit:** grammar-only import still does not parse these scopes. The fixture uses issue text; rulings and CR text were unavailable for independent verification.
 
-## The Lord of the Nazgûl deck, issue 57, group 14: Sauron's Ransom (D-549)
+## The Lord of the Nazgûl deck, issue 57, group 14: Sauron's Ransom (D-579)
 
 - **Engine and UI:** `revealAndSeparate.faceDownPile` privately gives the separator the top cards and makes pile 1 face down. The public event contains only the face-up pile's names and the hidden pile's size. The chooser's pending decision and preview omit hidden object IDs; the pile picker shows that public size and renders one face-down card back per hidden card. Choosing the hidden pile emits no card names. Piles move through the normal zone pipeline, then `ringTempts` resolves.
 - **Proof:** `scenario-xx-saurons-ransom.test.ts` checks the separator's card view, the chooser's redacted pending data, the public event, the hidden pile going to hand, hidden event names, and Ring temptation. The importer acceptance test checks the issue fixture.

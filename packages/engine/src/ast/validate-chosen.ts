@@ -3,7 +3,7 @@
  * choose a creature type / a color" (`asEntersChoose`, CR 614.12, 614.12a) and the references to "the
  * chosen type" and "the chosen color" (`chosenType`, `chosenColor`, a static `setTypes`). Entry-time
  * choices are linked (CR 607.2d): a reference reads only a choice made by the same object's own ability.
- * A resolving creature-type choice instead belongs to that spell's effect sequence (D-536). This file
+ * A resolving creature-type choice instead belongs to that spell's effect sequence (D-566). This file
  * only imports types, so `validate-parts.ts` can call it.
  */
 import type { Ability } from './types';

@@ -373,7 +373,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomesTargetSpell',
     // D-229: "casts their second spell each turn" (`castSpell` with `nth`).
     'castNth',
-    // D-535: "your first spell during each opponent's turn" (`castSpell` with `duringTurn`).
+    // D-565: "your first spell during each opponent's turn" (`castSpell` with `duringTurn`).
     'castDuringOpponentTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
     // (`notAsAttacker`) and "Whenever you tap one or more untapped creatures" (`batch`).
@@ -578,7 +578,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'payXLife',
     // D-386 (provisional): "Discard X cards" as an additional cost to cast a spell (an activated ability's cost refuses it).
     'discardX',
-    // D-545: optional exiling of any number of cards from hand as a spell's additional cost.
+    // D-575: optional exiling of any number of cards from hand as a spell's additional cost.
     'exileFromHand',
     'sacrifice',
     'removeCounters',
@@ -964,7 +964,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsDrawnThisTurn',
     // D-491: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
     'sacrificedAsCost',
-    // D-545: "for each card exiled this way" for a spell's additional cost.
+    // D-575: "for each card exiled this way" for a spell's additional cost.
     'exiledAsCost',
     // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
     'enteredX',
@@ -1139,7 +1139,7 @@ export const TRIGGER_FEATURES = [
   'becomesTargetSpell',
   /** "Whenever an opponent casts their second spell each turn" (CR 601.2i, D-229): the engine's `castSpell` with `nth`. */
   'castNth',
-  /** "Whenever you cast your first spell during each opponent's turn" (D-535): `castSpell` with `duringTurn`. */
+  /** "Whenever you cast your first spell during each opponent's turn" (D-565): `castSpell` with `duringTurn`. */
   'castDuringOpponentTurn',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
   'tappedBy',
@@ -1213,14 +1213,14 @@ export const SELECTOR_KINDS = [
   'copyForEach',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
   'singleTarget',
-  /** "with one or more targets" on a cast trigger (D-544). */
+  /** "with one or more targets" on a cast trigger (D-574). */
   'targetCountAtLeast',
   /** "Spells you cast from anywhere other than your hand" (CR 601.2a, D-235): the engine's `ObjectFilter.notCastFromHand`. */
   'notCastFromHand',
   'triggerSubject',
   'triggerActor',
   'bound',
-  /** The chosen type/color selectors (D-100, D-536), including the inverse chosen-type filter. */
+  /** The chosen type/color selectors (D-100, D-566), including the inverse chosen-type filter. */
   'chosenType',
   'notChosenType',
   'chosenColor',
@@ -1240,7 +1240,7 @@ export const SELECTOR_KINDS = [
   'attached',
   /** "Attacking creature" (CR 506.4, D-120): the engine's `ObjectFilter.attacking`. */
   'attacking',
-  /** "Nonattacking creatures" (CR 508.1k, D-543): the engine's `ObjectFilter.notAttacking`. */
+  /** "Nonattacking creatures" (CR 508.1k, D-573): the engine's `ObjectFilter.notAttacking`. */
   'notAttacking',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
@@ -1444,7 +1444,7 @@ export const STATIC_KINDS = [
   /** "~ can't block", "can't be blocked", "attacks each combat if able", "doesn't untap", "can't be countered" (D-094): the engine's `restriction`. */
   'restriction',
   'noMaximumHandSize',
-  /** A permanent gives creature objects every creature subtype in its stated scope (D-548). */
+  /** A permanent gives creature objects every creature subtype in its stated scope (D-578). */
   'allCreatureTypes',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */
   'additionalLandDrops',
@@ -1600,7 +1600,7 @@ export const AMOUNT_KINDS = [
   'opponentsWithMore',
   /** "That much" for the damage that caused a trigger (D-133): the engine's `triggerDamage`. */
   'triggerDamage',
-  /** Number of targets chosen for a spell in a cast trigger (D-544). */
+  /** Number of targets chosen for a spell in a cast trigger (D-574). */
   'triggerTargetCount',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
   'votesFor',
@@ -1608,7 +1608,7 @@ export const AMOUNT_KINDS = [
   'cardsDrawnThisTurn',
   /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
-  /** "For each card exiled this way" for a spell's additional cost (D-545): the engine's `exiledAsCost`. */
+  /** "For each card exiled this way" for a spell's additional cost (D-575): the engine's `exiledAsCost`. */
   'exiledAsCost',
   /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
   'enteredX',

@@ -1,6 +1,6 @@
 /**
  * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (Fact or Fiction,
- * D-303, D-549): the `revealAndSeparate` effect, run as one instruction that asks twice at most.
+ * D-303, D-579): the `revealAndSeparate` effect, run as one instruction that asks twice at most.
  *
  * In face-down mode, the separator looks privately, pile 1 stays hidden from the chooser, and public events report only pile 2's names and pile 1's size.
  * CR 700.3 (General): objects grouped into piles stay where they are (700.3c: the cards are still in the library while they are sorted), each is in exactly one pile (700.3a) and a

@@ -55,7 +55,7 @@ describe('the dimensions', () => {
       'payXLife',
       // D-386: "Discard X cards" as an additional cost to cast a spell.
       'discardX',
-      // D-545: an optional exile of any number of cards from hand as a spell cost.
+      // D-575: an optional exile of any number of cards from hand as a spell cost.
       'exileFromHand',
       'sacrifice',
       'removeCounters',

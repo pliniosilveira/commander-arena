@@ -321,7 +321,7 @@ export interface DeclareBlockersDecision extends DecisionBase {
   readonly candidates: readonly {
     readonly blocker: ObjectId;
     readonly canBlock: readonly ObjectId[];
-    /** This creature must block this turn if able (D-542). */
+    /** This creature must block this turn if able (D-572). */
     readonly mustBlock?: true;
   }[];
   /**
@@ -818,7 +818,7 @@ export interface ChooseOptionDecision extends DecisionBase {
     readonly otherTo: 'hand' | 'graveyard';
     readonly separator: SeatId;
     readonly receiver: SeatId;
-    /** Which pile is face down and its size; the chooser's view must omit its object IDs (D-549). */
+    /** Which pile is face down and its size; the chooser's view must omit its object IDs (D-579). */
     readonly faceDownPile?: 1 | 2;
     readonly faceDownCount?: number;
   };

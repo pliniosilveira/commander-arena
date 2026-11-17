@@ -184,7 +184,7 @@ function lowerFilterAt(
       anyOf.push(lowered.value);
     }
   }
-  // D-100, D-536: chosen-type filters read an entry choice or a type selected as this resolves.
+  // D-100, D-566: chosen-type filters read an entry choice or a type selected as this resolves.
   let chosen:
     | { chosenType: true }
     | { chosenColor: true }
