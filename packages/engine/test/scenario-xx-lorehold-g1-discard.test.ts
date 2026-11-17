@@ -1,11 +1,9 @@
 // Group 1 of the Lorehold Spirit deck (issue 86): "Whenever you discard a card, you may exile that card from your graveyard. If you do, you may play that card this turn." (Containment
-// Construct), "Whenever you discard one or more nonland cards, you may exile one of them from your graveyard. If you do, you may cast it this turn." (Conspiracy Theorist, a batch trigger of
-// `discarded`, the effect `exileFromTriggerCards` and the permission `mayPlay` with `castOnly`) and "Whenever this creature attacks, you may pay {1} and discard a card. If you do, draw a
-// card." (`mayPay` with a mana cost and a discard cost).
-// Pins: CR 701.9a (discard), CR 603.2 and 603.2c (a trigger for each card; one trigger for one or more cards discarded at once), CR 603.12 and 608.2c (an "if you do" reads what the
-// instruction before it did), CR 608.2d (the player chooses among the cards while the effect resolves), CR 400.7 (a card that left the graveyard is a new object: the trigger finds
-// nothing to exile), CR 601.2 and 305.1 (casting from exile at the timing of the type, playing a land from exile uses the land drop; "cast" gives no permission to play a land), CR 611.2a (the
-// permission lasts until end of turn), CR 118.3 (a cost that cannot be paid is not paid) and CR 702.35a (madness).
+// Construct: the trigger `discarded` of one card, `may` of an `exile` of the card, and `mayPlay` of it after "if you do"). The batch of discards and the payment of {1} and a discard are in
+// scenario-xx-lorehold-g1-discard-batch.test.ts.
+// Pins: CR 701.9a (discard), CR 603.2 and 603.2c (a trigger for each card discarded), CR 603.12 and 608.2c (an "if you do" reads what the instruction before it did), CR 400.7 (a card that
+// left the graveyard is a new object), CR 601.2 and 305.1 (casting from exile at the timing of the type; playing a land from exile uses the land drop), CR 611.2a (the permission lasts until
+// end of turn).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-lorehold-g1.ts); the real cards are played in packages/cards/test/convert-grammar-engine-lorehold-g1.test.ts.
 import { describe, expect, test } from 'vitest';
 import { syntheticCard, validateCard } from '../src/index';

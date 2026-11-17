@@ -1,7 +1,7 @@
 // Group 1 of the Lorehold Spirit deck (issue 86): "{T}: Mill two cards." and "{2}, Exile this artifact: Shuffle any number of target cards from your graveyard into your library."
 // (a shuffle of the targets into the library: `moveToZone` to the library of an any-number slot, then `shuffle`).
 // Pins: CR 701.24d (a library is shuffled even if no card is shuffled into it), CR 701.24a (the order of the library is random afterwards), CR 701.17a (mill: the top cards go to the
-// graveyard), CR 115.1 and 601.2c (any number of targets: none to as many as there are), CR 608.2b (a target that left the graveyard is not shuffled), CR 602.2 and 118.12 (the
+// graveyard), CR 115.1 and 601.2c (any number of targets: none to as many as there are), CR 602.2 and 118.1 (the
 // exile of the artifact is a cost, paid when the ability is activated), CR 404.1 (only cards of your own graveyard).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-lorehold-g1.ts); the real card is played in packages/cards/test/convert-grammar-engine-lorehold-g1.test.ts.
 import { describe, expect, test } from 'vitest';

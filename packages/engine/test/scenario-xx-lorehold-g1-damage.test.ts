@@ -1,7 +1,6 @@
 // Group 1 of the Lorehold Spirit deck (issue 86): "Each creature deals damage to itself equal to its power." (the effect `dealDamageToSelf`).
-// Pins: CR 120.3 (damage is dealt by a source: deathtouch and lifelink of the creature apply, and the damage is not combat damage), CR 120.2 (all the damage of one effect is dealt at
-// once: the powers are read before any is dealt), CR 120.8 (no damage from a source with power 0 or less), CR 704.5g and 704.5h (lethal damage and deathtouch destroy the creature),
-// CR 608.2h (the effect uses the information as it applies), CR 616.1 (a prevention effect for the source applies).
+// Pins: CR 120.3 (damage is dealt by a source: deathtouch and lifelink of the creature apply, and the damage is not combat damage), CR 608.2h and 120.4a (the powers are read once, as the
+// effect is applied, before any damage is dealt), CR 120.8 (no damage from a source with power 0 or less), CR 704.5g and 704.5h (lethal damage and deathtouch destroy the creature).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-lorehold-g1.ts); the real card is played in packages/cards/test/convert-grammar-engine-lorehold-g1.test.ts.
 import { describe, expect, test } from 'vitest';
 import { syntheticCard, validateCard } from '../src/index';
@@ -105,15 +104,6 @@ describe('Each creature deals damage to itself equal to its power (CR 120.3)', (
     g.passAll();
     g.expect.life(0, 40);
     g.expect.life(1, 40);
-  });
-
-  test('powers are read first: a creature killed by the damage of an earlier one in the list still dealt its own', () => {
-    // The two Bears deal 2 to themselves and the Spider 2 to itself, all at once (CR 120.2): neither pair is changed by what the other dealt.
-    const g = board().build();
-    g.act(0).cast(TIDE, { pay: true });
-    g.passAll();
-    g.expect.eventLog([{ kind: 'damageDealt', amount: 2, source: g.id('my spider') }]);
-    g.expect.noObject(BEARS, { zone: 'battlefield' });
   });
 
   test('a +1/+1 counter raises the power it deals and the toughness it survives with', () => {

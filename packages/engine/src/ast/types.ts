@@ -1415,7 +1415,7 @@ export type Effect =
   /**
    * "Each creature deals damage to itself equal to its power" (CR 120.3, 120.3a-e, 608.2c; Lorehold group 1): every object `objects` names is a source and its own
    * recipient, and is dealt damage equal to its power as the effect begins. Each is a source of its own damage, so deathtouch, lifelink, infect and wither apply as for any damage
-   * (CR 120.3), a prevention effect for that source applies, and the damage is not combat damage. Powers are read before any damage is dealt (all of it is dealt at once, CR 120.2).
+   * (CR 120.3), a prevention effect for that source applies, and the damage is not combat damage. Powers are read before any damage is dealt (CR 608.2h: the information is determined once, when the effect is applied; CR 120.4a speaks of damage dealt at the same time).
    * An object that is not a creature (no power), is not on the battlefield or has power 0 or less deals none (CR 120.8). `objects` is `each` or a reference (not a `choose`).
    */
   | {

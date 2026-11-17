@@ -111,7 +111,7 @@ export function runDealDamage(
 }
 
 /**
- * "Each creature deals damage to itself equal to its power" (CR 120.3, 120.2, 608.2h; Lorehold group 1): every object the selector names on the battlefield is the source and the recipient
+ * "Each creature deals damage to itself equal to its power" (CR 120.2b, 120.3, 608.2h; Lorehold group 1): every object the selector names on the battlefield is the source and the recipient
  * of one damage event of its own, as much as its power was as the effect began. All the powers are read first, from the state the instruction began with, so no damage dealt by an
  * earlier object of the list changes what a later one deals. An object with power 0 or less deals none (CR 120.8). Like every damage instruction it returns the question of a
  * replacement effect (CR 616.1) with nothing dealt, and runs again with the answer.
