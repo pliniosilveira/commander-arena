@@ -7,6 +7,7 @@ import type { GameView, ObjectView } from '@commander-arena/engine';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test, vi } from 'vitest';
 import { CardFace } from '../src/ui/board/CardFace';
+import { ExilePlayStrip } from '../src/ui/board/ExilePlayStrip';
 import { OtherZonesStrip } from '../src/ui/board/OtherZonesStrip';
 import { PreviewPanel } from '../src/ui/board/PreviewPanel';
 import { Tile } from '../src/ui/board/Tile';
@@ -246,13 +247,14 @@ test('an Adventure card in exile: the chip row, the zone list badge and the card
   const strip = renderToStaticMarkup(
     <StoreProvider store={live(session.store)}>
       <DecisionLayer>
+        <ExilePlayStrip view={view} />
         <OtherZonesStrip view={view} />
       </DecisionLayer>
     </StoreProvider>,
   );
   expect(strip).toContain('aria-label="Cast from exile"');
   expect(strip).toContain('aria-label="Cast from exile: Wise Owl"');
-  expect(strip).toContain('<b>Wise Owl</b>');
+  expect(strip).toContain('board-exile-play-name">Wise Owl<');
   expect(strip).not.toContain('Cast from your graveyard');
 
   const list = renderToStaticMarkup(

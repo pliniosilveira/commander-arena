@@ -257,10 +257,10 @@ test('Foretell: the button, our own card face down, cast for the foretell cost f
   await expect(viewer.locator('[data-exile-mark="Foretold"]')).toHaveCount(1);
   await expect(viewer.getByText('Yours')).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(page.locator('.board-flashback-chip', { hasText: 'Cast for' })).toHaveCount(0);
+  await expect(page.locator('.board-exile-play', { hasText: 'Cast for' })).toHaveCount(0);
 
   // From a later turn: "Cast for {1}{G}" above the hand, one click casts it.
-  const chip = page.locator('.board-flashback-chip', { hasText: 'Cast for {1}{G}' });
+  const chip = page.locator('.board-exile-play', { hasText: 'Cast for {1}{G}' });
   await playUntil(page, async () => (await noDialog(page)) && (await chip.count()) > 0);
   await expect(chip.first()).toHaveAttribute('aria-label', `Cast for {1}{G}: ${giant}`);
   // Full Control, so the spell stays on the stack for us to read.
