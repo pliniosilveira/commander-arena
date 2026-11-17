@@ -474,7 +474,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     !untappedByEffect &&
     request.tapped !== true &&
     !entersTapped(before, entering.abilities, enterCtx) &&
-    getSeat(state, enterController).life >= lifeOf(payment);
+    (lifeOf(payment) <= 0 || getSeat(state, enterController).life >= lifeOf(payment));
   // D-208 (CR 614.12, 701.20, 701.4): "you may reveal a Mountain or Plains card from your hand. If you don't, it enters tapped": the same question as a shock
   // land's, with nothing to pay. Nothing is asked when it enters tapped anyway or when no card (or permanent) qualifies.
   const revealRule = entering === null ? null : entersReveal(entering.abilities);

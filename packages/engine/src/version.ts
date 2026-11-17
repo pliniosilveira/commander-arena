@@ -15,4 +15,5 @@
 // 111: Support protection from the Ring-bearer designation and Lord of the Nazgûl's Wraith threshold (D-577).
 // 112: Apply Maskwood Nexus's all-creature-types effect to controlled and owned cards (D-578).
 // 113: Keep Sauron's Ransom's face-down pile identities private through resolution (D-579).
-export const ENGINE_VERSION = 113;
+// 114: A cost of no life is payable at a negative life total (D-581, issue 254); a targets decision slot carries the card's own target words (D-582).
+export const ENGINE_VERSION = 114;

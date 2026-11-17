@@ -117,14 +117,50 @@ describe('default stops (A18)', () => {
     }
   });
 
-  test('nothing stops on the opponent turn with an empty stack, even holding an instant', () => {
-    const v = view({
-      active: 1,
-      step: 'end',
-      hand: [bolt],
-      options: [{ kind: 'pass' }, cast(bolt)],
-    });
-    expect(shouldStop(v, DEFAULT_STOPS)).toBe(false);
+  test('nothing stops on the opponent turn with an empty stack before the end step, even holding an instant', () => {
+    for (const step of [
+      'upkeep',
+      'draw',
+      'precombatMain',
+      'beginningOfCombat',
+      'postcombatMain',
+    ] as const) {
+      const v = view({ active: 1, step, hand: [bolt], options: [{ kind: 'pass' }, cast(bolt)] });
+      expect(shouldStop(v, DEFAULT_STOPS), step).toBe(false);
+    }
+  });
+
+  test("the opponent's end step stops when the player can act (issue 56): the last window for an instant or flash before cleanup", () => {
+    const options = [{ kind: 'pass' }, cast(bolt)] as const;
+    // An instant in hand: stop. Nothing to do (no relevant action): pass through, as before.
+    expect(shouldStop(view({ active: 1, step: 'end', hand: [bolt], options }), DEFAULT_STOPS)).toBe(
+      true,
+    );
+    expect(
+      shouldStop(
+        view({ active: 1, step: 'end', hand: [bear], options: [{ kind: 'pass' }] }),
+        DEFAULT_STOPS,
+      ),
+    ).toBe(false);
+    // A flash creature and an activated ability count like an instant.
+    const flash = { ...card(12, ['creature']), keywords: ['flash'] };
+    expect(
+      shouldStop(
+        view({ active: 1, step: 'end', hand: [flash], options: [{ kind: 'pass' }, cast(flash)] }),
+        DEFAULT_STOPS,
+      ),
+    ).toBe(true);
+    const ability: PriorityOption = { kind: 'activate', object: objectId(40), abilityIndex: 0 };
+    expect(
+      shouldStop(
+        view({ active: 1, step: 'end', options: [{ kind: 'pass' }, ability] }),
+        DEFAULT_STOPS,
+      ),
+    ).toBe(true);
+    // The player's own end step is not this window: their own stops decide.
+    expect(shouldStop(view({ active: 0, step: 'end', hand: [bolt], options }), DEFAULT_STOPS)).toBe(
+      false,
+    );
   });
 
   test('a decision other than priority always stops', () => {

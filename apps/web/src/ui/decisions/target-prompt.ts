@@ -4,7 +4,7 @@
  * player is choosing in their own words. Kept out of `model.ts`, which is large already.
  */
 import type { TargetChoiceSpec, TargetsDecision } from '@commander-arena/engine';
-import { isEquip, triggerCondition, triggerGist } from './ability-label';
+import { isEquip, targetText, triggerCondition, triggerGist } from './ability-label';
 import { type Index, nameOf, stackName } from './lookup';
 import { modeText } from './modes-picker';
 import { modeTime, type SlotStatus } from './targeting';
@@ -55,19 +55,23 @@ export function targetsWord(spec: TargetChoiceSpec): string {
     const most = WORDS[spec.max] ?? String(spec.max);
     return spec.min === 0 ? `up to ${most} other targets` : `${most} other targets`;
   }
-  return spec.max === 1 ? 'a target' : 'targets';
+  // Issue 250: "up to one target creature you control" (a slot with `min` 0) must not read as a required target.
+  if (spec.max === 1) return spec.min === 0 ? 'up to one target' : 'a target';
+  return 'targets';
 }
 
 /** "Mode 2" for a slot of a modal spell or ability; with several slots in one mode, "Mode 2, target 2"; the second time a mode is chosen, "Mode 2, time 2". */
 export function slotLabel(specs: readonly TargetChoiceSpec[], at: number): string {
   const spec = specs[at];
-  if (spec?.mode === undefined) return `Slot ${at + 1}`;
+  // A slot with several in the decision says what it is for, in the card's words: "Slot 2: target creature you control".
+  const words = spec?.target === undefined ? '' : `: ${targetText(spec.target)}`;
+  if (spec?.mode === undefined) return `Slot ${at + 1}${words}`;
   const time = modeTime(specs, spec);
   const same = specs.filter(
     (s) => s.mode === spec.mode && (s.instance ?? 0) === (spec.instance ?? 0),
   );
   const head = `Mode ${spec.mode + 1}${time === null ? '' : `, time ${time}`}`;
-  return same.length > 1 ? `${head}, target ${same.indexOf(spec) + 1}` : head;
+  return same.length > 1 ? `${head}, target ${same.indexOf(spec) + 1}${words}` : head;
 }
 
 /**
@@ -129,5 +133,11 @@ export function targetsPrompt(
   if (slot.spec.divide !== undefined) {
     return `Choose targets for ${source}, then divide ${slot.spec.divide} damage among them.`;
   }
-  return `Choose ${targetsWord(slot.spec)} for ${source}.`;
+  const plain = `Choose ${targetsWord(slot.spec)} for ${source}.`;
+  // A spell with several targets (different effects, one target each): which slot this is and what it takes.
+  const at = decision.specs.findIndex((s) => s.specId === slot.spec.specId);
+  if (decision.specs.length > 1 && at >= 0 && slot.spec.target !== undefined) {
+    return `${plain} Slot ${at + 1} of ${decision.specs.length}: ${targetText(slot.spec.target)}.`;
+  }
+  return plain;
 }

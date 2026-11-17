@@ -257,7 +257,10 @@ function immediateRefusal(
     if (isSummoningSick(state, source)) return 'it is summoning sick';
   }
   // CR 119.4: life can be paid only if the life total is at least the amount.
-  if (costs.life > getSeat(state, seat).life) return `you have less than ${costs.life} life`;
+  // A cost of no life is payable at any life total, a negative one included (the player cannot lose the game, CR 104.3b, issue 254).
+  if (costs.life > 0 && costs.life > getSeat(state, seat).life) {
+    return `you have less than ${costs.life} life`;
+  }
   for (const { counter, count } of costs.counters) {
     if (source.zone !== 'battlefield' || (source.counters[counter] ?? 0) < count) {
       return `it has fewer than ${count} ${counter} counters`;
