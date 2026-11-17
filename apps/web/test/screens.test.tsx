@@ -152,10 +152,10 @@ describe('Menu', () => {
     expect(onlyPrecons).toContain('Commander: Cmd One');
     expect(onlyPrecons).not.toContain('Back');
     expect(onlyPrecons).toContain('>Select<');
-    for (const label of ['Random all', 'Random precon', 'Random from yours'])
+    for (const label of ['Random all', 'Random precon', 'Random mine'])
       expect(onlyPrecons).toContain(label);
     // No deck was saved: its random button is disabled.
-    expect(onlyPrecons).toMatch(/<button[^>]*disabled=""[^>]*>Random from yours/);
+    expect(onlyPrecons).toMatch(/<button[^>]*disabled=""[^>]*>Random mine/);
     expect(onlyPrecons).not.toMatch(/<button[^>]*disabled=""[^>]*>Random precon/);
     expect(onlyPrecons).toContain('name="human-deck"');
   });

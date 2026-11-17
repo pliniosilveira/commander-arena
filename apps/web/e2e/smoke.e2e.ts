@@ -45,10 +45,10 @@ test('the random buttons mark a deck and Select confirms it', async ({ page }) =
     'Cancel',
     'Random all',
     'Random precon',
-    'Random from yours',
+    'Random mine',
   ]);
   // Nothing is saved in a fresh browser, so there is nothing to pick from.
-  await expect(dialog.getByRole('button', { name: 'Random from yours' })).toBeDisabled();
+  await expect(dialog.getByRole('button', { name: 'Random mine' })).toBeDisabled();
   await dialog.getByRole('button', { name: 'Random precon' }).click();
   await expect(dialog.getByRole('radio', { checked: true })).toHaveCount(1);
   await dialog.getByRole('button', { name: 'Random all' }).click();

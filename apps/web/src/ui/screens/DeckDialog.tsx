@@ -19,7 +19,7 @@ const TABS: readonly { readonly id: DeckTab; readonly label: string }[] = [
 const RANDOMS: readonly { readonly scope: RandomScope; readonly label: string }[] = [
   { scope: 'all', label: 'Random all' },
   { scope: 'precon', label: 'Random precon' },
-  { scope: 'saved', label: 'Random from yours' },
+  { scope: 'saved', label: 'Random mine' },
 ];
 
 export function DeckDialog({
