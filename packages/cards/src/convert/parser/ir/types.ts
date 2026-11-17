@@ -259,7 +259,11 @@ export interface IrFilter {
    * creature type or the color that the source of the ability chose as it entered.
    */
   readonly chosen?: 'type' | 'color';
+  /** "aren't of the chosen type" after a resolving creature-type choice (D-566). */
+  readonly notChosenType?: true;
   readonly stackKind?: 'spell' | 'ability' | 'triggeredAbility';
+  /** A cast trigger that counts any chosen targets (D-574). */
+  readonly targetCountAtLeast?: number;
   /** "with a single target" (stage P38, D-182, CR 115.9a): a spell or ability that was put on the stack with exactly one target. */
   readonly singleTarget?: true;
   /** "that targets a creature" (stage P49, D-206, CR 115.1, 601.2c): a spell with a chosen target that is an object of this kind (a card type). */
@@ -276,6 +280,8 @@ export interface IrFilter {
   readonly attackingOrBlocking?: true;
   /** "attacking creatures" (stage P31, CR 508.1k): creatures that are attacking, whoever they attack. */
   readonly attacking?: true;
+  /** "nonattacking creatures" (D-573): battlefield creatures not declared as attackers now. */
+  readonly notAttacking?: true;
   /**
    * "monocolored", "multicolored", "that are one or more colors" (stage P31, CR 105.2): the number of colors the object has, compared
    * with a whole number.
@@ -285,6 +291,8 @@ export interface IrFilter {
   readonly manaValueX?: true;
   /** "with mana value X or less" (stage P68, D-230, CR 202.3): at most the X the sentence defines ("..., where X is this creature's power"). Only a target reads it. */
   readonly manaValueAtMostX?: true;
+  /** A target's mana value is at most an amount read as the spell resolves (Drown in the Loch, CR 202.3). */
+  readonly manaValueAtMostAmount?: IrAmount;
   /** "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga. */
   readonly historic?: true;
   /** "modified" (D-416, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls (the engine's `modified`). */
@@ -464,6 +472,9 @@ export type IrAmount =
     }
   // Stage P29 (D-133): "you gain that much life": the damage of the event that caused the trigger
   | { readonly kind: 'triggerDamage'; readonly span: Span }
+  // Galadriel deck, group 3 (CR 706.2): "Scry X, where X is the result": the natural result of the die rolled earlier in the text
+  | { readonly kind: 'dieResult'; readonly span: Span }
+  | { readonly kind: 'triggerTargetCount'; readonly span: Span }
   // Stage P34 (D-152, CR 701.57): "a number of tapped Treasure tokens equal to the difference" between 10 and the mana value of the card discovered
   | { readonly kind: 'shortfall'; readonly limit: number; readonly span: Span }
   // Stage P39 (D-184, CR 601.2h): "the amount of mana spent to cast it", "for each mana from an artifact source spent to cast it"; `fromType` is the
@@ -477,7 +488,9 @@ export type IrAmount =
       readonly span: Span;
     }
   // Stage P34 (D-152, CR 400.7): "for each of those cards that are still exiled", the cards an earlier instruction of the same text exiled
-  | { readonly kind: 'exiledStillThere'; readonly span: Span };
+  | { readonly kind: 'exiledStillThere'; readonly span: Span }
+  /** Number of cards selected for the spell's optional additional exile cost (D-575). */
+  | { readonly kind: 'exiledAsCost'; readonly span: Span };
 
 export interface IrDuration extends IrNode {
   readonly kind: 'duration';
@@ -522,6 +535,10 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'opponentsAtLeast'; readonly atLeast: IrAmount }
     // "~ was kicked", "it was kicked" (CR 702.33d); `who` is the word the text used for the object
     | { readonly kind: 'kicked'; readonly who: 'self' | 'it' }
+    // "this is the second time this ability has resolved this turn" (Galadriel deck group 1, CR 608.2c): the resolutions of the triggered ability, this one included
+    | { readonly kind: 'abilityResolvedTimes'; readonly times: number }
+    // "you chose a creature other than ~ as your Ring-bearer" (Galadriel deck group 1, CR 701.54a): the creature the Ring tempted the controller to choose, not the permanent itself
+    | { readonly kind: 'ringBearerChosen' }
     // "it isn't being declared as an attacker" (Hylda deck group 1, D-510, CR 508.1f): part of the event of "becomes tapped", read by the trigger's lowering
     | { readonly kind: 'notDeclaredAttacker' }
     // "you control a commander" (CR 903.3d), stage P13; stage P29: "you control your commander" (`yours`, CR 903.3)
@@ -689,6 +706,7 @@ export type IrCost = IrNode &
         readonly named?: true;
       }
     | { readonly kind: 'exile'; readonly what: IrNoun }
+    | { readonly kind: 'exileFromHand'; readonly what: IrNoun }
     // "Discard this card" (stage P68, D-229, CR 701.9, 113.6b): the card itself, from the hand; "Exile ~" (CR 118.1): the permanent itself
     | { readonly kind: 'discardThis' }
     // "Reveal this card from your hand" (Gisa deck, group 4, D-462, CR 701.20a, 113.6b): the card itself is shown, from the hand
@@ -904,6 +922,12 @@ export interface IrToken extends IrNode {
     readonly colors: readonly string[];
     readonly subtypes: readonly string[];
   };
+  /**
+   * "..., except it's not legendary and its starting loyalty is 1" (Galadriel deck group 3, CR 707.9b, 205.4a, 306.5b): with `copyOf`, the copy has no legendary supertype
+   * (`copyNotLegendary`) and the loyalty it enters with (`copyStartingLoyalty`, a copiable value of a planeswalker).
+   */
+  readonly copyNotLegendary?: true;
+  readonly copyStartingLoyalty?: number;
   /** "create two tapped Treasure tokens" (stage P28, CR 110.5b): the tokens enter tapped. */
   readonly tapped?: true;
   readonly count: IrAmount;
@@ -1063,6 +1087,8 @@ export interface IrTrigger extends IrNode {
   readonly step?: 'draw' | 'main1' | 'beginCombat' | 'combatEnd' | 'main2' | 'upkeep' | 'endStep';
   /** 'drawn': the nth card the player draws each turn ("your second card each turn", CR 121.1). */
   readonly nth?: number;
+  /** 'cast': only while the active player is an opponent of this ability's controller. */
+  readonly duringTurn?: 'opponent';
   /** 'attacks' alone (stage P21, CR 506.5): it triggers only when the creature is the only one declared as an attacker. */
   readonly alone?: true;
   /** 'becomesTarget' (stage P36, D-178, CR 603.2): "becomes the target of a spell", only a spell triggers it, not an ability. */
@@ -1163,7 +1189,8 @@ export type IrRestrictionKind =
   | 'cantBeCountered'
   // "can't be blocked by more than one creature" (stage P29, D-133, CR 509.1b)
   | 'cantBeBlockedByMoreThanOne'
-  | 'mustBeBlocked';
+  | 'mustBeBlocked'
+  | 'mustBlock';
 
 export type IrStaticEffect =
   | { readonly kind: 'pt'; readonly power: number; readonly toughness: number }
@@ -1244,6 +1271,7 @@ export type IrStaticEffect =
   | {
       readonly kind: 'additionalCost';
       readonly costs: readonly IrCost[];
+      readonly optional?: true;
       /**
        * "..., sacrifice an artifact or creature or pay {4}." (stage P38, D-182, CR 118.8, 601.2b): the second way the cost is paid, when the line
        * says two ("A or B"); `costs` is then the first way, of one cost.
@@ -1281,6 +1309,8 @@ export type IrStaticEffect =
   | { readonly kind: 'attackTax'; readonly cost: IrCost; readonly planeswalkers?: true }
   /** "You may choose not to untap ~ during your untap step." (stage P24, D-125, CR 502.3). The subject is `~`. */
   | { readonly kind: 'optionalUntap' }
+  /** "~ saddles Mounts and crews Vehicles as though its power were 2 greater." (Galadriel deck group 3, CR 702.122a, 702.171a). The subject is `~`. */
+  | { readonly kind: 'crewSaddleBonus'; readonly amount: number }
   /**
    * "Untap all creatures you control during each other player's untap step." (stage P68, D-229, CR 502.3). The subject is `you`; with `self` (D-320,
    * "Untap ~ during each other player's untap step.") the permanent itself untaps and the subject is `~`.
@@ -1292,8 +1322,15 @@ export type IrStaticEffect =
   | { readonly kind: 'cantBeBlockedBy'; readonly blockers: IrFilter }
   /** "have base power and toughness 5/3" (stage P31, CR 613.4b): the subject's power and toughness are set in layer 7b. */
   | { readonly kind: 'basePt'; readonly power: number; readonly toughness: number }
-  /** "are Juggernauts in addition to their other creature types" (stage P31, CR 205.1b, 613.1d): creature types added in layer 4. */
-  | { readonly kind: 'addTypes'; readonly subtypes: readonly string[] }
+  /**
+   * "are Juggernauts in addition to their other creature types" (stage P31, CR 205.1b, 613.1d): creature types added in layer 4. `types`
+   * (Galadriel deck, group 2, D-541, "Nontoken creatures you control are Forest lands in addition to their other types"): card types added with them.
+   */
+  | {
+      readonly kind: 'addTypes';
+      readonly subtypes: readonly string[];
+      readonly types?: readonly string[];
+    }
   /** "You may cast artifact spells as though they had flash." (stage P31, CR 601.3b, 702.8a). The subject is `you`. */
   | { readonly kind: 'castAsThoughFlash'; readonly spells: IrFilter }
   /** "Your opponents can't cast spells with mana value 3 or less." (stage P70, D-282, CR 101.2, 601.2). The subject is `you`. */
@@ -1469,6 +1506,8 @@ export interface IrKeyword extends IrNode {
   readonly kind: 'keyword';
   readonly name: string;
   readonly params: readonly IrArg[];
+  /** What Gift gives when its line names the gift. */
+  readonly gift?: 'card' | 'tappedFish';
   /** The cost of a keyword that has one: "Cycling {2}" (CR 702.29a). */
   readonly cost?: readonly IrCost[];
   /** "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type of the creature the equip ability attaches to. */
@@ -1596,6 +1635,8 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'opponentsWithMore',
   'thisWay',
   'triggerDamage',
+  'dieResult',
+  'triggerTargetCount',
   'shortfall',
   'exiledStillThere',
   'manaSpent',

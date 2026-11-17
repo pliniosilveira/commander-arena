@@ -252,6 +252,20 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:scries']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'scries', who });
     }
+    case 'surveils': {
+      // "Whenever you scry or surveil" (Galadriel deck, group 1, CR 701.25): the player is relative to the controller of the ability.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:surveils']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'surveils', who });
+    }
+    case 'rollsHighest': {
+      // "Whenever you roll a die's highest natural result" (Galadriel deck, group 3, CR 706.1a, 706.2): the player is relative to the controller of the ability.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:rollsHighest']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'rollsHighest', who });
+    }
     case 'dies':
     case 'blocks':
     case 'becomesBlocked':
@@ -502,9 +516,19 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (!filter.ok) return filter;
       // "an opponent casts their second spell each turn" (stage P68, D-229, CR 601.2i): the caster's nth spell of the turn.
       if (t.nth !== undefined) {
-        const missing = missingFeatures(['trigger:castNth']);
+        const missing = missingFeatures(
+          t.duringTurn === undefined
+            ? ['trigger:castNth']
+            : ['trigger:castNth', 'trigger:castDuringOpponentTurn'],
+        );
         if (missing.length > 0) return failure(t, missing);
-        return ok({ kind: 'castSpell', filter: filter.value, by, nth: t.nth });
+        return ok({
+          kind: 'castSpell',
+          filter: filter.value,
+          by,
+          nth: t.nth,
+          ...(t.duringTurn === undefined ? {} : { duringTurn: t.duringTurn }),
+        });
       }
       return ok({ kind: 'castSpell', filter: filter.value, by });
     }
@@ -571,6 +595,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'crimeCommitted',
       'tokenCreated',
       'scries',
+      'surveils',
+      'rollsHighest',
     ].includes(only.event) &&
       only.actor !== undefined) ||
     ((only.event === 'dealsCombatDamage' ||
@@ -800,18 +826,21 @@ function paysThatMuchLife(clause: IrClause): boolean {
  */
 function eventAmountThatMany(ability: Triggered): Triggered {
   const events = [ability.trigger, ...(ability.trigger.alternatives ?? [])];
-  if (
-    ability.modal !== undefined ||
-    !events.every((e) => e.event === 'lifeGained' || e.event === 'noncombatDamageDealt')
-  ) {
-    return ability;
-  }
+  if (ability.modal !== undefined) return ability;
+  const castTargetCount = events.every(
+    (e) => e.event === 'cast' && e.subject?.filter.targetCountAtLeast !== undefined,
+  );
+  const eventDamage = events.every(
+    (e) => e.event === 'lifeGained' || e.event === 'noncombatDamageDealt',
+  );
+  if (!castTargetCount && !eventDamage) return ability;
+  const eventAmount = castTargetCount ? 'triggerTargetCount' : 'triggerDamage';
   let counted = false;
   const retarget = (amount: IrAmount): IrAmount => {
     switch (amount.kind) {
       case 'thisWay':
         return amount.thatMany === true && !counted
-          ? { kind: 'triggerDamage', span: amount.span }
+          ? { kind: eventAmount, span: amount.span }
           : amount;
       case 'half':
       case 'multiple':
@@ -929,6 +958,13 @@ export function lowerTriggered(
     ctx.interveningCondition = false;
     if (!lowered.ok) return lowered;
     interveningIf = lowered.value;
+    // "if you chose a creature other than ~ as your Ring-bearer" (Galadriel deck, group 1, CR 701.54a): only the tempting of the Ring chooses a creature; the engine reads it from that event.
+    if (
+      interveningIf.kind === 'ringBearerChosen' &&
+      !triggers.every((t) => t.kind === 'ringTempted')
+    ) {
+      return failure(ifWritten, []);
+    }
   }
   // "When ~ enters during the declare attackers step" (stage P31, D-140, CR 603.4): the step is checked as the event happens and as the
   // ability resolves, which is the engine's intervening `duringStep`, joined with any "if" the text has.
@@ -1280,6 +1316,8 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:tapBatch',
   'trigger:notAsAttacker',
   'trigger:scries',
+  'trigger:surveils',
+  'trigger:rollsHighest',
   'ability:oncePerTurn',
   'ability:doOnlyOnceEachTurn',
   'condition:duringStep',

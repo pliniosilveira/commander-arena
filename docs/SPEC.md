@@ -218,7 +218,7 @@ The player-facing request phrases were removed with the pipeline. The owner asks
 
 - `pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build` pass at every milestone, enforced by CI. The commands and what to run while working are in `AGENTS.md`.
 - **No stubs in supported paths.** Code reachable from supported features has no TODO placeholders, fake return values or "simplified" logic. Deferred work goes in `docs/ROADMAP.md`. Anything unsupported is detected and flagged, never silently skipped.
-- **Performance budgets:** `applyAction` under 5 ms and `getLegalActions` under 20 ms in typical board states; AI decisions within 5 s (D-172); animations at 60 fps. Not yet verified as a whole (`docs/STATUS.md`).
+- **Performance budgets:** `applyAction` under 5 ms and `getLegalActions` under 20 ms in typical board states; AI decisions within 5 s (D-172); animations at 60 fps. Not yet verified as a whole.
 - **Scenario tests** use the scenario DSL (`@commander-arena/engine/testing`, A12): a builder that writes a precise state, drives everything through `applyAction` and asserts. Every scenario test, and every test written for card support, uses it.
 
 ### Required scenario tests
@@ -270,7 +270,6 @@ Together with the code, these are the project's long-term memory: a future sessi
 |---|---|
 | `AGENTS.md`, `CLAUDE.md` | Standing instructions for any coding agent (setup, commands, codebase rules). `CLAUDE.md` imports `AGENTS.md`. |
 | `docs/SPEC.md` | This document. Changed only with the owner's approval. |
-| `docs/STATUS.md`, `docs/progress/M<n>.md` | The handoff file (current state, next steps, how to run) and the per-milestone reports (A22). |
 | `docs/ARCHITECTURE.md` | Module map, state model, data flow; real and planned kept apart. |
 | `docs/DECISIONS.md` | Decision log, one entry per decision (template at its top). |
 | `docs/rules/` | The CR text, `RULES_VERSION.md` and bulletins. |
@@ -278,13 +277,11 @@ Together with the code, these are the project's long-term memory: a future sessi
 | `docs/CARD_SUPPORT_PLAYBOOK.md` | The procedure of 8.3 and its lessons learned. |
 | `docs/ROADMAP.md` | Deferred work and known limitations. |
 | `docs/CORPUS.md`, `reports/` | The corpus and coverage tooling and its generated reports. |
-| `docs/design/`, `docs/proposals/` | Implemented design proposals; proposals awaiting approval. |
-| `docs/PRIOR_ART.md` | Other projects studied, with the license limits on reuse. |
 | `README.md` | How to run, how to request card support, known limitations, credits and the Fan Content Policy notice. |
 
 ## 14. How to work
 
-- Work milestone by milestone. At the end of each: all checks pass, documents are updated, a short report goes in `docs/progress/M<n>.md` (what is done, test status, coverage numbers, known gaps, decisions), and the work is committed on its branch.
+- Work milestone by milestone. At the end of each: all checks pass, documents are updated, a short report goes in the pull request (what is done, test status, coverage numbers, known gaps, decisions), and the work is committed on its branch.
 - Stop for the owner's review at checkpoints and for S-class proposals; otherwise make the most reasonable decision consistent with the CR and this specification, record it in `docs/DECISIONS.md` and continue.
 - When unsure about a rule, look it up with `pnpm rule` instead of relying on memory, then add a test that pins the behavior.
 - Prefer small, well-named modules, under about 400 lines where practical.
@@ -293,14 +290,14 @@ Together with the code, these are the project's long-term memory: a future sessi
 
 | # | Milestone | Status |
 |---|---|---|
-| M0 | Foundations: monorepo, tooling, CI, boundary lint rule, documents, CR text | Done (`docs/progress/M0.md`) |
-| M1 | Engine core, headless: state, zones, identity, seeded RNG, turns, priority, stack, SBAs, mana, payment planner, mulligan, commander setup and tax; the scenario DSL | Done (`docs/progress/M1.md`) |
-| M2 | Combat: all steps, combat keywords, damage division, planeswalkers and battles as attack targets, commander damage | Done (`docs/progress/M2.md`) |
-| M3 | First playable: the web UI on the Worker architecture, a full 1v1 game, static deploy | Done (`docs/progress/M3.md`) |
-| M4 | Card data and deck import: decklist parser, Scryfall client and queue, cache, validation, commander selection, coverage report, "Why unsupported?", versioned support status | Done (`docs/progress/M4.md`) |
-| M5 | The ability system: AST and interpreter, triggered, activated and static abilities, layers, replacement and prevention, targeting, keywords, tokens, Equipment, Auras, Vehicles, the multi-face layouts, `docs/MECHANICS.md` | Done (`docs/progress/M5.md`) |
-| M6 | Oracle parser growth, coverage tooling, the card support procedure and playbook | Done (`docs/progress/M6.md`) |
-| M7 | The stronger AI: `determinize`, evaluator, `GreedyAgent`, `HeuristicAgent`, `pnpm ai:arena`, property and soak tests | Done (`docs/progress/M7.md`) |
+| M0 | Foundations: monorepo, tooling, CI, boundary lint rule, documents, CR text | Done |
+| M1 | Engine core, headless: state, zones, identity, seeded RNG, turns, priority, stack, SBAs, mana, payment planner, mulligan, commander setup and tax; the scenario DSL | Done |
+| M2 | Combat: all steps, combat keywords, damage division, planeswalkers and battles as attack targets, commander damage | Done |
+| M3 | First playable: the web UI on the Worker architecture, a full 1v1 game, static deploy | Done |
+| M4 | Card data and deck import: decklist parser, Scryfall client and queue, cache, validation, commander selection, coverage report, "Why unsupported?", versioned support status | Done |
+| M5 | The ability system: AST and interpreter, triggered, activated and static abilities, layers, replacement and prevention, targeting, keywords, tokens, Equipment, Auras, Vehicles, the multi-face layouts, `docs/MECHANICS.md` | Done |
+| M6 | Oracle parser growth, coverage tooling, the card support procedure and playbook | Done |
+| M7 | The stronger AI: `determinize`, evaluator, `GreedyAgent`, `HeuristicAgent`, `pnpm ai:arena`, property and soak tests | Done |
 | M8 | The full Arena-style UI (section 10) | Built as slices together with the M9 track (D-138 to D-153); no separate report |
 | M9 | v1 complete: precons built from supported cards with snapshots; performance budgets; README complete | Precons done (D-137 and the card slices); leftovers: the performance budgets (12) and the README pass (`docs/STATUS.md`). Save and resume, replay export and import, and the three-card support-loop exercise were removed (D-165, D-166, D-167) |
 | M10, M11 | v2: the multiplayer engine, then the multiplayer UI and AI | Not started (`docs/ROADMAP.md`) |

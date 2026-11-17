@@ -1,10 +1,10 @@
 /**
  * Validation of the choice a permanent makes as it enters and of what reads it (D-100): "As this enters,
  * choose a creature type / a color" (`asEntersChoose`, CR 614.12, 614.12a) and the references to "the
- * chosen type" and "the chosen color" (`chosenType`, `chosenColor`, a static `setTypes`). The two kinds of
- * ability are linked (CR 607.2d): a reference reads only a choice made by the same object's own ability,
- * so a card (or token definition) that refers to a choice must ask for it, and ask at most one question as
- * it enters. This file only imports types, so `validate-parts.ts` can call it.
+ * chosen type" and "the chosen color" (`chosenType`, `chosenColor`, a static `setTypes`). Entry-time
+ * choices are linked (CR 607.2d): a reference reads only a choice made by the same object's own ability.
+ * A resolving creature-type choice instead belongs to that spell's effect sequence (D-566). This file
+ * only imports types, so `validate-parts.ts` can call it.
  */
 import type { Ability } from './types';
 import type { AstIssue } from './validate-base';
@@ -24,6 +24,7 @@ function referencedChoices(value: unknown, found: Set<Choice>): void {
   }
   const o = value as Record<string, unknown>;
   if (o.chosenType === true) found.add('creatureType');
+  if (o.notChosenType === true) found.add('creatureType');
   if (o.chosenColor === true) found.add('color');
   // D-149: "Add one mana of the chosen color" reads the same choice.
   if (o.kind === 'chosenColor') found.add('color');
@@ -35,6 +36,16 @@ function referencedChoices(value: unknown, found: Set<Choice>): void {
     if (key === 'definition' && o.kind === 'custom') continue;
     referencedChoices(v, found);
   }
+}
+
+function asksCreatureTypeWhileResolving(value: unknown): boolean {
+  if (value === null || typeof value !== 'object') return false;
+  if (Array.isArray(value)) return value.some(asksCreatureTypeWhileResolving);
+  const o = value as Record<string, unknown>;
+  if (o.kind === 'chooseCreatureType') return true;
+  return Object.entries(o).some(
+    ([key, child]) => key !== 'definition' && asksCreatureTypeWhileResolving(child),
+  );
 }
 
 /** Every option name a `chosenOption` condition inside the value refers to (D-151). */
@@ -125,6 +136,7 @@ export function chosenIssues(
   const used = new Set<Choice>();
   referencedChoices(abilities, used);
   referencedChoices(others, used);
+  const resolutionTypeChoice = asksCreatureTypeWhileResolving(others);
   // D-151: a `chosenOption` names one of the options the permanent chooses among.
   const names = new Set<string>();
   referencedOptionNames(abilities, names);
@@ -145,7 +157,7 @@ export function chosenIssues(
     }
   }
   for (const choice of used) {
-    if (!asked.includes(choice)) {
+    if (!asked.includes(choice) && !(choice === 'creatureType' && resolutionTypeChoice)) {
       out.push({
         path,
         message:

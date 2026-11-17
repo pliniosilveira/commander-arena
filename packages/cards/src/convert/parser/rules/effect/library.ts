@@ -490,12 +490,86 @@ export const EFFECT_LOOK_TAKE_BOTTOM = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.look-take-one-top`: "Look at the top five cards of your library. Put one of them into
+ * your hand and the rest on top of your library in any order" (CR 401.2, 401.4). The cards put
+ * into the hand are not revealed; the remaining cards are reordered on top.
+ */
+export const EFFECT_LOOK_TAKE_ONE_TOP = defineRule<Clauses>({
+  id: 'effect.look-take-one-top',
+  family: 'effect',
+  leading: ['look'],
+  cites: ['CR 401.2 (Library)', 'CR 401.4 (Library)', 'CR 701.20a (Reveal)'],
+  examples: [
+    'look at the top five cards of your library. put one of them into your hand and the rest on top of your library in any order',
+    'look at the top three cards of your library. put one of them into your hand and the rest on top of your library in any order',
+    'look at the top 4 cards of your library. put one of them into your hand and the rest on top of your library in any order',
+  ],
+  rejects: [
+    'look at the top one card of your library. put one of them into your hand and the rest on top of your library in any order',
+    'look at the top five cards of your library. put two of them into your hand and the rest on top of your library in any order',
+    'look at the top five cards of your library. put one of them into your hand and the rest on top of your library',
+    'look at the top five cards of target player’s library. put one of them into your hand and the rest on top of your library in any order',
+    'look at the top five cards of your library. put one of them into your hand and the rest on the bottom of your library in any order',
+    'look at the top x cards of your library. put one of them into your hand and the rest on top of your library in any order',
+  ],
+  parse: single(
+    'effect.look-take-one-top',
+    satisfy(
+      sequence(
+        literal('look at the top '),
+        AT_LEAST(2),
+        literal(
+          ' cards of your library. put one of them into your hand and the rest on top of your library in any order',
+        ),
+      ),
+      ([, count]) => numberOf(count) > 1,
+    ),
+    ([, count]) => ({ verb: 'lookTakeOneTop', args: { count } }),
+  ),
+});
+
+/** `effect.look-take-one-bottom`: the two-card "one ... the other on the bottom" form (Sleight of Hand). */
+export const EFFECT_LOOK_TAKE_ONE_BOTTOM = defineRule<Clauses>({
+  id: 'effect.look-take-one-bottom',
+  family: 'effect',
+  leading: ['look'],
+  cites: ['CR 401.2 (Library)', 'CR 401.4 (Library)', 'CR 701.20a (Reveal)'],
+  examples: [
+    'look at the top two cards of your library. put one of them into your hand and the other on the bottom of your library',
+    'look at the top 2 cards of your library. put one of them into your hand and the other on the bottom of your library',
+  ],
+  rejects: [
+    'look at the top three cards of your library. put one of them into your hand and the other on the bottom of your library',
+    'look at the top two cards of your library. put one of them into your hand and the rest on the bottom of your library in a random order',
+    'look at the top two cards of your library. put one of them into your hand and the other on top of your library',
+    'look at the top two cards of target player’s library. put one of them into your hand and the other on the bottom of your library',
+    'look at the top two cards of your library. put two of them into your hand and the other on the bottom of your library',
+  ],
+  parse: single(
+    'effect.look-take-one-bottom',
+    satisfy(
+      sequence(
+        literal('look at the top '),
+        NUMBER,
+        literal(
+          ' cards of your library. put one of them into your hand and the other on the bottom of your library',
+        ),
+      ),
+      ([, count]) => numberOf(count) === 2,
+    ),
+    ([, count]) => ({ verb: 'lookTakeOneBottom', args: { count } }),
+  ),
+});
+
 export const LIBRARY_RULES = [
   EFFECT_SCRY,
   EFFECT_SURVEIL,
   EFFECT_LOOK_REORDER,
   EFFECT_LOOK_TAKE,
   EFFECT_LOOK_TAKE_BOTTOM,
+  EFFECT_LOOK_TAKE_ONE_TOP,
+  EFFECT_LOOK_TAKE_ONE_BOTTOM,
   EFFECT_LOOK_SPLIT,
   EFFECT_PUT_HAND_TOP,
 ];

@@ -66,6 +66,7 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
 /** Features a noun can need beyond its selector kind. */
 export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:chosenType',
+  'selector:chosen',
   'selector:chosenColor',
   'selector:thisSpell',
   'selector:anyTarget',
@@ -183,9 +184,17 @@ function lowerFilterAt(
       anyOf.push(lowered.value);
     }
   }
-  // D-100: "of the chosen type" reads the choice the source made as it entered (CR 607.2d).
-  let chosen: { chosenType: true } | { chosenColor: true } | Record<string, never> = {};
-  if (filter.chosen !== undefined) {
+  // D-100, D-566: chosen-type filters read an entry choice or a type selected as this resolves.
+  let chosen:
+    | { chosenType: true }
+    | { chosenColor: true }
+    | { notChosenType: true }
+    | Record<string, never> = {};
+  if (filter.notChosenType === true) {
+    const missing = missingFeatures(['selector:chosenType']);
+    if (missing.length > 0) return bad(missing);
+    chosen = { notChosenType: true };
+  } else if (filter.chosen !== undefined) {
     const feature = filter.chosen === 'type' ? 'selector:chosenType' : 'selector:chosenColor';
     const missing = missingFeatures([feature]);
     if (missing.length > 0) return bad(missing);
@@ -222,6 +231,7 @@ function lowerFilterAt(
   if (keywords.length > 0 || notKeywords.length > 0) parts.push('selector:keywords');
   // D-139 (stage P31): "attacking creatures" (CR 508.1k), a number of colors (CR 105.2).
   if (filter.attacking === true) parts.push('selector:attacking');
+  if (filter.notAttacking === true) parts.push('selector:notAttacking');
   if (filter.colorCount !== undefined) parts.push('selector:colorCount');
   // "With mana value X" and "whose controller was dealt combat damage by ~ this turn" read the ability that resolves (its X, its
   // source): the engine reads them in the `each` selector of an effect only, so a target or a member of a choice is not lowered.
@@ -363,10 +373,14 @@ function lowerFilterAt(
     ...(filter.controller !== undefined ? { controller: filter.controller } : {}),
     ...(filter.tapped !== undefined ? { tapped: filter.tapped } : {}),
     ...(filter.stackKind !== undefined ? { stackKind: filter.stackKind } : {}),
+    ...(filter.targetCountAtLeast !== undefined
+      ? { targetCountAtLeast: filter.targetCountAtLeast }
+      : {}),
     ...(filter.attackingYou === true && !inner ? { attackingYou: true as const } : {}),
     ...(filter.attackingOpponents === true && !inner ? { attackingOpponents: true as const } : {}),
     ...(filter.attackingOrBlocking === true ? { attackingOrBlocking: true as const } : {}),
     ...(filter.attacking === true ? { attacking: true as const } : {}),
+    ...(filter.notAttacking === true ? { notAttacking: true as const } : {}),
     ...(filter.colorCount === undefined
       ? {}
       : { colorCount: { cmp: filter.colorCount.cmp, value: filter.colorCount.value } }),
@@ -531,6 +545,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         noun.atLeastOne === true ||
         noun.greatest !== undefined ||
         noun.filter.manaValueAtMostX === true ||
+        noun.filter.manaValueAtMostAmount !== undefined ||
         noun.upTo !== true
       ) {
         return failure(noun, []);
@@ -551,6 +566,28 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       // the X the sentence defines becomes the limit of the filter, read as the targets are chosen.
       let atMost: ObjectFilter['manaValueAtMost'];
       let subject: IrNoun = noun;
+      if (noun.filter.manaValueAtMostAmount !== undefined) {
+        const missing = missingFeatures(['selector:manaValueAtMost']);
+        if (missing.length > 0) return failure(noun, missing);
+        const dynamic = noun.filter.manaValueAtMostAmount;
+        if (dynamic.kind !== 'countOf' || typeof dynamic.of.filter.controller !== 'object') {
+          return failure(noun, []);
+        }
+        const ownerNoun = dynamic.of.filter.controller.noun;
+        if (ownerNoun.det !== 'controllerOf' || ownerNoun.of?.ref !== noun.ref) {
+          return failure(noun, []);
+        }
+        const owner = playerSelectorOf(ownerNoun, ctx);
+        if (!owner.ok) return owner;
+        const { controller: _controller, ...countFilter } = dynamic.of.filter;
+        void _controller;
+        const counted = lowerFilter({ ...dynamic.of, filter: countFilter });
+        if (!counted.ok) return counted;
+        atMost = { kind: 'countOf', filter: { ...counted.value, owner: owner.value } };
+        const { manaValueAtMostAmount: _amount, ...rest } = noun.filter;
+        void _amount;
+        subject = { ...noun, filter: rest };
+      }
       if (noun.filter.manaValueAtMostX === true) {
         const defined = ctx.xIs;
         if (defined === null) return failure(noun, []);
@@ -738,6 +775,15 @@ export function objectRefOf(
     );
   }
   if (noun.det === 'anaphor' || noun.det === 'triggerSubject') {
+    if (noun.det === 'anaphor' && noun.ref !== undefined && ctx.chosenObjectRefs.has(noun.ref)) {
+      return (
+        gate(noun, ['selector:chosen']) ?? {
+          ok: true,
+          value: { kind: 'chosen', id: noun.ref },
+          rule: noun.rule,
+        }
+      );
+    }
     const to = followed(noun);
     if ('needs' in to) {
       if (options.triggerSubject === true && noun.det === 'triggerSubject') {
@@ -957,7 +1003,18 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       // "Its controller": the controller of the object the pronoun stands for (CR 109.4), read
       // from its last known information when it has left (CR 608.2h).
       if (noun.of === undefined) return failure(noun, []);
-      const blocked = gate(noun, need === undefined ? [] : [need]);
+      const blocked = gate(
+        noun,
+        noun.det === 'controllerOf'
+          ? [
+              ...(need === undefined ? [] : [need]),
+              'selector:controllerOf',
+              'selector:controllerRef',
+            ]
+          : need === undefined
+            ? []
+            : [need],
+      );
       if (blocked !== null) return blocked;
       // D-111: "its controller", "that creature's owner" in a trigger: the object whose event caused it,
       // read from last-known information when it is gone (CR 608.2h).

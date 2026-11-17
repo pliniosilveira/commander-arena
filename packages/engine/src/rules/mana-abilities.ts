@@ -18,6 +18,7 @@ import { hasKeyword } from './keywords';
 import { effectiveManaAbility, isCombinationProduction, productionOutcomes } from './mana-outcomes';
 import { manaValueOfCost } from './mana-value';
 import { millCards } from './mill';
+import { hasRestriction } from './restrictions';
 import { sacrificeCandidates, sacrificePermanent } from './sacrifice';
 
 export function manaAbilitiesOf(
@@ -204,11 +205,16 @@ export function physicalRefusal(
   const name = derive(state, obj).name;
   if (obj.zone !== 'battlefield' || controllerOf(state, obj) !== seat)
     return `${name} is not yours`;
+  // CR 602.5, 605.1a (Galadriel group 3): "Its activated abilities can't be activated this turn" includes the mana abilities.
+  if (hasRestriction(state, obj, 'cantActivateAbilities')) {
+    return `${name}'s activated abilities cannot be activated`;
+  }
   if (hasCost(ability, 'tap') && !canTapForMana(state, obj, seat)) {
     return `${name} is tapped or summoning sick`;
   }
   const life = lifeCostOf(ability);
-  if (life > getSeat(state, seat).life) return `you have less than ${life} life to pay`;
+  // A cost of no life is always payable, whatever the life total (it may be negative while the player cannot lose the game, CR 104.3b, issue 254).
+  if (life > 0 && life > getSeat(state, seat).life) return `you have less than ${life} life to pay`;
   // CR 701.17b, 118.3: a cost that mills more cards than the library holds cannot be paid.
   const mill = millCostOf(ability);
   if (mill > getSeat(state, seat).library.length)

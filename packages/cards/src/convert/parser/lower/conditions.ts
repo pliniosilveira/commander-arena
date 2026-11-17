@@ -482,6 +482,20 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'playerDealtDamage', player: test.who, atLeast: test.atLeast });
     }
+    case 'abilityResolvedTimes': {
+      // CR 608.2c (Galadriel deck, group 1): read as the instruction comes up, in the effect of a triggered ability.
+      const blocked = missingFeatures(['condition:abilityResolvedTimes']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'abilityResolvedTimes', times: test.times });
+    }
+    case 'ringBearerChosen': {
+      // CR 701.54a, 603.4 (Galadriel deck, group 1): the intervening "if" of "whenever the Ring tempts you"; the creature is "other than ~" (the permanent with the ability).
+      const blocked = missingFeatures(['condition:ringBearerChosen']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'ringBearerChosen', other: true });
+    }
     case 'notDeclaredAttacker':
       // D-510 (CR 508.1f): "if it isn't being declared as an attacker" is part of the event of a "becomes tapped" trigger, which the lowering of the trigger reads (`lowerTriggered`);
       // as a condition of anything else there is nothing to read it from.
@@ -614,4 +628,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:thisEnteredThisTurn',
   // D-475 (Gisa deck group 1): "a player was dealt combat damage by a Zombie this turn".
   'condition:combatDamagedBy',
+  // Galadriel deck group 1: "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
+  'condition:abilityResolvedTimes',
+  'condition:ringBearerChosen',
 ];

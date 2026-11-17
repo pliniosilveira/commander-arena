@@ -47,7 +47,7 @@ describe('the dimensions', () => {
   });
 
   test('what the engine does not run yet is empty, not guessed', () => {
-    // Only the costs and the duration the engine pays and ends (scenario-xx-activated-*, -pump-*).
+    // The costs and durations the engine pays and ends (scenario-xx-activated-*, -pump-*).
     expect(SUPPORTED_FEATURES.costKinds).toEqual([
       'tap',
       'mana',
@@ -55,6 +55,8 @@ describe('the dimensions', () => {
       'payXLife',
       // D-386: "Discard X cards" as an additional cost to cast a spell.
       'discardX',
+      // D-575: an optional exile of any number of cards from hand as a spell cost.
+      'exileFromHand',
       'sacrifice',
       'removeCounters',
       'discardThis',
@@ -128,6 +130,9 @@ describe('the dimensions', () => {
       // D-207: "if it targets a tapped creature".
       'spellTargets',
       'attackersAttackedYou',
+      // Galadriel group 1: "if this is the second time this ability has resolved this turn", "if you chose a creature other than ~ as your Ring-bearer".
+      'abilityResolvedTimes',
+      'ringBearerChosen',
       'ownTurnNumber',
       'sameNameAtLeast',
       // D-151: what entered this turn, damage dealt this turn.
@@ -157,11 +162,13 @@ describe('the dimensions', () => {
       'not',
     ]);
     expect(SUPPORTED_FEATURES.staticKinds).toEqual([
+      'allCreatureTypes',
       'noMaximumHandSize',
       'additionalLandDrops',
       'lookAtTopOfLibrary',
       'attackTax',
       'optionalUntap',
+      'crewSaddleBonus',
       'untapInOthersUntapStep',
       'modifyPt',
       'characteristicPt',

@@ -281,13 +281,12 @@ export function typeChoice(
 const TYPE_CHOICE: Parser<string[]> = typeChoice(PERMANENT_TYPES);
 
 /**
- * " of the chosen type" and " of the chosen color" (stage P15, D-100, CR 607.2d): what the source of
- * the ability chose as it entered. The engine reads the creature type or the color from the source
- * and refuses the card unless it asks the question itself (`asEntersChoose`).
+ * "of the chosen type/color" (D-100) or "of that type" after a resolving creature-type choice
+ * (D-566): the filter reads the answer carried by the resolution or by the source permanent.
  */
 export const CHOSEN_SUFFIX: Parser<'type' | 'color'> = map(
-  pattern(new RegExp(` of the chosen (type|color)${BOUNDARY}`, 'iu')),
-  (m) => (m[1] ?? '').toLowerCase() as 'type' | 'color',
+  pattern(new RegExp(` of (?:the chosen (type|color)|that type)${BOUNDARY}`, 'iu')),
+  (m) => (m[1] ?? 'type').toLowerCase() as 'type' | 'color',
 );
 
 /**
@@ -470,15 +469,31 @@ export function permanentPhrase(
       // "artifact, enchantment, or creature with power 4 or greater" (stage P33, D-150): a power or a toughness belongs to the creature
       // among the types, the only one that has either; it is said of the last one only.
       optional(quiet(comparisonSuffix(['power', 'toughness'])), undefined),
+      // "artifact, enchantment, or creature with flying" (Galadriel deck, group 1, Shower of Arrows): a keyword belongs to the creature among the types too, said of the last one only.
+      optional(quiet(KEYWORD_SUFFIX), undefined),
       optional(CONTROL_SUFFIX, undefined),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [types, compared, controller] = r.value;
+    const [types, compared, keyword, controller] = r.value;
     const last = types[types.length - 1];
     if (compared !== undefined && (types.length < 2 || last !== 'creature')) return fail(ctx, pos);
+    if (
+      keyword !== undefined &&
+      (types.length < 2 || last !== 'creature' || compared !== undefined)
+    ) {
+      return fail(ctx, pos);
+    }
     const base = toFilter('battlefield', { ...NO_PARTS, controller }, ctx.text.slice(pos, r.pos));
     const anyOf = types.map((t): IrFilter => {
-      const member: IrFilter = { types: [t], raw: t };
+      const member: IrFilter = {
+        types: [t],
+        raw: t,
+        ...(t === last && keyword !== undefined
+          ? keyword.has
+            ? { keywords: [keyword.keyword] }
+            : { notKeywords: [keyword.keyword] }
+          : {}),
+      };
       return t === last ? withComparison(member, compared) : member;
     });
     return { ok: true, value: { ...base, anyOf }, pos: r.pos };
@@ -497,6 +512,7 @@ export function permanentPhrase(
   const tail: Parser<{
     controller: 'you' | 'opponent' | 'triggerPlayer' | 'defendingPlayer' | undefined;
     chosen: 'type' | 'color' | undefined;
+    notChosenType: boolean;
     compared: Comparison | undefined;
     keyword: KeywordSuffix | undefined;
     manaValueX: boolean;
@@ -506,7 +522,15 @@ export function permanentPhrase(
   }> = (ctx, pos) => {
     const control = optional(EVENT_CONTROL_SUFFIX, undefined)(ctx, pos);
     if (!control.ok) return control;
-    const chosen = optional(quiet(CHOSEN_SUFFIX), undefined)(ctx, control.pos);
+    const notChosen = optional(
+      quiet(pattern(/ that aren't of the chosen type(?![\p{L}\p{N}])/iu)),
+      undefined,
+    )(ctx, control.pos);
+    if (!notChosen.ok) return notChosen;
+    const chosen = optional(quiet(CHOSEN_SUFFIX), undefined)(
+      ctx,
+      notChosen.value === undefined ? control.pos : notChosen.pos,
+    );
     if (!chosen.ok) return chosen;
     const compared = optional(quiet(comparisonSuffix(ALL_COMPARABLE)), undefined)(ctx, chosen.pos);
     if (!compared.ok) return compared;
@@ -549,6 +573,7 @@ export function permanentPhrase(
       value: {
         controller,
         chosen: chosen.value,
+        notChosenType: notChosen.value !== undefined,
         compared: compared.value,
         keyword: keyword.value,
         manaValueX: manaValueX.value,
@@ -578,7 +603,17 @@ export function permanentPhrase(
       modifiers,
       noun,
       isToken,
-      { controller, chosen, compared, keyword, manaValueX, damaged, counter, aboveBase },
+      {
+        controller,
+        chosen,
+        notChosenType,
+        compared,
+        keyword,
+        manaValueX,
+        damaged,
+        counter,
+        aboveBase,
+      },
     ] = r.value;
     const parts = modifiers.reduce<FilterParts>((acc, m) => m(acc), {
       ...NO_PARTS,
@@ -599,6 +634,7 @@ export function permanentPhrase(
           ...filter,
           ...(noun.subtypes.length > 0 ? { subtypes: noun.subtypes } : {}),
           ...(chosen === undefined ? {} : { chosen }),
+          ...(notChosenType ? { notChosenType: true as const } : {}),
           ...(manaValueX ? { manaValueX: true as const } : {}),
           ...(damaged ? { controllerDamagedBySource: true as const } : {}),
           ...(counter === undefined ? {} : { hasCounter: counter }),

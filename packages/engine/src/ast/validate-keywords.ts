@@ -143,6 +143,20 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
         });
       }
       return true;
+    case 'buyback':
+      // CR 702.27a (Galadriel group 3): an additional cost paid as the spell is cast: mana, no X.
+      checkCosts(k.cost, `${path}.cost`, out);
+      if (Array.isArray(k.cost)) {
+        if (k.cost.length === 0) issue(out, `${path}.cost`, 'buyback needs a cost to pay');
+        k.cost.forEach((c, i) => {
+          if (c?.kind !== 'mana') {
+            issue(out, `${path}.cost[${i}]`, 'a buyback cost may be mana only in this engine');
+          } else if (c.symbols?.includes('X')) {
+            issue(out, `${path}.cost[${i}]`, 'X in a buyback cost is not supported');
+          }
+        });
+      }
+      return true;
     case 'escalate':
       // CR 702.120a (D-145): an additional cost for each mode chosen beyond the first: mana, no X.
       checkCosts(k.cost, `${path}.cost`, out);
@@ -236,9 +250,9 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       }
       return true;
     case 'gift':
-      // CR 702.174d (D-135): "Gift a card": the one gift the engine gives.
-      if (k.gift !== 'card') {
-        issue(out, `${path}.gift`, `gift ${JSON.stringify(k.gift)} is not supported (only a card)`);
+      // D-135 and issue 57 group 5: card and tapped Fish gifts have engine effects.
+      if (k.gift !== 'card' && k.gift !== 'tappedFish') {
+        issue(out, `${path}.gift`, `gift ${JSON.stringify(k.gift)} is not supported`);
       }
       return true;
     case 'echo':

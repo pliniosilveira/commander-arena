@@ -122,7 +122,7 @@ function answersKicker(action: Action, pending: GameState['pending']): boolean {
   return (
     (action.kind === 'acceptOptional' || action.kind === 'declineOptional') &&
     pending?.kind === 'confirmOptional' &&
-    pending.purpose === 'kicker'
+    (pending.purpose === 'kicker' || pending.purpose === 'buyback')
   );
 }
 

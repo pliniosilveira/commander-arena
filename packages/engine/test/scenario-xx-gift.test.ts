@@ -13,6 +13,7 @@ import type { scenario } from '../src/testing/index';
 import { twoSeatGame } from './two-seat-helpers';
 
 const RANGER = 'SYNTHETIC Gifted Ranger';
+const FISHMAKER = 'SYNTHETIC Gifted Fishmaker';
 const REAPER = 'SYNTHETIC Greedy Reaper';
 const STUDY = 'SYNTHETIC Gift Study';
 const EDICT = 'SYNTHETIC Edict of the Mighty';
@@ -25,6 +26,19 @@ const RING = 'Sol Ring';
 type Builder = ReturnType<typeof scenario>;
 
 describe('Gift on a permanent: "When this enters, if its gift cost was paid, the chosen player draws a card"', () => {
+  test('a promised tapped Fish gift goes to the chosen player as the permanent enters', () => {
+    const g = twoSeatGame(
+      (b) => b.hand(FISHMAKER).battlefield('Island', { count: 3 }),
+      (b) => b,
+    );
+    g.act(0).cast(FISHMAKER, { gift: true, pay: true });
+    g.passAll();
+    g.expect.zone('Fish', 'battlefield', { seat: 1 });
+    g.expect.tapped('Fish');
+    g.expect.zone(FISHMAKER, 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+
   test('promised: the opponent draws as the permanent enters, and the "if the gift was promised" trigger runs', () => {
     const g = twoSeatGame(
       (b) => b.hand(RANGER).battlefield('Forest', { count: 3 }),
@@ -292,7 +306,36 @@ describe('validation', () => {
         },
       ],
     } as never;
-    expect(reasons(bad)).toEqual([expect.stringContaining('exists only if the gift was promised')]);
+    expect(reasons(bad)).toEqual([expect.stringContaining('matching gift branch')]);
+  });
+
+  test('a target that exists only without the gift is rejected in the promised branch', () => {
+    const base = syntheticCard(STUDY);
+    const face = base.faces[0];
+    if (face === undefined || face.spell === null) throw new Error('no spell');
+    const bad = {
+      ...base,
+      faces: [
+        {
+          ...face,
+          spell: {
+            targets: [
+              {
+                id: 't1',
+                ifGiftPromised: false,
+                what: { kind: 'object', filter: { types: ['creature'] } },
+              },
+            ],
+            effect: {
+              kind: 'conditional',
+              condition: { kind: 'giftPromised' },
+              effect: { kind: 'destroy', objects: { kind: 'target', id: 't1' } },
+            },
+          },
+        },
+      ],
+    } as never;
+    expect(reasons(bad)).toEqual([expect.stringContaining('matching gift branch')]);
   });
 
   test('gift is not on a land, and a face has one', () => {

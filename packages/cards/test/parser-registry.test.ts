@@ -175,6 +175,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `If ${e}, you may cast ~ without paying its mana cost.`,
   ),
   'amount.for-each': spell((e) => `Draw a card ${e}.`),
+  // Galadriel deck, group 2 (D-539): two counts added.
+  'amount.for-each-and-each': permanent((e) => `~ gets +1/+1 ${e}.`),
   'amount.for-each-died': permanent(
     (e) => `Nontoken creatures you control enter with an additional +1/+1 counter on them ${e}.`,
   ),
@@ -269,6 +271,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.number-of': permanent((e) => `When ~ dies, create ${e}.`),
   'noun.self': spell((e) => `Put a +1/+1 counter on ${e}.`),
   'noun.a-permanent': spell((e) => `Sacrifice ${e}.`),
+  'noun.up-to-one-permanent': spell((e) => `Put two +1/+1 counters on ${e}.`),
+  'noun.up-to-graveyard-cards': spell((e) => `Return ${e} to your hand.`),
   'noun.any-target': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.player': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.target-spell': spell((e) => `Counter ${e}.`),
@@ -558,6 +562,21 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,
   'trigger.scry': whenever,
+  // Galadriel deck, group 1 (issue 43): "you scry or surveil" follows "Whenever"; the conditions follow a trigger's comma or a sentence of its body.
+  'trigger.scry-or-surveil': whenever,
+  // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result" follows "Whenever"; the copy is the token of an enters trigger; "up to one target spell" is the noun of a counter.
+  'trigger.roll-highest': whenever,
+  'keyword.buyback': asIs,
+  'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
+  'noun.up-to-one-target-spell': spell(
+    (e) =>
+      `Counter ${e} unless its controller pays mana equal to the greatest power among creatures you control.`,
+  ),
+  'static.crew-saddle-bonus': asIs,
+  'condition.resolved-times': permanent(
+    (e) => `Whenever a creature you control enters, scry 1. If ${e}, you gain 1 life.`,
+  ),
+  'condition.chose-ring-bearer': permanent((e) => `Whenever the Ring tempts you, if ${e}, scry 3.`),
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),
@@ -605,6 +624,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,
+  'trigger.you-attack-with-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
   'trigger.cast-or-copy': whenever,
   'noun.attacking-opponents': permanent((e) => `When ~ enters, ${e} get +1/+0 until end of turn.`),
@@ -686,6 +706,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.behold': spell((e) => `As an additional cost to cast ~, ${e}. Draw a card.`),
   // Group 5 (D-233): the exile of cards of the graveyard as a cost.
   'cost.exile-graveyard-cards': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
+  'cost.exile-any-hand': spell(
+    (e) => `As an additional cost to cast ~, you may ${e}. Draw a card.`,
+  ),
   'effect.mana-rider-scry-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
   'amount.for-each-commander-cast': permanent((e) => `Creatures you control get +1/+1 ${e}.`),
   'static.untap-in-others-step': asIs,

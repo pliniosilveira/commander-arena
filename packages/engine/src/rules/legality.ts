@@ -9,7 +9,7 @@ import type { CardFace } from '../cards/definition';
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, getSeat, opponentsOf, printedCard, zoneList } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
-import { alternativeOf, flashbackCostOf, hasModeCosts } from './alt-costs';
+import { alternativeOf, flashbackCostOf, hasGift, hasModeCosts } from './alt-costs';
 import { auraTargetSpec } from './attach';
 import {
   type CastAlternative,
@@ -407,6 +407,8 @@ export function targetSpecsOf(
   overloaded = obj.stack?.alt === 'overload',
   /** D-181: whether the spell is kicked, for the slots that exist only if it was (or was not): the spell on the stack says so; a card not cast yet is asked both ways. */
   kicked = obj.stack?.kicked === true,
+  /** Whether Gift was promised. Before casting, callers can ask either branch. */
+  giftPromised = obj.stack?.giftTo !== undefined,
 ): readonly TargetSpec[] {
   // CR 702.96b: a spell cast for its overload cost won't require any targets.
   if (overloaded && obj.stack?.ability == null) return [];
@@ -419,12 +421,12 @@ export function targetSpecsOf(
   }
   const face = faceOf(state, obj);
   const modal = modalOfSpellText(face?.spell);
-  // CR 702.174m (D-135): a slot that exists only if the gift was promised is chosen only then.
-  const promised = obj.stack?.giftTo !== undefined;
+  // D-135: a slot with a gift condition is chosen only in the matching promised or unpromised branch.
+  const promised = giftPromised;
   const declared = (
     modal ? chosenModeSpecs(modal, chosenModes).map((e) => e.spec) : (face?.spell?.targets ?? [])
   )
-    .filter((spec) => spec.ifGiftPromised !== true || promised)
+    .filter((spec) => spec.ifGiftPromised === undefined || spec.ifGiftPromised === promised)
     // CR 702.33g, 601.2c (D-181): a slot of the kicked spell's text, or of the unkicked spell's, is chosen only in that case.
     .filter(
       (spec) => (spec.ifKicked !== true || kicked) && (spec.unlessKicked !== true || !kicked),
@@ -451,15 +453,24 @@ export function targetsPossible(
   // CR 702.96b: an overloaded spell needs no target (the "each" of its text affects what matches).
   if (overloaded) return true;
   const ctx = { controller: seat, source: obj.id };
-  const modal = modalOfSpellText(faceOf(state, obj)?.spell);
+  const face = faceOf(state, obj);
+  const modal = modalOfSpellText(face?.spell);
   if (modal !== null && legalModeSets(state, modal, ctx).length === 0) return false;
-  const specs = targetSpecsOf(state, obj, false, kicked);
-  // D-408: a spell with nothing it must target cannot meet "if it targets a commander".
-  const restricted = only === null ? -1 : flashSlotOf(specs);
-  if (only !== null && restricted < 0) return false;
-  return specs.every((spec, i) =>
-    slotCanBeFilled(state, spec, ctx, i === restricted ? only : null),
-  );
+  const giftBranches =
+    obj.stack == null &&
+    hasGift(face) &&
+    (face?.spell?.targets ?? []).some((spec) => spec.ifGiftPromised !== undefined)
+      ? [false, true]
+      : [obj.stack?.giftTo !== undefined];
+  return giftBranches.some((giftPromised) => {
+    const specs = targetSpecsOf(state, obj, false, kicked, giftPromised);
+    // D-408: a spell with nothing it must target cannot meet "if it targets a commander".
+    const restricted = only === null ? -1 : flashSlotOf(specs);
+    if (only !== null && restricted < 0) return false;
+    return specs.every((spec, i) =>
+      slotCanBeFilled(state, spec, ctx, i === restricted ? only : null),
+    );
+  });
 }
 
 /**

@@ -74,6 +74,7 @@ export const PERMANENT_OPERANDS = [
 export const SELF_OR_PERMANENT_OPERANDS = ['noun.self', ...PERMANENT_OPERANDS] as const;
 
 export const GRAVEYARD_OPERANDS = [
+  'noun.up-to-graveyard-cards',
   'noun.target-graveyard-card',
   'noun.all-graveyard-cards',
 ] as const;

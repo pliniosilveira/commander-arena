@@ -506,7 +506,10 @@ describe('flicker: "Exile target creature, then return it to the battlefield und
     });
     expect(
       dropped("Exile target creature. Return it to the battlefield under its owner's control."),
-    ).toMatchObject({ reason: 'unrecognised', stoppedAt: expect.stringContaining('it to the') });
+    ).toMatchObject({
+      reason: 'notRunnable',
+      stoppedAt: expect.stringContaining('Return it to the'),
+    });
   });
 
   test('the delayed form is read since stage P48 (D-205): a delayed triggered ability that returns the exiled card (CR 603.7, 603.7c)', () => {

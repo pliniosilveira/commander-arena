@@ -92,6 +92,7 @@ interface Occurrence {
   readonly player?: SeatId;
   /** The damage the event dealt, for `triggerDamage` and `dealtDamage` (D-133). */
   readonly damage?: number;
+  readonly targetCount?: number;
   /** For `lifeGained`: how many times the player has gained life this turn, this one included (D-149). */
   readonly gainNth?: number;
   /** For `countersAdded`: the kind of the counters put on (D-149). */
@@ -194,10 +195,25 @@ function occurrences(
     case 'castSpell':
       // D-218 (CR 707.10): a copy put onto the stack is not cast, but "cast or copy" counts it, under the control of the player who has it.
       if (trigger.orCopy === true && event.kind === 'spellCopied') {
-        return [{ subject: event.copy, seat: event.seat, player: event.seat }];
+        return [
+          {
+            subject: event.copy,
+            seat: event.seat,
+            player: event.seat,
+            targetCount: state.objects[event.copy]?.stack?.chosenTargets.length ?? 0,
+          },
+        ];
       }
       return event.kind === 'spellCast'
-        ? [{ subject: event.object, seat: event.seat, player: event.seat, nth: event.nth }]
+        ? [
+            {
+              subject: event.object,
+              seat: event.seat,
+              player: event.seat,
+              nth: event.nth,
+              targetCount: event.targetCount,
+            },
+          ]
         : [];
     case 'cycled':
       // CR 702.29c (D-179): the card that was cycled, where it wound up.
@@ -318,6 +334,23 @@ function occurrences(
             },
           ]
         : [];
+    case 'surveils':
+      // CR 701.25 (Galadriel group 1): the player who surveilled, as for a scry; the cards looked at are those put into the graveyard and those put back on top.
+      return event.kind === 'surveiled'
+        ? [
+            {
+              subject: null,
+              seat: event.seat,
+              player: event.seat,
+              damage: event.top + event.toGraveyard,
+            },
+          ]
+        : [];
+    case 'rollsHighest':
+      // CR 706.1a, 706.2 (Galadriel group 3): a die rolled whose natural result is the highest its sides allow (the engine has no modifier of a roll, so the result is natural).
+      return event.kind === 'dieRolled' && event.result === event.sides
+        ? [{ subject: null, seat: event.seat, player: event.seat }]
+        : [];
     case 'becomesUntapped':
       // CR 603.2e (D-206): a permanent that untaps (the untap step or an effect); a stun counter that stops it (CR 122.1d) makes no `untapped` event.
       return event.kind === 'untapped' ? [{ subject: event.object, seat: null }] : [];
@@ -417,8 +450,15 @@ function occurrences(
         : [];
     case 'ringTempted':
       // CR 701.54d (D-196): each time the Ring tempts a player, whatever they could choose.
+      // Galadriel group 1: the creature chosen is the subject, for "if you chose a creature other than ~ as your Ring-bearer" (`ringBearerChosen`); no other ability reads it.
       return event.kind === 'ringTempted'
-        ? [{ subject: null, seat: event.seat, player: event.seat }]
+        ? [
+            {
+              subject: event.bearer,
+              seat: event.seat,
+              player: event.seat,
+            },
+          ]
         : [];
     case 'chapter':
       // CR 714.2b, 714.2c: once for each chapter number the lore counters newly reached.
@@ -594,7 +634,9 @@ function matches(
       if (trigger.notAsAttacker === true && occ.attacker === true) return false;
       return matchesWhat(state, trigger.what, subject, candidate);
     case 'scries':
-      // CR 701.22 (D-513): the player who scried, relative to the controller of this ability.
+    case 'surveils':
+    case 'rollsHighest':
+      // CR 701.22, 701.25 (D-513): the player who scried or surveilled, relative to the controller of this ability. CR 706.1a: the player who rolled the die.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
       return true;
@@ -658,6 +700,9 @@ function matches(
       if (trigger.by === 'opponent' && occ.seat === candidate.controller) return false;
       // D-229: "their second spell each turn": the caster's nth spell of the turn.
       if (trigger.nth !== undefined && occ.nth !== trigger.nth) return false;
+      // D-565: "during each opponent's turn" is relative to the controller of this ability.
+      if (trigger.duringTurn === 'opponent' && state.turn.activeSeat === candidate.controller)
+        return false;
       return matchesFilter(state, subject, trigger.filter, ctx);
     case 'step':
       // CR 503 to 514: whose turn it is, relative to the controller of the ability.
@@ -755,6 +800,8 @@ function isRelevant(event: GameEvent): boolean {
     case 'damageDealt':
       return true; // CR 510.2 (combat damage), 120.3 (D-133: "is dealt damage" reads any damage)
     case 'scried':
+    case 'surveiled':
+    case 'dieRolled': // CR 706.2 (Galadriel group 3): "whenever you roll a die's highest natural result"
     case 'tokenCreated':
     case 'died':
     case 'sacrificed':
@@ -1011,6 +1058,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             subject: occ.subject,
             ...eventPlayer(ability, occ),
             ...(occ.damage === undefined ? {} : { damage: occ.damage }),
+            ...(occ.targetCount === undefined ? {} : { targetCount: occ.targetCount }),
             ...(occ.chapter === undefined ? {} : { chapter: occ.chapter }),
             ...(occ.attacked === undefined ? {} : { attacked: occ.attacked }),
             // D-232: "become a copy of an artifact or creature card from among those cards": every card of the player that left the graveyard in these events.

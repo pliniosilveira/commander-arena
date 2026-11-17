@@ -185,7 +185,7 @@ function pluralNounOf(filter: ObjectFilter): string {
     .join(' or ');
 }
 
-function targetText(spec: TargetSpec | undefined): string {
+export function targetText(spec: TargetSpec | undefined): string {
   if (spec === undefined) return 'target';
   // D-151 (CR 115.3): "up to two other targets": a slot of several targets, kept apart from an earlier slot by the word "other".
   if (spec.what.kind === 'anyTarget' && (spec.differentFrom !== undefined || (spec.max ?? 1) > 1)) {
@@ -286,6 +286,8 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       return 'this spell';
     case 'target':
       return targetText(ability.targets?.find((t) => t.id === what.id));
+    case 'chosen':
+      return 'the chosen permanent';
     case 'each': {
       // D-517: "all creatures target player controls", the group of a player chosen as a target.
       const chosen = what.filter.controlledBy;
@@ -422,6 +424,8 @@ function recipientText(
       return "the player or planeswalker it's attacking";
     case 'triggerPlayer':
       return 'that player';
+    case 'declinedPlayer':
+      return 'the player who declined';
     case 'giftRecipient':
       // CR 702.174a (D-135): the opponent the caster promised the gift to.
       return 'the chosen player';
@@ -433,6 +437,7 @@ function recipientText(
     case 'all':
       return to.of.map((member) => recipientText(member, ability, self)).join(' and ');
     case 'target':
+    case 'chosen':
     case 'this':
     case 'thisSpell':
     case 'moved':
@@ -467,8 +472,10 @@ const RESTRICTION_EFFECT: Readonly<Record<Restriction, string>> = {
   cantBeBlockedByMoreThanOne: "can't be blocked by more than one creature",
   attacksEachCombat: 'attacks if able',
   mustBeBlocked: 'must be blocked if able',
+  mustBlock: 'must block this turn if able',
   doesntUntap: "doesn't untap",
   cantBeCountered: "can't be countered",
+  cantActivateAbilities: "can't have its activated abilities activated",
 };
 
 const lower = (text: string): string => text.charAt(0).toLowerCase() + text.slice(1);
@@ -581,6 +588,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the defending player', third: true };
     case 'triggerPlayer':
       return { who: 'that player', third: true };
+    case 'declinedPlayer':
+      return { who: 'the player who declined', third: true };
     case 'giftRecipient':
       return { who: 'the chosen player', third: true };
     case 'discardedThisWay':
@@ -909,7 +918,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       const until = effect.duration === 'untilEndOfTurn' ? ' until end of turn' : '';
       const at = words.indexOf(', where ');
       const said = at < 0 ? `${words}${until}` : `${words.slice(0, at)}${until}${words.slice(at)}`;
-      return `${capital(object(effect.objects))} ${said}`;
+      // Galadriel group 1: "up to two target lands you control have base power and toughness 5/5": several targets, the plural verb.
+      const several = object(effect.objects).startsWith('up to ');
+      const verbed = several ? said.replace(/^gets /u, 'get ').replace(/^has /u, 'have ') : said;
+      return `${capital(object(effect.objects))} ${verbed}`;
     }
     case 'draw':
       // D-135: "draw that many cards" after "sacrifice any number of ...": the count of the instruction before.
@@ -931,7 +943,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         const who = effect.player.kind === 'triggerPlayer' ? 'That player' : 'You';
         return `${who} may draw up to ${quantity(effect.count, defs, CARD)}`;
       }
-      return `${playerVerb(effect.player, ability, 'draw')} ${quantity(effect.count, defs, CARD)}`;
+      return `${playerVerb(effect.player, ability, 'draw')} ${quantity(effect.count, defs, CARD)}${effect.reveal === true ? ' and reveal it' : ''}`;
     case 'discard': {
       // D-151 (CR 701.9): "You discard any number of cards".
       if (effect.anyNumber === true) {
@@ -1088,6 +1100,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return effect.partner === 'choose'
         ? 'You may pair this creature with another unpaired creature you control'
         : 'You may pair this creature with the creature that entered';
+    case 'scry':
+    case 'surveil':
+      // CR 701.22, 701.25 (Galadriel group 1): "Scry 3", "Surveil X"; always the controller's own library.
+      return effect.player === undefined || effect.player.kind === 'you'
+        ? `${effect.kind === 'scry' ? 'Scry' : 'Surveil'} ${defs.say(effect.count, { self })}`
+        : UNSAID;
     case 'ringTempts':
       // D-196 (CR 701.54a): the Ring tempts the controller.
       return 'The Ring tempts you';
@@ -1144,11 +1162,34 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         const who = object(effect.objects);
         return keepTappedText(who, isSeveral(who));
       }
+      // Galadriel group 3 (CR 602.5): "Target permanent's activated abilities can't be activated this turn".
+      if (effect.restriction === 'cantActivateAbilities') {
+        return `${capital(object(effect.objects))}'s activated abilities can't be activated${effect.duration === 'untilEndOfTurn' ? ' this turn' : ''}`;
+      }
       // "Target creature can't be blocked this turn" (CR 613.11).
       return `${capital(object(effect.objects))} ${RESTRICTION_EFFECT[effect.restriction]}${effect.duration === 'untilEndOfTurn' ? ' this turn' : effect.duration === 'forAsLongAsYouControlThis' ? ' for as long as you control this' : ''}`;
     case 'gainControl':
       // D-189 (CR 613.1b, 611.2): "Gain control of target creature until end of turn".
       return `Gain control of ${object(effect.objects)}${controlDurationText(effect.duration, self)}`;
+    case 'exchangeControl':
+      // Galadriel group 3 (CR 701.12): "Exchange control of this enchantment and target nonland permanent".
+      return `Exchange control of ${object(effect.first)} and ${object(effect.second)}`;
+    case 'removeCounters':
+      // Galadriel group 3 (CR 122.1): "Remove a number of loyalty counters equal to that card's mana value from this planeswalker".
+      if (
+        typeof effect.count === 'object' &&
+        effect.count.kind === 'manaValueOf' &&
+        effect.count.of.kind === 'moved'
+      ) {
+        return `Remove a number of ${effect.counter} counters equal to that card's mana value from ${object(effect.objects)}`;
+      }
+      return `Remove ${quantity(effect.count, defs, counters(effect.counter))} from ${object(effect.objects)}`;
+    case 'counterUnlessPays':
+      // Galadriel group 3 (CR 118.12a): "Counter target spell unless its controller pays mana equal to the greatest power among creatures you control". The effects with a cost of
+      // symbols show the cost only, as before.
+      return effect.genericAmount === undefined
+        ? ''
+        : `Counter ${object(effect.objects)} unless its controller pays mana equal to ${amountPhrase(effect.genericAmount, { self })}`;
     case 'requireAttack':
       // D-179 (CR 508.1d): "Until your next turn, creatures your opponents control attack each combat if able".
       return requireAttackText(effect) ?? UNSAID;
@@ -1316,6 +1357,16 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         return `${capital(object(effect.objects))} is a ${size} ${noun} in addition to its other types`;
       }
       const until = effect.duration === 'untilEndOfTurn' ? ' until end of turn' : '';
+      // Galadriel group 1: "Up to two target lands you control become Elemental creatures in addition to their other types": several targets, the plural verb and noun.
+      if (object(effect.objects).startsWith('up to ')) {
+        const plural = [
+          ...(effect.types === undefined && effect.subtypes !== undefined
+            ? [...effect.subtypes.slice(0, -1), pluralSubtype(effect.subtypes.at(-1) ?? '')]
+            : (effect.subtypes ?? [])),
+          ...(effect.types ?? []).map((type) => `${type}s`),
+        ].join(' ');
+        return `${capital(object(effect.objects))} become ${plural} in addition to their other types${until}`;
+      }
       return `${capital(object(effect.objects))} becomes ${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun} in addition to its other types${until}`;
     }
     case 'proliferate':

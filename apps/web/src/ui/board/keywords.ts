@@ -77,6 +77,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
     'Gravestorm (When you cast this spell, copy it for each permanent put into a graveyard from the battlefield this turn.)',
   ],
   replicate: ['Rep', 'Replicate'],
+  // Buyback (Galadriel group 3, CR 702.27a): the cost rides in the chip (`PARAMETERIZED`).
+  buyback: ['Bb', 'Buyback'],
   // Gift a card (D-135).
   gift: ['Gft', 'Gift a card'],
   // The Artifacts slice (D-139): the reminder text rides in the tooltip (CR 702.92a).
@@ -135,6 +137,11 @@ const PARAMETERIZED: Readonly<
   replicate: (text) =>
     [...text.matchAll(/replicate\s*((?:\{[^}]+\})+)/gi)].map(
       (m) => ['Rep', withCost('Replicate', m[1] ?? '')] as const,
+    ),
+  // "Buyback {2}": one chip per instance (CR 702.27a).
+  buyback: (text) =>
+    [...text.matchAll(/buyback\s*((?:\{[^}]+\})+)/gi)].map(
+      (m) => ['Bb', withCost('Buyback', m[1] ?? '')] as const,
     ),
   // "Escalate {G}": the cost of each mode beyond the first (CR 702.120a), one chip per instance.
   escalate: (text) =>
@@ -204,8 +211,11 @@ const RESTRICTIONS: Readonly<Record<Restriction, readonly [short: string, full: 
   cantBeBlockedByMoreThanOne: ['Blk≤1', "Can't be blocked by more than one creature"],
   attacksEachCombat: ['Atk!', 'Attacks each combat'],
   mustBeBlocked: ['Blk!', 'Must be blocked if able'],
+  mustBlock: ['Blk!', 'Must block this turn if able'],
   doesntUntap: ['NoUnt', "Doesn't untap"],
   cantBeCountered: ['NoCtr', "Can't be countered"],
+  // Galadriel group 3: "Its activated abilities can't be activated this turn" (CR 602.5).
+  cantActivateAbilities: ['NoAct', "Its activated abilities can't be activated"],
 };
 
 /** "Islandwalk" for a landwalk of Island, "Nonbasic landwalk" for the nonbasic one (CR 702.14). */

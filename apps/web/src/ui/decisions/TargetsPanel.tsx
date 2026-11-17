@@ -9,7 +9,7 @@ import { keptDivisionText, keptTargets, shareLabel } from './copy-division';
 import { bumpShare, divisionLine, shareOf, sharesLeft, withEvenShares } from './divide';
 import { useHoverProps } from './hover';
 import { type Index, nameOf, objectIndex } from './lookup';
-import { modeHeading } from './target-prompt';
+import { modeHeading, slotLabel } from './target-prompt';
 import {
   allLegalTargets,
   chosenObjects,
@@ -172,6 +172,38 @@ function PlainList({
                     </button>
                   </li>
                 ))}
+            </ul>
+          </div>
+        ))}
+      </>
+    );
+  }
+  // Several slots with different effects: one list for each slot under what it is for ("Slot 2: target creature you control"), so a chip picks the target of that slot.
+  if (specs.length > 1 && specs.every((s) => s.target !== undefined)) {
+    return (
+      <>
+        {specs.map((spec, at) => (
+          <div key={spec.specId} className="dec-target-group" data-slot={spec.specId}>
+            <h4 className="dec-target-group-title">{slotLabel(specs, at)}</h4>
+            <ul className="dec-target-list">
+              {spec.legal.map((t) => (
+                <li key={targetKey(t)}>
+                  <button
+                    type="button"
+                    className="dec-chip"
+                    {...hoverOf(hoverProps, t)}
+                    aria-pressed={pickedFor(ui.targets, t, spec.specId)}
+                    onClick={() =>
+                      update((u) => ({
+                        ...u,
+                        targets: toggleTarget(specs, u.targets, t, spec.specId),
+                      }))
+                    }
+                  >
+                    {targetLabel(t, index, viewer)}
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
         ))}

@@ -140,6 +140,7 @@ describe('the cast line says how many times it was kicked', () => {
       object: 'o1',
       fromZone: 'hand',
       commanderTax: 0,
+      targetCount: 0,
       ...extra,
     }) as GameEvent;
 

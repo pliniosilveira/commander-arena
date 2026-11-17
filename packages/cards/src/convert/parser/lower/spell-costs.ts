@@ -91,7 +91,19 @@ function lowerAdditional(
   ability: Static,
   costs: readonly IrCost[],
   orCosts?: readonly IrCost[],
+  optional?: true,
 ): LowerResult<FaceCosts> {
+  if (optional === true) {
+    if (orCosts !== undefined || costs.length !== 1 || costs[0]?.kind !== 'exileFromHand') {
+      return failure(ability);
+    }
+    const cost = additional(costs[0]);
+    if (!cost.ok) return cost;
+    const blocked = missingFeatures(['cost:exileFromHand']);
+    return blocked.length > 0
+      ? failure(ability, blocked)
+      : { ok: true, value: { ...NONE, additionalCosts: [cost.value] }, rule: ability.rule };
+  }
   if (orCosts !== undefined) return lowerChoice(ability, costs, orCosts);
   const lowered: Cost[] = [];
   for (const ir of costs) {
@@ -221,7 +233,7 @@ export function lowerSpellCosts(ability: Static): SpellCostLowering | null {
   const [effect, ...more] = ability.statement.effects;
   if (effect === undefined || more.length > 0) return null;
   if (effect.kind === 'additionalCost') {
-    return lowerAdditional(ability, effect.costs, effect.orCosts);
+    return lowerAdditional(ability, effect.costs, effect.orCosts, effect.optional);
   }
   if (effect.kind === 'optionalSacrificeCopies') return lowerSacrificeCopies(ability, effect);
   if (effect.kind === 'freeCast') return lowerFree(ability, effect.condition);

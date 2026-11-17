@@ -352,6 +352,12 @@ export interface StackData {
    */
   readonly replicated?: number;
   /**
+   * True when the buyback cost was paid as the spell was cast (CR 702.27a, Galadriel group 3): the card returns to its owner's hand instead of the graveyard as the spell
+   * resolves (`rules/stack.ts`). Absent for a spell with no buyback and for one whose caster did not pay it. A copy of the spell has it too (CR 707.10), which makes no
+   * difference to it: a copy is not a card and ceases to exist.
+   */
+  readonly boughtBack?: true;
+  /**
    * The opponent the caster promised a gift to as the spell was cast (CR 702.174a, 702.174k, D-135): "the chosen player". Absent
    * when the spell has no gift or the gift was not promised. A copy of the spell has it too (CR 707.10), which makes no
    * difference to it: the gift happens as the spell resolves, once, for the spell that was cast.
@@ -451,6 +457,8 @@ export interface StackData {
    */
   readonly triggerPlayer?: SeatId;
   readonly triggerDamage?: number;
+  /** The target count read by a cast trigger (D-574). */
+  readonly triggerTargetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
   readonly triggerAttacked?: readonly SeatId[];
   /**
@@ -687,6 +695,7 @@ export interface PendingTrigger {
   /** The player the event is about (`triggerPlayer`, D-133) and the damage it dealt (`triggerDamage`), when it has them. */
   readonly player?: SeatId;
   readonly damage?: number;
+  readonly targetCount?: number;
   /** For a reflexive ability (D-177): the permanents the resolution that created it had sacrificed (`StackData.sacrificedBefore`). */
   readonly sacrificedBefore?: readonly ObjectId[];
   /** For a reflexive ability (D-231): what the resolution that created it had counted (`ThisWayCounts`), read by its `thisWay` amounts. */
@@ -794,6 +803,7 @@ export interface CastingContext {
     | 'payOptions'
     | 'payment'
     | 'behold'
+    | 'additionalExile'
     | 'sacrifice'
     | 'discard'
     | 'exile'
@@ -828,6 +838,8 @@ export interface CastingContext {
     readonly behold?: ObjectFilter | null;
     /** How many other cards of the caster's graveyard to exile (Escape, CR 702.138a, D-124); 0 for none. */
     readonly exile: number;
+    /** Cards selected from hand for an optional exile additional cost, moved after mana is paid. */
+    readonly exileFromHand?: ObjectId[];
     /** The untapped permanents to tap as part of the cost (the `tapPermanents` alternative cost, D-149), or null. */
     readonly tap?: { readonly filter: ObjectFilter; readonly count: number } | null;
   };
@@ -866,8 +878,22 @@ export interface ActivationContext {
 }
 
 export type Instruction =
+  | {
+      readonly kind: 'chooseObjects';
+      readonly id: string;
+      readonly filter: ObjectFilter;
+      readonly count: number;
+      readonly chosen: readonly ObjectId[] | null;
+    }
+  | { readonly kind: 'chooseCreatureType'; readonly chosen: string | null }
   /** Run one effect node of the resolving spell or ability. */
-  | { readonly kind: 'effect'; readonly effect: Effect; readonly as?: SeatId }
+  | {
+      readonly kind: 'effect';
+      readonly effect: Effect;
+      readonly as?: SeatId;
+      /** The player whose `playersMay` answer declined this `otherwise` effect (D-576). */
+      readonly declinedBy?: SeatId;
+    }
   /**
    * One player's "may" of a `playersMay` effect (D-210): `seat` is asked (a `confirmOptional`, answered by that player); when they accept, `effect` runs, as
    * `as` when it is set (that player is "you" in it); when they decline, `otherwise` runs as the controller. `answer` is null until they answer.
@@ -1064,6 +1090,8 @@ export type Instruction =
       readonly position: 'top' | 'bottom' | number;
       /** "You may ..." (`ChooseSelector.optional`, D-139): none up to `count` are chosen. */
       readonly optional?: true;
+      /** "From your hand or graveyard" (`ChooseSelector.alsoGraveyard`, D-544): the cards of the graveyard are candidates besides those of the hand `filter` names. */
+      readonly alsoGraveyard?: true;
       /** Moving a card chosen from the hand or the graveyard onto the battlefield (D-139): how it enters. */
       readonly tapped?: boolean;
       readonly controller?: 'owner' | 'you';
@@ -1120,6 +1148,7 @@ export type Instruction =
       readonly cards: readonly ObjectId[];
       readonly chosenTo: 'hand' | 'graveyard';
       readonly otherTo: 'hand' | 'graveyard';
+      readonly faceDownPile?: true;
       readonly first?: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
       readonly pick?: 1 | 2;
@@ -1152,8 +1181,8 @@ export type Instruction =
       readonly revealAll?: true;
       /** With `revealAll`: the cards have been revealed (the event came out), so the instruction asks the question now (D-396). */
       readonly revealed?: true;
-      /** `bottomChosen` (D-324): the rest go on the bottom in the order their owner chooses (an `arrange` instruction of purpose 'bottom'). */
-      readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen';
+      /** The remaining cards are left, ordered or randomized as the effect says. */
+      readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen' | 'topChosen';
       readonly chosen: readonly ObjectId[] | null;
       readonly left?: readonly ObjectId[];
     }
@@ -1502,6 +1531,8 @@ export type Instruction =
       readonly commanderChoice: boolean | null;
       /** An earlier card of this instruction was already counted for `thisWay` `playersDrew` (D-131). */
       readonly counted?: true;
+      /** "Draw a card and reveal it" (the effect `draw` with `reveal`, Galadriel group 3): the card drawn is revealed and is what `moved` names after it. Only a count of 1. */
+      readonly reveal?: true;
       /**
        * The next `replacedLeft` draws of this instruction are the ones a `drawInstead` replacement made in place of a draw (D-379, CR 614.5, 614.11a): the
        * effects that made them do not replace them again, and they go before the draws the replaced one was followed by. Absent when none are waiting.
@@ -1577,6 +1608,10 @@ export interface ResolutionContext {
    */
   readonly source: ObjectId;
   readonly controller: SeatId;
+  /** Creature type chosen by a resolving instruction such as "choose a creature type". */
+  readonly chosenCreatureType?: string;
+  /** Objects chosen by resolving instructions, keyed by their bound text reference. */
+  readonly chosenObjects?: Readonly<Record<string, readonly ObjectId[]>>;
   readonly queue: readonly Instruction[];
   /** Targets that were still legal when resolution began (CR 608.2b). */
   readonly legalTargets: readonly ChosenTarget[];
@@ -1616,7 +1651,10 @@ export interface ResolutionContext {
   readonly triggerSubject?: ObjectId;
   /** What `triggerPlayer` and `triggerDamage` mean for a triggered ability that reads them (D-133): `StackData.triggerPlayer`, `triggerDamage`. */
   readonly triggerPlayer?: SeatId;
+  /** The player whose `playersMay` answer declined the current otherwise effect (D-576). */
+  readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
+  readonly triggerTargetCount?: number;
   /** What `attackersAttackedYou` reads (D-149): `StackData.triggerAttacked`. */
   readonly triggerAttacked?: readonly SeatId[];
   /** What `sacrificedCost` means (D-133): `StackData.sacrificedAsCost`. */
@@ -1950,6 +1988,12 @@ export interface TurnLog {
     readonly abilityIndex: number;
     readonly seat: SeatId;
   }[];
+  /**
+   * Each time a triggered ability that counts its resolutions (the effect has the condition `abilityResolvedTimes`, Galadriel group 1) began to resolve this turn: the
+   * source permanent and the effect of the ability as text (the abilities written for the events of one printed "or" share it). Absent until one was recorded, so the
+   * state of a game with no such ability is as it was.
+   */
+  readonly resolved?: readonly { readonly object: ObjectId; readonly key: string }[];
   /**
    * Each permanent that entered the battlefield this turn (D-151, Celebration: "two or more nonland permanents entered the battlefield under your
    * control this turn"), in order: who controlled it as it entered, its card types as it entered and whether it is a token. It stays when the

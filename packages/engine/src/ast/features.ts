@@ -113,6 +113,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayPlayFromGraveyard',
     // D-411: "Mill four cards. You may put a land card from among them into your hand." (`ChooseSelector.fromMoved`: the choice among the cards `moved` names).
     'chooseAmongMoved',
+    // D-544: "You may put a land card from your hand or graveyard onto the battlefield." (`ChooseSelector.alsoGraveyard`: the cards of both places are the candidates).
+    'chooseAlsoGraveyard',
     // D-433: "Tiered", a mode with a cost listed before its effect (`SpellMode.cost`, CR 700.2h, 702.183a).
     'modeCost',
     // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
@@ -125,6 +127,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   ],
   effectKinds: [
     'sequence',
+    'chooseObjects',
+    'chooseCreatureType',
     'dealDamage',
     'destroy',
     'exile',
@@ -164,6 +168,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'untap',
     'removeAllCounters',
     'removeAllPlayerCounters',
+    // Galadriel group 3: "Remove a number of loyalty counters equal to that card's mana value from ~" (CR 122.1).
+    'removeCounters',
     // D-209: "You get {E}{E}" (`gainEnergy`) and "connives" (`connive`).
     'gainEnergy',
     'connive',
@@ -193,6 +199,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'permanentsEnterTapped',
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
     'gainControl',
+    // Galadriel group 3: "Exchange control of this enchantment and target nonland permanent" (CR 701.12a, 701.12b).
+    'exchangeControl',
     'shuffle',
     // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
     'rollDie',
@@ -360,6 +368,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tokenCreated',
     // D-513: "Whenever you scry" (CR 701.22).
     'scries',
+    // Galadriel group 1: "Whenever you surveil" (CR 701.25).
+    'surveils',
+    // Galadriel group 3: "Whenever you roll a die's highest natural result" (CR 706.1a, 706.2).
+    'rollsHighest',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -375,6 +387,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomesTargetSpell',
     // D-229: "casts their second spell each turn" (`castSpell` with `nth`).
     'castNth',
+    // D-565: "your first spell during each opponent's turn" (`castSpell` with `duringTurn`).
+    'castDuringOpponentTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
     // (`notAsAttacker`) and "Whenever you tap one or more untapped creatures" (`batch`).
     'tappedBy',
@@ -466,6 +480,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-129: Storm (CR 702.40a) and Replicate (CR 702.56a).
     'storm',
     'replicate',
+    // Galadriel group 3: Buyback (CR 702.27a).
+    'buyback',
     'gravestorm',
     // D-135: Gift (CR 702.174), "Gift a card".
     'gift',
@@ -578,6 +594,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'payXLife',
     // D-386 (provisional): "Discard X cards" as an additional cost to cast a spell (an activated ability's cost refuses it).
     'discardX',
+    // D-575: optional exiling of any number of cards from hand as a spell's additional cost.
+    'exileFromHand',
     'sacrifice',
     'removeCounters',
     'discardThis',
@@ -609,6 +627,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'this',
     'thisSpell',
     'target',
+    'chosen',
     'anyTarget',
     // D-200: "target player or planeswalker".
     'playerOrObject',
@@ -644,6 +663,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sharedLandType',
     // D-181: "target spell or ability with a single target" (`ObjectFilter.singleTarget`).
     'singleTarget',
+    'targetCountAtLeast',
     // D-206: "an instant or sorcery spell that targets a creature" (`ObjectFilter.targetsObject`).
     'targetsObject',
     // D-437: "a spell that targets only this creature" and "a spell that targets this creature" (`ObjectFilter.targetsOnly`, `isSource`).
@@ -655,6 +675,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
     'chosenType',
+    'notChosenType',
     'chosenColor',
     // D-110: "defending player" (CR 508.5) and "it" for the card the source became (CR 400.7, Persist).
     'defendingPlayer',
@@ -670,6 +691,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attached',
     // D-120: `ObjectFilter.attacking` and `powerLessThanSource`.
     'attacking',
+    'notAttacking',
     'powerLessThanSource',
     // D-431: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
     'powerAboveBase',
@@ -787,6 +809,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-149: "if none of those creatures attacked you" (`not` of `attackersAttackedYou`), "during your first, second, or third turn",
     // "you control three or more lands with the same name".
     'attackersAttackedYou',
+    // Galadriel group 1: "if this is the second time this ability has resolved this turn", "if you chose a creature other than ~ as your Ring-bearer".
+    'abilityResolvedTimes',
+    'ringBearerChosen',
     'ownTurnNumber',
     'sameNameAtLeast',
     // D-151: "two or more nonland permanents entered the battlefield under your control this turn", "an opponent was dealt 7 or more damage".
@@ -835,6 +860,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-095: `costReduction` ("costs {1} less to cast for each ...", "Artifact spells you cast cost {1} less").
   // D-099: `grantAbility` gives a mana ability ("Lands you control have "{T}: Add one mana of any color."").
   staticKinds: [
+    'allCreatureTypes',
     'noMaximumHandSize',
     // D-125: "You may play an additional land on each of your turns."
     'additionalLandDrops',
@@ -844,6 +870,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackTax',
     // D-125: "You may choose not to untap ~ during your untap step."
     'optionalUntap',
+    // Galadriel group 3: "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a).
+    'crewSaddleBonus',
     // D-229: "Untap all creatures you control during each other player's untap step."
     'untapInOthersUntapStep',
     'modifyPt',
@@ -950,14 +978,19 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'thisWay',
     // D-133: "that much" for the damage that caused a trigger.
     'triggerDamage',
+    'triggerTargetCount',
     // D-194: "the number of profit votes" (CR 701.38a).
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
     'cardsDrawnThisTurn',
     // D-491: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
     'sacrificedAsCost',
+    // D-575: "for each card exiled this way" for a spell's additional cost.
+    'exiledAsCost',
     // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
     'enteredX',
+    // Galadriel group 3: "Scry X, where X is the result" (CR 706.2): the natural result of the die rolled earlier in the same resolution.
+    'dieResult',
   ],
   // D-405: 'library' is "then shuffle and put that card on top".
   searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library'],
@@ -1034,6 +1067,7 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'cantBeBlockedByMoreThanOne',
   'attacksEachCombat',
   'mustBeBlocked',
+  'mustBlock',
   'doesntUntap',
   'cantBeCountered',
 ];
@@ -1049,6 +1083,9 @@ export const RESTRICTABLE_BY_EFFECT: readonly Restriction[] = [
   'cantBeBlocked',
   'attacksEachCombat',
   'mustBeBlocked',
+  // Galadriel group 3: "Its activated abilities can't be activated this turn."
+  'cantActivateAbilities',
+  'mustBlock',
 ];
 
 /**
@@ -1101,6 +1138,8 @@ export const ABILITY_FEATURES = [
   'mayPlayFromGraveyard',
   /** "Mill four cards. You may put a land card from among them into your hand" (D-411, CR 608.2c, 608.2d): the engine's `ChooseSelector.fromMoved` of a `moveToZone`. */
   'chooseAmongMoved',
+  /** "You may put a land card from your hand or graveyard onto the battlefield" (D-544, CR 608.2d, 110.2a): the engine's `ChooseSelector.alsoGraveyard` of a `moveToZone` onto the battlefield. */
+  'chooseAlsoGraveyard',
   /** "Tiered" (D-433, CR 700.2h, 702.183a): a mode of a modal spell with a cost listed before its effect, paid as an additional cost when the mode is chosen (`SpellMode.cost`). */
   'modeCost',
   /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
@@ -1127,6 +1166,8 @@ export const TRIGGER_FEATURES = [
   'becomesTargetSpell',
   /** "Whenever an opponent casts their second spell each turn" (CR 601.2i, D-229): the engine's `castSpell` with `nth`. */
   'castNth',
+  /** "Whenever you cast your first spell during each opponent's turn" (D-565): `castSpell` with `duringTurn`. */
+  'castDuringOpponentTurn',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
   'tappedBy',
   /** "Whenever a creature becomes tapped, if it isn't being declared as an attacker" (CR 508.1f, D-510): the engine's `becomesTapped` with `notAsAttacker`. */
@@ -1143,6 +1184,7 @@ export const SELECTOR_KINDS = [
   'this',
   'thisSpell',
   'target',
+  'chosen',
   'anyTarget',
   /** "Target player or planeswalker" (D-200): the engine's `TargetSpec.what` `playerOrObject`. */
   'playerOrObject',
@@ -1198,13 +1240,16 @@ export const SELECTOR_KINDS = [
   'copyForEach',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
   'singleTarget',
+  /** "with one or more targets" on a cast trigger (D-574). */
+  'targetCountAtLeast',
   /** "Spells you cast from anywhere other than your hand" (CR 601.2a, D-235): the engine's `ObjectFilter.notCastFromHand`. */
   'notCastFromHand',
   'triggerSubject',
   'triggerActor',
   'bound',
-  /** "Of the chosen type" / "of the chosen color" (D-100, CR 607.2d): the engine's `ObjectFilter.chosenType` and `chosenColor`. */
+  /** The chosen type/color selectors (D-100, D-566), including the inverse chosen-type filter. */
   'chosenType',
+  'notChosenType',
   'chosenColor',
   /** "Defending player" (CR 508.5, Annihilator): the engine's `PlayerSelector` `defendingPlayer`. */
   'defendingPlayer',
@@ -1222,6 +1267,8 @@ export const SELECTOR_KINDS = [
   'attached',
   /** "Attacking creature" (CR 506.4, D-120): the engine's `ObjectFilter.attacking`. */
   'attacking',
+  /** "Nonattacking creatures" (CR 508.1k, D-573): the engine's `ObjectFilter.notAttacking`. */
+  'notAttacking',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
   /** "With power greater than its base power" (CR 208.4b, D-431): the engine's `ObjectFilter.powerAboveBase`. */
@@ -1353,6 +1400,10 @@ export const CONDITION_KINDS = [
   'duringStep',
   /** "None of those creatures attacked you" (CR 508.1b, D-149): the engine's `attackersAttackedYou`. */
   'attackersAttackedYou',
+  /** "If this is the second time this ability has resolved this turn" (CR 608.2c, Galadriel group 1): the engine's `abilityResolvedTimes`. */
+  'abilityResolvedTimes',
+  /** "If you chose a creature other than ~ as your Ring-bearer" (CR 701.54a, Galadriel group 1): the engine's `ringBearerChosen`. */
+  'ringBearerChosen',
   /** "During your first, second, or third turn of the game" (CR 500.1, D-149): the engine's `ownTurnNumber`. */
   'ownTurnNumber',
   /** "You control three or more lands with the same name" (D-149): the engine's `sameNameAtLeast`. */
@@ -1424,6 +1475,8 @@ export const STATIC_KINDS = [
   /** "~ can't block", "can't be blocked", "attacks each combat if able", "doesn't untap", "can't be countered" (D-094): the engine's `restriction`. */
   'restriction',
   'noMaximumHandSize',
+  /** A permanent gives creature objects every creature subtype in its stated scope (D-578). */
+  'allCreatureTypes',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */
   'additionalLandDrops',
   /** "You may look at the top card of your library any time." (CR 401.5, D-125). */
@@ -1432,6 +1485,8 @@ export const STATIC_KINDS = [
   'attackTax',
   /** "You may choose not to untap ~ during your untap step." (CR 502.3, D-125). */
   'optionalUntap',
+  /** "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a, Galadriel group 3). */
+  'crewSaddleBonus',
   /** "Untap all creatures you control during each other player's untap step." (CR 502.3, D-229). */
   'untapInOthersUntapStep',
   /** "~ costs {1} less to cast for each ...", "Artifact spells you cast cost {1} less" (D-095): the engine's `costReduction`. */
@@ -1578,14 +1633,20 @@ export const AMOUNT_KINDS = [
   'opponentsWithMore',
   /** "That much" for the damage that caused a trigger (D-133): the engine's `triggerDamage`. */
   'triggerDamage',
+  /** Number of targets chosen for a spell in a cast trigger (D-574). */
+  'triggerTargetCount',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
   /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
+  /** "For each card exiled this way" for a spell's additional cost (D-575): the engine's `exiledAsCost`. */
+  'exiledAsCost',
   /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
   'enteredX',
+  /** "Scry X, where X is the result" (CR 706.2, Galadriel group 3): the engine's `dieResult` amount, the natural result of the die rolled earlier in the resolution. */
+  'dieResult',
   'bound',
 ] as const;
 export type AmountKind = (typeof AMOUNT_KINDS)[number];
@@ -1666,6 +1727,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpentRiderCopy: true,
   mayPlayFromGraveyard: true,
   chooseAmongMoved: true,
+  chooseAlsoGraveyard: true,
   modeCost: true,
   sacrificeX: true,
   optionalSacrifice: true,
@@ -1683,6 +1745,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
 };
 const EFFECT_TABLE: KindTable<Effect['kind']> = {
   sequence: true,
+  chooseObjects: true,
   grantPlayerHexproof: true,
   mill: true,
   manifest: true,
@@ -1712,6 +1775,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   tap: true,
   untap: true,
   removeAllCounters: true,
+  removeCounters: true,
   removeAllPlayerCounters: true,
   gainEnergy: true,
   connive: true,
@@ -1730,6 +1794,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   requireAttack: true,
   permanentsEnterTapped: true,
   gainControl: true,
+  exchangeControl: true,
   shuffle: true,
   rollDie: true,
   scry: true,
@@ -1779,6 +1844,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   castCard: true,
   reselectAttack: true,
   chooseOne: true,
+  chooseCreatureType: true,
   vote: true,
   ringTempts: true,
   pair: true,
@@ -1836,6 +1902,8 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   crimeCommitted: true,
   tokenCreated: true,
   scries: true,
+  surveils: true,
+  rollsHighest: true,
   interveningIf: true,
   alone: true,
   attacksAt: true,
@@ -1844,6 +1912,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   triggerCondition: true,
   becomesTargetSpell: true,
   castNth: true,
+  castDuringOpponentTurn: true,
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,
@@ -1868,6 +1937,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   enchant: true,
   equip: true,
   kicker: true,
+  buyback: true,
   flashback: true,
   prowess: true,
   ward: true,
@@ -1965,6 +2035,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   payLife: true,
   payXLife: true,
   discardX: true,
+  exileFromHand: true,
   sacrifice: true,
   discard: true,
   behold: true,

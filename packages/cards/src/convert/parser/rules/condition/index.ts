@@ -33,6 +33,7 @@ import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
+import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
 import { GISA_G1_CONDITION_RULES } from './gisa-g1';
 import { HOFRI_CONDITION_RULES } from './hofri';
@@ -449,6 +450,8 @@ export const CONDITION_RULES = [
   ...HYLDA_G2_CONDITION_RULES,
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way".
   ...LOREHOLD_G1_CONDITION_RULES,
+  // Galadriel deck, group 1 (issue 43): "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
+  ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,

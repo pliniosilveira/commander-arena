@@ -55,6 +55,18 @@ export function lowerCopyToken(
       setCreatureTypes: [...token.copyExcept.subtypes],
     };
   }
+  // "..., except it's not legendary and its starting loyalty is 1" (Galadriel deck group 3, CR 707.9b, 205.4a, 306.5b): the supertype and the loyalty of the copy.
+  if (token.copyNotLegendary === true || token.copyStartingLoyalty !== undefined) {
+    const missing = missingFeatures(['token:copyExceptions']);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    exceptions = {
+      ...exceptions,
+      ...(token.copyNotLegendary === true ? { notLegendary: true } : {}),
+      ...(token.copyStartingLoyalty === undefined
+        ? {}
+        : { startingLoyalty: token.copyStartingLoyalty }),
+    };
+  }
   // "Create a tapped token that's a copy of ...": the token enters tapped (CR 110.5b).
   if (token.tapped === true) {
     const missing = missingFeatures(['token:tapped']);

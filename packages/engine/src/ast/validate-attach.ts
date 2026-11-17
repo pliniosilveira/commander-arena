@@ -154,7 +154,11 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
         `${path}.from`,
         'protection from the color of your choice is chosen as an effect resolves: only a grantKeyword effect gives it',
       );
-    } else if (k.from !== 'colorsNotInCommanderIdentity' && k.from !== 'chosenCardType') {
+    } else if (
+      k.from !== 'colorsNotInCommanderIdentity' &&
+      k.from !== 'chosenCardType' &&
+      k.from !== 'ringBearer'
+    ) {
       issue(
         out,
         `${path}.from`,

@@ -22,6 +22,8 @@ import { activationRefusal } from './rules/activate-legality';
 import { isArrangement } from './rules/arrange';
 import { acceptCascade, declineCascade } from './rules/cascade-cast';
 import {
+  answerBuyback,
+  answerCastAdditionalExile,
   answerCastBehold,
   answerCastDiscard,
   answerCastExile,
@@ -92,6 +94,7 @@ import {
   answerResolutionChoice,
   answerResolutionChooseOne,
   answerResolutionCommanderChoice,
+  answerResolutionCreatureType,
   answerResolutionDevour,
   answerResolutionEntersChosen,
   answerResolutionEntersCopy,
@@ -360,6 +363,8 @@ function answerConfirm(
   if (d.purpose === 'kicker') return answerKicker(state, accept);
   // CR 702.174a, 601.2b (D-135): "promise a gift to this opponent?" is asked while the spell is being cast.
   if (d.purpose === 'gift') return answerGiftChoice(state, accept);
+  // CR 702.27a, 601.2b (Galadriel group 3): "pay the buyback cost?" is asked while the spell is being cast.
+  if (d.purpose === 'buyback') return answerBuyback(state, accept);
   // CR 118.8, 601.2b (D-181): "sacrifice an artifact or creature or pay {4}": which way, asked while the spell is being cast.
   if (d.purpose === 'costChoice') return answerCostChoice(state, accept);
   // CR 702.21a: "pay [cost] or it is countered" (Ward), asked of the spell's controller as the
@@ -468,6 +473,10 @@ function answerChooseOption(
     // CR 608.2d (D-175): the instruction of a resolving effect that the controller chose among the ones it offered.
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionChooseOne(state, option));
+  }
+  if (d.purpose === 'creatureType' && state.resolution?.queue[0]?.kind === 'chooseCreatureType') {
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionCreatureType(state, option));
   }
   if (d.purpose === 'protectionColor') {
     // CR 702.16, 608.2d (D-451): the color the controller chose for "gains protection from the color of your choice".
@@ -918,6 +927,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       if (!validCardsChoice(action.objects, d)) return fail('That is not a legal choice');
       if (d.forCost === true) {
         if (d.purpose === 'behold') return answerCastBehold(state, action.objects);
+        if (d.purpose === 'additionalExile')
+          return answerCastAdditionalExile(state, action.objects);
         // CR 702.138a (D-124): the other cards an escape cost exiles are chosen as the spell is cast.
         if (d.purpose === 'exile') {
           // D-232: "Exile two creature cards from your graveyard" as the cost of an activated ability.
@@ -976,7 +987,10 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
     case 'confirmOptional': {
       // The kicker question can be taken back, which rewinds the cast (CR 733).
       if (
-        (d.purpose === 'kicker' || d.purpose === 'gift' || d.purpose === 'costChoice') &&
+        (d.purpose === 'kicker' ||
+          d.purpose === 'gift' ||
+          d.purpose === 'costChoice' ||
+          d.purpose === 'buyback') &&
         action.kind === 'cancel'
       ) {
         return cancelCast(state);

@@ -13,6 +13,7 @@
 import type { Condition, ObjectFilter, StaticSubject } from '../ast/types';
 import type { CardType, Color } from '../characteristics';
 import { isNonCreatureSubtype, type Subtype } from '../characteristics';
+import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId } from '../ids';
 import type { ContinuousEffect, GameObject, GameState } from '../state/types';
 import { plainConditionHolds } from './condition-reads';
@@ -42,11 +43,15 @@ interface LinkedTypes {
   readonly from: ObjectFilter;
   readonly also: readonly Subtype[];
 }
+interface AllCreatureTypes {
+  readonly kind: 'allCreatureTypes';
+  readonly scope: 'youControl' | 'youOwn';
+}
 
 interface TypeSource {
   readonly object: GameObject;
   readonly subject: StaticSubject;
-  readonly what: NamedTypes | NamedColors | LinkedTypes | LostTypes;
+  readonly what: NamedTypes | NamedColors | LinkedTypes | LostTypes | AllCreatureTypes;
   /** "As long as ..." (D-151, Celebration): a condition that reads no characteristic, read each time the effects are looked at (CR 611.3a). */
   readonly condition?: Condition;
 }
@@ -70,7 +75,14 @@ function scan(state: GameState): Index {
       if (a.kind !== 'static') continue;
       const s = a.static;
       const condition = a.condition === undefined ? {} : { condition: a.condition };
-      if (s.kind === 'setTypes' && s.chosenType === undefined) {
+      if (s.kind === 'allCreatureTypes') {
+        sources.push({
+          object,
+          subject: { kind: 'filter', filter: { types: ['creature'] } },
+          what: s,
+          ...condition,
+        });
+      } else if (s.kind === 'setTypes' && s.chosenType === undefined) {
         sources.push({
           object,
           subject: s.subject,
@@ -191,12 +203,25 @@ export function groupTypeEffects(
   target: GameObject,
   view: FilterSubject,
 ): readonly ContinuousEffect[] {
-  if (target.zone !== 'battlefield') return NONE;
   const { sources } = indexOf(state);
   if (sources.length === 0) return NONE;
   const out: ContinuousEffect[] = [];
   for (const [i, src] of sources.entries()) {
-    if (!subjectAffects(state, src.object, src.subject, target, view)) continue;
+    if (src.what.kind === 'allCreatureTypes') {
+      if (!view.types.includes('creature')) continue;
+      const you = controllerOf(state, src.object);
+      const applies =
+        src.what.scope === 'youControl'
+          ? (target.zone === 'battlefield' ||
+              (target.zone === 'stack' && target.stack?.kind === 'spell')) &&
+            controllerOf(state, target) === you
+          : target.zone !== 'battlefield' && target.card !== null && target.owner === you;
+      if (!applies) continue;
+    } else if (
+      target.zone !== 'battlefield' ||
+      !subjectAffects(state, src.object, src.subject, target, view)
+    )
+      continue;
     if (
       src.condition !== undefined &&
       !plainConditionHolds(state, src.condition, controllerOf(state, src.object))
@@ -227,6 +252,10 @@ export function groupTypeEffects(
     }
     if (src.what.kind === 'colors') {
       out.push({ ...base, change: { kind: 'setColors', colors: src.what.colors } });
+      continue;
+    }
+    if (src.what.kind === 'allCreatureTypes') {
+      out.push({ ...base, change: { kind: 'setTypes', subtypes: CREATURE_TYPES, additive: true } });
       continue;
     }
     const card = linkedCardOf(state, src.object, src.what.from);

@@ -187,6 +187,8 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   crimeCommitted: { kind: 'crimeCommitted', who: 'you' },
   tokenCreated: { kind: 'tokenCreated', who: 'you' },
   scries: { kind: 'scries', who: 'you' },
+  surveils: { kind: 'surveils', who: 'you' },
+  rollsHighest: { kind: 'rollsHighest', who: 'you' },
   upkeep: { kind: 'upkeep', whose: 'you' },
   endStep: { kind: 'endStep', whose: 'each' },
   step: { kind: 'step', step: 'beginCombat', whose: 'you' },

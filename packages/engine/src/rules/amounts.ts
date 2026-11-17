@@ -46,6 +46,7 @@ type StateAmount = Extract<
       | 'cardsStillExiled'
       | 'cardsDrawnThisTurn'
       | 'sacrificedAsCost'
+      | 'exiledAsCost'
       | 'cardTypesAmong';
   }
 >;
@@ -80,6 +81,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'cardsStillExiled' ||
     amount.kind === 'cardsDrawnThisTurn' ||
     amount.kind === 'sacrificedAsCost' ||
+    amount.kind === 'exiledAsCost' ||
     amount.kind === 'cardTypesAmong'
   );
 }
@@ -221,6 +223,8 @@ export function amountOf(
     const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
     return source?.castX ?? 0;
   }
+  // CR 706.2 (Galadriel group 3): "where X is the result": the natural result of the die rolled earlier in this resolution (0 when none was: `validateCard` forbids that).
+  if (amount.kind === 'dieResult') return ctx.dieResult ?? 0;
   if (amount.kind === 'x') {
     // CR 107.3a: the X announced for the spell or ability on the stack; 0 anywhere else (CR 107.3g).
     if (ctx.x !== undefined) return ctx.x;
@@ -232,13 +236,15 @@ export function amountOf(
   if (amount.kind === 'countOf') {
     // CR 109.4, 608.2c (Hylda group 3): "for each tapped creature target opponent controls": the player is a target, read now, with the targets.
     const controlled = amount.filter.controlledBy;
-    return countMatching(
-      state,
-      amount.filter,
-      controlled === undefined
-        ? ctx
-        : { ...ctx, controllers: resolvePlayers(state, controlled, ctx, targets) },
-    );
+    const owner = amount.filter.owner;
+    const filterContext = {
+      ...ctx,
+      ...(controlled === undefined
+        ? {}
+        : { controllers: resolvePlayers(state, controlled, ctx, targets) }),
+      ...(owner === undefined ? {} : { owners: resolvePlayers(state, owner, ctx, targets) }),
+    };
+    return countMatching(state, amount.filter, filterContext);
   }
   // D-120: "the total life lost this way": what the earlier `loseLife` of this resolution made players lose.
   if (amount.kind === 'lifeLostThisWay') return ctx.lifeLost ?? 0;
@@ -249,6 +255,7 @@ export function amountOf(
   if (amount.kind === 'votesFor') return ctx.votes?.[amount.option] ?? 0;
   // D-133: "that much" for the damage that caused the trigger (CR 120.3).
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
+  if (amount.kind === 'triggerTargetCount') return ctx.triggerTargetCount ?? 0;
   // D-110: "for each time it was kicked": the source's own count, or what its last-known information says.
   if (amount.kind === 'timesKicked') {
     return ctx.source === null ? 0 : timesKickedOf(objectOrLki(state, ctx.source));
@@ -360,6 +367,10 @@ export function stateAmountOf(
       // or, once it has left the stack, from its last-known information (CR 113.7a).
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return source?.stack?.sacrificedAsCost?.length ?? 0;
+    }
+    case 'exiledAsCost': {
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return source?.stack?.exiledAsCost?.length ?? 0;
     }
     default: {
       const unreachable: never = amount;

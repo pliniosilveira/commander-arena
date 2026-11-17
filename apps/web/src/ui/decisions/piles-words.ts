@@ -23,9 +23,9 @@ export function pilePrompt(d: Pick<ChooseOptionDecision, 'seat'> & { piles: Pile
 }
 
 /** "Pile 1 (2 cards)", "Pile 2 (no cards)". */
-export function pileLabel(n: 1 | 2, cards: readonly ObjectId[]): string {
-  const count =
-    cards.length === 0 ? 'no cards' : `${cards.length} card${cards.length === 1 ? '' : 's'}`;
+export function pileLabel(n: 1 | 2, cards: readonly ObjectId[], faceDownCount?: number): string {
+  const cardCount = faceDownCount ?? cards.length;
+  const count = cardCount === 0 ? 'no cards' : `${cardCount} card${cardCount === 1 ? '' : 's'}`;
   return `Pile ${n} (${count})`;
 }
 

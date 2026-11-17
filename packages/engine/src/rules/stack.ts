@@ -15,7 +15,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getObject, getSeat } from '../state/ops';
 import type { ChosenValues, GameState, Instruction, ResolutionContext } from '../state/types';
-import { recordActionTaken } from './action-taken';
+import { recordActionTaken, recordResolution } from './action-taken';
 import { attachEntered, auraTargetSpec, ENCHANT_TARGET_ID } from './attach';
 import { runCascade } from './cascade';
 import { runCastCard } from './cast-card';
@@ -96,6 +96,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
     ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
     // D-230: "mana value X or less, where X is the damage dealt" is read again as the ability resolves.
     ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
+    ...(obj.stack?.triggerTargetCount === undefined
+      ? {}
+      : { triggerTargetCount: obj.stack.triggerTargetCount }),
   };
   const legal = stillLegalTargets(input, specs, chosen, ctx);
 
@@ -135,8 +138,10 @@ export function resolveTop(input: GameState): ResolveOutcome {
   if (ability?.kind === 'triggered' && ability.optional)
     queue.unshift({ kind: 'confirmOptional', answer: null });
   // CR 603.2h (D-256): "Do this only once each turn": the action is taken as the ability begins, or, with "you may", when it is accepted.
-  const begun: GameState =
-    ability?.kind === 'triggered' && ability.optional ? input : recordActionTaken(input, id);
+  const begun: GameState = recordResolution(
+    ability?.kind === 'triggered' && ability.optional ? input : recordActionTaken(input, id),
+    id,
+  );
   const state: GameState = {
     ...begun,
     resolution: {
@@ -159,6 +164,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.thisWayBefore === undefined ? {} : { thisWay: obj.stack.thisWayBefore }),
       ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
       ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
+      ...(obj.stack?.triggerTargetCount === undefined
+        ? {}
+        : { triggerTargetCount: obj.stack.triggerTargetCount }),
       ...(obj.stack?.triggerAttacked === undefined
         ? {}
         : { triggerAttacked: obj.stack.triggerAttacked }),
@@ -266,6 +274,9 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
           ? { entersPaid: null }
           : {}),
         ...(head.kind === 'move' && res.entersChosen != null ? { entersChosen: null } : {}),
+        ...(head.kind === 'chooseObjects' && head.chosen !== null
+          ? { chosenObjects: { ...res.chosenObjects, [head.id]: head.chosen } }
+          : {}),
       },
     };
     // D-191: the answers to the replacement questions of the damage belong to the one instruction that asked them.
@@ -326,9 +337,25 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
     const adventure = isAdventureSpell(next, obj);
     // CR 614.1a, 608.2n (D-439): "exile that card instead of putting it into your graveyard as it resolves": an instant or sorcery that carries the mark is exiled.
     const exiled = exiledAsItResolves(obj, permanent, adventure);
+    // CR 702.27a (Galadriel group 3): "If the buyback cost was paid, put this spell into its owner's hand instead of into that player's graveyard as it resolves": an instant
+    // or sorcery card; not a permanent, an Adventure, a flashback spell or one another effect sends to exile (those keep their own place).
+    const boughtBack =
+      obj.stack?.boughtBack === true &&
+      obj.card !== null &&
+      !permanent &&
+      !adventure &&
+      !exiled &&
+      obj.stack.flashback !== true &&
+      obj.stack.exileInstead !== true;
     const moved = moveObject(next, {
       object: res.object,
-      to: permanent ? 'battlefield' : adventure || exiled ? 'exile' : 'graveyard',
+      to: permanent
+        ? 'battlefield'
+        : adventure || exiled
+          ? 'exile'
+          : boughtBack
+            ? 'hand'
+            : 'graveyard',
       // CR 400.3 (D-353): an instant or sorcery that resolves goes to its OWNER's graveyard, whoever cast it (a card cast from another player's graveyard); a
       // permanent enters under its controller's control (CR 110.2), and an Adventure is exiled for its caster (CR 715.3d).
       toSeat: permanent || adventure ? controllerOf(state, obj) : obj.owner,
@@ -403,6 +430,7 @@ export function answerResolutionChoice(
   if (!res || head === undefined) return null;
   if (
     head.kind !== 'chooseSacrifice' &&
+    head.kind !== 'chooseObjects' &&
     head.kind !== 'chooseMove' &&
     head.kind !== 'chooseTap' &&
     head.kind !== 'fightPairs' &&
@@ -804,6 +832,45 @@ export function answerResolutionChooseOne(state: GameState, option: string): Res
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
     [],
+  );
+}
+
+/** Records the creature type chosen by a resolving instruction and continues its spell. */
+export function answerResolutionCreatureType(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (
+    !res ||
+    head?.kind !== 'chooseCreatureType' ||
+    head.chosen !== null ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'creatureType' ||
+    !d.options.includes(option)
+  )
+    return null;
+  const updated: Instruction = { ...head, chosen: option };
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    {
+      ...state,
+      pending: null,
+      resolution: {
+        ...res,
+        chosenCreatureType: option,
+        queue: [updated, ...res.queue.slice(1)],
+      },
+    },
+    [event],
   );
 }
 

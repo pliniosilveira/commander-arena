@@ -108,8 +108,12 @@ const DIE_CONDITIONS = ['condition.die-result'] as const;
  */
 const MANA_SPENT_CONDITIONS = ['condition.mana-spent-or-more'] as const;
 
+/** Galadriel deck, group 1 (issue 43): "If this is the second time this ability has resolved this turn, the Ring tempts you." (CR 608.2c). */
+const RESOLUTION_CONDITIONS = ['condition.resolved-times'] as const;
+
 const LEAD_CONDITIONS = [
   ...MANA_SPENT_CONDITIONS,
+  ...RESOLUTION_CONDITIONS,
   ...DIE_CONDITIONS,
   // Stage P52 (D-210): "If a creature card was discarded this way, ..." after a discard.
   'condition.discarded-this-way',

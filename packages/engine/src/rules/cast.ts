@@ -50,6 +50,7 @@ import {
 } from './activate';
 import { planForActivation } from './activate-costs';
 import {
+  buybackCostOf,
   escalateCostOf,
   hasModeCosts,
   kickerCostOf,
@@ -116,6 +117,7 @@ import { becomeUnprepared } from './prepare';
 import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
+import { matchesFilter } from './select';
 import { setPending } from './set-pending';
 import { sourceInfo } from './source-info';
 import { maxTargetCountX, targetAnswerError, targetChoiceSpecs } from './target-choice';
@@ -460,12 +462,12 @@ function toReplicate(state: GameState, events: GameEvent[]): Result {
   const stack = spell.stack;
   if (!stack) return fail('The spell is not on the stack');
   const cost = replicateCostOf(faceOf(state, spell));
-  if (cost === null) return toGift(state, events, toCostChoice);
+  if (cost === null) return toBuyback(state, events);
   const before = casting.snapshot;
   const card = getObject(before, casting.from);
   const request = {
     seat: casting.seat,
-    spell: castAs(card, casting.seat, spell.face),
+    spell,
     zone: casting.fromZone as CastFrom,
     alternative: alternativeOfStack(stack),
     excluded: card.id,
@@ -477,7 +479,7 @@ function toReplicate(state: GameState, events: GameEvent[]): Result {
   const max = largestPayableX((n) =>
     canPayRequest(before, casting.seat, request.spell, { ...request, replicas: n }),
   );
-  if (max < 1) return toGift(state, events, toCostChoice);
+  if (max < 1) return toBuyback(state, events);
   const info = sourceInfo(state, casting.object);
   return ok(
     setPending(
@@ -500,18 +502,17 @@ function toReplicate(state: GameState, events: GameEvent[]): Result {
 }
 
 /**
- * CR 118.8, 601.2b (D-181): "As an additional cost to cast this spell, sacrifice an artifact or creature or pay {4}": the caster announces which way
- * they pay, after the kicker, replicate and gift and before X and the targets. A way that could not be paid with the choices already made (the
- * kicker as it was answered) is not offered, and nothing is asked when only one can be paid. The answer is kept on the spell (`StackData.costOption`).
+ * CR 702.27a, 601.2b (Galadriel group 3): a spell with Buyback asks whether to pay the buyback cost, after the kicker and replicate questions and before the gift, X and the targets. It
+ * is asked only when the whole cost with the buyback cost (and the kicker as it was answered) can be paid. The answer is kept on the spell (`StackData.boughtBack`).
  */
-function toCostChoice(state: GameState, events: GameEvent[]): Result {
+function toBuyback(state: GameState, events: GameEvent[]): Result {
   const casting = state.casting;
   if (!casting) return fail('No cast in progress');
   const spell = getObject(state, casting.object);
   const stack = spell.stack;
   if (!stack) return fail('The spell is not on the stack');
-  const choice = faceOf(state, spell)?.additionalCostChoice;
-  if (choice === undefined) return toX(state, events);
+  const cost = buybackCostOf(faceOf(state, spell));
+  if (cost === null) return toGift(state, events, toCostChoice);
   const before = casting.snapshot;
   const card = getObject(before, casting.from);
   const request = {
@@ -526,12 +527,119 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
     ...(stack.kicks === undefined ? {} : { kicks: stack.kicks }),
     ...(stack.replicated === undefined ? {} : { replicas: stack.replicated }),
   } as const;
+  if (!canPayRequest(before, casting.seat, request.spell, { ...request, bought: true })) {
+    return toGift(state, events, toCostChoice);
+  }
+  const info = sourceInfo(state, casting.object);
+  return ok(
+    setPending(
+      { ...state, casting: { ...casting, stage: 'kicker' } },
+      {
+        kind: 'confirmOptional',
+        seat: casting.seat,
+        source: casting.object,
+        sourceName: info?.name ?? '',
+        sourceOracleText: info?.oracleText ?? '',
+        cost,
+        purpose: 'buyback',
+      },
+    ),
+    events,
+  );
+}
+
+/**
+ * The answer to "pay the buyback cost?" (CR 702.27a, 601.2b): the spell is bought back or not, then the cast goes on to the gift, X and the targets.
+ * The answer has no event of its own; `spellCast` says `boughtBack`.
+ */
+export function answerBuyback(state: GameState, accept: boolean): Result {
+  const casting = state.casting;
+  const d = state.pending;
+  if (casting?.stage !== 'kicker' || d?.kind !== 'confirmOptional' || d.purpose !== 'buyback') {
+    return fail('No buyback cost is being asked');
+  }
+  const stack = getObject(state, casting.object).stack;
+  if (!stack) return fail('The spell is not on the stack');
+  const next = patchObject({ ...state, pending: null }, casting.object, {
+    stack: accept ? { ...stack, boughtBack: true } : stack,
+  });
+  return toGift(next, [], toCostChoice);
+}
+
+/**
+ * CR 118.8, 601.2b (D-181): "As an additional cost to cast this spell, sacrifice an artifact or creature or pay {4}": the caster announces which way
+ * they pay, after the kicker, replicate and gift and before X and the targets. A way that could not be paid with the choices already made (the
+ * kicker as it was answered) is not offered, and nothing is asked when only one can be paid. The answer is kept on the spell (`StackData.costOption`).
+ */
+function toCostChoice(state: GameState, events: GameEvent[]): Result {
+  const casting = state.casting;
+  if (!casting) return fail('No cast in progress');
+  const spell = getObject(state, casting.object);
+  const stack = spell.stack;
+  if (!stack) return fail('The spell is not on the stack');
+  const face = faceOf(state, spell);
+  const optionalExile = face?.additionalCosts?.find((cost) => cost.kind === 'exileFromHand');
+  if (optionalExile?.kind === 'exileFromHand' && stack.exiledAsCost === undefined) {
+    const legal = Object.values(state.objects)
+      .filter(
+        (object) =>
+          object.zone === 'hand' &&
+          object.owner === casting.seat &&
+          object.card !== null &&
+          object.id !== casting.object &&
+          matchesFilter(state, object, optionalExile.filter, {
+            controller: casting.seat,
+            source: casting.object,
+          }),
+      )
+      .map((object) => object.id);
+    if (legal.length > 0) {
+      return ok(
+        setPending(
+          { ...state, casting: { ...casting, stage: 'additionalExile' } },
+          {
+            kind: 'chooseCards',
+            seat: casting.seat,
+            source: casting.object,
+            purpose: 'additionalExile',
+            zone: 'hand',
+            legal,
+            min: 0,
+            max: legal.length,
+            reveal: true,
+            prompt: 'You may exile any number of cards from your hand',
+            forCost: true,
+          },
+        ),
+        events,
+      );
+    }
+    return toCostChoice(
+      patchObject(state, casting.object, { stack: { ...stack, exiledAsCost: [] } }),
+      events,
+    );
+  }
+  const choice = face?.additionalCostChoice;
+  if (choice === undefined) return toX(state, events);
+  const card = getObject(casting.snapshot, casting.from);
+  const request = {
+    seat: casting.seat,
+    spell: castAs(card, casting.seat, spell.face),
+    zone: casting.fromZone as CastFrom,
+    alternative: alternativeOfStack(stack),
+    excluded: card.id,
+    kicked: stack.kicked,
+    modes: stack.chosenModes.length,
+    modeSet: stack.chosenModes,
+    ...(stack.kicks === undefined ? {} : { kicks: stack.kicks }),
+    ...(stack.replicated === undefined ? {} : { replicas: stack.replicated }),
+  } as const;
   const payable = ([0, 1] as const).filter((option) =>
     canPaySpellCost(
-      before,
+      state,
       casting.seat,
       request.spell,
-      spellCost(before, { ...request, costOption: option }),
+      spellCost(state, { ...request, costOption: option }),
     ),
   );
   if (payable.length !== 2) {
@@ -558,6 +666,20 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
     ),
     events,
   );
+}
+
+/** The choice is recorded before X so the spell can use the number exiled to determine its cost. */
+export function answerCastAdditionalExile(state: GameState, chosen: readonly ObjectId[]): Result {
+  const casting = state.casting;
+  if (casting?.stage !== 'additionalExile' || casting.activation !== null) {
+    return fail('No hand cards are being chosen for an additional cost');
+  }
+  const spell = getObject(state, casting.object);
+  if (!spell.stack) return fail('The spell is not on the stack');
+  const next = patchObject({ ...state, pending: null }, casting.object, {
+    stack: { ...spell.stack, exiledAsCost: chosen },
+  });
+  return toCostChoice(next, []);
 }
 
 /**
@@ -730,7 +852,7 @@ export function answerReplicas(state: GameState, value: number): Result {
   const next = patchObject({ ...state, pending: null }, casting.object, {
     stack: { ...stack, ...(value > 0 ? { replicated: value } : {}) },
   });
-  return toGift(next, [], toCostChoice);
+  return toBuyback(next, []);
 }
 
 /**
@@ -780,6 +902,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
         discard: cost.discard,
         behold: cost.behold,
         exile: cost.exile,
+        ...(cost.exileFromHand === null ? {} : { exileFromHand: [...(stack?.exiledAsCost ?? [])] }),
         tap: cost.tap,
       },
     },
@@ -1000,6 +1123,11 @@ export function answerCastBehold(state: GameState, chosen: readonly ObjectId[]):
 /** The answer to the question of which other cards an escape cost exiles (CR 702.138a, D-124). */
 export function answerCastExile(state: GameState, chosen: readonly ObjectId[]): Result {
   return answerExile(state, chosen, finishCast);
+}
+
+/** Pays the optional hand-exile additional cost after the mana payment. */
+export function answerCastAdditionalExilePayment(state: GameState): Result {
+  return payAdditionalCosts(state, [], finishCast);
 }
 
 export function answerTargets(state: GameState, chosen: readonly ChosenTarget[]): Result {
@@ -1303,9 +1431,11 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
     fromZone: casting.fromZone,
     commanderTax: casting.commanderTax,
     nth: getSeat(next, casting.seat).spellsCastThisTurn,
+    targetCount: obj.stack?.chosenTargets.length ?? 0,
     ...(obj.stack?.kicked ? { kicked: true as const } : {}),
     ...(obj.stack?.kicks === undefined ? {} : { kicks: obj.stack.kicks }),
     ...(obj.stack?.replicated === undefined ? {} : { replicas: obj.stack.replicated }),
+    ...(obj.stack?.boughtBack === true ? { boughtBack: true as const } : {}),
     ...(obj.stack?.giftTo === undefined ? {} : { gift: obj.stack.giftTo }),
     ...(cast === undefined ? {} : { alternative: cast }),
     ...(obj.face !== 0 ? { face: obj.face } : {}),

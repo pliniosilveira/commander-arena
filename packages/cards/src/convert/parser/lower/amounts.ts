@@ -151,12 +151,25 @@ export function lowerAmount(
       }
       return { ok: true, value: { kind: 'manaValueOf', of: of.value }, rule };
     }
+    case 'dieResult': {
+      // "Scry X, where X is the result" (Galadriel deck group 3, CR 706.2, 706.3b): the natural result of the die the text rolled before, read by the instructions after the roll in
+      // the same sequence; a result with no roll before it in the text is refused, as `validateCard` does.
+      const blocked = needs('dieResult');
+      if (blocked !== null) return blocked;
+      if (ctx.dieSides === null) return { ok: false, needs: [], at: amount.span, rule };
+      return { ok: true, value: { kind: 'dieResult' }, rule };
+    }
     case 'triggerDamage': {
       // "You gain that much life" (stage P29, D-133): the damage of the event that caused the trigger; `validateCard`
       // checks the trigger is one that has it.
       const blocked = needs('triggerDamage');
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'triggerDamage' }, rule };
+    }
+    case 'triggerTargetCount': {
+      const blocked = needs('triggerTargetCount');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'triggerTargetCount' }, rule };
     }
     case 'timesKicked': {
       // CR 702.33c: the engine counts the kicks of the source, the spell or the permanent. "It" is the
@@ -329,6 +342,11 @@ export function lowerAmount(
       const of = lowerAmount(amount.of, ctx, rule);
       if (!of.ok) return of;
       return { ok: true, value: { kind: 'multiple', factor: amount.factor, of: of.value }, rule };
+    }
+    case 'exiledAsCost': {
+      const blocked = needs('exiledAsCost');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'exiledAsCost' }, rule };
     }
     case 'minus': {
       // CR 107.1b (D-321): `of` less a whole number of 1 or more, a negative result counting as 0.
@@ -540,6 +558,12 @@ export function lowerStaticPtStep(
       ? { ok: true, value: { kind: 'colorsAmong', filter: filter.value }, rule }
       : filter;
   }
+  // D-539 (CR 613.4c): "+1/+1 for each land you control and each land card in your graveyard": the sum of counts; a step other than 1 of a sum is not a multiple the engine reads.
+  if (count.kind === 'sum') {
+    return step === 1
+      ? sumInStatic(count, ctx, rule)
+      : { ok: false, needs: [], at: count.span, rule };
+  }
   const counted = countInStatic(count, ctx, rule);
   if (!counted.ok || step === 1) return counted;
   const missing = missingFeatures(['amount:times']);
@@ -584,6 +608,7 @@ export function lowerDefinedPt(
 export const AMOUNT_NEEDS = [
   'amount:x',
   'amount:enteredX',
+  'amount:dieResult',
   'amount:powerOf',
   'amount:manaValueOf',
   'amount:countOf',
@@ -595,6 +620,7 @@ export const AMOUNT_NEEDS = [
   'amount:enteredThisTurn',
   'amount:diedThisTurn',
   'amount:cardsDrawnThisTurn',
+  'amount:exiledAsCost',
   'amount:times',
   'amount:toughnessOf',
   'amount:countersOn',
@@ -612,5 +638,6 @@ export const AMOUNT_NEEDS = [
   'amount:opponentsWithMore',
   'amount:thisWay',
   'amount:triggerDamage',
+  'amount:triggerTargetCount',
   'amount:votesFor',
 ] as const;

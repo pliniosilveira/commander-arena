@@ -7,6 +7,7 @@ import { CARD_TYPES, COLORS } from './characteristics';
 import { CREATURE_TYPES } from './data/creature-types';
 import type { ObjectId } from './ids';
 import {
+  buybackCostOf,
   flashbackCostOf,
   kickerLikeCostOf,
   multikickerCostOf,
@@ -176,6 +177,13 @@ export function checkInvariants(state: GameState): string[] {
       ) {
         problems.push(`${id} was replicated ${n} times, which it cannot be`);
       }
+    }
+    // CR 702.27a (Galadriel group 3): a spell was bought back only if it is a spell whose face has a buyback cost.
+    if (
+      obj.stack?.boughtBack === true &&
+      (obj.stack.kind !== 'spell' || buybackCostOf(face) === null)
+    ) {
+      problems.push(`${id} was bought back but is not a spell with buyback`);
     }
     // CR 107.3a (D-103): an X was announced only for a spell or activated ability on the stack that
     // has an {X} or "pay X life" to announce (a spell cast without paying its mana cost has none, CR

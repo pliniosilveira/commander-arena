@@ -166,6 +166,7 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
     case 'protection':
       // D-259 (CR 903.4f): "each color that's not in your commander's color identity" names no color: the engine works them out.
       if (k.from === 'colorsNotInCommanderIdentity') break;
+      if (k.from === 'ringBearer') break;
       // D-376 (CR 702.16a): "the chosen card type" is read from the permanent's own choice (the card must ask it, `validate-chosen.ts`); named card types are checked.
       if (k.from === 'chosenCardType') break;
       if (k.from === 'cardType') {
@@ -347,10 +348,21 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
 
 function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
   switch (s?.kind) {
+    case 'allCreatureTypes':
+      if (s.scope !== 'youControl' && s.scope !== 'youOwn') {
+        issue(out, `${path}.scope`, 'scope must be youControl or youOwn');
+      }
+      break;
     case 'noMaximumHandSize':
       break;
     case 'lookAtTopOfLibrary':
     case 'optionalUntap':
+      break;
+    case 'crewSaddleBonus':
+      // Galadriel group 3 (CR 702.122a): the power a creature counts more as it is tapped for a crew cost: a positive whole number.
+      if (!Number.isSafeInteger(s.amount) || s.amount < 1) {
+        issue(out, `${path}.amount`, 'the bonus is a positive whole number');
+      }
       break;
     case 'untapInOthersUntapStep':
       // D-320: the permanent itself (`self`), or (D-229) the permanents a filter names: exactly one of the two.
@@ -447,7 +459,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         checkManaAbility(s.ability, `${path}.ability`, out);
       } else if (s.ability?.kind === 'activated' || s.ability?.kind === 'triggered') {
         checkAbility(s.ability, `${path}.ability`, out);
-        // D-530: a granted loyalty ability is activated only from a planeswalker, so it is granted to planeswalkers (CR 606.1).
+        // D-560: a granted loyalty ability is activated only from a planeswalker, so it is granted to planeswalkers (CR 606.1).
         if (
           s.ability.kind === 'activated' &&
           Array.isArray(s.ability.cost) &&
@@ -611,6 +623,12 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           issue(out, `${path}.nth`, 'nth must be a positive integer');
         if (t.self !== undefined) issue(out, `${path}.nth`, 'a self cast trigger has no count');
       }
+      if (t.duringTurn !== undefined && t.duringTurn !== 'opponent') {
+        issue(out, `${path}.duringTurn`, 'unknown active player condition');
+      }
+      if (t.duringTurn !== undefined && (t.nth !== 1 || t.by !== 'you')) {
+        issue(out, `${path}.duringTurn`, 'opponent-turn first-spell trigger must be you and nth 1');
+      }
       break;
     case 'landfall':
       break;
@@ -620,6 +638,8 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'crimeCommitted':
     case 'tokenCreated':
     case 'scries':
+    case 'surveils':
+    case 'rollsHighest':
       // D-464, D-465, D-513: the player who commits the crime, creates the token or scries, relative to the controller of this ability.
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -905,8 +925,14 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'noncombatDamageDealt' ||
     t?.kind === 'lifeGained' ||
     // D-513: the cards looked at while scrying are "that many".
-    t?.kind === 'scries'
+    t?.kind === 'scries' ||
+    t?.kind === 'surveils'
   );
+}
+
+/** Whether a cast trigger records the number of chosen targets for its effect (`triggerTargetCount`, D-574). */
+function hasTargetCount(t: Trigger): boolean {
+  return t?.kind === 'castSpell' && t.filter.targetCountAtLeast !== undefined;
 }
 
 /**
@@ -1086,7 +1112,11 @@ function checkActivationCosts(
       kind === 'removeCounters' ||
       kind === 'loyalty' ||
       kind === 'putCounters' ||
-      kind === 'returnToHand' ||
+      // D-540 (CR 602.2, 118.3): returning other permanents you control is paid wherever the ability works ("Return two lands you control to their owner's hand: Return this card from your graveyard to your hand"); returning the source itself needs it on the battlefield.
+      (c?.kind === 'returnToHand' &&
+        typeof c.what === 'object' &&
+        c.what !== null &&
+        'kind' in c.what) ||
       kind === 'sacrifice' ||
       kind === 'discard' ||
       kind === 'tapCreatures';
@@ -1236,7 +1266,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           : {}),
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
+        ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),
         ...(a.trigger?.kind === 'attackBatch' ? { triggerAttacked: true } : {}),
+        triggeredAbility: true,
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
         ...(a.trigger?.kind === 'step' && a.trigger.step === 'main2'
@@ -1351,6 +1383,16 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             out,
             `${path}.interveningIf`,
             'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
+          );
+        }
+        if (
+          conditionHas(a.interveningIf, 'ringBearerChosen') &&
+          a.trigger?.kind !== 'ringTempted'
+        ) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'ringBearerChosen reads the creature the Ring tempted its controller to choose: it needs a ringTempted trigger',
           );
         }
         if (
@@ -1759,12 +1801,12 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
 
   if (face.spell !== null) {
     checkSpellText(face.spell, `${path}.spell`, out);
-    // D-135, CR 702.174m: a target chosen only if the gift was promised is used only under that condition.
+    // D-135: a gift-conditioned target is used only in the matching promised or unpromised branch.
     for (const id of giftTargetsUsedUnguarded(face.spell)) {
       issue(
         out,
         `${path}.spell.targets`,
-        `target "${id}" exists only if the gift was promised: use it only in the effect of a giftPromised conditional`,
+        `target "${id}" exists only in the matching gift branch: use it only in that branch`,
       );
     }
     // D-181, CR 702.33g, 601.2c: a target chosen only if the spell was kicked (or only if it was not) is used only in that case.

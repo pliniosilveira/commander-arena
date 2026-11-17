@@ -354,6 +354,7 @@ const EVENT_CARD_FIELDS: Readonly<Record<GameEvent['kind'], readonly string[]>> 
   meldFailed: [],
   manifested: [],
   pilesSeparated: ['first', 'second'],
+  faceDownPileSeparated: ['faceUp'],
   pileChosen: ['names'],
   turnedFaceUp: ['card'],
   cardDrawn: [],

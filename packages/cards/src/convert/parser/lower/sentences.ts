@@ -346,6 +346,34 @@ function markKickedTargets(
 }
 
 /**
+ * The two target sets of "If the gift was promised, ... instead" are chosen after the Gift decision:
+ * the new targets belong to the promised branch, and replaced targets only to the other branch unless reused.
+ */
+function markGiftTargets(
+  ctx: LowerContext,
+  declared: readonly [number, number],
+  replaced: Step | undefined,
+  replacement: readonly Effect[] | null,
+): boolean {
+  if (ctx.owner !== 'spell') return false;
+  let marked = false;
+  for (let k = declared[0]; k < declared[1]; k += 1) {
+    const spec = ctx.targets[k];
+    if (spec === undefined) continue;
+    ctx.targets[k] = { ...spec, ifGiftPromised: true };
+    marked = true;
+  }
+  if (replacement === null || replaced?.slots === undefined) return marked;
+  for (let k = replaced.slots[0]; k < replaced.slots[1]; k += 1) {
+    const spec = ctx.targets[k];
+    if (spec === undefined || mentionsSlot(replacement, spec.id)) continue;
+    ctx.targets[k] = { ...spec, ifGiftPromised: false };
+    marked = true;
+  }
+  return marked;
+}
+
+/**
  * "Destroy target creature. It can't be regenerated." (CR 701.19c, 608.2c: later text may change the
  * meaning of earlier text, stage P21): the sentence is not an instruction of its own, it sets the engine's
  * `cantBeRegenerated` on the destroy right before it. That destroy is the one clause of the sentence before,
@@ -644,7 +672,9 @@ function lowerUntapThose(sentence: IrSentence, before: Step | undefined): LowerR
   const group = before?.effects.map((e) =>
     (e.kind === 'modifyPt' || e.kind === 'grantKeyword') && e.objects.kind === 'each'
       ? e.objects
-      : null,
+      : e.kind === 'gainControl' && e.objects.kind === 'target'
+        ? e.objects
+        : null,
   );
   const [first] = group ?? [];
   if (
@@ -1647,6 +1677,13 @@ function lowerStep(
     markKickedTargets(ctx, [slotsFrom, ctx.targets.length], previous, replacement.value)
   ) {
     const blocked = missingFeatures(['ability:ifKicked']);
+    if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+  }
+  if (
+    sentence.condition.test.kind === 'giftPromised' &&
+    markGiftTargets(ctx, [slotsFrom, ctx.targets.length], previous, replacement.value)
+  ) {
+    const blocked = missingFeatures(['ability:ifGiftPromised']);
     if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
   }
   const effect: Effect = {

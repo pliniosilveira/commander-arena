@@ -632,7 +632,9 @@ describe('one target for each opponent', () => {
     expect(targetsWord(spec)).toBe('up to one target for each opponent');
     expect(targetsWord({ ...spec, min: 1 })).toBe('one target for each opponent');
     const { onePerGroup: _one, ...single } = spec;
-    expect(targetsWord({ ...single, max: 1 })).toBe('a target');
+    expect(targetsWord({ ...single, max: 1, min: 1 })).toBe('a target');
+    // Issue 250: an optional slot ("up to one target creature you control") says so, or it reads as required and is skipped.
+    expect(targetsWord({ ...single, max: 1, min: 0 })).toBe('up to one target');
     const d = {
       kind: 'targets',
       id: 'd',

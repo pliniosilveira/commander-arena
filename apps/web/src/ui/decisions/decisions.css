@@ -956,6 +956,19 @@
   gap: 6px;
   min-height: calc(84px * 1.4);
 }
+.dec-pile-facedown {
+  width: 84px;
+  height: calc(84px * 1.4);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: repeating-linear-gradient(
+    45deg,
+    var(--panel),
+    var(--panel) 6px,
+    var(--line) 7px,
+    var(--line) 9px
+  );
+}
 .dec-pile-btn {
   width: 100%;
 }

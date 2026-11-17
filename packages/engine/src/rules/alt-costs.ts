@@ -9,7 +9,7 @@ import type { CardFace } from '../cards/definition';
 
 function keywordCost(
   face: CardFace | null,
-  kind: 'kicker' | 'multikicker' | 'flashback' | 'replicate' | 'escalate',
+  kind: 'kicker' | 'multikicker' | 'flashback' | 'replicate' | 'escalate' | 'buyback',
 ): readonly Cost[] | null {
   for (const a of face?.abilities ?? []) {
     if (a.kind !== 'keyword') continue;
@@ -22,6 +22,11 @@ function keywordCost(
 /** The kicker cost of the face, or null when it has no kicker (CR 702.33a). */
 export function kickerCostOf(face: CardFace | null): readonly Cost[] | null {
   return keywordCost(face, 'kicker');
+}
+
+/** The buyback cost of the face, or null when it has none (CR 702.27a): an optional additional cost, mana only. */
+export function buybackCostOf(face: CardFace | null): readonly Cost[] | null {
+  return keywordCost(face, 'buyback');
 }
 
 /** The multikicker cost of the face, or null when it has none (CR 702.33c: a kicker cost paid any number of times). */

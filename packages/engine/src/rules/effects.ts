@@ -6,10 +6,11 @@
  * path: a card using any other kind is rejected by validateCard before it can be supported.
  */
 import type { Effect, ObjectFilter, ObjectSelector } from '../ast/types';
+import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
 import type { GameEvent } from '../state/events';
-import { getSeat, patchObject, patchSeat, setSeat } from '../state/ops';
+import { getObject, getSeat, objectsInZone, patchObject, patchSeat, setSeat } from '../state/ops';
 import type {
   ChosenTarget,
   GameState,
@@ -29,7 +30,7 @@ import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
 import { runBecomeCopy, runContinuous, runEntersTappedGroup, runRequireAttack } from './continuous';
 import { controllerOf } from './control';
-import { runGainControl } from './control-effects';
+import { runExchangeControl, runGainControl } from './control-effects';
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
@@ -96,7 +97,13 @@ import { rollDie } from './roll-die';
 import { controlledCandidates, sacrificeCandidates, sacrificePermanent } from './sacrifice';
 import { runChooseSacrifice, sacrificeInstructions } from './sacrifice-choice';
 import { runDiscard, runSearch } from './search';
-import { apnapOrder, resolveObjects, resolvePlayers, type SelectContext } from './select';
+import {
+  apnapOrder,
+  matchesFilter,
+  resolveObjects,
+  resolvePlayers,
+  type SelectContext,
+} from './select';
 import { recordTogether } from './simultaneous';
 import { runPair } from './soulbond';
 import { objectOrLki, sourceInfo } from './source-info';
@@ -136,6 +143,46 @@ export function runInstruction(
 ): StepOutcome {
   // D-191: the answers given so far to the replacement questions of the damage this instruction deals (rules/damage-effects.ts).
   const flow = askingFlow(res.damageAnswers);
+  if (instruction.kind === 'chooseCreatureType') {
+    if (instruction.chosen !== null) return done(state);
+    const info = sourceInfo(state, res.source);
+    return {
+      state,
+      events: [],
+      front: [],
+      needs: {
+        kind: 'chooseOption',
+        seat: res.controller,
+        purpose: 'creatureType',
+        options: CREATURE_TYPES,
+        source: res.object,
+        sourceName: info?.name ?? '',
+        sourceOracleText: info?.oracleText ?? '',
+      },
+    };
+  }
+  if (instruction.kind === 'chooseObjects') {
+    if (instruction.chosen !== null) return done(state);
+    const candidates = objectsInZone(state, instruction.filter.zone ?? 'battlefield').filter((id) =>
+      matchesFilter(state, getObject(state, id), instruction.filter, contextOf(state, res)),
+    );
+    if (candidates.length === 0) return { ...done(state), front: [{ ...instruction, chosen: [] }] };
+    const max = Math.min(instruction.count, candidates.length);
+    return {
+      state,
+      events: [],
+      front: [],
+      needs: {
+        kind: 'choosePermanent',
+        seat: res.controller,
+        source: res.object,
+        purpose: 'effect',
+        min: 0,
+        max,
+        legal: candidates,
+      },
+    };
+  }
   if (instruction.kind === 'sacrifice') {
     // CR 701.21a: only a permanent its controller still controls can be sacrificed. One that
     // already left (an earlier instruction moved it) is skipped (CR 608.2c).
@@ -215,6 +262,22 @@ export function runInstruction(
     // D-210 (CR 608.2d, 101.4): one player's "may" of a `playersMay` effect. The player asked answers; a player who has lost is never asked.
     if (getSeat(state, instruction.seat).hasLost) return done(state);
     if (instruction.answer === null) {
+      const offered = instruction.effect;
+      const player = instruction.as ?? res.controller;
+      if (
+        offered.kind === 'sacrifice' &&
+        offered.objects.kind === 'choose' &&
+        offered.player === undefined &&
+        sacrificeCandidates(state, player, res.source, offered.objects.filter).length === 0
+      ) {
+        return instruction.otherwise === undefined
+          ? done(state)
+          : done(
+              state,
+              [],
+              [{ kind: 'effect', effect: instruction.otherwise, declinedBy: instruction.seat }],
+            );
+      }
       const info = sourceInfo(state, res.source);
       return {
         state,
@@ -235,7 +298,14 @@ export function runInstruction(
     return done(
       state,
       [],
-      [{ kind: 'effect', effect: chosen, ...(as === undefined ? {} : { as }) }],
+      [
+        {
+          kind: 'effect',
+          effect: chosen,
+          ...(as === undefined ? {} : { as }),
+          ...(!instruction.answer ? { declinedBy: instruction.seat } : {}),
+        },
+      ],
     );
   }
   if (instruction.kind === 'mayEffect') {
@@ -441,13 +511,26 @@ export function runInstruction(
     };
   }
   // D-210: an effect run "as" another player (the one a `playersMay` asked): that player is "you" in it, and what it queues next is run as them too.
-  if (instruction.as !== undefined) {
+  if (instruction.as !== undefined || instruction.declinedBy !== undefined) {
     const as = instruction.as;
-    const out = runEffect(state, { ...res, controller: as }, instruction.effect, targets, flow);
+    const context = {
+      ...res,
+      ...(as === undefined ? {} : { controller: as }),
+      ...(instruction.declinedBy === undefined ? {} : { declinedPlayer: instruction.declinedBy }),
+    };
+    const out = runEffect(state, context, instruction.effect, targets, flow);
     return {
       ...out,
       front: out.front.map((next) =>
-        next.kind === 'effect' && next.as === undefined ? { ...next, as } : next,
+        next.kind === 'effect'
+          ? {
+              ...next,
+              ...(as === undefined || next.as !== undefined ? {} : { as }),
+              ...(instruction.declinedBy === undefined || next.declinedBy !== undefined
+                ? {}
+                : { declinedBy: instruction.declinedBy }),
+            }
+          : next,
       ),
     };
   }
@@ -500,6 +583,10 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
   return {
     controller: res.controller,
     source: res.source,
+    ...(res.chosenCreatureType === undefined
+      ? {}
+      : { sourceChosen: { creatureType: res.chosenCreatureType } }),
+    ...(res.chosenObjects === undefined ? {} : { chosenObjects: res.chosenObjects }),
     // CR 107.3a: the X announced for the spell or ability that is resolving.
     x: state.objects[res.object]?.stack?.x ?? 0,
     ...(res.lastMoved === undefined ? {} : { moved: res.lastMoved }),
@@ -507,11 +594,14 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.costSacrificed === undefined ? {} : { costSacrificed: res.costSacrificed }),
     ...(res.sacrificed === undefined ? {} : { sacrificed: res.sacrificed }),
     ...(res.triggerPlayer === undefined ? {} : { triggerPlayer: res.triggerPlayer }),
+    ...(res.declinedPlayer === undefined ? {} : { declinedPlayer: res.declinedPlayer }),
     ...(res.triggerDamage === undefined ? {} : { triggerDamage: res.triggerDamage }),
+    ...(res.triggerTargetCount === undefined ? {} : { triggerTargetCount: res.triggerTargetCount }),
     ...(res.triggerAttacked === undefined ? {} : { triggerAttacked: res.triggerAttacked }),
     ...(res.lifeLost === undefined ? {} : { lifeLost: res.lifeLost }),
     ...(res.thisWay === undefined ? {} : { thisWay: res.thisWay }),
     ...(res.votes === undefined ? {} : { votes: res.votes }),
+    ...(res.dieResult === undefined ? {} : { dieResult: res.dieResult }),
   };
 }
 
@@ -527,6 +617,22 @@ function runEffect(
   let next = state;
 
   switch (effect.kind) {
+    case 'chooseObjects':
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseObjects',
+            id: effect.id,
+            filter: effect.filter,
+            count: effect.count,
+            chosen: null,
+          },
+        ],
+      );
+    case 'chooseCreatureType':
+      return done(state, [], [{ kind: 'chooseCreatureType', chosen: null }]);
     case 'sequence':
       return done(
         state,
@@ -616,7 +722,7 @@ function runEffect(
         // their own permanents (CR 701.21a); without `player` the controller of the effect does.
         const sacrificers: (SeatId | undefined)[] =
           effect.player === undefined
-            ? [undefined]
+            ? [res.controller]
             : resolvePlayers(state, effect.player, ctx, targets);
         // D-485 (CR 608.2b, 701.21a): a player named by a selector that names nobody now ("any number of target players" with none chosen, a target that has left the game)
         // sacrifices nothing; the controller of the effect does not take their place.
@@ -762,6 +868,7 @@ function runEffect(
                 to: effect.to,
                 position: effect.position ?? 'top',
                 ...(effect.objects.optional === true ? { optional: true as const } : {}),
+                ...(effect.objects.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
                 // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
                 ...(effect.objects.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
                 ...(effect.objects.exceptSacrificed === true
@@ -848,13 +955,22 @@ function runEffect(
       const ids = resolveObjects(state, effect.objects, ctx, targets).filter((id) =>
         canBeCountered(state, id),
       );
+      // CR 118.12a, 608.2c (Galadriel group 3): "... unless its controller pays mana equal to the greatest power among creatures you control": the generic mana is read now, as
+      // this resolves. Paying {0} is paying nothing, so a spell whose controller owes none is not countered.
+      const owed =
+        effect.genericAmount === undefined
+          ? null
+          : amountOf(state, effect.genericAmount, ctx, targets);
+      if (owed === 0) return done(state);
+      const cost: typeof effect.cost =
+        owed === null ? effect.cost : [{ kind: 'mana', symbols: [String(owed)] }];
       return done(
         state,
         [],
         ids.map((object) => ({
           kind: 'counterUnlessPays' as const,
           object,
-          cost: effect.cost,
+          cost,
           stage: 'ask' as const,
           // Ward's trigger asks as 'ward'; a target spell ("Counter target spell unless ...") as
           // 'counterUnlessPays' (rules/pay-unless.ts).
@@ -1381,6 +1497,7 @@ function runEffect(
               seat,
               count,
               commanderChoice: null,
+              ...(effect.reveal === true ? { reveal: true as const } : {}),
             })),
       );
     }
@@ -2237,6 +2354,35 @@ function runEffect(
     case 'gainControl':
       // CR 613.1b, 611.2 (D-189): a layer 2 effect (`rules/control-effects.ts`).
       return runGainControl(state, effect, ctx, targets);
+
+    case 'exchangeControl':
+      // CR 701.12a, 701.12b (Galadriel group 3): two layer 2 effects made together, or nothing (`rules/control-effects.ts`).
+      return runExchangeControl(state, effect, ctx, targets);
+
+    case 'removeCounters': {
+      // CR 122.1 (Galadriel group 3): the permanent loses up to that many counters of the kind; one event for the number that came off.
+      const wanted = amountOf(state, effect.count, ctx, targets);
+      if (wanted <= 0) return done(state);
+      for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
+        const obj = next.objects[id];
+        if (obj?.zone !== 'battlefield') continue;
+        const had = obj.counters[effect.counter] ?? 0;
+        const removed = Math.min(had, wanted);
+        if (removed <= 0) continue;
+        const left = had - removed;
+        const { [effect.counter]: _gone, ...rest } = obj.counters;
+        next = patchObject(next, id, {
+          counters: left > 0 ? { ...obj.counters, [effect.counter]: left } : rest,
+        });
+        events.push({
+          kind: 'counterRemoved',
+          object: id,
+          counter: effect.counter,
+          count: removed,
+        });
+      }
+      return done(next, events);
+    }
 
     case 'modifyPt':
     case 'setPt':

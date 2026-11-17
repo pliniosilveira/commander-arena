@@ -14,6 +14,7 @@ import { derive } from './derive';
 import { hasSorceryTiming } from './legality';
 import { isLoyaltyAbility, loyaltyActivatedThisTurn } from './loyalty';
 import { legalModeSets, modalOfAbility } from './modes';
+import { hasRestriction } from './restrictions';
 import { legalTargets, targetBounds } from './select';
 import { splitSecondOnStack } from './split-second';
 
@@ -77,6 +78,11 @@ export function activationRefusal(
   const { ability } = entry;
   const zone = ability.functionsIn ?? 'battlefield';
   if (obj.zone !== zone) return `That ability works only from the ${zone}`;
+  // CR 602.5 (Galadriel group 3): "Its activated abilities can't be activated this turn": a permanent such an effect named has none to activate (a mana ability, a loyalty ability and
+  // the abilities of a keyword included, CR 605.1a, 606.1).
+  if (zone === 'battlefield' && hasRestriction(state, obj, 'cantActivateAbilities')) {
+    return 'The activated abilities of that permanent cannot be activated';
+  }
   if (zone === 'battlefield' ? controllerOf(state, obj) !== seat : obj.owner !== seat) {
     return 'You cannot activate an ability of an object you do not control';
   }

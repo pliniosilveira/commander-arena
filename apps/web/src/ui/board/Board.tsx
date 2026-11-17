@@ -9,7 +9,7 @@ import { areaClass, battlefieldLabel } from './active-area';
 import { type Attachments, splitAttachments } from './attach';
 import { BlockArrows } from './BlockArrows';
 import { combatOrder } from './combat-order';
-import { EmblemStrip } from './Emblems';
+import { EmblemStrip } from './EmblemStrip';
 import { Hand } from './Hand';
 import { OtherZonesStrip } from './OtherZonesStrip';
 import { PlayerStrip, type ZoneRef } from './PlayerStrip';

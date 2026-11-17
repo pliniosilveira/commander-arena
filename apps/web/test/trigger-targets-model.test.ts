@@ -111,11 +111,12 @@ describe('targets of a triggered ability', () => {
   });
 
   test('an effect the gist does not know leaves the prompt at the ability name', () => {
+    // Scry has words since the Galadriel deck (group 1); a look that puts the cards back in any order has none yet.
     const odd = {
       ...triggerOnStack,
       ability: {
         ...destroyOpposing,
-        effect: { kind: 'scry', count: 1 },
+        effect: { kind: 'lookAndReorder', count: 3 },
       },
     } as ObjectView;
     const { m } = model(decision(o(20), true), [odd]);

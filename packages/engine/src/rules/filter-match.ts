@@ -221,6 +221,7 @@ export function matchesFilterWith(
   }
   // CR 506.4 (D-120): an attacking creature is one declared as an attacker that is still in combat.
   if (filter.attacking === true && !(ctx.attackers ?? []).includes(obj.id)) return false;
+  if (filter.notAttacking === true && (ctx.attackers ?? []).includes(obj.id)) return false;
   // CR 506.4, 509.1g (D-229): "attacking or blocking" is a creature declared as an attacker or a blocker that is still in combat.
   if (filter.attackingOrBlocking === true && !(ctx.inCombat ?? []).includes(obj.id)) return false;
   // D-131: "attacking you" is an attacker whose attack target is the controller as a player.
@@ -237,6 +238,12 @@ export function matchesFilterWith(
   }
   // CR 115.9a (D-181): "with a single target": the spell or ability was put on the stack with exactly one target (one chosen twice counts twice).
   if (filter.singleTarget === true && obj.stack?.chosenTargets.length !== 1) return false;
+  if (
+    filter.targetCountAtLeast !== undefined &&
+    (obj.stack?.chosenTargets.length ?? 0) < filter.targetCountAtLeast
+  ) {
+    return false;
+  }
   const d = describe();
   // CR 201.2 (D-489): "a card named X": the name is exactly the text.
   if (filter.named !== undefined && d.name !== filter.named) return false;
@@ -315,6 +322,10 @@ export function matchesFilterWith(
   if (filter.chosenType === true) {
     const type = ctx.sourceChosen?.creatureType;
     if (type === undefined || !d.subtypes.some((s) => sameCreatureType(s, type))) return false;
+  }
+  if (filter.notChosenType === true) {
+    const type = ctx.sourceChosen?.creatureType;
+    if (type === undefined || d.subtypes.some((s) => sameCreatureType(s, type))) return false;
   }
   if (filter.chosenColor === true) {
     const color = ctx.sourceChosen?.color;

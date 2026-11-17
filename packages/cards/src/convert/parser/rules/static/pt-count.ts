@@ -37,7 +37,12 @@ const STEP: Parser<{ power: number; toughness: number }> = (ctx, pos) => {
 const PERIOD = literal('.');
 // Stage P37 (D-180): "for each color among permanents you control" counts colors, not objects.
 const FOR_EACH = family<IrAmount>('amount', {
-  only: ['amount.for-each', 'amount.for-each-color', 'amount.for-each-commander-cast'],
+  only: [
+    'amount.for-each-and-each',
+    'amount.for-each',
+    'amount.for-each-color',
+    'amount.for-each-commander-cast',
+  ],
 });
 
 const SINGULAR_SUBJECTS = ['noun.self', 'noun.attached-permanent'];

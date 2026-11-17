@@ -49,7 +49,10 @@ import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
+import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
+import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
+import { GRANT_ABILITY } from './granted-ability';
 import { GAIN_STATIC_ABILITY } from './granted-static';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
@@ -290,10 +293,26 @@ function lowerChosenReturn(clause: IrClause, what: IrNoun, zone: string): LowerR
   if (blocked.length > 0) return failure(clause, blocked);
   const filter = lowerFilter(what);
   if (!filter.ok) return filter;
-  if (filter.value.controller !== 'you') return failure(clause);
+  if (filter.value.controller !== 'you' && filter.value.zone !== 'graveyard')
+    return failure(clause);
+  const count = what.count?.kind === 'number' ? what.count.value : undefined;
+  if (what.upTo === true && (count === undefined || filter.value.zone !== 'graveyard')) {
+    return failure(clause);
+  }
   return {
     ok: true,
-    value: [{ kind: 'moveToZone', objects: { kind: 'choose', filter: filter.value }, to: 'hand' }],
+    value: [
+      {
+        kind: 'moveToZone',
+        objects: {
+          kind: 'choose',
+          filter: filter.value,
+          ...(count === undefined ? {} : { count }),
+          ...(what.upTo === true ? { optional: true } : {}),
+        },
+        to: 'hand',
+      },
+    ],
     rule: clause.rule,
   };
 }
@@ -363,6 +382,16 @@ const RETURN: Lowering<IrClause, Effects> = {
     const refused = selfRefusal(clause, ctx);
     if (refused !== null) return refused;
     const chosen = operand(clause, 'objects');
+    // "Return it to the battlefield" of a dies or leaves trigger (D-568): `it` is the card the
+    // permanent became. The same words in a spell or an unrelated trigger do not establish a card to return.
+    if (
+      zone === 'battlefield' &&
+      chosen?.kind === 'noun' &&
+      /^it$/iu.test(chosen.filter.raw.trim()) &&
+      !ctx.itIsCard
+    ) {
+      return failure(clause);
+    }
     if (chosen?.kind === 'noun' && chosen.det === 'a') {
       return lowerChosenReturn(clause, chosen, zone);
     }
@@ -430,7 +459,7 @@ const RETURN: Lowering<IrClause, Effects> = {
             }
           : { kind: 'moveToZone', objects, to: zone },
       'objects',
-      zone === 'hand' ? { thisCard: true } : {},
+      zone === 'hand' || zone === 'battlefield' ? { thisCard: true } : {},
     );
   },
 };
@@ -540,7 +569,7 @@ const RESELECT_ATTACK: Lowering<IrClause, Effects> = {
 const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
   head: 'putFromZone',
   id: 'lower.put-from-zone',
-  needs: ['effect:moveToZone', 'selector:choose'],
+  needs: ['effect:moveToZone', 'selector:choose', 'ability:chooseAlsoGraveyard'],
   lower(clause) {
     const objects = arg(clause, 'objects');
     const to = zoneOf(clause);
@@ -567,12 +596,15 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
     const filter = lowerFilter(objects);
     if (!filter.ok) return filter;
     const optional = may?.kind === 'flag' && may.value;
+    // D-544 (CR 608.2d): "from your hand or graveyard": the cards of both places are the candidates.
+    const both = arg(clause, 'alsoGraveyard');
     const move: Effect = {
       kind: 'moveToZone',
       objects: {
         kind: 'choose',
         filter: filter.value,
         ...(optional ? { optional: true as const } : {}),
+        ...(both?.kind === 'flag' && both.value ? { alsoGraveyard: true as const } : {}),
       },
       to: 'battlefield',
       ...(to.tapped === true ? { tapped: true } : {}),
@@ -725,6 +757,17 @@ const CHOOSE_COLOR: Lowering<IrClause, Effects> = {
     ok: false,
     needs: ['selector:colorChoice'],
     at: clause.span,
+    rule: clause.rule,
+  }),
+};
+
+const CHOOSE_CREATURE_TYPE: Lowering<IrClause, Effects> = {
+  head: 'chooseCreatureType',
+  id: 'lower.choose-creature-type',
+  needs: ['effect:chooseCreatureType'],
+  lower: (clause) => ({
+    ok: true,
+    value: [{ kind: 'chooseCreatureType' }],
     rule: clause.rule,
   }),
 };
@@ -1042,6 +1085,52 @@ const LOOK_TAKE_BOTTOM: Lowering<IrClause, Effects> = {
   },
 };
 
+/** One chosen card goes to the hand without reveal; the remaining cards are ordered on top (CR 401.4). */
+const LOOK_TAKE_ONE_TOP: Lowering<IrClause, Effects> = {
+  head: 'lookTakeOneTop',
+  id: 'lower.look-take-one-top',
+  needs: ['effect:lookAtTop'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          take: { filter: {}, max: 1, min: 1, hidden: true },
+          rest: 'topChosen',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/** One of two looked-at cards goes to the hand, the other to the bottom (CR 401.4). */
+const LOOK_TAKE_ONE_BOTTOM: Lowering<IrClause, Effects> = {
+  head: 'lookTakeOneBottom',
+  id: 'lower.look-take-one-bottom',
+  needs: ['effect:lookAtTop'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          take: { filter: {}, max: 1, min: 1, hidden: true },
+          rest: 'bottomRandom',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** "Sacrifice ~" or "sacrifice another permanent / a creature" (CR 701.21). */
 const SACRIFICE: Lowering<IrClause, Effects> = {
   head: 'sacrifice',
@@ -1145,10 +1234,41 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
   needs: ['effect:addCounters'],
   takesObjectTest: true,
   lower(clause, ctx) {
-    const count = amountArg(clause, 'count', ctx);
-    if (!count.ok) return count;
     const counter = arg(clause, 'counter');
     if (counter?.kind !== 'counterSpec') return failure(clause);
+    const objectsArg = arg(clause, 'objects');
+    if (
+      objectsArg?.kind === 'noun' &&
+      objectsArg.det === 'a' &&
+      objectsArg.upTo === true &&
+      objectsArg.ref !== undefined
+    ) {
+      const filter = lowerFilter(objectsArg);
+      if (!filter.ok) return filter;
+      const count = amountArg(clause, 'count', ctx);
+      if (!count.ok) return count;
+      ctx.chosenObjectRefs.add(objectsArg.ref);
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'chooseObjects',
+            id: objectsArg.ref,
+            filter: { ...filter.value, controller: 'you' },
+            count: 1,
+          },
+          {
+            kind: 'addCounters',
+            objects: { kind: 'chosen', id: objectsArg.ref },
+            counter: counter.name,
+            count: count.value,
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
     return eachObject(
       clause,
       ctx,
@@ -1266,7 +1386,13 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
   }
   const types = (token.types ?? []) as CardType[];
   const creature = types.includes('creature');
-  if (!creature || token.power === undefined || token.toughness === undefined) {
+  // D-543 (CR 208.2a, 604.3): a token with no numbers has a characteristic-defining ability in its quotes that defines both ("Beau's power and toughness are each equal
+  // to ..."); a token with numbers never has one (the star and the ability go together, `validateCard`).
+  const definesPt =
+    (token.power === undefined) !== (token.toughness === undefined)
+      ? null
+      : token.power === undefined;
+  if (!creature || definesPt === null) {
     return { ok: false, needs: [], ...at };
   }
   const subtypes = [...(token.subtypes ?? [])];
@@ -1293,6 +1419,10 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     if (!own.ok) return own;
     abilities.push(own.value);
   }
+  const defines = abilities.filter(
+    (a) => a.kind === 'static' && a.static.kind === 'characteristicPt',
+  );
+  if (definesPt ? defines.length !== 1 : defines.length > 0) return { ok: false, needs: [], ...at };
   // CR 111.4: the name the effect gives the token. "named ~'s Pridemate" (D-266): the card's own short name, which normalization wrote as the tilde;
   // a context that does not know it (a quoted ability, where the tilde is the token) refuses the name instead of guessing.
   const named = token.named === undefined ? undefined : ownTokenName(token.named, ctx);
@@ -1305,8 +1435,8 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     types,
     subtypes,
     colors,
-    power: token.power,
-    toughness: token.toughness,
+    power: token.power ?? '*',
+    toughness: token.toughness ?? '*',
     loyalty: null,
     defense: null,
     // The words of the token's abilities, which the card face prints (CR 111.4): its keywords on one line, then each ability in
@@ -1371,6 +1501,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   REGENERATE,
   ADD_MANA,
   CHOOSE_COLOR,
+  CHOOSE_CREATURE_TYPE,
   playerVerb('draw'),
   playerVerb('discard'),
   playerVerb('gainLife'),
@@ -1391,8 +1522,11 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   libraryVerb('putFromHandOnTop'),
   LOOK_TAKE,
   LOOK_TAKE_BOTTOM,
+  LOOK_TAKE_ONE_TOP,
+  LOOK_TAKE_ONE_BOTTOM,
   PUMP,
   GRANT_KEYWORD,
+  GRANT_ABILITY,
   RESTRICT,
   LOSE_ALL_ABILITIES,
   BECOMES,
@@ -1420,6 +1554,11 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...GISA_G4_LOWERINGS,
   // D-517, D-519: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_LOWERINGS,
+  // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If it's a creature or land card, draw a card."
+  ...GALADRIEL_G1_LOWERINGS,
+  // Galadriel deck, group 3 (issue 43): an exchange of control, a counter unless the controller pays an amount, "draw a card and reveal it" with counters removed, "its activated
+  // abilities can't be activated this turn".
+  ...GALADRIEL_G3_LOWERINGS,
   ...GRAVEYARD_CHOICE_LOWERINGS,
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,

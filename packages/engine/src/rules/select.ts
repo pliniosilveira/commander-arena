@@ -34,6 +34,8 @@ export interface SelectContext {
   readonly controller: SeatId;
   /** The spell or ability being cast or resolving, or the source of a static check. */
   readonly source: ObjectId | null;
+  /** The objects selected by resolving choices earlier in this spell or ability. */
+  readonly chosenObjects?: Readonly<Record<string, readonly ObjectId[]>>;
   /**
    * While an ability is being activated: the ability's own object on the stack, which never
    * targets itself. `source` is then the permanent the ability belongs to, so "another" and
@@ -50,7 +52,11 @@ export interface SelectContext {
   readonly sacrificed?: readonly ObjectId[];
   /** What `triggerPlayer` ("that player") and `triggerDamage` ("that much") mean in this resolution (D-133). */
   readonly triggerPlayer?: SeatId;
+  readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
+  readonly triggerTargetCount?: number;
+  /** Targets already chosen for this spell or ability, including a candidate being checked. */
+  readonly targets?: readonly ChosenTarget[];
   /** The players the attack event of this trigger was declared at (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: readonly SeatId[];
   /** The seats an `owner` selector of the filter names (see `FilterContext.owners`). */
@@ -73,6 +79,8 @@ export interface SelectContext {
   readonly thisWay?: ThisWayCounts;
   /** The tally of the latest vote of this resolution, for `votesFor` amounts (D-194). */
   readonly votes?: Readonly<Record<string, number>>;
+  /** The natural result of the latest die the resolution rolled, for the amount `dieResult` (CR 706.2, Galadriel group 3). Absent where none was rolled: the amount is 0. */
+  readonly dieResult?: number;
   /**
    * Whether `targetsObject` assumes a target the spell has not chosen yet could match (D-424): the question "may this spell be cast at all?" asks it before any target is chosen
    * (the cost reduction of a permanent that names the spells that target a kind of permanent).
@@ -250,6 +258,7 @@ export function matchesFilter(
 function readsGame(f: ObjectFilter): boolean {
   return (
     f.attacking === true ||
+    f.notAttacking === true ||
     f.attackingYou === true ||
     f.attackingOpponents === true ||
     f.attackingOrBlocking === true ||
@@ -316,6 +325,14 @@ function manaValueLimitOf(
 ): number {
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
+  if (amount.kind === 'countOf') {
+    const owner = amount.filter.owner;
+    const countedContext =
+      owner === undefined
+        ? ctx
+        : { ...ctx, owners: resolvePlayers(state, owner, ctx, ctx.targets ?? []) };
+    return countMatching(state, amount.filter, countedContext);
+  }
   if (amount.kind === 'powerOf' && ctx.source !== null) {
     return Math.max(0, powerOfObject(state, ctx.source) ?? 0);
   }
@@ -467,8 +484,15 @@ export function legalTargets(
     const obj = getObject(state, id);
     // A spell or ability on the stack never targets itself while it is being put there.
     if (obj.zone === 'stack' && (id === ctx.source || id === ctx.stackObject)) continue;
+    const matchingContext =
+      filter.manaValueAtMost === undefined
+        ? ctx
+        : {
+            ...ctx,
+            targets: [...(ctx.targets ?? []), { kind: 'object' as const, id, specId }],
+          };
     if (
-      matchesFilter(state, obj, filter, ctx) &&
+      matchesFilter(state, obj, filter, matchingContext) &&
       canBeTargetedBy(state, obj, ctx.controller, ctx.source)
     ) {
       // D-149: a slot with one target for each opponent says whose each target is.
@@ -515,7 +539,9 @@ export function stillLegalTargets(
   ctx: SelectContext,
 ): ChosenTarget[] {
   const legalBySpec = new Map<string, ChosenTarget[]>();
-  for (const spec of specs) legalBySpec.set(spec.id, legalTargets(state, spec, ctx));
+  for (const spec of specs) {
+    legalBySpec.set(spec.id, legalTargets(state, spec, { ...ctx, targets: chosen }));
+  }
   return chosen.filter((t) => (legalBySpec.get(t.specId) ?? []).some((l) => sameTarget(l, t)));
 }
 
@@ -536,6 +562,8 @@ export function resolveObjects(
       return ctx.source === null ? [] : [ctx.source];
     case 'target':
       return targetObjects(selector.id, targets);
+    case 'chosen':
+      return [...(ctx.chosenObjects?.[selector.id] ?? [])];
     case 'moved':
       // CR 400.7j: the new object, found through the effect that moved the old one (CR 400.7).
       return [...(ctx.moved ?? [])];
@@ -687,6 +715,10 @@ export function resolvePlayers(
       return ctx.triggerPlayer === undefined || getSeat(state, ctx.triggerPlayer).hasLost
         ? []
         : [ctx.triggerPlayer];
+    case 'declinedPlayer':
+      return ctx.declinedPlayer === undefined || getSeat(state, ctx.declinedPlayer).hasLost
+        ? []
+        : [ctx.declinedPlayer];
     case 'discardedThisWay':
       // D-210: "each player who discarded a card this way": the players of the `discard` effects of this resolution that discarded, in the order of CR 101.4.
       return apnapOrder(

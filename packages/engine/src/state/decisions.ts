@@ -7,7 +7,7 @@
  * a kind has no handler.
  */
 import type { CastAlternativeKind } from '../ast/features';
-import type { Cost, Trigger } from '../ast/types';
+import type { Cost, TargetSpec, Trigger } from '../ast/types';
 import type { CardType, Color } from '../characteristics';
 import type { CardId, DecisionId, ObjectId, SeatId } from '../ids';
 import type { ManaColor } from '../mana/types';
@@ -159,6 +159,11 @@ export interface TargetChoiceSpec {
   readonly eachController?: true;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
   readonly differentFrom?: string;
+  /**
+   * The slot as the card words it (the `TargetSpec` it came from, public like the card's text): the interface reads "target creature you control" from it so a
+   * spell with several slots says what each slot is for. Absent when the engine builds a slot of its own (a changed target, an Aura's host).
+   */
+  readonly target?: TargetSpec;
   /** Every legal target for this slot, computed by the engine (CR 115, 608.2b). */
   readonly legal: readonly ChosenTarget[];
   /**
@@ -321,6 +326,8 @@ export interface DeclareBlockersDecision extends DecisionBase {
   readonly candidates: readonly {
     readonly blocker: ObjectId;
     readonly canBlock: readonly ObjectId[];
+    /** This creature must block this turn if able (D-572). */
+    readonly mustBlock?: true;
   }[];
   /**
    * What blocking costs (D-149, CR 509.1d), present only when some permanent taxes it ("As long as this creature is attacking, creatures can't block
@@ -497,6 +504,7 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'lookTake'
     | 'cast'
     | 'behold'
+    | 'additionalExile'
     | 'lookSplit'
     | 'reveal'
     | 'split'
@@ -504,6 +512,8 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'pair'
     | 'separate';
   readonly zone: 'library' | 'hand' | 'graveyard' | 'exile';
+  /** "From your hand or graveyard" (D-544): with `zone` `hand`, the cards of `legal` may also be in the graveyard of `seat`. Absent for every other question. */
+  readonly alsoGraveyard?: true;
   readonly legal: readonly ObjectId[];
   readonly min: number;
   readonly max: number;
@@ -662,7 +672,9 @@ export interface ConfirmOptionalDecision extends DecisionBase {
    * and its trigger goes on the stack; declining reveals nothing. `'miracle'`: "you may cast it by paying [its miracle cost]": `subject` is
    * the card in the hand, `cost` its miracle cost, `source` the trigger on the stack; declining leaves the card in the hand.
    * `'castCard'` (D-350, CR 608.2g): "you may cast target instant or sorcery card from a graveyard": `subject` is the card (in a graveyard, public), `source` the ability on
-   * the stack; declining leaves the card in its graveyard.
+   * the stack; declining leaves the card in its graveyard. `'buyback'` (CR 702.27a, 601.2b; Galadriel group 3): the spell being cast has buyback and the total with the buyback
+   * cost can be paid; `source` is the spell on the stack, `cost` the buyback cost, accepting pays it (the card returns to the hand as the spell resolves) and declining casts the
+   * spell without it, and `cancel` rewinds the cast, as for the kicker.
    */
   readonly purpose?:
     | 'kicker'
@@ -679,7 +691,8 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'gift'
     | 'costChoice'
     | 'pairReturn'
-    | 'castCard';
+    | 'castCard'
+    | 'buyback';
   /**
    * For purpose `'pairReturn'` (D-272, "You may return those cards to the battlefield under their owners' control", Dawnbreak Reclaimer): the cards that would return, which are in
    * graveyards and public: `theirs` the card chosen in an opponent's graveyard (it returns under its owner's control, the opponent's), `mine` the card chosen in the graveyard of
@@ -815,6 +828,9 @@ export interface ChooseOptionDecision extends DecisionBase {
     readonly otherTo: 'hand' | 'graveyard';
     readonly separator: SeatId;
     readonly receiver: SeatId;
+    /** Which pile is face down and its size; the chooser's view must omit its object IDs (D-579). */
+    readonly faceDownPile?: 1 | 2;
+    readonly faceDownCount?: number;
   };
   readonly source: ObjectId;
   readonly sourceName: string;

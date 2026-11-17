@@ -50,6 +50,10 @@ export interface Scope {
   readonly owner: 'ability' | 'spell';
   /** Target specs declared on the same ability or spell mode, by id. */
   readonly targets: ReadonlyMap<string, TargetKind>;
+  /** Resolving choices already made earlier in a sequence. */
+  readonly chosenObjects?: ReadonlySet<string>;
+  /** The `otherwise` branch of a playersMay can refer to the player whose choice was declined. */
+  readonly declinedPlayer?: boolean;
   /** Whether the kind 'x' amount has an X to read (an X in the cost or a spell with X). */
   readonly xAllowed: boolean;
   /** Validates an ability nested in the tree, such as one a token carries (set by validate.ts). */
@@ -134,8 +138,12 @@ export interface Scope {
   readonly triggerPlayer?: boolean;
   /** True in the effect of a triggered ability whose trigger deals damage (`triggerDamage`, D-133). */
   readonly triggerDamage?: boolean;
+  /** True in the effect of a cast trigger that requires targets (`triggerTargetCount`, D-574). */
+  readonly triggerTargetCount?: boolean;
   /** True in the effect of a triggered ability whose trigger is a batch of attackers (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: boolean;
+  /** True in the effect of any triggered ability: `abilityResolvedTimes` counts the resolutions of the ability it belongs to (Galadriel group 1). */
+  readonly triggeredAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
   /** True in the effect of a triggered ability whose intervening "if" is `yourMainPhase`: an `extraCombat` follows a main phase (D-187). */
@@ -322,11 +330,21 @@ export function checkFilter(
   }
   // D-230: "mana value X or less, where X is ...": an amount that reads no target and no earlier instruction.
   if (f.manaValueAtMost !== undefined) {
-    const a = f.manaValueAtMost as { kind?: string; of?: { kind?: string } };
+    const a = f.manaValueAtMost as {
+      kind?: string;
+      of?: { kind?: string };
+      filter?: ObjectFilter;
+    };
+    const countOfTargetControllerGraveyard =
+      a?.kind === 'countOf' &&
+      a.filter?.zone === 'graveyard' &&
+      a.filter.owner?.kind === 'controllerOf' &&
+      kindOf(a.filter.owner.of) === 'target';
     const ok =
       typeof a === 'number' ||
       (a?.kind === 'powerOf' && a.of?.kind === 'this') ||
-      a?.kind === 'triggerDamage';
+      a?.kind === 'triggerDamage' ||
+      countOfTargetControllerGraveyard;
     if (!ok) {
       issue(
         out,
@@ -344,13 +362,18 @@ export function checkFilter(
   }
   if (
     (f.attacking === true ||
+      f.notAttacking === true ||
       f.attackingYou === true ||
       f.attackingOpponents === true ||
       f.attackingOrBlocking === true) &&
     f.zone !== undefined &&
     f.zone !== 'battlefield'
   ) {
-    issue(out, `${path}.attacking`, 'only a permanent on the battlefield can be attacking');
+    issue(
+      out,
+      `${path}.attacking`,
+      'attacking status only applies to a permanent on the battlefield',
+    );
   }
   // CR 700.9 (D-416): only a permanent is modified.
   if (f.modified === true && f.zone !== undefined && f.zone !== 'battlefield') {
@@ -377,6 +400,14 @@ export function checkFilter(
       `${path}.singleTarget`,
       "only a spell or ability on the stack has targets chosen: the filter's zone is 'stack'",
     );
+  }
+  if (f.targetCountAtLeast !== undefined) {
+    if (!Number.isInteger(f.targetCountAtLeast) || f.targetCountAtLeast < 1) {
+      issue(out, `${path}.targetCountAtLeast`, 'target count must be a positive integer');
+    }
+    if (f.zone !== 'stack' && f.stackKind === undefined && where.onStack !== true) {
+      issue(out, `${path}.targetCountAtLeast`, "target count requires a stack object's filter");
+    }
   }
   // CR 115.1 (D-206): "that targets a creature" is about a spell or ability on the stack, and its filter describes a permanent or an object it targets.
   // D-437: "a spell that targets only this creature" (CR 115.9c) is read as `targetsObject` is; a member of a disjunction of such a filter is read with the outer filter's stack.
@@ -449,7 +480,7 @@ export function checkFilter(
     }
   }
   // D-100: "of the chosen type" / "of the chosen color" are flags; the card must ask for the choice.
-  for (const key of ['chosenType', 'chosenColor'] as const) {
+  for (const key of ['chosenType', 'chosenColor', 'notChosenType'] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
   }
@@ -601,6 +632,25 @@ export function declareTargets(
     switch (what?.kind) {
       case 'object':
         checkFilter(what.filter, `${p}.what.filter`, out);
+        if (
+          what.filter.manaValueAtMost !== undefined &&
+          typeof what.filter.manaValueAtMost === 'object' &&
+          what.filter.manaValueAtMost.kind === 'countOf' &&
+          what.filter.manaValueAtMost.filter.owner !== undefined
+        ) {
+          const owner = what.filter.manaValueAtMost.filter.owner;
+          if (
+            owner.kind !== 'controllerOf' ||
+            owner.of.kind !== 'target' ||
+            owner.of.id !== spec.id
+          ) {
+            issue(
+              out,
+              `${p}.what.filter.manaValueAtMost`,
+              'the graveyard count must use the controller of this target',
+            );
+          }
+        }
         break;
       case 'player':
         if (!isOneOf(what.filter, ['any', 'opponent'])) {
@@ -692,8 +742,8 @@ export function declareTargets(
       default:
         issue(out, `${p}.what`, `unknown target kind ${kindOf(what)}`);
     }
-    if (spec.ifGiftPromised !== undefined && spec.ifGiftPromised !== true) {
-      issue(out, `${p}.ifGiftPromised`, 'ifGiftPromised must be true when present');
+    if (spec.ifGiftPromised !== undefined && typeof spec.ifGiftPromised !== 'boolean') {
+      issue(out, `${p}.ifGiftPromised`, 'ifGiftPromised must be boolean when present');
     }
     // D-181, CR 702.33g, 601.2c: a slot chosen only if the spell was kicked, or only if it was not.
     for (const key of ['ifKicked', 'unlessKicked'] as const) {
@@ -933,6 +983,10 @@ export function checkRef(
     case 'target':
       checkTargetRef(ref.id, expect, path, scope, out);
       break;
+    case 'chosen':
+      if (!scope.chosenObjects?.has(ref.id))
+        issue(out, path, "'chosen' needs an earlier chooseObjects instruction");
+      break;
     case 'moved':
       if (scope.movedAvailable !== true) {
         issue(
@@ -1060,6 +1114,11 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
           path,
           "'triggerPlayer' needs a triggered ability whose event is about a player (a draw, a cast, an attack, damage to a player, becoming a target, a sacrifice)",
         );
+      }
+      break;
+    case 'declinedPlayer':
+      if (scope.declinedPlayer !== true) {
+        issue(out, path, "'declinedPlayer' is only valid in a playersMay 'otherwise' effect");
       }
       break;
     case 'giftRecipient':
@@ -1358,6 +1417,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (!scope.xAllowed)
         issue(out, path, 'X is used but nothing in this ability or spell has an X');
       break;
+    case 'dieResult':
+      // CR 706.2 (Galadriel group 3): "Scry X, where X is the result": the die rolled earlier in the same sequence (`scope.dieSides` is set after a `rollDie`).
+      if (scope.dieSides === undefined) {
+        issue(
+          out,
+          path,
+          'dieResult needs a rollDie before it in the same sequence (the result of the roll is what it reads)',
+        );
+      }
+      break;
     case 'enteredX':
       // CR 107.3m (Hylda group 3): only the enters trigger of the permanent itself reads the X of the spell it came from (the card's {X} is checked with the face).
       if (scope.entersX !== true) {
@@ -1577,6 +1646,15 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'triggerTargetCount':
+      if (scope.triggerTargetCount !== true) {
+        issue(
+          out,
+          path,
+          "'triggerTargetCount' needs a cast trigger whose filter requires one or more targets",
+        );
+      }
+      break;
     case 'lifeLostThisTurn':
       // D-365: only as the whole amount of a `loseLife` (checked with the effect), where it is read for each player the effect affects.
       issue(
@@ -1595,6 +1673,18 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // D-095: a count of the objects the filter matches; `owner` is not read here (checkFilter).
       if (a.filter === undefined || a.filter === null) {
         issue(out, `${path}.filter`, 'countOf needs a filter');
+      } else if (a.filter.owner !== undefined) {
+        const { owner: _owner, ...rest } = a.filter;
+        void _owner;
+        issue(
+          out,
+          `${path}.filter.owner`,
+          "owner is only read in an effect's each selector, except for a target mana-value limit",
+        );
+        if (rest.controlledBy !== undefined) {
+          issue(out, `${path}.filter.controlledBy`, 'owner and controlledBy cannot both be set');
+        }
+        checkFilter(rest, `${path}.filter`, out);
       } else if (a.filter.controlledBy !== undefined) {
         // Hylda group 3 (CR 109.4, 608.2c): "for each tapped creature target opponent controls": the player is a target the effect declared, read as the amount is
         // counted (with the targets); a player named any other way is not read here, and the other fields are those of any count.
@@ -1804,6 +1894,12 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
     case 'untap':
     case 'payXLife':
     case 'discardX':
+      break;
+    case 'exileFromHand':
+      checkFilter(cost.filter, `${path}.filter`, out);
+      if (cost.filter.zone !== 'hand') {
+        issue(out, `${path}.filter.zone`, 'an additional exile cost selects cards from hand');
+      }
       break;
     case 'payLife':
       // D-135: a number, or an amount that reads the game as the ability is activated (only an activated ability's cost
@@ -2430,6 +2526,19 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'escaped': // D-124: the face must list an escape cost (`checkCastFace`)
     case 'subjectGreaterPt': // D-120: where it may stand is checked with the trigger (validate.ts)
       break;
+    case 'ringBearerChosen':
+      // Galadriel group 1 (CR 701.54a): the creature chosen by the tempting of this trigger; where it may stand is checked with the trigger (validate.ts).
+      if (c.other !== undefined && c.other !== true) {
+        issue(out, `${path}.other`, 'other must be true when present');
+      }
+      break;
+    case 'abilityResolvedTimes':
+      issue(
+        out,
+        path,
+        'abilityResolvedTimes reads the resolution of a triggered ability: it is only valid in a conditional effect of one',
+      );
+      break;
     case 'amountIs':
       // D-131: an amount that reads the game now, compared with a whole number.
       checkStateAmount(c.amount, `${path}.amount`, out, 'a condition');
@@ -2502,7 +2611,9 @@ function movesObjects(e: Effect): boolean {
     // D-327: the cards a `mill` put into a graveyard are "that card" ("Mill a card. You may play that card this turn.").
     e?.kind === 'mill' ||
     // Lorehold group 1: the card `exileFromTriggerCards` exiled is "it" ("If you do, you may cast it this turn").
-    e?.kind === 'exileFromTriggerCards'
+    e?.kind === 'exileFromTriggerCards' ||
+    // Galadriel group 3: the card a `draw` with `reveal` drew is "that card" ("Draw a card and reveal it. ... that card's mana value").
+    (e?.kind === 'draw' && e.reveal === true)
   );
 }
 
@@ -2728,6 +2839,19 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
       );
     }
   }
+  // D-544: "from your hand or graveyard": the graveyard is added to a choice among the cards of the hand; the destination (the battlefield) is checked with the move.
+  if (sel.alsoGraveyard !== undefined) {
+    if (sel.alsoGraveyard !== true) {
+      issue(out, `${path}.alsoGraveyard`, 'alsoGraveyard must be true when present');
+    }
+    if (sel.filter?.zone !== 'hand' || sel.fromMoved === true) {
+      issue(
+        out,
+        `${path}.alsoGraveyard`,
+        'a choice from the hand or the graveyard (D-544) names the hand as its zone and is not a choice among moved cards',
+      );
+    }
+  }
   if (sel.count !== undefined) {
     if (typeof sel.count === 'number' && (!isCount(sel.count) || sel.count < 1)) {
       issue(out, `${path}.count`, 'count must be a positive integer');
@@ -2795,7 +2919,8 @@ function checkTokenDefinition(def: TokenDefinition, path: string, scope: Scope, 
   for (const key of ['power', 'toughness'] as const) {
     const v = def[key];
     if (def.types?.includes('creature')) {
-      if (typeof v !== 'number' || !Number.isSafeInteger(v)) {
+      // D-543 (CR 208.2a, 604.3): a '*' is the power or toughness its own characteristic-defining ability sets (`checkStarPairing` below pairs the two).
+      if (v !== '*' && (typeof v !== 'number' || !Number.isSafeInteger(v))) {
         issue(out, `${path}.${key}`, `a creature token needs a numeric ${key}`);
       }
     } else if (v !== null) {
@@ -2929,6 +3054,13 @@ function checkCopyExceptions(
   }
   if (spec.noManaCost !== undefined && spec.noManaCost !== true) {
     issue(out, `${path}.noManaCost`, 'noManaCost must be true when present');
+  }
+  // Galadriel group 3: "except it's not legendary and its starting loyalty is 1".
+  if (spec.notLegendary !== undefined && spec.notLegendary !== true) {
+    issue(out, `${path}.notLegendary`, 'notLegendary must be true when present');
+  }
+  if (spec.startingLoyalty !== undefined && !isCount(spec.startingLoyalty)) {
+    issue(out, `${path}.startingLoyalty`, 'startingLoyalty is a whole number from 0');
   }
 }
 
@@ -3122,6 +3254,8 @@ export const MAY_EFFECT_KINDS = [
   'copySpell',
   // D-232: "you may have this creature become a copy of an artifact or creature card from among those cards".
   'becomeCopyOfCard',
+  // Galadriel group 1: "you may reveal the top card of your library. If a land card is revealed this way, ...".
+  'revealTop',
 ];
 
 /**
@@ -3174,6 +3308,26 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       }
       break;
     }
+    case 'ringBearerChosen':
+      issue(
+        out,
+        path,
+        'ringBearerChosen is the intervening "if" of a ringTempted trigger, read as it triggers and again as it resolves',
+      );
+      break;
+    case 'abilityResolvedTimes':
+      // Galadriel group 1 (CR 608.2c): "if this is the second time this ability has resolved this turn": a whole number from 1, in the effect of a triggered ability.
+      if (scope.triggeredAbility !== true) {
+        issue(
+          out,
+          path,
+          'abilityResolvedTimes counts the resolutions of a triggered ability: it is only valid in the effect of one',
+        );
+      }
+      if (!isCount(c.times) || c.times < 1) {
+        issue(out, `${path}.times`, 'times is a whole number from 1');
+      }
+      break;
     case 'attackersAttackedYou':
       if (scope.triggerAttacked !== true) {
         issue(
@@ -3276,6 +3430,25 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     );
   }
   switch (e?.kind) {
+    case 'chooseObjects':
+      if (typeof e.id !== 'string' || e.id.length === 0)
+        issue(out, `${path}.id`, 'chooseObjects needs an id');
+      if (!Number.isInteger(e.count) || e.count < 1)
+        issue(out, `${path}.count`, 'chooseObjects count must be positive');
+      if (e.filter.zone !== undefined && e.filter.zone !== 'battlefield') {
+        issue(out, `${path}.filter.zone`, 'chooseObjects selects permanents on the battlefield');
+      }
+      if (e.filter.controller !== 'you') {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          'chooseObjects must select permanents the controller controls',
+        );
+      }
+      checkFilter(e.filter, `${path}.filter`, out, scope);
+      break;
+    case 'chooseCreatureType':
+      break;
     case 'sequence':
       if (!Array.isArray(e.effects) || e.effects.length === 0) {
         issue(out, `${path}.effects`, 'a sequence needs at least one effect');
@@ -3286,6 +3459,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkEffect(child, `${path}.effects[${i}]`, after, out);
           if (movesObjects(child) && after.movedAvailable !== true) {
             after = { ...after, movedAvailable: true };
+          }
+          if (child?.kind === 'chooseObjects') {
+            after = {
+              ...after,
+              chosenObjects: new Set([...(after.chosenObjects ?? []), child.id]),
+            };
           }
           // D-120: after a `loseLife`, "the total life lost this way" can be read.
           if (child?.kind === 'loseLife' && after.lossAvailable !== true) {
@@ -3471,7 +3650,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'counterUnlessPays names a target spell or ability, or the triggering one (triggerSubject)',
         );
       }
-      checkCosts(e.cost, `${path}.cost`, out);
+      if (e.genericAmount !== undefined) {
+        // Galadriel group 3 (CR 118.12a): "unless its controller pays mana equal to ...": the whole cost is that much generic mana, of a target spell.
+        if (kindOf(e.objects) !== 'target') {
+          issue(out, `${path}.genericAmount`, 'a generic amount to pay is for a target spell');
+        }
+        if (!Array.isArray(e.cost) || e.cost.length !== 0) {
+          issue(out, `${path}.cost`, 'the cost is empty when the amount to pay is generic');
+        }
+        checkAmount(e.genericAmount, `${path}.genericAmount`, scope, out);
+      } else {
+        checkCosts(e.cost, `${path}.cost`, out);
+      }
       break;
     case 'playersMay': {
       // D-210 (CR 608.2d): each player named is asked whether to do the effect; the effect and what is done otherwise are ordinary effects.
@@ -3480,7 +3670,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.runsAs`, "runsAs is 'chooser' when present");
       }
       checkEffect(e.effect, `${path}.effect`, scope, out);
-      if (e.otherwise !== undefined) checkEffect(e.otherwise, `${path}.otherwise`, scope, out);
+      if (e.otherwise !== undefined) {
+        checkEffect(e.otherwise, `${path}.otherwise`, { ...scope, declinedPlayer: true }, out);
+      }
       break;
     }
     case 'unlessPays':
@@ -3512,6 +3704,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.objects`,
           'gainControl names a target or the permanent that caused the trigger',
         );
+      if (e.player !== undefined) {
+        checkPlayerSelector(e.player, `${path}.player`, scope, out);
+        if (!SINGLE_PLAYER_KINDS.includes(e.player.kind)) {
+          issue(out, `${path}.player`, 'gainControl names one player who gains control');
+        }
+      }
       if (
         !isOneOf(e.duration, [
           'untilEndOfTurn',
@@ -3531,6 +3729,44 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'exchangeControl': {
+      // CR 701.12a (Galadriel group 3): two permanents, each the permanent with the ability or a target; never the same one twice.
+      const sides = [
+        ['first', e.first],
+        ['second', e.second],
+      ] as const;
+      for (const [name, selector] of sides) {
+        const named = kindOf(selector);
+        if (named === 'target' || named === 'this') {
+          checkObjectSelector(selector, `${path}.${name}`, scope, out);
+        } else {
+          issue(
+            out,
+            `${path}.${name}`,
+            'exchangeControl names the permanent with the ability (this) or a target',
+          );
+        }
+      }
+      if (kindOf(e.first) === kindOf(e.second) && kindOf(e.first) === 'this') {
+        issue(out, path, 'exchangeControl names two different permanents');
+      }
+      if (
+        kindOf(e.first) === 'target' &&
+        kindOf(e.second) === 'target' &&
+        (e.first as { id?: string }).id === (e.second as { id?: string }).id
+      ) {
+        issue(out, path, 'exchangeControl names two different permanents');
+      }
+      break;
+    }
+    case 'removeCounters':
+      // CR 122.1 (Galadriel group 3): counters of one kind come off the permanents the selector names, a number read as the effect resolves.
+      checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
+      if (typeof e.counter !== 'string' || e.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
+      checkAmount(e.count, `${path}.count`, scope, out);
+      break;
     case 'becomeCopy':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       checkCopySource(e.of, `${path}.of`, scope, out);
@@ -3961,6 +4197,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (fromCards && e.to === zone) {
           issue(out, `${path}.to`, `the cards chosen are already in the ${zone}`);
         }
+        if ((e.objects as ChooseSelector).alsoGraveyard === true && e.to !== 'battlefield') {
+          issue(
+            out,
+            `${path}.to`,
+            'a card chosen from the hand or the graveyard is put onto the battlefield (D-544)',
+          );
+        }
         // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand).
         if ((e.objects as ChooseSelector).fromMoved === true && e.to !== 'hand') {
           issue(
@@ -4119,7 +4362,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'revealAll is true, and not with cards taken unrevealed (take.hidden) or exiled face down',
         );
       }
-      if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top', 'bottomChosen'])) {
+      if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top', 'bottomChosen', 'topChosen'])) {
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }
       break;
@@ -4351,6 +4594,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'discard':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       checkAmount(e.count, `${path}.count`, scope, out);
+      // Galadriel group 3: "Draw a card and reveal it": one card, drawn (not "up to"); `moved` names it afterwards.
+      if (e.kind === 'draw' && e.reveal !== undefined) {
+        if (e.reveal !== true || e.count !== 1 || e.upTo !== undefined) {
+          issue(out, `${path}.reveal`, 'reveal is true, with a count of exactly 1 and no "up to"');
+        }
+      }
       // D-151: "Discard any number of cards": the player chooses how many, so `count` is 0 and nothing else narrows the choice.
       if (e.kind === 'discard' && e.anyNumber !== undefined) {
         if (e.anyNumber !== true || e.count !== 0 || e.unless !== undefined) {
@@ -4743,6 +4992,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'revealAndSeparate':
       // D-303 (CR 700.3): who makes the piles is one of two players, and the two piles go to two different places of the controller.
       checkAmount(e.count, `${path}.count`, scope, out);
+      if (e.faceDownPile !== undefined && e.faceDownPile !== true) {
+        issue(out, `${path}.faceDownPile`, 'faceDownPile is true or absent');
+      }
       if (e.separator !== 'opponent' && e.separator !== 'you') {
         issue(out, `${path}.separator`, 'the piles are separated by an opponent or by you');
       }

@@ -47,6 +47,9 @@ import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
+import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
+import { GALADRIEL_G2_EFFECT_RULES } from './galadriel-g2';
+import { GALADRIEL_G3_EFFECT_RULES } from './galadriel-g3';
 import { GISA_G3_EFFECT_RULES } from './gisa-g3';
 import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
@@ -64,7 +67,12 @@ import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
-import { EFFECT_ADD_ADDITIONAL_MANA, EFFECT_ADD_MANA, EFFECT_CHOOSE_COLOR } from './mana';
+import {
+  EFFECT_ADD_ADDITIONAL_MANA,
+  EFFECT_ADD_MANA,
+  EFFECT_CHOOSE_COLOR,
+  EFFECT_CHOOSE_CREATURE_TYPE,
+} from './mana';
 import { MELD_EFFECT_RULES } from './meld';
 import { NIV_EFFECT_RULES } from './niv';
 import { NIV_GROUP_2B_B_EFFECT_RULES } from './niv-group-2b-b';
@@ -555,6 +563,14 @@ const TO_THE_BATTLEFIELD: Parser<IrZoneSpec> = map(
     }),
 );
 
+/** A creature's dies trigger may return the card that creature became to the battlefield. */
+const RETURN_IT_TO_BATTLEFIELD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }> = quiet(
+  map(
+    sequence(literal('return '), operands(['noun.it'], 'effect.return'), TO_THE_BATTLEFIELD),
+    ([, objects, to]): { objects: IrNoun | IrNounList; to: IrZoneSpec } => ({ objects, to }),
+  ),
+);
+
 /**
  * "return that nonland permanent card to the battlefield", "return that card to your hand" (stage P33, D-150, CR 608.2c): the card an earlier
  * instruction of the text chose from a graveyard, which the lowering checks it is.
@@ -659,6 +675,8 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return ~ to its owner's hand",
     // Stage P35 (D-176): "it", the card a permanent became when it went to its owner's graveyard.
     "return it to its owner's hand",
+    "return it to the battlefield tapped under its owner's control",
+    "return it to the battlefield tapped under its owner's control with a +1/+1 counter on it",
     "return a land you control to its owner's hand",
     'return an artifact you control to its owner’s hand',
     "return a nonland permanent you control to its owner's hand",
@@ -710,6 +728,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     choice<{ objects: IrNoun | IrNounList; to: IrZoneSpec }>(
       RETURN_TO_HAND,
       RETURN_IT_TO_HAND,
+      RETURN_IT_TO_BATTLEFIELD,
       RETURN_CHOSEN,
       RETURN_FROM_GRAVEYARD,
       RETURN_THAT_CARD,
@@ -882,6 +901,12 @@ export const EFFECT_RULES = [
   // Lorehold Spirit deck, group 1 (issue 86): "repeat this process once", "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and
   // "each creature deals damage to itself equal to its power" start like a plain exile, a plain shuffle and a plain damage, and are tried first.
   ...LOREHOLD_G1_EFFECT_RULES,
+  // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
+  // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
+  ...GALADRIEL_G1_EFFECT_RULES,
+  // Galadriel deck, group 3 (issue 43): "Exchange control of ~ and target nonland permanent", "counter ... unless its controller pays mana equal to ...", "Draw a card and reveal it.
+  // Remove ..." and "Its activated abilities can't be activated this turn." start like the plain counter, draw and pronoun rules, and are tried first.
+  ...GALADRIEL_G3_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
@@ -951,6 +976,8 @@ export const EFFECT_RULES = [
   ...DANITHA_G1B_EFFECT_RULES,
   // Issue 26 (D-411): "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_EFFECT_RULES,
+  // Galadriel deck, group 2 (D-542): "put up to two land cards from among them into your hand".
+  ...GALADRIEL_G2_EFFECT_RULES,
   ...DANITHA_G4_EFFECT_RULES,
   // Issue 27 (D-445, D-446): "Monstrosity 5" and the second damage of "~ deals 4 damage to X and 2 damage to Y".
   ...FEATHER_G2_EFFECT_RULES,
@@ -970,6 +997,7 @@ export const EFFECT_RULES = [
   EFFECT_ADD_MANA,
   // The sentence before "Add an amount of mana of that color equal to your devotion to that color" (Nykthos, Shrine to Nyx).
   EFFECT_CHOOSE_COLOR,
+  EFFECT_CHOOSE_CREATURE_TYPE,
   // Before `effect.player` and `effect.draw`: "you draw a card" is a prefix of the delayed draw (stage P26).
   ...DELAYED_RULES,
   EFFECT_PLAYER,

@@ -87,7 +87,7 @@ function mentionsGiftTarget(node: unknown): boolean {
   if (Array.isArray(node)) return node.some(mentionsGiftTarget);
   if (node === null || typeof node !== 'object') return false;
   const record = node as Record<string, unknown>;
-  if (record.ifGiftPromised === true) return true;
+  if (record.ifGiftPromised !== undefined) return true;
   return Object.values(record).some(mentionsGiftTarget);
 }
 
@@ -218,10 +218,14 @@ export function checkCastFace(
   if (devours.length > 1) {
     issue(out, `${path}.abilities`, 'more than one devour ability on a face is not supported');
   }
-  const has = (kind: 'kicker' | 'flashback' | 'multikicker') =>
+  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback') =>
     abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === kind);
   if (has('flashback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'flashback is on an instant or a sorcery (CR 702.34a)');
+  }
+  // Galadriel group 3, CR 702.27a: "put this spell into its owner's hand as it resolves" is said of an instant or a sorcery.
+  if (has('buyback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
+    issue(out, `${path}.abilities`, 'buyback is on an instant or a sorcery (CR 702.27a)');
   }
   // D-129: "if a replicate cost was paid for it" needs a replicate ability to pay.
   const replicable = abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'replicate');
@@ -293,28 +297,34 @@ export function checkCastFace(
 }
 
 /**
- * The target slots of a spell that exist only if the gift was promised (`TargetSpec.ifGiftPromised`, CR 702.174m, D-135) and
- * that the effect also uses where the gift was not promised: a mention outside the `then` branch of a `giftPromised`
- * conditional. Chosen only when promised, such a slot would be empty otherwise, so every use of it is guarded.
+ * The target slots of a spell that exist only in one branch of a gift conditional (`TargetSpec.ifGiftPromised`, D-135) and
+ * that the effect also uses in the other branch. Such a slot would be empty there, so every use must match its condition.
  */
 export function giftTargetsUsedUnguarded(spell: SpellText): string[] {
-  const slots = (spell.targets ?? []).filter((t) => t.ifGiftPromised === true).map((t) => t.id);
-  const unguarded = (node: unknown, id: string, guarded: boolean): boolean => {
-    if (Array.isArray(node)) return node.some((n) => unguarded(n, id, guarded));
+  const slots = (spell.targets ?? []).filter((t) => t.ifGiftPromised !== undefined);
+  const unguarded = (
+    node: unknown,
+    id: string,
+    expected: boolean,
+    promised: boolean | null,
+  ): boolean => {
+    if (Array.isArray(node)) return node.some((n) => unguarded(n, id, expected, promised));
     if (node === null || typeof node !== 'object') return false;
     const record = node as Record<string, unknown>;
-    if (record.kind === 'target' && record.id === id) return !guarded;
+    if (record.kind === 'target' && record.id === id) return promised !== expected;
     if (record.kind === 'conditional') {
       const gift = mentionsKind(record.condition, 'giftPromised');
       return (
-        unguarded(record.condition, id, guarded) ||
-        unguarded(record.effect, id, guarded || gift) ||
-        unguarded(record.else, id, guarded)
+        unguarded(record.condition, id, expected, promised) ||
+        unguarded(record.effect, id, expected, gift ? true : promised) ||
+        unguarded(record.else, id, expected, gift ? false : promised)
       );
     }
-    return Object.values(record).some((n) => unguarded(n, id, guarded));
+    return Object.values(record).some((n) => unguarded(n, id, expected, promised));
   };
-  return slots.filter((id) => unguarded(spell.effect, id, false));
+  return slots
+    .filter((slot) => unguarded(spell.effect, slot.id, slot.ifGiftPromised === true, null))
+    .map((slot) => slot.id);
 }
 
 /**

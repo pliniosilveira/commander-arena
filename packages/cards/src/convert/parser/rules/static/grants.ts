@@ -7,6 +7,8 @@
  * "get" and "have", and the sentence ends at its period, so "until end of turn" (a duration, which a
  * static ability never has: CR 611.2a is for a resolving effect) is not read.
  */
+
+import { BASIC_LAND_TYPES } from '@commander-arena/engine';
 import {
   choice,
   fail,
@@ -134,13 +136,24 @@ function areTypes(plural: boolean): Parser<Effects> {
     { kind: 'addTypes', subtypes: [word.subtype] },
   ];
   if (plural) {
-    return map(
-      sequence(
-        literal('are '),
-        satisfy(SUBTYPE_WORD_NUMBERED, (w) => w.plural !== false),
-        pattern(/ in addition to their other (?:creature )?types(?![\p{L}\p{N}])/iu),
+    return choice(
+      map(
+        sequence(
+          literal('are '),
+          satisfy(SUBTYPE_WORD_NUMBERED, (w) => w.plural !== false),
+          pattern(/ in addition to their other (?:creature )?types(?![\p{L}\p{N}])/iu),
+        ),
+        ([, word]) => typeEffect(word),
       ),
-      ([, word]) => typeEffect(word),
+      // D-541 (CR 205.1b, 305.6, 613.1d): "are Forest lands in addition to their other types": the land card type and a basic land type, added in layer 4.
+      map(
+        sequence(
+          literal('are '),
+          pattern(new RegExp(`(${Object.keys(BASIC_LAND_TYPES).join('|')}) lands`, 'u')),
+          pattern(/ in addition to their other types(?![\p{L}\p{N}])/iu),
+        ),
+        ([, land]): Effects => [{ kind: 'addTypes', subtypes: [land[1] ?? ''], types: ['land'] }],
+      ),
     );
   }
   return map(
@@ -383,6 +396,7 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Other creatures you control have base power and toughness 5/3 and are Juggernauts in addition to their other creature types.',
     "Juggernauts you control can't be blocked by Walls.",
     'Creatures you control are Zombies in addition to their other creature types.',
+    'Nontoken creatures you control are Forest lands in addition to their other types.',
     'Creature tokens you control have haste.',
     'Zombie tokens you control have hexproof and menace.',
     'Zombie tokens you control get +1/+1.',
@@ -404,6 +418,11 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Creatures you control get +1/+1 and have trample until end of turn.',
     'Creatures you control are Zombie in addition to their other creature types.',
     'Creatures you control are Zombies.',
+    'Nontoken creatures you control are Forest lands.',
+    'Nontoken creatures you control are Forest lands in addition to their other creature types.',
+    'Nontoken creatures you control are forest lands in addition to their other types.',
+    'Nontoken creatures you control are Desert lands in addition to their other types.',
+    'Nontoken creatures you control are Forest land in addition to their other types.',
   ],
   parse: statement(
     'static.permanents',

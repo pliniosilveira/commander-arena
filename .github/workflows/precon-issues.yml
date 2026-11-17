@@ -1,6 +1,6 @@
 name: Precon issues
 
-# D-532: by hand only. Reads Archidekt's list of Commander precons (https://archidekt.com/commander-precons), reads each deck, checks its cards with the same
+# D-562: by hand only. Reads Archidekt's list of Commander precons (https://archidekt.com/commander-precons), reads each deck, checks its cards with the same
 # pipeline as `pnpm corpus:decks`, and opens one issue for each deck: "deck support <name>" when the engine cannot run every card (in the shape of the issue the
 # app's "Ask for support on GitHub" button writes, so the triage workflow and the deck support routine take it from there), "precon <name>" when it can. Every
 # issue also asks for the deck to be added to the ready-made decks of the app, so that everyone can play it.

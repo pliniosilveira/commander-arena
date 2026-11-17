@@ -303,12 +303,45 @@ function readOther(sk: AbilitySkeleton, rules: RuleLookup): ParseOutcome {
       end,
       rules,
     );
+    const sentences = splitSentences(sk.text, 0, end);
+    if (
+      sentences.length > 1 &&
+      sk.text.includes('for each card exiled this way') &&
+      /^as an additional cost to cast ~, you may exile any number of /iu.test(sk.text)
+    ) {
+      const abilities: IrAbility[] = [];
+      const recognised: string[] = [];
+      for (const span of sentences) {
+        const part = runDetailed(
+          family<IrStatic>('static', { only: SPELL_STATICS }),
+          sk.text,
+          span.start,
+          span.end,
+          rules,
+        );
+        if (!part.ok) {
+          abilities.length = 0;
+          break;
+        }
+        abilities.push({
+          kind: 'static',
+          statement: part.value,
+          span: part.value.span,
+          rule: part.value.rule,
+        });
+        recognised.push(...part.recognised);
+      }
+      if (abilities.length === sentences.length) {
+        return { ok: true, abilities, recognised: unique(recognised) };
+      }
+    }
     if (own.ok) {
       const s = own.value;
       const ability: IrAbility = { kind: 'static', statement: s, span: s.span, rule: s.rule };
       return { ok: true, abilities: [ability], recognised: own.recognised };
     }
-    failures.push(body.failure, failureOf(own, 0, null, NO_RULE, []));
+    failures.push(body.failure);
+    if (!own.ok) failures.push(failureOf(own, 0, null, NO_RULE, []));
   } else {
     const statement = runDetailed(family<IrStatic>('static'), sk.text, 0, end, rules);
     if (statement.ok) {

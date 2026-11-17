@@ -33,6 +33,7 @@ import { definitionOf, getSeat, patchSeat, printedCard } from '../state/ops';
 import type { GameObject, GameState, StackData } from '../state/types';
 import {
   alternativeOf,
+  buybackCostOf,
   escalateCostOf,
   flashbackCostOf,
   kickerLikeCostOf,
@@ -86,6 +87,8 @@ export interface SpellCost {
   readonly behold: ObjectFilter | null;
   /** How many other cards of the caster's graveyard are exiled (Escape, CR 702.138a, D-124). */
   readonly exile: number;
+  /** Optional number of cards selected from hand for an additional exile cost, if present. */
+  readonly exileFromHand: ObjectFilter | null;
   /** The permanents tapped as part of the cost, or null (the `tapPermanents` alternative cost, D-149). */
   readonly tap: TapRequirement | null;
   /** D-351 (CR 609.4b): mana of any type can be spent on the spell, so any mana pays any symbol of `symbols`. */
@@ -229,6 +232,8 @@ export interface CostRequest {
   readonly kicks?: number;
   /** How many times the replicate cost is paid (CR 702.56a, D-129): 0 when it is not, or the spell has none. */
   readonly replicas?: number;
+  /** Whether the buyback cost is paid (CR 702.27a): left out, what the spell on the stack says (`StackData.boughtBack`); false for a card that is not on the stack yet. */
+  readonly bought?: boolean;
   /** The card's own object while it is still in its zone (see `reductionFor`). */
   readonly excluded?: ObjectId;
   /** The X announced for the spell (CR 107.3a, 601.2b): 0 when it has none or none was announced yet. */
@@ -321,6 +326,9 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   if (replicate !== null) {
     for (let i = 0; i < (request.replicas ?? 0); i += 1) symbols.push(...manaSymbolsOf(replicate));
   }
+  // CR 702.27a: the buyback cost is an additional cost, paid once when the caster chose to (mana only).
+  const buyback = (request.bought ?? spell.stack?.boughtBack === true) ? buybackCostOf(face) : null;
+  if (buyback !== null) symbols.push(...manaSymbolsOf(buyback));
   // CR 702.120a (D-145): an escalate cost is paid for each mode chosen beyond the first, as an additional cost.
   const escalate = escalateCostOf(face);
   if (escalate !== null) {
@@ -343,6 +351,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   let sacrificeCount = 1;
   let discard = 0;
   let behold: ObjectFilter | null = null;
+  let exileFromHand: ObjectFilter | null = null;
   for (const c of additional) {
     if (c.kind === 'sacrifice' && !('kind' in c.what)) {
       // D-491: "you may sacrifice one or more creatures" is no requirement for casting the spell: it is asked as the cost is paid.
@@ -353,6 +362,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
       }
     } else if (c.kind === 'discard') discard += c.count;
     else if (c.kind === 'behold') behold = c.filter;
+    else if (c.kind === 'exileFromHand') exileFromHand = c.filter;
   }
   const life = lifeOf(additional) + (kicker === null ? 0 : lifeOf(kicker) * kicks) + perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
@@ -385,6 +395,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     discard,
     behold,
     exile,
+    exileFromHand,
     tap,
     ...(anyType ? { anyType: true as const } : {}),
   };
@@ -515,6 +526,7 @@ export function canPaySpellCost(
   if (cost.life > 0 && life < cost.life) return false;
   if (cost.discard > discardable(state, seat, spell.id).length) return false;
   if (cost.exile > exilable(state, seat, spell.id).length) return false;
+  // An optional exile cost can always be paid by choosing zero cards.
   if (cost.behold !== null && beholdCandidates(state, seat, spell.id, cost.behold).length === 0) {
     return false;
   }
