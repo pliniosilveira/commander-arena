@@ -289,6 +289,7 @@
 /* ---- Fields and rows ------------------------------------------------------------------- */
 
 .board-field {
+  position: relative;
   flex: 1 1 0;
   min-height: 0;
   display: flex;
@@ -423,8 +424,18 @@
   -webkit-box-orient: vertical;
 }
 
+/* Over the battlefield, not beside it (issue 49): the rows keep the whole width, so the permanents stay centred. */
 .board-exile-plays {
-  border-right: 2px solid var(--accent);
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  border-right: none;
+  pointer-events: none;
+}
+
+.board-exile-plays .board-exile-play {
+  pointer-events: auto;
 }
 
 .board-exile-plays .board-emblems-caption {
