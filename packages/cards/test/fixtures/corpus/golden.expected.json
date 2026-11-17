@@ -1,5 +1,5 @@
 {
-  "parserVersion": 120,
+  "parserVersion": 121,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1185,19 +1185,10 @@
     "307be184-176a-40a8-944c-48aa00cfdd29": {
       "name": "Radiant Lotus",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "cost.sacrifice"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "081f2eb0"
+      "ast": "8ceba38d"
     },
     "30c3c700-46f4-4a77-8c45-5c7e3a21bd62": {
       "name": "Wizard's Staff",
@@ -6224,7 +6215,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 418,
+      "supported": 419,
       "total": 440
     }
   }
