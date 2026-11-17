@@ -153,7 +153,10 @@ test.describe('precons on the decks page', () => {
     await expect(alert).toContainText(`"${PRECON_NAME}" cannot be played`);
     await expect(alert).toContainText('abilities the engine cannot run yet');
 
-    // Resetting from the decks page brings the shipped, playable deck back.
+    // Resetting from the decks page brings the shipped, playable deck back. The refusal left the
+    // flow on its second step: go back to the home first.
+    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: 'Back' }).click();
     await page.getByRole('button', { name: 'Your decks' }).click();
     await page.getByRole('button', { name: 'Reset to default Ghoulcaller Gisa Zombies' }).click();
     await page.getByRole('button', { name: 'Yes, reset Ghoulcaller Gisa Zombies' }).click();
