@@ -5004,7 +5004,7 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 
 ## A static ability that gives ward (issue 89, D-588)
 
-- CR: 702.21a (Ward), 613.1f and 613.7 (a granted keyword is a layer 6 effect with the timestamp of its source), 303.4 ("enchanted creature" is what the Aura is attached to). The text of 702.21b (instances) was not available in this session (D-246) and is not cited: unverified.
+- CR: 702.21a (Ward), 702.21b (X in a ward cost: not read by the grant words), 613.1f and 613.7 (a granted keyword is a layer 6 effect with the timestamp of its source), 303.4 ("enchanted creature" is what the Aura is attached to). 113.2c (each instance of an ability functions independently).
 - Gap class: P (a granted keyword that carries a cost), T (the grant words).
 - Engine: `ward` is in `GRANTABLE_KEYWORDS` (`ast/features.ts`) with its cost checked by `checkGrantedParameter` (`ast/validate-attach.ts`: at least one cost, each mana, life or a discard); it is an `INSTANCE_KEYWORDS` member of `rules/derive-layers.ts`, so each grant adds the keyword and the triggered ability `wardAbility` (`rules/derive-keywords.ts`) stands for.
 - Parser: the grant word "ward {2}" of `rules/keyword/list.ts` (`KEYWORD_WORD`, mana symbols in braces only) turned into the keyword by `grantedKeyword` (`rules/keyword/vocabulary.ts`); read by `lower/statics.ts` and `lower/continuous.ts` like the other grant words.
