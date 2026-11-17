@@ -2,8 +2,7 @@
  * The cards the player can cast right now from another zone, as rows of chips above the hand:
  * the graveyard cards with flashback (CR 702.34a, "Name Flashback {2}{B}"), escape (CR 702.138a,
  * "Name Escape {G}{G}, exile 5 other cards") or unearth (CR 702.84a, "Name Unearth {R}") and the cards in exile
- * that resolved as an Adventure (CR 715.3d, "Name Cast from exile"), the cards an effect lets the player play from exile ("You may play that card this
- * turn", D-151: "Name Cast from exile", a land "Name Play from exile") and the top card of the library under a permission to cast it from there
+ * (the cards playable from exile are shown at the left of the battlefield instead, `ExilePlayStrip`, issue 49) and the top card of the library under a permission to cast it from there
  * ("Name Cast from the top of your library"). A graveyard and the shared
  * exile are otherwise only a count that opens a list, and a castable card in one would be easy to
  * miss. A chip does what a click on the card does (the decision layer sends the cast with its
@@ -12,30 +11,23 @@
 import type { GameView, ObjectId, ObjectView } from '@commander-arena/engine';
 import { exileMarks, FACE_DOWN_NAME, isHiddenFaceDown } from '../../game/later-text';
 import { graveyardLabels, graveyardPlayObjects } from '../decisions/flashback';
-import { exileBadge, exileCastObjects, libraryBadge } from '../decisions/layouts';
+import { libraryBadge } from '../decisions/layouts';
 import { objectIndex } from '../decisions/lookup';
 import { playableObjects } from '../decisions/priority';
 import { useDraggable } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
+import { exilePlayable } from './exile-play';
 import { useHoverPreview } from './hover';
 import './later.css';
 
-function Chip({
-  object,
-  label,
-  prominent = false,
-}: {
-  object: ObjectView;
-  label: string;
-  prominent?: boolean;
-}) {
+function Chip({ object, label }: { object: ObjectView; label: string }) {
   const hover = useHoverPreview(object.id);
   const ix = useInteraction();
   const drag = useDraggable(object.id, 'card', object.name);
   return (
     <button
       type="button"
-      className={`board-flashback-chip${prominent ? ' is-prominent' : ''}${drag.dragging ? ' is-dragging' : ''}`}
+      className={`board-flashback-chip${drag.dragging ? ' is-dragging' : ''}`}
       draggable={drag.draggable}
       onDragStart={drag.onDragStart}
       onDragEnd={drag.onDragEnd}
@@ -86,10 +78,8 @@ export function OtherZonesStrip({ view }: { view: GameView }) {
   const usable =
     priority === null ? new Set<ObjectId>() : graveyardPlayObjects(priority, graveyard);
   const fromGraveyard = graveyard.filter((o) => usable.has(o.id) && ix.clickable.has(o.id));
-  // Exile is shared; the cards the viewer may cast or play from there are those the engine lists, which include a card of another player that an
-  // effect let the viewer play (D-187, CR 406.3: "You may look at and play those cards").
-  const exile = priority === null ? new Set<ObjectId>() : exileCastObjects(priority, index);
-  const fromExile = view.exile.filter((o) => exile.has(o.id) && ix.clickable.has(o.id));
+  // The cards the viewer may cast or play from exile are shown by ExilePlayStrip, at the left of the battlefield (issue 49).
+  const { cards: fromExile } = exilePlayable(view, ix.clickable);
   // D-151 (CR 601.3): the top card of the viewer's own library, when a permanent lets them cast it from there.
   const top = view.seats[view.viewer]?.libraryTop;
   const playable = priority === null ? new Set<ObjectId>() : playableObjects(priority);
@@ -115,18 +105,6 @@ export function OtherZonesStrip({ view }: { view: GameView }) {
               key={o.id}
               object={o}
               label={libraryBadge(playable, index, o.id) ?? 'Cast from the top of your library'}
-            />
-          ))}
-        </section>
-      )}
-      {fromExile.length > 0 && (
-        <section className="board-flashback is-prominent" aria-label="Cast from exile">
-          {fromExile.map((o) => (
-            <Chip
-              key={o.id}
-              prominent
-              object={o}
-              label={exileBadge(exile, index, o.id, priority ?? undefined) ?? 'Cast from exile'}
             />
           ))}
         </section>
