@@ -104,6 +104,14 @@ describe('the cost a card has now', () => {
     expect(costNowTitle(free)).toContain('Costs {0} now (printed {2})');
     expect(castCostSuffix(bolt)).toBe(' for {5}{R}');
     expect(castCostSuffix(plain)).toBe('');
+    const taxedAsLife = card(7, 'Liesa', {
+      zone: 'command',
+      manaCost: ['2', 'W', 'B'],
+      castCost: ['2', 'W', 'B'],
+      castCostLife: 4,
+    });
+    expect(costNowTitle(taxedAsLife)).toContain('Commander tax is replaced by 4 life');
+    expect(castCostSuffix(taxedAsLife)).toBe(' for {2}{W}{B} and 4 life');
   });
 });
 
@@ -457,6 +465,9 @@ describe('the log', () => {
     );
     expect(text(cast({ alternative: 'free', commanderTax: 2 }), state())).toBe(
       'You cast Sacrifice Draw (commander tax 2) without paying its mana cost.',
+    );
+    expect(text(cast({ commanderTaxLife: 4 }), state())).toBe(
+      'You cast Sacrifice Draw (commander tax paid as 4 life).',
     );
     expect(text(cast({ alternative: 'flashback' }), state())).toBe(
       'You cast Sacrifice Draw with flashback.',

@@ -8,6 +8,8 @@ import type { Characteristics } from '../characteristics';
 
 export interface CardFace extends Characteristics {
   readonly abilities: readonly Ability[];
+  /** Life paid for each {2} of this card's commander tax when cast from the command zone. */
+  readonly commanderTaxLife?: number;
   /**
    * A Saga's final chapter number: the greatest chapter number its chapter abilities have (CR
    * 714.2d). Present on the face of a Saga (layout `saga`); `validateCard` checks that every

@@ -74,6 +74,8 @@ export interface SpellCost {
   readonly symbols: readonly string[];
   /** The commander tax included in `symbols` before the reductions (CR 903.8). */
   readonly tax: number;
+  /** Life replacing commander-tax mana, tracked separately from the printed and additional costs. */
+  readonly taxLife: number;
   /** Life paid: the kicker's and the additional costs' (CR 119.4). */
   readonly life: number;
   /** The permanent to sacrifice, by filter, or null. */
@@ -312,10 +314,16 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
             withX(manaSymbolsOf(named), x)
           : withX(face?.manaCost ?? [], x);
   let tax = 0;
+  let taxLife = 0;
   if (zone === 'command' && spell.card !== null) {
     const casts = state.commanderCasts[spell.card] ?? 0;
-    tax = 2 * casts;
-    for (let i = 0; i < casts; i += 1) symbols.push('2');
+    const replacement = face?.commanderTaxLife;
+    if (replacement === undefined) {
+      tax = 2 * casts;
+      for (let i = 0; i < casts; i += 1) symbols.push('2');
+    } else {
+      taxLife = replacement * casts;
+    }
   }
   const kicks = request.kicks ?? (request.kicked ? 1 : 0);
   const kicker = kicks > 0 ? kickerLikeCostOf(face) : null;
@@ -364,7 +372,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     else if (c.kind === 'behold') behold = c.filter;
     else if (c.kind === 'exileFromHand') exileFromHand = c.filter;
   }
-  const life = lifeOf(additional) + (kicker === null ? 0 : lifeOf(kicker) * kicks) + perX.life * x;
+  const life =
+    taxLife + lifeOf(additional) + (kicker === null ? 0 : lifeOf(kicker) * kicks) + perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;
   const reduced = reduceGeneric(
@@ -388,6 +397,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   return {
     symbols: reduced,
     tax,
+    taxLife,
     life,
     sacrifice,
     ...(sacrificeCount === 1 ? {} : { sacrificeCount }),

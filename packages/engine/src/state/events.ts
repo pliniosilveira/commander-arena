@@ -133,6 +133,8 @@ export type GameEvent =
       /** Number of targets chosen for this spell as it was cast (D-574). */
       readonly targetCount: number;
       readonly commanderTax: number;
+      /** Life paid instead of commander-tax mana, when the card's face replaces it. */
+      readonly commanderTaxLife?: number;
       /** Present (true) when a kicker cost was paid, at least once (CR 702.33d). */
       readonly kicked?: true;
       /** How many times the multikicker cost was paid (CR 702.33c); present when it is at least 1. */

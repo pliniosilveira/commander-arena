@@ -819,6 +819,10 @@ export interface CastingContext {
   /** Mana symbols of the total cost, locked in at CR 601.2f. Empty until the payment stage. */
   readonly totalCost: readonly string[];
   readonly commanderTax: number;
+  /** Life paid instead of commander-tax mana for this cast, when the card's face replaces the tax. */
+  readonly commanderTaxLife?: number;
+  /** Total life cost paid when the total cost was locked in; shown in the ensuing mana prompt. */
+  readonly lifePaid?: number;
   /**
    * For a spell, what its total cost asks besides mana once the mana is paid (CR 601.2h, D-095): the
    * filter of the permanent to sacrifice and the number of cards to discard. Set when the total

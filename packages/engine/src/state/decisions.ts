@@ -179,6 +179,8 @@ export interface PayManaDecision extends DecisionBase {
   readonly kind: 'payMana';
   readonly source: ObjectId;
   readonly totalCost: readonly string[];
+  /** Life already paid as part of the locked total cost, shown in the payment prompt when present. */
+  readonly lifePaid?: number;
   /**
    * Mana abilities of permanents the seat may tap now, as object and ability index. `colors` is
    * set when the player picks the color the source makes (any color, "{U} or {B}", the commander's

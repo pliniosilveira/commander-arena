@@ -37,4 +37,5 @@
 // 132: Parse delayed hand returns of the card named by a dies trigger (D-592).
 // 133: Parse numbered toxic keywords and a quoted "can't block" token ability (D-593).
 // 134: Read the creature-death history condition and its spell replacement paragraph (D-597).
-export const PARSER_VERSION = 137;
+// 135: Parse the commander-tax life replacement sentence (D-598).
+export const PARSER_VERSION = 138;

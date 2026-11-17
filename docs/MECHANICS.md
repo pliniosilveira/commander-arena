@@ -5079,3 +5079,9 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Parser and engine:** The condition "a creature died this turn" reads the turn's creature-death history. The spell parser joins Tragic Slip's following "That creature gets ... instead if ..." paragraph to its preceding pump instruction and lowers it as a conditional replacement.
 - **Proof:** `parser-registry.test.ts` exercises the condition through the full pipeline; `parser-p48.test.ts` checks complete real-card parsing; the golden corpus records support.
 - **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Liesa, Shroud of Dusk (D-598)
+
+- **Engine and parser:** `CardFace.commanderTaxLife` replaces each prior-cast {2} tax increment with the stated life amount, only for a cast from the command zone. Mana reductions do not reduce that life cost. The object view and payment prompt expose the life amount, and the cast event records it.
+- **Proof:** `scenario-22-commander-tax.test.ts` covers multiple prior casts, mana reductions, cancellation, casting from hand and insufficient life. `parser-p48.test.ts` checks complete real-card parsing and golden acceptance support; `costs-model.test.ts` and `references-model.test.ts` cover the cost label and payment prompt.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.

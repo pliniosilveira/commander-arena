@@ -1708,6 +1708,12 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
   if (face.types.includes('battle') && !isCount(face.defense)) {
     issue(out, `${path}.defense`, 'a battle needs a non-negative defense');
   }
+  if (
+    face.commanderTaxLife !== undefined &&
+    (!Number.isSafeInteger(face.commanderTaxLife) || face.commanderTaxLife <= 0)
+  ) {
+    issue(out, `${path}.commanderTaxLife`, 'commander tax life must be a positive whole number');
+  }
 
   face.abilities.forEach((a, i) => {
     checkAbility(a, `${path}.abilities[${i}]`, out);

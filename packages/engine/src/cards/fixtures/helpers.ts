@@ -22,6 +22,7 @@ export interface SingleFaceInput {
   /** Printed defense of a battle (CR 310.4a). */
   readonly defense?: number;
   readonly oracleText: string;
+  readonly commanderTaxLife?: number;
   readonly abilities?: readonly Ability[];
   readonly spell?: SpellText;
   /** Additional costs to cast (CR 118.8, D-095). */
@@ -52,6 +53,9 @@ export function singleFace(input: SingleFaceInput): CardDefinition {
         defense: input.defense ?? null,
         oracleText: input.oracleText,
         abilities: input.abilities ?? [],
+        ...(input.commanderTaxLife === undefined
+          ? {}
+          : { commanderTaxLife: input.commanderTaxLife }),
         spell: input.spell ?? null,
         ...(input.additionalCosts === undefined ? {} : { additionalCosts: input.additionalCosts }),
         ...(input.additionalCostChoice === undefined

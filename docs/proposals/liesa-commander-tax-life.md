@@ -1,6 +1,6 @@
 # Proposal: Liesa, Shroud of Dusk replaces commander tax with life
 
-Status: AWAITING OWNER APPROVAL. Gap class: S — this changes the command-zone casting cost and life payment path, which is shared by every commander spell. Card data: issue #255's owner-provided acceptance record in `packages/cards/test/fixtures/corpus/golden.jsonl`. The local Comprehensive Rules text and Scryfall rulings were unavailable; this proposal uses the existing engine model and cites only the rules already referenced by repository code.
+Status: APPROVED by the owner on 2026-11-17. Gap class: S — this changes the command-zone casting cost and life payment path, which is shared by every commander spell. Card data: issue #255's owner-provided acceptance record in `packages/cards/test/fixtures/corpus/golden.jsonl`. The local Comprehensive Rules text and Scryfall rulings were unavailable; this proposal uses the existing engine model and cites only the rules already referenced by repository code.
 
 ## What the card needs
 
@@ -15,7 +15,7 @@ Liesa, Shroud of Dusk says: “Rather than pay {2} for each previous time you've
 
 ## Proposed design
 
-1. Represent this as a card-data ability that applies only when that card is a designated commander and is cast from the command zone. Do not match the card name in engine code.
+1. Store the parsed replacement amount as `CardFace.commanderTaxLife`. Apply it only when that card is a designated commander and is cast from the command zone. Do not match the card name in engine code.
 2. At total-cost determination, use the tracked prior-cast count once: omit the corresponding {2} commander-tax symbols and add 2 life for each prior cast to the spell's existing life cost.
 3. Preserve all other cost components and order: printed or alternative mana cost, additional costs, reductions, and the existing cost-payment stages. If the player cannot pay the life, the spell is not cast.
 4. Show both the remaining commander-tax mana and replacement life amount in the cast-cost view and prompt. At zero previous casts, neither cost is added.
@@ -33,4 +33,4 @@ Liesa, Shroud of Dusk says: “Rather than pay {2} for each previous time you've
 
 This is more than a parser grammar rule: the generic command-tax calculation, cost state, cast view and user-facing payment description must agree. A wrong implementation could charge both costs, let cost reductions modify the life payment, or lose the replacement when the cast is cancelled. The implementation must remain deterministic and use the existing `commanderCasts` record as the sole count.
 
-Approval requested for the design above. No engine or parser code for this subsystem should be written until approved.
+Approved for implementation. The implementation records the life replacement separately from mana tax so the view, payment prompt, and cast event can report it clearly.

@@ -84,6 +84,9 @@ describe('the counterspell payment', () => {
     expect(payBarPrompt(pay(undefined), index)).toBe(
       'Pay for SYNTHETIC Soft Counter: tap your mana sources.',
     );
+    expect(payBarPrompt({ ...pay(undefined), lifePaid: 4 }, index)).toBe(
+      'Pay for SYNTHETIC Soft Counter (4 life paid): tap your mana sources.',
+    );
   });
 
   test('Cancel says the spell is countered for both purposes, and is Cancel for a cast', () => {

@@ -78,9 +78,19 @@ export function shownCost(card: ObjectView): readonly string[] | null {
 
 /** "Costs {1}{R} now (printed {3}{R})", the hover text of a changed cost; null when unchanged. */
 export function costNowTitle(card: ObjectView): string | null {
-  if (!castCostChanged(card) || card.castCost === undefined) return null;
+  if ((!castCostChanged(card) || card.castCost === undefined) && card.castCostLife === undefined) {
+    return null;
+  }
   const printed = printedCost(card);
-  return `Costs ${costText(card.castCost)} now (printed ${printed === null ? 'none' : symbolsText(printed)}). Commander tax and cost reductions are included.`;
+  const mana =
+    card.castCost === undefined
+      ? ''
+      : `Costs ${costText(card.castCost)} now (printed ${printed === null ? 'none' : symbolsText(printed)}). `;
+  const life =
+    card.castCostLife === undefined
+      ? ''
+      : `Commander tax is replaced by ${card.castCostLife} life. `;
+  return `${mana}${life}Commander tax and cost reductions are included.`;
 }
 
 /**
@@ -90,5 +100,10 @@ export function costNowTitle(card: ObjectView): string | null {
 export function castCostSuffix(card: ObjectView | undefined): string {
   if (card === undefined || card.castCost === undefined) return '';
   if (card.layout === 'split') return '';
-  return castCostChanged(card) || costsX(card) ? ` for ${costText(card.castCost)}` : '';
+  const mana =
+    castCostChanged(card) || costsX(card) || card.castCostLife !== undefined
+      ? ` for ${costText(card.castCost)}`
+      : '';
+  const life = card.castCostLife === undefined ? '' : ` and ${card.castCostLife} life`;
+  return mana === '' && life === '' ? '' : `${mana}${life}`;
 }

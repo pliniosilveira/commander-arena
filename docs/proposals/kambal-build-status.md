@@ -4,10 +4,10 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 
 ## Status
 
-- [x] 17 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, Liesa, Forgotten Archangel, Skrelv's Hive, Authority of the Consuls, Underworld Connections, and Tragic Slip.
+- [x] 18 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, Liesa, Forgotten Archangel, Skrelv's Hive, Authority of the Consuls, Underworld Connections, Tragic Slip, and Liesa, Shroud of Dusk.
 - Current branch: `support-kambal`.
-- Current group: F — Tragic Slip is supported (D-597).
-- Next: Ob Nixilis of the Black Oath. Liesa, Shroud of Dusk is awaiting owner approval of `docs/proposals/liesa-commander-tax-life.md`.
+- Current group: F — Liesa, Shroud of Dusk's commander-tax life replacement is supported (D-598).
+- Next: Ob Nixilis of the Black Oath.
 
 ## Cards and initial gap groups
 
@@ -51,6 +51,7 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 - [ ] Ob Nixilis of the Black Oath
 - [ ] Teferi's Reproach
 - [x] Tragic Slip — its Morbid replacement reads the creature-death history for the turn (D-597).
+- [x] Liesa, Shroud of Dusk — each prior command-zone cast tax is paid as 2 life instead of {2} mana (D-598; approved proposal).
 
 ## Validation
 

@@ -118,6 +118,7 @@ export function convertFace(
     face: {
       ...characteristics,
       abilities,
+      ...(parsed.commanderTaxLife === null ? {} : { commanderTaxLife: parsed.commanderTaxLife }),
       spell: parsed.spell,
       ...(finalChapter === null ? {} : { finalChapter }),
       ...(parsed.additionalCosts.length === 0 ? {} : { additionalCosts: parsed.additionalCosts }),

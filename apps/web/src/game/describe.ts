@@ -439,7 +439,12 @@ export function describeEvent(
     case 'spellCast': {
       // Kicker (CR 702.33d), Flashback (CR 702.34a) and a free cast (CR 118.9, D-095) say how it
       // was cast; none of them has an event of its own, so this line is where the log mentions them.
-      const tax = event.commanderTax > 0 ? ` (commander tax ${event.commanderTax})` : '';
+      const tax =
+        event.commanderTaxLife !== undefined
+          ? ` (commander tax paid as ${event.commanderTaxLife} life)`
+          : event.commanderTax > 0
+            ? ` (commander tax ${event.commanderTax})`
+            : '';
       // Overload (CR 702.96a), Evoke (CR 702.74a) and Dash (CR 702.109a) are alternative costs: "for its
       // overload cost" (D-121).
       const alternative =

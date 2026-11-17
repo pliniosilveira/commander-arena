@@ -210,6 +210,15 @@ describe('Tragic Slip', () => {
   });
 });
 
+describe('Liesa, Shroud of Dusk', () => {
+  test('the commander tax life replacement parses as card cost data', () => {
+    const imported = real('Liesa, Shroud of Dusk');
+    expect(imported.support.unparsed).toEqual([]);
+    expect(imported.support.status).toBe('supported');
+    expect(imported.definition.faces[0]?.commanderTaxLife).toBe(2);
+  });
+});
+
 describe('"That token gains haste until end of turn" and "then attach ~ to it": the token the text made (CR 111.2, 400.7j)', () => {
   const grantHaste = {
     kind: 'grantKeyword',

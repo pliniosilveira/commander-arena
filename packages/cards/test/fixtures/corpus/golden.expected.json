@@ -1,5 +1,5 @@
 {
-  "parserVersion": 137,
+  "parserVersion": 138,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -863,18 +863,10 @@
     "2270daaf-252d-40c4-bed5-bd46ae15f041": {
       "name": "Liesa, Shroud of Dusk",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Rather than pay {2} for each previous time you've cast ~ from the command zone this game, pay 2 life that many times.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "64796caf"
+      "ast": "e5dba4ba"
     },
     "23467047-6dba-4498-b783-1ebc4f74b8c2": {
       "name": "Ancient Tomb",
@@ -6208,7 +6200,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 435,
+      "supported": 436,
       "total": 459
     }
   }

@@ -3745,3 +3745,10 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: Add card-specific support or use current battlefield state as a proxy for a creature death; rejected because neither represents the printed history condition generically.
 - Consequences: Tragic Slip is fully parsed through the ordinary spell effect path. The parser registry and real-card integration test cover the condition and replacement; the golden corpus records the accepted card.
 - Limit: CR text and Scryfall rulings were unavailable for independent verification.
+
+## D-598: Replace Liesa's commander tax with life (2026-11-17, issue 255)
+- Context: Liesa, Shroud of Dusk replaces each {2} of her command-zone commander tax with 2 life per previous cast. The shared cast-cost path records commander casts per card, adds tax mana, pays life costs, and exposes the mana cost to the view.
+- Decision: Parse this exact replacement into `CardFace.commanderTaxLife`. When that card is cast from the command zone, omit its commander-tax mana and add the life amount for each previous cast to the total life cost. Keep mana reductions separate, expose remaining tax life and tax mana in the view, and report life in the payment prompt and cast event.
+- Alternatives: Match Liesa's name in engine code, or model the text as a battlefield static; rejected because the former is card-specific logic and the latter is not active in the command zone.
+- Consequences: A generic card-data field controls the cast cost. Scenarios cover replacement count, reductions, cancellation, other zones, insufficient life and event/view reporting. The parser and golden acceptance corpus cover the real card.
+- Limit: CR text and Scryfall rulings were unavailable for independent verification.
