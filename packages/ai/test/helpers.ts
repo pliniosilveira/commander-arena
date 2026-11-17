@@ -3244,6 +3244,50 @@ export const GALADRIEL_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle]
 ];
 
 /**
+ * The SYNTHETIC cards of group 2 of the Lorehold Spirit deck (issue 86, D-596 and later): a sorcery in which each player votes for past or present (a card milled for each past vote and damage for
+ * the mana value of what was milled, a card exiled for each present vote to play until the end of the next turn), a 3/5 with vigilance that exiles a noncreature, nonland card of its controller's
+ * graveyard at their end step for a 3/2 Spirit and casts it for free later by sacrificing a Spirit, and a plain Spirit. The vote, the targets, the sacrifice and the free cast change which answers the
+ * generic pools ask for, which games-100 expects only from dedicated styles.
+ */
+export const LOREHOLD_G2_NAMES = [
+  'SYNTHETIC Verdict Tempest',
+  'SYNTHETIC Lore Elephant',
+  'SYNTHETIC Bound Spirit',
+] as const;
+
+/** The loreholdG2 style: every card of the group twice, cards that go to the graveyard to be exiled and cast (instants, sorceries and an artifact), bodies, and burn. */
+export const LOREHOLD_G2_SPELLS = [
+  ...supported(LOREHOLD_G2_NAMES),
+  ...supported(LOREHOLD_G2_NAMES),
+  ...supported(['SYNTHETIC Verdict Tempest', 'SYNTHETIC Bound Spirit']),
+  ...supported(['SYNTHETIC Loot', 'SYNTHETIC Loot']),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Divination', 'Sol Ring']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Raging Goblin']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Mountains for the red and Plains for the white of the Elephant and the Spirits, Islands for the blue of the Divination and the Loot, Swamps. */
+export const LOREHOLD_G2_LANDS = supported([
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Island',
+  'Island',
+  'Swamp',
+]);
+
+/** Style pairs of the Lorehold group 2 soak test (issue 86): a mirror match and both mixed ways. */
+export const LOREHOLD_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['loreholdG2', 'loreholdG2'],
+  ['loreholdG2', 'spells'],
+  ['spells', 'loreholdG2'],
+];
+
+/**
  * The SYNTHETIC cards of group 2 of the Hylda deck (D-517 to D-525): a sorcery that taps everything a chosen player controls and keeps it tapped, a creature that taps what a chosen
  * opponent controls, an instant that does it for up to two creatures, an X instant, a creature that does it when its controller casts an instant or sorcery, an Aura that taps its
  * creature at every upkeep, a d20 table, a creature with a "choose up to one" trigger, a siege that asks for Khans or Dragons as it enters, a creature with a trigger that needs four
@@ -4237,6 +4281,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(HYLDA_G1_NAMES as readonly string[]).includes(card.name))
   // The Lorehold group 1 cards (issue 86) ask a "you may" before a search, which cards to discard, which card to exile and whether to pay {1} and discard: a style of their own.
   .filter((card) => !(LOREHOLD_G1_NAMES as readonly string[]).includes(card.name))
+  // The Lorehold group 2 cards (issue 86) ask each player to vote, which card to exile, which Spirit to sacrifice and whether to cast a card without paying: a style of their own.
+  .filter((card) => !(LOREHOLD_G2_NAMES as readonly string[]).includes(card.name))
   // The Galadriel group 1 cards (issue 43) ask a "you may" before a reveal, an X for a planeswalker, which permanent the Ring chooses and what to put onto the battlefield: a style of their own.
   .filter((card) => !(GALADRIEL_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
@@ -4464,6 +4510,7 @@ export type DeckStyle =
   | 'gisaG4'
   | 'hyldaG1'
   | 'loreholdG1'
+  | 'loreholdG2'
   | 'galadrielG1'
   | 'vehicles'
   | 'prevention'
@@ -4556,6 +4603,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'gisaG1' && GISA_G1_SPELLS.length > 0) return GISA_G1_SPELLS;
   if (style === 'hyldaG1' && HYLDA_G1_SPELLS.length > 0) return HYLDA_G1_SPELLS;
   if (style === 'loreholdG1' && LOREHOLD_G1_SPELLS.length > 0) return LOREHOLD_G1_SPELLS;
+  if (style === 'loreholdG2' && LOREHOLD_G2_SPELLS.length > 0) return LOREHOLD_G2_SPELLS;
   if (style === 'galadrielG1' && GALADRIEL_G1_SPELLS.length > 0) return GALADRIEL_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
@@ -4760,6 +4808,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'gisaG1' && BASIC_LANDS.length > 0) return GISA_G1_LANDS;
   if (style === 'hyldaG1' && BASIC_LANDS.length > 0) return HYLDA_G1_LANDS;
   if (style === 'loreholdG1' && BASIC_LANDS.length > 0) return LOREHOLD_G1_LANDS;
+  if (style === 'loreholdG2' && BASIC_LANDS.length > 0) return LOREHOLD_G2_LANDS;
   if (style === 'galadrielG1' && BASIC_LANDS.length > 0) return GALADRIEL_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
