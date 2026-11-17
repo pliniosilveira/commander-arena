@@ -1,5 +1,5 @@
 {
-  "parserVersion": 125,
+  "parserVersion": 126,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -216,19 +216,10 @@
     "05a4f8ff-49da-42af-add5-6248c4b0644b": {
       "name": "Darksteel Mutation",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has indestructible, and it loses all other abilities, card types, and creature types.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.attached-becomes"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "6ab0686a"
+      "ast": "ed661185"
     },
     "05e6b243-48a6-4a42-bc5f-413441de9c33": {
       "name": "Elspeth, Sun's Champion",
@@ -6875,7 +6866,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 427,
+      "supported": 428,
       "total": 480
     }
   }

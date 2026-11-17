@@ -5038,3 +5038,11 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Parser: `rules/static/grants.ts` (`andQuoted`: an ability in quotes after "has ..." or "gets ..."), `lower/statics.ts` (`lowerGrantedAbility`: an activated ability for an attached subject).
 - Tests: engine `scenario-xx-granted-activated.test.ts` (flying and a sacrifice ability, the controller of the creature activates it, a tap cost, it ends with the turn and with the Aura); cards `parser-granted-activated.test.ts` (the real line of Fallen Ideal, near misses).
 - Example cards: Fallen Ideal (issue 89).
+
+## An Aura that remakes its creature and gives it a keyword (issue 89, D-592)
+
+- CR: 613.1d (layer 4: card types and creature types replaced), 613.1f (layer 6: abilities lost, then the keyword given, in order), 613.4b (layer 7b: base power and toughness), 205.1a and 205.3d (types replaced), 611.3a (it ends with the Aura).
+- Gap class: T (the tail of a sentence); the engine already ran each piece (D-145).
+- Parser: `static.attached-becomes` (`rules/static/dinosaurs.ts`): ", and has [keywords], and it loses all other abilities, card types, and creature types".
+- Tests: engine `scenario-xx-aura-remakes-creature.test.ts` (types, base power and toughness, the one keyword left, the Aura gone; mutation: the lose after the grant); cards `parser-aura-remakes.test.ts` (the real line of Darksteel Mutation, near misses).
+- Example cards: Darksteel Mutation (issue 89).
