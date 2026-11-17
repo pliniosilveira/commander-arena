@@ -3665,3 +3665,14 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Decision: Add `Amount.lifeTotalOf` with a player selector and allow `setLifeTotal.amount` to be any validated `Amount`. Read each amount when its instruction resolves. Preserve the existing `setLifeTotal` gain/loss delta flow, including life-gain replacements. Parse the card's “Double your life total” form as twice your life total and bind “their life” to the same target opponent as the loss instruction.
 - Alternatives: Hard-code the card's arithmetic in its fixture or engine rules (not reusable), or set a life total directly (would skip life-gain and life-loss events and their replacements/triggers).
 - Consequences: Revival // Revenge imports as fully supported. Engine scenarios cover an odd target life total and a life-gain replacement on the caster; card integration casts the real Revenge face. The rules source and Scryfall rulings were unavailable for independent verification.
+## D-585: Define toughness by devotion (2026-11-17, issue 255)
+- Context: Daxos, Blessed by the Sun defines its toughness as its controller's devotion to white; the engine already evaluates devotion for resolving effects but characteristic-defining power and toughness accepted only object counts.
+- Decision: Permit devotion as a characteristic-defining power/toughness amount and evaluate it for the source controller during derivation. Extend the existing parser rule for "equal to" static values.
+- Alternatives: Store a printed base toughness or special-case Daxos; either would stop the value following devotion as the battlefield changes.
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. A synthetic engine scenario checks devotion across three copies, including each object's own mana cost, and the golden corpus checks Daxos's import. Rules text and rulings could not be checked against the local CR/Scryfall sources.
+
+## D-586: Check gained and lost life in one turn (2026-11-17, issue 255)
+- Context: Lunar Convocation's end-step ability triggers only if its controller both gained and lost life during the current turn. The engine already records each history independently but had no condition combining them.
+- Decision: Add the reusable `lifeGainedAndLostThisTurn` condition, true only when the controller has at least one life gained and more than zero life lost this turn; parse the exact combined wording.
+- Alternatives: Infer the condition from the current life total (which misses equal gains and losses) or special-case Lunar Convocation.
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. A scenario proves neither event alone suffices and both together do; parser and golden tests cover the issue card. Local CR text and rulings were unavailable for independent verification.

@@ -1834,6 +1834,11 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
     return;
   }
   const amount = a as { kind?: string; factor?: number; of?: unknown };
+  if (amount?.kind === 'devotion') {
+    if (plain)
+      issue(out, path, 'devotion is not supported as a plain static power/toughness modifier');
+    return;
+  }
   // D-145: "where X is the greatest mana value among your commanders": plain (+X/+X) only, a mana value is never negative.
   if (amount?.kind === 'commanderManaValue' || amount?.kind === 'commanderCasts') {
     if (!plain) {
@@ -2492,6 +2497,11 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // D-252, CR 119.3: the life the controller has gained this turn.
       if (!isCount(c.atLeast) || c.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
+      }
+      break;
+    case 'lifeGainedAndLostThisTurn':
+      if (Object.keys(c).some((key) => key !== 'kind')) {
+        issue(out, path, 'the gained-and-lost-life condition has no extra fields');
       }
       break;
     case 'spellsCastThisTurn':

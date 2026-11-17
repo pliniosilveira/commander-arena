@@ -425,6 +425,13 @@ export function evaluateCondition(
     case 'lifeGainedThisTurn':
       // D-252, CR 119.3: the life the controller has gained this turn, from the turn log.
       return lifeGainedThisTurnHolds(state, ctx.controller, condition);
+    case 'lifeGainedAndLostThisTurn':
+      return (
+        lifeGainedThisTurnHolds(state, ctx.controller, {
+          kind: 'lifeGainedThisTurn',
+          atLeast: 1,
+        }) && getSeat(state, ctx.controller).lifeLostThisTurn > 0
+      );
     case 'spellsCastThisTurn':
       // D-318, CR 601.2i: the spells the controller has cast this turn (copies are not cast, CR 707.10).
       if (condition.ofTypes === undefined) {

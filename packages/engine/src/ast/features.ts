@@ -820,6 +820,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'combatDamagedBy',
     // D-252: "if you gained 3 or more life this turn".
     'lifeGainedThisTurn',
+    'lifeGainedAndLostThisTurn',
     // D-318: "Activate only if you've cast three or more spells this turn".
     'spellsCastThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
@@ -1416,6 +1417,8 @@ export const CONDITION_KINDS = [
   'combatDamagedBy',
   /** "If you gained 3 or more life this turn" (D-252): the engine's `lifeGainedThisTurn`. */
   'lifeGainedThisTurn',
+  /** "If you gained and lost life this turn" (D-586). */
+  'lifeGainedAndLostThisTurn',
   /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
@@ -1591,6 +1594,7 @@ export const AMOUNT_KINDS = [
   /** "The life that player lost this turn" (CR 119.3, D-365): the engine's `lifeLostThisTurn`, the whole amount of a `loseLife`. */
   'lifeLostThisTurn',
   'lifeGainedThisTurn',
+  'lifeGainedAndLostThisTurn',
   'enteredThisTurn',
   'diedThisTurn',
   /** "-X/-X", "+2/+2 for each ..." (D-115): a multiple of an amount, only as a power or toughness. */

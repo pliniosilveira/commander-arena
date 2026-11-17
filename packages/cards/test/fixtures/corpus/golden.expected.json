@@ -1,5 +1,5 @@
 {
-  "parserVersion": 124,
+  "parserVersion": 126,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -3957,21 +3957,10 @@
     "9d3c7c96-056f-408e-a834-fa45a430d3d4": {
       "name": "Daxos, Blessed by the Sun",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "~'s toughness is equal to your devotion to white.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
-      "reasons": [
-        "faces[0].toughness: a printed '*' toughness needs a characteristic-defining ability that defines it (CR 208.2a, 604.3)",
-        "faces[0].toughness: a printed '*' toughness with no characteristic-defining ability is not implemented by the engine"
-      ],
-      "ast": "f16ef72e"
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "88e3d15c"
     },
     "9d6fdbd4-ba51-4df1-b383-9b709b36a8d7": {
       "name": "Retrieve the Esper",
@@ -5060,19 +5049,10 @@
     "cb68d1e4-36aa-4a00-b671-8959e7d526d4": {
       "name": "Lunar Convocation",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "At the beginning of your end step, if you gained and lost life this turn, create a 1/1 black Bat creature token with flying.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "condition.life-gained-this-turn"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "aad08c5b"
+      "ast": "c6e5fd37"
     },
     "cb923c4d-1d2e-4039-90bb-72d1981b9738": {
       "name": "Endless Atlas",
@@ -6318,7 +6298,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 423,
+      "supported": 425,
       "total": 459
     }
   }

@@ -143,6 +143,8 @@ describe('the dimensions', () => {
       'combatDamagedBy',
       // D-252: "if you gained 3 or more life this turn".
       'lifeGainedThisTurn',
+      // D-586: life gain and life loss are both recorded this turn.
+      'lifeGainedAndLostThisTurn',
       // D-318: "Activate only if you've cast three or more spells this turn".
       'spellsCastThisTurn',
       'dieResult',

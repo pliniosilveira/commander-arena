@@ -195,6 +195,24 @@ export const SYNTHETIC_PT_LIST: readonly CardDefinition[] = [
     oracleText: '',
   }),
   // ---- Characteristic-defining power and toughness
+  // SYNTHETIC: "~'s toughness is equal to your devotion to white."
+  singleFace({
+    name: 'SYNTHETIC White Devotion Body',
+    manaCost: ['W', 'W'],
+    types: ['creature'],
+    subtypes: ['Demigod'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    power: 2,
+    toughness: '*',
+    oracleText: "This creature's toughness is equal to your devotion to white.",
+    abilities: [
+      staticAbility({
+        kind: 'characteristicPt',
+        toughness: { kind: 'devotion', colors: ['W'] },
+      }),
+    ],
+  }),
   // "This creature's power and toughness are each equal to the number of cards in your hand."
   singleFace({
     name: 'SYNTHETIC Hand Hydra',

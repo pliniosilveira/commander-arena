@@ -112,6 +112,10 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'lifeGainedThisTurn', atLeast: test.atLeast });
     }
+    case 'lifeGainedAndLostThisTurn': {
+      const blocked = missingFeatures(['condition:lifeGainedAndLostThisTurn']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'lifeGainedAndLostThisTurn' });
+    }
     case 'spellsCastThisTurn': {
       // CR 602.5b, 601.2i (D-318): the spells the controller has cast this turn, read as the ability is activated.
       const blocked = missingFeatures(['condition:spellsCastThisTurn']);
@@ -604,6 +608,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:attackersTotalPower',
   'condition:playerDealtDamage',
   'condition:lifeGainedThisTurn',
+  'condition:lifeGainedAndLostThisTurn',
   'condition:spellsCastThisTurn',
   'condition:dieResult',
   'condition:thisInYourGraveyard',

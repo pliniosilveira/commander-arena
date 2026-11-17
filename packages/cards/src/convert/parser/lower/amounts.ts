@@ -608,6 +608,18 @@ export function lowerDefinedPt(
   ctx: LowerContext,
   rule: string,
 ): LowerResult<DefinedPtAmount> {
+  if (count.kind === 'devotion') {
+    const lowered = lowerAmount(count, ctx, rule);
+    if (!lowered.ok) return lowered;
+    if (
+      lowered.value === null ||
+      typeof lowered.value !== 'object' ||
+      lowered.value.kind !== 'devotion'
+    ) {
+      return { ok: false, needs: [], at: count.span, rule };
+    }
+    return { ok: true, value: lowered.value, rule };
+  }
   return count.kind === 'sum' ? sumInStatic(count, ctx, rule) : countInStatic(count, ctx, rule);
 }
 

@@ -18,4 +18,6 @@
 // 114: Order interacting life-gain replacements (D-581).
 // 115: Remember non-repeating modes for the source object's lifetime (D-583).
 // 116: Read current life totals as effect amounts and set a total from such an amount (D-584).
-export const ENGINE_VERSION = 116;
+// 117: Read devotion in characteristic-defining toughness abilities (D-585).
+// 118: Check gained-and-lost-life turn history (D-586).
+export const ENGINE_VERSION = 118;

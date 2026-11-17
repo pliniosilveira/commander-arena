@@ -5001,3 +5001,15 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Engine and UI:** `revealAndSeparate.faceDownPile` privately gives the separator the top cards and makes pile 1 face down. The public event contains only the face-up pile's names and the hidden pile's size. The chooser's pending decision and preview omit hidden object IDs; the pile picker shows that public size and renders one face-down card back per hidden card. Choosing the hidden pile emits no card names. Piles move through the normal zone pipeline, then `ringTempts` resolves.
 - **Proof:** `scenario-xx-saurons-ransom.test.ts` checks the separator's card view, the chooser's redacted pending data, the public event, the hidden pile going to hand, hidden event names, and Ring temptation. The importer acceptance test checks the issue fixture.
 - **Limit:** the parser-only route still does not read this private-pile wording. The two-player game has one opponent, so the separator is unambiguous. Card text is from issue 57.
+
+## The Kambal deck, issue 255, Daxos (D-585)
+
+- **Engine:** characteristic-defining power/toughness amounts may read devotion. `derive-count.ts` evaluates the devotion of the source's current controller as layer 7a derives the defined characteristic.
+- **Proof:** `scenario-xx-amounts-rules.test.ts` checks that each of three Daxos-like synthetic permanents sees all three white mana costs; the golden acceptance corpus checks Daxos's complete text.
+- **Limit:** the local CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Lunar Convocation (D-586)
+
+- **Engine:** `lifeGainedAndLostThisTurn` checks both the controller's accumulated life gain and `SeatState.lifeLostThisTurn`; the current life total is not used. The new condition works with existing condition conjunction and intervening-if timing.
+- **Proof:** parser coverage includes the exact token ability; an engine scenario gains life, loses life to a spell, and checks false before both events and true afterward. The golden acceptance corpus checks the complete card.
+- **Limit:** the local CR text and Scryfall rulings were unavailable for independent verification.

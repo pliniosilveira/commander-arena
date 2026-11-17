@@ -369,6 +369,7 @@ export type StaticPtAmount =
 /** What a characteristic-defining ability sets a power or toughness to: a count, or a multiple of one (CR 604.3). */
 export type DefinedPtAmount =
   | CountAmount
+  | Extract<Amount, { readonly kind: 'devotion' }>
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
   | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
 
@@ -4132,6 +4133,8 @@ export type Condition =
    * after replacement, summed; a gain of 0 is no event, CR 119.9). Reads the turn log only, so it is read as the event happens and again as the ability resolves.
    */
   | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
+  /** "If you gained and lost life this turn": at least one gain and one life lost by this player. */
+  | { readonly kind: 'lifeGainedAndLostThisTurn' }
   /**
    * "Activate only if you've cast three or more spells this turn" (CR 602.5b, 601.2i, D-318): the controller of the condition has cast at least
    * `atLeast` spells this turn (`SeatState.spellsCastThisTurn`: a spell counts once it is on the stack with its costs paid, whether or not it

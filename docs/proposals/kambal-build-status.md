@@ -27,8 +27,8 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 
 ### Group C — life, toughness, and scaling
 
-- [ ] Daxos, Blessed by the Sun
-- [ ] Lunar Convocation
+- [x] Daxos, Blessed by the Sun — characteristic-defining toughness follows the controller's white devotion (D-585).
+- [x] Lunar Convocation — end-step condition requires both life gain and life loss this turn (D-586).
 - [ ] Moseo, Vein's New Dean
 - [ ] Tivash, Gloom Summoner
 - [ ] Wall of Reverence

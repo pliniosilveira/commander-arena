@@ -27,4 +27,6 @@
 // 122: Read and/or unions of card types in plural graveyard targets (D-582).
 // 123: Read a triggered mode choice that has no duration qualifier (D-583).
 // 124: Read life total doubling and losing half a target player's life (D-584).
-export const PARSER_VERSION = 124;
+// 125: Parse characteristic-defining toughness equal to devotion (D-585).
+// 126: Parse the end-step condition that life was gained and lost (D-586).
+export const PARSER_VERSION = 126;
