@@ -78,6 +78,7 @@ import { nextMainStep } from './next-main';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { runGrantPlayerHexproof } from './player-hexproof';
+import { runPlayerLock } from './player-lock';
 import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
@@ -1546,8 +1547,16 @@ function runEffect(
         const amount = lifeAmountFor(next, effect.amount, seat, () => everyone);
         const r =
           effect.kind === 'gainLife'
-            ? gainLifeOf(next, seat, amount)
+            ? gainLifeOf(next, seat, amount, flow, res.source)
             : loseLifeOf(next, seat, amount);
+        if ('kind' in r && r.kind === 'asked') {
+          return { state, events: [], front: [], needs: r.decision };
+        }
+        if ('kind' in r && r.kind === 'gained') {
+          next = r.state;
+          events.push(...r.events);
+          continue;
+        }
         next = r.state;
         events.push(...r.events);
         // CR 702.101a (D-120): the life lost is remembered for "the total life lost this way".
@@ -1569,9 +1578,21 @@ function runEffect(
     case 'setLifeTotal': {
       // CR 119.5 (D-201): the player gains or loses the life that takes their life total to the number; a player who has it already does neither.
       for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
-        const delta = effect.amount - getSeat(next, seat).life;
+        const amount = amountOf(next, effect.amount, ctx, targets);
+        const delta = amount - getSeat(next, seat).life;
         if (delta === 0) continue;
-        const r = delta > 0 ? gainLifeOf(next, seat, delta) : loseLifeOf(next, seat, -delta);
+        const r =
+          delta > 0
+            ? gainLifeOf(next, seat, delta, flow, res.source)
+            : loseLifeOf(next, seat, -delta);
+        if ('kind' in r && r.kind === 'asked') {
+          return { state, events: [], front: [], needs: r.decision };
+        }
+        if ('kind' in r && r.kind === 'gained') {
+          next = r.state;
+          events.push(...r.events);
+          continue;
+        }
         next = r.state;
         events.push(...r.events);
       }
@@ -1869,7 +1890,15 @@ function runEffect(
       // CR 716.2a (D-235): "This Class's level becomes N": the permanent the ability belongs to, if it is still on the battlefield.
       const source = res.source === null ? undefined : state.objects[res.source];
       if (source?.zone !== 'battlefield') return done(state);
-      return { ...done(patchObject(state, source.id, { level: effect.level })), performed: 1 };
+      const previous = source.level ?? 1;
+      return {
+        ...done(patchObject(state, source.id, { level: effect.level })),
+        events:
+          previous === effect.level
+            ? []
+            : [{ kind: 'classLevelReached', object: source.id, level: effect.level }],
+        performed: 1,
+      };
     }
 
     case 'monstrosity': {
@@ -2317,6 +2346,10 @@ function runEffect(
     case 'grantPlayerHexproof':
       // CR 702.11b, 611.2 (Hylda group 3): the players have hexproof until end of turn (`rules/player-hexproof.ts`).
       return runGrantPlayerHexproof(state, effect, ctx, targets);
+
+    case 'grantPlayerProtectionEverything':
+    case 'preventPlayerLifeTotalChange':
+      return runPlayerLock(state, effect, ctx, targets);
 
     case 'requireAttack':
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.

@@ -50,6 +50,12 @@ export function lowerCondition(
       if (test.atLeast.kind !== 'number' || test.atLeast.value < 1) return failure(c, []);
       return ok({ kind: 'opponentsAtLeast', count: test.atLeast.value });
     }
+    case 'opponentPoisonAtLeast': {
+      const blocked = missingFeatures(['condition:opponentPoisonAtLeast']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (test.atLeast.kind !== 'number' || test.atLeast.value < 1) return failure(c, []);
+      return ok({ kind: 'opponentPoisonAtLeast', count: test.atLeast.value });
+    }
     case 'and':
     case 'or': {
       const blocked = missingFeatures([`condition:${test.kind}`]);
@@ -111,6 +117,10 @@ export function lowerCondition(
       return blocked.length > 0
         ? failure(c, blocked)
         : ok({ kind: 'lifeGainedThisTurn', atLeast: test.atLeast });
+    }
+    case 'lifeGainedAndLostThisTurn': {
+      const blocked = missingFeatures(['condition:lifeGainedAndLostThisTurn']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'lifeGainedAndLostThisTurn' });
     }
     case 'spellsCastThisTurn': {
       // CR 602.5b, 601.2i (D-318): the spells the controller has cast this turn, read as the ability is activated.
@@ -577,6 +587,7 @@ export function lowerCondition(
 export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:controlsAtLeast',
   'condition:opponentsAtLeast',
+  'condition:opponentPoisonAtLeast',
   'condition:kicked',
   'condition:controlCommander',
   'condition:lifeTotal',
@@ -604,6 +615,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:attackersTotalPower',
   'condition:playerDealtDamage',
   'condition:lifeGainedThisTurn',
+  'condition:lifeGainedAndLostThisTurn',
   'condition:spellsCastThisTurn',
   'condition:dieResult',
   'condition:thisInYourGraveyard',

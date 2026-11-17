@@ -97,6 +97,7 @@ const asChapter = permanent((e) => `${e} — You gain 1 life.`);
 const atStep = permanent((e) => `At ${e}, you gain 1 life.`);
 
 const EMBED: Readonly<Record<string, Embed>> = {
+  'replacement.life-gain-double': asIs,
   'keyword.line': asIs,
   'replacement.enters-tapped': asIs,
   'replacement.enters-with-counters': asIs,
@@ -497,6 +498,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Return target creature to its owner's hand. If ${e}, scry 1.`,
   ),
   'modal.choose-not-repeated': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
+  'modal.choose-not-repeated-source': permanent(
+    (e) => `At the beginning of your end step, ${e}\n• Draw a card.\n• You gain 1 life.`,
+  ),
   // D-344 (repeatable modes, CR 700.2d): the header with no dash, its bullets after it.
   'modal.choose-repeatable': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   // Danitha deck, group 7 (D-433): Tiered, whose bullets name their mode and its cost before the effect.
@@ -526,6 +530,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.opponents-cant-cast': asIs,
   'static.opponents-cant-cast-spells': asIs,
   'static.group-enters-untapped': asIs,
+  'static.group-enters-tapped': asIs,
   'static.spells-cant-be-countered': asIs,
   // Stage P43 (D-193): the damage that stays and the redirection of Ancient Adamantoise, lines of their own.
   'static.keeps-damage': asIs,
@@ -712,6 +717,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.mana-rider-scry-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
   'amount.for-each-commander-cast': permanent((e) => `Creatures you control get +1/+1 ${e}.`),
   'static.untap-in-others-step': asIs,
+  'trigger.class-level': permanent((e) => `When ${e}, draw a card.`),
+  'trigger.ring-bearer-chosen': permanent((e) => `Whenever ${e}, draw a card.`),
   // Group 4 (D-232): the permission to play from the graveyard is a line of its own.
   'static.graveyard-play-once-each-turn': asIs,
   // Group 4 (D-208): the rider of the mana a land adds follows the "Add" sentence of its mana ability.
@@ -751,6 +758,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hylda deck, group 2 (D-517, D-518, D-520, D-521, D-523): the group of a target player, the group "those creatures" says, a target of the player of the event, the card types of
   // a graveyard, the state of the permanent an Aura enchants and the cost of an ability that depends on the turn.
   'noun.all-permanents-of-target-player': spell((e) => `Tap ${e}.`),
+  'noun.all-nonland-they-control': spell(() => `All nonland permanents they control phase out.`),
   'noun.those-creatures': spell(
     (e) =>
       `Tap up to two target creatures. ${cap(e)} don't untap during their controllers' next untap steps.`,
@@ -761,6 +769,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.card-types-among': permanent(
     (e) =>
       `At the beginning of each opponent's upkeep, if ${e}, tap target creature that player controls.`,
+  ),
+  'condition.opponent-poison-at-least': permanent(
+    (e) => `As long as ${e}, creatures you control with toxic have lifelink.`,
+  ),
+  'condition.creature-died-this-turn': spell(
+    (e) =>
+      `Target creature gets -1/-1 until end of turn. That creature gets -13/-13 until end of turn instead if ${e}.`,
   ),
   'condition.host-is-tapped': permanent((e) => `At the beginning of each upkeep, if ${e}, tap it.`),
   'restriction.cost-reduction-your-turn': permanent(

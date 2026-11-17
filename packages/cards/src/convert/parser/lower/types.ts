@@ -151,6 +151,8 @@ export interface LowerContext {
    * battlefield some other way, where the card may be anywhere). A subset of `itIsCard`.
    */
   itDied: boolean;
+  /** True in any dies trigger body, including a trigger about another creature (D-599). */
+  diesTrigger: boolean;
   /**
    * True while the total of a divided damage is lowered (stage P32, D-147, CR 601.2d): "..., where X is the greatest power among
    * creatures you control as you cast this spell" is read once, as the spell is cast, and only there.
@@ -280,6 +282,7 @@ export function newContext(
     meldPartner: null,
     itIsCard: false,
     itDied: false,
+    diesTrigger: false,
     cardName,
     selfName: '',
   };

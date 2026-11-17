@@ -13,9 +13,11 @@ import type { ChosenTarget, GameState, Instruction } from '../state/types';
 import { amountOf } from './amounts';
 import { copiableValues } from './copiable';
 import { withCopyExceptions } from './copy-exceptions';
+import type { OrderFlow } from './damage-order';
 import { replacementSources } from './die-replacement';
 import { drawSkippedBy } from './draw-skip';
-import { gainLife } from './life-gain';
+import { gainLife, type LifeGainResult } from './life-gain';
+import { lifeTotalIsLocked } from './player-lock';
 import { prepareCardOf } from './prepare';
 import { resolveObjects, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
@@ -138,16 +140,22 @@ export function drawCard(
 
 export function loseLifeOf(state: GameState, seat: SeatId, amount: number): StepOutcomeLike {
   const s = getSeat(state, seat);
-  if (amount <= 0) return { state, events: [] };
+  if (amount <= 0 || lifeTotalIsLocked(state, seat)) return { state, events: [] };
   return {
     state: loseLifeBy(state, seat, amount),
     events: [{ kind: 'lifeChanged', seat, from: s.life, to: s.life - amount }],
   };
 }
 
-export function gainLifeOf(state: GameState, seat: SeatId, amount: number): StepOutcomeLike {
+export function gainLifeOf(
+  state: GameState,
+  seat: SeatId,
+  amount: number,
+  flow: OrderFlow,
+  source: ObjectId,
+): LifeGainResult {
   // D-149: replaced and counted by `rules/life-gain.ts`.
-  return gainLife(state, seat, amount);
+  return gainLife(state, seat, amount, flow, source);
 }
 
 export interface StepOutcomeLike {

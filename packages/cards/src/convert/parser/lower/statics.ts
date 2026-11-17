@@ -142,15 +142,23 @@ function lowerGrantedAbility(
   // A refusal points at the statement that grants, as it did when the quoted text was only text.
   if (inner.kind !== 'activated' && inner.kind !== 'triggered') return failure(at);
   // The permanent itself, or (stage P36, D-178) a group of permanents (the engine's `grantAbility` gives the ability to each permanent the subject
-  // names, which has it as its own); an attached subject with such an ability is read and not run. `~` is the permanent that has the ability, which
+  // names, which has it as its own); an untyped attached subject with such an ability is read and not run. `~` is the permanent that has the ability, which
   // is not the card for a group, so a card that names itself inside a quotation is not read for one.
   // Stage P49 (D-206): the equipped or enchanted permanent too, for a triggered ability ("Equipped creature has \"Whenever this creature attacks, you gain 1 life.\"": `~` in the quotation is
   // the creature that has the ability, the same as for a group).
   // D-286 (CR 702.95b): the pair, for a triggered ability ("each of those creatures has a quoted ability"): `~` in the quotation is the creature that has it.
+  // D-603: a typed attached permanent can receive an activated ability; Underworld Connections grants one to an enchanted land.
+  const attachedLandActivated =
+    subject.kind === 'attached' &&
+    subject.types?.includes('land') === true &&
+    inner.kind === 'activated';
   if (
     subject.kind !== 'this' &&
     ((subject.kind !== 'filter' &&
-      !((subject.kind === 'attached' || subject.kind === 'pair') && inner.kind === 'triggered')) ||
+      !(
+        ((subject.kind === 'attached' || subject.kind === 'pair') && inner.kind === 'triggered') ||
+        attachedLandActivated
+      )) ||
       ctx.namedInQuotes)
   ) {
     return failure(at);
@@ -164,7 +172,11 @@ function lowerGrantedAbility(
       ...ctx,
       faceTypes: grantedToPlaneswalkers ? ['planeswalker'] : ctx.faceTypes,
     },
-    grantedToPlaneswalkers ? ['planeswalker'] : ctx.faceTypes,
+    grantedToPlaneswalkers
+      ? ['planeswalker']
+      : attachedLandActivated
+        ? (subject.types ?? ctx.faceTypes)
+        : ctx.faceTypes,
   );
 }
 
@@ -502,6 +514,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'graveyardPlay':
       return ['static:playFromGraveyardOnceEachTurn'];
     case 'groupEntersUntapped':
+    case 'groupEntersTapped':
       return ['replacement:groupEntersUntapped'];
     case 'opponentsCantCast':
       return ['static:opponentsCantCastOnYourTurn'];

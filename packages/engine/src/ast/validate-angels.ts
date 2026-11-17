@@ -101,6 +101,8 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
         issue(out, `${path}.amount`, 'the extra life is a positive whole number');
       }
       return true;
+    case 'lifeGainDouble':
+      return true;
     case 'tokensInstead':
       // D-219: the tokens that would be created, as they would be on the battlefield; and the token that is created instead or as well.
       checkEnteringFilter(r.what, `${path}.what`, out);
@@ -160,6 +162,7 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       }
       return true;
     case 'groupEntersUntapped':
+    case 'groupEntersTapped':
       // D-179: tapped is a state, not something the entering permanent has before it enters; the other fields are read as for the counters.
       checkEnteringFilter(r.what, `${path}.what`, out);
       return true;

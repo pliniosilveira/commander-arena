@@ -54,6 +54,7 @@ import { asFace } from './layouts';
 import { applyPaymentPlan, planFor } from './mana-engine';
 import type { PlanOptions } from './mana-sources';
 import { payMechanismsOf, payOptionSources } from './pay-options';
+import { lifeTotalIsLocked } from './player-lock';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter, type SelectContext } from './select';
 import { hasX, largestPayableX, spellXCost, withX, type XCost } from './x-value';
@@ -74,6 +75,8 @@ export interface SpellCost {
   readonly symbols: readonly string[];
   /** The commander tax included in `symbols` before the reductions (CR 903.8). */
   readonly tax: number;
+  /** Life replacing commander-tax mana, tracked separately from the printed and additional costs. */
+  readonly taxLife: number;
   /** Life paid: the kicker's and the additional costs' (CR 119.4). */
   readonly life: number;
   /** The permanent to sacrifice, by filter, or null. */
@@ -312,10 +315,16 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
             withX(manaSymbolsOf(named), x)
           : withX(face?.manaCost ?? [], x);
   let tax = 0;
+  let taxLife = 0;
   if (zone === 'command' && spell.card !== null) {
     const casts = state.commanderCasts[spell.card] ?? 0;
-    tax = 2 * casts;
-    for (let i = 0; i < casts; i += 1) symbols.push('2');
+    const replacement = face?.commanderTaxLife;
+    if (replacement === undefined) {
+      tax = 2 * casts;
+      for (let i = 0; i < casts; i += 1) symbols.push('2');
+    } else {
+      taxLife = replacement * casts;
+    }
   }
   const kicks = request.kicks ?? (request.kicked ? 1 : 0);
   const kicker = kicks > 0 ? kickerLikeCostOf(face) : null;
@@ -364,7 +373,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     else if (c.kind === 'behold') behold = c.filter;
     else if (c.kind === 'exileFromHand') exileFromHand = c.filter;
   }
-  const life = lifeOf(additional) + (kicker === null ? 0 : lifeOf(kicker) * kicks) + perX.life * x;
+  const life =
+    taxLife + lifeOf(additional) + (kicker === null ? 0 : lifeOf(kicker) * kicks) + perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;
   const reduced = reduceGeneric(
@@ -388,6 +398,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   return {
     symbols: reduced,
     tax,
+    taxLife,
     life,
     sacrifice,
     ...(sacrificeCount === 1 ? {} : { sacrificeCount }),
@@ -523,7 +534,7 @@ export function canPaySpellCost(
   const life = getSeat(state, seat).life;
   // CR 119.4: life can be paid only if the life total is at least the payment; paying all of it is allowed (the player then has 0 life and
   // loses when state-based actions are next checked, CR 704.5a).
-  if (cost.life > 0 && life < cost.life) return false;
+  if (cost.life > 0 && (lifeTotalIsLocked(state, seat) || life < cost.life)) return false;
   if (cost.discard > discardable(state, seat, spell.id).length) return false;
   if (cost.exile > exilable(state, seat, spell.id).length) return false;
   // An optional exile cost can always be paid by choosing zero cards.

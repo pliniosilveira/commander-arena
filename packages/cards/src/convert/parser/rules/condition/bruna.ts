@@ -38,6 +38,21 @@ export const CONDITION_LIFE_GAINED_THIS_TURN = defineRule<IrCondition>({
     'you gain 3 or more life this turn',
   ],
   parse: (ctx, pos) => {
+    const gainedAndLost = pattern(
+      new RegExp(`you gained and lost life this turn${BOUNDARY}`, 'iu'),
+    )(ctx, pos);
+    if (gainedAndLost.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'condition',
+          test: { kind: 'lifeGainedAndLostThisTurn' },
+          span: { start: pos, end: gainedAndLost.pos },
+          rule: 'condition.life-gained-this-turn',
+        },
+        pos: gainedAndLost.pos,
+      };
+    }
     const bare = pattern(new RegExp(`you gained life this turn${BOUNDARY}`, 'iu'))(ctx, pos);
     const r = bare.ok
       ? { ...bare, value: 1 }

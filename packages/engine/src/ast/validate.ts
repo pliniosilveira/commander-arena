@@ -633,7 +633,14 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'landfall':
       break;
     case 'ringTempted':
-      // D-196: "whenever the Ring tempts you" (CR 701.54d) has no parameters.
+      if (t.bearerChosen !== undefined && t.bearerChosen !== true) {
+        issue(out, `${path}.bearerChosen`, 'must be true when present');
+      }
+      break;
+    case 'classLevel':
+      if (!isCount(t.level) || t.level < 2) {
+        issue(out, `${path}.level`, 'a Class level trigger must name a level of 2 or greater');
+      }
       break;
     case 'crimeCommitted':
     case 'tokenCreated':
@@ -1717,6 +1724,12 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
   }
   if (face.types.includes('battle') && !isCount(face.defense)) {
     issue(out, `${path}.defense`, 'a battle needs a non-negative defense');
+  }
+  if (
+    face.commanderTaxLife !== undefined &&
+    (!Number.isSafeInteger(face.commanderTaxLife) || face.commanderTaxLife <= 0)
+  ) {
+    issue(out, `${path}.commanderTaxLife`, 'commander tax life must be a positive whole number');
   }
 
   face.abilities.forEach((a, i) => {

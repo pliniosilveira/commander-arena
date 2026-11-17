@@ -371,6 +371,13 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:ringTempted']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'ringTempted' });
     }
+    case 'ringBearerChosen': {
+      // CR 701.54a: unlike `ringTempted`, this trigger needs a creature to have been chosen.
+      const blocked = missingFeatures(['trigger:ringTempted']);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({ kind: 'ringTempted', bearerChosen: true });
+    }
     case 'castSelf': {
       // "When you cast this spell" (stage P39, D-184, CR 601.2i, 603.2): the spell's own ability, which works while it is on the stack and
       // triggers for that spell only (`self`; the caster is the controller of the ability, the filter says a spell).
@@ -449,6 +456,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     }
     case 'chapter':
       return lowerChapter(t);
+    case 'classLevel': {
+      const level = t.level;
+      if (typeof level !== 'number') return failure(t);
+      const blocked = missingFeatures(['trigger:classLevel']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'classLevel', level });
+    }
     case 'lifeGained': {
       // "Whenever you gain life [for the first time each turn]" (stage P33, D-150, CR 119.9): the player is relative to the controller.
       const who = whoOf(t.actor);
@@ -1047,6 +1060,7 @@ export function lowerTriggered(
   ctx.itDied = triggers.every(
     (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'this',
   );
+  ctx.diesTrigger = triggers.every((t) => t.kind === 'dies');
   const bodies = ability.modal === undefined ? [ability.body] : ability.modal.modes;
   const clauses = bodies.flatMap((b) => b.sentences.flatMap((s) => s.clauses));
   // "It" in the body of "becomes the target" is the spell or ability that targeted (the engine's

@@ -213,7 +213,8 @@ export function payBarPrompt(d: PayManaDecision, index: Index): string {
     return `${prompt}: tap your mana sources.`;
   }
   if (d.purpose === undefined) {
-    return `Pay for ${nameOf(index, d.source)}: tap your mana sources.`;
+    const life = d.lifePaid === undefined ? '' : ` (${d.lifePaid} life paid)`;
+    return `Pay for ${nameOf(index, d.source)}${life}: tap your mana sources.`;
   }
   const mana = d.totalCost.map((s) => `{${s}}`).join('');
   if (d.purpose === 'unlessPays') {

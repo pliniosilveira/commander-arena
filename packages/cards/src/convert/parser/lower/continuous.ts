@@ -406,3 +406,36 @@ export const DELAYED_RETURN: Lowering<IrClause, Effects> = {
     };
   },
 };
+
+/** A dies trigger can schedule its trigger card to its owner's hand at the next end step (D-599). */
+export const DELAYED_RETURN_TO_HAND: Lowering<IrClause, Effects> = {
+  head: 'delayedReturnToHand',
+  id: 'lower.delayed-return-to-hand',
+  needs: [
+    'effect:delayedTrigger',
+    'effect:moveToZone',
+    'selector:triggerCard',
+    'selector:triggerSubject',
+  ],
+  lower(clause, ctx): LowerResult<Effects> {
+    const what = operand(clause, 'objects');
+    const to = arg(clause, 'to');
+    if (what?.kind !== 'noun' || to?.kind !== 'zoneSpec' || to.zone !== 'hand') {
+      return failure(clause);
+    }
+    if (what.det !== 'triggerSubject' || !ctx.diesTrigger || ctx.lowered > 0) {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'delayedTrigger',
+          at: { step: 'endStep', whose: 'each' },
+          effect: { kind: 'moveToZone', objects: { kind: 'triggerCard' }, to: 'hand' },
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};

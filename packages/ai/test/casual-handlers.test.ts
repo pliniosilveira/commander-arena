@@ -100,6 +100,7 @@ function view(spec: ViewSpec = {}): GameView {
     spellsCastThisTurn: 0,
     landPlaysAllowed: 1,
     commanderTax: {},
+    commanderTaxLife: {},
   });
   return {
     viewer: 0,

@@ -819,6 +819,10 @@ export interface CastingContext {
   /** Mana symbols of the total cost, locked in at CR 601.2f. Empty until the payment stage. */
   readonly totalCost: readonly string[];
   readonly commanderTax: number;
+  /** Life paid instead of commander-tax mana for this cast, when the card's face replaces the tax. */
+  readonly commanderTaxLife?: number;
+  /** Total life cost paid when the total cost was locked in; shown in the ensuing mana prompt. */
+  readonly lifePaid?: number;
   /**
    * For a spell, what its total cost asks besides mana once the mana is paid (CR 601.2h, D-095): the
    * filter of the permanent to sacrifice and the number of cards to discard. Set when the total
@@ -1810,6 +1814,10 @@ export type ContinuousChange =
    * player is targeted (`rules/player-protection.ts`).
    */
   | { readonly kind: 'playerHexproof' }
+  /** Protection from everything granted to a player until their next turn (D-607). */
+  | { readonly kind: 'playerProtectionEverything' }
+  /** Prevents all increases and decreases to the player's life total (D-607). */
+  | { readonly kind: 'playerCantChangeLifeTotal' }
   /**
    * "Creatures your opponents control attack each combat if able [and attack a player other than you if able]" (`requireAttack`, CR 508.1d, 611.2c,
    * D-179): no layer and no fixed set (`objects` is empty): the requirement is read where attackers are declared (`rules/combat-legality.ts`), for
@@ -2083,6 +2091,8 @@ export interface GameState {
   readonly monarchBecameAt?: Readonly<Record<number, number>>;
   /** What has happened this turn that abilities ask about (D-139): see `TurnLog`. */
   readonly turnLog: TurnLog;
+  /** Modes chosen by a source object whose triggered ability uses `notRepeatedBySource`; zone changes create a new source id. */
+  readonly modesChosenBySource?: Readonly<Record<ObjectId, readonly number[]>>;
   readonly battlefield: readonly ObjectId[];
   /** The permanents that are phased out (D-234, CR 702.26): objects whose `zone` is `'phased'`. Absent in a game saved before D-234. */
   readonly phased?: readonly ObjectId[];

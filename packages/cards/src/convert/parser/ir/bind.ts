@@ -375,6 +375,8 @@ class Binder {
       case 'colorsAmong':
       case 'cardTypesAmong':
         return { ...amount, of: this.noun(amount.of) };
+      case 'lifeTotalOf':
+        return { ...amount, of: this.noun(amount.of) };
       case 'half':
       case 'multiple':
       case 'minus':

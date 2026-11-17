@@ -88,6 +88,7 @@ describe('amounts that read an object', () => {
       'commanderColors',
       'commanderManaValue',
       'commanderCasts',
+      'lifeTotalOf',
       // D-179: "for each color among permanents you control".
       'colorsAmong',
       // D-518: "the number of card types among cards in your graveyard".
@@ -116,6 +117,21 @@ describe('amounts that read an object', () => {
       'dieResult',
     ]);
   });
+});
+
+test('a mana-value target limit may read life gained this turn', () => {
+  const target: TargetSpec = {
+    id: 't1',
+    what: {
+      kind: 'object',
+      filter: {
+        zone: 'graveyard',
+        types: ['creature'],
+        manaValueAtMost: { kind: 'lifeGainedThisTurn' },
+      },
+    },
+  };
+  expect(runnable({ kind: 'draw', player: { kind: 'you' }, count: 1 }, [target])).toEqual([]);
 });
 
 describe('createToken.controller and shuffle.player', () => {

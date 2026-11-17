@@ -18,6 +18,7 @@ import { hasKeyword } from './keywords';
 import { effectiveManaAbility, isCombinationProduction, productionOutcomes } from './mana-outcomes';
 import { manaValueOfCost } from './mana-value';
 import { millCards } from './mill';
+import { lifeTotalIsLocked } from './player-lock';
 import { hasRestriction } from './restrictions';
 import { sacrificeCandidates, sacrificePermanent } from './sacrifice';
 
@@ -192,6 +193,7 @@ export function canPayPhysicalCosts(
   ability: ManaAbility,
   seat: SeatId,
 ): boolean {
+  if (lifeCostOf(ability) > 0 && lifeTotalIsLocked(state, seat)) return false;
   return physicalRefusal(state, obj, ability, seat) === null;
 }
 

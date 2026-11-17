@@ -143,6 +143,51 @@ export const STATIC_GROUP_ENTERS_UNTAPPED = defineRule<IrStatic>({
   },
 });
 
+/** "Creatures your opponents control enter tapped." */
+export const STATIC_GROUP_ENTERS_TAPPED = defineRule<IrStatic>({
+  id: 'static.group-enters-tapped',
+  family: 'static',
+  leading: [],
+  cites: [
+    'CR 614.1c (Replacement Effects)',
+    'CR 614.12 (Replacement Effects)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'Creatures your opponents control enter tapped.',
+    'Artifacts your opponents control enter tapped.',
+  ],
+  rejects: [
+    'Creatures your opponents control enter tapped',
+    'Creatures enter tapped.',
+    'Creatures you control enter tapped.',
+    'Other creatures your opponents control enter tapped.',
+    'Creatures your opponents control enter untapped.',
+    'Creatures your opponents control enter tapped unless you control a Forest.',
+    'Creatures your opponents control enter tapped and gain 1 life.',
+    'Creature your opponents control enters tapped.',
+  ],
+  parse: (ctx, pos) => {
+    const subject = quiet(family<IrNoun>('noun', { only: ['noun.plain-permanents'] }))(ctx, pos);
+    if (!subject.ok || subject.value.filter.controller !== 'opponent' || subject.value.other) {
+      return fail(ctx, pos);
+    }
+    const words = literal(' enter tapped.')(ctx, subject.pos);
+    if (!words.ok) return words;
+    return {
+      ok: true,
+      value: staticOf(
+        'static.group-enters-tapped',
+        subject.value,
+        [{ kind: 'groupEntersTapped' }],
+        pos,
+        words.pos,
+      ),
+      pos: words.pos,
+    };
+  },
+});
+
 /**
  * `static.spells-cant-be-countered`: "Creature spells you control can't be countered." (stage P40, D-186, CR 101.2, 604.1, 701.6a: while the
  * permanent has the ability, a spell of its controller that the subject describes is not countered; it stays on the stack and resolves). The
@@ -273,5 +318,6 @@ export const KORVOLD_STATIC_RULES = [
   STATIC_PT_TIMES_ATTACKED,
   STATIC_OPPONENTS_CANT_CAST,
   STATIC_GROUP_ENTERS_UNTAPPED,
+  STATIC_GROUP_ENTERS_TAPPED,
   STATIC_SPELLS_CANT_BE_COUNTERED,
 ];

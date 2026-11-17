@@ -149,7 +149,9 @@ export function votePrompt(
 
 /** The title of the dialog of the order of replacement effects: "Damage replacement", or "Destruction replacement" for the destruction of a permanent (D-418). */
 export function replacementTitle(d: Pick<ChooseOptionDecision, 'replacement'>): string {
-  return d.replacement?.destroy === undefined ? 'Damage replacement' : 'Destruction replacement';
+  const replacement = d.replacement;
+  if (replacement !== undefined && 'lifeGain' in replacement) return 'Life gain replacement';
+  return replacement?.destroy === undefined ? 'Damage replacement' : 'Destruction replacement';
 }
 
 /**
@@ -163,7 +165,10 @@ export function replacementPrompt(replacement: ChooseOptionDecision['replacement
     // D-418 (CR 616.1): the permanent that would be destroyed, and the effects that replace it.
     return destroyReplacementPrompt(replacement.destroy.objectName);
   }
-  if (replacement.event === undefined) {
+  if ('lifeGain' in replacement) {
+    return `You would gain ${replacement.lifeGain.amount} life. Several effects change that amount. Choose which to apply first.`;
+  }
+  if (!('event' in replacement) || replacement.event === undefined) {
     // D-221 (CR 616.1): the tokens the player would create, and the effects that replace their creation.
     const would = replacement.tokens.would.join(' and ');
     return `You would create ${would}. Several effects replace that. Choose which to apply first.`;
@@ -250,6 +255,8 @@ export function namedOptionRows(
       if (choice !== undefined && 'aura' in choice.outcome) {
         // D-418: the Aura destroyed in place of the permanent, or the regeneration (tapped, removed from combat).
         detail = destroyReplacementThen(choice.outcome);
+      } else if (choice?.kind === 'lifeGain') {
+        detail = `Then: ${choice.outcome.amount} life`;
       } else if (
         choice !== undefined &&
         question?.event !== undefined &&

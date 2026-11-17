@@ -37,6 +37,14 @@ export function chooseReplacementByOutcome(d: ChooseOptionDecision): Action {
       if (choice.outcome.aura === null) return { kind: 'chooseOption', option: choice.option };
       continue;
     }
+    if (choice.kind === 'lifeGain') {
+      const cost = -choice.outcome.amount;
+      if (cost < bestCost) {
+        best = choice.option;
+        bestCost = cost;
+      }
+      continue;
+    }
     const cost = costOf(choice.outcome);
     const { prevented } = choice.outcome;
     if (cost < bestCost || (cost === bestCost && prevented > bestPrevented)) {

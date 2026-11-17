@@ -651,7 +651,6 @@ describe('gaining life (CR 119.9, 119.10, 614.1a)', () => {
     'Whenever each opponent gains life, draw a card.',
     'If an opponent would gain life, they gain that much life plus 1 instead.',
     'If you would gain life, you gain that much life plus X instead.',
-    'If you would gain life, you gain twice that much life instead.',
     'If you would gain life, you gain that much life instead.',
     'If you would lose life, you lose that much life plus 1 instead.',
   ])('is not read: %s', (text) => {

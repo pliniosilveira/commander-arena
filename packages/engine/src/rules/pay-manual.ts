@@ -12,6 +12,7 @@ import type { GameEvent } from '../state/events';
 import { getSeat } from '../state/ops';
 import type { GameState } from '../state/types';
 import { activateManaAbility, applyPaymentPlan } from './mana-engine';
+import { lifeTotalIsLocked } from './player-lock';
 
 /** What a payment may spend: a spell's own restrictions apply, or an ability's (CR 106.6, 605.3a). */
 export type PaymentUse = SpendTarget;
@@ -62,7 +63,9 @@ export function payByTapping(
     x: 0,
     pool: getSeat(working, seat).manaPool,
     sources: [],
-    lifeAvailable: Math.max(0, getSeat(working, seat).life - 1),
+    lifeAvailable: lifeTotalIsLocked(working, seat)
+      ? 0
+      : Math.max(0, getSeat(working, seat).life - 1),
     spell: use,
   });
   if (plan === null) return { error: 'The mana you tapped does not pay that cost' };

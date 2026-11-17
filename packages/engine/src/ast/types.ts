@@ -201,6 +201,8 @@ export type Amount =
    * "the number of times it's been cast from the command zone") was cast from the command zone.
    */
   | { readonly kind: 'commanderCasts'; readonly of?: 'triggerSubject' }
+  /** A player's current life total, read when the containing instruction resolves (CR 119.1). */
+  | { readonly kind: 'lifeTotalOf'; readonly player: PlayerSelector }
   /**
    * "Half the number of ..., rounded down" (D-131): `of` divided by two and rounded as `round` says (CR 107.1a:
    * the rounding is stated; a fraction is never left).
@@ -269,7 +271,7 @@ export type Amount =
    * spell the effect belongs to (the spell is the source of its own "When you cast this spell" ability, or of its own text), read from the spell on the stack or from its last-known
    * information once it has left (CR 113.7a). 0 when none was. Only in the abilities of a spell that name `castSpell` with `self` and in its own text, of a face whose additional
    * cost sacrifices any number of permanents (`validateCard`).
-   * D-583 (CR 602.2b, 701.21a): also the number of permanents sacrificed to pay the cost of the activated ability the effect belongs to ("Sacrifice one or more artifacts: ... for each
+   * D-584 (CR 602.2b, 701.21a): also the number of permanents sacrificed to pay the cost of the activated ability the effect belongs to ("Sacrifice one or more artifacts: ... for each
    * artifact sacrificed this way"), read from the resolving ability (`ResolutionContext.costSacrificed`); only in the effect of an activated ability whose cost sacrifices any number
    * of permanents (`Cost` `sacrifice` with `anyNumber` and `atLeastOne`).
    */
@@ -370,6 +372,7 @@ export type StaticPtAmount =
 /** What a characteristic-defining ability sets a power or toughness to: a count, or a multiple of one (CR 604.3). */
 export type DefinedPtAmount =
   | CountAmount
+  | Extract<Amount, { readonly kind: 'devotion' }>
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
   | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
 
@@ -2175,9 +2178,9 @@ export type Effect =
   /**
    * "Target player's life total becomes 1." (CR 119.5, D-201): each player the selector names gains or loses the life that takes their life total
    * to `amount`, a whole number of 0 or more (the life gained or lost triggers what it triggers, CR 119.9; nothing happens to a player who already has
-   * that total). No other source of the number is supported (a life total that becomes a count is not read).
+   * that total). `amount` can read a current player life total and perform arithmetic on it.
    */
-  | { readonly kind: 'setLifeTotal'; readonly player: PlayerSelector; readonly amount: number }
+  | { readonly kind: 'setLifeTotal'; readonly player: PlayerSelector; readonly amount: Amount }
   /**
    * CR 701.26a (Tap). `objects` may (D-139) be a `choose` selector, "you may tap X untapped Myr you control" (`anyNumber`, the
    * controller chooses none, some or all of the untapped permanents they control that match, so the X is how many they chose) or
@@ -2377,6 +2380,18 @@ export type Effect =
       readonly kind: 'grantPlayerHexproof';
       readonly player: PlayerSelector;
       readonly duration: 'untilEndOfTurn';
+    }
+  /** "Target player gains protection from everything until their next turn" (D-607, CR 702.16). */
+  | {
+      readonly kind: 'grantPlayerProtectionEverything';
+      readonly player: PlayerSelector;
+      readonly duration: 'untilNextTurn';
+    }
+  /** "Target player's life total can't change until their next turn" (D-607): blocks every life-total increase and decrease. */
+  | {
+      readonly kind: 'preventPlayerLifeTotalChange';
+      readonly player: PlayerSelector;
+      readonly duration: 'untilNextTurn';
     }
   /**
    * "The Ring tempts you" (CR 701.54a, 701.54c, 701.54d, D-196): the controller of the effect gets the emblem named The Ring if they have none, the
@@ -3008,9 +3023,11 @@ export type Trigger =
   /**
    * "Whenever the Ring tempts you" (CR 701.54d, D-196): once each time the Ring tempts the controller of the ability, as they have done what
    * CR 701.54a says, even when some or all of it was impossible (no creature to choose). The creature they chose is in the event, not the
-   * subject of the trigger.
+   * subject of the trigger. `bearerChosen` narrows the event to times a creature was actually chosen, as in CR 701.54a.
    */
-  | { readonly kind: 'ringTempted' }
+  | { readonly kind: 'ringTempted'; readonly bearerChosen?: true }
+  /** "When this Class becomes level N" (CR 716.2, D-235): once as its level changes to `level`. */
+  | { readonly kind: 'classLevel'; readonly level: number }
   /**
    * "Whenever you commit a crime" (CR 700.13, 603.2, D-464): once each time the player `who` names (relative to the controller of this ability) casts a
    * spell, activates an ability or puts a triggered ability on the stack and that spell or ability targets at least one opponent of that player, at least
@@ -3818,6 +3835,8 @@ export type Condition =
    */
   | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: CardType }
   | { readonly kind: 'opponentsAtLeast'; readonly count: number }
+  /** "An opponent has three or more poison counters" (D-601): true when any opponent meets the threshold. */
+  | { readonly kind: 'opponentPoisonAtLeast'; readonly count: number }
   /**
    * CR 702.33d (Kicker): the object was kicked. Read from the spell that is resolving, or, for an
    * ability of a permanent ("When this enters, if it was kicked"), from the permanent, which keeps
@@ -4138,6 +4157,8 @@ export type Condition =
    * after replacement, summed; a gain of 0 is no event, CR 119.9). Reads the turn log only, so it is read as the event happens and again as the ability resolves.
    */
   | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
+  /** "If you gained and lost life this turn": at least one gain and one life lost by this player. */
+  | { readonly kind: 'lifeGainedAndLostThisTurn' }
   /**
    * "Activate only if you've cast three or more spells this turn" (CR 602.5b, 601.2i, D-318): the controller of the condition has cast at least
    * `atLeast` spells this turn (`SeatState.spellsCastThisTurn`: a spell counts once it is on the stack with its costs paid, whether or not it
@@ -4343,6 +4364,8 @@ export type Replacement =
    * (CR 119.10). It is the ability of the permanent (lost with "loses all abilities") and applies to its controller only.
    */
   | { readonly kind: 'lifeGainBonus'; readonly amount: number }
+  /** "If you would gain life, you gain twice that much life instead" (CR 614.1a): applies once to a life-gain event. */
+  | { readonly kind: 'lifeGainDouble' }
   /**
    * "Each other Angel you control enters with an additional +1/+1 counter on it for each Angel you already control", "Each other creature
    * you control of the chosen type enters with an additional +1/+1 counter on it" (D-149, CR 614.1c, 614.12, 122.6): a replacement effect of
@@ -4376,6 +4399,11 @@ export type Replacement =
    * X, combat or stack kind.
    */
   | { readonly kind: 'groupEntersUntapped'; readonly what: ObjectFilter }
+  /**
+   * "Creatures your opponents control enter tapped." (CR 614.1c, 614.12): a replacement effect
+   * of a permanent on the battlefield for matching permanents as they enter.
+   */
+  | { readonly kind: 'groupEntersTapped'; readonly what: ObjectFilter }
   /**
    * "All damage that would be dealt to you and other permanents you control is dealt to this creature instead." (D-192, CR 614.9, 614.1a,
    * 614.5, 616.1, 120.3): a redirection effect of a creature on the battlefield. It replaces damage that would be dealt to the controller of
@@ -5202,6 +5230,8 @@ export interface ModeChoice {
    * be chosen again; with every mode chosen the ability is removed from the stack as it would be with no legal mode (CR 603.3c). Only a triggered ability.
    */
   readonly notRepeatedThisTurn?: true;
+  /** "Choose one that hasn't been chosen": choices stay unavailable for this source object across turns and reset on a zone change. */
+  readonly notRepeatedBySource?: true;
   /**
    * "Choose three. You may choose the same mode more than once." (CR 700.2d, D-344): the same mode may be chosen more than once, so the modes chosen are a
    * multiset of between `min` and `max` of them (`max` may be more than the number of modes). Every instance of a mode is a mode of its own: a targeted

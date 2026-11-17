@@ -340,11 +340,9 @@ describe('emblems and Empower Jace: the near misses', () => {
       }),
     );
 
-  test('an emblem with an ability that is not static or triggered, or with text that is not an ability, is not read', () => {
+  test('an emblem with an activated ability is read; plain text and target-dependent recipients are not', () => {
     expect(sorcery('You get an emblem with "Draw a card."').support.status).toBe('unsupported');
-    expect(sorcery('You get an emblem with "{T}: Draw a card."').support.status).toBe(
-      'unsupported',
-    );
+    expect(sorcery('You get an emblem with "{T}: Draw a card."').support.status).toBe('supported');
     expect(
       sorcery('Target player gets an emblem with "Creatures you control get +1/+1."').support
         .status,

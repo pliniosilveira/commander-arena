@@ -205,6 +205,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   entersBatch: { kind: 'entersBatch', what: { token: true, controller: 'you' } },
   becomesTarget: { kind: 'becomesTarget', what: { kind: 'this' }, by: 'opponent' },
   chapter: { kind: 'chapter', from: 1, to: 2 },
+  classLevel: { kind: 'classLevel', level: 3 },
   combatDamageBatch: {
     kind: 'combatDamageBatch',
     what: { types: ['creature'], controller: 'you' },

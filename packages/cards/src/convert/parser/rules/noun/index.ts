@@ -314,6 +314,7 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
   examples: [
     'target card from a graveyard',
     'target creature card from your graveyard',
+    'one or two target creature and/or planeswalker cards from your graveyard',
     "target creature card from an opponent's graveyard",
     'two target land cards from your graveyard',
     'up to three target land cards from your graveyard',
@@ -324,6 +325,7 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'target card',
     'all creature cards from your graveyard',
     'up to two target land card from your graveyard',
+    'one or two target creature and planeswalker cards from your graveyard',
   ],
   parse: targetOf(ID.targetGraveyard, graveyardPhrase),
 });

@@ -197,13 +197,13 @@ export const EFFECT_CHOOSE_TARGET = defineRule<Clauses>({
     'choose target commander that entered this turn',
     'choose target creature',
     'choose target permanent',
+    'choose target opponent',
   ],
   rejects: [
     'choose',
     'choose a creature',
     'choose target',
     'choose two target creatures',
-    'choose target player',
     'choose one',
     'choose target creature and draw a card',
     'choose up to one target creature',
@@ -212,12 +212,16 @@ export const EFFECT_CHOOSE_TARGET = defineRule<Clauses>({
     'effect.choose-target',
     sequence(
       literal('choose '),
-      operands(['noun.target-commander', 'noun.target-permanent'], 'effect.choose-target', {
-        // One target, not "two target creatures" or "up to one target creature": the sentences after say "it".
-        accept: (noun) =>
-          !noun.plural && !noun.upTo && noun.count === undefined && noun.anyNumber === undefined,
-        locate: (noun) => noun.span.start,
-      }),
+      operands(
+        ['noun.target-commander', 'noun.target-permanent', 'noun.player'],
+        'effect.choose-target',
+        {
+          // One target, not "two target creatures" or "up to one target creature": the sentences after say "it".
+          accept: (noun) =>
+            !noun.plural && !noun.upTo && noun.count === undefined && noun.anyNumber === undefined,
+          locate: (noun) => noun.span.start,
+        },
+      ),
     ),
     ([, what]) => ({ verb: 'chooseTarget', args: { what } }),
   ),

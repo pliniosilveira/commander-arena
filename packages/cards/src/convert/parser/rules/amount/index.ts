@@ -137,6 +137,8 @@ export const AMOUNT_THAT_MANY = defineRule<IrAmount>({
 });
 
 const POWER_OF = /equal to (its|that (?:creature|permanent)['’]s|~['’]s) power(?![\p{L}\p{N}])/iu;
+const TARGET_CREATURE_POWER =
+  /equal to the power of (target creature you control)(?![\p{L}\p{N}])/iu;
 
 /**
  * `amount.power-of`: "equal to its power", "equal to that creature's power", "equal to ~'s power"
@@ -166,6 +168,25 @@ export const AMOUNT_POWER_OF = defineRule<IrAmount>({
     'equal to',
   ],
   parse: (ctx, pos) => {
+    const targetMatch = pattern(TARGET_CREATURE_POWER)(ctx, pos);
+    if (targetMatch.ok) {
+      const start = pos + 'equal to the power of '.length;
+      const target: IrNoun = {
+        kind: 'noun',
+        det: 'target',
+        filter: { types: ['creature'], controller: 'you', raw: targetMatch.value[1] ?? '' },
+        upTo: false,
+        plural: false,
+        other: false,
+        span: { start, end: targetMatch.pos },
+        rule: 'noun.target-permanent',
+      };
+      return {
+        ok: true,
+        value: { kind: 'powerOf', of: target, span: { start: pos, end: targetMatch.pos } },
+        pos: targetMatch.pos,
+      };
+    }
     const m = pattern(POWER_OF)(ctx, pos);
     if (!m.ok) return fail(ctx, pos);
     const head = m.value[1] ?? '';
