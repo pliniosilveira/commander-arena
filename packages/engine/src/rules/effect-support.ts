@@ -15,7 +15,8 @@ import { copiableValues } from './copiable';
 import { withCopyExceptions } from './copy-exceptions';
 import { replacementSources } from './die-replacement';
 import { drawSkippedBy } from './draw-skip';
-import { gainLife } from './life-gain';
+import { gainLife, type LifeGainResult } from './life-gain';
+import type { OrderFlow } from './damage-order';
 import { prepareCardOf } from './prepare';
 import { resolveObjects, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
@@ -145,9 +146,15 @@ export function loseLifeOf(state: GameState, seat: SeatId, amount: number): Step
   };
 }
 
-export function gainLifeOf(state: GameState, seat: SeatId, amount: number): StepOutcomeLike {
+export function gainLifeOf(
+  state: GameState,
+  seat: SeatId,
+  amount: number,
+  flow: OrderFlow,
+  source: ObjectId,
+): LifeGainResult {
   // D-149: replaced and counted by `rules/life-gain.ts`.
-  return gainLife(state, seat, amount);
+  return gainLife(state, seat, amount, flow, source);
 }
 
 export interface StepOutcomeLike {

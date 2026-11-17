@@ -956,7 +956,7 @@ export interface TokenReplacementQuestion {
   readonly choices: readonly TokenReplacementChoice[];
   readonly event?: undefined;
   readonly destroy?: undefined;
-  readonly resume?: undefined;
+  readonly resume?: DamageResume;
 }
 
 /**
@@ -974,13 +974,34 @@ export interface DestroyReplacementQuestion {
   readonly choices: readonly DestroyReplacementChoice[];
   readonly event?: undefined;
   readonly tokens?: undefined;
-  readonly resume?: undefined;
+  readonly resume?: DamageResume;
+}
+
+/** The outcome of applying one life-gain replacement first and the remaining ones in the default order. */
+export interface LifeGainReplacementChoice {
+  readonly kind: 'lifeGain';
+  readonly option: string;
+  readonly text: string;
+  readonly object?: ObjectId;
+  readonly objectName?: string;
+  readonly outcome: { readonly amount: number };
+}
+
+/** CR 616.1: the player gaining life orders applicable replacements when the order changes the amount gained. */
+export interface LifeGainReplacementQuestion {
+  readonly lifeGain: { readonly seat: SeatId; readonly amount: number };
+  readonly choices: readonly LifeGainReplacementChoice[];
+  readonly event?: undefined;
+  readonly tokens?: undefined;
+  readonly destroy?: undefined;
+  readonly resume?: DamageResume;
 }
 
 export type ReplacementQuestion =
   | DamageReplacementQuestion
   | TokenReplacementQuestion
-  | DestroyReplacementQuestion;
+  | DestroyReplacementQuestion
+  | LifeGainReplacementQuestion;
 
 /**
  * CR 107.3a, 601.2b, 602.2b (D-103): the controller of a spell or activated ability with an {X} in its

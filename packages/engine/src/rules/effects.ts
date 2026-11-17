@@ -1546,8 +1546,16 @@ function runEffect(
         const amount = lifeAmountFor(next, effect.amount, seat, () => everyone);
         const r =
           effect.kind === 'gainLife'
-            ? gainLifeOf(next, seat, amount)
+            ? gainLifeOf(next, seat, amount, flow, res.source)
             : loseLifeOf(next, seat, amount);
+        if ('kind' in r && r.kind === 'asked') {
+          return { state, events: [], front: [], needs: r.decision };
+        }
+        if ('kind' in r && r.kind === 'gained') {
+          next = r.state;
+          events.push(...r.events);
+          continue;
+        }
         next = r.state;
         events.push(...r.events);
         // CR 702.101a (D-120): the life lost is remembered for "the total life lost this way".
@@ -1571,7 +1579,18 @@ function runEffect(
       for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
         const delta = effect.amount - getSeat(next, seat).life;
         if (delta === 0) continue;
-        const r = delta > 0 ? gainLifeOf(next, seat, delta) : loseLifeOf(next, seat, -delta);
+        const r =
+          delta > 0
+            ? gainLifeOf(next, seat, delta, flow, res.source)
+            : loseLifeOf(next, seat, -delta);
+        if ('kind' in r && r.kind === 'asked') {
+          return { state, events: [], front: [], needs: r.decision };
+        }
+        if ('kind' in r && r.kind === 'gained') {
+          next = r.state;
+          events.push(...r.events);
+          continue;
+        }
         next = r.state;
         events.push(...r.events);
       }

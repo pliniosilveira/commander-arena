@@ -4335,6 +4335,8 @@ export type Replacement =
    * (CR 119.10). It is the ability of the permanent (lost with "loses all abilities") and applies to its controller only.
    */
   | { readonly kind: 'lifeGainBonus'; readonly amount: number }
+  /** "If you would gain life, you gain twice that much life instead" (CR 614.1a): applies once to a life-gain event. */
+  | { readonly kind: 'lifeGainDouble' }
   /**
    * "Each other Angel you control enters with an additional +1/+1 counter on it for each Angel you already control", "Each other creature
    * you control of the chosen type enters with an additional +1/+1 counter on it" (D-149, CR 614.1c, 614.12, 122.6): a replacement effect of

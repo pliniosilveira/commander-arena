@@ -509,6 +509,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-149: "If you would gain life, you gain that much life plus 1 instead", "each other Angel you control enters with an
     // additional +1/+1 counter on it".
     'lifeGainBonus',
+    'lifeGainDouble',
     'othersEnterWithCounters',
     // D-219: "If one or more artifact tokens would be created under your control, ... are created instead".
     'tokensInstead',
@@ -2002,6 +2003,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   asEntersChoose: true,
   wouldDie: true,
   lifeGainBonus: true,
+  lifeGainDouble: true,
   othersEnterWithCounters: true,
   tokensInstead: true,
   groupEntersUntapped: true,

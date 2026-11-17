@@ -41,6 +41,14 @@ const angel = (
   });
 
 export const SYNTHETIC_LIFE_GAIN_LIST: readonly CardDefinition[] = [
+  angel(
+    'SYNTHETIC Doubling Angel',
+    ['3', 'W'],
+    2,
+    2,
+    [{ kind: 'replacement', replacement: { kind: 'lifeGainDouble' } }],
+    'If you would gain life, you gain twice that much life instead.',
+  ),
   // "If you would gain life, you gain that much life plus 1 instead. This creature gets +2/+2 as long as you have 25 or more life."
   angel(
     'SYNTHETIC Vital Angel',

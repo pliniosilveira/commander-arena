@@ -527,6 +527,12 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     if (blocked !== null) return blocked;
     return built({ kind: 'lifeGainBonus', amount: amount.value });
   }
+  if (event.verb === 'lifeGainDouble') {
+    if (event.condition !== undefined || Object.keys(event.args).length > 0) return failure(ability);
+    const blocked = gate(ability, ['ability:replacement', 'replacement:lifeGainDouble']);
+    if (blocked !== null) return blocked;
+    return built({ kind: 'lifeGainDouble' });
+  }
   if (event.verb === 'skipDraw') {
     // CR 614.11, 121.6 (issue 25, D-332): every draw of the controller is skipped, or only while the plain condition holds.
     const blocked = gate(ability, ['ability:replacement', 'replacement:skipDraw']);

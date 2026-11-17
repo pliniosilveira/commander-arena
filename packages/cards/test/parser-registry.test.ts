@@ -97,6 +97,7 @@ const asChapter = permanent((e) => `${e} — You gain 1 life.`);
 const atStep = permanent((e) => `At ${e}, you gain 1 life.`);
 
 const EMBED: Readonly<Record<string, Embed>> = {
+  'replacement.life-gain-double': asIs,
   'keyword.line': asIs,
   'replacement.enters-tapped': asIs,
   'replacement.enters-with-counters': asIs,

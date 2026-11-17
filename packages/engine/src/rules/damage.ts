@@ -313,7 +313,8 @@ export function dealDamageAsking(
 
   if (info?.lifelink) {
     // CR 120.3f, 702.15b: the source's controller gains that much life.
-    const gained = gainLife(state, info.controller, amount);
+    const gained = gainLife(state, info.controller, amount, flow, source);
+    if (gained.kind === 'asked') return { kind: 'asked', decision: gained.decision };
     state = gained.state;
     events.push(...gained.events);
   }

@@ -212,6 +212,7 @@ export const ANGEL_NEEDS: readonly FeatureRef[] = [
   'condition:ownTurnNumber',
   'replacement:othersEnterWithCounters',
   'replacement:lifeGainBonus',
+  'replacement:lifeGainDouble',
   'static:blockTax',
   'castAlternative:tapPermanents',
   'manaProduction:chosenColor',

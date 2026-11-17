@@ -13,6 +13,7 @@ import {
   namedOptionPrompt,
   namedOptionRows,
   replacementThen,
+  replacementTitle,
 } from '../src/ui/decisions/option-names';
 import { optionPrompt } from '../src/ui/decisions/option-picker';
 

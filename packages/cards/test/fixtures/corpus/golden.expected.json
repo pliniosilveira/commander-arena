@@ -1,5 +1,5 @@
 {
-  "parserVersion": 120,
+  "parserVersion": 121,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -253,6 +253,31 @@
       "reasons": [],
       "ast": "8adbffee"
     },
+    "06d219ff-0083-4c2a-b5b3-2b84bb58f57e": {
+      "name": "Skrelv's Hive",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "At the beginning of your upkeep, you lose 1 life and create a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and \"~ can't block.\"",
+          "reason": "unrecognised",
+          "slot": "token",
+          "closestRule": "token.custom"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Corrupted — As long as an opponent has three or more poison counters, creatures you control with toxic have lifelink.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "condition.life-total"
+        }
+      ],
+      "reasons": [],
+      "ast": "8142280e"
+    },
     "07617648-6490-4719-acec-7705671f7e01": {
       "name": "Protege's Awakening",
       "group": "acceptance",
@@ -293,6 +318,23 @@
       ],
       "reasons": [],
       "ast": "7c12731f"
+    },
+    "0810983f-818a-43e6-a7b5-ebe0bc8b9f6a": {
+      "name": "Wall of Reverence",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "At the beginning of your end step, you may gain life equal to the power of target creature you control.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.life"
+        }
+      ],
+      "reasons": [],
+      "ast": "c12b0512"
     },
     "0828d891-f7c3-4e51-b42e-6ce88d48ac8b": {
       "name": "Icewrought Sentry",
@@ -844,6 +886,22 @@
       "reasons": [],
       "ast": "cb4f5a2f"
     },
+    "2270daaf-252d-40c4-bed5-bd46ae15f041": {
+      "name": "Liesa, Shroud of Dusk",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Rather than pay {2} for each previous time you've cast ~ from the command zone this game, pay 2 life that many times.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "64796caf"
+    },
     "23467047-6dba-4498-b783-1ebc4f74b8c2": {
       "name": "Ancient Tomb",
       "group": "training",
@@ -875,6 +933,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e00dda18"
+    },
+    "240f0835-36af-4ad8-9336-d6d3d816d293": {
+      "name": "The Wind Crystal",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7983adfb"
     },
     "24310f49-2156-4c0d-b3b1-40ca3182474f": {
       "name": "Sahagin",
@@ -1003,6 +1069,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9564f29c"
+    },
+    "2abe9303-d498-4aad-b6b2-8b5064bd2ffd": {
+      "name": "Rhox Faithmender",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1f03c34e"
     },
     "2ad8ff62-d090-4835-9274-3b755ba0f8e6": {
       "name": "Priest of Forgotten Gods",
@@ -1488,6 +1562,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4d098038"
+    },
+    "39c10798-9dfc-47a2-9da3-b4038509aebe": {
+      "name": "Underworld Connections",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Enchanted land has \"{T}, Pay 1 life: Draw a card.\"",
+          "reason": "notRunnable",
+          "closestRule": "static.attached"
+        }
+      ],
+      "reasons": [],
+      "ast": "4eadc185"
     },
     "3a49b518-61c8-4dea-8008-c5edf8384581": {
       "name": "Ob Nixilis, the Ascended",
@@ -2059,6 +2149,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "01c5c12c"
+    },
+    "55f3c721-e13a-406e-bc8e-d6cdc91ac477": {
+      "name": "Authority of the Consuls",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Creatures your opponents control enter tapped.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "static.permanents"
+        }
+      ],
+      "reasons": [],
+      "ast": "982713b2"
     },
     "561af57d-d43d-4d98-9ef6-18a0843f22ae": {
       "name": "Defend the Rider",
@@ -3284,6 +3391,23 @@
       "reasons": [],
       "ast": "9a35e9cd"
     },
+    "836ecd67-6487-4f3d-9e08-013746be829a": {
+      "name": "Revival // Revenge",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 1,
+          "ability": 0,
+          "text": "Double your life total. Target opponent loses half their life, rounded up.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "2e2cd21b"
+    },
     "83917116-d2d8-4701-a79f-af17486706ae": {
       "name": "Light the Way",
       "group": "acceptance",
@@ -3629,6 +3753,23 @@
       "reasons": [],
       "ast": "325dd6e9"
     },
+    "9381b4a5-a8e0-412d-bc7f-ae15afa0f135": {
+      "name": "Teferi's Reproach",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose target opponent. Until that player's next turn, they gain protection from everything and their life total can't change. All nonland permanents they control phase out.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.target-cards-in-your-graveyard"
+        }
+      ],
+      "reasons": [],
+      "ast": "4b2c2dee"
+    },
     "939e6f71-185e-41f2-9d54-72cce06f1dce": {
       "name": "Thirst for Knowledge",
       "group": "holdout",
@@ -3822,6 +3963,25 @@
       "reasons": [],
       "ast": "658cbe5a"
     },
+    "9d3c7c96-056f-408e-a834-fa45a430d3d4": {
+      "name": "Daxos, Blessed by the Sun",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "~'s toughness is equal to your devotion to white.",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [
+        "faces[0].toughness: a printed '*' toughness needs a characteristic-defining ability that defines it (CR 208.2a, 604.3)",
+        "faces[0].toughness: a printed '*' toughness with no characteristic-defining ability is not implemented by the engine"
+      ],
+      "ast": "f16ef72e"
+    },
     "9d6fdbd4-ba51-4df1-b383-9b709b36a8d7": {
       "name": "Retrieve the Esper",
       "group": "acceptance",
@@ -3877,6 +4037,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "799e936a"
+    },
+    "9fcb920c-b8d7-4a79-a335-f63050182cca": {
+      "name": "Call of the Ring",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever you choose a creature as your Ring-bearer, you may pay 2 life. If you do, draw a card.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.cast"
+        }
+      ],
+      "reasons": [],
+      "ast": "267b48fa"
     },
     "a0753b28-e693-4f5b-a4e4-846e933058d3": {
       "name": "Roar of Resistance",
@@ -4387,6 +4564,23 @@
       "reasons": [],
       "ast": "7037decd"
     },
+    "b5641fcf-135e-43e7-a547-344fac61e279": {
+      "name": "Tivash, Gloom Summoner",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "At the beginning of your end step, if you gained life this turn, you may pay X life, where X is the amount of life you gained this turn. If you do, create an X/X black Demon creature token with flying.",
+          "reason": "unrecognised",
+          "slot": "cost",
+          "closestRule": "effect.pay"
+        }
+      ],
+      "reasons": [],
+      "ast": "47413166"
+    },
     "b655bee5-52d3-467e-b16c-cfc2edf2b1a1": {
       "name": "Arachnogenesis",
       "group": "training",
@@ -4628,6 +4822,16 @@
       "reasons": [],
       "ast": "5bab268b"
     },
+    "c2e2f21a-0338-44d7-96a5-5a277f0ec419": {
+      "name": "Moseo, Vein's New Dean",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [],
+      "reasons": [
+        "faces[0].abilities[2].targets[0].what.filter.manaValueAtMost: the limit is a number, the power of this or the damage that triggered the ability"
+      ],
+      "ast": "d2ef975e"
+    },
     "c3974ec7-7af0-4b65-baf6-4c1c4fe8a5c4": {
       "name": "Ajani, Strength of the Pride",
       "group": "acceptance",
@@ -4739,6 +4943,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b132c698"
+    },
+    "c7bdbf7a-8054-4e91-bb32-84f47e98553c": {
+      "name": "Kimoyo Beads",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "At the beginning of your end step, choose one that hasn't been chosen —\n• AV Bead — Draw a card.\n• Communication Bead — Create two 1/1 white Soldier creature tokens.\n• Prime Bead — You gain 3 life. Exile ~, then return it to the battlefield under its owner's control.",
+          "reason": "unrecognised",
+          "slot": "modal",
+          "closestRule": "modal.choose"
+        }
+      ],
+      "reasons": [],
+      "ast": "c3bf9ec7"
     },
     "c82cc78b-ffd6-4f72-881d-85913830feb2": {
       "name": "Immoral Bargain",
@@ -4854,6 +5075,23 @@
       "reasons": [],
       "ast": "dbeec17a"
     },
+    "cb68d1e4-36aa-4a00-b671-8959e7d526d4": {
+      "name": "Lunar Convocation",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "At the beginning of your end step, if you gained and lost life this turn, create a 1/1 black Bat creature token with flying.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "condition.life-gained-this-turn"
+        }
+      ],
+      "reasons": [],
+      "ast": "aad08c5b"
+    },
     "cb923c4d-1d2e-4039-90bb-72d1981b9738": {
       "name": "Endless Atlas",
       "group": "training",
@@ -4901,6 +5139,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "76d86017"
+    },
+    "cfc9a2f9-92fa-4608-b98d-f9763c89fc40": {
+      "name": "Ob Nixilis of the Black Oath",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "−8: You get an emblem with \"{1}{B}, Sacrifice a creature: You gain X life and draw X cards, where X is the sacrificed creature's power.\"",
+          "reason": "notRunnable",
+          "closestRule": "static.quoted-ability"
+        }
+      ],
+      "reasons": [],
+      "ast": "90148e5d"
     },
     "cfdd5dc6-593e-495a-8cfe-3a56b3c4c7df": {
       "name": "Temple of the False God",
@@ -5551,6 +5805,23 @@
       "reasons": [],
       "ast": "391f728f"
     },
+    "edcb0248-e7c9-4df9-8dba-982048654fd2": {
+      "name": "Archenemy's Charm",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose one —\n• Exile target creature or planeswalker.\n• Return one or two target creature and/or planeswalker cards from your graveyard to your hand.\n• Put two +1/+1 counters on target creature you control. It gains lifelink until end of turn.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.target-graveyard-card"
+        }
+      ],
+      "reasons": [],
+      "ast": "21fbb58c"
+    },
     "ededbdae-d9dc-4206-9335-d7158f2d7700": {
       "name": "Vampiric Tutor",
       "group": "training",
@@ -5624,6 +5895,23 @@
       "reasons": [],
       "ast": "f8c33c33"
     },
+    "efcaadbe-24e3-4dfc-b08c-a910f003d427": {
+      "name": "Liesa, Forgotten Archangel",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever another nontoken creature you control dies, return that card to its owner's hand at the beginning of the next end step.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.return"
+        }
+      ],
+      "reasons": [],
+      "ast": "810343f8"
+    },
     "efcbca5a-743c-4b16-a7cf-b07335b31ced": {
       "name": "Shower of Arrows",
       "group": "acceptance",
@@ -5639,6 +5927,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f0443af4"
+    },
+    "f0ead7f5-5c82-40fd-8e89-3e3c5d31fbad": {
+      "name": "Cleric Class",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 4,
+          "text": "When ~ becomes level 3, return target creature card from your graveyard to the battlefield. You gain life equal to that creature's toughness.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.or"
+        }
+      ],
+      "reasons": [],
+      "ast": "9bf6e2d6"
     },
     "f0ec8681-da50-466b-8cdd-1dc710deccd9": {
       "name": "Deserted Beach",
@@ -5899,6 +6204,23 @@
       "reasons": [],
       "ast": "7c0d491e"
     },
+    "fa6e2a47-a8cb-4224-ae3e-f61c90477285": {
+      "name": "Tragic Slip",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "That creature gets -13/-13 until end of turn instead if a creature died this turn.",
+          "reason": "unrecognised",
+          "slot": "duration",
+          "closestRule": "duration.until-end-of-turn"
+        }
+      ],
+      "reasons": [],
+      "ast": "8663f459"
+    },
     "fab29bc7-1f0a-4df4-b8f1-c008ce5583d2": {
       "name": "Search for Glory",
       "group": "acceptance",
@@ -6011,204 +6333,20 @@
       "unparsed": [],
       "reasons": [],
       "ast": "51b14ad1"
-    },
-    "name:Counterspell": {
-      "name": "Counterspell",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "aecc2d34"
-    },
-    "name:Divination": {
-      "name": "Divination",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "c8faa5cd"
-    },
-    "name:Fencing Ace": {
-      "name": "Fencing Ace",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "c36ec457"
-    },
-    "name:Forest": {
-      "name": "Forest",
-      "group": "holdout",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "0d0c05d8"
-    },
-    "name:Giant Spider": {
-      "name": "Giant Spider",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "9fa2fa90"
-    },
-    "name:Grizzly Bears": {
-      "name": "Grizzly Bears",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "e77faf33"
-    },
-    "name:Healer's Hawk": {
-      "name": "Healer's Hawk",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "28858ca7"
-    },
-    "name:Isamaru, Hound of Konda": {
-      "name": "Isamaru, Hound of Konda",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "54556fd1"
-    },
-    "name:Island": {
-      "name": "Island",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "75e49a90"
-    },
-    "name:Lightning Bolt": {
-      "name": "Lightning Bolt",
-      "group": "holdout",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "fe5d21d2"
-    },
-    "name:Llanowar Elves": {
-      "name": "Llanowar Elves",
-      "group": "holdout",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "f30d4c4e"
-    },
-    "name:Mountain": {
-      "name": "Mountain",
-      "group": "holdout",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "011d2374"
-    },
-    "name:Murder": {
-      "name": "Murder",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "e6854d08"
-    },
-    "name:Plains": {
-      "name": "Plains",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "e0c3d2b0"
-    },
-    "name:Raging Goblin": {
-      "name": "Raging Goblin",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "a3093fa5"
-    },
-    "name:Serra Angel": {
-      "name": "Serra Angel",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "de6a9301"
-    },
-    "name:Sol Ring": {
-      "name": "Sol Ring",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "6b54549e"
-    },
-    "name:Swamp": {
-      "name": "Swamp",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "62bf04b8"
-    },
-    "name:Typhoid Rats": {
-      "name": "Typhoid Rats",
-      "group": "holdout",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "3e9d79a8"
-    },
-    "name:Unsummon": {
-      "name": "Unsummon",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "49f242ad"
-    },
-    "name:Wall of Stone": {
-      "name": "Wall of Stone",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "a3ae7d4d"
-    },
-    "name:Yargle, Glutton of Urborg": {
-      "name": "Yargle, Glutton of Urborg",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "31f5c77c"
-    },
-    "name:Youthful Knight": {
-      "name": "Youthful Knight",
-      "group": "training",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "485de879"
     }
   },
   "summary": {
     "training": {
-      "supported": 167,
-      "total": 192
+      "supported": 149,
+      "total": 174
     },
     "holdout": {
-      "supported": 55,
-      "total": 61
+      "supported": 50,
+      "total": 56
     },
     "acceptance": {
-      "supported": 418,
-      "total": 439
+      "supported": 420,
+      "total": 459
     }
   }
 }
