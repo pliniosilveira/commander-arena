@@ -7,7 +7,7 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 - [x] 18 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, Liesa, Forgotten Archangel, Skrelv's Hive, Authority of the Consuls, Underworld Connections, Tragic Slip, and Liesa, Shroud of Dusk.
 - Current branch: `support-kambal`.
 - Current group: F — Liesa, Shroud of Dusk's commander-tax life replacement is supported (D-598).
-- Next: Ob Nixilis of the Black Oath.
+- Next: Ob Nixilis of the Black Oath and Teferi's Reproach; both need owner approval of their S-class proposals before implementation.
 
 ## Cards and initial gap groups
 
