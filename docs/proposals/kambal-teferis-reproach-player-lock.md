@@ -1,6 +1,6 @@
 # Proposal: Teferi's Reproach player lock and mass phasing
 
-Status: AWAITING OWNER APPROVAL. Gap class: S — one spell combines a player-wide prohibition on life-total changes, protection from everything for a bounded duration, and phasing a group of permanents without targeting each one. Card data: issue #255's owner-provided acceptance record in `packages/cards/test/fixtures/corpus/golden.jsonl`. The local Comprehensive Rules text and Scryfall rulings were unavailable.
+Status: APPROVED. Gap class: S — one spell combines a player-wide prohibition on life-total changes, protection from everything for a bounded duration, and phasing a group of permanents without targeting each one. Card data: issue #255's owner-provided acceptance record in `packages/cards/test/fixtures/corpus/golden.jsonl`. The local Comprehensive Rules text and Scryfall rulings were unavailable.
 
 ## What the card needs
 

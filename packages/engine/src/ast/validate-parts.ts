@@ -4020,16 +4020,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 701.54a (D-196): no operand; the Ring tempts the controller of the effect.
       break;
     case 'createEmblem':
-      // CR 114.1, 114.4 (D-201): an emblem has static and triggered abilities, which work from the command zone: at least one, and no other kind.
+      // CR 114.1, 114.4 (D-201): an emblem can have static, triggered or activated abilities that work from the command zone: at least one, and no other kind.
       if (!Array.isArray(e.abilities) || e.abilities.length === 0) {
         issue(out, `${path}.abilities`, 'an emblem has at least one ability');
       } else {
         e.abilities.forEach((a, i) => {
-          if (a?.kind !== 'static' && a?.kind !== 'triggered') {
+          if (a?.kind !== 'static' && a?.kind !== 'triggered' && a?.kind !== 'activated') {
             issue(
               out,
               `${path}.abilities[${i}]`,
-              `an emblem has static and triggered abilities, not ${kindOf(a)}`,
+              `an emblem has static, triggered and activated abilities, not ${kindOf(a)}`,
             );
           } else {
             scope.checkAbility(a, `${path}.abilities[${i}]`, out);

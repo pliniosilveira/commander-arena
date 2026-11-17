@@ -25,4 +25,5 @@
 // 121: Emit and match Class level reached triggers (D-591).
 // 122: Allow a dies trigger's delayed trigger to return its trigger card to its owner's hand (D-592).
 // 125: Replace a command-zone cast's commander tax with its card-defined life payment (D-598).
-export const ENGINE_VERSION = 125;
+// 126: Activate emblem abilities from the command zone (D-599).
+export const ENGINE_VERSION = 126;

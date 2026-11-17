@@ -3732,6 +3732,7 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Consequences: Matching opponent creatures entering from any zone are tapped, including creature spells that resolve. The scenario test uses the ordinary cast path; the Authority real-card test checks both abilities parse completely.
 - Limit: CR text and Scryfall rulings were unavailable for independent verification.
 
+
 ## D-596: Grant an activated ability to an enchanted land (2026-11-17, issue 255)
 - Context: Underworld Connections gives its enchanted land an activated ability with a tap cost, a life payment and a draw. The engine already applies granted activated abilities, but the parser only lowered an activated ability when granted to the source itself or a filter group; attached grants were limited to triggered abilities.
 - Decision: Allow a quoted activated ability on a typed attached land and lower it with the host's land type as its source context. Keep other attached activated grants unsupported until their host-type and rules behavior are covered.
@@ -3751,4 +3752,11 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Decision: Parse this exact replacement into `CardFace.commanderTaxLife`. When that card is cast from the command zone, omit its commander-tax mana and add the life amount for each previous cast to the total life cost. Keep mana reductions separate, expose remaining tax life and tax mana in the view, and report life in the payment prompt and cast event.
 - Alternatives: Match Liesa's name in engine code, or model the text as a battlefield static; rejected because the former is card-specific logic and the latter is not active in the command zone.
 - Consequences: A generic card-data field controls the cast cost. Scenarios cover replacement count, reductions, cancellation, other zones, insufficient life and event/view reporting. The parser and golden acceptance corpus cover the real card.
+- Limit: CR text and Scryfall rulings were unavailable for independent verification.
+
+## D-599: Activate emblem abilities from the command zone (2026-11-17, issue 255)
+- Context: Ob Nixilis of the Black Oath creates an emblem with an activated ability. Emblems already carried static and triggered abilities, and activation costs already preserve last-known information for sacrificed objects, but activation legality excluded command-zone objects.
+- Decision: Allow activated abilities on emblems to use the ordinary activation and stack path from their controller's command zone. Lower activated abilities inside emblem quotes, and accept only the existing supported cost/effect grammar. Keep emblems as command-zone objects and preserve `sacrificedCost` for later effect resolution.
+- Alternatives: Model the emblem as a battlefield permanent or add an Ob Nixilis exception; rejected because emblems are command-zone objects and the engine must not special-case card names.
+- Consequences: Ob Nixilis's emblem can sacrifice a creature and use its last-known power for both life gain and card draw. Engine and parser scenarios cover the generic activation and real card. `ENGINE_VERSION` and `PARSER_VERSION` change.
 - Limit: CR text and Scryfall rulings were unavailable for independent verification.

@@ -2,7 +2,7 @@
  * Lowerings of stage P47 (D-200): "Empower Jace N" (CR 701.71a) and "You get an emblem with ..." (CR 114).
  *
  * The emblem's text in the quotes was read as an ability of its own (`rules/static/quoted.ts`) and is lowered like the abilities of a card, as the
- * abilities of the emblem: a static ability (which may lower to several of the engine's) or a triggered ability, with "this emblem" read as `~`.
+ * abilities of the emblem: a static ability (which may lower to several of the engine's), a triggered ability, or an activated ability, with "this emblem" read as `~`.
  */
 import type { Ability, Effect } from '@commander-arena/engine';
 import { bind } from '../ir/bind';
@@ -47,7 +47,7 @@ export const SET_LIFE_TOTAL: Lowering<IrClause, Effects> = {
   },
 };
 
-/** The abilities of the emblem the quoted text says, in the engine's AST: static and triggered ones only (CR 114.4). */
+/** The abilities of the emblem the quoted text says, in the engine's AST (CR 114.4). */
 function lowerEmblemAbilities(
   quoted: IrQuotedAbility,
   ctx: LowerContext,
@@ -59,7 +59,8 @@ function lowerEmblemAbilities(
     rule: quoted.rule,
   });
   const inner = quoted.ability;
-  if (inner.kind !== 'static' && inner.kind !== 'triggered') return fail();
+  if (inner.kind !== 'static' && inner.kind !== 'triggered' && inner.kind !== 'activated')
+    return fail();
   const bound = bind(inner, {});
   if (!bound.ok) return fail();
   const late = lateLowerers();
@@ -70,13 +71,20 @@ function lowerEmblemAbilities(
       ? late.triggered(bound.ability, own)
       : bound.ability.kind === 'static'
         ? late.static(bound.ability, own)
-        : null;
+        : bound.ability.kind === 'activated'
+          ? late.activated(bound.ability, own)
+          : null;
   if (lowered === null) return fail();
   if (!lowered.ok) return fail(lowered.needs);
   // An X nothing defines, or a target of a static ability, is not an emblem's: `validateCard` refuses them too.
   if (own.usesX) return fail();
   if (lowered.value.length === 0) return fail();
-  if (lowered.value.some((a) => a.kind !== 'static' && a.kind !== 'triggered')) return fail();
+  if (
+    lowered.value.some(
+      (a) => a.kind !== 'static' && a.kind !== 'triggered' && a.kind !== 'activated',
+    )
+  )
+    return fail();
   return { ok: true, value: lowered.value, rule: quoted.rule };
 }
 
@@ -106,6 +114,7 @@ export const PLANESWALKER_NEEDS: readonly FeatureRef[] = [
   'effect:setLifeTotal',
   'ability:static',
   'ability:triggered',
+  'ability:activated',
 ];
 
 export const PLANESWALKER_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [

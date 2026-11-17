@@ -137,6 +137,21 @@ describe('Liesa, Forgotten Archangel', () => {
   });
 });
 
+describe('Ob Nixilis of the Black Oath', () => {
+  test('the ultimate creates an emblem with an activated ability', () => {
+    const card = real('Ob Nixilis of the Black Oath');
+    expect(card.support.status).toBe('supported');
+    expect(card.support.unparsed).toEqual([]);
+    expect(card.definition.faces[0]?.abilities[2]).toMatchObject({
+      kind: 'activated',
+      effect: {
+        kind: 'createEmblem',
+        abilities: [{ kind: 'activated' }],
+      },
+    });
+  });
+});
+
 describe('a token with toxic and a quoted restriction', () => {
   test('the upkeep trigger creates a Mite with toxic 1 and cannot block', () => {
     const parsed = readAll(

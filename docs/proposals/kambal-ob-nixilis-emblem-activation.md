@@ -1,6 +1,6 @@
 # Proposal: Activated abilities of emblems (Ob Nixilis of the Black Oath)
 
-Status: AWAITING OWNER APPROVAL. Gap class: S — emblems already work from the command zone for static and triggered abilities, but activating an ability from a nonpermanent command-zone object changes shared activation legality, costs, and stack behavior. Card data: issue #255's owner-provided acceptance record in `packages/cards/test/fixtures/corpus/golden.jsonl`. The local Comprehensive Rules text and Scryfall rulings were unavailable.
+Status: APPROVED. Gap class: S — emblems already work from the command zone for static and triggered abilities, but activating an ability from a nonpermanent command-zone object changes shared activation legality, costs, and stack behavior. Card data: issue #255's owner-provided acceptance record in `packages/cards/test/fixtures/corpus/golden.jsonl`. The local Comprehensive Rules text and Scryfall rulings were unavailable.
 
 ## What the card needs
 

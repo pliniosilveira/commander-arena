@@ -4,10 +4,10 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 
 ## Status
 
-- [x] 18 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, Liesa, Forgotten Archangel, Skrelv's Hive, Authority of the Consuls, Underworld Connections, Tragic Slip, and Liesa, Shroud of Dusk.
+- [x] 19 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, Liesa, Forgotten Archangel, Skrelv's Hive, Authority of the Consuls, Underworld Connections, Tragic Slip, Liesa, Shroud of Dusk, and Ob Nixilis of the Black Oath.
 - Current branch: `support-kambal`.
-- Current group: F — Liesa, Shroud of Dusk's commander-tax life replacement is supported (D-598).
-- Next: Ob Nixilis of the Black Oath and Teferi's Reproach; both need owner approval of their S-class proposals before implementation.
+- Current group: F — Ob Nixilis of the Black Oath is supported through activated emblem abilities (D-599); Liesa, Shroud of Dusk's commander-tax life replacement is supported (D-598).
+- Next: Teferi's Reproach; its approved proposal is `kambal-teferis-reproach-player-lock.md`.
 
 ## Cards and initial gap groups
 
@@ -48,7 +48,7 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 ### Group F — other spell and permanent abilities
 
 - [ ] Liesa, Shroud of Dusk
-- [ ] Ob Nixilis of the Black Oath
+- [x] Ob Nixilis of the Black Oath — activated emblem abilities are available from the command zone (D-599).
 - [ ] Teferi's Reproach
 - [x] Tragic Slip — its Morbid replacement reads the creature-death history for the turn (D-597).
 - [x] Liesa, Shroud of Dusk — each prior command-zone cast tax is paid as 2 life instead of {2} mana (D-598; approved proposal).

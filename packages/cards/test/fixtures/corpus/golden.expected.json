@@ -1,5 +1,5 @@
 {
-  "parserVersion": 138,
+  "parserVersion": 139,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -5034,18 +5034,10 @@
     "cfc9a2f9-92fa-4608-b98d-f9763c89fc40": {
       "name": "Ob Nixilis of the Black Oath",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "−8: You get an emblem with \"{1}{B}, Sacrifice a creature: You gain X life and draw X cards, where X is the sacrificed creature's power.\"",
-          "reason": "notRunnable",
-          "closestRule": "static.quoted-ability"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "90148e5d"
+      "ast": "a0b5fa11"
     },
     "cfdd5dc6-593e-495a-8cfe-3a56b3c4c7df": {
       "name": "Temple of the False God",
@@ -6200,7 +6192,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 436,
+      "supported": 437,
       "total": 459
     }
   }
