@@ -79,7 +79,11 @@ describe('`exileFromTriggerCards`: one of the cards a batch trigger is about', (
   test('another trigger has none either', () => {
     expect(
       messages(
-        withAbility(SEER, triggered({ kind: 'entersBattlefield', what: { kind: 'this' } }, EXILE), 1),
+        withAbility(
+          SEER,
+          triggered({ kind: 'entersBattlefield', what: { kind: 'this' } }, EXILE),
+          1,
+        ),
       ).join(' | '),
     ).toContain('needs a trigger about a batch of cards');
   });
@@ -134,7 +138,10 @@ describe('`dealDamageToSelf`', () => {
       messages(
         withSpell(TIDE, {
           kind: 'dealDamageToSelf',
-          objects: { kind: 'each', filter: { zone: 'battlefield', types: ['creature'], controller: 'you' } },
+          objects: {
+            kind: 'each',
+            filter: { zone: 'battlefield', types: ['creature'], controller: 'you' },
+          },
         }),
       ),
     ).toEqual([]);
@@ -153,19 +160,15 @@ describe('`dealDamageToSelf`', () => {
 
   test('a target that no slot declares is refused', () => {
     expect(
-      messages(
-        withSpell(TIDE, { kind: 'dealDamageToSelf', objects: { kind: 'target', id: 't1' } }),
-      ).length,
+      messages(withSpell(TIDE, { kind: 'dealDamageToSelf', objects: { kind: 'target', id: 't1' } }))
+        .length,
     ).toBeGreaterThan(0);
   });
 });
 
 describe('a discard in the payment of a `mayPay`', () => {
   const pay = (cost: unknown[]) =>
-    triggered(
-      { kind: 'attacks', what: { kind: 'this' } },
-      { kind: 'mayPay', cost, effect: DRAW },
-    );
+    triggered({ kind: 'attacks', what: { kind: 'this' } }, { kind: 'mayPay', cost, effect: DRAW });
   const MANA = { kind: 'mana', symbols: ['1'] };
 
   test('mana and cards are valid, and so are cards alone', () => {
@@ -188,9 +191,7 @@ describe('a discard in the payment of a `mayPay`', () => {
   });
 
   test('a cost the payment of an offer does not pay is refused as before', () => {
-    expect(
-      messages(withAbility(SEER, pay([MANA, { kind: 'tap' }]))).length,
-    ).toBeGreaterThan(0);
+    expect(messages(withAbility(SEER, pay([MANA, { kind: 'tap' }]))).length).toBeGreaterThan(0);
   });
 });
 
@@ -219,7 +220,11 @@ describe('the `thisWay` count `searched`: "if you search your library this way"'
   test('after a search of the same sequence it is valid', () => {
     expect(
       messages(
-        withAbility(CLAIMER, enters({ kind: 'sequence', effects: [SEARCH, SHUFFLE_IF_SEARCHED] }), 1),
+        withAbility(
+          CLAIMER,
+          enters({ kind: 'sequence', effects: [SEARCH, SHUFFLE_IF_SEARCHED] }),
+          1,
+        ),
       ),
     ).toEqual([]);
     expect(messages(syntheticCard(CLAIMER))).toEqual([]);
@@ -231,6 +236,8 @@ describe('the `thisWay` count `searched`: "if you search your library this way"'
         withAbility(CLAIMER, enters({ kind: 'sequence', effects: [DRAW, SHUFFLE_IF_SEARCHED] }), 1),
       ).length,
     ).toBeGreaterThan(0);
-    expect(messages(withAbility(CLAIMER, enters(SHUFFLE_IF_SEARCHED), 1)).length).toBeGreaterThan(0);
+    expect(messages(withAbility(CLAIMER, enters(SHUFFLE_IF_SEARCHED), 1)).length).toBeGreaterThan(
+      0,
+    );
   });
 });

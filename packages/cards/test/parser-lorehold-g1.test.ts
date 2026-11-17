@@ -64,8 +64,9 @@ describe('"you may pay {1} and discard a card. If you do, ..." (D-1700, CR 118.3
 
   test('more mana and more cards (SYNTHETIC)', () => {
     expect(
-      readAll('Whenever ~ attacks, you may pay {2}{R} and discard two cards. If you do, draw a card.')
-        .abilities,
+      readAll(
+        'Whenever ~ attacks, you may pay {2}{R} and discard two cards. If you do, draw a card.',
+      ).abilities,
     ).toMatchObject([
       {
         effect: {
@@ -119,9 +120,7 @@ describe('"Whenever you discard one or more nonland cards" (D-1701, CR 603.2c, 7
   });
 
   test('cards of any kind, of a creature kind, and of an opponent (SYNTHETIC)', () => {
-    expect(
-      readAll('Whenever you discard one or more cards, draw a card.').abilities,
-    ).toEqual([
+    expect(readAll('Whenever you discard one or more cards, draw a card.').abilities).toEqual([
       {
         kind: 'triggered',
         trigger: { kind: 'discarded', who: 'you', batch: true },
@@ -174,7 +173,12 @@ describe('"you may exile one of them from your graveyard. If you do, you may cas
             {
               kind: 'conditional',
               condition: { kind: 'didPrevious' },
-              effect: { kind: 'mayPlay', objects: { kind: 'moved' }, lasts: 'endOfTurn', castOnly: true },
+              effect: {
+                kind: 'mayPlay',
+                objects: { kind: 'moved' },
+                lasts: 'endOfTurn',
+                castOnly: true,
+              },
             },
           ],
         },
@@ -278,14 +282,16 @@ describe('"you may play that card this turn" and "you may cast it this turn" aft
 
   test('the top card of the library is still read as before, and "cast" is cast only', () => {
     expect(
-      readAll('When ~ enters, exile the top card of your library. You may play that card this turn.')
-        .abilities,
+      readAll(
+        'When ~ enters, exile the top card of your library. You may play that card this turn.',
+      ).abilities,
     ).toMatchObject([
       { effect: { effects: [{ kind: 'exileTop' }, { kind: 'mayPlay', lasts: 'endOfTurn' }] } },
     ]);
     expect(
-      readAll('When ~ enters, exile the top card of your library. You may cast that card this turn.')
-        .abilities,
+      readAll(
+        'When ~ enters, exile the top card of your library. You may cast that card this turn.',
+      ).abilities,
     ).toMatchObject([
       {
         effect: {
@@ -359,7 +365,9 @@ describe('"shuffle any number of target cards from your graveyard into your libr
     expect(
       readAll('Shuffle target card from your graveyard into your library.', 'sorcery').spell,
     ).toMatchObject({
-      targets: [{ id: 't1', what: { kind: 'object', filter: { zone: 'graveyard', controller: 'you' } } }],
+      targets: [
+        { id: 't1', what: { kind: 'object', filter: { zone: 'graveyard', controller: 'you' } } },
+      ],
       effect: {
         kind: 'sequence',
         effects: [
@@ -493,7 +501,10 @@ describe('"you may search ... and put it onto the battlefield tapped. Then if ..
       {
         effect: {
           kind: 'sequence',
-          effects: [DRAW, { kind: 'conditional', condition: OPPONENT_HAS_MORE_LANDS, effect: DRAW }],
+          effects: [
+            DRAW,
+            { kind: 'conditional', condition: OPPONENT_HAS_MORE_LANDS, effect: DRAW },
+          ],
         },
       },
     ]);
@@ -514,7 +525,11 @@ describe('"you may search ... and put it onto the battlefield tapped. Then if ..
       {
         effect: {
           kind: 'sequence',
-          effects: [SEARCH_PLAINS, SEARCH_PLAINS, { kind: 'conditional', effect: { kind: 'shuffle' } }],
+          effects: [
+            SEARCH_PLAINS,
+            SEARCH_PLAINS,
+            { kind: 'conditional', effect: { kind: 'shuffle' } },
+          ],
         },
       },
     ]);
