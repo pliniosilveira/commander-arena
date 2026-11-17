@@ -171,7 +171,7 @@ export function DeckDialog({
               <button
                 key={r.scope}
                 type="button"
-                className="scr-btn"
+                className="scr-btn scr-btn-primary"
                 disabled={busy || pickRandomDeck(decks, r.scope, () => 0) === null}
                 onClick={() => markRandom(r.scope)}
               >
