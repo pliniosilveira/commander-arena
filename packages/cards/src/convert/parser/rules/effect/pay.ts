@@ -61,7 +61,13 @@ export const EFFECT_PAY = defineRule<Clauses>({
             literal('pay X life, '),
             family<IrAmount>('amount', { only: ['amount.where-x'] }),
           ),
-          ([, amount]): IrCost => ({ kind: 'payLife', amount }),
+          ([, amount]): IrCost => ({
+            kind: 'payLife',
+            amount,
+            definesX: true,
+            span: amount.span,
+            rule: RULE,
+          }),
         ),
         // D-364: "pay that much life", the life that caused the trigger of a life gain.
         family<IrCost>('cost', { only: ['cost.pay-life', 'cost.pay-life-that-much'] }),

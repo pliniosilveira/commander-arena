@@ -246,8 +246,7 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
       ),
       ([amount, , , pt, , , , , plural]) =>
         ((amount.kind !== 'x' && !pluralOnly) || plural) &&
-        ((pt[1] === 'X' && pt[2] === 'X') ||
-          (pt[1] !== 'X' && pt[2] !== 'X')),
+        ((pt[1] === 'X' && pt[2] === 'X') || (pt[1] !== 'X' && pt[2] !== 'X')),
     ),
     ([
       amount,

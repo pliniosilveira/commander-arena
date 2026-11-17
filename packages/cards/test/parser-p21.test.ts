@@ -646,7 +646,15 @@ describe('effect.pay and condition.if-you-do: "You may pay [cost]. If you do, ..
         effect: {
           kind: 'mayPay',
           cost: [{ kind: 'payLife', amount: { kind: 'lifeGainedThisTurn' } }],
-          effect: { kind: 'createToken', count: { kind: 'lifeGainedThisTurn' } },
+          effect: {
+            kind: 'createToken',
+            count: 1,
+            token: {
+              kind: 'custom',
+              ptAmount: { kind: 'lifeGainedThisTurn' },
+              definition: { power: 0, toughness: 0 },
+            },
+          },
         },
       },
     ]);

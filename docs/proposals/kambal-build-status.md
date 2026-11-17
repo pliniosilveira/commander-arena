@@ -30,7 +30,7 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 - [x] Daxos, Blessed by the Sun — characteristic-defining toughness follows the controller's white devotion (D-585).
 - [x] Lunar Convocation — end-step condition requires both life gain and life loss this turn (D-586).
 - [x] Moseo, Vein's New Dean — graveyard creature targets can be limited by the life gained this turn (D-588).
-- [ ] Tivash, Gloom Summoner
+- [x] Tivash, Gloom Summoner — defined life gained this turn is used for both the life payment and X/X token stats (D-589).
 - [x] Wall of Reverence — life gain can read the power of its targeted creature (D-587).
 
 ### Group D — triggers, Class abilities, and return effects

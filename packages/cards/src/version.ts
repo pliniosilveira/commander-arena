@@ -31,4 +31,5 @@
 // 126: Parse the end-step condition that life was gained and lost (D-586).
 // 127: Read the power of a target creature selected by the same ability (D-587).
 // 128: Support Moseo's history-based graveyard mana-value limit (D-588).
-export const PARSER_VERSION = 128;
+// 129: Use a defined life amount for a payment and an X/X token (D-589).
+export const PARSER_VERSION = 129;

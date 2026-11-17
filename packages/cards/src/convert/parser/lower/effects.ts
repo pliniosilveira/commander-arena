@@ -1447,7 +1447,7 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
   };
   let ptAmount: Amount | undefined;
   if (token.ptAmount === true) {
-    const amount = lowerAmount({ kind: 'x', span: token.span, rule: token.rule }, ctx, clause.rule);
+    const amount = lowerAmount({ kind: 'x', span: token.span }, ctx, clause.rule);
     if (!amount.ok) return amount;
     ptAmount = amount.value;
   }

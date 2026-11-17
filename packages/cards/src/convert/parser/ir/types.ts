@@ -690,7 +690,7 @@ export type IrCost = IrNode &
         readonly what: IrNoun;
         readonly count: number;
       }
-    | { readonly kind: 'payLife'; readonly amount: IrAmount }
+    | { readonly kind: 'payLife'; readonly amount: IrAmount; readonly definesX?: true }
     // Blight 1 (Danitha deck, D-407, CR 701.68a): `count` -1/-1 counters on a creature the player controls
     | { readonly kind: 'blight'; readonly count: number }
     // "Pay X life" (stage P16): the amount is announced as X (CR 107.3a), not a number

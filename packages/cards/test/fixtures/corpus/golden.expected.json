@@ -1,5 +1,5 @@
 {
-  "parserVersion": 128,
+  "parserVersion": 129,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -4538,19 +4538,10 @@
     "b5641fcf-135e-43e7-a547-344fac61e279": {
       "name": "Tivash, Gloom Summoner",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "At the beginning of your end step, if you gained life this turn, you may pay X life, where X is the amount of life you gained this turn. If you do, create an X/X black Demon creature token with flying.",
-          "reason": "unrecognised",
-          "slot": "cost",
-          "closestRule": "effect.pay"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "47413166"
+      "ast": "f4f3543d"
     },
     "b655bee5-52d3-467e-b16c-cfc2edf2b1a1": {
       "name": "Arachnogenesis",
@@ -6287,7 +6278,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 427,
+      "supported": 428,
       "total": 459
     }
   }

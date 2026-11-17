@@ -485,7 +485,7 @@ function lowerMayPay(
     // life cost, not the announced-X cost `payXLife`; resolve it from the definition in this text.
     const definedLife =
       item.kind === 'payLife' && ctx.xIs !== null
-        ? ctx.xIs.lower?.() ?? lowerAmount(ctx.xIs.amount, ctx, item.rule)
+        ? (ctx.xIs.lower?.() ?? lowerAmount(ctx.xIs.amount, ctx, item.rule))
         : null;
     if (definedLife !== null) {
       if (!definedLife.ok) return definedLife;
@@ -1870,11 +1870,19 @@ export function lowerSentences(
   const steps: Step[] = [];
   const unordered = thisWaysAreSupported(sentences);
   if (unordered !== null) return refuse(unordered);
-  let currentX: NonNullable<LowerContext['xIs']> = null;
+  let currentX: LowerContext['xIs'] = null;
   for (let i = 0; i < sentences.length; i += 1) {
     const sentence = sentences[i];
     if (sentence === undefined) break;
-    const whereAmount = sentence.where;
+    const definedXCost = sentence.clauses
+      .map((clause) => clause.args.cost)
+      .find((cost) => cost?.kind === 'costList');
+    const costAmount =
+      definedXCost?.kind === 'costList'
+        ? definedXCost.costs.find((cost) => cost.kind === 'payLife' && cost.definesX === true)
+        : undefined;
+    const whereAmount =
+      sentence.where ?? (costAmount?.kind === 'payLife' ? costAmount.amount : undefined);
     const defined =
       whereAmount === undefined
         ? null

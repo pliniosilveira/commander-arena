@@ -5025,3 +5025,9 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Engine and parser:** a graveyard target's `manaValueAtMost` may use `lifeGainedThisTurn`; the usual selector reads the turn log when it checks the object.
 - **Proof:** `parser-p18.test.ts` checks Moseo's target filter and amount; `ast-references-validate.test.ts` proves the engine accepts the generic selector shape; the golden corpus checks full card support.
 - **Limit:** CR text and rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Tivash (D-589)
+
+- **Parser:** the value after "pay X life, where X is ..." defines X for the payment and the following instruction; an X/X custom token uses the same amount for both stats, with its count remaining one.
+- **Proof:** `parser-p21.test.ts` checks the payment and token AST; the golden acceptance corpus checks the complete card.
+- **Limit:** CR text and rulings were unavailable for independent verification.

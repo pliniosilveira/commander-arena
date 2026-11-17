@@ -3688,3 +3688,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Decision: Allow `lifeGainedThisTurn` as a mana-value filter limit. The normal selector evaluates it from the turn log when the target is chosen or the effect resolves.
 - Alternatives: Store a snapshot or reduce the history amount to a printed number; either would not follow the current turn's recorded life gain.
 - Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. Engine validation and parser tests cover the filter; the golden corpus checks Moseo's full import. CR text and rulings were unavailable for independent verification.
+
+## D-589: Use a defined life amount for payment and token size (2026-11-17, issue 255)
+- Context: Tivash offers to pay X life, where X is the life gained this turn, then creates one X/X Demon. The parser recognized the sentences and token, but did not preserve the amount definition across the payment and token instruction.
+- Decision: Preserve the value introduced by the payment's "where X is" wording as the ability's X definition. Use it for both the `mayPay` life cost and the custom token's power and toughness; the token count remains one.
+- Alternatives: Treat X as an announced choice (not what the text defines), or special-case Tivash's card data.
+- Consequences: Tivash's parser output uses `lifeGainedThisTurn` for the cost and token stats. Parser and golden acceptance tests cover the complete card. The local CR text and Scryfall rulings were unavailable for independent verification.
