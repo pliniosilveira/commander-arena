@@ -1413,11 +1413,13 @@ Engine slice, `ENGINE_VERSION` 18. The kinds are found in the event stream like 
 
 - Panharmonicon ("triggers an additional time", D-108 point 8): see `docs/ROADMAP.md`.
 
-## Modal spells and abilities (engine slice; D-105, D-114; CR 700.2, 700.2a-d, 601.2b-c, 602.2b, 603.3c, 608.2b-c, 903.3d)
+## Modal spells and abilities (engine slice; D-105, D-114, D-583; CR 700.2, 700.2a-d, 601.2b-c, 602.2b, 603.3c, 608.2b-c, 903.3d)
 
 Entries for "Choose one —" and the like, on spells, triggered abilities and activated abilities (about 0.10 of the corpus replay's unread weight, D-105). The engine side only. All tests use SYNTHETIC cards (`packages/engine/src/cards/fixtures/synthetic-modal.ts`, `SYNTHETIC Modal Choice` in `synthetic.ts`, and cards defined in the test files); run them with `pnpm exec vitest run packages/engine/test/scenario-xx-modal packages/engine/test/ast-modal-validate.test.ts packages/ai/test/casual-modes.test.ts packages/ai/test/modal-games.test.ts`. Code: `rules/modes.ts`, `rules/cast.ts`, `rules/activate.ts`, `rules/trigger-stack.ts`, `rules/stack.ts`, `rules/legality.ts`, `rules/activate-legality.ts`, `ast/validate-modes.ts`, `api.ts`, `legal-actions.ts`.
 
 How modes are chosen, for every entry below. The controller answers a `chooseModes { source, sourceName, sourceOracleText, purpose, modes: { index, text, legal }[], min, max, sets, forTrigger? }` decision with `chooseModes { modes }`, one of `sets` (each in printed order, fewest modes first; any order is accepted). It comes first in the cast (before the kicker, X and the targets), first in an activation (before X, the targets and the costs) and first as a triggered ability goes on the stack (before its targets). Only the modes whose targets can all be chosen are in a set (CR 700.2a). With one legal set the engine chooses it (`modesChosen { automatic: true }`), with none the spell is not castable, the activated ability is not offered and the triggered ability is removed (`abilityRemoved { reason: 'noLegalModes' }`). `cancel` rewinds a cast or activation, never a trigger. The targets of the chosen modes are asked in one `targets` decision, mode by mode, each slot tagged with its `mode`; the target ids are unique across the modes. On resolution the chosen modes' effects run in printed order.
+
+For triggered abilities with `notRepeatedBySource`, each selected mode is recorded in `GameState.modesChosenBySource`, keyed by the source object's identity. The record persists across turns while that object remains; leaving and returning creates a new object and therefore a fresh history. The same trigger machinery records an automatically selected sole legal mode. The parser currently uses this for “choose one that hasn't been chosen —”; per-turn history remains a separate `ModeChoice.notRepeatedThisTurn` feature (D-583).
 
 ### "Choose one —", "Choose two —", "Choose one or both —", "Choose one or more —" (a modal spell)
 

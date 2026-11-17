@@ -16,4 +16,5 @@
 // 112: Apply Maskwood Nexus's all-creature-types effect to controlled and owned cards (D-578).
 // 113: Keep Sauron's Ransom's face-down pile identities private through resolution (D-579).
 // 114: Order interacting life-gain replacements (D-581).
-export const ENGINE_VERSION = 114;
+// 115: Remember non-repeating modes for the source object's lifetime (D-583).
+export const ENGINE_VERSION = 115;

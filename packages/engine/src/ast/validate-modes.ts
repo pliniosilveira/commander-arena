@@ -161,8 +161,12 @@ function checkChoice(
         'a triggered ability that may choose no mode is removed from the stack (CR 700.2b): not run',
       );
     }
-    if (choose.maxIf !== undefined || choose.notRepeatedThisTurn !== undefined) {
-      issue(out, p, 'a repeatable chooseModes has no maxIf and no notRepeatedThisTurn (CR 700.2d)');
+    if (
+      choose.maxIf !== undefined ||
+      choose.notRepeatedThisTurn !== undefined ||
+      choose.notRepeatedBySource !== undefined
+    ) {
+      issue(out, p, 'a repeatable chooseModes has no widening or non-repeating restriction (CR 700.2d)');
     }
   }
   if (choose.maxIf !== undefined) {
@@ -175,6 +179,12 @@ function checkChoice(
       );
     }
     checkCondition(condition, `${p}.maxIf.condition`, out);
+  }
+  if (choose.notRepeatedBySource !== undefined && (!triggered || choose.notRepeatedBySource !== true)) {
+    issue(out, `${p}.notRepeatedBySource`, 'notRepeatedBySource is true only for a triggered ability');
+  }
+  if (choose.notRepeatedBySource === true && choose.notRepeatedThisTurn === true) {
+    issue(out, p, 'source history and turn history are separate mode-choice rules');
   }
 }
 

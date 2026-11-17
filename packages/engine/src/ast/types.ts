@@ -5196,6 +5196,8 @@ export interface ModeChoice {
    * be chosen again; with every mode chosen the ability is removed from the stack as it would be with no legal mode (CR 603.3c). Only a triggered ability.
    */
   readonly notRepeatedThisTurn?: true;
+  /** "Choose one that hasn't been chosen": choices stay unavailable for this source object across turns and reset on a zone change. */
+  readonly notRepeatedBySource?: true;
   /**
    * "Choose three. You may choose the same mode more than once." (CR 700.2d, D-344): the same mode may be chosen more than once, so the modes chosen are a
    * multiset of between `min` and `max` of them (`max` may be more than the number of modes). Every instance of a mode is a mode of its own: a targeted

@@ -498,6 +498,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Return target creature to its owner's hand. If ${e}, scry 1.`,
   ),
   'modal.choose-not-repeated': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
+  'modal.choose-not-repeated-source': permanent(
+    (e) => `At the beginning of your end step, ${e}\n• Draw a card.\n• You gain 1 life.`,
+  ),
   // D-344 (repeatable modes, CR 700.2d): the header with no dash, its bullets after it.
   'modal.choose-repeatable': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   // Danitha deck, group 7 (D-433): Tiered, whose bullets name their mode and its cost before the effect.

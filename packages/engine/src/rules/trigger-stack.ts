@@ -137,7 +137,16 @@ function pushTrigger(
     ...(modes.length === 0 ? {} : { modes }),
   });
   // D-151: "choose one that hasn't been chosen this turn" reads the modes this permanent chose.
-  const logged = trigger.source === null ? next : withModesChosen(next, trigger.source, modes);
+  const modal = modalOfAbility(trigger.ability);
+  const logged =
+    trigger.source === null
+      ? next
+      : withModesChosen(
+          next,
+          trigger.source,
+          modes,
+          modal?.choose.notRepeatedBySource === true,
+        );
   return {
     // A new object on the stack: earlier passes in succession no longer count (CR 117.4).
     state: { ...logged, turn: { ...logged.turn, passedInSuccession: [] } },
@@ -478,7 +487,15 @@ export function answerTriggerModes(
   const patched = patchObject({ ...state, pending: null }, stackObject, {
     stack: { ...stack, chosenModes: chosen },
   });
-  const answered = stack.source === null ? patched : withModesChosen(patched, stack.source, chosen);
+  const answered =
+    stack.source === null
+      ? patched
+      : withModesChosen(
+          patched,
+          stack.source,
+          chosen,
+          modal.choose.notRepeatedBySource === true,
+        );
   const events: GameEvent[] = [
     {
       kind: 'modesChosen',

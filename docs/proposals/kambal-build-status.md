@@ -4,10 +4,10 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 
 ## Status
 
-- [x] 3 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, and Archenemy's Charm.
+- [x] 4 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, and Kimoyo Beads.
 - Current branch: `support-kambal`.
-- Current group: B — modalities and split effects; Archenemy's Charm is done.
-- Next: Kimoyo Beads and Revival // Revenge.
+- Current group: B — modalities and split effects; Archenemy's Charm and Kimoyo Beads are done.
+- Next: Revival // Revenge.
 
 ## Cards and initial gap groups
 
@@ -22,7 +22,7 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 ### Group B — modalities and split effects
 
 - [x] Archenemy's Charm — all three modes parse; its one-or-two target mode returns creature and/or planeswalker cards.
-- [ ] Kimoyo Beads
+- [x] Kimoyo Beads — remembers modal choices for the source permanent; leaving and returning starts a new history.
 - [ ] Revival // Revenge
 
 ### Group C — life, toughness, and scaling

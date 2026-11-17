@@ -2083,6 +2083,8 @@ export interface GameState {
   readonly monarchBecameAt?: Readonly<Record<number, number>>;
   /** What has happened this turn that abilities ask about (D-139): see `TurnLog`. */
   readonly turnLog: TurnLog;
+  /** Modes chosen by a source object whose triggered ability uses `notRepeatedBySource`; zone changes create a new source id. */
+  readonly modesChosenBySource?: Readonly<Record<ObjectId, readonly number[]>>;
   readonly battlefield: readonly ObjectId[];
   /** The permanents that are phased out (D-234, CR 702.26): objects whose `zone` is `'phased'`. Absent in a game saved before D-234. */
   readonly phased?: readonly ObjectId[];

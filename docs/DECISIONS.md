@@ -3653,3 +3653,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Decision: Lower `and/or` card-type lists to the existing `ObjectFilter.anyOf` representation for graveyard cards, and reuse the existing one-or-two target bounds and return-to-hand effect. Do not add a new target or movement primitive.
 - Alternatives: Treat the two types as a conjunction (would reject cards of just one type), or add card-specific card data.
 - Consequences: Archenemy's Charm is supported through the standard importer. Its return mode can target one or two cards from the same graveyard slot; integration tests cover both counts and a creature plus a planeswalker. The rule source file was unavailable; the implementation reuses existing references to CR 115.1 (Targets), 205.2a (Card Types) and 404.1 (Graveyard).
+
+## D-583: Remember modal choices for the source permanent (2026-11-17, issue 255)
+- Context: Kimoyo Beads triggers at each end step and asks for a mode that has not been chosen for that artifact. The existing `notRepeatedThisTurn` history expires at the turn boundary and cannot represent this text.
+- Decision: Add `ModeChoice.notRepeatedBySource` and persist selected mode indices in `GameState.modesChosenBySource`, keyed by the source object's identity. Record choices from both player answers and automatic selection when only one legal mode remains. A zone change creates a new object identity and starts a fresh history.
+- Alternatives: Reuse the turn log (forgets choices too early), store history on the card definition (shared by copies and later objects), or add a Kimoyo-specific branch.
+- Consequences: Kimoyo Beads is supported through the standard importer. Integration coverage checks choices over successive turns, automatic selection of the only remaining mode, and reset after leaving and returning. CR text and Scryfall rulings were unavailable for independent verification.

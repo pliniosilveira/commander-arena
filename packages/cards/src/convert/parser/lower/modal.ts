@@ -63,6 +63,9 @@ export function lowerModes(
   if (count < MIN_MODES || count > MAX_MODES) return refuse(modal);
   // "One or both" and "may choose both instead" are about two modes (CR 700.2).
   if (choose.exactly !== undefined && choose.exactly !== count) return refuse(modal);
+  if ((choose.notRepeatedThisTurn === true || choose.notRepeatedBySource === true) && !triggered) {
+    return refuse(modal);
+  }
   const max = choose.max === 'all' ? count : choose.max;
   // CR 700.2d (D-344): a repeatable choice may be for more modes than there are, and "up to" has a minimum of 0.
   const repeatable = choose.repeatable === true;
@@ -128,6 +131,7 @@ export function lowerModes(
     ...(maxIf === undefined ? {} : { maxIf }),
     // "Choose one that hasn't been chosen this turn" (stage P34, D-152): only a triggered ability may say it (`validateCard`).
     ...(choose.notRepeatedThisTurn === true ? { notRepeatedThisTurn: true as const } : {}),
+    ...(choose.notRepeatedBySource === true ? { notRepeatedBySource: true as const } : {}),
     // "You may choose the same mode more than once" (D-344, CR 700.2d): the modes chosen are a multiset.
     ...(repeatable ? { repeatable: true as const } : {}),
   };

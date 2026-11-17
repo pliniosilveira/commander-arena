@@ -1,5 +1,5 @@
 {
-  "parserVersion": 122,
+  "parserVersion": 123,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -4947,19 +4947,10 @@
     "c7bdbf7a-8054-4e91-bb32-84f47e98553c": {
       "name": "Kimoyo Beads",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of your end step, choose one that hasn't been chosen —\n• AV Bead — Draw a card.\n• Communication Bead — Create two 1/1 white Soldier creature tokens.\n• Prime Bead — You gain 3 life. Exile ~, then return it to the battlefield under its owner's control.",
-          "reason": "unrecognised",
-          "slot": "modal",
-          "closestRule": "modal.choose"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "c3bf9ec7"
+      "ast": "5bbfa373"
     },
     "c82cc78b-ffd6-4f72-881d-85913830feb2": {
       "name": "Immoral Bargain",
@@ -6336,7 +6327,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 421,
+      "supported": 422,
       "total": 459
     }
   }

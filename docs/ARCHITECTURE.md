@@ -90,6 +90,7 @@ Items are tagged REAL (built and tested) or PLANNED.
 ### State and API (REAL)
 
 - `GameState` is plain, JSON-serializable data: no class instances, functions or cycles (`src/state/types.ts`). Seats are an ordered array; "opponent" is resolved through the rules (`opponentsOf`, `seatsInOrder`), never as `players[1]`. `createGame` accepts exactly two seats until M10 (multiplayer leaving-the-game rules); every other rule is written for any number.
+- `GameState.modesChosenBySource` stores persistent modal choice history by object identity for abilities such as Kimoyo Beads (D-583); a zone change creates a new object with a fresh history.
 - Zones: each seat owns library, hand, graveyard and command; battlefield, stack and exile are shared. Zone lists hold ObjectIds.
 - Gift keeps the promised opponent on the spell and on a permanent that enters from it. Its shared effect module provides the card draw and tapped Fish gifts; spell target slots may be conditioned on either branch of the gift choice.
 - Public API (`src/index.ts`):

@@ -1532,6 +1532,8 @@ export interface IrModeChoice {
   readonly widenTo?: number;
   /** "Choose one that hasn't been chosen this turn" (stage P34, D-152, CR 700.2): a mode this permanent chose earlier this turn is not offered. */
   readonly notRepeatedThisTurn?: true;
+  /** "Choose one that hasn't been chosen": a mode this permanent chose while it was the same object is not offered. */
+  readonly notRepeatedBySource?: true;
   /**
    * "Choose three. You may choose the same mode more than once." (D-344, CR 700.2d): the same mode may be chosen more than once; `max` may be more than the number
    * of bullets, and `min` is 0 for "Choose up to three. You may choose the same mode more than once.".
