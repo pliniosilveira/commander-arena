@@ -619,6 +619,23 @@
       "reasons": [],
       "ast": "d3bef44a"
     },
+    "17b4778b-82b1-4845-ad08-00f3ff66877b": {
+      "name": "Perpetual Timepiece",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{2}, Exile ~: Shuffle any number of target cards from your graveyard into your library.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "01bf8dae"
+    },
     "180eda7c-fca2-403b-85cd-8ffebaf9f408": {
       "name": "Palace Jailer",
       "group": "acceptance",
@@ -650,6 +667,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "28a7effb"
+    },
+    "18f0cd0b-3e4f-4637-a62e-75dd1b2f3fce": {
+      "name": "Claim Jumper",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "When ~ enters, if an opponent controls more lands than you, you may search your library for a Plains card and put it onto the battlefield tapped. Then if an opponent controls more lands than you, repeat this process once. If you search your library this way, shuffle.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.search"
+        }
+      ],
+      "reasons": [],
+      "ast": "900bed56"
     },
     "19b5c94b-b4fa-41a9-b649-51c4e6f03602": {
       "name": "Might of the Meek",
@@ -851,6 +885,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "83eaa363"
+    },
+    "24f7143c-d43a-4120-baa0-0235b15d8186": {
+      "name": "Wave of Reckoning",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Each creature deals damage to itself equal to its power.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.gain-keyword-each"
+        }
+      ],
+      "reasons": [],
+      "ast": "bc4d66a6"
     },
     "25012c1f-c069-43d7-b930-a3a5a7eb1389": {
       "name": "Dismantling Wave",
@@ -1938,6 +1989,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9e8374f4"
+    },
+    "54d48e54-be4a-4a78-a778-b28e74ef7134": {
+      "name": "Containment Construct",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever you discard a card, you may exile that card from your graveyard. If you do, you may play that card this turn.",
+          "reason": "notRunnable",
+          "closestRule": "effect.may-play"
+        }
+      ],
+      "reasons": [],
+      "ast": "bdaef2ee"
     },
     "5548ff43-e5f6-4a63-8562-a2b1de06d6f5": {
       "name": "Riveteers Overlook",
@@ -3572,6 +3639,23 @@
       "reasons": [],
       "ast": "658cbe5a"
     },
+    "9d2f02f7-adcd-4d23-a051-ebca70f22ba5": {
+      "name": "Fateful Tempest",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Starting with you, each player votes for past or present. You mill a card for each past vote, then ~ deals damage to each opponent equal to the total mana value of cards milled this way. Exile the top card of your library for each present vote. Until the end of your next turn, you may play the exiled cards.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "amount.for-each"
+        }
+      ],
+      "reasons": [],
+      "ast": "1c2ab863"
+    },
     "9d6fdbd4-ba51-4df1-b383-9b709b36a8d7": {
       "name": "Retrieve the Esper",
       "group": "acceptance",
@@ -4378,6 +4462,31 @@
       "reasons": [],
       "ast": "57262890"
     },
+    "c3d38129-b955-4fb5-8486-095f918935b9": {
+      "name": "Quintorius, Loremaster",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "At the beginning of your end step, exile target noncreature, nonland card from your graveyard. Create a 3/2 red and white Spirit creature token.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "noun.target-graveyard-card"
+        },
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{1}{R}{W}, {T}, Sacrifice a Spirit: Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. If that spell would be put into a graveyard, put it on the bottom of its owner's library instead.",
+          "reason": "unrecognised",
+          "slot": "replacement",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "532c085a"
+    },
     "c43e7fa5-ff93-42d9-af79-ee417a8e41a7": {
       "name": "Emissary Green",
       "group": "acceptance",
@@ -4449,6 +4558,31 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b989839b"
+    },
+    "c78783e5-868d-4a8b-a4f8-95a92853cf0a": {
+      "name": "Naktamun Lorespinner // Wheel of Fortune",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "At the beginning of your upkeep, if a player has one or fewer cards in hand, ~ becomes prepared.",
+          "reason": "unrecognised",
+          "slot": "condition",
+          "closestRule": "ability.triggered"
+        },
+        {
+          "face": 1,
+          "ability": 0,
+          "text": "Each player discards their hand, then draws seven cards.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.player.discard"
+        }
+      ],
+      "reasons": [],
+      "ast": "bfb04a5b"
     },
     "c7aecca5-2f67-4245-ab2d-e723d8b23a67": {
       "name": "Expressive Iteration",
@@ -5569,6 +5703,30 @@
       "reasons": [],
       "ast": "7c0d491e"
     },
+    "fa81e7ff-0f2c-40df-9169-c0a22f00cd76": {
+      "name": "Conspiracy Theorist",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever ~ attacks, you may pay {1} and discard a card. If you do, draw a card.",
+          "reason": "notRunnable",
+          "closestRule": "effect.pay"
+        },
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever you discard one or more nonland cards, you may exile one of them from your graveyard. If you do, you may cast it this turn.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "trigger.discarded"
+        }
+      ],
+      "reasons": [],
+      "ast": "c799efda"
+    },
     "fab29bc7-1f0a-4df4-b8f1-c008ce5583d2": {
       "name": "Search for Glory",
       "group": "acceptance",
@@ -5845,7 +6003,7 @@
     },
     "acceptance": {
       "supported": 382,
-      "total": 399
+      "total": 407
     }
   }
 }
