@@ -81,6 +81,7 @@ import {
 } from '../../game/hylda-text';
 import { ENCORE_EFFECT_TEXT } from '../../game/keywords-text';
 import { controlDurationText, requireAttackText } from '../../game/korvold-text';
+import { searchText } from '../../game/lorehold-g1-text';
 import { playRuleWordings, staticWording } from '../../game/play-rule-text';
 import { namesSeveral, subjectVerb } from '../../game/player-text';
 import { ptEffectText } from '../../game/pt-text';
@@ -208,6 +209,10 @@ function targetText(spec: TargetSpec | undefined): string {
           anyOf === undefined &&
           commander === undefined;
         const kind = any ? 'card' : `${nounOf(spec.what.filter)} card`;
+        // Lorehold group 1: "any number of target cards from your graveyard".
+        if (spec.anyNumber === true) {
+          return `any number of target ${kind}s from ${whose} graveyard${withText(spec.what.filter)}`;
+        }
         return `target ${kind} from ${whose} graveyard${withText(spec.what.filter)}`;
       }
       // "target creature an opponent controls": the controller is part of what the text promises.
@@ -743,6 +748,13 @@ function sequenceText(
       at += 2;
       continue;
     }
+    // Lorehold group 1 (CR 701.24c, 701.24d): "Shuffle any number of target cards from your graveyard into your library".
+    const cardsShuffled = shuffleCardsIntoLibrary(effects, at, ability, self);
+    if (cardsShuffled !== null) {
+      out.push(cardsShuffled);
+      at += 1;
+      continue;
+    }
     // D-327: "Mill two cards. You may play those cards this turn." says it the same way after a mill.
     if (effect.kind === 'exileTop' || effect.kind === 'mill') several = effect.count !== 1;
     const text =
@@ -784,6 +796,39 @@ function shuffleIntoThenReveal(
   const tail = revealTopTail(reveal, false);
   if (tail === null) return null;
   return `${capital(owner)} shuffles it into their library, then reveals the top card of their library. ${tail}`;
+}
+
+/**
+ * "Shuffle any number of target cards from your graveyard into your library" (CR 701.24c, 701.24d, Lorehold group 1): the move of the targets of your own graveyard into your library and
+ * the shuffle of it, read as one sentence, or null for any other two effects. The library is shuffled whatever the number of cards, so the position the cards were put at is not said.
+ */
+function shuffleCardsIntoLibrary(
+  effects: readonly Effect[],
+  at: number,
+  ability: WithTargets,
+  self: string,
+): string | null {
+  const [move, shuffle] = [effects[at], effects[at + 1]];
+  if (move?.kind !== 'moveToZone' || move.to !== 'library' || move.position !== undefined) {
+    return null;
+  }
+  if (
+    move.objects.kind !== 'target' ||
+    shuffle?.kind !== 'shuffle' ||
+    shuffle.player.kind !== 'you'
+  ) {
+    return null;
+  }
+  const { id } = move.objects;
+  const spec = ability.targets?.find((t) => t.id === id);
+  if (
+    spec?.what.kind !== 'object' ||
+    spec.what.filter.zone !== 'graveyard' ||
+    spec.what.filter.controller !== 'you'
+  ) {
+    return null;
+  }
+  return `Shuffle ${objectText(move.objects, ability, self)} into your library`;
 }
 
 function effectText(effect: Effect, ability: WithTargets, self: string, defs: Definitions): string {
@@ -1282,7 +1327,13 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // CR 706.1 (D-271): "Roll a four-sided die".
       return `Roll a ${effect.sides}-sided die`;
     case 'search':
-      return 'Search your library';
+      return searchText(effect);
+    case 'dealDamageToSelf':
+      // CR 120.3 (Lorehold group 1): "Each creature deals damage to itself equal to its power".
+      return `${capital(object(effect.objects))} deals damage to itself equal to its power`;
+    case 'exileFromTriggerCards':
+      // CR 603.2c (Lorehold group 1): of the cards a batch trigger is about.
+      return 'You may exile one of them from your graveyard';
     case 'createToken':
       return tokenText(effect, ability, self, defs);
     case 'conditional': {
@@ -1379,7 +1430,14 @@ export function activationLabel(
   const crew = crewNumber(card, ability);
   if (crew !== null) return `Crew ${crew}`;
   const noun = selfNoun(card);
-  const cost = ability.cost.map((part) => activationCostPart(part, noun)).join(', ');
+  // Lorehold group 1: "Exile this artifact" of a permanent on the battlefield; the exile of a card in the graveyard is said by the cost.
+  const cost = ability.cost
+    .map((part) =>
+      part.kind === 'exileThis' && ability.functionsIn !== 'graveyard'
+        ? `Exile this ${noun}`
+        : activationCostPart(part, noun),
+    )
+    .join(', ');
   // An ability that works from the graveyard is read from the card there: "Return this card from your graveyard".
   const self = ability.functionsIn === 'graveyard' ? 'card' : noun;
   const gist = gistOf(ability.effect, ability, self);
