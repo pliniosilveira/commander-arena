@@ -215,7 +215,7 @@ export const SYNTHETIC_LOREHOLD_G1_LIST: readonly CardDefinition[] = [
   }),
   // "Discard two cards."
   singleFace({
-    name: 'SYNTHETIC Double Discard',
+    name: 'SYNTHETIC Twin Discard',
     manaCost: ['R'],
     types: ['sorcery'],
     colors: ['R'],

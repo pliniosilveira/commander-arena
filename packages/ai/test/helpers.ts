@@ -3112,7 +3112,7 @@ export const LOREHOLD_G1_NAMES = [
   'SYNTHETIC Cast Golem',
   'SYNTHETIC Doubting Seer',
   'SYNTHETIC Discard Watcher',
-  'SYNTHETIC Double Discard',
+  'SYNTHETIC Twin Discard',
   'SYNTHETIC Memory Clock',
   'SYNTHETIC Reckoning Tide',
   'SYNTHETIC Venom Titan',

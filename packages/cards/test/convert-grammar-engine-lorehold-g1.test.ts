@@ -35,7 +35,7 @@ const GOBLIN = 'Raging Goblin';
 const BEARS = 'Grizzly Bears';
 const SPIDER = 'Giant Spider';
 const LOOT = 'SYNTHETIC Loot'; // {U}: draw a card, then discard a card
-const PAIR = 'SYNTHETIC Double Discard'; // {R}: discard two cards
+const PAIR = 'SYNTHETIC Twin Discard'; // {R}: discard two cards
 const FILLER = Array.from({ length: 8 }, () => 'Mountain');
 
 describe('every card is valid and has the abilities of its SYNTHETIC sibling', () => {
