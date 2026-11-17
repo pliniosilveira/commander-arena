@@ -28,7 +28,7 @@ function hundredCardList(): string {
 async function openImport(page: Page): Promise<void> {
   await page.goto('/');
   await page.getByRole('button', { name: 'Your decks' }).click();
-  await page.getByRole('button', { name: 'Import a deck' }).click();
+  await page.getByRole('button', { name: 'Paste a list' }).click();
   await expect(page.getByRole('heading', { name: 'Import a deck' })).toBeVisible();
 }
 

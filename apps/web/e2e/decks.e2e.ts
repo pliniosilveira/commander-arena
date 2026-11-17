@@ -58,7 +58,7 @@ async function saveMine(page: Page): Promise<void> {
 
 async function saveDeck(page: Page, name: string, text: string): Promise<void> {
   await page.getByRole('button', { name: 'Your decks' }).click();
-  await page.getByRole('button', { name: 'Import a deck' }).click();
+  await page.getByRole('button', { name: 'Paste a list' }).click();
   await page.getByLabel('Deck name').fill(name);
   await page.getByLabel(/^Decklist/).fill(text);
   await page.getByRole('button', { name: 'Import', exact: true }).click();
