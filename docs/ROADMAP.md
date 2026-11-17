@@ -1,6 +1,6 @@
 # Roadmap: deferred work and known limitations
 
-What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the decisions are in `docs/DECISIONS.md`, the mechanics in `docs/MECHANICS.md`, the milestone reports in `docs/progress/`. For what is happening now, read `docs/STATUS.md`; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.
+What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the decisions are in `docs/DECISIONS.md`, the mechanics in `docs/MECHANICS.md`. For what is happening now, read the open issues and pull requests; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.
 
 Every limit under "Deferred engine features" and "Deferred grammar" is refused or left unread (`validateCard`, the parser), so no supported card reaches it. The rows of "Known rules deviations" are the exception: they are places where supported play can differ from the Comprehensive Rules, and they are the first candidates for fixes.
 
@@ -21,8 +21,8 @@ Every limit under "Deferred engine features" and "Deferred grammar" is refused o
 - **Stack legibility, deferred (D-199).** (a) The value of a *defined* X on the stack ("deals X damage, where X is the number of Dragons you control"): the announced X is shown, a computed one is not, because the web has no evaluator of an `Amount`; the engine would have to put the current value in the view (a public API change and an `ENGINE_VERSION` bump). (b) A short highlight on the permanents a resolution touched (no animation layer exists; the log names them). (c) Stopping for an opponent's activated abilities that wipe boards or are costly to ignore: only spells stop by default; the opponent's abilities keep the D-138 stops.
 - **v2, multiplayer** (design for it now, build it after v1; nothing in v1 assumes exactly two players). M10 engine: several defending players, APNAP around the table, search by several players, the monarch and Myriad with more seats, attacks at different opponents (CR 508.7d, 508.7e), the attack tax and annihilator with several defenders, soaks with 4 and 6 seats. M11: table layout, opponent focus, threat assessment, performance with 5 AIs.
 - **Face-down permanents** (Morph, Megamorph, Disguise): approved at low priority (`docs/proposals/face-down.md`); they need that proposal built first.
-- **Cockatrice `.cod` import** (low priority): the import reads pasted text only; `docs/PRIOR_ART.md` section 7.5 has the details.
-- **XMage scenarios** (`docs/PRIOR_ART.md` section 7.3) are a list of eighteen scenarios to port as our own tests with expected results re-derived from today's CR; none is ported.
+- **Cockatrice `.cod` import** (low priority): the import reads pasted text only.
+- **XMage scenarios** (from the survey of other projects, removed from the repository; see the git history) are a list of eighteen scenarios to port as our own tests with expected results re-derived from today's CR; none is ported.
 
 ## Known rules deviations
 

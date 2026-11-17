@@ -117,16 +117,11 @@ describe('the table', () => {
 
 describe('the reports of the repository: the plural forms of real Oracle texts', () => {
   const root = new URL('../../../reports/', import.meta.url);
-  // The Oracle lines of the 1000 most weighted shapes (`example`) and the decks' blockers; card names are left out.
+  // The Oracle lines of the 1000 most weighted shapes (`example`); card names are left out.
   const templates = JSON.parse(readFileSync(new URL('templates.json', root), 'utf8')) as {
     templates: { example: string; template: string }[];
   };
-  const text = [
-    ...templates.templates.flatMap((t) => [t.example, t.template]),
-    ...readFileSync(new URL('decks.md', root), 'utf8')
-      .split('\n')
-      .filter((line) => line.startsWith('| ')),
-  ].join('\n');
+  const text = templates.templates.flatMap((t) => [t.example, t.template]).join('\n');
   const words = new Set(text.match(/[A-Z][\p{L}’'-]*/gu) ?? []);
 
   test('every capitalized word of those lines that is a plural form of a type reads as that type', () => {
