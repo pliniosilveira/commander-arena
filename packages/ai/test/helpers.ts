@@ -3099,6 +3099,57 @@ export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
+ * The SYNTHETIC cards of group 1 of the Lorehold Spirit deck (issue 86, D-1700 and later): a 3/3 with vigilance that searches for a Plains when an opponent controls more lands (twice at
+ * most, shuffling if it searched), an artifact creature that may exile a card its controller discards and play it, one that may only cast it, a creature that may pay {1} and discard a
+ * card to draw when it attacks and may exile one of the nonland cards its controller discards and cast it, a creature that draws when its controller discards one or more cards, a sorcery
+ * that discards two cards, an artifact that mills and shuffles cards of the graveyard into the library, a sorcery in which each creature deals damage to itself equal to its power and a 3/5
+ * with deathtouch and lifelink. The "you may" of the searches, the cards to discard, the card to exile and the permission to play change which answers the generic pools ask for, which
+ * games-100 expects only from dedicated styles.
+ */
+export const LOREHOLD_G1_NAMES = [
+  'SYNTHETIC Land Claimer',
+  'SYNTHETIC Quarantine Golem',
+  'SYNTHETIC Cast Golem',
+  'SYNTHETIC Doubting Seer',
+  'SYNTHETIC Discard Watcher',
+  'SYNTHETIC Twin Discard',
+  'SYNTHETIC Memory Clock',
+  'SYNTHETIC Reckoning Tide',
+  'SYNTHETIC Venom Titan',
+] as const;
+
+/** The loreholdG1 style: every card of the group twice, the draw-and-discard sorcery of the generic pool for more discards, bodies, and a burn spell. */
+export const LOREHOLD_G1_SPELLS = [
+  ...supported(LOREHOLD_G1_NAMES),
+  ...supported(LOREHOLD_G1_NAMES),
+  ...supported(['SYNTHETIC Loot', 'SYNTHETIC Loot']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Raging Goblin']),
+  ...supported(['Lightning Bolt', 'Lightning Bolt']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Plains for the Claimer to find and for white, Mountains and Islands for the red and blue, Swamps for the Titan. */
+export const LOREHOLD_G1_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Island',
+  'Island',
+  'Swamp',
+]);
+
+/** Style pairs of the Lorehold group 1 soak test (issue 86): a mirror match and both mixed ways. */
+export const LOREHOLD_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['loreholdG1', 'loreholdG1'],
+  ['loreholdG1', 'spells'],
+  ['spells', 'loreholdG1'],
+];
+
+/**
  * The SYNTHETIC cards of group 2 of the Hylda deck (D-517 to D-525): a sorcery that taps everything a chosen player controls and keeps it tapped, a creature that taps what a chosen
  * opponent controls, an instant that does it for up to two creatures, an X instant, a creature that does it when its controller casts an instant or sorcery, an Aura that taps its
  * creature at every upkeep, a d20 table, a creature with a "choose up to one" trigger, a siege that asks for Khans or Dragons as it enters, a creature with a trigger that needs four
@@ -3981,6 +4032,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(GISA_G4_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 1 cards (D-510 to D-514) ask to pay for reflexive abilities, the modes of one, targets of taps, the card type to protect from and what to do with a scry: a style of their own.
   .filter((card) => !(HYLDA_G1_NAMES as readonly string[]).includes(card.name))
+  // The Lorehold group 1 cards (issue 86) ask a "you may" before a search, which cards to discard, which card to exile and whether to pay {1} and discard: a style of their own.
+  .filter((card) => !(LOREHOLD_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ANGEL_NAMES as readonly string[]).includes(card.name))
@@ -4202,6 +4255,7 @@ export type DeckStyle =
   | 'featherG1'
   | 'gisaG4'
   | 'hyldaG1'
+  | 'loreholdG1'
   | 'vehicles'
   | 'prevention'
   | 'layouts'
@@ -4289,6 +4343,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'hyldaG3' && HYLDA_G3_SPELLS.length > 0) return HYLDA_G3_SPELLS;
   if (style === 'gisaG1' && GISA_G1_SPELLS.length > 0) return GISA_G1_SPELLS;
   if (style === 'hyldaG1' && HYLDA_G1_SPELLS.length > 0) return HYLDA_G1_SPELLS;
+  if (style === 'loreholdG1' && LOREHOLD_G1_SPELLS.length > 0) return LOREHOLD_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
@@ -4488,6 +4543,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'hyldaG3' && BASIC_LANDS.length > 0) return HYLDA_G3_LANDS;
   if (style === 'gisaG1' && BASIC_LANDS.length > 0) return GISA_G1_LANDS;
   if (style === 'hyldaG1' && BASIC_LANDS.length > 0) return HYLDA_G1_LANDS;
+  if (style === 'loreholdG1' && BASIC_LANDS.length > 0) return LOREHOLD_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;

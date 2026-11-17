@@ -1687,6 +1687,8 @@ export interface ThisWayCounts {
   readonly discardedInstantOrSorcery?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
   readonly discardedBy?: readonly SeatId[];
+  /** The `search` instructions the player went through with (Lorehold group 1: "If you search your library this way, shuffle"). */
+  readonly searched?: number;
 }
 
 /** An attacking creature (CR 508.1k). `blocked` stays true even if its blockers leave (CR 509.1h). */
@@ -1749,7 +1751,12 @@ export type ContinuousChange =
    * "You may play that card this turn" (`mayPlay`, D-151, CR 601.2, 305.1, 611.2a): `seat` may cast the card in exile `objects` names, or play it when it
    * is a land, until the effect ends. No layer: read where casting and playing are decided (`rules/legality.ts`, `mayPlayFromExile`).
    */
-  | { readonly kind: 'playPermission'; readonly seat: SeatId }
+  | {
+      readonly kind: 'playPermission';
+      readonly seat: SeatId;
+      /** "You may cast it this turn" (`mayPlay.castOnly`, Lorehold group 1): the card may be cast, not played as a land. */
+      readonly castOnly?: true;
+    }
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'loseAllAbilities' }

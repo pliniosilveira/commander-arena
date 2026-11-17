@@ -55,14 +55,16 @@ const PLAY_UNTIL: Readonly<Record<PlayUntil, string>> = {
  */
 export function mayPlayText(effect: Extract<Effect, { kind: 'mayPlay' }>, many: boolean): string {
   const what = many ? 'those cards' : 'that card';
+  // Lorehold group 1 (CR 601.2, 305.1): "You may cast that card this turn" is a permission to cast, never to play a land.
+  const verb = effect.castOnly === true ? 'cast' : 'play';
   if (effect.lasts === 'endOfYourNextTurn') {
-    return `Until the end of your next turn, you may play ${what}`;
+    return `Until the end of your next turn, you may ${verb} ${what}`;
   }
   if (effect.lasts === 'whileExiled') {
     const look = effect.lookAt === true ? 'look at and ' : '';
-    return `You may ${look}play ${what} for as long as ${many ? 'they remain' : 'it remains'} exiled`;
+    return `You may ${look}${verb} ${what} for as long as ${many ? 'they remain' : 'it remains'} exiled`;
   }
-  return `You may play ${what} ${PLAY_UNTIL[effect.lasts]}`;
+  return `You may ${verb} ${what} ${PLAY_UNTIL[effect.lasts]}`;
 }
 
 /** "After this phase, there is an additional combat phase" (CR 500.8, 500.10). */

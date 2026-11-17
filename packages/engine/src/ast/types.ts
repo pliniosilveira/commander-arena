@@ -282,7 +282,9 @@ export type ThisWayKind =
   | 'discardedCreature'
   | 'discardedNoncreature'
   // D-358: "If you discarded an instant or sorcery card this way" (Vohar, Vodalian Desecrator): the instant and sorcery cards `discard` effects discarded.
-  | 'discardedInstantOrSorcery';
+  | 'discardedInstantOrSorcery'
+  // Lorehold group 1: "If you search your library this way, shuffle." (CR 701.23): the `search` instructions of this resolution the player went through with (a "may" search they accepted).
+  | 'searched';
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
@@ -1411,6 +1413,16 @@ export type Effect =
       readonly to: { readonly kind: 'target'; readonly id: string };
     }
   /**
+   * "Each creature deals damage to itself equal to its power" (CR 120.3, 120.3a-e, 608.2c; Lorehold group 1): every object `objects` names is a source and its own
+   * recipient, and is dealt damage equal to its power as the effect begins. Each is a source of its own damage, so deathtouch, lifelink, infect and wither apply as for any damage
+   * (CR 120.3), a prevention effect for that source applies, and the damage is not combat damage. Powers are read before any damage is dealt (CR 608.2h: the information is determined once, when the effect is applied; CR 120.4a speaks of damage dealt at the same time).
+   * An object that is not a creature (no power), is not on the battlefield or has power 0 or less deals none (CR 120.8). `objects` is `each` or a reference (not a `choose`).
+   */
+  | {
+      readonly kind: 'dealDamageToSelf';
+      readonly objects: ObjectSelector;
+    }
+  /**
    * CR 701.17 (Mill): each player `player` names puts the top `count` cards of their library into their graveyard (all of
    * them when they have fewer, and nobody loses for it: milling is not drawing, CR 121.4). `count` 0 does nothing. The
    * cards go one after another from the top; a commander milled goes to the graveyard like any card (its owner may
@@ -1583,6 +1595,13 @@ export type Effect =
    */
   | { readonly kind: 'exileOwnGraveyardCard'; readonly players: PlayerSelector }
   /**
+   * "You may exile one of them from your graveyard" (CR 603.2c, 608.2d, 400.7, Lorehold group 1): of the cards that triggered this ability (`triggerCards`: the cards a batch
+   * `discarded` trigger saw discarded, as the objects they became) the ones still in the graveyard of the controller, the controller chooses none or one and the card is exiled
+   * (the choice is the offer: nothing is asked when no card is there). The card exiled is what `moved` names afterwards ("If you do, you may cast it this turn") and what
+   * `didPrevious` reads. Only in a triggered ability whose trigger is a batch `discarded` (`validateCard`).
+   */
+  | { readonly kind: 'exileFromTriggerCards' }
+  /**
    * "For each player, you choose from among the permanents that player controls an artifact, a creature, an enchantment, and a planeswalker. Then each player
    * sacrifices all other nonland permanents they control" (Tragic Arrogance; CR 608.2d, 701.21a, 101.4, D-231): the controller of the effect chooses, for each player
    * (the active player first) and each type of `types` in order, one permanent of that type the player controls (none when there is none; the same permanent may be
@@ -1749,6 +1768,11 @@ export type Effect =
   | {
       readonly kind: 'mayPlay';
       readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+      /**
+       * "You may cast it this turn" (Lorehold group 1, CR 601.2, 305.1): the permission is to cast the card, never to play it as a land, so a land card among `moved` stays where it
+       * is. Without it ("you may play that card") a land card is played as a land (a land drop, CR 305.2) and a spell is cast.
+       */
+      readonly castOnly?: true;
       /** How long the permission lasts. Named `lasts`, not `until`: `exile` has an `until` of another kind, which would make it a discriminant of the union. */
       readonly lasts: PlayUntil;
       /**
@@ -3068,6 +3092,12 @@ export type Trigger =
       readonly who: 'you' | 'opponent' | 'any';
       readonly another?: boolean;
       readonly filter?: ObjectFilter;
+      /**
+       * "Whenever you discard one or more nonland cards" (CR 603.2c, 701.9a, Lorehold group 1): a batch trigger. The cards discarded in one run of events (a `discard` of two
+       * cards, the cleanup step, a cost) that `who`, `another` and `filter` name are one occurrence: the ability triggers once however many. `triggerSubject` is the first of the
+       * cards and `triggerCards` all of them (as the objects they became in the graveyard, or in exile for madness), so "you may exile one of them" can choose among them.
+       */
+      readonly batch?: true;
     }
   /**
    * "Whenever one or more other creatures and/or artifacts you control die" (CR 603.10a, 603.2c, 700.4, D-206): a batch trigger. The permanents that

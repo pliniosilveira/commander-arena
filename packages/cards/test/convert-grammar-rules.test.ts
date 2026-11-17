@@ -569,7 +569,8 @@ describe('out of scope stays unparsed', () => {
     'Destroy any number of target creatures.',
     'You may draw a card.',
     'Create a 1/1 white Soldier creature token with changeling.',
-    'Search your library for a basic land card and put it onto the battlefield tapped.',
+    // Lorehold group 1 reads "... and put it onto the battlefield tapped." (one card, a put joined with "and"); two cards put with "and" are still not read.
+    'Search your library for two basic land cards and put them onto the battlefield tapped.',
     'Target player discards their hand.',
     'Target creature gets +3/+3 until your next turn.',
     'The next time a source of your choice would deal damage to you this turn, prevent that damage.',

@@ -34,7 +34,7 @@ import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
-import { asking, runDealDamage, runDealDividedDamage } from './damage-effects';
+import { asking, runDealDamage, runDealDamageToSelf, runDealDividedDamage } from './damage-effects';
 import { askingFlow, type OrderFlow, quietFlow } from './damage-order';
 import { derive } from './derive';
 import { UNEARTH_EXILE_ABILITY } from './derive-alt';
@@ -539,6 +539,10 @@ function runEffect(
 
     case 'dealDividedDamage':
       return runDealDividedDamage(state, res, effect, targets, flow);
+
+    case 'dealDamageToSelf':
+      // CR 120.3 (Lorehold group 1): "Each creature deals damage to itself equal to its power."
+      return runDealDamageToSelf(state, effect, ctx, targets, flow);
 
     case 'destroy': {
       // CR 701.8 (Destroy): indestructible permanents are not destroyed (CR 702.12b).
@@ -1830,6 +1834,27 @@ function runEffect(
           ),
         ],
       );
+
+    case 'exileFromTriggerCards': {
+      // CR 603.2c, 608.2d, 400.7 (Lorehold group 1): "you may exile one of them from your graveyard": the controller chooses none or one of the cards that triggered this ability
+      // that are still in their graveyard, which the choice's own question offers; with none there nothing is asked and nothing is done.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseMove' as const,
+            filter: { zone: 'graveyard' as const },
+            count: 1,
+            to: 'exile' as const,
+            position: 'top' as const,
+            optional: true as const,
+            among: res.triggerCards ?? [],
+            chosen: null,
+          },
+        ],
+      );
+    }
 
     case 'exileOwnGraveyardCard': {
       // CR 701.13, 101.4 (D-231): each player named chooses a card of their own graveyard, in turn order from the active player; it is exiled.

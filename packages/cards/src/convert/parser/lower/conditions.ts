@@ -536,6 +536,13 @@ export function lowerCondition(
         count: 1,
       });
     }
+    case 'searchedThisWay': {
+      // "If you search your library this way" (Lorehold group 1, CR 608.2c, 701.23a): what a search before it in the same text did; with no search lowered before it there is nothing to ask.
+      const blocked = missingFeatures(['condition:thisWayAtLeast']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.didSearch !== true) return failure(c, []);
+      return ok({ kind: 'thisWayAtLeast', what: 'searched', count: 1 });
+    }
     case 'discardedSpellThisWay': {
       // "If you discarded an instant or sorcery card this way" (D-358, CR 608.2c): what a discard before it in the same text did.
       const blocked = missingFeatures(['condition:thisWayAtLeast']);

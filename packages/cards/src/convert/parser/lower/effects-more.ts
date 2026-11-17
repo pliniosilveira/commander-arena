@@ -114,6 +114,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     }
     // D-178: the cards that were found are "it" and "that land" for what follows (the engine's `moved`).
     ctx.searched = cards.ref ?? null;
+    ctx.didSearch = true;
     const total = destinations.reduce((sum, d) => sum + (d.count === 'rest' ? 0 : d.count), 0);
     if (total !== max) return failure(clause);
     // Another player searches their own library, and a "may" is theirs to answer (CR 608.2d).

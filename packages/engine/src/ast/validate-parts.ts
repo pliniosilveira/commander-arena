@@ -1196,6 +1196,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedInstantOrSorcery: 'a discard effect',
+  searched: 'a search effect',
 };
 
 /** Every `thisWay` count, one source of truth for the validator (the conditions and the amounts both read them from `ThisWayCounts`, D-131, D-210, D-358). */
@@ -1213,6 +1214,8 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'discard')
     return ['discarded', 'discardedCreature', 'discardedNoncreature', 'discardedInstantOrSorcery'];
   if (e?.kind === 'mill') return ['milledValue'];
+  // Lorehold group 1: "If you search your library this way, shuffle."
+  if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
   if (e?.kind === 'playersMay') return thisWayProduced(e.effect);
   return [];
@@ -2475,6 +2478,8 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
  */
 function movesObjects(e: Effect): boolean {
   if (e?.kind === 'sequence') return Array.isArray(e.effects) && e.effects.some(movesObjects);
+  // Lorehold group 1: "you may exile that card from your graveyard. If you do, you may play that card this turn": the card a declined `may` did not exile is no card (`moved` is empty).
+  if (e?.kind === 'may') return movesObjects(e.effect);
   // D-139: a `createToken` produces objects `moved` names too ("create a token, then attach this to it").
   return (
     e?.kind === 'exile' ||
@@ -2495,7 +2500,9 @@ function movesObjects(e: Effect): boolean {
     // D-216: the card a `lookAndSplit` exiled is "the exiled card" ("You may play the exiled card this turn").
     (e?.kind === 'lookAndSplit' && e.exile > 0) ||
     // D-327: the cards a `mill` put into a graveyard are "that card" ("Mill a card. You may play that card this turn.").
-    e?.kind === 'mill'
+    e?.kind === 'mill' ||
+    // Lorehold group 1: the card `exileFromTriggerCards` exiled is "it" ("If you do, you may cast it this turn").
+    e?.kind === 'exileFromTriggerCards'
   );
 }
 
@@ -3290,7 +3297,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             (child?.kind === 'may' ||
               MAY_EFFECT_KINDS.includes(child?.kind) ||
               // D-231: "each player exiles a card from their graveyard. When one or more nonland cards are exiled this way, ...".
-              child?.kind === 'exileOwnGraveyardCard') &&
+              child?.kind === 'exileOwnGraveyardCard' ||
+              // Lorehold group 1: "you may exile one of them from your graveyard. If you do, ...".
+              child?.kind === 'exileFromTriggerCards') &&
             after.mayAvailable !== true
           ) {
             after = { ...after, mayAvailable: true };
@@ -3349,6 +3358,24 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'trampleExcess is about the creatures the damage is dealt to: the recipient names permanents',
           );
         }
+      }
+      break;
+    case 'dealDamageToSelf':
+      // CR 120.3 (Lorehold group 1): each object the selector names deals damage to itself equal to its power: a group or a reference, never a choice.
+      if (kindOf(e.objects) === 'choose') {
+        issue(out, `${path}.objects`, 'dealDamageToSelf names the objects: each or a reference');
+      } else {
+        checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      }
+      break;
+    case 'exileFromTriggerCards':
+      // CR 603.2c (Lorehold group 1): the cards a batch `discarded` trigger saw discarded, one of which is exiled.
+      if (scope.triggerCards !== true) {
+        issue(
+          out,
+          path,
+          'exileFromTriggerCards needs a trigger about a batch of cards (a batch discarded trigger)',
+        );
       }
       break;
     case 'dealDividedDamage':

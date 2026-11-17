@@ -42,6 +42,7 @@
   "hylda-g3-games.test.ts",
   "hylda-g1-games.test.ts",
   "hylda-g2-games.test.ts",
+  "lorehold-g1-games.test.ts",
   "keyword-batch-games.test.ts",
   "keyword-batch2-games.test.ts",
   "kicker-games.test.ts",

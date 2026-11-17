@@ -131,7 +131,11 @@ export function runSearch(
     const legal = searchCandidates(state, seat, res.source, search.filter);
     // CR 701.23c: with nothing to find the player still searched (and shuffles if told to).
     if (legal.length === 0) {
-      return done(state, [{ kind: 'librarySearched', seat, found: 0 }], shuffle);
+      // Lorehold group 1: the player searched, which "if you search your library this way" reads.
+      return {
+        ...done(state, [{ kind: 'librarySearched', seat, found: 0 }], shuffle),
+        thisWay: { searched: 1 },
+      };
     }
     const decision: Omit<ChooseCardsDecision, 'id'> = {
       kind: 'chooseCards',
@@ -176,7 +180,10 @@ export function runSearch(
     ? [{ kind: 'shuffle', seat, ...(placed.onTop.length > 0 ? { keep: placed.onTop } : {}) }]
     : [];
   const top = [...placed.onTop].reverse().map((id) => moveInstruction(id, 'library', false));
-  return done(state, events, [...placed.now, ...shuffled, ...top]);
+  return {
+    ...done(state, events, [...placed.now, ...shuffled, ...top]),
+    thisWay: { searched: 1 },
+  };
 }
 
 /** CR 701.9: the player chooses (unless the whole hand goes), then the cards go to the graveyard. */

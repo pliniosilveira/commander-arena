@@ -237,6 +237,11 @@ const THIS_WAY_WORDS: Readonly<Record<string, { readonly yes: string; readonly n
     yes: 'you sacrificed a permanent this way',
     not: "you didn't sacrifice a permanent this way",
   },
+  // Lorehold group 1 (CR 701.23a): "If you search your library this way, shuffle."
+  searched: {
+    yes: 'you search your library this way',
+    not: "you don't search your library this way",
+  },
 };
 
 function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): string | null {

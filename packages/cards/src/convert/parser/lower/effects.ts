@@ -60,6 +60,7 @@ import { HOFRI_LOWERINGS } from './hofri';
 import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { KORVOLD_LOWERINGS } from './korvold';
+import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { MELD_LOWERINGS } from './meld';
 import { NIV_LOWERINGS } from './niv';
 import { NIV_GROUP_3_C_LOWERINGS } from './niv-group-3-c';
@@ -1430,6 +1431,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...NIV_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,
+  // Lorehold Spirit deck, group 1 (issue 86): "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and "each creature deals damage to itself".
+  ...LOREHOLD_G1_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,
   ...HASHATON_GROUP_4_LOWERINGS,
@@ -1481,7 +1484,9 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
               ? 'sameNameAtLeast'
               : test === 'attachedTo' || test === 'putThisWay' || test === 'exiledThisWay'
                 ? 'objectMatches'
-                : test === 'discardedThisWay' || test === 'discardedSpellThisWay'
+                : test === 'discardedThisWay' ||
+                    test === 'discardedSpellThisWay' ||
+                    test === 'searchedThisWay'
                   ? 'thisWayAtLeast'
                   : test === 'otherAttachedToHost'
                     ? 'amountIs'

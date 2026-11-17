@@ -280,6 +280,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'fight',
     // D-145: "deals X damage divided as you choose among any number of target creatures" (CR 601.2d): with `TargetSpec.divide`.
     'dealDividedDamage',
+    // Lorehold group 1: "Each creature deals damage to itself equal to its power." (CR 120.3).
+    'dealDamageToSelf',
+    // Lorehold group 1: "you may exile one of them from your graveyard" of the cards a batch discard trigger saw (CR 603.2c).
+    'exileFromTriggerCards',
     // D-145: "you may cast a spell ... from your hand without paying its mana cost", "you may play the exiled card" (CR 608.2g).
     'castFree',
     // D-350: "you may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead" (CR 608.2g, 609.4b).
@@ -1768,6 +1772,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   lookAtTop: true,
   revealUntil: true,
   dealDividedDamage: true,
+  dealDamageToSelf: true,
+  exileFromTriggerCards: true,
   fight: true,
   castFree: true,
   castCard: true,
