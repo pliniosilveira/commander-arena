@@ -139,7 +139,7 @@ Do not write a test count into any document; it goes stale. Say how to run the c
 
 ## Card support
 
-The procedure for adding support for a card is `docs/CARD_SUPPORT_PLAYBOOK.md`. In short: research the card and its rulings, classify the gap (T template, P primitive, K keyword, S subsystem, O one-off override), write tests first, implement the general fix, run the checks of your change (the full suite runs every night on GitHub), then record it in `docs/MECHANICS.md`. An S-class gap needs a proposal in `docs/proposals/` and the human's approval first.
+The procedure for adding support for a card is `docs/CARD_SUPPORT_PLAYBOOK.md`. In short: research the card and its rulings, classify the gap (T template, P primitive, K keyword, S subsystem, O one-off override), write tests first, implement the general fix, run the checks of your change (the full suite runs every night on GitHub), then record it in `docs/MECHANICS.md`. An S-class gap needs a proposal (a comment on the issue) and the human's approval first.
 
 ## Network
 
