@@ -363,7 +363,7 @@ export function stateAmountOf(
       // CR 121.1 (D-450): "for each card you've drawn this turn": the cards the controller of the effect has drawn so far this turn (`SeatState.cardsDrawnThisTurn`).
       return getSeat(state, ctx.controller).cardsDrawnThisTurn;
     case 'sacrificedAsCost': {
-      // CR 602.2b, 701.21a (D-581): "for each artifact sacrificed this way" in an activated ability whose cost sacrificed one or more permanents: the ability on the stack carries
+      // CR 602.2b, 701.21a (D-583): "for each artifact sacrificed this way" in an activated ability whose cost sacrificed one or more permanents: the ability on the stack carries
       // them, and its resolution reads them (`ResolutionContext.costSacrificed`, which an ability without such a cost does not have).
       if (ctx.costSacrificed !== undefined) return ctx.costSacrificed.length;
       // CR 118.8, 701.21a (D-491): "for each creature sacrificed this way": the permanents sacrificed to pay the additional cost of the spell that is the source, read from the spell

@@ -111,7 +111,7 @@ export function namedOptionPrompt(
   if (isRiotChoice(d)) return riotPrompt(d.sourceName, d.riotSoFar ?? []);
   if (isReplacementChoice(d)) return replacementPrompt(d.replacement);
   if (isEffectChoice(d)) {
-    // D-583 (CR 105.1, 608.2d): "Choose a color." offers the five colors of the game.
+    // D-585 (CR 105.1, 608.2d): "Choose a color." offers the five colors of the game.
     return d.options.join(',') === 'white,blue,black,red,green'
       ? `Choose a color for ${d.sourceName}.`
       : `Choose one for ${d.sourceName}: ${optionList(d.options)}.`;

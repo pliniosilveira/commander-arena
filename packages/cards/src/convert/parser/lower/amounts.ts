@@ -67,7 +67,7 @@ function statSource(
 }
 
 /**
- * D-581 (CR 602.2b, 701.21a): whether `amount` ("for each artifact sacrificed this way") counts what the cost of the activated ability sacrificed: the cost sacrifices one or more
+ * D-583 (CR 602.2b, 701.21a): whether `amount` ("for each artifact sacrificed this way") counts what the cost of the activated ability sacrificed: the cost sacrifices one or more
  * permanents of the kind the words name (or "permanent"), and the words are not "that many" (which counts what an instruction did).
  */
 export function isCostSacrificeCount(
@@ -411,7 +411,7 @@ export function lowerAmount(
     case 'thisWay': {
       // CR 608.2c: what an earlier instruction of this resolution did; `lowerSentences` checks that one of that kind
       // comes before it in the same list of effects and that the words name what it did.
-      // D-581 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" of an activated ability whose cost sacrificed one or more artifacts counts that cost; `lowerSentences`
+      // D-583 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" of an activated ability whose cost sacrificed one or more artifacts counts that cost; `lowerSentences`
       // has refused the text if an instruction of it sacrifices too.
       if (isCostSacrificeCount(amount, ctx)) {
         const costBlocked = needs('sacrificedAsCost');

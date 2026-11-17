@@ -199,7 +199,7 @@ export const COST_SACRIFICE = defineRule<IrCost>({
             'noun.self',
             'noun.a-permanent',
             'noun.x-permanents',
-            // D-581 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts", at least one of them.
+            // D-583 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts", at least one of them.
             'noun.one-or-more-permanents',
           ],
         }),

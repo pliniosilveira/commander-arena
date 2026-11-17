@@ -1,5 +1,5 @@
 /**
- * Effect rules of "Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (issue 258, D-583, D-584): the second sentence, which
+ * Effect rules of "Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (issue 258, D-585, D-586): the second sentence, which
  * names the color the sentence "Choose a color." (`effect.choose-color`) before it chose. The lowering (`lower/chosen-color-mana.ts`) reads the two sentences together.
  */
 import { literal, optional, pattern, satisfy, sequence } from '../../combinators';

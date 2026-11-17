@@ -1543,7 +1543,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...VRASKA_LOWERINGS,
   ...HASHATON_G5_LOWERINGS,
   ...HOFRI_LOWERINGS,
-  // Issue 258 (D-583): the sentence after "Choose a color.", reported alone (the pair is lowered by `lowerStep`).
+  // Issue 258 (D-585): the sentence after "Choose a color.", reported alone (the pair is lowered by `lowerStep`).
   ...CHOSEN_COLOR_MANA_LOWERINGS,
   // D-393, D-394 (Hashaton, group 9): the exile of a random card from a hand, then "put it onto the battlefield" and "cast it without paying its mana cost".
   ...HASHATON_G9_LOWERINGS,

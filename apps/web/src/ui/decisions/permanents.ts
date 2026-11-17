@@ -405,7 +405,7 @@ export function activationSacrifice(
   if (ability?.kind !== 'activated') return null;
   const cost = ability.cost.find((c) => c.kind === 'sacrifice');
   if (cost?.kind !== 'sacrifice' || 'kind' in cost.what) return null;
-  // D-581 (CR 602.2b): "Sacrifice one or more artifacts": at least one, as many as the player chooses.
+  // D-583 (CR 602.2b): "Sacrifice one or more artifacts": at least one, as many as the player chooses.
   if (cost.anyNumber === true && cost.atLeastOne === true) {
     return sacrificeWhat(cost.what, 1, false, true);
   }

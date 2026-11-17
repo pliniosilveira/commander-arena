@@ -102,7 +102,7 @@ export function sacrificeWhat(
   count = 1,
   /** D-488: "Sacrifice X creatures": the number is the X announced. */
   countX = false,
-  /** D-581: "Sacrifice one or more artifacts": at least one of them, chosen as the cost is paid. */
+  /** D-583: "Sacrifice one or more artifacts": at least one of them, chosen as the cost is paid. */
   oneOrMore = false,
 ): string {
   if ('kind' in what) return 'this';
@@ -146,7 +146,7 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
       // D-386: the additional cost of a spell, "Discard X cards".
       return 'Discard X cards';
     case 'sacrifice':
-      // D-581 (CR 602.2b): the cost of an activated ability that sacrifices one or more permanents, at least one.
+      // D-583 (CR 602.2b): the cost of an activated ability that sacrifices one or more permanents, at least one.
       if (cost.anyNumber === true && cost.atLeastOne === true) {
         return `Sacrifice ${sacrificeWhat(cost.what, 1, false, true)}`;
       }

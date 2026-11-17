@@ -1,4 +1,4 @@
-// Issue 258 (D-581 to D-585): the line of Radiant Lotus, "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact
+// Issue 258 (D-583 to D-587): the line of Radiant Lotus, "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact
 // sacrificed this way." (the parenthesis "(Activate only as an instant.)" is reminder text and leaves the line), through the whole pipeline, the near misses the grammar must not
 // read, and the features each lowering needs. The engine runs what is lowered in convert-grammar-engine-sacrifice-mana.test.ts.
 import { syntheticCard } from '@commander-arena/engine';

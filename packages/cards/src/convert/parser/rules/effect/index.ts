@@ -966,7 +966,7 @@ export const EFFECT_RULES = [
   ...DAWNBREAK_EFFECT_RULES,
   // Stage P68 (D-229): the Hofri Ghostforge deck.
   ...HOFRI_EFFECT_RULES,
-  // Issue 258 (D-583): "Target player adds three mana of the chosen color for each artifact sacrificed this way", the sentence after "Choose a color.".
+  // Issue 258 (D-585): "Target player adds three mana of the chosen color for each artifact sacrificed this way", the sentence after "Choose a color.".
   ...CHOSEN_COLOR_MANA_EFFECT_RULES,
   // Gisa deck, group 3 (issue 41, D-484): "each opponent chooses a permanent they control of each permanent type and sacrifices the rest".
   ...GISA_G3_EFFECT_RULES,

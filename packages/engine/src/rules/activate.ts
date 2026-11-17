@@ -403,7 +403,7 @@ function paySacrifice(state: GameState, events: GameEvent[]): Result {
       legal.length === 0 ? 'You have nothing to sacrifice' : 'You do not have enough to sacrifice',
     );
   }
-  // D-581 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts" asks for one to all of them, and nothing is asked when only one qualifies.
+  // D-583 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts" asks for one to all of them, and nothing is asked when only one qualifies.
   if (legal.length === costs.sacrificeCount) return sacrificeChosen(state, events, legal, true);
   return pause({ ...state, casting: { ...casting, stage: 'sacrifice' } }, events, {
     kind: 'choosePermanent',

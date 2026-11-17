@@ -1,4 +1,4 @@
-// Slice soak (issue 258, D-581 to D-585): whole games with the 'sacrificeMana' deck style (SYNTHETIC cards of the engine fixtures `synthetic-sacrifice-mana.ts`: an artifact that taps and
+// Slice soak (issue 258, D-583 to D-587): whole games with the 'sacrificeMana' deck style (SYNTHETIC cards of the engine fixtures `synthetic-sacrifice-mana.ts`: an artifact that taps and
 // sacrifices one or more artifacts to have its controller choose a color and a target player add three mana of it for each artifact sacrificed, a second one that draws a card for
 // each, a sorcery that makes three Treasure tokens, an instant that counters an activated ability and an artifact creature) between random agents, with CasualAgent and HeuristicAgent
 // in some seats. Every game finishes with a result, no fallback, no rejected action and consistent state after every action; the action log replays to the same final state; and, with the

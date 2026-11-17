@@ -556,7 +556,7 @@ function prepare(
     ...(costs.value.some((c) => c.kind === 'sacrifice' && c.countX === true)
       ? (['ability:sacrificeX'] as const)
       : []),
-    // D-581: "Sacrifice one or more artifacts".
+    // D-583: "Sacrifice one or more artifacts".
     ...(costs.value.some((c) => c.kind === 'sacrifice' && c.atLeastOne === true)
       ? (['ability:sacrificeOneOrMore'] as const)
       : []),
@@ -578,7 +578,7 @@ function prepare(
   if (!restrictions.ok) return restrictions;
   // A cost that sacrifices `~` leaves nothing for the effect to act on.
   ctx.selfGone = costs.value.some((c) => c.kind === 'sacrifice' && 'kind' in c.what);
-  // D-581 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" counts what a cost of "Sacrifice one or more artifacts" sacrificed.
+  // D-583 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" counts what a cost of "Sacrifice one or more artifacts" sacrificed.
   const oneOrMore = ability.costs.find(
     (c) => c.kind === 'sacrifice' && c.what.anyNumber === true && c.what.atLeastOne === true,
   );

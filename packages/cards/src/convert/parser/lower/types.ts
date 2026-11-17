@@ -38,7 +38,7 @@ export interface LowerContext {
    */
   selfGone: boolean;
   /**
-   * D-581 (CR 602.2b, 701.21a): the kind of permanent ("artifact", or "" for none that a word names) the cost of this activated ability sacrifices one or more of, or null when
+   * D-583 (CR 602.2b, 701.21a): the kind of permanent ("artifact", or "" for none that a word names) the cost of this activated ability sacrifices one or more of, or null when
    * its cost has no such sacrifice. "For each artifact sacrificed this way" in its text counts them (the engine's `sacrificedAsCost`), where no earlier instruction sacrificed.
    */
   costSacrifice: string | null;

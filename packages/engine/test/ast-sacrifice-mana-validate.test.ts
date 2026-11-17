@@ -1,5 +1,5 @@
 // validateCard for the nodes of "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way."
-// (D-581 to D-585): the cost `sacrifice` with `anyNumber` and `atLeastOne` in an activated ability, and the amount `sacrificedAsCost` read by it. Cards are SYNTHETIC or defined here.
+// (D-583 to D-587): the cost `sacrifice` with `anyNumber` and `atLeastOne` in an activated ability, and the amount `sacrificedAsCost` read by it. Cards are SYNTHETIC or defined here.
 import { describe, expect, test } from 'vitest';
 import type { Ability, Cost, Effect } from '../src/ast/types';
 import { validateCard } from '../src/ast/validate';

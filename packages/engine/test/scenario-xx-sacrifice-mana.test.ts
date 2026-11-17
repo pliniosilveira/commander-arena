@@ -1,4 +1,4 @@
-// "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (issue 258, D-581 to D-585): the
+// "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (issue 258, D-583 to D-587): the
 // SYNTHETIC Lotus Engine, Lotus Reader, Lotus Mint, Lotus Hush and Lotus Golem of `src/cards/fixtures/synthetic-sacrifice-mana.ts`. Pins: CR 602.2b and 701.21a (the permanents
 // sacrificed are chosen among those the player controls as the cost is paid, one or more: never none), CR 118.3 (a cost that can't be paid is not paid, so with no artifact to
 // sacrifice the ability is not offered), CR 602.5e (an ability that reads "Activate only as an instant" follows the timing of an instant: any time its controller has priority),

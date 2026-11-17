@@ -1,4 +1,4 @@
-// Issue 258 (D-581 to D-585): the REAL Oracle text of Radiant Lotus (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is compared
+// Issue 258 (D-583 to D-587): the REAL Oracle text of Radiant Lotus (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is compared
 // with the SYNTHETIC Lotus Engine of the engine fixtures the engine scenarios of `scenario-xx-sacrifice-mana.test.ts` run, and is played through applyAction, so the nodes the parser
 // writes for the real text are what the engine runs. Pins: CR 602.2b and 701.21a (one or more artifacts, chosen as the cost is paid), CR 605.1a (a targeted ability is not a mana
 // ability: it uses the stack), CR 608.2d (the color is chosen as the ability resolves), CR 106.4 (the mana goes to the pool of the target player), CR 602.5e (any time the player has

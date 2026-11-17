@@ -1,5 +1,5 @@
 /**
- * The words of "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (D-581, D-583) as pure
+ * The words of "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (D-583, D-585) as pure
  * models: the cost, the label of the ability, the prompt of the sacrifice question, read from the engine's SYNTHETIC cards so a wording that drifts from the AST fails here. No DOM.
  */
 import {

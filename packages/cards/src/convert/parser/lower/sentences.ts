@@ -1188,7 +1188,7 @@ function thisWaysAreSupported(
         if ((sentence.condition !== undefined && !otherwise) || clause.condition !== undefined) {
           return sentence;
         }
-        // D-581 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" in an ability whose cost sacrifices one or more artifacts counts that cost. An instruction
+        // D-583 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" in an ability whose cost sacrifices one or more artifacts counts that cost. An instruction
         // of the text that also sacrifices makes the words ambiguous, so it is refused, never guessed.
         if (isCostSacrificeCount(amount, ctx)) {
           if (before.some((earlier) => earlier.verb === 'sacrifice')) return sentence;
@@ -1441,7 +1441,7 @@ function lowerStep(
     steps.push({ effects: regenerated.value, replaceable: false });
     return { last: i };
   }
-  // "Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (D-583, CR 608.2d, 106.4, 605.1a): the two sentences are one `chooseOne`.
+  // "Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (D-585, CR 608.2d, 106.4, 605.1a): the two sentences are one `chooseOne`.
   const chosenColor = lowerChooseColorMana(sentence, sentences, i, ctx);
   if (chosenColor !== null) {
     if (!chosenColor.ok) return stop(chosenColor);

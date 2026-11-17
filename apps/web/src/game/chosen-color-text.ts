@@ -1,5 +1,5 @@
 /**
- * The words of "Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (D-583): the engine's `chooseOne` of the five colors, each
+ * The words of "Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (D-585): the engine's `chooseOne` of the five colors, each
  * option `addMana` of that color for the same player, read back as the two sentences of the card. Nothing is guessed: any other shape of `chooseOne` keeps its words (null here).
  */
 import type { Amount, Effect, PlayerSelector } from '@commander-arena/engine';

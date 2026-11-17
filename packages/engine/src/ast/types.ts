@@ -269,7 +269,7 @@ export type Amount =
    * spell the effect belongs to (the spell is the source of its own "When you cast this spell" ability, or of its own text), read from the spell on the stack or from its last-known
    * information once it has left (CR 113.7a). 0 when none was. Only in the abilities of a spell that name `castSpell` with `self` and in its own text, of a face whose additional
    * cost sacrifices any number of permanents (`validateCard`).
-   * D-581 (CR 602.2b, 701.21a): also the number of permanents sacrificed to pay the cost of the activated ability the effect belongs to ("Sacrifice one or more artifacts: ... for each
+   * D-583 (CR 602.2b, 701.21a): also the number of permanents sacrificed to pay the cost of the activated ability the effect belongs to ("Sacrifice one or more artifacts: ... for each
    * artifact sacrificed this way"), read from the resolving ability (`ResolutionContext.costSacrificed`); only in the effect of an activated ability whose cost sacrifices any number
    * of permanents (`Cost` `sacrifice` with `anyNumber` and `atLeastOne`).
    */
@@ -956,12 +956,12 @@ export type Cost =
        * permanents they control that match, none to all of them (none is the "may" declined), as the cost is paid after the mana. The spell is castable with none. Only an additional
        * cost of a spell (`CardFace.additionalCosts`), alone as its sacrifice, with a filter and never with `this`, `count` or `countX`. What was sacrificed is what the amount and
        * the condition `sacrificedAsCost` read.
-       * D-581 (CR 602.2b, 701.21a): with `atLeastOne`, "Sacrifice one or more artifacts" in the cost of an activated ability (not a mana ability): the player chooses one to all of
+       * D-583 (CR 602.2b, 701.21a): with `atLeastOne`, "Sacrifice one or more artifacts" in the cost of an activated ability (not a mana ability): the player chooses one to all of
        * the permanents they control that match as the cost is paid (nothing is chosen for zero, so with none that match the ability can't be activated, CR 118.3). In an activated ability `anyNumber` is
        * valid only with `atLeastOne`, and an additional cost of a spell has no `atLeastOne`.
        */
       readonly anyNumber?: true;
-      /** D-581: with `anyNumber`, at least one permanent: "Sacrifice one or more artifacts" as the cost of an activated ability. Not for an additional cost of a spell. */
+      /** D-583: with `anyNumber`, at least one permanent: "Sacrifice one or more artifacts" as the cost of an activated ability. Not for an additional cost of a spell. */
       readonly atLeastOne?: true;
     }
   /**

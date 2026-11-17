@@ -74,7 +74,7 @@ export interface ConditionContext {
    */
   readonly targets?: readonly ChosenTarget[];
   readonly moved?: readonly ObjectId[];
-  /** The permanents sacrificed to pay the cost of the activated ability that is resolving, for `sacrificedAsCost` (D-581, CR 602.2b). Absent for any other spell or ability. */
+  /** The permanents sacrificed to pay the cost of the activated ability that is resolving, for `sacrificedAsCost` (D-583, CR 602.2b). Absent for any other spell or ability. */
   readonly costSacrificed?: readonly ObjectId[];
   readonly performed?: number;
   /** The result of the latest die the resolution rolled, for `dieResult` (D-271). Absent where none was rolled, which fails that condition closed. */
@@ -144,7 +144,7 @@ export function evaluateCondition(
     }
     case 'sacrificedAsCost': {
       // CR 118.8, 603.4 (D-491): "if you sacrificed one or more creatures to cast it": the spell carries the sacrificed permanents on the stack, or its last-known information
-      // does once it has left (CR 113.7a). D-581 (CR 602.2b): an activated ability reads what its own cost sacrificed from its resolution.
+      // does once it has left (CR 113.7a). D-583 (CR 602.2b): an activated ability reads what its own cost sacrificed from its resolution.
       if (ctx.costSacrificed !== undefined) return ctx.costSacrificed.length > 0;
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return (source?.stack?.sacrificedAsCost?.length ?? 0) > 0;

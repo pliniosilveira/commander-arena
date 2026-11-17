@@ -1,5 +1,5 @@
 /**
- * "Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (issue 258, D-583, D-584): the two sentences are one instruction of
+ * "Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (issue 258, D-585, D-586): the two sentences are one instruction of
  * the engine, a `chooseOne` of the five colors whose options each add that color's mana to the pool of the target player. The first sentence makes no instruction of its own
  * (`lowerChooseColorMana` reads it with the one after it), and the second alone has no color to name (`ADD_MANA_CHOSEN_COLOR` reports it, never guesses).
  */

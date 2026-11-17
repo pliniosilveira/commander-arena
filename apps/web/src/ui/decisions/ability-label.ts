@@ -852,7 +852,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         : `Whenever ${object(effect.objects)} deals combat damage to a player this combat, ${lower(inner)}`;
     }
     case 'chooseOne': {
-      // D-583 (CR 106.4, 608.2d): "Choose a color. Target player adds three mana of that color for each artifact sacrificed this way".
+      // D-585 (CR 106.4, 608.2d): "Choose a color. Target player adds three mana of that color for each artifact sacrificed this way".
       const colored = chosenColorManaText(effect, (player) => recipientText(player, ability, self));
       if (colored !== null) return colored;
       const choices = effect.options.map((option) => option.label).join('; ');

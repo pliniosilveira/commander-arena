@@ -66,12 +66,12 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
             'a spell sacrifices one permanent as an additional cost: no count (D-133)',
           );
         }
-        // D-581: "one or more" is the cost of an activated ability; a spell's optional sacrifice may choose none.
+        // D-583: "one or more" is the cost of an activated ability; a spell's optional sacrifice may choose none.
         if (cost.atLeastOne !== undefined) {
           issue(
             out,
             `${p}.atLeastOne`,
-            'an additional cost of a spell may sacrifice any number, none included: no atLeastOne (D-581)',
+            'an additional cost of a spell may sacrifice any number, none included: no atLeastOne (D-583)',
           );
         }
         if (cost.countX === true && cost.anyNumber === true) {

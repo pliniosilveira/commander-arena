@@ -64,7 +64,7 @@ export interface CostBreakdown {
   readonly sacrifice: 'this' | ObjectFilter | null;
   /** How many of them (D-133, "Sacrifice two artifacts"; D-488, "Sacrifice X creatures": the X announced, 0 for none); 1 for the source and for an ordinary cost. */
   readonly sacrificeCount: number;
-  /** D-581, "Sacrifice one or more artifacts": the player sacrifices one to all of the permanents that match (`sacrificeCount` is the least, 1). */
+  /** D-583, "Sacrifice one or more artifacts": the player sacrifices one to all of the permanents that match (`sacrificeCount` is the least, 1). */
   readonly sacrificeAny: boolean;
   /** The permanents to return to their owners' hands (D-139): the source itself, or a choice among a filter's matches; null for none. */
   readonly bounce: 'this' | ObjectFilter | null;
@@ -177,7 +177,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         sacrifice = 'kind' in cost.what ? 'this' : cost.what;
         // D-488 (CR 107.3a, 602.2b): "Sacrifice X creatures" is X permanents, the X announced for the ability (none for X = 0).
         sacrificeCount = cost.countX === true ? x : (cost.count ?? 1);
-        // D-581 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts": at least one, chosen as the cost is paid.
+        // D-583 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts": at least one, chosen as the cost is paid.
         sacrificeAny = cost.anyNumber === true && cost.atLeastOne === true;
         break;
       case 'exileFromGraveyard':

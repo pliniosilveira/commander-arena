@@ -1972,7 +1972,7 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         }
       }
       if (cost.atLeastOne !== undefined) {
-        // D-581 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts": at least one of the permanents that match, so it goes with `anyNumber`; where it may stand is checked there.
+        // D-583 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts": at least one of the permanents that match, so it goes with `anyNumber`; where it may stand is checked there.
         if (cost.atLeastOne !== true || cost.anyNumber !== true) {
           issue(out, `${path}.atLeastOne`, 'atLeastOne is true and goes with anyNumber');
         }

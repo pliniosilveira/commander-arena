@@ -3003,7 +3003,7 @@ export const HYLDA_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 
 /**
  * The SYNTHETIC cards of "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (issue 258,
- * D-581 to D-585): the artifact that does it, a second artifact with the same cost that draws, a sorcery that makes three Treasure tokens (artifacts to give up), an instant that
+ * D-583 to D-587): the artifact that does it, a second artifact with the same cost that draws, a sorcery that makes three Treasure tokens (artifacts to give up), an instant that
  * counters an activated ability and an artifact creature. They ask a target, `choosePermanent` of a sacrifice of one to all of the artifacts, and `chooseOption` of the five colors as an
  * ability resolves: questions games-100 expects only from dedicated styles.
  */
@@ -4176,7 +4176,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(GISA_G2_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 3 cards (issue 42) ask X, modes, tap-or-untap choices and targets with different controllers, and fetch a land: a style of their own.
   .filter((card) => !(HYLDA_G3_NAMES as readonly string[]).includes(card.name))
-  // The cards of the sacrifice-for-mana group (issue 258, D-581 to D-585) ask a target, the artifacts to sacrifice (one to all) and a color as an ability resolves: a style of their own.
+  // The cards of the sacrifice-for-mana group (issue 258, D-583 to D-587) ask a target, the artifacts to sacrifice (one to all) and a color as an ability resolves: a style of their own.
   .filter((card) => !(SACRIFICE_MANA_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 1 cards (D-472 to D-476) ask which Zombies to tap, which card to return from the graveyard and the targets of their abilities: a style of their own.
   .filter((card) => !(GISA_G1_NAMES as readonly string[]).includes(card.name))

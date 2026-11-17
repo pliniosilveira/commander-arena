@@ -121,7 +121,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificeX',
     // D-491: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
     'optionalSacrifice',
-    // D-581: "{T}, Sacrifice one or more artifacts: ..." (`Cost` `sacrifice` with `anyNumber` and `atLeastOne` in an activated ability, CR 602.2b, 701.21a).
+    // D-583: "{T}, Sacrifice one or more artifacts: ..." (`Cost` `sacrifice` with `anyNumber` and `atLeastOne` in an activated ability, CR 602.2b, 701.21a).
     'sacrificeOneOrMore',
     // D-511: "You may pay {1}. When you do, choose one —" (a `reflexive` effect with `modes`, and with `afterPayment` inside a `mayPay`, CR 603.12, 700.2b).
     'reflexiveModal',
@@ -1144,7 +1144,7 @@ export const ABILITY_FEATURES = [
   'sacrificeX',
   /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-491, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
   'optionalSacrifice',
-  /** "{T}, Sacrifice one or more artifacts: ..." (D-581, CR 602.2b, 701.21a, 118.3): a `sacrifice` cost with `anyNumber` and `atLeastOne` in an activated ability, chosen as the cost is paid; `sacrificedAsCost` counts what was sacrificed. */
+  /** "{T}, Sacrifice one or more artifacts: ..." (D-583, CR 602.2b, 701.21a, 118.3): a `sacrifice` cost with `anyNumber` and `atLeastOne` in an activated ability, chosen as the cost is paid; `sacrificedAsCost` counts what was sacrificed. */
   'sacrificeOneOrMore',
   /** "When you do, choose one —" (CR 603.12, 700.2b, 603.3c, D-511): a `reflexive` effect with `modes` and `chooseModes`. */
   'reflexiveModal',
@@ -1639,7 +1639,7 @@ export const AMOUNT_KINDS = [
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
-  /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491) or the cost of an activated ability (CR 602.2b, D-581): the engine's `sacrificedAsCost`. */
+  /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491) or the cost of an activated ability (CR 602.2b, D-583): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
   /** "For each card exiled this way" for a spell's additional cost (D-575): the engine's `exiledAsCost`. */
   'exiledAsCost',
