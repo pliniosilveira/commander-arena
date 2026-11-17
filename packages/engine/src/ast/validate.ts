@@ -166,6 +166,7 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
     case 'protection':
       // D-259 (CR 903.4f): "each color that's not in your commander's color identity" names no color: the engine works them out.
       if (k.from === 'colorsNotInCommanderIdentity') break;
+      if (k.from === 'ringBearer') break;
       // D-376 (CR 702.16a): "the chosen card type" is read from the permanent's own choice (the card must ask it, `validate-chosen.ts`); named card types are checked.
       if (k.from === 'chosenCardType') break;
       if (k.from === 'cardType') {

@@ -8,6 +8,7 @@ import type { CardDefinition } from '../definition';
 import { BASIC_LAND_FIXTURES } from './basic-lands';
 import { CREATURE_FIXTURES } from './creatures';
 import { FANDANIEL_FIXTURE } from './fandaniel';
+import { LORD_OF_THE_NAZGUL_FIXTURE } from './lord-of-the-nazgul';
 import { MANA_SOURCE_FIXTURES } from './mana-sources';
 import { SPELL_FIXTURES } from './spells';
 import { SYNTHETIC_PREFIX, syntheticCard } from './synthetic';
@@ -19,6 +20,7 @@ export const FIXTURE_CARDS: Readonly<Record<string, CardDefinition>> = Object.fr
     ...BASIC_LAND_FIXTURES,
     ...CREATURE_FIXTURES,
     FANDANIEL_FIXTURE,
+    LORD_OF_THE_NAZGUL_FIXTURE,
     ...MANA_SOURCE_FIXTURES,
     ...SPELL_FIXTURES,
   ].map((card) => [card.name, card]),

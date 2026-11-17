@@ -1,10 +1,9 @@
 # Roadmap: deferred work and known limitations
 
-## Lord of the Nazgûl deck leftovers (issue 57, D-533 to D-546)
+## Lord of the Nazgûl deck work and parser limits (issue 57, D-533 to D-547)
 
-- `Lazotep Plating` was already supported on current `main`; the sixteen cards through `March of Swirling Mist` plus `Fandaniel, Telophoroi Ascian` now read and run. The current corpus records 18 of the 21 issue cards supported and 3 unsupported.
-- Remaining cards: `Lord of the Nazgûl`, `Maskwood Nexus`, and `Sauron's Ransom`. The measured support status is the acceptance-card section of `packages/cards/test/fixtures/corpus/golden.expected.json`.
-- `March of Swirling Mist` now parses and runs (D-545). `Fandaniel, Telophoroi Ascian` runs from its approved hand-written engine fixture (D-546), including per-opponent choice and decliner-only life loss. The general parser still does not read the full “each opponent may sacrifice a nontoken creature of their choice” form, so parser-only import remains unsupported; the real card fixture and engine scenarios are tested. The Phasing keyword is still not built or needed. Three approved designs remain queued; see `docs/design/lord-of-the-nazgul-remaining-subsystems.md`. `Into the Flood Maw` uses the generic tapped Fish Gift path (D-539).
+- `Lazotep Plating` was already supported on current `main`; the seventeen cards through `Fandaniel, Telophoroi Ascian` and Lord of the Nazgûl now run through the app's default import path. Together these cover 19 of the 21 issue cards; `Maskwood Nexus` and `Sauron's Ransom` remain.
+- The two cards with hand-written fixtures remain unsupported by grammar-only import: Fandaniel's full may-sacrifice clause (D-546) and Lord of the Nazgûl's Ring-bearer protection and group base-power clause (D-547). Their engine scenarios and default-import acceptance tests pass. `March of Swirling Mist` parses and runs (D-545); the Phasing keyword is still not built or needed. The remaining two approved designs are in `docs/design/lord-of-the-nazgul-remaining-subsystems.md`. `Into the Flood Maw` uses the generic tapped Fish Gift path (D-539).
 - The whole deck was not measured by `pnpm corpus:decks`: the Scryfall bulk file is not in this workspace. The card data is from the issue author's description; no rulings were independently checked.
 
 What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the decisions are in `docs/DECISIONS.md`, the mechanics in `docs/MECHANICS.md`, the milestone reports in `docs/progress/`. For what is happening now, read `docs/STATUS.md`; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.

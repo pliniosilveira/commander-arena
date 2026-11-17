@@ -3368,6 +3368,8 @@ export type Keyword =
    */
   | { readonly kind: 'protection'; readonly from: 'cardType'; readonly types: readonly CardType[] }
   | { readonly kind: 'protection'; readonly from: 'chosenCardType' }
+  /** Protection from a creature that currently has the Ring-bearer designation (D-547). */
+  | { readonly kind: 'protection'; readonly from: 'ringBearer' }
   /**
    * "Target creature you control gains protection from the color of your choice until end of turn" (CR 702.16, 608.2d; D-451, the Feather deck's Gods Willing
    * and Shelter): the controller of the spell or ability chooses one of the five colors as the effect resolves (a `chooseOption` decision of purpose

@@ -11,4 +11,5 @@
 // 107: Preserve the target count that a cast trigger reads when the spell is cast.
 // 108: Pay an optional hand-exile spell cost after mana and expose its chosen count to cost reductions (D-545).
 // 109: Track the player who declined a playersMay choice for its otherwise effect (D-546).
-export const ENGINE_VERSION = 109;
+// 110: Support protection from the Ring-bearer designation and Lord of the Nazgûl's Wraith threshold (D-547).
+export const ENGINE_VERSION = 110;

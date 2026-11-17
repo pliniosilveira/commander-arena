@@ -23,11 +23,12 @@ Issue data is from the author's description. The 21 cards below were added to th
 - [x] Group 10: `March of Swirling Mist` chooses an optional number of blue cards to exile before X, applies its {2}-per-card reduction, and phases out up to X targets (D-545, `ENGINE_VERSION` 108, `PARSER_VERSION` 119).
 - [x] The owner approved all five remaining subsystem designs; the approved designs are now in `docs/design/lord-of-the-nazgul-remaining-subsystems.md`.
 - [x] Group 11: `Fandaniel, Telophoroi Ascian` runs from its hand-written engine fixture (D-546, `ENGINE_VERSION` 109). `playersMay.otherwise` identifies the player who declined, and an unavailable sacrifice choice declines automatically. The general parser still does not read the full may-sacrifice phrase.
+- [x] Group 12: `Lord of the Nazgûl` grants Wraiths protection from Ring-bearers, creates a 3/3 Wraith with menace for each instant or sorcery cast, and sets its Wraiths to base 9/9 through end of turn when the post-creation count reaches nine (D-547, `ENGINE_VERSION` 110). The full card uses its hand-written engine fixture because the general parser does not read its protection and base-power clauses.
 - [ ] Rerun `UPDATE_GOLDEN=1 pnpm exec vitest run packages/cards/test/golden.test.ts` after each parser group.
-- [ ] Implement the three approved subsystems still queued: `Lord of the Nazgûl`, `Maskwood Nexus`, and `Sauron's Ransom`.
+- [ ] Implement the two approved subsystems still queued: `Maskwood Nexus` and `Sauron's Ransom`.
 - [ ] Run `pnpm corpus:decks --deck decks/lord-of-the-nazgul.txt` with the owner's bulk file; unavailable in this workspace.
 
-At intake, current `main` already supported `Lazotep Plating`. Completed groups through 11 bring the count to 18 of the 21 issue cards supported; three remain unsupported while their approved designs are implemented. No deck-wide coverage result is claimed.
+At intake, current `main` already supported `Lazotep Plating`. Completed groups through 12 bring the app's default import path to 19 of the 21 issue cards supported; `Maskwood Nexus` and `Sauron's Ransom` remain. The two hand-written fixtures are supported on the app path while still reported unsupported by the grammar-only golden snapshot. No deck-wide coverage result is claimed.
 
 ## The Lord of the Nazgûl deck, issue 57, group 7: Drown in the Loch (D-541)
 

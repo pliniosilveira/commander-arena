@@ -223,6 +223,16 @@ const FACTS: Record<string, Facts> = {
     identity: ['B'],
     text: "Whenever you cast an instant or sorcery spell, surveil 1.\nAt the beginning of your end step, each opponent may sacrifice a nontoken creature of their choice. Each opponent who doesn't loses 2 life for each instant and sorcery card in your graveyard.",
   },
+  'Lord of the Nazgûl': {
+    cost: ['3', 'U', 'B'],
+    supertypes: ['legendary'],
+    types: ['creature'],
+    subtypes: ['Wraith', 'Noble'],
+    pt: [4, 3],
+    colors: ['U', 'B'],
+    identity: ['U', 'B'],
+    text: 'Flying\nWraiths you control have protection from Ring-bearers.\nWhenever you cast an instant or sorcery spell, create a 3/3 black Wraith creature token with menace. Then if you control nine or more Wraiths, Wraiths you control have base power and toughness 9/9 until end of turn.',
+  },
   'Wall of Stone': {
     cost: ['1', 'R', 'R'],
     types: ['creature'],

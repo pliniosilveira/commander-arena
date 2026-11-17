@@ -16,6 +16,28 @@ const game = (...opponentPermanents: string[]) =>
     .build();
 
 describe('the player who declines a choice', () => {
+  test('casting an instant or sorcery triggers Fandaniel and asks to surveil', () => {
+    const g = scenario()
+      .seat(0)
+      .hand('Divination')
+      .battlefield(WARDEN)
+      .pool('U')
+      .pool('U')
+      .pool('U')
+      .library('Island', 'Swamp')
+      .seat(1)
+      .library('Island')
+      .at('precombatMain')
+      .build();
+
+    g.act(0).cast('Divination', { pay: true });
+    g.passAll();
+    expect(g.state.pending?.kind).toBe('arrangeCards');
+    if (g.state.pending?.kind === 'arrangeCards') {
+      expect(g.state.pending.purpose).toBe('surveil');
+    }
+  });
+
   test('loses life based on the ability controller’s graveyard', () => {
     const g = game('Grizzly Bears');
     g.advanceTo('end');

@@ -28,7 +28,7 @@ export const FANDANIEL_FIXTURE: CardDefinition = singleFace({
       kind: 'triggered',
       trigger: {
         kind: 'castSpell',
-        filter: INSTANT_OR_SORCERY,
+        filter: { ...INSTANT_OR_SORCERY, stackKind: 'spell' },
         by: 'you',
       },
       effect: { kind: 'surveil', count: 1 },
