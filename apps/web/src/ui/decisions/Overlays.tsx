@@ -10,7 +10,7 @@ import {
   type ObjectId,
   type PendingDecision,
 } from '@commander-arena/engine';
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { turnUpPayDetail } from '../../game/face-down-text';
 import { specialPayDetail } from '../../game/later-text';
 import { ManaCost } from '../mana';
@@ -71,25 +71,19 @@ function Hand({
   onPick?: (id: ObjectId) => void;
 }) {
   const cards = myHand(view).filter((o) => ids.includes(o.id));
-  // Issue 48: whole cards, as large as the dialog allows. Up to four cards share one row; more go
-  // on two. The CSS (`.dec-hand-grid`) turns the row and the screen height into the card width.
-  const rows = cards.length > 4 ? 2 : 1;
-  const perRow = Math.max(1, Math.ceil(cards.length / rows));
-  const style = { '--hand-per': perRow, '--hand-rows': rows } as CSSProperties;
+  // Issue 48: whole cards in one row that scrolls sideways (`.dec-hand-grid` sizes them).
   return (
-    <div className="dec-hand-whole">
-      <div className="dec-hand dec-hand-grid" style={style}>
-        {cards.map((card) => (
-          <MiniCard
-            key={card.id}
-            card={card}
-            width="var(--card-w)"
-            full
-            selected={selected.includes(card.id)}
-            onClick={onPick === undefined ? undefined : () => onPick(card.id)}
-          />
-        ))}
-      </div>
+    <div className="dec-hand dec-hand-grid">
+      {cards.map((card) => (
+        <MiniCard
+          key={card.id}
+          card={card}
+          width="var(--card-w)"
+          full
+          selected={selected.includes(card.id)}
+          onClick={onPick === undefined ? undefined : () => onPick(card.id)}
+        />
+      ))}
     </div>
   );
 }
@@ -129,7 +123,7 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
     mulligan: (d) => {
       const taken = view.seats[view.viewer]?.mulligans ?? 0;
       return (
-        <Dialog label="Opening hand" className="dec-mulligan">
+        <Dialog label="Opening hand" className="dec-mulligan" popup>
           <h2 className="dec-title">Your opening hand</h2>
           <p className="dec-sub">
             {taken === 0 ? 'First hand.' : `Mulligans taken: ${taken}.`}{' '}
@@ -145,7 +139,7 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
     },
 
     mulliganBottom: (d) => (
-      <Dialog label={model.bar.prompt} className="dec-mulligan">
+      <Dialog label={model.bar.prompt} className="dec-mulligan" popup>
         <h2 className="dec-title">{model.bar.prompt}</h2>
         <p className="dec-sub dec-pick-hint">
           Click {d.count === 1 ? 'the card' : `${d.count} cards`} below to choose, then press
@@ -165,7 +159,7 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
     ),
 
     discard: (d) => (
-      <Dialog label={model.bar.prompt} className="dec-mulligan">
+      <Dialog label={model.bar.prompt} className="dec-mulligan" popup>
         <h2 className="dec-title">{model.bar.prompt}</h2>
         <p className="dec-sub dec-pick-hint">
           Click {d.count === 1 ? 'the card' : `${d.count} cards`} below to choose, then press
