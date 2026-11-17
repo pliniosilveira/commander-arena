@@ -5,6 +5,7 @@
 import type { ControlDuration } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
 import { type Effects, eachObject, failure } from './clauses';
+import { playerSelectorOf } from './nouns';
 import type { Lowering } from './types';
 
 /** "It" or "that artifact" may be the permanent whose event caused the trigger (D-133). */
@@ -34,10 +35,23 @@ export const GAIN_CONTROL: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const duration = durationOf(clause);
     if (duration === null) return failure(clause);
+    const playerArg = clause.args.player;
+    const player =
+      playerArg === undefined
+        ? undefined
+        : playerArg.kind === 'noun'
+          ? playerSelectorOf(playerArg, ctx)
+          : failure(clause);
+    if (player !== undefined && !player.ok) return player;
     return eachObject(
       clause,
       ctx,
-      (objects) => ({ kind: 'gainControl', objects, duration }),
+      (objects) => ({
+        kind: 'gainControl',
+        objects,
+        ...(player === undefined ? {} : { player: player.value }),
+        duration,
+      }),
       'objects',
       TRIGGER_SUBJECT,
     );

@@ -321,6 +321,8 @@ export interface DeclareBlockersDecision extends DecisionBase {
   readonly candidates: readonly {
     readonly blocker: ObjectId;
     readonly canBlock: readonly ObjectId[];
+    /** This creature must block this turn if able (D-572). */
+    readonly mustBlock?: true;
   }[];
   /**
    * What blocking costs (D-149, CR 509.1d), present only when some permanent taxes it ("As long as this creature is attacking, creatures can't block
@@ -497,6 +499,7 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'lookTake'
     | 'cast'
     | 'behold'
+    | 'additionalExile'
     | 'lookSplit'
     | 'reveal'
     | 'split'
@@ -820,6 +823,9 @@ export interface ChooseOptionDecision extends DecisionBase {
     readonly otherTo: 'hand' | 'graveyard';
     readonly separator: SeatId;
     readonly receiver: SeatId;
+    /** Which pile is face down and its size; the chooser's view must omit its object IDs (D-579). */
+    readonly faceDownPile?: 1 | 2;
+    readonly faceDownCount?: number;
   };
   readonly source: ObjectId;
   readonly sourceName: string;

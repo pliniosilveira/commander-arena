@@ -67,31 +67,100 @@ export function withinAttackBudget(
 }
 
 /**
- * CR 509.1c (D-206): an attacker that must be blocked if able is blocked by as many creatures as it needs (one, two for menace), added to the
- * declaration first, from the creatures that can block it and are not blocking yet. Every agent's declaration goes through here.
+ * CR 509.1c (D-206), 509.1b (D-572): maximize the satisfiable attacker and blocker requirements together. The decision sets are small, so
+ * enumerate legal assignments for the free blockers while keeping the agent's existing choices fixed.
  */
 export function withRequiredBlocks(
   d: DeclareBlockersDecision,
   blocks: readonly { blocker: ObjectId; attacker: ObjectId }[],
 ): { blocker: ObjectId; attacker: ObjectId }[] {
-  const out = [...blocks];
-  const used = new Set(out.map((b) => b.blocker));
-  const added: { blocker: ObjectId; attacker: ObjectId }[] = [];
-  for (const a of d.attackers) {
-    if (a.mustBeBlocked !== true) continue;
-    const have = out.filter((b) => b.attacker === a.attacker).length;
-    if (have >= a.minBlockers) continue;
-    const free = d.candidates.filter(
-      (c) => !used.has(c.blocker) && c.canBlock.includes(a.attacker),
-    );
-    if (have + free.length < a.minBlockers) continue;
-    // A creature that blocks something else already is not moved: the ones that were free are used.
-    for (const c of free.slice(0, a.minBlockers - have)) {
-      used.add(c.blocker);
-      added.push({ blocker: c.blocker, attacker: a.attacker });
-    }
+  if (
+    !d.attackers.some((a) => a.mustBeBlocked === true) &&
+    !d.candidates.some((c) => c.mustBlock === true)
+  ) {
+    return [...blocks];
   }
-  return [...added, ...out];
+  const fixed = [...blocks];
+  const requiredAttackers = d.attackers.filter((a) => a.mustBeBlocked === true);
+  const requiredBlockers = d.candidates.filter((c) => c.mustBlock === true);
+  const supportTargets = new Set(requiredBlockers.flatMap((c) => c.canBlock));
+  const score = (assignment: readonly { blocker: ObjectId; attacker: ObjectId }[]) =>
+    requiredAttackers.filter(
+      (a) => assignment.filter((b) => b.attacker === a.attacker).length >= a.minBlockers,
+    ).length +
+    requiredBlockers.filter(
+      (c) => c.mustBlock === true && assignment.some((b) => b.blocker === c.blocker),
+    ).length;
+  const valid = (assignment: readonly { blocker: ObjectId; attacker: ObjectId }[]) =>
+    d.attackers.every((a) => {
+      const count = assignment.filter((b) => b.attacker === a.attacker).length;
+      return (
+        count === 0 ||
+        (count >= a.minBlockers && (a.maxBlockers === undefined || count <= a.maxBlockers))
+      );
+    });
+  const total = requiredAttackers.length + requiredBlockers.length;
+  const fixedCounts = new Map<ObjectId, number>();
+  for (const block of fixed)
+    fixedCounts.set(block.attacker, (fixedCounts.get(block.attacker) ?? 0) + 1);
+  const normalizedFixed = fixed.filter((block) => {
+    const attacker = d.attackers.find((a) => a.attacker === block.attacker);
+    const count = fixedCounts.get(block.attacker) ?? 0;
+    return (
+      attacker === undefined ||
+      (count >= attacker.minBlockers &&
+        (attacker.maxBlockers === undefined || count <= attacker.maxBlockers))
+    );
+  });
+  const fixedValid = valid(normalizedFixed);
+  const used = new Set(normalizedFixed.map((b) => b.blocker));
+  const free = d.candidates.filter(
+    (c) =>
+      !used.has(c.blocker) &&
+      (c.mustBlock === true ||
+        c.canBlock.some(
+          (attacker) =>
+            requiredAttackers.some((a) => a.attacker === attacker) || supportTargets.has(attacker),
+        )),
+  );
+  free.sort((a, b) => Number(b.mustBlock === true) - Number(a.mustBlock === true));
+  let best = [...normalizedFixed];
+  let bestScore = fixedValid ? score(best) : -1;
+  let complete = bestScore === total;
+  const attackerIds = d.attackers.map((a) => a.attacker);
+  const visited = new Set<string>();
+  const search = (index: number, assignment: { blocker: ObjectId; attacker: ObjectId }[]) => {
+    if (complete) return;
+    const key = `${index}|${attackerIds
+      .map((attacker) => assignment.filter((b) => b.attacker === attacker).length)
+      .join(
+        ',',
+      )}|${requiredBlockers.filter((c) => assignment.some((b) => b.blocker === c.blocker)).length}`;
+    if (visited.has(key)) return;
+    visited.add(key);
+    if (index === free.length) {
+      if (valid(assignment) && score(assignment) > bestScore) {
+        best = [...assignment];
+        bestScore = score(assignment);
+        complete = bestScore === total;
+      }
+      return;
+    }
+    const candidate = free[index];
+    if (candidate === undefined) return;
+    for (const attacker of candidate.canBlock) {
+      const restriction = d.attackers.find((a) => a.attacker === attacker);
+      const count = assignment.filter((b) => b.attacker === attacker).length;
+      if (restriction?.maxBlockers !== undefined && count >= restriction.maxBlockers) continue;
+      assignment.push({ blocker: candidate.blocker, attacker });
+      search(index + 1, assignment);
+      assignment.pop();
+      if (complete) return;
+    }
+    search(index + 1, assignment);
+  };
+  search(0, normalizedFixed);
+  return [...best.filter((b) => !used.has(b.blocker)), ...normalizedFixed];
 }
 
 /**

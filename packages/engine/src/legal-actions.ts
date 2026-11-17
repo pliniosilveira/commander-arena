@@ -90,6 +90,79 @@ function triggerOrders(n: number): number[][] {
   return permutations(identity);
 }
 
+/** Find one legal declaration that satisfies as many blocker requirements as possible. */
+function requiredBlockDeclaration(
+  d: Extract<PendingDecision, { kind: 'declareBlockers' }>,
+): { blocker: ObjectId; attacker: ObjectId }[] {
+  const requiredAttackers = d.attackers.filter((a) => a.mustBeBlocked === true);
+  const requiredBlockers = d.candidates.filter((c) => c.mustBlock === true);
+  const targetsForRequiredBlockers = new Set(requiredBlockers.flatMap((c) => c.canBlock));
+  const candidates = d.candidates
+    .filter(
+      (c) =>
+        c.mustBlock === true ||
+        c.canBlock.some(
+          (attacker) =>
+            requiredAttackers.some((a) => a.attacker === attacker) ||
+            targetsForRequiredBlockers.has(attacker),
+        ),
+    )
+    .sort((a, b) => Number(b.mustBlock === true) - Number(a.mustBlock === true));
+  const score = (blocks: readonly { blocker: ObjectId; attacker: ObjectId }[]) =>
+    requiredAttackers.filter(
+      (a) => blocks.filter((b) => b.attacker === a.attacker).length >= a.minBlockers,
+    ).length + requiredBlockers.filter((c) => blocks.some((b) => b.blocker === c.blocker)).length;
+  const valid = (blocks: readonly { blocker: ObjectId; attacker: ObjectId }[]) =>
+    d.attackers.every((a) => {
+      const count = blocks.filter((b) => b.attacker === a.attacker).length;
+      return (
+        count === 0 ||
+        (count >= a.minBlockers && (a.maxBlockers === undefined || count <= a.maxBlockers))
+      );
+    });
+  const total = requiredAttackers.length + requiredBlockers.length;
+  let best: { blocker: ObjectId; attacker: ObjectId }[] = [];
+  let bestScore = 0;
+  let complete = total === 0;
+  const assignment: { blocker: ObjectId; attacker: ObjectId }[] = [];
+  const visited = new Set<string>();
+  const search = (index: number): void => {
+    if (complete) return;
+    const key = `${index}|${d.attackers
+      .map((a) => assignment.filter((b) => b.attacker === a.attacker).length)
+      .join(
+        ',',
+      )}|${requiredBlockers.filter((c) => assignment.some((b) => b.blocker === c.blocker)).length}`;
+    if (visited.has(key)) return;
+    visited.add(key);
+    if (index === candidates.length) {
+      if (valid(assignment)) {
+        const candidateScore = score(assignment);
+        if (candidateScore > bestScore) {
+          best = [...assignment];
+          bestScore = candidateScore;
+          complete = bestScore === total;
+        }
+      }
+      return;
+    }
+    const candidate = candidates[index];
+    if (candidate === undefined) return;
+    for (const attacker of candidate.canBlock) {
+      const limit = d.attackers.find((a) => a.attacker === attacker)?.maxBlockers;
+      const count = assignment.filter((b) => b.attacker === attacker).length;
+      if (limit !== undefined && count >= limit) continue;
+      assignment.push({ blocker: candidate.blocker, attacker });
+      search(index + 1);
+      assignment.pop();
+      if (complete) return;
+    }
+    search(index + 1);
+  };
+  search(0);
+  return best;
+}
+
 /**
  * Two ways to divide `total` among `n` targets, each getting at least 1: the rest on the last, the rest on the first (one way when they are the
  * same, none for n of 0 or a total that is too small).
@@ -394,9 +467,18 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
     case 'declareBlockers': {
       // Any legal assignment is accepted; the list holds no block and each single block.
       const minBlockers = new Map(d.attackers.map((a) => [a.attacker, a.minBlockers] as const));
+      const required = d.candidates.filter((c) => c.mustBlock === true);
+      const requiredAttackers = d.attackers.some((a) => a.mustBeBlocked === true);
+      if (required.length > 0 || requiredAttackers) {
+        return [
+          { kind: 'declareBlockers', blocks: requiredBlockDeclaration(d) },
+          { kind: 'concede' },
+        ];
+      }
       const single = d.candidates.flatMap((c) =>
         c.canBlock
           .filter((attacker) => (minBlockers.get(attacker) ?? 1) <= 1)
+          .filter(() => required.length === 0 || c.mustBlock === true)
           .map((attacker) => ({
             kind: 'declareBlockers' as const,
             blocks: [{ blocker: c.blocker, attacker }],
@@ -405,7 +487,7 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
       // D-149: a block costs mana when something taxes it; with nothing affordable only "no block" is listed.
       const canPay = d.blockCost === undefined || d.blockCost.affordable >= 1;
       return [
-        { kind: 'declareBlockers', blocks: [] },
+        ...(required.length === 0 ? [{ kind: 'declareBlockers' as const, blocks: [] }] : []),
         ...(canPay ? single : []),
         { kind: 'concede' },
       ];

@@ -144,7 +144,10 @@ export function compileLine(text: string, options: CompileOptions): LineResult {
     return {
       ok: true,
       kind: 'faceCosts',
-      costs: faceCosts.costs,
+      costs: {
+        ...faceCosts.costs,
+        ...(abilities.length === 0 ? {} : { abilities }),
+      },
       ruleId: faceCosts.rule,
       recognised,
     };

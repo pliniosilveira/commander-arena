@@ -271,6 +271,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.number-of': permanent((e) => `When ~ dies, create ${e}.`),
   'noun.self': spell((e) => `Put a +1/+1 counter on ${e}.`),
   'noun.a-permanent': spell((e) => `Sacrifice ${e}.`),
+  'noun.up-to-one-permanent': spell((e) => `Put two +1/+1 counters on ${e}.`),
+  'noun.up-to-graveyard-cards': spell((e) => `Return ${e} to your hand.`),
   'noun.any-target': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.player': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.target-spell': spell((e) => `Counter ${e}.`),
@@ -622,6 +624,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,
+  'trigger.you-attack-with-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
   'trigger.cast-or-copy': whenever,
   'noun.attacking-opponents': permanent((e) => `When ~ enters, ${e} get +1/+0 until end of turn.`),
@@ -703,6 +706,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.behold': spell((e) => `As an additional cost to cast ~, ${e}. Draw a card.`),
   // Group 5 (D-233): the exile of cards of the graveyard as a cost.
   'cost.exile-graveyard-cards': permanent((e) => `{1}, {T}, ${e}: Draw a card.`),
+  'cost.exile-any-hand': spell(
+    (e) => `As an additional cost to cast ~, you may ${e}. Draw a card.`,
+  ),
   'effect.mana-rider-scry-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
   'amount.for-each-commander-cast': permanent((e) => `Creatures you control get +1/+1 ${e}.`),
   'static.untap-in-others-step': asIs,

@@ -281,6 +281,8 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       return 'this spell';
     case 'target':
       return targetText(ability.targets?.find((t) => t.id === what.id));
+    case 'chosen':
+      return 'the chosen permanent';
     case 'each': {
       // D-517: "all creatures target player controls", the group of a player chosen as a target.
       const chosen = what.filter.controlledBy;
@@ -417,6 +419,8 @@ function recipientText(
       return "the player or planeswalker it's attacking";
     case 'triggerPlayer':
       return 'that player';
+    case 'declinedPlayer':
+      return 'the player who declined';
     case 'giftRecipient':
       // CR 702.174a (D-135): the opponent the caster promised the gift to.
       return 'the chosen player';
@@ -428,6 +432,7 @@ function recipientText(
     case 'all':
       return to.of.map((member) => recipientText(member, ability, self)).join(' and ');
     case 'target':
+    case 'chosen':
     case 'this':
     case 'thisSpell':
     case 'moved':
@@ -462,6 +467,7 @@ const RESTRICTION_EFFECT: Readonly<Record<Restriction, string>> = {
   cantBeBlockedByMoreThanOne: "can't be blocked by more than one creature",
   attacksEachCombat: 'attacks if able',
   mustBeBlocked: 'must be blocked if able',
+  mustBlock: 'must block this turn if able',
   doesntUntap: "doesn't untap",
   cantBeCountered: "can't be countered",
   cantActivateAbilities: "can't have its activated abilities activated",
@@ -577,6 +583,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the defending player', third: true };
     case 'triggerPlayer':
       return { who: 'that player', third: true };
+    case 'declinedPlayer':
+      return { who: 'the player who declined', third: true };
     case 'giftRecipient':
       return { who: 'the chosen player', third: true };
     case 'discardedThisWay':

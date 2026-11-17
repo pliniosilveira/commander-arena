@@ -87,6 +87,8 @@ export interface SpellCost {
   readonly behold: ObjectFilter | null;
   /** How many other cards of the caster's graveyard are exiled (Escape, CR 702.138a, D-124). */
   readonly exile: number;
+  /** Optional number of cards selected from hand for an additional exile cost, if present. */
+  readonly exileFromHand: ObjectFilter | null;
   /** The permanents tapped as part of the cost, or null (the `tapPermanents` alternative cost, D-149). */
   readonly tap: TapRequirement | null;
   /** D-351 (CR 609.4b): mana of any type can be spent on the spell, so any mana pays any symbol of `symbols`. */
@@ -349,6 +351,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   let sacrificeCount = 1;
   let discard = 0;
   let behold: ObjectFilter | null = null;
+  let exileFromHand: ObjectFilter | null = null;
   for (const c of additional) {
     if (c.kind === 'sacrifice' && !('kind' in c.what)) {
       // D-491: "you may sacrifice one or more creatures" is no requirement for casting the spell: it is asked as the cost is paid.
@@ -359,6 +362,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
       }
     } else if (c.kind === 'discard') discard += c.count;
     else if (c.kind === 'behold') behold = c.filter;
+    else if (c.kind === 'exileFromHand') exileFromHand = c.filter;
   }
   const life = lifeOf(additional) + (kicker === null ? 0 : lifeOf(kicker) * kicks) + perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
@@ -391,6 +395,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     discard,
     behold,
     exile,
+    exileFromHand,
     tap,
     ...(anyType ? { anyType: true as const } : {}),
   };
@@ -521,6 +526,7 @@ export function canPaySpellCost(
   if (cost.life > 0 && life < cost.life) return false;
   if (cost.discard > discardable(state, seat, spell.id).length) return false;
   if (cost.exile > exilable(state, seat, spell.id).length) return false;
+  // An optional exile cost can always be paid by choosing zero cards.
   if (cost.behold !== null && beholdCandidates(state, seat, spell.id, cost.behold).length === 0) {
     return false;
   }

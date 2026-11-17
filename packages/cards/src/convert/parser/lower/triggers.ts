@@ -514,9 +514,19 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (!filter.ok) return filter;
       // "an opponent casts their second spell each turn" (stage P68, D-229, CR 601.2i): the caster's nth spell of the turn.
       if (t.nth !== undefined) {
-        const missing = missingFeatures(['trigger:castNth']);
+        const missing = missingFeatures(
+          t.duringTurn === undefined
+            ? ['trigger:castNth']
+            : ['trigger:castNth', 'trigger:castDuringOpponentTurn'],
+        );
         if (missing.length > 0) return failure(t, missing);
-        return ok({ kind: 'castSpell', filter: filter.value, by, nth: t.nth });
+        return ok({
+          kind: 'castSpell',
+          filter: filter.value,
+          by,
+          nth: t.nth,
+          ...(t.duringTurn === undefined ? {} : { duringTurn: t.duringTurn }),
+        });
       }
       return ok({ kind: 'castSpell', filter: filter.value, by });
     }
@@ -814,18 +824,21 @@ function paysThatMuchLife(clause: IrClause): boolean {
  */
 function eventAmountThatMany(ability: Triggered): Triggered {
   const events = [ability.trigger, ...(ability.trigger.alternatives ?? [])];
-  if (
-    ability.modal !== undefined ||
-    !events.every((e) => e.event === 'lifeGained' || e.event === 'noncombatDamageDealt')
-  ) {
-    return ability;
-  }
+  if (ability.modal !== undefined) return ability;
+  const castTargetCount = events.every(
+    (e) => e.event === 'cast' && e.subject?.filter.targetCountAtLeast !== undefined,
+  );
+  const eventDamage = events.every(
+    (e) => e.event === 'lifeGained' || e.event === 'noncombatDamageDealt',
+  );
+  if (!castTargetCount && !eventDamage) return ability;
+  const eventAmount = castTargetCount ? 'triggerTargetCount' : 'triggerDamage';
   let counted = false;
   const retarget = (amount: IrAmount): IrAmount => {
     switch (amount.kind) {
       case 'thisWay':
         return amount.thatMany === true && !counted
-          ? { kind: 'triggerDamage', span: amount.span }
+          ? { kind: eventAmount, span: amount.span }
           : amount;
       case 'half':
       case 'multiple':

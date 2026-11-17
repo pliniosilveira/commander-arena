@@ -51,15 +51,37 @@ function isOneOf(value: unknown, allowed: readonly string[]): boolean {
 const GRANTABLE_STATICS = ['cantLoseGame', 'opponentsCantWin'];
 
 /**
- * D-230: Backup's grant (until end of turn) is written by the engine from the abilities printed below the keyword, never in a card. D-275
- * (CR 611.2a): a card gives "You can't lose the game and your opponents can't win the game" with no duration, for the rest of the game; no other
- * ability is given by an effect (an activated or a triggered ability would need its own tests).
+ * CR 613.1f: a resolving effect can grant activated, triggered, or mana abilities until end of turn (Backup is one source). D-275
+ * (CR 611.2a): a card gives only "You can't lose the game" or "your opponents can't win the game" with no duration, for the rest of the game.
  */
 function checkGrantAbility(
   e: Extract<ContinuousNode, { kind: 'grantAbility' }>,
   path: string,
+  scope: Scope,
   out: AstIssue[],
 ): void {
+  if (e.duration === 'untilEndOfTurn') {
+    if (!Array.isArray(e.abilities) || e.abilities.length === 0) {
+      issue(out, `${path}.abilities`, 'a grant gives at least one ability');
+      return;
+    }
+    e.abilities.forEach((ability, i) => {
+      if (
+        ability?.kind !== 'activated' &&
+        ability?.kind !== 'triggered' &&
+        ability?.kind !== 'mana'
+      ) {
+        issue(
+          out,
+          `${path}.abilities[${i}]`,
+          'a temporary grant gives an activated, triggered or mana ability',
+        );
+        return;
+      }
+      scope.checkAbility(ability, `${path}.abilities[${i}]`, out);
+    });
+    return;
+  }
   if (e.duration !== 'permanent') {
     issue(
       out,
@@ -245,7 +267,7 @@ export function checkContinuousEffect(
       checkSetColors(e, path, out);
       break;
     case 'grantAbility':
-      checkGrantAbility(e, path, out);
+      checkGrantAbility(e, path, scope, out);
       break;
     case 'grantKeyword':
       if (e.keyword?.kind === 'protection') {

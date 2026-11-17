@@ -250,9 +250,9 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       }
       return true;
     case 'gift':
-      // CR 702.174d (D-135): "Gift a card": the one gift the engine gives.
-      if (k.gift !== 'card') {
-        issue(out, `${path}.gift`, `gift ${JSON.stringify(k.gift)} is not supported (only a card)`);
+      // D-135 and issue 57 group 5: card and tapped Fish gifts have engine effects.
+      if (k.gift !== 'card' && k.gift !== 'tappedFish') {
+        issue(out, `${path}.gift`, `gift ${JSON.stringify(k.gift)} is not supported`);
       }
       return true;
     case 'echo':

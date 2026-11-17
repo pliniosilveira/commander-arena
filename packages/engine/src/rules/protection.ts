@@ -13,6 +13,7 @@ import type { GameObject, GameState } from '../state/types';
 import { colorsNotInCommanderIdentity } from './commander-colors';
 import { controllerOf } from './control';
 import { derive } from './derive';
+import { ringBearerSeat } from './ring-bearer';
 
 /** The colors a source has: the object as it is, or as it last existed. Empty for a source the engine knows nothing about. */
 export function sourceColors(state: GameState, source: ObjectId | null): readonly Color[] {
@@ -74,9 +75,17 @@ export function hasProtectionFrom(
 ): boolean {
   const colors = protectedColors(state, obj);
   const types = protectedTypes(state, obj);
-  if (colors.length === 0 && types.length === 0) return false;
+  const fromRingBearer =
+    obj.zone === 'battlefield' &&
+    derive(state, obj).abilities.some(
+      (a) =>
+        a.kind === 'keyword' && a.keyword.kind === 'protection' && a.keyword.from === 'ringBearer',
+    );
+  if (colors.length === 0 && types.length === 0 && !fromRingBearer) return false;
+  const sourceObject = source === null ? undefined : state.objects[source];
   return (
     (colors.length > 0 && sourceColors(state, source).some((c) => colors.includes(c))) ||
-    (types.length > 0 && sourceTypes(state, source).some((t) => types.includes(t)))
+    (types.length > 0 && sourceTypes(state, source).some((t) => types.includes(t))) ||
+    (fromRingBearer && sourceObject !== undefined && ringBearerSeat(state, sourceObject) !== null)
   );
 }

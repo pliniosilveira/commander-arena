@@ -117,6 +117,7 @@ import { becomeUnprepared } from './prepare';
 import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
+import { matchesFilter } from './select';
 import { setPending } from './set-pending';
 import { sourceInfo } from './source-info';
 import { maxTargetCountX, targetAnswerError, targetChoiceSpecs } from './target-choice';
@@ -466,7 +467,7 @@ function toReplicate(state: GameState, events: GameEvent[]): Result {
   const card = getObject(before, casting.from);
   const request = {
     seat: casting.seat,
-    spell: castAs(card, casting.seat, spell.face),
+    spell,
     zone: casting.fromZone as CastFrom,
     alternative: alternativeOfStack(stack),
     excluded: card.id,
@@ -576,10 +577,51 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
   const spell = getObject(state, casting.object);
   const stack = spell.stack;
   if (!stack) return fail('The spell is not on the stack');
-  const choice = faceOf(state, spell)?.additionalCostChoice;
+  const face = faceOf(state, spell);
+  const optionalExile = face?.additionalCosts?.find((cost) => cost.kind === 'exileFromHand');
+  if (optionalExile?.kind === 'exileFromHand' && stack.exiledAsCost === undefined) {
+    const legal = Object.values(state.objects)
+      .filter(
+        (object) =>
+          object.zone === 'hand' &&
+          object.owner === casting.seat &&
+          object.card !== null &&
+          object.id !== casting.object &&
+          matchesFilter(state, object, optionalExile.filter, {
+            controller: casting.seat,
+            source: casting.object,
+          }),
+      )
+      .map((object) => object.id);
+    if (legal.length > 0) {
+      return ok(
+        setPending(
+          { ...state, casting: { ...casting, stage: 'additionalExile' } },
+          {
+            kind: 'chooseCards',
+            seat: casting.seat,
+            source: casting.object,
+            purpose: 'additionalExile',
+            zone: 'hand',
+            legal,
+            min: 0,
+            max: legal.length,
+            reveal: true,
+            prompt: 'You may exile any number of cards from your hand',
+            forCost: true,
+          },
+        ),
+        events,
+      );
+    }
+    return toCostChoice(
+      patchObject(state, casting.object, { stack: { ...stack, exiledAsCost: [] } }),
+      events,
+    );
+  }
+  const choice = face?.additionalCostChoice;
   if (choice === undefined) return toX(state, events);
-  const before = casting.snapshot;
-  const card = getObject(before, casting.from);
+  const card = getObject(casting.snapshot, casting.from);
   const request = {
     seat: casting.seat,
     spell: castAs(card, casting.seat, spell.face),
@@ -594,10 +636,10 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
   } as const;
   const payable = ([0, 1] as const).filter((option) =>
     canPaySpellCost(
-      before,
+      state,
       casting.seat,
       request.spell,
-      spellCost(before, { ...request, costOption: option }),
+      spellCost(state, { ...request, costOption: option }),
     ),
   );
   if (payable.length !== 2) {
@@ -624,6 +666,20 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
     ),
     events,
   );
+}
+
+/** The choice is recorded before X so the spell can use the number exiled to determine its cost. */
+export function answerCastAdditionalExile(state: GameState, chosen: readonly ObjectId[]): Result {
+  const casting = state.casting;
+  if (casting?.stage !== 'additionalExile' || casting.activation !== null) {
+    return fail('No hand cards are being chosen for an additional cost');
+  }
+  const spell = getObject(state, casting.object);
+  if (!spell.stack) return fail('The spell is not on the stack');
+  const next = patchObject({ ...state, pending: null }, casting.object, {
+    stack: { ...spell.stack, exiledAsCost: chosen },
+  });
+  return toCostChoice(next, []);
 }
 
 /**
@@ -846,6 +902,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
         discard: cost.discard,
         behold: cost.behold,
         exile: cost.exile,
+        ...(cost.exileFromHand === null ? {} : { exileFromHand: [...(stack?.exiledAsCost ?? [])] }),
         tap: cost.tap,
       },
     },
@@ -1066,6 +1123,11 @@ export function answerCastBehold(state: GameState, chosen: readonly ObjectId[]):
 /** The answer to the question of which other cards an escape cost exiles (CR 702.138a, D-124). */
 export function answerCastExile(state: GameState, chosen: readonly ObjectId[]): Result {
   return answerExile(state, chosen, finishCast);
+}
+
+/** Pays the optional hand-exile additional cost after the mana payment. */
+export function answerCastAdditionalExilePayment(state: GameState): Result {
+  return payAdditionalCosts(state, [], finishCast);
 }
 
 export function answerTargets(state: GameState, chosen: readonly ChosenTarget[]): Result {
@@ -1369,6 +1431,7 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
     fromZone: casting.fromZone,
     commanderTax: casting.commanderTax,
     nth: getSeat(next, casting.seat).spellsCastThisTurn,
+    targetCount: obj.stack?.chosenTargets.length ?? 0,
     ...(obj.stack?.kicked ? { kicked: true as const } : {}),
     ...(obj.stack?.kicks === undefined ? {} : { kicks: obj.stack.kicks }),
     ...(obj.stack?.replicated === undefined ? {} : { replicas: obj.stack.replicated }),

@@ -404,6 +404,7 @@ const WAITING_WORDS: Readonly<Record<NonNullable<GameView['waitingOn']>['purpose
   // CR 401.4 (D-324): the cards a look did not take go on the bottom of the library in an order their owner chooses.
   bottom: 'putting cards on the bottom of their library in an order',
   exile: 'choosing cards to exile from their graveyard',
+  additionalExile: 'choosing cards to exile from their hand for a spell cost',
   move: 'choosing cards to put onto the battlefield',
   lookTake: 'choosing among the top cards of their library',
   lookSplit: 'sorting the top cards of their library',

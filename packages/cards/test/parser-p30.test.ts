@@ -938,6 +938,12 @@ describe('Gift a card (CR 702.174)', () => {
     ]);
   });
 
+  test('Gift a tapped Fish lowers to the token-giving variant', () => {
+    expect(readAll('Gift a tapped Fish', 'instant').abilities).toEqual([
+      { kind: 'keyword', keyword: { kind: 'gift', gift: 'tappedFish' } },
+    ]);
+  });
+
   test('an instant with a sentence that begins "If the gift was promised"', () => {
     const parsed = readAll(
       'Gift a card\nDestroy target creature. If the gift was promised, you gain 4 life.',
@@ -998,15 +1004,12 @@ describe('Gift a card (CR 702.174)', () => {
     expect(trigger).not.toHaveProperty('targets.0.ifGiftPromised');
   });
 
-  test.each([
-    'Gift a Food',
-    'Gift a Treasure',
-    'Gift a tapped Fish',
-    'Gift an extra turn',
-    'Gift two cards',
-  ])('%s is another gift, which the engine does not run: not read', (line) => {
-    expect(drop(line, 'creature')).toMatchObject({ reason: 'unrecognised' });
-  });
+  test.each(['Gift a Food', 'Gift a Treasure', 'Gift an extra turn', 'Gift two cards'])(
+    '%s is another gift, which the engine does not run: not read',
+    (line) => {
+      expect(drop(line, 'creature')).toMatchObject({ reason: 'unrecognised' });
+    },
+  );
 
   test.each([
     "When ~ enters, if the gift wasn't promised, draw a card.",

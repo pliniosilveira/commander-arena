@@ -69,4 +69,24 @@ describe('the modal of the player who chooses', () => {
     expect(html).toContain('data-option="pile1"');
     expect(html).toContain('data-option="pile2"');
   });
+
+  test('shows the hidden pile count and card backs without revealing its identities', () => {
+    const top = ['Grizzly Bears', 'Giant Spider', 'Serra Angel', 'Sol Ring'];
+    const b = scenario().seat(0).hand("Sauron's Ransom").pool('C').pool('U').pool('B');
+    for (const [i, name] of top.entries()) b.library(name, { label: `hidden-${i}` });
+    const g = b.seat(1).library('Island').at('precombatMain', { active: 0 }).build();
+    g.act(0).cast("Sauron's Ransom", { pay: true });
+    g.passAll();
+    g.act(1).chooseCards('hidden-0', 'hidden-1');
+    const view = getView(g.state, 0);
+    const d = view.pending;
+    if (d?.kind !== 'chooseOption') throw new Error('no chooseOption decision');
+    const html = renderToStaticMarkup(<PilesDialog d={d} view={view} act={() => {}} />);
+    expect(html).toContain('aria-label="Pile 1 (2 cards)"');
+    expect(html).toContain('Pile 1 (2 cards)');
+    expect(html.match(/aria-label="Face-down card"/g)).toHaveLength(2);
+    expect(html.match(/class="dec-pile-facedown"/g)).toHaveLength(2);
+    expect(html).not.toContain('Grizzly Bears');
+    expect(html).not.toContain('Giant Spider');
+  });
 });

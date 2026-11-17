@@ -23,6 +23,7 @@ import { isArrangement } from './rules/arrange';
 import { acceptCascade, declineCascade } from './rules/cascade-cast';
 import {
   answerBuyback,
+  answerCastAdditionalExile,
   answerCastBehold,
   answerCastDiscard,
   answerCastExile,
@@ -93,6 +94,7 @@ import {
   answerResolutionChoice,
   answerResolutionChooseOne,
   answerResolutionCommanderChoice,
+  answerResolutionCreatureType,
   answerResolutionDevour,
   answerResolutionEntersChosen,
   answerResolutionEntersCopy,
@@ -471,6 +473,10 @@ function answerChooseOption(
     // CR 608.2d (D-175): the instruction of a resolving effect that the controller chose among the ones it offered.
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionChooseOne(state, option));
+  }
+  if (d.purpose === 'creatureType' && state.resolution?.queue[0]?.kind === 'chooseCreatureType') {
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionCreatureType(state, option));
   }
   if (d.purpose === 'protectionColor') {
     // CR 702.16, 608.2d (D-451): the color the controller chose for "gains protection from the color of your choice".
@@ -921,6 +927,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       if (!validCardsChoice(action.objects, d)) return fail('That is not a legal choice');
       if (d.forCost === true) {
         if (d.purpose === 'behold') return answerCastBehold(state, action.objects);
+        if (d.purpose === 'additionalExile')
+          return answerCastAdditionalExile(state, action.objects);
         // CR 702.138a (D-124): the other cards an escape cost exiles are chosen as the spell is cast.
         if (d.purpose === 'exile') {
           // D-232: "Exile two creature cards from your graveyard" as the cost of an activated ability.

@@ -79,6 +79,7 @@ const RESTRICTION_WORDS: Readonly<Record<Restriction, { one: string; many: strin
   },
   attacksEachCombat: { one: 'attacks each combat if able', many: 'attack each combat if able' },
   mustBeBlocked: { one: 'must be blocked if able', many: 'must be blocked if able' },
+  mustBlock: { one: 'must block this turn if able', many: 'must block this turn if able' },
   doesntUntap: {
     one: "doesn't untap during its controller's untap step",
     many: "don't untap during their controllers' untap steps",

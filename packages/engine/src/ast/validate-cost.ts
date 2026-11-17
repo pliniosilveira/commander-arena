@@ -22,6 +22,7 @@ export const ADDITIONAL_COST_KINDS: readonly Cost['kind'][] = [
   'payLife',
   'payXLife',
   'discardX',
+  'exileFromHand',
   'mana',
 ];
 
@@ -94,6 +95,11 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
         break;
       case 'discardX':
         xDiscard += 1;
+        break;
+      case 'exileFromHand':
+        if (cost.filter.zone !== 'hand') {
+          issue(out, `${p}.filter.zone`, 'an additional exile cost selects cards from hand');
+        }
         break;
       case 'mana':
         if (Array.isArray(cost.symbols) && cost.symbols.includes('X')) {
@@ -292,6 +298,11 @@ export function checkCostReduction(
   ) {
     // D-420 (CR 601.2f, 208.1): "Aura and Equipment spells you cast cost {X} less to cast, where X is this creature's power": the power of the permanent
     // with the ability, read as the cost is determined. A spell's own reduction has no such permanent ("this" is the spell).
+  } else if (
+    kindOf(amount) === 'exiledAsCost' ||
+    (kindOf(amount) === 'multiple' && kindOf((amount as { of?: unknown }).of) === 'exiledAsCost')
+  ) {
+    // A spell may reduce its own cost by the number of cards chosen for its optional exile cost.
   } else {
     // D-131: a count, or any amount that reads the game as the spell is cast (total power, devotion, counters on this
     // permanent, ...): worked out at CR 601.2f.

@@ -109,7 +109,15 @@ export function beginCombatStep(
     }
     case 'declareBlockers': {
       const defender = defendingSeat(state);
-      const candidates = defender === null ? [] : blockCandidates(state, defender);
+      const candidates =
+        defender === null
+          ? []
+          : blockCandidates(state, defender).map((c) => ({
+              ...c,
+              ...(hasRestriction(state, getObject(state, c.blocker), 'mustBlock')
+                ? { mustBlock: true as const }
+                : {}),
+            }));
       if (defender === null || candidates.length === 0) {
         return grantPriority(state, active, stepEvents);
       }

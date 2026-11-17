@@ -12,6 +12,7 @@
  * own: two instances of prowess are two triggered abilities (CR 702.108b), and so are two of ward.
  */
 import type { Ability, Cost, Keyword, ObjectFilter, TokenDefinition } from '../ast/types';
+import { effectForGift } from './gift-effect';
 import { SOULBOND_ENTERS_ABILITY, SOULBOND_OTHER_ENTERS_ABILITY } from './soulbond-abilities';
 
 /** The kinds of the keyword abilities in a list (a keyword with parameters counts by its kind). */
@@ -492,12 +493,14 @@ function cumulativeUpkeepAbility(cost: readonly Cost[]): Ability {
  * resolves, before its other effects, `rules/stack.ts`, CR 702.174j.) The condition is checked as it triggers and as it resolves
  * (CR 603.4); the permanent remembers the chosen player (`GameObject.giftTo`).
  */
-const GIFT_ABILITY: Ability = {
-  kind: 'triggered',
-  trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
-  interveningIf: { kind: 'giftPromised' },
-  effect: { kind: 'draw', player: { kind: 'giftRecipient' }, count: 1 },
-};
+function giftAbility(gift: Extract<Keyword, { kind: 'gift' }>['gift']): Ability {
+  return {
+    kind: 'triggered',
+    trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+    interveningIf: { kind: 'giftPromised' },
+    effect: effectForGift(gift),
+  };
+}
 
 /** CR 702.92a: the token of Living weapon, "a 0/0 black Phyrexian Germ creature token". */
 const GERM_TOKEN: TokenDefinition = {
@@ -650,7 +653,7 @@ export function expansionOf(ability: Ability): Ability[] {
     case 'cumulativeUpkeep':
       return [cumulativeUpkeepAbility(ability.keyword.cost)];
     case 'gift':
-      return [GIFT_ABILITY];
+      return [giftAbility(ability.keyword.gift)];
     case 'livingWeapon':
       return [LIVING_WEAPON_ABILITY];
     case 'jobSelect':

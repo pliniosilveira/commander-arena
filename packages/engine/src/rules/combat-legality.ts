@@ -289,42 +289,78 @@ function unmetBlockRequirements(
   const required = [...new Set(candidates.flatMap((c) => c.canBlock))].filter((a) =>
     hasRestriction(state, getObject(state, a), 'mustBeBlocked'),
   );
-  if (required.length === 0) return false;
+  const requiredBlockers = candidates
+    .filter((c) => hasRestriction(state, getObject(state, c.blocker), 'mustBlock'))
+    .map((c) => c.blocker);
+  if (required.length === 0 && requiredBlockers.length === 0) return false;
   const need = (a: ObjectId) => (hasKeyword(state, getObject(state, a), 'menace') ? 2 : 1);
-  const obeyed = required.filter(
-    (a) => blocks.filter((b) => b.attacker === a).length >= need(a),
-  ).length;
-  // The most requirements any assignment of the blockers could obey (the sets are small: a handful of attackers and blockers).
-  const best = (index: number, free: readonly ObjectId[]): number => {
-    const attacker = required[index];
-    if (attacker === undefined) return 0;
-    let top = best(index + 1, free);
-    const able = free.filter((b) =>
-      candidates.find((c) => c.blocker === b)?.canBlock.includes(attacker),
-    );
-    const groups: ObjectId[][] =
-      need(attacker) === 1
-        ? able.map((b) => [b])
-        : able.flatMap((b, i) => able.slice(i + 1).map((c) => [b, c]));
-    for (const used of groups) {
-      top = Math.max(
-        top,
-        1 +
-          best(
-            index + 1,
-            free.filter((b) => !used.includes(b)),
-          ),
-      );
-    }
-    return top;
-  };
-  return (
-    obeyed <
-    best(
-      0,
-      candidates.map((c) => c.blocker),
-    )
+  const attackerRules = [...new Set(candidates.flatMap((c) => c.canBlock))].map((attacker) => ({
+    attacker,
+    min: need(attacker),
+    max: hasRestriction(state, getObject(state, attacker), 'cantBeBlockedByMoreThanOne')
+      ? 1
+      : Number.POSITIVE_INFINITY,
+  }));
+  const maxFor = (attacker: ObjectId) =>
+    attackerRules.find((a) => a.attacker === attacker)?.max ?? Infinity;
+  const minFor = (attacker: ObjectId) =>
+    attackerRules.find((a) => a.attacker === attacker)?.min ?? 1;
+  const score = (assignment: readonly { blocker: ObjectId; attacker: ObjectId }[]) =>
+    required.filter((a) => assignment.filter((b) => b.attacker === a).length >= need(a)).length +
+    requiredBlockers.filter((b) => assignment.some((entry) => entry.blocker === b)).length;
+  const valid = (assignment: readonly { blocker: ObjectId; attacker: ObjectId }[]) =>
+    [...new Set(assignment.map((b) => b.attacker))].every((attacker) => {
+      const count = assignment.filter((b) => b.attacker === attacker).length;
+      return count >= minFor(attacker) && count <= maxFor(attacker);
+    });
+  const total = required.length + requiredBlockers.length;
+  const requiredIds = new Set(required);
+  const supportingTargets = new Set(
+    candidates.filter((c) => requiredBlockers.includes(c.blocker)).flatMap((c) => c.canBlock),
   );
+  const relevant = candidates
+    .filter(
+      (c) =>
+        requiredBlockers.includes(c.blocker) ||
+        c.canBlock.some((attacker) => requiredIds.has(attacker) || supportingTargets.has(attacker)),
+    )
+    .sort(
+      (a, b) =>
+        Number(requiredBlockers.includes(b.blocker)) - Number(requiredBlockers.includes(a.blocker)),
+    );
+  let bestScore = valid(blocks) ? score(blocks) : -1;
+  let complete = bestScore === total;
+  const visited = new Set<string>();
+  const best = (index: number, assignment: { blocker: ObjectId; attacker: ObjectId }[]): void => {
+    if (complete) return;
+    const key = `${index}|${attackerRules
+      .map((a) => assignment.filter((b) => b.attacker === a.attacker).length)
+      .join(
+        ',',
+      )}|${requiredBlockers.filter((id) => assignment.some((b) => b.blocker === id)).length}`;
+    if (visited.has(key)) return;
+    visited.add(key);
+    if (index === relevant.length) {
+      if (valid(assignment)) {
+        bestScore = Math.max(bestScore, score(assignment));
+        complete = bestScore === total;
+      }
+      return;
+    }
+    const candidate = relevant[index];
+    if (candidate === undefined) return;
+    for (const attacker of candidate.canBlock) {
+      const limit = maxFor(attacker);
+      if (assignment.filter((b) => b.attacker === attacker).length >= limit) continue;
+      assignment.push({ blocker: candidate.blocker, attacker });
+      best(index + 1, assignment);
+      assignment.pop();
+      if (complete) return;
+    }
+    best(index + 1, assignment);
+  };
+  best(0, []);
+  return (valid(blocks) ? score(blocks) : -1) < bestScore;
 }
 
 /** Returns an error message, or null when the block declaration is legal (CR 509.1). */
@@ -361,7 +397,11 @@ export function validateBlocks(
   }
   // CR 509.1c (D-206): "must be blocked if able": the declaration obeys as many of these requirements as any legal declaration could.
   const needed = unmetBlockRequirements(state, candidates, blocks);
-  if (needed) return 'A creature that must be blocked if able must be blocked';
+  if (needed) {
+    return candidates.some((c) => hasRestriction(state, getObject(state, c.blocker), 'mustBlock'))
+      ? 'A creature that must block if able must block'
+      : 'A creature that must be blocked if able must be blocked';
+  }
   // CR 509.1b, 509.1d (D-149): "creatures can't block unless their controller pays {1} for each of those creatures": the mana for the whole
   // declaration must be there (it is paid when the declaration is answered).
   if (!payableBlockTax(state, defender, blocks.length)) {

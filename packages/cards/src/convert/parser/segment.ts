@@ -230,6 +230,10 @@ const SPLIT_THE_TOP =
  */
 const PUT_HAND_REST_BOTTOM =
   /^put \w+ of them into your hand and the rest on the bottom of your library in any order\.$/i;
+const PUT_HAND_REST_TOP =
+  /^put one of them into your hand and the rest on top of your library in any order\.$/i;
+const PUT_HAND_OTHER_BOTTOM =
+  /^put one of them into your hand and the other on the bottom of your library\.$/i;
 
 /**
  * "Reveal cards from the top of your library until you reveal a land card. Put that card onto the battlefield tapped and the rest on the
@@ -407,7 +411,10 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
-        (said(a, LOOK_AT_TOP) && said(b, PUT_HAND_REST_BOTTOM)) ||
+        (said(a, LOOK_AT_TOP) &&
+          (said(b, PUT_HAND_REST_BOTTOM) ||
+            said(b, PUT_HAND_REST_TOP) ||
+            said(b, PUT_HAND_OTHER_BOTTOM))) ||
         (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)) ||
         (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)))

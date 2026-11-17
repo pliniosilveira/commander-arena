@@ -14,13 +14,13 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrFilter, IrNoun } from '../../ir/types';
+import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { defineRule, family, node, spanned } from '../registry';
 import { AJANI_NOUN_RULES } from './ajani';
 import { ANGEL_NOUN_RULES } from './angels';
 import { NOUN_ATTACKED_BY_IT } from './attacked';
-import { CHOOSE_NOUN_RULES } from './choose';
+import { CHOOSE_NOUN_RULES, NOUN_UP_TO_GRAVEYARD_CARDS, NOUN_UP_TO_ONE_PERMANENT } from './choose';
 import { NOUN_ITS_CONTROLLER } from './controller';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
 import { DANITHA_G3_NOUN_RULES } from './danitha-g3';
@@ -76,12 +76,30 @@ function targetOf(
   phrase: (plural: boolean) => Parser<IrFilter>,
   allowX = false,
 ): Parser<IrNoun> {
+  const limitedPhrase =
+    (plural: boolean): Parser<IrFilter> =>
+    (ctx, pos) => {
+      const found = phrase(plural)(ctx, pos);
+      if (!found.ok) return found;
+      const suffix = sequence(
+        literal(' with mana value less than or equal to '),
+        family<IrAmount>('amount'),
+      )(ctx, found.pos);
+      if (!suffix.ok) return { ...found, pos: found.pos };
+      return {
+        ok: true,
+        value: { ...found.value, manaValueAtMostAmount: suffix.value[1] },
+        pos: suffix.pos,
+      };
+    };
+  // Graveyard targets have their own card-object semantics and are not the battlefield target filter Drown uses.
+  const targetPhrase = id === ID.targetGraveyard ? phrase : limitedPhrase;
   const xTargets: Parser<Bare> = map(
     sequence(
       optional(literal('up to '), null),
       spanned(literal('X')),
       literal(' target '),
-      phrase(true),
+      targetPhrase(true),
     ),
     ([upTo, count, , filter]) =>
       bare('target', filter, {
@@ -91,7 +109,7 @@ function targetOf(
       }),
   );
   const counted: Parser<Bare> = map(
-    sequence(spanned(satisfy(quantity, (n) => n >= 2)), literal(' target '), phrase(true)),
+    sequence(spanned(satisfy(quantity, (n) => n >= 2)), literal(' target '), targetPhrase(true)),
     ([count, , filter]) =>
       bare('target', filter, {
         count: { kind: 'number', value: count.value, span: count.span },
@@ -100,7 +118,7 @@ function targetOf(
   );
   // "one or two target creatures" (D-295, CR 115.1, 601.2c): at least one target and at most two. No other pair of numbers is a phrase of the text.
   const oneOrTwo: Parser<Bare> = map(
-    sequence(spanned(literal('one or two')), literal(' target '), phrase(true)),
+    sequence(spanned(literal('one or two')), literal(' target '), targetPhrase(true)),
     ([count, , filter]) =>
       bare('target', filter, {
         count: { kind: 'number', value: 2, span: count.span },
@@ -117,7 +135,7 @@ function targetOf(
     if (!head.ok) return head;
     const count = head.value[1];
     const plural = count.value >= 2;
-    const filter = phrase(plural)(ctx, head.pos);
+    const filter = targetPhrase(plural)(ctx, head.pos);
     if (!filter.ok) return filter;
     const value = bare('target', filter.value, {
       count: { kind: 'number', value: count.value, span: count.span },
@@ -129,14 +147,14 @@ function targetOf(
   // "up to that many target creatures" (stage P41, D-188, CR 603.12): the number is what a sacrifice before a reflexive ability made; always plural,
   // with no count of its own.
   const upToThatMany: Parser<Bare> = map(
-    sequence(literal('up to that many target '), phrase(true)),
+    sequence(literal('up to that many target '), targetPhrase(true)),
     ([, filter]) => bare('target', filter, { plural: true, upTo: true, upToThatMany: true }),
   );
   // "another target creature": one target that is not the source of the ability (CR 115.1, 109.1).
-  const another = map(sequence(literal('another target '), phrase(false)), ([, filter]) =>
+  const another = map(sequence(literal('another target '), targetPhrase(false)), ([, filter]) =>
     bare('target', filter, { other: true }),
   );
-  const single = map(sequence(literal('target '), phrase(false)), ([, filter]) =>
+  const single = map(sequence(literal('target '), targetPhrase(false)), ([, filter]) =>
     bare('target', filter),
   );
   // "each of up to two target creatures": the counters of a spell that puts one on each (the engine's
@@ -266,7 +284,23 @@ export const NOUN_TARGET_SPELL = defineRule<IrNoun>({
   ],
   parse: node<IrFilter, IrNoun>(
     ID.targetSpell,
-    map(sequence(literal('target '), spellPhrase()), ([, filter]) => filter),
+    (ctx, pos) => {
+      const head = sequence(literal('target '), spellPhrase())(ctx, pos);
+      if (!head.ok) return head;
+      const suffix = sequence(
+        literal(' with mana value less than or equal to '),
+        family<IrAmount>('amount'),
+      )(ctx, head.pos);
+      if (!suffix.ok) return { ...head, value: head.value[1] };
+      return {
+        ok: true,
+        value: {
+          ...head.value[1],
+          manaValueAtMostAmount: suffix.value[1],
+        },
+        pos: suffix.pos,
+      };
+    },
     (filter) => bare('target', filter),
   ),
 });
@@ -465,9 +499,11 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'target creature with flying',
     'target nontoken creature',
     'target creature without flying',
+    'up to three target nonattacking creatures',
     'target creature an opponent controls with mana value 3 or greater',
     'target nonland permanent with mana value 2 or less',
     'target creature you control with toughness 5 or greater',
+    'target nonattacking creature',
   ],
   rejects: [
     'up to one target creatures',
@@ -517,8 +553,18 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
   // Stage P48 (D-205): one target may say which colors it has, "target creature or planeswalker that's green or blue".
   parse: targetOf(
     ID.targetPermanent,
-    (plural) =>
-      plural ? permanentPhrase(true, 'all') : withColorList(permanentPhrase(false, 'all')),
+    (plural) => {
+      const base = plural
+        ? permanentPhrase(true, 'all')
+        : withColorList(permanentPhrase(false, 'all'));
+      return choice(
+        map(sequence(literal('nonattacking '), base), ([, filter]) => ({
+          ...filter,
+          notAttacking: true as const,
+        })),
+        base,
+      );
+    },
     true,
   ),
 });
@@ -660,6 +706,8 @@ export const NOUN_RULES = [
   // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards".
   ...CROSS_ZONE_NOUN_RULES,
   NOUN_TARGET_GRAVEYARD_CARD,
+  NOUN_UP_TO_GRAVEYARD_CARDS,
+  NOUN_UP_TO_ONE_PERMANENT,
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
   // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.
   ...HASHATON_G10_NOUN_RULES,

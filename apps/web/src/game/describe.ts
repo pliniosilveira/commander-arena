@@ -1259,10 +1259,21 @@ export function describeEvent(
         [],
         'CR 700.3',
       );
+    case 'faceDownPileSeparated':
+      // D-579: the hidden pile's identities never enter the public event; only its size and the face-up cards are logged.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'separate', 'separates')} the cards into a face-down pile of ${event.faceDownCount} and a face-up pile (${pileText(event.faceUp)}).`,
+        event.seat,
+        [],
+        'CR 700.3',
+      );
     case 'pileChosen':
       return line(
         'major',
-        `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} pile ${event.pile} (${pileText(event.names)}).`,
+        event.faceDown === true
+          ? `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} the face-down pile.`
+          : `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} pile ${event.pile} (${pileText(event.names)}).`,
         event.seat,
         [],
         'CR 700.3',

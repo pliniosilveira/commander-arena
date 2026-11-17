@@ -235,6 +235,8 @@ export type Amount =
    * life"). Valid only in the effect of a triggered ability with one of those triggers.
    */
   | { readonly kind: 'triggerDamage' }
+  /** Number of targets chosen for the spell that caused a cast trigger (D-574). */
+  | { readonly kind: 'triggerTargetCount' }
   /**
    * "For each opponent who has more life / cards in hand / creatures than you" (D-131): the number of opponents still
    * in the game whose `stat` is greater than the controller's, now.
@@ -268,7 +270,9 @@ export type Amount =
    * information once it has left (CR 113.7a). 0 when none was. Only in the abilities of a spell that name `castSpell` with `self` and in its own text, of a face whose additional
    * cost sacrifices any number of permanents (`validateCard`).
    */
-  | { readonly kind: 'sacrificedAsCost' };
+  | { readonly kind: 'sacrificedAsCost' }
+  /** "For each card exiled this way" as an additional spell cost: the chosen cards for the cast, read at CR 601.2f. */
+  | { readonly kind: 'exiledAsCost' };
 
 /** What a `thisWay` amount counts (D-131). */
 export type ThisWayKind =
@@ -513,6 +517,8 @@ export interface ObjectFilter {
    * and a characteristic-defining ability, which `derive` reads without the combat.
    */
   readonly attacking?: true;
+  /** "Nonattacking creatures" (D-573): battlefield permanents not in the attackers of the combat in progress. */
+  readonly notAttacking?: true;
   /**
    * Only creatures attacking the controller of this ability as a player (CR 508.1b, D-131): "creatures attacking
    * you" counts the attackers whose attack target is that player, not one attacking a planeswalker or battle they
@@ -572,12 +578,13 @@ export interface ObjectFilter {
    */
   readonly powerAboveBase?: true;
   /**
-   * "Of the chosen type" (D-100): the object has the creature type that the source of the ability or
-   * static ability chose as it entered (`GameObject.chosen.creatureType`, CR 607.2d). Matches nothing
-   * when the source has made no such choice. `validateCard` requires the card to ask for it with an
-   * `asEntersChoose` of `creatureType` (linked abilities, CR 607.2d).
+   * "Of the chosen type" (D-100) or "of that type" after a resolving choice (D-566): the object has
+   * the creature type the source permanent chose as it entered, or the resolving instruction chose
+   * in this resolution. Matches nothing without either choice.
    */
   readonly chosenType?: true;
+  /** "Aren't of the chosen type" after a creature-type choice made as an effect resolves (D-566). */
+  readonly notChosenType?: true;
   /**
    * "that shares a creature type with it" (D-261, CR 205.3m, 603.10a, 113.7a): the object has at least one creature type that the creature the trigger is
    * about has (`triggerSubject`: the one that died), as that creature last was on the battlefield; a changeling has every creature type (CR 702.73a).
@@ -598,6 +605,8 @@ export interface ObjectFilter {
    * Only for a target slot (a stack object), read where `stackKind` is; refused anywhere `derive` matches filters.
    */
   readonly singleTarget?: true;
+  /** A spell was cast with at least this many chosen targets (D-574). */
+  readonly targetCountAtLeast?: number;
   /**
    * "An instant or sorcery spell that targets a creature" (CR 115.1, 601.2c, D-206): a spell or ability on the stack with at least one chosen target that
    * is an object matching this filter (a player target never does). Read where a filter is matched against the game with the spell on the stack (a
@@ -642,6 +651,8 @@ export type ObjectRef =
   | { readonly kind: 'this' }
   | { readonly kind: 'thisSpell' }
   | { readonly kind: 'target'; readonly id: string }
+  /** "It" for the object chosen by an earlier resolving instruction (CR 608.2d). */
+  | { readonly kind: 'chosen'; readonly id: string }
   /**
    * "It", for what an earlier instruction of the same resolution moved (CR 400.7j): the new
    * object or objects that the previous `exile`, `destroy` or `moveToZone` effect produced, by
@@ -760,6 +771,8 @@ export type PlayerSelector =
    * (a step, a death, an entering) has none.
    */
   | { readonly kind: 'triggerPlayer' }
+  /** The player whose `playersMay` answer declined the current `otherwise` effect (D-576). */
+  | { readonly kind: 'declinedPlayer' }
   /**
    * "The chosen player", "they" in the gift ability (CR 702.174a, D-135): the opponent the caster chose when they promised the
    * gift, read from the spell on the stack, from the permanent that remembers it, or from last-known information (CR 113.7a).
@@ -788,10 +801,10 @@ export type PlayerSelector =
 export interface TargetSpec {
   readonly id: string;
   /**
-   * The slot exists only if the spell's gift was promised (CR 702.174m, D-135): "If the gift was promised, return target creature
-   * card from your graveyard to your hand" chooses that target only when it was. Only a spell's slot of a face with Gift.
+   * The slot exists only in the named branch of the spell's gift decision (D-135): a `true` slot is chosen only if it was promised,
+   * a `false` slot only if it was not. Only a spell's slot of a face with Gift.
    */
-  readonly ifGiftPromised?: true;
+  readonly ifGiftPromised?: boolean;
   /**
    * "Draw a card. If this spell was kicked, destroy target creature." (CR 702.33g, 601.2c, D-181): the slot exists only if the spell was kicked
    * (with `kicker`): a spell that was not kicked is cast as if it did not have it. Only a slot of a spell's own text, not of a modal one, of a
@@ -916,6 +929,8 @@ export type Cost =
    * (CR 601.2h), after the targets were chosen, so a discarded card is no target of the spell. Not in the cost of an ability.
    */
   | { readonly kind: 'discardX' }
+  /** "As an additional cost, you may exile any number of cards from your hand" (D-575). */
+  | { readonly kind: 'exileFromHand'; readonly filter: ObjectFilter }
   | {
       readonly kind: 'sacrifice';
       readonly what: { readonly kind: 'this' } | ObjectFilter;
@@ -1357,6 +1372,14 @@ export interface InlineChoice {
   readonly effect: Effect;
 }
 export type Effect =
+  /** A resolving choice of up to `count` matching permanents, remembered by `id` for later instructions. */
+  | {
+      readonly kind: 'chooseObjects';
+      readonly id: string;
+      readonly filter: ObjectFilter;
+      readonly count: number;
+    }
+  | { readonly kind: 'chooseCreatureType' }
   | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }
   | { readonly kind: 'prepare'; readonly objects: ObjectSelector }
   | {
@@ -2287,9 +2310,10 @@ export type Effect =
       readonly duration: Duration;
     }
   /**
-   * "It also gains the non-backup abilities of this creature printed below this one until end of turn" (Backup, CR 702.165a, 613.1f, D-230): layer 6, each permanent the selector
+   * "It also gains the non-backup abilities of this creature printed below this one until end of turn" (Backup, CR 702.165a, 613.1f, D-230), and a resolving spell that grants an activated,
+   * triggered or mana ability (D-568): layer 6, each permanent the selector
    * names (a `target`, fixed now, CR 611.2c) has the abilities in `abilities` (any ability but a static one or a keyword that cannot be granted: keywords without parameters,
-   * activated, triggered and mana abilities) until `duration`. The engine's own Backup writes that form (`validateCard` refuses `untilEndOfTurn` in a card).
+   * activated, triggered and mana abilities) until `duration`. A card may write the temporary form when its resolving effect grants one of those abilities.
    * D-275 (CR 611.2a, 613.1f): "It gains \"You can't lose the game and your opponents can't win the game.\"" with no duration: `duration: 'permanent'`, for
    * the rest of the game (the object a zone change makes is a new one, CR 400.7). A card may write only this form, and only with static abilities
    * `cantLoseGame` and `opponentsCantWin`, the ones read from the abilities the object has after the layers (`rules/player-protection.ts`).
@@ -2442,11 +2466,12 @@ export type Effect =
    * when this is the turn of the controller, D-151), `forAsLongAsYouControlThis` (CR 611.2b: ends as the permanent with the ability, this one, leaves the
    * battlefield or is no longer controlled by the controller of the effect; the effect does nothing at all when that is already so as it would begin;
    * only in the ability of a permanent) and `permanent` (no duration stated, CR 611.2a: until the game ends or something else changes control).
-   * The controller of the effect is the player who gains control; a permanent is not given to another player here.
+   * Unless `player` is present, the controller of the effect gains control. `player` names the one player who will control the permanents.
    */
   | {
       readonly kind: 'gainControl';
       readonly objects: ObjectSelector;
+      readonly player?: PlayerSelector;
       readonly duration: ControlDuration;
     }
   /**
@@ -2589,7 +2614,7 @@ export type Effect =
        * (D-324, "the rest on the bottom of your library in any order", CR 401.4): the bottom of the library in the order the controller (who owns the cards
        * looked at) chooses, an `arrangeCards` decision of purpose `bottom`; the order stays hidden.
        */
-      readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen';
+      readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen' | 'topChosen';
     }
   /**
    * "Proliferate" (CR 701.34a, D-149): the controller chooses any number of permanents and/or players that have a counter, and each chosen
@@ -2699,6 +2724,8 @@ export type Effect =
       readonly separator: 'opponent' | 'you';
       readonly chosenTo: 'hand' | 'graveyard';
       readonly otherTo: 'hand' | 'graveyard';
+      /** The separator privately looks at the cards; pile 1 is face down, pile 2 face up (D-579). */
+      readonly faceDownPile?: true;
     }
   /**
    * "Put N cards from your hand on top of your library in any order" (Brainstorm's second half): the
@@ -2934,6 +2961,8 @@ export type Trigger =
        * (a spell cast this turn counts, whoever it was cast by, whatever it is: the filter reads the spell that triggers, not the count). Not with `self`.
        */
       readonly nth?: number;
+      /** For "during each opponent's turn", only while the active player is an opponent of this ability's controller. */
+      readonly duringTurn?: 'opponent';
       /**
        * "When you cast this spell" (CR 702.85a Cascade, 603.2, D-120): the ability of a spell that works while
        * the spell is on the stack and triggers only for that very spell (so `by` is 'you' and the filter is
@@ -3285,6 +3314,7 @@ export type Trigger =
  *   one creature"; with menace nothing can block it, CR 702.111b);
  * - `attacksEachCombat`: it attacks each combat if able (CR 508.1d, a requirement);
  * - `mustBeBlocked`: it must be blocked if able (CR 509.1c, a requirement on the defending player, D-206);
+ * - `mustBlock`: it must block this turn if able (CR 509.1b, a requirement on its controller);
  * - `doesntUntap`: it doesn't untap during its controller's untap step (CR 502.3);
  * - `cantBeCountered`: a spell that can't be countered (CR 101.2, 701.6, 113.6g);
  * - `cantActivateAbilities`: its activated abilities, mana abilities and loyalty abilities included, can't be activated (CR 602.5, 605.1a; Galadriel group 3:
@@ -3298,6 +3328,7 @@ export type Restriction =
   | 'cantBeBlocked'
   | 'cantBeBlockedByMoreThanOne'
   | 'mustBeBlocked'
+  | 'mustBlock'
   | 'attacksEachCombat'
   | 'doesntUntap'
   | 'cantBeCountered'
@@ -3420,6 +3451,8 @@ export type Keyword =
    */
   | { readonly kind: 'protection'; readonly from: 'cardType'; readonly types: readonly CardType[] }
   | { readonly kind: 'protection'; readonly from: 'chosenCardType' }
+  /** Protection from a creature that currently has the Ring-bearer designation (D-577). */
+  | { readonly kind: 'protection'; readonly from: 'ringBearer' }
   /**
    * "Target creature you control gains protection from the color of your choice until end of turn" (CR 702.16, 608.2d; D-451, the Feather deck's Gods Willing
    * and Shelter): the controller of the spell or ability chooses one of the five colors as the effect resolves (a `chooseOption` decision of purpose
@@ -3704,10 +3737,9 @@ export type Keyword =
    * permanent: "When this permanent enters, if its gift cost was paid, the chosen player draws a card"; of an instant or sorcery:
    * "if its gift cost was paid, the chosen player draws a card", before the other effects, and not at all if the spell is
    * countered or leaves the stack (CR 702.174j). The engine writes both abilities itself (`giftRecipient`, `giftPromised`);
-   * the card adds its own text that reads `giftPromised`. `gift` names what is given: only `card` is built (a Food, a tapped
-   * Fish, an extra turn, a Treasure, an Octopus are not).
+   * the card adds its own text that reads `giftPromised`. `gift` names what is given: this engine supports `card` and `tappedFish`.
    */
-  | { readonly kind: 'gift'; readonly gift: 'card' }
+  | { readonly kind: 'gift'; readonly gift: 'card' | 'tappedFish' }
   /**
    * CR 702.75a (Hideaway, D-145): "Hideaway N" means "When this permanent enters, look at the top N cards of your library. Exile one of them face
    * down and put the rest on the bottom of your library in a random order. The exiled card gains 'The player who controls the permanent that
@@ -4426,6 +4458,8 @@ export type StaticSubject =
 
 /** What a static ability does while its permanent is on the battlefield (CR 604, 611.3). */
 export type StaticEffect =
+  /** CR 205.3a (D-578): a permanent gives every creature card in specified ownership/control scopes every creature subtype. */
+  | { readonly kind: 'allCreatureTypes'; readonly scope: 'youControl' | 'youOwn' }
   | {
       /** CR 402.2: "You have no maximum hand size." */
       readonly kind: 'noMaximumHandSize';

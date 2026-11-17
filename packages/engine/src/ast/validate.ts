@@ -166,6 +166,7 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
     case 'protection':
       // D-259 (CR 903.4f): "each color that's not in your commander's color identity" names no color: the engine works them out.
       if (k.from === 'colorsNotInCommanderIdentity') break;
+      if (k.from === 'ringBearer') break;
       // D-376 (CR 702.16a): "the chosen card type" is read from the permanent's own choice (the card must ask it, `validate-chosen.ts`); named card types are checked.
       if (k.from === 'chosenCardType') break;
       if (k.from === 'cardType') {
@@ -347,6 +348,11 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
 
 function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
   switch (s?.kind) {
+    case 'allCreatureTypes':
+      if (s.scope !== 'youControl' && s.scope !== 'youOwn') {
+        issue(out, `${path}.scope`, 'scope must be youControl or youOwn');
+      }
+      break;
     case 'noMaximumHandSize':
       break;
     case 'lookAtTopOfLibrary':
@@ -616,6 +622,12 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         if (!isCount(t.nth) || t.nth < 1)
           issue(out, `${path}.nth`, 'nth must be a positive integer');
         if (t.self !== undefined) issue(out, `${path}.nth`, 'a self cast trigger has no count');
+      }
+      if (t.duringTurn !== undefined && t.duringTurn !== 'opponent') {
+        issue(out, `${path}.duringTurn`, 'unknown active player condition');
+      }
+      if (t.duringTurn !== undefined && (t.nth !== 1 || t.by !== 'you')) {
+        issue(out, `${path}.duringTurn`, 'opponent-turn first-spell trigger must be you and nth 1');
       }
       break;
     case 'landfall':
@@ -912,6 +924,11 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'scries' ||
     t?.kind === 'surveils'
   );
+}
+
+/** Whether a cast trigger records the number of chosen targets for its effect (`triggerTargetCount`, D-574). */
+function hasTargetCount(t: Trigger): boolean {
+  return t?.kind === 'castSpell' && t.filter.targetCountAtLeast !== undefined;
 }
 
 /**
@@ -1242,6 +1259,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(a.trigger.kind === 'leftGraveyard' ? { triggerCards: true } : {}),
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
+        ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),
         ...(a.trigger?.kind === 'attackBatch' ? { triggerAttacked: true } : {}),
         triggeredAbility: true,
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
@@ -1776,12 +1794,12 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
 
   if (face.spell !== null) {
     checkSpellText(face.spell, `${path}.spell`, out);
-    // D-135, CR 702.174m: a target chosen only if the gift was promised is used only under that condition.
+    // D-135: a gift-conditioned target is used only in the matching promised or unpromised branch.
     for (const id of giftTargetsUsedUnguarded(face.spell)) {
       issue(
         out,
         `${path}.spell.targets`,
-        `target "${id}" exists only if the gift was promised: use it only in the effect of a giftPromised conditional`,
+        `target "${id}" exists only in the matching gift branch: use it only in that branch`,
       );
     }
     // D-181, CR 702.33g, 601.2c: a target chosen only if the spell was kicked (or only if it was not) is used only in that case.

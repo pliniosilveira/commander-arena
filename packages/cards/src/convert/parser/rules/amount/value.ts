@@ -624,6 +624,7 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
   examples: [
     'for each creature sacrificed this way',
     'for each permanent sacrificed this way',
+    'for each card exiled this way',
     'for each creature destroyed this way',
     'for each opponent who drew a card this way',
     'for each player who drew a card this way',
@@ -638,6 +639,14 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each opponent who discarded a card this way',
   ],
   parse: (ctx, pos) => {
+    const exiled = pattern(/for each card exiled this way(?![\\p{L}\\p{N}])/iu)(ctx, pos);
+    if (exiled.ok) {
+      return {
+        ok: true,
+        value: { kind: 'exiledAsCost', span: { start: pos, end: exiled.pos } },
+        pos: exiled.pos,
+      };
+    }
     const r = spanned(
       pattern(
         new RegExp(

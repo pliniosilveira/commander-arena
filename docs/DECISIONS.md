@@ -3532,3 +3532,113 @@ Run on the working tree, each with the focused test file named, and restored aft
 - Consequences: the first dry run showed what the page looks like to the scanner (192 deck links) (the job log prints the start of the page when it links to no deck, so the reader can be adjusted). Many "deck support" issues at once queue many builds: the routine takes them oldest first, within its budget, and the owner can close or reorder them. The snapshot of a precon needs the bulk file, which a cloud session cannot download: the issue says the owner (or a runner) runs `pnpm precon:snapshot`; a workflow that makes the snapshot is not built.
 
 Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with a deck of ten Plane and Phenomenon cards, which Archidekt lists with the 100. `issues.ts` sets apart every card whose type line (before the dash) is Plane, Phenomenon, Scheme, Vanguard or Conspiracy, once the card types are known from the bulk file; the deck is then supported and added as its 100 cards, as any other precon, and the issue lists the cards left out in a section ("Left out for now") for a second round. A deck that is not 100 cards without them is skipped and the log says so.
+
+## D-563: Take one card from the top of the library and order the rest (issue 57)
+
+- Context: `Diabolic Vision` and `Sleight of Hand` use `lookAtTop`, which already supports a hidden card choice and arranging library cards, but the parser did not read their two wordings.
+- Decision: read the two exact shapes as `lookAtTop` with one required hidden card in hand. `topChosen` queues the existing `arrangeCards` decision with purpose `reorder`; the two-card bottom form uses `bottomRandom`, whose order is immaterial when one card remains. The sentence segmenter keeps each pair together. No new decision kind or engine state field is needed.
+- Alternatives: treating either as scry (would emit the wrong event), or revealing the card (the text does not say to reveal).
+- Consequences: these two lines are supported; other counts, another player's library, and different destinations remain unread. The CR text was not available in this workspace; the existing code cites CR 401.2, 401.4 and 701.20a, and the implementation follows those existing engine primitives.
+
+## D-564: Spell cost reductions may name a union of colors (issue 57)
+- Context: `Nightscape Familiar` reduces the cost of blue spells and red spells its controller casts. The engine already applies generic cost reductions to a filter with `anyOf`, but the parser's repeated spell-subject grammar only listed card types and subtypes.
+- Decision: parse repeated color spell subjects into an `anyOf` filter and pass it through the existing cost-reduction path. Do not alter engine cost calculation.
+- Alternatives: use two static abilities in card-specific data (duplicates the same printed ability and adds a card-name route); apply two reductions when either color matches (would incorrectly reduce twice for a multicolored spell).
+- Consequences: one matching color reduces generic mana once, including for multicolored spells; the repeated-subject grammar remains limited to a list where each member says "spells".
+
+## D-565: Count the first spell cast during an opponent's turn (2026-11-16, issue 57)
+- Context: `Wavebreak Hippocamp` triggers on its controller's first spell during each opponent's turn. The existing spell-cast event already records the caster's spell number for the turn, and triggered abilities already inspect that event.
+- Decision: add an optional active-turn restriction to the existing `castSpell` trigger and match it relative to the ability's current controller. Pair it with `nth: 1`; the turn's spell count already resets for every player when a new turn begins.
+- Alternatives: add a new trigger kind and event; keep a separate per-opponent-turn spell counter (duplicates the existing count and reset path).
+- Consequences: the trigger reuses the existing spell event and turn state. The new field is only valid for a controller's first spell and is evaluated from the active player at the cast event.
+
+## D-566: Choose a creature type while a spell resolves (2026-11-16, issue 57)
+- Context: Distant Melody asks for a creature type as it resolves, then counts permanents of that type. The engine's existing chosen-type filter only read choices made as a permanent entered.
+- Decision: model the resolving choice as an instruction and store its answer on the resolution context, so later instructions and amount filters can read the selected type. Reuse the existing `chooseOption` decision and `CREATURE_TYPES` list.
+- Alternatives: ask while casting (changes when the choice happens); represent the type as an object subtype filter (cannot represent every legal type choice dynamically).
+- Consequences: other spells can use the same choice instruction and the matching or inverse chosen-type filters (`of that type`, `that aren't of the chosen type`). The question is asked during resolution, before either filter is evaluated.
+
+## D-567: Read an attack trigger phrased from the attacking player (2026-11-16, issue 57)
+- Context: Hermes, Overseer of Elpis triggers when its controller attacks with one or more Birds. The engine already groups a player's declared attackers into one `attackBatch`, but the parser only read the alternate form "one or more creatures attack".
+- Decision: parse "you attack with one or more <creature filter>" as the existing `attackBatch` event with actor `you`, at least one matching creature, and the printed creature filter. Reuse the existing scry effect and decision.
+- Alternatives: emit one trigger per attacking Bird (would trigger multiple times for one declaration); add a card-specific override (duplicates existing batch machinery).
+- Consequences: this wording and future filtered versions use the existing declaration event; engine behavior and `ENGINE_VERSION` do not change.
+
+## D-568: A resolving effect grants a triggered ability until end of turn (2026-11-16, issue 57)
+- Context: Feign Death and Supernatural Stamina grant a targeted creature a dies trigger until end of turn; the engine already creates and expires layer-6 `grantAbility` effects, but `validateCard` reserved temporary grants for Backup and the return parser did not read "return it to the battlefield" from a dies trigger.
+- Decision: permit a temporary `grantAbility` effect to give activated, triggered or mana abilities, validating each nested ability; keep the permanent-duration grant restricted to the two static player-protection abilities of D-275. Reuse the existing quoted-ability lowerer for a targeted creature and read "return it to the battlefield" as the card the creature became when a dies trigger resolves (`thisCard`, CR 400.7). The existing `moveToZone` carries tapped and enters-with counters.
+- Alternatives: add separate effects for granted death triggers or one-off rules for the two cards; both would duplicate the continuous-effect and quoted-ability paths.
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The scenario test covers granting, dying, returning tapped and receiving a +1/+1 counter; parser acceptance tests cover both real cards from issue 57. Other text in a quoted ability is still supported only when its own parser and engine rules can lower it.
+
+## D-569: Give a tapped Fish for a promised Gift (2026-11-16, issue 57)
+- Context: `Into the Flood Maw` says `Gift a tapped Fish`, then has different target and return instructions depending on whether the gift was promised. Gift already supported the casting choice and the card gift, but its keyword value and target slots only represented the promised branch.
+- Decision: represent `tappedFish` as a Gift kind and use one shared effect to create the 1/1 blue Fish token tapped under the chosen opponent's control, before an instant or sorcery's other effects or as a permanent enters. Let `TargetSpec.ifGiftPromised` be boolean so a spell can select targets only in the promised or unpromised branch; the parser marks both sides of an `instead` sentence. No new decision kind or card-specific route.
+- Alternatives: model the token with a card-specific override (duplicates Gift and token creation); leave one target set active regardless of the promise (would make the printed spell choose the wrong target).
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The real issue card is played through `applyAction` with both choices, and an engine fixture checks the generic permanent Gift path. The reminder text came from the issue's card data; the comprehensive-rules text and card rulings were unavailable for independent verification in this session.
+
+## D-570: Carry a resolving object choice into later instructions (2026-11-16, issue 57)
+- Context: `Gix's Command` lets its controller choose up to one creature for counters and then says "It gains lifelink"; its other mode returns up to two creature cards from the controller's graveyard. The engine had choices of permanents for movement and choices of graveyard cards for movement, but no reusable binding for a resolving choice used by a later instruction.
+- Decision: add `chooseObjects` as a resolving instruction that asks the existing `choosePermanent` decision and stores the answer by a text reference on `ResolutionContext`. Add a `chosen` object reference for later instructions, and reuse `moveToZone`'s optional card choice for the graveyard mode.
+- Alternatives: treat the creature as a target (changes the card's targeting rules); resolve lifelink on all creatures; add card-name data (duplicates general rules); or build another decision/action path for graveyard returns.
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The engine remembers an empty answer as well as selected objects; the parser only binds the following pronoun to an earlier choice when its reference matches. The issue's card data supplies the Oracle text; the Comprehensive Rules text was unavailable for independent verification.
+
+## D-571: Read a target's mana-value limit from its controller's graveyard (2026-11-16, issue 57)
+- Context: `Drown in the Loch` chooses a spell or creature target whose mana value must be no greater than the number of cards in that target's controller's graveyard. Existing target filters could read numeric limits and a few simple amounts, while `countOf` could follow a targeted player but not the controller of the target object itself.
+- Decision: allow a target's `manaValueAtMost` filter to read a graveyard `countOf` owned by `controllerOf` that same target. When checking a candidate, add that candidate to the target context so the controller and graveyard count are known; repeat the check against the chosen targets as they resolve. Reject counts whose owner reference is not the target in that filter.
+- Alternatives: check the limit only when resolving the counter/destroy effect (would allow casting at an illegal target); hard-code Drown's two modes; count the spell controller's graveyard (wrong player when the target is controlled by an opponent).
+- Consequences: both parser and engine versions change. The same amount can support future target restrictions that compare mana value with the target controller's graveyard count; `Drown in the Loch` tests cover counter, destroy, and an illegal over-limit target.
+
+## D-572: Model creatures that must block this turn (2026-11-16, issue 57)
+- Context: `Domineering Will` gives its selected creatures a temporary requirement to block if able. The existing `mustBeBlocked` requirement applies to attackers and cannot represent this behavior. The owner approved `docs/proposals/domineering-will-block-requirement.md`.
+- Decision: Add `mustBlock` as a separate temporary restriction. At blocker declaration, maximize the number of satisfiable attacker and blocker requirements together; a creature with no legal attacker is not a candidate requirement. Bind "They" to the chosen creature target group.
+- Alternatives: Reuse `mustBeBlocked`, which reverses which player has the requirement; process the creature requirement independently, which can fail where requirements compete for blockers.
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The real issue card is played through `applyAction` with a legal blocking choice and an illegal no-block choice; the CR text file was unavailable for direct lookup in this session.
+
+## D-573: Give targeted creatures to the targeted player (2026-11-16, issue 57)
+- Context: `Domineering Will` gives the targeted player control of up to three targeted nonattacking creatures, untaps those same creatures, and requires them to block if able. The engine's control-changing effect could only return control to the spell's controller, and target filters could not exclude creatures already attacking.
+- Decision: Extend `gainControl` with a single-player selector and let `ObjectFilter.notAttacking` read whether a battlefield object is in the current attackers list. Reuse the same target references for control, untap and the subsequent restriction.
+- Alternatives: Treat the selected player as the spell's controller (incorrect when they differ), use a card-specific override, or select a fresh group for each sentence (does not preserve the chosen targets).
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The acceptance test checks the player who gets control, untapping, the mandatory block, and the nonattacking target filter; the CR text file was unavailable for direct lookup in this session.
+
+## D-574: Count targets of a cast trigger (2026-11-16, issue 57)
+- Context: `Voracious Bibliophile` triggers only when a spell with one or more targets is cast, then draws one card for each target that spell had. Cast events did not record target counts, and event amounts could not represent them.
+- Decision: Record the number of chosen targets on `spellCast` events and pending cast triggers. Add a target-count filter for stack objects and a `triggerTargetCount` amount for the triggered effect.
+- Alternatives: Count legal targets when the trigger resolves (targets can become illegal in response), or count target slots (one slot can choose multiple targets and two slots can choose the same object).
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The engine scenario tests one and two targets and a spell with none; the real card integration plays a two-target spell and checks that two cards are drawn.
+
+## D-575: Count cards chosen for an optional spell exile cost (2026-11-17, issue 57)
+- Context: `March of Swirling Mist` may exile any number of blue cards from its caster's hand and reduces its generic cost by {2} for each card exiled this way. The number chosen affects the cost determined before X and targets, while the cards must still be paid as a cost.
+- Decision: Ask for the optional hand-card selection before announcing X, record the selected object IDs on the spell so its own reduction can read their count, and move them to exile after mana is paid. Update the spell's `exiledAsCost` with the new exile objects for later instructions. Preserve both face costs and static abilities when a single Oracle line lowers to both.
+- Alternatives: Ask for cards after locking the total cost (the reduction would be too late); exile them before the cost is determined (the additional cost would be paid at the wrong time); or add card-specific data.
+- Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. The real-card scenario covers choosing and declining the optional exile, the cost reduction, X, up-to-X targets and the final exile/phasing result. Preserving the combined compiler output also restores the existing mixed-cost/cast-trigger line for `Plumb the Forbidden` (D-492), whose card integration already has acceptance tests. The CR text and Scryfall rulings were unavailable for independent verification.
+
+## D-576: Track who declined a playersMay choice (2026-11-17, issue 57)
+- Context: `Fandaniel, Telophoroi Ascian` makes each opponent choose whether to sacrifice a nontoken creature, then makes only the opponents who declined lose life based on the ability controller's graveyard. The engine could run an `otherwise` effect but could not identify the player who declined; it also asked a player to choose a sacrifice when no eligible creature existed.
+- Decision: Add a `declinedPlayer` selector scoped to `playersMay.otherwise`, carry the declining seat through nested effects and selection resolution, and automatically decline an offered sacrifice with no legal candidate. Preserve the chooser as the sacrifice seat when `runsAs: 'chooser'` pauses for a selection. Implement the real card through the hand-written fixture route because the current general parser does not read the full “may sacrifice a nontoken creature of their choice” clause.
+- Alternatives: Add a Fandaniel-specific engine branch (violates the card-data boundary); treat every opponent as declining; or mark the parser-only result supported despite its unread clause.
+- Consequences: `ENGINE_VERSION` changes. The issue card fixture is tested through `applyAction` for accepting, declining, and having no eligible creature. The parser-only limitation remains explicit in `docs/ROADMAP.md`; Oracle text came from issue 57 and CR text/Scryfall rulings were unavailable for independent verification.
+
+## D-577: Apply Ring-bearer protection and the Wraith threshold (2026-11-17, issue 57)
+- Context: `Lord of the Nazgûl` grants its Wraiths protection from creatures with the Ring-bearer designation and creates a Wraith for each instant or sorcery cast. The new token may be the ninth Wraith, after which the card sets its Wraiths' base power and toughness to 9/9 until end of turn.
+- Decision: Add `protection { from: 'ringBearer' }` as a static keyword quality read through the common protection path, so target legality, damage, attachments and blocking use the current designation. Use a custom Wraith token, count the controlled Wraiths after creating it, and apply a temporary `setPt` continuous effect to the matching group.
+- Alternatives: Treat protection as protection from the Ring-bearer controller (not what the keyword names); model the threshold as a static ability (it would persist beyond this trigger's stated duration); or branch on Lord's card name in engine rules.
+- Consequences: `ENGINE_VERSION` changes. Engine scenarios cover token creation, menace, the Ring-bearer blocking restriction, the eight-to-nine threshold, the Lord's +1/+1 counter and an unaffected non-Wraith. The full card uses the hand-written fixture path because the general parser does not read protection from Ring-bearers or base P/T group effects; issue text is used and CR/Scryfall references were unavailable for independent verification.
+
+## D-578: Apply every creature type in controlled and owned zones (2026-11-17, issue 57)
+- Context: `Maskwood Nexus` affects creatures and creature spells its controller controls, plus creature cards its controller owns outside the battlefield; its token also has changeling.
+- Decision: Add the reusable static effect `allCreatureTypes` with explicit `youControl` and `youOwn` scopes. Apply it additively in layer 4, preserve printed types, and use the generated creature-type table. The real fixture creates the blue Shapeshifter token with changeling.
+- Alternatives: Expand the parser's battlefield-only filter into several zone-specific forms, or special-case Maskwood Nexus by name in derivation.
+- Consequences: `ENGINE_VERSION` changes. Scenarios cover a controlled permanent and an owned hand card; the card's full importer path uses its hand-written fixture because the grammar does not express these scopes. Issue text is used; the CR text and Scryfall rulings were unavailable for independent verification.
+
+## D-579: Keep a face-down separated pile private (2026-11-17, issue 57)
+- Context: `Sauron's Ransom` lets the opponent privately look at four library cards, divide them into a face-down and a face-up pile, and lets the spell's controller choose a pile without learning the hidden identities.
+- Decision: Extend the generic pile-separation effect with a face-down mode. Only the separator receives the library-card decision; the public separation event carries the face-up names and face-down count. The chooser's pending view and card preview omit the hidden pile's IDs, and choosing the hidden pile emits no names. Continue resolution into the Ring-temptation effect after both piles move.
+- Alternatives: Treat both piles as revealed (which defeats the face-down instruction), omit pile events (loses public information for the face-up pile), or add a Sauron-specific rules branch.
+- Consequences: `ENGINE_VERSION` changes. Scenarios check both seats' views, public events, hidden hand contents, final zones, and Ring temptation. The real card uses the fixture path because its wording is not fully parsed; the card text is from issue 57.
+
+## D-580: Compare blocker requirements using legal declarations (2026-11-17, PR 252 review)
+- Context: The `mustBlock`/`mustBeBlocked` search counted illegal assignments, omitted supporting blockers for menace, and enumerated equivalent blocker assignments repeatedly. The UI also showed an empty hidden pile because the chooser's view redacts its object IDs.
+- Decision: Score only declarations that satisfy each attacker's minimum and maximum blocker counts. Include ordinary blockers that make a mandatory block legal, memoize equivalent search states, and offer a complete maximum-satisfaction declaration when requirements apply. The AI uses the same legality constraints when it augments its plan. In the pile picker, show the hidden pile's public count and one face-down card back per hidden card, never its IDs.
+- Alternatives: Keep enumerating raw assignments and validate only the final answer (can stall and can score impossible outcomes), or expose hidden IDs to recover the count (violates the private-pile effect).
+- Consequences: Combat requirement comparisons and representative legal actions are correct for menace and maximum-block restrictions; the decision picker keeps private card identities hidden while showing public pile size. Regression scenarios and UI rendering tests cover these cases.
+
