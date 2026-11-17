@@ -671,11 +671,43 @@
 .dec-card-button {
   cursor: pointer;
 }
-/* The whole card without its picture (offline, a token) is drawn taller than a card is: it grows
-   instead of running over the next row. */
-.dec-card-full {
-  height: auto;
-  min-height: var(--hand-h);
+/* Issue 48: the card picture fills the card. Until it has loaded, and when it cannot, the name of
+   the card shows in its place; once it is there the name stays in the page for assistive technology
+   but is not seen. */
+.dec-card-pic {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--radius) + 2px);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  box-sizing: border-box;
+}
+.dec-card-name {
+  display: block;
+  padding: 8px;
+  font-size: calc(14px * var(--text-scale));
+  font-weight: 600;
+}
+.dec-card-img {
+  position: absolute;
+  inset: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.dec-card-img.is-loaded {
+  opacity: 1;
+}
+.dec-card-pic:has(.dec-card-img.is-loaded) {
+  background: none;
+  border-color: transparent;
+}
+.dec-card-pic:has(.dec-card-img.is-loaded) .dec-card-name {
+  opacity: 0;
 }
 .dec-card-button:hover {
   border-color: var(--text-dim);
