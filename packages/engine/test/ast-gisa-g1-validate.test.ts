@@ -133,7 +133,6 @@ describe('a granted landwalk (CR 702.14a, 702.14e)', () => {
   test('the other keywords with a parameter are still not granted', () => {
     for (const keyword of [
       { kind: 'toxic', count: 1 },
-      { kind: 'annihilator', count: 1 },
       { kind: 'bushido', count: 1 },
     ]) {
       expect(messages(creature([staticGrant(keyword)])), keyword.kind).toContain(

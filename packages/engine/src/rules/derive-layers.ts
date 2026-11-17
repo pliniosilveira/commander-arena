@@ -172,8 +172,14 @@ function hasAbility(list: readonly Ability[], grant: Ability): boolean {
   return list.some((a) => a.kind === 'mana' && JSON.stringify(a) === written);
 }
 
-/** The keywords whose instances each count (CR 702.83b: exalted, CR 702.108b: prowess, CR 702.130b: afflict, D-588: ward) and so are not added once only. */
-const INSTANCE_KEYWORDS: readonly (string | null)[] = ['exalted', 'prowess', 'afflict', 'ward'];
+/** The keywords whose instances each count (CR 702.83b: exalted, CR 702.108b: prowess, CR 702.130b: afflict, D-588: ward, CR 702.86b: annihilator) and so are not added once only. */
+const INSTANCE_KEYWORDS: readonly (string | null)[] = [
+  'exalted',
+  'prowess',
+  'afflict',
+  'ward',
+  'annihilator',
+];
 
 /** The keywords a grant gives together with the abilities they stand for, once (D-478: Decayed, a static and a triggered ability). */
 const EXPANDED_WHEN_GRANTED: readonly (string | null)[] = ['decayed'];

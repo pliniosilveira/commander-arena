@@ -175,6 +175,9 @@ export function landwalkOf(name: string): string | undefined {
 /** The grant words of an Afflict (CR 702.130a): "afflict 3", the word and a positive whole number written in digits (D-472). */
 export const AFFLICT_WORD = /^afflict ([1-9]\d*)$/;
 
+/** The grant words of an Annihilator (CR 702.86a): "annihilator 2", the word and a positive whole number written in digits (D-590). */
+export const ANNIHILATOR_WORD = /^annihilator ([1-9]\d*)$/;
+
 /** The grant words of a Ward (CR 702.21a): "ward {2}", the word and a mana cost in braces (D-588). */
 export const WARD_WORD = /^ward ((?:\{[0-9WUBRGC]\})+)$/i;
 
@@ -190,6 +193,10 @@ export function grantedKeyword(word: string): Keyword | undefined {
   if (landType !== undefined) return { kind: 'landwalk', landType };
   const afflict = AFFLICT_WORD.exec(word);
   if (afflict?.[1] !== undefined) return { kind: 'afflict', count: Number(afflict[1]) };
+  const annihilator = ANNIHILATOR_WORD.exec(word);
+  if (annihilator?.[1] !== undefined) {
+    return { kind: 'annihilator', count: Number(annihilator[1]) };
+  }
   const ward = WARD_WORD.exec(word);
   if (ward?.[1] !== undefined) {
     // D-588: the symbols of the cost in the order written, as the engine keeps a mana cost ("{1}{W}" is ['1', 'W']).

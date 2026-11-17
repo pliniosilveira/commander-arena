@@ -1,5 +1,5 @@
 {
-  "parserVersion": 123,
+  "parserVersion": 124,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1514,19 +1514,10 @@
     "3635e4e5-e655-45f4-a444-39756f55129a": {
       "name": "Eldrazi Conscription",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Enchanted creature gets +10/+10 and has trample and annihilator 2.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "a4f54c00"
+      "ast": "8c4c503a"
     },
     "3640c29b-1534-4952-b297-619ade948431": {
       "name": "Roaming Throne",
@@ -6893,7 +6884,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 425,
+      "supported": 426,
       "total": 480
     }
   }

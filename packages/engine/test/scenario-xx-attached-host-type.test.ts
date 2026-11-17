@@ -176,6 +176,8 @@ describe('GRANTABLE_KEYWORDS is exported for the parser', () => {
         // D-472, D-473: afflict and landwalk carry a number or a land type, checked by `checkGrantedParameter`.
         'afflict',
         'landwalk',
+        // D-590: annihilator carries a number, checked by `checkGrantedParameter`; each instance triggers separately.
+        'annihilator',
         // D-588: ward carries a cost, checked by `checkGrantedParameter`; each instance granted is a triggered ability of its own.
         'ward',
         // D-478: decayed, the keyword of a token and of a counter, with the trigger it stands for added when it is granted.

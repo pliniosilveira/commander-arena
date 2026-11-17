@@ -19,4 +19,5 @@
 // 115: Pay a sacrifice cost of one or more permanents and read the count sacrificed as a cost from the resolving ability (D-583, D-584, issue 258).
 // 116: A static ability may give ward; each instance granted is a triggered ability of its own (D-588, issue 89).
 // 117: Goad: the effect `goad`, the static ability "is goaded" of an attached permanent and the continuous change `goaded`, read where attackers are declared (D-589, issue 89).
-export const ENGINE_VERSION = 117;
+// 118: A static ability may give annihilator; each instance granted is a triggered ability of its own (D-590, issue 89).
+export const ENGINE_VERSION = 118;

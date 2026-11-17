@@ -5021,3 +5021,12 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Tests: engine `scenario-xx-goad.test.ts` (the effect: required attack, ends at the goader's next turn, no second goad by the same player, a third player, a creature that cannot attack; the Aura: required, goaded by the Aura's controller, lasts while it does, ends when it leaves or loses its abilities), `ast-goad-validate.test.ts`; cards `parser-goaded.test.ts` (the real lines of Coercive Impetus, Parasitic Impetus, Redemption Arc and Ghoulish Impetus, near misses).
 - Example cards: Coercive Impetus, Parasitic Impetus, Redemption Arc (issue 89).
 - Limits: see `docs/ROADMAP.md`.
+
+## A static ability that gives annihilator (issue 89, D-590)
+
+- CR: 702.86a-b (Annihilator and its instances), 113.2c (each instance functions independently), 613.1f and 611.3a (a granted keyword is a layer 6 effect that ends with its source).
+- Gap class: P (a granted keyword with a number), T (the grant words).
+- Engine: `annihilator` in `GRANTABLE_KEYWORDS` (`ast/features.ts`), count checked by `checkGrantedParameter` (`ast/validate-attach.ts`), an `INSTANCE_KEYWORDS` member of `rules/derive-layers.ts`; the trigger is `annihilatorAbility` (`rules/derive-keywords.ts`).
+- Parser: the grant word "annihilator N" (`rules/keyword/list.ts`, `rules/keyword/vocabulary.ts`), read by `lower/statics.ts` and `lower/continuous.ts`.
+- Tests: engine `scenario-xx-granted-annihilator.test.ts` (an Aura that gives it, none without the Aura, two Auras are two instances); cards `parser-granted-annihilator.test.ts` (the real line of Eldrazi Conscription, near misses).
+- Example cards: Eldrazi Conscription (issue 89).

@@ -17,7 +17,13 @@ import {
   type Supertype,
 } from '@commander-arena/engine';
 import type { IrAbility, IrNoun, IrStaticEffect, IrStaticPart } from '../ir/types';
-import { AFFLICT_WORD, grantedKeyword, landwalkOf } from '../rules/keyword/vocabulary';
+import {
+  AFFLICT_WORD,
+  ANNIHILATOR_WORD,
+  grantedKeyword,
+  landwalkOf,
+  WARD_WORD,
+} from '../rules/keyword/vocabulary';
 import { lowerGrantedMana } from './activated';
 import { isKeepsDamage, lowerKeepsDamage } from './adamantoise';
 import { lowerAmount, lowerDefinedPt, lowerStaticAmount, lowerStaticPtStep } from './amounts';
@@ -416,6 +422,11 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       if (effect.keyword === 'riot') return ['static:grantKeyword', 'keyword:riot'];
       // D-472, D-473: the keyword node of a granted afflict or landwalk is a kind of its own for the engine.
       if (AFFLICT_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:afflict'];
+      // D-590, D-588: the keyword node of a granted annihilator or ward is a kind of its own for the engine.
+      if (ANNIHILATOR_WORD.test(effect.keyword)) {
+        return ['static:grantKeyword', 'keyword:annihilator'];
+      }
+      if (WARD_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:ward'];
       if (landwalkOf(effect.keyword) !== undefined) {
         return ['static:grantKeyword', 'keyword:landwalk'];
       }
