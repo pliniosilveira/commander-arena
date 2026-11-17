@@ -5037,3 +5037,9 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Engine and parser:** `ringTempted` may require a non-null chosen bearer; the trigger wording “you choose a creature as your Ring-bearer” lowers to that filter.
 - **Proof:** `scenario-xx-ring.test.ts` proves it does not trigger when no creature was available and does trigger when a creature was chosen; `parser-p45.test.ts` checks the exact trigger and payment effect.
 - **Limit:** CR text and rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Cleric Class (D-591)
+
+- **Engine and parser:** changing a Class's level emits `classLevelReached`; `classLevel` triggers only for the same Class object reaching the named level. The game log names the level change.
+- **Proof:** `scenario-xx-class-level.test.ts` checks a level-three trigger, `parser-p48.test.ts` checks the trigger grammar, and the real-card integration test returns its targeted creature and gains life equal to its toughness.
+- **Limit:** CR text and rulings were unavailable for independent verification.

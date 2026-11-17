@@ -359,6 +359,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cycled',
     // D-196: "Whenever the Ring tempts you" (CR 701.54d).
     'ringTempted',
+    // D-591: "When this Class becomes level N" (CR 716.2).
+    'classLevel',
     // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
     'crimeCommitted',
     'tokenCreated',
@@ -1901,6 +1903,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   attackBatch: true,
   cycled: true,
   ringTempted: true,
+  classLevel: true,
   crimeCommitted: true,
   tokenCreated: true,
   scries: true,

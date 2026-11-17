@@ -22,4 +22,5 @@
 // 118: Check gained-and-lost-life turn history (D-586).
 // 119: Allow life gained this turn as a mana-value selector limit (D-588).
 // 120: Distinguish Ring tempt events that chose a creature as Ring-bearer (D-590).
-export const ENGINE_VERSION = 120;
+// 121: Emit and match Class level reached triggers (D-591).
+export const ENGINE_VERSION = 121;

@@ -1454,6 +1454,14 @@ export function describeEvent(
         [event.object],
         'CR 613.1b',
       );
+    case 'classLevelReached':
+      return line(
+        'major',
+        `${label(event.object)} becomes level ${event.level}.`,
+        null,
+        [event.object],
+        'CR 716.2',
+      );
     case 'ringTempted': {
       // CR 701.54a, 701.54c, 701.54d (D-196): the Ring tempts a player, who chooses a creature they control as their Ring-bearer (when they control none, nothing
       // is chosen and the Ring has still tempted them).

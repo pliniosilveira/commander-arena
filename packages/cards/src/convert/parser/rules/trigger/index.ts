@@ -28,6 +28,7 @@ import { spellPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
 import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
+import { CLASS_TRIGGER_RULES } from './class';
 import { CONTROL_TRIGGER_RULES } from './control';
 import { DINOSAUR_TRIGGER_RULES } from './dinosaurs';
 import { DRAGON_TRIGGER_RULES } from './dragons';
@@ -1093,6 +1094,7 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
  */
 export const TRIGGER_RULES = [
   TRIGGER_ENTERS_AND_CAST,
+  ...CLASS_TRIGGER_RULES,
   TRIGGER_OR,
   TRIGGER_OR_SUBJECTS,
   TRIGGER_BECOMES_TARGET,

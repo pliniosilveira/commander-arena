@@ -680,6 +680,8 @@ export type GameEvent =
       readonly bearer: ObjectId | null;
       readonly first: boolean;
     }
+  /** A Class permanent reached `level` as its level-bar ability resolved (CR 716.2, D-235). */
+  | { readonly kind: 'classLevelReached'; readonly object: ObjectId; readonly level: number }
   /**
    * A creature stopped being the Ring-bearer of `seat` (CR 701.54a), because another creature became it or because another player gained
    * control of it. Not emitted for one that left the battlefield (it is a new object, CR 400.7, and the designation is simply gone).

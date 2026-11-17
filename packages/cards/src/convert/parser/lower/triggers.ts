@@ -456,6 +456,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     }
     case 'chapter':
       return lowerChapter(t);
+    case 'classLevel': {
+      const level = t.level;
+      if (typeof level !== 'number') return failure(t);
+      const blocked = missingFeatures(['trigger:classLevel']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'classLevel', level });
+    }
     case 'lifeGained': {
       // "Whenever you gain life [for the first time each turn]" (stage P33, D-150, CR 119.9): the player is relative to the controller.
       const who = whoOf(t.actor);

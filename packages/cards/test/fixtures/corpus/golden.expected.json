@@ -1,5 +1,5 @@
 {
-  "parserVersion": 130,
+  "parserVersion": 131,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -4945,8 +4945,8 @@
           "ability": 2,
           "text": "When ~ becomes level 2, create a token that's a copy of target token you control.",
           "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.or"
+          "slot": "noun",
+          "closestRule": "noun.target-permanent"
         }
       ],
       "reasons": [],
@@ -5855,19 +5855,10 @@
     "f0ead7f5-5c82-40fd-8e89-3e3c5d31fbad": {
       "name": "Cleric Class",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 4,
-          "text": "When ~ becomes level 3, return target creature card from your graveyard to the battlefield. You gain life equal to that creature's toughness.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.or"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "9bf6e2d6"
+      "ast": "bbabd2ff"
     },
     "f0ec8681-da50-466b-8cdd-1dc710deccd9": {
       "name": "Deserted Beach",
@@ -6269,7 +6260,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 429,
+      "supported": 430,
       "total": 459
     }
   }

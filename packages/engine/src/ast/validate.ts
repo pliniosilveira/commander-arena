@@ -637,6 +637,11 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.bearerChosen`, 'must be true when present');
       }
       break;
+    case 'classLevel':
+      if (!isCount(t.level) || t.level < 2) {
+        issue(out, `${path}.level`, 'a Class level trigger must name a level of 2 or greater');
+      }
+      break;
     case 'crimeCommitted':
     case 'tokenCreated':
     case 'scries':

@@ -116,6 +116,20 @@ describe('flavor words (CR 207.2d): taken off only when the line does not read a
   });
 });
 
+describe('a Class becomes a level', () => {
+  test('the level three trigger names the level it reaches', () => {
+    expect(
+      readAll('When ~ becomes level 3, draw a card.', 'enchantment', ['Class']).abilities,
+    ).toMatchObject([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'classLevel', level: 3 },
+        effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+      },
+    ]);
+  });
+});
+
 describe('"That token gains haste until end of turn" and "then attach ~ to it": the token the text made (CR 111.2, 400.7j)', () => {
   const grantHaste = {
     kind: 'grantKeyword',

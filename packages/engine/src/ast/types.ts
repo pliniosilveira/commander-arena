@@ -3006,6 +3006,8 @@ export type Trigger =
    * subject of the trigger. `bearerChosen` narrows the event to times a creature was actually chosen, as in CR 701.54a.
    */
   | { readonly kind: 'ringTempted'; readonly bearerChosen?: true }
+  /** "When this Class becomes level N" (CR 716.2, D-235): once as its level changes to `level`. */
+  | { readonly kind: 'classLevel'; readonly level: number }
   /**
    * "Whenever you commit a crime" (CR 700.13, 603.2, D-464): once each time the player `who` names (relative to the controller of this ability) casts a
    * spell, activates an ability or puts a triggered ability on the stack and that spell or ability targets at least one opponent of that player, at least

@@ -30,6 +30,7 @@ const TRANSFER = real('Mind Transfer Protocol');
 const HOMESICKNESS = real('Homesickness');
 const CINDER = real('Flaring Cinder');
 const MEDITATOR = real('Mirkwood Meditator');
+const CLERIC_CLASS = real('Cleric Class');
 
 const FILLER = Array.from({ length: 30 }, () => 'Island');
 const BEARS = 'Grizzly Bears';
@@ -379,6 +380,27 @@ describe("Mirkwood Meditator (Landfall: you may have this creature's base power 
     g.passAll();
     g.act(0).decline();
     g.expect.pt(MEDITATOR.name, 2, 4);
+  });
+});
+
+describe('Cleric Class (level 3: return a creature, then gain life equal to its toughness)', () => {
+  test('reaching level 3 returns the targeted creature and gains life equal to its toughness', () => {
+    const g = on(CLERIC_CLASS)
+      .seat(0)
+      .battlefield(CLERIC_CLASS.name, { level: 2 })
+      .battlefield('Plains', { count: 5 })
+      .graveyard(ANGEL)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+    g.act(0).activate(CLERIC_CLASS.name, { ability: 3, pay: true });
+    g.passAll();
+    if (g.state.pending?.kind === 'targets') g.act(0).chooseTargets(ANGEL);
+    g.passAll();
+
+    g.expect.zone(ANGEL, 'battlefield', { seat: 0 });
+    g.expect.life(0, 45);
+    g.expect.invariants();
   });
 });
 

@@ -1889,7 +1889,15 @@ function runEffect(
       // CR 716.2a (D-235): "This Class's level becomes N": the permanent the ability belongs to, if it is still on the battlefield.
       const source = res.source === null ? undefined : state.objects[res.source];
       if (source?.zone !== 'battlefield') return done(state);
-      return { ...done(patchObject(state, source.id, { level: effect.level })), performed: 1 };
+      const previous = source.level ?? 1;
+      return {
+        ...done(patchObject(state, source.id, { level: effect.level })),
+        events:
+          previous === effect.level
+            ? []
+            : [{ kind: 'classLevelReached', object: source.id, level: effect.level }],
+        performed: 1,
+      };
     }
 
     case 'monstrosity': {

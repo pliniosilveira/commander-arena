@@ -33,4 +33,5 @@
 // 128: Support Moseo's history-based graveyard mana-value limit (D-588).
 // 129: Use a defined life amount for a payment and an X/X token (D-589).
 // 130: Parse a trigger for choosing a creature as Ring-bearer (D-590).
-export const PARSER_VERSION = 130;
+// 131: Parse "when this Class becomes level N" (D-591).
+export const PARSER_VERSION = 131;

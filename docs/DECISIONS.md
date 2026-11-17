@@ -3700,3 +3700,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Decision: Keep the generic Ring-tempted trigger and add an optional `bearerChosen` filter that matches only events carrying a chosen creature. Parse “Whenever you choose a creature as your Ring-bearer” to that filtered trigger.
 - Alternatives: Trigger on every Ring tempt (would trigger even without a creature choice), or add a Ring-specific path to card execution.
 - Consequences: The parser can represent both wordings and the engine filters the shared event. Scenario tests cover the no-creature and chosen-creature cases. Local CR text and Scryfall rulings were unavailable for independent verification.
+
+## D-591: Trigger when a Class reaches a level (2026-11-17, issue 255)
+- Context: Cleric Class has a triggered ability that fires when that same Class becomes level 3. The engine already changed a Class's level but did not emit an event that triggers could observe.
+- Decision: Emit `classLevelReached` when a Class's level changes and add a `classLevel` trigger for a specified level. Match only the same Class object, then describe the level change in the game log.
+- Alternatives: Guess from later board state (misses the exact event and may trigger on a different Class), or special-case Cleric Class.
+- Consequences: The generic Class level change can trigger any level-specific ability. Engine scenarios cover the transition and the real Cleric Class integration test returns its chosen creature and gains life from its toughness. Local CR text and Scryfall rulings were unavailable for independent verification.

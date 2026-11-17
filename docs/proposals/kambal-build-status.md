@@ -4,10 +4,10 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 
 ## Status
 
-- [x] 11 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, and Call of the Ring.
+- [x] 12 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, and Cleric Class.
 - Current branch: `support-kambal`.
 - Current group: D — triggers, Class abilities, and return effects.
-- Next: Cleric Class's level-three trigger and Liesa, Forgotten Archangel's delayed return. The latter may require an owner-approved proposal if it needs a new delayed-trigger subsystem.
+- Next: Liesa, Forgotten Archangel's delayed return. It may require an owner-approved proposal if it needs a new delayed-trigger subsystem.
 
 ## Cards and initial gap groups
 
@@ -36,7 +36,7 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 ### Group D — triggers, Class abilities, and return effects
 
 - [x] Call of the Ring — only triggers after a creature is chosen as Ring-bearer (D-590).
-- [ ] Cleric Class
+- [x] Cleric Class — reaching level 3 emits a Class-level event and triggers its return-and-life ability (D-591).
 - [ ] Liesa, Forgotten Archangel
 - [ ] Skrelv's Hive
 
