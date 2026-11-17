@@ -1,6 +1,6 @@
 # Corpus and coverage tooling: how to run it
 
-Purpose: measure how much of the format the parser supports and rank what to teach it next (SPEC 7.3 and A21, D-057, `docs/design/scaling-card-support.md`). The real run needs Scryfall's bulk host, which the cloud sessions cannot reach, so the owner runs it locally and commits the reports; the numbers live in `reports/`, never in prose. The tests of the tool run offline against a SYNTHETIC corpus.
+Purpose: measure how much of the format the parser supports and rank what to teach it next (SPEC 7.3 and A21, D-057). The real run needs Scryfall's bulk host, which the cloud sessions cannot reach, so the owner runs it locally and commits the reports; the numbers live in `reports/`, never in prose. The tests of the tool run offline against a SYNTHETIC corpus.
 
 ## Run it (local machine, Node 22, after `pnpm install`)
 
