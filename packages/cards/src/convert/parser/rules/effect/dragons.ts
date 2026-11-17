@@ -96,12 +96,13 @@ const THOSE_CARDS = pattern(
  * `effect.may-play`: "You may play that card this turn.", "Until the end of your next turn, you may play those cards.", "You may play those
  * cards until your next end step." (CR 601.2, 305.1, 611.2a: until the moment named, the player may play the cards the instruction before it
  * exiled, a land as a land drop and a spell by casting it, as though they were in their hand). The permission has one duration, said first
- * or last. The cards are those of an earlier "exile": the lowering refuses it after anything else.
+ * or last. The cards are those of an earlier "exile": the lowering refuses it after anything else. Since Lorehold group 1 "cast" says the same of casting only: "you may cast it this
+ * turn" (CR 601.2, 305.1: a land card is no spell, so it is not cast and is not played), the engine's `mayPlay` with `castOnly`.
  */
 export const EFFECT_MAY_PLAY = defineRule<Clauses>({
   id: 'effect.may-play',
   family: 'effect',
-  leading: ['you', 'play', 'until'],
+  leading: ['you', 'play', 'cast', 'until'],
   cites: [
     'CR 601.2 (Casting Spells)',
     'CR 305.1 (Lands)',
@@ -117,8 +118,16 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
     'until end of turn, you may play that card',
     'you may play those cards until your next end step',
     'you may play those cards until the end of your next turn',
+    'you may cast it this turn',
+    'you may cast that card this turn',
+    'cast that card this turn',
+    'until the end of your next turn, you may cast those cards',
   ],
   rejects: [
+    'you may cast that card',
+    'you may cast it without paying its mana cost',
+    'you may cast target card this turn',
+    'you may cast that card this turn and draw a card',
     'you may play that card',
     'you may play that card this turn until your next end step',
     'until end of turn, you may play that card this turn',
@@ -126,7 +135,6 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
     'you may play target card this turn',
     'you may play those cards this turn and draw a card',
     'you may play that card next turn',
-    'you may cast that card this turn',
     'you may play lands this turn',
     'until the end of your next turn, you may play that card until your next end step',
     'until your next turn, you may play those cards',
@@ -151,10 +159,12 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
     if (!lead.ok) return lead;
     const body = sequence(
       optional(literal('you may '), null),
-      literal('play '),
+      choice(literal('play '), literal('cast ')),
       THOSE_CARDS,
     )(ctx, lead.pos);
     if (!body.ok) return body;
+    // "cast" is a permission to cast only: a land card is not played (Lorehold group 1).
+    const castOnly = body.value[1] === 'cast ';
     const trail = spanned(
       optional(
         choice(
@@ -183,7 +193,12 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
       ok: true,
       value: [
         {
-          ...makeClause(id, 'mayPlay', {}, { start: pos, end: trail.pos }),
+          ...makeClause(
+            id,
+            'mayPlay',
+            castOnly ? { castOnly: flag(id, true, { start: pos, end: trail.pos }) } : {},
+            { start: pos, end: trail.pos },
+          ),
           duration: duration(scope, span),
         },
       ],

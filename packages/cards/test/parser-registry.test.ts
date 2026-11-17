@@ -736,6 +736,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `At the beginning of each opponent's upkeep, if ${e}, tap target creature that player controls.`,
   ),
   'condition.host-is-tapped': permanent((e) => `At the beginning of each upkeep, if ${e}, tap it.`),
+  // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way" after a search; "any number of target cards from your graveyard" of a shuffle.
+  'condition.searched-this-way': permanent(
+    (e) =>
+      `When ~ enters, you may search your library for a Plains card and put it onto the battlefield tapped. If ${e}, shuffle.`,
+  ),
+  'noun.any-number-target-graveyard-cards': permanent(
+    (e) => `{2}, Exile ~: Shuffle ${e} into your library.`,
+  ),
   'restriction.cost-reduction-your-turn': permanent(
     (e) => `{1}, {T}: Tap target creature. ${cap(e)}`,
   ),

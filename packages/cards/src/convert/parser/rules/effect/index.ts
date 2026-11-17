@@ -63,6 +63,7 @@ import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
+import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
 import { EFFECT_ADD_ADDITIONAL_MANA, EFFECT_ADD_MANA, EFFECT_CHOOSE_COLOR } from './mana';
 import { MELD_EFFECT_RULES } from './meld';
 import { NIV_EFFECT_RULES } from './niv';
@@ -878,6 +879,9 @@ export const EFFECT_RULES = [
   ...HYLDA_G1_EFFECT_RULES,
   // D-517, D-519 (Hylda deck, group 2): "Those creatures don't untap during ... next untap step" and "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_EFFECT_RULES,
+  // Lorehold Spirit deck, group 1 (issue 86): "repeat this process once", "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and
+  // "each creature deals damage to itself equal to its power" start like a plain exile, a plain shuffle and a plain damage, and are tried first.
+  ...LOREHOLD_G1_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
