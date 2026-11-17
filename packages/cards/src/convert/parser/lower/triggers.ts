@@ -371,6 +371,13 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:ringTempted']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'ringTempted' });
     }
+    case 'ringBearerChosen': {
+      // CR 701.54a: unlike `ringTempted`, this trigger needs a creature to have been chosen.
+      const blocked = missingFeatures(['trigger:ringTempted']);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({ kind: 'ringTempted', bearerChosen: true });
+    }
     case 'castSelf': {
       // "When you cast this spell" (stage P39, D-184, CR 601.2i, 603.2): the spell's own ability, which works while it is on the stack and
       // triggers for that spell only (`self`; the caster is the controller of the ability, the filter says a spell).

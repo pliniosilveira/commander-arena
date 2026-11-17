@@ -1,5 +1,5 @@
 {
-  "parserVersion": 129,
+  "parserVersion": 130,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -4012,19 +4012,10 @@
     "9fcb920c-b8d7-4a79-a335-f63050182cca": {
       "name": "Call of the Ring",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever you choose a creature as your Ring-bearer, you may pay 2 life. If you do, draw a card.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.cast"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "267b48fa"
+      "ast": "8cdadbff"
     },
     "a0753b28-e693-4f5b-a4e4-846e933058d3": {
       "name": "Roar of Resistance",
@@ -6278,7 +6269,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 428,
+      "supported": 429,
       "total": 459
     }
   }

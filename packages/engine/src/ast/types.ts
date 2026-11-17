@@ -3003,9 +3003,9 @@ export type Trigger =
   /**
    * "Whenever the Ring tempts you" (CR 701.54d, D-196): once each time the Ring tempts the controller of the ability, as they have done what
    * CR 701.54a says, even when some or all of it was impossible (no creature to choose). The creature they chose is in the event, not the
-   * subject of the trigger.
+   * subject of the trigger. `bearerChosen` narrows the event to times a creature was actually chosen, as in CR 701.54a.
    */
-  | { readonly kind: 'ringTempted' }
+  | { readonly kind: 'ringTempted'; readonly bearerChosen?: true }
   /**
    * "Whenever you commit a crime" (CR 700.13, 603.2, D-464): once each time the player `who` names (relative to the controller of this ability) casts a
    * spell, activates an ability or puts a triggered ability on the stack and that spell or ability targets at least one opponent of that player, at least

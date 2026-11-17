@@ -32,4 +32,5 @@
 // 127: Read the power of a target creature selected by the same ability (D-587).
 // 128: Support Moseo's history-based graveyard mana-value limit (D-588).
 // 129: Use a defined life amount for a payment and an X/X token (D-589).
-export const PARSER_VERSION = 129;
+// 130: Parse a trigger for choosing a creature as Ring-bearer (D-590).
+export const PARSER_VERSION = 130;

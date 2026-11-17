@@ -35,7 +35,7 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 
 ### Group D — triggers, Class abilities, and return effects
 
-- [ ] Call of the Ring
+- [x] Call of the Ring — only triggers after a creature is chosen as Ring-bearer (D-590).
 - [ ] Cleric Class
 - [ ] Liesa, Forgotten Archangel
 - [ ] Skrelv's Hive

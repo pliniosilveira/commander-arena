@@ -633,7 +633,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'landfall':
       break;
     case 'ringTempted':
-      // D-196: "whenever the Ring tempts you" (CR 701.54d) has no parameters.
+      if (t.bearerChosen !== undefined && t.bearerChosen !== true) {
+        issue(out, `${path}.bearerChosen`, 'must be true when present');
+      }
       break;
     case 'crimeCommitted':
     case 'tokenCreated':

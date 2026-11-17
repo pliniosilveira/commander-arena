@@ -21,4 +21,5 @@
 // 117: Read devotion in characteristic-defining toughness abilities (D-585).
 // 118: Check gained-and-lost-life turn history (D-586).
 // 119: Allow life gained this turn as a mana-value selector limit (D-588).
-export const ENGINE_VERSION = 119;
+// 120: Distinguish Ring tempt events that chose a creature as Ring-bearer (D-590).
+export const ENGINE_VERSION = 120;

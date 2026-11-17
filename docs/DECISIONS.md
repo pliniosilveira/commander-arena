@@ -3694,3 +3694,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Decision: Preserve the value introduced by the payment's "where X is" wording as the ability's X definition. Use it for both the `mayPay` life cost and the custom token's power and toughness; the token count remains one.
 - Alternatives: Treat X as an announced choice (not what the text defines), or special-case Tivash's card data.
 - Consequences: Tivash's parser output uses `lifeGainedThisTurn` for the cost and token stats. Parser and golden acceptance tests cover the complete card. The local CR text and Scryfall rulings were unavailable for independent verification.
+
+## D-590: Filter Ring triggers by an actual creature choice (2026-11-17, issue 255)
+- Context: Call of the Ring triggers when its controller chooses a creature as their Ring-bearer; the existing `ringTempted` event also occurs when no creature could be chosen.
+- Decision: Keep the generic Ring-tempted trigger and add an optional `bearerChosen` filter that matches only events carrying a chosen creature. Parse “Whenever you choose a creature as your Ring-bearer” to that filtered trigger.
+- Alternatives: Trigger on every Ring tempt (would trigger even without a creature choice), or add a Ring-specific path to card execution.
+- Consequences: The parser can represent both wordings and the engine filters the shared event. Scenario tests cover the no-creature and chosen-creature cases. Local CR text and Scryfall rulings were unavailable for independent verification.

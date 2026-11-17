@@ -5031,3 +5031,9 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Parser:** the value after "pay X life, where X is ..." defines X for the payment and the following instruction; an X/X custom token uses the same amount for both stats, with its count remaining one.
 - **Proof:** `parser-p21.test.ts` checks the payment and token AST; the golden acceptance corpus checks the complete card.
 - **Limit:** CR text and rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Call of the Ring (D-590)
+
+- **Engine and parser:** `ringTempted` may require a non-null chosen bearer; the trigger wording “you choose a creature as your Ring-bearer” lowers to that filter.
+- **Proof:** `scenario-xx-ring.test.ts` proves it does not trigger when no creature was available and does trigger when a creature was chosen; `parser-p45.test.ts` checks the exact trigger and payment effect.
+- **Limit:** CR text and rulings were unavailable for independent verification.

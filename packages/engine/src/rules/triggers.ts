@@ -451,7 +451,8 @@ function occurrences(
     case 'ringTempted':
       // CR 701.54d (D-196): each time the Ring tempts a player, whatever they could choose.
       // Galadriel group 1: the creature chosen is the subject, for "if you chose a creature other than ~ as your Ring-bearer" (`ringBearerChosen`); no other ability reads it.
-      return event.kind === 'ringTempted'
+      return event.kind === 'ringTempted' &&
+        (trigger.bearerChosen !== true || event.bearer !== null)
         ? [
             {
               subject: event.bearer,
