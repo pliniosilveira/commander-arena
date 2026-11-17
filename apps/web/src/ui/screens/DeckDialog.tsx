@@ -2,16 +2,24 @@
  * A step of the start-game flow (issue 53): a dialog that asks for one deck, for you or for the
  * opponent. Two tabs split the choices, "Your decks" (decks saved in this browser) and "Precons"
  * (the shipped precons, edited ones included, D-215); the tab opens on the one most likely wanted.
- * A deck is marked by clicking it; the Select button under the list confirms the step.
+ * A deck is marked by clicking it, or by one of the three Random buttons; the Select button under
+ * the list confirms the step.
  */
 import { useEffect, useId, useRef, useState } from 'react';
 import type { DeckChoice } from '../../precons';
+import { pickRandomDeck, type RandomScope } from './menu-model';
 
 type DeckTab = 'saved' | 'precon';
 
 const TABS: readonly { readonly id: DeckTab; readonly label: string }[] = [
   { id: 'saved', label: 'Your Decks' },
   { id: 'precon', label: 'Precons' },
+];
+
+const RANDOMS: readonly { readonly scope: RandomScope; readonly label: string }[] = [
+  { scope: 'all', label: 'Random all' },
+  { scope: 'precon', label: 'Random precon' },
+  { scope: 'saved', label: 'Random from yours' },
 ];
 
 export function DeckDialog({
@@ -53,6 +61,14 @@ export function DeckDialog({
     decks.find((d) => d.id === value)?.kind === 'saved' ? 'saved' : 'precon',
   );
   const shown = decks.filter((deck) => deck.kind === tab);
+
+  // A random button marks a deck (and shows its tab); Select still confirms it.
+  const markRandom = (scope: RandomScope) => {
+    const deck = pickRandomDeck(decks, scope);
+    if (deck === null) return;
+    setMarked(deck.id);
+    setTab(deck.kind);
+  };
 
   // Focus moves into the dialog when it opens and back to the opener when it closes.
   useEffect(() => {
@@ -132,22 +148,37 @@ export function DeckDialog({
           </p>
         )}
         <div className="scr-modal-nav">
-          {onBack !== undefined && (
-            <button type="button" className="scr-btn" onClick={onBack}>
-              Back
+          <div className="scr-modal-group">
+            <button
+              type="button"
+              className="scr-btn scr-btn-primary"
+              disabled={busy || !decks.some((d) => d.id === marked)}
+              onClick={() => onChoose(marked)}
+            >
+              Select
             </button>
-          )}
-          <button type="button" className="scr-btn" onClick={onCancel}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="scr-btn scr-btn-primary"
-            disabled={busy || !decks.some((d) => d.id === marked)}
-            onClick={() => onChoose(marked)}
-          >
-            Select
-          </button>
+            <button type="button" className="scr-btn" onClick={onCancel}>
+              Cancel
+            </button>
+            {onBack !== undefined && (
+              <button type="button" className="scr-btn" onClick={onBack}>
+                Back
+              </button>
+            )}
+          </div>
+          <div className="scr-modal-group">
+            {RANDOMS.map((r) => (
+              <button
+                key={r.scope}
+                type="button"
+                className="scr-btn"
+                disabled={busy || pickRandomDeck(decks, r.scope, () => 0) === null}
+                onClick={() => markRandom(r.scope)}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

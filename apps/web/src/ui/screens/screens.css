@@ -356,6 +356,13 @@
 }
 .scr-modal-nav {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.scr-modal-group {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }

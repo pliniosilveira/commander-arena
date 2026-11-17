@@ -17,7 +17,7 @@ import { lossReason, outcomeFor } from '../src/ui/screens/game-over-model';
 import { HonestyBanner } from '../src/ui/screens/HonestyBanner';
 import { honestyLines } from '../src/ui/screens/honesty-model';
 import { Menu } from '../src/ui/screens/Menu';
-import { defaultDecks, parseSeed } from '../src/ui/screens/menu-model';
+import { defaultDecks, parseSeed, pickRandomDeck } from '../src/ui/screens/menu-model';
 import { StoreProvider } from '../src/ui/store-context';
 import { playableSnapshot, preconsOf } from './precons-helpers';
 
@@ -152,7 +152,27 @@ describe('Menu', () => {
     expect(onlyPrecons).toContain('Commander: Cmd One');
     expect(onlyPrecons).not.toContain('Back');
     expect(onlyPrecons).toContain('>Select<');
+    for (const label of ['Random all', 'Random precon', 'Random from yours'])
+      expect(onlyPrecons).toContain(label);
+    // No deck was saved: its random button is disabled.
+    expect(onlyPrecons).toMatch(/<button[^>]*disabled=""[^>]*>Random from yours/);
+    expect(onlyPrecons).not.toMatch(/<button[^>]*disabled=""[^>]*>Random precon/);
     expect(onlyPrecons).toContain('name="human-deck"');
+  });
+
+  test('the random buttons pick from the whole list, the precons or the saved decks', () => {
+    const deck = (id: string, kind: 'precon' | 'saved') =>
+      ({ id, kind, name: id, blurb: '', commander: '', edited: false }) as const;
+    const decks = [deck('p1', 'precon'), deck('p2', 'precon'), deck('s1', 'saved')];
+    const last = (n: number) => n - 1;
+    expect(pickRandomDeck(decks, 'all', last)?.id).toBe('s1');
+    expect(pickRandomDeck(decks, 'all', () => 0)?.id).toBe('p1');
+    expect(pickRandomDeck(decks, 'precon', last)?.id).toBe('p2');
+    expect(pickRandomDeck(decks, 'saved', last)?.id).toBe('s1');
+    expect(pickRandomDeck([decks[0] as (typeof decks)[0]], 'saved', last)).toBeNull();
+    expect(pickRandomDeck([], 'all', last)).toBeNull();
+    // The browser's own source always lands inside the list.
+    expect(['p1', 'p2']).toContain(pickRandomDeck(decks, 'precon')?.id);
   });
 
   test('the seed rules', () => {
