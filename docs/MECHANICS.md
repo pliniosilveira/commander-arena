@@ -5030,3 +5030,11 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Parser: the grant word "annihilator N" (`rules/keyword/list.ts`, `rules/keyword/vocabulary.ts`), read by `lower/statics.ts` and `lower/continuous.ts`.
 - Tests: engine `scenario-xx-granted-annihilator.test.ts` (an Aura that gives it, none without the Aura, two Auras are two instances); cards `parser-granted-annihilator.test.ts` (the real line of Eldrazi Conscription, near misses).
 - Example cards: Eldrazi Conscription (issue 89).
+
+## An Aura or Equipment that gives an activated ability (issue 89, D-591)
+
+- CR: 613.1f (a granted ability is a layer 6 effect), 113.6g and 602.2 (the creature has it as its own, so its controller activates it), 602.5a ({T} costs), 611.3a (it ends with the source).
+- Gap class: T (the grammar and the gate of the lowering); the engine already ran it (D-099, D-151).
+- Parser: `rules/static/grants.ts` (`andQuoted`: an ability in quotes after "has ..." or "gets ..."), `lower/statics.ts` (`lowerGrantedAbility`: an activated ability for an attached subject).
+- Tests: engine `scenario-xx-granted-activated.test.ts` (flying and a sacrifice ability, the controller of the creature activates it, a tap cost, it ends with the turn and with the Aura); cards `parser-granted-activated.test.ts` (the real line of Fallen Ideal, near misses).
+- Example cards: Fallen Ideal (issue 89).

@@ -27,4 +27,5 @@
 // 122: Read "has ward {N}" as a granted keyword (D-588, issue 89).
 // 123: Read "..., and is goaded" of an Aura as the static ability `goaded` (D-589, issue 89).
 // 124: Read "has annihilator N" as a granted keyword (D-590, issue 89).
-export const PARSER_VERSION = 124;
+// 125: Read an ability in quotes after what an attached permanent has, and an activated one given to it (D-591, issue 89).
+export const PARSER_VERSION = 125;

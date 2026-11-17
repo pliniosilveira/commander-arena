@@ -200,8 +200,18 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
           (): Effects => [{ kind: 'goaded' }],
         )
       : (_ctx: Parameters<Parser<Effects>>[0], pos: number) => fail(_ctx, pos);
+  // D-591 (CR 613.1f): "has flying and "Sacrifice a creature: ~ gets +2/+1 until end of turn."": an ability in quotes after what the subject has, joined with "and" or a comma.
+  const andQuoted =
+    mode === 'self' || mode === 'selfGrant'
+      ? (_ctx: Parameters<Parser<Effects>>[0], pos: number) => fail(_ctx, pos)
+      : quiet(
+          map(
+            sequence(pattern(/(?: and |, and |, )/iu), choice(QUOTED_MANA, QUOTED_ABILITY, QUOTED)),
+            ([, what]) => what,
+          ),
+        );
   const more = map(
-    many(choice(andHas, andRestriction, andAre, andGoaded)),
+    many(choice(andHas, andRestriction, andAre, andGoaded, andQuoted)),
     (groups): Effects => groups.flat(),
   );
   const getsPt = map(

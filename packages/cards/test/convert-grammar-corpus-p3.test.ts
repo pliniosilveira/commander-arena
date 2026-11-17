@@ -92,10 +92,22 @@ const AURAS: readonly Line[] = [
   {
     kind: 'aura',
     text: 'Enchant creature\nEnchanted creature has "{T}: Draw a card."',
-    expect: no('Enchanted creature has "{T}: Draw a card."', 'static.attached', {
+    expect: OK,
+    note: 'SYNTHETIC; an attached permanent is given a triggered ability (stage P49, D-206), a mana ability and, since D-591 (issue 89), an activated one: the creature has it as its own',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant creature\nEnchanted creature has annihilator X.',
+    expect: no('annihilator X.', 'static.attached'),
+    note: 'SYNTHETIC near miss: annihilator is granted only with a number in digits (D-590)',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant creature\nEnchanted creature has "{T}: Foretell the top card."',
+    expect: no('Enchanted creature has "{T}: Foretell the top card."', 'static.attached', {
       ...NOT_RUNNABLE,
     }),
-    note: 'SYNTHETIC; still not run: an attached permanent is given a triggered ability (stage P49, D-206) and a mana ability, no activated one',
+    note: 'SYNTHETIC; the activated ability is read and not run: no rule for foretelling a card as an effect',
   },
   {
     kind: 'aura',
@@ -290,10 +302,11 @@ const EQUIPMENT: readonly Line[] = [
     kind: 'equipment',
     text: 'Equipped creature gets +1/+1 and has trample and "Whenever ~ deals combat damage to a player or planeswalker, create that many Treasure tokens."\nEquip {3}',
     expect: no(
-      '"Whenever ~ deals combat damage to a player or planeswalker, create that many Treasure tokens."',
+      'Equipped creature gets +1/+1 and has trample and "Whenever ~ deals combat damage to a player or planeswalker, create that many Treasure tokens."',
       'static.attached',
+      { ...NOT_RUNNABLE },
     ),
-    note: 'backlog: 1 card',
+    note: 'backlog: 1 card; the quoted ability is read since D-591 and not run (no rule for "create that many Treasure tokens")',
   },
   {
     kind: 'equipment',

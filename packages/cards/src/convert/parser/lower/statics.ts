@@ -156,7 +156,13 @@ function lowerGrantedAbility(
   if (
     subject.kind !== 'this' &&
     ((subject.kind !== 'filter' &&
-      !((subject.kind === 'attached' || subject.kind === 'pair') && inner.kind === 'triggered')) ||
+      !(
+        // D-591 (CR 113.6g, 602.2, 613.1f): an activated ability too for the permanent an Aura or Equipment is attached to: the creature has it as its own, so its
+        // controller activates it and `~` in the quotation is the creature (the engine runs it: `scenario-xx-granted-activated.test.ts`).
+        (subject.kind === 'attached' &&
+          (inner.kind === 'triggered' || inner.kind === 'activated')) ||
+        (subject.kind === 'pair' && inner.kind === 'triggered')
+      )) ||
       ctx.namedInQuotes)
   ) {
     return failure(at);
