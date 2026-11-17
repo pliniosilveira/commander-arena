@@ -64,10 +64,6 @@ function Field({
     >
       {/* The monarch, the Ring and the emblems of this player: a strip of small cards of their own (D-243). */}
       <EmblemStrip view={view} seat={seat} />
-      {/* The cards the viewer may play from exile, at the left of their own battlefield (issue 49). */}
-      {seat === view.viewer && (
-        <ExilePlayStrip view={view} {...(exile ? { playable: exile } : {})} />
-      )}
       <div className="board-field-rows">
         {order.map((kind) => (
           <BattlefieldRow
@@ -79,6 +75,10 @@ function Field({
           />
         ))}
       </div>
+      {/* The cards the viewer may play from exile, over the right side of their own battlefield, apart from the emblems at the left (issue 49). */}
+      {seat === view.viewer && (
+        <ExilePlayStrip view={view} {...(exile ? { playable: exile } : {})} />
+      )}
     </section>
   );
 }

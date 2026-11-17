@@ -35,8 +35,8 @@ function PlayTile({ object, label }: { object: ObjectView; label: string }) {
 
 /**
  * `playable` is the list the board already computed; without it the strip computes its own. The strip sits
- * in a zero-width anchor that follows the emblem strip in the row, so it starts at that strip's right edge
- * (or the field's left edge without one) and floats over the rows without moving them.
+ * in a zero-width anchor at the right end of the field row and floats over the right side of the rows, so
+ * it never meets the emblem strip at the left and the permanents stay centred.
  */
 export function ExilePlayStrip({ view, playable }: { view: GameView; playable?: ExilePlayable }) {
   const ix = useInteraction();
