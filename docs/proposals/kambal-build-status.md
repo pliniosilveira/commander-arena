@@ -6,7 +6,7 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 
 - [x] 2 of 20 unsupported cards are fully supported: Rhox Faithmender and The Wind Crystal.
 - Current branch: `support-kambal`.
-- Current group: A — life-gain replacements, implemented as D-533.
+- Current group: A — life-gain replacements, implemented as D-581.
 - Next: Group B — modalities and split effects.
 
 ## Cards and initial gap groups
