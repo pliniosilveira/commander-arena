@@ -809,6 +809,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-149: "if none of those creatures attacked you" (`not` of `attackersAttackedYou`), "during your first, second, or third turn",
     // "you control three or more lands with the same name".
     'attackersAttackedYou',
+    // D-593: "if two or more of those creatures are attacking you and/or planeswalkers you control".
+    'attackersAtYouAtLeast',
     // Galadriel group 1: "if this is the second time this ability has resolved this turn", "if you chose a creature other than ~ as your Ring-bearer".
     'abilityResolvedTimes',
     'ringBearerChosen',
@@ -1408,6 +1410,8 @@ export const CONDITION_KINDS = [
   'duringStep',
   /** "None of those creatures attacked you" (CR 508.1b, D-149): the engine's `attackersAttackedYou`. */
   'attackersAttackedYou',
+  /** "If two or more of those creatures are attacking you and/or planeswalkers you control" (CR 508.1b, 603.4, D-593): the engine's `attackersAtYouAtLeast`. */
+  'attackersAtYouAtLeast',
   /** "If this is the second time this ability has resolved this turn" (CR 608.2c, Galadriel group 1): the engine's `abilityResolvedTimes`. */
   'abilityResolvedTimes',
   /** "If you chose a creature other than ~ as your Ring-bearer" (CR 701.54a, Galadriel group 1): the engine's `ringBearerChosen`. */

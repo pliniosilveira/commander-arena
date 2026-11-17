@@ -5046,3 +5046,12 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Parser: `static.attached-becomes` (`rules/static/dinosaurs.ts`): ", and has [keywords], and it loses all other abilities, card types, and creature types".
 - Tests: engine `scenario-xx-aura-remakes-creature.test.ts` (types, base power and toughness, the one keyword left, the Aura gone; mutation: the lose after the grant); cards `parser-aura-remakes.test.ts` (the real line of Darksteel Mutation, near misses).
 - Example cards: Darksteel Mutation (issue 89).
+
+## An opponent attacks you and your planeswalkers (issue 89, D-593)
+
+- CR: 508.1b (a creature is declared attacking a player, a planeswalker or a battle), 603.2 and 603.2c (the ability triggers once for the declaration), 603.4 (an intervening "if": checked as it triggers and as it resolves).
+- Gap class: P (a condition that counts whom the declared creatures attack, as an intervening "if"), T (the sentences).
+- Engine: `Condition` `attackersAtYouAtLeast { count }`, valid only as the intervening "if" of an `attackBatch` trigger (`ast/validate.ts`); `rules/triggers.ts` (`attackedAt` of an attack batch), `rules/trigger-stack.ts`, `rules/ability-object.ts`, `rules/stack.ts`, `rules/effects.ts`, `rules/conditions.ts`, `state/types.ts` (`triggerAttackedAt`).
+- Parser: `trigger.opponent-attacks`, `condition.those-attacking-you`, and "that opponent" as the pronoun "that player" (`rules/noun/players.ts`).
+- Tests: engine `scenario-xx-attack-at-you.test.ts` (both at me, one at me and one at my planeswalker, both at my planeswalker, one attacker only: nothing is put on the stack, once for the declaration, my own attack, the opponent loses 3 life); cards `parser-attack-at-you.test.ts` (the real lines of Mangara and Tomik, near misses). Mutation-checked: a planeswalker not counted, and no check as the ability triggers.
+- Example cards: Mangara, the Diplomat; Tomik, Wielder of Law (issue 89).

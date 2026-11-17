@@ -599,6 +599,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.triggerDamage === undefined ? {} : { triggerDamage: res.triggerDamage }),
     ...(res.triggerTargetCount === undefined ? {} : { triggerTargetCount: res.triggerTargetCount }),
     ...(res.triggerAttacked === undefined ? {} : { triggerAttacked: res.triggerAttacked }),
+    ...(res.triggerAttackedAt === undefined ? {} : { triggerAttackedAt: res.triggerAttackedAt }),
     ...(res.lifeLost === undefined ? {} : { lifeLost: res.lifeLost }),
     ...(res.thisWay === undefined ? {} : { thisWay: res.thisWay }),
     ...(res.votes === undefined ? {} : { votes: res.votes }),

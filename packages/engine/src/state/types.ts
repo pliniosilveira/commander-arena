@@ -461,6 +461,8 @@ export interface StackData {
   readonly triggerTargetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
   readonly triggerAttacked?: readonly SeatId[];
+  /** For a triggered ability that reads `attackersAtYouAtLeast` (D-593): who each creature of its attack event was declared attacking, a player or the controller of a planeswalker. */
+  readonly triggerAttackedAt?: readonly SeatId[];
   /**
    * For an activated ability whose cost sacrificed permanents (D-133): the ids they had on the battlefield, which the
    * `sacrificedCost` reference reads (from last-known information: they are gone). For a spell whose additional cost sacrificed any number of permanents
@@ -704,6 +706,8 @@ export interface PendingTrigger {
   readonly cards?: readonly ObjectId[];
   /** For an `attackBatch` trigger (D-149): the players the creatures declared were attacking, in the order declared (a planeswalker or battle is no player). */
   readonly attacked?: readonly SeatId[];
+  /** For an `attackBatch` trigger (D-593): for each creature declared, the player it attacked or the controller of the planeswalker it attacked (a battle is neither), in the order declared. */
+  readonly attackedAt?: readonly SeatId[];
   /** For a chapter ability (CR 714.2): the chapter number that was reached. Absent otherwise. */
   readonly chapter?: number;
   /**
@@ -1657,6 +1661,8 @@ export interface ResolutionContext {
   readonly triggerTargetCount?: number;
   /** What `attackersAttackedYou` reads (D-149): `StackData.triggerAttacked`. */
   readonly triggerAttacked?: readonly SeatId[];
+  /** What `attackersAtYouAtLeast` reads (D-593): `StackData.triggerAttackedAt`. */
+  readonly triggerAttackedAt?: readonly SeatId[];
   /** What `sacrificedCost` means (D-133): `StackData.sacrificedAsCost`. */
   readonly costSacrificed?: readonly ObjectId[];
   /** The cards the cost of this activated ability exiled from the graveyard (D-232, `StackData.exiledAsCost`). */

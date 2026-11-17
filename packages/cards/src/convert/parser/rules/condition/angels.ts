@@ -186,8 +186,51 @@ export const CONDITION_SAME_NAME = defineRule<IrCondition>({
   },
 });
 
+const COUNT_WORDS: Readonly<Record<string, number>> = { two: 2, three: 3, four: 4, five: 5 };
+
+/**
+ * `condition.those-attacking-you`: "two or more of those creatures are attacking you and/or planeswalkers you control" (CR 508.1b: a creature is declared as attacking a
+ * player, a planeswalker or a battle; this counts the declaration at "you" and at the planeswalkers "you" control, together; D-593). "Those creatures" are the attackers that
+ * triggered the ability (`trigger.attack-batch`), which the lowering checks, and the condition is the intervening "if" of the ability.
+ */
+export const CONDITION_THOSE_ATTACKING_YOU = defineRule<IrCondition>({
+  id: 'condition.those-attacking-you',
+  family: 'condition',
+  leading: ['two', 'three', 'four', 'five'],
+  cites: ['CR 508.1b (Declare Attackers Step)', 'CR 603.4 (Handling Triggered Abilities)'],
+  examples: [
+    'two or more of those creatures are attacking you and/or planeswalkers you control',
+    'three or more of those creatures are attacking you and/or planeswalkers you control',
+  ],
+  rejects: [
+    'one or more of those creatures are attacking you and/or planeswalkers you control',
+    'two or more of those creatures are attacking you',
+    'two or more of those creatures are attacking you or planeswalkers you control',
+    'two or more of those creatures attack you and/or planeswalkers you control',
+    'two or more of the creatures are attacking you and/or planeswalkers you control',
+    'two of those creatures are attacking you and/or planeswalkers you control',
+    'two or more of those creatures are attacking you and/or planeswalkers you control and',
+    'two or more of those creatures are attacking you and/or planeswalkers they control',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /(two|three|four|five) or more of those creatures are attacking you and\/or planeswalkers you control(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: conditionOf('condition.those-attacking-you', pos, r.pos, {
+        kind: 'attackersAtYou',
+        atLeast: COUNT_WORDS[(r.value[1] ?? '').toLowerCase()] ?? 0,
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 export const ANGEL_CONDITION_RULES = [
   CONDITION_SAME_NAME,
   CONDITION_HAD_COUNTERS,
   CONDITION_THOSE_ATTACKED_YOU,
+  CONDITION_THOSE_ATTACKING_YOU,
 ].map(quietly);

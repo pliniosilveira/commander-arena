@@ -2285,6 +2285,12 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         );
       }
       break;
+    case 'attackersAtYouAtLeast':
+      // D-593: read from the declaration of the attack event; where it may stand (the intervening "if" of an attackBatch trigger) is checked with the trigger (validate.ts).
+      if (!isCount(c.count) || c.count < 1) {
+        issue(out, `${path}.count`, 'count must be a positive integer');
+      }
+      break;
     case 'attackersAttackedYou':
       // D-149: read from the declaration of the attack event, so only a conditional effect of an attackBatch trigger.
       issue(

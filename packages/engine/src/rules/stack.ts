@@ -76,6 +76,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
         ? {}
         : { triggerSubject: obj.stack.triggerSubject }),
       ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
+      ...(obj.stack?.triggerAttackedAt === undefined
+        ? {}
+        : { triggerAttackedAt: obj.stack.triggerAttackedAt }),
     })
   ) {
     events.push({ kind: 'fizzled', object: id, reason: 'interveningIf' });
@@ -170,6 +173,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.triggerAttacked === undefined
         ? {}
         : { triggerAttacked: obj.stack.triggerAttacked }),
+      ...(obj.stack?.triggerAttackedAt === undefined
+        ? {}
+        : { triggerAttackedAt: obj.stack.triggerAttackedAt }),
     },
   };
   return continueResolution(state, events);

@@ -415,12 +415,16 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.life-gained': whenever,
   'trigger.counters-added': whenever,
   'trigger.attack-batch': whenever,
+  'trigger.opponent-attacks': whenever,
   'condition.had-counters': permanent(
     (e) =>
       `Whenever another permanent you control leaves the battlefield, if ${e}, you gain 1 life.`,
   ),
   'condition.those-attacked-you': permanent(
     (e) => `Whenever another player attacks with two or more creatures, they draw a card if ${e}.`,
+  ),
+  'condition.those-attacking-you': permanent(
+    (e) => `Whenever an opponent attacks with creatures, if ${e}, draw a card.`,
   ),
   'condition.same-name': permanent((e) => `{2}, {T}: Draw a card. Activate only if ${e}.`),
   'noun.that-card': spell(

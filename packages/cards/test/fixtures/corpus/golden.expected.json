@@ -1,5 +1,5 @@
 {
-  "parserVersion": 126,
+  "parserVersion": 127,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1204,19 +1204,10 @@
     "2ef0961a-0543-4371-8c2a-333881b735e5": {
       "name": "Tomik, Wielder of Law",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Whenever an opponent attacks with creatures, if two or more of those creatures are attacking you and/or planeswalkers you control, that opponent loses 3 life and you draw a card.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.or"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "7b7dbc89"
+      "ast": "ba69e5f1"
     },
     "2ef797ef-c05f-4309-85c7-1bd151dac3fa": {
       "name": "Far Wanderings",
@@ -5349,19 +5340,10 @@
     "cbcb6d9a-6ae5-4bcd-8013-2b657553764a": {
       "name": "Mangara, the Diplomat",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever an opponent attacks with creatures, if two or more of those creatures are attacking you and/or planeswalkers you control, draw a card.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.or"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "b744774a"
+      "ast": "19ba33e7"
     },
     "cc2b6e58-2d6f-495e-95f3-9496105c4cba": {
       "name": "Jace Beleren",
@@ -6866,7 +6848,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 428,
+      "supported": 430,
       "total": 480
     }
   }

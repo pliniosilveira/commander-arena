@@ -3992,6 +3992,13 @@ export type Condition =
    */
   | { readonly kind: 'attackersAttackedYou' }
   /**
+   * "If two or more of those creatures are attacking you and/or planeswalkers you control" (CR 508.1b, 603.4, D-593): at least `count` of the creatures declared as
+   * attackers in the event of an `attackBatch` trigger were declared attacking the controller of this ability as a player or a planeswalker that controller controlled
+   * as they were declared (a battle is not counted). It reads the declaration, so a creature removed from combat since still counts. Only the intervening "if" of an
+   * `attackBatch` trigger (`validateCard`): it is read as the attack is declared and again as the ability resolves, from the declaration.
+   */
+  | { readonly kind: 'attackersAtYouAtLeast'; readonly count: number }
+  /**
    * "If this is the second time this ability has resolved this turn" (Galadriel group 1, Elrond, Lord of Rivendell; CR 608.2c, 603.4): the triggered ability this
    * effect belongs to, counted with every other time it has begun to resolve this turn for the same permanent (a resolution is counted as it begins, so this one is
    * included: the second resolution reads 2; a countered ability never resolves and is not counted), has resolved exactly `times` times. Two abilities of one

@@ -632,6 +632,9 @@ export interface IrCondition extends IrNode {
     // Stage P33 (D-150): "none of those creatures attacked you" is `not` of this (CR 508.1b): at least one creature of the attackers that
     // triggered the ability was declared as attacking its controller as a player
     | { readonly kind: 'attackersAttackedYou' }
+    // D-593 (CR 508.1b): "if two or more of those creatures are attacking you and/or planeswalkers you control": at least that many of the attackers that triggered the ability were
+    // declared attacking its controller or a planeswalker its controller controlled
+    | { readonly kind: 'attackersAtYou'; readonly atLeast: number }
     // Stage P33 (D-150): "you control three or more lands with the same name": some name is shared by at least that many of the permanents
     // that match (CR 201.2: two objects have the same name when their names are identical)
     | { readonly kind: 'sameName'; readonly noun: IrNoun; readonly atLeast: number }

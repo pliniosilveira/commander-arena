@@ -1189,7 +1189,14 @@ export function lowerTriggered(
   }
   // "none of those creatures attacked you" is about the attackers of the declaration that triggered the ability (stage P33, D-150, CR 508.1b).
   if (
-    JSON.stringify(effect).includes('"attackersAttackedYou"') &&
+    JSON.stringify([effect, interveningIf ?? null]).includes('"attackersAttackedYou"') &&
+    !triggers.every((t) => t.kind === 'attackBatch')
+  ) {
+    return failure(ability);
+  }
+  // D-593 (CR 508.1b): "if two or more of those creatures are attacking you and/or planeswalkers you control" is about the attackers of the declaration that triggered the ability.
+  if (
+    JSON.stringify(interveningIf ?? null).includes('"attackersAtYouAtLeast"') &&
     !triggers.every((t) => t.kind === 'attackBatch')
   ) {
     return failure(ability);

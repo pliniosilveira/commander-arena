@@ -1396,6 +1396,17 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'subjectControllerHasMore reads the controller of a permanent the event is about',
           );
         }
+        // D-593: the attack declaration is what `attackersAtYouAtLeast` reads, so only the intervening "if" of an attackBatch trigger has it.
+        if (
+          conditionHas(a.interveningIf, 'attackersAtYouAtLeast') &&
+          a.trigger?.kind !== 'attackBatch'
+        ) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'attackersAtYouAtLeast reads the creatures of an attackBatch trigger: it is only valid in the intervening "if" of one',
+          );
+        }
         if (conditionHas(a.interveningIf, 'triggerPlayerHasMore') && !triggerHasPlayer(a.trigger)) {
           issue(
             out,

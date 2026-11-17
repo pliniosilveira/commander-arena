@@ -102,6 +102,8 @@ interface Occurrence {
   /** For `attackBatch`: the creatures declared as attackers and the players they were declared as attacking (D-149). */
   readonly attackers?: readonly ObjectId[];
   readonly attacked?: readonly SeatId[];
+  /** For `attackBatch` (D-593): for each creature declared, the player it attacked or the controller of the planeswalker it attacked. */
+  readonly attackedAt?: readonly SeatId[];
 }
 
 /** The controller of a damage source, as it is or as it last was (CR 113.7a); null when unknown. */
@@ -445,6 +447,15 @@ function occurrences(
               attacked: event.attackers.flatMap((a) =>
                 a.target.kind === 'player' ? [a.target.seat] : [],
               ),
+              // CR 508.1b (D-593): a planeswalker attacked counts for its controller as the declaration is made; a battle is neither a player nor a planeswalker.
+              attackedAt: event.attackers.flatMap((a) => {
+                if (a.target.kind === 'player') return [a.target.seat];
+                const attacked = state.objects[a.target.object];
+                return attacked !== undefined &&
+                  derive(state, attacked).types.includes('planeswalker')
+                  ? [controllerOf(state, attacked)]
+                  : [];
+              }),
             },
           ]
         : [];
@@ -1007,6 +1018,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
               source: id,
               ...(occ.subject === null ? {} : { triggerSubject: occ.subject }),
               ...(occ.player === undefined ? {} : { triggerPlayer: occ.player }),
+              ...(occ.attackedAt === undefined ? {} : { triggerAttackedAt: occ.attackedAt }),
             })
           ) {
             continue;
@@ -1037,6 +1049,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             ...(occ.targetCount === undefined ? {} : { targetCount: occ.targetCount }),
             ...(occ.chapter === undefined ? {} : { chapter: occ.chapter }),
             ...(occ.attacked === undefined ? {} : { attacked: occ.attacked }),
+            ...(occ.attackedAt === undefined ? {} : { attackedAt: occ.attackedAt }),
             // D-232: "become a copy of an artifact or creature card from among those cards": every card of the player that left the graveyard in these events.
             ...(ability.trigger.kind === 'leftGraveyard'
               ? { cards: cardsThatLeftGraveyard(state, events, candidate.controller) }

@@ -269,8 +269,56 @@ export const TRIGGER_ATTACK_BATCH = defineRule<IrTrigger>({
   },
 });
 
+/**
+ * `trigger.opponent-attacks`: "an opponent attacks with creatures" (CR 508.1, 603.2, 603.2c: the attackers are declared together and the ability triggers once for the declaration,
+ * however many creatures it holds; D-593). One or more creatures, so `atLeast` 1 and every creature declared counts; "an opponent" is a player who is not the controller of the
+ * ability, who is "that opponent" in the body.
+ */
+export const TRIGGER_OPPONENT_ATTACKS = defineRule<IrTrigger>({
+  id: 'trigger.opponent-attacks',
+  family: 'trigger',
+  leading: ['an'],
+  cites: [
+    'CR 508.1 (Declare Attackers Step)',
+    'CR 603.2 (Handling Triggered Abilities)',
+    'CR 603.2c (Handling Triggered Abilities)',
+  ],
+  examples: ['an opponent attacks with creatures'],
+  rejects: [
+    'an opponent attacks with a creature',
+    'an opponent attacks with creature',
+    'an opponent attacks with creatures you control',
+    'an opponent attack with creatures',
+    'an opponent attacks with creatures and',
+    'an opponent attacks',
+    'a player attacks with creatures',
+    'you attack with creatures',
+    'another player attacks with creatures',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'trigger.opponent-attacks';
+    const r = pattern(/an opponent attacks with creatures(?![\p{L}\p{N}'’])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'attackBatch',
+        actor: makeNoun(id, span, 'eachOpponent', { raw: 'an opponent' }),
+        atLeast: 1,
+        args: {},
+        span,
+        rule: id,
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const ANGEL_TRIGGER_RULES = [
   TRIGGER_LIFE_GAINED,
   TRIGGER_COUNTERS_ADDED,
   TRIGGER_ATTACK_BATCH,
+  TRIGGER_OPPONENT_ATTACKS,
 ].map(quietly);

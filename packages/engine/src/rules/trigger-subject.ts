@@ -58,8 +58,10 @@ export function readsTriggerDamage(ability: Ability): boolean {
 export function readsTriggerAttacked(ability: Ability): boolean {
   return (
     ability.kind === 'triggered' &&
-    JSON.stringify([ability.effect, ability.modes ?? [], ability.interveningIf ?? null]).includes(
+    (JSON.stringify([ability.effect, ability.modes ?? [], ability.interveningIf ?? null]).includes(
       '"attackersAttackedYou"',
-    )
+    ) ||
+      // D-593: the intervening "if" reads whom each creature attacked, as the ability triggers and again as it resolves.
+      JSON.stringify(ability.interveningIf ?? null).includes('"attackersAtYouAtLeast"'))
   );
 }

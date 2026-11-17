@@ -29,4 +29,5 @@
 // 124: Read "has annihilator N" as a granted keyword (D-590, issue 89).
 // 125: Read an ability in quotes after what an attached permanent has, and an activated one given to it (D-591, issue 89).
 // 126: Read "..., and has [keywords], and it loses all other abilities, card types, and creature types" of an Aura (D-592, issue 89).
-export const PARSER_VERSION = 126;
+// 127: Read "an opponent attacks with creatures", "if two or more of those creatures are attacking you and/or planeswalkers you control" and "that opponent" (D-593, issue 89).
+export const PARSER_VERSION = 127;

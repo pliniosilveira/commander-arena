@@ -138,8 +138,10 @@ export const NOUN_THAT_PLAYER = defineRule<IrNoun>({
   family: 'noun',
   leading: ['that'],
   cites: ['CR 102.1 (Players)', 'CR 603.2 (Handling Triggered Abilities)'],
-  examples: ['that player', 'That player'],
+  // D-593 (Tomik, Wielder of Law): "that opponent" is the same pronoun for a player the text has named an opponent.
+  examples: ['that player', 'That player', 'that opponent'],
   rejects: [
+    'that opponents',
     'that players',
     'that creature',
     'that',
@@ -147,8 +149,11 @@ export const NOUN_THAT_PLAYER = defineRule<IrNoun>({
     "that player's",
     'the player',
   ],
-  parse: phrase('noun.that-player', new RegExp(`that player${END}(?!['’])`, 'iu'), (raw) =>
-    bare('anaphor', raw),
+  // The words are kept as "that player" whichever was written: the binding pass and the lowering know the pronoun by them.
+  parse: phrase(
+    'noun.that-player',
+    new RegExp(`that (?:player|opponent)${END}(?!['’])`, 'iu'),
+    () => bare('anaphor', 'that player'),
   ),
 });
 

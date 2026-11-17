@@ -399,6 +399,13 @@ export function lowerCondition(
       if (!filter.ok) return filter;
       return ok({ kind: 'controlsGreatest', filter: filter.value, stat: test.stat });
     }
+    case 'attackersAtYou': {
+      // CR 508.1b, 603.4 (D-593): read from the declaration of the `attackBatch` trigger the ability belongs to, as its intervening "if"; `validateCard` refuses it anywhere else.
+      const blocked = missingFeatures(['condition:attackersAtYouAtLeast']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'attackersAtYouAtLeast', count: test.atLeast });
+    }
     case 'attackersAttackedYou': {
       // CR 508.1b (stage P33, D-150): read from the declaration of the `attackBatch` trigger the ability belongs to; `validateCard` refuses it
       // anywhere else.
@@ -599,6 +606,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:opponentControlsAtLeast',
   'condition:controlsGreatest',
   'condition:attackersAttackedYou',
+  'condition:attackersAtYouAtLeast',
   'condition:sameNameAtLeast',
   'condition:attackingMostLife',
   'condition:attackersTotalPower',

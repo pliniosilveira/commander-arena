@@ -1627,7 +1627,9 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                   ? 'thisWayAtLeast'
                   : test === 'otherAttachedToHost'
                     ? 'amountIs'
-                    : test;
+                    : test === 'attackersAtYou'
+                      ? 'attackersAtYouAtLeast'
+                      : test;
     return failure(
       clause,
       kind === 'raw' ||

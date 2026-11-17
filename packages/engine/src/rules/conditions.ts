@@ -83,6 +83,8 @@ export interface ConditionContext {
   readonly thisWay?: ThisWayCounts;
   /** For `attackersAttackedYou` (D-149): the players the creatures of the trigger's attack event were declared as attacking. */
   readonly triggerAttacked?: readonly SeatId[];
+  /** For `attackersAtYouAtLeast` (D-593): who each creature of the trigger's attack event was declared attacking (a player, or the controller of a planeswalker). */
+  readonly triggerAttackedAt?: readonly SeatId[];
   /**
    * Whether to assume a target the spell has not chosen yet could satisfy `spellTargets` (D-207): the question "may this spell be cast at all?" asks it before any
    * target is chosen, so a reduction that depends on the target is counted; the cost as it is paid is determined after the targets, without this.
@@ -355,6 +357,12 @@ export function evaluateCondition(
       }
       return [...byName.values()].some((n) => n >= condition.count);
     }
+    case 'attackersAtYouAtLeast':
+      // CR 508.1b, 603.4 (D-593): the creatures declared at me or at a planeswalker I control, read from the declaration.
+      return (
+        (ctx.triggerAttackedAt ?? []).filter((seat) => seat === ctx.controller).length >=
+        condition.count
+      );
     case 'attackersAttackedYou':
       // CR 508.1b (D-149): read from the declaration of the attack event this trigger came from.
       return (ctx.triggerAttacked ?? []).includes(ctx.controller);

@@ -20,4 +20,5 @@
 // 116: A static ability may give ward; each instance granted is a triggered ability of its own (D-588, issue 89).
 // 117: Goad: the effect `goad`, the static ability "is goaded" of an attached permanent and the continuous change `goaded`, read where attackers are declared (D-589, issue 89).
 // 118: A static ability may give annihilator; each instance granted is a triggered ability of its own (D-590, issue 89).
-export const ENGINE_VERSION = 118;
+// 119: A trigger of an attack batch keeps, for each creature declared, whom it attacked (a player or the controller of a planeswalker), read by the intervening "if" `attackersAtYouAtLeast` (D-593, issue 89).
+export const ENGINE_VERSION = 119;
