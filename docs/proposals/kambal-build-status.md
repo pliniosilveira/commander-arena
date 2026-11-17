@@ -4,10 +4,10 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 
 ## Status
 
-- [x] 5 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, and Revival // Revenge.
+- [x] 11 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, and Call of the Ring.
 - Current branch: `support-kambal`.
-- Current group: B — modalities and split effects; all three cards in the group are done.
-- Next: Daxos, Blessed by the Sun and Lunar Convocation.
+- Current group: D — triggers, Class abilities, and return effects.
+- Next: Cleric Class's level-three trigger and Liesa, Forgotten Archangel's delayed return. The latter may require an owner-approved proposal if it needs a new delayed-trigger subsystem.
 
 ## Cards and initial gap groups
 
@@ -59,3 +59,5 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 - Golden snapshot regenerated after parser support; `pnpm test:focus -- packages/cards/test/golden.test.ts` passes.
 - The focused engine, parser, AI, web rendering and golden checks for group A pass; see the proposal for the command.
 - `Archenemy's Charm` now passes default import and golden support. Focused parser registry, real-card integration, and golden tests pass; the tests cover one target and two targets of different card types.
+- `Tivash, Gloom Summoner` passes parser and golden support: defined life gained this turn is used for the payment and X/X token stats. The focused parser, validation, golden and typecheck checks pass.
+- `Call of the Ring` passes parser and golden support. Focused Ring scenario tests prove the filtered trigger does not fire with no creature available and does fire after a creature is chosen. `pnpm typecheck`, `pnpm lint`, and dependency boundaries pass; lint reports existing warnings and informational findings outside this work.
