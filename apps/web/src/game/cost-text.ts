@@ -176,6 +176,19 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
       return `Tap untapped creatures you control with total power ${cost.totalPower} or greater`;
     case 'exileFromGraveyard':
       return `Exile ${countText(cost.count, 'card', 'cards')} from your graveyard`;
+    case 'exileFromHand': {
+      const colorNames: Readonly<Record<string, string>> = {
+        W: 'white',
+        U: 'blue',
+        B: 'black',
+        R: 'red',
+        G: 'green',
+      };
+      const colors = (cost.filter.colors ?? [])
+        .map((color) => colorNames[color] ?? color)
+        .join(' or ');
+      return `Exile any number of ${colors === '' ? '' : `${colors} `}cards from your hand (optional)`;
+    }
     case 'removeCounters':
       return `Remove ${countText(cost.count, `${cost.counter} counter`, `${cost.counter} counters`)}`;
     case 'putCounters':

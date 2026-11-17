@@ -99,4 +99,57 @@ export const EFFECT_GAIN_CONTROL = defineRule<Clauses>({
   ),
 });
 
-export const CONTROL_EFFECT_RULES = [EFFECT_GAIN_CONTROL];
+/** "Target player gains control of up to N target creatures" (CR 613.1b, 611.2c): one target player controls the chosen target group. */
+export const EFFECT_GAIN_CONTROL_FOR_PLAYER = defineRule<Clauses>({
+  id: `${RULE}-for-player`,
+  family: 'effect',
+  leading: ['target'],
+  cites: [
+    'CR 115.1 (Targets)',
+    'CR 601.2c (Casting Spells)',
+    'CR 611.2c (Continuous Effects)',
+    'CR 613.1b (Interaction of Continuous Effects)',
+  ],
+  examples: [
+    'target player gains control of up to three target nonattacking creatures until end of turn',
+  ],
+  rejects: [
+    'target player gains control of target creature until end of turn',
+    'target player gains control of up to three creatures until end of turn',
+  ],
+  parse: single(
+    `${RULE}-for-player`,
+    sequence(
+      refuseAt(
+        family<IrNoun>('noun', { only: ['noun.player'] }),
+        (n) => n.det === 'target' && n.filter.player !== undefined,
+        (_n, _ctx, start) => start,
+      ),
+      literal(' gains control of '),
+      refuseAt(
+        family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+        (n) =>
+          n.plural &&
+          n.det === 'target' &&
+          n.filter.types?.length === 1 &&
+          n.filter.types[0] === 'creature' &&
+          n.upTo === true,
+        (_n, _ctx, start) => start,
+      ),
+      DURATION,
+    ),
+    ([player, , objects, ended]) => {
+      const duration: IrDuration | undefined =
+        ended === null
+          ? undefined
+          : { kind: 'duration', scope: ended.value, span: ended.span, rule: `${RULE}-for-player` };
+      return {
+        verb: 'gainControl',
+        args: { player, objects },
+        ...(duration === undefined ? {} : { duration }),
+      };
+    },
+  ),
+});
+
+export const CONTROL_EFFECT_RULES = [EFFECT_GAIN_CONTROL, EFFECT_GAIN_CONTROL_FOR_PLAYER];

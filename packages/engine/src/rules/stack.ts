@@ -96,6 +96,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
     ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
     // D-230: "mana value X or less, where X is the damage dealt" is read again as the ability resolves.
     ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
+    ...(obj.stack?.triggerTargetCount === undefined
+      ? {}
+      : { triggerTargetCount: obj.stack.triggerTargetCount }),
   };
   const legal = stillLegalTargets(input, specs, chosen, ctx);
 
@@ -161,6 +164,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.thisWayBefore === undefined ? {} : { thisWay: obj.stack.thisWayBefore }),
       ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
       ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
+      ...(obj.stack?.triggerTargetCount === undefined
+        ? {}
+        : { triggerTargetCount: obj.stack.triggerTargetCount }),
       ...(obj.stack?.triggerAttacked === undefined
         ? {}
         : { triggerAttacked: obj.stack.triggerAttacked }),
@@ -267,6 +273,9 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
           ? { entersPaid: null }
           : {}),
         ...(head.kind === 'move' && res.entersChosen != null ? { entersChosen: null } : {}),
+        ...(head.kind === 'chooseObjects' && head.chosen !== null
+          ? { chosenObjects: { ...res.chosenObjects, [head.id]: head.chosen } }
+          : {}),
       },
     };
     // D-191: the answers to the replacement questions of the damage belong to the one instruction that asked them.
@@ -420,6 +429,7 @@ export function answerResolutionChoice(
   if (!res || head === undefined) return null;
   if (
     head.kind !== 'chooseSacrifice' &&
+    head.kind !== 'chooseObjects' &&
     head.kind !== 'chooseMove' &&
     head.kind !== 'chooseTap' &&
     head.kind !== 'fightPairs' &&
@@ -821,6 +831,45 @@ export function answerResolutionChooseOne(state: GameState, option: string): Res
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
     [],
+  );
+}
+
+/** Records the creature type chosen by a resolving instruction and continues its spell. */
+export function answerResolutionCreatureType(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const d = state.pending;
+  if (
+    !res ||
+    head?.kind !== 'chooseCreatureType' ||
+    head.chosen !== null ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'creatureType' ||
+    !d.options.includes(option)
+  )
+    return null;
+  const updated: Instruction = { ...head, chosen: option };
+  const event: GameEvent = {
+    kind: 'optionChosen',
+    seat: d.seat,
+    source: d.source,
+    purpose: d.purpose,
+    option,
+  };
+  return continueResolution(
+    {
+      ...state,
+      pending: null,
+      resolution: {
+        ...res,
+        chosenCreatureType: option,
+        queue: [updated, ...res.queue.slice(1)],
+      },
+    },
+    [event],
   );
 }
 

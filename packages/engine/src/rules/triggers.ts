@@ -92,6 +92,7 @@ interface Occurrence {
   readonly player?: SeatId;
   /** The damage the event dealt, for `triggerDamage` and `dealtDamage` (D-133). */
   readonly damage?: number;
+  readonly targetCount?: number;
   /** For `lifeGained`: how many times the player has gained life this turn, this one included (D-149). */
   readonly gainNth?: number;
   /** For `countersAdded`: the kind of the counters put on (D-149). */
@@ -194,10 +195,25 @@ function occurrences(
     case 'castSpell':
       // D-218 (CR 707.10): a copy put onto the stack is not cast, but "cast or copy" counts it, under the control of the player who has it.
       if (trigger.orCopy === true && event.kind === 'spellCopied') {
-        return [{ subject: event.copy, seat: event.seat, player: event.seat }];
+        return [
+          {
+            subject: event.copy,
+            seat: event.seat,
+            player: event.seat,
+            targetCount: state.objects[event.copy]?.stack?.chosenTargets.length ?? 0,
+          },
+        ];
       }
       return event.kind === 'spellCast'
-        ? [{ subject: event.object, seat: event.seat, player: event.seat, nth: event.nth }]
+        ? [
+            {
+              subject: event.object,
+              seat: event.seat,
+              player: event.seat,
+              nth: event.nth,
+              targetCount: event.targetCount,
+            },
+          ]
         : [];
     case 'cycled':
       // CR 702.29c (D-179): the card that was cycled, where it wound up.
@@ -684,6 +700,9 @@ function matches(
       if (trigger.by === 'opponent' && occ.seat === candidate.controller) return false;
       // D-229: "their second spell each turn": the caster's nth spell of the turn.
       if (trigger.nth !== undefined && occ.nth !== trigger.nth) return false;
+      // D-565: "during each opponent's turn" is relative to the controller of this ability.
+      if (trigger.duringTurn === 'opponent' && state.turn.activeSeat === candidate.controller)
+        return false;
       return matchesFilter(state, subject, trigger.filter, ctx);
     case 'step':
       // CR 503 to 514: whose turn it is, relative to the controller of the ability.
@@ -1015,6 +1034,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             subject: occ.subject,
             ...eventPlayer(ability, occ),
             ...(occ.damage === undefined ? {} : { damage: occ.damage }),
+            ...(occ.targetCount === undefined ? {} : { targetCount: occ.targetCount }),
             ...(occ.chapter === undefined ? {} : { chapter: occ.chapter }),
             ...(occ.attacked === undefined ? {} : { attacked: occ.attacked }),
             // D-232: "become a copy of an artifact or creature card from among those cards": every card of the player that left the graveyard in these events.

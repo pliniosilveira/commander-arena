@@ -30,8 +30,10 @@ const wordsFor = (plural: boolean): readonly (readonly [RegExp, IrRestrictionKin
       : / attacks this turn if able(?![\p{L}\p{N}])/iu,
     'attacksEachCombat',
   ],
+  [/ block this turn if able(?![\p{L}\p{N}])/iu, 'mustBlock'],
   // Stage P49 (D-206, CR 509.1c): "must be blocked this turn if able".
   [/ must be blocked this turn if able(?![\p{L}\p{N}])/iu, 'mustBeBlocked'],
+  [/ block this turn if able(?![\p{L}\p{N}])/iu, 'mustBlock'],
 ];
 
 const tail = (plural: boolean) => {
@@ -243,6 +245,34 @@ export const EFFECT_RESTRICT_SELF = defineRule<Clauses>({
   ),
 });
 
+/** `effect.restrict-those`: "They block this turn if able" binds to the plural creature group the prior instruction named. */
+export const EFFECT_RESTRICT_THOSE = defineRule<Clauses>({
+  id: `${RULE}-those`,
+  family: 'effect',
+  leading: ['they'],
+  cites: [
+    'CR 509.1b (Declare Blockers Step)',
+    'CR 611.2c (Continuous Effects)',
+    'CR 514.2 (Cleanup Step)',
+  ],
+  examples: ['They block this turn if able'],
+  rejects: ['They block if able', 'They block this turn'],
+  parse: single(
+    `${RULE}-those`,
+    sequence(family<IrNoun>('noun', { only: ['noun.they'] }), TAIL_ALL),
+    ([objects, { restriction, span }]) => {
+      const kind: IrArg = { kind: 'restrictionKind', restriction, span, rule: `${RULE}-those` };
+      const duration: IrDuration = {
+        kind: 'duration',
+        scope: 'thisTurn',
+        span,
+        rule: `${RULE}-those`,
+      };
+      return { verb: 'restrict', args: { objects, restriction: kind }, duration };
+    },
+  ),
+});
+
 /**
  * `effect.restrict-while-controlling`: "up to one target creature can't block for as long as you control ~" (stage P45, D-197, CR 509.1b, 611.2b,
  * 613.11): the same effect as `effect.restrict` with the duration of an ability of a permanent, which does nothing when the permanent is not on the
@@ -323,5 +353,6 @@ export const RESTRICT_RULES = [
   EFFECT_RESTRICT,
   EFFECT_RESTRICT_ALL,
   EFFECT_RESTRICT_SELF,
+  EFFECT_RESTRICT_THOSE,
   EFFECT_RESTRICT_WHILE_CONTROLLING,
 ];

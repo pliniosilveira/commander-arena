@@ -307,3 +307,17 @@ export const EFFECT_CHOOSE_COLOR = defineRule<Clauses>({
     args: {},
   })),
 });
+
+export const EFFECT_CHOOSE_CREATURE_TYPE = defineRule<Clauses>({
+  id: 'effect.choose-creature-type',
+  family: 'effect',
+  leading: ['choose'],
+  cites: ['CR 205.3m (Creature Types)', 'CR 608.2d (Resolving Spells and Abilities)'],
+  examples: ['choose a creature type'],
+  rejects: ['choose a creature', 'choose any creature type', 'choose two creature types'],
+  parse: single(
+    'effect.choose-creature-type',
+    pattern(/choose a creature type(?![\p{L}\p{N}])/iu),
+    () => ({ verb: 'chooseCreatureType', args: {} }),
+  ),
+});

@@ -18,7 +18,7 @@ import { allocateTimestamp, patchObject } from '../state/ops';
 import type { ChosenTarget, ContinuousEffect, EffectEnd, GameState } from '../state/types';
 import { removeAttackedFromCombat, removeFromCombat } from './combat-removal';
 import { controllerOf } from './control';
-import { resolveObjects, type SelectContext } from './select';
+import { resolveObjects, resolvePlayers, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
 /** When an effect of this duration, begun now for `ctx.controller`, ends; null when it does nothing (CR 611.2b). */
@@ -110,6 +110,9 @@ export function runGainControl(
   if (affected.length === 0) return done(state);
   const until = endOf(state, node.duration, ctx);
   if (until === null) return done(state);
+  const player =
+    node.player === undefined ? [ctx.controller] : resolvePlayers(state, node.player, ctx, targets);
+  if (player.length !== 1 || player[0] === undefined) return done(state);
   const before = controllersOf(state, affected);
   const [timestamp, stamped] = allocateTimestamp(state);
   const created: ContinuousEffect = {
@@ -117,7 +120,7 @@ export function runGainControl(
     timestamp,
     objects: affected,
     until,
-    change: { kind: 'control', seat: ctx.controller },
+    change: { kind: 'control', seat: player[0] },
   };
   const next: GameState = {
     ...stamped,

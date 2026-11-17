@@ -47,6 +47,18 @@ const lookOf = (name: string) => {
 const say = (n: unknown) => String(n);
 
 describe('the effect, worded as the cards print it', () => {
+  test('one hidden card taken, with the rest ordered on top', () => {
+    const effect: Extract<Effect, { kind: 'lookAtTop' }> = {
+      kind: 'lookAtTop',
+      count: 5,
+      take: { filter: {}, max: 1, min: 1, hidden: true },
+      rest: 'topChosen',
+    };
+    expect(lookAtTopText(effect, say)).toBe(
+      'Look at the top five cards of your library. Put one of them into your hand. Put the rest on top of your library in any order',
+    );
+  });
+
   test.each([
     [
       'SYNTHETIC Reveal Five Sorcery',

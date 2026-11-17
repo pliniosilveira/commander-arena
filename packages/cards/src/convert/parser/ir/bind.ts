@@ -222,6 +222,15 @@ class Binder {
     let found: Antecedent | undefined;
     switch (pronoun?.kind) {
       case 'player':
+        // Oracle "they" may refer to the most recent plural object group instead of a player.
+        if (/^they$/iu.test(noun.filter.raw.trim())) {
+          const pluralIndex = recent.findIndex((a) => a.kind === 'object' && a.noun.plural);
+          const playerIndex = recent.findIndex((a) => a.kind === 'player');
+          if (pluralIndex >= 0 && (playerIndex < 0 || pluralIndex < playerIndex)) {
+            found = recent[pluralIndex];
+            break;
+          }
+        }
         // A player the text never says ("Draw a card": you, implied, no words) cannot be what "that
         // player" or "they" points back to (stage P18).
         // Stage P52 (D-210): after a sentence that asks a player ("target opponent may have you draw three cards. If the player doesn't, you mill three cards,
@@ -278,6 +287,15 @@ class Binder {
   noun(noun: IrNoun): IrNoun {
     const seen = this.byKey.get(key(noun.span));
     if (seen !== undefined) return seen;
+    const ownTargetRef =
+      noun.det === 'target' && noun.filter.manaValueAtMostAmount !== undefined
+        ? `t${++this.scope.targetCount}`
+        : undefined;
+    if (ownTargetRef !== undefined) {
+      const target = { ...noun, ref: ownTargetRef };
+      this.targets.push(target);
+      this.antecedents.push({ noun: target, kind: isPlayerNoun(target) ? 'player' : 'object' });
+    }
     const of = noun.of === undefined ? undefined : this.noun(noun.of);
     // D-269: "you and that player each gain that much life": a pronoun of the list points at what came before the list, never at "you" of its own list
     // (as for a list of nouns, stage P53, D-212), so the pronouns are bound first.
@@ -300,8 +318,19 @@ class Binder {
     const controller = noun.filter.controller;
     const filter =
       typeof controller === 'object'
-        ? { ...noun.filter, controller: { ...controller, noun: this.noun(controller.noun) } }
-        : noun.filter;
+        ? {
+            ...noun.filter,
+            controller: { ...controller, noun: this.noun(controller.noun) },
+            ...(noun.filter.manaValueAtMostAmount === undefined
+              ? {}
+              : { manaValueAtMostAmount: this.amount(noun.filter.manaValueAtMostAmount) }),
+          }
+        : noun.filter.manaValueAtMostAmount === undefined
+          ? noun.filter
+          : {
+              ...noun.filter,
+              manaValueAtMostAmount: this.amount(noun.filter.manaValueAtMostAmount),
+            };
     let out: IrNoun = {
       ...noun,
       filter,
@@ -311,10 +340,12 @@ class Binder {
     if (noun.det === 'anaphor') {
       out = this.resolveAnaphor(out);
     } else if (noun.det === 'target') {
-      this.scope.targetCount += 1;
-      out = { ...out, ref: `t${this.scope.targetCount}` };
-      this.targets.push(out);
-      this.antecedents.push({ noun: out, kind: isPlayerNoun(out) ? 'player' : 'object' });
+      const ref = ownTargetRef ?? `t${++this.scope.targetCount}`;
+      out = { ...out, ref };
+      if (ownTargetRef === undefined) {
+        this.targets.push(out);
+        this.antecedents.push({ noun: out, kind: isPlayerNoun(out) ? 'player' : 'object' });
+      }
     } else if (noun.det === 'self') {
       out = { ...out, ref: 'self' };
       this.antecedents.push({ noun: out, kind: 'object' });

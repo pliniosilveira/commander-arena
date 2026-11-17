@@ -52,6 +52,7 @@ import { missingFeatures } from './features';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
+import { GRANT_ABILITY } from './granted-ability';
 import { GAIN_STATIC_ABILITY } from './granted-static';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
@@ -291,10 +292,26 @@ function lowerChosenReturn(clause: IrClause, what: IrNoun, zone: string): LowerR
   if (blocked.length > 0) return failure(clause, blocked);
   const filter = lowerFilter(what);
   if (!filter.ok) return filter;
-  if (filter.value.controller !== 'you') return failure(clause);
+  if (filter.value.controller !== 'you' && filter.value.zone !== 'graveyard')
+    return failure(clause);
+  const count = what.count?.kind === 'number' ? what.count.value : undefined;
+  if (what.upTo === true && (count === undefined || filter.value.zone !== 'graveyard')) {
+    return failure(clause);
+  }
   return {
     ok: true,
-    value: [{ kind: 'moveToZone', objects: { kind: 'choose', filter: filter.value }, to: 'hand' }],
+    value: [
+      {
+        kind: 'moveToZone',
+        objects: {
+          kind: 'choose',
+          filter: filter.value,
+          ...(count === undefined ? {} : { count }),
+          ...(what.upTo === true ? { optional: true } : {}),
+        },
+        to: 'hand',
+      },
+    ],
     rule: clause.rule,
   };
 }
@@ -364,6 +381,16 @@ const RETURN: Lowering<IrClause, Effects> = {
     const refused = selfRefusal(clause, ctx);
     if (refused !== null) return refused;
     const chosen = operand(clause, 'objects');
+    // "Return it to the battlefield" of a dies or leaves trigger (D-568): `it` is the card the
+    // permanent became. The same words in a spell or an unrelated trigger do not establish a card to return.
+    if (
+      zone === 'battlefield' &&
+      chosen?.kind === 'noun' &&
+      /^it$/iu.test(chosen.filter.raw.trim()) &&
+      !ctx.itIsCard
+    ) {
+      return failure(clause);
+    }
     if (chosen?.kind === 'noun' && chosen.det === 'a') {
       return lowerChosenReturn(clause, chosen, zone);
     }
@@ -431,7 +458,7 @@ const RETURN: Lowering<IrClause, Effects> = {
             }
           : { kind: 'moveToZone', objects, to: zone },
       'objects',
-      zone === 'hand' ? { thisCard: true } : {},
+      zone === 'hand' || zone === 'battlefield' ? { thisCard: true } : {},
     );
   },
 };
@@ -729,6 +756,17 @@ const CHOOSE_COLOR: Lowering<IrClause, Effects> = {
     ok: false,
     needs: ['selector:colorChoice'],
     at: clause.span,
+    rule: clause.rule,
+  }),
+};
+
+const CHOOSE_CREATURE_TYPE: Lowering<IrClause, Effects> = {
+  head: 'chooseCreatureType',
+  id: 'lower.choose-creature-type',
+  needs: ['effect:chooseCreatureType'],
+  lower: (clause) => ({
+    ok: true,
+    value: [{ kind: 'chooseCreatureType' }],
     rule: clause.rule,
   }),
 };
@@ -1046,6 +1084,52 @@ const LOOK_TAKE_BOTTOM: Lowering<IrClause, Effects> = {
   },
 };
 
+/** One chosen card goes to the hand without reveal; the remaining cards are ordered on top (CR 401.4). */
+const LOOK_TAKE_ONE_TOP: Lowering<IrClause, Effects> = {
+  head: 'lookTakeOneTop',
+  id: 'lower.look-take-one-top',
+  needs: ['effect:lookAtTop'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          take: { filter: {}, max: 1, min: 1, hidden: true },
+          rest: 'topChosen',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/** One of two looked-at cards goes to the hand, the other to the bottom (CR 401.4). */
+const LOOK_TAKE_ONE_BOTTOM: Lowering<IrClause, Effects> = {
+  head: 'lookTakeOneBottom',
+  id: 'lower.look-take-one-bottom',
+  needs: ['effect:lookAtTop'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'lookAtTop',
+          count: count.value,
+          take: { filter: {}, max: 1, min: 1, hidden: true },
+          rest: 'bottomRandom',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** "Sacrifice ~" or "sacrifice another permanent / a creature" (CR 701.21). */
 const SACRIFICE: Lowering<IrClause, Effects> = {
   head: 'sacrifice',
@@ -1149,10 +1233,41 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
   needs: ['effect:addCounters'],
   takesObjectTest: true,
   lower(clause, ctx) {
-    const count = amountArg(clause, 'count', ctx);
-    if (!count.ok) return count;
     const counter = arg(clause, 'counter');
     if (counter?.kind !== 'counterSpec') return failure(clause);
+    const objectsArg = arg(clause, 'objects');
+    if (
+      objectsArg?.kind === 'noun' &&
+      objectsArg.det === 'a' &&
+      objectsArg.upTo === true &&
+      objectsArg.ref !== undefined
+    ) {
+      const filter = lowerFilter(objectsArg);
+      if (!filter.ok) return filter;
+      const count = amountArg(clause, 'count', ctx);
+      if (!count.ok) return count;
+      ctx.chosenObjectRefs.add(objectsArg.ref);
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'chooseObjects',
+            id: objectsArg.ref,
+            filter: { ...filter.value, controller: 'you' },
+            count: 1,
+          },
+          {
+            kind: 'addCounters',
+            objects: { kind: 'chosen', id: objectsArg.ref },
+            counter: counter.name,
+            count: count.value,
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
     return eachObject(
       clause,
       ctx,
@@ -1385,6 +1500,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   REGENERATE,
   ADD_MANA,
   CHOOSE_COLOR,
+  CHOOSE_CREATURE_TYPE,
   playerVerb('draw'),
   playerVerb('discard'),
   playerVerb('gainLife'),
@@ -1405,8 +1521,11 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   libraryVerb('putFromHandOnTop'),
   LOOK_TAKE,
   LOOK_TAKE_BOTTOM,
+  LOOK_TAKE_ONE_TOP,
+  LOOK_TAKE_ONE_BOTTOM,
   PUMP,
   GRANT_KEYWORD,
+  GRANT_ABILITY,
   RESTRICT,
   LOSE_ALL_ABILITIES,
   BECOMES,

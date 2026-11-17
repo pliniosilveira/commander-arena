@@ -214,6 +214,18 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         ? ok({ kind: 'exileFromGraveyard', filter: filter.value, count: many })
         : filter;
     }
+    case 'exileFromHand': {
+      if (options.additional !== true || cost.what.anyNumber !== true) return failure(cost);
+      const filter = lowerFilter({
+        ...cost.what,
+        filter: { ...cost.what.filter, zone: 'hand', card: true },
+      });
+      if (!filter.ok) return filter;
+      const blocked = missingFeatures(['cost:exileFromHand']);
+      return blocked.length > 0
+        ? failure(cost, blocked)
+        : ok({ kind: 'exileFromHand', filter: filter.value });
+    }
   }
 }
 
@@ -230,6 +242,7 @@ export const COST_NEEDS: readonly FeatureRef[] = [
   'cost:discardX',
   'cost:discard',
   'cost:exileFromGraveyard',
+  'cost:exileFromHand',
   'cost:removeCounters',
   'cost:energy',
   'cost:putCounters',

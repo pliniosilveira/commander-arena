@@ -457,6 +457,8 @@ export interface StackData {
    */
   readonly triggerPlayer?: SeatId;
   readonly triggerDamage?: number;
+  /** The target count read by a cast trigger (D-574). */
+  readonly triggerTargetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
   readonly triggerAttacked?: readonly SeatId[];
   /**
@@ -693,6 +695,7 @@ export interface PendingTrigger {
   /** The player the event is about (`triggerPlayer`, D-133) and the damage it dealt (`triggerDamage`), when it has them. */
   readonly player?: SeatId;
   readonly damage?: number;
+  readonly targetCount?: number;
   /** For a reflexive ability (D-177): the permanents the resolution that created it had sacrificed (`StackData.sacrificedBefore`). */
   readonly sacrificedBefore?: readonly ObjectId[];
   /** For a reflexive ability (D-231): what the resolution that created it had counted (`ThisWayCounts`), read by its `thisWay` amounts. */
@@ -800,6 +803,7 @@ export interface CastingContext {
     | 'payOptions'
     | 'payment'
     | 'behold'
+    | 'additionalExile'
     | 'sacrifice'
     | 'discard'
     | 'exile'
@@ -834,6 +838,8 @@ export interface CastingContext {
     readonly behold?: ObjectFilter | null;
     /** How many other cards of the caster's graveyard to exile (Escape, CR 702.138a, D-124); 0 for none. */
     readonly exile: number;
+    /** Cards selected from hand for an optional exile additional cost, moved after mana is paid. */
+    readonly exileFromHand?: ObjectId[];
     /** The untapped permanents to tap as part of the cost (the `tapPermanents` alternative cost, D-149), or null. */
     readonly tap?: { readonly filter: ObjectFilter; readonly count: number } | null;
   };
@@ -872,8 +878,22 @@ export interface ActivationContext {
 }
 
 export type Instruction =
+  | {
+      readonly kind: 'chooseObjects';
+      readonly id: string;
+      readonly filter: ObjectFilter;
+      readonly count: number;
+      readonly chosen: readonly ObjectId[] | null;
+    }
+  | { readonly kind: 'chooseCreatureType'; readonly chosen: string | null }
   /** Run one effect node of the resolving spell or ability. */
-  | { readonly kind: 'effect'; readonly effect: Effect; readonly as?: SeatId }
+  | {
+      readonly kind: 'effect';
+      readonly effect: Effect;
+      readonly as?: SeatId;
+      /** The player whose `playersMay` answer declined this `otherwise` effect (D-576). */
+      readonly declinedBy?: SeatId;
+    }
   /**
    * One player's "may" of a `playersMay` effect (D-210): `seat` is asked (a `confirmOptional`, answered by that player); when they accept, `effect` runs, as
    * `as` when it is set (that player is "you" in it); when they decline, `otherwise` runs as the controller. `answer` is null until they answer.
@@ -1128,6 +1148,7 @@ export type Instruction =
       readonly cards: readonly ObjectId[];
       readonly chosenTo: 'hand' | 'graveyard';
       readonly otherTo: 'hand' | 'graveyard';
+      readonly faceDownPile?: true;
       readonly first?: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
       readonly pick?: 1 | 2;
@@ -1160,8 +1181,8 @@ export type Instruction =
       readonly revealAll?: true;
       /** With `revealAll`: the cards have been revealed (the event came out), so the instruction asks the question now (D-396). */
       readonly revealed?: true;
-      /** `bottomChosen` (D-324): the rest go on the bottom in the order their owner chooses (an `arrange` instruction of purpose 'bottom'). */
-      readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen';
+      /** The remaining cards are left, ordered or randomized as the effect says. */
+      readonly rest: 'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen' | 'topChosen';
       readonly chosen: readonly ObjectId[] | null;
       readonly left?: readonly ObjectId[];
     }
@@ -1587,6 +1608,10 @@ export interface ResolutionContext {
    */
   readonly source: ObjectId;
   readonly controller: SeatId;
+  /** Creature type chosen by a resolving instruction such as "choose a creature type". */
+  readonly chosenCreatureType?: string;
+  /** Objects chosen by resolving instructions, keyed by their bound text reference. */
+  readonly chosenObjects?: Readonly<Record<string, readonly ObjectId[]>>;
   readonly queue: readonly Instruction[];
   /** Targets that were still legal when resolution began (CR 608.2b). */
   readonly legalTargets: readonly ChosenTarget[];
@@ -1626,7 +1651,10 @@ export interface ResolutionContext {
   readonly triggerSubject?: ObjectId;
   /** What `triggerPlayer` and `triggerDamage` mean for a triggered ability that reads them (D-133): `StackData.triggerPlayer`, `triggerDamage`. */
   readonly triggerPlayer?: SeatId;
+  /** The player whose `playersMay` answer declined the current otherwise effect (D-576). */
+  readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
+  readonly triggerTargetCount?: number;
   /** What `attackersAttackedYou` reads (D-149): `StackData.triggerAttacked`. */
   readonly triggerAttacked?: readonly SeatId[];
   /** What `sacrificedCost` means (D-133): `StackData.sacrificedAsCost`. */

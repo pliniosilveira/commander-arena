@@ -66,7 +66,12 @@ import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
-import { EFFECT_ADD_ADDITIONAL_MANA, EFFECT_ADD_MANA, EFFECT_CHOOSE_COLOR } from './mana';
+import {
+  EFFECT_ADD_ADDITIONAL_MANA,
+  EFFECT_ADD_MANA,
+  EFFECT_CHOOSE_COLOR,
+  EFFECT_CHOOSE_CREATURE_TYPE,
+} from './mana';
 import { MELD_EFFECT_RULES } from './meld';
 import { NIV_EFFECT_RULES } from './niv';
 import { NIV_GROUP_2B_B_EFFECT_RULES } from './niv-group-2b-b';
@@ -557,6 +562,14 @@ const TO_THE_BATTLEFIELD: Parser<IrZoneSpec> = map(
     }),
 );
 
+/** A creature's dies trigger may return the card that creature became to the battlefield. */
+const RETURN_IT_TO_BATTLEFIELD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }> = quiet(
+  map(
+    sequence(literal('return '), operands(['noun.it'], 'effect.return'), TO_THE_BATTLEFIELD),
+    ([, objects, to]): { objects: IrNoun | IrNounList; to: IrZoneSpec } => ({ objects, to }),
+  ),
+);
+
 /**
  * "return that nonland permanent card to the battlefield", "return that card to your hand" (stage P33, D-150, CR 608.2c): the card an earlier
  * instruction of the text chose from a graveyard, which the lowering checks it is.
@@ -661,6 +674,8 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return ~ to its owner's hand",
     // Stage P35 (D-176): "it", the card a permanent became when it went to its owner's graveyard.
     "return it to its owner's hand",
+    "return it to the battlefield tapped under its owner's control",
+    "return it to the battlefield tapped under its owner's control with a +1/+1 counter on it",
     "return a land you control to its owner's hand",
     'return an artifact you control to its owner’s hand',
     "return a nonland permanent you control to its owner's hand",
@@ -712,6 +727,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     choice<{ objects: IrNoun | IrNounList; to: IrZoneSpec }>(
       RETURN_TO_HAND,
       RETURN_IT_TO_HAND,
+      RETURN_IT_TO_BATTLEFIELD,
       RETURN_CHOSEN,
       RETURN_FROM_GRAVEYARD,
       RETURN_THAT_CARD,
@@ -977,6 +993,7 @@ export const EFFECT_RULES = [
   EFFECT_ADD_MANA,
   // The sentence before "Add an amount of mana of that color equal to your devotion to that color" (Nykthos, Shrine to Nyx).
   EFFECT_CHOOSE_COLOR,
+  EFFECT_CHOOSE_CREATURE_TYPE,
   // Before `effect.player` and `effect.draw`: "you draw a card" is a prefix of the delayed draw (stage P26).
   ...DELAYED_RULES,
   EFFECT_PLAYER,

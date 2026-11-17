@@ -35,6 +35,7 @@ export interface AbilityObjectRequest {
   /** For a triggered ability that reads `triggerPlayer` or `triggerDamage` (D-133): the player and the damage of its event. */
   readonly player?: SeatId;
   readonly damage?: number;
+  readonly targetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
   readonly attacked?: readonly SeatId[];
   /** For a reflexive ability (D-177): the permanents the resolution that created it had sacrificed. */
@@ -89,6 +90,7 @@ export function pushAbilityObject(
       ...(request.subject === undefined ? {} : { triggerSubject: request.subject }),
       ...(request.player === undefined ? {} : { triggerPlayer: request.player }),
       ...(request.damage === undefined ? {} : { triggerDamage: request.damage }),
+      ...(request.targetCount === undefined ? {} : { triggerTargetCount: request.targetCount }),
       ...(request.attacked === undefined ? {} : { triggerAttacked: request.attacked }),
       ...(request.sacrificedBefore === undefined
         ? {}

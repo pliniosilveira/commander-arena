@@ -107,10 +107,7 @@ const UNREAD: readonly Line[] = [
   {
     kind: 'creature',
     text: 'When ~ dies, return it to the battlefield tapped and transformed under its owner’s control.',
-    expect: no(
-      'it to the battlefield tapped and transformed under its owner’s control.',
-      'effect.return',
-    ),
+    expect: no('transformed under its owner’s control.', 'ability.triggered'),
     note: 'backlog: 4 cards; entering transformed (CR 712.14a) is not read, so the return stops at "it"',
   },
 ];

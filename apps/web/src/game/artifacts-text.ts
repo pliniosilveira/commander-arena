@@ -114,14 +114,16 @@ export function cardNoun(filter: ObjectFilter, many = false): string | null {
 }
 
 /** "Put the rest on the bottom of your library in a random order" / "Put the rest into your graveyard". */
-const REST_WORDS: Readonly<Record<'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen', string>> =
-  {
-    bottomRandom: 'Put the rest on the bottom of your library in a random order',
-    // D-324 (CR 401.4): the owner of the cards chooses the order.
-    bottomChosen: 'Put the rest on the bottom of your library in any order',
-    graveyard: 'Put the rest into your graveyard',
-    top: 'Leave the rest on top of your library',
-  };
+const REST_WORDS: Readonly<
+  Record<'bottomRandom' | 'graveyard' | 'top' | 'bottomChosen' | 'topChosen', string>
+> = {
+  bottomRandom: 'Put the rest on the bottom of your library in a random order',
+  // D-324 (CR 401.4): the owner of the cards chooses the order.
+  bottomChosen: 'Put the rest on the bottom of your library in any order',
+  graveyard: 'Put the rest into your graveyard',
+  top: 'Leave the rest on top of your library',
+  topChosen: 'Put the rest on top of your library in any order',
+};
 
 /**
  * "Look at the top six cards of your library. You may reveal an artifact card from among them and put it into your

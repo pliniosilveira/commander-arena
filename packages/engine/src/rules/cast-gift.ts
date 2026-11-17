@@ -4,8 +4,8 @@
  * puts the choices of additional costs there): a `confirmOptional` decision of purpose `gift`, naming the opponent the gift
  * would go to. With several opponents each is offered in turn order until one is accepted; declining all casts the spell
  * with no gift. The opponent is kept on the spell (`StackData.giftTo`): "the gift was promised" (CR 702.174k) and "the chosen
- * player" read it, a permanent the spell becomes remembers it, and the target slots marked `ifGiftPromised` exist only
- * then (CR 702.174m, `targetSpecsOf`). The question is not asked when the gift could not be promised: no opponent is in the
+ * player" read it, a permanent the spell becomes remembers it, and target slots marked `ifGiftPromised` are chosen only in their
+ * matching branch (`targetSpecsOf`). The question is not asked when the gift could not be promised: no opponent is in the
  * game, or a target the promise requires has no legal choice.
  */
 import type { Effect } from '../ast/types';
@@ -14,14 +14,12 @@ import type { GameEvent } from '../state/events';
 import { getObject, opponentsOf, patchObject } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { hasGift } from './alt-costs';
+import { effectForGift } from './gift-effect';
 import { faceOf } from './legality';
 import { fail, ok, type Result } from './result';
 import { legalTargets, targetBounds } from './select';
 import { setPending } from './set-pending';
 import { sourceInfo } from './source-info';
-
-/** "The chosen player draws a card" (CR 702.174e). */
-const GIFT_DRAW: Effect = { kind: 'draw', player: { kind: 'giftRecipient' }, count: 1 };
 
 /**
  * The effect that happens first as an instant or sorcery with a promised gift resolves (CR 702.174b, 702.174j: always before any other
@@ -31,7 +29,13 @@ const GIFT_DRAW: Effect = { kind: 'draw', player: { kind: 'giftRecipient' }, cou
 export function giftEffectOf(state: GameState, spell: GameObject): Effect | null {
   const face = faceOf(state, spell);
   if (spell.stack?.giftTo === undefined || !hasGift(face)) return null;
-  return face?.types.some((t) => t === 'instant' || t === 'sorcery') === true ? GIFT_DRAW : null;
+  const gift = face?.abilities.find(
+    (ability) => ability.kind === 'keyword' && ability.keyword.kind === 'gift',
+  );
+  if (gift?.kind !== 'keyword' || gift.keyword.kind !== 'gift') return null;
+  return face?.types.some((t) => t === 'instant' || t === 'sorcery') === true
+    ? effectForGift(gift.keyword.gift)
+    : null;
 }
 
 /** The step the cast goes on to once the gift is settled: announcing X, then the targets. */

@@ -16,10 +16,9 @@ import {
   SUPERTYPES,
   type Supertype,
 } from '@commander-arena/engine';
-import { bind } from '../ir/bind';
 import type { IrAbility, IrNoun, IrStaticEffect, IrStaticPart } from '../ir/types';
 import { AFFLICT_WORD, grantedKeyword, landwalkOf } from '../rules/keyword/vocabulary';
-import { lowerActivated, lowerGrantedMana } from './activated';
+import { lowerGrantedMana } from './activated';
 import { isKeepsDamage, lowerKeepsDamage } from './adamantoise';
 import { lowerAmount, lowerDefinedPt, lowerStaticAmount, lowerStaticPtStep } from './amounts';
 import { isAngelStatic, lowerAngelStatic } from './angels';
@@ -33,8 +32,8 @@ import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
 import { isKorvoldStatic, lowerKorvoldStatic } from './korvold';
 import { colorLetter, lowerFilter } from './nouns';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
-import { lowerTriggered } from './triggers';
-import { type LowerContext, type LowerFailure, type LowerResult, newContext } from './types';
+import { lowerQuotedGrantedAbility } from './quoted-ability';
+import type { LowerContext, LowerFailure, LowerResult } from './types';
 
 type At = { readonly span: { start: number; end: number }; readonly rule: string };
 type Static = Extract<IrAbility, { kind: 'static' }>;
@@ -156,29 +155,17 @@ function lowerGrantedAbility(
   ) {
     return failure(at);
   }
-  const bound = bind(inner, {});
-  if (!bound.ok) return failure(at);
   const grantedToPlaneswalkers =
     subject.kind === 'filter' && subject.filter.types?.includes('planeswalker') === true;
-  const own = newContext(
-    'ability',
+  return lowerQuotedGrantedAbility(
+    quoted,
+    at,
+    {
+      ...ctx,
+      faceTypes: grantedToPlaneswalkers ? ['planeswalker'] : ctx.faceTypes,
+    },
     grantedToPlaneswalkers ? ['planeswalker'] : ctx.faceTypes,
-    ctx.faceSubtypes,
-    ctx.cardName,
   );
-  const lowered =
-    bound.ability.kind === 'triggered'
-      ? lowerTriggered(bound.ability, own)
-      : bound.ability.kind === 'activated'
-        ? lowerActivated(bound.ability, own)
-        : null;
-  if (lowered === null) return failure(at);
-  if (!lowered.ok) return failure(at, lowered.needs);
-  const [only, ...more] = lowered.value;
-  if (only === undefined || more.length > 0) return failure(at);
-  return only.kind === 'activated' || only.kind === 'triggered'
-    ? { ok: true, value: only, rule: at.rule }
-    : failure(at);
 }
 
 function effectOf(

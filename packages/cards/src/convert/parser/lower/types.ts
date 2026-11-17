@@ -111,6 +111,8 @@ export interface LowerContext {
    * effect runs). Only a clause that says it reads it (`RefOptions.eachMention`).
    */
   readonly eachMentions: Map<string, ObjectSelector>;
+  /** References to resolving choices whose selected objects later text calls "it". */
+  readonly chosenObjectRefs: Set<string>;
   /**
    * The normalized text of the ability the spans of the IR point into (D-287): the one place a lowering can tell the "you" the text says (the controller) from the "you"
    * the engine reads for a player asked who acts (`runsAs: 'chooser'`). Empty where the lowering has no text (a quotation lowered on its own): a rule that needs it refuses then.
@@ -265,6 +267,7 @@ export function newContext(
     usedGraveyardSource: false,
     dieSides: null,
     eachMentions: new Map(),
+    chosenObjectRefs: new Set(),
     staticCondition: false,
     text: '',
     interveningCondition: false,

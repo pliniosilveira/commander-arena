@@ -133,7 +133,8 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
       restriction !== 'cantBlock' &&
       restriction !== 'cantBeBlocked' &&
       restriction !== 'attacksEachCombat' &&
-      restriction !== 'mustBeBlocked'
+      restriction !== 'mustBeBlocked' &&
+      restriction !== 'mustBlock'
     ) {
       return failure(clause);
     }

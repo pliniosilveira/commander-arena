@@ -130,6 +130,8 @@ export type GameEvent =
       readonly fromZone: Zone;
       /** How many spells the caster has cast this turn, this one included (D-229, "their second spell each turn"). */
       readonly nth: number;
+      /** Number of targets chosen for this spell as it was cast (D-574). */
+      readonly targetCount: number;
       readonly commanderTax: number;
       /** Present (true) when a kicker cost was paid, at least once (CR 702.33d). */
       readonly kicked?: true;
@@ -531,12 +533,20 @@ export type GameEvent =
       readonly first: readonly string[];
       readonly second: readonly string[];
     }
+  /** D-579: the separator looked at the cards, but only pile 2's identities are public. */
+  | {
+      readonly kind: 'faceDownPileSeparated';
+      readonly seat: SeatId;
+      readonly faceUp: readonly string[];
+      readonly faceDownCount: number;
+    }
   /** CR 700.3 (D-303): `seat` chose pile `pile` (1 or 2, as `pilesSeparated` lists them); `names` are its cards, which go where the effect says. */
   | {
       readonly kind: 'pileChosen';
       readonly seat: SeatId;
       readonly pile: 1 | 2;
       readonly names: readonly string[];
+      readonly faceDown?: true;
     }
   /** CR 603.5: the controller of an optional ("you may") triggered ability answered. */
   | {

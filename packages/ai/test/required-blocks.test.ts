@@ -2,13 +2,13 @@
 // asks for. The decision is built by hand: it is the shape the engine sends (`mustBeBlocked` on the attacker).
 import type { DeclareBlockersDecision, ObjectId } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
-import { withinBlockBudget } from '../src/legal';
+import { withinBlockBudget, withRequiredBlocks } from '../src/legal';
 
 const id = (n: number) => `o${n}` as ObjectId;
 
 function decision(
-  attackers: readonly { id: number; must?: true; min?: number }[],
-  candidates: readonly { blocker: number; canBlock: readonly number[] }[],
+  attackers: readonly { id: number; must?: true; min?: number; max?: number }[],
+  candidates: readonly { blocker: number; canBlock: readonly number[]; must?: true }[],
 ): DeclareBlockersDecision {
   return {
     kind: 'declareBlockers',
@@ -18,8 +18,13 @@ function decision(
       target: { kind: 'player', seat: 1 },
       minBlockers: a.min ?? 1,
       ...(a.must === true ? { mustBeBlocked: true as const } : {}),
+      ...(a.max === undefined ? {} : { maxBlockers: a.max }),
     })),
-    candidates: candidates.map((c) => ({ blocker: id(c.blocker), canBlock: c.canBlock.map(id) })),
+    candidates: candidates.map((c) => ({
+      blocker: id(c.blocker),
+      canBlock: c.canBlock.map(id),
+      ...(c.must === true ? { mustBlock: true as const } : {}),
+    })),
   } as unknown as DeclareBlockersDecision;
 }
 
@@ -55,8 +60,77 @@ describe('withinBlockBudget adds the blocks a requirement asks for (CR 509.1c)',
     expect(withinBlockBudget(one, [])).toEqual([]);
   });
 
+  test('adds a supporting blocker so a must-block creature can legally block menace', () => {
+    const d = decision(
+      [{ id: 1, min: 2 }],
+      [
+        { blocker: 2, canBlock: [1], must: true },
+        { blocker: 3, canBlock: [1] },
+      ],
+    );
+    expect(withinBlockBudget(d, [])).toEqual([
+      { blocker: id(2), attacker: id(1) },
+      { blocker: id(3), attacker: id(1) },
+    ]);
+  });
+
+  test('does not count illegal partial menace blocks as satisfying a must-block requirement', () => {
+    const d = decision(
+      [{ id: 1, min: 2 }],
+      [
+        { blocker: 2, canBlock: [1], must: true },
+        { blocker: 3, canBlock: [] },
+      ],
+    );
+    expect(withinBlockBudget(d, [])).toEqual([]);
+  });
+
+  test('does not exceed an attacker maximum when two creatures must block', () => {
+    const d = decision(
+      [{ id: 1, max: 1 }],
+      [
+        { blocker: 2, canBlock: [1], must: true },
+        { blocker: 3, canBlock: [1], must: true },
+      ],
+    );
+    expect(withinBlockBudget(d, [])).toEqual([{ blocker: id(2), attacker: id(1) }]);
+  });
+
+  test('finds a full declaration without enumerating irrelevant attacker assignments', () => {
+    const attackers = Array.from({ length: 9 }, (_, i) => i + 1);
+    const blockers = Array.from({ length: 10 }, (_, i) => ({
+      blocker: i + 20,
+      canBlock: attackers,
+      must: true as const,
+    }));
+    const d = decision(
+      attackers.map((id) => ({ id, max: 1 })),
+      blockers,
+    );
+    expect(withRequiredBlocks(d, [])).toHaveLength(9);
+  });
+
   test('an attacker with no requirement is not blocked by the helper', () => {
     const d = decision([{ id: 1 }], [{ blocker: 2, canBlock: [1] }]);
     expect(withinBlockBudget(d, [])).toEqual([]);
+  });
+
+  test('a creature that must block is assigned a legal attacker', () => {
+    const d = decision([{ id: 1 }], [{ blocker: 2, canBlock: [1], must: true }]);
+    expect(withinBlockBudget(d, [])).toEqual([{ blocker: id(2), attacker: id(1) }]);
+  });
+
+  test('competing requirements are both met when separate blockers can satisfy them', () => {
+    const d = decision(
+      [{ id: 1, must: true }, { id: 3 }],
+      [
+        { blocker: 2, canBlock: [3], must: true },
+        { blocker: 4, canBlock: [1] },
+      ],
+    );
+    expect(withinBlockBudget(d, [])).toEqual([
+      { blocker: id(2), attacker: id(3) },
+      { blocker: id(4), attacker: id(1) },
+    ]);
   });
 });

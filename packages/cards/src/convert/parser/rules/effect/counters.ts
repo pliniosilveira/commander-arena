@@ -38,6 +38,7 @@ const COUNTER_OPERANDS = [
   // Stage P49 (D-206): "put two +1/+1 counters on that token" (the token the sentence before made).
   'noun.that-token',
   'noun.target-permanent',
+  'noun.up-to-one-permanent',
   'noun.all-permanents',
   'noun.each-permanent',
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle".
