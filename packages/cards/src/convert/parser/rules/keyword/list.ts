@@ -16,6 +16,11 @@ export const KEYWORD_WORD: Parser<string> = choice(
   ...LANDWALKS.map(([word]) =>
     map(pattern(new RegExp(`${word.replace(' ', '\\s+')}${BOUNDARY}`, 'iu')), () => word as string),
   ),
+  // D-588 (CR 702.21a): "ward {2}", the mana cost in braces, the word kept with its cost ("ward {2}").
+  map(
+    pattern(new RegExp(`ward\\s+((?:\\{[0-9WUBRGC]\\})+)${BOUNDARY}`, 'iu')),
+    (m) => `ward ${m[1]}` as string,
+  ),
   // D-472 (CR 702.130a): "afflict 3", the number in digits, the word kept with its number ("afflict 3").
   map(
     pattern(new RegExp(`afflict\\s+([1-9]\\d*)${BOUNDARY}`, 'iu')),

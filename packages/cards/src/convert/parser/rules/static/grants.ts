@@ -328,6 +328,9 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     "Equipped creature gets +3/+3 and has protection from each color that's not in your commander's color identity.",
     'Enchanted creature gets +4/+4, has flying and first strike, and is an Angel in addition to its other types.',
     'Enchanted creature gets +2/+2, has flying, and is a Zombie in addition to its other types.',
+    // Issue 89 (D-588, CR 702.21a): ward a static ability gives, with a mana cost.
+    'Enchanted creature has ward {2}.',
+    'Enchanted creature gets +1/+0 and has lifelink and ward {2}.',
   ],
   rejects: [
     'Enchanted creature gets +2/+2',
@@ -336,7 +339,8 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature gets +X/+X.',
     'Enchanted creature gets +1/+1 for each creature you control.',
     'Enchanted creature has flash.',
-    'Enchanted creature has ward {2}.',
+    'Enchanted creature has ward.',
+    'Enchanted creature has ward 2.',
     // Stage P70 (D-259): protection from a quality that is not a color, a list that is not Oracle's, and the identity wording changed.
     'Enchanted creature has protection from everything.',
     'Enchanted creature has protection from each color.',

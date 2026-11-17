@@ -450,7 +450,6 @@ describe('token.custom: a token with the keywords of the engine (CR 111.4, 702)'
       'Create a 1/1 white Soldier creature token with flying and flying.',
       'with flying and flying.',
     ],
-    ['Create a 1/1 white Soldier creature token with ward {2}.', 'with ward {2}.'],
     [
       'Create a 1/1 white Soldier creature token with "Sacrifice this creature: You gain 1 life".',
       'with "Sacrifice ~: You gain 1 life".',
@@ -465,6 +464,15 @@ describe('token.custom: a token with the keywords of the engine (CR 111.4, 702)'
     ],
   ])('%s stops at "%s": a token is never made without an ability it has', (text, stoppedAt) => {
     expect(dropped(text, 'sorcery')).toMatchObject({ reason: 'unrecognised', stoppedAt });
+  });
+
+  test("a token with ward {2} is read but not run: the token's keywords go through keywordKind, which has no cost (D-588)", () => {
+    expect(
+      dropped('Create a 1/1 white Soldier creature token with ward {2}.', 'sorcery'),
+    ).toMatchObject({
+      reason: 'notRunnable',
+      stoppedAt: 'a 1/1 white Soldier creature token with ward {2}.',
+    });
   });
 
   test('"its controller creates a ... token with flying" gives it to the controller of the target', () => {

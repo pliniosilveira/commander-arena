@@ -143,7 +143,7 @@ describe('supertypes of the host ("Enchanted legendary creature")', () => {
 });
 
 describe('GRANTABLE_KEYWORDS is exported for the parser', () => {
-  test('lists the keywords without parameters and not flash, ward or protection', () => {
+  test('lists the keywords without parameters and not flash or protection', () => {
     expect([...GRANTABLE_KEYWORDS].sort()).toEqual(
       [
         'flying',
@@ -176,11 +176,13 @@ describe('GRANTABLE_KEYWORDS is exported for the parser', () => {
         // D-472, D-473: afflict and landwalk carry a number or a land type, checked by `checkGrantedParameter`.
         'afflict',
         'landwalk',
+        // D-588: ward carries a cost, checked by `checkGrantedParameter`; each instance granted is a triggered ability of its own.
+        'ward',
         // D-478: decayed, the keyword of a token and of a counter, with the trigger it stands for added when it is granted.
         'decayed',
       ].sort(),
     );
-    for (const excluded of ['flash', 'ward', 'protection', 'cycling', 'enchant', 'equip']) {
+    for (const excluded of ['flash', 'protection', 'cycling', 'enchant', 'equip']) {
       expect(GRANTABLE_KEYWORDS).not.toContain(excluded);
     }
   });

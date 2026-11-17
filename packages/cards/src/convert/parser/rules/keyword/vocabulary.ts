@@ -175,6 +175,9 @@ export function landwalkOf(name: string): string | undefined {
 /** The grant words of an Afflict (CR 702.130a): "afflict 3", the word and a positive whole number written in digits (D-472). */
 export const AFFLICT_WORD = /^afflict ([1-9]\d*)$/;
 
+/** The grant words of a Ward (CR 702.21a): "ward {2}", the word and a mana cost in braces (D-588). */
+export const WARD_WORD = /^ward ((?:\{[0-9WUBRGC]\})+)$/i;
+
 /**
  * The engine's keyword that a word of a grant ("has swampwalk", "gains afflict 3", "has flying") stands for, or undefined when the engine cannot
  * grant it (CR 613.1f): a keyword without parameters (`GRANTABLE_KEYWORDS`), a landwalk with its land type (CR 702.14a, D-473) or "afflict N"
@@ -187,6 +190,12 @@ export function grantedKeyword(word: string): Keyword | undefined {
   if (landType !== undefined) return { kind: 'landwalk', landType };
   const afflict = AFFLICT_WORD.exec(word);
   if (afflict?.[1] !== undefined) return { kind: 'afflict', count: Number(afflict[1]) };
+  const ward = WARD_WORD.exec(word);
+  if (ward?.[1] !== undefined) {
+    // D-588: the symbols of the cost in the order written, as the engine keeps a mana cost ("{1}{W}" is ['1', 'W']).
+    const symbols = [...ward[1].matchAll(/\{([^}]+)\}/g)].map((m) => (m[1] ?? '').toUpperCase());
+    return { kind: 'ward', cost: [{ kind: 'mana', symbols }] };
+  }
   return undefined;
 }
 

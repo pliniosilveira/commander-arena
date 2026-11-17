@@ -5001,3 +5001,13 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Web: the cost "Sacrifice one or more artifacts" (`game/cost-text.ts`), the sacrifice prompt "Sacrifice one or more artifacts to pay for ..." (`ui/decisions/permanents.ts`), the label "Choose a color. Target player adds three mana of that color for each permanent sacrificed this way" (`game/chosen-color-text.ts`, `ui/decisions/ability-label.ts`), the question "Choose a color for ..." (`ui/decisions/option-names.ts`), the amount "the number of permanents sacrificed as a cost" (`game/amount-text.ts`). AI: unchanged (the casual agent never activates such an ability and `choosePermanentToSacrifice` takes `min`); the SYNTHETIC cards are kept out of the generic soak pools (`SACRIFICE_MANA_NAMES`), the style `sacrificeMana`.
 - Tests: engine `scenario-xx-sacrifice-mana.test.ts`, `ast-sacrifice-mana-validate.test.ts`; cards `parser-sacrifice-mana.test.ts`, `convert-grammar-engine-sacrifice-mana.test.ts`; web `sacrifice-mana-text.test.ts`; AI soak `sacrifice-mana-games.test.ts` (100 games clean).
 - Limits: see `docs/ROADMAP.md`.
+
+## A static ability that gives ward (issue 89, D-588)
+
+- CR: 702.21a (Ward), 613.1f and 613.7 (a granted keyword is a layer 6 effect with the timestamp of its source), 303.4 ("enchanted creature" is what the Aura is attached to). The text of 702.21b (instances) was not available in this session (D-246) and is not cited: unverified.
+- Gap class: P (a granted keyword that carries a cost), T (the grant words).
+- Engine: `ward` is in `GRANTABLE_KEYWORDS` (`ast/features.ts`) with its cost checked by `checkGrantedParameter` (`ast/validate-attach.ts`: at least one cost, each mana, life or a discard); it is an `INSTANCE_KEYWORDS` member of `rules/derive-layers.ts`, so each grant adds the keyword and the triggered ability `wardAbility` (`rules/derive-keywords.ts`) stands for.
+- Parser: the grant word "ward {2}" of `rules/keyword/list.ts` (`KEYWORD_WORD`, mana symbols in braces only) turned into the keyword by `grantedKeyword` (`rules/keyword/vocabulary.ts`); read by `lower/statics.ts` and `lower/continuous.ts` like the other grant words.
+- Tests: engine `scenario-xx-granted-ward.test.ts` (an Aura that gives ward: the derived abilities, the trigger above the spell, declining and paying, the controller's own targeting, two Auras are two instances); cards `parser-granted-ward.test.ts` (the real lines of Chains of Custody and Sheltered by Ghosts, a colored cost, near misses that are dropped whole).
+- Example cards: Chains of Custody, Sheltered by Ghosts (issue 89).
+- Limits: a ward cost that is not mana (life, a sacrifice, a discard) is not read as a grant word; ward granted by a continuous effect for a duration has no test yet.

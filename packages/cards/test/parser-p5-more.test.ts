@@ -78,8 +78,8 @@ describe('the vocabulary and the engine agree on what can be granted', () => {
   });
 
   test('the grantable words are exactly the engine list (no copy kept here)', () => {
-    // Afflict and landwalk take a number and a land type: `grantedKeyword` reads them (D-472, D-473), the words of this table are the others.
-    const withParameter = ['afflict', 'landwalk'];
+    // Afflict, landwalk and ward take a number, a land type and a cost: `grantedKeyword` reads them (D-472, D-473, D-588), the words of this table are the others.
+    const withParameter = ['afflict', 'landwalk', 'ward'];
     expect(GRANTABLE_KEYWORDS.map(([, kind]) => kind).sort()).toEqual(
       [...ENGINE_GRANTABLE].filter((kind) => !withParameter.includes(kind)).sort(),
     );
@@ -89,12 +89,23 @@ describe('the vocabulary and the engine agree on what can be granted', () => {
     expect(grantedKeyword('afflict 3')).toEqual({ kind: 'afflict', count: 3 });
     expect(grantedKeyword('swampwalk')).toEqual({ kind: 'landwalk', landType: 'Swamp' });
     expect(grantedKeyword('nonbasic landwalk')).toEqual({ kind: 'landwalk', landType: 'nonbasic' });
+    expect(grantedKeyword('ward {2}')).toEqual({
+      kind: 'ward',
+      cost: [{ kind: 'mana', symbols: ['2'] }],
+    });
+    expect(grantedKeyword('ward {1}{W}')).toEqual({
+      kind: 'ward',
+      cost: [{ kind: 'mana', symbols: ['1', 'W'] }],
+    });
     expect(grantedKeyword('flying')).toEqual({ kind: 'flying' });
     for (const word of [
       'flash',
       'afflict',
       'afflict 0',
       'afflict x',
+      'ward',
+      'ward 2',
+      'ward {x}',
       'snow landwalk',
       'landwalk',
     ]) {

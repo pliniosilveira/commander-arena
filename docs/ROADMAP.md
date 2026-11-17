@@ -514,3 +514,5 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The condition `sacrificedAsCost` of an activated ability is read from its resolution; an intervening "if" of a triggered ability cannot read what an activated ability sacrificed.
 - The casual agent never activates such an ability (a sacrifice outlet it cannot judge); the random and heuristic agents may, and the soak style `sacrificeMana` plays it legally.
 - The Scryfall rulings of Radiant Lotus were not fetched (the host is blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. The Oracle text is the card of `golden.jsonl` taken from issue 258.
+
+- **Ward in other places (D-588, issue 89).** A ward with a mana cost can be given by a static ability and by a `grantKeyword` effect. Not built: a token "with ward {2}" (the token's keywords have no cost, so the card is reported as not runnable), a condition "it has ward {2}" (a filter cannot compare a cost), and a granted ward whose cost is a sacrifice or a discard read from the text (the engine pays a discard, but the grant words read only mana).

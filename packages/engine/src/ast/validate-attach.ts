@@ -124,6 +124,18 @@ export function checkGrantedParameter(k: Keyword, path: string, out: AstIssue[])
   if (k?.kind === 'afflict' && (!isCount(k.count) || k.count < 1)) {
     issue(out, `${path}.count`, 'afflict needs a positive integer');
   }
+  if (k?.kind === 'ward') {
+    // D-588 (CR 702.21a): the cost is paid when the ward ability resolves (rules/pay-unless.ts): mana, life and discarding, as for a printed ward.
+    if (!Array.isArray(k.cost) || k.cost.length === 0) {
+      issue(out, `${path}.cost`, 'ward needs a cost');
+    } else {
+      k.cost.forEach((c, i) => {
+        if (c?.kind !== 'mana' && c?.kind !== 'payLife' && c?.kind !== 'discard') {
+          issue(out, `${path}.cost[${i}]`, 'a granted ward may cost mana, life or a discard');
+        }
+      });
+    }
+  }
   if (k?.kind === 'landwalk') {
     if (typeof k.landType !== 'string' || k.landType === '') {
       issue(out, `${path}.landType`, 'landwalk needs a land type or "nonbasic"');

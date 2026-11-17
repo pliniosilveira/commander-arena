@@ -293,7 +293,6 @@ describe('static abilities with subjects (CR 611.3, 613)', () => {
     }
     for (const keyword of [
       { kind: 'flash' },
-      { kind: 'ward', cost: [{ kind: 'mana', symbols: ['1'] }] },
       { kind: 'cycling', cost: [{ kind: 'mana', symbols: ['1'] }] },
       { kind: 'equip', cost: [{ kind: 'mana', symbols: ['1'] }] },
       { kind: 'enchant', filter: {} },

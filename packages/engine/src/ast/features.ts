@@ -1049,6 +1049,8 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'riot',
   // D-472: Afflict N (CR 702.130): each instance granted is a triggered ability of its own (CR 702.130b), like exalted's.
   'afflict',
+  // D-588: ward (CR 702.21): "Enchanted creature has ward {2}"; each instance granted is a triggered ability of its own, like afflict's.
+  'ward',
   // D-473: landwalk (CR 702.14): the land type is part of the keyword, and one kind twice is redundant (CR 702.14e).
   'landwalk',
 ];
