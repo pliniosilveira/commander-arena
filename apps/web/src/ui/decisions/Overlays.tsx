@@ -72,22 +72,24 @@ function Hand({
 }) {
   const cards = myHand(view).filter((o) => ids.includes(o.id));
   // Issue 48: whole cards, as large as the dialog allows. Up to four cards share one row; more go
-  // on two. The CSS (`.dec-hand-whole`) turns the row and the screen height into the card width.
+  // on two. The CSS (`.dec-hand-grid`) turns the row and the screen height into the card width.
   const rows = cards.length > 4 ? 2 : 1;
   const perRow = Math.max(1, Math.ceil(cards.length / rows));
   const style = { '--hand-per': perRow, '--hand-rows': rows } as CSSProperties;
   return (
-    <div className="dec-hand dec-hand-whole" style={style}>
-      {cards.map((card) => (
-        <MiniCard
-          key={card.id}
-          card={card}
-          width="var(--card-w)"
-          full
-          selected={selected.includes(card.id)}
-          onClick={onPick === undefined ? undefined : () => onPick(card.id)}
-        />
-      ))}
+    <div className="dec-hand-whole">
+      <div className="dec-hand dec-hand-grid" style={style}>
+        {cards.map((card) => (
+          <MiniCard
+            key={card.id}
+            card={card}
+            width="var(--card-w)"
+            full
+            selected={selected.includes(card.id)}
+            onClick={onPick === undefined ? undefined : () => onPick(card.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 }

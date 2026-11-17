@@ -640,19 +640,29 @@
 }
 /* Issue 48 (opening hand, discard): whole cards, as large as the dialog allows. The card width is
    what fits `--hand-per` cards in the row, and `--hand-rows` rows in the height of the screen (a
-   card is 488:680; 430px is what the title, the buttons and the board header take). */
+   card is 488:680). `.dec-hand-whole` is the size container and `.dec-hand-grid` inside it is the
+   grid: a container's own `cqw` would resolve against an ancestor, so the grid and its cards
+   would not agree on the width. */
 .dec-hand-whole {
+  /* The height the title, the buttons and the board header take; what the cards may not use. */
+  --dec-hand-chrome: 430px;
+  container-type: inline-size;
+  width: 100%;
+  flex: none;
+}
+.dec-hand-grid {
   --card-w: clamp(
     96px,
     min(
       calc((100cqw - 8px * (var(--hand-per, 7) - 1)) / var(--hand-per, 7)),
-      calc((100dvh - 430px - 8px * (var(--hand-rows, 1) - 1)) / var(--hand-rows, 1) / 1.3935)
+      calc(
+        (100dvh - var(--dec-hand-chrome) - 8px * (var(--hand-rows, 1) - 1)) /
+        var(--hand-rows, 1) /
+        1.3935
+      )
     ),
     200px
   );
-  container-type: inline-size;
-  width: 100%;
-  flex: none;
   display: grid;
   grid-template-columns: repeat(var(--hand-per, 7), var(--card-w));
   justify-content: center;
