@@ -162,6 +162,7 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       }
       return true;
     case 'groupEntersUntapped':
+    case 'groupEntersTapped':
       // D-179: tapped is a state, not something the entering permanent has before it enters; the other fields are read as for the counters.
       checkEnteringFilter(r.what, `${path}.what`, out);
       return true;

@@ -5061,3 +5061,9 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Engine and parser:** `opponentPoisonAtLeast` reads whether an opponent still in the game has the specified number of poison counters. Skrelv's Hive grants lifelink to creatures its controller controls with Toxic while that condition holds; Toxic is tested as a keyword presence and its value is unchanged.
 - **Proof:** `scenario-xx-corrupted.test.ts` checks that the grant is absent below three poison counters and present at three. `parser-p48.test.ts` checks complete real-card parsing and the golden corpus records its support.
 - **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Authority of the Consuls (D-595)
+
+- **Engine and parser:** A permanent's `groupEntersTapped` replacement makes matching permanents enter tapped. Authority of the Consuls applies it to creatures its controller's opponents control. The existing parser and engine handle its life-gain trigger when an opponent's creature enters.
+- **Proof:** `scenario-xx-authority.test.ts` checks that an opponent's creature spell enters tapped; `parser-p48.test.ts` checks complete import of the real card and golden acceptance support.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.

@@ -3724,3 +3724,10 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: Treat the condition as a life-total threshold (incorrect counter type), or special-case Skrelv's Hive; rejected because both obscure reusable rules behavior.
 - Consequences: The engine evaluates the threshold in ordinary conditions and static abilities; the parser reads the threshold and Toxic subject filter. Scenarios cover below and at threshold, and Skrelv's Hive is included in the golden acceptance corpus.
 - Limit: The local Comprehensive Rules text and Scryfall rulings were unavailable for independent verification.
+
+## D-595: Make matching opponents' creatures enter tapped (2026-11-17, issue 255)
+- Context: Authority of the Consuls makes creatures its controller's opponents control enter tapped. The engine already modeled the inverse replacement for permanents entering untapped, but had no positive enter-tapped replacement on a permanent.
+- Decision: Add a reusable `groupEntersTapped` replacement, read from permanents already on the battlefield against the entering permanent's battlefield characteristics. Parse the opponent-controlled creature group and lower it to that replacement.
+- Alternatives: Model the ability as a temporary continuous effect (it has no duration), or special-case the card; rejected because neither captures the permanent's static replacement effect generically.
+- Consequences: Matching opponent creatures entering from any zone are tapped, including creature spells that resolve. The scenario test uses the ordinary cast path; the Authority real-card test checks both abilities parse completely.
+- Limit: CR text and Scryfall rulings were unavailable for independent verification.

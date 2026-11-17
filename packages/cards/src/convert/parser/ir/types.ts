@@ -1466,6 +1466,7 @@ export type IrStaticEffect =
    * the subject describes (a plural group of the controller's own) enter untapped. The subject is the group.
    */
   | { readonly kind: 'groupEntersUntapped' }
+  | { readonly kind: 'groupEntersTapped' }
   /**
    * "Your opponents can't cast spells during your turn." (stage P37, D-180, CR 101.2, 604.1): no opponent of the controller of the permanent casts a
    * spell in a turn of that controller. The subject is `you`; a condition ("As long as ~ is attached to a creature") may go with it.

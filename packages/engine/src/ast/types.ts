@@ -4380,6 +4380,11 @@ export type Replacement =
    */
   | { readonly kind: 'groupEntersUntapped'; readonly what: ObjectFilter }
   /**
+   * "Creatures your opponents control enter tapped." (CR 614.1c, 614.12): a replacement effect
+   * of a permanent on the battlefield for matching permanents as they enter.
+   */
+  | { readonly kind: 'groupEntersTapped'; readonly what: ObjectFilter }
+  /**
    * "All damage that would be dealt to you and other permanents you control is dealt to this creature instead." (D-192, CR 614.9, 614.1a,
    * 614.5, 616.1, 120.3): a redirection effect of a creature on the battlefield. It replaces damage that would be dealt to the controller of
    * the creature (`you`) and to the other permanents that `permanents` matches (read for the controller of the creature: `controller: 'you'`

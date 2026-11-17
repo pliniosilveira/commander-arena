@@ -502,6 +502,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'graveyardPlay':
       return ['static:playFromGraveyardOnceEachTurn'];
     case 'groupEntersUntapped':
+    case 'groupEntersTapped':
       return ['replacement:groupEntersUntapped'];
     case 'opponentsCantCast':
       return ['static:opponentsCantCastOnYourTurn'];

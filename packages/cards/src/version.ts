@@ -36,4 +36,4 @@
 // 131: Parse "when this Class becomes level N" (D-591).
 // 132: Parse delayed hand returns of the card named by a dies trigger (D-592).
 // 133: Parse numbered toxic keywords and a quoted "can't block" token ability (D-593).
-export const PARSER_VERSION = 134;
+export const PARSER_VERSION = 135;

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 134,
+  "parserVersion": 135,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -2127,19 +2127,10 @@
     "55f3c721-e13a-406e-bc8e-d6cdc91ac477": {
       "name": "Authority of the Consuls",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Creatures your opponents control enter tapped.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "static.permanents"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "982713b2"
+      "ast": "d69f2299"
     },
     "561af57d-d43d-4d98-9ef6-18a0843f22ae": {
       "name": "Defend the Rider",
@@ -6234,7 +6225,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 432,
+      "supported": 433,
       "total": 459
     }
   }

@@ -209,6 +209,7 @@ The CR source was unavailable for a fresh rule-number audit. Existing references
 | 702.165 | Backup | Implemented (D-230) | `Keyword` `backup`: the enters trigger is derived from the abilities printed after it; `grantAbility` gives them until end of turn. |
 | 122.1h | Finality counter | Implemented (D-230) | A permanent with one that would go to a graveyard from the battlefield is exiled instead (`rules/zones.ts`). |
 | 122.1 | Poison counters in a static condition | Implemented (D-594): `opponentPoisonAtLeast` reads the count on opponents still in the game; Skrelv's Hive uses it for its corrupted ability. | `rules/static-conditions.ts`, `rules/conditions.ts`; `scenario-xx-corrupted.test.ts`. |
+| 614.1c, 614.12 | A permanent makes creatures its controller's opponents control enter tapped | Implemented (D-595): `groupEntersTapped` reads the permanents already on the battlefield and matches the entering creature as it would be on the battlefield. | `rules/enters-group.ts`, `rules/zones.ts`; `scenario-xx-authority.test.ts`. |
 | 700.6 | Historic | Implemented (D-230) | The parser's "historic" reads as an artifact, a legendary permanent or a Saga. |
 | 610.3 | Exile until an event | Implemented for the permanent leaving and for an opponent becoming the monarch (D-231) | `ExileReturn.untilMonarch`; CR 610.3b is checked with the timestamp of the ability. |
 | 725.3, 725.4 | The monarch | Implemented; the designation moves through `withMonarch` (D-231) | The moment a player becomes the monarch is stamped. |

@@ -3,54 +3,54 @@
     "label": "soup 1",
     "steps": 400,
     "peak": 13,
-    "digest": "1ba4b71e6ff72ae8"
+    "digest": "129d98fc7883cf11"
   },
   {
     "label": "soup 2",
     "steps": 400,
     "peak": 11,
-    "digest": "3523c9a26bc13e67"
+    "digest": "79d7e41a81fdc366"
   },
   {
     "label": "soup 3",
     "steps": 400,
     "peak": 8,
-    "digest": "cc7a406a2f1c72c2"
+    "digest": "3ef1375dbc7bc2c7"
   },
   {
     "label": "combat 1",
     "steps": 400,
     "peak": 17,
-    "digest": "eaa16b5d43f27284"
+    "digest": "211b8ad53e1f9bb5"
   },
   {
     "label": "board 1",
     "steps": 162,
     "peak": 70,
-    "digest": "38511984ffbaebd8"
+    "digest": "18e8e588ddbe2ffd"
   },
   {
     "label": "board 2",
     "steps": 332,
     "peak": 70,
-    "digest": "923501607c989205"
+    "digest": "4c6c35d0a95254f1"
   },
   {
     "label": "board 3",
     "steps": 185,
     "peak": 70,
-    "digest": "75d40efe063c6e84"
+    "digest": "fbbebc5df339caaa"
   },
   {
     "label": "board 4",
     "steps": 183,
     "peak": 70,
-    "digest": "8784a47e239be60f"
+    "digest": "fbc755f7bb7899cc"
   },
   {
     "label": "board 5",
     "steps": 189,
     "peak": 70,
-    "digest": "2105641b72295f7c"
+    "digest": "77a4cfa5720f62bc"
   }
 ]

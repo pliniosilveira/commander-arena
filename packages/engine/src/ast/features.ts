@@ -517,6 +517,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tokensInstead',
     // D-179: "Lands you control enter untapped".
     'groupEntersUntapped',
+    // D-595: "Creatures your opponents control enter tapped".
+    'groupEntersTapped',
     // D-151: "As this enters, you may have it become a copy of any creature on the battlefield until end of turn".
     'entersAsCopy',
     // D-192: "All damage that would be dealt to you and other permanents you control is dealt to this creature instead."
@@ -2024,6 +2026,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   othersEnterWithCounters: true,
   tokensInstead: true,
   groupEntersUntapped: true,
+  groupEntersTapped: true,
   entersAsCopy: true,
   redirectDamage: true,
   skipDraw: true,

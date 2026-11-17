@@ -189,6 +189,13 @@ describe("Skrelv's Hive", () => {
   });
 });
 
+describe('Authority of the Consuls', () => {
+  test('the opponent entry replacement and life trigger parse completely', () => {
+    expect(real('Authority of the Consuls').support.unparsed).toEqual([]);
+    expect(real('Authority of the Consuls').support.status).toBe('supported');
+  });
+});
+
 describe('"That token gains haste until end of turn" and "then attach ~ to it": the token the text made (CR 111.2, 400.7j)', () => {
   const grantHaste = {
     kind: 'grantKeyword',

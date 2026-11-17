@@ -72,6 +72,7 @@ import { becomeCopyAsItEnters, copyCandidates } from './enters-copy';
 import {
   addCounterMaps,
   enteredTappedByEffect,
+  groupEntersTapped,
   groupEntersUntapped,
   groupEntryCounters,
 } from './enters-group';
@@ -729,6 +730,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   }
 
   // CR 614.1c, 614.12 (D-519): "Until your next turn, creatures your opponents control enter tapped".
+  if (
+    to === 'battlefield' &&
+    !tapped &&
+    groupEntersTapped(before, {
+      ...old,
+      ...downEntry,
+      zone: 'battlefield',
+      controller: enterController,
+      face: faceIndex,
+    })
+  ) {
+    tapped = true;
+  }
   if (
     to === 'battlefield' &&
     !tapped &&

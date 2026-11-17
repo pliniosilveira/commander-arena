@@ -82,6 +82,26 @@ export function groupEntersUntapped(state: GameState, entering: GameObject): boo
   return false;
 }
 
+/** Whether a permanent on the battlefield makes the matching permanent enter tapped. */
+export function groupEntersTapped(state: GameState, entering: GameObject): boolean {
+  for (const id of state.battlefield) {
+    const permanent = state.objects[id];
+    if (permanent === undefined || !mayHaveReplacement(state, permanent)) continue;
+    for (const ability of derive(state, permanent).abilities) {
+      if (ability.kind !== 'replacement' || ability.replacement.kind !== 'groupEntersTapped') {
+        continue;
+      }
+      const ctx = { controller: controllerOf(state, permanent), source: id };
+      if (
+        matchesFilter(state, entering, { ...ability.replacement.what, zone: 'battlefield' }, ctx)
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 /**
  * CR 614.1c, 614.12 (D-519): whether a continuous effect of the game ("Until your next turn, creatures your opponents control enter tapped",
  * `permanentsEnterTapped`) makes `entering` enter tapped: some effect whose filter the permanent matches as it would be on the battlefield, for the controller of the
@@ -102,7 +122,9 @@ export function enteredTappedByEffect(state: GameState, entering: GameObject): b
 function mayHaveReplacement(state: GameState, obj: GameObject): boolean {
   if (obj.card === null && obj.token === null && obj.copyOf === undefined) return false;
   return copiableValues(state, obj).abilities.some(
-    (a) => a.kind === 'replacement' && a.replacement.kind === 'groupEntersUntapped',
+    (a) =>
+      a.kind === 'replacement' &&
+      (a.replacement.kind === 'groupEntersUntapped' || a.replacement.kind === 'groupEntersTapped'),
   );
 }
 

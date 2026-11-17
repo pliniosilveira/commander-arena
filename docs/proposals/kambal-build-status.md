@@ -4,10 +4,10 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 
 ## Status
 
-- [x] 14 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, Liesa, Forgotten Archangel, and Skrelv's Hive.
+- [x] 15 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, Liesa, Forgotten Archangel, Skrelv's Hive, and Authority of the Consuls.
 - Current branch: `support-kambal`.
-- Current group: E — Skrelv's Hive's Mite token and corrupted static ability are supported (D-593, D-594).
-- Next: Authority of the Consuls.
+- Current group: F — Authority of the Consuls' enter-tapped replacement is supported (D-595).
+- Next: Underworld Connections.
 
 ## Cards and initial gap groups
 
@@ -42,7 +42,7 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 
 ### Group E — continuous and attached abilities
 
-- [ ] Authority of the Consuls
+- [x] Authority of the Consuls
 - [ ] Underworld Connections
 
 ### Group F — other spell and permanent abilities
@@ -63,3 +63,4 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 - `Call of the Ring` passes parser and golden support. Focused Ring scenario tests prove the filtered trigger does not fire with no creature available and does fire after a creature is chosen. `pnpm typecheck`, `pnpm lint`, and dependency boundaries pass; lint reports existing warnings and informational findings outside this work.
 - `Liesa, Forgotten Archangel` passes real-card parser/golden support. The delayed trigger reuses `triggerCard` and returns the card from the graveyard to its owner's hand at the next end step. Its focused scenario, parser registry, golden and derive checks pass; typecheck and lint pass.
 - Skrelv's Hive parses completely: the Mite has Toxic 1 and can't block; corrupted grants lifelink to your creatures with Toxic while an opponent has three or more poison counters (D-593, D-594). Engine scenarios check both sides of the threshold.
+- Authority of the Consuls parses completely (D-595): creatures your opponents control enter tapped, and its creature-entry life trigger uses the existing trigger and life-gain rules. An engine scenario checks the entry replacement.

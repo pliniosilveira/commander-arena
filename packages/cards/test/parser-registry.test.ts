@@ -530,6 +530,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.opponents-cant-cast': asIs,
   'static.opponents-cant-cast-spells': asIs,
   'static.group-enters-untapped': asIs,
+  'static.group-enters-tapped': asIs,
   'static.spells-cant-be-countered': asIs,
   // Stage P43 (D-193): the damage that stays and the redirection of Ancient Adamantoise, lines of their own.
   'static.keeps-damage': asIs,
