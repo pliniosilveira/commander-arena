@@ -3099,7 +3099,7 @@ export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
- * The SYNTHETIC cards of group 1 of the Lorehold Spirit deck (issue 86, D-563 and later): a 3/3 with vigilance that searches for a Plains when an opponent controls more lands (twice at
+ * The SYNTHETIC cards of group 1 of the Lorehold Spirit deck (issue 86, D-583 and later): a 3/3 with vigilance that searches for a Plains when an opponent controls more lands (twice at
  * most, shuffling if it searched), an artifact creature that may exile a card its controller discards and play it, one that may only cast it, a creature that may pay {1} and discard a
  * card to draw when it attacks and may exile one of the nonland cards its controller discards and cast it, a creature that draws when its controller discards one or more cards, a sorcery
  * that discards two cards, an artifact that mills and shuffles cards of the graveyard into the library, a sorcery in which each creature deals damage to itself equal to its power and a 3/5

@@ -1,4 +1,4 @@
-// The Lorehold Spirit deck (issue 86), group 1 (D-563 to D-569, provisional): the lines of Claim Jumper, Containment Construct, Conspiracy Theorist, Perpetual Timepiece and Wave of
+// The Lorehold Spirit deck (issue 86), group 1 (D-583 to D-589, provisional): the lines of Claim Jumper, Containment Construct, Conspiracy Theorist, Perpetual Timepiece and Wave of
 // Reckoning. The real lines are the Oracle text of the acceptance cards of the golden corpus read through the whole pipeline; the other lines are SYNTHETIC siblings and the near
 // misses the grammar must not read. The engine runs what is lowered in convert-grammar-engine-lorehold-g1.test.ts.
 import { describe, expect, test, vi } from 'vitest';
@@ -41,7 +41,7 @@ const SEARCH_PLAINS = {
   shuffle: false,
 } as const;
 
-describe('"you may pay {1} and discard a card. If you do, ..." (D-563, CR 118.3, 701.9, 608.2c)', () => {
+describe('"you may pay {1} and discard a card. If you do, ..." (D-583, CR 118.3, 701.9, 608.2c)', () => {
   test('the real line of Conspiracy Theorist: the payment is mana and a discard of the engine`s `mayPay`', () => {
     expect(
       readAll('Whenever ~ attacks, you may pay {1} and discard a card. If you do, draw a card.')
@@ -104,7 +104,7 @@ describe('"you may pay {1} and discard a card. If you do, ..." (D-563, CR 118.3,
   });
 });
 
-describe('"Whenever you discard one or more nonland cards" (D-564, CR 603.2c, 701.9a)', () => {
+describe('"Whenever you discard one or more nonland cards" (D-584, CR 603.2c, 701.9a)', () => {
   test('a batch trigger of the cards discarded together, of a kind of card', () => {
     expect(
       readAll(
@@ -156,7 +156,7 @@ describe('"Whenever you discard one or more nonland cards" (D-564, CR 603.2c, 70
   });
 });
 
-describe('"you may exile one of them from your graveyard. If you do, you may cast it this turn." (D-565, CR 603.2c, 608.2d, 601.2, 305.1)', () => {
+describe('"you may exile one of them from your graveyard. If you do, you may cast it this turn." (D-585, CR 603.2c, 608.2d, 601.2, 305.1)', () => {
   test('the real line of Conspiracy Theorist: the engine`s `exileFromTriggerCards`, then the permission to cast the card', () => {
     expect(
       readAll(
@@ -220,7 +220,7 @@ describe('"you may exile one of them from your graveyard. If you do, you may cas
   });
 });
 
-describe('"you may play that card this turn" and "you may cast it this turn" after an exile (D-566, CR 601.2, 305.1, 611.2a)', () => {
+describe('"you may play that card this turn" and "you may cast it this turn" after an exile (D-586, CR 601.2, 305.1, 611.2a)', () => {
   test('the real line of Containment Construct: exile the card discarded, then the permission to play it', () => {
     expect(
       readAll(
@@ -315,7 +315,7 @@ describe('"you may play that card this turn" and "you may cast it this turn" aft
   });
 });
 
-describe('"shuffle any number of target cards from your graveyard into your library" (D-567, CR 701.24c, 701.24d, 115.1)', () => {
+describe('"shuffle any number of target cards from your graveyard into your library" (D-587, CR 701.24c, 701.24d, 115.1)', () => {
   const TARGET = {
     id: 't1',
     what: { kind: 'object', filter: { zone: 'graveyard', controller: 'you' } },
@@ -396,7 +396,7 @@ describe('"shuffle any number of target cards from your graveyard into your libr
   });
 });
 
-describe('"each creature deals damage to itself equal to its power" (D-568, CR 120.3, 608.2h)', () => {
+describe('"each creature deals damage to itself equal to its power" (D-588, CR 120.3, 608.2h)', () => {
   test('the real line of Wave of Reckoning: each creature, whoever controls it', () => {
     expect(
       readAll('Each creature deals damage to itself equal to its power.', 'sorcery').spell,
@@ -447,7 +447,7 @@ describe('"each creature deals damage to itself equal to its power" (D-568, CR 1
   });
 });
 
-describe('"you may search ... and put it onto the battlefield tapped. Then if ..., repeat this process once. If you search your library this way, shuffle." (D-569, CR 701.23, 608.2c)', () => {
+describe('"you may search ... and put it onto the battlefield tapped. Then if ..., repeat this process once. If you search your library this way, shuffle." (D-589, CR 701.23, 608.2c)', () => {
   const CLAIM_JUMPER =
     'When ~ enters, if an opponent controls more lands than you, you may search your library for a Plains card and put it onto the battlefield tapped. Then if an opponent controls more lands than you, repeat this process once. If you search your library this way, shuffle.';
 
