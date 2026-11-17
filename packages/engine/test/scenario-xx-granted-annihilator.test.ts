@@ -3,7 +3,7 @@
 // object with several instances of an ability: each functions independently), CR 613.1f (a granted keyword is a layer 6 effect that ends with its source, CR 611.3a).
 // Cards: the SYNTHETIC "Annihilation Aura" of this file, the real Grizzly Bears, Llanowar Elves and the basic lands.
 import { describe, expect, test } from 'vitest';
-import { type ScenarioGame, scenario } from '../src/testing/index';
+import { scenario } from '../src/testing/index';
 import { singleFaceCard } from './dsl-helpers';
 
 const AURA = 'SYNTHETIC Annihilation Aura'; // Enchant creature. Enchanted creature has annihilator 2.
