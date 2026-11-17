@@ -147,7 +147,7 @@ function lowerGrantedAbility(
   // Stage P49 (D-206): the equipped or enchanted permanent too, for a triggered ability ("Equipped creature has \"Whenever this creature attacks, you gain 1 life.\"": `~` in the quotation is
   // the creature that has the ability, the same as for a group).
   // D-286 (CR 702.95b): the pair, for a triggered ability ("each of those creatures has a quoted ability"): `~` in the quotation is the creature that has it.
-  // D-596: a typed attached permanent can receive an activated ability; Underworld Connections grants one to an enchanted land.
+  // D-603: a typed attached permanent can receive an activated ability; Underworld Connections grants one to an enchanted land.
   const attachedLandActivated =
     subject.kind === 'attached' &&
     subject.types?.includes('land') === true &&

@@ -163,7 +163,7 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
     case 'enteredThisTurn': // D-151: the turn log, which no layer changes
     case 'playerDealtDamage':
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
-    case 'lifeGainedAndLostThisTurn': // D-586: both turn-log reads
+    case 'lifeGainedAndLostThisTurn': // D-593: both turn-log reads
     case 'cardsInGraveyard': // D-229: the cards in a zone, which no layer changes
     case 'cardsInLibrary': // D-331: the cards in a zone, which no layer changes
     case 'chosenOption': // D-151: what the permanent chose as it entered

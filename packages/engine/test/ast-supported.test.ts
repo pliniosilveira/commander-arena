@@ -299,7 +299,7 @@ describe('supported feature gate', () => {
         'castSpell',
         'cycled',
         'chapter',
-        // D-591: "When this Class becomes level N".
+        // D-596: "When this Class becomes level N".
         'classLevel',
         'dealsCombatDamage',
         'dealtDamage',

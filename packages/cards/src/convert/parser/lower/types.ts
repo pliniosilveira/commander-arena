@@ -38,6 +38,11 @@ export interface LowerContext {
    */
   selfGone: boolean;
   /**
+   * D-583 (CR 602.2b, 701.21a): the kind of permanent ("artifact", or "" for none that a word names) the cost of this activated ability sacrifices one or more of, or null when
+   * its cost has no such sacrifice. "For each artifact sacrificed this way" in its text counts them (the engine's `sacrificedAsCost`), where no earlier instruction sacrificed.
+   */
+  costSacrifice: string | null;
+  /**
    * True when "it" in the text of this ability is the object the ability belongs to: a triggered
    * ability whose every event is about `~` itself (stage P17: "for each time it was kicked" reads the
    * source's kicks). A spell sets nothing: in spell text "it" may be a target.
@@ -146,7 +151,7 @@ export interface LowerContext {
    * battlefield some other way, where the card may be anywhere). A subset of `itIsCard`.
    */
   itDied: boolean;
-  /** True in any dies trigger body, including a trigger about another creature (D-592). */
+  /** True in any dies trigger body, including a trigger about another creature (D-599). */
   diesTrigger: boolean;
   /**
    * True while the total of a divided damage is lowered (stage P32, D-147, CR 601.2d): "..., where X is the greatest power among
@@ -240,6 +245,7 @@ export function newContext(
     usesX: false,
     entersX: false,
     selfGone: false,
+    costSacrifice: null,
     staticSubjectIsSelf: false,
     itIsSelf: false,
     selfCast: false,

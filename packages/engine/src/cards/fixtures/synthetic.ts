@@ -137,6 +137,7 @@ import { SYNTHETIC_RESELECT_LIST } from './synthetic-reselect';
 import { SYNTHETIC_RESTRICTION_LIST } from './synthetic-restrictions';
 import { SYNTHETIC_REVEAL_LIST } from './synthetic-reveal';
 import { SYNTHETIC_RING_LIST } from './synthetic-ring';
+import { SYNTHETIC_SACRIFICE_MANA_LIST } from './synthetic-sacrifice-mana';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
 import { SYNTHETIC_SEARCH_LIST } from './synthetic-search';
 import { SYNTHETIC_SNOW_LIST } from './synthetic-snow';
@@ -425,6 +426,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_FEATHER_G3_LIST,
   ...SYNTHETIC_GISA_G1_LIST,
   ...SYNTHETIC_GISA_G3_LIST,
+  ...SYNTHETIC_SACRIFICE_MANA_LIST,
   ...SYNTHETIC_FEATHER_G1_LIST,
   ...SYNTHETIC_GISA_G4_LIST,
   ...SYNTHETIC_GISA_G2_LIST,

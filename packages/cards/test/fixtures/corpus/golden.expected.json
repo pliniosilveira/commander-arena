@@ -1,5 +1,5 @@
 {
-  "parserVersion": 140,
+  "parserVersion": 141,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1221,6 +1221,14 @@
       ],
       "reasons": [],
       "ast": "6cbfd10d"
+    },
+    "307be184-176a-40a8-944c-48aa00cfdd29": {
+      "name": "Radiant Lotus",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8ceba38d"
     },
     "30c3c700-46f4-4a77-8c45-5c7e3a21bd62": {
       "name": "Wizard's Staff",
@@ -6171,20 +6179,204 @@
       "unparsed": [],
       "reasons": [],
       "ast": "51b14ad1"
+    },
+    "name:Counterspell": {
+      "name": "Counterspell",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "aecc2d34"
+    },
+    "name:Divination": {
+      "name": "Divination",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c8faa5cd"
+    },
+    "name:Fencing Ace": {
+      "name": "Fencing Ace",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c36ec457"
+    },
+    "name:Forest": {
+      "name": "Forest",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0d0c05d8"
+    },
+    "name:Giant Spider": {
+      "name": "Giant Spider",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9fa2fa90"
+    },
+    "name:Grizzly Bears": {
+      "name": "Grizzly Bears",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e77faf33"
+    },
+    "name:Healer's Hawk": {
+      "name": "Healer's Hawk",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "28858ca7"
+    },
+    "name:Isamaru, Hound of Konda": {
+      "name": "Isamaru, Hound of Konda",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "54556fd1"
+    },
+    "name:Island": {
+      "name": "Island",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "75e49a90"
+    },
+    "name:Lightning Bolt": {
+      "name": "Lightning Bolt",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fe5d21d2"
+    },
+    "name:Llanowar Elves": {
+      "name": "Llanowar Elves",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f30d4c4e"
+    },
+    "name:Mountain": {
+      "name": "Mountain",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "011d2374"
+    },
+    "name:Murder": {
+      "name": "Murder",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e6854d08"
+    },
+    "name:Plains": {
+      "name": "Plains",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e0c3d2b0"
+    },
+    "name:Raging Goblin": {
+      "name": "Raging Goblin",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a3093fa5"
+    },
+    "name:Serra Angel": {
+      "name": "Serra Angel",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "de6a9301"
+    },
+    "name:Sol Ring": {
+      "name": "Sol Ring",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6b54549e"
+    },
+    "name:Swamp": {
+      "name": "Swamp",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "62bf04b8"
+    },
+    "name:Typhoid Rats": {
+      "name": "Typhoid Rats",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3e9d79a8"
+    },
+    "name:Unsummon": {
+      "name": "Unsummon",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "49f242ad"
+    },
+    "name:Wall of Stone": {
+      "name": "Wall of Stone",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a3ae7d4d"
+    },
+    "name:Yargle, Glutton of Urborg": {
+      "name": "Yargle, Glutton of Urborg",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "31f5c77c"
+    },
+    "name:Youthful Knight": {
+      "name": "Youthful Knight",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "485de879"
     }
   },
   "summary": {
     "training": {
-      "supported": 149,
-      "total": 174
+      "supported": 167,
+      "total": 192
     },
     "holdout": {
-      "supported": 50,
-      "total": 56
+      "supported": 55,
+      "total": 61
     },
     "acceptance": {
-      "supported": 438,
-      "total": 459
+      "supported": 439,
+      "total": 460
     }
   }
 }

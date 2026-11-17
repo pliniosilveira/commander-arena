@@ -407,7 +407,7 @@ export const DELAYED_RETURN: Lowering<IrClause, Effects> = {
   },
 };
 
-/** A dies trigger can schedule its trigger card to its owner's hand at the next end step (D-592). */
+/** A dies trigger can schedule its trigger card to its owner's hand at the next end step (D-599). */
 export const DELAYED_RETURN_TO_HAND: Lowering<IrClause, Effects> = {
   head: 'delayedReturnToHand',
   id: 'lower.delayed-return-to-hand',

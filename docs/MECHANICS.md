@@ -5004,92 +5004,104 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Proof:** `scenario-xx-saurons-ransom.test.ts` checks the separator's card view, the chooser's redacted pending data, the public event, the hidden pile going to hand, hidden event names, and Ring temptation. The importer acceptance test checks the issue fixture.
 - **Limit:** the parser-only route still does not read this private-pile wording. The two-player game has one opponent, so the separator is unambiguous. Card text is from issue 57.
 
-## The Kambal deck, issue 255, Daxos (D-585)
+## The Kambal deck, issue 255, Daxos (D-592)
 
 - **Engine:** characteristic-defining power/toughness amounts may read devotion. `derive-count.ts` evaluates the devotion of the source's current controller as layer 7a derives the defined characteristic.
 - **Proof:** `scenario-xx-amounts-rules.test.ts` checks that each of three Daxos-like synthetic permanents sees all three white mana costs; the golden acceptance corpus checks Daxos's complete text.
 - **Limit:** the local CR text and Scryfall rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Lunar Convocation (D-586)
+## The Kambal deck, issue 255, Lunar Convocation (D-593)
 
 - **Engine:** `lifeGainedAndLostThisTurn` checks both the controller's accumulated life gain and `SeatState.lifeLostThisTurn`; the current life total is not used. The new condition works with existing condition conjunction and intervening-if timing.
 - **Proof:** parser coverage includes the exact token ability; an engine scenario gains life, loses life to a spell, and checks false before both events and true afterward. The golden acceptance corpus checks the complete card.
 - **Limit:** the local CR text and Scryfall rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Wall of Reverence (D-587)
+## The Kambal deck, issue 255, Wall of Reverence (D-594)
 
 - **Parser:** the generic power amount grammar accepts "the power of target creature you control" and carries that target into the `powerOf` amount, so targeting and amount calculation use the same chosen object.
 - **Proof:** `parser-p11.test.ts` checks the trigger target and the linked power reference; the golden corpus checks full card import.
 - **Limit:** CR text and rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Moseo (D-588)
+## The Kambal deck, issue 255, Moseo (D-595)
 
 - **Engine and parser:** a graveyard target's `manaValueAtMost` may use `lifeGainedThisTurn`; the usual selector reads the turn log when it checks the object.
 - **Proof:** `parser-p18.test.ts` checks Moseo's target filter and amount; `ast-references-validate.test.ts` proves the engine accepts the generic selector shape; the golden corpus checks full card support.
 - **Limit:** CR text and rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Tivash (D-589)
+## The Kambal deck, issue 255, Tivash (D-596)
 
 - **Parser:** the value after "pay X life, where X is ..." defines X for the payment and the following instruction; an X/X custom token uses the same amount for both stats, with its count remaining one.
 - **Proof:** `parser-p21.test.ts` checks the payment and token AST; the golden acceptance corpus checks the complete card.
 - **Limit:** CR text and rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Call of the Ring (D-590)
+## The Kambal deck, issue 255, Call of the Ring (D-597)
 
 - **Engine and parser:** `ringTempted` may require a non-null chosen bearer; the trigger wording “you choose a creature as your Ring-bearer” lowers to that filter.
 - **Proof:** `scenario-xx-ring.test.ts` proves it does not trigger when no creature was available and does trigger when a creature was chosen; `parser-p45.test.ts` checks the exact trigger and payment effect.
 - **Limit:** CR text and rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Cleric Class (D-591)
+## The Kambal deck, issue 255, Cleric Class (D-598)
 
 - **Engine and parser:** changing a Class's level emits `classLevelReached`; `classLevel` triggers only for the same Class object reaching the named level. The game log names the level change.
 - **Proof:** `scenario-xx-class-level.test.ts` checks a level-three trigger, `parser-p48.test.ts` checks the trigger grammar, and the real-card integration test returns its targeted creature and gains life equal to its toughness.
 - **Limit:** CR text and rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Liesa, Forgotten Archangel (D-592)
+## The Kambal deck, issue 255, Liesa, Forgotten Archangel (D-599)
 
 - **Engine and parser:** a dies trigger can create a delayed triggered ability that returns the card the creature became in the graveyard to its owner's hand at the next end step. The existing `triggerCard` reference and delayed-trigger machinery handle object identity and scheduling; token cards are excluded.
 - **Proof:** `scenario-xx-dies-return.test.ts` checks creation and resolution of the delayed hand return; `parser-p48.test.ts` checks Liesa's complete real-card import and the golden corpus records its support.
 - **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Skrelv's Hive token (D-593)
+## The Kambal deck, issue 255, Skrelv's Hive token (D-600)
 
 - **Parser:** custom token descriptions can include numbered Toxic and a quoted static `cantBlock` restriction, alongside the existing keyword list and quoted ability handling.
 - **Proof:** `parser-p48.test.ts` reads the full upkeep trigger and checks the Mite's types, Toxic value and blocking restriction.
 - **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Skrelv's Hive corrupted ability (D-594)
+## The Kambal deck, issue 255, Skrelv's Hive corrupted ability (D-601)
 
 - **Engine and parser:** `opponentPoisonAtLeast` reads whether an opponent still in the game has the specified number of poison counters. Skrelv's Hive grants lifelink to creatures its controller controls with Toxic while that condition holds; Toxic is tested as a keyword presence and its value is unchanged.
 - **Proof:** `scenario-xx-corrupted.test.ts` checks that the grant is absent below three poison counters and present at three. `parser-p48.test.ts` checks complete real-card parsing and the golden corpus records its support.
 - **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Authority of the Consuls (D-595)
+## The Kambal deck, issue 255, Authority of the Consuls (D-602)
 
 - **Engine and parser:** A permanent's `groupEntersTapped` replacement makes matching permanents enter tapped. Authority of the Consuls applies it to creatures its controller's opponents control. The existing parser and engine handle its life-gain trigger when an opponent's creature enters.
 - **Proof:** `scenario-xx-authority.test.ts` checks that an opponent's creature spell enters tapped; `parser-p48.test.ts` checks complete import of the real card and golden acceptance support.
 - **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Underworld Connections (D-596)
+## The Kambal deck, issue 255, Underworld Connections (D-603)
 
 - **Parser and engine:** An Aura may grant an activated ability to an enchanted land. The granted ability is lowered with the host's land type so tap costs and activation rules apply to the land; Underworld Connections' ability pays 1 life and draws a card.
 - **Proof:** `scenario-xx-underworld.test.ts` activates the granted ability and checks the life payment, tap and draw. `parser-p48.test.ts` checks complete import of the real card and golden acceptance support.
 - **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Tragic Slip (D-597)
+## The Kambal deck, issue 255, Tragic Slip (D-604)
 
 - **Parser and engine:** The condition "a creature died this turn" reads the turn's creature-death history. The spell parser joins Tragic Slip's following "That creature gets ... instead if ..." paragraph to its preceding pump instruction and lowers it as a conditional replacement.
 - **Proof:** `parser-registry.test.ts` exercises the condition through the full pipeline; `parser-p48.test.ts` checks complete real-card parsing; the golden corpus records support.
 - **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Liesa, Shroud of Dusk (D-598)
+## The Kambal deck, issue 255, Liesa, Shroud of Dusk (D-605)
 
 - **Engine and parser:** `CardFace.commanderTaxLife` replaces each prior-cast {2} tax increment with the stated life amount, only for a cast from the command zone. Mana reductions do not reduce that life cost. The object view and payment prompt expose the life amount, and the cast event records it.
 - **Proof:** `scenario-22-commander-tax.test.ts` covers multiple prior casts, mana reductions, cancellation, casting from hand and insufficient life. `parser-p48.test.ts` checks complete real-card parsing and golden acceptance support; `costs-model.test.ts` and `references-model.test.ts` cover the cost label and payment prompt.
 - **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
 
-## The Kambal deck, issue 255, Teferi's Reproach (D-600)
+## The Kambal deck, issue 255, Teferi's Reproach (D-607)
 
 - **Engine and parser:** Temporary player protection from everything and a life-total lock end as the chosen player's next turn begins. The life lock prevents life gains, life losses, damage-based life changes, life-total setting and payment of life costs. The spell phases out all nonland permanents controlled by its chosen player; anaphoric "they" binds to the earlier target, and the existing phasing rules carry attached permanents with them.
 - **Proof:** `scenario-xx-player-lock.test.ts` checks protection, loss/gain/set life attempts, life-paid spell costs, damage when only the life lock is present, simultaneous nonland phasing, land preservation, and expiration at the target's next turn. `parser-p48.test.ts` and the golden corpus check the real card.
 - **Limit:** The local CR text and Scryfall rulings were unavailable for independent verification.
+
+## The VRA 2 deck (issue 258): Radiant Lotus, "Sacrifice one or more artifacts", a chosen color of mana for a target player (D-583 to D-587)
+
+- CR: 602.2b, 601.2b, 701.21a and 118.3 (the cost sacrifices one or more of the artifacts the player controls, chosen as the cost is paid; with none the cost can't be paid), 602.5e (an ability that reads "Activate only as an instant" follows the timing of an instant: any time its controller has priority, the default of an activated ability), 605.1a and 605.5a (an ability with a target is not a mana ability: it uses the stack and can be responded to or countered), 106.4 (mana a player adds goes into their pool), 105.1 (the five colors), 608.2d (the controller chooses the color as the ability resolves), 608.2c, 603.10a and 113.7a (a sacrificed permanent is gone when the effect resolves, the count survives it).
+- Gap class: P (a `sacrifice` cost of one or more, read by `sacrificedAsCost` in an activated ability) and T (the grammar); no S proposal and no new decision kind (`choosePermanent` of a cost with `min` 1, `chooseOption` of the existing `chooseOne`).
+- Engine: `Cost` `sacrifice` with `anyNumber` and `atLeastOne` in an activated ability (`ast/types.ts`, `rules/activate-costs.ts` `breakDown` `sacrificeAny`, `rules/activate.ts` `paySacrifice`: `choosePermanent` with `min` 1 and `max` all the candidates, nothing asked with one candidate, `cancel` rewinds, D-583); the amount `sacrificedAsCost` and the condition of the same name read `ResolutionContext.costSacrificed` first, which the ability on the stack carries (`rules/amounts.ts`, `rules/conditions.ts` `ConditionContext.costSacrificed`, D-584); the mana is the existing `addMana` of fixed mana with `times` for a target player inside a `chooseOne` of the five colors (D-229, D-152, D-585). Validation: `ast/validate.ts` (`checkActivationCosts`, `checkSacrificedAsCost`), `ast/validate-parts.ts` (`atLeastOne` goes with `anyNumber`), `ast/validate-cost.ts` (a spell's optional sacrifice has no `atLeastOne`). Feature `ability:sacrificeOneOrMore`; `amount:sacrificedAsCost` and `effect:chooseOne` are the existing ones.
+- Parser: `cost.sacrifice` reads `noun.one-or-more-permanents` (`rules/cost/index.ts`, lowered by `lower/costs.ts` for an ordinary activated ability only: never a mana ability, a keyword cost or a spell's cost); `effect.player-adds-chosen-color-mana` ("target player adds three mana of the chosen color for each artifact sacrificed this way", `rules/effect/chosen-color-mana.ts`); `lowerChooseColorMana` (`lower/chosen-color-mana.ts`, called by `lowerStep`) reads "Choose a color." and the sentence after it as one `chooseOne` whose options each add that color's mana to the target player; `LowerContext.costSacrifice` and `isCostSacrificeCount` (`lower/amounts.ts`, `lower/sentences.ts` `thisWaysAreSupported`) make "for each artifact sacrificed this way" the amount `sacrificedAsCost` when the cost of the ability sacrifices one or more artifacts and no instruction of the text sacrifices (D-586). The reminder "(Activate only as an instant.)" is removed with all reminder text (`normalize.ts`) and adds no restriction.
+- AST nodes: Radiant Lotus `activated { cost: [tap, sacrifice { what: { types: [artifact] }, anyNumber, atLeastOne }], targets: [player any], effect: chooseOne { options: five of { label: white | blue | black | red | green, effect: addMana { mana: fixed { mana: [W, W, W], times: sacrificedAsCost }, player: target t1 } } } }`; "Target player draws a card for each artifact sacrificed this way" is `draw { count: sacrificedAsCost }` with the same cost.
+- What the parser must produce: the real text of the golden corpus reads to exactly these nodes (the SYNTHETIC Lotus Engine of `synthetic-sacrifice-mana.ts` holds the same nodes and the cards package compares them).
+- Web: the cost "Sacrifice one or more artifacts" (`game/cost-text.ts`), the sacrifice prompt "Sacrifice one or more artifacts to pay for ..." (`ui/decisions/permanents.ts`), the label "Choose a color. Target player adds three mana of that color for each permanent sacrificed this way" (`game/chosen-color-text.ts`, `ui/decisions/ability-label.ts`), the question "Choose a color for ..." (`ui/decisions/option-names.ts`), the amount "the number of permanents sacrificed as a cost" (`game/amount-text.ts`). AI: unchanged (the casual agent never activates such an ability and `choosePermanentToSacrifice` takes `min`); the SYNTHETIC cards are kept out of the generic soak pools (`SACRIFICE_MANA_NAMES`), the style `sacrificeMana`.
+- Tests: engine `scenario-xx-sacrifice-mana.test.ts`, `ast-sacrifice-mana-validate.test.ts`; cards `parser-sacrifice-mana.test.ts`, `convert-grammar-engine-sacrifice-mana.test.ts`; web `sacrifice-mana-text.test.ts`; AI soak `sacrifice-mana-games.test.ts` (100 games clean).
+- Limits: see `docs/ROADMAP.md`.

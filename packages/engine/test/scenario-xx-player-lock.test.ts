@@ -1,4 +1,4 @@
-// Teferi's Reproach player effects (D-600): protection from everything, life-total lock and mass phasing.
+// Teferi's Reproach player effects (D-607): protection from everything, life-total lock and mass phasing.
 import { describe, expect, test } from 'vitest';
 import { singleFace } from '../src/cards/fixtures/helpers';
 import { scenario } from '../src/testing/index';
@@ -75,7 +75,7 @@ const lifeLockOnly = singleFace({
   },
 });
 
-describe('player lock and mass phasing (D-600)', () => {
+describe('player lock and mass phasing (D-607)', () => {
   test('protects the opponent, prevents life loss, phases out their nonlands and expires as their next turn begins', () => {
     const g = scenario()
       .define(lockReproach)

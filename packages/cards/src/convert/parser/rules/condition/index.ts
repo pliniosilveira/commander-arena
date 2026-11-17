@@ -357,7 +357,7 @@ export const CONDITION_OPPONENTS_AT_LEAST = defineRule<IrCondition>({
   },
 });
 
-/** `condition.opponent-poison-at-least`: an opponent's poison counters cross a threshold (D-594). */
+/** `condition.opponent-poison-at-least`: an opponent's poison counters cross a threshold (D-601). */
 export const CONDITION_OPPONENT_POISON_AT_LEAST = defineRule<IrCondition>({
   id: 'condition.opponent-poison-at-least',
   family: 'condition',

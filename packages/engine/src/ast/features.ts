@@ -121,6 +121,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificeX',
     // D-491: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
     'optionalSacrifice',
+    // D-583: "{T}, Sacrifice one or more artifacts: ..." (`Cost` `sacrifice` with `anyNumber` and `atLeastOne` in an activated ability, CR 602.2b, 701.21a).
+    'sacrificeOneOrMore',
     // D-511: "You may pay {1}. When you do, choose one —" (a `reflexive` effect with `modes`, and with `afterPayment` inside a `mayPay`, CR 603.12, 700.2b).
     'reflexiveModal',
     'reflexivePaid',
@@ -361,7 +363,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cycled',
     // D-196: "Whenever the Ring tempts you" (CR 701.54d).
     'ringTempted',
-    // D-591: "When this Class becomes level N" (CR 716.2).
+    // D-598: "When this Class becomes level N" (CR 716.2).
     'classLevel',
     // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
     'crimeCommitted',
@@ -519,7 +521,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tokensInstead',
     // D-179: "Lands you control enter untapped".
     'groupEntersUntapped',
-    // D-595: "Creatures your opponents control enter tapped".
+    // D-602: "Creatures your opponents control enter tapped".
     'groupEntersTapped',
     // D-151: "As this enters, you may have it become a copy of any creature on the battlefield until end of turn".
     'entersAsCopy',
@@ -758,7 +760,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   conditionKinds: [
     'controlsAtLeast',
     'opponentsAtLeast',
-    // D-594 (CR 122.1): "an opponent has three or more poison counters".
+    // D-601 (CR 122.1): "an opponent has three or more poison counters".
     'opponentPoisonAtLeast',
     'kicked',
     // D-129: "if a replicate cost was paid for it" (CR 702.56a).
@@ -1156,6 +1158,8 @@ export const ABILITY_FEATURES = [
   'sacrificeX',
   /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-491, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
   'optionalSacrifice',
+  /** "{T}, Sacrifice one or more artifacts: ..." (D-583, CR 602.2b, 701.21a, 118.3): a `sacrifice` cost with `anyNumber` and `atLeastOne` in an activated ability, chosen as the cost is paid; `sacrificedAsCost` counts what was sacrificed. */
+  'sacrificeOneOrMore',
   /** "When you do, choose one —" (CR 603.12, 700.2b, 603.3c, D-511): a `reflexive` effect with `modes` and `chooseModes`. */
   'reflexiveModal',
   /** "You may pay {1}. When you do, ..." (CR 603.12, 118.1, D-511): a `reflexive` effect with `afterPayment`, the `effect` of a `mayPay`. */
@@ -1352,7 +1356,7 @@ export const CONDITION_KINDS = [
   'controlsAtLeast',
   /** "You have two or more opponents": the engine's `opponentsAtLeast`. */
   'opponentsAtLeast',
-  /** "An opponent has three or more poison counters" (D-594). */
+  /** "An opponent has three or more poison counters" (D-601). */
   'opponentPoisonAtLeast',
   /** "If this spell was kicked", "if it was kicked" (CR 702.33d): the engine's `kicked`. */
   'kicked',
@@ -1430,7 +1434,7 @@ export const CONDITION_KINDS = [
   'combatDamagedBy',
   /** "If you gained 3 or more life this turn" (D-252): the engine's `lifeGainedThisTurn`. */
   'lifeGainedThisTurn',
-  /** "If you gained and lost life this turn" (D-586). */
+  /** "If you gained and lost life this turn" (D-593). */
   'lifeGainedAndLostThisTurn',
   /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
@@ -1656,7 +1660,7 @@ export const AMOUNT_KINDS = [
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
-  /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491): the engine's `sacrificedAsCost`. */
+  /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491) or the cost of an activated ability (CR 602.2b, D-583): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
   /** "For each card exiled this way" for a spell's additional cost (D-575): the engine's `exiledAsCost`. */
   'exiledAsCost',
@@ -1748,6 +1752,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   modeCost: true,
   sacrificeX: true,
   optionalSacrifice: true,
+  sacrificeOneOrMore: true,
   reflexiveModal: true,
   reflexivePaid: true,
   activateOnlyIf: true,

@@ -3655,126 +3655,158 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: Guess the slot from its legal targets in the interface (wrong when one object is the only legal one); write the text in the engine (the engine has no text renderer and must stay free of presentation).
 - Consequences: The decision shape grows by one optional field; the engine version stays 114 as the rules do not change, and the derive digests are regenerated.
 
-## D-583: Order interacting life-gain replacements (2026-11-17)
+## D-583: "Sacrifice one or more artifacts" as the cost of an activated ability: `Cost` `sacrifice` with `anyNumber` and `atLeastOne` (2026-11-17, issue 258)
+- Context: Radiant Lotus (the VRA 2 deck) is "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." The engine paid a fixed number of permanents (`count`, D-133), X permanents with X announced first (`countX`, D-488) and, for a spell's additional cost only, "any number" that may be none (`anyNumber`, D-491). The parser stopped at the cost (`closestRule` `cost.sacrifice`).
+- Decision: an activated ability's `sacrifice` cost may carry `anyNumber` together with `atLeastOne` (CR 602.2b, 701.21a): the player chooses one to all of the permanents they control that match, as the cost is paid, after the {T} and the mana (the existing `choosePermanent` of purpose `sacrifice` with `forCost`, now with `min` 1 and `max` the number of candidates; nothing is asked when exactly one qualifies, and `cancel` rewinds the activation, CR 733). With no permanent to sacrifice the cost can't be paid and the ability is not offered (CR 118.3). The source may sacrifice itself (it is tapped first). `CostBreakdown.sacrificeAny` carries the flag. `validateCard` refuses `atLeastOne` without `anyNumber`, `anyNumber` in an ability without `atLeastOne` (a spell's optional sacrifice may choose none), `atLeastOne` in a spell's additional cost, and the form with `this`, `count`, `countX` or in a mana ability. Feature `ability:sacrificeOneOrMore`; grammar: `cost.sacrifice` reads `noun.one-or-more-permanents` (lowered for an ordinary activated ability only).
+- Alternatives: announce a number like X (`countX`): rejected, "one or more" is not an {X} and the player would have to choose a number before the targets, which CR 107.3 does not ask of a sacrifice; add a new decision kind: rejected, `choosePermanent` has `min`/`max` and its answer validation and legal-action listing already handle a range; reuse `anyNumber` alone for abilities: rejected, D-491's none-is-allowed is a different rule from "one or more" (the cost cannot be paid with nothing).
+- Consequences: other "Sacrifice one or more <permanents>" costs need only their effect. The listing of legal answers is capped by `MAX_LISTED_CHOICES` for many artifacts, as for every `choosePermanent`; any legal choice is accepted. The Scryfall rulings of Radiant Lotus could not be fetched in a cloud session (unverified); the rules above follow the CR text.
+
+## D-584: The amount and the condition `sacrificedAsCost` of an activated ability (2026-11-17, issue 258)
+- Context: "for each artifact sacrificed this way" after a cost needs the number of permanents the cost sacrificed. `sacrificedAsCost` read it only from a spell (or its last-known information) for an additional cost (D-491); an ability's resolution has the source permanent as `ctx.source`, not the ability on the stack, so the spell reading found nothing.
+- Decision: the amount and the condition `sacrificedAsCost` read `ResolutionContext.costSacrificed` first (the permanents the cost of the resolving ability sacrificed, recorded on the ability on the stack as they were paid, CR 602.2c, and the same list `sacrificedCost` reads, D-133). A spell, and the cast trigger of a spell (D-492), have none there and read the spell as before. `validateCard` lets an activated ability read it only when its own cost has `anyNumber` with `atLeastOne`; every other ability and the text of a spell keep the D-491 rules.
+- Alternatives: a new amount kind for abilities: rejected, the meaning is the same ("permanents sacrificed to pay the cost of this") and a second kind would be a second way to say it; `thisWay` `sacrificed`: rejected, it counts what `sacrifice` effects of the same resolution did, which a cost is not.
+- Consequences: a count of the permanents a cost sacrificed survives their leaving the battlefield (CR 603.10a). The amount text of the web reads "the number of permanents sacrificed as a cost" for spells and abilities alike.
+
+## D-585: "Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." is a `chooseOne` of the five colors, and is not a mana ability (2026-11-17, issue 258)
+- Context: the two sentences have the controller choose a color as the ability resolves, then a target player add mana of it. A color chosen in a mana ability is part of its activation (`anyColor`, D-145); this ability has a target, so it is no mana ability (CR 605.1a, 605.5a) and uses the stack: the opponent can respond, and counter it, before any mana is added; the controller chooses as it resolves (CR 608.2d), so nobody can respond knowing the color.
+- Decision: no new effect. The lowering (`lowerChooseColorMana`, called by `lowerStep`) reads the sentence "Choose a color." with the one after it (`effect.player-adds-chosen-color-mana`) as `chooseOne` with five options, white to green, each `addMana` of fixed mana (three symbols of that color) with `times` the count the text says and `player` the target player (D-229 and D-152 are the two pieces it joins). The controller of the ability chooses (no `chooser`). The two sentences apart are reported as a color the engine cannot choose (`selector:colorChoice`), never run. Only a target player is read: "you add" would make a mana ability, which this shape is not. The web reads the whole `chooseOne` back as "Choose a color. Target player adds three mana of that color for each permanent sacrificed this way" and asks "Choose a color for ...".
+- Alternatives: a new effect `addManaOfChosenColor` with a stored color: rejected, `chooseOne` and `addMana` with `times` express it without state; a mana ability with a target: rejected by CR 605.1a; `ManaProduction` `chosenColor`: rejected, it is the color a permanent chose as it entered (D-149), not a choice made as an ability resolves.
+- Consequences: other "Choose a color. Target player adds N mana of the chosen color" texts need only their count. "Activate only as an instant" is the default timing (CR 602.5e); the parenthesis is reminder text and adds no restriction: the scenarios activate the ability at the end step of an opponent's turn, in response to a spell and in combat.
+
+## D-586: "for each artifact sacrificed this way" counts the cost of the ability when no instruction sacrifices (2026-11-17, issue 258)
+- Context: `lowerSentences` refused a "this way" amount unless an instruction before it in the same text did the thing (D-131); the sacrifice here is the cost.
+- Decision: `LowerContext.costSacrifice` holds the kind of permanent ("artifact", "creature", or "" for none a word names) of an activated ability's cost of "Sacrifice one or more ..."; `isCostSacrificeCount` accepts a `thisWay` `sacrificed` amount whose words name that kind (or "permanent") as the amount `sacrificedAsCost`, and `thisWaysAreSupported` refuses the text when an instruction of it also sacrifices (the words could mean either). A cost of one permanent, a count or X, another kind of permanent and "that many" are not read.
+- Alternatives: read the amount as the engine's `thisWay` and let the engine count sacrifice effects: rejected, a cost is not an effect and the number would be 0; guess when both exist: rejected (honesty).
+- Consequences: other abilities with this cost read their own "this way" counts ("draws a card for each artifact sacrificed this way" is tested). The web, the AI and the soak: the sacrifice prompt "Sacrifice one or more artifacts to pay for ...", the label of the ability and the question of the color are in `docs/MECHANICS.md`; the casual agent never activates such an ability and `choosePermanentToSacrifice` takes `min`; the soak style `sacrificeMana` (`SACRIFICE_MANA_NAMES`, `SACRIFICE_MANA_STYLE_PAIRS` in `helpers.ts`, `sacrifice-mana-games.test.ts`, listed in `tools/test/pr-excluded.json`) plays 100 games clean.
+
+## D-587: Tests and mutation checks of Radiant Lotus (2026-11-17, issue 258)
+- Context: the proof of D-583 to D-586.
+- Decision: engine `scenario-xx-sacrifice-mana.test.ts` (one to all artifacts, never none, never another player's or a non-artifact; the Lotus sacrificing itself; cancel; the target player is the opponent; each artifact counts three; tokens; a second activation; the colors; instant timing at the end step, in response and in combat; a targeted ability uses the stack, can be responded to and countered), `ast-sacrifice-mana-validate.test.ts`; cards `parser-sacrifice-mana.test.ts` (the real line, reminder text, near misses dropped, the features each lowering needs), `convert-grammar-engine-sacrifice-mana.test.ts` (the real card is the SYNTHETIC Lotus Engine and is played), `convert-parser.test.ts` and `parser-registry.test.ts` (the rule `effect.player-adds-chosen-color-mana`); web `sacrifice-mana-text.test.ts`; AI `sacrifice-mana-games.test.ts`.
+- Mutation checks (each on the real file with `scenario-xx-sacrifice-mana.test.ts` or `ast-sacrifice-mana-validate.test.ts`, all killed, the file restored from git after each): the maximum of the sacrifice question is the count instead of the candidates (`activate.ts`); its minimum is 0 (`activate.ts`); the count read for the effect is at most one (`amounts.ts`); `addMana` ignores `times` (`effects.ts`); the mana goes to the controller instead of the target player (`effects.ts`); the cost's sacrificed permanents are not remembered on the ability (`activate.ts`); the condition does not read the resolving ability (`conditions.ts`); the validator accepts "any number" without `atLeastOne` in an ability (`validate.ts`); it lets an activated ability read `sacrificedAsCost` without such a cost (`validate.ts`); it lets a spell's additional cost carry `atLeastOne` (`validate-cost.ts`).
+- Alternatives: proving the engine with the SYNTHETIC cards only: rejected, the real Oracle text of the golden corpus is read through the grammar and played (`convert-grammar-engine-sacrifice-mana.test.ts`), so the nodes the parser writes are the nodes the engine runs; a card-specific route for Radiant Lotus: rejected (D-167).
+- Consequences: Radiant Lotus changes from unsupported to supported in the golden corpus snapshot (`golden.expected.json`). `ENGINE_VERSION`, `PARSER_VERSION`, the golden snapshot and the derive digests are not part of this change: they are bumped and regenerated with the repository's commands when the branch is merged.
+
+## D-588: Order interacting life-gain replacements (2026-11-17)
 - Context: Rhox Faithmender and The Wind Crystal double a life gain. The engine already supports replacements that add a fixed amount, and applying an additive and a multiplicative replacement in different orders changes the result.
 - Decision: Add `lifeGainDouble` and run life-gain replacements through an ordered sequence. Ask the player gaining life to choose when both additive and multiplicative effects apply; after each choice, apply that replacement once and re-evaluate the remaining effects. Use the same resumable `chooseOption` replacement flow for resolving effects and lifelink damage. Same-kind effects commute, so their order is not asked.
 - Alternatives: Apply the multiplier before or after all additions in a fixed order (wrong when both types apply); ask for every combination even when orders produce the same result (a meaningless choice).
 - Consequences: Life doubling works as a general replacement and composes correctly with existing bonuses. Gaining life can pause inside a spell, ability, or combat damage step; the web and both AI policies handle the decision. The Comprehensive Rules source file was unavailable in this session, so the repository's existing CR 616.1 reference was used and no new rule text was copied.
 
-## D-584: Read and/or card-type unions in graveyard targets (issue 255)
+## D-589: Read and/or card-type unions in graveyard targets (issue 255)
 - Context: Archenemy's Charm has a mode that returns one or two target creature and/or planeswalker cards from its controller's graveyard. The existing graveyard noun read a single card type or an `or` list, but not Oracle's `and/or` form.
 - Decision: Lower `and/or` card-type lists to the existing `ObjectFilter.anyOf` representation for graveyard cards, and reuse the existing one-or-two target bounds and return-to-hand effect. Do not add a new target or movement primitive.
 - Alternatives: Treat the two types as a conjunction (would reject cards of just one type), or add card-specific card data.
 - Consequences: Archenemy's Charm is supported through the standard importer. Its return mode can target one or two cards from the same graveyard slot; integration tests cover both counts and a creature plus a planeswalker. The rule source file was unavailable; the implementation reuses existing references to CR 115.1 (Targets), 205.2a (Card Types) and 404.1 (Graveyard).
 
-## D-585: Remember modal choices for the source permanent (2026-11-17, issue 255)
+## D-590: Remember modal choices for the source permanent (2026-11-17, issue 255)
 - Context: Kimoyo Beads triggers at each end step and asks for a mode that has not been chosen for that artifact. The existing `notRepeatedThisTurn` history expires at the turn boundary and cannot represent this text.
 - Decision: Add `ModeChoice.notRepeatedBySource` and persist selected mode indices in `GameState.modesChosenBySource`, keyed by the source object's identity. Record choices from both player answers and automatic selection when only one legal mode remains. A zone change creates a new object identity and starts a fresh history.
 - Alternatives: Reuse the turn log (forgets choices too early), store history on the card definition (shared by copies and later objects), or add a Kimoyo-specific branch.
 - Consequences: Kimoyo Beads is supported through the standard importer. Integration coverage checks choices over successive turns, automatic selection of the only remaining mode, and reset after leaving and returning. CR text and Scryfall rulings were unavailable for independent verification.
 
-## D-586: Read current life totals as effect amounts (2026-11-17, issue 255)
+## D-591: Read current life totals as effect amounts (2026-11-17, issue 255)
 - Context: Revival // Revenge sets its caster's life total to twice the current total, then has a target opponent lose half their current life, rounded up. `setLifeTotal` accepted only a printed number, and no amount could read a player's life total.
 - Decision: Add `Amount.lifeTotalOf` with a player selector and allow `setLifeTotal.amount` to be any validated `Amount`. Read each amount when its instruction resolves. Preserve the existing `setLifeTotal` gain/loss delta flow, including life-gain replacements. Parse the card's “Double your life total” form as twice your life total and bind “their life” to the same target opponent as the loss instruction.
 - Alternatives: Hard-code the card's arithmetic in its fixture or engine rules (not reusable), or set a life total directly (would skip life-gain and life-loss events and their replacements/triggers).
 - Consequences: Revival // Revenge imports as fully supported. Engine scenarios cover an odd target life total and a life-gain replacement on the caster; card integration casts the real Revenge face. The rules source and Scryfall rulings were unavailable for independent verification.
-## D-587: Define toughness by devotion (2026-11-17, issue 255)
+
+## D-592: Define toughness by devotion (2026-11-17, issue 255)
 - Context: Daxos, Blessed by the Sun defines its toughness as its controller's devotion to white; the engine already evaluates devotion for resolving effects but characteristic-defining power and toughness accepted only object counts.
 - Decision: Permit devotion as a characteristic-defining power/toughness amount and evaluate it for the source controller during derivation. Extend the existing parser rule for "equal to" static values.
 - Alternatives: Store a printed base toughness or special-case Daxos; either would stop the value following devotion as the battlefield changes.
 - Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. A synthetic engine scenario checks devotion across three copies, including each object's own mana cost, and the golden corpus checks Daxos's import. Rules text and rulings could not be checked against the local CR/Scryfall sources.
 
-## D-588: Check gained and lost life in one turn (2026-11-17, issue 255)
+## D-593: Check gained and lost life in one turn (2026-11-17, issue 255)
 - Context: Lunar Convocation's end-step ability triggers only if its controller both gained and lost life during the current turn. The engine already records each history independently but had no condition combining them.
 - Decision: Add the reusable `lifeGainedAndLostThisTurn` condition, true only when the controller has at least one life gained and more than zero life lost this turn; parse the exact combined wording.
 - Alternatives: Infer the condition from the current life total (which misses equal gains and losses) or special-case Lunar Convocation.
 - Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. A scenario proves neither event alone suffices and both together do; parser and golden tests cover the issue card. Local CR text and rulings were unavailable for independent verification.
 
-## D-589: Read a targeted creature's power in a life instruction (2026-11-17, issue 255)
+## D-594: Read a targeted creature's power in a life instruction (2026-11-17, issue 255)
 - Context: Wall of Reverence targets a creature and gains life equal to that creature's power; the engine already reads target power, but the parser did not recognize the Oracle phrase "the power of target creature you control".
 - Decision: Extend the generic power-amount grammar to parse that target noun and preserve it as the amount's object reference.
 - Alternatives: Hard-code Wall of Reverence or treat the target noun as a non-target choice; both would misrepresent target legality and reuse.
 - Consequences: `PARSER_VERSION` changes. The parser test pins the target slot and the `powerOf` reference; the golden corpus checks full card support. CR text and rulings were unavailable for independent verification.
 
-## D-590: Use life gained as a graveyard mana-value limit (2026-11-17, issue 255)
+## D-595: Use life gained as a graveyard mana-value limit (2026-11-17, issue 255)
 - Context: Moseo returns a target creature card from its controller's graveyard with mana value no greater than the life gained this turn. The parser already represents this amount and the selector resolves an `Amount`, but validation allowed only numeric, source-power, trigger-damage, and one target-controller count limits.
 - Decision: Allow `lifeGainedThisTurn` as a mana-value filter limit. The normal selector evaluates it from the turn log when the target is chosen or the effect resolves.
 - Alternatives: Store a snapshot or reduce the history amount to a printed number; either would not follow the current turn's recorded life gain.
 - Consequences: `ENGINE_VERSION` and `PARSER_VERSION` change. Engine validation and parser tests cover the filter; the golden corpus checks Moseo's full import. CR text and rulings were unavailable for independent verification.
 
-## D-591: Use a defined life amount for payment and token size (2026-11-17, issue 255)
+## D-596: Use a defined life amount for payment and token size (2026-11-17, issue 255)
 - Context: Tivash offers to pay X life, where X is the life gained this turn, then creates one X/X Demon. The parser recognized the sentences and token, but did not preserve the amount definition across the payment and token instruction.
 - Decision: Preserve the value introduced by the payment's "where X is" wording as the ability's X definition. Use it for both the `mayPay` life cost and the custom token's power and toughness; the token count remains one.
 - Alternatives: Treat X as an announced choice (not what the text defines), or special-case Tivash's card data.
 - Consequences: Tivash's parser output uses `lifeGainedThisTurn` for the cost and token stats. Parser and golden acceptance tests cover the complete card. The local CR text and Scryfall rulings were unavailable for independent verification.
 
-## D-592: Filter Ring triggers by an actual creature choice (2026-11-17, issue 255)
+## D-597: Filter Ring triggers by an actual creature choice (2026-11-17, issue 255)
 - Context: Call of the Ring triggers when its controller chooses a creature as their Ring-bearer; the existing `ringTempted` event also occurs when no creature could be chosen.
 - Decision: Keep the generic Ring-tempted trigger and add an optional `bearerChosen` filter that matches only events carrying a chosen creature. Parse “Whenever you choose a creature as your Ring-bearer” to that filtered trigger.
 - Alternatives: Trigger on every Ring tempt (would trigger even without a creature choice), or add a Ring-specific path to card execution.
 - Consequences: The parser can represent both wordings and the engine filters the shared event. Scenario tests cover the no-creature and chosen-creature cases. Local CR text and Scryfall rulings were unavailable for independent verification.
 
-## D-593: Trigger when a Class reaches a level (2026-11-17, issue 255)
+## D-598: Trigger when a Class reaches a level (2026-11-17, issue 255)
 - Context: Cleric Class has a triggered ability that fires when that same Class becomes level 3. The engine already changed a Class's level but did not emit an event that triggers could observe.
 - Decision: Emit `classLevelReached` when a Class's level changes and add a `classLevel` trigger for a specified level. Match only the same Class object, then describe the level change in the game log.
 - Alternatives: Guess from later board state (misses the exact event and may trigger on a different Class), or special-case Cleric Class.
 - Consequences: The generic Class level change can trigger any level-specific ability. Engine scenarios cover the transition and the real Cleric Class integration test returns its chosen creature and gains life from its toughness. Local CR text and Scryfall rulings were unavailable for independent verification.
-## D-594: Return a dead creature card to its owner's hand at the next end step (2026-11-17, issue 255)
+
+## D-599: Return a dead creature card to its owner's hand at the next end step (2026-11-17, issue 255)
 - Context: Liesa, Forgotten Archangel says that when another nontoken creature its controller controls dies, the card is returned to its owner's hand at the beginning of the next end step. The engine already tracks delayed triggers and the card that a creature became in its graveyard (`triggerCard`), but delayed moves previously allowed only the battlefield destination.
 - Decision: Reuse the existing delayed-trigger mechanism for a dies trigger whose delayed effect returns `triggerCard` to its owner's hand at the next end step. Resolve the reference only while the same card object remains in its graveyard; tokens are not scheduled. The parser accepts the specific "that card" hand-return wording only in a dies trigger.
 - Alternatives: Add a new delayed-return subsystem; rejected because the event tracking, delayed scheduling, and object identity already exist. Permit delayed moves to any destination; rejected because this card only needs a hand return and other destinations are not covered by this work.
 - Consequences: The mechanic is tested through the engine scenario and Liesa's real Oracle text. Other delayed hand returns remain unsupported unless their text and rules are separately implemented.
 
-## D-595: Read toxic and a quoted blocking restriction on a token (2026-11-17, issue 255)
+## D-600: Read toxic and a quoted blocking restriction on a token (2026-11-17, issue 255)
 - Context: Skrelv's Hive creates a Mite token with "toxic 1" and the quoted static ability "This token can't block." The custom-token parser already read grantable keyword lists and quoted abilities, but not the numbered toxic keyword or this restriction on a token.
 - Decision: Parse `toxic N` as a numbered token keyword, lower it to the engine's existing Toxic keyword, and permit a quoted token static ability only when it is `cantBlock` or the already supported Crew bonus/characteristic definition.
 - Alternatives: Drop the quoted restriction or create the token without Toxic; rejected because that would misrepresent the token. Permit every static ability on a token; rejected because only the supported static forms are covered here.
 - Consequences: The token description can be represented and validated while the card remains unsupported until its independent corrupted static ability is implemented.
 
-## D-596: Read the corrupted poison threshold and Toxic filter (2026-11-17, issue 255)
+## D-601: Read the corrupted poison threshold and Toxic filter (2026-11-17, issue 255)
 - Context: Skrelv's Hive grants lifelink to creatures its controller controls with Toxic while an opponent has three or more poison counters. The parser could read the token, but the condition and Toxic-presence filter were outside its supported static-ability path.
 - Decision: Add a plain `opponentPoisonAtLeast` condition, evaluated against opponents still in the game, and allow the static ability's subject filter to test for Toxic without granting or changing Toxic's value.
 - Alternatives: Treat the condition as a life-total threshold (incorrect counter type), or special-case Skrelv's Hive; rejected because both obscure reusable rules behavior.
 - Consequences: The engine evaluates the threshold in ordinary conditions and static abilities; the parser reads the threshold and Toxic subject filter. Scenarios cover below and at threshold, and Skrelv's Hive is included in the golden acceptance corpus.
 - Limit: The local Comprehensive Rules text and Scryfall rulings were unavailable for independent verification.
 
-## D-597: Make matching opponents' creatures enter tapped (2026-11-17, issue 255)
+## D-602: Make matching opponents' creatures enter tapped (2026-11-17, issue 255)
 - Context: Authority of the Consuls makes creatures its controller's opponents control enter tapped. The engine already modeled the inverse replacement for permanents entering untapped, but had no positive enter-tapped replacement on a permanent.
 - Decision: Add a reusable `groupEntersTapped` replacement, read from permanents already on the battlefield against the entering permanent's battlefield characteristics. Parse the opponent-controlled creature group and lower it to that replacement.
 - Alternatives: Model the ability as a temporary continuous effect (it has no duration), or special-case the card; rejected because neither captures the permanent's static replacement effect generically.
 - Consequences: Matching opponent creatures entering from any zone are tapped, including creature spells that resolve. The scenario test uses the ordinary cast path; the Authority real-card test checks both abilities parse completely.
 - Limit: CR text and Scryfall rulings were unavailable for independent verification.
 
-
-## D-598: Grant an activated ability to an enchanted land (2026-11-17, issue 255)
+## D-603: Grant an activated ability to an enchanted land (2026-11-17, issue 255)
 - Context: Underworld Connections gives its enchanted land an activated ability with a tap cost, a life payment and a draw. The engine already applies granted activated abilities, but the parser only lowered an activated ability when granted to the source itself or a filter group; attached grants were limited to triggered abilities.
 - Decision: Allow a quoted activated ability on a typed attached land and lower it with the host's land type as its source context. Keep other attached activated grants unsupported until their host-type and rules behavior are covered.
 - Alternatives: Parse the ability as belonging to the Aura (would tap the wrong permanent and use the wrong controller), or add a card-specific override; rejected because the existing static grant mechanism can represent the correct host.
 - Consequences: Underworld Connections uses the ordinary ability-grant and activation paths. An engine scenario checks tapping the enchanted land, paying life and drawing; the parser test checks the complete real card.
 - Limit: CR text and Scryfall rulings were unavailable for independent verification.
 
-## D-599: Read Tragic Slip's Morbid replacement (2026-11-17, issue 255)
+## D-604: Read Tragic Slip's Morbid replacement (2026-11-17, issue 255)
 - Context: Tragic Slip gives a target creature -1/-1, or -13/-13 instead if a creature died this turn. The parser already supports replaceable spell instructions and the engine already records deaths for turn-history amounts, but it did not read the Morbid condition or join its following paragraph to the instruction it replaces.
 - Decision: Read "a creature died this turn" as a condition over the turn's creature-death history, and join the specific "That creature gets ... instead if ..." paragraph to the preceding spell instruction so ordinary conditional replacement lowering handles it.
 - Alternatives: Add card-specific support or use current battlefield state as a proxy for a creature death; rejected because neither represents the printed history condition generically.
 - Consequences: Tragic Slip is fully parsed through the ordinary spell effect path. The parser registry and real-card integration test cover the condition and replacement; the golden corpus records the accepted card.
 - Limit: CR text and Scryfall rulings were unavailable for independent verification.
 
-## D-600: Replace Liesa's commander tax with life (2026-11-17, issue 255)
+## D-605: Replace Liesa's commander tax with life (2026-11-17, issue 255)
 - Context: Liesa, Shroud of Dusk replaces each {2} of her command-zone commander tax with 2 life per previous cast. The shared cast-cost path records commander casts per card, adds tax mana, pays life costs, and exposes the mana cost to the view.
 - Decision: Parse this exact replacement into `CardFace.commanderTaxLife`. When that card is cast from the command zone, omit its commander-tax mana and add the life amount for each previous cast to the total life cost. Keep mana reductions separate, expose remaining tax life and tax mana in the view, and report life in the payment prompt and cast event.
 - Alternatives: Match Liesa's name in engine code, or model the text as a battlefield static; rejected because the former is card-specific logic and the latter is not active in the command zone.
 - Consequences: A generic card-data field controls the cast cost. Scenarios cover replacement count, reductions, cancellation, other zones, insufficient life and event/view reporting. The parser and golden acceptance corpus cover the real card.
 - Limit: CR text and Scryfall rulings were unavailable for independent verification.
 
-## D-601: Activate emblem abilities from the command zone (2026-11-17, issue 255)
+## D-606: Activate emblem abilities from the command zone (2026-11-17, issue 255)
 - Context: Ob Nixilis of the Black Oath creates an emblem with an activated ability. Emblems already carried static and triggered abilities, and activation costs already preserve last-known information for sacrificed objects, but activation legality excluded command-zone objects.
 - Decision: Allow activated abilities on emblems to use the ordinary activation and stack path from their controller's command zone. Lower activated abilities inside emblem quotes, and accept only the existing supported cost/effect grammar. Keep emblems as command-zone objects and preserve `sacrificedCost` for later effect resolution.
 - Alternatives: Model the emblem as a battlefield permanent or add an Ob Nixilis exception; rejected because emblems are command-zone objects and the engine must not special-case card names.
 - Consequences: Ob Nixilis's emblem can sacrifice a creature and use its last-known power for both life gain and card draw. Engine and parser scenarios cover the generic activation and real card. `ENGINE_VERSION` and `PARSER_VERSION` change.
 - Limit: CR text and Scryfall rulings were unavailable for independent verification.
 
-## D-602: Lock a player's life total and phase out their nonlands (2026-11-17, issue 255)
+## D-607: Lock a player's life total and phase out their nonlands (2026-11-17, issue 255)
 - Context: Teferi's Reproach grants protection from everything and prevents a target player's life total from changing until that player's next turn, then phases out all their nonland permanents. The engine had player hexproof, selective player protection, life gain/loss paths, and phasing, but not an all-source player protection, a life-total lock, or anaphoric mass phase-out of a target player's permanents.
 - Decision: Add temporary player effects that expire as the named player's next turn begins: protection from everything and a prohibition on life-total changes. Route target legality and damage prevention through the player-protection check; route life gain, loss, damage and life payments through the life lock. Parse the anaphoric controller of "all nonland permanents they control" as the previously chosen player, and resolve phasing as one group instruction.
 - Alternatives: Treat the two player effects as a prevention shield, use a card-name override, or phase out all players' nonlands; rejected because those approaches lose the effect's targeting semantics, duration, or scope.

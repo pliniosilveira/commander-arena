@@ -748,6 +748,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Gisa deck, group 3 (D-486, D-488, D-490): the subject "any number of target players each", the cost "Sacrifice X creatures" and "Partner with [name]".
   'noun.any-number-target-players': spell((e) => `${cap(e)} lose 2 life.`),
   'noun.x-permanents': permanent((e) => `{T}, Sacrifice ${e}: Draw X cards.`),
+  // Issue 258 (D-585): the sentence after "Choose a color." in an ability that sacrifices one or more artifacts.
+  'effect.player-adds-chosen-color-mana': permanent(
+    (e) => `{T}, Sacrifice one or more artifacts: Choose a color. ${cap(e)}.`,
+  ),
   'keyword.partner-with': asIs,
   // D-492: the optional sacrifice and the copies are one statement of a spell.
   'static.additional-cost-sacrifice-copies': spell((e) => e),

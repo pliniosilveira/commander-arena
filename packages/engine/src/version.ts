@@ -15,17 +15,18 @@
 // 111: Support protection from the Ring-bearer designation and Lord of the Nazgûl's Wraith threshold (D-577).
 // 112: Apply Maskwood Nexus's all-creature-types effect to controlled and owned cards (D-578).
 // 113: Keep Sauron's Ransom's face-down pile identities private through resolution (D-579).
-// 114: A cost of no life is payable at a negative life total; target slots carry target words (D-581, D-582).
-// 115: Order interacting life-gain replacements (D-583).
-// 116: Remember non-repeating modes for the source object's lifetime (D-585).
-// 117: Read current life totals as effect amounts and set a total from such an amount (D-586).
-// 118: Read devotion in characteristic-defining toughness abilities (D-587).
-// 119: Check gained-and-lost-life turn history (D-588).
-// 120: Allow life gained this turn as a mana-value selector limit (D-590).
-// 121: Distinguish Ring tempt events that chose a creature as Ring-bearer (D-592).
-// 122: Emit and match Class level reached triggers (D-593).
-// 123: Allow a dies trigger's delayed trigger to return its trigger card to its owner's hand (D-594).
-// 126: Replace a command-zone cast's commander tax with its card-defined life payment (D-600).
-// 127: Activate emblem abilities from the command zone (D-601).
-// 128: Lock a player's life total and grant temporary protection from everything (D-602).
-export const ENGINE_VERSION = 128;
+// 114: A cost of no life is payable at a negative life total (D-581, issue 254); a targets decision slot carries the card's own target words (D-582).
+// 115: Pay a sacrifice cost of one or more permanents and read the count sacrificed as a cost from the resolving ability (D-583, D-584, issue 258).
+// 116: Order interacting life-gain replacements (D-588).
+// 117: Remember non-repeating modes for the source object's lifetime (D-590).
+// 118: Read current life totals as effect amounts and set a total from such an amount (D-591).
+// 119: Read devotion in characteristic-defining toughness abilities (D-592).
+// 120: Check gained-and-lost-life turn history (D-593).
+// 121: Allow life gained this turn as a mana-value selector limit (D-595).
+// 122: Distinguish Ring tempt events that chose a creature as Ring-bearer (D-597).
+// 123: Emit and match Class level reached triggers (D-598).
+// 124: Allow a dies trigger's delayed trigger to return its trigger card to its owner's hand (D-599).
+// 127: Replace a command-zone cast's commander tax with its card-defined life payment (D-605).
+// 128: Activate emblem abilities from the command zone (D-606).
+// 129: Lock a player's life total and grant temporary protection from everything (D-607).
+export const ENGINE_VERSION = 129;

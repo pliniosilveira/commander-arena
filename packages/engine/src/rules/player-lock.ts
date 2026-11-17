@@ -1,4 +1,4 @@
-/** Temporary player-wide protection and life-total lock (D-600). */
+/** Temporary player-wide protection and life-total lock (D-607). */
 import type { Effect } from '../ast/types';
 import type { SeatId } from '../ids';
 import { allocateTimestamp } from '../state/ops';

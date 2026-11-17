@@ -1,6 +1,6 @@
 # Life-gain replacement ordering
 
-Status: approved by the owner and implemented as D-581.
+Status: approved by the owner and implemented as D-588.
 
 ## Context
 

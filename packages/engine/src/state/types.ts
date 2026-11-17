@@ -1814,9 +1814,9 @@ export type ContinuousChange =
    * player is targeted (`rules/player-protection.ts`).
    */
   | { readonly kind: 'playerHexproof' }
-  /** Protection from everything granted to a player until their next turn (D-600). */
+  /** Protection from everything granted to a player until their next turn (D-607). */
   | { readonly kind: 'playerProtectionEverything' }
-  /** Prevents all increases and decreases to the player's life total (D-600). */
+  /** Prevents all increases and decreases to the player's life total (D-607). */
   | { readonly kind: 'playerCantChangeLifeTotal' }
   /**
    * "Creatures your opponents control attack each combat if able [and attack a player other than you if able]" (`requireAttack`, CR 508.1d, 611.2c,
