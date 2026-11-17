@@ -5011,3 +5011,13 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Tests: engine `scenario-xx-granted-ward.test.ts` (an Aura that gives ward: the derived abilities, the trigger above the spell, declining and paying, the controller's own targeting, two Auras are two instances); cards `parser-granted-ward.test.ts` (the real lines of Chains of Custody and Sheltered by Ghosts, a colored cost, near misses that are dropped whole).
 - Example cards: Chains of Custody, Sheltered by Ghosts (issue 89).
 - Limits: a ward cost that is not mana (life, a sacrifice, a discard) is not read as a grant word; ward granted by a continuous effect for a duration has no test yet.
+
+## Goad (issue 89, D-589)
+
+- CR: 701.15a-d (Goad), 508.1d (a requirement that can be obeyed is), 500.1 (a turn begins), 611.3a and 613.1f (a static ability applies only while its source does and keeps its abilities), 303.4m ("enchanted creature" is what the Aura is attached to).
+- Gap class: P (a keyword action and a designation made of the requirement D-179 already had), T (the sentence).
+- Engine: `Effect` `goad { objects }` (`rules/goad.ts` `runGoad`, `rules/effects.ts`), `StaticEffect` `goaded { subject: attached }`, `ContinuousEffect` change `goaded { by }`; `rules/goad.ts` `goadersOf` read by `rules/combat-legality.ts` (`requiredAttackers`, `narrowedTargets`); `ast/validate.ts` and `ast/validate-parts.ts`; `ast/features.ts` (`goad`, `goaded`).
+- Parser: "..., and is goaded" after "gets +N/+N" or "has ..." of an attached permanent (`rules/static/grants.ts`, IR `goaded`, `lower/statics.ts`).
+- Tests: engine `scenario-xx-goad.test.ts` (the effect: required attack, ends at the goader's next turn, no second goad by the same player, a third player, a creature that cannot attack; the Aura: required, goaded by the Aura's controller, lasts while it does, ends when it leaves or loses its abilities), `ast-goad-validate.test.ts`; cards `parser-goaded.test.ts` (the real lines of Coercive Impetus, Parasitic Impetus, Redemption Arc and Ghoulish Impetus, near misses).
+- Example cards: Coercive Impetus, Parasitic Impetus, Redemption Arc (issue 89).
+- Limits: see `docs/ROADMAP.md`.

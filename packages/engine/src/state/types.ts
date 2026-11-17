@@ -1823,6 +1823,12 @@ export type ContinuousChange =
       readonly awayFrom?: SeatId;
     }
   /**
+   * "Goad target creature" (`goad`, CR 701.15a-d, D-589): the objects of the effect are goaded by the player `by`: they attack each combat if able and attack a player other
+   * than `by` if able, until the next turn of `by` begins (`until`). The designation is not a characteristic or an ability (CR 701.15b): read in `rules/combat-legality.ts`,
+   * not in a layer. At most one such effect for an object and a player (CR 701.15d).
+   */
+  | { readonly kind: 'goaded'; readonly by: SeatId }
+  /**
    * "Attacks that opponent this turn if able" (`encore`, CR 702.141a, 508.1d, D-185): the objects of the effect must attack the player `seat` when
    * attackers are declared, if they are able to attack that player; a permanent or another player they could attack instead does not satisfy it.
    * A requirement of the rules, not a characteristic: read in `rules/combat-legality.ts`, not in a layer.

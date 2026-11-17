@@ -20,6 +20,7 @@ import { payableBlockTax } from './block-tax';
 import { controllerOf } from './control';
 import { attackerDefender } from './defending';
 import { derive } from './derive';
+import { goadersOf } from './goad';
 import { abilitiesHaveKeyword, hasKeyword } from './keywords';
 import { isSummoningSick } from './mana-engine';
 import { hasProtectionFrom } from './protection';
@@ -86,9 +87,13 @@ function narrowedTargets(
     const wanted = targets.filter((t) => t.kind === 'player' && forced.includes(t.seat));
     if (wanted.length > 0) return wanted;
   }
-  const away = groupRequirements(state, getObject(state, attacker)).flatMap((r) =>
-    r.awayFrom === undefined ? [] : [r.awayFrom],
-  );
+  const away = [
+    ...groupRequirements(state, getObject(state, attacker)).flatMap((r) =>
+      r.awayFrom === undefined ? [] : [r.awayFrom],
+    ),
+    // CR 701.15b (D-589): a goaded creature attacks a player other than each player that goaded it if able.
+    ...goadersOf(state, attacker),
+  ];
   if (away.length === 0) return targets;
   const others = targets.filter((t) => t.kind === 'player' && !away.includes(t.seat));
   return others.length > 0 ? others : targets;
@@ -124,6 +129,8 @@ export function requiredAttackers(
       (c) =>
         hasRestriction(state, getObject(state, c.attacker), 'attacksEachCombat') ||
         playersToAttack(state, c.attacker).length > 0 ||
+        // CR 701.15b (D-589): a goaded creature attacks each combat if able.
+        goadersOf(state, c.attacker).length > 0 ||
         groupRequirements(state, getObject(state, c.attacker)).length > 0,
     )
     .filter((c) => untaxedTargets(state, c.targets).length > 0)

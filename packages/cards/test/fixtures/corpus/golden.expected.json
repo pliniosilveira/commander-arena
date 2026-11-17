@@ -1,5 +1,5 @@
 {
-  "parserVersion": 122,
+  "parserVersion": 123,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1014,14 +1014,6 @@
       "unparsed": [
         {
           "face": 0,
-          "ability": 1,
-          "text": "Enchanted creature gets +1/+1, has deathtouch, and is goaded.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.attached"
-        },
-        {
-          "face": 0,
           "ability": 2,
           "text": "When enchanted creature dies, return this card to the battlefield at the beginning of the next end step.",
           "reason": "unrecognised",
@@ -1030,7 +1022,7 @@
         }
       ],
       "reasons": [],
-      "ast": "83124b22"
+      "ast": "eedd81e4"
     },
     "27b047e3-0d41-45e2-98e9-9391d7923a1e": {
       "name": "Exotic Orchard",
@@ -5093,19 +5085,10 @@
     "c22e5fc6-9b4e-4197-b472-70d168eb4330": {
       "name": "Redemption Arc",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Enchanted creature has indestructible and is goaded.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "bf82176a"
+      "ast": "45da202b"
     },
     "c232d974-9c65-4bce-b045-e5a7cc0c62e0": {
       "name": "Idol of Oblivion",
@@ -5266,14 +5249,6 @@
       "unparsed": [
         {
           "face": 0,
-          "ability": 1,
-          "text": "Enchanted creature gets +1/+1 and is goaded.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.attached"
-        },
-        {
-          "face": 0,
           "ability": 2,
           "text": "Whenever enchanted creature attacks, each other creature that's attacking one of your opponents gets +1/+1 until end of turn.",
           "reason": "unrecognised",
@@ -5282,7 +5257,7 @@
         }
       ],
       "reasons": [],
-      "ast": "a825aba9"
+      "ast": "2131f6b2"
     },
     "c8f08704-7330-4fa9-b456-2e96aa252a2c": {
       "name": "Gideon's Memorial",
@@ -5813,19 +5788,10 @@
     "dbb8a3d9-6b1b-4ad1-b8b9-f92ead03d1d9": {
       "name": "Coercive Impetus",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Enchanted creature gets +1/+1 and is goaded.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "04956b66"
+      "ast": "9b03ba0d"
     },
     "dbba75f5-2404-4bd5-982b-f6c4effa5316": {
       "name": "Ethereal Armor",
@@ -6686,19 +6652,10 @@
     "ff3de07d-86c3-49e1-9de0-97c85301ff93": {
       "name": "Parasitic Impetus",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Enchanted creature gets +2/+2 and is goaded.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "5635b683"
+      "ast": "172f45c2"
     },
     "ff5caed4-0276-476d-8fae-edae2536df7f": {
       "name": "Archangel of Tithes",
@@ -6936,7 +6893,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 422,
+      "supported": 425,
       "total": 480
     }
   }

@@ -2453,6 +2453,12 @@ export type Effect =
       readonly awayFromYou?: true;
     }
   /**
+   * "Goad target creature" (D-589, CR 701.15a-d): each creature `objects` names is goaded by the controller of the effect until their next turn begins (CR 500.1, the
+   * turn it resolves in not counted): it attacks each combat if able and attacks a player other than that controller if able (CR 701.15b). The set is fixed
+   * when the effect resolves (CR 611.2c); a creature already goaded by the same player is not goaded again and the first goad keeps its end (CR 701.15d).
+   */
+  | { readonly kind: 'goad'; readonly objects: ObjectRef }
+  /**
    * "Until your next turn, creatures your opponents control enter tapped." (CR 614.1c, 614.12, 611.2a, D-519): a replacement effect of the game for a group of
    * permanents that is not a set fixed as the effect resolves (CR 611.2c is about changes to characteristics): every permanent `permanents` matches as it would enter the
    * battlefield (a card put there from any zone, a token) enters tapped while the effect lasts, read for the controller of the effect ("your opponents" is
@@ -4616,6 +4622,17 @@ export type StaticEffect =
       readonly kind: 'restriction';
       readonly subject: StaticSubject;
       readonly restriction: Restriction;
+    }
+  /**
+   * "Enchanted creature gets +1/+1 and is goaded" (D-589, CR 701.15b, 611.3a): the creature the Aura or Equipment is attached to is goaded by the controller
+   * of the source for as long as this ability applies: it attacks each combat if able and attacks a player other than that controller if able. A static
+   * ability makes no continuous effect that ends: the designation is read where attackers are declared from the permanents that are attached to the
+   * creature (`rules/goad.ts`), so it ends with the source, with the source's abilities (CR 613.1f) or when it is attached to something else. Only the
+   * attached subject is built.
+   */
+  | {
+      readonly kind: 'goaded';
+      readonly subject: Extract<StaticSubject, { readonly kind: 'attached' }>;
     }
   /**
    * "Rhonas can't attack or block unless you control another creature with power 4 or greater" (D-145, CR 508.1a, 509.1a, 113.6): the

@@ -443,6 +443,14 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         );
       }
       break;
+    case 'goaded':
+      // D-589 (CR 701.15b): only the permanent an Aura or Equipment is attached to is built.
+      if (s.subject?.kind !== 'attached') {
+        issue(out, `${path}.subject`, 'goaded is given to the attached permanent');
+      } else {
+        checkStaticSubject(s.subject, `${path}.subject`, out);
+      }
+      break;
     case 'costReduction':
       checkCostReduction(s, path, out);
       break;

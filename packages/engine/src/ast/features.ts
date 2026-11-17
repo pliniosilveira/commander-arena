@@ -195,6 +195,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'restrict',
     // Hylda group 3 (CR 702.11b): "You gain hexproof until end of turn", a player's hexproof for the turn.
     'grantPlayerHexproof',
+    // D-589: "Goad target creature" (CR 701.15).
+    'goad',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".
     'requireAttack',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
@@ -877,6 +879,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantKeyword',
     'grantAbility',
     'restriction',
+    // D-589: "Enchanted creature ... is goaded" (CR 701.15b).
+    'goaded',
     'costReduction',
     // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
     'abilityCostReduction',
@@ -1476,6 +1480,8 @@ export const STATIC_KINDS = [
   'cantBeBlocked',
   /** "~ can't block", "can't be blocked", "attacks each combat if able", "doesn't untap", "can't be countered" (D-094): the engine's `restriction`. */
   'restriction',
+  /** "Enchanted creature is goaded" (D-589, CR 701.15b): the creature is goaded by the controller of the source while the ability applies. */
+  'goaded',
   'noMaximumHandSize',
   /** A permanent gives creature objects every creature subtype in its stated scope (D-578). */
   'allCreatureTypes',
@@ -1794,6 +1800,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   grantKeyword: true,
   grantAbility: true,
   restrict: true,
+  goad: true,
   requireAttack: true,
   permanentsEnterTapped: true,
   gainControl: true,

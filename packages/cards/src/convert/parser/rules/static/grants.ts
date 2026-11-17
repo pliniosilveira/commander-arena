@@ -192,8 +192,16 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
       : quiet(
           map(sequence(pattern(/(?: and |, and |, )/iu), areTypes(plural)), ([, what]) => what),
         );
+  // D-589 (CR 701.15b): "..., and is goaded", said of the permanent an Aura or Equipment is attached to.
+  const andGoaded =
+    mode === 'attached'
+      ? map(
+          pattern(/(?: and |, and |, )is goaded(?![\p{L}\p{N}'’])/iu),
+          (): Effects => [{ kind: 'goaded' }],
+        )
+      : (_ctx: Parameters<Parser<Effects>>[0], pos: number) => fail(_ctx, pos);
   const more = map(
-    many(choice(andHas, andRestriction, andAre)),
+    many(choice(andHas, andRestriction, andAre, andGoaded)),
     (groups): Effects => groups.flat(),
   );
   const getsPt = map(
@@ -328,6 +336,10 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     "Equipped creature gets +3/+3 and has protection from each color that's not in your commander's color identity.",
     'Enchanted creature gets +4/+4, has flying and first strike, and is an Angel in addition to its other types.',
     'Enchanted creature gets +2/+2, has flying, and is a Zombie in addition to its other types.',
+    // Issue 89 (D-589, CR 701.15b): the creature is goaded by the controller of the Aura.
+    'Enchanted creature gets +1/+1 and is goaded.',
+    'Enchanted creature has indestructible and is goaded.',
+    'Enchanted creature gets +1/+1, has deathtouch, and is goaded.',
     // Issue 89 (D-588, CR 702.21a): ward a static ability gives, with a mana cost.
     'Enchanted creature has ward {2}.',
     'Enchanted creature gets +1/+0 and has lifelink and ward {2}.',
@@ -340,6 +352,8 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature gets +1/+1 for each creature you control.',
     'Enchanted creature has flash.',
     'Enchanted creature has ward.',
+    'Enchanted creature is goaded',
+    'Equipped creature is goaded.',
     'Enchanted creature has ward 2.',
     // Stage P70 (D-259): protection from a quality that is not a color, a list that is not Oracle's, and the identity wording changed.
     'Enchanted creature has protection from everything.',

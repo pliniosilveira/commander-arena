@@ -3770,6 +3770,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.cantBeRegenerated`, 'cantBeRegenerated must be true when present');
       }
       break;
+    case 'goad':
+      // D-589 (CR 701.15a): each creature the selector names is goaded by the controller of the effect.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
     case 'regenerate':
       // CR 701.19a: a shield for each permanent the selector names, until end of turn.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);

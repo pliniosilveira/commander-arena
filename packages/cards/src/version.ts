@@ -25,4 +25,5 @@
 // 120: Read optional exile-from-hand costs and reductions based on cards exiled that way (D-575).
 // 121: Read "Sacrifice one or more artifacts" and "Choose a color. Target player adds N mana of the chosen color for each artifact sacrificed this way" (D-585, D-586, issue 258).
 // 122: Read "has ward {N}" as a granted keyword (D-588, issue 89).
-export const PARSER_VERSION = 122;
+// 123: Read "..., and is goaded" of an Aura as the static ability `goaded` (D-589, issue 89).
+export const PARSER_VERSION = 123;

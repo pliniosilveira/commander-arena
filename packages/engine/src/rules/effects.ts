@@ -59,6 +59,7 @@ import { runEnterToken } from './enter-token';
 import { markExileOnResolve } from './exile-on-resolve';
 import { runExileRandomFromHand } from './exile-random-hand';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
+import { runGoad } from './goad';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
 import { lifeAmountFor, resolveMayPayCost } from './life-amounts';
@@ -2317,6 +2318,10 @@ function runEffect(
     case 'grantPlayerHexproof':
       // CR 702.11b, 611.2 (Hylda group 3): the players have hexproof until end of turn (`rules/player-hexproof.ts`).
       return runGrantPlayerHexproof(state, effect, ctx, targets);
+
+    case 'goad':
+      // CR 701.15a-d (D-589): the creatures are goaded until the controller's next turn (`rules/goad.ts`).
+      return runGoad(state, effect, ctx, targets);
 
     case 'requireAttack':
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.

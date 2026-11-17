@@ -175,6 +175,8 @@ describe('the dimensions', () => {
       'grantKeyword',
       'grantAbility',
       'restriction',
+      // D-589: "Enchanted creature ... is goaded" (CR 701.15b).
+      'goaded',
       'costReduction',
       // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
       'abilityCostReduction',

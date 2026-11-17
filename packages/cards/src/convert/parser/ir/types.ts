@@ -1240,6 +1240,10 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'grantQuoted'; readonly text: string }
   /**
+   * "..., and is goaded" (D-589, CR 701.15b): the permanent an Aura or Equipment is attached to is goaded by the controller of the source while the ability applies.
+   */
+  | { readonly kind: 'goaded' }
+  /**
    * "can't block", "can't be blocked", "attacks each combat if able", "doesn't untap during ...",
    * "can't be countered" (stage P12): the subject has the restriction while the ability applies.
    */

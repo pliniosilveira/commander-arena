@@ -387,6 +387,10 @@ function effectOf(
       }
       return ok({ kind: 'loseTypes', subject, types: effect.cardTypes as CardType[] });
     }
+    case 'goaded':
+      // D-589 (CR 701.15b): only the permanent an Aura or Equipment is attached to.
+      if (subject.kind !== 'attached') return failure(at);
+      return ok({ kind: 'goaded', subject });
     case 'restriction': {
       // CR 113.6g: "can't be countered" is the spell's own ability, so its subject is `~`; `~` says
       // nothing else but restrictions (the grammar reads only those of it).
@@ -422,6 +426,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantAbility'];
     case 'restriction':
       return ['static:restriction'];
+    case 'goaded':
+      return ['static:goaded'];
     case 'grantAbility':
       return ['static:grantAbility'];
     case 'noMaxHandSize':
