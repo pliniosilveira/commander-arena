@@ -10,4 +10,5 @@
 // 106: Let an effect give control of targeted objects to one targeted player; filter nonattacking objects.
 // 107: Preserve the target count that a cast trigger reads when the spell is cast.
 // 108: Pay an optional hand-exile spell cost after mana and expose its chosen count to cost reductions (D-545).
-export const ENGINE_VERSION = 108;
+// 109: Track the player who declined a playersMay choice for its otherwise effect (D-546).
+export const ENGINE_VERSION = 109;

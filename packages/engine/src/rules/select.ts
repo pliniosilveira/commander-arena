@@ -52,6 +52,7 @@ export interface SelectContext {
   readonly sacrificed?: readonly ObjectId[];
   /** What `triggerPlayer` ("that player") and `triggerDamage` ("that much") mean in this resolution (D-133). */
   readonly triggerPlayer?: SeatId;
+  readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
   readonly triggerTargetCount?: number;
   /** Targets already chosen for this spell or ability, including a candidate being checked. */
@@ -712,6 +713,10 @@ export function resolvePlayers(
       return ctx.triggerPlayer === undefined || getSeat(state, ctx.triggerPlayer).hasLost
         ? []
         : [ctx.triggerPlayer];
+    case 'declinedPlayer':
+      return ctx.declinedPlayer === undefined || getSeat(state, ctx.declinedPlayer).hasLost
+        ? []
+        : [ctx.declinedPlayer];
     case 'discardedThisWay':
       // D-210: "each player who discarded a card this way": the players of the `discard` effects of this resolution that discarded, in the order of CR 101.4.
       return apnapOrder(

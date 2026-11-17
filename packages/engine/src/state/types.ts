@@ -881,7 +881,13 @@ export type Instruction =
     }
   | { readonly kind: 'chooseCreatureType'; readonly chosen: string | null }
   /** Run one effect node of the resolving spell or ability. */
-  | { readonly kind: 'effect'; readonly effect: Effect; readonly as?: SeatId }
+  | {
+      readonly kind: 'effect';
+      readonly effect: Effect;
+      readonly as?: SeatId;
+      /** The player whose `playersMay` answer declined this `otherwise` effect (D-546). */
+      readonly declinedBy?: SeatId;
+    }
   /**
    * One player's "may" of a `playersMay` effect (D-210): `seat` is asked (a `confirmOptional`, answered by that player); when they accept, `effect` runs, as
    * `as` when it is set (that player is "you" in it); when they decline, `otherwise` runs as the controller. `answer` is null until they answer.
@@ -1634,6 +1640,8 @@ export interface ResolutionContext {
   readonly triggerSubject?: ObjectId;
   /** What `triggerPlayer` and `triggerDamage` mean for a triggered ability that reads them (D-133): `StackData.triggerPlayer`, `triggerDamage`. */
   readonly triggerPlayer?: SeatId;
+  /** The player whose `playersMay` answer declined the current otherwise effect (D-546). */
+  readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
   readonly triggerTargetCount?: number;
   /** What `attackersAttackedYou` reads (D-149): `StackData.triggerAttacked`. */

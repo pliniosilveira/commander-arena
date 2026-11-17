@@ -52,6 +52,8 @@ export interface Scope {
   readonly targets: ReadonlyMap<string, TargetKind>;
   /** Resolving choices already made earlier in a sequence. */
   readonly chosenObjects?: ReadonlySet<string>;
+  /** The `otherwise` branch of a playersMay can refer to the player whose choice was declined. */
+  readonly declinedPlayer?: boolean;
   /** Whether the kind 'x' amount has an X to read (an X in the cost or a spell with X). */
   readonly xAllowed: boolean;
   /** Validates an ability nested in the tree, such as one a token carries (set by validate.ts). */
@@ -1110,6 +1112,11 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
           path,
           "'triggerPlayer' needs a triggered ability whose event is about a player (a draw, a cast, an attack, damage to a player, becoming a target, a sacrifice)",
         );
+      }
+      break;
+    case 'declinedPlayer':
+      if (scope.declinedPlayer !== true) {
+        issue(out, path, "'declinedPlayer' is only valid in a playersMay 'otherwise' effect");
       }
       break;
     case 'giftRecipient':
@@ -3555,7 +3562,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.runsAs`, "runsAs is 'chooser' when present");
       }
       checkEffect(e.effect, `${path}.effect`, scope, out);
-      if (e.otherwise !== undefined) checkEffect(e.otherwise, `${path}.otherwise`, scope, out);
+      if (e.otherwise !== undefined) {
+        checkEffect(e.otherwise, `${path}.otherwise`, { ...scope, declinedPlayer: true }, out);
+      }
       break;
     }
     case 'unlessPays':

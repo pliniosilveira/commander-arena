@@ -63,6 +63,7 @@ export const NOUN_A_PERMANENT = defineRule<IrNoun>({
   examples: [
     'another permanent',
     'a creature',
+    'a nontoken creature',
     'an artifact',
     'a nonland permanent',
     'two lands',

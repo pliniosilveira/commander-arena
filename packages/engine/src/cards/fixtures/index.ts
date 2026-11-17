@@ -7,6 +7,7 @@
 import type { CardDefinition } from '../definition';
 import { BASIC_LAND_FIXTURES } from './basic-lands';
 import { CREATURE_FIXTURES } from './creatures';
+import { FANDANIEL_FIXTURE } from './fandaniel';
 import { MANA_SOURCE_FIXTURES } from './mana-sources';
 import { SPELL_FIXTURES } from './spells';
 import { SYNTHETIC_PREFIX, syntheticCard } from './synthetic';
@@ -14,9 +15,13 @@ import { SYNTHETIC_PREFIX, syntheticCard } from './synthetic';
 export { SYNTHETIC_CARDS, syntheticCard } from './synthetic';
 
 export const FIXTURE_CARDS: Readonly<Record<string, CardDefinition>> = Object.fromEntries(
-  [...BASIC_LAND_FIXTURES, ...CREATURE_FIXTURES, ...MANA_SOURCE_FIXTURES, ...SPELL_FIXTURES].map(
-    (card) => [card.name, card],
-  ),
+  [
+    ...BASIC_LAND_FIXTURES,
+    ...CREATURE_FIXTURES,
+    FANDANIEL_FIXTURE,
+    ...MANA_SOURCE_FIXTURES,
+    ...SPELL_FIXTURES,
+  ].map((card) => [card.name, card]),
 );
 
 /** Looks up a real-card fixture by exact name; throws on an unknown name. */

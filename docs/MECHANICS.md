@@ -4924,3 +4924,10 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Parser:** reads the optional blue-card cost, the reduction for each card exiled this way, and the up-to-X phasing targets. When one Oracle line produces both face costs and static abilities, the compiler preserves both.
 - **Proof:** `convert-grammar-engine-march-of-swirling-mist.test.ts` covers selection and decline, cost reduction, X, up-to-X targets, exile and phasing.
 - **Regression:** the same mixed-output compiler fix preserves `Plumb the Forbidden`'s existing additional-cost and cast-trigger behavior (D-492); its parser and real-card engine integration regressions pass.
+
+## The Lord of the Nazgûl deck, issue 57, group 11: Fandaniel, Telophoroi Ascian (D-546)
+
+- **Engine:** `playersMay.otherwise` can refer to the player who declined through `PlayerSelector` `declinedPlayer`. That seat is preserved through nested effects and paused selections. If a player has no legal candidate for an offered sacrifice choice, the choice is declined automatically; when `runsAs: 'chooser'` pauses, the chooser remains the player who sacrifices.
+- **Card data:** Fandaniel is supported through its hand-written engine fixture. Its triggered ability surveils after an instant or sorcery is cast; at its controller's end step, each opponent may sacrifice a nontoken creature, and only a decliner loses life based on the controller's instant and sorcery cards in their graveyard.
+- **Proof:** `scenario-xx-player-may-declined-player.test.ts` covers decline, acceptance, no eligible creature, graveyard counting, and fixture validation. `convert-grammar-engine-fandaniel.test.ts` verifies that the issue card loads as supported from the fixture.
+- **Limit:** the full may-sacrifice sentence is still not handled by the general parser, so parser-only import remains unsupported. The fixture uses the Oracle text supplied in issue 57; rulings and CR text were not independently available.

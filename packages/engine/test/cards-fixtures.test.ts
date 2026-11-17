@@ -213,6 +213,16 @@ const FACTS: Record<string, Facts> = {
     identity: ['W'],
     text: 'Double strike',
   },
+  'Fandaniel, Telophoroi Ascian': {
+    cost: ['4', 'B'],
+    supertypes: ['legendary'],
+    types: ['creature'],
+    subtypes: ['Elder', 'Wizard'],
+    pt: [4, 5],
+    colors: ['B'],
+    identity: ['B'],
+    text: "Whenever you cast an instant or sorcery spell, surveil 1.\nAt the beginning of your end step, each opponent may sacrifice a nontoken creature of their choice. Each opponent who doesn't loses 2 life for each instant and sorcery card in your graveyard.",
+  },
   'Wall of Stone': {
     cost: ['1', 'R', 'R'],
     types: ['creature'],

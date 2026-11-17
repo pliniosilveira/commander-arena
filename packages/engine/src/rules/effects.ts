@@ -262,6 +262,22 @@ export function runInstruction(
     // D-210 (CR 608.2d, 101.4): one player's "may" of a `playersMay` effect. The player asked answers; a player who has lost is never asked.
     if (getSeat(state, instruction.seat).hasLost) return done(state);
     if (instruction.answer === null) {
+      const offered = instruction.effect;
+      const player = instruction.as ?? res.controller;
+      if (
+        offered.kind === 'sacrifice' &&
+        offered.objects.kind === 'choose' &&
+        offered.player === undefined &&
+        sacrificeCandidates(state, player, res.source, offered.objects.filter).length === 0
+      ) {
+        return instruction.otherwise === undefined
+          ? done(state)
+          : done(
+              state,
+              [],
+              [{ kind: 'effect', effect: instruction.otherwise, declinedBy: instruction.seat }],
+            );
+      }
       const info = sourceInfo(state, res.source);
       return {
         state,
@@ -282,7 +298,14 @@ export function runInstruction(
     return done(
       state,
       [],
-      [{ kind: 'effect', effect: chosen, ...(as === undefined ? {} : { as }) }],
+      [
+        {
+          kind: 'effect',
+          effect: chosen,
+          ...(as === undefined ? {} : { as }),
+          ...(!instruction.answer ? { declinedBy: instruction.seat } : {}),
+        },
+      ],
     );
   }
   if (instruction.kind === 'mayEffect') {
@@ -488,13 +511,26 @@ export function runInstruction(
     };
   }
   // D-210: an effect run "as" another player (the one a `playersMay` asked): that player is "you" in it, and what it queues next is run as them too.
-  if (instruction.as !== undefined) {
+  if (instruction.as !== undefined || instruction.declinedBy !== undefined) {
     const as = instruction.as;
-    const out = runEffect(state, { ...res, controller: as }, instruction.effect, targets, flow);
+    const context = {
+      ...res,
+      ...(as === undefined ? {} : { controller: as }),
+      ...(instruction.declinedBy === undefined ? {} : { declinedPlayer: instruction.declinedBy }),
+    };
+    const out = runEffect(state, context, instruction.effect, targets, flow);
     return {
       ...out,
       front: out.front.map((next) =>
-        next.kind === 'effect' && next.as === undefined ? { ...next, as } : next,
+        next.kind === 'effect'
+          ? {
+              ...next,
+              ...(as === undefined || next.as !== undefined ? {} : { as }),
+              ...(instruction.declinedBy === undefined || next.declinedBy !== undefined
+                ? {}
+                : { declinedBy: instruction.declinedBy }),
+            }
+          : next,
       ),
     };
   }
@@ -558,6 +594,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.costSacrificed === undefined ? {} : { costSacrificed: res.costSacrificed }),
     ...(res.sacrificed === undefined ? {} : { sacrificed: res.sacrificed }),
     ...(res.triggerPlayer === undefined ? {} : { triggerPlayer: res.triggerPlayer }),
+    ...(res.declinedPlayer === undefined ? {} : { declinedPlayer: res.declinedPlayer }),
     ...(res.triggerDamage === undefined ? {} : { triggerDamage: res.triggerDamage }),
     ...(res.triggerTargetCount === undefined ? {} : { triggerTargetCount: res.triggerTargetCount }),
     ...(res.triggerAttacked === undefined ? {} : { triggerAttacked: res.triggerAttacked }),
@@ -680,7 +717,7 @@ function runEffect(
         // their own permanents (CR 701.21a); without `player` the controller of the effect does.
         const sacrificers: (SeatId | undefined)[] =
           effect.player === undefined
-            ? [undefined]
+            ? [res.controller]
             : resolvePlayers(state, effect.player, ctx, targets);
         // D-485 (CR 608.2b, 701.21a): a player named by a selector that names nobody now ("any number of target players" with none chosen, a target that has left the game)
         // sacrifices nothing; the controller of the effect does not take their place.
