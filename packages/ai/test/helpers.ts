@@ -3002,6 +3002,51 @@ export const HYLDA_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
+ * The SYNTHETIC cards of "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (issue 258,
+ * D-583 to D-587): the artifact that does it, a second artifact with the same cost that draws, a sorcery that makes three Treasure tokens (artifacts to give up), an instant that
+ * counters an activated ability and an artifact creature. They ask a target, `choosePermanent` of a sacrifice of one to all of the artifacts, and `chooseOption` of the five colors as an
+ * ability resolves: questions games-100 expects only from dedicated styles.
+ */
+export const SACRIFICE_MANA_NAMES = [
+  'SYNTHETIC Lotus Engine',
+  'SYNTHETIC Lotus Reader',
+  'SYNTHETIC Lotus Mint',
+  'SYNTHETIC Lotus Hush',
+  'SYNTHETIC Lotus Golem',
+] as const;
+
+/** The sacrificeMana style: every card of the group three times, artifacts and Treasures to give up, bodies, and burn. */
+export const SACRIFICE_MANA_SPELLS = [
+  ...supported(SACRIFICE_MANA_NAMES),
+  ...supported(SACRIFICE_MANA_NAMES),
+  ...supported(SACRIFICE_MANA_NAMES),
+  ...supported(['SYNTHETIC Trinket', 'SYNTHETIC Trinket', 'SYNTHETIC Trinket', 'Sol Ring']),
+  ...supported(['Grizzly Bears', 'Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+  ...supported(['Lightning Bolt', 'Divination']),
+];
+
+/** Blue for the counterspell of the group, the rest for the artifacts and the creatures. */
+export const SACRIFICE_MANA_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Forest',
+  'Swamp',
+  'Island',
+]);
+
+/** Style pairs of the sacrifice-for-mana soak test (issue 258): a mirror match and both mixed ways. */
+export const SACRIFICE_MANA_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['sacrificeMana', 'sacrificeMana'],
+  ['sacrificeMana', 'spells'],
+  ['spells', 'sacrificeMana'],
+];
+
+/**
  * The SYNTHETIC cards of group 2 of the Gisa deck (D-464 to D-468): a lord with ward that costs mana and life and a trigger on committing a crime (two Zombie Rogue tokens, once
  * each turn), a creature card that comes back from the graveyard when its controller commits a crime and pays {B} (a `confirmOptional` question from the graveyard), a creature that
  * drains when its controller creates or sacrifices a token, a creature that draws when others die (once each turn), two helpers that commit a crime (an activated ability and a
@@ -4182,6 +4227,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(GISA_G2_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 3 cards (issue 42) ask X, modes, tap-or-untap choices and targets with different controllers, and fetch a land: a style of their own.
   .filter((card) => !(HYLDA_G3_NAMES as readonly string[]).includes(card.name))
+  // The cards of the sacrifice-for-mana group (issue 258, D-583 to D-587) ask a target, the artifacts to sacrifice (one to all) and a color as an ability resolves: a style of their own.
+  .filter((card) => !(SACRIFICE_MANA_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 1 cards (D-472 to D-476) ask which Zombies to tap, which card to return from the graveyard and the targets of their abilities: a style of their own.
   .filter((card) => !(GISA_G1_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 4 cards (D-459 to D-462) have abilities that work from the hand and from graveyards, targets in graveyards and delayed exiles: a style of their own.
@@ -4410,6 +4457,7 @@ export type DeckStyle =
   | 'featherG3'
   | 'gisaG2'
   | 'hyldaG3'
+  | 'sacrificeMana'
   | 'gisaG1'
   | 'featherG2'
   | 'featherG1'
@@ -4504,6 +4552,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'featherG1' && FEATHER_G1_SPELLS.length > 0) return FEATHER_G1_SPELLS;
   if (style === 'gisaG2' && GISA_G2_SPELLS.length > 0) return GISA_G2_SPELLS;
   if (style === 'hyldaG3' && HYLDA_G3_SPELLS.length > 0) return HYLDA_G3_SPELLS;
+  if (style === 'sacrificeMana' && SACRIFICE_MANA_SPELLS.length > 0) return SACRIFICE_MANA_SPELLS;
   if (style === 'gisaG1' && GISA_G1_SPELLS.length > 0) return GISA_G1_SPELLS;
   if (style === 'hyldaG1' && HYLDA_G1_SPELLS.length > 0) return HYLDA_G1_SPELLS;
   if (style === 'loreholdG1' && LOREHOLD_G1_SPELLS.length > 0) return LOREHOLD_G1_SPELLS;
@@ -4707,6 +4756,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'featherG1' && BASIC_LANDS.length > 0) return FEATHER_G1_LANDS;
   if (style === 'gisaG2' && BASIC_LANDS.length > 0) return GISA_G2_LANDS;
   if (style === 'hyldaG3' && BASIC_LANDS.length > 0) return HYLDA_G3_LANDS;
+  if (style === 'sacrificeMana' && BASIC_LANDS.length > 0) return SACRIFICE_MANA_LANDS;
   if (style === 'gisaG1' && BASIC_LANDS.length > 0) return GISA_G1_LANDS;
   if (style === 'hyldaG1' && BASIC_LANDS.length > 0) return HYLDA_G1_LANDS;
   if (style === 'loreholdG1' && BASIC_LANDS.length > 0) return LOREHOLD_G1_LANDS;

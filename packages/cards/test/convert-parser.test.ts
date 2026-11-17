@@ -623,6 +623,7 @@ describe('unmatched abilities', () => {
       'effect.player-adds-mana',
       'effect.copy-this-spell',
       'effect.becomes-in-addition',
+      'effect.player-adds-chosen-color-mana',
       'effect.each-opponent-choose-keep',
       'effect.you-add-mana',
       'effect.exile-random-from-hand',

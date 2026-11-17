@@ -516,3 +516,12 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - Buyback is read on an instant or a sorcery whose cost is mana; a buyback cost that is not mana is not read (D-549).
 - The "pay mana equal to ..." of a counterspell is read for the greatest power among creatures you control; another amount needs only its amount rule (D-553).
 - The Scryfall rulings of the seven cards were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md` (D-558).
+
+## The VRA 2 deck (issue 258, D-583 to D-587)
+
+- "Sacrifice one or more artifacts" is the cost of an ordinary activated ability only: a keyword's cost, a mana ability's cost and a spell's additional cost do not read it (a spell's optional "one or more" is D-491, which may choose none). "Sacrifice any number of ..." that may sacrifice none as the cost of an ability is not read (the validator refuses `anyNumber` without `atLeastOne` there, D-583).
+- "Choose a color. [Target player] adds N mana of the chosen color" is read for a target player only: "you add" would be a mana ability with no target (CR 605.1a), whose color the engine asks as the ability is activated for `anyColor` and not through a choice that resolves later; "Choose a color" for any other use (a color for a group, a color other than white, two colors) is not read.
+- "for each artifact sacrificed this way" is read as the number the cost sacrificed only when the text has no instruction that also sacrifices (the words could mean either, D-586); "that many" after such a cost is not read.
+- The condition `sacrificedAsCost` of an activated ability is read from its resolution; an intervening "if" of a triggered ability cannot read what an activated ability sacrificed.
+- The casual agent never activates such an ability (a sacrifice outlet it cannot judge); the random and heuristic agents may, and the soak style `sacrificeMana` plays it legally.
+- The Scryfall rulings of Radiant Lotus were not fetched (the host is blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. The Oracle text is the card of `golden.jsonl` taken from issue 258.

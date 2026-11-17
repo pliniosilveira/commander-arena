@@ -17,7 +17,8 @@ import {
   isIrAmount,
 } from '../ir/types';
 import { CREATURE_TYPES } from '../rules/noun/creature-types';
-import { lowerAmount } from './amounts';
+import { isCostSacrificeCount, lowerAmount } from './amounts';
+import { lowerChooseColorMana } from './chosen-color-mana';
 import { amountArg, type Effects } from './clauses';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
@@ -1189,18 +1190,20 @@ function thisWaysOf(clause: IrClause): Extract<IrAmount, { kind: 'thisWay' }>[] 
   return out;
 }
 
+/** What kind of permanent a noun names: its card types, or "creature" for a creature type ("all Zombies"). */
+export function kindOfNoun(noun: IrNoun): string {
+  const types = noun.filter.types ?? [];
+  if (types.length > 0) return types.join(' ');
+  const subtypes = noun.filter.subtypes ?? [];
+  return subtypes.length > 0 && subtypes.every((s) => CREATURE_TYPES.has(s)) ? 'creature' : '';
+}
+
 /** Whether `earlier` is an instruction of the kind `amount` counts, and says what the words of the amount say. */
 function countsWhatHappened(
   amount: Extract<IrAmount, { kind: 'thisWay' }>,
   earlier: IrClause,
 ): boolean {
-  // What kind of permanent a noun names: its card types, or "creature" for a creature type ("all Zombies").
-  const kindOf = (noun: IrNoun): string => {
-    const types = noun.filter.types ?? [];
-    if (types.length > 0) return types.join(' ');
-    const subtypes = noun.filter.subtypes ?? [];
-    return subtypes.length > 0 && subtypes.every((s) => CREATURE_TYPES.has(s)) ? 'creature' : '';
-  };
+  const kindOf = kindOfNoun;
   const names = (what: IrArg | undefined): readonly string[] =>
     what?.kind === 'noun'
       ? [kindOf(what)]
@@ -1260,7 +1263,10 @@ function countsWhatHappened(
  * and about what the words say. Every other place for it is refused here (the engine's `validateCard` also refuses it,
  * but only the grammar can tell that the words name the wrong thing).
  */
-function thisWaysAreSupported(sentences: readonly IrSentence[]): IrSentence | null {
+function thisWaysAreSupported(
+  sentences: readonly IrSentence[],
+  ctx: LowerContext,
+): IrSentence | null {
   const before: IrClause[] = [];
   for (const sentence of sentences) {
     // "If the player doesn't, you mill three cards, then ... equal to the total mana value of those cards" (stage P52, D-210): the sentence is what a
@@ -1270,6 +1276,12 @@ function thisWaysAreSupported(sentences: readonly IrSentence[]): IrSentence | nu
       for (const amount of thisWaysOf(clause)) {
         if ((sentence.condition !== undefined && !otherwise) || clause.condition !== undefined) {
           return sentence;
+        }
+        // D-583 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" in an ability whose cost sacrifices one or more artifacts counts that cost. An instruction
+        // of the text that also sacrifices makes the words ambiguous, so it is refused, never guessed.
+        if (isCostSacrificeCount(amount, ctx)) {
+          if (before.some((earlier) => earlier.verb === 'sacrifice')) return sentence;
+          continue;
         }
         if (!before.some((earlier) => countsWhatHappened(amount, earlier))) return sentence;
       }
@@ -1530,6 +1542,13 @@ function lowerStep(
     steps.pop();
     steps.push({ effects: regenerated.value, replaceable: false });
     return { last: i };
+  }
+  // "Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way." (D-585, CR 608.2d, 106.4, 605.1a): the two sentences are one `chooseOne`.
+  const chosenColor = lowerChooseColorMana(sentence, sentences, i, ctx);
+  if (chosenColor !== null) {
+    if (!chosenColor.ok) return stop(chosenColor);
+    steps.push({ effects: chosenColor.value, replaceable: false });
+    return { last: i + 1 };
   }
   // "Each player may discard a card." and "Target opponent may have you draw three cards. If the player doesn't, ..." (stage P52, D-210, CR 608.2d, 101.4).
   const asking = lowerPlayersMay(sentence, sentences, i, ctx);
@@ -1958,7 +1977,7 @@ export function lowerSentences(
   const firstRow = sentences.findIndex((s) => s.dieRow !== undefined);
   if (firstRow >= 0) return lowerDieTable(sentences, firstRow, ctx);
   const steps: Step[] = [];
-  const unordered = thisWaysAreSupported(sentences);
+  const unordered = thisWaysAreSupported(sentences, ctx);
   if (unordered !== null) return refuse(unordered);
   for (let i = 0; i < sentences.length; i += 1) {
     const sentence = sentences[i];

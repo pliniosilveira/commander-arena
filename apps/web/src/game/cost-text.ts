@@ -102,10 +102,13 @@ export function sacrificeWhat(
   count = 1,
   /** D-488: "Sacrifice X creatures": the number is the X announced. */
   countX = false,
+  /** D-583: "Sacrifice one or more artifacts": at least one of them, chosen as the cost is paid. */
+  oneOrMore = false,
 ): string {
   if ('kind' in what) return 'this';
   const words = nounsOf(what);
   if (countX) return `X ${plural(words)}`;
+  if (oneOrMore) return `one or more ${what.other === true ? 'other ' : ''}${plural(words)}`;
   // D-485: "two other creatures": all but the permanent with the ability.
   if (count > 1) {
     return `${NUMBER_WORDS[count] ?? count} ${what.other === true ? 'other ' : ''}${plural(words)}`;
@@ -143,6 +146,10 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
       // D-386: the additional cost of a spell, "Discard X cards".
       return 'Discard X cards';
     case 'sacrifice':
+      // D-583 (CR 602.2b): the cost of an activated ability that sacrifices one or more permanents, at least one.
+      if (cost.anyNumber === true && cost.atLeastOne === true) {
+        return `Sacrifice ${sacrificeWhat(cost.what, 1, false, true)}`;
+      }
       // D-491 (CR 118.8): the additional cost of a spell that may sacrifice any number of permanents.
       if (cost.anyNumber === true && !('kind' in cost.what)) {
         return `Sacrifice one or more ${plural(nounsOf(cost.what))} (optional)`;
