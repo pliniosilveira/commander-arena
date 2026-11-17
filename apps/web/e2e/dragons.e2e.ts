@@ -240,7 +240,7 @@ test('A card exiled to be played: a tile at the left of the battlefield says "Ca
   await page.screenshot({ path: `${SHOTS}/impulse-chip.png` });
 
   // The card is in exile with a permission: one click casts the spell or plays the land.
-  const name = (await chip.first().locator('b').textContent()) ?? '';
+  const name = (await chip.first().locator('.board-exile-play-name').textContent()) ?? '';
   await chip.first().click();
   await settled(page);
   await expect(page.getByRole('region', { name: 'Cast from exile' })).toBeHidden();
