@@ -4946,6 +4946,6 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 
 ## The Lord of the Nazgûl deck, issue 57, group 14: Sauron's Ransom (D-549)
 
-- **Engine and UI:** `revealAndSeparate.faceDownPile` privately gives the separator the top cards and makes pile 1 face down. The public event contains only the face-up pile's names and the hidden pile's size. The chooser's pending decision and preview omit hidden object IDs; the pile picker shows that public size as face-down card backs. Choosing the hidden pile emits no card names. Piles move through the normal zone pipeline, then `ringTempts` resolves.
+- **Engine and UI:** `revealAndSeparate.faceDownPile` privately gives the separator the top cards and makes pile 1 face down. The public event contains only the face-up pile's names and the hidden pile's size. The chooser's pending decision and preview omit hidden object IDs; the pile picker shows that public size and renders one face-down card back per hidden card. Choosing the hidden pile emits no card names. Piles move through the normal zone pipeline, then `ringTempts` resolves.
 - **Proof:** `scenario-xx-saurons-ransom.test.ts` checks the separator's card view, the chooser's redacted pending data, the public event, the hidden pile going to hand, hidden event names, and Ring temptation. The importer acceptance test checks the issue fixture.
 - **Limit:** the parser-only route still does not read this private-pile wording. The two-player game has one opponent, so the separator is unambiguous. Card text is from issue 57.

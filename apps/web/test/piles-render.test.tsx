@@ -84,8 +84,8 @@ describe('the modal of the player who chooses', () => {
     const html = renderToStaticMarkup(<PilesDialog d={d} view={view} act={() => {}} />);
     expect(html).toContain('aria-label="Pile 1 (2 cards)"');
     expect(html).toContain('Pile 1 (2 cards)');
-    expect(html).toContain('aria-label="2 face-down cards"');
-    expect(html).toContain('class="dec-pile-facedown"');
+    expect(html.match(/aria-label="Face-down card"/g)).toHaveLength(2);
+    expect(html.match(/class="dec-pile-facedown"/g)).toHaveLength(2);
     expect(html).not.toContain('Grizzly Bears');
     expect(html).not.toContain('Giant Spider');
   });

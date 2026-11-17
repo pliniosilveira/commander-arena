@@ -27,6 +27,10 @@ export function PilesDialog({
       const o = seen.get(id);
       return o === undefined ? [] : [o];
     });
+  const faceDownCardKeys = (count: number | undefined) =>
+    count === undefined
+      ? []
+      : Array.from({ length: count }, (_, index) => `face-down-${index + 1}`);
   const sides = [
     {
       n: 1 as const,
@@ -50,11 +54,11 @@ export function PilesDialog({
         {sides.map(({ n, ids, faceDown }) => (
           <div key={n} className="dec-pile" data-pile={n}>
             <ul className="dec-pile-cards" aria-label={pileLabel(n, ids, faceDown)}>
-              {faceDown === undefined || faceDown === 0 ? null : (
-                <li key="face-down-pile" aria-label={`${faceDown} face-down cards`}>
+              {faceDownCardKeys(faceDown).map((cardKey) => (
+                <li key={cardKey} aria-label="Face-down card">
                   <div className="dec-pile-facedown" aria-hidden="true" />
                 </li>
-              )}
+              ))}
               {pileOf(ids).map((card) => (
                 <li key={card.id}>
                   <MiniCard card={card} width={84} />
