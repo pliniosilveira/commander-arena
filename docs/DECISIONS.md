@@ -3397,3 +3397,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: Treat both piles as revealed (which defeats the face-down instruction), omit pile events (loses public information for the face-up pile), or add a Sauron-specific rules branch.
 - Consequences: `ENGINE_VERSION` changes. Scenarios check both seats' views, public events, hidden hand contents, final zones, and Ring temptation. The real card uses the fixture path because its wording is not fully parsed; the card text is from issue 57.
 
+## D-550: Compare blocker requirements using legal declarations (2026-11-17, PR 252 review)
+- Context: The `mustBlock`/`mustBeBlocked` search counted illegal assignments, omitted supporting blockers for menace, and enumerated equivalent blocker assignments repeatedly. The UI also showed an empty hidden pile because the chooser's view redacts its object IDs.
+- Decision: Score only declarations that satisfy each attacker's minimum and maximum blocker counts. Include ordinary blockers that make a mandatory block legal, memoize equivalent search states, and offer a complete maximum-satisfaction declaration when requirements apply. The AI uses the same legality constraints when it augments its plan. In the pile picker, show the hidden pile's public count with face-down card backs, never its IDs.
+- Alternatives: Keep enumerating raw assignments and validate only the final answer (can stall and can score impossible outcomes), or expose hidden IDs to recover the count (violates the private-pile effect).
+- Consequences: Combat requirement comparisons and representative legal actions are correct for menace and maximum-block restrictions; the decision picker keeps private card identities hidden while showing public pile size. Regression scenarios and UI rendering tests cover these cases.
+

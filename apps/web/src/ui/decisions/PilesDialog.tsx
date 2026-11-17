@@ -28,8 +28,16 @@ export function PilesDialog({
       return o === undefined ? [] : [o];
     });
   const sides = [
-    { n: 1 as const, ids: piles.first },
-    { n: 2 as const, ids: piles.second },
+    {
+      n: 1 as const,
+      ids: piles.first,
+      faceDown: piles.faceDownPile === 1 ? (piles.faceDownCount ?? 0) : undefined,
+    },
+    {
+      n: 2 as const,
+      ids: piles.second,
+      faceDown: piles.faceDownPile === 2 ? (piles.faceDownCount ?? 0) : undefined,
+    },
   ];
   return (
     <Dialog label="Pick a pile" className="dec-piles">
@@ -39,9 +47,14 @@ export function PilesDialog({
         {pilePrompt({ seat: d.seat, piles })}
       </p>
       <div className="dec-piles-row">
-        {sides.map(({ n, ids }) => (
+        {sides.map(({ n, ids, faceDown }) => (
           <div key={n} className="dec-pile" data-pile={n}>
-            <ul className="dec-pile-cards" aria-label={pileLabel(n, ids)}>
+            <ul className="dec-pile-cards" aria-label={pileLabel(n, ids, faceDown)}>
+              {faceDown === undefined || faceDown === 0 ? null : (
+                <li key="face-down-pile" aria-label={`${faceDown} face-down cards`}>
+                  <div className="dec-pile-facedown" aria-hidden="true" />
+                </li>
+              )}
               {pileOf(ids).map((card) => (
                 <li key={card.id}>
                   <MiniCard card={card} width={84} />
@@ -55,7 +68,7 @@ export function PilesDialog({
               data-option={pileOption(n)}
               onClick={() => act({ kind: 'chooseOption', option: pileOption(n) })}
             >
-              {pileLabel(n, ids)}
+              {pileLabel(n, ids, faceDown)}
             </button>
           </div>
         ))}

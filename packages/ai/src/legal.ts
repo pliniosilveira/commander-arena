@@ -81,22 +81,14 @@ export function withRequiredBlocks(
     return [...blocks];
   }
   const fixed = [...blocks];
-  const used = new Set(fixed.map((b) => b.blocker));
-  const requiredAttackers = new Set(
-    d.attackers.filter((a) => a.mustBeBlocked === true).map((a) => a.attacker),
-  );
-  const free = d.candidates.filter(
-    (c) =>
-      !used.has(c.blocker) &&
-      (c.mustBlock === true || c.canBlock.some((attacker) => requiredAttackers.has(attacker))),
-  );
+  const requiredAttackers = d.attackers.filter((a) => a.mustBeBlocked === true);
+  const requiredBlockers = d.candidates.filter((c) => c.mustBlock === true);
+  const supportTargets = new Set(requiredBlockers.flatMap((c) => c.canBlock));
   const score = (assignment: readonly { blocker: ObjectId; attacker: ObjectId }[]) =>
-    d.attackers.filter(
-      (a) =>
-        a.mustBeBlocked === true &&
-        assignment.filter((b) => b.attacker === a.attacker).length >= a.minBlockers,
+    requiredAttackers.filter(
+      (a) => assignment.filter((b) => b.attacker === a.attacker).length >= a.minBlockers,
     ).length +
-    d.candidates.filter(
+    requiredBlockers.filter(
       (c) => c.mustBlock === true && assignment.some((b) => b.blocker === c.blocker),
     ).length;
   const valid = (assignment: readonly { blocker: ObjectId; attacker: ObjectId }[]) =>
@@ -107,27 +99,68 @@ export function withRequiredBlocks(
         (count >= a.minBlockers && (a.maxBlockers === undefined || count <= a.maxBlockers))
       );
     });
-  let best = [...fixed];
-  let bestScore = score(best);
+  const total = requiredAttackers.length + requiredBlockers.length;
+  const fixedCounts = new Map<ObjectId, number>();
+  for (const block of fixed)
+    fixedCounts.set(block.attacker, (fixedCounts.get(block.attacker) ?? 0) + 1);
+  const normalizedFixed = fixed.filter((block) => {
+    const attacker = d.attackers.find((a) => a.attacker === block.attacker);
+    const count = fixedCounts.get(block.attacker) ?? 0;
+    return (
+      attacker === undefined ||
+      (count >= attacker.minBlockers &&
+        (attacker.maxBlockers === undefined || count <= attacker.maxBlockers))
+    );
+  });
+  const fixedValid = valid(normalizedFixed);
+  const used = new Set(normalizedFixed.map((b) => b.blocker));
+  const free = d.candidates.filter(
+    (c) =>
+      !used.has(c.blocker) &&
+      (c.mustBlock === true ||
+        c.canBlock.some(
+          (attacker) =>
+            requiredAttackers.some((a) => a.attacker === attacker) || supportTargets.has(attacker),
+        )),
+  );
+  free.sort((a, b) => Number(b.mustBlock === true) - Number(a.mustBlock === true));
+  let best = [...normalizedFixed];
+  let bestScore = fixedValid ? score(best) : -1;
+  let complete = bestScore === total;
+  const attackerIds = d.attackers.map((a) => a.attacker);
+  const visited = new Set<string>();
   const search = (index: number, assignment: { blocker: ObjectId; attacker: ObjectId }[]) => {
+    if (complete) return;
+    const key = `${index}|${attackerIds
+      .map((attacker) => assignment.filter((b) => b.attacker === attacker).length)
+      .join(
+        ',',
+      )}|${requiredBlockers.filter((c) => assignment.some((b) => b.blocker === c.blocker)).length}`;
+    if (visited.has(key)) return;
+    visited.add(key);
     if (index === free.length) {
       if (valid(assignment) && score(assignment) > bestScore) {
         best = [...assignment];
         bestScore = score(assignment);
+        complete = bestScore === total;
       }
       return;
     }
     const candidate = free[index];
     if (candidate === undefined) return;
-    search(index + 1, assignment);
     for (const attacker of candidate.canBlock) {
+      const restriction = d.attackers.find((a) => a.attacker === attacker);
+      const count = assignment.filter((b) => b.attacker === attacker).length;
+      if (restriction?.maxBlockers !== undefined && count >= restriction.maxBlockers) continue;
       assignment.push({ blocker: candidate.blocker, attacker });
       search(index + 1, assignment);
       assignment.pop();
+      if (complete) return;
     }
+    search(index + 1, assignment);
   };
-  search(0, fixed);
-  return [...best.filter((b) => !used.has(b.blocker)), ...fixed];
+  search(0, normalizedFixed);
+  return [...best.filter((b) => !used.has(b.blocker)), ...normalizedFixed];
 }
 
 /**

@@ -155,6 +155,8 @@ describe('the question which pile goes where', () => {
     expect(pileLabel(1, ['o1'])).toBe('Pile 1 (1 card)');
     expect(pileLabel(2, ['o2', 'o3'])).toBe('Pile 2 (2 cards)');
     expect(pileLabel(2, [])).toBe('Pile 2 (no cards)');
+    expect(pileLabel(1, [], 4)).toBe('Pile 1 (4 cards)');
+    expect(pileLabel(2, [], 1)).toBe('Pile 2 (1 card)');
     expect([pileOption(1), pileOption(2)]).toEqual(['pile1', 'pile2']);
   });
 

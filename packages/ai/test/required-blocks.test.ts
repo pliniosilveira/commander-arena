@@ -2,12 +2,12 @@
 // asks for. The decision is built by hand: it is the shape the engine sends (`mustBeBlocked` on the attacker).
 import type { DeclareBlockersDecision, ObjectId } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
-import { withinBlockBudget } from '../src/legal';
+import { withinBlockBudget, withRequiredBlocks } from '../src/legal';
 
 const id = (n: number) => `o${n}` as ObjectId;
 
 function decision(
-  attackers: readonly { id: number; must?: true; min?: number }[],
+  attackers: readonly { id: number; must?: true; min?: number; max?: number }[],
   candidates: readonly { blocker: number; canBlock: readonly number[]; must?: true }[],
 ): DeclareBlockersDecision {
   return {
@@ -18,6 +18,7 @@ function decision(
       target: { kind: 'player', seat: 1 },
       minBlockers: a.min ?? 1,
       ...(a.must === true ? { mustBeBlocked: true as const } : {}),
+      ...(a.max === undefined ? {} : { maxBlockers: a.max }),
     })),
     candidates: candidates.map((c) => ({
       blocker: id(c.blocker),
@@ -57,6 +58,56 @@ describe('withinBlockBudget adds the blocks a requirement asks for (CR 509.1c)',
     expect(withinBlockBudget(two, [])).toHaveLength(2);
     const one = decision([{ id: 1, must: true, min: 2 }], [{ blocker: 2, canBlock: [1] }]);
     expect(withinBlockBudget(one, [])).toEqual([]);
+  });
+
+  test('adds a supporting blocker so a must-block creature can legally block menace', () => {
+    const d = decision(
+      [{ id: 1, min: 2 }],
+      [
+        { blocker: 2, canBlock: [1], must: true },
+        { blocker: 3, canBlock: [1] },
+      ],
+    );
+    expect(withinBlockBudget(d, [])).toEqual([
+      { blocker: id(2), attacker: id(1) },
+      { blocker: id(3), attacker: id(1) },
+    ]);
+  });
+
+  test('does not count illegal partial menace blocks as satisfying a must-block requirement', () => {
+    const d = decision(
+      [{ id: 1, min: 2 }],
+      [
+        { blocker: 2, canBlock: [1], must: true },
+        { blocker: 3, canBlock: [] },
+      ],
+    );
+    expect(withinBlockBudget(d, [])).toEqual([]);
+  });
+
+  test('does not exceed an attacker maximum when two creatures must block', () => {
+    const d = decision(
+      [{ id: 1, max: 1 }],
+      [
+        { blocker: 2, canBlock: [1], must: true },
+        { blocker: 3, canBlock: [1], must: true },
+      ],
+    );
+    expect(withinBlockBudget(d, [])).toEqual([{ blocker: id(2), attacker: id(1) }]);
+  });
+
+  test('finds a full declaration without enumerating irrelevant attacker assignments', () => {
+    const attackers = Array.from({ length: 10 }, (_, i) => i + 1);
+    const blockers = Array.from({ length: 10 }, (_, i) => ({
+      blocker: i + 20,
+      canBlock: attackers,
+      must: true as const,
+    }));
+    const d = decision(
+      attackers.map((id) => ({ id })),
+      blockers,
+    );
+    expect(withRequiredBlocks(d, [])).toHaveLength(10);
   });
 
   test('an attacker with no requirement is not blocked by the helper', () => {

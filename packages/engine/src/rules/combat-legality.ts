@@ -294,22 +294,73 @@ function unmetBlockRequirements(
     .map((c) => c.blocker);
   if (required.length === 0 && requiredBlockers.length === 0) return false;
   const need = (a: ObjectId) => (hasKeyword(state, getObject(state, a), 'menace') ? 2 : 1);
+  const attackerRules = [...new Set(candidates.flatMap((c) => c.canBlock))].map((attacker) => ({
+    attacker,
+    min: need(attacker),
+    max: hasRestriction(state, getObject(state, attacker), 'cantBeBlockedByMoreThanOne')
+      ? 1
+      : Number.POSITIVE_INFINITY,
+  }));
+  const maxFor = (attacker: ObjectId) =>
+    attackerRules.find((a) => a.attacker === attacker)?.max ?? Infinity;
+  const minFor = (attacker: ObjectId) =>
+    attackerRules.find((a) => a.attacker === attacker)?.min ?? 1;
   const score = (assignment: readonly { blocker: ObjectId; attacker: ObjectId }[]) =>
     required.filter((a) => assignment.filter((b) => b.attacker === a).length >= need(a)).length +
     requiredBlockers.filter((b) => assignment.some((entry) => entry.blocker === b)).length;
-  const best = (index: number, assignment: { blocker: ObjectId; attacker: ObjectId }[]): number => {
-    if (index === candidates.length) return score(assignment);
-    const candidate = candidates[index];
-    if (candidate === undefined) return score(assignment);
-    let top = best(index + 1, assignment);
-    for (const attacker of candidate.canBlock) {
-      assignment.push({ blocker: candidate.blocker, attacker });
-      top = Math.max(top, best(index + 1, assignment));
-      assignment.pop();
+  const valid = (assignment: readonly { blocker: ObjectId; attacker: ObjectId }[]) =>
+    [...new Set(assignment.map((b) => b.attacker))].every((attacker) => {
+      const count = assignment.filter((b) => b.attacker === attacker).length;
+      return count >= minFor(attacker) && count <= maxFor(attacker);
+    });
+  const total = required.length + requiredBlockers.length;
+  const requiredIds = new Set(required);
+  const supportingTargets = new Set(
+    candidates.filter((c) => requiredBlockers.includes(c.blocker)).flatMap((c) => c.canBlock),
+  );
+  const relevant = candidates
+    .filter(
+      (c) =>
+        requiredBlockers.includes(c.blocker) ||
+        c.canBlock.some((attacker) => requiredIds.has(attacker) || supportingTargets.has(attacker)),
+    )
+    .sort(
+      (a, b) =>
+        Number(requiredBlockers.includes(b.blocker)) - Number(requiredBlockers.includes(a.blocker)),
+    );
+  let bestScore = valid(blocks) ? score(blocks) : -1;
+  let complete = bestScore === total;
+  const visited = new Set<string>();
+  const best = (index: number, assignment: { blocker: ObjectId; attacker: ObjectId }[]): void => {
+    if (complete) return;
+    const key = `${index}|${attackerRules
+      .map((a) => assignment.filter((b) => b.attacker === a.attacker).length)
+      .join(
+        ',',
+      )}|${requiredBlockers.filter((id) => assignment.some((b) => b.blocker === id)).length}`;
+    if (visited.has(key)) return;
+    visited.add(key);
+    if (index === relevant.length) {
+      if (valid(assignment)) {
+        bestScore = Math.max(bestScore, score(assignment));
+        complete = bestScore === total;
+      }
+      return;
     }
-    return top;
+    const candidate = relevant[index];
+    if (candidate === undefined) return;
+    for (const attacker of candidate.canBlock) {
+      const limit = maxFor(attacker);
+      if (assignment.filter((b) => b.attacker === attacker).length >= limit) continue;
+      assignment.push({ blocker: candidate.blocker, attacker });
+      best(index + 1, assignment);
+      assignment.pop();
+      if (complete) return;
+    }
+    best(index + 1, assignment);
   };
-  return score(blocks) < best(0, []);
+  best(0, []);
+  return (valid(blocks) ? score(blocks) : -1) < bestScore;
 }
 
 /** Returns an error message, or null when the block declaration is legal (CR 509.1). */

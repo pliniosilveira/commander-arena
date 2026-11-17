@@ -48,14 +48,14 @@ describe('Lord of the Nazgûl', () => {
       .battlefield(LORD, { ringBearer: true })
       .seat(1)
       .ring(1)
-      .battlefield('Grizzly Bears', { ringBearer: true })
+      .battlefield('Serra Angel', { ringBearer: true })
       .at('precombatMain', { active: 0 })
       .build();
 
     expect(() =>
       g.playCombat({
         attack: [LORD],
-        block: [{ blocker: 'Grizzly Bears', attacker: LORD }],
+        block: [{ blocker: 'Serra Angel', attacker: LORD }],
         until: 'declareBlockers',
       }),
     ).toThrow();
