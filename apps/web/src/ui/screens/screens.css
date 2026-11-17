@@ -34,6 +34,9 @@
 
 /* Menu */
 .scr-menu {
+  /* The scroll container of the screen: positioned, so that the absolutely placed hidden inputs and
+     legends inside it are clipped and scrolled with it, not laid out against the page (issue 52). */
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;

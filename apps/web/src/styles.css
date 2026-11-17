@@ -152,6 +152,14 @@ button {
   flex-direction: column;
   height: 100%;
   min-width: 720px;
+}
+
+/* The board needs room, so the game screen keeps a minimum height and the page scrolls below it.
+   The menu and import screens scroll inside themselves (`.scr-menu`, `.imp-screen`): a minimum
+   height there made the page scroll behind them, a second scroll bar with only the footer on it
+   (issue 52). */
+.app[data-screen="playing"],
+.app[data-screen="loading"] {
   min-height: 680px;
 }
 
