@@ -95,6 +95,7 @@ import {
   hasKickedTargets,
   libraryCastPermission,
   mayCastFromGraveyard,
+  mayPlayFromExile,
   playPermissionBottoms,
   targetSpecsOf,
   targetsPossible,
@@ -213,7 +214,12 @@ export function beginCast(
       flashback: alternative === 'flashback',
       ...(alternative === 'free' ? { free: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
-      ...(resolving && alternative !== 'madness' && alternative !== 'miracle'
+      ...((resolving && alternative !== 'madness' && alternative !== 'miracle') ||
+      // Lorehold group 2 (CR 118.9): a card in exile cast for no mana cost because an effect said "you may cast that card this turn without paying its mana cost".
+      (!resolving &&
+        alternative === 'free' &&
+        zone === 'exile' &&
+        mayPlayFromExile(state, seat, obj, false, true))
         ? { byEffect: true as const }
         : {}),
       ...(suspended ? { suspended: true as const } : {}),

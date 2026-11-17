@@ -441,8 +441,8 @@ export interface StackData {
   };
   /**
    * True when the spell was cast as the effect of a resolving ability allows (CR 608.2g, Cascade, D-120), which
-   * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own.
-   * Absent otherwise, and for an ability.
+   * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own. Also (Lorehold group 2) a card in exile cast for no mana cost because an
+   * effect gave a permission to ("You may cast that card this turn without paying its mana cost", `mayCast.free`). Absent otherwise, and for an ability.
    */
   readonly byEffect?: true;
   /**
