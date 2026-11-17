@@ -19,6 +19,7 @@ import { DANITHA_G3_STATIC_RULES } from './danitha-g3';
 import { DINOSAUR_STATIC_RULES } from './dinosaurs';
 import { DRAGON_STATIC_RULES } from './dragons';
 import { EDHREC_STATIC_RULES } from './edhrec';
+import { GALADRIEL_G3_STATIC_RULES } from './galadriel-g3';
 import { GISA_G4_STATIC_RULES } from './gisa-g4';
 import { GRANT_STATIC_RULES } from './grants';
 import { HASHATON_G2_STATIC_RULES } from './hashaton-group-2';
@@ -118,4 +119,6 @@ export const STATIC_RULES = [
   ...DANITHA_G3_STATIC_RULES,
   // Issue 41 (the Gisa deck, D-461): "Activated abilities of creature cards in your graveyard cost {1} less to activate."
   ...GISA_G4_STATIC_RULES,
+  // Galadriel deck, group 3 (issue 43): "~ saddles Mounts and crews Vehicles as though its power were 2 greater."
+  ...GALADRIEL_G3_STATIC_RULES,
 ];

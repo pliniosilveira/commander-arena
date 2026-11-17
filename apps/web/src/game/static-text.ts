@@ -8,14 +8,15 @@
  * type reads right (`pluralSubtype`), never from a card name. A shape the words do not cover gives `null`, and
  * the card's Oracle text stays the only description (AGENTS.md "Honesty"). Pure.
  */
-import type {
-  Ability,
-  Condition,
-  ObjectFilter,
-  Replacement,
-  Restriction,
-  StaticEffect,
-  StaticSubject,
+import {
+  type Ability,
+  BASIC_LAND_TYPES,
+  type Condition,
+  type ObjectFilter,
+  type Replacement,
+  type Restriction,
+  type StaticEffect,
+  type StaticSubject,
 } from '@commander-arena/engine';
 import {
   angelsStaticWording,
@@ -83,6 +84,11 @@ const RESTRICTION_WORDS: Readonly<Record<Restriction, { one: string; many: strin
     many: "don't untap during their controllers' untap steps",
   },
   cantBeCountered: { one: "can't be countered", many: "can't be countered" },
+  // Galadriel group 3: only an effect gives it ("Its activated abilities can't be activated this turn"), so no static ability shows it; the words are for the type.
+  cantActivateAbilities: {
+    one: "can't have its activated abilities activated",
+    many: "can't have their activated abilities activated",
+  },
 };
 
 /** "a, b and c": a list of group names, as a lord's subject names several. */
@@ -175,6 +181,15 @@ function spellsPhrase(spells: ObjectFilter): string | null {
 function addedTypes(
   effect: Extract<StaticEffect, { kind: 'setTypes'; chosenType?: undefined }>,
 ): string | null {
+  // D-541: "Forest lands": the land card type with a basic land type is said as a card says it, the type after the land type.
+  if (
+    effect.types?.length === 1 &&
+    effect.types[0] === 'land' &&
+    (effect.subtypes ?? []).length > 0 &&
+    (effect.subtypes ?? []).every((s) => Object.hasOwn(BASIC_LAND_TYPES, s))
+  ) {
+    return `${joinAnd(effect.subtypes ?? [])} lands`;
+  }
   const subtypes = (effect.subtypes ?? []).map(pluralSubtype);
   const types = (effect.types ?? []).map((t) => `${t}s`);
   const all = [...types, ...subtypes];

@@ -8,6 +8,7 @@
 // last-known information when it has left the stack).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-niv-group-3-a.ts, synthetic-copies.ts) or real fixtures.
 import { describe, expect, test } from 'vitest';
+import { validateCardStructure } from '../src/ast/validate';
 import { checkInvariants, getView, syntheticCard, validateCard } from '../src/index';
 import { type ScenarioGame, scenario } from '../src/testing/index';
 import { singleFaceCard } from './dsl-helpers';
@@ -510,15 +511,11 @@ describe('"{2}{U}, Sacrifice this creature: When you next cast an instant or sor
 });
 
 describe('Way of the Cryomancer grants a loyalty ability that copies your next instant or sorcery', () => {
-  test('a granted loyalty ability cannot be activated from a creature', () => {
-    const g = game((b) =>
-      b.define(creatureLoyaltyGrant).seat(0).battlefield('SYNTHETIC Creature Loyalty Grant', BEARS),
-    );
-    expect(
-      getView(g.state, 0).battlefield.find((obj) => obj.name === BEARS)?.activated?.[0]?.ability
-        .cost,
-    ).toEqual([{ kind: 'loyalty', change: -3 }]);
-    g.expect.illegal(0, { activate: BEARS, ability: 0 });
+  test('a loyalty ability granted to creatures is refused by the validator (D-560, CR 606.1)', () => {
+    // A loyalty ability is activated only from a planeswalker, so the grant names planeswalkers only.
+    const messages = validateCardStructure(creatureLoyaltyGrant).map((issue) => issue.message);
+    expect(messages).toContain('a granted loyalty ability is granted to planeswalkers only');
+    expect(validateCardStructure(wayCard)).toEqual([]);
   });
 
   test('the granted ability is activated on a planeswalker and copies the next spell with new targets', () => {

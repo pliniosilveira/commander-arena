@@ -11,6 +11,9 @@
  *   restricts, and tapping it for another permanent's cost is not one.
  * - Power is what `derive` gives now (CR 613.4), counters and effects included. The total is a sum,
  *   so a creature with negative power lowers it (CR 702.122a says "total power").
+ * - "This creature saddles Mounts and crews Vehicles as though its power were 2 greater" (`crewSaddleBonus`, Galadriel group 3) adds that much to the power the creature counts
+ *   for as it is tapped for the cost; its power as a creature is not changed. Saddle (CR 702.171) is not built, so this reads only the crew cost; a Saddle cost, when built,
+ *   reads the same function.
  */
 import type { ObjectId, SeatId } from '../ids';
 import type { GameState } from '../state/types';
@@ -31,10 +34,19 @@ export function crewCandidates(state: GameState, seat: SeatId, source: ObjectId)
   });
 }
 
-/** The power of `id` as the engine derives it now; 0 for an object that is gone or has none. */
+/**
+ * The power `id` counts for as it is tapped for a crew cost: the power the engine derives now (0 for an object that is gone or has none), plus what each `crewSaddleBonus` ability
+ * it has gives (CR 702.122a; the abilities it has now, so a creature that lost them has no bonus).
+ */
 export function crewPowerOf(state: GameState, id: ObjectId): number {
   const obj = state.objects[id];
-  return obj === undefined ? 0 : (derive(state, obj).power ?? 0);
+  if (obj === undefined) return 0;
+  const derived = derive(state, obj);
+  let bonus = 0;
+  for (const a of derived.abilities) {
+    if (a.kind === 'static' && a.static.kind === 'crewSaddleBonus') bonus += a.static.amount;
+  }
+  return (derived.power ?? 0) + bonus;
 }
 
 /** The total power of the creatures `ids` (CR 702.122a). */

@@ -237,6 +237,10 @@ export interface CastHandle {
    */
   gift(promise: boolean): CastHandle;
   /**
+   * Answer the buyback question (CR 702.27a, 601.2b): `true` pays the buyback cost (the card returns to the hand as the spell resolves), `false` casts the spell without it.
+   */
+  buyback(pay: boolean): CastHandle;
+  /**
    * Answer the additional cost choice (CR 118.8, 601.2b, D-181), "sacrifice an artifact or creature or pay {4}": `true` pays the first way (the
    * sacrifice), `false` the second.
    */
@@ -374,6 +378,11 @@ export interface CastOptions {
    * false casts the spell with no gift. Left out, the question stays pending for the test to answer (`accept()` or `decline()`).
    */
   readonly gift?: boolean;
+  /**
+   * Answers the buyback question when the engine asks it (CR 702.27a): true pays the buyback cost, false does not. Left out, the question stays pending for the test to answer
+   * (`accept()` or `decline()`).
+   */
+  readonly bought?: boolean;
   /**
    * Answers the additional cost choice when the engine asks it (D-181): true pays the first way, false the second. Left out, the question stays
    * pending for the test to answer (`accept()` or `decline()`).

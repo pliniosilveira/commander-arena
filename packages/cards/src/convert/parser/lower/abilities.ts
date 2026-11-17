@@ -59,6 +59,7 @@ const KEYWORD_RULE = {
   ward: 'keyword.ward',
   replicate: 'keyword.replicate',
   escalate: 'keyword.escalate',
+  buyback: 'keyword.buyback',
 } as const;
 
 type CostedKeyword =
@@ -74,7 +75,8 @@ type CostedKeyword =
   | 'cumulativeUpkeep'
   | 'ward'
   | 'replicate'
-  | 'escalate';
+  | 'escalate'
+  | 'buyback';
 
 /**
  * "Cycling {2}" (CR 702.29a), "Equip {1}" (CR 702.6a), "Kicker {2}" (CR 702.33a), "Multikicker {2}"
@@ -146,7 +148,8 @@ function lowerCostedKeyword(
     name === 'echo' ||
     name === 'cumulativeUpkeep' ||
     name === 'replicate' ||
-    name === 'escalate'
+    name === 'escalate' ||
+    name === 'buyback'
       ? ['mana']
       : name === 'ward'
         ? ['mana', 'payLife', 'sacrifice', 'discard']
@@ -419,6 +422,7 @@ export function lowerKeyword(
     ability.name === 'cumulativeUpkeep' ||
     ability.name === 'replicate' ||
     ability.name === 'escalate' ||
+    ability.name === 'buyback' ||
     ability.name === 'ward'
   ) {
     return lowerCostedKeyword(ability, ability.name);
@@ -457,7 +461,11 @@ export function lowerKeyword(
     };
   }
   if (ability.name === 'protection') return lowerProtection(ability);
-  const typeSearch = typecyclingFilter(ability.name);
+  // A creature type ("Halflingcycling {4}", D-538) names its type in `quality`; the five land types and "basic land" are in the table.
+  const typeSearch: ObjectFilter | undefined =
+    ability.quality !== undefined && ability.name.endsWith('cycling')
+      ? { subtypes: [ability.quality] }
+      : typecyclingFilter(ability.name);
   if (typeSearch !== undefined) return lowerTypecycling(ability, typeSearch);
   const landType = landwalkOf(ability.name);
   if (landType !== undefined && ability.params.length === 0) {
@@ -843,6 +851,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:hideaway',
   'keyword:escalate',
   'keyword:replicate',
+  'keyword:buyback',
   'keyword:echo',
   'keyword:cumulativeUpkeep',
   'keyword:ward',

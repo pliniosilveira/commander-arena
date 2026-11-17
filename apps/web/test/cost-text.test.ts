@@ -93,9 +93,10 @@ describe('ability labels', () => {
   });
 
   test('an effect the label does not know shows the cost alone', () => {
+    // Scry has words since the Galadriel deck (group 1); a look that puts the cards back in any order has none yet.
     const odd = ability({
       cost: [mana('1')],
-      effect: { kind: 'scry', count: 1 },
+      effect: { kind: 'lookAndReorder', count: 3 },
     });
     expect(activationLabel(bear, entry(odd))).toBe('{1}');
   });

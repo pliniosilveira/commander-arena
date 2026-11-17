@@ -224,6 +224,9 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     'you may put a Dragon creature card from your hand onto the battlefield',
     // Stage P34 (D-152, CR 508.4): it enters attacking.
     'you may put a Dragon creature card from your hand onto the battlefield tapped and attacking',
+    // D-544: a card of the hand or of the graveyard.
+    'you may put a land card from your hand or graveyard onto the battlefield',
+    'put a creature card from your hand or graveyard onto the battlefield tapped',
   ],
   rejects: [
     'you may put an artifact card from your hand onto the battlefield under your control',
@@ -235,6 +238,11 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     'you may put target artifact card from your graveyard onto the battlefield',
     'you may put a creature card from your hand onto the battlefield attacking',
     'you may put a creature card from your hand onto the battlefield tapped and attacking and draw a card',
+    'you may put a land card from your graveyard or hand onto the battlefield',
+    'you may put a land card from your hand or library onto the battlefield',
+    'you may put a land card from your hand or your graveyard onto the battlefield',
+    'you may put a land card from your hand or graveyard into your hand',
+    'you may put a land card from your hand or graveyard onto the battlefield and draw a card',
   ],
   parse: single(
     FROM_HAND_RULE,
@@ -263,6 +271,8 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
                 ),
                 literal(' card from your '),
                 choice(
+                  // D-544 (Galadriel deck, group 2): "from your hand or graveyard", the cards of both places together.
+                  map(literal('hand or graveyard'), () => 'handOrGraveyard' as const),
                   map(literal('hand'), () => 'hand' as const),
                   map(literal('graveyard'), () => 'graveyard' as const),
                 ),
@@ -284,7 +294,7 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         kind: 'noun',
         det: 'a',
         filter: {
-          zone,
+          zone: zone === 'handOrGraveyard' ? 'hand' : zone,
           ...(types.length > 0 ? { types } : {}),
           ...(subtypes.length > 0 ? { subtypes } : {}),
           controller: 'you',
@@ -313,9 +323,18 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         span: { start: pos, end: pos },
         rule: FROM_HAND_RULE,
       };
-      return { ok: true, value: { objects, to, may: flag }, pos: r.pos };
+      const both: IrFlag = {
+        kind: 'flag',
+        value: zone === 'handOrGraveyard',
+        span: { start: pos, end: pos },
+        rule: FROM_HAND_RULE,
+      };
+      return { ok: true, value: { objects, to, may: flag, both }, pos: r.pos };
     },
-    ({ objects, to, may }) => ({ verb: 'putFromZone', args: { objects, to, may } }),
+    ({ objects, to, may, both }) => ({
+      verb: 'putFromZone',
+      args: { objects, to, may, ...(both.value ? { alsoGraveyard: both } : {}) },
+    }),
   ),
 });
 

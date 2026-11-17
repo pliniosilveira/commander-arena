@@ -184,6 +184,17 @@ export function lookAtTopText(
   if (rest === 'top' && count === 1 && one && (take.min ?? 0) === 0 && take.to !== 'battlefield') {
     return `${look}. If it's ${what}, you may reveal it and put it into your hand. If you don't, it stays on top of your library`;
   }
+  // Galadriel group 1 (Nissa, Steward of Elements): one card looked at, put onto the battlefield when it is of the kind, or left on top; it is not revealed.
+  if (
+    rest === 'top' &&
+    count === 1 &&
+    one &&
+    (take.min ?? 0) === 0 &&
+    take.to === 'battlefield' &&
+    effect.revealAll !== true
+  ) {
+    return `${look}. If it's ${what}, you may put it onto the battlefield${take.tapped === true ? ' tapped' : ''}. If you don't, it stays on top of your library`;
+  }
   // `min` 1 or more: no "you may", the card is taken whenever there is one.
   const may = (take.min ?? 0) > 0 ? '' : 'You may ';
   const reveal = `${may}${may === '' ? 'Reveal' : 'reveal'} ${taken} from among them`;
@@ -277,6 +288,15 @@ export function chosenCardMoveText(effect: Extract<Effect, { kind: 'moveToZone' 
   // D-411 (CR 608.2d): "You may put a land card from among them into your hand": a choice among the cards the mill before it put into the graveyard.
   if (objects.kind === 'choose' && objects.fromMoved === true && effect.to === 'hand') {
     const { zone: _zone, controller: _owner, ...kind } = objects.filter;
+    // D-542 (CR 608.2d): "Put up to two land cards from among them into your hand": a number of cards, none up to it.
+    const many = objects.count ?? 1;
+    if (typeof many !== 'number') return null;
+    if (many > 1) {
+      const cards = cardNoun(kind, true);
+      return cards === null
+        ? null
+        : `Put up to ${numberWord(many)} ${cards} from among them into your hand`;
+    }
     const noun = fromAmongNoun(kind);
     if (noun === null) return null;
     return `${objects.optional === true ? 'You may put' : 'Put'} ${noun} from among them into your hand`;
@@ -290,7 +310,9 @@ export function chosenCardMoveText(effect: Extract<Effect, { kind: 'moveToZone' 
   if (typeof count !== 'number') return null;
   const what = count === 1 ? card : `${numberWord(count)} ${cardNoun(rest, true) ?? card}`;
   const head = objects.optional === true ? 'You may put' : 'Put';
-  return `${head} ${what} from your ${zone} onto the battlefield${effect.tapped === true ? ' tapped' : ''}`;
+  // D-544: "from your hand or graveyard": the cards of both places.
+  const places = objects.alsoGraveyard === true && zone === 'hand' ? 'hand or graveyard' : zone;
+  return `${head} ${what} from your ${places} onto the battlefield${effect.tapped === true ? ' tapped' : ''}`;
 }
 
 /**

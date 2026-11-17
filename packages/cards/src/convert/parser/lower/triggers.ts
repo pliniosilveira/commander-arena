@@ -252,6 +252,20 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:scries']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'scries', who });
     }
+    case 'surveils': {
+      // "Whenever you scry or surveil" (Galadriel deck, group 1, CR 701.25): the player is relative to the controller of the ability.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:surveils']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'surveils', who });
+    }
+    case 'rollsHighest': {
+      // "Whenever you roll a die's highest natural result" (Galadriel deck, group 3, CR 706.1a, 706.2): the player is relative to the controller of the ability.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:rollsHighest']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'rollsHighest', who });
+    }
     case 'dies':
     case 'blocks':
     case 'becomesBlocked':
@@ -569,6 +583,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'crimeCommitted',
       'tokenCreated',
       'scries',
+      'surveils',
+      'rollsHighest',
     ].includes(only.event) &&
       only.actor !== undefined) ||
     ((only.event === 'dealsCombatDamage' ||
@@ -926,6 +942,13 @@ export function lowerTriggered(
     ctx.interveningCondition = false;
     if (!lowered.ok) return lowered;
     interveningIf = lowered.value;
+    // "if you chose a creature other than ~ as your Ring-bearer" (Galadriel deck, group 1, CR 701.54a): only the tempting of the Ring chooses a creature; the engine reads it from that event.
+    if (
+      interveningIf.kind === 'ringBearerChosen' &&
+      !triggers.every((t) => t.kind === 'ringTempted')
+    ) {
+      return failure(ifWritten, []);
+    }
   }
   // "When ~ enters during the declare attackers step" (stage P31, D-140, CR 603.4): the step is checked as the event happens and as the
   // ability resolves, which is the engine's intervening `duringStep`, joined with any "if" the text has.
@@ -1271,6 +1294,8 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:tapBatch',
   'trigger:notAsAttacker',
   'trigger:scries',
+  'trigger:surveils',
+  'trigger:rollsHighest',
   'ability:oncePerTurn',
   'ability:doOnlyOnceEachTurn',
   'condition:duringStep',

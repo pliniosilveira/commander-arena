@@ -3099,6 +3099,55 @@ export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
+ * The SYNTHETIC cards of group 1 of the Galadriel deck (issue 43, D-528 and later): a creature that scries when a creature of its controller enters and makes the Ring tempt its
+ * controller the second time that ability resolves in a turn, a creature that scries 3 when the Ring tempts its controller (another creature chosen) and may reveal the top card
+ * whenever its controller scries, a creature that draws whenever its controller scries or surveils, two sorceries that scry 3 and reveal the top card, a planeswalker with X loyalty, an
+ * instant that destroys an artifact, an enchantment or a creature with flying, and a surveil. The "you may" of the reveal, the X, the Ring-bearer to choose, the cards to put and the
+ * lands to animate change which answers the generic pools ask for, which games-100 expects only from dedicated styles. 'SYNTHETIC Ring Rite' (the other source of the Ring) is left out
+ * of the deck, so that every tempt of the Ring in a game is the Rivendell Warden's.
+ */
+export const GALADRIEL_G1_NAMES = [
+  'SYNTHETIC Rivendell Warden',
+  'SYNTHETIC Lorien Lady',
+  'SYNTHETIC Archon Seer',
+  'SYNTHETIC Far Sight',
+  'SYNTHETIC Run Down',
+  'SYNTHETIC Seer of Elements',
+  'SYNTHETIC Arrow Rain',
+  'SYNTHETIC Quiet Look',
+] as const;
+
+/** The galadrielG1 style: every card of the group twice, bodies that enter in a row, fliers and an artifact to destroy, and the scry spell of the Hylda group. */
+export const GALADRIEL_G1_SPELLS = [
+  ...supported(GALADRIEL_G1_NAMES),
+  ...supported(GALADRIEL_G1_NAMES),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['Sol Ring', 'SYNTHETIC Clear Sight']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Green and blue for the creatures and the X, the rest for the colorless costs. */
+export const GALADRIEL_G1_LANDS = supported([
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Plains',
+  'Plains',
+]);
+
+/** Style pairs of the Galadriel group 1 soak test (issue 43): a mirror match and both mixed ways. */
+export const GALADRIEL_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['galadrielG1', 'galadrielG1'],
+  ['galadrielG1', 'spells'],
+  ['spells', 'galadrielG1'],
+];
+
+/**
  * The SYNTHETIC cards of group 2 of the Hylda deck (D-517 to D-525): a sorcery that taps everything a chosen player controls and keeps it tapped, a creature that taps what a chosen
  * opponent controls, an instant that does it for up to two creatures, an X instant, a creature that does it when its controller casts an instant or sorcery, an Aura that taps its
  * creature at every upkeep, a d20 table, a creature with a "choose up to one" trigger, a siege that asks for Khans or Dragons as it enters, a creature with a trigger that needs four
@@ -3145,6 +3194,109 @@ export const HYLDA_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
   ['hyldaG2', 'hyldaG2'],
   ['hyldaG2', 'spells'],
   ['spells', 'hyldaG2'],
+];
+
+/**
+ * The SYNTHETIC cards of group 2 of the Galadriel deck (D-538 to D-546): a creature that makes the nontoken creatures of its controller Forest lands, a creature that grows with the lands
+ * and the land cards in the graveyard and comes back from the graveyard for two lands, a sorcery that mills four and puts up to two land cards among them into the hand, a creature that
+ * makes a token as big as the lands and puts a land from the hand or the graveyard onto the battlefield when its controller attacks, a land with Halflingcycling {4} and the creature it
+ * finds. They ask `chooseCards` of a search and of "up to two", `choosePermanent` for the lands a cost returns and the question of the land from two places, which the generic pools are not
+ * built to follow: a style of their own (GALADRIEL_G2_NAMES).
+ */
+export const GALADRIEL_G2_NAMES = [
+  'SYNTHETIC Forest Heart',
+  'SYNTHETIC Land Avatar',
+  'SYNTHETIC Mill Four Take Two',
+  'SYNTHETIC Land Giant',
+  'SYNTHETIC Halfling Hole',
+  'SYNTHETIC Halfling Scout',
+] as const;
+
+/** The galadrielG2 style: every card of the group three times, bodies to attack with and burn that sends the big creatures to the graveyard. */
+export const GALADRIEL_G2_SPELLS = [
+  ...supported(GALADRIEL_G2_NAMES),
+  ...supported(GALADRIEL_G2_NAMES),
+  ...supported(GALADRIEL_G2_NAMES),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Serra Angel']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2', 'SYNTHETIC Vanilla 3/3']),
+];
+
+/** Green for most of the group, blue for the Giant. */
+export const GALADRIEL_G2_LANDS = supported([
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Island',
+  'Island',
+  'Island',
+]);
+
+/** Style pairs of the Galadriel group 2 soak test (D-538 to D-546): a mirror match and both mixed ways. */
+export const GALADRIEL_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['galadrielG2', 'galadrielG2'],
+  ['galadrielG2', 'spells'],
+  ['spells', 'galadrielG2'],
+];
+
+/**
+ * The SYNTHETIC cards of group 3 of the Galadriel deck (issue 43, D-548 and later): a modal instant that shields a permanent or makes a Pilot token that crews as though its power
+ * were 2 greater, an enchantment that exchanges control of itself and a nonland permanent, a sorcery that exchanges control of two creatures, a planeswalker with kicker whose copy is not
+ * legendary and starts with loyalty 1 and whose 0 ability draws and reveals a card and loses loyalty equal to its mana value, a legendary Serpent that makes a token each upkeep and
+ * sacrifices a Serpent to tap a permanent and stop its abilities or to be indestructible, a sorcery with buyback, an enchantment that rolls a d4 at upkeep and scries that many cards, an
+ * instant that puts X counters and counters a spell unless its controller pays the greatest power, an instant that stops the abilities of a permanent, an instant that destroys an
+ * enchantment and the Serpent to sacrifice. They ask a kicker, a buyback, X, modes, a payment, a scry of a number of cards and two targets of different controllers, which the generic pools
+ * are not built to follow: a style of their own.
+ */
+export const GALADRIEL_G3_NAMES = [
+  'SYNTHETIC Rider Shield',
+  'SYNTHETIC Swap Eyes',
+  'SYNTHETIC Swap Pair',
+  'SYNTHETIC Mirror Walker',
+  'SYNTHETIC Coil Titan',
+  'SYNTHETIC Buyback Peek',
+  'SYNTHETIC Die Ward',
+  'SYNTHETIC Mutation Counter',
+  'SYNTHETIC Lock Abilities',
+  'SYNTHETIC Break Enchantment',
+  'SYNTHETIC Garden Serpent',
+] as const;
+
+/** The galadrielG3 style: every card of the group twice, bodies to hold the exchanged permanents and to crew with, a Vehicle, a counterspell and burn. */
+export const GALADRIEL_G3_SPELLS = [
+  ...supported(GALADRIEL_G3_NAMES),
+  ...supported(GALADRIEL_G3_NAMES),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Serra Angel']),
+  ...supported(['SYNTHETIC Rattle Wagon', 'SYNTHETIC Scout Skiff', 'Sol Ring']),
+  ...supported(['Counterspell', 'Lightning Bolt', 'Divination']),
+  // The Mutation counters a spell only when one is on the stack, and asks its controller only when they have mana left: more of it, and cheap spells to answer.
+  ...supported(['SYNTHETIC Mutation Counter', 'SYNTHETIC Mutation Counter']),
+  ...supported(['Lightning Bolt', 'Unsummon', 'Llanowar Elves']),
+  // The exchanges need a creature or permanent on each side, and the Walker a turn to be used.
+  ...supported(['SYNTHETIC Swap Eyes', 'SYNTHETIC Swap Pair', 'SYNTHETIC Swap Pair']),
+  ...supported(['SYNTHETIC Mirror Walker', 'SYNTHETIC Swap Eyes']),
+];
+
+/** Blue and green for the cards, a few Mountains for the burn and the destruction. */
+export const GALADRIEL_G3_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Forest',
+  'Mountain',
+]);
+
+/** Style pairs of the Galadriel group 3 soak test: a mirror match and both mixed ways. */
+export const GALADRIEL_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['galadrielG3', 'galadrielG3'],
+  ['galadrielG3', 'spells'],
+  ['spells', 'galadrielG3'],
 ];
 
 /**
@@ -3971,6 +4123,10 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(FEATHER_G1_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 2 cards (D-517 to D-525) ask a number for X, a named option as a siege enters and "choose up to one" with no mode allowed: a style of their own.
   .filter((card) => !(HYLDA_G2_NAMES as readonly string[]).includes(card.name))
+  // The Galadriel group 2 cards (D-538 to D-546) search by a creature type, choose up to two cards, return lands as a cost and choose a land from two places: a style of their own.
+  .filter((card) => !(GALADRIEL_G2_NAMES as readonly string[]).includes(card.name))
+  // The Galadriel group 3 cards (issue 43) ask a kicker, a buyback, X, modes, a scry of a rolled number and the targets of an exchange: a style of their own.
+  .filter((card) => !(GALADRIEL_G3_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 2 cards (D-464 to D-468) ask to pay {B} to return a card from the graveyard and put tokens, ward payments and drawing into games: a style of their own.
   .filter((card) => !(GISA_G2_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 3 cards (issue 42) ask X, modes, tap-or-untap choices and targets with different controllers, and fetch a land: a style of their own.
@@ -3981,6 +4137,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(GISA_G4_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 1 cards (D-510 to D-514) ask to pay for reflexive abilities, the modes of one, targets of taps, the card type to protect from and what to do with a scry: a style of their own.
   .filter((card) => !(HYLDA_G1_NAMES as readonly string[]).includes(card.name))
+  // The Galadriel group 1 cards (issue 43) ask a "you may" before a reveal, an X for a planeswalker, which permanent the Ring chooses and what to put onto the battlefield: a style of their own.
+  .filter((card) => !(GALADRIEL_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_LAND_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(ANGEL_NAMES as readonly string[]).includes(card.name))
@@ -4192,6 +4350,8 @@ export type DeckStyle =
   | 'ward'
   | 'danithaG6'
   | 'hyldaG2'
+  | 'galadrielG2'
+  | 'galadrielG3'
   | 'danithaG7'
   | 'gisaG5'
   | 'featherG3'
@@ -4202,6 +4362,7 @@ export type DeckStyle =
   | 'featherG1'
   | 'gisaG4'
   | 'hyldaG1'
+  | 'galadrielG1'
   | 'vehicles'
   | 'prevention'
   | 'layouts'
@@ -4280,6 +4441,8 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaG6' && DANITHA_G6_SPELLS.length > 0) return DANITHA_G6_SPELLS;
   if (style === 'danithaG7' && DANITHA_G7_SPELLS.length > 0) return DANITHA_G7_SPELLS;
   if (style === 'hyldaG2' && HYLDA_G2_SPELLS.length > 0) return HYLDA_G2_SPELLS;
+  if (style === 'galadrielG2' && GALADRIEL_G2_SPELLS.length > 0) return GALADRIEL_G2_SPELLS;
+  if (style === 'galadrielG3' && GALADRIEL_G3_SPELLS.length > 0) return GALADRIEL_G3_SPELLS;
   if (style === 'gisaG4' && GISA_G4_SPELLS.length > 0) return GISA_G4_SPELLS;
   if (style === 'featherG3' && FEATHER_G3_SPELLS.length > 0) return FEATHER_G3_SPELLS;
   if (style === 'gisaG5' && GISA_G5_SPELLS.length > 0) return GISA_G5_SPELLS;
@@ -4289,6 +4452,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'hyldaG3' && HYLDA_G3_SPELLS.length > 0) return HYLDA_G3_SPELLS;
   if (style === 'gisaG1' && GISA_G1_SPELLS.length > 0) return GISA_G1_SPELLS;
   if (style === 'hyldaG1' && HYLDA_G1_SPELLS.length > 0) return HYLDA_G1_SPELLS;
+  if (style === 'galadrielG1' && GALADRIEL_G1_SPELLS.length > 0) return GALADRIEL_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
   if (style === 'repeatable' && REPEATABLE_SPELLS.length > 0) return REPEATABLE_SPELLS;
@@ -4477,6 +4641,8 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'danithaMill' && BASIC_LANDS.length > 0) return DANITHA_G2_LANDS;
   if (style === 'danithaG5' && BASIC_LANDS.length > 0) return DANITHA_G5_LANDS;
   if (style === 'hyldaG2' && BASIC_LANDS.length > 0) return HYLDA_G2_LANDS;
+  if (style === 'galadrielG2' && BASIC_LANDS.length > 0) return GALADRIEL_G2_LANDS;
+  if (style === 'galadrielG3' && BASIC_LANDS.length > 0) return GALADRIEL_G3_LANDS;
   if (style === 'danithaG6' && BASIC_LANDS.length > 0) return DANITHA_G6_LANDS;
   if (style === 'danithaG7' && BASIC_LANDS.length > 0) return DANITHA_G7_LANDS;
   if (style === 'gisaG4' && BASIC_LANDS.length > 0) return GISA_G4_LANDS;
@@ -4488,6 +4654,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'hyldaG3' && BASIC_LANDS.length > 0) return HYLDA_G3_LANDS;
   if (style === 'gisaG1' && BASIC_LANDS.length > 0) return GISA_G1_LANDS;
   if (style === 'hyldaG1' && BASIC_LANDS.length > 0) return HYLDA_G1_LANDS;
+  if (style === 'galadrielG1' && BASIC_LANDS.length > 0) return GALADRIEL_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
   if (style === 'repeatable' && BASIC_LANDS.length > 0) return REPEATABLE_LANDS;

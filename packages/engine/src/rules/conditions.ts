@@ -6,6 +6,7 @@ import type { Condition } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState, ThisWayCounts } from '../state/types';
+import { resolutionCount } from './action-taken';
 import { amountOf, playerStatOf, statOf } from './amounts';
 import { chosenOf } from './chosen';
 import {
@@ -203,6 +204,17 @@ export function evaluateCondition(
         )
       );
     }
+    case 'abilityResolvedTimes':
+      // CR 608.2c (Galadriel group 1): how often this triggered ability has begun to resolve this turn, this resolution included (`TurnLog.resolved`).
+      return state.resolution === null
+        ? false
+        : resolutionCount(state, state.resolution.object) === condition.times;
+    case 'ringBearerChosen':
+      // CR 701.54a, 701.54d (Galadriel group 1): the creature the tempting chose is the subject of the trigger's event (none when there was no creature to choose).
+      return (
+        ctx.triggerSubject !== undefined &&
+        (condition.other !== true || ctx.triggerSubject !== ctx.source)
+      );
     case 'thisWayAtLeast':
       // D-210 (CR 608.2c): "if a creature card was discarded this way": what the effects before this one did.
       return (ctx.thisWay?.[condition.what] ?? 0) >= condition.count;

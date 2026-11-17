@@ -50,6 +50,7 @@ import {
 } from './activate';
 import { planForActivation } from './activate-costs';
 import {
+  buybackCostOf,
   escalateCostOf,
   hasModeCosts,
   kickerCostOf,
@@ -460,7 +461,7 @@ function toReplicate(state: GameState, events: GameEvent[]): Result {
   const stack = spell.stack;
   if (!stack) return fail('The spell is not on the stack');
   const cost = replicateCostOf(faceOf(state, spell));
-  if (cost === null) return toGift(state, events, toCostChoice);
+  if (cost === null) return toBuyback(state, events);
   const before = casting.snapshot;
   const card = getObject(before, casting.from);
   const request = {
@@ -477,7 +478,7 @@ function toReplicate(state: GameState, events: GameEvent[]): Result {
   const max = largestPayableX((n) =>
     canPayRequest(before, casting.seat, request.spell, { ...request, replicas: n }),
   );
-  if (max < 1) return toGift(state, events, toCostChoice);
+  if (max < 1) return toBuyback(state, events);
   const info = sourceInfo(state, casting.object);
   return ok(
     setPending(
@@ -497,6 +498,71 @@ function toReplicate(state: GameState, events: GameEvent[]): Result {
     ),
     events,
   );
+}
+
+/**
+ * CR 702.27a, 601.2b (Galadriel group 3): a spell with Buyback asks whether to pay the buyback cost, after the kicker and replicate questions and before the gift, X and the targets. It
+ * is asked only when the whole cost with the buyback cost (and the kicker as it was answered) can be paid. The answer is kept on the spell (`StackData.boughtBack`).
+ */
+function toBuyback(state: GameState, events: GameEvent[]): Result {
+  const casting = state.casting;
+  if (!casting) return fail('No cast in progress');
+  const spell = getObject(state, casting.object);
+  const stack = spell.stack;
+  if (!stack) return fail('The spell is not on the stack');
+  const cost = buybackCostOf(faceOf(state, spell));
+  if (cost === null) return toGift(state, events, toCostChoice);
+  const before = casting.snapshot;
+  const card = getObject(before, casting.from);
+  const request = {
+    seat: casting.seat,
+    spell: castAs(card, casting.seat, spell.face),
+    zone: casting.fromZone as CastFrom,
+    alternative: alternativeOfStack(stack),
+    excluded: card.id,
+    kicked: stack.kicked,
+    modes: stack.chosenModes.length,
+    modeSet: stack.chosenModes,
+    ...(stack.kicks === undefined ? {} : { kicks: stack.kicks }),
+    ...(stack.replicated === undefined ? {} : { replicas: stack.replicated }),
+  } as const;
+  if (!canPayRequest(before, casting.seat, request.spell, { ...request, bought: true })) {
+    return toGift(state, events, toCostChoice);
+  }
+  const info = sourceInfo(state, casting.object);
+  return ok(
+    setPending(
+      { ...state, casting: { ...casting, stage: 'kicker' } },
+      {
+        kind: 'confirmOptional',
+        seat: casting.seat,
+        source: casting.object,
+        sourceName: info?.name ?? '',
+        sourceOracleText: info?.oracleText ?? '',
+        cost,
+        purpose: 'buyback',
+      },
+    ),
+    events,
+  );
+}
+
+/**
+ * The answer to "pay the buyback cost?" (CR 702.27a, 601.2b): the spell is bought back or not, then the cast goes on to the gift, X and the targets.
+ * The answer has no event of its own; `spellCast` says `boughtBack`.
+ */
+export function answerBuyback(state: GameState, accept: boolean): Result {
+  const casting = state.casting;
+  const d = state.pending;
+  if (casting?.stage !== 'kicker' || d?.kind !== 'confirmOptional' || d.purpose !== 'buyback') {
+    return fail('No buyback cost is being asked');
+  }
+  const stack = getObject(state, casting.object).stack;
+  if (!stack) return fail('The spell is not on the stack');
+  const next = patchObject({ ...state, pending: null }, casting.object, {
+    stack: accept ? { ...stack, boughtBack: true } : stack,
+  });
+  return toGift(next, [], toCostChoice);
 }
 
 /**
@@ -730,7 +796,7 @@ export function answerReplicas(state: GameState, value: number): Result {
   const next = patchObject({ ...state, pending: null }, casting.object, {
     stack: { ...stack, ...(value > 0 ? { replicated: value } : {}) },
   });
-  return toGift(next, [], toCostChoice);
+  return toBuyback(next, []);
 }
 
 /**
@@ -1306,6 +1372,7 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
     ...(obj.stack?.kicked ? { kicked: true as const } : {}),
     ...(obj.stack?.kicks === undefined ? {} : { kicks: obj.stack.kicks }),
     ...(obj.stack?.replicated === undefined ? {} : { replicas: obj.stack.replicated }),
+    ...(obj.stack?.boughtBack === true ? { boughtBack: true as const } : {}),
     ...(obj.stack?.giftTo === undefined ? {} : { gift: obj.stack.giftTo }),
     ...(cast === undefined ? {} : { alternative: cast }),
     ...(obj.face !== 0 ? { face: obj.face } : {}),

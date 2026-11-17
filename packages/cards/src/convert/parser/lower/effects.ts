@@ -49,6 +49,8 @@ import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
+import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
+import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
 import { GAIN_STATIC_ABILITY } from './granted-static';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
@@ -539,7 +541,7 @@ const RESELECT_ATTACK: Lowering<IrClause, Effects> = {
 const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
   head: 'putFromZone',
   id: 'lower.put-from-zone',
-  needs: ['effect:moveToZone', 'selector:choose'],
+  needs: ['effect:moveToZone', 'selector:choose', 'ability:chooseAlsoGraveyard'],
   lower(clause) {
     const objects = arg(clause, 'objects');
     const to = zoneOf(clause);
@@ -566,12 +568,15 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
     const filter = lowerFilter(objects);
     if (!filter.ok) return filter;
     const optional = may?.kind === 'flag' && may.value;
+    // D-544 (CR 608.2d): "from your hand or graveyard": the cards of both places are the candidates.
+    const both = arg(clause, 'alsoGraveyard');
     const move: Effect = {
       kind: 'moveToZone',
       objects: {
         kind: 'choose',
         filter: filter.value,
         ...(optional ? { optional: true as const } : {}),
+        ...(both?.kind === 'flag' && both.value ? { alsoGraveyard: true as const } : {}),
       },
       to: 'battlefield',
       ...(to.tapped === true ? { tapped: true } : {}),
@@ -1265,7 +1270,13 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
   }
   const types = (token.types ?? []) as CardType[];
   const creature = types.includes('creature');
-  if (!creature || token.power === undefined || token.toughness === undefined) {
+  // D-543 (CR 208.2a, 604.3): a token with no numbers has a characteristic-defining ability in its quotes that defines both ("Beau's power and toughness are each equal
+  // to ..."); a token with numbers never has one (the star and the ability go together, `validateCard`).
+  const definesPt =
+    (token.power === undefined) !== (token.toughness === undefined)
+      ? null
+      : token.power === undefined;
+  if (!creature || definesPt === null) {
     return { ok: false, needs: [], ...at };
   }
   const subtypes = [...(token.subtypes ?? [])];
@@ -1292,6 +1303,10 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     if (!own.ok) return own;
     abilities.push(own.value);
   }
+  const defines = abilities.filter(
+    (a) => a.kind === 'static' && a.static.kind === 'characteristicPt',
+  );
+  if (definesPt ? defines.length !== 1 : defines.length > 0) return { ok: false, needs: [], ...at };
   // CR 111.4: the name the effect gives the token. "named ~'s Pridemate" (D-266): the card's own short name, which normalization wrote as the tilde;
   // a context that does not know it (a quoted ability, where the tilde is the token) refuses the name instead of guessing.
   const named = token.named === undefined ? undefined : ownTokenName(token.named, ctx);
@@ -1304,8 +1319,8 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     types,
     subtypes,
     colors,
-    power: token.power,
-    toughness: token.toughness,
+    power: token.power ?? '*',
+    toughness: token.toughness ?? '*',
     loyalty: null,
     defense: null,
     // The words of the token's abilities, which the card face prints (CR 111.4): its keywords on one line, then each ability in
@@ -1419,6 +1434,11 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...GISA_G4_LOWERINGS,
   // D-517, D-519: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_LOWERINGS,
+  // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If it's a creature or land card, draw a card."
+  ...GALADRIEL_G1_LOWERINGS,
+  // Galadriel deck, group 3 (issue 43): an exchange of control, a counter unless the controller pays an amount, "draw a card and reveal it" with counters removed, "its activated
+  // abilities can't be activated this turn".
+  ...GALADRIEL_G3_LOWERINGS,
   ...GRAVEYARD_CHOICE_LOWERINGS,
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,

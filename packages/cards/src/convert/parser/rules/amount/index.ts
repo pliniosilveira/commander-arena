@@ -5,6 +5,7 @@ import { defineRule, spanned } from '../registry';
 import { COUNT_AMOUNT_RULES } from './count';
 import { AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
+import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
 import { HASHATON_G2_AMOUNT_RULES } from './hashaton-group-2';
 import { AMOUNT_FOR_EACH_DIED } from './history';
 import { HOFRI_AMOUNT_RULES } from './hofri';
@@ -326,6 +327,8 @@ export const AMOUNT_RULES = [
   AMOUNT_MANA_VALUE_OF,
   AMOUNT_LIFE_LOST_THIS_WAY,
   AMOUNT_MILLED_VALUE_THIS_WAY,
+  // Galadriel deck, group 2 (D-539): two counts added; before `amount.for-each`, which would stop after the first.
+  ...GALADRIEL_G2_AMOUNT_RULES,
   ...COUNT_AMOUNT_RULES,
   ...FOR_EACH_VALUE_RULES,
   AMOUNT_TIMES_KICKED,

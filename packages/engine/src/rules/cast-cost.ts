@@ -33,6 +33,7 @@ import { definitionOf, getSeat, patchSeat, printedCard } from '../state/ops';
 import type { GameObject, GameState, StackData } from '../state/types';
 import {
   alternativeOf,
+  buybackCostOf,
   escalateCostOf,
   flashbackCostOf,
   kickerLikeCostOf,
@@ -229,6 +230,8 @@ export interface CostRequest {
   readonly kicks?: number;
   /** How many times the replicate cost is paid (CR 702.56a, D-129): 0 when it is not, or the spell has none. */
   readonly replicas?: number;
+  /** Whether the buyback cost is paid (CR 702.27a): left out, what the spell on the stack says (`StackData.boughtBack`); false for a card that is not on the stack yet. */
+  readonly bought?: boolean;
   /** The card's own object while it is still in its zone (see `reductionFor`). */
   readonly excluded?: ObjectId;
   /** The X announced for the spell (CR 107.3a, 601.2b): 0 when it has none or none was announced yet. */
@@ -321,6 +324,9 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   if (replicate !== null) {
     for (let i = 0; i < (request.replicas ?? 0); i += 1) symbols.push(...manaSymbolsOf(replicate));
   }
+  // CR 702.27a: the buyback cost is an additional cost, paid once when the caster chose to (mana only).
+  const buyback = (request.bought ?? spell.stack?.boughtBack === true) ? buybackCostOf(face) : null;
+  if (buyback !== null) symbols.push(...manaSymbolsOf(buyback));
   // CR 702.120a (D-145): an escalate cost is paid for each mode chosen beyond the first, as an additional cost.
   const escalate = escalateCostOf(face);
   if (escalate !== null) {

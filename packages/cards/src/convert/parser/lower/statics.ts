@@ -320,7 +320,13 @@ function effectOf(
       // "... are Juggernauts in addition to their other creature types" (stage P31, D-140, CR 205.1b, 613.1d): layer 4; and, stage P33
       // (D-150), "Enchanted creature ... is an Angel in addition to its other types".
       return subject.kind === 'filter' || subject.kind === 'attached'
-        ? ok({ kind: 'setTypes', subject, additive: true, subtypes: [...effect.subtypes] })
+        ? ok({
+            kind: 'setTypes',
+            subject,
+            additive: true,
+            subtypes: [...effect.subtypes],
+            ...(effect.types === undefined ? {} : { types: effect.types as CardType[] }),
+          })
         : failure(at);
     case 'restrictUnless': {
       // CR 508.1a, 509.1a (stage P32, D-147): the permanent's own restriction, lifted while the condition holds for its controller
@@ -472,6 +478,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'lookAtTopOfLibrary':
     case 'attackTax':
     case 'optionalUntap':
+    case 'crewSaddleBonus':
     case 'untapInOthersStep':
       return playRuleNeeds(effect);
     case 'additionalCost':

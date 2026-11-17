@@ -32,6 +32,8 @@ export function staticWording(effect: StaticEffect): string | null {
     }
     case 'optionalUntap':
       return 'You may choose not to untap this permanent during your untap step';
+    case 'crewSaddleBonus':
+      return `This creature saddles Mounts and crews Vehicles as though its power were ${effect.amount} greater`;
     case 'untapInOthersUntapStep':
       return effect.self === true
         ? "Untap this permanent during each other player's untap step"

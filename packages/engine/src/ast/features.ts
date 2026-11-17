@@ -113,6 +113,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayPlayFromGraveyard',
     // D-411: "Mill four cards. You may put a land card from among them into your hand." (`ChooseSelector.fromMoved`: the choice among the cards `moved` names).
     'chooseAmongMoved',
+    // D-544: "You may put a land card from your hand or graveyard onto the battlefield." (`ChooseSelector.alsoGraveyard`: the cards of both places are the candidates).
+    'chooseAlsoGraveyard',
     // D-433: "Tiered", a mode with a cost listed before its effect (`SpellMode.cost`, CR 700.2h, 702.183a).
     'modeCost',
     // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
@@ -164,6 +166,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'untap',
     'removeAllCounters',
     'removeAllPlayerCounters',
+    // Galadriel group 3: "Remove a number of loyalty counters equal to that card's mana value from ~" (CR 122.1).
+    'removeCounters',
     // D-209: "You get {E}{E}" (`gainEnergy`) and "connives" (`connive`).
     'gainEnergy',
     'connive',
@@ -193,6 +197,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'permanentsEnterTapped',
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
     'gainControl',
+    // Galadriel group 3: "Exchange control of this enchantment and target nonland permanent" (CR 701.12a, 701.12b).
+    'exchangeControl',
     'shuffle',
     // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
     'rollDie',
@@ -356,6 +362,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tokenCreated',
     // D-513: "Whenever you scry" (CR 701.22).
     'scries',
+    // Galadriel group 1: "Whenever you surveil" (CR 701.25).
+    'surveils',
+    // Galadriel group 3: "Whenever you roll a die's highest natural result" (CR 706.1a, 706.2).
+    'rollsHighest',
   ],
   // D-110: `alone`, "attacks alone" (CR 506.5), a feature of the `attacks` trigger. D-133: `attacksAt`, "attacks you
   // or a planeswalker you control" (CR 508.1b).
@@ -462,6 +472,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-129: Storm (CR 702.40a) and Replicate (CR 702.56a).
     'storm',
     'replicate',
+    // Galadriel group 3: Buyback (CR 702.27a).
+    'buyback',
     'gravestorm',
     // D-135: Gift (CR 702.174), "Gift a card".
     'gift',
@@ -783,6 +795,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-149: "if none of those creatures attacked you" (`not` of `attackersAttackedYou`), "during your first, second, or third turn",
     // "you control three or more lands with the same name".
     'attackersAttackedYou',
+    // Galadriel group 1: "if this is the second time this ability has resolved this turn", "if you chose a creature other than ~ as your Ring-bearer".
+    'abilityResolvedTimes',
+    'ringBearerChosen',
     'ownTurnNumber',
     'sameNameAtLeast',
     // D-151: "two or more nonland permanents entered the battlefield under your control this turn", "an opponent was dealt 7 or more damage".
@@ -840,6 +855,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackTax',
     // D-125: "You may choose not to untap ~ during your untap step."
     'optionalUntap',
+    // Galadriel group 3: "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a).
+    'crewSaddleBonus',
     // D-229: "Untap all creatures you control during each other player's untap step."
     'untapInOthersUntapStep',
     'modifyPt',
@@ -954,6 +971,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificedAsCost',
     // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
     'enteredX',
+    // Galadriel group 3: "Scry X, where X is the result" (CR 706.2): the natural result of the die rolled earlier in the same resolution.
+    'dieResult',
   ],
   // D-405: 'library' is "then shuffle and put that card on top".
   searchDestinationKinds: ['battlefield', 'hand', 'graveyard', 'library'],
@@ -1045,6 +1064,8 @@ export const RESTRICTABLE_BY_EFFECT: readonly Restriction[] = [
   'cantBeBlocked',
   'attacksEachCombat',
   'mustBeBlocked',
+  // Galadriel group 3: "Its activated abilities can't be activated this turn."
+  'cantActivateAbilities',
 ];
 
 /**
@@ -1097,6 +1118,8 @@ export const ABILITY_FEATURES = [
   'mayPlayFromGraveyard',
   /** "Mill four cards. You may put a land card from among them into your hand" (D-411, CR 608.2c, 608.2d): the engine's `ChooseSelector.fromMoved` of a `moveToZone`. */
   'chooseAmongMoved',
+  /** "You may put a land card from your hand or graveyard onto the battlefield" (D-544, CR 608.2d, 110.2a): the engine's `ChooseSelector.alsoGraveyard` of a `moveToZone` onto the battlefield. */
+  'chooseAlsoGraveyard',
   /** "Tiered" (D-433, CR 700.2h, 702.183a): a mode of a modal spell with a cost listed before its effect, paid as an additional cost when the mode is chosen (`SpellMode.cost`). */
   'modeCost',
   /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
@@ -1349,6 +1372,10 @@ export const CONDITION_KINDS = [
   'duringStep',
   /** "None of those creatures attacked you" (CR 508.1b, D-149): the engine's `attackersAttackedYou`. */
   'attackersAttackedYou',
+  /** "If this is the second time this ability has resolved this turn" (CR 608.2c, Galadriel group 1): the engine's `abilityResolvedTimes`. */
+  'abilityResolvedTimes',
+  /** "If you chose a creature other than ~ as your Ring-bearer" (CR 701.54a, Galadriel group 1): the engine's `ringBearerChosen`. */
+  'ringBearerChosen',
   /** "During your first, second, or third turn of the game" (CR 500.1, D-149): the engine's `ownTurnNumber`. */
   'ownTurnNumber',
   /** "You control three or more lands with the same name" (D-149): the engine's `sameNameAtLeast`. */
@@ -1428,6 +1455,8 @@ export const STATIC_KINDS = [
   'attackTax',
   /** "You may choose not to untap ~ during your untap step." (CR 502.3, D-125). */
   'optionalUntap',
+  /** "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a, Galadriel group 3). */
+  'crewSaddleBonus',
   /** "Untap all creatures you control during each other player's untap step." (CR 502.3, D-229). */
   'untapInOthersUntapStep',
   /** "~ costs {1} less to cast for each ...", "Artifact spells you cast cost {1} less" (D-095): the engine's `costReduction`. */
@@ -1582,6 +1611,8 @@ export const AMOUNT_KINDS = [
   'sacrificedAsCost',
   /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
   'enteredX',
+  /** "Scry X, where X is the result" (CR 706.2, Galadriel group 3): the engine's `dieResult` amount, the natural result of the die rolled earlier in the resolution. */
+  'dieResult',
   'bound',
 ] as const;
 export type AmountKind = (typeof AMOUNT_KINDS)[number];
@@ -1662,6 +1693,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpentRiderCopy: true,
   mayPlayFromGraveyard: true,
   chooseAmongMoved: true,
+  chooseAlsoGraveyard: true,
   modeCost: true,
   sacrificeX: true,
   optionalSacrifice: true,
@@ -1708,6 +1740,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   tap: true,
   untap: true,
   removeAllCounters: true,
+  removeCounters: true,
   removeAllPlayerCounters: true,
   gainEnergy: true,
   connive: true,
@@ -1726,6 +1759,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   requireAttack: true,
   permanentsEnterTapped: true,
   gainControl: true,
+  exchangeControl: true,
   shuffle: true,
   rollDie: true,
   scry: true,
@@ -1830,6 +1864,8 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   crimeCommitted: true,
   tokenCreated: true,
   scries: true,
+  surveils: true,
+  rollsHighest: true,
   interveningIf: true,
   alone: true,
   attacksAt: true,
@@ -1862,6 +1898,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   enchant: true,
   equip: true,
   kicker: true,
+  buyback: true,
   flashback: true,
   prowess: true,
   ward: true,
