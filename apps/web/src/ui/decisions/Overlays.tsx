@@ -59,6 +59,9 @@ export interface OverlayProps {
 
 const none = () => null;
 
+/** Width in px of the row of cards in the opening hand and discard dialogs. */
+const HAND_ROW = 1100;
+
 function Hand({
   view,
   ids,
@@ -71,10 +74,10 @@ function Hand({
   onPick?: (id: ObjectId) => void;
 }) {
   const cards = myHand(view).filter((o) => ids.includes(o.id));
-  // Everything fits on one row of the overlay: shrink the cards for big hands.
+  // Issue 48: whole cards, as large as one row of the overlay allows (it wraps on a narrow screen).
   const width = Math.max(
-    64,
-    Math.min(100, Math.floor((730 - 8 * (cards.length - 1)) / Math.max(1, cards.length))),
+    120,
+    Math.min(200, Math.floor((HAND_ROW - 8 * (cards.length - 1)) / Math.max(1, cards.length))),
   );
   return (
     <div className="dec-hand">
@@ -83,6 +86,7 @@ function Hand({
           key={card.id}
           card={card}
           width={width}
+          full
           selected={selected.includes(card.id)}
           onClick={onPick === undefined ? undefined : () => onPick(card.id)}
         />

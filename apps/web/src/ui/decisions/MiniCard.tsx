@@ -11,6 +11,8 @@ interface MiniCardProps {
   readonly badge?: string | null;
   /** Card width in px; the height follows the card proportions. */
   readonly width?: number;
+  /** Draw the whole card (picture and rules text), as the preview panel does, not the small frame. */
+  readonly full?: boolean;
 }
 
 /**
@@ -23,15 +25,18 @@ export function MiniCard({
   onClick,
   badge = null,
   width = 100,
+  full = false,
 }: MiniCardProps) {
+  // The full face sizes itself from --preview-card-w and is as tall as a card is (488:680).
   const size = {
     '--hand-w': `${width}px`,
-    '--hand-h': `${Math.round(width * 1.4)}px`,
+    '--hand-h': `${Math.round(width * (full ? 1.3935 : 1.4))}px`,
+    ...(full ? { '--preview-card-w': `${width}px` } : {}),
   } as CSSProperties;
   const hoverProps = useHoverProps();
   const body = (
     <>
-      <CardFace object={card} variant="hand" />
+      <CardFace object={card} variant={full ? 'full' : 'hand'} />
       {badge === null ? null : <span className="dec-card-badge">{badge}</span>}
     </>
   );

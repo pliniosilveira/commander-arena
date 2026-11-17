@@ -409,6 +409,9 @@
   align-items: center;
   gap: 10px;
 }
+.dec-mulligan {
+  width: min(1180px, 100%);
+}
 .dec-title {
   margin: 0;
   font-size: calc(18px * var(--text-scale));
