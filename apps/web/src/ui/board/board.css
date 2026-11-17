@@ -289,7 +289,6 @@
 /* ---- Fields and rows ------------------------------------------------------------------- */
 
 .board-field {
-  position: relative;
   flex: 1 1 0;
   min-height: 0;
   display: flex;
@@ -424,12 +423,21 @@
   -webkit-box-orient: vertical;
 }
 
-/* Over the battlefield, not beside it (issue 49): the rows keep the whole width, so the permanents stay centred. */
+/* A zero-width anchor after the emblem strip: the column starts where that strip ends and floats over the rows
+   (issue 49), so the rows keep the whole width and the permanents stay centred. */
+.board-exile-anchor {
+  position: relative;
+  flex: none;
+  width: 0;
+  z-index: 3;
+}
+
 .board-exile-plays {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 3;
+  width: max-content;
+  max-width: none;
   border-right: none;
   pointer-events: none;
 }
