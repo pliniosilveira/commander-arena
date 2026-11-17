@@ -188,8 +188,8 @@ export function runEnterToken(
     }
     if (
       payment !== null &&
-      !lifeTotalIsLocked(state, seat) &&
-      getSeat(state, seat).life >= lifeOf(payment)
+      (lifeOf(payment) <= 0 ||
+        (!lifeTotalIsLocked(state, seat) && getSeat(state, seat).life >= lifeOf(payment)))
     ) {
       return asked({
         kind: 'confirmOptional',
@@ -208,8 +208,8 @@ export function runEnterToken(
     const askedReveal = reveal !== null && canReveal(state, seat, reveal, res.object);
     const askedPay =
       payment !== null &&
-      !lifeTotalIsLocked(state, seat) &&
-      getSeat(state, seat).life >= lifeOf(payment) &&
+      (lifeOf(payment) <= 0 ||
+        (!lifeTotalIsLocked(state, seat) && getSeat(state, seat).life >= lifeOf(payment))) &&
       !askedReveal;
     if (answered === true && askedReveal && reveal !== null) {
       // D-225 (CR 701.20a): with more than one card to reveal the player chooses which.

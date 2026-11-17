@@ -15,16 +15,17 @@
 // 111: Support protection from the Ring-bearer designation and Lord of the Nazgûl's Wraith threshold (D-577).
 // 112: Apply Maskwood Nexus's all-creature-types effect to controlled and owned cards (D-578).
 // 113: Keep Sauron's Ransom's face-down pile identities private through resolution (D-579).
-// 114: Order interacting life-gain replacements (D-581).
-// 115: Remember non-repeating modes for the source object's lifetime (D-583).
-// 116: Read current life totals as effect amounts and set a total from such an amount (D-584).
-// 117: Read devotion in characteristic-defining toughness abilities (D-585).
-// 118: Check gained-and-lost-life turn history (D-586).
-// 119: Allow life gained this turn as a mana-value selector limit (D-588).
-// 120: Distinguish Ring tempt events that chose a creature as Ring-bearer (D-590).
-// 121: Emit and match Class level reached triggers (D-591).
-// 122: Allow a dies trigger's delayed trigger to return its trigger card to its owner's hand (D-592).
-// 125: Replace a command-zone cast's commander tax with its card-defined life payment (D-598).
-// 126: Activate emblem abilities from the command zone (D-599).
-// 127: Lock a player's life total and grant temporary protection from everything (D-600).
-export const ENGINE_VERSION = 127;
+// 114: A cost of no life is payable at a negative life total; target slots carry target words (D-581, D-582).
+// 115: Order interacting life-gain replacements (D-583).
+// 116: Remember non-repeating modes for the source object's lifetime (D-585).
+// 117: Read current life totals as effect amounts and set a total from such an amount (D-586).
+// 118: Read devotion in characteristic-defining toughness abilities (D-587).
+// 119: Check gained-and-lost-life turn history (D-588).
+// 120: Allow life gained this turn as a mana-value selector limit (D-590).
+// 121: Distinguish Ring tempt events that chose a creature as Ring-bearer (D-592).
+// 122: Emit and match Class level reached triggers (D-593).
+// 123: Allow a dies trigger's delayed trigger to return its trigger card to its owner's hand (D-594).
+// 126: Replace a command-zone cast's commander tax with its card-defined life payment (D-600).
+// 127: Activate emblem abilities from the command zone (D-601).
+// 128: Lock a player's life total and grant temporary protection from everything (D-602).
+export const ENGINE_VERSION = 128;

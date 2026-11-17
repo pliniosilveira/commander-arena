@@ -215,7 +215,8 @@ export function physicalRefusal(
     return `${name} is tapped or summoning sick`;
   }
   const life = lifeCostOf(ability);
-  if (life > getSeat(state, seat).life) return `you have less than ${life} life to pay`;
+  // A cost of no life is always payable, whatever the life total (it may be negative while the player cannot lose the game, CR 104.3b, issue 254).
+  if (life > 0 && life > getSeat(state, seat).life) return `you have less than ${life} life to pay`;
   // CR 701.17b, 118.3: a cost that mills more cards than the library holds cannot be paid.
   const mill = millCostOf(ability);
   if (mill > getSeat(state, seat).library.length)

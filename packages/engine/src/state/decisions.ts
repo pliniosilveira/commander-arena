@@ -7,7 +7,7 @@
  * a kind has no handler.
  */
 import type { CastAlternativeKind } from '../ast/features';
-import type { Cost, Trigger } from '../ast/types';
+import type { Cost, TargetSpec, Trigger } from '../ast/types';
 import type { CardType, Color } from '../characteristics';
 import type { CardId, DecisionId, ObjectId, SeatId } from '../ids';
 import type { ManaColor } from '../mana/types';
@@ -159,6 +159,11 @@ export interface TargetChoiceSpec {
   readonly eachController?: true;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
   readonly differentFrom?: string;
+  /**
+   * The slot as the card words it (the `TargetSpec` it came from, public like the card's text): the interface reads "target creature you control" from it so a
+   * spell with several slots says what each slot is for. Absent when the engine builds a slot of its own (a changed target, an Aura's host).
+   */
+  readonly target?: TargetSpec;
   /** Every legal target for this slot, computed by the engine (CR 115, 608.2b). */
   readonly legal: readonly ChosenTarget[];
   /**

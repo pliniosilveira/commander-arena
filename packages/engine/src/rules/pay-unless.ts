@@ -113,7 +113,7 @@ export function canPayUnless(state: GameState, payer: SeatId, cost: readonly Cos
   }
   const life = lifeOf(cost);
   const seat = getSeat(state, payer);
-  if (seat.life < life || (life > 0 && lifeTotalIsLocked(state, payer))) return false;
+  if (life > 0 && (seat.life < life || lifeTotalIsLocked(state, payer))) return false;
   // CR 107.14, 118.3 (D-209): {E} is paid by removing an energy counter, so the payer needs that many.
   if ((seat.energy ?? 0) < energyOf(cost)) return false;
   if (seat.hand.length < discardOf(cost)) return false;

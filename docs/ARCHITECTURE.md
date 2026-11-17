@@ -13,7 +13,7 @@ The type line is matched by an escaped, anchored regex; tokens with no abilities
 | Tag | Meaning |
 | --- | --- |
 | **REAL** | Exists in the repository and is checked by a command or a test. |
-| **PREPARED** | Written but not yet run, because it needs network access that the environment blocks. See `docs/STATUS.md`. |
+| **PREPARED** | Written but not yet run, because it needs network access that the environment blocks. See the issue or pull request that says so. |
 | **PLANNED (M<n>)** | Intent only. No code exists. `M<n>` is the milestone that builds it, from SPEC section 15. Where the SPEC names no milestone for an item, the entry says "inferred" and names the milestone whose done-when needs it. |
 
 Anything without a tag is a definition, not a claim about the code. When you build something, move it from PLANNED to REAL in the same change.
