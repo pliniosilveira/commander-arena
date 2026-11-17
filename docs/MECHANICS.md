@@ -4937,3 +4937,9 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Engine:** a static grant of `protection { from: 'ringBearer' }` uses the Ring-bearer designation already tracked by the Ring subsystem. The shared protection check makes targeting, damage, attachment and blocking read it. An instant or sorcery cast creates a 3/3 black Wraith token with menace; after creation, the trigger counts the controller's Wraiths, including Lord itself and the new token, and sets the matching group to base 9/9 through end of turn once the count reaches nine.
 - **Proof:** `scenario-xx-lord-of-the-nazgul.test.ts` checks the Wraith token and keywords, that a Ring-bearer can't block a protected Wraith, the eighth-cast threshold, the +1/+1 counter on Lord, and an unaffected Grizzly Bears. `convert-grammar-engine-lord-of-the-nazgul.test.ts` verifies that the issue card is loaded from its engine fixture.
 - **Limit:** the full text still uses the approved hand-written fixture route; the general parser does not read the Ring-bearer protection or group base-P/T clause. Oracle text came from issue 57; rulings and CR text were unavailable for independent verification.
+
+## The Lord of the Nazgûl deck, issue 57, group 13: Maskwood Nexus (D-548)
+
+- **Engine:** the static `allCreatureTypes` effect adds the generated creature-type list in layer 4. Its `youControl` scope covers controlled creatures and creature spells; `youOwn` covers creature cards owned outside the battlefield. Printed subtypes remain. The token's printed changeling applies in every zone.
+- **Proof:** `scenario-xx-maskwood-nexus.test.ts` checks controlled creatures and owned hand cards; the fixture validator and cards importer acceptance test cover the full card and its custom token.
+- **Limit:** grammar-only import still does not parse these scopes. The fixture uses issue text; rulings and CR text were unavailable for independent verification.

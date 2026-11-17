@@ -12,4 +12,5 @@
 // 108: Pay an optional hand-exile spell cost after mana and expose its chosen count to cost reductions (D-545).
 // 109: Track the player who declined a playersMay choice for its otherwise effect (D-546).
 // 110: Support protection from the Ring-bearer designation and Lord of the Nazgûl's Wraith threshold (D-547).
-export const ENGINE_VERSION = 110;
+// 111: Apply Maskwood Nexus's all-creature-types effect to controlled and owned cards (D-548).
+export const ENGINE_VERSION = 111;

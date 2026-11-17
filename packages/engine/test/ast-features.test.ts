@@ -159,6 +159,7 @@ describe('the dimensions', () => {
       'not',
     ]);
     expect(SUPPORTED_FEATURES.staticKinds).toEqual([
+      'allCreatureTypes',
       'noMaximumHandSize',
       'additionalLandDrops',
       'lookAtTopOfLibrary',

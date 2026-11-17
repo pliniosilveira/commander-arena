@@ -348,6 +348,11 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
 
 function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
   switch (s?.kind) {
+    case 'allCreatureTypes':
+      if (s.scope !== 'youControl' && s.scope !== 'youOwn') {
+        issue(out, `${path}.scope`, 'scope must be youControl or youOwn');
+      }
+      break;
     case 'noMaximumHandSize':
       break;
     case 'lookAtTopOfLibrary':

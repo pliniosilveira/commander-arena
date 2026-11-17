@@ -3385,3 +3385,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: Treat protection as protection from the Ring-bearer controller (not what the keyword names); model the threshold as a static ability (it would persist beyond this trigger's stated duration); or branch on Lord's card name in engine rules.
 - Consequences: `ENGINE_VERSION` changes. Engine scenarios cover token creation, menace, the Ring-bearer blocking restriction, the eight-to-nine threshold, the Lord's +1/+1 counter and an unaffected non-Wraith. The full card uses the hand-written fixture path because the general parser does not read protection from Ring-bearers or base P/T group effects; issue text is used and CR/Scryfall references were unavailable for independent verification.
 
+## D-548: Apply every creature type in controlled and owned zones (2026-11-17, issue 57)
+- Context: `Maskwood Nexus` affects creatures and creature spells its controller controls, plus creature cards its controller owns outside the battlefield; its token also has changeling.
+- Decision: Add the reusable static effect `allCreatureTypes` with explicit `youControl` and `youOwn` scopes. Apply it additively in layer 4, preserve printed types, and use the generated creature-type table. The real fixture creates the blue Shapeshifter token with changeling.
+- Alternatives: Expand the parser's battlefield-only filter into several zone-specific forms, or special-case Maskwood Nexus by name in derivation.
+- Consequences: `ENGINE_VERSION` changes. Scenarios cover a controlled permanent and an owned hand card; the card's full importer path uses its hand-written fixture because the grammar does not express these scopes. Issue text is used; the CR text and Scryfall rulings were unavailable for independent verification.
+

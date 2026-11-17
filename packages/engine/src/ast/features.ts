@@ -841,6 +841,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-095: `costReduction` ("costs {1} less to cast for each ...", "Artifact spells you cast cost {1} less").
   // D-099: `grantAbility` gives a mana ability ("Lands you control have "{T}: Add one mana of any color."").
   staticKinds: [
+    'allCreatureTypes',
     'noMaximumHandSize',
     // D-125: "You may play an additional land on each of your turns."
     'additionalLandDrops',
@@ -1443,6 +1444,8 @@ export const STATIC_KINDS = [
   /** "~ can't block", "can't be blocked", "attacks each combat if able", "doesn't untap", "can't be countered" (D-094): the engine's `restriction`. */
   'restriction',
   'noMaximumHandSize',
+  /** A permanent gives creature objects every creature subtype in its stated scope (D-548). */
+  'allCreatureTypes',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */
   'additionalLandDrops',
   /** "You may look at the top card of your library any time." (CR 401.5, D-125). */

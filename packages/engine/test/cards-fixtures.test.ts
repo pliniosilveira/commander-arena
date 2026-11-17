@@ -233,6 +233,14 @@ const FACTS: Record<string, Facts> = {
     identity: ['U', 'B'],
     text: 'Flying\nWraiths you control have protection from Ring-bearers.\nWhenever you cast an instant or sorcery spell, create a 3/3 black Wraith creature token with menace. Then if you control nine or more Wraiths, Wraiths you control have base power and toughness 9/9 until end of turn.',
   },
+  'Maskwood Nexus': {
+    cost: ['4'],
+    types: ['artifact'],
+    subtypes: [],
+    colors: [],
+    identity: [],
+    text: "Creatures you control are every creature type. The same is true for creature spells you control and creature cards you own that aren't on the battlefield.\n{3}, {T}: Create a 2/2 blue Shapeshifter creature token with changeling. (It is every creature type.)",
+  },
   'Wall of Stone': {
     cost: ['1', 'R', 'R'],
     types: ['creature'],

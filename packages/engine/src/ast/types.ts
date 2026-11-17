@@ -4360,6 +4360,8 @@ export type StaticSubject =
 
 /** What a static ability does while its permanent is on the battlefield (CR 604, 611.3). */
 export type StaticEffect =
+  /** CR 205.3a (D-548): a permanent gives every creature card in specified ownership/control scopes every creature subtype. */
+  | { readonly kind: 'allCreatureTypes'; readonly scope: 'youControl' | 'youOwn' }
   | {
       /** CR 402.2: "You have no maximum hand size." */
       readonly kind: 'noMaximumHandSize';
