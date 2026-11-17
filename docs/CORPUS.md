@@ -82,6 +82,8 @@ It writes `apps/web/src/precons/snapshots/<id>.json` (`--out <dir>` changes the 
 
 Names are matched as `pnpm corpus:decks` matches them (the same code): case, quotes and dashes normalised, a double-faced or split card found by its front-face name. A name no card of the file matches, or a decklist line the parser cannot read, is listed and the command exits 1 without writing anything. Exit 2 is a usage, file or empty-deck error. A card the engine cannot fully run, or a deck that breaks the Commander rules, is only a warning here: the web app refuses to start such a precon, and a test over the shipped snapshots fails until the list is fixed.
 
+A precon issue (the "Precon issues" workflow writes them) needs none of this by hand (D-608): the `Deck support triage` workflow runs `pnpm precon:from-issue --body <issue> --download` on a runner, which can reach Scryfall, and keeps the snapshot and the decklist on the branch `precon-snapshot/<id>`. The id and the name come from the issue; the blurb is "A Commander precon led by <commander>." for a new precon and the one the app has for an update. The deck-support routine takes the two files into its pull request once every card is supported.
+
 Without any snapshot the menu says "No precon is installed yet" and Start is disabled. The generated snapshot of the Zombies deck (`--id zombies`) is what the web app's sample deck and its menu entry come from.
 
 ## The golden corpus (`pnpm corpus:extract`)

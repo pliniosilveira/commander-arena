@@ -35,6 +35,7 @@
     "planeswalker-types:generate": "node tools/creature-types/generate-planeswalker.ts",
     "ai:arena": "node tools/ai/arena.ts",
     "precon:snapshot": "node tools/precon/cli.ts",
+    "precon:from-issue": "node tools/precon/from-issue-cli.ts",
     "e2e": "pnpm --filter @commander-arena/web e2e"
   },
   "devDependencies": {
