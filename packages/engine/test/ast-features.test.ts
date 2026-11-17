@@ -93,6 +93,8 @@ describe('the dimensions', () => {
     expect(SUPPORTED_FEATURES.conditionKinds).toEqual([
       'controlsAtLeast',
       'opponentsAtLeast',
+      // D-594: corrupted checks an opponent's poison counters.
+      'opponentPoisonAtLeast',
       'kicked',
       'replicated',
       'sacrificedAsCost',
