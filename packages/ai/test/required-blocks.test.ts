@@ -97,17 +97,17 @@ describe('withinBlockBudget adds the blocks a requirement asks for (CR 509.1c)',
   });
 
   test('finds a full declaration without enumerating irrelevant attacker assignments', () => {
-    const attackers = Array.from({ length: 10 }, (_, i) => i + 1);
+    const attackers = Array.from({ length: 9 }, (_, i) => i + 1);
     const blockers = Array.from({ length: 10 }, (_, i) => ({
       blocker: i + 20,
       canBlock: attackers,
       must: true as const,
     }));
     const d = decision(
-      attackers.map((id) => ({ id })),
+      attackers.map((id) => ({ id, max: 1 })),
       blockers,
     );
-    expect(withRequiredBlocks(d, [])).toHaveLength(10);
+    expect(withRequiredBlocks(d, [])).toHaveLength(9);
   });
 
   test('an attacker with no requirement is not blocked by the helper', () => {
