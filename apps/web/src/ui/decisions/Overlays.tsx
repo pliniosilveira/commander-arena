@@ -10,7 +10,7 @@ import {
   type ObjectId,
   type PendingDecision,
 } from '@commander-arena/engine';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { turnUpPayDetail } from '../../game/face-down-text';
 import { specialPayDetail } from '../../game/later-text';
 import { ManaCost } from '../mana';
@@ -59,9 +59,6 @@ export interface OverlayProps {
 
 const none = () => null;
 
-/** Width in px of the row of cards in the opening hand and discard dialogs. */
-const HAND_ROW = 1100;
-
 function Hand({
   view,
   ids,
@@ -74,18 +71,18 @@ function Hand({
   onPick?: (id: ObjectId) => void;
 }) {
   const cards = myHand(view).filter((o) => ids.includes(o.id));
-  // Issue 48: whole cards, as large as one row of the overlay allows (it wraps on a narrow screen).
-  const width = Math.max(
-    120,
-    Math.min(200, Math.floor((HAND_ROW - 8 * (cards.length - 1)) / Math.max(1, cards.length))),
-  );
+  // Issue 48: whole cards, as large as the dialog allows. Up to four cards share one row; more go
+  // on two. The CSS (`.dec-hand-whole`) turns the row and the screen height into the card width.
+  const rows = cards.length > 4 ? 2 : 1;
+  const perRow = Math.max(1, Math.ceil(cards.length / rows));
+  const style = { '--hand-per': perRow, '--hand-rows': rows } as CSSProperties;
   return (
-    <div className="dec-hand">
+    <div className="dec-hand dec-hand-whole" style={style}>
       {cards.map((card) => (
         <MiniCard
           key={card.id}
           card={card}
-          width={width}
+          width="var(--card-w)"
           full
           selected={selected.includes(card.id)}
           onClick={onPick === undefined ? undefined : () => onPick(card.id)}

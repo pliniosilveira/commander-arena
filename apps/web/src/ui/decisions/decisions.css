@@ -411,6 +411,8 @@
 }
 .dec-mulligan {
   width: min(1180px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
 }
 .dec-title {
   margin: 0;
@@ -636,6 +638,26 @@
   justify-content: center;
   gap: 8px;
 }
+/* Issue 48 (opening hand, discard): whole cards, as large as the dialog allows. The card width is
+   what fits `--hand-per` cards in the row, and `--hand-rows` rows in the height of the screen (a
+   card is 488:680; 430px is what the title, the buttons and the board header take). */
+.dec-hand-whole {
+  --card-w: clamp(
+    96px,
+    min(
+      calc((100cqw - 8px * (var(--hand-per, 7) - 1)) / var(--hand-per, 7)),
+      calc((100dvh - 430px - 8px * (var(--hand-rows, 1) - 1)) / var(--hand-rows, 1) / 1.3935)
+    ),
+    200px
+  );
+  container-type: inline-size;
+  width: 100%;
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(var(--hand-per, 7), var(--card-w));
+  justify-content: center;
+  gap: 8px;
+}
 .dec-card {
   position: relative;
   width: var(--hand-w);
@@ -648,6 +670,12 @@
 }
 .dec-card-button {
   cursor: pointer;
+}
+/* The whole card without its picture (offline, a token) is drawn taller than a card is: it grows
+   instead of running over the next row. */
+.dec-card-full {
+  height: auto;
+  min-height: var(--hand-h);
 }
 .dec-card-button:hover {
   border-color: var(--text-dim);

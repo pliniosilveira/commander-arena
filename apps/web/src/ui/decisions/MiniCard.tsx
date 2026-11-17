@@ -9,8 +9,8 @@ interface MiniCardProps {
   /** When set, the card is a toggle button. */
   readonly onClick?: (() => void) | undefined;
   readonly badge?: string | null;
-  /** Card width in px; the height follows the card proportions. */
-  readonly width?: number;
+  /** Card width in px, or a CSS length; the height follows the card proportions. */
+  readonly width?: number | string;
   /** Draw the whole card (picture and rules text), as the preview panel does, not the small frame. */
   readonly full?: boolean;
 }
@@ -28,10 +28,11 @@ export function MiniCard({
   full = false,
 }: MiniCardProps) {
   // The full face sizes itself from --preview-card-w and is as tall as a card is (488:680).
+  const w = typeof width === 'number' ? `${width}px` : width;
   const size = {
-    '--hand-w': `${width}px`,
-    '--hand-h': `${Math.round(width * (full ? 1.3935 : 1.4))}px`,
-    ...(full ? { '--preview-card-w': `${width}px` } : {}),
+    '--hand-w': w,
+    '--hand-h': `calc(${w} * ${full ? 1.3935 : 1.4})`,
+    ...(full ? { '--preview-card-w': w } : {}),
   } as CSSProperties;
   const hoverProps = useHoverProps();
   const body = (
@@ -40,7 +41,7 @@ export function MiniCard({
       {badge === null ? null : <span className="dec-card-badge">{badge}</span>}
     </>
   );
-  const className = `dec-card${selected ? ' dec-card-selected' : ''}`;
+  const className = `dec-card${full ? ' dec-card-full' : ''}${selected ? ' dec-card-selected' : ''}`;
   return onClick === undefined ? (
     <div className={className} style={size} {...hoverProps(card.id)}>
       {body}
