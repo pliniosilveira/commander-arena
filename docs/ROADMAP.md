@@ -1,14 +1,14 @@
 # Roadmap: deferred work and known limitations
 
+What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the decisions are in `docs/DECISIONS.md`, the mechanics in `docs/MECHANICS.md`. For what is happening now, read the open issues and pull requests; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.
+
+Every limit under "Deferred engine features" and "Deferred grammar" is refused or left unread (`validateCard`, the parser), so no supported card reaches it. The rows of "Known rules deviations" are the exception: they are places where supported play can differ from the Comprehensive Rules, and they are the first candidates for fixes.
+
 ## Lord of the Nazgûl deck work and parser limits (issue 57, D-563 to D-579)
 
 - `Lazotep Plating` was already supported on current `main`; groups through `Sauron's Ransom` now run through the app's default import path. All 21 issue cards are supported by the app's default import path.
 - The cards with hand-written fixtures remain unsupported by grammar-only import: Fandaniel's full may-sacrifice clause (D-576), Lord of the Nazgûl's Ring-bearer protection and group base-power clause (D-577), Maskwood Nexus's all-creature-types scopes (D-578), and Sauron's Ransom's hidden-pile clause (D-579). Their engine scenarios and default-import acceptance tests pass. `March of Swirling Mist` parses and runs (D-575); the Phasing keyword is still not built or needed. `Into the Flood Maw` uses the generic tapped Fish Gift path (D-569).
 - The whole deck was not measured by `pnpm corpus:decks`: the Scryfall bulk file is not in this workspace. The card data is from the issue author's description; no rulings were independently checked.
-
-What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the decisions are in `docs/DECISIONS.md`, the mechanics in `docs/MECHANICS.md`, the milestone reports in `docs/progress/`. For what is happening now, read `docs/STATUS.md`; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.
-
-Every limit under "Deferred engine features" and "Deferred grammar" is refused or left unread (`validateCard`, the parser), so no supported card reaches it. The rows of "Known rules deviations" are the exception: they are places where supported play can differ from the Comprehensive Rules, and they are the first candidates for fixes.
 
 ## Owner-run work and tooling
 
@@ -27,8 +27,8 @@ Every limit under "Deferred engine features" and "Deferred grammar" is refused o
 - **Stack legibility, deferred (D-199).** (a) The value of a *defined* X on the stack ("deals X damage, where X is the number of Dragons you control"): the announced X is shown, a computed one is not, because the web has no evaluator of an `Amount`; the engine would have to put the current value in the view (a public API change and an `ENGINE_VERSION` bump). (b) A short highlight on the permanents a resolution touched (no animation layer exists; the log names them). (c) Stopping for an opponent's activated abilities that wipe boards or are costly to ignore: only spells stop by default; the opponent's abilities keep the D-138 stops.
 - **v2, multiplayer** (design for it now, build it after v1; nothing in v1 assumes exactly two players). M10 engine: several defending players, APNAP around the table, search by several players, the monarch and Myriad with more seats, attacks at different opponents (CR 508.7d, 508.7e), the attack tax and annihilator with several defenders, soaks with 4 and 6 seats. M11: table layout, opponent focus, threat assessment, performance with 5 AIs.
 - **Face-down permanents** (Morph, Megamorph, Disguise): approved at low priority (`docs/proposals/face-down.md`); they need that proposal built first.
-- **Cockatrice `.cod` import** (low priority): the import reads pasted text only; `docs/PRIOR_ART.md` section 7.5 has the details.
-- **XMage scenarios** (`docs/PRIOR_ART.md` section 7.3) are a list of eighteen scenarios to port as our own tests with expected results re-derived from today's CR; none is ported.
+- **Cockatrice `.cod` import** (low priority): the import reads pasted text only.
+- **XMage scenarios** (from the survey of other projects, removed from the repository; see the git history) are a list of eighteen scenarios to port as our own tests with expected results re-derived from today's CR; none is ported.
 
 ## Known rules deviations
 
@@ -164,13 +164,11 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - A target slot of two zones (D-270): only "up to N other target creatures from the battlefield and/or creature cards from graveyards" is read, in a triggered ability, for `exile`. Other types ("artifacts and/or artifact cards"), "from a graveyard" or "your graveyard" for the card half, an activated ability or a spell with such a slot, another verb (destroy, return, tap) and the singular ("exile target creature from the battlefield or a creature card from a graveyard") are unsupported. "Other" in such a slot on a dies or leaves-the-battlefield trigger (or an ability that works from the graveyard) is unsupported, because the source is a card of a graveyard then and the engine does not leave it out of the card half (the same slot without "other" is read there). A card that exiles with "until this leaves the battlefield" into such a slot would need the return of a graveyard card to the battlefield and is refused.
 - Return of a linked exile (D-270): only "return the exiled cards to their owners' hands" (plural, to the hand). "Return the exiled card to its owner's hand" (one card), "to the battlefield" with several cards and "exiled with ~" in the leaves trigger of a permanent that exiled with a different phrasing are not read.
 
-
 ## Dice leftovers (D-271)
 
 - Rolling a die (CR 706) is the first version: `rollDie { sides }` rolls one die for the controller, and `dieResult` ("If the result is 1", "4 or more", "2 or less") reads the natural result in a `conditional` after the roll of the same sequence. Not built, and the parser leaves the text unsupported: rolling two or more dice ("roll two dice", "roll a d20 twice"), a roll by another player ("each player rolls", "target opponent rolls"), a "you may roll", modifiers to a roll and rerolls (CR 706.2, 706.2a, 706.2b: there is no decision for them, so the natural result is the result), results tables with several lines (CR 706.3a, 706.3c: only one or more "If the result is ..." sentences), a result used as a number ("draw cards equal to the result", CR 706.4), ignored rolls (CR 706.6), triggers on a roll ("Whenever you roll a die"), the planar die (CR 706.7, 901), stored results (CR 706.8) and a second roll in one ability. A second `rollDie` in one text is refused because "the result" would then be one of two. A result that can reach the dice of several seats needs a decision and a modifier model (an S-class change).
 - `thisInYourGraveyard` (D-271) is read only for a trigger that works from the graveyard and returns its own card; a trigger on another event of a graveyard card ("Whenever a creature dies, if ~ is in your graveyard, ...") that does not move the card is not read, because the engine runs an ability from the graveyard only when the card says so (CR 113.6b).
 - A die roll is not hidden information and is not shown to the AI as a special decision: the AI plays on, and the roll comes from the seeded generator of the state. The determinized copies the search agents play forward draw their rolls from the replaced generator (`determinize.ts`), so they never learn the real roll.
-
 
 ## Dismantling Wave group leftovers (D-273)
 
@@ -178,12 +176,10 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 
 - Miracle (D-274): the reveal question is asked only for a card that has miracle, so in the draw step the other seat's `GameView.decidingSeat` is the drawing seat (priority is not a pending decision) and an observer learns that the first card drawn has miracle; the question itself (`pending`, the card) is private. Harmless against the AI; two humans would need the question asked on every first draw (for a card without miracle, answered by the engine) or a `decidingSeat` the view hides for this purpose.
 
-
 ## Dawnbreak Reclaimer leftovers (D-272)
 
 - The empty cases of "choose a creature card in an opponent's graveyard, then that player chooses a creature card in your graveyard. You may return those cards ..." are read from the CR (608.2d: an impossible choice is not made; with no card in an opponent's graveyard there is no "that player", so nothing else is asked), not from a published ruling the sandbox could not fetch. Check them against the rulings of the card when the owner next has Scryfall access.
 - The scenario DSL has two seats, so the choice among several opponents' graveyards (the owner of the card chosen is "that player") has no scenario test; the code takes every opponent still in the game. The two cards enter in one event (D-272, CR 603.6a, 614.12): their enters triggers see each other (`move.together`, `zoneChanged.simultaneous`) and their replacement effects do not (`MoveRequest.alongside`, `withoutRun`: the copy candidates, counts, enter-tapped and enter-with-counters effects of the battlefield are read without the cards of the run already there; tested with a copy, a counter source, a count and an untap effect). What is left: when the second card asks a question as it enters ("as this enters, choose ...", devour, riot, a copy) the resolution pauses between the two moves and the triggers collected so far are noticed before the second card is on the battlefield, so the second card's own "whenever another creature enters" misses the first (probed: a Cleric with "as this enters, choose a creature type" and that trigger gains no life from the card that entered with it). Fixing it needs the events of a paused run to be held, or the questions of every card of the run asked before the first enters; the two cards are still two objects created one after the other, with consecutive timestamps. An instant or a sorcery card is refused by the parser and `validateCard` (CR 304.4, 307.4); applying that rule to every move to the battlefield is not built.
-
 
 ## Meld leftovers (D-277 to D-282)
 
@@ -305,7 +301,6 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - "X target ..." (`TargetSpec.countX`) is read for objects (cards of your graveyard or permanents) in the text of a spell: not "up to X", not a target of an ability or a trigger, not players, not a slot with a kicker or gift condition, not a mode of a modal spell. The grammar reads "X target creature cards from your graveyard" only (`noun.x-target-graveyard-cards`).
 - The CasualAgent picks the first X legal graveyard cards for "return X target creature cards" (any legal answer) and discards by `chooseCostDiscard`; `worthCasting` of a recursion spell with a single "target creature card from your graveyard" ("Raise Dead") still asks for an opposing creature (the text matches "target creature"), which is a known weakness of the agent, not touched here.
 - The rulings of Restless Dreams on Scryfall were not fetched (blocked in a cloud session): the order of the announcement (X, then the targets, then the discard) follows CR 601.2b, 601.2c and 601.2h.
-
 
 ## The Hashaton deck, group 9 (issue 31, D-390 to D-395)
 

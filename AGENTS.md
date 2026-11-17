@@ -15,11 +15,10 @@ Authoritative documents: `docs/SPEC.md` (the short current specification; sectio
 ## Session start checklist
 
 1. Read this file.
-2. Read `docs/STATUS.md`: current milestone, what is done, blockers, next steps.
-3. Read the SPEC sections your task touches: engine 4 and 5, cards 6 to 8, AI 9, UI 10, tests 12, milestones 15; section 17 only to resolve an amendment number cited in the code.
-4. Skim `docs/DECISIONS.md` for entries in the area you will change. Check `docs/ARCHITECTURE.md` to see what exists and what is only planned.
-5. Run `git status` and `git branch --show-current`. Work on a branch of its own for the task (`support-<deck>`, `fix-<topic>`, `feat-<topic>`), never on `main`.
-6. Run the checks once to learn the baseline (commands below).
+2. Read the SPEC sections your task touches: engine 4 and 5, cards 6 to 8, AI 9, UI 10, tests 12, milestones 15; section 17 only to resolve an amendment number cited in the code.
+3. Skim `docs/DECISIONS.md` for entries in the area you will change. Check `docs/ARCHITECTURE.md` to see what exists and what is only planned.
+4. Run `git status` and `git branch --show-current`. Work on a branch of its own for the task (`support-<deck>`, `fix-<topic>`, `feat-<topic>`), never on `main`.
+5. Run the checks once to learn the baseline (commands below).
 
 ## Setup and commands
 
@@ -35,16 +34,16 @@ Needs Node 22 (`.nvmrc`) and the pnpm version pinned in `packageManager` in `pac
 | `pnpm test:pr` | The required-PR unit tier across all projects, including all fast AI tests. It keeps parser/golden correctness and precon deck-loading checks and uses the fixed-seed combat smoke. Exact AI game suites deferred to nightly are listed in `tools/test/pr-excluded.json`; the 200-game combat run, fixed 100-game AI check, 60-game combat group, precon full-game soak and repeated golden timing loop are explicitly tiered. CI uploads Vitest's test/import timing log and JSON results. |
 | `pnpm test:focus -- <test-path> [<test-path> ...]` | Run exactly the supplied test paths without PR exclusions, so focused tests retain their full behavior. Focused selection is assistance, not proof: follow with affected integration checks and use the broader PR tier for unknown/shared changes. |
 | `pnpm test:soak` | The AI soak tests with 100 games each. The manual `Soak` workflow plays 500 on demand (D-132). |
-| `pnpm e2e` | The Playwright browser tests of `apps/web` (needs Chromium; see `docs/STATUS.md`). The nightly `Full` workflow runs them (D-250). |
+| `pnpm e2e` | The Playwright browser tests of `apps/web` (needs Chromium: `pnpm --filter @commander-arena/web exec playwright install chromium`; in a cloud session the browser is in `/opt/pw-browsers`, issue 35). The nightly `Full` workflow runs them (D-250). |
 | `pnpm build` | Build packages and apps. Packages are consumed from source, so today only `apps/web` really builds. |
 | `pnpm format` | `biome check --write .`: format and apply safe fixes. |
 | `pnpm rule <number>` | Print a CR rule and its subrules from `docs/rules/comprehensive-rules.txt`. The file is Wizards' text and is not committed (D-246): fetch it with `pnpm rules:fetch`, or use a copy elsewhere with `pnpm rule --file <path>` or `COMMANDER_ARENA_CR_FILE`. |
 | `pnpm rule --search <text>` | Find CR rules by title or text. |
 | `pnpm rules:fetch` | Download the CR text into `docs/rules/` (git ignores it). Needs network access to Wizards of the Coast, so the owner runs it. |
-| `pnpm coverage:cards --file <oracle_cards file>` | Run the card pipeline over Scryfall's bulk file; write `reports/coverage.md`, `reports/backlog.md` and `reports/templates.json`. `--download` fetches the file (network, owner only); `--check` compares with `reports/coverage-baseline.json`; `--update-baseline` rewrites it. See `docs/CORPUS.md`. |
+| `pnpm coverage:cards --file <oracle_cards file>` | Run the card pipeline over Scryfall's bulk file; write `reports/coverage.md`, `reports/backlog.md` and `reports/templates.json` (only `templates.json` and `coverage-baseline.json` are committed: the other reports are regenerated, and the weekly `Coverage report` workflow publishes the numbers). `--download` fetches the file (network, owner only); `--check` compares with `reports/coverage-baseline.json`; `--update-baseline` rewrites it. See `docs/CORPUS.md`. |
 | `pnpm corpus:templates --file <oracle_cards file>` | The same run, writing only `reports/backlog.md` and `reports/templates.json`. |
-| `pnpm corpus:replay` | Replay the real example line of each template in `reports/templates.json` through today's parser; write `reports/template-replay.md`. Offline; an ability-level estimate, never a coverage number. |
-| `pnpm corpus:decks --file <oracle_cards file> --deck <decklist> [--deck ...]` | Per-deck coverage: how much of each decklist (a file, or a folder of `.txt` files such as `decks/`) the engine fully supports, which cards block it and which shared blockers to fix first; writes `reports/decks.md`. Offline; owner supplies the real lists (`docs/CORPUS.md`). |
+| `pnpm corpus:replay` | Replay the real example line of each template in `reports/templates.json` through today's parser; write `reports/template-replay.md` (not committed). Offline; an ability-level estimate, never a coverage number. |
+| `pnpm corpus:decks --file <oracle_cards file> --deck <decklist> [--deck ...]` | Per-deck coverage: how much of each decklist (a file, or a folder of `.txt` files such as `decks/`) the engine fully supports, which cards block it and which shared blockers to fix first; writes `reports/decks.md` (not committed). Offline; owner supplies the real lists (`docs/CORPUS.md`). |
 | `pnpm corpus:check-issue --body <file> [--card-data <file>]` | Is a "deck support" issue complete? What counts is the names of the unsupported cards (the `Unsupported cards (N)` line, or the `cards:` lines of the template report) and their card data (the description's block, or the comment the workflow fetched, `--card-data`); the decklist, the template report and the build line are `notes` when missing (D-251, D-290). One JSON line `{ complete, problems, notes, needsCardData, ... }`; exit 0 complete, 1 not. Offline. |
 | `pnpm corpus:fetch-card-data --body <file> --out <file> [--digest <sha256>]` | The card data of an issue that has none of its own: looks the unsupported names up on Scryfall through the app's client and writes the comment the deck support workflow posts (D-290). Runs on a GitHub runner, which can reach Scryfall; a cloud session cannot. Exit 0 written, 1 Scryfall could not give the cards. |
 | `pnpm corpus:from-issue --body <file> --issue <number>` | Add the unsupported cards a support issue carries (the import screen's "Ask for support on GitHub" button writes them, compressed, into the description) to the golden corpus as acceptance cards. Offline: save the issue's description to a file first. The way to get real card text in a cloud session, which cannot reach Scryfall (D-245, `docs/CORPUS.md`). `--fetched`: the file is the workflow's card data comment, not a description (D-290). |
@@ -82,9 +81,11 @@ Scripts under `tools/` are TypeScript run with `node file.ts` (Node type strippi
 | `tools/precon` | `pnpm precon:snapshot`: the card-data snapshot of a precon, from the bulk file and a decklist of `decks/` (D-137). |
 | `.claude/skills/deck-support` | The routine that builds a complete "deck support" issue from anyone, oldest first, when the token budget allows (D-251); `tools/corpus/check-issue.ts` and `.github/workflows/deck-support-triage.yml` decide whether the issue is complete. |
 | `decks/` | Real decklists the owner supplies, one `.txt` per deck, for `pnpm corpus:decks`; `README.md` says how. |
-| `docs/` | `SPEC.md`, `DECISIONS.md`, `STATUS.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `progress/`, `rules/` (CR text, version record, bulletins). `RULES_COVERAGE.md`. `MECHANICS.md`, `CARD_SUPPORT_PLAYBOOK.md`, `design/` (implemented design proposals), `proposals/` (proposals awaiting work). |
+| `docs/` | `SPEC.md`, `DECISIONS.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `RULES_COVERAGE.md`, `MECHANICS.md`, `CARD_SUPPORT_PLAYBOOK.md`, `CORPUS.md`, `rules/` (CR version record, bulletins). Working notes (status reports, build checklists, design drafts) are not kept in the repository: they live in the issue, the pull request description and its comments, and the git history has the earlier ones. |
 
 All four packages are real. `docs/ARCHITECTURE.md` marks what is real and what is planned, `docs/MECHANICS.md` is the per-mechanic reference, and `docs/RULES_COVERAGE.md` lists rules by CR section.
+
+References in the docs and in code comments to `docs/STATUS.md`, `docs/progress/`, `docs/proposals/`, `docs/design/` and `docs/PRIOR_ART.md` point to notes that were removed in a cleanup of the repository. Read one with `git log --diff-filter=D -n 1 --format=%H -- <path>`, then `git show <that commit>^:<path>`.
 
 ## Codebase rules
 
@@ -108,13 +109,11 @@ All four packages are real. `docs/ARCHITECTURE.md` marks what is real and what i
 
 | Document | Update when |
 | --- | --- |
-| `docs/STATUS.md` | Every session, as the last thing you do. |
 | `docs/DECISIONS.md` | Whenever you make a decision, including any deviation from the SPEC's stack defaults. |
 | `docs/ARCHITECTURE.md` | A module, type or data flow changes. Move items from planned to real in the same change. |
 | `docs/ROADMAP.md` | Work is deferred or a known limitation is found. |
 | `docs/RULES_COVERAGE.md` | Rules support changes. |
 | `docs/MECHANICS.md` | A mechanic is added (from M5). |
-| `docs/progress/M<n>.md` | A milestone ends: what is done, test status, coverage numbers, known gaps, decisions made. |
 | `README.md` | User-facing behavior changes. |
 | `docs/SPEC.md` | Only with the human's approval. |
 
@@ -140,7 +139,7 @@ Do not write a test count into any document; it goes stale. Say how to run the c
 
 ## Card support
 
-The procedure for adding support for a card is `docs/CARD_SUPPORT_PLAYBOOK.md`. In short: research the card and its rulings, classify the gap (T template, P primitive, K keyword, S subsystem, O one-off override), write tests first, implement the general fix, run the checks of your change (the full suite runs every night on GitHub), then record it in `docs/MECHANICS.md`. An S-class gap needs a proposal in `docs/proposals/` and the human's approval first.
+The procedure for adding support for a card is `docs/CARD_SUPPORT_PLAYBOOK.md`. In short: research the card and its rulings, classify the gap (T template, P primitive, K keyword, S subsystem, O one-off override), write tests first, implement the general fix, run the checks of your change (the full suite runs every night on GitHub), then record it in `docs/MECHANICS.md`. An S-class gap needs a proposal (a comment on the issue) and the human's approval first.
 
 ## Network
 
