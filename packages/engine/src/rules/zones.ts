@@ -91,6 +91,7 @@ import { faceDownEntry } from './face-down';
 import { applyGraveyardRider } from './graveyard-play';
 import { timesKickedOf } from './kicks';
 import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
+import { lifeTotalIsLocked } from './player-lock';
 import { becomePrepared, dropPrepareCopy } from './prepare';
 import { countMatching } from './select';
 import { sourceInfo } from './source-info';
@@ -475,6 +476,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     !untappedByEffect &&
     request.tapped !== true &&
     !entersTapped(before, entering.abilities, enterCtx) &&
+    !lifeTotalIsLocked(state, enterController) &&
     getSeat(state, enterController).life >= lifeOf(payment);
   // D-208 (CR 614.12, 701.20, 701.4): "you may reveal a Mountain or Plains card from your hand. If you don't, it enters tapped": the same question as a shock
   // land's, with nothing to pay. Nothing is asked when it enters tapped anyway or when no card (or permanent) qualifies.

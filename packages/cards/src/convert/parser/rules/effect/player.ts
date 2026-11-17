@@ -882,6 +882,39 @@ export const EFFECT_LIFE = defineRule<Clauses>({
     )(ctx, pos),
 });
 
+/** "Until that player's next turn, they gain protection from everything and their life total can't change." */
+export const EFFECT_PLAYER_LOCK = defineRule<Clauses>({
+  id: 'effect.player-lock',
+  family: 'effect',
+  leading: ['until'],
+  cites: ['CR 702.16 (Protection)', 'CR 119 (Life)'],
+  examples: [
+    "until that player's next turn, they gain protection from everything and their life total can't change",
+  ],
+  rejects: [
+    "until that player's next turn, they gain protection from everything",
+    "until that player's next turn, their life total can't change",
+    'until your next turn, you gain protection from everything and your life total can’t change',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        /until that player['’]s next turn, they gain protection from everything and their life total can(?:not|'t|’t) change(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const player = family<IrNoun>('noun', { only: ['noun.they'] })(ctx, pos + 31);
+    if (!player.ok) return player;
+    return {
+      ok: true,
+      value: [
+        makeClause('effect.player-lock', 'playerLock', { player: player.value }, r.value.span),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 /** `effect.shuffle`: "Shuffle your library." and, since stage P63 (D-216), "You may shuffle." (Ponder: the library is the controller's) (CR 701.24). */
 export const EFFECT_SHUFFLE = defineRule<Clauses>({
   id: 'effect.shuffle',

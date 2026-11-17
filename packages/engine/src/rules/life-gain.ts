@@ -19,6 +19,7 @@ import type { GameState } from '../state/types';
 import { controllerOf } from './control';
 import type { OrderFlow } from './damage-order';
 import { derive } from './derive';
+import { lifeTotalIsLocked } from './player-lock';
 import { cannotGainLife } from './player-protection';
 import { sourceInfo } from './source-info';
 
@@ -84,6 +85,7 @@ export function gainLife(
   source: ObjectId,
 ): LifeGainResult {
   if (amount <= 0) return { kind: 'gained', state, events: [] };
+  if (lifeTotalIsLocked(state, seat)) return { kind: 'gained', state, events: [] };
   // CR 119.7: a replacement effect that would replace a life gain event of that player won't do anything either, so nothing below runs.
   if (cannotGainLife(state, seat)) return { kind: 'gained', state, events: [] };
   const replacements = replacementsFor(state, seat);

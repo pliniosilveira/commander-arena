@@ -5087,3 +5087,9 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Engine and parser:** `CardFace.commanderTaxLife` replaces each prior-cast {2} tax increment with the stated life amount, only for a cast from the command zone. Mana reductions do not reduce that life cost. The object view and payment prompt expose the life amount, and the cast event records it.
 - **Proof:** `scenario-22-commander-tax.test.ts` covers multiple prior casts, mana reductions, cancellation, casting from hand and insufficient life. `parser-p48.test.ts` checks complete real-card parsing and golden acceptance support; `costs-model.test.ts` and `references-model.test.ts` cover the cost label and payment prompt.
 - **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Teferi's Reproach (D-600)
+
+- **Engine and parser:** Temporary player protection from everything and a life-total lock end as the chosen player's next turn begins. The life lock prevents life gains, life losses, damage-based life changes, life-total setting and payment of life costs. The spell phases out all nonland permanents controlled by its chosen player; anaphoric "they" binds to the earlier target, and the existing phasing rules carry attached permanents with them.
+- **Proof:** `scenario-xx-player-lock.test.ts` checks protection, loss/gain/set life attempts, life-paid spell costs, damage when only the life lock is present, simultaneous nonland phasing, land preservation, and expiration at the target's next turn. `parser-p48.test.ts` and the golden corpus check the real card.
+- **Limit:** The local CR text and Scryfall rulings were unavailable for independent verification.

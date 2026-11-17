@@ -17,6 +17,7 @@ import type { OrderFlow } from './damage-order';
 import { replacementSources } from './die-replacement';
 import { drawSkippedBy } from './draw-skip';
 import { gainLife, type LifeGainResult } from './life-gain';
+import { lifeTotalIsLocked } from './player-lock';
 import { prepareCardOf } from './prepare';
 import { resolveObjects, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
@@ -139,7 +140,7 @@ export function drawCard(
 
 export function loseLifeOf(state: GameState, seat: SeatId, amount: number): StepOutcomeLike {
   const s = getSeat(state, seat);
-  if (amount <= 0) return { state, events: [] };
+  if (amount <= 0 || lifeTotalIsLocked(state, seat)) return { state, events: [] };
   return {
     state: loseLifeBy(state, seat, amount),
     events: [{ kind: 'lifeChanged', seat, from: s.life, to: s.life - amount }],

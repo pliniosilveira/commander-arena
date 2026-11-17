@@ -3682,6 +3682,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'grantPlayerProtectionEverything':
+    case 'preventPlayerLifeTotalChange':
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.duration !== 'untilNextTurn') {
+        issue(
+          out,
+          `${path}.duration`,
+          "this player effect lasts until the named player's next turn",
+        );
+      }
+      break;
     case 'gainControl': {
       // CR 613.1b (D-189): a layer 2 effect for one named permanent: a target or the permanent that caused the trigger.
       const named = kindOf(e.objects);

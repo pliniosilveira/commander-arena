@@ -2373,6 +2373,18 @@ export type Effect =
       readonly player: PlayerSelector;
       readonly duration: 'untilEndOfTurn';
     }
+  /** "Target player gains protection from everything until their next turn" (D-600, CR 702.16). */
+  | {
+      readonly kind: 'grantPlayerProtectionEverything';
+      readonly player: PlayerSelector;
+      readonly duration: 'untilNextTurn';
+    }
+  /** "Target player's life total can't change until their next turn" (D-600): blocks every life-total increase and decrease. */
+  | {
+      readonly kind: 'preventPlayerLifeTotalChange';
+      readonly player: PlayerSelector;
+      readonly duration: 'untilNextTurn';
+    }
   /**
    * "The Ring tempts you" (CR 701.54a, 701.54c, 701.54d, D-196): the controller of the effect gets the emblem named The Ring if they have none, the
    * Ring has tempted them one more time (its abilities turn on at 2, 3 and 4 times: `rules/ring.ts`), and they choose a creature they control to

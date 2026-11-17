@@ -54,6 +54,7 @@ import { asFace } from './layouts';
 import { applyPaymentPlan, planFor } from './mana-engine';
 import type { PlanOptions } from './mana-sources';
 import { payMechanismsOf, payOptionSources } from './pay-options';
+import { lifeTotalIsLocked } from './player-lock';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter, type SelectContext } from './select';
 import { hasX, largestPayableX, spellXCost, withX, type XCost } from './x-value';
@@ -533,7 +534,7 @@ export function canPaySpellCost(
   const life = getSeat(state, seat).life;
   // CR 119.4: life can be paid only if the life total is at least the payment; paying all of it is allowed (the player then has 0 life and
   // loses when state-based actions are next checked, CR 704.5a).
-  if (cost.life > 0 && life < cost.life) return false;
+  if (cost.life > 0 && (lifeTotalIsLocked(state, seat) || life < cost.life)) return false;
   if (cost.discard > discardable(state, seat, spell.id).length) return false;
   if (cost.exile > exilable(state, seat, spell.id).length) return false;
   // An optional exile cost can always be paid by choosing zero cards.

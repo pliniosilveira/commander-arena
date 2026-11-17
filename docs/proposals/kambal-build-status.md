@@ -4,10 +4,10 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 
 ## Status
 
-- [x] 19 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, Liesa, Forgotten Archangel, Skrelv's Hive, Authority of the Consuls, Underworld Connections, Tragic Slip, Liesa, Shroud of Dusk, and Ob Nixilis of the Black Oath.
+- [x] All 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, Liesa, Forgotten Archangel, Skrelv's Hive, Authority of the Consuls, Underworld Connections, Tragic Slip, Liesa, Shroud of Dusk, Ob Nixilis of the Black Oath, and Teferi's Reproach.
 - Current branch: `support-kambal`.
-- Current group: F — Ob Nixilis of the Black Oath is supported through activated emblem abilities (D-599); Liesa, Shroud of Dusk's commander-tax life replacement is supported (D-598).
-- Next: Teferi's Reproach; its approved proposal is `kambal-teferis-reproach-player-lock.md`.
+- Current group: F — complete. Ob Nixilis of the Black Oath's activated emblem ability is supported (D-599); Liesa, Shroud of Dusk's commander-tax life replacement is supported (D-598); Teferi's Reproach's temporary player lock and mass phasing are supported (D-600).
+- Next: none; all cards in issue #255 are supported.
 
 ## Cards and initial gap groups
 
@@ -47,11 +47,10 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 
 ### Group F — other spell and permanent abilities
 
-- [ ] Liesa, Shroud of Dusk
-- [x] Ob Nixilis of the Black Oath — activated emblem abilities are available from the command zone (D-599).
-- [ ] Teferi's Reproach
-- [x] Tragic Slip — its Morbid replacement reads the creature-death history for the turn (D-597).
 - [x] Liesa, Shroud of Dusk — each prior command-zone cast tax is paid as 2 life instead of {2} mana (D-598; approved proposal).
+- [x] Ob Nixilis of the Black Oath — activated emblem abilities are available from the command zone (D-599).
+- [x] Teferi's Reproach — grants temporary protection from everything, prevents life-total changes, and phases out the chosen opponent's nonland permanents through that player's next turn (D-600; approved proposal).
+- [x] Tragic Slip — its Morbid replacement reads the creature-death history for the turn (D-597).
 
 ## Validation
 
@@ -66,3 +65,4 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 - Skrelv's Hive parses completely: the Mite has Toxic 1 and can't block; corrupted grants lifelink to your creatures with Toxic while an opponent has three or more poison counters (D-593, D-594). Engine scenarios check both sides of the threshold.
 - Authority of the Consuls parses completely (D-595): creatures your opponents control enter tapped, and its creature-entry life trigger uses the existing trigger and life-gain rules. An engine scenario checks the entry replacement.
 - Underworld Connections parses completely (D-596): an Aura can grant an activated ability to the typed attached land; activating it taps the land, pays 1 life, and draws a card.
+- Teferi's Reproach parses completely (D-600). Scenario tests cover protection-based targeting restrictions, battlefield-only nonland phasing, life gain/loss/set and damage while locked, expiry at the target's next turn, and inability to pay life costs. Parser registry, card parser, golden, typecheck, build, lint, dependency boundaries and public preflight pass.

@@ -35,6 +35,7 @@ import {
   riotInstances,
 } from './enters-keywords';
 import { canReveal, revealChoices, revealEvents } from './enters-reveal';
+import { lifeTotalIsLocked } from './player-lock';
 import { done, type StepOutcome } from './step-outcome';
 import { settleTokens } from './token-replacement';
 import { hypotheticalToken, makeTokens } from './tokens';
@@ -185,7 +186,11 @@ export function runEnterToken(
         },
       });
     }
-    if (payment !== null && getSeat(state, seat).life >= lifeOf(payment)) {
+    if (
+      payment !== null &&
+      !lifeTotalIsLocked(state, seat) &&
+      getSeat(state, seat).life >= lifeOf(payment)
+    ) {
       return asked({
         kind: 'confirmOptional',
         seat,
@@ -202,7 +207,10 @@ export function runEnterToken(
   if (!alreadyTapped && (reveal !== null || payment !== null)) {
     const askedReveal = reveal !== null && canReveal(state, seat, reveal, res.object);
     const askedPay =
-      payment !== null && getSeat(state, seat).life >= lifeOf(payment) && !askedReveal;
+      payment !== null &&
+      !lifeTotalIsLocked(state, seat) &&
+      getSeat(state, seat).life >= lifeOf(payment) &&
+      !askedReveal;
     if (answered === true && askedReveal && reveal !== null) {
       // D-225 (CR 701.20a): with more than one card to reveal the player chooses which.
       if (

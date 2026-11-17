@@ -39,4 +39,5 @@
 // 134: Read the creature-death history condition and its spell replacement paragraph (D-597).
 // 135: Parse the commander-tax life replacement sentence (D-598).
 // 139: Parse activated abilities carried by emblems (D-599).
-export const PARSER_VERSION = 139;
+// 140: Parse player locks, protection from everything, and phasing of a target player's nonlands (D-600).
+export const PARSER_VERSION = 140;

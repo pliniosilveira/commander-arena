@@ -1,5 +1,5 @@
 {
-  "parserVersion": 139,
+  "parserVersion": 140,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -3696,19 +3696,10 @@
     "9381b4a5-a8e0-412d-bc7f-ae15afa0f135": {
       "name": "Teferi's Reproach",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Choose target opponent. Until that player's next turn, they gain protection from everything and their life total can't change. All nonland permanents they control phase out.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.target-cards-in-your-graveyard"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "4b2c2dee"
+      "ast": "3304afae"
     },
     "939e6f71-185e-41f2-9d54-72cce06f1dce": {
       "name": "Thirst for Knowledge",
@@ -6192,7 +6183,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 437,
+      "supported": 438,
       "total": 459
     }
   }

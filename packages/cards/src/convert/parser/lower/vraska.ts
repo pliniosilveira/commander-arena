@@ -3,7 +3,7 @@
  */
 import type { IrClause } from '../ir/types';
 import { type Effects, eachObject, failure, operand } from './clauses';
-import { itemsOf, objectRefOf, objectSelectorOf } from './nouns';
+import { itemsOf, objectRefOf, objectSelectorOf, playerSelectorOf } from './nouns';
 import { lowerTokenAbility } from './tokens';
 import type { Lowering } from './types';
 
@@ -51,8 +51,13 @@ const CHOOSE_TARGET: Lowering<IrClause, Effects> = {
     const what = operand(clause, 'what');
     if (what === undefined) return failure(clause);
     for (const item of itemsOf(what)) {
-      const selector = objectSelectorOf(item, ctx, {});
-      if (!selector.ok) return selector;
+      if (item.filter.player !== undefined) {
+        const selector = playerSelectorOf(item, ctx);
+        if (!selector.ok) return selector;
+      } else {
+        const selector = objectSelectorOf(item, ctx, {});
+        if (!selector.ok) return selector;
+      }
     }
     return { ok: true, value: [], rule: clause.rule };
   },

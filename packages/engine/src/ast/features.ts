@@ -193,6 +193,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'restrict',
     // Hylda group 3 (CR 702.11b): "You gain hexproof until end of turn", a player's hexproof for the turn.
     'grantPlayerHexproof',
+    'grantPlayerProtectionEverything',
+    'preventPlayerLifeTotalChange',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".
     'requireAttack',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
@@ -1762,6 +1764,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   sequence: true,
   chooseObjects: true,
   grantPlayerHexproof: true,
+  grantPlayerProtectionEverything: true,
+  preventPlayerLifeTotalChange: true,
   mill: true,
   manifest: true,
   dealDamage: true,

@@ -152,6 +152,41 @@ describe('Ob Nixilis of the Black Oath', () => {
   });
 });
 
+describe("Teferi's Reproach", () => {
+  test('protects the target through their next turn and phases out their nonland permanents', () => {
+    const card = real("Teferi's Reproach");
+    expect(card.support.unparsed).toEqual([]);
+    expect(card.support.status).toBe('supported');
+    expect(card.definition.faces[0]?.spell?.effect).toMatchObject({
+      kind: 'sequence',
+      effects: [
+        {
+          kind: 'grantPlayerProtectionEverything',
+          player: { kind: 'target', id: 't1' },
+          duration: 'untilNextTurn',
+        },
+        {
+          kind: 'preventPlayerLifeTotalChange',
+          player: { kind: 'target', id: 't1' },
+          duration: 'untilNextTurn',
+        },
+        {
+          kind: 'phaseOut',
+          objects: {
+            kind: 'each',
+            filter: {
+              zone: 'battlefield',
+              notTypes: ['land'],
+              controlledBy: { kind: 'target', id: 't1' },
+            },
+          },
+        },
+        { kind: 'exile', objects: { kind: 'thisSpell' } },
+      ],
+    });
+  });
+});
+
 describe('a token with toxic and a quoted restriction', () => {
   test('the upkeep trigger creates a Mite with toxic 1 and cannot block', () => {
     const parsed = readAll(

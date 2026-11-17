@@ -32,6 +32,7 @@ import { discardCandidates } from './discard-cost';
 import { discardOne } from './madness';
 import { isSummoningSick, planFor } from './mana-engine';
 import { millCards } from './mill';
+import { lifeTotalIsLocked } from './player-lock';
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
 import { withX } from './x-value';
 import { moveObject } from './zones';
@@ -252,6 +253,7 @@ function immediateRefusal(
   }
   // CR 119.4: life can be paid only if the life total is at least the amount.
   if (costs.life > getSeat(state, seat).life) return `you have less than ${costs.life} life`;
+  if (costs.life > 0 && lifeTotalIsLocked(state, seat)) return 'your life total cannot change';
   for (const { counter, count } of costs.counters) {
     if (source.zone !== 'battlefield' || (source.counters[counter] ?? 0) < count) {
       return `it has fewer than ${count} ${counter} counters`;

@@ -1814,6 +1814,10 @@ export type ContinuousChange =
    * player is targeted (`rules/player-protection.ts`).
    */
   | { readonly kind: 'playerHexproof' }
+  /** Protection from everything granted to a player until their next turn (D-600). */
+  | { readonly kind: 'playerProtectionEverything' }
+  /** Prevents all increases and decreases to the player's life total (D-600). */
+  | { readonly kind: 'playerCantChangeLifeTotal' }
   /**
    * "Creatures your opponents control attack each combat if able [and attack a player other than you if able]" (`requireAttack`, CR 508.1d, 611.2c,
    * D-179): no layer and no fixed set (`objects` is empty): the requirement is read where attackers are declared (`rules/combat-legality.ts`), for

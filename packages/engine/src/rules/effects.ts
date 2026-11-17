@@ -78,6 +78,7 @@ import { nextMainStep } from './next-main';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { runGrantPlayerHexproof } from './player-hexproof';
+import { runPlayerLock } from './player-lock';
 import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
@@ -2345,6 +2346,10 @@ function runEffect(
     case 'grantPlayerHexproof':
       // CR 702.11b, 611.2 (Hylda group 3): the players have hexproof until end of turn (`rules/player-hexproof.ts`).
       return runGrantPlayerHexproof(state, effect, ctx, targets);
+
+    case 'grantPlayerProtectionEverything':
+    case 'preventPlayerLifeTotalChange':
+      return runPlayerLock(state, effect, ctx, targets);
 
     case 'requireAttack':
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.
