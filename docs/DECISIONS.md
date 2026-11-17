@@ -3731,3 +3731,10 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: Model the ability as a temporary continuous effect (it has no duration), or special-case the card; rejected because neither captures the permanent's static replacement effect generically.
 - Consequences: Matching opponent creatures entering from any zone are tapped, including creature spells that resolve. The scenario test uses the ordinary cast path; the Authority real-card test checks both abilities parse completely.
 - Limit: CR text and Scryfall rulings were unavailable for independent verification.
+
+## D-596: Grant an activated ability to an enchanted land (2026-11-17, issue 255)
+- Context: Underworld Connections gives its enchanted land an activated ability with a tap cost, a life payment and a draw. The engine already applies granted activated abilities, but the parser only lowered an activated ability when granted to the source itself or a filter group; attached grants were limited to triggered abilities.
+- Decision: Allow a quoted activated ability on a typed attached land and lower it with the host's land type as its source context. Keep other attached activated grants unsupported until their host-type and rules behavior are covered.
+- Alternatives: Parse the ability as belonging to the Aura (would tap the wrong permanent and use the wrong controller), or add a card-specific override; rejected because the existing static grant mechanism can represent the correct host.
+- Consequences: Underworld Connections uses the ordinary ability-grant and activation paths. An engine scenario checks tapping the enchanted land, paying life and drawing; the parser test checks the complete real card.
+- Limit: CR text and Scryfall rulings were unavailable for independent verification.

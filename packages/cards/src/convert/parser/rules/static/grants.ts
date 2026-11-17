@@ -315,6 +315,7 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted land has hexproof.',
     'Enchanted permanent gets +1/+1.',
     'Equipped creature has "{T}: Add {G}."',
+    'Enchanted land has "{T}, Pay 1 life: Draw a card."',
     "Equipped creature can't be blocked.",
     // Danitha deck (D-407, CR 508.1a, 509.1a): two restrictions at once, and one alone.
     "Enchanted creature can't attack or block.",

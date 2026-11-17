@@ -5067,3 +5067,9 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Engine and parser:** A permanent's `groupEntersTapped` replacement makes matching permanents enter tapped. Authority of the Consuls applies it to creatures its controller's opponents control. The existing parser and engine handle its life-gain trigger when an opponent's creature enters.
 - **Proof:** `scenario-xx-authority.test.ts` checks that an opponent's creature spell enters tapped; `parser-p48.test.ts` checks complete import of the real card and golden acceptance support.
 - **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Underworld Connections (D-596)
+
+- **Parser and engine:** An Aura may grant an activated ability to an enchanted land. The granted ability is lowered with the host's land type so tap costs and activation rules apply to the land; Underworld Connections' ability pays 1 life and draws a card.
+- **Proof:** `scenario-xx-underworld.test.ts` activates the granted ability and checks the life payment, tap and draw. `parser-p48.test.ts` checks complete import of the real card and golden acceptance support.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.

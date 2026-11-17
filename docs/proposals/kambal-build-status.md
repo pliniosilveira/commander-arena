@@ -4,10 +4,10 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 
 ## Status
 
-- [x] 15 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, Liesa, Forgotten Archangel, Skrelv's Hive, and Authority of the Consuls.
+- [x] 16 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, Liesa, Forgotten Archangel, Skrelv's Hive, Authority of the Consuls, and Underworld Connections.
 - Current branch: `support-kambal`.
-- Current group: F — Authority of the Consuls' enter-tapped replacement is supported (D-595).
-- Next: Underworld Connections.
+- Current group: E — Authority of the Consuls and Underworld Connections are supported (D-595, D-596).
+- Next: Liesa, Shroud of Dusk.
 
 ## Cards and initial gap groups
 
@@ -43,7 +43,7 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 ### Group E — continuous and attached abilities
 
 - [x] Authority of the Consuls
-- [ ] Underworld Connections
+- [x] Underworld Connections
 
 ### Group F — other spell and permanent abilities
 
@@ -64,3 +64,4 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 - `Liesa, Forgotten Archangel` passes real-card parser/golden support. The delayed trigger reuses `triggerCard` and returns the card from the graveyard to its owner's hand at the next end step. Its focused scenario, parser registry, golden and derive checks pass; typecheck and lint pass.
 - Skrelv's Hive parses completely: the Mite has Toxic 1 and can't block; corrupted grants lifelink to your creatures with Toxic while an opponent has three or more poison counters (D-593, D-594). Engine scenarios check both sides of the threshold.
 - Authority of the Consuls parses completely (D-595): creatures your opponents control enter tapped, and its creature-entry life trigger uses the existing trigger and life-gain rules. An engine scenario checks the entry replacement.
+- Underworld Connections parses completely (D-596): an Aura can grant an activated ability to the typed attached land; activating it taps the land, pays 1 life, and draws a card.

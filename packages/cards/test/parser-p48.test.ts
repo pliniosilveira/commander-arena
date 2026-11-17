@@ -196,6 +196,13 @@ describe('Authority of the Consuls', () => {
   });
 });
 
+describe('Underworld Connections', () => {
+  test('the enchanted land receives its activated draw ability', () => {
+    expect(real('Underworld Connections').support.unparsed).toEqual([]);
+    expect(real('Underworld Connections').support.status).toBe('supported');
+  });
+});
+
 describe('"That token gains haste until end of turn" and "then attach ~ to it": the token the text made (CR 111.2, 400.7j)', () => {
   const grantHaste = {
     kind: 'grantKeyword',

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 135,
+  "parserVersion": 136,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1540,18 +1540,10 @@
     "39c10798-9dfc-47a2-9da3-b4038509aebe": {
       "name": "Underworld Connections",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Enchanted land has \"{T}, Pay 1 life: Draw a card.\"",
-          "reason": "notRunnable",
-          "closestRule": "static.attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "4eadc185"
+      "ast": "3178465c"
     },
     "3a49b518-61c8-4dea-8008-c5edf8384581": {
       "name": "Ob Nixilis, the Ascended",
@@ -6225,7 +6217,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 433,
+      "supported": 434,
       "total": 459
     }
   }
