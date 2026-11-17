@@ -1060,6 +1060,7 @@ export function lowerTriggered(
   ctx.itDied = triggers.every(
     (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'this',
   );
+  ctx.diesTrigger = triggers.every((t) => t.kind === 'dies');
   const bodies = ability.modal === undefined ? [ability.body] : ability.modal.modes;
   const clauses = bodies.flatMap((b) => b.sentences.flatMap((s) => s.clauses));
   // "It" in the body of "becomes the target" is the spell or ability that targeted (the engine's

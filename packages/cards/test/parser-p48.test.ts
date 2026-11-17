@@ -130,6 +130,13 @@ describe('a Class becomes a level', () => {
   });
 });
 
+describe('Liesa, Forgotten Archangel', () => {
+  test('a nontoken creature that dies is returned to its owner’s hand at the next end step', () => {
+    expect(real('Liesa, Forgotten Archangel').support.status).toBe('supported');
+    expect(real('Liesa, Forgotten Archangel').support.unparsed).toEqual([]);
+  });
+});
+
 describe('"That token gains haste until end of turn" and "then attach ~ to it": the token the text made (CR 111.2, 400.7j)', () => {
   const grantHaste = {
     kind: 'grantKeyword',

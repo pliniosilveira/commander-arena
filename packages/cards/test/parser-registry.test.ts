@@ -716,6 +716,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.mana-rider-scry-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
   'amount.for-each-commander-cast': permanent((e) => `Creatures you control get +1/+1 ${e}.`),
   'static.untap-in-others-step': asIs,
+  'trigger.class-level': permanent((e) => `When ${e}, draw a card.`),
+  'trigger.ring-bearer-chosen': permanent((e) => `Whenever ${e}, draw a card.`),
   // Group 4 (D-232): the permission to play from the graveyard is a line of its own.
   'static.graveyard-play-once-each-turn': asIs,
   // Group 4 (D-208): the rider of the mana a land adds follows the "Add" sentence of its mana ability.

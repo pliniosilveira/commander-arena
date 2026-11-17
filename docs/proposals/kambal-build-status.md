@@ -4,10 +4,10 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 
 ## Status
 
-- [x] 12 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, and Cleric Class.
+- [x] 13 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, and Liesa, Forgotten Archangel.
 - Current branch: `support-kambal`.
 - Current group: D — triggers, Class abilities, and return effects.
-- Next: Liesa, Forgotten Archangel's delayed return. It may require an owner-approved proposal if it needs a new delayed-trigger subsystem.
+- Next: Skrelv's Hive.
 
 ## Cards and initial gap groups
 
@@ -37,7 +37,7 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 
 - [x] Call of the Ring — only triggers after a creature is chosen as Ring-bearer (D-590).
 - [x] Cleric Class — reaching level 3 emits a Class-level event and triggers its return-and-life ability (D-591).
-- [ ] Liesa, Forgotten Archangel
+- [x] Liesa, Forgotten Archangel — a dies trigger schedules its creature card to its owner's hand at the next end step (D-592).
 - [ ] Skrelv's Hive
 
 ### Group E — continuous and attached abilities
@@ -61,3 +61,4 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 - `Archenemy's Charm` now passes default import and golden support. Focused parser registry, real-card integration, and golden tests pass; the tests cover one target and two targets of different card types.
 - `Tivash, Gloom Summoner` passes parser and golden support: defined life gained this turn is used for the payment and X/X token stats. The focused parser, validation, golden and typecheck checks pass.
 - `Call of the Ring` passes parser and golden support. Focused Ring scenario tests prove the filtered trigger does not fire with no creature available and does fire after a creature is chosen. `pnpm typecheck`, `pnpm lint`, and dependency boundaries pass; lint reports existing warnings and informational findings outside this work.
+- `Liesa, Forgotten Archangel` passes real-card parser/golden support. The delayed trigger reuses `triggerCard` and returns the card from the graveyard to its owner's hand at the next end step. Its focused scenario, parser registry, golden and derive checks pass; typecheck and lint pass.

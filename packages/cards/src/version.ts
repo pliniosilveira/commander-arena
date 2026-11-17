@@ -34,4 +34,5 @@
 // 129: Use a defined life amount for a payment and an X/X token (D-589).
 // 130: Parse a trigger for choosing a creature as Ring-bearer (D-590).
 // 131: Parse "when this Class becomes level N" (D-591).
-export const PARSER_VERSION = 131;
+// 132: Parse delayed hand returns of the card named by a dies trigger (D-592).
+export const PARSER_VERSION = 132;

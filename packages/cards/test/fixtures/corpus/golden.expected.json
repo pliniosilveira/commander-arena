@@ -1,5 +1,5 @@
 {
-  "parserVersion": 131,
+  "parserVersion": 132,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -5822,19 +5822,10 @@
     "efcaadbe-24e3-4dfc-b08c-a910f003d427": {
       "name": "Liesa, Forgotten Archangel",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever another nontoken creature you control dies, return that card to its owner's hand at the beginning of the next end step.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.return"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "810343f8"
+      "ast": "5dbbe41e"
     },
     "efcbca5a-743c-4b16-a7cf-b07335b31ced": {
       "name": "Shower of Arrows",
@@ -6260,7 +6251,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 430,
+      "supported": 431,
       "total": 459
     }
   }

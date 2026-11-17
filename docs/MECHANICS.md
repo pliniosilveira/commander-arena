@@ -5043,3 +5043,9 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Engine and parser:** changing a Class's level emits `classLevelReached`; `classLevel` triggers only for the same Class object reaching the named level. The game log names the level change.
 - **Proof:** `scenario-xx-class-level.test.ts` checks a level-three trigger, `parser-p48.test.ts` checks the trigger grammar, and the real-card integration test returns its targeted creature and gains life equal to its toughness.
 - **Limit:** CR text and rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Liesa, Forgotten Archangel (D-592)
+
+- **Engine and parser:** a dies trigger can create a delayed triggered ability that returns the card the creature became in the graveyard to its owner's hand at the next end step. The existing `triggerCard` reference and delayed-trigger machinery handle object identity and scheduling; token cards are excluded.
+- **Proof:** `scenario-xx-dies-return.test.ts` checks creation and resolution of the delayed hand return; `parser-p48.test.ts` checks Liesa's complete real-card import and the golden corpus records its support.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
