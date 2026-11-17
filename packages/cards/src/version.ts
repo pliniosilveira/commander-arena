@@ -23,4 +23,5 @@
 // 118: Read player-directed control of target groups and nonattacking creature filters (D-573).
 // 119: Read "with one or more targets" and "draw that many" for a cast trigger (D-574).
 // 120: Read optional exile-from-hand costs and reductions based on cards exiled that way (D-575).
-export const PARSER_VERSION = 120;
+// 121: Read "Sacrifice one or more artifacts" and "Choose a color. Target player adds N mana of the chosen color for each artifact sacrificed this way" (D-585, D-586, issue 258).
+export const PARSER_VERSION = 121;

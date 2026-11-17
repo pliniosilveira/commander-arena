@@ -44,6 +44,7 @@ import {
   untapChooseText,
 } from '../../game/artifacts-text';
 import { castCardText } from '../../game/cast-card-text';
+import { chosenColorManaText } from '../../game/chosen-color-text';
 import { gameConditionWords } from '../../game/condition-text';
 import { copyForEachWords, copySpellWords, delayedCastWords } from '../../game/copy-text';
 import { activationCostPart, activationCostText, unlessCostPhrase } from '../../game/cost-text';
@@ -851,6 +852,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         : `Whenever ${object(effect.objects)} deals combat damage to a player this combat, ${lower(inner)}`;
     }
     case 'chooseOne': {
+      // D-585 (CR 106.4, 608.2d): "Choose a color. Target player adds three mana of that color for each artifact sacrificed this way".
+      const colored = chosenColorManaText(effect, (player) => recipientText(player, ability, self));
+      if (colored !== null) return colored;
       const choices = effect.options.map((option) => option.label).join('; ');
       // Hylda group 3: "You may tap or untap target creature" is a choice that may also be declined.
       if (effect.optional === true && effect.times === undefined) {

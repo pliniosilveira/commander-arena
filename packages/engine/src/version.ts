@@ -16,4 +16,5 @@
 // 112: Apply Maskwood Nexus's all-creature-types effect to controlled and owned cards (D-578).
 // 113: Keep Sauron's Ransom's face-down pile identities private through resolution (D-579).
 // 114: A cost of no life is payable at a negative life total (D-581, issue 254); a targets decision slot carries the card's own target words (D-582).
-export const ENGINE_VERSION = 114;
+// 115: Pay a sacrifice cost of one or more permanents and read the count sacrificed as a cost from the resolving ability (D-583, D-584, issue 258).
+export const ENGINE_VERSION = 115;

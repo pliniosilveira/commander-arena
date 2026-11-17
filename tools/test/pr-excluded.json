@@ -71,6 +71,7 @@
   "repeatable-modes-games.test.ts",
   "restriction-games.test.ts",
   "ring-games.test.ts",
+  "sacrifice-mana-games.test.ts",
   "saga-games.test.ts",
   "search-games.test.ts",
   "soulbond-games.test.ts",
