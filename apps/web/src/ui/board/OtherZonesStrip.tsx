@@ -20,14 +20,22 @@ import { useInteraction } from '../interaction';
 import { useHoverPreview } from './hover';
 import './later.css';
 
-function Chip({ object, label }: { object: ObjectView; label: string }) {
+function Chip({
+  object,
+  label,
+  prominent = false,
+}: {
+  object: ObjectView;
+  label: string;
+  prominent?: boolean;
+}) {
   const hover = useHoverPreview(object.id);
   const ix = useInteraction();
   const drag = useDraggable(object.id, 'card', object.name);
   return (
     <button
       type="button"
-      className={`board-flashback-chip${drag.dragging ? ' is-dragging' : ''}`}
+      className={`board-flashback-chip${prominent ? ' is-prominent' : ''}${drag.dragging ? ' is-dragging' : ''}`}
       draggable={drag.draggable}
       onDragStart={drag.onDragStart}
       onDragEnd={drag.onDragEnd}
@@ -112,10 +120,11 @@ export function OtherZonesStrip({ view }: { view: GameView }) {
         </section>
       )}
       {fromExile.length > 0 && (
-        <section className="board-flashback" aria-label="Cast from exile">
+        <section className="board-flashback is-prominent" aria-label="Cast from exile">
           {fromExile.map((o) => (
             <Chip
               key={o.id}
+              prominent
               object={o}
               label={exileBadge(exile, index, o.id, priority ?? undefined) ?? 'Cast from exile'}
             />

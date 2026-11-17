@@ -1164,6 +1164,39 @@
   font-weight: 700;
 }
 
+/* Cards the player may play from exile (impulse draw, an Adventure; issue 49): a larger, brighter chip so the
+   option is not missed. */
+.board-flashback.is-prominent {
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-raised);
+  border-top: 2px solid var(--accent);
+}
+
+.board-flashback-chip.is-prominent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 140px;
+  padding: 8px 18px;
+  font-size: calc(15px * var(--text-scale));
+  background: var(--bg-sunken);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.board-flashback-chip.is-prominent:hover,
+.board-flashback-chip.is-prominent:focus-visible {
+  background: var(--bg-raised);
+}
+
+.board-flashback-chip.is-prominent span {
+  font-size: calc(12px * var(--text-scale));
+  opacity: 0.85;
+}
+
 .board-hand {
   position: relative;
   /* Above everything the field draws, the land stack's count badge (z-index 8) included: a lifted card
