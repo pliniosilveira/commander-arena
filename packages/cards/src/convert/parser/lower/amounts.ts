@@ -67,6 +67,21 @@ function statSource(
 }
 
 /**
+ * D-581 (CR 602.2b, 701.21a): whether `amount` ("for each artifact sacrificed this way") counts what the cost of the activated ability sacrificed: the cost sacrifices one or more
+ * permanents of the kind the words name (or "permanent"), and the words are not "that many" (which counts what an instruction did).
+ */
+export function isCostSacrificeCount(
+  amount: Extract<IrAmount, { kind: 'thisWay' }>,
+  ctx: LowerContext,
+): boolean {
+  if (ctx.costSacrifice === null || amount.what !== 'sacrificed' || amount.thatMany === true) {
+    return false;
+  }
+  const [word] = amount.words;
+  return word === 'permanent' || word === ctx.costSacrifice;
+}
+
+/**
  * An amount (CR 107.1 numbers, 107.3 X, 208.1 power, 202.3 mana value). X (stage P16, D-103) needs
  * `amount:x` and marks the context (`usesX`): the caller decides whether the text has an X to read,
  * a spell or an activated ability whose cost has one (CR 107.3a), and refuses it anywhere else (a
@@ -396,6 +411,13 @@ export function lowerAmount(
     case 'thisWay': {
       // CR 608.2c: what an earlier instruction of this resolution did; `lowerSentences` checks that one of that kind
       // comes before it in the same list of effects and that the words name what it did.
+      // D-581 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" of an activated ability whose cost sacrificed one or more artifacts counts that cost; `lowerSentences`
+      // has refused the text if an instruction of it sacrifices too.
+      if (isCostSacrificeCount(amount, ctx)) {
+        const costBlocked = needs('sacrificedAsCost');
+        if (costBlocked !== null) return costBlocked;
+        return { ok: true, value: { kind: 'sacrificedAsCost' }, rule };
+      }
       const blocked = needs('thisWay');
       if (blocked !== null) return blocked;
       // "that many" counts what the last instruction of its kind did: sacrificed permanents or discarded cards (stage P34).

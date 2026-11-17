@@ -110,7 +110,12 @@ export function namedOptionPrompt(
   if (isVoteChoice(d)) return votePrompt(d.options, d.vote, d.seat);
   if (isRiotChoice(d)) return riotPrompt(d.sourceName, d.riotSoFar ?? []);
   if (isReplacementChoice(d)) return replacementPrompt(d.replacement);
-  if (isEffectChoice(d)) return `Choose one for ${d.sourceName}: ${optionList(d.options)}.`;
+  if (isEffectChoice(d)) {
+    // D-583 (CR 105.1, 608.2d): "Choose a color." offers the five colors of the game.
+    return d.options.join(',') === 'white,blue,black,red,green'
+      ? `Choose a color for ${d.sourceName}.`
+      : `Choose one for ${d.sourceName}: ${optionList(d.options)}.`;
+  }
   if (isCardTypeChoice(d)) return `As ${d.sourceName} enters, choose a card type.`;
   // D-451 (CR 702.16, 608.2d): asked as the spell resolves, so there is no "enters".
   if (isProtectionColorChoice(d)) {

@@ -1971,6 +1971,12 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
           issue(out, `${path}.anyNumber`, 'this permanent is sacrificed once: no "any number"');
         }
       }
+      if (cost.atLeastOne !== undefined) {
+        // D-581 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts": at least one of the permanents that match, so it goes with `anyNumber`; where it may stand is checked there.
+        if (cost.atLeastOne !== true || cost.anyNumber !== true) {
+          issue(out, `${path}.atLeastOne`, 'atLeastOne is true and goes with anyNumber');
+        }
+      }
       if (cost.count !== undefined) {
         // D-133: "Sacrifice two artifacts": 2 or more, of permanents chosen among those that match.
         if (!isCount(cost.count) || cost.count < 2) {

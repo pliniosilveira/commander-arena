@@ -107,6 +107,15 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         const filter = lowerFilter(described);
         return filter.ok ? ok({ kind: 'sacrifice', what: filter.value, countX: true }) : filter;
       }
+      // "Sacrifice one or more artifacts" (D-581, CR 602.2b, 701.21a): at least one, chosen as the cost of an ordinary activated ability is paid.
+      if (what.det === 'a' && what.anyNumber === true && what.atLeastOne === true) {
+        if (options.ordinary !== true || what.count !== undefined) return failure(cost);
+        const { anyNumber: _any, atLeastOne: _least, ...described } = what;
+        const filter = lowerFilter(described);
+        return filter.ok
+          ? ok({ kind: 'sacrifice', what: filter.value, anyNumber: true, atLeastOne: true })
+          : filter;
+      }
       // "Sacrifice two artifacts" (stage P29, D-133): the engine's `count` of an activated ability's cost.
       const many = what.count?.kind === 'number' ? what.count.value : 1;
       if (what.det !== 'a' || (what.count !== undefined && what.count.kind !== 'number')) {

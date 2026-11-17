@@ -30,7 +30,7 @@ import { lowerClause, lowerMana } from './effects';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
 import { colorLetter } from './nouns';
-import { lowerSentences } from './sentences';
+import { kindOfNoun, lowerSentences } from './sentences';
 import { type LowerContext, type LowerFailure, type LowerResult, newContext } from './types';
 
 type Activated = Extract<IrAbility, { kind: 'activated' }>;
@@ -556,6 +556,10 @@ function prepare(
     ...(costs.value.some((c) => c.kind === 'sacrifice' && c.countX === true)
       ? (['ability:sacrificeX'] as const)
       : []),
+    // D-581: "Sacrifice one or more artifacts".
+    ...(costs.value.some((c) => c.kind === 'sacrifice' && c.atLeastOne === true)
+      ? (['ability:sacrificeOneOrMore'] as const)
+      : []),
   ]);
   if (blocked !== null) return blocked;
   // The engine refuses a cost that taps permanents together with a mana cost, another tap cost or Crew (D-133): the
@@ -574,6 +578,11 @@ function prepare(
   if (!restrictions.ok) return restrictions;
   // A cost that sacrifices `~` leaves nothing for the effect to act on.
   ctx.selfGone = costs.value.some((c) => c.kind === 'sacrifice' && 'kind' in c.what);
+  // D-581 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" counts what a cost of "Sacrifice one or more artifacts" sacrificed.
+  const oneOrMore = ability.costs.find(
+    (c) => c.kind === 'sacrifice' && c.what.anyNumber === true && c.what.atLeastOne === true,
+  );
+  ctx.costSacrifice = oneOrMore?.kind === 'sacrifice' ? kindOfNoun(oneOrMore.what) : null;
   return {
     ok: true,
     value: { costs: costs.value, hasX, restrictions: restrictions.value },
@@ -754,4 +763,5 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:activated',
   'ability:xCost',
   'ability:sacrificeX',
+  'ability:sacrificeOneOrMore',
 ];

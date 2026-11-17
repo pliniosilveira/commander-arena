@@ -1021,13 +1021,19 @@ function effectHas(e: unknown, kind: string): boolean {
 /**
  * D-491 (CR 118.8, 701.21a): the amount and the condition `sacrificedAsCost` read what a spell sacrificed for its additional cost, so the face lists a cost that sacrifices any
  * number of permanents, a land is not cast, and an ability reads it only in "When you cast this spell" (`castSpell` with `self`, the spell being the source of its own ability).
+ * D-581 (CR 602.2b): an activated ability reads it too, when its own cost sacrifices one or more permanents (`atLeastOne`): the permanents its cost sacrificed.
  */
 function checkSacrificedAsCost(face: CardFace, path: string, out: AstIssue[]): void {
   const reads = (node: unknown) => effectHas(node, 'sacrificedAsCost');
   const optional = (face.additionalCosts ?? []).some(
     (c) => c?.kind === 'sacrifice' && c.anyNumber === true,
   );
-  const readers = face.abilities.filter((a) => reads(a));
+  // D-581 (CR 602.2b): an activated ability reads what its own cost sacrificed, when that cost sacrifices one or more permanents.
+  const ownCost = (a: Ability): boolean =>
+    a.kind === 'activated' &&
+    Array.isArray(a.cost) &&
+    a.cost.some((c) => c?.kind === 'sacrifice' && c.anyNumber === true && c.atLeastOne === true);
+  const readers = face.abilities.filter((a) => a.kind !== 'activated' && reads(a));
   if (!optional && (readers.length > 0 || reads(face.spell))) {
     issue(
       out,
@@ -1037,6 +1043,16 @@ function checkSacrificedAsCost(face: CardFace, path: string, out: AstIssue[]): v
   }
   face.abilities.forEach((a, i) => {
     if (!reads(a)) return;
+    if (a.kind === 'activated') {
+      if (!ownCost(a)) {
+        issue(
+          out,
+          `${path}.abilities[${i}]`,
+          'sacrificedAsCost is read by an activated ability only when its own cost sacrifices one or more permanents (D-581)',
+        );
+      }
+      return;
+    }
     const own =
       a.kind === 'triggered' && a.trigger?.kind === 'castSpell' && a.trigger.self === true;
     if (!own) {
@@ -1116,12 +1132,13 @@ function checkActivationCosts(
       kind === 'sacrifice' ||
       kind === 'discard' ||
       kind === 'tapCreatures';
-    // D-491: "you may sacrifice one or more creatures" is an additional cost of a spell, chosen as it is cast.
-    if (c?.kind === 'sacrifice' && c.anyNumber !== undefined) {
+    // D-491: "you may sacrifice one or more creatures" is an additional cost of a spell, chosen as it is cast. D-581 (CR 602.2b): an activated ability may sacrifice "one or more"
+    // permanents (`atLeastOne`), never "any number" including none.
+    if (c?.kind === 'sacrifice' && c.anyNumber !== undefined && c.atLeastOne !== true) {
       issue(
         out,
         `${path}.cost[${i}].anyNumber`,
-        'an activated ability sacrifices a number it states: "any number" is an additional cost of a spell (D-491)',
+        'an activated ability sacrifices a number it states or one or more permanents (atLeastOne): "any number" with none is an additional cost of a spell (D-491, D-581)',
       );
     }
     if (offBattlefield && needsBattlefield) {

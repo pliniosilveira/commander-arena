@@ -156,7 +156,7 @@ const atLeastOne = (amount: IrAmount) => amount.kind === 'number' && amount.valu
 
 /**
  * `cost.sacrifice`: "Sacrifice ~", "Sacrifice a creature", "Sacrifice another permanent", "Sacrifice
- * two lands" (CR 701.21, 118.1). Only your own permanents can be sacrificed (CR 701.21a), so the
+ * two lands", "Sacrifice one or more artifacts" (CR 701.21, 118.1). Only your own permanents can be sacrificed (CR 701.21a), so the
  * object is "~" or a noun you choose among (`noun.a-permanent`), never a target or an opponent's.
  */
 export const COST_SACRIFICE = defineRule<IrCost>({
@@ -172,8 +172,14 @@ export const COST_SACRIFICE = defineRule<IrCost>({
     'Sacrifice a Treasure',
     'Sacrifice two other creatures',
     'Sacrifice X creatures',
+    'Sacrifice one or more artifacts',
+    'Sacrifice one or more other creatures',
   ],
   rejects: [
+    'Sacrifice one or more',
+    'Sacrifice one or more target artifacts',
+    'Sacrifice one or more artifacts an opponent controls',
+    'Sacrifice any number of artifacts',
     'Sacrifice',
     'Sacrifice X other creatures',
     'Sacrifice X',
@@ -188,7 +194,15 @@ export const COST_SACRIFICE = defineRule<IrCost>({
       sequence(
         literal('sacrifice '),
         // D-488: "Sacrifice X creatures" (`noun.x-permanents`), the X announced as the ability is activated.
-        family<IrNoun>('noun', { only: ['noun.self', 'noun.a-permanent', 'noun.x-permanents'] }),
+        family<IrNoun>('noun', {
+          only: [
+            'noun.self',
+            'noun.a-permanent',
+            'noun.x-permanents',
+            // D-581 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts", at least one of them.
+            'noun.one-or-more-permanents',
+          ],
+        }),
       ),
       ([, what]) => what,
     ),
