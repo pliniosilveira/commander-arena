@@ -3711,3 +3711,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Decision: Reuse the existing delayed-trigger mechanism for a dies trigger whose delayed effect returns `triggerCard` to its owner's hand at the next end step. Resolve the reference only while the same card object remains in its graveyard; tokens are not scheduled. The parser accepts the specific "that card" hand-return wording only in a dies trigger.
 - Alternatives: Add a new delayed-return subsystem; rejected because the event tracking, delayed scheduling, and object identity already exist. Permit delayed moves to any destination; rejected because this card only needs a hand return and other destinations are not covered by this work.
 - Consequences: The mechanic is tested through the engine scenario and Liesa's real Oracle text. Other delayed hand returns remain unsupported unless their text and rules are separately implemented.
+
+## D-593: Read toxic and a quoted blocking restriction on a token (2026-11-17, issue 255)
+- Context: Skrelv's Hive creates a Mite token with "toxic 1" and the quoted static ability "This token can't block." The custom-token parser already read grantable keyword lists and quoted abilities, but not the numbered toxic keyword or this restriction on a token.
+- Decision: Parse `toxic N` as a numbered token keyword, lower it to the engine's existing Toxic keyword, and permit a quoted token static ability only when it is `cantBlock` or the already supported Crew bonus/characteristic definition.
+- Alternatives: Drop the quoted restriction or create the token without Toxic; rejected because that would misrepresent the token. Permit every static ability on a token; rejected because only the supported static forms are covered here.
+- Consequences: The token description can be represented and validated while the card remains unsupported until its independent corrupted static ability is implemented.

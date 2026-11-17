@@ -6,8 +6,8 @@ Source: owner-provided GitHub issue #255. Its card-data block is the source for 
 
 - [x] 13 of 20 unsupported cards are fully supported: Rhox Faithmender, The Wind Crystal, Archenemy's Charm, Kimoyo Beads, Revival // Revenge, Daxos, Blessed by the Sun, Lunar Convocation, Wall of Reverence, Moseo, Vein's New Dean, Tivash, Gloom Summoner, Call of the Ring, Cleric Class, and Liesa, Forgotten Archangel.
 - Current branch: `support-kambal`.
-- Current group: D — triggers, Class abilities, and return effects.
-- Next: Skrelv's Hive.
+- Current group: E — Skrelv's Hive token creation is implemented; its corrupted condition remains in progress.
+- Next: finish Skrelv's Hive's corrupted static ability.
 
 ## Cards and initial gap groups
 
@@ -62,3 +62,4 @@ The grouping below is provisional until the corpus diagnostics are reviewed alon
 - `Tivash, Gloom Summoner` passes parser and golden support: defined life gained this turn is used for the payment and X/X token stats. The focused parser, validation, golden and typecheck checks pass.
 - `Call of the Ring` passes parser and golden support. Focused Ring scenario tests prove the filtered trigger does not fire with no creature available and does fire after a creature is chosen. `pnpm typecheck`, `pnpm lint`, and dependency boundaries pass; lint reports existing warnings and informational findings outside this work.
 - `Liesa, Forgotten Archangel` passes real-card parser/golden support. The delayed trigger reuses `triggerCard` and returns the card from the graveyard to its owner's hand at the next end step. Its focused scenario, parser registry, golden and derive checks pass; typecheck and lint pass.
+- Skrelv's Hive's upkeep token now parses completely as a Mite with toxic 1 and a quoted no-blocking restriction (D-593). Its golden diagnostic is now only the corrupted condition, so Skrelv remains unsupported until that condition is implemented. Focused parser, registry and golden checks, typecheck and lint pass.

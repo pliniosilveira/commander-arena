@@ -5049,3 +5049,9 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Engine and parser:** a dies trigger can create a delayed triggered ability that returns the card the creature became in the graveyard to its owner's hand at the next end step. The existing `triggerCard` reference and delayed-trigger machinery handle object identity and scheduling; token cards are excluded.
 - **Proof:** `scenario-xx-dies-return.test.ts` checks creation and resolution of the delayed hand return; `parser-p48.test.ts` checks Liesa's complete real-card import and the golden corpus records its support.
 - **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Skrelv's Hive token (D-593)
+
+- **Parser:** custom token descriptions can include numbered Toxic and a quoted static `cantBlock` restriction, alongside the existing keyword list and quoted ability handling.
+- **Proof:** `parser-p48.test.ts` reads the full upkeep trigger and checks the Mite's types, Toxic value and blocking restriction.
+- **Limit:** Skrelv's Hive remains unsupported until the separate corrupted condition is implemented.

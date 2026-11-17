@@ -1409,6 +1409,13 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       abilities.push({ kind: 'keyword', keyword: { kind: 'devour', count: Number(devour[1]) } });
       continue;
     }
+    const toxic = /^toxic ([1-9]\d*)$/.exec(word);
+    if (toxic !== null) {
+      const unsupportedToxic = missingFeatures(['ability:keyword', 'keyword:toxic']);
+      if (unsupportedToxic.length > 0) return { ok: false, needs: unsupportedToxic, ...at };
+      abilities.push({ kind: 'keyword', keyword: { kind: 'toxic', count: Number(toxic[1]) } });
+      continue;
+    }
     const kind = keywordKind(word);
     if (kind === undefined) return { ok: false, needs: [], ...at };
     const unsupported = missingFeatures(['ability:keyword', `keyword:${kind}`]);

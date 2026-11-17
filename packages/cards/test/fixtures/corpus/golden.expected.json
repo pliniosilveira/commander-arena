@@ -1,5 +1,5 @@
 {
-  "parserVersion": 132,
+  "parserVersion": 133,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -260,14 +260,6 @@
       "unparsed": [
         {
           "face": 0,
-          "ability": 0,
-          "text": "At the beginning of your upkeep, you lose 1 life and create a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and \"~ can't block.\"",
-          "reason": "unrecognised",
-          "slot": "token",
-          "closestRule": "token.custom"
-        },
-        {
-          "face": 0,
           "ability": 1,
           "text": "Corrupted — As long as an opponent has three or more poison counters, creatures you control with toxic have lifelink.",
           "reason": "unrecognised",
@@ -276,7 +268,7 @@
         }
       ],
       "reasons": [],
-      "ast": "8142280e"
+      "ast": "40819c9c"
     },
     "07617648-6490-4719-acec-7705671f7e01": {
       "name": "Protege's Awakening",

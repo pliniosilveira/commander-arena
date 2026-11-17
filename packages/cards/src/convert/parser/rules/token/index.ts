@@ -121,6 +121,12 @@ const DEVOUR_WORD: Parser<string> = map(
   (m) => `devour ${m[1] ?? ''}`,
 );
 
+/** "toxic N" (CR 702.164): a numbered keyword a token may have alongside a quoted ability. */
+const TOXIC_WORD: Parser<string> = map(
+  pattern(/toxic ([1-9]\d*)(?![\p{L}\p{N}])/iu),
+  (m) => `toxic ${m[1] ?? ''}`,
+);
+
 /**
  * The keywords of a token: a list of those the engine can grant, or one keyword and "devour N" ("flying and devour 2"), or "devour N" alone. A longer
  * list with "devour N" at its end is not read (the list of grantable words is written "A, B, and C" and stops at the keyword it does not know).
@@ -128,12 +134,12 @@ const DEVOUR_WORD: Parser<string> = map(
 const TOKEN_KEYWORDS: Parser<string[]> = choice(
   map(
     satisfy(
-      sequence(KEYWORD_WORDS, literal(' and '), DEVOUR_WORD),
+      sequence(KEYWORD_WORDS, literal(' and '), choice(DEVOUR_WORD, TOXIC_WORD)),
       ([words]) => words.length === 1,
     ),
-    ([words, , devour]): string[] => [...words, devour],
+    ([words, , numbered]): string[] => [...words, numbered],
   ),
-  map(DEVOUR_WORD, (devour): string[] => [devour]),
+  map(choice(DEVOUR_WORD, TOXIC_WORD), (numbered): string[] => [numbered]),
   KEYWORD_WORDS,
 );
 
@@ -322,12 +328,15 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 1/1 red and green Dragon creature token with flying and devour 2',
     'a 2/2 red Goblin creature token with devour 1',
     'a 1/1 red Dragon creature token with first strike and devour 3',
+    'a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and "~ can’t block."',
   ],
   rejects: [
     'a 1/1 red and green Dragon creature token with devour',
     'a 1/1 red and green Dragon creature token with devour 0',
     'a 1/1 red and green Dragon creature token with devour X',
     'a 1/1 red and green Dragon creature token with devour 2 and flying',
+    'a 1/1 colorless Phyrexian Mite artifact creature token with toxic 0',
+    'a 1/1 colorless Phyrexian Mite artifact creature token with toxic X',
     'a 1/1 red and green Dragon creature token with flying, devour 2',
     'a 1/1 red and green Dragon creature token with flying, trample and devour 2',
     'a 1/1 red and green Dragon creature token with flying, trample, and devour 2',

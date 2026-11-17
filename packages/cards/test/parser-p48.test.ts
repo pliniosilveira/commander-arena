@@ -137,6 +137,51 @@ describe('Liesa, Forgotten Archangel', () => {
   });
 });
 
+describe('a token with toxic and a quoted restriction', () => {
+  test('the upkeep trigger creates a Mite with toxic 1 and cannot block', () => {
+    const parsed = readAll(
+      'At the beginning of your upkeep, you lose 1 life and create a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and "This token can’t block."',
+      'enchantment',
+    );
+    expect(parsed.abilities).toMatchObject([
+      {
+        kind: 'triggered',
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'loseLife', amount: 1 },
+            {
+              kind: 'createToken',
+              token: {
+                kind: 'custom',
+                definition: {
+                  power: 1,
+                  toughness: 1,
+                  colors: [],
+                  subtypes: ['Phyrexian', 'Mite'],
+                  supertypes: [],
+                  types: ['artifact', 'creature'],
+                  abilities: [
+                    { kind: 'keyword', keyword: { kind: 'toxic', count: 1 } },
+                    {
+                      kind: 'static',
+                      static: {
+                        kind: 'restriction',
+                        subject: { kind: 'this' },
+                        restriction: 'cantBlock',
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+    ]);
+  });
+});
+
 describe('"That token gains haste until end of turn" and "then attach ~ to it": the token the text made (CR 111.2, 400.7j)', () => {
   const grantHaste = {
     kind: 'grantKeyword',
