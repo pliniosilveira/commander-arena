@@ -184,7 +184,7 @@ function pluralNounOf(filter: ObjectFilter): string {
     .join(' or ');
 }
 
-function targetText(spec: TargetSpec | undefined): string {
+export function targetText(spec: TargetSpec | undefined): string {
   if (spec === undefined) return 'target';
   // D-151 (CR 115.3): "up to two other targets": a slot of several targets, kept apart from an earlier slot by the word "other".
   if (spec.what.kind === 'anyTarget' && (spec.differentFrom !== undefined || (spec.max ?? 1) > 1)) {

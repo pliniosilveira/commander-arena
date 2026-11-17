@@ -136,6 +136,7 @@ export function targetChoiceSpecs(
         specId: spec.id,
         min: spec.min === 0 ? 0 : n,
         max: n,
+        target: spec,
         legal,
         ...(slotMode === undefined ? {} : { mode: slotMode.mode }),
       };
@@ -155,6 +156,7 @@ export function targetChoiceSpecs(
         : {}),
       ...(spec.differentControllers === true ? { eachController: true as const } : {}),
       ...(spec.differentFrom === undefined ? {} : { differentFrom: spec.differentFrom }),
+      target: spec,
       legal,
       ...(slotMode === undefined ? {} : { mode: slotMode.mode }),
       // D-344: the slot of a later instance of a mode chosen more than once says which instance (the first says nothing).
