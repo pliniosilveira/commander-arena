@@ -1,14 +1,15 @@
 /**
- * The start screen (SPEC 10 "Screens", issue 53): a home with two buttons, "Start game" and "Your
- * decks", and a short how-to. Start game opens a flow of two steps (your deck, then the opponent's
- * deck with the seed and the mulligan setting); Your decks opens the page that lists and imports decks.
+ * The start screen (SPEC 10 "Screens", issue 53): two cards, "Play a game" and "Your decks", the
+ * seed and mulligan settings and a short how-to. Start game opens two dialogs in turn, your deck and
+ * the opponent's deck; choosing the second starts the game. Your Decks opens the page that lists
+ * and imports decks.
  */
 import { useState } from 'react';
 import { ThemeToggle } from '../panels/ThemeToggle';
 import { usePrecons } from '../precons-context';
 import { useActions } from '../store-context';
 import { useDeckChoices } from '../use-deck-choices';
-import { DeckStep } from './DeckStep';
+import { DeckDialog } from './DeckDialog';
 import { defaultDecks, type MenuForm, parseSeed, randomSeed, startFromForm } from './menu-model';
 import './screens.css';
 
@@ -37,170 +38,135 @@ export function Menu() {
   const seedValid = parseSeed(form.seed).ok;
   const installed = precons.list.length > 0;
 
-  // A precon that is not a valid, fully supported deck is refused here with the reason (D-137).
-  const start = () => {
+  // A precon that is not a valid, fully supported deck is refused with the reason (D-137).
+  const choose = (id: string) => {
+    if (step === 'player') {
+      setForm({ ...form, humanDeck: id });
+      setStep('opponent');
+      return;
+    }
+    // The opponent's deck ends the flow: the game starts with the two decks chosen.
+    const next = { ...form, aiDeck: id };
+    setForm(next);
     setRefused(null);
     setStarting(true);
-    void startFromForm(actions.startGame, { ...form, ai: 'normal' }, precons)
+    void startFromForm(actions.startGame, { ...next, ai: 'normal' }, precons)
       .then((result) => {
         if (!result.started && result.kind === 'refused') setRefused(result.reason);
       })
       .finally(() => setStarting(false));
   };
+  const closeFlow = () => {
+    setRefused(null);
+    setStep('home');
+  };
 
-  const header = (
-    <header className="scr-menu-head">
-      <h1>Commander Arena</h1>
-      <p className="scr-tagline">
-        An unofficial, free Magic: The Gathering Commander game: you against an AI, in your browser.
-      </p>
-    </header>
-  );
-
-  if (step === 'home') {
-    return (
-      <main className="scr-menu">
-        {header}
-        <div className="scr-home">
-          <button
-            type="button"
-            className="scr-btn scr-btn-primary scr-start"
-            onClick={() => setStep('player')}
-          >
-            Start game
-          </button>
-          <button type="button" className="scr-btn" onClick={() => actions.openImport('decks')}>
-            Your decks
-          </button>
-          <ThemeToggle />
-        </div>
-        <details className="scr-howto">
-          <summary>How to play this build</summary>
-          <ul>
-            {HOW_TO_PLAY.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        </details>
-      </main>
-    );
-  }
-
-  const opponentStep = step === 'opponent';
   return (
     <main className="scr-menu">
-      {header}
-      <section className="scr-flow" aria-labelledby="scr-flow-h">
-        <h2 id="scr-flow-h">
-          Step {opponentStep ? 2 : 1} of 2: {opponentStep ? "the opponent's deck" : 'your deck'}
-        </h2>
-        {installed ? (
-          <p className="scr-help">
-            A precon is checked and ready; its card data is part of the app, so it starts without a
-            connection (card images load from Scryfall). Decks you saved need a connection, and a
-            deck with a card the engine cannot run yet is refused with the reason.
-          </p>
-        ) : (
+      <header className="scr-menu-head">
+        <h1>Commander Arena</h1>
+        <p className="scr-tagline">
+          An unofficial, free Magic: The Gathering Commander game: you against an AI, in your
+          browser.
+        </p>
+      </header>
+
+      <section className="scr-card" aria-labelledby="scr-play-h">
+        <h2 id="scr-play-h">Play a game</h2>
+        <p className="scr-help">Choose your deck and an opponent, then start a game.</p>
+        <button
+          type="button"
+          className="scr-btn scr-btn-primary"
+          disabled={!seedValid || !installed}
+          onClick={() => setStep('player')}
+        >
+          Start game
+        </button>
+        {!installed && (
           <p className="scr-note scr-no-precon" role="note">
             No precon is installed yet. You can still import your own deck.
           </p>
         )}
-        {opponentStep ? (
-          <DeckStep
-            legend="Opponent's deck"
-            name="ai-deck"
-            value={form.aiDeck}
-            decks={choices}
-            onChange={(aiDeck) => setForm({ ...form, aiDeck })}
-            onImport={() => actions.openImport('import')}
-          />
-        ) : (
-          <DeckStep
-            legend="Your deck"
-            name="human-deck"
-            value={form.humanDeck}
-            decks={choices}
-            onChange={(humanDeck) => setForm({ ...form, humanDeck })}
-            onImport={() => actions.openImport('import')}
-          />
-        )}
       </section>
 
-      {opponentStep && (
-        <div className="scr-start-row">
-          <div className="scr-seed">
-            <label htmlFor="scr-seed-input">Seed</label>
-            <input
-              id="scr-seed-input"
-              className="scr-input"
-              inputMode="numeric"
-              placeholder="random"
-              value={form.seed}
-              aria-invalid={!seedValid}
-              aria-describedby="scr-seed-help"
-              onChange={(e) => setForm({ ...form, seed: e.target.value })}
-            />
-            <button
-              type="button"
-              className="scr-btn"
-              onClick={() => setForm({ ...form, seed: String(randomSeed()) })}
-            >
-              Roll seed
-            </button>
-            <span id="scr-seed-help" className={seedValid ? 'scr-help' : 'scr-help scr-error'}>
-              {seedValid
-                ? 'The same seed and decks replay the same shuffle.'
-                : 'Use a whole number from 0 to 4294967295.'}
-            </span>
-          </div>
-          <label className="scr-check">
-            <input
-              type="checkbox"
-              checked={form.freeMulligan ?? true}
-              onChange={(e) => setForm({ ...form, freeMulligan: e.target.checked })}
-            />
-            Free first mulligan
-          </label>
-        </div>
-      )}
-
-      {refused !== null && (
-        <p className="scr-error" role="alert">
-          {refused}
-        </p>
-      )}
-
-      <div className="scr-flow-nav">
+      <section className="scr-card" aria-labelledby="scr-decks-h">
+        <h2 id="scr-decks-h">Your decks</h2>
+        <p className="scr-help">Manage your saved decks and import a new decklist.</p>
         <button
           type="button"
-          className="scr-btn"
-          onClick={() => {
-            setRefused(null);
-            setStep(opponentStep ? 'player' : 'home');
-          }}
+          className="scr-btn scr-btn-primary"
+          onClick={() => actions.openImport('decks')}
         >
-          Back
+          Your Decks
         </button>
-        {opponentStep ? (
+      </section>
+
+      <div className="scr-start-row">
+        <div className="scr-seed">
+          <label htmlFor="scr-seed-input">Seed</label>
+          <input
+            id="scr-seed-input"
+            className="scr-input"
+            inputMode="numeric"
+            placeholder="random"
+            value={form.seed}
+            aria-invalid={!seedValid}
+            aria-describedby="scr-seed-help"
+            onChange={(e) => setForm({ ...form, seed: e.target.value })}
+          />
           <button
             type="button"
-            className="scr-btn scr-btn-primary scr-start"
-            disabled={!seedValid || !installed || starting}
-            onClick={start}
+            className="scr-btn"
+            onClick={() => setForm({ ...form, seed: String(randomSeed()) })}
           >
-            Start game
+            Roll seed
           </button>
-        ) : (
-          <button
-            type="button"
-            className="scr-btn scr-btn-primary"
-            disabled={form.humanDeck === ''}
-            onClick={() => setStep('opponent')}
-          >
-            Next
-          </button>
-        )}
+          <span id="scr-seed-help" className={seedValid ? 'scr-help' : 'scr-help scr-error'}>
+            {seedValid
+              ? 'The same seed and decks replay the same shuffle.'
+              : 'Use a whole number from 0 to 4294967295.'}
+          </span>
+        </div>
+        <label className="scr-check">
+          <input
+            type="checkbox"
+            checked={form.freeMulligan ?? true}
+            onChange={(e) => setForm({ ...form, freeMulligan: e.target.checked })}
+          />
+          Free first mulligan
+        </label>
+        <ThemeToggle />
       </div>
+
+      <details className="scr-howto">
+        <summary>How to play this build</summary>
+        <ul>
+          {HOW_TO_PLAY.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+      </details>
+
+      {step !== 'home' && (
+        <DeckDialog
+          key={step}
+          title={step === 'player' ? 'Choose your deck' : "Choose opponent's deck"}
+          prompt={
+            step === 'player'
+              ? "Select the deck you'll play in this game."
+              : 'Select the deck your opponent will play.'
+          }
+          name={step === 'player' ? 'human-deck' : 'ai-deck'}
+          value={step === 'player' ? form.humanDeck : form.aiDeck}
+          decks={choices}
+          error={step === 'opponent' ? refused : null}
+          busy={starting}
+          onChoose={choose}
+          {...(step === 'opponent' ? { onBack: () => setStep('player') } : {})}
+          onCancel={closeFlow}
+          onImport={() => actions.openImport('import')}
+        />
+      )}
     </main>
   );
 }

@@ -11,7 +11,7 @@ import type {
 } from '../src/game/protocol';
 import { createAppStore } from '../src/store';
 import { PreconsProvider } from '../src/ui/precons-context';
-import { DeckStep } from '../src/ui/screens/DeckStep';
+import { DeckDialog } from '../src/ui/screens/DeckDialog';
 import { GameOver } from '../src/ui/screens/GameOver';
 import { lossReason, outcomeFor } from '../src/ui/screens/game-over-model';
 import { HonestyBanner } from '../src/ui/screens/HonestyBanner';
@@ -73,7 +73,7 @@ describe('Menu', () => {
     expect(defaultDecks([])).toEqual({ humanDeck: '', aiDeck: '' });
   });
 
-  test('the home has only the Start game and Your decks buttons and the how-to', async () => {
+  test('the home has the two cards, the seed settings and no deck list', async () => {
     const snapshot = await playableSnapshot('synthetic-a');
     const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
     const out = html(
@@ -83,16 +83,20 @@ describe('Menu', () => {
       </PreconsProvider>,
     );
     expect(out).toContain('unofficial');
+    expect(out).toContain('Play a game');
     expect(out).toContain('Start game');
-    expect(out).toContain('Your decks');
+    expect(out).toContain('Your Decks');
+    expect(out).toContain('Seed');
+    expect(out).toContain('Free first mulligan');
     expect(out).not.toContain('Import a deck');
-    expect(out).not.toContain('type="radio"');
+    expect(out).not.toContain('role="dialog"');
     expect(out).not.toContain(snapshot.name);
     expect(out).toContain('How to play this build');
     expect(out).not.toContain('<details open');
+    expect(out).not.toMatch(/<button[^>]*disabled=""[^>]*>Start game/);
   });
 
-  test('the home works with no precon installed, without crashing', () => {
+  test('with no precon installed the home says so and Start is disabled, without crashing', () => {
     const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
     for (const out of [
       html(store, <Menu />),
@@ -103,12 +107,13 @@ describe('Menu', () => {
         </PreconsProvider>,
       ),
     ]) {
-      expect(out).toContain('Start game');
-      expect(out).toContain('Your decks');
+      expect(out).toContain('No precon is installed yet');
+      expect(out).toMatch(/<button[^>]*disabled=""[^>]*>Start game/);
+      expect(out).toContain('Your Decks');
     }
   });
 
-  test('a deck step lists the precons in one tab and the saved decks in the other', () => {
+  test('a deck dialog lists the precons in one tab and the saved decks in the other', () => {
     const decks = [
       {
         id: 'p1',
@@ -120,26 +125,34 @@ describe('Menu', () => {
       },
       { id: 's1', kind: 'saved', name: 'Saved One', blurb: 'b', commander: '', edited: false },
     ] as const;
-    const step = (value: string) =>
+    const dialog = (list: typeof decks | readonly [(typeof decks)[0]], value: string) =>
       renderToStaticMarkup(
-        <DeckStep
-          legend="Your deck"
+        <DeckDialog
+          title="Choose your deck"
           name="human-deck"
           value={value}
-          decks={decks}
-          onChange={() => undefined}
+          prompt="Select the deck you'll play in this game."
+          decks={list}
+          error={null}
+          busy={false}
+          onChoose={() => undefined}
+          onCancel={() => undefined}
           onImport={() => undefined}
         />,
       );
-    const onPrecons = step('p1');
-    expect(onPrecons).toContain('Precon One');
-    expect(onPrecons).toContain('Commander: Cmd One');
-    expect(onPrecons).not.toContain('Saved One');
-    expect(onPrecons).toContain('name="human-deck"');
-    const onSaved = step('s1');
-    expect(onSaved).toContain('Saved One');
-    expect(onSaved).toContain('No commander marked');
-    expect(onSaved).not.toContain('Precon One');
+    // The dialog opens on the tab of the marked deck.
+    const withSaved = dialog(decks, 's1');
+    expect(withSaved).toContain('role="dialog"');
+    expect(withSaved).toContain('Choose your deck');
+    expect(withSaved).toContain('Saved One');
+    expect(withSaved).toContain('No commander marked');
+    expect(withSaved).not.toContain('Precon One');
+    const onlyPrecons = dialog([decks[0]], 'p1');
+    expect(onlyPrecons).toContain('Precon One');
+    expect(onlyPrecons).toContain('Commander: Cmd One');
+    expect(onlyPrecons).not.toContain('Back');
+    expect(onlyPrecons).toContain('>Select<');
+    expect(onlyPrecons).toContain('name="human-deck"');
   });
 
   test('the seed rules', () => {

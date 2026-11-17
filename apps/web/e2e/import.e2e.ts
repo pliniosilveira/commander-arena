@@ -1,5 +1,11 @@
 import { expect, type Page, test } from '@playwright/test';
-import { openStartFlow, pickDeck, startDefaultGame, toOpponentStep } from './harness/menu';
+import {
+  chooseDeck,
+  OPPONENT_DIALOG,
+  openStartFlow,
+  select,
+  startDefaultGame,
+} from './harness/menu';
 import { fakeScryfall } from './harness/synthetic-scryfall';
 
 /**
@@ -160,10 +166,10 @@ test('an imported deck whose cards are all supported is saved and played from th
   await page.getByRole('button', { name: 'Save deck' }).click();
   await expect(page.getByText('Saved "SYNTHETIC Hundred".')).toBeVisible();
   await page.getByRole('button', { name: 'Back to menu' }).click();
-  await openStartFlow(page);
-  await pickDeck(page, 'Your deck', 'Your decks', /SYNTHETIC Hundred/);
-  await toOpponentStep(page);
-  await page.getByRole('button', { name: 'Start game' }).click();
+  const mine = await openStartFlow(page);
+  await chooseDeck(mine, 'Your Decks', /SYNTHETIC Hundred/);
+  const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
+  await select(theirs);
 
   // The first decision is the mulligan, with cards of this deck in the opening hand.
   const mulligan = page.getByRole('dialog', { name: 'Opening hand' });
