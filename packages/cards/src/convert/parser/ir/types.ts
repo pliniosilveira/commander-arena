@@ -273,7 +273,7 @@ export interface IrFilter {
   /** "that targets only ~" (Feather group 3, D-437, CR 115.9c): a spell whose chosen targets are all the source of the ability. */
   readonly targetsOnlySelf?: true;
   /** "creatures attacking you" (stage P28, CR 508.1b): attackers whose attack target is the controller as a player. */
-  readonly attackingYou?: true;
+  readonly attackingYou?: true | 'orPlaneswalkers';
   /** "creatures attacking your opponents and/or planeswalkers they control" (stage P65, D-218, CR 508.1b, 506.3): attackers of an opponent or of a permanent of an opponent. */
   readonly attackingOpponents?: true | 'players';
   /** "attacking or blocking creatures" (stage P68, D-229, CR 506.4, 509.1g): creatures declared as attackers or as blockers that are still in combat. */

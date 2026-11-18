@@ -443,6 +443,14 @@ function effectOf(
       return ok({ kind: 'loseTypes', subject, types: effect.cardTypes as CardType[] });
     }
     case 'cantAttackYou':
+      // CR 508.1a, 303.4 (Vow of Duty): "Enchanted creature can't attack you or planeswalkers you control.": the creature the Aura is attached to, read for the Aura's controller as "you".
+      if (subject.kind === 'attached') {
+        return ok({
+          kind: 'cantAttackYou',
+          creatures: { hostOfSource: true },
+          planeswalkers: true,
+        });
+      }
       // CR 508.1a (D-647): a group of creatures, read for the controller of the permanent as "you"; "other" is not said.
       if (subject.kind !== 'filter' || subject.other === true) return failure(at);
       return ok({ kind: 'cantAttackYou', creatures: subject.filter, planeswalkers: true });

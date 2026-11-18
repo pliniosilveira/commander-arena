@@ -241,7 +241,7 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
             : who === 'defendingPlayer'
               ? ' defending player controls'
               : filter.attacking === true ||
-                  filter.attackingYou === true ||
+                  filter.attackingYou !== undefined ||
                   filter.attackingOpponents !== undefined ||
                   filter.attackingOrBlocking === true ||
                   filter.blocking === true
@@ -263,13 +263,15 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
       ? ' that is attacking or blocking'
       : filter.blocking === true
         ? ' that is blocking'
-        : filter.attackingYou === true
-          ? ' attacking you'
-          : filter.attackingOpponents === 'players'
-            ? ' attacking one of your opponents'
-            : filter.attackingOpponents === true
-              ? ' attacking your opponents and/or planeswalkers they control'
-              : '';
+        : filter.attackingYou === 'orPlaneswalkers'
+          ? ' attacking you or a planeswalker you control'
+          : filter.attackingYou === true
+            ? ' attacking you'
+            : filter.attackingOpponents === 'players'
+              ? ' attacking one of your opponents'
+              : filter.attackingOpponents === true
+                ? ' attacking your opponents and/or planeswalkers they control'
+                : '';
   // D-422 (CR 303.4): "creatures that aren't enchanted" names its objects by what is attached to them, so no "on the battlefield".
   const attached = attachedToWords(filter);
   if (attached === null) return null;

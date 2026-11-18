@@ -596,9 +596,10 @@ export interface ObjectFilter {
   /**
    * Only creatures attacking the controller of this ability as a player (CR 508.1b, D-131): "creatures attacking
    * you" counts the attackers whose attack target is that player, not one attacking a planeswalker or battle they
-   * control. It implies `attacking`. Read where `attacking` is read, and refused where it is refused.
+   * control. It implies `attacking`. Read where `attacking` is read, and refused where it is refused. `'orPlaneswalkers'` ("creature that's attacking you or a planeswalker you control",
+   * CR 508.1b, 506.3): also the attackers whose attack target is a planeswalker the controller of this ability controls (a battle is never covered).
    */
-  readonly attackingYou?: true;
+  readonly attackingYou?: true | 'orPlaneswalkers';
   /**
    * Only creatures attacking an opponent of the controller of this ability as a player, or a planeswalker or battle that opponent controls or protects
    * (CR 508.1b, 506.3, D-218): "creatures attacking your opponents and/or planeswalkers they control". It implies `attacking`. Read where `attacking` is

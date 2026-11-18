@@ -583,7 +583,7 @@ function staticCannotRead(f: IrNoun['filter'], keywords = false): boolean {
   return (
     f.power !== undefined ||
     f.toughness !== undefined ||
-    f.attackingYou === true ||
+    f.attackingYou !== undefined ||
     f.attackingOpponents !== undefined ||
     f.attackingOrBlocking === true ||
     f.blocking === true ||

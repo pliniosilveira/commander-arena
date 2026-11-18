@@ -90,6 +90,8 @@ export interface FilterContext {
    * combat in progress by the caller, like `attackers`; without it the flag matches nothing.
    */
   readonly attackersOfYou?: readonly ObjectId[];
+  /** The creatures attacking the controller as a player or a planeswalker the controller controls, for `attackingYou: 'orPlaneswalkers'` (CR 508.1b, 506.3). */
+  readonly attackersOfYouOrPlaneswalkers?: readonly ObjectId[];
   /** The number `manaValueAtMost` stands for (D-230), worked out by the caller that has the state. */
   readonly manaValueLimit?: number;
   /** The creatures declared as blockers that are still in combat, for `blocking` (CR 509.1g): read from the combat in progress by the caller. */
@@ -247,6 +249,12 @@ export function matchesFilterWith(
   if (filter.attackingOrBlocking === true && !(ctx.inCombat ?? []).includes(obj.id)) return false;
   // D-131: "attacking you" is an attacker whose attack target is the controller as a player.
   if (filter.attackingYou === true && !(ctx.attackersOfYou ?? []).includes(obj.id)) return false;
+  if (
+    filter.attackingYou === 'orPlaneswalkers' &&
+    !(ctx.attackersOfYouOrPlaneswalkers ?? []).includes(obj.id)
+  ) {
+    return false;
+  }
   // D-218: "attacking your opponents and/or planeswalkers they control".
   if (filter.attackingOpponents === true && !(ctx.attackersOfOpponents ?? []).includes(obj.id)) {
     return false;

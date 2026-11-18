@@ -294,7 +294,6 @@ export function checkFilter(
   // D-120: "attacking" and "power less than this creature's power" are flags; D-179: so is "put there from the battlefield this turn", a graveyard card's.
   for (const key of [
     'attacking',
-    'attackingYou',
     'attackingOrBlocking',
     'blocking',
     'powerLessThanSource',
@@ -309,6 +308,14 @@ export function checkFilter(
   ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
+  }
+  // D-131, CR 508.1b: "attacking you" is a flag; 'orPlaneswalkers' is "attacking you or a planeswalker you control".
+  if (
+    f.attackingYou !== undefined &&
+    f.attackingYou !== true &&
+    f.attackingYou !== 'orPlaneswalkers'
+  ) {
+    issue(out, `${path}.attackingYou`, "attackingYou must be true or 'orPlaneswalkers'");
   }
   // D-218, D-650: "attacking your opponents and/or planeswalkers they control" is a flag; `'players'` is "attacking one of your opponents".
   if (
@@ -391,7 +398,7 @@ export function checkFilter(
     (f.attacking === true ||
       f.notAttacking === true ||
       f.blocking === true ||
-      f.attackingYou === true ||
+      f.attackingYou !== undefined ||
       f.attackingOpponents !== undefined ||
       f.attackingOrBlocking === true) &&
     f.zone !== undefined &&

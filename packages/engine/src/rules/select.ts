@@ -230,6 +230,10 @@ export function matchesFilter(
       ? { manaValueLimit: manaValueLimitOf(state, filter.manaValueAtMost, ctx) }
       : {}),
     attackersOfYou: attackersOfPlayer(state, ctx.controller),
+    ...(filter.attackingYou === 'orPlaneswalkers' ||
+    (filter.anyOf?.some((m) => m.attackingYou === 'orPlaneswalkers') ?? false)
+      ? { attackersOfYouOrPlaneswalkers: attackersOfPlayerOrPlaneswalkers(state, ctx.controller) }
+      : {}),
     ...(filter.attackingOpponents === true ||
     (filter.anyOf?.some((m) => m.attackingOpponents === true) ?? false)
       ? { attackersOfOpponents: attackersOfOpponents(state, ctx.controller) }
@@ -273,7 +277,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.attacking === true ||
     f.notAttacking === true ||
     f.blocking === true ||
-    f.attackingYou === true ||
+    f.attackingYou !== undefined ||
     f.attackingOpponents !== undefined ||
     f.attackingOrBlocking === true ||
     f.manaValueAtMost !== undefined ||
@@ -365,6 +369,25 @@ function attackingCreatures(state: GameState): readonly ObjectId[] {
 function attackersOfPlayer(state: GameState, seat: SeatId): readonly ObjectId[] {
   return (state.combat?.attackers ?? [])
     .filter((a) => a.target.kind === 'player' && a.target.seat === seat)
+    .map((a) => a.object);
+}
+
+/**
+ * The creatures attacking `seat` as a player or a planeswalker `seat` controls (CR 508.1b, 506.3): the attack target is that player, or a planeswalker permanent controlled
+ * by them (a battle is not one). The planeswalker is read through layers (CR 613) and its controller through `controllerOf`.
+ */
+function attackersOfPlayerOrPlaneswalkers(state: GameState, seat: SeatId): readonly ObjectId[] {
+  return (state.combat?.attackers ?? [])
+    .filter((a) => {
+      if (a.targetGone === true) return false;
+      if (a.target.kind === 'player') return a.target.seat === seat;
+      const attacked = state.objects[a.target.object];
+      return (
+        attacked !== undefined &&
+        derive(state, attacked).types.includes('planeswalker') &&
+        controllerOf(state, attacked) === seat
+      );
+    })
     .map((a) => a.object);
 }
 
