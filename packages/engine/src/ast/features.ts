@@ -403,6 +403,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
     'crimeCommitted',
     'tokenCreated',
+    // "Whenever an opponent activates an ability of a permanent that isn't a mana ability" (CR 602.2, 603.2, 605.1a).
+    'activatesAbility',
     // D-513: "Whenever you scry" (CR 701.22).
     'scries',
     // Galadriel group 1: "Whenever you surveil" (CR 701.25).
@@ -723,6 +725,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sharesCreatureTypeWith',
     // D-262: "up to two basic land cards that share a land type" (`search.sharedLandType`).
     'sharedLandType',
+    // "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b; `search.zones`).
+    'searchZones',
     // D-181: "target spell or ability with a single target" (`ObjectFilter.singleTarget`).
     'singleTarget',
     'targetCountAtLeast',
@@ -1345,6 +1349,8 @@ export const SELECTOR_KINDS = [
   'sharesCreatureTypeWith',
   /** "Up to two basic land cards that share a land type" (CR 205.3i, 701.23, D-262): the engine's `search.sharedLandType`. */
   'sharedLandType',
+  /** "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b): the engine's `search.zones`. */
+  'searchZones',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
   /** "That targets only this creature" (CR 115.9c, D-437): the engine's `ObjectFilter.targetsOnly`. */
@@ -2079,6 +2085,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   classLevel: true,
   crimeCommitted: true,
   tokenCreated: true,
+  activatesAbility: true,
   scries: true,
   surveils: true,
   rollsHighest: true,

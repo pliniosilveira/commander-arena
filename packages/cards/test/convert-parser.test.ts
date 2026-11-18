@@ -430,6 +430,7 @@ describe('unmatched abilities', () => {
       'trigger.cycled-or-discarded',
       'trigger.commit-crime',
       'trigger.create-token',
+      'trigger.activate-ability',
       'trigger.tap-untapped',
       'trigger.scry',
       'trigger.scry-or-surveil',

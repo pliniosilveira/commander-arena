@@ -109,7 +109,8 @@ function clause(
 export function describeSearch(search: SearchEffect): string {
   const what = describeFilter(search.filter);
   const sharing = search.sharedLandType === true ? ' that share a land type' : '';
-  const noun = `${what === '' ? '' : `${what} `}${search.max === 1 ? 'card' : 'cards'}${sharing}`;
+  const named = search.filter.named === undefined ? '' : ` named ${search.filter.named}`;
+  const noun = `${what === '' ? '' : `${what} `}${search.max === 1 ? 'card' : 'cards'}${named}${sharing}`;
   const clauses: string[] = [];
   let start = 0;
   for (let i = 0; i < search.destinations.length; i += 1) {
@@ -125,5 +126,10 @@ export function describeSearch(search: SearchEffect): string {
     : onTop
       ? ' The rest of your library is shuffled first.'
       : ' Then your library is shuffled.';
-  return `Choose up to ${numberWord(search.max)} ${noun}; ${clauses.join(', ')}.${reveal}${shuffle}`;
+  // CR 701.23a: the zones searched when it is more than the library.
+  const zones =
+    search.zones === undefined
+      ? ''
+      : ` (from your ${orList(search.zones).replace(/ or /gu, ' and/or ')})`;
+  return `Choose up to ${numberWord(search.max)} ${noun}${zones}; ${clauses.join(', ')}.${reveal}${shuffle}`;
 }

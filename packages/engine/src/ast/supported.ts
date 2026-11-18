@@ -227,7 +227,11 @@ function walkEffect(
             message: `putting a searched card into "${d.zone}" is not implemented by the engine yet`,
           });
         }
-        if (d.zone === 'battlefield') auraEntryIssue(effect.filter, `${path}.filter`, out);
+        // Issue 104 (CR 303.4f): a card found by name that is an Aura chooses what it enchants as it enters (`withAuraEntries` in `rules/search.ts`), whatever the
+        // name is; any other search that could find an Aura stays refused.
+        if (d.zone === 'battlefield' && effect.filter.named === undefined) {
+          auraEntryIssue(effect.filter, `${path}.filter`, out);
+        }
       }
       return;
     case 'revealUntil':

@@ -299,6 +299,7 @@ describe('supported feature gate', () => {
   test('the registry matches what the engine implements today', () => {
     expect([...SUPPORTED_FEATURES.triggerKinds].sort()).toEqual(
       [
+        'activatesAbility',
         'attackBatch',
         'attacks',
         'becomesBlocked',

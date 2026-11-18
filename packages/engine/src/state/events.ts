@@ -199,6 +199,8 @@ export type GameEvent =
       readonly stackObject: ObjectId | null;
       /** The X announced for the ability (CR 602.2b, D-103); present when its cost had an X. */
       readonly x?: number;
+      /** The ability is one of a permanent: its source was on the battlefield as it was activated (CR 602.2, 113.6); absent for an ability of a card in a hand or a graveyard. */
+      readonly fromBattlefield?: true;
     }
   /**
    * The modes of a modal spell or ability were chosen (CR 601.2b, 602.2b, 603.3c, 700.2, D-114): for a
