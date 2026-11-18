@@ -569,7 +569,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
-      ((said(a, LOOK_AT_TOP) && (said(b, TAKE_FROM_AMONG) || said(b, PUT_ANY_TOTAL))) ||
+      ((said(a, LOOK_AT_TOP) &&
+        (said(b, TAKE_FROM_AMONG) || said(b, PUT_ANY_TOTAL) || said(b, PUT_FROM_AMONG_ONTO))) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&
       said(c, PUT_THE_REST)
     ) {

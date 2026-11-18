@@ -402,6 +402,51 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
 });
 
 /**
+ * `effect.look-put-onto`: "look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your
+ * library in a random order" (CR 401.2, 401.4, 701.20a: Ureni of the Unwritten). Three sentences that `splitSentences` keeps together; the card is put without being revealed
+ * ("put", not "reveal and put"). The engine's `lookAtTop` taking one card of the kind onto the battlefield. Not read: "into your hand" (the player must reveal it, `effect.look-take`),
+ * a rest that goes anywhere but the bottom in a random order, one card looked at.
+ */
+export const EFFECT_LOOK_PUT_ONTO = defineRule<Clauses>({
+  id: 'effect.look-put-onto',
+  family: 'effect',
+  leading: ['look'],
+  cites: ['CR 401.2 (Library)', 'CR 401.4 (Library)', 'CR 701.20a (Reveal)'],
+  examples: [
+    'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may put a creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
+  ],
+  rejects: [
+    'look at the top eight cards of your library. You may put a Dragon creature card from among them into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your library in any order',
+    'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest into your graveyard',
+    'look at the top card of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
+    'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield tapped. Put the rest on the bottom of your library in a random order',
+  ],
+  parse: single(
+    'effect.look-put-onto',
+    sequence(
+      literal('look at the top '),
+      AT_LEAST(2),
+      literal(' cards of your library. you may put '),
+      TAKEN_CARD,
+      literal(
+        ' from among them onto the battlefield. put the rest on the bottom of your library in a random order',
+      ),
+    ),
+    ([, count, , take]) => ({
+      verb: 'lookTake',
+      args: {
+        count,
+        take,
+        toGraveyard: { kind: 'flag', value: false, span: take.span, rule: 'effect.look-put-onto' },
+        ontoBattlefield: { kind: 'flag', value: true, span: take.span, rule: 'effect.look-put-onto' },
+      },
+    }),
+  ),
+});
+
+/**
  * `effect.look-put-attach`: "look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the
  * battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-658, CR 401.2, 303.4f, 301.5,
  * 701.3, 401.4: Armored Skyhunter). Four sentences that `splitSentences` keeps together; the card is taken without being revealed ("put", not "reveal and put"), an Aura chooses what it
@@ -635,6 +680,7 @@ export const LIBRARY_RULES = [
   EFFECT_LOOK_REORDER,
   EFFECT_LOOK_TAKE,
   EFFECT_LOOK_PUT_ATTACH,
+  EFFECT_LOOK_PUT_ONTO,
   EFFECT_LOOK_TAKE_BOTTOM,
   EFFECT_LOOK_TAKE_ONE_TOP,
   EFFECT_LOOK_TAKE_ONE_BOTTOM,
