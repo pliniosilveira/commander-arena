@@ -24,6 +24,8 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   madness: 'Madness',
   miracle: 'Miracle',
   foretell: 'Foretell',
+  // D-667 (CR 702.81a): cast from the graveyard by discarding a land card.
+  retrace: 'Retrace',
   // D-149: "pay {W} and tap four untapped creatures ... rather than pay this spell's mana cost".
   tapPermanents: 'Tap creatures',
   // Issue 159: "cast this from your graveyard by paying {B}{B} and sacrificing two creatures".

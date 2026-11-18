@@ -293,6 +293,7 @@ export function castAction(
   const zones: readonly Zone[] =
     alternative === 'flashback' ||
     alternative === 'escape' ||
+    alternative === 'retrace' ||
     alternative === 'sacrificeFromGraveyard'
       ? ['graveyard']
       : ['hand', 'command', 'exile'];

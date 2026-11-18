@@ -73,7 +73,10 @@ test('the popover shows the menu for a card with a cast and a cycling option', (
         abilityIndex: 1,
         ability: {
           kind: 'activated',
-          cost: [{ kind: 'discardThis' }, { kind: 'mana', symbols: ['2'] }],
+          cost: [
+            { kind: 'discardThis', cycling: true },
+            { kind: 'mana', symbols: ['2'] },
+          ],
           effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
           functionsIn: 'hand',
         },

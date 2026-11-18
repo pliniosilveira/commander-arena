@@ -33,7 +33,7 @@ const pumpEffect = {
 const pump: ActivatedAbility = { kind: 'activated', cost: [mana('1')], effect: pumpEffect };
 const cycling: ActivatedAbility = {
   kind: 'activated',
-  cost: [{ kind: 'discardThis' }, mana('2')],
+  cost: [{ kind: 'discardThis', cycling: true }, mana('2')],
   effect: draw,
   functionsIn: 'hand',
 };
@@ -186,7 +186,10 @@ describe('clicking an object with activated abilities', () => {
       types: ['land'],
       zone: 'hand',
       activated: [
-        { abilityIndex: 2, ability: { ...cycling, cost: [{ kind: 'discardThis' }, mana('1')] } },
+        {
+          abilityIndex: 2,
+          ability: { ...cycling, cost: [{ kind: 'discardThis', cycling: true }, mana('1')] },
+        },
       ],
     });
     const d = priority({ kind: 'playLand', object: o(6) }, act(6, 2));

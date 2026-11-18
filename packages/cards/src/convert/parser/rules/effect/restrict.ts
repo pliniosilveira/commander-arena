@@ -154,8 +154,13 @@ export const EFFECT_RESTRICT_ALL = defineRule<Clauses>({
     "creatures you control can't be blocked this turn",
     'creatures your opponents control can’t block this turn',
     'creatures you control attack this turn if able',
+    // Prismari deck, group 2 (D-656, CR 201.2): every creature with the card's own name.
+    "creatures named ~ can't be blocked this turn",
+    'creatures named ~ attack this turn if able',
   ],
   rejects: [
+    "creatures named Bob can't be blocked this turn",
+    "creature named ~ can't be blocked this turn",
     'creatures your opponents control attacks this turn if able',
     "creatures you control can't be blocked",
     "creatures you control can't be blocked until end of turn",
@@ -170,7 +175,7 @@ export const EFFECT_RESTRICT_ALL = defineRule<Clauses>({
     `${RULE}-all`,
     sequence(
       refuseAt(
-        family<IrNoun>('noun', { only: ['noun.plain-permanents'] }),
+        family<IrNoun>('noun', { only: ['noun.plain-permanents', 'noun.creatures-named-self'] }),
         (n) =>
           n.plural &&
           n.det === 'each' &&

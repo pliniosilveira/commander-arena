@@ -26,7 +26,7 @@ import type { GameEvent } from '../state/events';
 import { patchObject } from '../state/ops';
 import type { GameState } from '../state/types';
 import { beholdCandidates } from './behold';
-import { discardable, exilable } from './cast-cost';
+import { discardableFor, exilable } from './cast-cost';
 import { derive } from './derive';
 import { discardCostDecision, discardObjects } from './discard-cost';
 import { exileCostDecision, exileObjects } from './exile-cost';
@@ -307,7 +307,8 @@ function payDiscard(state: GameState, events: GameEvent[], finish: Finish): Resu
   if (!casting) return fail('No cast in progress');
   const count = casting.extra?.discard ?? 0;
   if (count === 0) return payExile(state, events, finish);
-  const hand = discardable(state, casting.seat, casting.object);
+  // D-667 (CR 702.81a): retrace discards a land card, not any card.
+  const hand = discardableFor(state, casting.seat, casting.object, casting.extra?.discardFilter);
   if (hand.length < count) return fail('You do not have enough cards to discard');
   // Exactly as many cards as asked: there is nothing to choose.
   if (hand.length === count) return discardChosen(state, events, hand, finish);

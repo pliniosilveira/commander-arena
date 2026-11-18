@@ -50,6 +50,7 @@ import {
   checkAdditionalCosts,
   checkAlternativeCosts,
   checkAttackTax,
+  checkCostPerExtraTarget,
   checkCostReduction,
 } from './validate-cost';
 import { checkCrossZoneSlots } from './validate-cross-zone';
@@ -478,6 +479,9 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'costReduction':
       checkCostReduction(s, path, out);
+      break;
+    case 'costPerExtraTarget':
+      checkCostPerExtraTarget(s, path, out);
       break;
     case 'abilityCostReduction':
       checkAbilityCostReduction(s, path, out);
@@ -1830,6 +1834,20 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
       'a land is played, not cast: it has no castFromGraveyard to give it permission for',
     );
   }
+  // D-641 (CR 601.2f): "costs {2}{R} more to cast for each target beyond the first" is the cost of a spell, once, of a face with targets to count.
+  const strive = face.abilities.filter(
+    (a) => a?.kind === 'static' && a.static?.kind === 'costPerExtraTarget',
+  ).length;
+  if (strive > 0 && !face.types.some((t) => t === 'instant' || t === 'sorcery')) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'costPerExtraTarget is the cost of a spell: an instant or a sorcery face (CR 601.2f)',
+    );
+  }
+  if (strive > 1) {
+    issue(out, `${path}.abilities`, 'costPerExtraTarget once is enough: a spell has one such cost');
+  }
   // CR 607.2d, 614.12 (D-100): the choice a permanent makes as it enters and what reads it.
   chosenIssues(
     face.abilities,
@@ -1950,8 +1968,12 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
 
   // An unsupported instant or sorcery has had its text dropped (SPEC 7.1), so only a supported
   // one must carry an effect. A supported instant or sorcery with no effect would do nothing.
+  // D-667 (CR 702.85a, 608.2): "Cascade. Retrace." is a sorcery with no spell text whose cast trigger does the work: cascade alone makes a spell with no effect to resolve valid.
   const isSpellCard = face.types.includes('instant') || face.types.includes('sorcery');
-  if (supported && isSpellCard && !spellHasEffect(face.spell)) {
+  const castsOnItsOwn = face.abilities.some(
+    (a) => a.kind === 'keyword' && a.keyword.kind === 'cascade',
+  );
+  if (supported && isSpellCard && !spellHasEffect(face.spell) && !castsOnItsOwn) {
     issue(out, `${path}.spell`, 'an instant or sorcery must have spell text with an effect');
   }
 }

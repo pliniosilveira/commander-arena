@@ -3147,6 +3147,180 @@ export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
+ * The SYNTHETIC cards of group 1 of the Prismari deck (issue 87, D-638 to D-645): a creature that makes a Myr token each combat and has the other tokens become copies of a token it
+ * chooses, a creature that populates and gives the token haste until the end step, a creature that makes tapped and attacking copies of its tokens, one that makes X copies of a
+ * creature, a kicker spell that copies a creature, a strive spell with any number of targets, a creature that becomes a copy of another creature with myriad, the two prepared
+ * creatures (prepared when a creature token deals combat damage, when a spell of mana value 5 or more is cast from the hand) and the spells and token makers that feed them. They ask
+ * `choosePermanent` (populate and the token of a copy), `chooseObjects`, the kicker, any number of targets, the strive cost and the "you may" of a choice, which the generic pools are
+ * not built to follow: a style of their own.
+ */
+export const PRISMARI_G1_NAMES = [
+  'SYNTHETIC Myr Tinker',
+  'SYNTHETIC Iteration Engine',
+  'SYNTHETIC Storm Singer',
+  'SYNTHETIC Flame Dancer',
+  'SYNTHETIC Replication Rite',
+  'SYNTHETIC Twin Blaze',
+  'SYNTHETIC Mud Morph',
+  'SYNTHETIC Sky Painter // Gift Spell',
+  'SYNTHETIC Focus Mage // Brain Surge',
+  'SYNTHETIC Soldier Call',
+  'SYNTHETIC Beast Call',
+  'SYNTHETIC Prismari Legend',
+  'SYNTHETIC Prismari Cantrip',
+  'SYNTHETIC Prismari Grand Study',
+  'SYNTHETIC Prismari Grand Flash',
+  'SYNTHETIC Prismari Echo Study',
+  'SYNTHETIC Prismari Treasure Call',
+] as const;
+
+/** The prismariG1 style: every card of the group twice, the token makers three times, and bodies for the copies. */
+export const PRISMARI_G1_SPELLS = [
+  ...supported(PRISMARI_G1_NAMES),
+  ...supported(PRISMARI_G1_NAMES),
+  ...supported(['SYNTHETIC Soldier Call', 'SYNTHETIC Beast Call', 'SYNTHETIC Iteration Engine']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Blue and red for the creatures and the strive cost, white and green for the token makers. */
+export const PRISMARI_G1_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Plains',
+  'Plains',
+  'Forest',
+  'Forest',
+]);
+
+/** Style pairs of the Prismari group 1 soak test (issue 87): a mirror match and both mixed ways. */
+export const PRISMARI_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['prismariG1', 'prismariG1'],
+  ['prismariG1', 'spells'],
+  ['spells', 'prismariG1'],
+];
+
+/**
+ * The SYNTHETIC cards of group 2 of the Prismari deck (issue 87, D-646 and later): creatures whose triggers read the spell that was cast (its mana value, the mana spent on it, the
+ * greatest mana value this turn), one that exiles a card from the graveyard to cast a copy of it, a spell that deals divided damage among any number of targets (and can be discarded for a
+ * Treasure), a spell that makes tokens that must attack each opponent and costs less for the instants and sorceries in the graveyard, a creature that copies itself and has creatures with its
+ * name unblockable, a land that becomes a creature, a dragon that gives artifacts a mana ability to spend on instants and sorceries, a creature that can block only creatures with flying, a
+ * draw spell with flashback that costs life, a sorcery that adds mana that stays and is suspended, and the spells and permanents that feed them. They ask the targets of a divided slot, the
+ * copy to cast, the mana to spend and the flashback payment, which the generic pools are not built to follow: a style of their own.
+ */
+export const PRISMARI_G2_NAMES = [
+  'SYNTHETIC Piano Elemental',
+  'SYNTHETIC Moment Master',
+  'SYNTHETIC Charging Ox',
+  'SYNTHETIC Manaform Drake',
+  'SYNTHETIC Opus Burst',
+  'SYNTHETIC Flocking Gale',
+  'SYNTHETIC Name Composer',
+  'SYNTHETIC Spire Land',
+  'SYNTHETIC Prism Dragon',
+  'SYNTHETIC Skittish Borrower',
+  'SYNTHETIC Deep Study',
+  'SYNTHETIC Rushing Refrain',
+  'SYNTHETIC Prismari Big Study',
+  'SYNTHETIC Prismari X Spell',
+  'SYNTHETIC Prismari Trinket',
+  'SYNTHETIC Prismari Discounter',
+  'SYNTHETIC Prismari Apprentice',
+] as const;
+
+/** The prismariG2 style: every card of the group twice, the spells that feed the triggers three times, and bodies. */
+export const PRISMARI_G2_SPELLS = [
+  ...supported(PRISMARI_G2_NAMES),
+  ...supported(PRISMARI_G2_NAMES),
+  ...supported([
+    'SYNTHETIC Prismari Cantrip',
+    'SYNTHETIC Prismari Grand Study',
+    'SYNTHETIC Prismari Big Study',
+  ]),
+  ...supported(['SYNTHETIC Charging Ox', 'SYNTHETIC Charging Ox', 'SYNTHETIC Prismari Cantrip']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Blue and red, for every cost of the group. */
+export const PRISMARI_G2_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+]);
+
+/** Style pairs of the Prismari group 2 soak test (issue 87): a mirror match and both mixed ways. */
+export const PRISMARI_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['prismariG2', 'prismariG2'],
+  ['prismariG2', 'spells'],
+  ['spells', 'prismariG2'],
+];
+
+/**
+ * The SYNTHETIC cards of group 3 of the Prismari deck (issue 87, D-660 and later): sorceries and a creature that exile cards and cast spells from among them without paying their mana
+ * costs (up to two, any number, one, the card revealed until a nonland card), two piles of exiled cards one of them face down with an opponent's choice, the cards each player exiles until
+ * a nonland card and the opponent's choice among them, Demonstrate, a sorcery that copies an exiled card whenever a creature deals combat damage, Retrace, and the cheap and dear spells,
+ * the one with an additional cost and the permanents that these cast. They ask the cards to cast one at a time, the opponent's pile and card, the cards to discard for retrace and whether to
+ * copy: a style of their own.
+ */
+export const PRISMARI_G3_NAMES = [
+  'SYNTHETIC Calamity Dance',
+  'SYNTHETIC Calamity Unshuffled',
+  'SYNTHETIC Chaos Orc',
+  'SYNTHETIC Pile Performance',
+  'SYNTHETIC Reveal Technique',
+  'SYNTHETIC Copy Technique',
+  'SYNTHETIC Demo Bolt',
+  'SYNTHETIC Surge Victory',
+  'SYNTHETIC Chaos Retrace',
+  'SYNTHETIC Retrace Bolt',
+  'SYNTHETIC Retrace X Drain',
+  'SYNTHETIC Twin Cast',
+  'SYNTHETIC Calamity Gain Two',
+  'SYNTHETIC Calamity Gain Seven',
+  'SYNTHETIC Calamity Discard Draw',
+] as const;
+
+/** The prismariG3 style: every card of the group twice, cheap spells to cast for free, and bodies to attack with. */
+export const PRISMARI_G3_SPELLS = [
+  ...supported(PRISMARI_G3_NAMES),
+  ...supported(PRISMARI_G3_NAMES),
+  ...supported([
+    'SYNTHETIC Calamity Gain Two',
+    'SYNTHETIC Calamity Gain Seven',
+    'SYNTHETIC Prismari Big Study',
+    'SYNTHETIC Prismari Trinket',
+  ]),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Blue and red, for every cost of the group. */
+export const PRISMARI_G3_LANDS = PRISMARI_G2_LANDS;
+
+/** Style pairs of the Prismari group 3 soak test (issue 87): a mirror match and both mixed ways. */
+export const PRISMARI_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['prismariG3', 'prismariG3'],
+  ['prismariG3', 'spells'],
+  ['spells', 'prismariG3'],
+];
+
+/**
  * The SYNTHETIC cards of group 1 of the Lorehold Spirit deck (issue 86, D-610 and later): a 3/3 with vigilance that searches for a Plains when an opponent controls more lands (twice at
  * most, shuffling if it searched), an artifact creature that may exile a card its controller discards and play it, one that may only cast it, a creature that may pay {1} and discard a
  * card to draw when it attacks and may exile one of the nonland cards its controller discards and cast it, a creature that draws when its controller discards one or more cards, a sorcery
@@ -4282,6 +4456,10 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(GISA_G4_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 1 cards (D-510 to D-514) ask to pay for reflexive abilities, the modes of one, targets of taps, the card type to protect from and what to do with a scry: a style of their own.
   .filter((card) => !(HYLDA_G1_NAMES as readonly string[]).includes(card.name))
+  // The Prismari group 1 cards (issue 87) populate, copy tokens, ask for any number of targets, a kicker, a strive cost and a token to choose: a style of their own.
+  .filter((card) => !(PRISMARI_G1_NAMES as readonly string[]).includes(card.name))
+  // The Prismari group 2 cards (issue 87) ask the targets of a divided slot, the copy of an exiled card to cast, the flashback payment and mana that stays: a style of their own.
+  .filter((card) => !(PRISMARI_G2_NAMES as readonly string[]).includes(card.name))
   // The Lorehold group 1 cards (issue 86) ask a "you may" before a search, which cards to discard, which card to exile and whether to pay {1} and discard: a style of their own.
   .filter((card) => !(LOREHOLD_G1_NAMES as readonly string[]).includes(card.name))
   // The Lorehold group 2 cards (issue 86) ask each player to vote, which card to exile, which Spirit to sacrifice and whether to cast a card without paying: a style of their own.
@@ -4512,6 +4690,9 @@ export type DeckStyle =
   | 'featherG1'
   | 'gisaG4'
   | 'hyldaG1'
+  | 'prismariG1'
+  | 'prismariG2'
+  | 'prismariG3'
   | 'loreholdG1'
   | 'loreholdG2'
   | 'galadrielG1'
@@ -4605,6 +4786,9 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'sacrificeMana' && SACRIFICE_MANA_SPELLS.length > 0) return SACRIFICE_MANA_SPELLS;
   if (style === 'gisaG1' && GISA_G1_SPELLS.length > 0) return GISA_G1_SPELLS;
   if (style === 'hyldaG1' && HYLDA_G1_SPELLS.length > 0) return HYLDA_G1_SPELLS;
+  if (style === 'prismariG1' && PRISMARI_G1_SPELLS.length > 0) return PRISMARI_G1_SPELLS;
+  if (style === 'prismariG2' && PRISMARI_G2_SPELLS.length > 0) return PRISMARI_G2_SPELLS;
+  if (style === 'prismariG3' && PRISMARI_G3_SPELLS.length > 0) return PRISMARI_G3_SPELLS;
   if (style === 'loreholdG1' && LOREHOLD_G1_SPELLS.length > 0) return LOREHOLD_G1_SPELLS;
   if (style === 'loreholdG2' && LOREHOLD_G2_SPELLS.length > 0) return LOREHOLD_G2_SPELLS;
   if (style === 'galadrielG1' && GALADRIEL_G1_SPELLS.length > 0) return GALADRIEL_G1_SPELLS;
@@ -4810,6 +4994,9 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'sacrificeMana' && BASIC_LANDS.length > 0) return SACRIFICE_MANA_LANDS;
   if (style === 'gisaG1' && BASIC_LANDS.length > 0) return GISA_G1_LANDS;
   if (style === 'hyldaG1' && BASIC_LANDS.length > 0) return HYLDA_G1_LANDS;
+  if (style === 'prismariG1' && BASIC_LANDS.length > 0) return PRISMARI_G1_LANDS;
+  if (style === 'prismariG2' && BASIC_LANDS.length > 0) return PRISMARI_G2_LANDS;
+  if (style === 'prismariG3' && BASIC_LANDS.length > 0) return PRISMARI_G3_LANDS;
   if (style === 'loreholdG1' && BASIC_LANDS.length > 0) return LOREHOLD_G1_LANDS;
   if (style === 'loreholdG2' && BASIC_LANDS.length > 0) return LOREHOLD_G2_LANDS;
   if (style === 'galadrielG1' && BASIC_LANDS.length > 0) return GALADRIEL_G1_LANDS;

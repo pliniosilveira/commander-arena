@@ -214,7 +214,6 @@ export const STATIC_DEFINES_PT = defineRule<IrStatic>({
     "~'s power and toughness are each equal to twice the number of lands you control.",
     "~'s power and toughness are each equal to the number of lands you control plus 1.",
     "~'s power and toughness are each equal to its mana value.",
-    "~'s power and toughness are each equal to the number of cards in target opponent’s hand.",
     "~'s power is equal to the number of creatures you control and its toughness is equal to the number of lands you control.",
     "~'s power and toughness are each equal to the greatest power among creatures you control.",
     "~'s power equals the number of lands you control.",

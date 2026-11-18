@@ -168,7 +168,12 @@ function casualRemainder(
   const options = d.options.filter(
     (o) =>
       o.kind !== 'playLand' &&
-      !(o.kind === 'castSpell' && o.alternative !== 'flashback' && o.alternative !== 'escape'),
+      !(
+        o.kind === 'castSpell' &&
+        o.alternative !== 'flashback' &&
+        o.alternative !== 'escape' &&
+        o.alternative !== 'retrace'
+      ),
   );
   return choosePriorityAction(view, { ...d, options }, think.draw, activations);
 }

@@ -550,6 +550,17 @@ export type GameEvent =
       readonly names: readonly string[];
       readonly faceDown?: true;
     }
+  /**
+   * CR 608.2d (D-660, "An opponent chooses a nonland card exiled this way"): `seat` chose the cards `objects` (public, face up in exile) as `source`, a spell or ability, resolved.
+   * `automatic` is true when there was one card to choose. Nothing is done to them: they are set aside.
+   */
+  | {
+      readonly kind: 'cardsChosen';
+      readonly seat: SeatId;
+      readonly source: ObjectId;
+      readonly objects: readonly ObjectId[];
+      readonly automatic: boolean;
+    }
   /** CR 603.5: the controller of an optional ("you may") triggered ability answered. */
   | {
       readonly kind: 'optionalAnswered';

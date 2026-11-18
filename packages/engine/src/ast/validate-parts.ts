@@ -298,6 +298,7 @@ export function checkFilter(
     'powerAboveBase',
     'putFromBattlefieldThisTurn',
     'notCastFromHand',
+    'castFromHand',
     'enteredThisTurn',
     'exiledWithSource',
     'singleTarget',
@@ -1002,6 +1003,13 @@ export function checkRef(
       if (!scope.chosenObjects?.has(ref.id))
         issue(out, path, "'chosen' needs an earlier chooseObjects instruction");
       break;
+    case 'boundObjects':
+      issue(
+        out,
+        path,
+        "'boundObjects' is the engine's own form of 'moved' in a delayed ability and is never written in a card",
+      );
+      break;
     case 'moved':
       if (scope.movedAvailable !== true) {
         issue(
@@ -1547,6 +1555,21 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
+    case 'greatestManaValueCast':
+    case 'spellsCastThisTurn':
+      // D-638 (CR 601.2i): the controller's own count of the spells cast this turn, by card type when `ofTypes` names some (statics refuse it in `checkStateAmount`).
+      // D-646 (CR 202.3): and the greatest mana value among them, read the same way.
+      checkEnumList(out, `${path}.ofTypes`, a.ofTypes, CARD_TYPES, 'card type');
+      for (const key of Object.keys(a)) {
+        if (key !== 'kind' && key !== 'ofTypes') {
+          issue(
+            out,
+            `${path}.${key}`,
+            'spells cast this turn reads only the controller and the card types',
+          );
+        }
+      }
+      break;
     case 'lifeGainedThisTurn':
       if (Object.keys(a).some((key) => key !== 'kind')) {
         issue(out, path, 'life gained this turn reads only the controller; no extra fields');
@@ -1613,9 +1636,22 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // D-183: the spell that is the source of "When you cast this spell" paid for itself; nothing else has mana spent to cast it to read.
       if (a.of !== undefined) {
         // D-217 (CR 113.7a): the mana spent on a spell this ability targets ("that spell", Mana Sculpt).
-        if (a.of.kind !== 'target')
-          issue(out, `${path}.of`, 'the spell is a target of the ability');
-        else checkRef(a.of, 'object', `${path}.of`, scope, out);
+        // D-646 (CR 601.2h): or the spell that caused a "whenever you cast" trigger.
+        if (a.of.kind === 'triggerSubject') {
+          if (scope.triggerSubject !== 'stack') {
+            issue(
+              out,
+              `${path}.of`,
+              'the spell that was cast is read only in a trigger about a spell being cast',
+            );
+          }
+        } else if (a.of.kind !== 'target') {
+          issue(
+            out,
+            `${path}.of`,
+            'the spell is a target of the ability or the spell that was cast',
+          );
+        } else checkRef(a.of, 'object', `${path}.of`, scope, out);
       } else if (scope.selfCast !== true && scope.owner !== 'spell') {
         // D-260: the effect of the spell itself reads what was spent to cast it ("You gain 1 life for each {S} spent to cast this spell").
         issue(
@@ -1706,13 +1742,31 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // D-095: a count of the objects the filter matches; `owner` is not read here (checkFilter).
       if (a.filter === undefined || a.filter === null) {
         issue(out, `${path}.filter`, 'countOf needs a filter');
+      } else if (
+        a.filter.owner !== undefined &&
+        kindOf(a.filter.owner) === 'target' &&
+        a.filter.zone !== undefined &&
+        a.filter.zone !== 'battlefield'
+      ) {
+        // D-649 (CR 108.3, 400.1, 608.2c): "for each card in target opponent's hand": the cards of a zone outside the battlefield that a player the effect targets owns, counted as
+        // the amount is read, with the targets.
+        const { owner, ...rest } = a.filter;
+        checkPlayerSelector(owner, `${path}.filter.owner`, scope, out);
+        if (rest.controller !== undefined || rest.controlledBy !== undefined) {
+          issue(
+            out,
+            `${path}.filter`,
+            'a count of the cards a targeted player owns sets owner alone, not controller or controlledBy',
+          );
+        }
+        checkFilter(rest, `${path}.filter`, out);
       } else if (a.filter.owner !== undefined) {
         const { owner: _owner, ...rest } = a.filter;
         void _owner;
         issue(
           out,
           `${path}.filter.owner`,
-          "owner is only read in an effect's each selector, except for a target mana-value limit",
+          "owner is only read in an effect's each selector, except for a target mana-value limit and the cards of a zone outside the battlefield that a target player owns",
         );
         if (rest.controlledBy !== undefined) {
           issue(out, `${path}.filter.controlledBy`, 'owner and controlledBy cannot both be set');
@@ -2351,6 +2405,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'didPrevious':
     case 'thisWayAtLeast':
+    case 'movedTotalManaValue':
     case 'objectMatches':
       // D-135: these read what a resolving effect knows (what it did, the object it names), so only a `conditional` effect has them.
       issue(out, path, `${c.kind} is only valid in a conditional effect (D-135)`);
@@ -2666,6 +2721,9 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'destroy' ||
     e?.kind === 'moveToZone' ||
     e?.kind === 'createToken' ||
+    // D-639: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
+    e?.kind === 'createCopies' ||
+    e?.kind === 'populate' ||
     // D-145: the card found by a `revealUntil` is "it".
     e?.kind === 'revealUntil' ||
     // D-151: the cards `exileTop` exiled are "those cards", and the card Discover found is "the discovered card".
@@ -2675,6 +2733,11 @@ function movesObjects(e: Effect): boolean {
     // D-393: the card `exileRandomFromHand` exiled is "it" ("If it's a land card, you may put it onto the battlefield").
     e?.kind === 'exileRandomFromHand' ||
     e?.kind === 'exileUntilCast' ||
+    // D-660, D-661, D-663: the cards exiled by `exileUntilFound`, `exileTopAnyNumber` and `exilePiles` are "the cards exiled this way" (`opponentChoosesCard` keeps the others).
+    e?.kind === 'exileUntilFound' ||
+    e?.kind === 'opponentChoosesCard' ||
+    e?.kind === 'exileTopAnyNumber' ||
+    e?.kind === 'exilePiles' ||
     // D-177: the cards a `search` found and put somewhere are "it" and "that land" ("Then if you control four or more lands, untap that land").
     e?.kind === 'search' ||
     // D-216: the card a `lookAndSplit` exiled is "the exiled card" ("You may play the exiled card this turn").
@@ -3089,8 +3152,16 @@ function checkCopySource(ref: ObjectRef, path: string, scope: Scope, out: Out): 
     case 'target':
       checkRef(ref, 'object', path, scope, out);
       break;
+    case 'chosen':
+      // D-642 (CR 608.2d): "each other token you control becomes a copy of that token": the one an earlier `chooseObjects` of the same sequence chose.
+      checkRef(ref, 'object', path, scope, out);
+      break;
     default:
-      issue(out, path, 'a copy is made from this permanent, a target or the triggering permanent');
+      issue(
+        out,
+        path,
+        'a copy is made from this permanent, a target, the permanent chosen or the triggering permanent',
+      );
   }
 }
 
@@ -3330,6 +3401,32 @@ function checkSearch(
   }
 }
 
+/**
+ * D-660: the filter of an effect that picks cards among those in a library or in exile ("a nonland card"): it describes the card (types, supertypes, subtypes, colors, mana
+ * value), and says no zone, controller, owner or stackKind, nor anything read from the game.
+ */
+function checkLibraryFilter(f: ObjectFilter, path: string, out: Out, scope: Scope): void {
+  checkFilter(f, path, out, undefined, scope.diesTrigger === true);
+  if (
+    filterSome(
+      f,
+      (g) =>
+        g.zone !== undefined ||
+        g.controller !== undefined ||
+        g.owner !== undefined ||
+        g.stackKind !== undefined ||
+        g.other !== undefined ||
+        readsCombatOrSource(g),
+    )
+  ) {
+    issue(
+      out,
+      path,
+      'the cards are in a library or in exile: no zone, controller, owner, stackKind, other, or anything read from the game',
+    );
+  }
+}
+
 /** The effects a `may` effect wraps: each one tells the engine whether it did something (`StepOutcome.performed`, D-135). */
 export const MAY_EFFECT_KINDS = [
   // D-206 (CR 701.3): "you may attach it to target creature you control. If you do, ...".
@@ -3372,11 +3469,12 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         );
       } else if (ofKind === 'triggerSubject') {
         // D-149: "If that land is a Plains": the permanent whose event caused the trigger.
-        if (scope.triggerSubject !== 'permanent') {
+        // D-646 (CR 202.3, 608.2h): or the spell that was cast ("If that spell's mana value is 5 or greater"), read from the spell on the stack or from its last-known information.
+        if (scope.triggerSubject !== 'permanent' && scope.triggerSubject !== 'stack') {
           issue(
             out,
             `${path}.of`,
-            'triggerSubject is only read where the trigger names a permanent (enters, dies, attacks, ...)',
+            'triggerSubject is only read where the trigger names a permanent (enters, dies, attacks, ...) or a spell that was cast',
           );
         }
       } else {
@@ -3409,6 +3507,16 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       }
       break;
     }
+    case 'movedTotalManaValue':
+      // D-661 (CR 202.3): the cards an earlier moving effect of the sequence moved, added up, against a whole number.
+      checkRef({ kind: 'moved' }, 'object', `${path}`, scope, out);
+      if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
+        issue(out, `${path}.compare.cmp`, `unknown comparison ${JSON.stringify(c.compare?.cmp)}`);
+      }
+      if (!isCount(c.compare?.value)) {
+        issue(out, `${path}.compare.value`, 'a total mana value is compared with a whole number');
+      }
+      break;
     case 'ringBearerChosen':
       issue(
         out,
@@ -3710,10 +3818,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'createCopies': {
       // D-213: a group of permanents named by an `each` selector, and the abilities the copies have besides their own.
-      if (kindOf(e.objects) !== 'each') {
-        issue(out, `${path}.objects`, 'createCopies copies each permanent a group names');
+      // D-639 (CR 601.2c, 608.2c): "Choose any number of target creatures you control. For each of them, create a token that's a copy of that creature": the permanents a target slot named.
+      if (kindOf(e.objects) !== 'each' && kindOf(e.objects) !== 'target') {
+        issue(
+          out,
+          `${path}.objects`,
+          'createCopies copies each permanent a group or a target names',
+        );
       } else {
         checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      }
+      if (e.tapped !== undefined && e.tapped !== true) {
+        issue(out, `${path}.tapped`, 'tapped must be true when present');
       }
       if (e.abilities !== undefined) {
         if (!Array.isArray(e.abilities))
@@ -3735,6 +3851,30 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-131: "tapped" is a flag.
       if (e.tapped !== undefined && e.tapped !== true) {
         issue(out, `${path}.tapped`, 'tapped must be true when present');
+      }
+      // D-652 (CR 508.1d, 101.4): "for each opponent, create ... tokens that attack that opponent this turn if able": the controller of the effect makes them for each opponent;
+      // the tokens are plain (keywords only), so nothing is asked as they enter and each opponent's tokens are known.
+      if (e.forEachOpponent !== undefined) {
+        if (e.forEachOpponent?.mustAttack !== true) {
+          issue(out, `${path}.forEachOpponent`, 'forEachOpponent is { mustAttack: true }');
+        }
+        if (e.controller !== undefined) {
+          issue(
+            out,
+            `${path}.controller`,
+            'the tokens made for each opponent are the controller’s own',
+          );
+        }
+        if (
+          e.token?.kind !== 'custom' ||
+          !(e.token.definition?.abilities ?? []).every((a) => a?.kind === 'keyword')
+        ) {
+          issue(
+            out,
+            `${path}.token`,
+            'tokens made for each opponent are a custom token with keyword abilities only',
+          );
+        }
       }
       break;
     case 'counterUnlessPays':
@@ -3899,6 +4039,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkEnumList(out, `${path}.addTypes`, e.addTypes, CARD_TYPES, 'card type');
         }
       }
+      // D-640 (CR 707.9b): "..., except it has myriad": the abilities the copy has besides the ones it copies.
+      if (e.abilities !== undefined) {
+        if (!Array.isArray(e.abilities) || e.abilities.length === 0) {
+          issue(out, `${path}.abilities`, 'abilities is a non-empty list when present');
+        } else {
+          e.abilities.forEach((a, i) => {
+            scope.checkAbility(a, `${path}.abilities[${i}]`, out);
+          });
+        }
+      }
       break;
     case 'destroy':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
@@ -3972,6 +4122,56 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
       checkEffect(e.effect, `${path}.effect`, scope, out);
       break;
+    case 'exileUntilFound':
+      // D-660 (CR 701.13, 101.4): each player the selector names exiles from their own library until a card the filter describes (a card in a library).
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      checkLibraryFilter(e.filter, `${path}.filter`, out, scope);
+      break;
+    case 'opponentChoosesCard':
+      // D-660 (CR 608.2d): an opponent chooses among the cards an earlier effect moved, which a filter describes (cards in exile: no zone, controller or owner).
+      if (kindOf(e.objects) !== 'moved') {
+        issue(
+          out,
+          `${path}.objects`,
+          "an opponent chooses among the cards an effect before moved ('moved')",
+        );
+      } else {
+        checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
+      }
+      checkLibraryFilter(e.filter, `${path}.filter`, out, scope);
+      break;
+    case 'exilePiles':
+      // D-663 (CR 700.3, 406.3): the number of cards of each pile; the chosen pile goes to the graveyard.
+      checkAmount(e.count, `${path}.count`, scope, out);
+      if (e.chosenTo !== 'graveyard') {
+        issue(out, `${path}.chosenTo`, 'the chosen pile is put into the graveyard');
+      }
+      break;
+    case 'exileTopAnyNumber':
+      // D-661 (CR 701.13, 608.2d): no parameter; the player decides how many times.
+      break;
+    case 'delayedCombatDamageTurn': {
+      // D-662 (CR 603.7, 510.3a): a delayed ability that triggers on combat damage to a player by a source the filter names, until end of turn; what it does is about the card an
+      // earlier effect of the same sequence exiled, the only thing it can name (CR 603.7c).
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.controller !== 'you' || e.filter?.zone !== undefined) {
+        issue(
+          out,
+          `${path}.filter`,
+          "the sources are creatures the controller controls (controller 'you'), as they are on the battlefield",
+        );
+      }
+      if (e.effect?.kind !== 'copyCardAndCast' || kindOf(e.effect.objects) !== 'moved') {
+        issue(
+          out,
+          `${path}.effect`,
+          "a delayed combat damage trigger copies the card an earlier effect moved (copyCardAndCast of 'moved')",
+        );
+        break;
+      }
+      checkEffect(e.effect, `${path}.effect`, scope, out);
+      break;
+    }
     case 'delayedCombatDamage':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
@@ -4110,8 +4310,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
-      if (e.copier !== undefined && e.copier !== 'triggerPlayer') {
-        issue(out, `${path}.copier`, 'copier is "triggerPlayer"');
+      if (e.copier !== undefined && e.copier !== 'triggerPlayer' && e.copier !== 'opponent') {
+        issue(out, `${path}.copier`, 'copier is "triggerPlayer" or "opponent"');
+      } else if (e.copier === 'opponent') {
+        // D-665 (CR 702.144a): "choose an opponent. That player copies the spell": one copy of the spell of the trigger, with no group of copies.
+        if (e.forEach !== undefined || kindOf(e.spell) !== 'triggerSubject') {
+          issue(
+            out,
+            `${path}.copier`,
+            'an opponent copies the spell of the trigger (triggerSubject), one copy, with no forEach',
+          );
+        }
       } else if (e.copier !== undefined && kindOf(e.spell) !== 'triggerSubject') {
         issue(
           out,
@@ -4130,6 +4339,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.spell`,
           'exileOnResolve names the spell that was cast (triggerSubject)',
         );
+      }
+      break;
+    case 'exileSpellWithTimeCounters':
+      // D-651 (CR 608.2n, 122.1): the spell's own text; a whole number of counters of 1 or more.
+      if (scope.owner !== 'spell') {
+        issue(
+          out,
+          path,
+          "exileSpellWithTimeCounters is only valid in spell text (it exiles 'this spell')",
+        );
+      }
+      if (!Number.isSafeInteger(e.count) || e.count < 1) {
+        issue(out, `${path}.count`, 'the number of time counters is a positive whole number');
       }
       break;
     case 'unearth':
@@ -4500,10 +4722,38 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }
       break;
+    case 'copyCardAndCast':
+      // D-654 (CR 707.12): the card an earlier effect of the same sequence exiled ("copy it"), as it is in exile.
+      if (kindOf(e.objects) !== 'moved') {
+        issue(
+          out,
+          `${path}.objects`,
+          "copyCardAndCast copies the card an effect before it exiled (objects: 'moved')",
+        );
+      } else {
+        checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
+      }
+      break;
     case 'castFree': {
       // CR 608.2g (D-145): a card chosen from the hand, or the card an earlier effect or a linked exile names; `play` also allows a land.
       if (e.play !== undefined && e.play !== true)
         issue(out, `${path}.play`, 'play must be true when present');
+      // D-660 (CR 608.2g): "up to two spells", "any number of spells": the cards an earlier effect moved, spells only (a land is played, one at a time).
+      if (e.max !== undefined) {
+        if (e.max !== 'any' && !(Number.isSafeInteger(e.max) && e.max >= 2)) {
+          issue(out, `${path}.max`, "max is a whole number of 2 or more, or 'any'");
+        }
+        if (kindOf(e.objects) !== 'moved') {
+          issue(
+            out,
+            `${path}.max`,
+            "several spells are cast from the cards an effect before moved ('moved')",
+          );
+        }
+        if (e.play === true) {
+          issue(out, `${path}.max`, 'several cards are cast, not played (no play)');
+        }
+      }
       const objects = e.objects as ChooseSelector | ObjectRef;
       if (kindOf(objects) === 'choose') {
         const choose = objects as ChooseSelector;
@@ -4607,11 +4857,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'the cards are in the library: no zone, controller, owner, stackKind, other, or anything read from the game',
         );
       }
-      if (!isOneOf(e.put, ['battlefield', 'hand'])) {
+      if (!isOneOf(e.put, ['battlefield', 'hand', 'exile'])) {
         issue(
           out,
           `${path}.put`,
-          `a revealed card is put onto the battlefield or into the hand, not ${JSON.stringify(e.put)}`,
+          `a revealed card is put onto the battlefield, into the hand or into exile, not ${JSON.stringify(e.put)}`,
         );
       }
       if (e.tapped !== undefined && (e.tapped !== true || e.put !== 'battlefield')) {
