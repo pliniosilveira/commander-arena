@@ -32,6 +32,7 @@ import { MELD_NEEDS } from './meld';
 import { MODAL_NEEDS, MODE_COST_NEEDS } from './modal';
 import { NOUN_EXTRA_NEEDS, SELECTOR_NEEDS } from './nouns';
 import { PLANESWALKER_NEEDS } from './planeswalker';
+import { REVEAL_TOP_DUEL_NEEDS } from './reveal-top-duel';
 import { NEXT_CAST_NEEDS, SENTENCE_NEEDS } from './sentences';
 import { ALTERNATIVE_COST_NEEDS, lowerAlternativeKeyword, lowerSpellCosts } from './spell-costs';
 import { lowerStatic, STATIC_NEEDS } from './statics';
@@ -148,6 +149,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...DRAGON_NEEDS,
     ...KORVOLD_NEEDS,
     ...GIDEON_NEEDS,
+    ...REVEAL_TOP_DUEL_NEEDS,
     ...PLANESWALKER_NEEDS,
     ...DESTINY_NEEDS,
     ...MELD_NEEDS,

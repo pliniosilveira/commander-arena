@@ -2064,6 +2064,14 @@ export type Effect =
       readonly otherwiseTo?: 'hand';
     }
   /**
+   * "At the beginning of your upkeep, you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card
+   * revealed by the other player. You each put the card you revealed into your hand." (CR 701.20a Reveal, 119.3, 202.3): each of the two players `players` names reveals the top
+   * card of their own library (nothing for an empty library: the other player then loses no life), each loses life equal to the mana value of the card the OTHER player revealed,
+   * and each puts the card they revealed into their hand. `players` is `{ kind: 'all', of: [a, b] }` of two selectors that name different players, so "the other player" is
+   * defined; the cards are all revealed before any life is lost, and the mana values are read from the cards as they were revealed.
+   */
+  | { readonly kind: 'revealTopDuel'; readonly players: PlayerSelector }
+  /**
    * "Put a Dragon creature card from your hand onto the battlefield tapped and attacking" (CR 508.4, 506.3, D-151): the second half, after an
    * effect of the same sequence that put the creature onto the battlefield (`moveToZone` with `tapped`): each creature `objects` names ('moved') that
    * is on the battlefield and is not attacking now starts attacking. It attacks the player the source of this ability attacks (or the first

@@ -361,6 +361,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'exileUntilCast',
     // D-151: "reveals the top card of their library. If it's a permanent card, they put it onto the battlefield" (Chaos Warp).
     'revealTop',
+    // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
+    'revealTopDuel',
     // D-151: "you may behold a Dragon" (CR 701.4).
     'behold',
     // D-151: "you may pay any amount of {R}. When you do, ..." (CR 603.12).
@@ -2149,6 +2151,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   enterAttacking: true,
   exileUntilCast: true,
   revealTop: true,
+  revealTopDuel: true,
   behold: true,
   payAnyAmount: true,
 };
