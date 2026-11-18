@@ -1,6 +1,6 @@
 # Roadmap: deferred work and known limitations
 
-What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the design is in `docs/ARCHITECTURE.md`, the mechanics in `docs/MECHANICS.md`. For what is happening now, read the open issues and pull requests; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.
+What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the design is in `docs/ARCHITECTURE.md`, what exists is read from the code. For what is happening now, read the open issues and pull requests; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.
 
 Every limit under "Deferred engine features" and "Deferred grammar" is refused or left unread (`validateCard`, the parser), so no supported card reaches it. The rows of "Known rules deviations" are the exception: they are places where supported play can differ from the Comprehensive Rules, and they are the first candidates for fixes.
 
@@ -577,3 +577,19 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 - Retrace (D-667) is printed only and never granted; it does not combine with another way to cast from the graveyard.
 - The Scryfall rulings of the seven cards were not fetched (the host is blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
 - The web shows the piles and the new choices with generic wording; the effect text of the spells is shown from the Oracle text.
+
+## Limits carried over from the removed mechanics file
+
+- Behold cost, granted loyalty ability, graveyard self-exile cost: built without the Comprehensive Rules text at hand; their rule references are unverified.
+- Split cards: Flashback on a split card is refused, so such a card stays unsupported.
+- Vehicles: a Vehicle whose printed power or toughness is `*` is not supported.
+- Modal double-faced commander: its land face cannot be played from the command zone; only casting either face is offered.
+- Sagas: a permanent that becomes a Saga after it entered gets no lore counter from the turn-based action.
+- "Unless [player] pays": a payer who chooses among costs ("pays {1} or discards a card") is not read.
+- Evoke: there is no "if it was evoked" condition, so a card that asks it stays unsupported.
+- Can't be countered: "can't be countered by [quality] spells" and abilities that can't be countered are not built.
+- Copy a spell: "Copy target instant or sorcery spell, then return it to its owner's hand" is not read.
+- Equip commander: a token that copies a commander cannot be the target; a granted list mixing a keyword and protection is not read.
+- AI, pay any amount: the agent always pays the most it can for a "pay any amount" question.
+- Look and take: a filtered take ("two creature cards from among them"), a number that is not fixed, X and another player's library are not read.
+- Look at the top cards and take one: only the Diabolic Vision and Sleight of Hand wordings are read.
