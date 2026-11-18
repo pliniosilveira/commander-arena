@@ -100,12 +100,35 @@ function noteMoved(effects: readonly Effect[], ctx: LowerContext): void {
     if (effect.kind === 'exile') ctx.exiled = 'cards';
     ctx.exiledRef =
       effect.kind === 'exile' && effect.objects.kind === 'target' ? effect.objects.id : null;
+    // `'*'` (issue 159): the instruction put objects onto the battlefield that no target names ("Put all creature cards from all graveyards onto the battlefield"): "they"
+    // are `moved`, as no target id can be '*'.
     ctx.movedOnto =
-      effect.kind === 'moveToZone' &&
-      effect.to === 'battlefield' &&
-      effect.objects.kind === 'target'
-        ? effect.objects.id
+      effect.kind === 'moveToZone' && effect.to === 'battlefield'
+        ? effect.objects.kind === 'target'
+          ? effect.objects.id
+          : '*'
         : null;
+  }
+}
+
+/**
+ * What "they", "them", "those tokens" and "the token created this way" mean after an instruction that created tokens (D-643, Prismari group 1): the tokens that instruction made,
+ * the engine's `moved`, until an instruction that moves, destroys, exiles or sacrifices other objects is lowered. A token made is also remembered (`lastToken`), which
+ * "create five of those tokens instead" makes more of.
+ */
+function noteTokensMade(effects: readonly Effect[], ctx: LowerContext): void {
+  const MAKES = ['createToken', 'createCopies', 'populate'];
+  if (effects.some((e) => MAKES.includes(e.kind))) {
+    ctx.tokensMade = true;
+    const [only] = effects;
+    // D-646: a token of any kind (the copy of "create five of those tokens instead", the 1/1 Elemental of "create three of those tokens instead").
+    ctx.lastToken = effects.length === 1 && only?.kind === 'createToken' ? only : null;
+    return;
+  }
+  const MOVES = ['moveToZone', 'destroy', 'exile', 'sacrifice'];
+  if (effects.some((e) => MOVES.includes(e.kind))) {
+    ctx.tokensMade = false;
+    ctx.lastToken = null;
   }
 }
 
@@ -178,8 +201,10 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     if (!lowered.ok) return lowered;
     effects.push(...lowered.value);
     ctx.lowered += 1;
+    ctx.lastEffectKind = lowered.value[lowered.value.length - 1]?.kind ?? ctx.lastEffectKind;
     noteRemoved(lowered.value, ctx);
     if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;
+    noteTokensMade(lowered.value, ctx);
     noteMoved(lowered.value, ctx);
     noteCreated(lowered.value, ctx);
     noteMadeToken(clause, lowered.value, ctx);
@@ -188,6 +213,11 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
       lowered.value.length === 1 &&
       lowered.value[0]?.kind === 'mill' &&
       lowered.value[0].player.kind === 'you';
+    // Issue 159: "Each opponent attacking that player does the same": the clause before it was one `createToken` for the controller.
+    const only = lowered.value.length === 1 ? lowered.value[0] : undefined;
+    ctx.createdToken = only?.kind === 'createToken' && only.controller === undefined ? only : null;
+    // Issue 159: "a creature card put into a graveyard this way": the clause before it was a destroy.
+    ctx.destroyed = lowered.value.length === 1 && lowered.value[0]?.kind === 'destroy';
     // D-412: "If you put a Town card into your hand this way": the clause before it moved cards to the hand.
     ctx.movedToHand =
       lowered.value.length === 1 &&
@@ -442,6 +472,49 @@ function lossReadsAreOrdered(effects: readonly Effect[]): boolean {
     if (!nestedLists(effect).every(lossReadsAreOrdered)) return false;
   }
   return true;
+}
+
+/**
+ * "Then you may choose a token you control. If you do, each other token you control becomes a copy of that token." (Prismari group 1, D-642, CR 608.2d, 707.2): the offer and the sentence
+ * after it are the engine's `chooseObjects` of one token (choosing none is declining it) and a `becomeCopy` of the others of the one chosen, which does nothing when none was chosen, so
+ * "if you do" needs no test of its own. Null when the sentence is not the offer; a pair of another shape is refused, never guessed.
+ */
+function lowerChooseTokenPair(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const [clause, ...more] = sentence.clauses;
+  if (clause?.verb !== 'chooseTokenYouControl') return null;
+  const next = sentences[i + 1];
+  const [second, ...rest] = next?.clauses ?? [];
+  if (
+    more.length > 0 ||
+    !clause.optional ||
+    clause.condition !== undefined ||
+    clause.duration !== undefined ||
+    sentence.condition !== undefined ||
+    sentence.instead === true ||
+    sentence.where !== undefined ||
+    sentence.delayed !== undefined ||
+    next === undefined ||
+    next.condition?.test.kind !== 'didPrevious' ||
+    next.instead === true ||
+    next.where !== undefined ||
+    next.reflexive === true ||
+    next.delayed !== undefined ||
+    second?.verb !== 'eachOtherTokenBecomesCopy' ||
+    second.optional ||
+    rest.length > 0
+  ) {
+    return refuse(sentence);
+  }
+  const offered = lowerClauses([{ ...clause, optional: false }], ctx);
+  if (!offered.ok) return offered;
+  const copied = lowerClauses([second], ctx);
+  if (!copied.ok) return copied;
+  return { ok: true, value: [...offered.value, ...copied.value], rule: clause.rule };
 }
 
 /**
@@ -1256,6 +1329,9 @@ function countsWhatHappened(
     case 'discarded':
       // Issue 244 (Syphon Mind): "for each card discarded this way": the cards a `discard` before it made the players discard.
       return earlier.verb === 'discard';
+    case 'damageDealt':
+      // Issue 159: "you gain life equal to the damage dealt this way": a `dealDamage` before it.
+      return earlier.verb === 'dealDamage';
     case 'milledValue':
       // Stage P52 (D-210): "equal to the total mana value of those cards": the cards a mill before it milled.
       return earlier.verb === 'mill';
@@ -1586,6 +1662,13 @@ function lowerStep(
     if (!notTaken.ok) return stop(notTaken);
     steps.push({ effects: notTaken.value, replaceable: false });
     return { last: i };
+  }
+  // "Then you may choose a token you control. If you do, each other token you control becomes a copy of that token." (Prismari group 1, D-642).
+  const chosenToken = lowerChooseTokenPair(sentence, sentences, i, ctx);
+  if (chosenToken !== null) {
+    if (!chosenToken.ok) return stop(chosenToken);
+    steps.push({ effects: chosenToken.value, replaceable: false });
+    return { last: i + 1 };
   }
   const offered = lowerMayPay(sentence, sentences[i + 1], ctx);
   if (offered !== null) {

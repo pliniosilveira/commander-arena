@@ -24,13 +24,20 @@ export function checkKickerCost(cost: readonly Cost[], path: string, out: AstIss
   });
 }
 
-/** CR 702.34a: the flashback cost is a mana cost (other flashback costs are not supported). */
+/**
+ * CR 702.34a: the flashback cost is a mana cost, or a mana cost and a payment of life ("Flashback—{1}{U}, Pay 3 life.",
+ * Deep Analysis); a flashback cost with another cost is not supported.
+ */
 export function checkFlashbackCost(cost: readonly Cost[], path: string, out: AstIssue[]): void {
   checkCosts(cost, path, out);
   if (!Array.isArray(cost)) return;
   cost.forEach((c, i) => {
-    if (c?.kind !== 'mana') {
-      issue(out, `${path}[${i}]`, 'a flashback cost may be mana only');
+    if (c?.kind === 'payLife') {
+      if (!Number.isSafeInteger(c.amount) || c.amount < 1) {
+        issue(out, `${path}[${i}].amount`, 'life paid must be at least 1');
+      }
+    } else if (c?.kind !== 'mana') {
+      issue(out, `${path}[${i}]`, 'a flashback cost may be mana or life only');
     } else if (c.symbols?.includes('X')) {
       issue(out, `${path}[${i}]`, 'X in a flashback cost is not supported');
     }
@@ -176,6 +183,27 @@ export function checkCastFace(
       );
     }
   }
+  // Issue 159: casting from the graveyard by sacrificing creatures is a way to cast a spell, so it is on a card that is not a land; Convoke, Improvise and Delve are not combined with it.
+  if (alternatives.some((a) => a?.kind === 'sacrificeFromGraveyard')) {
+    if (face.types.includes('land')) {
+      issue(out, `${path}.alternativeCosts`, 'sacrificeFromGraveyard is on a spell, not on a land');
+    }
+    if (
+      abilities.some(
+        (a) =>
+          a.kind === 'keyword' &&
+          (a.keyword.kind === 'convoke' ||
+            a.keyword.kind === 'improvise' ||
+            a.keyword.kind === 'delve'),
+      )
+    ) {
+      issue(
+        out,
+        `${path}.alternativeCosts`,
+        'sacrificeFromGraveyard with convoke, improvise or delve is not supported',
+      );
+    }
+  }
   // CR 702.35a, 702.94a, 702.143a (D-128, D-274): madness, miracle and foretell are ways to cast a card, so they are on a
   // card that is not a land (a land is played, never cast).
   for (const kind of ['madness', 'miracle', 'foretell'] as const) {
@@ -227,10 +255,14 @@ export function checkCastFace(
   if (devours.length > 1) {
     issue(out, `${path}.abilities`, 'more than one devour ability on a face is not supported');
   }
-  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback') =>
+  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback' | 'retrace') =>
     abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === kind);
   if (has('flashback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'flashback is on an instant or a sorcery (CR 702.34a)');
+  }
+  // D-667 (CR 702.81a): "You may cast this card from your graveyard by discarding a land card": a land is played, never cast, so it has no retrace.
+  if (has('retrace') && face.types.includes('land')) {
+    issue(out, `${path}.abilities`, 'retrace is on a card that is cast, not a land (CR 702.81a)');
   }
   // Galadriel group 3, CR 702.27a: "put this spell into its owner's hand as it resolves" is said of an instant or a sorcery.
   if (has('buyback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {

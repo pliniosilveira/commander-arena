@@ -12,6 +12,7 @@ import type { NewDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { attachEntered } from './attach';
 import { optionsFor } from './chosen';
 import { type OrderFlow, quietFlow } from './damage-order';
 import { bindEncoreToken } from './encore';
@@ -37,6 +38,7 @@ import {
 } from './enters-keywords';
 import { canReveal, revealChoices, revealEvents } from './enters-reveal';
 import { lifeTotalIsLocked } from './player-lock';
+import { matchesFilter } from './select';
 import { done, type StepOutcome } from './step-outcome';
 import { settleTokens } from './token-replacement';
 import { hypotheticalToken, makeTokens } from './tokens';
@@ -50,6 +52,7 @@ type EnterToken = Extract<Instruction, { kind: 'enterToken' }>;
  */
 export function tokenAsks(state: GameState, seat: SeatId, definition: TokenDefinition): boolean {
   return (
+    auraEnchantFilter(definition) !== null ||
     entersChoice(definition.abilities) !== null ||
     // D-225 (CR 614.12, 707.9): a token that is a copy of a permanent that may enter as a copy of a creature asks which, when there is one.
     tokenCopyCandidates(state, seat, definition, null).length > 0 ||
@@ -59,6 +62,15 @@ export function tokenAsks(state: GameState, seat: SeatId, definition: TokenDefin
     riotInstances(state, definition.abilities, hypotheticalToken(seat, definition)) > 0 ||
     (devourOf(definition.abilities) > 0 && devourCandidates(state, seat).length > 0)
   );
+}
+
+/** CR 303.4a, 702.5a (D-668): the enchant filter of a token that is an Aura (a copy of one), or null. */
+function auraEnchantFilter(definition: TokenDefinition) {
+  if (!definition.subtypes.includes('Aura')) return null;
+  for (const a of definition.abilities) {
+    if (a.kind === 'keyword' && a.keyword.kind === 'enchant') return a.keyword.filter;
+  }
+  return null;
 }
 
 /** The permanents a token with `definition` may become a copy of as it is created (CR 614.12, 707.9: "As this enters, you may have it become a copy of ..."); none when it has no such ability. */
@@ -255,6 +267,39 @@ export function runEnterToken(
       riotDecision(seat, res.object, definition.name, definition.oracleText, riotAnswers),
     );
   }
+  // CR 303.4f, 303.4g (D-668): a token that is an Aura enters under no spell, so its controller chooses what it enchants as it enters, among the permanents its enchant ability
+  // allows; with none it does not enter (a token cannot stay in a zone it was never in). The one chosen is attached once the token exists.
+  const enchant = auraEnchantFilter(definition);
+  let host = instruction.host ?? null;
+  if (enchant !== null && host === null) {
+    const hosts = state.battlefield.filter((id) => {
+      const obj = state.objects[id];
+      return (
+        obj !== undefined &&
+        matchesFilter(
+          state,
+          obj,
+          { ...enchant, zone: 'battlefield' },
+          { controller: seat, source: res.object },
+        )
+      );
+    });
+    if (hosts.length === 0) return done(state);
+    const only = hosts.length === 1 ? hosts[0] : undefined;
+    if (only === undefined) {
+      return asked({
+        kind: 'choosePermanent',
+        seat,
+        source: res.object,
+        purpose: 'auraHost',
+        subject: res.object,
+        min: 1,
+        max: 1,
+        legal: hosts,
+      });
+    }
+    host = only;
+  }
   // CR 702.82a (D-185): "you may sacrifice any number of creatures", the last question; none is asked when there is nothing to sacrifice.
   let devoured = instruction.devoured ?? null;
   if (devourOf(definition.abilities) > 0 && devoured === null) {
@@ -287,6 +332,13 @@ export function runEnterToken(
     copied = became.state;
     copyEvents.push(...became.events, ...became.counterEvents);
   }
+  // CR 303.4f (D-668): the Aura token enters attached to the permanent chosen.
+  let hostEvents: GameEvent[] = [];
+  if (host !== null && token !== undefined) {
+    const attached = attachEntered(copied, token, host);
+    copied = attached.state;
+    hostEvents = attached.events;
+  }
   // CR 702.141a (D-185): a copy Encore made is required to attack its opponent, has haste and is sacrificed at the next end step.
   const bound =
     instruction.encoreFor === undefined
@@ -296,7 +348,13 @@ export function runEnterToken(
           copied,
         );
   return {
-    ...done(bound, [...payEvents, ...sacrificed.events, ...made.events, ...copyEvents]),
+    ...done(bound, [
+      ...payEvents,
+      ...sacrificed.events,
+      ...made.events,
+      ...copyEvents,
+      ...hostEvents,
+    ]),
     lastMoved: [...(res.lastMoved ?? []), ...created],
   };
 }

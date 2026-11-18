@@ -240,10 +240,19 @@ export function evaluateCondition(
     case 'didPrevious':
       // CR 603.12, 608.2c (D-135; Learn, CR 701.48a, reads the same way): "if you do": the nearest `may` effect before this was accepted and did something.
       return (ctx.performed ?? 0) > 0;
+    case 'movedTotalManaValue': {
+      // CR 202.3, 608.2c (D-661): the mana values of the cards the earlier effects of this resolution moved, added up (a card gone from where it was counts 0).
+      const total = (ctx.moved ?? []).reduce((sum, id) => {
+        return sum + (statOf(state, id, 'manaValue') ?? 0);
+      }, 0);
+      if (condition.compare.cmp === 'atLeast') return total >= condition.compare.value;
+      if (condition.compare.cmp === 'atMost') return total <= condition.compare.value;
+      return total === condition.compare.value;
+    }
     case 'objectMatches': {
       // D-135, CR 113.7a, 608.2h: the object the reference names, as it is or as it last was (a card an earlier instruction
       // moved is read as it was when it left), against the filter in whatever zone it was in.
-      const [id] = resolveObjects(
+      const ids = resolveObjects(
         state,
         condition.of,
         {
@@ -254,18 +263,22 @@ export function evaluateCondition(
         },
         ctx.targets ?? [],
       );
-      const named = id === undefined ? null : objectOrLki(state, id);
-      return (
-        named !== null &&
-        // D-412: "If you put a Town card into your hand this way": the card is in the hand it was put into.
-        (condition.inZone === undefined || named.zone === condition.inZone) &&
-        matchesFilter(
-          state,
-          named,
-          { ...condition.filter, zone: named.zone },
-          { controller: ctx.controller, source: ctx.source },
-        )
-      );
+      // Issue 159: "If at least one Zombie card is milled this way": any of the objects the instruction before it moved; otherwise the first.
+      const candidates = condition.any === true ? ids : ids.slice(0, 1);
+      return candidates.some((id) => {
+        const named = objectOrLki(state, id);
+        return (
+          named !== null &&
+          // D-412: "If you put a Town card into your hand this way": the card is in the hand it was put into.
+          (condition.inZone === undefined || named.zone === condition.inZone) &&
+          matchesFilter(
+            state,
+            named,
+            { ...condition.filter, zone: named.zone },
+            { controller: ctx.controller, source: ctx.source },
+          )
+        );
+      });
     }
     case 'giftPromised': {
       // CR 702.174k (D-135): the spell carries the chosen player on the stack, the permanent that came from it remembers
@@ -465,6 +478,13 @@ export function evaluateCondition(
             s.seat === ctx.controller &&
             s.types.some((t) => condition.ofTypes?.includes(t) ?? false),
         ).length >= condition.atLeast
+      );
+    case 'castFromGraveyardThisTurn':
+      // Issue 159 (CR 601.2a, 602.2): a spell the controller cast from a graveyard this turn, or an ability of a card in a graveyard they activated this turn.
+      return (
+        state.turnLog.castSpells.some(
+          (s) => s.seat === ctx.controller && s.fromGraveyard === true,
+        ) || state.turnLog.activated.some((a) => a.fromGraveyard === ctx.controller)
       );
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die rolled earlier in this resolution against the number; no die rolled, no result.

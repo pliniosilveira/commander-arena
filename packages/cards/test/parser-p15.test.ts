@@ -257,7 +257,7 @@ describe('"another target ...", "each of up to two target creatures", "all other
   });
 
   test('"all other creatures" and "each other creature you control" are every one but the source', () => {
-    // Issue 233 (D-631): in a spell "other" has no source to leave out (a spell is no permanent); only the tokens an instruction before it created can be meant, so a spell
+    // Issue 233 (PR #280): in a spell "other" has no source to leave out (a spell is no permanent); only the tokens an instruction before it created can be meant, so a spell
     // that says it with nothing before it is refused, not run as "every creature".
     expect(dropped('Destroy all other creatures.', 'instant')).toMatchObject({
       reason: 'notRunnable',

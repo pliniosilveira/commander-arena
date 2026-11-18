@@ -208,6 +208,8 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters the battlefield with X +1/+1 counters on it.',
     '~ enters with a +1/+1 counter on it for each Zombie card in your graveyard.',
     '~ enters with a +1/+1 counter on it for each creature you control.',
+    // Grave Danger (issue 159): two counts joined by "and each".
+    '~ enters with a +1/+1 counter on it for each other Zombie you control and each Zombie card in your graveyard.',
     // Stage P69 (D-254): Everflowing Chalice.
     '~ enters with a +1/+1 counter on it for each time it was kicked.',
     '~ enters with a charge counter on it for each time it was kicked.',
@@ -217,6 +219,8 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters with two +1/+1 counters on it for each time it was kicked.',
     '~ enters with X +1/+1 counters on it for each creature you control.',
     '~ enters with a +1/+1 counter on it for each creature.',
+    '~ enters with a +1/+1 counter on it for each creature you control and each.',
+    '~ enters with a +1/+1 counter on it for each creature you control and creature cards in your graveyard.',
     '~ enters with Y +1/+1 counters on it.',
     '~ enters with X on it.',
     '~ enters with up to X +1/+1 counters on it.',

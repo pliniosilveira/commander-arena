@@ -363,6 +363,36 @@ const STORM_ABILITY: Extract<Ability, { kind: 'triggered' }> = {
 };
 
 /**
+ * CR 702.144a: "Demonstrate" means "When you cast this spell, you may copy it and you may choose new targets for the copy. If you copy the spell, choose an opponent. That player
+ * copies the spell and may choose new targets for that copy." A triggered ability of the spell that functions on the stack, found as the spell is cast (CR 603.3b). The copies are
+ * copies of a spell, not cast (CR 707.10): the copy of the controller goes on the stack first and the opponent's above it, so the opponent's copy resolves first. Each instance triggers
+ * separately. "If you copy the spell" is "if you do" of the `may` (CR 603.12, D-135): the opponent copies only when the controller did (D-665).
+ */
+const DEMONSTRATE_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'castSpell', filter: { stackKind: 'spell' }, by: 'you', self: true },
+  effect: {
+    kind: 'sequence',
+    effects: [
+      {
+        kind: 'may',
+        effect: { kind: 'copySpell', spell: { kind: 'triggerSubject' }, newTargets: 'may' },
+      },
+      {
+        kind: 'conditional',
+        condition: { kind: 'didPrevious' },
+        effect: {
+          kind: 'copySpell',
+          spell: { kind: 'triggerSubject' },
+          newTargets: 'may',
+          copier: 'opponent',
+        },
+      },
+    ],
+  },
+};
+
+/**
  * CR 702.56a: "Replicate [cost]" means, besides the additional cost, "When you cast this spell, if a replicate cost
  * was paid for it, copy it for each time its replicate cost was paid. If the spell has any targets, you may choose new
  * targets for any of the copies." The intervening "if" is the `replicated` condition (CR 603.4): with no payment the
@@ -634,6 +664,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [EXTORT_ABILITY];
     case 'cascade':
       return [CASCADE_ABILITY];
+    case 'demonstrate':
+      return [DEMONSTRATE_ABILITY];
     case 'storm':
       return [STORM_ABILITY];
     case 'gravestorm':

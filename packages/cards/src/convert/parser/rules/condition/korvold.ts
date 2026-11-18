@@ -150,8 +150,60 @@ export const CONDITION_RING_BEARER = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.milled-this-way`: "at least one Zombie card is milled this way", "a Zombie card is milled this way" (issue 159, Liliana, Untouched by Death; CR 608.2c, 701.17a,
+ * 400.7j: what the mill before it put into the graveyard is what the condition asks about; with nothing milled it is false). The kind is any description of what a card is. The
+ * engine's `objectMatches` of the objects that were moved, with `any`, in a `conditional` effect after a mill; the lowering refuses it when the clause before is not a mill of
+ * your own library.
+ */
+export const CONDITION_MILLED_THIS_WAY = defineRule<IrCondition>({
+  id: 'condition.milled-this-way',
+  family: 'condition',
+  leading: ['at', 'a'],
+  cites: ['CR 608.2c (Resolving Spells and Abilities)', 'CR 701.17a (Mill)', 'CR 400.7j (General)'],
+  examples: [
+    'at least one Zombie card is milled this way',
+    'a Zombie card is milled this way',
+    'at least one creature card is milled this way',
+    'at least one land card is milled this way',
+  ],
+  rejects: [
+    'at least one Zombie card is milled',
+    'at least one Zombie card was milled this way',
+    'at least two Zombie cards are milled this way',
+    'at least one Zombie card is milled this way.',
+    'at least one Zombie card is milled this way and',
+    'at least one Zombie card is discarded this way',
+    'Zombie cards are milled this way',
+    'at least one Banana card is milled this way',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      sequence(
+        // A lookahead first: "a player cast two or more spells last turn" and the like stop where they always did.
+        pattern(/(?=(?:at least one|an?) [^.,]* is milled this way)/iu),
+        pattern(/(?:at least one|an?) /iu),
+        WHAT_IT_IS,
+        pattern(/ is milled this way(?![\p{L}\p{N}])/iu),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'milledThisWay', filter: r.value.value[2] },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.milled-this-way',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const KORVOLD_CONDITION_RULES = [
   CONDITION_PUT_THIS_WAY,
+  CONDITION_MILLED_THIS_WAY,
   CONDITION_YOUR_MAIN_PHASE,
   CONDITION_RING_BEARER,
 ];

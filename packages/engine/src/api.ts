@@ -414,7 +414,8 @@ function answerConfirm(
     head === 'confirmOptional' ||
     head === 'mayEffect' ||
     head === 'playerMay' ||
-    head === 'graveyardPair'
+    head === 'graveyardPair' ||
+    head === 'exileAnyNumber'
   ) {
     return finishResolutionAnswer(answerResolutionOptional(state, accept));
   }

@@ -374,7 +374,7 @@ const CHOSEN: readonly Line[] = [
     kind: 'enchantment',
     text: 'As ~ enters, choose a color other than gold.',
     expect: no(', choose a color other than gold.', 'replacement.as-enters-choose'),
-    note: 'SYNTHETIC; "other than" a color is built since D-631 (the Thriving lands), but gold is not a color',
+    note: 'SYNTHETIC; "other than" a color is built since PR #280 (the Thriving lands), but gold is not a color',
   },
   {
     kind: 'enchantment',

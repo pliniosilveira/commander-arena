@@ -351,14 +351,20 @@ function colorsThatStay(state: GameState, seat: SeatId): ReadonlySet<ManaColor> 
   return keep;
 }
 
-/** Empties every mana pool (CR 500.5, 106.4), but for the colors a static ability keeps (D-151). */
-export function emptyManaPools(state: GameState): { state: GameState; events: GameEvent[] } {
+/**
+ * Empties every mana pool (CR 500.5, 106.4), but for the colors a static ability keeps (D-151) and the mana an effect said you don't lose as steps and phases end
+ * (D-650: kept until the cleanup step ends, where the "until end of turn" effect that kept it is over).
+ */
+export function emptyManaPools(
+  state: GameState,
+  endOfTurn = state.turn.step === 'cleanup',
+): { state: GameState; events: GameEvent[] } {
   let next = state;
   const events: GameEvent[] = [];
   for (const seat of state.seats) {
     if (seat.manaPool.length === 0) continue;
     const keep = colorsThatStay(state, seat.id);
-    const kept = seat.manaPool.filter((m) => keep.has(m.color));
+    const kept = seat.manaPool.filter((m) => keep.has(m.color) || (m.stays === true && !endOfTurn));
     const lost = seat.manaPool.length - kept.length;
     if (lost === 0) continue;
     events.push({ kind: 'manaEmptied', seat: seat.id, count: lost });

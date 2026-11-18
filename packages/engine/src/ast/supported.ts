@@ -76,13 +76,7 @@ function copySourceIssues(filter: ObjectFilter | null, path: string, out: AstIss
     });
     return;
   }
-  if (mightMatchAura(filter)) {
-    out.push({
-      path,
-      message:
-        'a token copy of a permanent that could be an Aura is not implemented by the engine yet (CR 303.4f)',
-    });
-  }
+  // D-668 (CR 303.4f): a token copy of an Aura asks what it enchants as it enters (`rules/enter-token.ts`), so a source that could be an Aura is run.
   // D-211 (CR 614.12): a token that is a copy of a land asks the questions of a shock land and of a land that reveals a card as a permanent does
   // (`rules/enter-token.ts`), so a copy whose source could be a land is run.
 }
@@ -304,7 +298,12 @@ function walkEffect(
       // CR 611.2a: only "until end of turn" has an end the engine runs (CR 514.2). The source must
       // be a permanent on the battlefield (a copy of an Aura or a land is a copy effect on an
       // object that already entered, so nothing is asked, unlike a token).
-      if (!SUPPORTED_FEATURES.durationKinds.includes(effect.duration)) {
+      // D-642 (CR 611.2a, 707.2): and no end at all (`permanent`): "each other token you control becomes a copy of that token" is a layer 1 copy effect that lasts as long as the
+      // permanent does.
+      if (
+        effect.duration !== 'permanent' &&
+        !SUPPORTED_FEATURES.durationKinds.includes(effect.duration)
+      ) {
         out.push({
           path: `${path}.duration`,
           message: `duration "${effect.duration}" is not implemented by the engine yet`,
@@ -331,7 +330,11 @@ function walkEffect(
       // D-230: and no end at all (`permanent`, CR 611.2a) for what an effect gives a permanent it put onto the battlefield: a base power and toughness, types, a keyword.
       if (
         effect.duration === 'permanent' &&
-        (effect.kind === 'setPt' || effect.kind === 'setTypes' || effect.kind === 'grantKeyword')
+        (effect.kind === 'setPt' ||
+          effect.kind === 'setTypes' ||
+          effect.kind === 'grantKeyword' ||
+          // Issue 159: "It's a black Zombie in addition to its other colors and types" (a Zombie from a graveyard keeps being one).
+          (effect.kind === 'setColors' && effect.additive === true))
       ) {
         return;
       }
@@ -813,8 +816,8 @@ function walkAbility(
         // CR 702.29e: paid like any activation cost, as for Cycling.
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'flashback') {
-        // CR 702.34a: an alternative cost; mana only (rules/legality.ts, rules/cast.ts).
-        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
+        // CR 702.34a: an alternative cost; mana and life ("Flashback—{1}{U}, Pay 3 life."; rules/cast-cost.ts, rules/cast.ts).
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'echo') {
         // CR 702.30a: paid as the echo trigger resolves (rules/pay-unless.ts); mana only, no X (D-127).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);

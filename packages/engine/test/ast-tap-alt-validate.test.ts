@@ -66,7 +66,9 @@ describe('the tapPermanents alternative cost', () => {
       cost: [{ kind: 'mana', symbols: ['R'] }],
       count: 2,
     } as unknown as AlternativeCost;
-    expect(messages(card(bad)).join('|')).toContain('only tapPermanents taps permanents');
+    expect(messages(card(bad)).join('|')).toContain(
+      'only tapPermanents and sacrificeFromGraveyard name permanents',
+    );
   });
 
   test('on a land it is refused', () => {

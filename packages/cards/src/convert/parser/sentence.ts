@@ -51,6 +51,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.gift-promised',
   // Stage P37 (D-180): "If you put a Cave onto the battlefield this way, you gain 4 life."
   'condition.put-this-way',
+  // Issue 159 (Liliana, Untouched by Death): "If at least one Zombie card is milled this way, each opponent loses 2 life."
+  'condition.milled-this-way',
   // D-412 (Danitha deck group 2): "If you control a Squirrel or returned a Squirrel card to your hand this way, create a Food token."
   'condition.control-or-returned',
   // Stage P49 (D-206): "Then if this spell was cast from a graveyard, put two +1/+1 counters on that token."
@@ -92,6 +94,8 @@ const TURN_CONDITIONS = [
   // Stage P69 (D-252, D-253): the Bruna deck, "if you gained 3 or more life this turn", "... if your life total is greater than your starting life total".
   'condition.life-gained-this-turn',
   'condition.life-above-starting',
+  // Issue 159 (Laboratory Drudge): "draw a card if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
+  'condition.cast-from-graveyard-this-turn',
 ] as const;
 
 /**
@@ -111,7 +115,13 @@ const DIE_CONDITIONS = ['condition.die-result'] as const;
  * "If five or more mana was spent to cast that spell, ~ deals 3 damage to each opponent instead." (issue 25, CR 601.2h, 608.2c): the mana spent on the spell a
  * cast trigger is about; the lowering reads it in the body of such a trigger only.
  */
-const MANA_SPENT_CONDITIONS = ['condition.mana-spent-or-more'] as const;
+const MANA_SPENT_CONDITIONS = [
+  'condition.mana-spent-or-more',
+  // Prismari deck, group 3 (issue 87, D-661): "If the total mana value of the cards exiled this way is 13 or less, you may cast any number of spells ..." (CR 202.3, 608.2c).
+  'condition.total-mana-value-exiled-this-way',
+  // Prismari deck, group 2 (issue 87, D-646): "If that spell's mana value is 5 or greater, create three of those tokens instead." (CR 202.3).
+  'condition.spell-mana-value-or-more',
+] as const;
 
 /** Galadriel deck, group 1 (issue 43): "If this is the second time this ability has resolved this turn, the Ring tempts you." (CR 608.2c). */
 const RESOLUTION_CONDITIONS = ['condition.resolved-times'] as const;

@@ -124,6 +124,8 @@ function targetable(view: GameView, o: ObjectView): boolean {
 export function auraHasHost(view: GameView, aura: ObjectView): boolean {
   const noun = enchantedNoun(aura);
   if (noun === null) return true;
+  // Issue 159 (CR 702.5d): "Enchant player": a player is always there to enchant.
+  if (noun === 'player') return true;
   const hostile = auraIsHostile(aura);
   return view.battlefield.some(
     (o) =>
@@ -171,6 +173,13 @@ export function chooseAuraHost(
 ): ChosenTarget[] {
   const [slot] = d.specs;
   if (slot === undefined) return [];
+  // Issue 159 ("Enchant player", CR 702.5d): a Curse goes on an opponent; the agent enchants itself only when no opponent is legal.
+  const players = slot.legal.filter((t) => t.kind === 'player');
+  if (players.length > 0) {
+    const chosenPlayer =
+      players.find((t) => t.kind === 'player' && t.seat !== view.viewer) ?? players[0];
+    return chosenPlayer === undefined ? [] : [chosenPlayer];
+  }
   const hostile = auraIsHostile(aura);
   const all = candidates(view, slot);
   const mine = all.filter((c) => c.view.controller === view.viewer);

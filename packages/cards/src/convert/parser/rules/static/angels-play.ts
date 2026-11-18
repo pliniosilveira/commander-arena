@@ -17,7 +17,8 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrCost, IrNoun, IrStatic, IrStaticEffect } from '../../ir/types';
-import { positiveCount } from '../amount/index';
+import { positiveCount, quantity } from '../amount/index';
+import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
 import { staticOf, subjectNoun } from './angels-words';
 import { TAX_COST } from './play-rules';
@@ -294,8 +295,83 @@ export const STATIC_TAP_ALT_COST = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.graveyard-sacrifice-alt-cost`: "You may cast ~ from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost." (issue 159, Scourge of
+ * Nel Toth; CR 118.9: an alternative cost, chosen as the spell is cast; CR 601.2h, 701.21a: sacrificing permanents is a cost, and only the caster's own can be sacrificed). The spell's
+ * own statement: mana, and two or more permanents of the caster's that a phrase of the permanent family names. Not read: a count of one, a cost with no mana, another zone, a
+ * different ending ("instead of paying"), a permanent that is not the caster's.
+ */
+export const STATIC_GRAVEYARD_SACRIFICE_ALT_COST = defineRule<IrStatic>({
+  id: 'static.graveyard-sacrifice-alt-cost',
+  family: 'static',
+  leading: ['you'],
+  cites: [
+    'CR 118.9 (Costs)',
+    'CR 601.2h (Casting Spells)',
+    'CR 701.21a (Sacrifice)',
+    'CR 601.2b (Casting Spells)',
+  ],
+  examples: [
+    'You may cast ~ from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost.',
+    'You may cast ~ from your graveyard by paying {1}{R} and sacrificing three artifacts rather than paying its mana cost.',
+  ],
+  rejects: [
+    'You may cast ~ from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost',
+    'You may cast ~ from your graveyard by paying {B}{B} and sacrificing a creature rather than paying its mana cost.',
+    'You may cast ~ from your graveyard by paying {X} and sacrificing two creatures rather than paying its mana cost.',
+    'You may cast ~ from your graveyard by sacrificing two creatures rather than paying its mana cost.',
+    'You may cast ~ from your hand by paying {B}{B} and sacrificing two creatures rather than paying its mana cost.',
+    'You may cast ~ from your graveyard by paying {B}{B} and sacrificing two creatures instead of paying its mana cost.',
+    'You may cast ~ from your graveyard by paying {B}{B} and sacrificing two creatures an opponent controls rather than paying its mana cost.',
+    'You may cast ~ from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost and draw a card.',
+    'You may cast ~ from your graveyard by paying {B}{B} and sacrificing two creature rather than paying its mana cost.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.graveyard-sacrifice-alt-cost';
+    const r = sequence(
+      literal('you may cast ~ from your graveyard by paying '),
+      family<IrCost>('cost', { only: ['cost.mana'] }),
+      literal(' and sacrificing '),
+      spanned(satisfy(quantity, (n) => n >= 2)),
+      literal(' '),
+      satisfy(
+        map(permanentPhrase(true, 'all'), withoutZone),
+        (filter) => filter.controller === undefined || filter.controller === 'you',
+      ),
+      literal(' rather than paying its mana cost'),
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, mana, , count, , filter] = r.value;
+    if (mana.kind !== 'mana' || mana.symbols.includes('X') || filter.anyOf !== undefined) {
+      return fail(ctx, pos);
+    }
+    const selfAt = ctx.text.indexOf('~', pos);
+    const self = subjectNoun('self', '~', { start: selfAt, end: selfAt + 1 }, id);
+    const what: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter,
+      upTo: false,
+      plural: true,
+      other: false,
+      count: { kind: 'number', value: count.value, span: count.span },
+      span: { start: count.span.end + 1, end: r.pos },
+      rule: id,
+    };
+    const effect: IrStaticEffect = {
+      kind: 'graveyardSacrificeAlternative',
+      cost: mana,
+      what,
+      count: count.value,
+    };
+    return { ok: true, value: staticOf(id, self, [effect], pos, r.pos), pos: r.pos };
+  },
+});
+
 export const ANGEL_PLAY_RULES = [
   STATIC_BLOCK_TAX,
   STATIC_OTHERS_ENTER_WITH_COUNTERS,
   STATIC_TAP_ALT_COST,
+  STATIC_GRAVEYARD_SACRIFICE_ALT_COST,
 ].map(quietly);

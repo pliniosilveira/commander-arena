@@ -17,6 +17,7 @@ import {
   plainKeyword,
   type SimpleKeyword,
 } from '../rules/keyword/vocabulary';
+import { CREATURE_TYPES } from '../rules/noun/creature-types';
 import { arg, type Effects, eachObject, failure, operand } from './clauses';
 import { type FeatureRef, missingFeatures } from './features';
 import { colorLetter, lowerFilter, objectRefOf, playerSelectorOf } from './nouns';
@@ -86,11 +87,37 @@ const BECOMES_IN_ADDITION: Lowering<IrClause, Effects> = {
   head: 'becomesInAddition',
   id: 'lower.becomes-in-addition',
   needs: ['effect:setTypes', 'effect:grantKeyword', 'selector:moved'],
-  lower: (clause) => {
+  lower: (clause, ctx) => {
     const types = arg(clause, 'types');
     const pt = arg(clause, 'basePt');
     const words = arg(clause, 'keywords');
     if (types?.kind !== 'typeList' || types.additive !== true) return failure(clause);
+    // Issue 159 (Grimoire of the Dead): "It's a black Zombie in addition to its other colors and types": the objects an instruction before it put onto the battlefield.
+    if (types.colors !== undefined) {
+      if (ctx.movedOnto === null || pt !== undefined || words !== undefined) return failure(clause);
+      if (!types.subtypes.every((t) => CREATURE_TYPES.has(t))) return failure(clause);
+      const colors: Color[] = [];
+      for (const word of types.colors) {
+        const letter = colorLetter(word);
+        if (letter === undefined) return failure(clause);
+        colors.push(letter);
+      }
+      const objects = { kind: 'moved' } as const;
+      return {
+        ok: true,
+        value: [
+          { kind: 'setColors', objects, colors, additive: true, duration: 'permanent' },
+          {
+            kind: 'setTypes',
+            objects,
+            subtypes: [...types.subtypes],
+            additive: true,
+            duration: 'permanent',
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
     const kinds: SimpleKeyword[] = [];
     for (const name of words?.kind === 'keywordList' ? words.names : []) {
       const kind = keywordKind(name);
@@ -123,6 +150,61 @@ const BECOMES_IN_ADDITION: Lowering<IrClause, Effects> = {
       ),
     ];
     return { ok: true, value: effects, rule: clause.rule };
+  },
+};
+
+/**
+ * "Destroy all creatures, then return a creature card put into a graveyard this way to the battlefield under your control." (issue 159, CR 608.2c, 400.7j): a `moveToZone` of a
+ * `choose` among the cards the destroy before it put into graveyards (`fromMoved`), in any player's graveyard (`fromAnyGraveyard`). The clause before it must be a destroy.
+ */
+const RETURN_FROM_DESTROYED: Lowering<IrClause, Effects> = {
+  head: 'returnFromDestroyed',
+  id: 'lower.return-from-destroyed',
+  needs: ['effect:moveToZone', 'selector:choose', 'ability:chooseAmongMoved'],
+  lower(clause, ctx) {
+    const objects = arg(clause, 'objects');
+    // "This way" is the destroy right before: after any other instruction it names something this lowering does not know (CR 608.2c).
+    if (objects?.kind !== 'noun' || !ctx.destroyed) return failure(clause);
+    const filter = lowerFilter(objects);
+    if (!filter.ok) return filter;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'moveToZone',
+          objects: {
+            kind: 'choose',
+            // `controller` is what the validator asks of a choice; the engine reads the cards of every graveyard (`fromAnyGraveyard`).
+            filter: { ...filter.value, zone: 'graveyard', controller: 'you' },
+            fromMoved: true,
+            fromAnyGraveyard: true,
+          },
+          to: 'battlefield',
+          controller: 'you',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "Each opponent attacking that player does the same." (issue 159, CR 508.6, 111.2): the `createToken` the clause before it lowered to, for every opponent of the controller who
+ * controls a creature attacking the player the trigger is about (`opponentsAttackingTriggerPlayer`). After any other clause "the same" names something this lowering does not know
+ * (CR 608.2c).
+ */
+const ATTACKERS_DO_SAME: Lowering<IrClause, Effects> = {
+  head: 'attackersDoSame',
+  id: 'lower.attackers-do-same',
+  needs: ['effect:createToken'],
+  lower(clause, ctx) {
+    const token = ctx.createdToken;
+    if (token === null) return failure(clause);
+    return {
+      ok: true,
+      value: [{ ...token, controller: { kind: 'opponentsAttackingTriggerPlayer' } }],
+      rule: clause.rule,
+    };
   },
 };
 
@@ -490,4 +572,6 @@ export const HOFRI_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   PLAYER_ADDS_MANA,
   COPY_THIS_SPELL,
   BECOMES_IN_ADDITION,
+  RETURN_FROM_DESTROYED,
+  ATTACKERS_DO_SAME,
 ];

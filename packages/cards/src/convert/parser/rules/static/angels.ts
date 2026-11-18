@@ -214,6 +214,58 @@ export const STATIC_PREVENT_DAMAGE_TO_SELF = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.prevent-damage-to-self-remove-counter`: "If ~ would be dealt damage, prevent that damage and remove a +1/+1 counter from it."
+ * (issue 159, Unbreathing Horde; CR 615.1, 615.6, 122.1): a static ability of the permanent that prevents all the damage dealt to it and
+ * removes one counter for each damage event it prevents. Only a power and toughness counter, one of them, from the permanent itself.
+ */
+export const STATIC_PREVENT_DAMAGE_TO_SELF_REMOVE_COUNTER = defineRule<IrStatic>({
+  id: 'static.prevent-damage-to-self-remove-counter',
+  family: 'static',
+  leading: ['if'],
+  cites: [
+    'CR 615.1 (Prevention Effects)',
+    'CR 615.6 (Prevention Effects)',
+    'CR 122.1 (Counters)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'If ~ would be dealt damage, prevent that damage and remove a +1/+1 counter from it.',
+    'If ~ would be dealt damage, prevent that damage and remove a -1/-1 counter from it.',
+  ],
+  rejects: [
+    'If ~ would be dealt damage, prevent that damage and remove a +1/+1 counter from it',
+    'If ~ would be dealt damage, prevent that damage and remove two +1/+1 counters from it.',
+    'If ~ would be dealt damage, prevent that damage and remove a charge counter from it.',
+    'If ~ would be dealt damage, prevent that damage.',
+    'If ~ would be dealt combat damage, prevent that damage and remove a +1/+1 counter from it.',
+    'If you would be dealt damage, prevent that damage and remove a +1/+1 counter from it.',
+    'If ~ would be dealt damage, prevent that damage and remove a +1/+1 counter from it and draw a card.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('if '),
+      spanned(literal('~')),
+      literal(' would be dealt damage, prevent that damage and remove a '),
+      pattern(/([+-]1\/[+-]1) counter from it/iu),
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, self, , counter] = r.value;
+    return {
+      ok: true,
+      value: staticOf(
+        'static.prevent-damage-to-self-remove-counter',
+        subjectNoun('self', '~', self.span, 'static.prevent-damage-to-self-remove-counter'),
+        [{ kind: 'preventDamageToThis', scope: 'all', removeCounter: counter[1] ?? '' }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 const ORDINALS = [
   'first',
   'second',
@@ -312,5 +364,6 @@ export const ANGEL_PROTECTION_RULES = [
   STATIC_PLAYER_HEXPROOF,
   STATIC_CANT_LOSE_WIN,
   STATIC_PREVENT_DAMAGE_TO_SELF,
+  STATIC_PREVENT_DAMAGE_TO_SELF_REMOVE_COUNTER,
   STATIC_CANT_CAST_EARLY,
 ].map(quietly);

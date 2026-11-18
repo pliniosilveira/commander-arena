@@ -79,9 +79,17 @@ function changeOf(
         ...(node.additive === true ? { additive: true as const } : {}),
       };
     case 'setColors':
-      return { kind: 'setColors', colors: node.colors };
+      return {
+        kind: 'setColors',
+        colors: node.colors,
+        ...(node.additive === true ? { additive: true as const } : {}),
+      };
     case 'grantKeyword':
-      return { kind: 'grantKeyword', keyword: node.keyword };
+      return {
+        kind: 'grantKeyword',
+        keyword: node.keyword,
+        ...(node.duringYourTurn === true ? { duringYourTurn: true as const } : {}),
+      };
     case 'grantAbility':
       // D-230 (Backup): one change for each ability; `runContinuous` makes a continuous effect of each.
       return { kind: 'grantAbility', ability: node.abilities[0] as Ability };
@@ -207,7 +215,10 @@ export function runBecomeCopy(
  */
 export function copyEffect(
   state: GameState,
-  node: Pick<Extract<Effect, { kind: 'becomeCopy' }>, 'duration' | 'keepName' | 'addTypes'>,
+  node: Pick<
+    Extract<Effect, { kind: 'becomeCopy' }>,
+    'duration' | 'keepName' | 'addTypes' | 'abilities'
+  >,
   source: GameObject,
   affected: readonly ObjectId[],
 ): StepOutcome {
@@ -215,7 +226,7 @@ export function copyEffect(
   const original = copiableValues(state, source);
   // D-217 (CR 707.9b): "except it's an artifact in addition to its other types" changes the copiable values the copy effect gives.
   const added = (node.addTypes ?? []).filter((t) => !original.characteristics.types.includes(t));
-  const copied =
+  const typed =
     added.length === 0
       ? original
       : {
@@ -225,6 +236,11 @@ export function copyEffect(
             types: [...original.characteristics.types, ...added],
           },
         };
+  // D-640 (CR 707.9b): "..., except it has myriad": the abilities of the exception are part of the copiable values the effect gives, after the ones it copies.
+  const copied =
+    node.abilities === undefined || node.abilities.length === 0
+      ? typed
+      : { ...typed, abilities: [...typed.abilities, ...node.abilities] };
   // D-212 (CR 707.9a): "except its name is ~": each permanent keeps the name it has, so there is one effect for each.
   const groups: readonly (readonly ObjectId[])[] =
     node.keepName === true ? affected.map((id) => [id]) : [affected];

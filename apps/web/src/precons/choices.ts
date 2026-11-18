@@ -26,6 +26,10 @@ export interface DeckChoice {
   readonly blurb: string;
   /** The commander as the list writes it; empty when the list marks none. */
   readonly commander: string;
+  /** Art of the commander card, when known (precons; not saved decks, which keep only text). */
+  readonly commanderImage?: string;
+  /** The deck's colors: the commander's color identity; absent when unknown. */
+  readonly colors?: readonly string[];
   readonly kind: 'precon' | 'saved';
   /** A precon the player edited: the list in use is theirs, not the one that shipped. */
   readonly edited: boolean;
@@ -49,11 +53,17 @@ export function deckChoices(
   const fromPrecons = precons.map((precon): DeckChoice => {
     const mine = override.get(precon.id);
     const commander = mine === undefined ? '' : commanderNameOf(mine.text);
+    // The shipped art only fits the shipped commander.
+    const same = commander === '' || commander === precon.commander;
+    const image = same ? precon.commanderImage : undefined;
+    const colors = same ? precon.colors : undefined;
     return {
       id: precon.id,
       name: precon.name,
       blurb: blurbOf(precon.blurb),
       commander: commander === '' ? precon.commander : commander,
+      ...(image === undefined ? {} : { commanderImage: image }),
+      ...(colors === undefined ? {} : { colors }),
       kind: 'precon',
       edited: mine !== undefined,
     };

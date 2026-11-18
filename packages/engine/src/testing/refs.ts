@@ -291,7 +291,10 @@ export function castAction(
   face?: number,
 ): Action {
   const zones: readonly Zone[] =
-    alternative === 'flashback' || alternative === 'escape'
+    alternative === 'flashback' ||
+    alternative === 'escape' ||
+    alternative === 'retrace' ||
+    alternative === 'sacrificeFromGraveyard'
       ? ['graveyard']
       : ['hand', 'command', 'exile'];
   let obj: GameObject;

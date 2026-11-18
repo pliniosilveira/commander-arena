@@ -80,6 +80,8 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
   if (subject === 'self' || subject === 'selfGrant') {
     return choice(
       ...common,
+      // D-648 (Prismari deck group 2, CR 509.1b): "~ can block only creatures with flying", said of `~` itself.
+      phrase('can block only creatures with flying', 'canBlockOnlyFlying'),
       phrase("doesn['’]t untap during your untap step", 'doesntUntap'),
       phrase("can['’]t be countered", 'cantBeCountered'),
     );

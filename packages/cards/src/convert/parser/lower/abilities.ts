@@ -4,7 +4,7 @@
  * checked against SUPPORTED_FEATURES before anything is built, so an ability the engine cannot run
  * is reported with what is missing.
  */
-import type { Ability, Color, Cost, Keyword, ObjectFilter } from '@commander-arena/engine';
+import type { Ability, Amount, Color, Cost, Keyword, ObjectFilter } from '@commander-arena/engine';
 import type { IrAbility, IrCost, IrKeyword } from '../ir/types';
 import {
   isGrantable,
@@ -97,7 +97,7 @@ type CostedKeyword =
 function lowerEquipCosts(
   ability: IrKeyword,
   written: readonly IrCost[],
-  name: 'equip' | 'ward' = 'equip',
+  name: 'equip' | 'ward' | 'flashback' = 'equip',
 ): LowerResult<readonly Ability[]> {
   const kinds = written.map((c) => c.kind);
   if (kinds.length !== 2 || !kinds.includes('mana') || !kinds.includes('payLife')) {
@@ -134,6 +134,15 @@ function lowerCostedKeyword(
   // "Ward—{2}, Pay 2 life." (Gisa deck, D-467, CR 702.21a): a mana cost and a payment of life, each once.
   if (name === 'ward' && only !== undefined && more.length === 1 && ability.params.length === 0) {
     return lowerEquipCosts(ability, [only, ...more], 'ward');
+  }
+  // "Flashback—{1}{U}, Pay 3 life." (Grave Danger, issue 159, CR 702.34a): a mana cost and a payment of life, each once.
+  if (
+    name === 'flashback' &&
+    only !== undefined &&
+    more.length === 1 &&
+    ability.params.length === 0
+  ) {
+    return lowerEquipCosts(ability, [only, ...more], 'flashback');
   }
   if (only === undefined || more.length > 0 || ability.params.length > 0) return failure(ability);
   // A cost the engine does not pay for this keyword is refused at the keyword, whatever else it is.
@@ -802,6 +811,31 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
         return failure(ability);
       }
       return built({ kind: 'entersWithCounters', counter: counter.name, count: counted.value });
+    }
+    // "for each other Zombie you control and each Zombie card in your graveyard" (issue 159): each count as it enters, added.
+    if (count?.kind === 'sum') {
+      const blocked = gate(ability, [
+        'ability:replacement',
+        'replacement:entersWithCounters',
+        'amount:countOf',
+        'amount:sum',
+      ]);
+      if (blocked !== null) return blocked;
+      const counted = lowerAmount(count, newContext('ability', []), ability.rule);
+      if (!counted.ok) return counted;
+      if (typeof counted.value !== 'object' || counted.value.kind !== 'sum') {
+        return failure(ability);
+      }
+      const parts: Extract<Amount, { kind: 'countOf' }>[] = [];
+      for (const part of counted.value.of) {
+        if (typeof part !== 'object' || part.kind !== 'countOf') return failure(ability);
+        parts.push(part);
+      }
+      return built({
+        kind: 'entersWithCounters',
+        counter: counter.name,
+        count: { kind: 'sum', of: parts },
+      });
     }
     // "enters with a charge counter on it for each time it was kicked" (D-254, CR 702.33c, 614.1c): the kicks of the spell it came from.
     if (count?.kind === 'timesKicked') {
