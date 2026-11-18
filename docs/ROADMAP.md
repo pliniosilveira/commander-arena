@@ -599,3 +599,9 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 - "Discard all the cards in your hand" is the whole-hand discard; "all the cards" with a filter ("all the creature cards in your hand") and "that many" after other verbs than sacrifice and discard are not read.
 - "That creature is a ..." reads only the permanent the instruction before it put onto the battlefield, with one color word and one creature type; another subject ("That permanent", "Those creatures") is not read.
 - The Scryfall rulings of the three cards were not fetched (the host is blocked in a cloud session): unverified.
+
+## A token copy of a card exiled from a graveyard (issue #104)
+
+- "Exile a card from your graveyard" is read for the player's own graveyard and one card (a creature card, a card of a type or subtype). Another player's graveyard, "up to two" and "a card from your hand" (the engine runs the hand too) are not read.
+- A copy exception is read only as a whole "it's a P/T color Type" (`token.copy-except`); "in addition to its other types" and "with haste" wordings are other rules (Embalm, Galadriel group 3).
+- The Scryfall rulings of God-Pharaoh's Gift and The Scarab God were not fetched (the host is blocked in a cloud session).
