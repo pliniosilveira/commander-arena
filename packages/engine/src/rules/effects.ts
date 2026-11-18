@@ -38,7 +38,13 @@ import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside
 import { runChooseOne } from './choose-one';
 import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
-import { runBecomeCopy, runContinuous, runEntersTappedGroup, runRequireAttack } from './continuous';
+import {
+  runBecomeCopy,
+  runContinuous,
+  runEntersTappedGroup,
+  runRequireAttack,
+  runRequireAttackSource,
+} from './continuous';
 import { controllerOf } from './control';
 import { runExchangeControl, runGainControl, runReturnControl } from './control-effects';
 import { copiableValues } from './copiable';
@@ -2638,6 +2644,10 @@ function runEffect(
     case 'requireAttack':
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.
       return runRequireAttack(state, effect, ctx);
+
+    case 'requireAttackSource':
+      // CR 508.1d, 611.2c: creatures of the named player attack this permanent if able, during that player's next turn.
+      return runRequireAttackSource(state, effect, ctx, targets);
 
     case 'permanentsEnterTapped':
       // CR 614.1c, 614.12 (D-519): "creatures your opponents control enter tapped", read as a permanent enters.

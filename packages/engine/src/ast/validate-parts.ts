@@ -4151,6 +4151,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'requireAttackSource':
+      // CR 508.1d: creatures of the named player (a target player, an opponent) attack the permanent with the ability, during that player's next turn.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.duration !== 'untilEndOfTheirNextTurn') {
+        issue(out, `${path}.duration`, "this lasts through the end of the player's next turn");
+      }
+      break;
     case 'gainControl': {
       // CR 613.1b (D-189): a layer 2 effect for one named permanent: a target or the permanent that caused the trigger.
       const named = kindOf(e.objects);

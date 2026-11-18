@@ -1987,6 +1987,12 @@ export type ContinuousChange =
       readonly awayFrom?: SeatId;
     }
   /**
+   * "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (`requireAttackSource`, CR 508.1d, 611.2c): no layer and no
+   * fixed set (`objects` is empty): read where `seat` declares attackers (`rules/combat-legality.ts`), for each creature `seat` controls then; a creature that is able to
+   * attack `permanent` attacks it. Moot when `permanent` is not on the battlefield or cannot be attacked.
+   */
+  | { readonly kind: 'mustAttackPermanent'; readonly seat: SeatId; readonly permanent: ObjectId }
+  /**
    * "Goad target creature" (`goad`, CR 701.15a-d, D-639): the objects of the effect are goaded by the player `by`: they attack each combat if able and attack a player other
    * than `by` if able, until the next turn of `by` begins (`until`). The designation is not a characteristic or an ability (CR 701.15b): read in `rules/combat-legality.ts`,
    * not in a layer. At most one such effect for an object and a player (CR 701.15d).
