@@ -129,8 +129,10 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     }
     case 'tapPermanents': {
       // "Tap three untapped Zombies you control" (stage P29, D-133, CR 118.3): the engine's `tapPermanents`, a cost of an
-      // ordinary activated ability.
-      if (options.ordinary !== true) return failure(cost);
+      // ordinary activated ability; D-609: of a mana ability too, one permanent ("{T}, Tap an untapped creature you control: Add one mana of any color").
+      if (options.ordinary !== true && !(options.mana === true && cost.count === 1)) {
+        return failure(cost);
+      }
       const filter = lowerFilter(cost.what);
       return filter.ok
         ? ok({ kind: 'tapPermanents', filter: filter.value, count: cost.count })

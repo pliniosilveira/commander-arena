@@ -287,6 +287,7 @@ export interface CastHandle {
           readonly ability?: number;
           /** The permanent a cost "Sacrifice a Spirit" gives up (D-222): needed when the player has more than one. */
           readonly sacrifice?: CardRef;
+          readonly tapped?: CardRef;
         }
     )[],
   ): Actor;
@@ -343,6 +344,8 @@ export interface TapOptions {
   readonly ability?: number;
   /** The permanent a cost "Sacrifice a Spirit" gives up (D-222): needed when the player has more than one. */
   readonly sacrifice?: CardRef;
+  /** The permanent a cost "Tap an untapped creature you control" taps (D-609): needed when the player has more than one. */
+  readonly tapped?: CardRef;
 }
 
 export interface PlayLandOptions {

@@ -537,7 +537,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // {T}, "Sacrifice this permanent" (a Treasure, CR 111.10a) and mana ({1}, {T}: a Signet). A mana
   // cost is paid from the pool, or by auto-pay from sources that have no mana cost themselves.
   // D-099: "Pay N life" too (CR 119.4, 605.3), and the mana cost may use hybrid symbols (CR 107.4e).
-  manaAbilityCostKinds: ['tap', 'sacrifice', 'mana', 'payLife', 'mill'],
+  // D-609: `tapPermanents` ("{T}, Tap an untapped creature you control: Add one mana of any color"), one permanent, chosen as the ability is activated.
+  manaAbilityCostKinds: ['tap', 'sacrifice', 'mana', 'payLife', 'mill', 'tapPermanents'],
   // D-099: `couldProduce` (CR 106.7) and `combination` ("Add {R}{R}, {R}{W}, or {W}{W}").
   manaProductionKinds: [
     'fixed',

@@ -4,7 +4,7 @@ import { AbilityChooser } from './AbilityChooser';
 import { type Index, nameOf } from './lookup';
 import { comboListText, comboText, lifeCostOf, lifeNote } from './mana-choice';
 import { Popover } from './Popover';
-import { setTapColor, setTapCombination, setTapSacrifice } from './payment';
+import { setTapColor, setTapCombination, setTapSacrifice, setTapTapped } from './payment';
 import { clickOutcome } from './priority';
 import type { UiState } from './ui-state';
 
@@ -83,6 +83,46 @@ export function ChooserPopover({
         </Popover>
       );
     }
+    // D-609 (CR 601.2b): "{T}, Tap an untapped creature you control: Add ...": the player chooses the permanent to tap, then (when it is asked) the color.
+    const taps = ability?.tappables ?? [];
+    if (taps.length > 1 && anchor.tapped === undefined) {
+      const asksMore = colors.length > 1 || combinations.length > 1;
+      return (
+        <Popover anchor={anchor} className="dec-ability-chooser">
+          <legend className="dec-popover-title">Tap which permanent?</legend>
+          <ul className="dec-ability-list">
+            {taps.map((id) => (
+              <li key={id}>
+                <button
+                  type="button"
+                  className="dec-chip"
+                  onClick={() =>
+                    update((u) =>
+                      asksMore
+                        ? { ...u, chooser: { ...anchor, tapped: id } }
+                        : {
+                            ...u,
+                            taps: setTapTapped(
+                              u.taps,
+                              sources,
+                              anchor.object,
+                              anchor.abilityIndex ?? 0,
+                              id,
+                            ),
+                            chooser: null,
+                          },
+                    )
+                  }
+                >
+                  {index === undefined ? id : nameOf(index, id)}
+                </button>
+              </li>
+            ))}
+            <li>{closeButton}</li>
+          </ul>
+        </Popover>
+      );
+    }
     const life = lifeCostOf(index?.get(anchor.object), colors[0] ?? null, combinations[0]);
     if (combinations.length > 0) {
       return (
@@ -105,6 +145,7 @@ export function ChooserPopover({
                       anchor.abilityIndex ?? 0,
                       combination,
                       anchor.sacrifice,
+                      anchor.tapped,
                     ),
                     chooser: null,
                   }))
@@ -138,6 +179,7 @@ export function ChooserPopover({
                     anchor.abilityIndex ?? 0,
                     color,
                     anchor.sacrifice,
+                    anchor.tapped,
                   ),
                   chooser: null,
                 }))
@@ -181,16 +223,21 @@ export function ChooserPopover({
       <div className="dec-popover-row">
         {outcome.choices.map((c) => (
           <button
-            key={`${c.action.abilityIndex}-${c.combination?.join('') ?? c.color ?? 'x'}-${c.sacrifice ?? ''}`}
+            key={`${c.action.abilityIndex}-${c.combination?.join('') ?? c.color ?? 'x'}-${c.sacrifice ?? ''}-${c.tapped ?? ''}`}
             type="button"
             className="dec-chip dec-chip-mana"
-            aria-label={`${c.sacrificeName === undefined ? c.label : `${c.label}, sacrificing ${c.sacrificeName}`}${c.life > 0 ? ` (${lifeNote(c.life).toLowerCase()})` : ''}`}
+            aria-label={`${c.sacrificeName !== undefined ? `${c.label}, sacrificing ${c.sacrificeName}` : c.tappedName !== undefined ? `${c.label}, tapping ${c.tappedName}` : c.label}${c.life > 0 ? ` (${lifeNote(c.life).toLowerCase()})` : ''}`}
             title={c.life > 0 ? lifeNote(c.life) : undefined}
             onClick={() => act(c.action)}
           >
             {c.sacrificeName !== undefined ? (
               <>
                 Sacrifice {c.sacrificeName}
+                {c.color === null ? null : <ManaSymbol symbol={c.color} />}
+              </>
+            ) : c.tappedName !== undefined ? (
+              <>
+                Tap {c.tappedName}
                 {c.color === null ? null : <ManaSymbol symbol={c.color} />}
               </>
             ) : c.combination !== undefined ? (

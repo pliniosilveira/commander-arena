@@ -41,4 +41,5 @@
 // 136: Parse the commander-tax life replacement sentence (D-605).
 // 140: Parse activated abilities carried by emblems (D-606).
 // 141: Parse player locks, protection from everything, and phasing of a target player's nonlands (D-607).
-export const PARSER_VERSION = 141;
+// 142: Read "Tap an untapped creature you control" next to a mana cost and {T}, and in a mana ability (D-609, issue 160).
+export const PARSER_VERSION = 142;

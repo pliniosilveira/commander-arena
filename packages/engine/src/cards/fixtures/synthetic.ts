@@ -147,6 +147,7 @@ import { SYNTHETIC_STUN_LIST } from './synthetic-stun';
 import { SYNTHETIC_SUBJECT_LIST } from './synthetic-subjects';
 import { SYNTHETIC_TAP_ALT_LIST } from './synthetic-tap-alt';
 import { SYNTHETIC_TAP_CHOICE_LIST } from './synthetic-tap-choice';
+import { SYNTHETIC_TAP_COST_LIST } from './synthetic-tap-cost';
 import { SYNTHETIC_TARGETING_LIST } from './synthetic-targeting';
 import { SYNTHETIC_TRIGGER_TARGET_LIST } from './synthetic-trigger-targets';
 import { SYNTHETIC_TRIGGER_LIST } from './synthetic-triggers';
@@ -435,6 +436,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
   ...SYNTHETIC_HOFRI_LIST,
   ...SYNTHETIC_TAP_ALT_LIST,
+  ...SYNTHETIC_TAP_COST_LIST,
   ...SYNTHETIC_PLAYER_EFFECT_LIST,
   ...SYNTHETIC_PLAY_RULE_LIST,
   ...SYNTHETIC_UPKEEP_LIST,

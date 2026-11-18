@@ -54,6 +54,9 @@ export interface AbilityChoice {
   /** The permanent this choice sacrifices ("Sacrifice a Spirit: Add {R}.", D-222), and its name for the button. */
   readonly sacrifice?: ObjectId;
   readonly sacrificeName?: string;
+  /** The permanent this choice taps besides the source ("{T}, Tap an untapped creature you control: Add ...", D-609), and its name for the button. */
+  readonly tapped?: ObjectId;
+  readonly tappedName?: string;
 }
 
 export type ClickOutcome =
@@ -135,6 +138,12 @@ export function clickOutcome(
         : {
             sacrifice: o.sacrifice,
             sacrificeName: index === undefined ? 'it' : nameOf(index, o.sacrifice),
+          }),
+      ...(o.tapped === undefined
+        ? {}
+        : {
+            tapped: o.tapped,
+            tappedName: index === undefined ? 'it' : nameOf(index, o.tapped),
           }),
     });
   }

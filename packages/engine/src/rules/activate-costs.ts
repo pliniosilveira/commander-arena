@@ -216,9 +216,10 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   if (tapCreatures !== null && (mana.length > 0 || sacrifice !== null || discard > 0)) return null;
   // D-407: the creature to blight is chosen after the permanents to tap and before the sacrifice, which a crew cost (its creatures are chosen last, alone) has no place for.
   if (blight > 0 && tapCreatures !== null) return null;
-  // D-133: the permanents to tap are chosen before the sacrifice and the discard, and could have been tapped for mana first,
-  // so a tap cost is not combined with mana (or with a crew cost).
-  if (tapPermanents !== null && (mana.length > 0 || tapCreatures !== null)) return null;
+  // D-133: the permanents to tap are chosen before the sacrifice and the discard, so a tap cost is not combined with a crew cost.
+  // D-609: next to a mana cost they are chosen before the mana is paid (CR 601.2h: the costs are paid in the order the player likes), so
+  // the mana is paid from the sources that are still untapped.
+  if (tapPermanents !== null && tapCreatures !== null) return null;
   return {
     tap,
     life,

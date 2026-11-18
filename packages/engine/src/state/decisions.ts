@@ -68,6 +68,11 @@ export type PriorityOption =
        * up: one option for each permanent they may give up, this one. Absent when the cost sacrifices nothing, only the source, or when there is one candidate.
        */
       readonly sacrifice?: ObjectId;
+      /**
+       * For a mana ability whose cost taps an untapped permanent besides the source ("{T}, Tap an untapped creature you control: Add one mana of any color.", D-609, CR 601.2b)
+       * when the player has more than one to tap: one option for each permanent they may tap, this one. Absent otherwise.
+       */
+      readonly tapped?: ObjectId;
     }
   /** Suspend a card from the hand (CR 702.62a, D-128): a special action, see the `suspend` action. */
   | { readonly kind: 'suspend'; readonly object: ObjectId }
@@ -209,6 +214,11 @@ export interface PayManaDecision extends DecisionBase {
      * before a card, then the lowest mana value).
      */
     readonly sacrifices?: readonly ObjectId[];
+    /**
+     * Set when the ability's cost taps an untapped permanent besides the source (D-609, CR 601.2b) and the player has more than one to tap: the permanents they may
+     * choose. A manual tap of the source must name one of them as `tapped`; `payAuto` taps the one the planner prefers.
+     */
+    readonly tappables?: readonly ObjectId[];
   }[];
   /**
    * `'ward'`, `'counterUnlessPays'`: the cost is not a spell's or an ability's but the one a

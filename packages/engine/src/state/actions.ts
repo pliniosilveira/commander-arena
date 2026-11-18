@@ -37,6 +37,8 @@ export type Action =
       readonly combination?: readonly ManaColor[];
       /** The permanent a cost "Sacrifice a Spirit" gives up (D-222, CR 601.2b): named when the player has more than one to give up. */
       readonly sacrifice?: ObjectId;
+      /** The permanent a cost "Tap an untapped creature you control" taps (D-609, CR 601.2b): named when the player has more than one to tap. */
+      readonly tapped?: ObjectId;
     }
   /**
    * Suspend a card from the hand (CR 702.62a, 116.2f, D-128): pay its suspend cost and exile it with time counters.
@@ -86,6 +88,8 @@ export type Action =
         readonly combination?: readonly ManaColor[] | null;
         /** For a source whose cost sacrifices another permanent ("Sacrifice a Spirit: Add {R}.", D-216): the one given up; the engine chooses when left out. */
         readonly sacrifice?: ObjectId;
+        /** For a source whose cost taps another permanent ("{T}, Tap an untapped creature you control: Add one mana of any color.", D-609): the one tapped; the engine chooses when left out. */
+        readonly tapped?: ObjectId;
       }[];
     }
   | { readonly kind: 'cancel' }

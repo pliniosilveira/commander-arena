@@ -1747,13 +1747,15 @@ describe('costs that tap or sacrifice other permanents (CR 118.3, 302.6, 701.21)
     expect(cost(text)).toEqual([{ kind: 'tapPermanents', filter, count }]);
   });
 
-  test('a mana cost or {T} beside it is read and refused: the permanents could have been tapped for mana', () => {
-    for (const text of [
-      '{1}, Tap two untapped artifacts you control: Draw a card.',
-      '{T}, Tap two untapped artifacts you control: Draw a card.',
-    ]) {
-      expect(drop(text)).toMatchObject({ reason: 'notRunnable' });
-    }
+  test('a mana cost or {T} beside it is read and run (D-609): the permanents are chosen before the mana is paid', () => {
+    expect(cost('{1}, Tap two untapped artifacts you control: Draw a card.')).toEqual([
+      { kind: 'mana', symbols: ['1'] },
+      { kind: 'tapPermanents', filter: { types: ['artifact'], controller: 'you' }, count: 2 },
+    ]);
+    expect(cost('{T}, Tap two untapped artifacts you control: Draw a card.')).toEqual([
+      { kind: 'tap' },
+      { kind: 'tapPermanents', filter: { types: ['artifact'], controller: 'you' }, count: 2 },
+    ]);
   });
 
   test('"Sacrifice two artifacts" has a count; "where X is the sacrificed creature\'s power" reads the cost', () => {
