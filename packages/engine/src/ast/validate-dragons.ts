@@ -81,6 +81,17 @@ export function checkDragonsEffect(
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }
       return true;
+    case 'revealTopDuel':
+      // CR 701.20a, 119.3: "the other player" is defined only when exactly two players are named, so the selector is `all` of two members.
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      if (e.players?.kind !== 'all' || e.players.of.length !== 2) {
+        issue(
+          out,
+          `${path}.players`,
+          'a revealTopDuel names two players, { kind: "all", of: [a, b] }, so that "the other player" is defined',
+        );
+      }
+      return true;
     case 'revealTop':
       // CR 701.20 (D-151): the players who reveal, the cards in the library that go on, and where they go.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);

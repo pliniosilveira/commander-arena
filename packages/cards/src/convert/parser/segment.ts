@@ -474,6 +474,14 @@ const PUT_ONE_PILE = /^put one pile into your hand and the other into your grave
  */
 const PUT_FROM_AMONG_REVEALED = /^you may put [^.]* from among them into your hand\.$/i;
 /**
+ * "You and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player. You each put the card you
+ * revealed into your hand." (CR 701.20a, 119.3): three sentences that are one instruction, kept together for `effect.reveal-top-duel`.
+ */
+const EACH_REVEAL_TOP = /^you and [^.]* each reveal the top card of your library\.$/i;
+const EACH_LOSE_LIFE_OTHER =
+  /^you each lose life equal to the mana value of the card revealed by the other player\.$/i;
+const EACH_PUT_REVEALED_INTO_HAND = /^you each put the card you revealed into your hand\.$/i;
+/**
  * "Scry 3, then reveal the top card of your library. If it's a creature or land card, draw a card." and "Whenever you scry, you may reveal the top card of your library. If a land card
  * is revealed this way, put it onto the battlefield tapped." (Galadriel deck, group 1, CR 701.20): the second sentence says what the card revealed by the first one does, so the two
  * are read as one instruction (`effect.reveal-top-then`; the first may follow the comma of a trigger or of "scry N, then").
@@ -545,6 +553,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, REVEAL_TOP_CARD) &&
       said(b, IF_REVEALED_CARD) &&
       said(c, OTHERWISE_PUT_INTO_HAND)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, EACH_REVEAL_TOP) &&
+      said(b, EACH_LOSE_LIFE_OTHER) &&
+      said(c, EACH_PUT_REVEALED_INTO_HAND)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

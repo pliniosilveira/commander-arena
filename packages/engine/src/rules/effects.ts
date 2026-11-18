@@ -128,6 +128,7 @@ import { runRegenerate } from './regenerate';
 import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
+import { runRevealTopDuel } from './reveal-top-duel';
 import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
 import { rollDie } from './roll-die';
@@ -2570,6 +2571,10 @@ function runEffect(
     case 'revealTop':
       // CR 701.20 (D-151): reveal the top card, and put it onto the battlefield if it matches (rules/reveal-top.ts).
       return runRevealTop(state, res, effect, ctx, targets);
+
+    case 'revealTopDuel':
+      // CR 701.20a, 119.3: two players reveal, lose life equal to the other's card, and take their card (rules/reveal-top-duel.ts).
+      return runRevealTopDuel(state, res, effect, ctx, targets);
 
     case 'exileUntilCast':
       // CR 701.57 (D-151): Discover and "exile until you exile a nonland card; you may cast it, else put it into your hand".
