@@ -1294,6 +1294,17 @@ function runEffect(
       // CR 701.71a (D-201): the token, the choice and the counters come up as the instruction runs (rules/empower.ts).
       return done(state, [], [{ kind: 'empowerJace', amount: effect.amount, chosen: null }]);
 
+    case 'additionalLandDropThisTurn':
+      // CR 305.2, 305.3: only the active player plays lands, so the extra land plays count for the active player's turn only.
+      return done(
+        res.controller === state.turn.activeSeat
+          ? {
+              ...state,
+              turn: { ...state.turn, extraLandDrops: state.turn.extraLandDrops + effect.count },
+            }
+          : state,
+      );
+
     case 'populate':
       // CR 701.36 (D-627): the choice of the creature token and its copy come up as the instruction runs (rules/populate.ts).
       return done(state, [], [{ kind: 'populate', chosen: null }]);

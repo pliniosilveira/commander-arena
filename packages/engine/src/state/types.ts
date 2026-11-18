@@ -403,6 +403,11 @@ export interface StackData {
    */
   readonly hasteUntilEnd?: true;
   /**
+   * How many mana with a `counters` rider were spent on the spell (issue 241, Opal Palace): the commander it becomes enters with that many times its casts from the command zone
+   * (CR 903.8) more +1/+1 counters (`rules/zones.ts`). Absent when none, and for an ability.
+   */
+  readonly commanderCastCounters?: number;
+  /**
    * A spell cast from the graveyard with the permission of a permanent (`playFromGraveyardOnceEachTurn`, D-232): that permanent, and what the permanent the spell becomes
    * does or has because of it (enters tapped; gains an ability). Applied as the spell enters the battlefield (`rules/zones.ts`).
    */

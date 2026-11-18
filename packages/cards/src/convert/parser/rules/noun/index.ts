@@ -146,6 +146,16 @@ function targetOf(
     });
     return { ok: true, value, pos: filter.pos };
   };
+  // "up to one other target artifact or enchantment" (issue 244, CR 115.3, 601.2c): none or one target, which is not a target of the slot before it in the same text.
+  const upToOneOther: Parser<Bare> = map(
+    sequence(spanned(literal('up to one')), literal(' other target '), targetPhrase(false)),
+    ([count, , filter]) =>
+      bare('target', filter, {
+        count: { kind: 'number', value: 1, span: count.span },
+        upTo: true,
+        otherTarget: true,
+      }),
+  );
   // "up to that many target creatures" (stage P41, D-188, CR 603.12): the number is what a sacrifice before a reflexive ability made; always plural,
   // with no count of its own.
   const upToThatMany: Parser<Bare> = map(
@@ -171,6 +181,7 @@ function targetOf(
       ...(allowX ? [xTargets] : []),
       eachOf,
       oneOrTwo,
+      upToOneOther,
       upTo,
       upToThatMany,
       counted,

@@ -362,6 +362,7 @@ export function spentRiderText(rider: {
     | 'haste'
     | { readonly scry: number }
     | { readonly scryCommanderCasts: true }
+    | { readonly countersCommanderCasts: true }
     | { readonly copySpell: 'may' | 'no' };
 }): string | null {
   const { spells, grants } = rider;
@@ -375,6 +376,10 @@ export function spentRiderText(rider: {
   // D-229 (CR 903.8): Study Hall's "When you spend this mana to cast your commander, scry X, where X is the number of times it's been cast from the command zone this game".
   if (typeof grants === 'object' && 'scryCommanderCasts' in grants) {
     return "When you spend this mana to cast your commander, scry X, where X is the number of times it's been cast from the command zone this game";
+  }
+  // Issue 241 (CR 122.6, 903.8): Opal Palace's "If you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone this game".
+  if (typeof grants === 'object' && 'countersCommanderCasts' in grants) {
+    return "If you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone this game";
   }
   const nouns = [...(spells.subtypes ?? []), ...(spells.types ?? [])];
   if (nouns.length === 0) return null;

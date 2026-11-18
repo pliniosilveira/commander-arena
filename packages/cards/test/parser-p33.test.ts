@@ -1215,7 +1215,7 @@ describe('mana spent only on some spells, and mana of the chosen color (CR 106.6
 
   test.each([
     '{T}: Add {G}. Spend this mana only to cast spells.',
-    '{T}: Add {G}. Spend this mana only to cast a creature spell of the chosen type.',
+    '{T}: Add {G}. Spend this mana only to cast a creature spell of the chosen type or an Angel spell.',
     '{T}: Add {G}. Spend this mana only to cast a red creature spell.',
     '{T}: Add {G}. Spend this mana only to activate abilities.',
     '{T}: Add {G}. Spend this mana only to cast an Angel spell. Draw a card.',

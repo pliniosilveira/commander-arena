@@ -86,7 +86,7 @@ function paymentSourcesFresh(state: GameState, seat: SeatId): PaymentSource[] {
         // D-183: the mana it makes carries the card types of the permanent.
         types: d.types,
         // D-149: "Spend this mana only to cast an Angel spell".
-        restriction: spendRestrictionOf(ability),
+        restriction: spendRestrictionOf(ability, obj),
         ...(symbols.length > 0 ? { cost: parseManaCost(symbols) } : {}),
         ...((ability.also?.length ?? 0) > 0 ? { extraEffect: true } : {}),
         ...(lifeLoss > 0 ? { lifeLoss } : {}),
