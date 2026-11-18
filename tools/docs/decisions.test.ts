@@ -9,13 +9,8 @@ const DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../do
 const TOPICS = ['ai.md', 'cards.md', 'engine.md', 'repo.md', 'web.md'];
 const LIMIT = 60;
 
-/** Written before the rule; its author folds it into repo.md. Remove this entry with the file. */
-const WAITING = ['2026-11-18-bump-versions-once-per-pr.md'];
-
 test('the folder holds only the topic files and the README: a decision is a bullet, not a new file', () => {
-  const extra = readdirSync(DIR).filter(
-    (name) => name !== 'README.md' && !TOPICS.includes(name) && !WAITING.includes(name),
-  );
+  const extra = readdirSync(DIR).filter((name) => name !== 'README.md' && !TOPICS.includes(name));
   expect(extra).toEqual([]);
 });
 
