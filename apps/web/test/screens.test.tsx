@@ -125,7 +125,11 @@ describe('Menu', () => {
       },
       { id: 's1', kind: 'saved', name: 'Saved One', blurb: 'b', commander: '', edited: false },
     ] as const;
-    const dialog = (list: typeof decks | readonly [(typeof decks)[0]], value: string) =>
+    const dialog = (
+      list: typeof decks | readonly [(typeof decks)[0]],
+      value: string,
+      initialTab?: 'saved' | 'precon',
+    ) =>
       renderToStaticMarkup(
         <DeckDialog
           title="Choose your deck"
@@ -133,6 +137,7 @@ describe('Menu', () => {
           value={value}
           prompt="Select the deck you'll play in this game."
           decks={list}
+          {...(initialTab === undefined ? {} : { initialTab })}
           error={null}
           busy={false}
           onChoose={() => undefined}
@@ -147,7 +152,7 @@ describe('Menu', () => {
     expect(withSaved).toContain('Saved One');
     expect(withSaved).toContain('No commander marked');
     expect(withSaved).not.toContain('Precon One');
-    const onlyPrecons = dialog([decks[0]], 'p1');
+    const onlyPrecons = dialog([decks[0]], 'p1', 'precon');
     expect(onlyPrecons).toContain('Precon One');
     expect(onlyPrecons).toContain('Commander: Cmd One');
     expect(onlyPrecons).not.toContain('Back');
