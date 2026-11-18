@@ -198,6 +198,8 @@ export const SYNTHETIC_PRISMARI_G3_LIST: readonly CardDefinition[] = [
       { kind: 'keyword', keyword: { kind: 'cascade' } },
       { kind: 'keyword', keyword: { kind: 'retrace' } },
     ],
+    // No spell text: the abilities do the work (D-654).
+    spell: { effect: { kind: 'sequence', effects: [] } },
   }),
   // Spells of known mana values to be exiled and cast: a cheap one that gains life, one with a target, one with an additional cost, and a permanent.
   singleFace({

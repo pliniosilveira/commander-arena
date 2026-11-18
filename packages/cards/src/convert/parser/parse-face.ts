@@ -167,8 +167,19 @@ export function parseFaceText(
     );
   }
   const kept = spellParts.filter((p) => !refused.includes(p)).map((p) => p.parts);
-  const spell = kept.length > 0 ? finishSpell(kept) : null;
   const linked = groupLevels(linkExile(abilities));
+  // D-654 (CR 608.2): an instant or sorcery whose whole text is keyword abilities that were read ("Cascade. Retrace.") has no spell text: it does nothing as it resolves, and
+  // the abilities do the work. The engine says so with an effect that has no instruction, never with a missing spell (a card whose text was not read is unsupported and has none).
+  const spell =
+    kept.length > 0
+      ? finishSpell(kept)
+      : face === 'spell' &&
+          spellParts.length === 0 &&
+          unparsed.length === 0 &&
+          linked.refused.length === 0 &&
+          linked.abilities.length > 0
+        ? { effect: { kind: 'sequence' as const, effects: [] } }
+        : null;
   for (const at of linked.refused) {
     const line = lineOf[at];
     if (line === undefined) continue;
