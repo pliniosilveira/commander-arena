@@ -34,6 +34,7 @@ import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family } from '../registry';
 import { QUOTED_ABILITY } from './quoted';
 import { AND_RESTRICTION, type RestrictionSubject, restrictionEffects } from './restriction-words';
+import { QUOTED_COST_INCREASE } from './skybonder';
 
 type Effects = readonly IrStaticEffect[];
 
@@ -156,6 +157,7 @@ const PROTECTION: Parser<Effects> = choice(
 const HAS_WHAT: Parser<Effects> = choice(
   QUOTED_MANA,
   QUOTED_ABILITY,
+  QUOTED_COST_INCREASE,
   QUOTED,
   BASE_PT,
   PROTECTION,
@@ -242,7 +244,10 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
       ? (_ctx: Parameters<Parser<Effects>>[0], pos: number) => fail(_ctx, pos)
       : quiet(
           map(
-            sequence(pattern(/(?: and |, and |, )/iu), choice(QUOTED_MANA, QUOTED_ABILITY, QUOTED)),
+            sequence(
+              pattern(/(?: and |, and |, )/iu),
+              choice(QUOTED_MANA, QUOTED_ABILITY, QUOTED_COST_INCREASE, QUOTED),
+            ),
             ([, what]) => what,
           ),
         );

@@ -206,6 +206,8 @@ interface BoardIndex {
   readonly late: EntryLists;
   /** Permanents with a `costReduction` static ability that names spells by a filter, in battlefield order. */
   readonly reductions: readonly CostReductionSource[];
+  /** Whether any permanent has a `costIncrease` static ability, its own or one a `grantAbility` gives (D-149): only then are the derived abilities read for a tax. */
+  readonly hasCostIncrease: boolean;
   /** Permanents with an `abilityCostReduction` static ability, in battlefield order (D-425). */
   readonly abilityReductions: readonly AbilityReductionSource[];
   /** Permanents with a `castAsThoughFlash` static ability, in battlefield order (D-139). */
@@ -371,6 +373,7 @@ function handGrantsOf(object: GameObject, abilities: readonly Ability[]): HandGr
 function buildIndex(state: GameState): BoardIndex {
   const sources: ModifierSource[] = [];
   const reductions: CostReductionSource[] = [];
+  let hasCostIncrease = false;
   const abilityReductions: AbilityReductionSource[] = [];
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
@@ -385,6 +388,7 @@ function buildIndex(state: GameState): BoardIndex {
     const modifiers = staticModifiers(printed);
     if (modifiers.length > 0)
       sources.push({ object, modifiers, context: subjectContextOf(state, object) });
+    if (printed.some(givesCostIncrease)) hasCostIncrease = true;
     reductions.push(...costReductionsOf(object, printed));
     abilityReductions.push(...abilityReductionsOf(object, printed));
     flashes.push(...flashesOf(object, printed));
@@ -448,6 +452,7 @@ function buildIndex(state: GameState): BoardIndex {
     deferred: listEntries(deferred),
     late: listEntries(late),
     reductions,
+    hasCostIncrease,
     abilityReductions,
     flashes,
     libraryCasts,
@@ -470,6 +475,22 @@ function indexOf(state: GameState): BoardIndex {
   const fresh = buildIndex(state);
   cache.set(state.objects, fresh);
   return fresh;
+}
+
+/** Whether an ability is a `costIncrease` or a static ability that gives one (D-149). */
+function givesCostIncrease(a: Ability): boolean {
+  return (
+    a.kind === 'static' &&
+    (a.static.kind === 'costIncrease' ||
+      (a.static.kind === 'grantAbility' &&
+        a.static.ability.kind === 'static' &&
+        a.static.ability.static.kind === 'costIncrease'))
+  );
+}
+
+/** Whether a permanent on the battlefield may have a spell tax (`costIncrease`) after the layers (D-149); read before looking at any permanent's derived abilities. */
+export function hasCostIncreaseSources(state: GameState): boolean {
+  return indexOf(state).hasCostIncrease;
 }
 
 /** The cost-reducing static abilities of the permanents on the battlefield (D-095). */

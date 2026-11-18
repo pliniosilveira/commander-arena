@@ -40,6 +40,7 @@ import { isKorvoldStatic, lowerKorvoldStatic } from './korvold';
 import { colorLetter, lowerFilter } from './nouns';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
 import { lowerQuotedGrantedAbility } from './quoted-ability';
+import { isCostIncrease, lowerCostIncrease, lowerGrantedCostIncrease } from './skybonder';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
 type At = { readonly span: { start: number; end: number }; readonly rule: string };
@@ -297,6 +298,12 @@ function effectOf(
         const mana = lowerGrantedMana(quoted, ctx.faceTypes);
         return mana.ok ? ok({ kind: 'grantAbility', subject, ability: mana.value }) : mana;
       }
+      // D-149 (CR 604.1, 613.1f): "Creatures you control with flying have \"Spells your opponents cast that target this creature cost {2} more to cast.\"": a group has the tax as its own.
+      if (inner.kind === 'static') {
+        if (subject.kind !== 'filter' || ctx.namedInQuotes) return failure(at);
+        const tax = lowerGrantedCostIncrease(quoted, at);
+        return tax.ok ? ok({ kind: 'grantAbility', subject, ability: tax.value }) : tax;
+      }
       const granted = lowerGrantedAbility(quoted, subject, at, ctx);
       return granted.ok ? ok({ kind: 'grantAbility', subject, ability: granted.value }) : granted;
     }
@@ -524,6 +531,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:takeFromLinkedExile'];
     case 'costReduction':
       return ['static:costReduction'];
+    case 'costIncrease':
+      return ['static:costIncrease'];
     case 'abilityCostReduction':
     case 'graveyardAbilityCostReduction':
       return ['static:abilityCostReduction'];
@@ -715,7 +724,9 @@ function lowerPart(
         e.kind === 'grantKeyword' ||
         e.kind === 'grantProtection' ||
         e.kind === 'pt' ||
-        e.kind === 'ptCount',
+        e.kind === 'ptCount' ||
+        // D-149: a group named by a keyword may be given the cost increase: it gives no keyword, so it cannot change who is in the group (CR 613.8).
+        (e.kind === 'grantAbility' && e.ability.ability.kind === 'static'),
     ),
   );
   if (!subject.ok) return subject;
@@ -946,6 +957,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     }
     return { ok: true, value: abilities, rule: ability.rule };
   }
+  // "Spells your opponents cast that target ~ cost {2} more to cast." (First Flight deck, D-149, CR 601.2f).
+  if (isCostIncrease(first)) return more.length > 0 ? failure(ability) : lowerCostIncrease(ability);
   if (first.kind === 'costReduction') {
     if (more.length > 0) return failure(ability);
     return lowerCostReduction(ability, first.amount, ctx);
@@ -1093,6 +1106,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:grantAbility',
   'static:restriction',
   'static:costReduction',
+  'static:costIncrease',
   // D-428 (Danitha group 3): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
   'static:abilityCostReduction',
   'static:setTypes',

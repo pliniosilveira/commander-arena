@@ -50,6 +50,7 @@ import {
   checkAdditionalCosts,
   checkAlternativeCosts,
   checkAttackTax,
+  checkCostIncrease,
   checkCostPerExtraTarget,
   checkCostReduction,
 } from './validate-cost';
@@ -532,6 +533,9 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'costReduction':
       checkCostReduction(s, path, out);
       break;
+    case 'costIncrease':
+      checkCostIncrease(s, path, out);
+      break;
     case 'costPerExtraTarget':
       checkCostPerExtraTarget(s, path, out);
       break;
@@ -555,7 +559,14 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'grantAbility':
-      checkStaticSubject(s.subject, `${path}.subject`, out, false, s.ability?.kind !== 'mana');
+      // D-149: a group of the cost increase may name a keyword ("creatures you control with flying"): it gives no keyword, so it cannot change what it reads (CR 613.8).
+      checkStaticSubject(
+        s.subject,
+        `${path}.subject`,
+        out,
+        s.ability?.kind === 'static',
+        s.ability?.kind !== 'mana',
+      );
       // D-099: a mana ability; D-151: an activated or a triggered ability too, held to the rules of one of the card's own.
       if (s.ability?.kind === 'mana') {
         checkManaAbility(s.ability, `${path}.ability`, out);
@@ -587,11 +598,21 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         if (s.ability.kind === 'triggered' && s.ability.functionsIn !== undefined) {
           issue(out, `${path}.ability.functionsIn`, 'a granted ability works on the battlefield');
         }
+      } else if (s.ability?.kind === 'static' && s.ability.static?.kind === 'costIncrease') {
+        // D-149 (CR 604.1, 613.1f): the one static ability a static ability gives; it has no condition and works on the battlefield.
+        checkAbility(s.ability, `${path}.ability`, out);
+        if (s.ability.condition !== undefined || s.ability.functionsIn !== undefined) {
+          issue(
+            out,
+            `${path}.ability`,
+            'a granted cost increase has no condition and works on the battlefield',
+          );
+        }
       } else {
         issue(
           out,
           `${path}.ability`,
-          `a static ability can grant a mana, an activated or a triggered ability, not ${kindOf(s.ability)}`,
+          `a static ability can grant a mana, an activated, a triggered ability or a cost increase, not ${kindOf(s.ability)}`,
         );
       }
       break;
