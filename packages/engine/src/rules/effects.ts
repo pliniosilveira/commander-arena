@@ -30,6 +30,7 @@ import { runSplitExiled, startSplit } from './activation-exile';
 import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
 import { attachEntered, attachObject } from './attach';
+import { runAttackRandomOpponent } from './attack-random-opponent';
 import { runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
 import { makeCardCopy } from './card-copy';
@@ -2637,6 +2638,10 @@ function runEffect(
     case 'grantPlayerHexproof':
       // CR 702.11b, 611.2 (Hylda group 3): the players have hexproof until end of turn (`rules/player-hexproof.ts`).
       return runGrantPlayerHexproof(state, effect, ctx, targets);
+
+    case 'attackRandomOpponent':
+      // CR 508.1d, 701.26a: an opponent at random that was not attacked in the last combat must be attacked this combat, or the creature is tapped (`rules/attack-random-opponent.ts`).
+      return runAttackRandomOpponent(state, effect, ctx.source, res.controller);
 
     case 'goad':
       // CR 701.15a-d (D-639): the creatures are goaded until the controller's next turn (`rules/goad.ts`).

@@ -16,6 +16,7 @@ import type {
 import type { GameEvent } from '../state/events';
 import { getObject, patchObject } from '../state/ops';
 import type { AttackerState, CombatState, GameObject, GameState } from '../state/types';
+import { recordAttacks } from './attack-random-opponent';
 import { type Dealt, dealDamageAsking, lethalDamageTo } from './damage';
 import type { Asked, OrderFlow } from './damage-order';
 import { attackedTarget, defenderRecord } from './defending';
@@ -84,6 +85,14 @@ export function declareAttackers(
       ],
     },
   };
+  // CR 508.6: what the combat phase attacked, for "a player this creature didn't attack during your last combat".
+  state = recordAttacks(
+    state,
+    seat,
+    attacks.flatMap((a) =>
+      a.target.kind === 'player' ? [{ object: a.attacker, player: a.target.seat }] : [],
+    ),
+  );
   events.push({
     kind: 'attackersDeclared',
     seat,

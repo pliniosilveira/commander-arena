@@ -255,6 +255,15 @@ const PUT_ANY_TOTAL =
   /^put any number of [^.]* with total mana value \d+ or less from among them onto the battlefield\.$/i;
 
 /**
+ * "Choose an opponent at random that ~ didn't attack during your last combat. ~ attacks that player this combat if able. If you can't choose an opponent this way, tap ~." (Territorial
+ * Hellkite, CR 508.1d): three sentences that are one instruction (the first may follow the comma of a trigger), kept together for `effect.attack-random-opponent`.
+ */
+const CHOOSE_OPPONENT_AT_RANDOM =
+  /(?:^|, )choose an opponent at random that ~ didn['’]t attack during your last combat\.$/i;
+const ATTACKS_THAT_PLAYER_THIS_COMBAT = /^~ attacks that player this combat if able\.$/i;
+const CANT_CHOOSE_TAP_IT = /^if you can['’]t choose an opponent this way, tap ~\.$/i;
+
+/**
  * "Look at the top three cards of your library. Put one of them into your hand, put one of them on the bottom of your library, and exile one of them."
  * (stage P63, D-216): two sentences that are one instruction (what is looked at, and where each of the cards goes), kept together for `effect.look-split`.
  */
@@ -538,6 +547,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       i += 2;
     } else if (
       a !== undefined &&
+      c !== undefined &&
+      said(a, CHOOSE_OPPONENT_AT_RANDOM) &&
+      said(b, ATTACKS_THAT_PLAYER_THIS_COMBAT) &&
+      said(c, CANT_CHOOSE_TAP_IT)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
       b !== undefined &&
       ((said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
         (said(a, CREATE_TOKENS) && said(b, TOKENS_HAVE_QUOTED_ABILITY)) ||
@@ -569,7 +587,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
-      ((said(a, LOOK_AT_TOP) && (said(b, TAKE_FROM_AMONG) || said(b, PUT_ANY_TOTAL))) ||
+      ((said(a, LOOK_AT_TOP) &&
+        (said(b, TAKE_FROM_AMONG) || said(b, PUT_ANY_TOTAL) || said(b, PUT_FROM_AMONG_ONTO))) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&
       said(c, PUT_THE_REST)
     ) {

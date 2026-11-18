@@ -4301,6 +4301,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.cantBeRegenerated`, 'cantBeRegenerated must be true when present');
       }
       break;
+    case 'attackRandomOpponent':
+      // CR 508.1d: the creature of the ability, which is a permanent: not a spell.
+      if (e.creature.kind !== 'this') {
+        issue(
+          out,
+          `${path}.creature`,
+          "'attackRandomOpponent' names the creature of the ability ('this')",
+        );
+      }
+      if (scope.owner !== 'ability') {
+        issue(out, path, "'attackRandomOpponent' needs an ability of a permanent, not a spell");
+      }
+      break;
     case 'goad':
       // D-639 (CR 701.15a): each creature the selector names is goaded by the controller of the effect.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);

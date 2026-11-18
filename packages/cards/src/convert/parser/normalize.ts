@@ -3,7 +3,7 @@
  * The grammar then only has to know one spelling of "this card".
  */
 
-import { CREATURE_TYPES } from '@commander-arena/engine';
+import { CREATURE_TYPES, PLANESWALKER_TYPES } from '@commander-arena/engine';
 
 export interface NormalizeOptions {
   /** The face's own name. */
@@ -257,9 +257,12 @@ function givenName(name: string): string | undefined {
  * Depths, D-515). The title starts with a capital (a "of the" is a place of the plane, not a name: "Liliana of the Veil"), and the word is no possessive and no type of permanent.
  */
 function creatureOfName(name: string): string | undefined {
-  const m = /^(\p{Lu}[\p{L}'’-]{2,}) of \p{Lu}/u.exec(name);
+  const m = /^(\p{Lu}[\p{L}'’-]{2,}) of (the )?\p{Lu}/u.exec(name);
   const first = m?.[1];
   if (first === undefined || /['’]s$/u.test(first) || NOT_A_GIVEN_NAME.has(first)) return undefined;
+  // "Ureni of the Unwritten" is "Ureni" (a legendary creature), but "of the" after a planeswalker type is a place of the plane ("Gideon of the Trials", "Liliana of the Veil"): that
+  // word is the type of a planeswalker the text may name ("a Gideon planeswalker"), not the card.
+  if (m?.[2] !== undefined && PLANESWALKER_TYPES.includes(first)) return undefined;
   return first;
 }
 

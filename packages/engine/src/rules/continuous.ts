@@ -403,6 +403,14 @@ export function expireEndOfTurnEffects(state: GameState): {
   );
 }
 
+/** "This combat" (CR 506.1, 611.2a): the effects that last for the combat phase end as it does. */
+export function expireEndOfCombatEffects(state: GameState): {
+  state: GameState;
+  events: GameEvent[];
+} {
+  return dropEffects(state, (e) => e.until === 'endOfCombat');
+}
+
 /**
  * "Until your next end step" (D-151, CR 611.2a, 500.1): an effect of that kind ends as the end step of the player whose turn it is begins,
  * when it was waiting for a turn of theirs numbered as this one or earlier.

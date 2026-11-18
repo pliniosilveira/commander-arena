@@ -61,7 +61,7 @@ export function controlEndOf(state: GameState, obj: GameObject): ControlEnd | un
     if (e.change.kind !== 'control') continue;
     if (e.until === 'endOfTurn') found = 'endOfTurn';
     else if (e.until === 'permanent') found = 'never';
-    else if (e.until === 'nextUntapStep') found = undefined;
+    else if (e.until === 'nextUntapStep' || e.until === 'endOfCombat') found = undefined;
     else if (e.until.kind === 'turnEnd') found = { endOfTurnOf: e.until.seat };
     else if (e.until.kind === 'whileControlling') found = { whileControlling: e.until.source };
     else found = undefined;
