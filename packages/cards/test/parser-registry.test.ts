@@ -588,6 +588,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'modal.choose-not-repeated-source': permanent(
     (e) => `At the beginning of your end step, ${e}\n• Draw a card.\n• You gain 1 life.`,
   ),
+  // Shadrix Silverquill: "you may choose two" with a different player for each mode (CR 700.2d).
+  'modal.choose-may-different': permanent(
+    (e) =>
+      `At the beginning of combat on your turn, ${e}\n• Target player draws a card and loses 1 life.\n• Target player creates a 2/1 white and black Inkling creature token with flying.`,
+  ),
+  'noun.each-permanent-they-control': spell((e) => `Target player puts a +1/+1 counter on ${e}.`),
   // D-344 (repeatable modes, CR 700.2d): the header with no dash, its bullets after it.
   'modal.choose-repeatable': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   // Danitha deck, group 7 (D-433): Tiered, whose bullets name their mode and its cost before the effect.
