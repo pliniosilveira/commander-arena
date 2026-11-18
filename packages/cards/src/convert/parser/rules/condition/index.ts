@@ -46,6 +46,7 @@ import { LIBRARY_CONDITION_RULES } from './library';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
 import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
+import { PRISMARI_G3_CONDITION_RULES } from './prismari-g3';
 import { RECURSION_CONDITION_RULES } from './recursion';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
@@ -502,6 +503,8 @@ export const CONDITION_RULES = [
   ...NIV_CONDITION_RULES,
   // Prismari deck, group 2 (issue 87, D-632): "that spell's mana value is 5 or greater".
   ...PRISMARI_G2_CONDITION_RULES,
+  // Prismari deck, group 3 (issue 87, D-648): "the total mana value of the cards exiled this way is 13 or less".
+  ...PRISMARI_G3_CONDITION_RULES,
   // Issue 25 (D-318): "you've cast three or more spells this turn".
   ...SPELLS_CAST_CONDITION_RULES,
   // Issue 25 (D-331): "there are no cards in your library", "your library has no cards in it".

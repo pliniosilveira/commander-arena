@@ -673,6 +673,9 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'manaSpentAtLeast'; readonly count: number; readonly ofTriggerSpell?: true }
     // Prismari deck, group 2 (D-632, CR 202.3, 608.2h): "that spell's mana value is 5 or greater": the mana value of the spell that caused a cast trigger; lowered in such a trigger only.
     | { readonly kind: 'triggerSpellManaValue'; readonly atLeast: number }
+    // Prismari deck, group 3 (D-648, CR 202.3, 608.2c): "the total mana value of the cards exiled this way is 13 or less": the cards the instructions before it exiled, added up; lowered
+    // only after an instruction that exiled cards.
+    | { readonly kind: 'movedTotalManaValue'; readonly atMost: number }
     | { readonly kind: 'cardLeftYourGraveyard' }
     // Stage P50 (D-207): "it targets a tapped creature" (CR 601.2c, 601.2f)
     | { readonly kind: 'spellTargets'; readonly noun: IrNoun }
