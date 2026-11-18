@@ -267,6 +267,13 @@ export type Amount =
    */
   | { readonly kind: 'cardsDrawnThisTurn' }
   /**
+   * "One plus the number of instant and sorcery spells you've cast this turn" (Prismari deck, group 1, CR 601.2i, 707.10): how many spells the controller of the spell or ability
+   * has cast this turn (`TurnLog.castSpells`: a spell counts once it is on the stack with its costs paid, whether or not it resolved or was countered; a copy is not cast, and an
+   * opponent's spell is not the controller's), read as the instruction runs. `ofTypes`: only the spells that have at least one of those card types, as they were cast; left out,
+   * every spell counts. Not valid in a static ability: nothing refreshes a layer effect when a spell is cast.
+   */
+  | { readonly kind: 'spellsCastThisTurn'; readonly ofTypes?: readonly CardType[] }
+  /**
    * "For each creature sacrificed this way" (CR 118.8, 701.21a, 707.10, D-491, Plumb the Forbidden): the number of permanents sacrificed to pay the additional cost of the
    * spell the effect belongs to (the spell is the source of its own "When you cast this spell" ability, or of its own text), read from the spell on the stack or from its last-known
    * information once it has left (CR 113.7a). 0 when none was. Only in the abilities of a spell that name `castSpell` with `self` and in its own text, of a face whose additional
@@ -437,6 +444,11 @@ export interface ObjectFilter {
    * zone, the library). Read from the spell itself as it is cast, so only a spell is matched; in a cost reduction (`costReduction.spells`) it is read as the cost is determined.
    */
   readonly notCastFromHand?: true;
+  /**
+   * "Whenever you cast an instant or sorcery spell with mana value 5 or greater from your hand" (Prismari deck, group 1, CR 601.2a, 601.2i): the spell on the stack was cast from its
+   * caster's hand. Read from the spell itself as it is cast (the zone it came from), so only a spell is matched. Not with `notCastFromHand`.
+   */
+  readonly castFromHand?: true;
   /**
    * "That entered this turn" (group 4 of the Vraska deck, CR 400.7, 110.1): the permanent entered the battlefield during this turn and is still the same
    * object (one that left and came back is a new object). Read from the turn log where the filter is matched against the game (a target slot, an `each`
