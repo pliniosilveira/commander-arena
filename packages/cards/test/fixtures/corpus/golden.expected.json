@@ -466,19 +466,10 @@
     "0ca4e80e-c19c-4b74-b531-c5a4dc5a8ba9": {
       "name": "Restless Spire",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{U}{R}: Until end of turn, ~ becomes a 2/1 blue and red Elemental creature with \"During your turn, ~ has first strike.\" It's still a land.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.lead-becomes-creature"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "a7d44706"
+      "ast": "dc66dcae"
     },
     "0d4ecdb1-ec90-497f-a7a4-1c68092b8757": {
       "name": "Teferi's Protection",
@@ -532,19 +523,10 @@
     "0fd114c4-092b-4e28-b0dc-ef529f3bc73e": {
       "name": "Jeska's Will",
       "group": "holdout",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Choose one. If you control a commander as you cast ~, you may choose both instead.\n• Add {R} for each card in target opponent's hand.\n• Exile the top three cards of your library. You may play them this turn.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.add-mana"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "9f7467d2"
+      "ast": "e7e7699c"
     },
     "0fe16212-66c3-4e45-a641-7391e9b2e304": {
       "name": "Shivan Reef",
@@ -1381,19 +1363,10 @@
     "348c67ef-9ccc-4651-9038-efdf1ad1b36a": {
       "name": "Rootha, Mastering the Moment",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of combat on your turn, if you've cast an instant or sorcery spell this turn, create an X/X blue and red Elemental creature token with flying and haste, where X is the greatest mana value among instant and sorcery spells you've cast this turn.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "9ef00bae"
+      "ast": "219e1a5a"
     },
     "3494a575-f68e-4e78-9f6b-142cd8a0edea": {
       "name": "Combustible Gearhulk",
@@ -2060,19 +2033,10 @@
     "515c522f-51d5-4f6d-b9b1-ea3c7f6a378e": {
       "name": "Rousing Refrain",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Add {R} for each card in target opponent's hand. Until end of turn, you don't lose this mana as steps and phases end. Exile ~ with three time counters on it.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.add-mana"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "512a87eb"
+      "ast": "de6cec4d"
     },
     "516101be-be39-4d84-8fee-d8a79930dd0a": {
       "name": "Sphinx of the Second Sun",
@@ -2246,18 +2210,10 @@
     "579cbd92-797f-4cdf-91ed-fca7a523eae5": {
       "name": "Deep Analysis",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Flashback—{1}{U}, Pay 3 life.",
-          "reason": "notRunnable",
-          "closestRule": "keyword.flashback"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "7e60292d"
+      "ast": "110187e4"
     },
     "580996d4-db9a-4b57-a0e1-a2dbb524121a": {
       "name": "Razorlash Transmogrant",
@@ -2516,44 +2472,18 @@
     "61747805-0c34-4beb-8cbf-97bac7a998d0": {
       "name": "Renegade Bull",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever you cast an instant or sorcery spell, ~ gets +X/+0 until end of turn, where X is that spell's mana value.",
-          "reason": "unrecognised",
-          "slot": "duration",
-          "closestRule": "duration.until-end-of-turn"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Whenever ~ attacks, exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.copy-spell"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "472f7653"
+      "ast": "0458692c"
     },
     "61816f98-9d1a-4b16-9194-cb7249880710": {
       "name": "Leitmotif Composer",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{2}{U}: Creatures named ~ can't be blocked this turn.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.pump-all"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "fea91128"
+      "ast": "1e8ef60d"
     },
     "619173f4-0403-49cd-9659-2fedd5028a90": {
       "name": "Shire Terrace",
@@ -3931,27 +3861,10 @@
     "943fc88d-c281-46bb-9dc7-1052f789362b": {
       "name": "Furygale Flocking",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "~ costs {1} less to cast for each instant and sorcery card in your graveyard.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "amount.for-each"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "For each opponent, create two 3/3 blue and red Elemental creature tokens with flying that attack that opponent this turn if able. They gain haste until end of turn.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "012fbae3"
+      "ast": "7a1ba9a7"
     },
     "9464ddf2-4bcb-44f6-b945-89a132544de6": {
       "name": "Maestros Theater",
@@ -4028,19 +3941,10 @@
     "985f9dd7-e693-48ff-9dd6-a1a3cbaa236b": {
       "name": "Magma Opus",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "~ deals 4 damage divided as you choose among any number of targets. Tap two target permanents. Create a 4/4 blue and red Elemental creature token. Draw two cards.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.damage-divided"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "70bd15d4"
+      "ast": "93a767d7"
     },
     "9965d9c5-2ebf-4a6c-930e-55c5890979be": {
       "name": "Thought Vessel",
@@ -5158,19 +5062,10 @@
     "c7b044c3-3cfa-407e-bf20-2875e8e04b7b": {
       "name": "Brazen Borrower // Petty Theft",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "~ can block only creatures with flying.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "static.self"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "da889666"
+      "ast": "81cef160"
     },
     "c7b72d38-0aa0-4e17-9dd5-9276d7cb21ec": {
       "name": "Kaervek the Merciless",
@@ -6271,19 +6166,10 @@
     "f426aa1a-e1dc-4563-b450-2e23d6bd980b": {
       "name": "Manaform Hellkite",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever you cast a noncreature spell, create an X/X red Dragon Illusion creature token with flying and haste, where X is the amount of mana spent to cast that spell. Exile that token at the beginning of the next end step.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "ee4a6d1c"
+      "ast": "1601ff88"
     },
     "f49302c5-8510-4360-841c-a59f53f87e0b": {
       "name": "Icy Blast",
@@ -6312,19 +6198,10 @@
     "f58117e4-ba85-41b8-8fd5-4245716a84dc": {
       "name": "Prismari Pianist",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever you cast an instant or sorcery spell, create a 1/1 blue and red Elemental creature token. If that spell's mana value is 5 or greater, create three of those tokens instead.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "350eafcc"
+      "ast": "9bce244c"
     },
     "f61680da-606e-4d16-b0a0-361aa5210901": {
       "name": "Chandra's Ignition",
@@ -6433,18 +6310,10 @@
     "f9217532-f7cf-4436-b476-72d97a3147dc": {
       "name": "Galazeth Prismari",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Artifacts you control have \"{T}: Add one mana of any color. Spend this mana only to cast an instant or sorcery spell.\"",
-          "reason": "notRunnable",
-          "closestRule": "static.permanents"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "9645ecb3"
+      "ast": "c6f51ee3"
     },
     "f92aaa00-6ece-4033-b3df-b2fc2c4718d9": {
       "name": "Leyline Tyrant",
@@ -6798,11 +6667,11 @@
       "total": 192
     },
     "holdout": {
-      "supported": 55,
+      "supported": 56,
       "total": 61
     },
     "acceptance": {
-      "supported": 449,
+      "supported": 461,
       "total": 489
     }
   }
