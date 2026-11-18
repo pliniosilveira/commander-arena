@@ -4040,6 +4040,13 @@ export type Keyword =
    */
   | { readonly kind: 'retrace' }
   /**
+   * CR 702.127a (Aftermath): "You may cast this half of this split card from your graveyard", "This half of this split card can't be cast from any zone other than a graveyard" and "If this
+   * spell was cast from a graveyard, exile it instead of putting it anywhere else any time it would leave the stack." Three static abilities of one half of a split card (CR 709). It is not an
+   * alternative cost: the half is cast paying its own mana cost, at the timing of its type, so the engine offers it as an ordinary `castSpell` with that `face` for a card in a graveyard
+   * (`castZone`); the spell on the stack carries `StackData.aftermath` and is exiled whenever it leaves the stack (`rules/zones.ts`). Only on a face of a split card.
+   */
+  | { readonly kind: 'aftermath' }
+  /**
    * CR 702.40a (Storm, D-129): "When you cast this spell, copy it for each other spell that was cast before it this
    * turn. If the spell has any targets, you may choose new targets for any of the copies." A triggered ability of the
    * spell, expanded by `derive` (`rules/derive-keywords.ts`) into `castSpell` with `self` and the `storm` effect. Each

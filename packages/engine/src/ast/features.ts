@@ -504,6 +504,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-665: Demonstrate (CR 702.144a); D-667: Retrace (CR 702.81a).
     'demonstrate',
     'retrace',
+    // CR 702.127a: Aftermath, one half of a split card cast from the graveyard.
+    'aftermath',
     // D-124: Unearth (CR 702.84a).
     'unearth',
     // D-185: Encore (CR 702.141a), Devour (CR 702.82a) and Riot (CR 702.136a).
@@ -611,7 +613,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
   // CR 709 split (either half is cast), CR 715 Adventure, CR 712 modal and nonmodal double-faced, CR
   // 714 Saga (lore counters and chapter abilities; read ahead is a keyword and is not run), CR 701.42 and 712.4 meld
-  // (D-277: two cards, one melded permanent). Fuse, Aftermath, Rooms and flip are not run (`validateCard` names the layout).
+  // (D-277: two cards, one melded permanent). Fuse, Rooms and flip are not run (`validateCard` names the layout); Aftermath is (CR 702.127).
   layouts: [
     'normal',
     'split',
@@ -2140,6 +2142,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   cascade: true,
   demonstrate: true,
   retrace: true,
+  aftermath: true,
   unearth: true,
   encore: true,
   eternalize: true,

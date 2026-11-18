@@ -6,7 +6,7 @@
  * convention for a card with several faces); oracleId is null. The text describes what the AST
  * does; it is not Oracle text and none of these copies a real card.
  *
- * Split: SYNTHETIC Singe // Mend (two instants), SYNTHETIC Study // Zap (a sorcery and an instant).
+ * Split: SYNTHETIC Singe // Mend (two instants), SYNTHETIC Study // Zap (a sorcery and an instant), SYNTHETIC Rite // Toll (a sorcery and an Aftermath sorcery).
  * Adventure: SYNTHETIC Brawler Bear // Chop (the Adventure has a target), SYNTHETIC Wise Owl // Peek
  * (it has none). Modal double-faced: SYNTHETIC Ridge Drake // Ridge Pass (a creature and a land),
  * SYNTHETIC Zeal Charm // Shock Pass (a sorcery and a land that asks to pay 2 life), SYNTHETIC Twin
@@ -140,6 +140,34 @@ export const SYNTHETIC_LAYOUT_LIST: readonly CardDefinition[] = [
       }),
     ],
     ['U', 'R'],
+  ),
+  // ---- Split with Aftermath (CR 702.127): the second half is cast only from a graveyard
+  card(
+    'split',
+    [
+      face({
+        name: 'Rite',
+        manaCost: ['1', 'B'],
+        types: ['sorcery'],
+        colors: ['B'],
+        oracleText: 'You gain 2 life.',
+        spell: { effect: gain(2) },
+      }),
+      face({
+        name: 'Toll',
+        manaCost: ['2', 'B'],
+        types: ['sorcery'],
+        colors: ['B'],
+        oracleText:
+          'Aftermath (Cast this spell only from your graveyard. Then exile it.)\nDestroy target creature.',
+        abilities: [{ kind: 'keyword', keyword: { kind: 'aftermath' } }],
+        spell: {
+          targets: [CREATURE_TARGET],
+          effect: { kind: 'destroy', objects: { kind: 'target', id: 't1' } },
+        },
+      }),
+    ],
+    ['B'],
   ),
   // ---- Adventure (CR 715): faces[0] the card, faces[1] its Adventure
   card(

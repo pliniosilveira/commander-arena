@@ -72,6 +72,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'CR 702.80a (Wither)',
     'CR 702.164a (Toxic)',
     'CR 702.61a (Split Second)',
+    'CR 702.127a (Aftermath)',
     'CR 702.118a (Skulk)',
     'CR 702.91a (Battle Cry)',
     'CR 702.134a (Mentor)',
@@ -138,6 +139,9 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Retrace',
     'Cascade, retrace',
     'Retrace, flying',
+    // CR 702.127a: Aftermath on the second half of a split card (the reminder text is stripped before the line is read).
+    'Aftermath',
+    'aftermath',
     'Bushido 1',
     'Bushido 2',
     // Stage P40 (D-186, CR 702.82a, 702.136a): Devour N and Riot.
@@ -226,6 +230,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Afflict three',
     'Afflict 3 4',
     'Afflict {1}',
+    'Aftermath {2}{B}',
     'Infectious',
     'Split',
     'Split second.',

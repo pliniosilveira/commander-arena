@@ -115,7 +115,7 @@ describe('what the engine reports about a split card, as the player is told it',
     expect(imported.support.reasons.join('\n')).toMatch(/Fuse/);
   });
 
-  test('Aftermath is refused, by its line (CR 702.127)', () => {
+  test('Aftermath is read as the keyword of its half (CR 702.127a)', () => {
     const aftermath = {
       ...mend,
       typeLine: 'Sorcery',
@@ -123,8 +123,21 @@ describe('what the engine reports about a split card, as the player is told it',
         'Aftermath (Cast this spell only from your graveyard. Then exile it.)\nYou gain 4 life.',
     };
     const imported = parse(multi('split', [singe, aftermath], ['W', 'R']));
+    expect(imported.support.status).toBe('supported');
+    expect(imported.definition.faces[0]?.abilities).toEqual([]);
+    expect(imported.definition.faces[1]?.abilities).toEqual([
+      { kind: 'keyword', keyword: { kind: 'aftermath' } },
+    ]);
+  });
+
+  test('an Aftermath line with a cost is not the keyword and the card stays unsupported', () => {
+    const aftermath = {
+      ...mend,
+      typeLine: 'Sorcery',
+      oracleText: 'Aftermath {1}{W}\nYou gain 4 life.',
+    };
+    const imported = parse(multi('split', [singe, aftermath], ['W', 'R']));
     expect(imported.support.status).toBe('unsupported');
-    expect(imported.support.reasons.join('\n')).toMatch(/Aftermath/);
   });
 
   test('a split card with permanent halves (a Room) is refused (CR 709.5)', () => {

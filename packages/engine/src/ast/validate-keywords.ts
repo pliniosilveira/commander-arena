@@ -44,6 +44,7 @@ const PLAIN: readonly Keyword['kind'][] = [
   'cascade',
   'demonstrate',
   'retrace',
+  'aftermath',
   'storm',
   'gravestorm',
   'livingWeapon',
