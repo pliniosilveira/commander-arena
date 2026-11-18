@@ -46,6 +46,7 @@ import { HOFRI_TRIGGER_RULES } from './hofri';
 import { HYLDA_G1_TRIGGER_RULES } from './hylda-g1';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
+import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
 import { RECURSION_TRIGGER_RULES } from './recursion';
 import {
@@ -1170,6 +1171,8 @@ export const TRIGGER_RULES = [
   ...CONTROL_TRIGGER_RULES,
   // Stage P33 (D-150): gaining life, counters put on a permanent, attacking with several creatures.
   ...ANGEL_TRIGGER_RULES,
+  // Ever-Watching Threshold: "an opponent attacks" with no creatures named.
+  ...OPPONENT_ATTACKS_TRIGGER_RULES,
   // Stage P65 (D-218): "one or more creatures attack", "one or more tokens you control enter", "you cast or copy an instant or sorcery spell".
   ...EDHREC_TRIGGER_RULES,
   // Issue 160 (D-629): "Whenever enchanted player is attacked".

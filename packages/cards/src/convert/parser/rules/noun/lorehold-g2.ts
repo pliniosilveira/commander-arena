@@ -63,6 +63,7 @@ export const NOUN_TARGET_NONMATCHING_GRAVEYARD_CARD = defineRule<IrNoun>({
       parts.notSupertypes.length === 0 &&
       !parts.attacking &&
       !parts.attackingOrBlocking &&
+      !parts.blocking &&
       !parts.historic &&
       !parts.modified &&
       !parts.commander &&

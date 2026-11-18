@@ -29,7 +29,7 @@ import { dropEffects, endOf } from './control-effects';
 import { copiableValues } from './copiable';
 import { derive } from './derive';
 import { ptAmountOf } from './effect-support';
-import { resolveObjects, type SelectContext } from './select';
+import { resolveObjects, resolvePlayers, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
 /** The effect nodes that make a continuous effect. */
@@ -314,6 +314,40 @@ export function runRequireAttack(
     },
   };
   return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
+}
+
+/**
+ * "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (CR 508.1d, 611.2a, 611.2c): for each player the effect names, one
+ * continuous effect with no set of objects, read where that player declares attackers, for the creatures they control then. It ends with the cleanup step of that player's next
+ * turn (`turnEnd`, the one after this moment: a turn of theirs that has begun already is not counted), so it covers the whole turn. It does nothing when the permanent with the
+ * ability is no longer on the battlefield (CR 608.2b).
+ */
+export function runRequireAttackSource(
+  state: GameState,
+  node: Extract<Effect, { kind: 'requireAttackSource' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): StepOutcome {
+  const source = ctx.source;
+  if (source === null || state.objects[source]?.zone !== 'battlefield') return done(state);
+  let next = state;
+  const made: ContinuousEffect[] = [];
+  for (const seat of resolvePlayers(state, node.player, ctx, targets)) {
+    const [timestamp, stamped] = allocateTimestamp(next);
+    next = stamped;
+    made.push({
+      id: `ce${timestamp}`,
+      timestamp,
+      objects: [],
+      until: {
+        kind: 'turnEnd',
+        seat,
+        turnsTaken: (next.seats[seat]?.turnsTaken ?? 0) + 1,
+      },
+      change: { kind: 'mustAttackPermanent', seat, permanent: source },
+    });
+  }
+  return done({ ...next, continuousEffects: [...next.continuousEffects, ...made] });
 }
 
 /**

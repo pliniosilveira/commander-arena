@@ -57,6 +57,7 @@ import { GAIN_RULES } from './gain';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
 import { GALADRIEL_G2_EFFECT_RULES } from './galadriel-g2';
 import { GALADRIEL_G3_EFFECT_RULES } from './galadriel-g3';
+import { GIDEON_EFFECT_RULES } from './gideon';
 import { GISA_G3_EFFECT_RULES } from './gisa-g3';
 import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
@@ -117,6 +118,7 @@ import {
 import { POPULATE_EFFECT_RULES } from './populate';
 import { PREPARE_EFFECT_RULES } from './prepare';
 import { PREVENT_RULES } from './prevent';
+import { PRIMORDIAL_EFFECT_RULES } from './primordial';
 import { PRISMARI_G1_EFFECT_RULES } from './prismari-g1';
 import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
 import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
@@ -424,6 +426,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile target creature an opponent controls until an opponent becomes the monarch',
     // Lorehold group 2 (issue 86): a card of your graveyard that is none of the types the words leave out.
     'exile target noncreature, nonland card from your graveyard',
+    // Soul Snare (CR 508.1b, 506.3): an attacker of the controller or of a planeswalker the controller controls.
+    "exile target creature that's attacking you or a planeswalker you control",
   ],
   rejects: [
     'exile target creature until an opponent becomes the monarch or ~ leaves the battlefield',
@@ -469,6 +473,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.that-object',
             // D-407 (Danitha deck): "Exile enchanted creature." (the permanent the Aura is attached to, which the engine's `attached` names).
             'noun.attached-permanent',
+            // Soul Snare (CR 508.1b, 506.3): "Exile target creature that's attacking you or a planeswalker you control."
+            'noun.target-creature-attacking-you',
           ],
           'effect.exile',
         ),
@@ -990,6 +996,7 @@ export const EFFECT_RULES = [
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
   ...KORVOLD_EFFECT_RULES,
+  ...GIDEON_EFFECT_RULES,
   ...HEXPROOF_LOSS_EFFECT_RULES,
   ...GOAD_EFFECT_RULES,
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
@@ -1000,6 +1007,8 @@ export const EFFECT_RULES = [
   // D-337: "copy it for each time you've cast your commander from the command zone this game".
   ...NIV_GROUP_3_A_EFFECT_RULES,
   ...NIV_GROUP_3_C_EFFECT_RULES,
+  // First Flight deck: "for each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost".
+  ...PRIMORDIAL_EFFECT_RULES,
   ...HASHATON_G7_EFFECT_RULES,
   // D-367: "amass Zombies 1".
   ...HASHATON_GROUP_4_EFFECT_RULES,

@@ -123,6 +123,8 @@ export const STATIC_PT_COUNT = defineRule<IrStatic>({
     'Enchanted creature gets -1/-1 for each creature card in your graveyard.',
     'Equipped creature gets +2/+0 for each Elf you control.',
     '~ gets +1/+1 for each other creature you control.',
+    // D-149 (First Flight): the count names a keyword, which the engine reads after layer 6 (CR 613.4c).
+    '~ gets +1/+1 for each other creature you control with flying.',
     'Other creatures you control get +1/+1 for each Elf you control.',
     'Creatures you control get +1/+0 for each artifact you control.',
     // Stage P37 (D-180): the colors the permanents have between them.

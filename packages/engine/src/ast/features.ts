@@ -217,6 +217,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'requireAttack',
     // CR 508.1d, 701.26a: "choose an opponent at random that this creature didn't attack during your last combat ... attacks that player this combat if able".
     'attackRandomOpponent',
+    // "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (CR 508.1d).
+    'requireAttackSource',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
     'permanentsEnterTapped',
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
@@ -788,6 +790,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-120: `ObjectFilter.attacking` and `powerLessThanSource`.
     'attacking',
     'notAttacking',
+    'blocking',
     'powerLessThanSource',
     // D-431: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
     'powerAboveBase',
@@ -1007,6 +1010,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantAbility',
     'restriction',
     'costReduction',
+    // D-149: "Spells your opponents cast that target this creature cost {2} more to cast" (CR 601.2f).
+    'costIncrease',
     // D-641: "Strive — ~ costs {2}{R} more to cast for each target beyond the first" (CR 601.2f).
     'costPerExtraTarget',
     // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
@@ -1464,6 +1469,8 @@ export const SELECTOR_KINDS = [
   'attacking',
   /** "Nonattacking creatures" (CR 508.1k, D-573): the engine's `ObjectFilter.notAttacking`. */
   'notAttacking',
+  /** "Blocking creatures" (CR 509.1g): the engine's `ObjectFilter.blocking`. */
+  'blocking',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
   /** "With power greater than its base power" (CR 208.4b, D-431): the engine's `ObjectFilter.powerAboveBase`. */
@@ -1718,6 +1725,8 @@ export const STATIC_KINDS = [
   'untapInOthersUntapStep',
   /** "~ costs {1} less to cast for each ...", "Artifact spells you cast cost {1} less" (D-095): the engine's `costReduction`. */
   'costReduction',
+  /** "Spells your opponents cast that target this creature cost {2} more to cast." (CR 601.2f, D-149): the engine's `costIncrease`. */
+  'costIncrease',
   /** "Strive — ~ costs {2}{R} more to cast for each target beyond the first" (CR 601.2f, D-641): the engine's `costPerExtraTarget`. */
   'costPerExtraTarget',
   /** "Equip abilities you activate that target enchanted creature cost {3} less to activate." (CR 601.2f, 602.2b, 702.6a, D-425): the engine's `abilityCostReduction`. */
@@ -2053,6 +2062,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   goad: true,
   requireAttack: true,
   attackRandomOpponent: true,
+  requireAttackSource: true,
   permanentsEnterTapped: true,
   gainControl: true,
   exchangeControl: true,

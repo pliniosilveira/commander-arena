@@ -167,7 +167,9 @@ export function beginCast(
             ? alternative
             : alternative === undefined
               ? 'normal' // D-350: cast as an effect allows, paying its mana cost
-              : 'free',
+              : alternative === 'free' && obj.zone === 'graveyard'
+                ? 'freeGraveyard' // CR 118.9: "cast target ... card from a graveyard without paying its mana cost"
+                : 'free',
           riders.anyManaType === true,
         )
       : !canCast(state, seat, obj, alternative, face)

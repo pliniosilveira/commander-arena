@@ -16,13 +16,14 @@ export type CastCardEffect = Extract<Effect, { kind: 'castCard' }>;
 
 /** The riders the effect puts on the spell, as a sentence tail: ", and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead". */
 export function castCardRiders(effect: CastCardEffect): string {
+  const free = effect.free === true ? ' without paying its mana cost' : '';
   const any =
     effect.anyManaType === true ? ', and mana of any type can be spent to cast that spell' : '';
   const exile =
     effect.exileInstead === true
       ? '. If that spell would be put into a graveyard, exile it instead'
       : '';
-  return `${any}${exile}`;
+  return `${free}${any}${exile}`;
 }
 
 /** "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead". */
@@ -56,7 +57,8 @@ export function castCardPrompt(name: string, effect: CastCardEffect | null): str
     effect?.exileInstead === true
       ? ' If it would be put into a graveyard, it is exiled instead.'
       : '';
-  return `Cast ${name} from a graveyard, paying its mana cost?${any}${exile}`;
+  const cost = effect?.free === true ? 'without paying its mana cost' : 'paying its mana cost';
+  return `Cast ${name} from a graveyard, ${cost}?${any}${exile}`;
 }
 
 /** The ability on the stack that asked, as its `castCard` effect. */

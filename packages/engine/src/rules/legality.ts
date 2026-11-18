@@ -746,13 +746,13 @@ export function canCastDuringResolution(
    * with the miracle cost, for a card that is in the hand (its X, when it has one, is announced in the cast). `normal` (D-350): the card, in a graveyard, is cast
    * paying its mana cost (an effect named it).
    */
-  alternative: 'free' | 'normal' | 'madness' | 'miracle' = 'free',
+  alternative: 'free' | 'freeGraveyard' | 'normal' | 'madness' | 'miracle' = 'free',
   /** D-351 (CR 609.4b): mana of any type can be spent to cast the spell (`normal` only): the cost is read that way. */
   anyManaType = false,
 ): boolean {
   // D-654 (CR 707.12): the copy of a card an effect made in exile is cast as the effect resolves, like the card itself.
   if (obj.card === null && obj.cardCopy !== true) return false;
-  if (alternative === 'normal') {
+  if (alternative === 'normal' || alternative === 'freeGraveyard') {
     // D-350 (CR 608.2g, 601.2): "you may cast target instant or sorcery card from a graveyard", paying its mana cost: the card is in a graveyard, whoever's it is (the
     // effect names it); the spell is cast from there and its owner stays the card's owner.
     if (obj.zone !== 'graveyard') return false;
@@ -788,7 +788,12 @@ export function canCastDuringResolution(
           spell,
           zone: from,
           // D-350: a cast that pays the mana cost has no alternative cost.
-          alternative: alternative === 'normal' ? undefined : alternative,
+          alternative:
+            alternative === 'normal'
+              ? undefined
+              : alternative === 'freeGraveyard'
+                ? 'free'
+                : alternative,
           kicked,
           excluded: obj.id,
           // CR 702.120a, 118.9 (D-145): a free cast still pays the escalate cost of the fewest modes it must choose, and the cost of the modes chosen (D-433).

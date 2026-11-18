@@ -72,6 +72,15 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
           ),
         ]
       : []),
+    // CR 508.1a, 506.3 (Vow of Duty): "can't attack you or planeswalkers you control", said of the permanent an Aura or Equipment is attached to; before the plain "can't attack".
+    ...(subject === 'attached'
+      ? [
+          map(
+            pattern(new RegExp(`can['’]t attack you or planeswalkers you control${END}`, 'iu')),
+            (): IrStaticEffect => ({ kind: 'cantAttackYou' }),
+          ),
+        ]
+      : []),
     // D-407 (CR 508.1a): "can't attack", said of the permanent an Aura or Equipment is attached to ("can't attack or block" is `restrictionEffects`).
     ...(subject === 'attached' ? [phrase("can['’]t attack", 'cantAttack')] : []),
     // Issue 201 (Shiny Impetus, CR 701.15): "is goaded", said of the permanent an Aura is attached to.
@@ -124,4 +133,5 @@ export function restrictionEffects(subject: RestrictionSubject): Parser<readonly
 }
 
 /** What can follow " and " to start another restriction: a lookahead, so a failure stays at " and". */
-export const AND_RESTRICTION = /\sand (?=can['’]t |attacks? |doesn['’]t |is goaded)/i;
+export const AND_RESTRICTION =
+  /\sand (?=can['’]t |attacks? |doesn['’]t |is goaded)|,\sand (?=can['’]t )/i;

@@ -601,11 +601,17 @@ export interface ObjectFilter {
   /** "Nonattacking creatures" (D-573): battlefield permanents not in the attackers of the combat in progress. */
   readonly notAttacking?: true;
   /**
+   * Only blocking creatures (CR 509.1g): a creature declared as a blocker that is still in combat ("blocking creatures with flying get +0/+2 until end of turn").
+   * Read where the filter is matched against the game (an `each` selector, a trigger subject).
+   */
+  readonly blocking?: true;
+  /**
    * Only creatures attacking the controller of this ability as a player (CR 508.1b, D-131): "creatures attacking
    * you" counts the attackers whose attack target is that player, not one attacking a planeswalker or battle they
-   * control. It implies `attacking`. Read where `attacking` is read, and refused where it is refused.
+   * control. It implies `attacking`. Read where `attacking` is read, and refused where it is refused. `'orPlaneswalkers'` ("creature that's attacking you or a planeswalker you control",
+   * CR 508.1b, 506.3): also the attackers whose attack target is a planeswalker the controller of this ability controls (a battle is never covered).
    */
-  readonly attackingYou?: true;
+  readonly attackingYou?: true | 'orPlaneswalkers';
   /**
    * Only creatures attacking an opponent of the controller of this ability as a player, or a planeswalker or battle that opponent controls or protects
    * (CR 508.1b, 506.3, D-218): "creatures attacking your opponents and/or planeswalkers they control". It implies `attacking`. Read where `attacking` is
@@ -2870,6 +2876,17 @@ export type Effect =
    */
   | { readonly kind: 'attackRandomOpponent'; readonly creature: { readonly kind: 'this' } }
   /**
+   * "During target opponent's next turn, creatures that player controls attack this planeswalker if able." (CR 508.1d, 508.1a, 611.2a, 611.2c): a requirement on the
+   * creatures the player `player` controls, read whenever that player declares attackers, for the creatures they control then (a creature that arrives later is required too,
+   * CR 611.2c is about characteristics). Each such creature that is able to attack the permanent with the ability attacks it. It lasts through the end of that player's next turn
+   * (the turn it resolves in not counted). Only in the ability of a permanent; the player is fixed as the effect resolves (a target player).
+   */
+  | {
+      readonly kind: 'requireAttackSource';
+      readonly player: PlayerSelector;
+      readonly duration: 'untilEndOfTheirNextTurn';
+    }
+  /**
    * "Goad target creature" (D-639, CR 701.15a-d): each creature `objects` names is goaded by the controller of the effect until their next turn begins (CR 500.1, the
    * turn it resolves in not counted): it attacks each combat if able and attacks a player other than that controller if able (CR 701.15b). The set is fixed
    * when the effect resolves (CR 611.2c); a creature already goaded by the same player is not goaded again and the first goad keeps its end (CR 701.15d).
@@ -3118,6 +3135,12 @@ export type Effect =
       readonly object: Extract<ObjectRef, { readonly kind: 'target' }>;
       readonly anyManaType?: true;
       readonly exileInstead?: true;
+      /**
+       * "You may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost" (CR 608.2g, 118.9): the spell is cast without paying its mana cost
+       * (its additional costs, and the costs of the modes it must choose, are still paid, as for `castFree`). `object` may name a slot of several targets (one for each opponent,
+       * `TargetSpec.onePerOpponent`): each card still a legal target is asked about, and cast, in the order the targets were chosen. Not with `anyManaType`.
+       */
+      readonly free?: true;
     }
   /**
    * CR 701.14 (Fight, D-145): each creature in `fighters` fights a creature in `against`: the two deal damage equal to their own power to
@@ -5392,6 +5415,17 @@ export type StaticEffect =
       readonly amount: Amount;
     }
   /**
+   * "Spells your opponents cast that target this creature cost {2} more to cast." (CR 601.2f, 601.2c, 604.2, 113.6, D-149): a static ability of a permanent (its own, or one a
+   * `grantAbility` gives it, read from the abilities it has after layer 6, CR 613.1f) that adds `amount` generic mana to the total cost of each spell `spells` describes, as the cost is
+   * determined, after the targets are chosen (CR 601.2c). The filter describes a spell being cast as `costReduction`'s does (`controller` is relative to the permanent's controller,
+   * `targetsObject: { isSource: true }` is "that target this creature": the permanent that has the ability). The increase comes before any reduction (CR 601.2f); every instance applies.
+   */
+  | {
+      readonly kind: 'costIncrease';
+      readonly spells: ObjectFilter;
+      readonly amount: number;
+    }
+  /**
    * "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-641, CR 601.2f, 601.2c, 118.8; Strive is an ability word, CR 207.2c): a
    * static ability of the spell itself, which works on the stack (CR 113.6d), that adds `cost` (mana only, no X) to the total cost once for each target the spell has beyond the first
    * (a spell with no target, or one, costs nothing more). The targets are chosen before the total cost is determined (CR 601.2c, 601.2f), so the number of targets is the
@@ -5438,7 +5472,11 @@ export type StaticEffect =
       readonly subject: StaticSubject;
       readonly ability:
         | ManaAbility
-        | Extract<Ability, { readonly kind: 'activated' | 'triggered' }>;
+        | Extract<Ability, { readonly kind: 'activated' | 'triggered' }>
+        // D-149 (CR 604.1, 613.1f): a static ability of the kind `costIncrease`, the only static ability a static ability gives.
+        | (Extract<Ability, { readonly kind: 'static' }> & {
+            readonly static: Extract<StaticEffect, { readonly kind: 'costIncrease' }>;
+          });
     }
   /**
    * "~ is the chosen type in addition to its other types." (D-100): the subject also has the creature

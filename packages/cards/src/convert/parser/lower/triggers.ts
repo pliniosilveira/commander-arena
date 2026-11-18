@@ -1290,7 +1290,8 @@ function lowerTriggeredAbility(
   // D-643 (CR 508.1b): "if two or more of those creatures are attacking you and/or planeswalkers you control" is about the attackers of the declaration that triggered the ability.
   if (
     JSON.stringify(interveningIf ?? null).includes('"attackersAtYouAtLeast"') &&
-    !triggers.every((t) => t.kind === 'attackBatch')
+    // Whom the attackers attacked is said of another player's attack: the controller's own creatures never attack the controller.
+    !triggers.every((t) => t.kind === 'attackBatch' && t.who !== 'you')
   ) {
     return failure(ability);
   }

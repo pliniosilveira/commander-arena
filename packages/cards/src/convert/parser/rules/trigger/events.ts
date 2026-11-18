@@ -328,6 +328,8 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
     '~ deals combat damage to an opponent',
     '~ deals combat damage to a creature',
     '~ deals combat damage to a player or planeswalker',
+    '~ deals combat damage to a player who controls more lands than you',
+    'a creature you control deals combat damage to an opponent who controls more creatures than you',
     'a creature you control deals combat damage to a player or planeswalker',
     '~ deals combat damage',
     'a creature you control deals combat damage to a player',
@@ -347,6 +349,10 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
     '~ deal combat damage to a player',
     'one or more creatures you control deal combat damage to a player',
     '~ deals combat damage to a player and',
+    '~ deals combat damage to a player who controls more lands',
+    '~ deals combat damage to a player who controls more cards than you',
+    '~ deals combat damage to a player who controls more lands than each opponent',
+    '~ deals combat damage to a creature who controls more lands than you',
     '~ deals noncombat damage to a player',
     '~ or another creature deals combat damage to a player',
   ],
@@ -364,7 +370,18 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
     )(ctx, pos);
     if (!dealt.ok) return dealt;
     const [what, { damaged, span: words }] = dealt.value;
-    const span = { start: pos, end: dealt.pos };
+    // CR 603.2: "to a player who controls more lands than you" qualifies the player damaged; the lowering reads it as a condition of the event itself.
+    const who =
+      damaged === 'player' || damaged === 'opponent'
+        ? spanned(
+            pattern(
+              new RegExp(` who controls more (lands|creatures) than you${NOT_IN_WORD}`, 'iu'),
+            ),
+          )(ctx, dealt.pos)
+        : undefined;
+    const whoRead = who?.ok === true ? who : undefined;
+    const end = whoRead === undefined ? dealt.pos : whoRead.pos;
+    const span = { start: pos, end };
     // The player hit is the antecedent of "that player" in the body.
     const recipient =
       damaged === 'player' || damaged === 'opponent'
@@ -386,11 +403,26 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
         subject: what,
         ...(damaged === undefined ? {} : { damaged }),
         ...(recipient === undefined ? {} : { recipient }),
+        ...(whoRead === undefined
+          ? {}
+          : {
+              whileCondition: {
+                kind: 'condition',
+                test: {
+                  kind: 'subjectControllerHasMore',
+                  stat: /creatures/iu.test(whoRead.value.value[1] ?? '')
+                    ? ('creatures' as const)
+                    : ('lands' as const),
+                },
+                span: whoRead.value.span,
+                rule: 'trigger.combat-damage',
+              },
+            }),
         args: {},
         span,
         rule: 'trigger.combat-damage',
       },
-      pos: dealt.pos,
+      pos: end,
     };
   },
 });

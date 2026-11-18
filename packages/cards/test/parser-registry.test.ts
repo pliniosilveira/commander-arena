@@ -229,6 +229,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.graveyard-ability-cost-reduction': asIs,
   // Prismari deck, group 1 (D-638, D-641, D-644): strive is the line of a sorcery, "X tokens that are copies of ..." follows "create", and the triggers are read after "Whenever".
   'static.cost-per-extra-target': spell((e) => e),
+  'static.spells-cost-increase-targeting-self': asIs,
   'token.copies-x': permanent(
     (e) =>
       `At the beginning of combat on your turn, create ${e}, where X is the number of creatures you control.`,
@@ -330,6 +331,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.player-graveyard': spell((e) => `Exile ${e}.`),
   'noun.all-graveyard-cards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyards': spell((e) => `Exile ${e}.`),
+  'noun.target-creature-attacking-you': permanent((e) => `{W}, Sacrifice ~: Exile ${e}.`),
   'noun.target-permanent': spell((e) => `Destroy ${e}.`),
   'noun.all-permanents': spell((e) => `Destroy ${e}.`),
   'noun.each-permanent': spell((e) => `Destroy ${e}.`),
@@ -481,6 +483,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'condition.those-attacked-you': permanent(
     (e) => `Whenever another player attacks with two or more creatures, they draw a card if ${e}.`,
+  ),
+  'trigger.opponent-attacks-bare': whenever,
+  'condition.they-attacked-you': permanent(
+    (e) => `Whenever an opponent attacks, if ${e}, draw a card.`,
   ),
   'condition.those-attacking-you': permanent(
     (e) => `Whenever an opponent attacks with creatures, if ${e}, draw a card.`,
@@ -866,6 +872,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.mana-rider-scry': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
   // Group 3-c (D-354): the cast of a card of a graveyard is read in the body of a trigger (a second rider sentence is joined to the first).
   'effect.cast-graveyard-card': permanent((e) => `When ~ enters, ${e}.`),
+  'effect.cast-per-opponent-graveyard-free': permanent((e) => `When ~ enters, ${e}.`),
   // Group 7 (D-356): the additional beginning phase is said in the body of a trigger of the postcombat main phase.
   'effect.extra-beginning-phase': permanent(
     (e) => `At the beginning of each of your postcombat main phases, ${e}.`,

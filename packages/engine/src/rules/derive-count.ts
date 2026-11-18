@@ -15,7 +15,7 @@
  *
  * It must not import `derive`: `derive` depends on this file.
  */
-import type { Ability, DefinedPtAmount, ObjectFilter, StaticPtAmount } from '../ast/types';
+import type { Ability, DefinedPtAmount, Keyword, ObjectFilter, StaticPtAmount } from '../ast/types';
 import type { Color } from '../characteristics';
 import { manaValue } from '../mana';
 import { definitionOf, getSeat, objectsInZone } from '../state/ops';
@@ -24,7 +24,7 @@ import { chosenOf } from './chosen';
 import { controllerOf } from './control';
 import { typeViewOf } from './derive-view';
 import { devotionOf } from './devotion';
-import { matchesFilterWith } from './filter-match';
+import { type FilterSubject, matchesFilterWith } from './filter-match';
 import { hasLostAbilities } from './lost-abilities';
 
 /**
@@ -32,7 +32,12 @@ import { hasLostAbilities } from './lost-abilities';
  * the controller of the source (the owner for a card outside the battlefield and the stack, CR 108.4,
  * 109.5) and "other" leaves out the source.
  */
-export function countForSource(state: GameState, filter: ObjectFilter, source: GameObject): number {
+export function countForSource(
+  state: GameState,
+  filter: ObjectFilter,
+  source: GameObject,
+  keywordsOf?: KeywordsOf,
+): number {
   let byFilter = counts.get(state);
   if (byFilter === undefined) {
     byFilter = new WeakMap();
@@ -45,7 +50,7 @@ export function countForSource(state: GameState, filter: ObjectFilter, source: G
   }
   let count = bySource.get(source);
   if (count === undefined) {
-    count = countFresh(state, filter, source);
+    count = countFresh(state, filter, source, keywordsOf);
     bySource.set(source, count);
   }
   return count;
@@ -58,7 +63,23 @@ export function countForSource(state: GameState, filter: ObjectFilter, source: G
  */
 const counts = new WeakMap<GameState, WeakMap<ObjectFilter, WeakMap<GameObject, number>>>();
 
-function countFresh(state: GameState, filter: ObjectFilter, source: GameObject): number {
+/** What a count that names a keyword reads of the objects it counts: the keywords they have after layer 6 (D-149). */
+export type KeywordsOf = (obj: GameObject) => readonly Keyword['kind'][];
+
+function namesKeywords(f: ObjectFilter): boolean {
+  return (
+    f.keywords !== undefined ||
+    f.notKeywords !== undefined ||
+    (f.anyOf?.some(namesKeywords) ?? false)
+  );
+}
+
+function countFresh(
+  state: GameState,
+  filter: ObjectFilter,
+  source: GameObject,
+  keywordsOf: KeywordsOf | undefined,
+): number {
   const zone = filter.zone ?? (filter.stackKind ? 'stack' : 'battlefield');
   const chosen = chosenOf(state, source.id);
   const ctx = {
@@ -71,12 +92,15 @@ function countFresh(state: GameState, filter: ObjectFilter, source: GameObject):
   let total = 0;
   for (const id of objectsInZone(state, zone)) {
     const obj = state.objects[id];
-    if (
-      obj !== undefined &&
-      matchesFilterWith(state, obj, () => typeViewOf(state, obj), filter, ctx)
-    ) {
-      total += 1;
-    }
+    if (obj === undefined) continue;
+    // D-149: the keywords the object has after layer 6, only where the filter names one (the view keeps its mana value read lazily).
+    const view = (): FilterSubject =>
+      keywordsOf === undefined || !namesKeywords(filter)
+        ? typeViewOf(state, obj)
+        : Object.create(typeViewOf(state, obj), {
+            keywords: { value: keywordsOf(obj), enumerable: true },
+          });
+    if (matchesFilterWith(state, obj, view, filter, ctx)) total += 1;
   }
   return total;
 }
@@ -136,6 +160,7 @@ export function staticAmountOf(
   source: GameObject,
   /** D-187: the permanent the effect is being applied to, for "for each time it has attacked this turn". */
   recipient: GameObject = source,
+  keywordsOf?: KeywordsOf,
 ): number {
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'devotion')
@@ -150,12 +175,15 @@ export function staticAmountOf(
     return commandersCastCount(state, controllerOf(state, source));
   if (amount.kind === 'colorsAmong') return colorsAmongForSource(state, amount.filter, source);
   if (amount.kind === 'times')
-    return amount.factor * countForSource(state, amount.of.filter, source);
+    return amount.factor * countForSource(state, amount.of.filter, source, keywordsOf);
   // D-131: "the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards".
   if (amount.kind === 'sum') {
-    return amount.of.reduce((n, part) => n + countForSource(state, part.filter, source), 0);
+    return amount.of.reduce(
+      (n, part) => n + countForSource(state, part.filter, source, keywordsOf),
+      0,
+    );
   }
-  return countForSource(state, amount.filter, source);
+  return countForSource(state, amount.filter, source, keywordsOf);
 }
 
 /** What the characteristic-defining abilities of an object set: a number for each of power and toughness it defines. */
