@@ -2941,7 +2941,14 @@ export type ManaProduction =
    * "Add one mana of the chosen color." (D-149, CR 106.1, 614.12, 607.2d): one mana of the color its permanent chose as it entered (an
    * `asEntersChoose` of `color` on the same face, linked abilities); nothing when it made no choice.
    */
-  | { readonly kind: 'chosenColor' }
+  | {
+      readonly kind: 'chosenColor';
+      /**
+       * "{T}: Add {U} or one mana of the chosen color." (issue 184, Thriving Isle; CR 106.1, 605.3b, 607.2d): the ability adds one mana of this color or of the
+       * chosen one, chosen as it resolves (so the activation names it). Left out, the mana is of the chosen color alone.
+       */
+      readonly or?: ManaColor;
+    }
   /**
    * "{2}, {T}: Choose a color. Add an amount of mana of that color equal to your devotion to that color." (Nykthos, Shrine to Nyx; CR 605.3b, 700.5): the
    * player chooses one of the five colors as the ability resolves (so the activation names it, like `anyColor`) and as many mana of that color as the
@@ -3953,6 +3960,11 @@ export type Condition =
    */
   | { readonly kind: 'castInOwnMainPhase' }
   /**
+   * "If X is 5 or more" (CR 107.3a, 608.2c, issue 233): the X announced for the spell is at least `value` (a whole number of at least 1). Read from the spell as the instruction
+   * comes up; a spell with no X in its cost has X 0 and never meets it. Only the effect of a spell.
+   */
+  | { readonly kind: 'xAtLeast'; readonly value: number }
+  /**
    * CR 702.56a (Replicate, D-129): "if a replicate cost was paid for it": the spell was cast with its replicate cost
    * paid at least once. Read from the spell, or from its last-known information once it has left (CR 113.7a).
    * Needs a replicate ability on the card.
@@ -4411,6 +4423,11 @@ export type Replacement =
        * `chosenOption` of the abilities that are linked to it ("Khans — ...", CR 607.2d). Absent for the other kinds.
        */
       readonly options?: readonly string[];
+      /**
+       * For `what: 'color'` (issue 184, Thriving Isle: "choose a color other than blue"): a color that cannot be chosen. It is left out of the options the question
+       * offers, and an answer that names it is refused. Absent for the other kinds and when any color may be chosen.
+       */
+      readonly except?: Color;
     }
   /**
    * "If a nontoken creature an opponent controls would die, instead exile that card and create a 2/2 black Zombie creature

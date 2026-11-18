@@ -71,7 +71,12 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
       break;
     case 'anyColorDevotion': // the color is chosen as the ability resolves: nothing to check
     case 'commanderIdentity':
+      break;
     case 'chosenColor': // D-149: the face must ask for the color as the permanent enters (`validate-chosen.ts`)
+      // Issue 184: "Add {U} or one mana of the chosen color".
+      if (mp.or !== undefined && !isOneOf(mp.or, MANA_COLORS)) {
+        issue(out, `${path}.or`, `unknown mana color ${JSON.stringify(mp.or)}`);
+      }
       break;
     case 'couldProduce':
       // The `lands` filter is checked with the mana ability (validate-mana-ability.ts).

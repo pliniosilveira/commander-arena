@@ -554,7 +554,16 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // cost is paid from the pool, or by auto-pay from sources that have no mana cost themselves.
   // D-099: "Pay N life" too (CR 119.4, 605.3), and the mana cost may use hybrid symbols (CR 107.4e).
   // D-625: `tapPermanents` ("{T}, Tap an untapped creature you control: Add one mana of any color"), one permanent, chosen as the ability is activated.
-  manaAbilityCostKinds: ['tap', 'sacrifice', 'mana', 'payLife', 'mill', 'tapPermanents'],
+  manaAbilityCostKinds: [
+    'tap',
+    'sacrifice',
+    'mana',
+    'payLife',
+    'mill',
+    'tapPermanents',
+    // Issue 245 (Vivid Grove): "{T}, Remove a charge counter from this land: Add one mana of any color." (CR 118.3, 122.1).
+    'removeCounters',
+  ],
   // D-099: `couldProduce` (CR 106.7) and `combination` ("Add {R}{R}, {R}{W}, or {W}{W}").
   manaProductionKinds: [
     'fixed',
@@ -784,6 +793,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'kicked',
     // Issue 244: "If you cast this spell during your main phase" (CR 601.2, 505.1).
     'castInOwnMainPhase',
+    // Issue 233: "If X is 5 or more" (CR 107.3a).
+    'xAtLeast',
     // D-129: "if a replicate cost was paid for it" (CR 702.56a).
     'replicated',
     // D-491: "if you sacrificed one or more creatures to cast it" (`Cost` `sacrifice` with `anyNumber`).
@@ -1393,6 +1404,8 @@ export const CONDITION_KINDS = [
   'kicked',
   /** "If you cast this spell during your main phase" (issue 244): the engine's `castInOwnMainPhase`. */
   'castInOwnMainPhase',
+  /** "If X is 5 or more" (issue 233, CR 107.3a): the engine's `xAtLeast`. */
+  'xAtLeast',
   /** "If a replicate cost was paid for it" (CR 702.56a): the engine's `replicated`. */
   'replicated',
   /** "If you sacrificed one or more creatures to cast it" (CR 118.8, D-491): the engine's `sacrificedAsCost`. */

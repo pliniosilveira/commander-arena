@@ -1124,6 +1124,23 @@
       "reasons": [],
       "ast": "8924b54e"
     },
+    "2b7c4dab-e432-4b34-b058-3cec5c0d72df": {
+      "name": "Martial Coup",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Create X 1/1 white Soldier creature tokens. If X is 5 or more, destroy all other creatures.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "spell.effect"
+        }
+      ],
+      "reasons": [],
+      "ast": "84a306f0"
+    },
     "2bd111bb-ce02-414c-b5b7-e0e037d8d96b": {
       "name": "Bolas's Citadel",
       "group": "training",
@@ -1228,6 +1245,23 @@
       ],
       "reasons": [],
       "ast": "cdf8dcbc"
+    },
+    "2ef75cf3-30dc-4852-a6d1-1d6391fad022": {
+      "name": "Forgotten Ancient",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "At the beginning of your upkeep, you may move any number of +1/+1 counters from ~ onto other creatures.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "545fc18d"
     },
     "2ef797ef-c05f-4309-85c7-1bd151dac3fa": {
       "name": "Far Wanderings",
@@ -2755,6 +2789,14 @@
       "reasons": [],
       "ast": "e867fc3e"
     },
+    "69fc70b8-b143-4662-ac95-e2743037239d": {
+      "name": "Thriving Isle",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ef7016e3"
+    },
     "6a6c5e17-6465-4a1f-9d63-8a3ce2edc522": {
       "name": "Sulfur Falls",
       "group": "training",
@@ -3117,6 +3159,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "fd3ec62c"
+    },
+    "79ba18fd-f184-43c1-86df-56ee18ce806c": {
+      "name": "Secluded Courtyard",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e44da1fb"
     },
     "79bc2c6d-b03d-4ceb-b468-293378ec73ae": {
       "name": "Midnight Tilling",
@@ -4375,6 +4425,23 @@
       "reasons": [],
       "ast": "2cd6f756"
     },
+    "aae76e5c-f5e0-4d18-b465-e6a829be908a": {
+      "name": "Shiny Impetus",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Enchanted creature gets +2/+2 and is goaded.",
+          "reason": "unrecognised",
+          "slot": "static",
+          "closestRule": "static.attached"
+        }
+      ],
+      "reasons": [],
+      "ast": "213d106f"
+    },
     "ab1cc360-b9de-48d9-9983-4dfe4a7d2a37": {
       "name": "Arcane Denial",
       "group": "acceptance",
@@ -4430,6 +4497,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "feb99224"
+    },
+    "abc37d6c-6300-47b5-a679-9db5b83eb54f": {
+      "name": "Syphon Mind",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Each other player discards a card. You draw a card for each card discarded this way.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "amount.for-each"
+        }
+      ],
+      "reasons": [],
+      "ast": "15d460bc"
     },
     "ac10d218-f9a6-4058-9cda-a15ca1b0b7b5": {
       "name": "Assassin's Trophy",
@@ -4666,6 +4750,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c7c592b1"
+    },
+    "b7a68899-c0d3-49e0-854b-19268ae9b89d": {
+      "name": "Vivid Grove",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{T}, Remove a charge counter from ~: Add one mana of any color.",
+          "reason": "notRunnable",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "681c160d"
     },
     "b81eaa2f-0554-41c6-bdf6-d1cb73b8f56f": {
       "name": "Realmwalker",
@@ -6615,8 +6715,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 469,
-      "total": 490
+      "supported": 471,
+      "total": 497
     }
   }
 }

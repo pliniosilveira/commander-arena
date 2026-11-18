@@ -2572,6 +2572,11 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'thisInYourGraveyard':
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
+    case 'xAtLeast': // issue 233: the X of the spell is at least a whole number of 1 or more
+      if (!Number.isSafeInteger(c.value) || c.value < 1) {
+        issue(out, `${path}.value`, 'xAtLeast names a whole number of at least 1');
+      }
+      break;
     case 'kicked':
     case 'castInOwnMainPhase': // issue 244: no parameters; it reads the spell it is asked of
     case 'sacrificedAsCost': // D-491: the face must list a cost that sacrifices any number of permanents (`checkSacrificedAsCost`)

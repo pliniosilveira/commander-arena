@@ -69,6 +69,14 @@ function optionNames(text: string): readonly string[] | null {
   return new Set(parts).size === parts.length ? parts : null;
 }
 
+const EXCLUDED_COLORS: Readonly<Record<string, 'W' | 'U' | 'B' | 'R' | 'G'>> = {
+  white: 'W',
+  blue: 'U',
+  black: 'B',
+  red: 'R',
+  green: 'G',
+};
+
 /**
  * `replacement.as-enters-choose`: "As ~ enters, choose a creature type." and "As ~ enters, choose a
  * color." (CR 614.1c, 614.12, 614.12a: "as this enters" is a replacement effect, and the choice is made
@@ -98,6 +106,9 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     // Hashaton deck group 6 (D-376): a card type.
     'As ~ enters, choose a card type.',
     'As ~ enters the battlefield, choose a card type.',
+    // Issue 184 (Thriving Isle): a color other than one.
+    'As ~ enters, choose a color other than blue.',
+    'as it enters, choose a color other than white.',
   ],
   rejects: [
     'As ~ enters, choose Khans, Dragons or Wolves.',
@@ -108,7 +119,8 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters, you may choose Khans or Dragons.',
     'As ~ enters, choose Khans or Dragons',
     'As ~ enters, choose a creature type',
-    'As ~ enters, choose a color other than white.',
+    'As ~ enters, choose a color other than gold.',
+    'As ~ enters, choose a color other than blue or red.',
     'As ~ enters, choose two colors.',
     'As ~ enters, choose a basic land type.',
     'As ~ enters, choose a card name.',
@@ -135,6 +147,8 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       choice(
         // Hashaton deck group 6 (D-376, CR 205.2a): "choose a card type".
         pattern(/, choose a (creature type|color|card type)\./i),
+        // Issue 184 (Thriving Isle, CR 614.12): "choose a color other than blue".
+        pattern(/, choose a (color) other than (white|blue|black|red|green)\./i),
         // Stage P34 (D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons." The names are the card's own, capitalized.
         pattern(/, choose (\p{Lu}[^.,—•\n]*(?:(?:, or | or |, )\p{Lu}[^.,—•\n]*)+)\./u),
       ),
@@ -147,11 +161,13 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     const plain = kind === 'color' || kind === 'creature type' || kind === 'card type';
     const names = plain ? null : optionNames(tail[1] ?? '');
     if (!plain && names === null) return fail(ctx, pos);
+    const excluded = EXCLUDED_COLORS[(tail[2] ?? '').toLowerCase()];
     const what: IrChoiceArg =
       names === null
         ? {
             kind: 'choiceKind',
             what: kind === 'color' ? 'color' : kind === 'card type' ? 'cardType' : 'creatureType',
+            ...(excluded === undefined ? {} : { except: excluded }),
             span,
             rule: id,
           }
@@ -230,8 +246,59 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
   },
 });
 
+/**
+ * `replacement.enters-tapped-with-counters`: "~ enters tapped with two charge counters on it." (issue 245, Vivid Grove; CR 614.1c, 614.1d, 122.6): the two replacement effects of
+ * a permanent that enters tapped and with counters, read as one sentence. A whole number of counters (the lowering refuses another count); the counter is "+1/+1", "-1/-1" or a
+ * named kind. Not read: a condition, "and with", the counters without "tapped", or more after the sentence.
+ */
+export const REPLACEMENT_ENTERS_TAPPED_WITH_COUNTERS = defineRule<IrAbility>({
+  id: 'replacement.enters-tapped-with-counters',
+  family: 'replacement',
+  leading: ['~'],
+  cites: [
+    'CR 614.1c (Replacement Effects)',
+    'CR 614.1d (Replacement Effects)',
+    'CR 614.12 (Replacement Effects)',
+    'CR 122.6 (Counters)',
+  ],
+  examples: [
+    '~ enters tapped with two charge counters on it.',
+    '~ enters the battlefield tapped with three charge counters on it.',
+    '~ enters tapped with a +1/+1 counter on it.',
+  ],
+  rejects: [
+    '~ enters tapped and with two charge counters on it.',
+    '~ enters with two charge counters on it.',
+    '~ enters tapped with two charge counters on it',
+    '~ enters tapped with two charge counters on it and draw a card.',
+    '~ enters untapped with two charge counters on it.',
+    '~ enters tapped unless you control a Forest with two charge counters on it.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      ENTERS,
+      literal(' tapped'),
+      countersTail('replacement.enters-tapped-with-counters', true, true),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const { count, counter } = r.value[2];
+    const span = { start: pos, end: r.pos };
+    const id = 'replacement.enters-tapped-with-counters';
+    const event: IrClause = {
+      kind: 'clause',
+      verb: 'entersTappedWithCounters',
+      args: { count, counter },
+      optional: false,
+      span,
+      rule: id,
+    };
+    return { ok: true, value: replacement(id, span, event), pos: r.pos };
+  },
+});
+
 export const REPLACEMENT_RULES = [
   REPLACEMENT_ENTERS_TAPPED,
+  REPLACEMENT_ENTERS_TAPPED_WITH_COUNTERS,
   REPLACEMENT_AS_ENTERS_CHOOSE,
   REPLACEMENT_ENTERS_WITH_COUNTERS,
   ...UNLESS_RULES,

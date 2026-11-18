@@ -669,7 +669,9 @@ export function lowerMana(spec: IrManaSpec): ManaProduction {
     case 'commanderIdentity':
       return { kind: 'commanderIdentity' };
     case 'chosenColor':
-      return { kind: 'chosenColor' };
+      return spec.what.or === undefined
+        ? { kind: 'chosenColor' }
+        : { kind: 'chosenColor', or: spec.what.or };
     case 'devotionToChosenColor':
       // CR 605.3b, 700.5: only after "Choose a color." in a mana ability (`lowerChosenColorDevotion`); the ordinary lowering of an instruction refuses it.
       return { kind: 'anyColorDevotion' };
@@ -1697,7 +1699,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                     test === 'discardedSpellThisWay' ||
                     test === 'searchedThisWay'
                   ? 'thisWayAtLeast'
-                  : test === 'otherAttachedToHost'
+                  : test === 'otherAttachedToHost' || test === 'xAtLeast'
                     ? 'amountIs'
                     : test;
     return failure(
