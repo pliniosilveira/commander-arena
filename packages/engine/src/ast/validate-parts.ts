@@ -1710,13 +1710,31 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // D-095: a count of the objects the filter matches; `owner` is not read here (checkFilter).
       if (a.filter === undefined || a.filter === null) {
         issue(out, `${path}.filter`, 'countOf needs a filter');
+      } else if (
+        a.filter.owner !== undefined &&
+        kindOf(a.filter.owner) === 'target' &&
+        a.filter.zone !== undefined &&
+        a.filter.zone !== 'battlefield'
+      ) {
+        // D-635 (CR 108.3, 400.1, 608.2c): "for each card in target opponent's hand": the cards of a zone outside the battlefield that a player the effect targets owns, counted as
+        // the amount is read, with the targets.
+        const { owner, ...rest } = a.filter;
+        checkPlayerSelector(owner, `${path}.filter.owner`, scope, out);
+        if (rest.controller !== undefined || rest.controlledBy !== undefined) {
+          issue(
+            out,
+            `${path}.filter`,
+            'a count of the cards a targeted player owns sets owner alone, not controller or controlledBy',
+          );
+        }
+        checkFilter(rest, `${path}.filter`, out);
       } else if (a.filter.owner !== undefined) {
         const { owner: _owner, ...rest } = a.filter;
         void _owner;
         issue(
           out,
           `${path}.filter.owner`,
-          "owner is only read in an effect's each selector, except for a target mana-value limit",
+          "owner is only read in an effect's each selector, except for a target mana-value limit and the cards of a zone outside the battlefield that a target player owns",
         );
         if (rest.controlledBy !== undefined) {
           issue(out, `${path}.filter.controlledBy`, 'owner and controlledBy cannot both be set');
@@ -4090,6 +4108,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.spell`,
           'exileOnResolve names the spell that was cast (triggerSubject)',
         );
+      }
+      break;
+    case 'exileSpellWithTimeCounters':
+      // D-637 (CR 608.2n, 122.1): the spell's own text; a whole number of counters of 1 or more.
+      if (scope.owner !== 'spell') {
+        issue(
+          out,
+          path,
+          "exileSpellWithTimeCounters is only valid in spell text (it exiles 'this spell')",
+        );
+      }
+      if (!Number.isSafeInteger(e.count) || e.count < 1) {
+        issue(out, `${path}.count`, 'the number of time counters is a positive whole number');
       }
       break;
     case 'unearth':

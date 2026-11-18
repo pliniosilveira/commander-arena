@@ -233,6 +233,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'copySpell',
     // D-439: "exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (`exileOnResolve`).
     'exileOnResolve',
+    // D-637: "Exile this spell with three time counters on it" (CR 608.2n, 122.1).
+    'exileSpellWithTimeCounters',
     // D-181: "Change the target of target spell or ability with a single target" (CR 115.7a).
     'changeTarget',
     'storm',
@@ -1862,6 +1864,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   cascade: true,
   copySpell: true,
   exileOnResolve: true,
+  exileSpellWithTimeCounters: true,
   changeTarget: true,
   storm: true,
   replicate: true,

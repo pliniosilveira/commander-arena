@@ -1090,6 +1090,17 @@ function runEffect(
       return done(markExileOnResolve(state, spells, res.controller, res.source));
     }
 
+    case 'exileSpellWithTimeCounters': {
+      // CR 608.2n, 122.1 (D-637): the resolving spell carries the exile until it finishes resolving (`rules/stack.ts`, `finish`).
+      const spell = state.objects[res.object];
+      if (spell?.zone !== 'stack' || spell.stack?.kind !== 'spell') return done(state);
+      return done(
+        patchObject(state, res.object, {
+          stack: { ...spell.stack, exileWithTimeCounters: effect.count },
+        }),
+      );
+    }
+
     case 'changeTarget': {
       // CR 115.7a (D-181): the target of each spell or ability the effect names changes, if it is still on the stack with a single target as this
       // resolves (CR 608.2b); the stack runs the instruction (it asks the controller, `rules/change-target.ts`).
@@ -1717,6 +1728,8 @@ function runEffect(
           source: res.source,
           restriction: null,
           ...(sourceTypes.length === 0 ? {} : { sourceTypes }),
+          // D-636 (CR 500.5): "you don't lose this mana as steps and phases end" until end of turn.
+          ...(production.staysUntilEndOfTurn === true ? { stays: true as const } : {}),
         })),
       ).flat();
       if (added.length === 0) return done(state);

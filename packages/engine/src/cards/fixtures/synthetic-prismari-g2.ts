@@ -299,8 +299,50 @@ export const SYNTHETIC_PRISMARI_G2_LIST: readonly CardDefinition[] = [
       FLYING,
       {
         kind: 'static',
-        static: { kind: 'restriction', subject: { kind: 'this' }, restriction: 'canBlockOnlyFlying' },
+        static: {
+          kind: 'restriction',
+          subject: { kind: 'this' },
+          restriction: 'canBlockOnlyFlying',
+        },
       },
     ],
+  }),
+  // "Add {R} for each card in target opponent's hand. Until end of turn, you don't lose this mana as steps and phases end. Exile this spell with three time counters on it.
+  //  Suspend 3—{1}{R}"
+  singleFace({
+    name: 'SYNTHETIC Rushing Refrain',
+    manaCost: ['3', 'R', 'R'],
+    types: ['sorcery'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText:
+      "Add {R} for each card in target opponent's hand. Until end of turn, you don't lose this mana as steps and phases end. Exile this spell with three time counters on it.\nSuspend 3\u2014{1}{R}",
+    abilities: [
+      {
+        kind: 'keyword',
+        keyword: { kind: 'suspend', count: 3, cost: [{ kind: 'mana', symbols: ['1', 'R'] }] },
+      },
+    ],
+    spell: {
+      targets: [{ id: 't1', what: { kind: 'player', filter: 'opponent' } }],
+      effect: {
+        kind: 'sequence',
+        effects: [
+          {
+            kind: 'addMana',
+            mana: {
+              kind: 'fixed',
+              mana: ['R'],
+              times: {
+                kind: 'countOf',
+                filter: { zone: 'hand', owner: { kind: 'target', id: 't1' } },
+              },
+              staysUntilEndOfTurn: true,
+            },
+          },
+          { kind: 'exileSpellWithTimeCounters', count: 3 },
+        ],
+      },
+    },
   }),
 ];

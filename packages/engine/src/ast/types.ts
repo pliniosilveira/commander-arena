@@ -1927,6 +1927,14 @@ export type Effect =
    */
   | { readonly kind: 'exileOnResolve'; readonly spell: ObjectRef }
   /**
+   * "Exile this spell with three time counters on it." (CR 608.2n, 122.1, 702.62b, D-637, Rousing Refrain): the last instruction of an instant or sorcery's own text: as the spell
+   * finishes resolving it is exiled, with `count` time counters on it, instead of being put into its owner's graveyard (or its owner's hand, or exile as it would by flashback or as an
+   * Adventure: this instruction decides). A card with Suspend that is in exile with a time counter is suspended (CR 702.62b) and its upkeep trigger removes the counters (the engine's
+   * suspend abilities); with no Suspend ability it simply stays in exile. A spell that is countered or does not resolve is not exiled by it, and a copy of the spell (not a card) ceases
+   * to exist. Only in the text of an instant or sorcery spell, not in an ability, and not twice.
+   */
+  | { readonly kind: 'exileSpellWithTimeCounters'; readonly count: number }
+  /**
    * "Change the target of target spell or ability with a single target." (CR 115.7a, 115.7b, D-181): the controller of the resolving spell or
    * ability changes the one target of the spell or ability `object` names (a `target` slot, as `copySpell`'s `spell`, whose filter says "with a single
    * target", `ObjectFilter.singleTarget`) to another legal target for that slot, a target the spell or ability could have chosen as it was put on
@@ -2879,6 +2887,12 @@ export type ManaProduction =
        * production is fixed before it resolves).
        */
       readonly times?: Amount;
+      /**
+       * "Until end of turn, you don't lose this mana as steps and phases end" (CR 500.5, 106.4, D-636, Rousing Refrain): the mana this effect adds stays in its player's mana
+       * pool as steps and phases end, until the turn does (the cleanup step: the effect ends then, CR 514.2, and the mana empties as that step ends). Only the `addMana` effect of
+       * a spell or a triggered ability, not a mana ability.
+       */
+      readonly staysUntilEndOfTurn?: true;
     }
   /**
    * "Add two mana in any combination of colors." (D-151, CR 106.1b, 605.3b): `count` mana, each of a color of the five (colorless is not a color), chosen

@@ -434,6 +434,12 @@ export interface StackData {
     readonly source: ObjectId;
   };
   /**
+   * "Exile this spell with three time counters on it" (D-637, CR 608.2n, 122.1, 702.62b): set on a spell by the effect `exileSpellWithTimeCounters`: the number of time counters. When this
+   * instant or sorcery card finishes resolving it is exiled with that many time counters on it, not put into a graveyard. A spell that is countered or fizzles is not changed, and a copy
+   * (not a card) ceases to exist. It ends when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
+   */
+  readonly exileWithTimeCounters?: number;
+  /**
    * True when the spell was cast as the effect of a resolving ability allows (CR 608.2g, Cascade, D-120), which
    * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own.
    * Absent otherwise, and for an ability.

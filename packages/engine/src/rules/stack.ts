@@ -13,7 +13,7 @@ import { overloadedText } from '../ast/overload';
 import { isPermanentType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
-import { getObject, getSeat } from '../state/ops';
+import { getObject, getSeat, patchObject } from '../state/ops';
 import type { ChosenValues, GameState, Instruction, ResolutionContext } from '../state/types';
 import { recordActionTaken, recordResolution } from './action-taken';
 import { attachEntered, auraTargetSpec, ENCHANT_TARGET_ID } from './attach';
@@ -47,6 +47,7 @@ import {
 import { cardTypeOfAnswer, colorOfAnswer } from './protection-choice';
 import { stillLegalTargets } from './select';
 import { setPending } from './set-pending';
+import { TIME_COUNTER } from './time-counter';
 import { collectTriggers } from './triggers';
 import { moveObject } from './zones';
 
@@ -336,6 +337,11 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
     const adventure = isAdventureSpell(next, obj);
     // CR 614.1a, 608.2n (D-439): "exile that card instead of putting it into your graveyard as it resolves": an instant or sorcery that carries the mark is exiled.
     const exiled = exiledAsItResolves(obj, permanent, adventure);
+    // CR 608.2n, 122.1 (D-637): "Exile this spell with three time counters on it": the instruction decides where the card goes: exile, with the counters.
+    const timeCounters =
+      obj.stack?.exileWithTimeCounters !== undefined && obj.card !== null && !permanent
+        ? obj.stack.exileWithTimeCounters
+        : null;
     // CR 702.27a (Galadriel group 3): "If the buyback cost was paid, put this spell into its owner's hand instead of into that player's graveyard as it resolves": an instant
     // or sorcery card; not a permanent, an Adventure, a flashback spell or one another effect sends to exile (those keep their own place).
     const boughtBack =
@@ -344,13 +350,14 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       !permanent &&
       !adventure &&
       !exiled &&
+      timeCounters === null &&
       obj.stack.flashback !== true &&
       obj.stack.exileInstead !== true;
     const moved = moveObject(next, {
       object: res.object,
       to: permanent
         ? 'battlefield'
-        : adventure || exiled
+        : adventure || exiled || timeCounters !== null
           ? 'exile'
           : boughtBack
             ? 'hand'
@@ -364,11 +371,21 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
       ...(res.entersRiot === undefined ? {} : { entersRiot: res.entersRiot }),
       ...(res.entersRevealed === undefined ? {} : { entersRevealed: res.entersRevealed }),
-      ...(adventure ? { onAdventure: true as const } : {}),
+      ...(adventure && timeCounters === null ? { onAdventure: true as const } : {}),
     });
     if (moved.kind === 'done') {
       next = moved.state;
       events.push(...moved.events);
+      // CR 122.1, 702.62b (D-637): the time counters go on the card as it is exiled (a card with suspend and a time counter in exile is suspended).
+      if (timeCounters !== null && moved.newObject !== null) {
+        next = patchObject(next, moved.newObject, { counters: { [TIME_COUNTER]: timeCounters } });
+        events.push({
+          kind: 'counterAdded',
+          object: moved.newObject,
+          counter: TIME_COUNTER,
+          count: timeCounters,
+        });
+      }
       if (auraHost !== null && moved.newObject !== null) {
         const attached = attachEntered(next, moved.newObject, auraHost);
         next = attached.state;
