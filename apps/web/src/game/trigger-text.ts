@@ -462,7 +462,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const base = discardedCardWords(trigger.filter);
       if (base === null) return null;
       const card = trigger.another === true ? base.replace(/^an? /u, 'another ') : base;
-      return `Whenever ${who} discard${trigger.who === 'you' ? '' : 's'} ${card}`;
+      // CR 603.2c (Lorehold group 1): "Whenever you discard one or more nonland cards": one trigger for the cards discarded together.
+      const said =
+        trigger.batch === true
+          ? base.replace(/^an? /u, 'one or more ').replace(/ card$/u, ' cards')
+          : card;
+      return `Whenever ${who} discard${trigger.who === 'you' ? '' : 's'} ${said}`;
     }
     case 'diesBatch': {
       // D-206 (CR 603.2c): "Whenever one or more other creatures and/or artifacts you control die".
@@ -583,9 +588,6 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         ? `Whenever you put one or more ${kind}counters on ${what}`
         : `Whenever one or more ${kind}counters are put on ${what}`;
     }
-    case 'playerAttacked':
-      // Issue 159 (CR 508.3b): "Whenever enchanted player is attacked".
-      return 'Whenever enchanted player is attacked';
     case 'attackBatch': {
       // D-149 (CR 508.1): "Whenever you attack with two or more creatures", "Whenever another player attacks with two or more creatures".
       const core = trigger.what === undefined ? 'creature' : nounCore(trigger.what, 'creature');

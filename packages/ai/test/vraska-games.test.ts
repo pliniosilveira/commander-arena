@@ -5,9 +5,15 @@
 // is never asked, a player who pays {E}{E} loses exactly two energy counters and keeps the card, one who does not discards a card of their hand, a land that asks to
 // reveal enters untapped only when a card of the hand was there to reveal, and a player's energy never goes below 0.
 // The count is `soakGames()` (D-126); the path checks run from 100 games up.
-import { checkInvariants, stateHash } from '@commander-arena/engine';
+import {
+  checkInvariants,
+  type GameEvent,
+  type GameState,
+  stateHash,
+} from '@commander-arena/engine';
 import { expect, test } from 'vitest';
 import { type Agent, CasualAgent, RandomLegalAgent, replayGame } from '../src/index';
+import { tokenOrCopyNameOf } from './game-names';
 import { smallGameConfig, stepGame, VRASKA_STYLE_PAIRS } from './helpers';
 import { expectPath, soakGames, soakTimeout } from './soak';
 
@@ -22,6 +28,11 @@ interface Tally {
   revealQuestions: number;
   prepared: number;
   preparedCast: number;
+  jackalPrepared: number;
+  jackalConditionLost: number;
+  spinsResolved: number;
+  spinDiscards: number;
+  spinShortLibraries: number;
 }
 
 const newTally = (): Tally => ({
@@ -32,7 +43,64 @@ const newTally = (): Tally => ({
   revealQuestions: 0,
   prepared: 0,
   preparedCast: 0,
+  jackalPrepared: 0,
+  jackalConditionLost: 0,
+  spinsResolved: 0,
+  spinDiscards: 0,
+  spinShortLibraries: 0,
 });
+
+const JACKAL = 'SYNTHETIC Lore Jackal // Spin of Fate';
+
+/**
+ * Lorehold group 3, restated from CR 603.4, 402.1, 722.3a, 701.9a, 121.1 and the card's text (not from the engine's code), for the events of one step: the upkeep trigger of a Jackal
+ * that resolves made it prepared only when some player still in the game had one or fewer cards in hand as it resolved, and was removed (the "if" no longer held) only when every player
+ * had two or more; a Spin of Fate that resolves made every player discard the whole hand they had and draw seven cards, or as many as their library held (an attempted draw from an empty library for each card missing).
+ */
+function checkJackal(before: GameState, events: readonly GameEvent[], total: Tally): void {
+  const small = before.seats.some((s) => !s.hasLost && s.hand.length <= 1);
+  for (const e of events) {
+    const obj =
+      e.kind === 'fizzled' || e.kind === 'resolved' ? before.objects[e.object] : undefined;
+    if (e.kind === 'prepared' && tokenOrCopyNameOf(before, e.object) === JACKAL) {
+      total.jackalPrepared += 1;
+      if (!small)
+        throw new Error('a Lore Jackal became prepared with no player at one card or fewer');
+    }
+    if (e.kind === 'fizzled' && e.reason === 'interveningIf') {
+      const source = obj?.stack?.source;
+      if (source != null && tokenOrCopyNameOf(before, source) === JACKAL) {
+        total.jackalConditionLost += 1;
+        if (small)
+          throw new Error('a Lore Jackal trigger was removed with a player at one card or fewer');
+      }
+    }
+    // The prepare spell is the second face of the card (CR 722.2a): the copy that was cast is a spell of face 1 of the card that is named.
+    if (e.kind === 'resolved' && obj?.stack?.kind === 'spell' && obj.face === 1) {
+      if (tokenOrCopyNameOf(before, e.object) !== JACKAL) continue;
+      total.spinsResolved += 1;
+      for (const seat of before.seats) {
+        const discards = events.filter((x) => x.kind === 'discarded' && x.seat === seat.id).length;
+        const draws = events.filter((x) => x.kind === 'cardDrawn' && x.seat === seat.id).length;
+        const empty = events.filter(
+          (x) => x.kind === 'drewFromEmptyLibrary' && x.seat === seat.id,
+        ).length;
+        total.spinDiscards += discards;
+        if (discards !== seat.hand.length) throw new Error('a Spin of Fate left cards in a hand');
+        if (draws !== Math.min(7, seat.library.length)) {
+          throw new Error(
+            `a Spin of Fate drew ${draws} cards from a library of ${seat.library.length}`,
+          );
+        }
+        if (seat.library.length < 7) {
+          total.spinShortLibraries += 1;
+          if (empty !== 7 - seat.library.length)
+            throw new Error('a short library drew too few times');
+        }
+      }
+    }
+  }
+}
 
 test(
   `${GAMES} Vraska program games run clean, replay exactly and use the paths of the slice`,
@@ -73,6 +141,7 @@ test(
             }
           }
         }
+        checkJackal(step.before, step.events, total);
         for (const e of step.events) {
           if (e.kind === 'prepared') total.prepared += 1;
           if (e.kind === 'energyChanged') {
@@ -107,6 +176,9 @@ test(
     expectPath(total.revealQuestions, 'a land that asks for a card to reveal');
     expectPath(total.prepared, 'a permanent that enters prepared');
     expectPath(total.preparedCast, 'a prepare spell cast from exile');
+    expectPath(total.jackalPrepared, 'a Lore Jackal that becomes prepared at an upkeep');
+    expectPath(total.spinsResolved, 'a Spin of Fate that resolves');
+    expectPath(total.spinDiscards, 'a card discarded by a Spin of Fate');
   },
   soakTimeout(240_000),
 );

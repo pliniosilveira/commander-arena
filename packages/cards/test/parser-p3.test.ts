@@ -75,6 +75,12 @@ describe('keyword.enchant: "Enchant <permanent phrase>" (CR 702.5a)', () => {
     expect(abilitiesOf('Enchant Island', 'Aura')).toEqual([enchant({ subtypes: ['Island'] })]);
   });
 
+  test('"Enchant player" is the engine\'s enchant keyword of a player, with an empty filter (D-629)', () => {
+    expect(abilitiesOf('Enchant player', 'Aura')).toEqual([
+      { kind: 'keyword', keyword: { kind: 'enchant', filter: {}, player: true } },
+    ]);
+  });
+
   test('the filter carries no zone: an Aura looks at the battlefield and says so by being one', () => {
     const [ability] = abilitiesOf('Enchant creature', 'Aura');
     expect(JSON.stringify(ability)).not.toContain('zone');
@@ -90,15 +96,15 @@ describe('keyword.enchant: "Enchant <permanent phrase>" (CR 702.5a)', () => {
   test('an Aura whose enchant line is not read is blamed on that line, not on the card', () => {
     const imported = parseOnly(
       syntheticCard({
-        name: 'SYNTHETIC Flying Aura',
+        name: 'SYNTHETIC Graveyard Aura',
         manaCost: '{1}{B}',
         typeLine: 'Enchantment — Aura',
-        oracleText: 'Enchant creature with flying or reach',
+        oracleText: 'Enchant creature card in a graveyard',
       }),
     );
     expect(imported.support.status).toBe('unsupported');
     expect(imported.support.unparsed.map((u) => u.text)).toEqual([
-      'Enchant creature with flying or reach',
+      'Enchant creature card in a graveyard',
     ]);
     expect(imported.support.reasons).toEqual([]);
   });

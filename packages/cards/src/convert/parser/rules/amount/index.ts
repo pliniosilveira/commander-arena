@@ -11,6 +11,7 @@ import { AMOUNT_FOR_EACH_DIED } from './history';
 import { HOFRI_AMOUNT_RULES } from './hofri';
 import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
+import { LOREHOLD_G2_AMOUNT_RULES } from './lorehold-g2';
 import { AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
 import { FOR_EACH_VALUE_RULES, VALUE_AMOUNT_RULES } from './value';
 
@@ -303,8 +304,18 @@ export const AMOUNT_MILLED_VALUE_THIS_WAY = defineRule<IrAmount>({
     'CR 701.17a (Mill)',
     'CR 608.2c (Resolving Spells and Abilities)',
   ],
-  examples: ['equal to the total mana value of those cards'],
+  examples: [
+    'equal to the total mana value of those cards',
+    // Lorehold Spirit deck, group 2 (issue 86): the cards "milled this way".
+    'equal to the total mana value of cards milled this way',
+    'equal to the total mana value of the cards milled this way',
+  ],
   rejects: [
+    'equal to the total mana value of cards milled',
+    'equal to the total mana value of cards exiled this way',
+    'equal to the total mana value of cards milled this way plus 1',
+    'the total mana value of cards milled this way',
+    'equal to the total mana value of those cards milled this way',
     'the total mana value of those cards',
     'equal to the mana value of those cards',
     'equal to the total mana value',
@@ -313,10 +324,11 @@ export const AMOUNT_MILLED_VALUE_THIS_WAY = defineRule<IrAmount>({
     'equal to the greatest mana value of those cards',
   ],
   parse: (ctx, pos) => {
-    const r = spanned(pattern(/equal to the total mana value of those cards(?![\p{L}\p{N}])/iu))(
-      ctx,
-      pos,
-    );
+    const r = spanned(
+      pattern(
+        /equal to the total mana value of (?:those cards|(?:the )?cards milled this way)(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
     if (!r.ok) return r;
     return {
       ok: true,
@@ -389,6 +401,8 @@ export const AMOUNT_RULES = [
   AMOUNT_TIMES_KICKED,
   AMOUNT_FOR_EACH_STILL_EXILED,
   AMOUNT_FOR_EACH_MANA_SPENT,
+  // Lorehold Spirit deck, group 2 (issue 86): "for each past vote".
+  ...LOREHOLD_G2_AMOUNT_RULES,
 ];
 
 /** The amounts of a damage or life clause: a number or X, never an article. */

@@ -404,7 +404,10 @@ function linkExile(abilities: readonly Ability[]): {
   // exiled ("Put a card exiled with ~ into its owner's graveyard").
   const readers = abilities.flatMap((a, i) =>
     (a.kind === 'static' && a.static.kind === 'takeFromLinkedExile') ||
-    ((a.kind === 'triggered' || a.kind === 'activated') && choosesFromLinkedExile(a.effect))
+    ((a.kind === 'triggered' || a.kind === 'activated') &&
+      (choosesFromLinkedExile(a.effect) ||
+        // Lorehold group 2 (CR 607.2a): "Choose target card exiled with ~": a target slot of the cards the permanent exiled.
+        JSON.stringify(a.targets ?? null).includes('"exiledWithSource":true')))
       ? [i]
       : [],
   );

@@ -29,9 +29,12 @@
 // 127: Replace a command-zone cast's commander tax with its card-defined life payment (D-605).
 // 128: Activate emblem abilities from the command zone (D-606).
 // 129: Lock a player's life total and grant temporary protection from everything (D-607).
-// 130: Pay the life of a flashback cost (D-609).
-// 131: Enter with a sum of counts, prevent damage to a permanent and remove a counter, count the damage a resolution dealt (D-610).
-// 132: Add colors without replacing the others, choose among the cards a destroy put into any graveyard (D-612).
-// 133: Alternative cost that sacrifices permanents from a graveyard cast, spell-filter cast permissions, any-graveyard permissions with a cast rider, turn-log cast and activation from a graveyard (D-613).
-// 134: Auras that enchant a player, the trigger "enchanted player is attacked", the selector of the opponents attacking that player (D-614).
-export const ENGINE_VERSION = 134;
+// 130: Lorehold Spirit deck: discard in a payment, batch discard trigger, cast-only and free play permissions from exile, linked exile filter, damage to itself, a search counted for "this way" and the repeat of an offered search, a free cast from exile that ends on the bottom of the library, a hand-size condition over every player, discard of a whole hand (D-610 to D-624, issue 86).
+// 131: Pay a cost that taps an untapped permanent before the mana of the same cost, and in a mana ability (D-625, issue 160).
+// 132: Count the opponents with fewer of a stat, discard the whole hand as a cost and search for up to an amount of cards (D-626, issue 160).
+// 133: Populate, the choice of a creature token to copy (D-627, issue 160).
+// 134: Give every creature back to its owner as layer 2 effects (D-628, issue 160).
+// 135: An Aura that enchants a player: its spell targets a player, it enters attached to them and goes to the graveyard when they can no longer be enchanted (D-629, issue 160).
+// 136: Additional land plays for a turn, a target slot and a condition about the phase a spell was cast in, mana spent on the chosen creature type, and counters on a commander cast with marked mana (D-630, issues 199, 208, 241, 244).
+// 137: Grave Danger deck (issue 159): flashback with life, enters with a sum of counts, prevention that removes a counter, damage dealt this way, additive colors, a destroy's cards from any graveyard, casting from a graveyard by sacrificing, spell-filter and any-graveyard cast permissions with a cast rider, the turn-log casts and activations from a graveyard, the opponents attacking the attacked player (D-631 to D-636).
+export const ENGINE_VERSION = 137;

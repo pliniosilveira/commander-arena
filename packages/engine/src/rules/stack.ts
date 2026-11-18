@@ -251,6 +251,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 discardedInstantOrSorcery:
                   (res.thisWay?.discardedInstantOrSorcery ?? 0) +
                   (out.thisWay.discardedInstantOrSorcery ?? 0),
+                searched: (res.thisWay?.searched ?? 0) + (out.thisWay.searched ?? 0),
                 damageDealt: (res.thisWay?.damageDealt ?? 0) + (out.thisWay.damageDealt ?? 0),
                 discardedBy: [
                   ...new Set([
@@ -315,12 +316,11 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
 /** The object or player an Aura spell targeted, as it was still legal when the spell resolved (CR 608.2b). */
 function enchantedHost(
   res: ResolutionContext,
-): { readonly object: ObjectId } | { readonly player: SeatId } | null {
+): { readonly object: ObjectId } | { readonly seat: SeatId } | null {
   for (const t of res.legalTargets) {
     if (t.specId !== ENCHANT_TARGET_ID) continue;
     if (t.kind === 'object') return { object: t.id };
-    // Issue 159 ("Enchant player", CR 702.5d): the Aura's target is a player.
-    if (t.kind === 'player') return { player: t.seat };
+    return { seat: t.seat };
   }
   return null;
 }
@@ -377,8 +377,8 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       events.push(...moved.events);
       if (auraHost !== null && moved.newObject !== null) {
         const attached =
-          'player' in auraHost
-            ? attachEnteredToPlayer(next, moved.newObject, auraHost.player)
+          'seat' in auraHost
+            ? attachEnteredToPlayer(next, moved.newObject, auraHost.seat)
             : attachEntered(next, moved.newObject, auraHost.object);
         next = attached.state;
         events.push(...attached.events);
@@ -448,6 +448,7 @@ export function answerResolutionChoice(
     head.kind !== 'pair' &&
     head.kind !== 'empowerJace' &&
     head.kind !== 'amass' &&
+    head.kind !== 'populate' &&
     head.kind !== 'conniveNext' &&
     head.kind !== 'spare'
   ) {

@@ -243,7 +243,12 @@ export type Amount =
    * "For each opponent who has more life / cards in hand / creatures than you" (D-131): the number of opponents still
    * in the game whose `stat` is greater than the controller's, now.
    */
-  | { readonly kind: 'opponentsWithMore'; readonly stat: PlayerStat }
+  | {
+      readonly kind: 'opponentsWithMore';
+      readonly stat: PlayerStat;
+      /** D-626 (issue 160, "for each opponent who controls fewer creatures than you"): the opponents whose `stat` is less than the controller's. */
+      readonly fewer?: true;
+    }
   /**
    * "For each of those cards that are still exiled" (D-151): the cards the effect before this one in the sequence that created the delayed trigger
    * exiled (`moved`), counted when the delayed trigger resolves: those that are still in exile, as the same objects (a card that left exile
@@ -297,6 +302,8 @@ export type ThisWayKind =
   | 'discardedNoncreature'
   // D-358: "If you discarded an instant or sorcery card this way" (Vohar, Vodalian Desecrator): the instant and sorcery cards `discard` effects discarded.
   | 'discardedInstantOrSorcery'
+  // Lorehold group 1: "If you search your library this way, shuffle." (CR 701.23): the `search` instructions of this resolution the player went through with (a "may" search they accepted).
+  | 'searched'
   // Issue 159 (Enter the God-Eternals): "you gain life equal to the damage dealt this way": the damage the `dealDamage` effects of this resolution dealt (what was prevented is not counted, CR 615.6).
   | 'damageDealt';
 
@@ -445,6 +452,13 @@ export interface ObjectFilter {
    * selector); refused in a static ability, as `attacking` is, and for a zone other than the battlefield.
    */
   readonly enteredThisTurn?: true;
+  /**
+   * "Target card exiled with this creature" (Lorehold group 2, CR 607.2a, 400.7): the object is a card in exile that the permanent the ability belongs to exiled with its linked
+   * ability (`exile.linked`, `GameObject.linkedExile`): a card another permanent exiled, or that this one exiled before it left the battlefield and came back (a new object, CR 400.7),
+   * does not match. Read where the filter is matched against the game with the source (a target slot, an `each` selector); the filter's zone is `exile`. Refused in a static ability,
+   * as `attacking` is, and in a face with no ability whose exile is linked.
+   */
+  readonly exiledWithSource?: true;
   /**
    * "A card named Regna, the Redeemer" (CR 201.2, D-489): the object's name (the name of its front face outside the battlefield, CR 711.4 analogue) is exactly this text. Read where the
    * filter is matched against the game (a target slot, an `each` selector, a search of a library); refused in a static ability, as `attacking` is.
@@ -782,9 +796,9 @@ export type PlayerSelector =
   /** The player whose `playersMay` answer declined the current `otherwise` effect (D-576). */
   | { readonly kind: 'declinedPlayer' }
   /**
-   * "Each opponent attacking that player" (issue 159, CR 508.6: a player is "attacking [a player]" if they control a creature that is attacking that player): the opponents of
-   * the controller of the ability, still in the game, who control a creature attacking `triggerPlayer`, read as the ability resolves. Valid only in the effect of a
-   * `playerAttacked` trigger, whose `triggerPlayer` is the attacked player.
+   * "Each opponent attacking that player" (issue 159, CR 508.6: a player is "attacking [a player]" if they control a creature that is attacking that player): in the effect of an
+   * `attackBatch` trigger, whose `triggerPlayer` is the player who declared the attackers, that player when they are an opponent of the controller of the ability and still in the
+   * game, and nobody otherwise (the controller who attacks is not an opponent). Valid only where `triggerPlayer` is.
    */
   | { readonly kind: 'opponentsAttackingTriggerPlayer' }
   /**
@@ -825,6 +839,12 @@ export interface TargetSpec {
    * face with Kicker (not Multikicker), and the effect uses it only in the `then` of a `kicked` conditional.
    */
   readonly ifKicked?: true;
+  /**
+   * "Exile target artifact or enchantment. If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment." (CR 601.2c, issue 244):
+   * the slot exists only if the spell was cast during its controller's main phase (a main phase of a turn of that player, so they are the active player); a spell cast at any
+   * other time is cast as if the slot was not in its text. Only a slot of a spell's own text, and the effect uses it only in the `then` of a `castInOwnMainPhase` conditional.
+   */
+  readonly ifCastInOwnMain?: true;
   /**
    * "Exile target artifact or enchantment. If this spell was kicked, exile target nonland permanent instead." (CR 601.2c: "a spell may require
    * alternative targets only if an alternative or additional cost was chosen for it", D-181): the slot exists only if the spell was not kicked, so a
@@ -1016,6 +1036,11 @@ export type Cost =
        * hand). Only in a cost of an activated ability.
        */
       readonly named?: true;
+      /**
+       * "Discard your hand" (D-626, CR 701.9, issue 160): every card of the hand, none chosen; `count` is 0 and unread, and a player with an empty hand pays it with
+       * nothing to discard. Only in a cost of an activated ability.
+       */
+      readonly hand?: true;
     }
   /**
    * "Behold a Jace" (CR 701.4, D-151): as an additional cost to cast a spell, reveal a matching
@@ -1495,6 +1520,16 @@ export type Effect =
       readonly to: { readonly kind: 'target'; readonly id: string };
     }
   /**
+   * "Each creature deals damage to itself equal to its power" (CR 120.3, 120.3a-e, 608.2c; Lorehold group 1): every object `objects` names is a source and its own
+   * recipient, and is dealt damage equal to its power as the effect begins. Each is a source of its own damage, so deathtouch, lifelink, infect and wither apply as for any damage
+   * (CR 120.3), a prevention effect for that source applies, and the damage is not combat damage. Powers are read before any damage is dealt (CR 608.2h: the information is determined once, when the effect is applied; CR 120.4a speaks of damage dealt at the same time).
+   * An object that is not a creature (no power), is not on the battlefield or has power 0 or less deals none (CR 120.8). `objects` is `each` or a reference (not a `choose`).
+   */
+  | {
+      readonly kind: 'dealDamageToSelf';
+      readonly objects: ObjectSelector;
+    }
+  /**
    * CR 701.17 (Mill): each player `player` names puts the top `count` cards of their library into their graveyard (all of
    * them when they have fewer, and nobody loses for it: milling is not drawing, CR 121.4). `count` 0 does nothing. The
    * cards go one after another from the top; a commander milled goes to the graveyard like any card (its owner may
@@ -1632,12 +1667,21 @@ export type Effect =
    * graveyard it is a new object (CR 400.7) and the permission is gone. `duration` is `untilEndOfTurn`.
    * `exileInstead` (D-359, CR 614.1a, "If that spell would be put into your graveyard, exile it instead"): the spell cast with this permission is exiled instead
    * of going to a graveyard when it would leave the stack for one (resolved, countered, fizzled); it is written onto the permission and read as the spell is cast.
+   * Lorehold group 2 (Quintorius, Loremaster; CR 601.2, 118.9, 614.1a, 400.7): `from: 'exile'` is the same permission for a card in exile that the target names ("Choose target card
+   * exiled with this creature. You may cast that card this turn without paying its mana cost."), whoever owns it: it is a `playPermission` that lets the card be cast (never played as a
+   * land) until end of turn, at the timing of its type. `free` ("without paying its mana cost", CR 118.9): the card is cast for no mana cost (X is 0, CR 107.3b; additional costs are paid, CR 118.9d),
+   * the one way to cast it with this permission. `bottomInstead` ("If that spell would be put into a graveyard, put it on the bottom of its owner's library instead", CR 614.1a): the spell
+   * cast with the permission goes to the bottom of its owner's library instead of a graveyard when it would leave the stack for one (resolved, countered, fizzled); a permanent spell that
+   * resolves is not put into a graveyard. Both only with `from: 'exile'`.
    */
   | {
       readonly kind: 'mayCast';
       readonly objects: ObjectSelector;
       readonly duration: 'untilEndOfTurn';
       readonly exileInstead?: true;
+      readonly from?: 'exile';
+      readonly free?: true;
+      readonly bottomInstead?: true;
       /**
        * "You may cast target creature card in a graveyard this turn" (issue 159, CR 601.2, 108.3): the card may be in the graveyard of any player, not only the controller's. The
        * spell is cast by the controller of this effect, who controls the permanent it becomes; if it does not resolve it goes to its owner's graveyard (CR 108.3).
@@ -1699,6 +1743,13 @@ export type Effect =
    * commander the owner puts into the command zone instead was not exiled).
    */
   | { readonly kind: 'exileOwnGraveyardCard'; readonly players: PlayerSelector }
+  /**
+   * "You may exile one of them from your graveyard" (CR 603.2c, 608.2d, 400.7, Lorehold group 1): of the cards that triggered this ability (`triggerCards`: the cards a batch
+   * `discarded` trigger saw discarded, as the objects they became) the ones still in the graveyard of the controller, the controller chooses none or one and the card is exiled
+   * (the choice is the offer: nothing is asked when no card is there). The card exiled is what `moved` names afterwards ("If you do, you may cast it this turn") and what
+   * `didPrevious` reads. Only in a triggered ability whose trigger is a batch `discarded` (`validateCard`).
+   */
+  | { readonly kind: 'exileFromTriggerCards' }
   /**
    * "For each player, you choose from among the permanents that player controls an artifact, a creature, an enchantment, and a planeswalker. Then each player
    * sacrifices all other nonland permanents they control" (Tragic Arrogance; CR 608.2d, 701.21a, 101.4, D-231): the controller of the effect chooses, for each player
@@ -1871,6 +1922,11 @@ export type Effect =
   | {
       readonly kind: 'mayPlay';
       readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+      /**
+       * "You may cast it this turn" (Lorehold group 1, CR 601.2, 305.1): the permission is to cast the card, never to play it as a land, so a land card among `moved` stays where it
+       * is. Without it ("you may play that card") a land card is played as a land (a land drop, CR 305.2) and a spell is cast.
+       */
+      readonly castOnly?: true;
       /** How long the permission lasts. Named `lasts`, not `until`: `exile` has an `until` of another kind, which would make it a discriminant of the union. */
       readonly lasts: PlayUntil;
       /**
@@ -2219,6 +2275,11 @@ export type Effect =
        * unread. What was discarded is what a later `thisWay` `discarded` amount counts ("then draw that many cards").
        */
       readonly anyNumber?: true;
+      /**
+       * "Each player discards their hand" (Lorehold group 3, CR 701.9a, 402.1): every card of the hand of each player the selector names, as many as that player's hand holds when the
+       * instruction comes up (so the plural selectors discard each their own hand); nobody chooses. `count` is 0 and unread. Never with `anyNumber`, `unless` or `random`.
+       */
+      readonly hand?: true;
     }
   | { readonly kind: 'gainLife'; readonly player: PlayerSelector; readonly amount: Amount }
   | { readonly kind: 'loseLife'; readonly player: PlayerSelector; readonly amount: Amount }
@@ -2498,6 +2559,16 @@ export type Effect =
    */
   | { readonly kind: 'amass'; readonly subtype: Subtype; readonly count: Amount }
   /**
+   * "Populate." (CR 701.36, issue 160, D-627): the controller chooses a creature token they control and creates a token that is a copy of it (CR 707.2); with none, nothing
+   * is created (CR 701.36b). With two or more creature tokens the controller is asked which (a `choosePermanent` decision of purpose 'populate'); with one it is chosen.
+   */
+  | { readonly kind: 'populate' }
+  /**
+   * "You may play an additional land this turn." (CR 305.2, 305.2a, issue 208): the controller's land plays for this turn go up by `count` (a positive whole number). Only the
+   * active player plays lands (CR 305.3), so the effect adds nothing when its controller is not the active player. It does not carry over to another turn.
+   */
+  | { readonly kind: 'additionalLandDropThisTurn'; readonly count: number }
+  /**
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
    * triggered this one (`triggerSubject`), that sacrifices it, by its controller, as the next combat ends. Only the effect of an inherent ability
@@ -2563,6 +2634,12 @@ export type Effect =
       readonly player?: PlayerSelector;
       readonly duration: ControlDuration;
     }
+  /**
+   * "Each player gains control of all creatures they own." (issue 160, D-628, CR 613.1b, 613.7b, 611.2a, 611.2c): for each owner, one layer 2 effect with no duration gives that
+   * player control of the permanents `objects` names that they own, as they are named now (CR 611.2c). The effect has a timestamp (CR 613.7b): it decides over an earlier
+   * effect that gave the permanent to another player, and a later one decides over it. A permanent that changed controller leaves combat (CR 506.4).
+   */
+  | { readonly kind: 'returnControlToOwners'; readonly objects: ObjectSelector }
   /**
    * "Exchange control of this enchantment and target nonland permanent" (CR 701.12a, 701.12b, 613.1b, 611.2a; Galadriel group 3): the two permanents `first` and `second` name
    * (each `this` or a `target`) swap controllers as this resolves. If the entire exchange can't be completed (one of them is no longer a permanent on the battlefield, or one of
@@ -2844,6 +2921,12 @@ export type Effect =
        * condition on the choice as a whole: any one card may be found, two only when some land type is on both. The land cards are of `filter`; `max` is at least 2.
        */
       readonly sharedLandType?: true;
+      /**
+       * "Search your library for up to X basic land cards, where X is the number of tapped creatures you control" (D-626, issue 160): the most cards that may be found is
+       * this amount, worked out as the search begins (CR 608.2c, 107.3c); `max` is 1 and unread, the destinations are one `rest`, and no `sharedLandType`. A count of 0 or
+       * less finds nothing (the player still searches and shuffles, CR 701.23c).
+       */
+      readonly maxAmount?: Amount;
       readonly destinations: readonly SearchDestination[];
       readonly reveal: boolean;
       readonly shuffle: boolean;
@@ -3259,6 +3342,12 @@ export type Trigger =
       readonly who: 'you' | 'opponent' | 'any';
       readonly another?: boolean;
       readonly filter?: ObjectFilter;
+      /**
+       * "Whenever you discard one or more nonland cards" (CR 603.2c, 701.9a, Lorehold group 1): a batch trigger. The cards discarded in one run of events (a `discard` of two
+       * cards, the cleanup step, a cost) that `who`, `another` and `filter` name are one occurrence: the ability triggers once however many. `triggerSubject` is the first of the
+       * cards and `triggerCards` all of them (as the objects they became in the graveyard, or in exile for madness), so "you may exile one of them" can choose among them.
+       */
+      readonly batch?: true;
     }
   /**
    * "Whenever one or more other creatures and/or artifacts you control die" (CR 603.10a, 603.2c, 700.4, D-206): a batch trigger. The permanents that
@@ -3367,13 +3456,13 @@ export type Trigger =
       readonly who: 'you' | 'opponent' | 'any';
       readonly atLeast: number;
       readonly what?: ObjectFilter;
+      /**
+       * "Whenever enchanted player is attacked" (issue 160, D-629, CR 303.4m, 508.1b): only when at least one creature of the declaration was declared as attacking the player this
+       * Aura enchants (as a player: an attack on their planeswalker or battle is not an attack on them). The ability must be an Aura's that enchants a player (`validateCard`);
+       * it triggers once for the declaration, however many creatures attack. `triggerPlayer` is the attacking player.
+       */
+      readonly attackedEnchantedPlayer?: true;
     }
-  /**
-   * "Whenever enchanted player is attacked" (issue 159, CR 508.3b, 508.6, 303.4m): once when one or more creatures are declared as attackers attacking the player the Aura
-   * with this ability enchants ("Enchant player"); not when a creature is put onto the battlefield attacking, and not for a planeswalker or a battle that player controls.
-   * `triggerPlayer` is the attacked player ("that player"). Only on an Aura that enchants a player (`validateCard`).
-   */
-  | { readonly kind: 'playerAttacked'; readonly who: 'enchanted' }
   /**
    * "Whenever [this permanent] becomes the target of a spell or ability [an opponent controls]"
    * (CR 603.2, 702.21a Ward): `what` is the permanent targeted, `by` whose spell or ability it is
@@ -3485,8 +3574,9 @@ export type Keyword =
       readonly kind: 'enchant';
       readonly filter: ObjectFilter;
       /**
-       * "Enchant player" (issue 159, CR 702.5a, 702.5d, 303.4): the Aura targets and enchants a player (any player, the Aura's controller included) and never a permanent.
-       * `filter` is then empty. The Aura's abilities may say "enchanted player" (`playerAttacked` with `who: 'enchanted'`).
+       * "Enchant player" (CR 702.5a, 303.4, 303.4b; issue 160, D-629): the Aura enchants a player, not a permanent: its spell targets a player, it enters attached to that player
+       * (`GameObject.attachedToPlayer`) and is put into its owner's graveyard when that player has left the game or has protection from it (CR 303.4c, 704.5m, 702.16c).
+       * `filter` is `{}` and unread then.
        */
       readonly player?: true;
     }
@@ -3924,6 +4014,11 @@ export type Condition =
    */
   | { readonly kind: 'kicked' }
   /**
+   * "If you cast this spell during your main phase" (CR 505.1, 601.2, issue 244): the spell is on the stack having been cast (not a copy) during a main phase of a turn of its
+   * controller. A phase cannot end with a spell on the stack, so the turn's phase and active player as the spell resolves are those it was cast in. Read from the spell.
+   */
+  | { readonly kind: 'castInOwnMainPhase' }
+  /**
    * CR 702.56a (Replicate, D-129): "if a replicate cost was paid for it": the spell was cast with its replicate cost
    * paid at least once. Read from the spell, or from its last-known information once it has left (CR 113.7a).
    * Needs a replicate ability on the card.
@@ -4008,6 +4103,11 @@ export type Condition =
    * ability that works in layer 4 or 7b may have it; it is also the `while` of a `skipDraw` replacement.
    */
   | { readonly kind: 'cardsInLibrary'; readonly compare: NumberComparison }
+  /**
+   * "If a player has one or fewer cards in hand" (Lorehold group 3, CR 402.1, 603.4): some player still in the game, the controller or an opponent, has a number of cards in hand that
+   * meets the comparison (`atMost` 1 is "one or fewer"). Read as the ability triggers and again as it resolves (an intervening "if"); a player who has left the game has no hand to count.
+   */
+  | { readonly kind: 'aPlayerCardsInHand'; readonly compare: NumberComparison }
   /**
    * "If it escaped", "unless it escaped" (CR 702.138b, D-124): the spell that is resolving, or the permanent (and
    * its last-known information once it has left), was cast from a graveyard with an escape ability.
@@ -5241,6 +5341,12 @@ export interface ManaAbility {
      * a permanent that has at least one of the card types and at least one of the subtypes (each when given), besides the spells it names.
      */
     readonly alsoAbilities?: true;
+    /**
+     * "Spend this mana only to cast a creature spell of the chosen type." (CR 106.6, 614.12, 607.2d; issue 199): the spell must have the creature type the permanent
+     * chose as it entered (`GameObject.chosen.creatureType`, `asEntersChoose` of `creatureType`), read as the mana is made. With no type chosen the mana can be spent
+     * on no spell. Replaces `subtypes`: a card gives one or the other, never both.
+     */
+    readonly chosenType?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability
@@ -5278,6 +5384,12 @@ export interface ManaAbility {
       | 'haste'
       | { readonly scry: number }
       | { readonly scryCommanderCasts: true }
+      /**
+       * `{ countersCommanderCasts: true }` (issue 241, Opal Palace, CR 106.6, 122.6, 903.8): "If you spend this mana to cast your commander, it enters with a number of additional
+       * +1/+1 counters on it equal to the number of times it's been cast from the command zone this game": the commander cast with this mana enters with that many more
+       * +1/+1 counters (this cast included), for each such mana spent on it. Read as the permanent enters.
+       */
+      | { readonly countersCommanderCasts: true }
       | { readonly copySpell: 'may' | 'no' };
   };
   /**

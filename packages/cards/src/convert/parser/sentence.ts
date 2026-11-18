@@ -57,6 +57,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.control-or-returned',
   // Stage P49 (D-206): "Then if this spell was cast from a graveyard, put two +1/+1 counters on that token."
   'condition.cast-from-graveyard',
+  // Issue 244 (Return to Dust): "If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment."
+  'condition.cast-in-own-main-phase',
 ] as const;
 
 /**
@@ -124,6 +126,8 @@ const LEAD_CONDITIONS = [
   'condition.discarded-this-way',
   // D-358: "If you discarded an instant or sorcery card this way, ..." after a discard.
   'condition.discarded-spell-this-way',
+  // Lorehold group 1: "If you search your library this way, shuffle." after a search.
+  'condition.searched-this-way',
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
   ...LIFE_LEAD_CONDITIONS,
@@ -439,7 +443,8 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
             map(
               (c, p) => {
                 const ahead = pattern(
-                  /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield))/iu,
+                  // Issue 244 (Return to Dust): "you may exile up to one other target ..." after a test of how the spell was cast.
+                  /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield|exile up to one other target ))/iu,
                 )(c, p);
                 return ahead.ok ? literal('you may ')(c, p) : ahead;
               },

@@ -43,11 +43,14 @@ async function playUntil(page: Page, ready: () => Promise<boolean>, land: RegExp
     await settled(page);
     if (await keepButton.isVisible()) {
       await keepButton.click();
+      // The popup's button sits over the hand; a card there would lift and cover the field.
+      await page.mouse.move(0, 0);
     } else if (await discardDialog(page).isVisible()) {
       const cards = discardDialog(page).locator('.dec-card-button');
       const spare = cards.filter({ hasNotText: land });
       await ((await spare.count()) > 0 ? spare : cards).first().click();
       await discardDialog(page).getByRole('button', { name: 'Confirm' }).click();
+      await page.mouse.move(0, 0);
     } else if ((await page.locator('.dec-overlay').count()) === 0 && (await ready())) {
       return;
     } else {

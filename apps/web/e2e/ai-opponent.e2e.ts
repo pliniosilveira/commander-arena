@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { startDefaultGame } from './harness/menu';
 import { installedPrecons } from './harness/precons';
 
 /** The turn banner reads "Your turn 3" or "Opponent's turn 3": the player, then the round (D-153). */
@@ -18,8 +19,7 @@ async function playFromMenu(page: Page): Promise<void> {
 
   await page.goto('/');
   expect(installed.length).toBeGreaterThan(0);
-  await page.getByLabel('Seed').fill('7');
-  await page.getByRole('button', { name: 'Start game' }).click();
+  await startDefaultGame(page, '7');
   await expect(page.getByText('Your opening hand')).toBeVisible({ timeout: 30_000 });
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
   await expect(primary(page)).toBeVisible({ timeout: 15_000 });

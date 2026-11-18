@@ -245,12 +245,12 @@ describe('a face the grammar cannot read blocks the whole card, and says which f
   ] as const)('%s: face %i', (layout, face) => {
     const faces = [creature('Front'), creature('Back', { manaCost: '' })];
     if (layout === 'adventure') {
-      faces[1] = instant('Back', 'Populate.', { typeLine: 'Instant — Adventure' });
+      faces[1] = instant('Back', 'Learn.', { typeLine: 'Instant — Adventure' });
     } else if (layout === 'split') {
       faces[0] = instant('Front', 'You gain 1 life.');
-      faces[1] = instant('Back', 'Populate.');
+      faces[1] = instant('Back', 'Learn.');
     } else {
-      faces[1] = creature('Back', { manaCost: '', oracleText: 'Populate.' });
+      faces[1] = creature('Back', { manaCost: '', oracleText: 'Learn.' });
     }
     const imported = importCard(multi(layout, faces), undefined, NO_OVERRIDES);
     expect(imported.support.status).toBe('unsupported');

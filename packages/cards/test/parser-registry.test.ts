@@ -170,6 +170,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.pt-count': asIs,
   'static.defines-pt': asIs,
   'cost.discard': permanent((e) => `${e}: Draw a card.`),
+  'cost.discard-hand': permanent((e) => `${e}: Draw a card.`),
   'cost.mill': permanent((e) => `{T}, ${e}: Add {C}.`),
   // Stage P51 (D-209): the energy cost is the payment of an "unless you pay" of a spell.
   'cost.energy': spell((e) => `Draw a card. Then discard a card at random unless you pay ${e}.`),
@@ -387,6 +388,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // conditions follow "if" (an intervening "if", or the sentence about a creature that deals damage); the nouns are operands.
   'keyword.escalate': asIs,
   'static.cant-attack-block-unless': asIs,
+  'static.creatures-with-less-power-cant-block': asIs,
   'static.attached-becomes': asIs,
   'static.pt-amount': asIs,
   'trigger.attacks-while': whenever,
@@ -664,6 +666,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Then if ${e}, put two +1/+1 counters on that token.`,
   ),
+  // Issue 244 (Return to Dust).
+  'condition.cast-in-own-main-phase': spell(
+    (e) => `Exile target artifact. If ${e}, exile target enchantment.`,
+  ),
   'static.during-your-turn': asIs,
   // Stage P50 (D-207): the costs, nouns and conditions of the Vraska deck's third group.
   'condition.it-targets': permanent((e) => `~ costs {3} less to cast if ${e}.`),
@@ -734,6 +740,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `As an additional cost to cast ~, you may ${e}. Draw a card.`,
   ),
   'effect.mana-rider-scry-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
+  // Issue 241 (Opal Palace).
+  'effect.mana-rider-counters-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
   'amount.for-each-commander-cast': permanent((e) => `Creatures you control get +1/+1 ${e}.`),
   'static.untap-in-others-step': asIs,
   'trigger.class-level': permanent((e) => `When ${e}, draw a card.`),
@@ -777,6 +785,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hylda deck, group 2 (D-517, D-518, D-520, D-521, D-523): the group of a target player, the group "those creatures" says, a target of the player of the event, the card types of
   // a graveyard, the state of the permanent an Aura enchants and the cost of an ability that depends on the turn.
   'noun.all-permanents-of-target-player': spell((e) => `Tap ${e}.`),
+  'noun.group-of-target-player': spell((e) => `${cap(e)} get +1/+1 until end of turn.`),
   'noun.all-nonland-they-control': spell(() => `All nonland permanents they control phase out.`),
   'noun.those-creatures': spell(
     (e) =>
@@ -797,6 +806,29 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Target creature gets -1/-1 until end of turn. That creature gets -13/-13 until end of turn instead if ${e}.`,
   ),
   'condition.host-is-tapped': permanent((e) => `At the beginning of each upkeep, if ${e}, tap it.`),
+  // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way" after a search; "any number of target cards from your graveyard" of a shuffle.
+  'condition.searched-this-way': permanent(
+    (e) =>
+      `When ~ enters, you may search your library for a Plains card and put it onto the battlefield tapped. If ${e}, shuffle.`,
+  ),
+  // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand" in the intervening "if" of an upkeep trigger.
+  'condition.a-player-cards-in-hand': permanent(
+    (e) => `At the beginning of your upkeep, if ${e}, ~ becomes prepared.`,
+  ),
+  'noun.any-number-target-graveyard-cards': permanent(
+    (e) => `{2}, Exile ~: Shuffle ${e} into your library.`,
+  ),
+  // Lorehold Spirit deck, group 2 (issue 86): a card of your graveyard that is none of two types, "card exiled with ~" and the three sentences of the free cast, and the votes counted.
+  'noun.target-nonmatching-graveyard-card': permanent(
+    (e) => `At the beginning of your end step, exile ${e}.`,
+  ),
+  'noun.target-card-exiled-with-self': permanent(
+    (e) => `{1}, {T}: Choose ${e}. You may cast that card this turn without paying its mana cost.`,
+  ),
+  'effect.cast-exiled-with-self': permanent((e) => `{1}, {T}: ${cap(e)}.`),
+  'amount.for-each-vote': spell(
+    (e) => `Starting with you, each player votes for past or present. You mill a card ${e}.`,
+  ),
   'restriction.cost-reduction-your-turn': permanent(
     (e) => `{1}, {T}: Tap target creature. ${cap(e)}`,
   ),

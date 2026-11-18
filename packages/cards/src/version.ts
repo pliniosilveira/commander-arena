@@ -41,10 +41,12 @@
 // 136: Parse the commander-tax life replacement sentence (D-605).
 // 140: Parse activated abilities carried by emblems (D-606).
 // 141: Parse player locks, protection from everything, and phasing of a target player's nonlands (D-607).
-// 142: Grave Danger deck: "for each" after "it deals N damage", "leaves the battlefield" after "~ or another creature", "the number of creatures that died under your control this turn", flashback with life (D-609).
-// 143: Grave Danger deck, second group: "for each A and each B" enters-with counts, prevention that removes a counter, "equal to the damage dealt this way" (D-610).
-// 144: A creature type before "creature spell" in the once-each-turn graveyard permission (D-611).
-// 145: Grave Danger deck, third group: "... and sacrifice it" costs, "in addition to its other colors and types", "a creature card put into a graveyard this way" (D-612).
-// 146: Grave Danger deck, fourth group: casting from the graveyard by sacrificing creatures, "this turn" permissions, "milled this way", casts and activations from a graveyard this turn, "in a graveyard" (D-613).
-// 147: "Enchant player", "whenever enchanted player is attacked" and "each opponent attacking that player does the same" (D-614).
-export const PARSER_VERSION = 147;
+// 142: Read the Lorehold Spirit deck cards: Claim Jumper, Containment Construct, Conspiracy Theorist, Perpetual Timepiece, Wave of Reckoning, Fateful Tempest, Quintorius, Loremaster and Naktamun Lorespinner // Wheel of Fortune (D-610 to D-624, issue 86).
+// 143: Read "Tap an untapped creature you control" next to a mana cost and {T}, and in a mana ability (D-625, issue 160).
+// 144: Read "where X is your life total", the mana value of a destroyed enchantment, "that many" tokens after damage, "for each opponent who controls fewer creatures", "Discard your hand", "up to X" library searches and a spell shuffling itself into its library (D-626, issue 160).
+// 145: Read "creatures target player controls get ...", "untap them", "those creatures gain ..." after an each group and "Populate" (D-627, issue 160).
+// 146: Read "creatures with power less than ~'s power can't block creatures you control", an enchanted creature with a granted activated ability and "each player gains control of all creatures they own" (D-628, issue 160).
+// 147: Read "Enchant player", "whenever enchanted player is attacked" and "each opponent attacking that player untaps all nonland permanents they control" (D-629, issue 160).
+// 148: Read "You may play an additional land this turn", a search for a card of each of two kinds, mana spent only on a creature spell of the chosen type, "If you cast this spell during your main phase, you may exile up to one other target ..." and the counters a commander gets from mana of its color identity (D-630, issues 199, 208, 226, 241, 244).
+// 149: Grave Danger deck (issue 159): "for each" after "it deals N damage", "leaves the battlefield" after "~ or another creature", the creatures that died under your control this turn, flashback with life, enters-with sums, prevention that removes a counter, "damage dealt this way", additive colors and "put into a graveyard this way", casting from a graveyard by sacrificing, spell-filter and any-graveyard permissions with their rider, "milled this way", casts and activations from a graveyard this turn, and "each opponent attacking that player does the same" (D-631 to D-636).
+export const PARSER_VERSION = 149;

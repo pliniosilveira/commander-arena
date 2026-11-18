@@ -38,12 +38,6 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
         issue(out, `${path}.by`, `unknown player ${String(t.by)}`);
       }
       return true;
-    case 'playerAttacked':
-      // Issue 159 (CR 508.3b): only "enchanted player" is read.
-      if (t.who !== 'enchanted') {
-        issue(out, `${path}.who`, `unknown player ${String((t as { who: unknown }).who)}`);
-      }
-      return true;
     case 'attackBatch':
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -51,6 +45,13 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
       // D-187: "Whenever you attack" is one or more creatures declared: `atLeast` 1.
       if (!isCount(t.atLeast) || t.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast is a whole number of 1 or more');
+      }
+      if (t.attackedEnchantedPlayer !== undefined && t.attackedEnchantedPlayer !== true) {
+        issue(
+          out,
+          `${path}.attackedEnchantedPlayer`,
+          'attackedEnchantedPlayer is true when present',
+        );
       }
       if (t.what !== undefined) {
         checkFilter(t.what, `${path}.what`, out);

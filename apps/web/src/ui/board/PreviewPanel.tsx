@@ -143,10 +143,6 @@ function PreviewDetails({ object }: { object: ObjectView }) {
       );
     facts.push(object.zone === 'battlefield' ? 'On the battlefield' : `In ${object.zone}`);
   }
-  // Issue 159 (CR 303.4b): an Aura that enchants a player says whom.
-  if (view !== null && object.enchantedPlayer !== undefined) {
-    facts.push(`Enchants ${seatLabel(view, object.enchantedPlayer)}`);
-  }
   const host =
     view === null || object.attachedTo === undefined ? null : findObject(view, object.attachedTo);
   const attached =
@@ -163,6 +159,10 @@ function PreviewDetails({ object }: { object: ObjectView }) {
       nameOf: (id) => findObject(view, id)?.name ?? null,
     });
     if (taken !== null) facts.push(taken);
+  }
+  // CR 303.4b (D-629): an Aura that enchants a player says whom.
+  if (object.attachedToPlayer !== undefined && view !== null) {
+    facts.push(`Enchants ${seatLabel(view, object.attachedToPlayer)} (CR 303.4b)`);
   }
   // CR 702.95b (D-286): the creature this one is paired with, while the pair stands (the engine says it only then).
   if (object.pairedWith !== undefined && view !== null) {

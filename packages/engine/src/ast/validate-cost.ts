@@ -89,8 +89,12 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
       case 'discard':
         discards += 1;
         // D-207: the cards a filter or a name picks out are for the cost of an activated ability.
-        if (cost.filter !== undefined || cost.named !== undefined) {
-          issue(out, p, 'an additional cost discards any cards: no filter and no name (D-207)');
+        if (cost.filter !== undefined || cost.named !== undefined || cost.hand !== undefined) {
+          issue(
+            out,
+            p,
+            'an additional cost discards any cards: no filter, no name and not the whole hand (D-207, D-626)',
+          );
         }
         break;
       case 'payLife':

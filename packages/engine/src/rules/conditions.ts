@@ -8,8 +8,10 @@ import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState, ThisWayCounts } from '../state/types';
 import { resolutionCount } from './action-taken';
 import { amountOf, playerStatOf, statOf } from './amounts';
+import { castInOwnMainPhase } from './cast-phase';
 import { chosenOf } from './chosen';
 import {
+  aPlayerCardsInHandHolds,
   cardsInGraveyardHolds,
   cardsInLibraryHolds,
   combatDamagedByHolds,
@@ -139,6 +141,11 @@ export function evaluateCondition(
       // last-known information says (CR 113.7a), which also covers a replacement as it enters.
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return source !== null && (source.stack?.kicked === true || source.kicked === true);
+    }
+    case 'castInOwnMainPhase': {
+      // CR 601.2, 505.1 (issue 244): "If you cast this spell during your main phase"; read from the spell, or from its last-known information once it has left.
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return source !== null && castInOwnMainPhase(state, source);
     }
     case 'replicated': {
       // CR 702.56a (D-129): "if a replicate cost was paid for it": the spell carries the count on the stack, or its
@@ -427,6 +434,8 @@ export function evaluateCondition(
       return cardsInGraveyardHolds(state, ctx.controller, condition.compare);
     case 'cardsInLibrary':
       return cardsInLibraryHolds(state, ctx.controller, condition.compare);
+    case 'aPlayerCardsInHand':
+      return aPlayerCardsInHandHolds(state, condition.compare);
     case 'playerDealtDamage':
       // D-151, CR 120.3: the damage dealt to the controller, or to an opponent, this turn.
       return playerDealtDamageHolds(state, ctx.controller, condition);

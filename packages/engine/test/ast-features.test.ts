@@ -96,6 +96,8 @@ describe('the dimensions', () => {
       // D-599: corrupted checks an opponent's poison counters.
       'opponentPoisonAtLeast',
       'kicked',
+      // Issue 244: "If you cast this spell during your main phase".
+      'castInOwnMainPhase',
       'replicated',
       'sacrificedAsCost',
       'controlCommander',
@@ -106,6 +108,8 @@ describe('the dimensions', () => {
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".
       'cardsInLibrary',
+      // Lorehold group 3: "if a player has one or fewer cards in hand".
+      'aPlayerCardsInHand',
       'escaped',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',

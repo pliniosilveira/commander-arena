@@ -89,6 +89,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-181: a target that exists only if the spell was kicked or only if it was not (`TargetSpec.ifKicked`, `unlessKicked`), the choice between two
     // additional costs (`CardFace.additionalCostChoice`) and "this spell costs {3} less to cast if ..." (a `costReduction` of `this` with a condition).
     'ifKicked',
+    // Issue 244: a target that exists only if the spell was cast during its controller's main phase (`TargetSpec.ifCastInOwnMain`).
+    'ifCastInOwnMain',
     'additionalCostChoice',
     'selfCostReducedIf',
     // D-139: "this ability costs {1} less to activate for each other artifact you control".
@@ -99,6 +101,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaInstead',
     // D-149: "Spend this mana only to cast an Angel spell." (`ManaAbility.spendOnly`)
     'manaSpendOnly',
+    // Issue 199: "Spend this mana only to cast a creature spell of the chosen type." (`ManaAbility.spendOnly.chosenType`)
+    'manaSpendOnlyChosenType',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
     'functionsInGraveyard',
     // D-256: "Do this only once each turn." (`TriggeredAbility.doOnlyOnceEachTurn`, CR 603.2h)
@@ -109,6 +113,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaDistinctColors',
     // D-328: "When that mana is spent to cast a red instant or sorcery spell, copy that spell" (`spentRider` with `copySpell`, a color of the spell).
     'manaSpentRiderCopy',
+    // Issue 241: "If you spend this mana to cast your commander, it enters with ... additional +1/+1 counters" (`spentRider.grants.countersCommanderCasts`).
+    'manaSpentRiderCounters',
     // D-327: "Mill a card. You may play that card this turn." (`mayPlay` of the cards a `mill` put into the graveyard).
     'mayPlayFromGraveyard',
     // D-411: "Mill four cards. You may put a land card from among them into your hand." (`ChooseSelector.fromMoved`: the choice among the cards `moved` names).
@@ -205,6 +211,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainControl',
     // Galadriel group 3: "Exchange control of this enchantment and target nonland permanent" (CR 701.12a, 701.12b).
     'exchangeControl',
+    // D-628: "each player gains control of all creatures they own" (CR 613.1b).
+    'returnControlToOwners',
     'shuffle',
     // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
     'rollDie',
@@ -284,6 +292,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'empowerJace',
     // D-367: "amass Zombies 1" (CR 701.47a).
     'amass',
+    // D-627: "Populate" (CR 701.36).
+    'populate',
+    // Issue 208: "You may play an additional land this turn." (CR 305.2).
+    'additionalLandDropThisTurn',
     // D-201: "You get an emblem with ..." (CR 114).
     'createEmblem',
     'delayedSacrifice',
@@ -296,6 +308,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'fight',
     // D-145: "deals X damage divided as you choose among any number of target creatures" (CR 601.2d): with `TargetSpec.divide`.
     'dealDividedDamage',
+    // Lorehold group 1: "Each creature deals damage to itself equal to its power." (CR 120.3).
+    'dealDamageToSelf',
+    // Lorehold group 1: "you may exile one of them from your graveyard" of the cards a batch discard trigger saw (CR 603.2c).
+    'exileFromTriggerCards',
     // D-145: "you may cast a spell ... from your hand without paying its mana cost", "you may play the exiled card" (CR 608.2g).
     'castFree',
     // D-350: "you may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead" (CR 608.2g, 609.4b).
@@ -363,8 +379,6 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeGained',
     'countersAdded',
     'attackBatch',
-    // Issue 159: "Whenever enchanted player is attacked" (CR 508.3b).
-    'playerAttacked',
     // D-179: "When you cycle this card" (CR 702.29c).
     'cycled',
     // D-196: "Whenever the Ring tempts you" (CR 701.54d).
@@ -543,7 +557,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // {T}, "Sacrifice this permanent" (a Treasure, CR 111.10a) and mana ({1}, {T}: a Signet). A mana
   // cost is paid from the pool, or by auto-pay from sources that have no mana cost themselves.
   // D-099: "Pay N life" too (CR 119.4, 605.3), and the mana cost may use hybrid symbols (CR 107.4e).
-  manaAbilityCostKinds: ['tap', 'sacrifice', 'mana', 'payLife', 'mill'],
+  // D-625: `tapPermanents` ("{T}, Tap an untapped creature you control: Add one mana of any color"), one permanent, chosen as the ability is activated.
+  manaAbilityCostKinds: ['tap', 'sacrifice', 'mana', 'payLife', 'mill', 'tapPermanents'],
   // D-099: `couldProduce` (CR 106.7) and `combination` ("Add {R}{R}, {R}{W}, or {W}{W}").
   manaProductionKinds: [
     'fixed',
@@ -664,6 +679,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notCastFromHand',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
+    // Lorehold group 2: "target card exiled with this creature" (`ObjectFilter.exiledWithSource`).
+    'exiledWithSource',
     // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
     'attachedTo',
     'enchanted',
@@ -769,6 +786,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-601 (CR 122.1): "an opponent has three or more poison counters".
     'opponentPoisonAtLeast',
     'kicked',
+    // Issue 244: "If you cast this spell during your main phase" (CR 601.2, 505.1).
+    'castInOwnMainPhase',
     // D-129: "if a replicate cost was paid for it" (CR 702.56a).
     'replicated',
     // D-491: "if you sacrificed one or more creatures to cast it" (`Cost` `sacrifice` with `anyNumber`).
@@ -785,6 +804,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsInGraveyard',
     // D-331: "as long as there are no cards in your library".
     'cardsInLibrary',
+    // Lorehold group 3: "if a player has one or fewer cards in hand" (CR 402.1, 603.4).
+    'aPlayerCardsInHand',
     // D-124: "if it escaped", "unless it escaped" (as `not`).
     'escaped',
     // D-127: "if this permanent came under your control since the beginning of your last upkeep" (Echo).
@@ -1136,6 +1157,8 @@ export const ABILITY_FEATURES = [
   'staticCondition',
   'costReducedIf',
   'ifGiftPromised',
+  /** Issue 244: `TargetSpec.ifCastInOwnMain`: a target chosen only if the spell was cast during its controller's main phase. */
+  'ifCastInOwnMain',
   /** D-181: `TargetSpec.ifKicked` and `unlessKicked`: a target chosen only if the spell was kicked, or only if it was not (CR 702.33g, 601.2c). */
   'ifKicked',
   /** D-181: `CardFace.additionalCostChoice`: "As an additional cost to cast this spell, sacrifice an artifact or creature or pay {4}" (CR 118.8, 601.2b). */
@@ -1146,6 +1169,8 @@ export const ABILITY_FEATURES = [
   'oncePerTurn',
   'manaInstead',
   'manaSpendOnly',
+  /** "Spend this mana only to cast a creature spell of the chosen type" (issue 199): `ManaAbility.spendOnly.chosenType`. */
+  'manaSpendOnlyChosenType',
   /** An ability that works while its card is in the graveyard (CR 113.6b, D-151): `functionsIn: 'graveyard'` on a static or triggered ability. */
   'functionsInGraveyard',
   /** "Do this only once each turn" (D-256): the engine's `doOnlyOnceEachTurn` of a triggered ability (CR 603.2h). */
@@ -1156,6 +1181,8 @@ export const ABILITY_FEATURES = [
   'manaDistinctColors',
   /** "When that mana is spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy" (D-328): `spentRider` with `copySpell`. */
   'manaSpentRiderCopy',
+  /** Issue 241: `spentRider.grants.countersCommanderCasts`: the commander cast with the mana enters with extra +1/+1 counters. */
+  'manaSpentRiderCounters',
   /** "Mill a card. You may play that card this turn" (D-327, CR 601.2, 305.1): the engine's `mayPlay` of a card a `mill` put into its owner's graveyard. */
   'mayPlayFromGraveyard',
   /** "Mill four cards. You may put a land card from among them into your hand" (D-411, CR 608.2c, 608.2d): the engine's `ChooseSelector.fromMoved` of a `moveToZone`. */
@@ -1244,6 +1271,8 @@ export const SELECTOR_KINDS = [
   'putFromBattlefieldThisTurn',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
+  /** "Target card exiled with this creature" (CR 607.2a, Lorehold group 2): the engine's `ObjectFilter.exiledWithSource`. */
+  'exiledWithSource',
   /** "Aura attached to it", "attached to enchanted creature", "attached to a creature" (CR 303.4, 301.5, 701.3, D-422): the engine's `ObjectFilter.attachedTo`. */
   'attachedTo',
   /** "Creatures that aren't enchanted" (CR 303.4, D-422): the engine's `ObjectFilter.enchanted`. */
@@ -1370,6 +1399,8 @@ export const CONDITION_KINDS = [
   'opponentPoisonAtLeast',
   /** "If this spell was kicked", "if it was kicked" (CR 702.33d): the engine's `kicked`. */
   'kicked',
+  /** "If you cast this spell during your main phase" (issue 244): the engine's `castInOwnMainPhase`. */
+  'castInOwnMainPhase',
   /** "If a replicate cost was paid for it" (CR 702.56a): the engine's `replicated`. */
   'replicated',
   /** "If you sacrificed one or more creatures to cast it" (CR 118.8, D-491): the engine's `sacrificedAsCost`. */
@@ -1472,6 +1503,8 @@ export const CONDITION_KINDS = [
   'cardsInGraveyard',
   /** "As long as there are no cards in your library" (CR 401.1, D-331): the engine's `cardsInLibrary`. */
   'cardsInLibrary',
+  /** "If a player has one or fewer cards in hand" (CR 402.1, 603.4; Lorehold group 3): the engine's `aPlayerCardsInHand`. */
+  'aPlayerCardsInHand',
   'and',
   'or',
   'not',
@@ -1748,17 +1781,20 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   costReducedIf: true,
   ifGiftPromised: true,
   ifKicked: true,
+  ifCastInOwnMain: true,
   additionalCostChoice: true,
   selfCostReducedIf: true,
   costReducedBy: true,
   oncePerTurn: true,
   manaInstead: true,
   manaSpendOnly: true,
+  manaSpendOnlyChosenType: true,
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,
   manaSpentRider: true,
   manaDistinctColors: true,
   manaSpentRiderCopy: true,
+  manaSpentRiderCounters: true,
   mayPlayFromGraveyard: true,
   chooseAmongMoved: true,
   chooseAlsoGraveyard: true,
@@ -1832,6 +1868,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   permanentsEnterTapped: true,
   gainControl: true,
   exchangeControl: true,
+  returnControlToOwners: true,
   shuffle: true,
   rollDie: true,
   scry: true,
@@ -1876,6 +1913,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   lookAtTop: true,
   revealUntil: true,
   dealDividedDamage: true,
+  dealDamageToSelf: true,
+  exileFromTriggerCards: true,
   fight: true,
   castFree: true,
   castCard: true,
@@ -1887,6 +1926,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   pair: true,
   empowerJace: true,
   amass: true,
+  populate: true,
+  additionalLandDropThisTurn: true,
   createEmblem: true,
   delayedSacrifice: true,
   exileIfLeaves: true,
@@ -1934,7 +1975,6 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   lifeGained: true,
   countersAdded: true,
   attackBatch: true,
-  playerAttacked: true,
   cycled: true,
   ringTempted: true,
   classLevel: true,

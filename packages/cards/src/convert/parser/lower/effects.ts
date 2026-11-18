@@ -19,6 +19,7 @@ import type {
 } from '@commander-arena/engine';
 import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
 import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
+import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
 import { ARDEN_LOWERINGS } from './arden';
@@ -49,6 +50,7 @@ import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
+import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
@@ -65,6 +67,8 @@ import { HOFRI_LOWERINGS } from './hofri';
 import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { KORVOLD_LOWERINGS } from './korvold';
+import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
+import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
 import { MELD_LOWERINGS } from './meld';
 import { NIV_LOWERINGS } from './niv';
 import { NIV_GROUP_3_C_LOWERINGS } from './niv-group-3-c';
@@ -80,9 +84,12 @@ import {
 } from './nouns';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
+import { POPULATE_LOWERINGS } from './populate';
 import { PREPARE_LOWERINGS } from './prepare';
 import { PREVENT_DAMAGE } from './prevent';
+import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
+import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { VRASKA_LOWERINGS } from './vraska';
@@ -838,6 +845,14 @@ function playerVerb(
       }
       // "Discard their hand" (stage P52, D-210, CR 701.9): as many cards as the hand holds, counted as the instruction comes up.
       if (verb === 'discard' && arg(clause, 'hand') !== undefined) {
+        // "Each player discards their hand" (Lorehold group 3, CR 701.9a): each player discards the hand they have as their instruction comes up, so the count is not the controller's.
+        if (player.value.kind !== 'you') {
+          return {
+            ok: true,
+            value: [{ kind: 'discard', player: player.value, count: 0, hand: true }],
+            rule: clause.rule,
+          };
+        }
         const blocked = missingFeatures(['amount:countOf']);
         if (blocked.length > 0) return failure(clause, blocked);
         return {
@@ -1667,9 +1682,18 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...NIV_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,
+  // Lorehold Spirit deck, group 1 (issue 86): "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and "each creature deals damage to itself".
+  ...LOREHOLD_G1_LOWERINGS,
+  // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
+  ...LOREHOLD_G2_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,
   ...HASHATON_GROUP_4_LOWERINGS,
+  ...POPULATE_LOWERINGS,
+  ...ADDITIONAL_LAND_LOWERINGS,
+  ...SEARCH_PAIR_LOWERINGS,
+  ...ENCHANTED_PLAYER_LOWERINGS,
+  ...RETURN_CONTROL_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
   ...DESTINY_LOWERINGS,
   ...MELD_LOWERINGS,
@@ -1721,7 +1745,9 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                   test === 'exiledThisWay' ||
                   test === 'milledThisWay'
                 ? 'objectMatches'
-                : test === 'discardedThisWay' || test === 'discardedSpellThisWay'
+                : test === 'discardedThisWay' ||
+                    test === 'discardedSpellThisWay' ||
+                    test === 'searchedThisWay'
                   ? 'thisWayAtLeast'
                   : test === 'otherAttachedToHost'
                     ? 'amountIs'

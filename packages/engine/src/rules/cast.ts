@@ -95,6 +95,8 @@ import {
   hasKickedTargets,
   libraryCastPermission,
   mayCastFromGraveyard,
+  mayPlayFromExile,
+  playPermissionBottoms,
   targetSpecsOf,
   targetsPossible,
 } from './legality';
@@ -212,7 +214,12 @@ export function beginCast(
       flashback: alternative === 'flashback',
       ...(alternative === 'free' ? { free: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
-      ...(resolving && alternative !== 'madness' && alternative !== 'miracle'
+      ...((resolving && alternative !== 'madness' && alternative !== 'miracle') ||
+      // Lorehold group 2 (CR 118.9): a card in exile cast for no mana cost because an effect said "you may cast that card this turn without paying its mana cost".
+      (!resolving &&
+        alternative === 'free' &&
+        zone === 'exile' &&
+        mayPlayFromExile(state, seat, obj, false, true))
         ? { byEffect: true as const }
         : {}),
       ...(suspended ? { suspended: true as const } : {}),
@@ -222,6 +229,12 @@ export function beginCast(
       ...(riders.exileInstead === true ||
       (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj))
         ? { exileInstead: true as const }
+        : {}),
+      // Lorehold group 2 (CR 614.1a): "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" of the permission the card is cast with.
+      ...(zone === 'exile' &&
+      !resolving &&
+      playPermissionBottoms(state, seat, obj, alternative === 'free')
+        ? { bottomInstead: true as const }
         : {}),
       // D-151: "If you cast a creature spell this way, it gains haste until end of turn".
       ...(zone === 'library' && libraryCastPermission(state, seat, obj)?.gainsHaste === true
@@ -1297,6 +1310,15 @@ function withSpentRiders(
     riders.some((r) => r.kind === 'haste' && matches(r))
   ) {
     next = patchObject(next, casting.object, { stack: { ...stack, hasteUntilEnd: true } });
+  }
+  // Issue 241: "it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone": the spell remembers how
+  // many such mana were spent on it; the counters are put on as it enters.
+  const counterMana = riders.filter((r) => r.kind === 'counters' && matches(r)).length;
+  const withCounters = state.objects[casting.object]?.stack;
+  if (counterMana > 0 && withCounters !== null && withCounters !== undefined) {
+    next = patchObject(next, casting.object, {
+      stack: { ...withCounters, commanderCastCounters: counterMana },
+    });
   }
   // Group 4 of the Vraska deck (CR 603.2, 701.22): "When that mana is spent to cast a creature spell that shares a creature type with your commander,
   // scry 1." is a triggered ability of the permanent that made the mana, for each mana spent; it waits to go on the stack above the spell.

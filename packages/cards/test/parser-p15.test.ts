@@ -603,7 +603,7 @@ describe('effect.tap and effect.untap: "it" (CR 701.26)', () => {
     ['Exile target creature. Tap it.', 'notRunnable'],
     ['Destroy target creature. Untap it.', 'notRunnable'],
     ["Return target creature to its owner's hand. Untap it.", 'notRunnable'],
-    ['Untap target land. Untap them.', 'unrecognised'],
+    ['Untap target land. Untap them.', 'notRunnable'],
     ['Untap itself.', 'unrecognised'],
   ])('%s is %s', (text, reason) => {
     expect(dropped(text)).toMatchObject({ reason });

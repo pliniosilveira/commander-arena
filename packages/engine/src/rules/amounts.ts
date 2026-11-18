@@ -164,9 +164,17 @@ export function playerStatOf(state: GameState, seat: SeatId, stat: PlayerStat): 
 }
 
 /** The opponents of `seat` still in the game whose stat is greater than `seat`'s (D-131). */
-export function opponentsWithMore(state: GameState, seat: SeatId, stat: PlayerStat): number {
+export function opponentsWithMore(
+  state: GameState,
+  seat: SeatId,
+  stat: PlayerStat,
+  /** D-626: count the opponents whose stat is less than `seat`'s instead. */
+  fewer = false,
+): number {
   const mine = playerStatOf(state, seat, stat);
-  return opponentsOf(state, seat).filter((o) => playerStatOf(state, o, stat) > mine).length;
+  return opponentsOf(state, seat).filter((o) =>
+    fewer ? playerStatOf(state, o, stat) < mine : playerStatOf(state, o, stat) > mine,
+  ).length;
 }
 
 /**
@@ -330,7 +338,7 @@ export function stateAmountOf(
     case 'thisWay':
       return ctx.thisWay?.[amount.what] ?? 0;
     case 'opponentsWithMore':
-      return opponentsWithMore(state, ctx.controller, amount.stat);
+      return opponentsWithMore(state, ctx.controller, amount.stat, amount.fewer === true);
     case 'cardsStillExiled':
       // CR 400.7: a card that left exile is a new object, so only the very objects still there count.
       return amount.objects.filter((id) => state.objects[id]?.zone === 'exile').length;

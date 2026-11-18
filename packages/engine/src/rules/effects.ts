@@ -30,12 +30,12 @@ import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
 import { runBecomeCopy, runContinuous, runEntersTappedGroup, runRequireAttack } from './continuous';
 import { controllerOf } from './control';
-import { runExchangeControl, runGainControl } from './control-effects';
+import { runExchangeControl, runGainControl, runReturnControl } from './control-effects';
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
-import { asking, runDealDamage, runDealDividedDamage } from './damage-effects';
+import { asking, runDealDamage, runDealDamageToSelf, runDealDividedDamage } from './damage-effects';
 import { askingFlow, type OrderFlow, quietFlow } from './damage-order';
 import { derive } from './derive';
 import { UNEARTH_EXILE_ABILITY } from './derive-alt';
@@ -85,6 +85,7 @@ import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { runGrantPlayerHexproof } from './player-hexproof';
 import { runPlayerLock } from './player-lock';
+import { runPopulate } from './populate';
 import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
@@ -231,6 +232,7 @@ export function runInstruction(
   if (instruction.kind === 'pair') return runPair(state, res, instruction);
   if (instruction.kind === 'empowerJace') return runEmpowerJace(state, res, instruction);
   if (instruction.kind === 'amass') return runAmass(state, res, instruction, flow);
+  if (instruction.kind === 'populate') return runPopulate(state, res, instruction, flow);
   if (instruction.kind === 'conniveNext') return runConniveNext(state, res, instruction);
   if (instruction.kind === 'spare') return runSpare(state, res, instruction);
   if (instruction.kind === 'splitExiled') return runSplitExiled(state, res, instruction);
@@ -652,6 +654,10 @@ function runEffect(
 
     case 'dealDividedDamage':
       return runDealDividedDamage(state, res, effect, targets, flow);
+
+    case 'dealDamageToSelf':
+      // CR 120.3 (Lorehold group 1): "Each creature deals damage to itself equal to its power."
+      return runDealDamageToSelf(state, effect, ctx, targets, flow);
 
     case 'destroy': {
       // CR 701.8 (Destroy): indestructible permanents are not destroyed (CR 702.12b).
@@ -1295,6 +1301,21 @@ function runEffect(
       // CR 701.71a (D-201): the token, the choice and the counters come up as the instruction runs (rules/empower.ts).
       return done(state, [], [{ kind: 'empowerJace', amount: effect.amount, chosen: null }]);
 
+    case 'additionalLandDropThisTurn':
+      // CR 305.2, 305.3: only the active player plays lands, so the extra land plays count for the active player's turn only.
+      return done(
+        res.controller === state.turn.activeSeat
+          ? {
+              ...state,
+              turn: { ...state.turn, extraLandDrops: state.turn.extraLandDrops + effect.count },
+            }
+          : state,
+      );
+
+    case 'populate':
+      // CR 701.36 (D-627): the choice of the creature token and its copy come up as the instruction runs (rules/populate.ts).
+      return done(state, [], [{ kind: 'populate', chosen: null }]);
+
     case 'amass':
       // CR 701.47a (D-367): N is read now (CR 608.2h); the token, the choice of the Army and the counters come up as the instruction runs (rules/amass.ts).
       return done(
@@ -1881,8 +1902,10 @@ function runEffect(
     case 'discard': {
       // CR 701.9: each player named discards that many cards, choosing which (CR 701.9b).
       const anyNumber = effect.anyNumber === true;
-      const count = anyNumber ? 0 : amountOf(state, effect.count, ctx, targets);
-      if (count <= 0 && !anyNumber) return done(state);
+      // CR 701.9a: "discards their hand" is read for each player as their instruction runs (`runDiscard`), so there is no count here.
+      const wholeHand = effect.hand === true;
+      const count = anyNumber || wholeHand ? 0 : amountOf(state, effect.count, ctx, targets);
+      if (count <= 0 && !anyNumber && !wholeHand) return done(state);
       const seats = resolvePlayers(state, effect.player, ctx, targets);
       return done(
         state,
@@ -1892,6 +1915,7 @@ function runEffect(
           seat,
           count,
           ...(anyNumber ? { anyNumber: true as const } : {}),
+          ...(wholeHand ? { hand: true as const } : {}),
           ...(effect.random === true ? { random: true as const } : {}),
           ...(effect.unless === undefined ? {} : { unless: effect.unless }),
           chosen: null,
@@ -1989,6 +2013,27 @@ function runEffect(
           ),
         ],
       );
+
+    case 'exileFromTriggerCards': {
+      // CR 603.2c, 608.2d, 400.7 (Lorehold group 1): "you may exile one of them from your graveyard": the controller chooses none or one of the cards that triggered this ability
+      // that are still in their graveyard, which the choice's own question offers; with none there nothing is asked and nothing is done.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseMove' as const,
+            filter: { zone: 'graveyard' as const },
+            count: 1,
+            to: 'exile' as const,
+            position: 'top' as const,
+            optional: true as const,
+            among: res.triggerCards ?? [],
+            chosen: null,
+          },
+        ],
+      );
+    }
 
     case 'exileOwnGraveyardCard': {
       // CR 701.13, 101.4 (D-231): each player named chooses a card of their own graveyard, in turn order from the active player; it is exiled.
@@ -2173,7 +2218,11 @@ function runEffect(
           [],
           resolvePlayers(state, effect.player, ctx, targets).map((seat) => ({
             kind: 'search' as const,
-            search: effect,
+            // D-626 (CR 608.2c): "up to X" is read as the search begins.
+            search:
+              effect.maxAmount === undefined
+                ? effect
+                : { ...effect, max: Math.max(0, amountOf(state, effect.maxAmount, ctx, targets)) },
             seat,
             accepted: effect.optional === true ? null : true,
             chosen: null,
@@ -2375,6 +2424,10 @@ function runEffect(
     case 'gainControl':
       // CR 613.1b, 611.2 (D-189): a layer 2 effect (`rules/control-effects.ts`).
       return runGainControl(state, effect, ctx, targets);
+
+    case 'returnControlToOwners':
+      // CR 613.1b, 611.2a (D-628): one layer 2 effect for each owner (`rules/control-effects.ts`).
+      return runReturnControl(state, effect, ctx, targets);
 
     case 'exchangeControl':
       // CR 701.12a, 701.12b (Galadriel group 3): two layer 2 effects made together, or nothing (`rules/control-effects.ts`).

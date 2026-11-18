@@ -56,6 +56,8 @@ export interface ChooserAnchor {
   readonly abilityIndex?: number;
   /** While paying, for a source that sacrifices a permanent of a kind and also asks a color (D-222): the permanent already chosen, the color is asked next. */
   readonly sacrifice?: ObjectId;
+  /** While paying, for a source that taps a permanent and also asks a color (D-625): the permanent already chosen, the color is asked next. */
+  readonly tapped?: ObjectId;
   /** The card the popover points at, in the coordinates of the decision layer (issue 85). */
   readonly left: number;
   readonly top: number;

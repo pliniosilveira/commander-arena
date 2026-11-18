@@ -214,7 +214,6 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   lifeGained: { kind: 'lifeGained', who: 'you', firstEachTurn: true },
   countersAdded: { kind: 'countersAdded', what: { kind: 'this' }, counter: '+1/+1', by: 'you' },
   attackBatch: { kind: 'attackBatch', who: 'you', atLeast: 2 },
-  playerAttacked: { kind: 'playerAttacked', who: 'enchanted' },
   tappedForMana: {
     kind: 'tappedForMana',
     what: { types: ['creature'], controller: 'you' },

@@ -156,7 +156,19 @@ function walkEffect(
       return;
     case 'mayCast': {
       // D-135: the permission is for a card in the graveyard (`runMayCast` skips any other).
-      const zone = selectedFilter(effect.objects, targets)?.zone;
+      const filter = selectedFilter(effect.objects, targets);
+      // Lorehold group 2 (CR 607.2a): `from: 'exile'` is for a card the permanent exiled with its linked ability, which only `exiledWithSource` names.
+      if (effect.from === 'exile') {
+        if (filter?.zone !== 'exile' || filter.exiledWithSource !== true) {
+          out.push({
+            path: `${path}.objects`,
+            message:
+              "a cast permission from exile is for a card exiled with this permanent: the target says zone 'exile' and exiledWithSource",
+          });
+        }
+        return;
+      }
+      const zone = filter?.zone;
       if (zone !== 'graveyard') {
         out.push({
           path: `${path}.objects`,
@@ -243,9 +255,26 @@ function walkEffect(
       }
       return;
     case 'mayPay':
-      // CR 702.101a (D-120): paid as Ward's cost is (rules/pay-unless.ts): mana and life, no X.
+      // CR 702.101a (D-120): paid as Ward's cost is (rules/pay-unless.ts): mana, life and (Lorehold group 1, "you may pay {1} and discard a card") discarding cards, no X.
       // D-364: the life may be an amount, worked out as the instruction resolves (`rules/life-amounts.ts`).
-      activationCostIssues(effect.cost, `${path}.cost`, out, ['mana', 'payLife'], false, true);
+      activationCostIssues(
+        effect.cost,
+        `${path}.cost`,
+        out,
+        ['mana', 'payLife', 'discard'],
+        false,
+        true,
+      );
+      // The cards are discarded as Ward's discard is (rules/pay-unless.ts): any cards of the hand, no filter and no name.
+      effect.cost.forEach((c, i) => {
+        if (c.kind === 'discard' && (c.filter !== undefined || c.named !== undefined)) {
+          out.push({
+            path: `${path}.cost[${i}]`,
+            message:
+              'a discard in the payment of a "you may pay" takes any cards: no filter, no name',
+          });
+        }
+      });
       walkEffect(effect.effect, `${path}.effect`, out, targets, moved, subject);
       return;
     case 'regenerate':
@@ -451,14 +480,14 @@ function activationCostIssues(
   const tappingPermanents = costs.filter((c) => c.kind === 'tapPermanents').length;
   if (
     tappingPermanents > 1 ||
-    (tappingPermanents === 1 && costs.some((c) => c.kind === 'mana' || c.kind === 'tapCreatures'))
+    (tappingPermanents === 1 && costs.some((c) => c.kind === 'tapCreatures'))
   ) {
-    // `breakDown` (rules/activate-costs.ts) pays the permanents to tap before the sacrifice and the discard and never
-    // with mana: the player could have tapped them for mana first, and nothing promises they are still untapped.
+    // `breakDown` (rules/activate-costs.ts) pays the permanents to tap before the mana, the sacrifice and the discard (D-625: next to a mana
+    // cost too, the player chooses them before paying the mana); it has no place for a second one or for a crew cost.
     out.push({
       path,
       message:
-        'a cost that taps untapped permanents combined with another one, a mana cost or a creature-tapping cost is not implemented by the engine yet',
+        'a cost that taps untapped permanents combined with another one or a creature-tapping cost is not implemented by the engine yet',
     });
   }
   if (

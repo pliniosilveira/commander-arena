@@ -641,8 +641,8 @@ export type GameEvent =
   | { readonly kind: 'foretold'; readonly seat: SeatId; readonly object: ObjectId }
   /** CR 701.3 (Attach): an Aura or Equipment became attached to a permanent. */
   | { readonly kind: 'attached'; readonly object: ObjectId; readonly to: ObjectId }
-  /** CR 303.4, 702.5d (issue 159): an Aura that enchants a player ("Enchant player") entered the battlefield attached to `player`. */
-  | { readonly kind: 'attachedToPlayer'; readonly object: ObjectId; readonly player: SeatId }
+  /** An Aura that enchants a player entered attached to that player (CR 303.4b, issue 160, D-629). */
+  | { readonly kind: 'attachedToPlayer'; readonly object: ObjectId; readonly seat: SeatId }
   /**
    * CR 701.3d: an Aura or Equipment became unattached from `from` and stays on the battlefield
    * (an Aura that falls off goes to the graveyard, which is its `zoneChanged`). `reason` is

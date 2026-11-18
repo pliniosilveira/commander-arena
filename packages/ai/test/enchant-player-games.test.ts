@@ -1,4 +1,4 @@
-// CasualAgent and "Enchant player" (issue 159, CR 702.5d): the agent casts the SYNTHETIC Dread Curse of the engine's fixtures, and puts it on an opponent, not on itself;
+// CasualAgent and "Enchant player" (issue 159, CR 702.5d): the agent casts the SYNTHETIC Curse of Tithes of the engine's fixtures, and puts it on an opponent, not on itself;
 // whole games with it in the decks end with a result, no fallback and a consistent state, and replay to the same final state.
 import { type Action, checkInvariants } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
@@ -6,7 +6,7 @@ import { expect, test } from 'vitest';
 import { CasualAgent } from '../src/index';
 import { answer, answerFor, expectLegal } from './casual-helpers';
 
-const CURSE = 'SYNTHETIC Dread Curse';
+const CURSE = 'SYNTHETIC Curse of Tithes';
 const LIBRARY = Array.from({ length: 8 }, () => 'Swamp');
 
 test('the agent casts the Curse on its main phase and chooses the opponent as its target', async () => {
@@ -14,7 +14,7 @@ test('the agent casts the Curse on its main phase and chooses the opponent as it
     .seat(0)
     .library(...LIBRARY)
     .hand(CURSE)
-    .battlefield('Swamp', 'Swamp')
+    .battlefield('Plains', 'Plains')
     .seat(1)
     .library(...LIBRARY)
     .at('precombatMain', { active: 0, turn: 3 })

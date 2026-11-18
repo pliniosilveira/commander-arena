@@ -1184,17 +1184,14 @@ export function describeEvent(
       );
     }
     case 'attachedToPlayer': {
-      // Issue 159 (CR 303.4, 702.5d): an Aura with "Enchant player" enters attached to a player; its controller put it there as it resolved.
-      const attacher = after.objects[event.object]?.controller;
-      const to = event.player === attacher ? 'themselves' : who(event.player);
+      // D-629 (CR 303.4b): an Aura that enchants a player enters attached to that player.
+      const caster = after.objects[event.object]?.controller;
       return line(
         'major',
-        attacher === undefined
-          ? `${name(event.object)} enchants ${who(event.player)}.`
-          : `${who(attacher)} ${verb(attacher, 'enchant', 'enchants')} ${to} with ${name(event.object)}.`,
-        attacher ?? null,
+        `${name(event.object)} enchants ${who(event.seat)}.`,
+        caster ?? null,
         [event.object],
-        'CR 303.4',
+        'CR 303.4b',
       );
     }
     case 'unattached':

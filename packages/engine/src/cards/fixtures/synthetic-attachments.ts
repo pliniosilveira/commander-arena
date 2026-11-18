@@ -177,24 +177,6 @@ export const SYNTHETIC_ATTACHMENT_LIST: readonly CardDefinition[] = [
       }),
     ],
   }),
-  // Issue 159 (CR 303.4, 702.5a, 702.5d): an Aura that enchants a player. SYNTHETIC: invented for the tests of "Enchant player".
-  singleFace({
-    name: 'SYNTHETIC Dread Curse',
-    manaCost: ['1', 'B'],
-    types: ['enchantment'],
-    subtypes: ['Aura', 'Curse'],
-    colors: ['B'],
-    colorIdentity: ['B'],
-    oracleText: 'Enchant player. Whenever enchanted player is attacked, you gain 1 life.',
-    abilities: [
-      { kind: 'keyword', keyword: { kind: 'enchant', filter: {}, player: true } },
-      {
-        kind: 'triggered',
-        trigger: { kind: 'playerAttacked', who: 'enchanted' },
-        effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 1 },
-      },
-    ],
-  }),
   singleFace({
     name: 'SYNTHETIC Plague Banner',
     manaCost: ['2', 'B'],

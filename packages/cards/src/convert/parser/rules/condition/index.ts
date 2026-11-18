@@ -25,6 +25,7 @@ import { ANGEL_CONDITION_RULES } from './angels';
 import { ARDEN_CONDITION_RULES } from './arden';
 import { ARTIFACT_CONDITION_RULES } from './artifacts';
 import { BRUNA_CONDITION_RULES } from './bruna';
+import { CONDITION_CAST_IN_OWN_MAIN_PHASE } from './cast-phase';
 import { CHOOSER_CONDITION_RULES } from './choosers';
 import { DANITHA_G1B_CONDITION_RULES } from './danitha-g1b';
 import { DANITHA_G2_CONDITION_RULES, DANITHA_G2_LATE_CONDITION_RULES } from './danitha-g2';
@@ -43,6 +44,8 @@ import { CONDITION_IF_YOU_DO } from './if-you-do';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
 import { LIBRARY_CONDITION_RULES } from './library';
+import { LOREHOLD_G1_CONDITION_RULES } from './lorehold-g1';
+import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
 import { RECURSION_CONDITION_RULES } from './recursion';
@@ -521,9 +524,14 @@ export const CONDITION_RULES = [
   ...HYLDA_G1_CONDITION_RULES,
   // D-518, D-520 (Hylda deck, group 2): "there are four or more card types among cards in your graveyard", "enchanted creature is untapped".
   ...HYLDA_G2_CONDITION_RULES,
+  // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way".
+  ...LOREHOLD_G1_CONDITION_RULES,
+  // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand".
+  ...LOREHOLD_G3_CONDITION_RULES,
   // Galadriel deck, group 1 (issue 43): "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
   ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,
+  CONDITION_CAST_IN_OWN_MAIN_PHASE,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,
   CONDITION_IF_YOU_DO,

@@ -97,7 +97,22 @@ const CARD_KINDS = 'artifact|battle|creature|enchantment|land|planeswalker|insta
  * left out ("non" and the kind); the article agrees with the next word as English has it, so "an creature card" and "a artifact card" are not read. The filter has no zone: the
  * card is read where it went.
  */
-const DISCARDED_CARD: Parser<{ filter: IrFilter }> = (ctx, pos) => {
+const DISCARDED_CARD: Parser<{ filter: IrFilter; batch: boolean }> = (ctx, pos) => {
+  // Lorehold group 1 (CR 603.2c): "one or more cards", "one or more nonland cards": one trigger for the cards discarded together, whatever their number.
+  const many = pattern(
+    new RegExp(`one or more (?:(non)?(${CARD_KINDS}) )?cards${NOT_IN_WORD}`, 'iu'),
+  )(ctx, pos);
+  if (many.ok) {
+    const [whole, non, kind] = many.value;
+    const raw = whole.slice('one or more '.length);
+    const filter: IrFilter =
+      kind === undefined
+        ? { raw }
+        : non === undefined
+          ? { types: [kind.toLowerCase()], raw }
+          : { notTypes: [kind.toLowerCase()], raw };
+    return { ok: true, value: { filter, batch: true }, pos: many.pos };
+  }
   const r = pattern(new RegExp(`(an?) (?:(non)?(${CARD_KINDS}) )?card${NOT_IN_WORD}`, 'iu'))(
     ctx,
     pos,
@@ -114,13 +129,14 @@ const DISCARDED_CARD: Parser<{ filter: IrFilter }> = (ctx, pos) => {
       : non === undefined
         ? { types: [kind.toLowerCase()], raw }
         : { notTypes: [kind.toLowerCase()], raw };
-  return { ok: true, value: { filter }, pos: r.pos };
+  return { ok: true, value: { filter, batch: false }, pos: r.pos };
 };
 
 /**
  * `trigger.discarded`: "you discard a card", "you discard a creature card", "an opponent discards a card", "a player discards a card" (CR 701.9a, 603.2: once for each card,
  * however it is discarded). The card is "that card" of the ability (in the graveyard it went to, or in exile for madness); a kind of card (a creature card, a nonland card) is a
- * filter on it (Hashaton, Scarab's Fist; D-383, provisional number). Not read: "one or more cards", "your first card each turn", a card of two kinds, the past tense.
+ * filter on it (Hashaton, Scarab's Fist; D-383, provisional number). With Lorehold group 1 "one or more cards" and "one or more nonland cards" (CR 603.2c): one trigger for the cards
+ * discarded together, whatever their number. Not read: "your first card each turn", a card of two kinds, the past tense, a number of cards ("two cards"), cards with no "one or more".
  */
 export const TRIGGER_DISCARDED = defineRule<IrTrigger>({
   id: 'trigger.discarded',
@@ -136,10 +152,22 @@ export const TRIGGER_DISCARDED = defineRule<IrTrigger>({
     'you discard an artifact card',
     'you discard a nonland card',
     'a player discards an instant card',
+    'you discard one or more cards',
+    'you discard one or more nonland cards',
+    'you discard one or more creature cards',
+    'an opponent discards one or more cards',
+    'a player discards one or more land cards',
   ],
   rejects: [
     'you discard cards',
-    'you discard one or more cards',
+    'you discard one or more',
+    'you discard one or more creature or land cards',
+    'you discard one or more Zombie cards',
+    'you discard one or more card',
+    'you discard one or more nonlandcards',
+    'you discard one or more cards or',
+    'you discarded one or more cards',
+    'you discard two or more cards',
     'you discard creature cards',
     'you discard a creature or land card',
     'you discard a Zombie card',
@@ -184,6 +212,7 @@ export const TRIGGER_DISCARDED = defineRule<IrTrigger>({
         actor,
         // The card discarded is what "that card" of the ability means (CR 701.9a): the engine's `triggerSubject`.
         subject: makeNoun('trigger.discarded', card.span, 'a', card.value.filter),
+        ...(card.value.batch ? { batch: true as const } : {}),
         args: {},
         span: { start: pos, end: r.pos },
         rule: 'trigger.discarded',

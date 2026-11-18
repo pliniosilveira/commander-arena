@@ -1121,6 +1121,8 @@ export const TRIGGER_RULES = [
   ...ANGEL_TRIGGER_RULES,
   // Stage P65 (D-218): "one or more creatures attack", "one or more tokens you control enter", "you cast or copy an instant or sorcery spell".
   ...EDHREC_TRIGGER_RULES,
+  // Issue 160 (D-629): "Whenever enchanted player is attacked".
+  ...ENCHANTED_PLAYER_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,
@@ -1151,7 +1153,6 @@ export const TRIGGER_RULES = [
   ...EVENT_TRIGGER_RULES,
   // Issue 25 (D-333): "a source you control deals noncombat damage to an opponent".
   ...NONCOMBAT_DAMAGE_TRIGGER_RULES,
-  ...ENCHANTED_PLAYER_TRIGGER_RULES,
   // D-391 (Hashaton, group 9): "a source deals damage to ~".
   ...HASHATON_G9_TRIGGER_RULES,
   // Stage P49 (D-206): "one or more other creatures and/or artifacts you control die", "you discard a card".

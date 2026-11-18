@@ -21,18 +21,6 @@ export function withoutZone(filter: IrFilter): IrFilter {
 }
 
 export function lowerEnchant(ability: IrKeyword): LowerResult<readonly Ability[]> {
-  // "Enchant player" (issue 159, CR 702.5a, 702.5d): a player, never a permanent.
-  if (ability.quality === 'player' && ability.params.length === 0) {
-    const missing = missingFeatures(['ability:keyword', 'keyword:enchant']);
-    if (missing.length > 0) {
-      return { ok: false, needs: missing, at: ability.span, rule: ability.rule };
-    }
-    return {
-      ok: true,
-      value: [{ kind: 'keyword', keyword: { kind: 'enchant', filter: {}, player: true } }],
-      rule: 'keyword.enchant-player',
-    };
-  }
   const [what, ...more] = ability.params;
   if (what?.kind !== 'noun' || more.length > 0 || what.det !== 'a') {
     return { ok: false, needs: [], at: ability.span, rule: ability.rule };
@@ -47,6 +35,19 @@ export function lowerEnchant(ability: IrKeyword): LowerResult<readonly Ability[]
     ok: true,
     value: [{ kind: 'keyword', keyword: { kind: 'enchant', filter: filter.value } }],
     rule: 'keyword.enchant',
+  };
+}
+
+/** "Enchant player" (issue 160, D-629, CR 702.5a): the engine's `enchant` keyword of a player, whose filter of permanents is empty. */
+export function lowerEnchantPlayer(ability: IrKeyword): LowerResult<readonly Ability[]> {
+  const missing = missingFeatures(['ability:keyword', 'keyword:enchant']);
+  if (missing.length > 0) {
+    return { ok: false, needs: missing, at: ability.span, rule: ability.rule };
+  }
+  return {
+    ok: true,
+    value: [{ kind: 'keyword', keyword: { kind: 'enchant', filter: {}, player: true } }],
+    rule: 'keyword.enchant-player',
   };
 }
 

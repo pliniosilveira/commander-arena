@@ -406,7 +406,7 @@ describe('screens', () => {
         <Menu />
       </StoreProvider>,
     );
-    expect(out).toContain('Import a deck');
+    expect(out).toContain('Import deck');
     expect(out).toContain('Your decks');
     expect(out).not.toContain('Your requests');
   });

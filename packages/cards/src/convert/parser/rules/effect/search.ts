@@ -18,7 +18,7 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrDestinationList, IrFlag, IrNoun, IrZoneSpec, Span } from '../../ir/types';
+import type { IrAmount, IrDestinationList, IrFlag, IrNoun, IrZoneSpec, Span } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, single } from './operands';
 
@@ -129,7 +129,30 @@ function tailFor(cards: IrNoun, yours = true): Parser<Tail> {
       };
     }
     const placed = spanned(sequence(literal(', put '), put))(ctx, afterReveal);
-    if (!placed.ok) return placed;
+    if (!placed.ok) {
+      // Lorehold group 1 (CR 701.23): "search your library for a Plains card and put it onto the battlefield tapped": one card put at once, with no reveal and no shuffle in the same
+      // sentence (a shuffle after it is a sentence of its own: "If you search your library this way, shuffle.").
+      const andPut =
+        yours && !plural && !reveal.ok
+          ? spanned(sequence(literal(' and put '), all))(ctx, afterReveal)
+          : fail(ctx, afterReveal);
+      if (!andPut.ok) return placed;
+      const [, zones] = andPut.value.value;
+      return {
+        ok: true,
+        value: {
+          reveal: revealFlag,
+          destinations: {
+            kind: 'destinations',
+            items: zones,
+            span: andPut.value.span,
+            rule: RULE,
+          },
+          shuffle: flag(false, { start: andPut.pos, end: andPut.pos }),
+        },
+        pos: andPut.pos,
+      };
+    }
     const items = placed.value.value[1];
     const destinations: IrDestinationList = {
       kind: 'destinations',
@@ -166,10 +189,15 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for a card, put that card into your graveyard, then shuffle',
     'search your library for an artifact card, reveal that card, put it into your hand, then shuffle',
     'search your library for a basic land card, put it into your hand',
+    // Lorehold group 1 (Claim Jumper): the put is joined with "and", and a shuffle is another sentence.
+    'search your library for a Plains card and put it onto the battlefield tapped',
+    'search your library for a basic land card and put it into your hand',
     // D-405 (CR 701.24b): the found card is left out of the shuffle and put on top.
     'search your library for an enchantment card, reveal it, then shuffle and put that card on top',
     'search your library for an instant or sorcery card, reveal it, then shuffle and put it on top of your library',
     'search your library for a card, then shuffle and put that card on top',
+    // Issue 160 (D-626): "up to X", with X defined right after the noun.
+    'search your library for up to X basic land cards, where X is the number of tapped creatures you control, put those cards onto the battlefield tapped, then shuffle',
     'search your library for an artifact card, reveal that card, then shuffle and put the card on top',
   ],
   rejects: [
@@ -183,9 +211,15 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for a card, put it into your hand, discard a card at random, then shuffle',
     'search your library for up to three basic land cards, put one onto the battlefield and the other into your hand, then shuffle',
     'search your library for a basic land card and put it onto the battlefield tapped, then shuffle',
+    'search your library for a basic land card and put them onto the battlefield tapped',
+    'search your library for up to two basic land cards and put them onto the battlefield tapped',
+    'search your library for a creature card, reveal it and put it into your hand',
+    'search their library for a basic land card and put it onto the battlefield',
     'search their library for a basic land card, put it onto the battlefield, then shuffle',
     'search your library for a creature card with mana value 3 or less, put it onto the battlefield, then shuffle',
     'search your library for a card, reveal those cards, put it into your hand, then shuffle',
+    'search your library for up to X basic land cards, put those cards onto the battlefield tapped, then shuffle',
+    'search your library for up to X basic land cards, where X is the number of tapped creatures you control, put it onto the battlefield tapped, then shuffle',
   ],
   parse: single(
     RULE,
@@ -196,13 +230,31 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
       )(ctx, pos);
       if (!head.ok) return head;
       const cards = head.value[1];
-      const tail = tailFor(cards)(ctx, head.pos);
+      // Issue 160 (D-626, CR 107.3c): "up to X ... cards, where X is the number of tapped creatures you control": the definition comes right after the noun.
+      let after = head.pos;
+      let amount: IrAmount | null = null;
+      if (cards.count?.kind === 'x') {
+        const defined = sequence(
+          literal(', '),
+          family<IrAmount>('amount', { only: ['amount.where-x'] }),
+        )(ctx, after);
+        if (!defined.ok) return defined;
+        amount = defined.value[1];
+        after = defined.pos;
+      }
+      const tail = tailFor(cards)(ctx, after);
       if (!tail.ok) return tail;
-      return { ok: true, value: { cards, ...tail.value }, pos: tail.pos };
+      return { ok: true, value: { cards, amount, ...tail.value }, pos: tail.pos };
     },
-    ({ cards, reveal, destinations, shuffle }) => ({
+    ({ cards, amount, reveal, destinations, shuffle }) => ({
       verb: 'search',
-      args: { cards, destinations, reveal, shuffle },
+      args: {
+        cards,
+        destinations,
+        reveal,
+        shuffle,
+        ...(amount === null ? {} : { maxAmount: amount }),
+      },
     }),
   ),
 });
