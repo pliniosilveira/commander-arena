@@ -573,7 +573,7 @@ export function lowerCountedPtStep(
 }
 
 /** Whether the filter, or one of its `anyOf` members, is something a static ability's count cannot read (D-115). */
-function staticCannotRead(f: IrNoun['filter']): boolean {
+function staticCannotRead(f: IrNoun['filter'], keywords = false): boolean {
   // D-115, CR 613.8: the count reads types, colors, subtypes, controller and zone and never a power or a
   // toughness (the filter rules read "with power 4 or greater", which the engine refuses here). The objects of
   // another player ("your opponents control") are not counted by a static ability here; the cards in the graveyards
@@ -591,11 +591,11 @@ function staticCannotRead(f: IrNoun['filter']): boolean {
     f.manaValueX === true ||
     f.controllerDamagedBySource === true ||
     f.modified === true ||
-    f.keywords !== undefined ||
-    f.notKeywords !== undefined ||
+    // D-149 (CR 613.4c, 613.8): a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (7a) may not.
+    (!keywords && (f.keywords !== undefined || f.notKeywords !== undefined)) ||
     opponentsObjects ||
     typeof f.controller === 'object' ||
-    (f.anyOf?.some(staticCannotRead) ?? false)
+    (f.anyOf?.some((m) => staticCannotRead(m, keywords)) ?? false)
   );
 }
 
@@ -604,9 +604,11 @@ function countInStatic(
   amount: IrAmount,
   ctx: LowerContext,
   rule: string,
+  keywords = false,
 ): LowerResult<Extract<Amount, { kind: 'countOf' }>> {
   if (amount.kind !== 'countOf') return { ok: false, needs: [], at: amount.span, rule };
-  if (staticCannotRead(amount.of.filter)) return { ok: false, needs: [], at: amount.span, rule };
+  if (staticCannotRead(amount.of.filter, keywords))
+    return { ok: false, needs: [], at: amount.span, rule };
   const lowered = lowerAmount(amount, ctx, rule);
   if (!lowered.ok) return lowered;
   if (
@@ -624,6 +626,7 @@ function sumInStatic(
   amount: Extract<IrAmount, { kind: 'sum' }>,
   ctx: LowerContext,
   rule: string,
+  keywords = false,
 ): LowerResult<{
   readonly kind: 'sum';
   readonly of: readonly Extract<Amount, { kind: 'countOf' }>[];
@@ -632,7 +635,7 @@ function sumInStatic(
   if (missing.length > 0) return { ok: false, needs: missing, at: amount.span, rule };
   const parts: Extract<Amount, { kind: 'countOf' }>[] = [];
   for (const part of amount.of) {
-    const counted = countInStatic(part, ctx, rule);
+    const counted = countInStatic(part, ctx, rule, keywords);
     if (!counted.ok) return counted;
     parts.push(counted.value);
   }
@@ -678,10 +681,10 @@ export function lowerStaticPtStep(
   // D-539 (CR 613.4c): "+1/+1 for each land you control and each land card in your graveyard": the sum of counts; a step other than 1 of a sum is not a multiple the engine reads.
   if (count.kind === 'sum') {
     return step === 1
-      ? sumInStatic(count, ctx, rule)
+      ? sumInStatic(count, ctx, rule, true)
       : { ok: false, needs: [], at: count.span, rule };
   }
-  const counted = countInStatic(count, ctx, rule);
+  const counted = countInStatic(count, ctx, rule, true);
   if (!counted.ok || step === 1) return counted;
   const missing = missingFeatures(['amount:times']);
   if (missing.length > 0) return { ok: false, needs: missing, at: count.span, rule };

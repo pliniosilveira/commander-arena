@@ -40,7 +40,8 @@ type Effects = readonly IrStaticEffect[];
 /** "+2/+2", "-1/-1", "+3/-1": a change of power and toughness (CR 613.4c), never "+X/+X". */
 const PT: Parser<IrStaticEffect> = map(
   pattern(/([+-]\d+)\/([+-]\d+)(?![\p{L}\p{N}/])/u),
-  (m): IrStaticEffect => ({ kind: 'pt', power: Number(m[1]), toughness: Number(m[2]) }),
+  // `+ 0`: "-2/-0" is a change of 0, not the negative zero `Number('-0')` gives (`toEqual` and `Object.is` tell them apart).
+  (m): IrStaticEffect => ({ kind: 'pt', power: Number(m[1]) + 0, toughness: Number(m[2]) + 0 }),
 );
 
 const PERIOD = pattern(/\./);
