@@ -369,13 +369,15 @@ export function checkFilter(
       typeof a === 'number' ||
       (a?.kind === 'powerOf' && a.of?.kind === 'this') ||
       a?.kind === 'triggerDamage' ||
+      // CR 603.3d: "with mana value less than or equal to that spell's mana value" (a cast trigger; `validateCard` checks the trigger).
+      (a?.kind === 'manaValueOf' && a.of?.kind === 'triggerSubject') ||
       a?.kind === 'lifeGainedThisTurn' ||
       countOfTargetControllerGraveyard;
     if (!ok) {
       issue(
         out,
         `${path}.manaValueAtMost`,
-        'the limit is a number, the power of this or the damage that triggered the ability',
+        'the limit is a number, the power of this, the damage that triggered the ability or the mana value of the spell that triggered it',
       );
     }
     if (f.manaValue !== undefined) {
@@ -662,7 +664,7 @@ export function declareTargets(
   specs: readonly TargetSpec[] | undefined,
   path: string,
   out: Out,
-  /** D-145: only the targets of a spell's own text can divide something among them (CR 601.2d). */
+  /** D-145: only the targets of a spell's own text, an activated ability or a triggered ability (not a mode, not a reflexive ability) can divide something among them (CR 601.2d). */
   divideAllowed = false,
   /** D-187: only the targets of a reflexive ability after a sacrifice can be "up to that many" (CR 603.12). */
   thatManyAllowed = false,
@@ -1015,7 +1017,7 @@ export function declareTargets(
         issue(
           out,
           `${p}.divide`,
-          "only the targets of a spell's own text (not an ability, not a mode) can have a division",
+          "only the targets of a spell's own text, an activated ability or a triggered ability (not a mode) can have a division",
         );
       }
       checkStateAmount(spec.divide.total, `${p}.divide.total`, out, 'a division');

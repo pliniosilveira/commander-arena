@@ -332,7 +332,7 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
         const h = handle();
         if (o.modes !== undefined && state.casting?.stage === 'modes') h.modes(...o.modes);
         if (o.x !== undefined && state.casting?.stage === 'x') h.x(o.x);
-        if (o.targets !== undefined) h.targets(o.targets);
+        if (o.targets !== undefined) h.targets(o.targets, o.divide);
         if (o.pay) {
           if (state.pending?.kind === 'targets') {
             throw new ScenarioError(

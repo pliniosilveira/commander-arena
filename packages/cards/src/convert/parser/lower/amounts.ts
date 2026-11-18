@@ -363,7 +363,8 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       // "... as you cast this spell" (stage P32, D-147, CR 601.2d): read once as the spell is cast, which only the total of a divided
       // damage is; anywhere else the same words would be read as the spell resolves.
-      if (amount.asCast === true && !ctx.readAsCast) {
+      // "as you cast ~" names a spell: an ability has no cast (CR 601.2d, 602.2b), so its total is a number or an amount that reads no "cast".
+      if (amount.asCast === true && (!ctx.readAsCast || ctx.owner !== 'spell')) {
         return { ok: false, needs: [], at: amount.span, rule };
       }
       const filter = countFilter(amount.of);

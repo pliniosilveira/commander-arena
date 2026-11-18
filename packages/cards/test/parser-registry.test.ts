@@ -331,6 +331,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.x': spell((e) => `Draw ${e} cards.`),
   'amount.article': spell((e) => `Draw ${e} card.`),
   'amount.power-of': spell((e) => `Exile target creature. You gain life ${e}.`),
+  'amount.that-spells-mana-value': permanent(
+    (e) =>
+      `Whenever you cast a spell, return up to one target nonland permanent an opponent controls with mana value less than or equal to ${e} to its owner's hand.`,
+  ),
   'amount.mana-value-of': spell((e) => `Exile target creature. You lose life ${e}.`),
   'amount.times-kicked': spell((e) => `Draw a card ${e}.`),
   // Feather deck group 1 (D-450): the count of a pump, or of a draw, after "for each".
@@ -365,6 +369,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.control-your-commander': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.life-total': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.this-tapped': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
+  // CR 602.5b: "Activate only if ~ has a +1/+1 counter on it." is read after "if", like every condition.
+  'condition.this-has-counter': permanent((e) => `{2}, {T}: Draw a card. Activate only if ${e}.`),
   'static.each': asIs,
   'static.conditional-prefix': asIs,
   'static.conditional-suffix': asIs,
@@ -553,6 +559,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // D-295 to D-298 (the Niv-Mizzet deck, group B): the header of a modal spell, the damage to one or two targets and the sentence about what a target was.
   'modal.choose-widen': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.\n• Scry 1.`),
   'noun.one-or-two-targets': spell((e) => `~ deals 1 damage to ${e}.`),
+  'noun.one-or-two-targets-bare': spell(
+    (e) => `~ deals 2 damage divided as you choose among ${e}.`,
+  ),
+  'condition.that-spells-stat': permanent(
+    (e) => `Whenever you cast a creature spell, if ${e}, you gain 1 life.`,
+  ),
   'condition.its-mana-value': spell(
     (e) => `Return target creature to its owner's hand. If ${e}, scry 1.`,
   ),

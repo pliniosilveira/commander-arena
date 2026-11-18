@@ -11,7 +11,8 @@ import type { Ability } from '../ast/types';
 export function readsTriggerSubject(ability: Ability): boolean {
   if (ability.kind !== 'triggered') return false;
   // A modal ability keeps its effects in the modes (D-114).
-  const effects = JSON.stringify([ability.effect, ability.modes ?? []]);
+  // CR 603.3d: so does a target filter that reads the triggering object ("with mana value less than or equal to that spell's mana value").
+  const effects = JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]);
   if (effects.includes('"triggerSubject"') || effects.includes('"triggerCard"')) return true;
   // D-654 (CR 603.10a): "for each Aura you controlled that was attached to it" reads the Auras of the creature the trigger is about, from its last-known information.
   if (effects.includes('"aurasAttachedToTriggerSubject"')) return true;

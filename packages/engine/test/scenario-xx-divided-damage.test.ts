@@ -330,7 +330,30 @@ describe('the validator: a division and its damage go together, in a spell', () 
     expect(issues.length).toBeGreaterThan(0);
   });
 
-  test('the effect of an ability cannot divide: it is announced as a spell is cast', () => {
+  test('the effect of an activated or a triggered ability may divide: it is announced as the ability is put on the stack (CR 602.2b, 603.3d)', () => {
+    const card = syntheticCard('SYNTHETIC Duel');
+    const face = card.faces[0];
+    if (face === undefined) throw new Error('no face');
+    const targets = [{ id: 't1', what: { kind: 'anyTarget' }, divide: { total: 2 } }];
+    const effect = { kind: 'dealDividedDamage', to: { kind: 'target', id: 't1' } };
+    const withAbility = (ability: unknown) =>
+      ({ ...card, faces: [{ ...face, abilities: [ability] }] }) as never;
+    expect(
+      validateCard(withAbility({ kind: 'activated', cost: [{ kind: 'tap' }], targets, effect })),
+    ).toEqual([]);
+    expect(
+      validateCard(
+        withAbility({
+          kind: 'triggered',
+          trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+          targets,
+          effect,
+        }),
+      ),
+    ).toEqual([]);
+  });
+
+  test('the effect of a mode cannot divide: the modes are chosen with the targets, one decision for all of them', () => {
     const card = syntheticCard('SYNTHETIC Duel');
     const face = card.faces[0];
     if (face === undefined) throw new Error('no face');
@@ -339,20 +362,25 @@ describe('the validator: a division and its damage go together, in a spell', () 
       faces: [
         {
           ...face,
-          abilities: [
-            {
-              kind: 'activated',
-              cost: [{ kind: 'tap' }],
-              targets: [{ id: 't1', what: { kind: 'anyTarget' }, divide: { total: 2 } }],
-              effect: { kind: 'dealDividedDamage', to: { kind: 'target', id: 't1' } },
-            },
-          ],
+          spell: {
+            chooseModes: { min: 1, max: 1 },
+            modes: [
+              {
+                text: 'Deals 2 damage divided among one or two targets.',
+                targets: [
+                  { id: 't1', what: { kind: 'anyTarget' }, min: 1, max: 2, divide: { total: 2 } },
+                ],
+                effect: { kind: 'dealDividedDamage', to: { kind: 'target', id: 't1' } },
+              },
+              { text: 'Draw a card.', effect: { kind: 'draw', player: { kind: 'you' }, count: 1 } },
+            ],
+          },
         },
       ],
     };
     // biome-ignore lint/suspicious/noExplicitAny: a deliberately malformed card for the validator
     const issues = validateCard(bad as any).map((i) => i.message);
-    expect(issues.join('\n')).toContain('only the targets of a spell');
+    expect(issues.join('\n')).toContain('can have a division');
   });
 });
 

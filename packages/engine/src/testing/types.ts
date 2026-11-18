@@ -331,6 +331,8 @@ export interface ActivateOptions {
   readonly x?: number;
   /** Targets in slot order, as for `cast`. */
   readonly targets?: readonly TargetRef[];
+  /** The share of each target, in the order of `targets`, when the ability divides something among them (CR 601.2d, 602.2b). */
+  readonly divide?: readonly number[];
   /** Pay the mana cost with the planner straight away, when the engine asks for a payment. */
   readonly pay?: boolean;
 }

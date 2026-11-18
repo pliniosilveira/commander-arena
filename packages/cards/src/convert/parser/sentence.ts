@@ -125,11 +125,18 @@ const MANA_SPENT_CONDITIONS = [
   'condition.spell-mana-value-or-more',
 ] as const;
 
+/**
+ * "If that spell's power is 4 or greater, draw a card." (CR 208.1, 608.2c): a stat of the spell a cast trigger is about, read as the instruction comes up; the lowering
+ * reads it in the body of such a trigger only.
+ */
+const TRIGGER_SPELL_CONDITIONS = ['condition.that-spells-stat'] as const;
+
 /** Galadriel deck, group 1 (issue 43): "If this is the second time this ability has resolved this turn, the Ring tempts you." (CR 608.2c). */
 const RESOLUTION_CONDITIONS = ['condition.resolved-times'] as const;
 
 const LEAD_CONDITIONS = [
   ...MANA_SPENT_CONDITIONS,
+  ...TRIGGER_SPELL_CONDITIONS,
   ...RESOLUTION_CONDITIONS,
   ...DIE_CONDITIONS,
   // Stage P52 (D-210): "If a creature card was discarded this way, ..." after a discard.
