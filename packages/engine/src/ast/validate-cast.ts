@@ -224,10 +224,14 @@ export function checkCastFace(
   if (devours.length > 1) {
     issue(out, `${path}.abilities`, 'more than one devour ability on a face is not supported');
   }
-  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback') =>
+  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback' | 'retrace') =>
     abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === kind);
   if (has('flashback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'flashback is on an instant or a sorcery (CR 702.34a)');
+  }
+  // D-653 (CR 702.81a): "You may cast this card from your graveyard by discarding a land card": a land is played, never cast, so it has no retrace.
+  if (has('retrace') && face.types.includes('land')) {
+    issue(out, `${path}.abilities`, 'retrace is on a card that is cast, not a land (CR 702.81a)');
   }
   // Galadriel group 3, CR 702.27a: "put this spell into its owner's hand as it resolves" is said of an instant or a sorcery.
   if (has('buyback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
