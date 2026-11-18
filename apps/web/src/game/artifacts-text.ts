@@ -303,6 +303,16 @@ export function chosenCardMoveText(effect: Extract<Effect, { kind: 'moveToZone' 
     if (noun === null) return null;
     return `${objects.optional === true ? 'You may put' : 'Put'} ${noun} from among them into your hand`;
   }
+  // Issue 104 (CR 406.1, 608.2d): "You may exile a creature card from your graveyard": a card the controller chooses among those of their hand or graveyard and exiles.
+  if (objects.kind === 'choose' && effect.to === 'exile') {
+    const { zone, controller: _owner, ...kind } = objects.filter;
+    const count = objects.count ?? 1;
+    if ((zone !== 'hand' && zone !== 'graveyard') || count !== 1) return null;
+    const card = cardNoun(kind);
+    return card === null
+      ? null
+      : `${objects.optional === true ? 'You may exile' : 'Exile'} ${card} from your ${zone}`;
+  }
   if (objects.kind !== 'choose' || effect.to !== 'battlefield') return null;
   const { zone, controller: _controller, ...rest } = objects.filter;
   if (zone !== 'hand' && zone !== 'graveyard') return null;

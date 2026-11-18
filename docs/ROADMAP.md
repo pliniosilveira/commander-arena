@@ -583,3 +583,9 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 
 - A dies trigger that returns the card to the battlefield at the beginning of the next end step (as opposed to your next upkeep) is not read.
 - The Scryfall rulings were not fetched (the host is blocked in a cloud session).
+
+## A token copy of a card exiled from a graveyard (issue #104)
+
+- "Exile a card from your graveyard" is read for the player's own graveyard and one card (a creature card, a card of a type or subtype). Another player's graveyard, "up to two" and "a card from your hand" (the engine runs the hand too) are not read.
+- A copy exception is read only as a whole "it's a P/T color Type" (`token.copy-except`); "in addition to its other types" and "with haste" wordings are other rules (Embalm, Galadriel group 3).
+- The Scryfall rulings of God-Pharaoh's Gift and The Scarab God were not fetched (the host is blocked in a cloud session).

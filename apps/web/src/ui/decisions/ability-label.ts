@@ -801,6 +801,9 @@ function moveText(
       return `Put ${what} ${positionPhrase(effect.position ?? 'top')} ${owner} library`;
     case 'graveyard':
       return `Put ${what} into ${owner} graveyard`;
+    // CR 406.1: only a chosen card is exiled by a `moveToZone` (the choice is worded above); anything else is the `exile` effect.
+    case 'exile':
+      return `Exile ${what}`;
     case 'battlefield': {
       const kept = effect.withCounters;
       const withCounters =
