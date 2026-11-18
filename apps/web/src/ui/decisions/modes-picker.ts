@@ -11,7 +11,7 @@ import { type Index, plural } from './lookup';
 
 export { modeText, timesNote };
 
-type Counts = Pick<ChooseModesDecision, 'min' | 'max' | 'repeatable'>;
+type Counts = Pick<ChooseModesDecision, 'min' | 'max' | 'repeatable' | 'allOrNone'>;
 
 /** Why a mode cannot be picked: a mode is illegal when its targets cannot all be chosen (CR 700.2a). */
 export const NO_LEGAL_MODE = 'No legal target';
@@ -38,7 +38,9 @@ const word = (n: number): string => COUNT_WORDS[n] ?? String(n);
  * How many modes to choose, in the words of the cards: "one", "two", "one or both", "one or more".
  * Shapes the cards do not print ("up to two", "two or three") are said plainly.
  */
-export function modesCountWords({ min, max }: Counts): string {
+export function modesCountWords({ min, max, allOrNone }: Counts): string {
+  // CR 700.2b: "you may choose two": no mode, or exactly that many (the legal sets say it; the words say it too).
+  if (allOrNone === true) return `none or ${word(max)}`;
   if (min === max) return word(min);
   if (min === 1 && max === 2) return 'one or both';
   if (min === 1) return 'one or more';
@@ -192,7 +194,12 @@ export function modesDetail(
   d: Counts & Partial<Pick<ChooseModesDecision, 'sourceOracleText' | 'purpose'>>,
   picks: readonly number[],
 ): string {
-  const range = d.min === d.max ? String(d.max) : `${d.min} to ${d.max}`;
+  const range =
+    d.allOrNone === true
+      ? `0 or ${d.max}`
+      : d.min === d.max
+        ? String(d.max)
+        : `${d.min} to ${d.max}`;
   const full = picks.length >= d.max && d.max > 1 && d.min !== d.max;
   const again =
     d.repeatable === true ? 'Remove one to pick another.' : 'Clear one to pick another.';

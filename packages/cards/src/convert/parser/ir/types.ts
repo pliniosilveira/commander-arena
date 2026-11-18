@@ -1700,6 +1700,10 @@ export interface IrModeChoice {
    * of bullets, and `min` is 0 for "Choose up to three. You may choose the same mode more than once.".
    */
   readonly repeatable?: true;
+  /** "you may choose two" (CR 700.2b): no mode or exactly `max` of them, `min` is 0; the engine's `ModeChoice.allOrNone`. Only a triggered ability. */
+  readonly allOrNone?: true;
+  /** "Each mode must target a different player." (CR 700.2d): the engine's `ModeChoice.differentTargets`. */
+  readonly differentTargets?: true;
 }
 
 /** The header line of a modal spell or ability ("Choose one —"), read by the `modal` rules. */

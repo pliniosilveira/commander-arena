@@ -125,6 +125,30 @@ function checkChoice(
   if (choose.repeatable !== undefined && choose.repeatable !== true) {
     issue(out, `${p}.repeatable`, 'repeatable is true when present');
   }
+  for (const flag of ['allOrNone', 'differentTargets'] as const) {
+    if (choose[flag] !== undefined && choose[flag] !== true) {
+      issue(out, `${p}.${flag}`, `${flag} is true when present`);
+    }
+  }
+  if (choose.allOrNone === true) {
+    // CR 700.2b: "you may choose two": no mode chosen removes a triggered ability from the stack, which only a triggered ability has.
+    if (
+      !triggered ||
+      repeatable ||
+      choose.maxIf !== undefined ||
+      choose.min !== 0 ||
+      choose.max < 2
+    ) {
+      issue(
+        out,
+        `${p}.allOrNone`,
+        'allOrNone is for a triggered ability with min 0 and max of at least 2, without repeatable or maxIf',
+      );
+    }
+  }
+  if (choose.differentTargets === true && repeatable) {
+    issue(out, `${p}.differentTargets`, 'differentTargets is not for a repeatable choice');
+  }
   if (
     !isCount(choose.min) ||
     !isCount(choose.max) ||

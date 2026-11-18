@@ -71,6 +71,12 @@ describe('the heading and prompt', () => {
     expect(modesCountWords({ min: 2, max: 4 })).toBe('two to four');
   });
 
+  test('"you may choose two" (CR 700.2b) is said as none or two, and counted as 0 or 2', () => {
+    const may = { min: 0, max: 2, allOrNone: true as const };
+    expect(modesCountWords(may)).toBe('none or two');
+    expect(modesDetail(may, [0])).toContain('of 0 or 2 chosen');
+  });
+
   test('the prompt names the card, or "Name\'s ability" for an ability and a trigger', () => {
     expect(modesPrompt(decision())).toBe('Choose one mode for SYNTHETIC Three Way Charm.');
     expect(modesPrompt(decision({ min: 1, max: 2 }))).toBe(

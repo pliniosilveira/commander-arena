@@ -171,6 +171,9 @@ export function targetChoiceSpecs(
         : {}),
       ...(spec.differentControllers === true ? { eachController: true as const } : {}),
       ...(spec.differentFrom === undefined ? {} : { differentFrom: spec.differentFrom }),
+      ...(slotMode?.differentFrom === undefined
+        ? {}
+        : { differentFromAll: slotMode.differentFrom }),
       target: spec,
       legal,
       ...(slotMode === undefined ? {} : { mode: slotMode.mode }),
@@ -209,6 +212,13 @@ export function targetAnswerError(
       const others = chosen.filter((t) => t.specId === spec.differentFrom);
       if (picks.some((t) => others.some((o) => sameTargetOf(o, t)))) {
         return 'Those targets must be different from the other target';
+      }
+    }
+    // CR 700.2d: "each mode must target a different player": none is a target chosen for a slot of another chosen mode.
+    if (spec.differentFromAll !== undefined) {
+      const others = chosen.filter((t) => spec.differentFromAll?.includes(t.specId));
+      if (picks.some((t) => others.some((o) => sameTargetOf(o, t)))) {
+        return 'Each mode must have different targets';
       }
     }
     // D-149: at most one target for each opponent: two targets of one player's are refused (the group is read from the legal list).

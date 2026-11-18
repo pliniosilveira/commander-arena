@@ -33,6 +33,12 @@ export interface LoweredModes {
 /** The ability-level feature a modal spell or ability needs, for the dimension test. */
 export const MODAL_NEEDS: readonly FeatureRef[] = ['ability:modal'];
 
+/** What "you may choose two" and "each mode must target a different player" need (CR 700.2b, 700.2d): the engine's `ModeChoice.allOrNone` and `differentTargets`. */
+export const MODE_CHOICE_NEEDS: readonly FeatureRef[] = [
+  'ability:modeAllOrNone',
+  'ability:modeDifferentTargets',
+];
+
 /** What a mode with a cost listed before its effect needs (D-433): the engine's `SpellMode.cost`. */
 export const MODE_COST_NEEDS: readonly FeatureRef[] = ['ability:modeCost'];
 
@@ -72,6 +78,20 @@ export function lowerModes(
     (!repeatable && max > count)
   ) {
     return refuse(modal);
+  }
+  // CR 700.2b: "you may choose two" can choose no mode, which only a triggered ability may (it is removed from the stack).
+  if (choose.allOrNone === true && (!triggered || choose.min !== 0 || max < 2 || repeatable)) {
+    return refuse(modal);
+  }
+  if (choose.allOrNone === true || choose.differentTargets === true) {
+    const unrunnable = missingFeatures(
+      MODE_CHOICE_NEEDS.filter((ref) =>
+        ref === 'ability:modeAllOrNone'
+          ? choose.allOrNone === true
+          : choose.differentTargets === true,
+      ),
+    );
+    if (unrunnable.length > 0) return refuse(modal, unrunnable);
   }
   // "You may choose two instead" (D-297): the widened maximum is more than the usual one and no more than the number of modes.
   const widened = choose.widenTo ?? count;
@@ -132,6 +152,8 @@ export function lowerModes(
     ...(choose.notRepeatedBySource === true ? { notRepeatedBySource: true as const } : {}),
     // "You may choose the same mode more than once" (D-344, CR 700.2d): the modes chosen are a multiset.
     ...(repeatable ? { repeatable: true as const } : {}),
+    ...(choose.allOrNone === true ? { allOrNone: true as const } : {}),
+    ...(choose.differentTargets === true ? { differentTargets: true as const } : {}),
   };
   return { ok: true, value: { modes, chooseModes, usesX }, rule: modal.rule };
 }
