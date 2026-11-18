@@ -1872,8 +1872,10 @@ function runEffect(
     case 'discard': {
       // CR 701.9: each player named discards that many cards, choosing which (CR 701.9b).
       const anyNumber = effect.anyNumber === true;
-      const count = anyNumber ? 0 : amountOf(state, effect.count, ctx, targets);
-      if (count <= 0 && !anyNumber) return done(state);
+      // CR 701.9a: "discards their hand" is read for each player as their instruction runs (`runDiscard`), so there is no count here.
+      const wholeHand = effect.hand === true;
+      const count = anyNumber || wholeHand ? 0 : amountOf(state, effect.count, ctx, targets);
+      if (count <= 0 && !anyNumber && !wholeHand) return done(state);
       const seats = resolvePlayers(state, effect.player, ctx, targets);
       return done(
         state,
@@ -1883,6 +1885,7 @@ function runEffect(
           seat,
           count,
           ...(anyNumber ? { anyNumber: true as const } : {}),
+          ...(wholeHand ? { hand: true as const } : {}),
           ...(effect.random === true ? { random: true as const } : {}),
           ...(effect.unless === undefined ? {} : { unless: effect.unless }),
           chosen: null,

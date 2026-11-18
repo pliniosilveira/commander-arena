@@ -2195,6 +2195,11 @@ export type Effect =
        * unread. What was discarded is what a later `thisWay` `discarded` amount counts ("then draw that many cards").
        */
       readonly anyNumber?: true;
+      /**
+       * "Each player discards their hand" (Lorehold group 3, CR 701.9a, 402.1): every card of the hand of each player the selector names, as many as that player's hand holds when the
+       * instruction comes up (so the plural selectors discard each their own hand); nobody chooses. `count` is 0 and unread. Never with `anyNumber`, `unless` or `random`.
+       */
+      readonly hand?: true;
     }
   | { readonly kind: 'gainLife'; readonly player: PlayerSelector; readonly amount: Amount }
   | { readonly kind: 'loseLife'; readonly player: PlayerSelector; readonly amount: Amount }
@@ -3974,6 +3979,11 @@ export type Condition =
    * ability that works in layer 4 or 7b may have it; it is also the `while` of a `skipDraw` replacement.
    */
   | { readonly kind: 'cardsInLibrary'; readonly compare: NumberComparison }
+  /**
+   * "If a player has one or fewer cards in hand" (Lorehold group 3, CR 402.1, 603.4): some player still in the game, the controller or an opponent, has a number of cards in hand that
+   * meets the comparison (`atMost` 1 is "one or fewer"). Read as the ability triggers and again as it resolves (an intervening "if"); a player who has left the game has no hand to count.
+   */
+  | { readonly kind: 'aPlayerCardsInHand'; readonly compare: NumberComparison }
   /**
    * "If it escaped", "unless it escaped" (CR 702.138b, D-124): the spell that is resolving, or the permanent (and
    * its last-known information once it has left), was cast from a graveyard with an escape ability.

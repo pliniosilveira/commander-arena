@@ -195,7 +195,9 @@ export function runDiscard(
   const { seat } = instruction;
   const hand = getSeat(state, seat).hand;
   // D-151: "Discard any number of cards": as many as the hand holds may be chosen, none included.
-  const count = instruction.anyNumber === true ? hand.length : instruction.count;
+  // CR 701.9a: "discards their hand": the whole hand as it is when this player's instruction comes up, so nothing is chosen.
+  const count =
+    instruction.anyNumber === true || instruction.hand === true ? hand.length : instruction.count;
   // D-139: "discard N cards unless you discard an artifact card": the cards of the hand the filter matches may be discarded alone.
   const alone =
     instruction.unless === undefined

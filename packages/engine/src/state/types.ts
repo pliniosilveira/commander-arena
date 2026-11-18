@@ -1284,6 +1284,8 @@ export type Instruction =
       readonly anyNumber?: true;
       /** "Discard a card at random" (`discard.random`, D-209, CR 701.9b): the cards come from the hand as the game's generator picks them. */
       readonly random?: true;
+      /** "Discards their hand" (`discard.hand`, CR 701.9a): the whole hand of `seat` as the instruction comes up; `count` is unread. */
+      readonly hand?: true;
       /** The creature that connives (CR 701.50a, D-209): a nonland card discarded puts a +1/+1 counter on it, if it is still on the battlefield. */
       readonly conniver?: ObjectId;
       readonly chosen: readonly ObjectId[] | null;

@@ -785,6 +785,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsInGraveyard',
     // D-331: "as long as there are no cards in your library".
     'cardsInLibrary',
+    // Lorehold group 3: "if a player has one or fewer cards in hand" (CR 402.1, 603.4).
+    'aPlayerCardsInHand',
     // D-124: "if it escaped", "unless it escaped" (as `not`).
     'escaped',
     // D-127: "if this permanent came under your control since the beginning of your last upkeep" (Echo).
@@ -1468,6 +1470,8 @@ export const CONDITION_KINDS = [
   'cardsInGraveyard',
   /** "As long as there are no cards in your library" (CR 401.1, D-331): the engine's `cardsInLibrary`. */
   'cardsInLibrary',
+  /** "If a player has one or fewer cards in hand" (CR 402.1, 603.4; Lorehold group 3): the engine's `aPlayerCardsInHand`. */
+  'aPlayerCardsInHand',
   'and',
   'or',
   'not',

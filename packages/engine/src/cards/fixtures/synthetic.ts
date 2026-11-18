@@ -102,6 +102,7 @@ import { SYNTHETIC_LIFE_GAIN_LIST } from './synthetic-life-gain';
 import { SYNTHETIC_LIVING_LIST } from './synthetic-living';
 import { SYNTHETIC_LOREHOLD_G1_LIST } from './synthetic-lorehold-g1';
 import { SYNTHETIC_LOREHOLD_G2_LIST } from './synthetic-lorehold-g2';
+import { SYNTHETIC_LOREHOLD_G3_LIST } from './synthetic-lorehold-g3';
 import { SYNTHETIC_LOSE_GAME_LIST } from './synthetic-lose-game';
 import { SYNTHETIC_MANA_LIST } from './synthetic-mana';
 import { SYNTHETIC_MANA_INSTEAD_LIST } from './synthetic-mana-instead';
@@ -390,6 +391,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_LIFE_GAIN_LIST,
   ...SYNTHETIC_LOREHOLD_G1_LIST,
   ...SYNTHETIC_LOREHOLD_G2_LIST,
+  ...SYNTHETIC_LOREHOLD_G3_LIST,
   ...SYNTHETIC_LOSE_GAME_LIST,
   ...SYNTHETIC_DICE_LIST,
   ...SYNTHETIC_PLAYER_MORE_LIST,

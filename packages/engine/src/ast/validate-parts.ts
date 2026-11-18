@@ -2459,6 +2459,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.token`, 'token must be a boolean when present');
       }
       break;
+    case 'aPlayerCardsInHand': // Lorehold group 3, CR 402.1: the same shape, for the hands of the players
     case 'cardsInLibrary': // D-331, CR 401.1: the same shape, for the library
     case 'cardsInGraveyard':
       // D-229, CR 404.1: the number of cards in the controller's graveyard against a whole number.
@@ -4645,6 +4646,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       }
       // D-151: "Discard any number of cards": the player chooses how many, so `count` is 0 and nothing else narrows the choice.
+      // Lorehold group 3: "Each player discards their hand": the hand as the instruction comes up, so `count` is 0 and nothing else narrows or chooses.
+      if (e.kind === 'discard' && e.hand !== undefined) {
+        if (
+          e.hand !== true ||
+          e.count !== 0 ||
+          e.anyNumber !== undefined ||
+          e.unless !== undefined ||
+          e.random !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.hand`,
+            'hand is true, with a count of 0 and no "any number", "unless you discard" or "at random"',
+          );
+        }
+      }
       if (e.kind === 'discard' && e.anyNumber !== undefined) {
         if (e.anyNumber !== true || e.count !== 0 || e.unless !== undefined) {
           issue(
