@@ -1,5 +1,5 @@
 {
-  "parserVersion": 153,
+  "parserVersion": 154,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -276,6 +276,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5b5e6f38"
+    },
+    "06eb43af-637a-4f73-8071-a7036d4c8c3d": {
+      "name": "Corpse Augur",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "24a8fee4"
     },
     "07617648-6490-4719-acec-7705671f7e01": {
       "name": "Protege's Awakening",
@@ -575,6 +583,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d1880795"
+    },
+    "1080c5b5-6651-4c6a-93e6-099fbe389e26": {
+      "name": "Murderous Rider // Swift End",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a407f84a"
     },
     "12397dbf-99a9-40c3-aa7c-76d09baad008": {
       "name": "Teacher's Pest",
@@ -1673,6 +1689,14 @@
       "reasons": [],
       "ast": "b45efded"
     },
+    "36117e99-a2bc-46f9-8e17-bd2e2a9c31f4": {
+      "name": "Rot Hulk",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "53d6382b"
+    },
     "3635e4e5-e655-45f4-a444-39756f55129a": {
       "name": "Eldrazi Conscription",
       "group": "acceptance",
@@ -1827,6 +1851,14 @@
       "reasons": [],
       "ast": "94f727e1"
     },
+    "3b6f608d-f27d-44cd-b0a1-0e1e1aa1c98a": {
+      "name": "On Wings of Gold",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ee8bc203"
+    },
     "3bb518ff-399b-4ce7-b9ad-a1d563dd7792": {
       "name": "Arch of Orazca",
       "group": "acceptance",
@@ -1874,6 +1906,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "29685c40"
+    },
+    "3c49e98d-d33b-47fa-8b07-b38b367de2c7": {
+      "name": "Angel of Sanctions",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b829d1c1"
     },
     "3c4da169-1e50-4790-abdc-214e7b8a2ad5": {
       "name": "Thorin's Last Stand",
@@ -2324,6 +2364,14 @@
       "reasons": [],
       "ast": "44646418"
     },
+    "524e5098-9c6d-43ad-80cb-52fd6d14ef53": {
+      "name": "Priest of the Crossing",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fb6f03ab"
+    },
     "5277a68e-1ceb-4b40-8e10-3d0564f5d7be": {
       "name": "Jace, Wielder of Mysteries",
       "group": "acceptance",
@@ -2444,6 +2492,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "01c5c12c"
+    },
+    "55bceb83-bbba-477f-98ce-6e0a80b91080": {
+      "name": "Vizier of Many Faces",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ce611ade"
     },
     "55f3c721-e13a-406e-bc8e-d6cdc91ac477": {
       "name": "Authority of the Consuls",
@@ -2583,6 +2639,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c375aa82"
+    },
+    "5a682ec5-78e6-4238-b5c2-e94b7a8f8066": {
+      "name": "Gate to the Afterlife",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2f45734c"
     },
     "5a6d01c8-47b6-43e5-a6e9-c48088286007": {
       "name": "Strix Lookout",
@@ -2882,6 +2946,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "422686ad"
+    },
+    "642fa01d-025e-44dd-8360-5325e5a28282": {
+      "name": "Dread Summons",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8f15458b"
     },
     "64883ef2-c536-42e2-b52f-cfd1984fcdfd": {
       "name": "Fading Hope",
@@ -3222,6 +3294,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "021d1482"
+    },
+    "6eb5193b-5ef0-4261-acdc-958e161c8118": {
+      "name": "Wizened Mentor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "37d475f9"
     },
     "6f16c3ac-a9b8-47e6-b18b-ae37c74d44a0": {
       "name": "Nether Traitor",
@@ -3594,6 +3674,14 @@
       "reasons": [],
       "ast": "11943bc2"
     },
+    "7bc3f92f-68a2-4934-afc4-89f6d0e8cf98": {
+      "name": "Dusk // Dawn",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "09b647ae"
+    },
     "7c3a8766-e440-48c5-a561-197490efdba5": {
       "name": "Heirloom Blade",
       "group": "acceptance",
@@ -3782,6 +3870,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e090b618"
+    },
+    "7fca595e-1902-40fd-a359-622caa612b6a": {
+      "name": "Liliana, Death's Majesty",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c8c00319"
     },
     "800fb917-8898-4eba-9f94-aec6e9d75236": {
       "name": "Mazemind Tome",
@@ -4436,27 +4532,10 @@
     "9b2cdbed-c733-409b-b0e4-2c8960c25111": {
       "name": "Maskwood Nexus",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Creatures you control are every creature type. The same is true for creature spells you control and creature cards you own that aren't on the battlefield.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.permanents"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{3}, {T}: Create a 2/2 blue Shapeshifter creature token with changeling.",
-          "reason": "unrecognised",
-          "slot": "token",
-          "closestRule": "token.custom"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "1fed547a"
+      "ast": "4a35bd2a"
     },
     "9b40faad-1b96-4461-89d8-9a207b58e832": {
       "name": "Voice of Many",
@@ -4609,6 +4688,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4ece150a"
+    },
+    "9f2d2fda-f098-4375-8fe9-63f929e3928c": {
+      "name": "God-Pharaoh's Gift",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e305ff62"
     },
     "9f7d5e1c-bf5b-4ab9-bd6e-2627b4d22b36": {
       "name": "Zada, Hedron Grinder",
@@ -5473,6 +5560,14 @@
       "reasons": [],
       "ast": "112bcd91"
     },
+    "bf276236-18a6-4a48-b47d-5227832d26e6": {
+      "name": "Never // Return",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c8c6700c"
+    },
     "bffdfe7b-f17a-41b6-a460-80280fe497d4": {
       "name": "Collective Resistance",
       "group": "training",
@@ -5553,6 +5648,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1970937d"
+    },
+    "c26964c7-4259-4281-b450-f0c2ed34b37c": {
+      "name": "Forgotten Creation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5dd766c0"
     },
     "c2c47e13-b581-41a8-a4af-542557a6249a": {
       "name": "Il Mheg Pixie",
@@ -5689,6 +5792,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b989839b"
+    },
+    "c75e55f2-fd6c-4816-9d96-21eeb8369aff": {
+      "name": "The Scarab God",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9713ede0"
     },
     "c78783e5-868d-4a8b-a4f8-95a92853cf0a": {
       "name": "Naktamun Lorespinner // Wheel of Fortune",
@@ -6519,6 +6630,14 @@
       "reasons": [],
       "ast": "c9b9a65c"
     },
+    "e445825a-e70e-4796-99be-4a7c4080b8cc": {
+      "name": "Rhet-Tomb Mystic",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8bbcb07f"
+    },
     "e4ed7935-0263-4cde-8118-ac18fffce3ef": {
       "name": "Determined Iteration",
       "group": "acceptance",
@@ -6807,6 +6926,14 @@
       ],
       "reasons": [],
       "ast": "ea59a6f1"
+    },
+    "eefe2d53-4856-465d-a900-77836ef9ae07": {
+      "name": "Prophet of the Scarab",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2bae1436"
     },
     "ef6c0054-3a89-4fac-b822-37c7d2514489": {
       "name": "Matoya, Archon Elder",
@@ -7336,8 +7463,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 556,
-      "total": 588
+      "supported": 575,
+      "total": 606
     }
   }
 }
