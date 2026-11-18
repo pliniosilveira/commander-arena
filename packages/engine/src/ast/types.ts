@@ -2835,6 +2835,17 @@ export type Effect =
       readonly awayFromYou?: true;
     }
   /**
+   * "During target opponent's next turn, creatures that player controls attack this planeswalker if able." (CR 508.1d, 508.1a, 611.2a, 611.2c): a requirement on the
+   * creatures the player `player` controls, read whenever that player declares attackers, for the creatures they control then (a creature that arrives later is required too,
+   * CR 611.2c is about characteristics). Each such creature that is able to attack the permanent with the ability attacks it. It lasts through the end of that player's next turn
+   * (the turn it resolves in not counted). Only in the ability of a permanent; the player is fixed as the effect resolves (a target player).
+   */
+  | {
+      readonly kind: 'requireAttackSource';
+      readonly player: PlayerSelector;
+      readonly duration: 'untilEndOfTheirNextTurn';
+    }
+  /**
    * "Goad target creature" (D-639, CR 701.15a-d): each creature `objects` names is goaded by the controller of the effect until their next turn begins (CR 500.1, the
    * turn it resolves in not counted): it attacks each combat if able and attacks a player other than that controller if able (CR 701.15b). The set is fixed
    * when the effect resolves (CR 611.2c); a creature already goaded by the same player is not goaded again and the first goad keeps its end (CR 701.15d).

@@ -20,6 +20,7 @@ import { SYNTHETIC_ASCEND_LIST } from './synthetic-ascend';
 import { SYNTHETIC_ATTACHMENT_LIST } from './synthetic-attachments';
 import { SYNTHETIC_ATTACK_BATCH_LIST } from './synthetic-attack-batch';
 import { SYNTHETIC_ATTACK_LIMIT_LIST } from './synthetic-attack-limits';
+import { SYNTHETIC_ATTACK_MAGNET_LIST } from './synthetic-attack-magnet';
 import { SYNTHETIC_BATCH_LIST } from './synthetic-batch';
 import { SYNTHETIC_BIG_DISCOUNT_LIST } from './synthetic-big-discount';
 import { SYNTHETIC_BITE_EXCESS_LIST } from './synthetic-bite-excess';
@@ -496,6 +497,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_KORVOLD_TRIGGERS_LIST,
   ...SYNTHETIC_KORVOLD_KEYWORDS_LIST,
   ...SYNTHETIC_KORVOLD_SINGLES_LIST,
+  ...SYNTHETIC_ATTACK_MAGNET_LIST,
   ...SYNTHETIC_CONTROL_LIST,
   ...SYNTHETIC_ADAMANTOISE_LIST,
   ...SYNTHETIC_VOTE_LIST,

@@ -209,6 +209,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'preventPlayerLifeTotalChange',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".
     'requireAttack',
+    // "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (CR 508.1d).
+    'requireAttackSource',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
     'permanentsEnterTapped',
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
@@ -2019,6 +2021,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   restrict: true,
   goad: true,
   requireAttack: true,
+  requireAttackSource: true,
   permanentsEnterTapped: true,
   gainControl: true,
   exchangeControl: true,
