@@ -10,7 +10,7 @@ import {
   type ObjectId,
   type PendingDecision,
 } from '@commander-arena/engine';
-import type { ReactNode } from 'react';
+import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import { turnUpPayDetail } from '../../game/face-down-text';
 import { specialPayDetail } from '../../game/later-text';
 import { ManaCost } from '../mana';
@@ -71,9 +71,23 @@ function Hand({
   onPick?: (id: ObjectId) => void;
 }) {
   const cards = myHand(view).filter((o) => ids.includes(o.id));
-  // Issue 48: whole cards in one row that scrolls sideways (`.dec-hand-grid` sizes them).
+  // Issue 48: whole cards in one row that scrolls sideways (`.dec-hand-grid` sizes them). When the
+  // row is wider than the dialog it opens centred on the middle card (the 4th of 7), so a card is
+  // cut off at each end and none is hidden. It centres again when the hand changes, not when a
+  // card is picked.
+  const row = useRef<HTMLDivElement>(null);
+  const hand = cards.map((card) => card.id).join(',');
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `hand` is what tells a new hand
+  useLayoutEffect(() => {
+    const box = row.current;
+    const middle = box?.children[Math.floor((cards.length - 1) / 2)];
+    if (box === null || middle === undefined) return;
+    const at = box.getBoundingClientRect();
+    const card = middle.getBoundingClientRect();
+    box.scrollLeft += card.left + card.width / 2 - (at.left + at.width / 2);
+  }, [hand]);
   return (
-    <div className="dec-hand dec-hand-grid">
+    <div className="dec-hand dec-hand-grid" ref={row}>
       {cards.map((card) => (
         <MiniCard
           key={card.id}

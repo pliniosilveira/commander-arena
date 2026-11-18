@@ -644,14 +644,14 @@
   gap: 8px;
 }
 /* Issue 48 (opening hand, discard): whole cards in one row that scrolls sideways, as large as the
-   height of the window allows, scaled by --dec-hand-scale: never under 134px or over 228px wide
+   height of the window allows, scaled by --dec-hand-scale: never under 141px or over 239px wide
    (200px and 340px before the scale), and never taller than what the title and the buttons leave
    (a card is 488:680). */
 .dec-hand-grid {
   /* The height the title, the buttons and the padding of the dialog take; what the cards may not use. */
   --dec-hand-chrome: 270px;
-  /* A third smaller than the largest cards the window would take (the owner's size). */
-  --dec-hand-scale: 0.67;
+  /* A third smaller than the largest cards the window would take, and 5% back: 0.67 * 1.05. */
+  --dec-hand-scale: 0.7035;
   --card-w: calc(
     clamp(200px, calc((100dvh - var(--dec-hand-chrome)) / 1.3935), 340px) *
     var(--dec-hand-scale)
