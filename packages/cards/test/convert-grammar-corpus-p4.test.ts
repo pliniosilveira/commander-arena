@@ -171,8 +171,8 @@ const FLASHBACK: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Draw a card.\nFlashback—{1}{U}, Pay 3 life.',
-    expect: no('Flashback—{1}{U}, Pay 3 life.', 'keyword.flashback', NOT_RUNNABLE),
-    note: 'SYNTHETIC; the engine pays a mana cost for flashback, nothing else',
+    expect: OK,
+    note: 'SYNTHETIC; a mana cost and a payment of life (Deep Analysis, Grave Danger deck, issue 159)',
   },
   {
     kind: 'sorcery',

@@ -125,6 +125,11 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'lifeGainedThisTurn', atLeast: test.atLeast });
     }
+    case 'castFromGraveyardThisTurn': {
+      // Issue 159 (CR 601.2a, 602.2): the turn log of the controller of the condition.
+      const blocked = missingFeatures(['condition:castFromGraveyardThisTurn']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'castFromGraveyardThisTurn' });
+    }
     case 'lifeGainedAndLostThisTurn': {
       const blocked = missingFeatures(['condition:lifeGainedAndLostThisTurn']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'lifeGainedAndLostThisTurn' });
@@ -368,6 +373,25 @@ export function lowerCondition(
         at.movedOnto === id ? ({ kind: 'moved' } as const) : ({ kind: 'target', id } as const);
       return ok({ kind: 'objectMatches', of, filter: filter.value });
     }
+    case 'milledThisWay': {
+      // Issue 159 (CR 608.2c, 701.17a): the cards the mill before it put into the graveyard, any of them: the clause before must be a mill of your own library (`ctx.milled`).
+      const blocked = missingFeatures(['condition:objectMatches']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.milled !== true) return failure(c, []);
+      const filter = lowerFilter({
+        kind: 'noun',
+        det: 'a',
+        filter: test.filter,
+        upTo: false,
+        plural: false,
+        other: false,
+        span: c.span,
+        rule: c.rule,
+      });
+      return filter.ok
+        ? ok({ kind: 'objectMatches', of: { kind: 'moved' }, filter: filter.value, any: true })
+        : filter;
+    }
     case 'exiledThisWay':
     case 'putThisWay': {
       // "If you put a Cave onto the battlefield this way" (stage P37, D-180, CR 608.2c, 400.7j): the object the instruction before it moved, as it is
@@ -472,6 +496,29 @@ export function lowerCondition(
       return blocked.length > 0
         ? failure(c, blocked)
         : ok({ kind: 'manaSpentAtLeast', count: test.count });
+    }
+    case 'movedTotalManaValue': {
+      // CR 202.3, 608.2c (D-661): the cards an instruction before this one exiled (`moved`), added up; no other cards are named.
+      if (ctx?.lastEffectKind !== 'exileTopAnyNumber' && ctx?.lastEffectKind !== 'exileTop') {
+        return failure(c, []);
+      }
+      const blocked = missingFeatures(['condition:movedTotalManaValue']);
+      if (blocked.length > 0) return failure(c, blocked);
+      return ok({
+        kind: 'movedTotalManaValue',
+        compare: { cmp: 'atMost', value: test.atMost },
+      });
+    }
+    case 'triggerSpellManaValue': {
+      // CR 202.3, 608.2h (D-646): "that spell" is the spell that caused the trigger, read as it is on the stack or as it last was; in any other text no spell is named, so it is not lowered.
+      if (ctx?.castTrigger !== true) return failure(c, []);
+      const blocked = missingFeatures(['condition:objectMatches', 'selector:triggerSubject']);
+      if (blocked.length > 0) return failure(c, blocked);
+      return ok({
+        kind: 'objectMatches',
+        of: { kind: 'triggerSubject' },
+        filter: { manaValue: { cmp: 'atLeast', value: test.atLeast } },
+      });
     }
     case 'cardLeftYourGraveyard': {
       // CR 400.7 (stage P49, D-206): the turn log of cards that left a graveyard.

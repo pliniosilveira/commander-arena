@@ -24,7 +24,7 @@ type DialogState = { readonly kind: 'why'; readonly oracleId: string } | null;
 
 const TABS: readonly { readonly id: ImportTab; readonly label: string }[] = [
   { id: 'import', label: 'Paste a list' },
-  { id: 'decks', label: 'Your decks' },
+  { id: 'decks', label: 'My decks' },
 ];
 
 export function ImportScreen() {

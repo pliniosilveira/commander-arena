@@ -109,6 +109,10 @@ describe('amounts that read an object', () => {
       'votesFor',
       // D-450: "for each card you've drawn this turn" (CR 121.1).
       'cardsDrawnThisTurn',
+      // D-638 (CR 601.2i): the instants and sorceries cast this turn.
+      'spellsCastThisTurn',
+      // D-646 (CR 202.3, 601.2i): the greatest mana value among the spells cast this turn.
+      'greatestManaValueCast',
       'sacrificedAsCost',
       // D-575: the cards selected for a spell's optional hand-exile cost.
       'exiledAsCost',

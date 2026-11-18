@@ -119,6 +119,7 @@ describe('the dimensions', () => {
       'lifeTotal',
       'thisMatches',
       'didPrevious',
+      'movedTotalManaValue',
       // D-210: "if a creature card was discarded this way".
       'thisWayAtLeast',
       'objectMatches',
@@ -151,6 +152,8 @@ describe('the dimensions', () => {
       'lifeGainedThisTurn',
       // D-591: life gain and life loss are both recorded this turn.
       'lifeGainedAndLostThisTurn',
+      // Issue 159: "if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
+      'castFromGraveyardThisTurn',
       // D-318: "Activate only if you've cast three or more spells this turn".
       'spellsCastThisTurn',
       // Issue 279: "if you attacked with three or more creatures this turn".
@@ -186,6 +189,8 @@ describe('the dimensions', () => {
       'grantAbility',
       'restriction',
       'costReduction',
+      // D-641 (CR 601.2f): strive, "costs {2}{R} more to cast for each target beyond the first".
+      'costPerExtraTarget',
       // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
       'abilityCostReduction',
       'setTypes',

@@ -62,6 +62,14 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       'a mana ability adds a fixed amount of mana, never a count',
     );
   }
+  // D-650: the mana that stays through steps and phases is the mana of a spell or a triggered ability's instruction; a mana ability's mana empties as any mana does.
+  if (a.production?.kind === 'fixed' && a.production.staysUntilEndOfTurn !== undefined) {
+    issue(
+      out,
+      `${path}.production.staysUntilEndOfTurn`,
+      'the mana of a mana ability empties as steps and phases end',
+    );
+  }
   if (a.production?.kind === 'couldProduce') {
     // The permanents whose mana is looked at are on the battlefield (CR 106.7).
     if (a.production.lands === undefined || a.production.lands === null) {

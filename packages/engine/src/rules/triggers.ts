@@ -1202,6 +1202,9 @@ function findDelayedTriggers(
       .filter(
         (occ) =>
           (delayed.watched === undefined || occ.subject === delayed.watched) &&
+          // Issue 159: "When you cast it this turn": only a spell cast from that card.
+          (delayed.watchedCard === undefined ||
+            (occ.subject !== null && state.objects[occ.subject]?.card === delayed.watchedCard)) &&
           matches(state, trigger, occ, candidate),
       );
     if (matched.length === 0) {

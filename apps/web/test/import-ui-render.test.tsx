@@ -395,7 +395,7 @@ describe('screens', () => {
     expect(out).toContain('Back to menu');
     expect(out).toContain('aria-label="Import sections"');
     expect(out).toContain('aria-current="page"');
-    expect(out).toContain('Your decks');
+    expect(out).toContain('My decks');
     expect(out).not.toContain('Your requests');
     expect(out).toContain('Import a deck');
   });
@@ -407,7 +407,7 @@ describe('screens', () => {
       </StoreProvider>,
     );
     expect(out).toContain('Import deck');
-    expect(out).toContain('Your decks');
+    expect(out).toContain('My decks');
     expect(out).not.toContain('Your requests');
   });
 });

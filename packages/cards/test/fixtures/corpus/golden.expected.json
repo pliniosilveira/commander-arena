@@ -1,5 +1,5 @@
 {
-  "parserVersion": 149,
+  "parserVersion": 150,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -285,23 +285,6 @@
       "reasons": [],
       "ast": "5d9fd28c"
     },
-    "078def07-ae5d-4591-8db6-d156834aab97": {
-      "name": "Etali, Primal Storm",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever ~ attacks, exile the top card of each player's library, then you may cast any number of spells from among those cards without paying their mana costs.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.exile-top-face-down"
-        }
-      ],
-      "reasons": [],
-      "ast": "b168b08a"
-    },
     "07a0cba9-8768-4fd9-a3d5-b0f83b4bf8e8": {
       "name": "Chaos Warp",
       "group": "training",
@@ -350,14 +333,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "04b35336"
-    },
-    "08becc07-28bc-4a2f-a6b0-28a2998d2f50": {
-      "name": "Windfall",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "1bc914df"
     },
     "08d80efc-9542-4ba2-824c-c8615d8d07f2": {
       "name": "Undercity Sewers",
@@ -496,6 +471,14 @@
       "reasons": [],
       "ast": "21f03046"
     },
+    "0ca4e80e-c19c-4b74-b531-c5a4dc5a8ba9": {
+      "name": "Restless Spire",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "dc66dcae"
+    },
     "0d4ecdb1-ec90-497f-a7a4-1c68092b8757": {
       "name": "Teferi's Protection",
       "group": "training",
@@ -548,19 +531,10 @@
     "0fd114c4-092b-4e28-b0dc-ef529f3bc73e": {
       "name": "Jeska's Will",
       "group": "holdout",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Choose one. If you control a commander as you cast ~, you may choose both instead.\n• Add {R} for each card in target opponent's hand.\n• Exile the top three cards of your library. You may play them this turn.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.add-mana"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "9f7467d2"
+      "ast": "e7e7699c"
     },
     "0fe16212-66c3-4e45-a641-7391e9b2e304": {
       "name": "Shivan Reef",
@@ -684,6 +658,14 @@
       "reasons": [],
       "ast": "07985f6a"
     },
+    "163baf58-b35d-4f2b-aa53-8384b8b5800a": {
+      "name": "Replication Technique",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bd3017f8"
+    },
     "16629f59-bae8-4c19-bf50-443eb0ed6856": {
       "name": "Felidar Retreat",
       "group": "acceptance",
@@ -747,6 +729,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f8995fba"
+    },
+    "185e34f0-60ae-4b07-94ac-96cef11b1604": {
+      "name": "Vela the Night-Clad",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f301d892"
     },
     "186b4def-4fff-4a2b-bcbf-5318b0ac5fa9": {
       "name": "Garruk Wildspeaker",
@@ -868,6 +858,14 @@
       "reasons": [],
       "ast": "74084e43"
     },
+    "1c6a0d19-c7dd-4353-95ad-dfdef2d5d2d9": {
+      "name": "Laboratory Drudge",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9fbd6d07"
+    },
     "1d5ff280-7f4d-4801-aefd-9b6e6b1f2818": {
       "name": "Ajani, Caller of the Pride",
       "group": "acceptance",
@@ -883,6 +881,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2d4f4daf"
+    },
+    "1fb02bad-0d1f-437f-a269-f51cc19b280f": {
+      "name": "Havengul Lich",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "16010b8f"
     },
     "1ff25f67-36a7-4cfa-a2b1-2135b5b6fb67": {
       "name": "Scavenging Ooze",
@@ -907,6 +913,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "57e20b87"
+    },
+    "20e94d0f-6887-45f8-a137-877011d786c6": {
+      "name": "Gisa and Geralf",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "01389bc9"
     },
     "212d058b-69c6-4dc2-8c93-bdfe26dc2ffe": {
       "name": "Hammer of Purphoros",
@@ -1254,23 +1268,6 @@
       "reasons": [],
       "ast": "cdf8dcbc"
     },
-    "2ef75cf3-30dc-4852-a6d1-1d6391fad022": {
-      "name": "Forgotten Ancient",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "At the beginning of your upkeep, you may move any number of +1/+1 counters from ~ onto other creatures.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
-      "reasons": [],
-      "ast": "545fc18d"
-    },
     "2ef797ef-c05f-4309-85c7-1bd151dac3fa": {
       "name": "Far Wanderings",
       "group": "acceptance",
@@ -1408,6 +1405,14 @@
       "reasons": [],
       "ast": "5ecccdb8"
     },
+    "32972d7a-c7c6-437c-8e7c-6c7d56b130e4": {
+      "name": "Scourge of Nel Toth",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8bf43001"
+    },
     "32e5339e-9e4f-46f8-b305-f9d6d3ba8bb5": {
       "name": "Lotus Petal",
       "group": "training",
@@ -1455,6 +1460,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7e2b33f9"
+    },
+    "348c67ef-9ccc-4651-9038-efdf1ad1b36a": {
+      "name": "Rootha, Mastering the Moment",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "219e1a5a"
     },
     "3494a575-f68e-4e78-9f6b-142cd8a0edea": {
       "name": "Combustible Gearhulk",
@@ -1529,14 +1542,6 @@
         "faces[1].types: layout transform with a planeswalker or battle back face is not implemented by the engine yet"
       ],
       "ast": "6f040bf3"
-    },
-    "3589bcfc-42b0-414a-adce-bc690dc631c8": {
-      "name": "Windbrisk Heights",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "e71e09a8"
     },
     "35b2b172-5fbc-4e4d-a011-390ee1b6c848": {
       "name": "Goddric, Cloaked Reveler",
@@ -1779,6 +1784,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ffd3bd2b"
+    },
+    "3e0e3676-e634-4e64-bdfd-4aaa5885461f": {
+      "name": "Abstract Performance",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "75c6ffcd"
     },
     "3f4e300a-ec5c-42f3-a97b-d58e62abe22b": {
       "name": "Season of Growth",
@@ -2093,6 +2106,14 @@
       "reasons": [],
       "ast": "fb10320f"
     },
+    "4f66489c-5a19-40ad-9126-461fa8231f1b": {
+      "name": "Liliana, Untouched by Death",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a20f8a8a"
+    },
     "4f819ba4-52ef-4fdd-8e4c-5ae3b2f44db5": {
       "name": "Ramunap Excavator",
       "group": "training",
@@ -2116,6 +2137,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "511a0fc4"
+    },
+    "515c522f-51d5-4f6d-b9b1-ea3c7f6a378e": {
+      "name": "Rousing Refrain",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "de6cec4d"
     },
     "516101be-be39-4d84-8fee-d8a79930dd0a": {
       "name": "Sphinx of the Second Sun",
@@ -2278,23 +2307,6 @@
       "reasons": [],
       "ast": "ff07c294"
     },
-    "5669ea7c-c4fc-494c-896b-4bce9b494817": {
-      "name": "Curse of the Swine",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Exile X target creatures. For each creature exiled this way, its controller creates a 2/2 green Boar creature token.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "spell.effect"
-        }
-      ],
-      "reasons": [],
-      "ast": "cc5da5a8"
-    },
     "56fd0752-9fb0-4c05-90e5-c3b268b57c6f": {
       "name": "Cone of Cold",
       "group": "acceptance",
@@ -2310,6 +2322,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "bdf7e65d"
+    },
+    "579cbd92-797f-4cdf-91ed-fca7a523eae5": {
+      "name": "Deep Analysis",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "110187e4"
     },
     "580996d4-db9a-4b57-a0e1-a2dbb524121a": {
       "name": "Razorlash Transmogrant",
@@ -2500,13 +2520,13 @@
       "reasons": [],
       "ast": "ac73db81"
     },
-    "5e62b51d-faec-4aa0-9504-cf2c282d08ea": {
-      "name": "Rakdos Charm",
+    "5e0bd136-e7e9-49f0-910b-a9fb0b9c481a": {
+      "name": "Lotleth Giant",
       "group": "acceptance",
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "e4b2006b"
+      "ast": "48dd05c9"
     },
     "5e958212-6a5b-4288-8d31-f1572619d7dc": {
       "name": "Liliana, Dreadhorde General",
@@ -2571,6 +2591,30 @@
       "unparsed": [],
       "reasons": [],
       "ast": "42a23b9a"
+    },
+    "615b4189-e800-408b-99e0-71ae7089b937": {
+      "name": "Dance with Calamity",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e7169500"
+    },
+    "61747805-0c34-4beb-8cbf-97bac7a998d0": {
+      "name": "Renegade Bull",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0458692c"
+    },
+    "61816f98-9d1a-4b16-9194-cb7249880710": {
+      "name": "Leitmotif Composer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1e8ef60d"
     },
     "619173f4-0403-49cd-9659-2fedd5028a90": {
       "name": "Shire Terrace",
@@ -2685,6 +2729,14 @@
       "reasons": [],
       "ast": "9b4c079b"
     },
+    "655ee0db-1913-464f-bd06-072c6bf446bd": {
+      "name": "Dirgur Focusmage // Braingeyser",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b5d13efb"
+    },
     "65756e6d-9825-4ed6-91c4-79f1e3bd4ae5": {
       "name": "Supernatural Stamina",
       "group": "acceptance",
@@ -2790,6 +2842,14 @@
       "reasons": [],
       "ast": "7dc278bb"
     },
+    "67ee7c8b-afcc-4f09-a184-3db01f2ab175": {
+      "name": "Enter the God-Eternals",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "64a9cf50"
+    },
     "6812e4d3-0034-4fc8-9ee9-520f76a0ea94": {
       "name": "Innovative Commons",
       "group": "acceptance",
@@ -2885,6 +2945,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8f33c1d4"
+    },
+    "6cbd36d9-de47-41b0-9ef4-a72ca01adccd": {
+      "name": "Curse of Disturbance",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "40fb9d8c"
     },
     "6e64f1e0-ddd6-4ee7-8797-086e234b02e8": {
       "name": "Steel Hellkite",
@@ -3193,13 +3261,13 @@
       "reasons": [],
       "ast": "fd3ec62c"
     },
-    "79ba18fd-f184-43c1-86df-56ee18ce806c": {
-      "name": "Secluded Courtyard",
+    "792c4d38-41e6-49eb-bd4e-de0a5ac8330f": {
+      "name": "Redoubled Stormsinger",
       "group": "acceptance",
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "e44da1fb"
+      "ast": "72a49612"
     },
     "79bc2c6d-b03d-4ceb-b468-293378ec73ae": {
       "name": "Midnight Tilling",
@@ -3248,6 +3316,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "973b74f5"
+    },
+    "7b600c0e-5ad2-48a2-a147-346ca78c8629": {
+      "name": "Liliana's Standard Bearer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "11943bc2"
     },
     "7c3a8766-e440-48c5-a561-197490efdba5": {
       "name": "Heirloom Blade",
@@ -3551,6 +3627,14 @@
       "reasons": [],
       "ast": "7e69df7b"
     },
+    "83cf1169-5853-4332-b897-7b17d72d76ab": {
+      "name": "Twinflame",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0a13d3ed"
+    },
     "84275aab-f718-4896-b61c-63bf49fb483b": {
       "name": "Merchant of Truth",
       "group": "training",
@@ -3840,6 +3924,14 @@
       "reasons": [],
       "ast": "fa12f890"
     },
+    "8ea414c1-88cf-46d4-9a54-6dee9847c537": {
+      "name": "Surge to Victory",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bbcfccea"
+    },
     "8f28b65b-4b73-4080-9cdc-d236ad99f39c": {
       "name": "Track Down",
       "group": "acceptance",
@@ -3871,6 +3963,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8047fe32"
+    },
+    "922c6e1b-abcf-40e0-847e-9ebb7d0b6fd4": {
+      "name": "Grimoire of the Dead",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4ece6bfc"
     },
     "9270eb03-4600-40cc-83a5-ea987d5d4978": {
       "name": "Gix's Command",
@@ -3911,6 +4011,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ca25ff73"
+    },
+    "943fc88d-c281-46bb-9dc7-1052f789362b": {
+      "name": "Furygale Flocking",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7a1ba9a7"
     },
     "9464ddf2-4bcb-44f6-b945-89a132544de6": {
       "name": "Maestros Theater",
@@ -3984,6 +4092,14 @@
       "reasons": [],
       "ast": "f41e2416"
     },
+    "985f9dd7-e693-48ff-9dd6-a1a3cbaa236b": {
+      "name": "Magma Opus",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "93a767d7"
+    },
     "9965d9c5-2ebf-4a6c-930e-55c5890979be": {
       "name": "Thought Vessel",
       "group": "holdout",
@@ -3999,6 +4115,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "219ac0cd"
+    },
+    "9a8f6e5e-6cde-49df-861c-a26cb09c9b12": {
+      "name": "Muddle, the Ever-Changing",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b9062661"
     },
     "9aace0d3-89e6-4254-b96f-ee3a878f2f91": {
       "name": "Conqueror's Flail",
@@ -4081,14 +4205,6 @@
       "reasons": [],
       "ast": "efbbb092"
     },
-    "9b9a10ff-5a5d-4df8-88aa-18d84ff9117c": {
-      "name": "Inspiring Call",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "7262f39b"
-    },
     "9c36760b-57c5-488b-afc9-ef141942c6ab": {
       "name": "Archfiend of Despair",
       "group": "acceptance",
@@ -4160,6 +4276,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "49f61e6e"
+    },
+    "9e769a65-7aa5-484d-9493-badb485b5964": {
+      "name": "Plargg and Nassari",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9d0f8610"
     },
     "9e96d12b-8381-4706-8089-3521aa2b5422": {
       "name": "Gau, Feral Youth",
@@ -4369,6 +4493,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3d2e0fca"
+    },
+    "a7ac5d98-805e-4212-be94-333a0c0c44a7": {
+      "name": "Brudiclad, Telchor Engineer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d7b5fa8f"
     },
     "a7c6c9b3-91f2-4ecf-b2b0-b0edd96974d9": {
       "name": "Zul Ashur, Lich Lord",
@@ -4710,6 +4842,14 @@
       "reasons": [],
       "ast": "2885e63d"
     },
+    "b3b8c7d0-46b9-4519-808a-154e503a58b6": {
+      "name": "Liliana's Devotee",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5052b74e"
+    },
     "b473e293-59e3-4e04-acf2-622604aeb25f": {
       "name": "Path of Ancestry",
       "group": "holdout",
@@ -4717,6 +4857,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e798f6e7"
+    },
+    "b48a149c-aead-43b2-a99e-c964d6d28aa0": {
+      "name": "Necromantic Selection",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "861ce866"
     },
     "b548578c-4910-402c-8e78-498924e0a9be": {
       "name": "Consumed by Greed",
@@ -4902,6 +5050,14 @@
       "reasons": [],
       "ast": "1a4191d5"
     },
+    "be4f47e9-1bd2-4aa9-bc85-3f203ad21639": {
+      "name": "Rionya, Fire Dancer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4e265a4c"
+    },
     "bea3ff6e-7649-4e51-b2ad-763f9ac2d4b8": {
       "name": "Renewed Solidarity",
       "group": "acceptance",
@@ -4998,6 +5154,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d2ef975e"
+    },
+    "c336b735-3e6b-471e-be7a-84d7402ae2f5": {
+      "name": "Creative Technique",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a0fa0366"
     },
     "c3974ec7-7af0-4b65-baf6-4c1c4fe8a5c4": {
       "name": "Ajani, Strength of the Pride",
@@ -5126,6 +5290,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "140f0528"
+    },
+    "c7b044c3-3cfa-407e-bf20-2875e8e04b7b": {
+      "name": "Brazen Borrower // Petty Theft",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "81cef160"
     },
     "c7b72d38-0aa0-4e17-9dd5-9276d7cb21ec": {
       "name": "Kaervek the Merciless",
@@ -5489,6 +5661,14 @@
       "reasons": [],
       "ast": "1d05c81c"
     },
+    "d751580b-bb72-4d1d-be27-d0410f883b2a": {
+      "name": "Inspired Skypainter // Maestro's Gift",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8f45de5d"
+    },
     "d75b9c82-1b49-4c3e-a1b5-aeef57d6644b": {
       "name": "Cyclonic Rift",
       "group": "training",
@@ -5770,23 +5950,6 @@
       "reasons": [],
       "ast": "90b0e9dd"
     },
-    "e1d294e8-67b1-4a4a-86b8-f98f28a327d9": {
-      "name": "Promise of Loyalty",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.player"
-        }
-      ],
-      "reasons": [],
-      "ast": "cb0a7c4e"
-    },
     "e286d1aa-bb74-4568-98b5-a693ac7a369d": {
       "name": "Venerable Warsinger",
       "group": "acceptance",
@@ -5819,6 +5982,14 @@
       "reasons": [],
       "ast": "6cb785aa"
     },
+    "e3444fcf-70ed-4d6e-aea9-030af15cad56": {
+      "name": "Throes of Chaos",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a623951f"
+    },
     "e3afc704-220f-498f-9eaa-0821b17dc24c": {
       "name": "Sakura-Tribe Elder",
       "group": "holdout",
@@ -5842,6 +6013,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c9b9a65c"
+    },
+    "e4ed7935-0263-4cde-8118-ac18fffce3ef": {
+      "name": "Determined Iteration",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fe9ecaed"
     },
     "e5e8e116-10fe-48b0-b3d8-6edb39bd5f90": {
       "name": "Alibou, Ancient Witness",
@@ -5875,13 +6054,21 @@
       "reasons": [],
       "ast": "0b2f7e49"
     },
-    "e88027a6-24cc-4a8b-86db-734f26149ea8": {
-      "name": "Oran-Rief, the Vastwood",
+    "e6cd9203-e4d3-4d9f-b59f-4e454fc5a477": {
+      "name": "Unbreathing Horde",
       "group": "acceptance",
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "71f19d82"
+      "ast": "ca4d6498"
+    },
+    "e7a7ba65-ad14-41d5-889b-9bbeae9ab3f7": {
+      "name": "Crippling Fear",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4704e4be"
     },
     "e89e1fae-bac3-4cc0-a233-24b9e08a5290": {
       "name": "Fall from Favor",
@@ -5978,6 +6165,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2d451c01"
+    },
+    "ec2968fb-163d-4907-862b-b84a1f167833": {
+      "name": "Volcanic Torrent",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7b262078"
     },
     "ec6d52f9-1c8f-48da-951c-be8d7813c7be": {
       "name": "Harvest Season",
@@ -6247,6 +6442,14 @@
       "reasons": [],
       "ast": "b8bc1bbf"
     },
+    "f426aa1a-e1dc-4563-b450-2e23d6bd980b": {
+      "name": "Manaform Hellkite",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1601ff88"
+    },
     "f49302c5-8510-4360-841c-a59f53f87e0b": {
       "name": "Icy Blast",
       "group": "acceptance",
@@ -6270,6 +6473,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "be0487d5"
+    },
+    "f58117e4-ba85-41b8-8fd5-4245716a84dc": {
+      "name": "Prismari Pianist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9bce244c"
     },
     "f61680da-606e-4d16-b0a0-361aa5210901": {
       "name": "Chandra's Ignition",
@@ -6375,6 +6586,14 @@
       "reasons": [],
       "ast": "1f6c4af4"
     },
+    "f9217532-f7cf-4436-b476-72d97a3147dc": {
+      "name": "Galazeth Prismari",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c6f51ee3"
+    },
     "f92aaa00-6ece-4033-b3df-b2fc2c4718d9": {
       "name": "Leyline Tyrant",
       "group": "training",
@@ -6446,6 +6665,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "24a689f7"
+    },
+    "fb60739e-1dc3-481d-a056-ad72e665c680": {
+      "name": "Rite of Replication",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "82dbd195"
     },
     "fb69bc57-f05a-41c2-9b7b-9a9761ef0cd3": {
       "name": "Sacred Peaks",
@@ -6727,12 +6954,12 @@
       "total": 192
     },
     "holdout": {
-      "supported": 55,
+      "supported": 56,
       "total": 61
     },
     "acceptance": {
-      "supported": 475,
-      "total": 500
+      "supported": 513,
+      "total": 534
     }
   }
 }

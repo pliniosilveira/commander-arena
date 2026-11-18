@@ -168,7 +168,6 @@ describe('static.defines-pt: a characteristic-defining ability (CR 604.3, 208.2a
     "~'s power and toughness are each equal to twice the number of lands you control.",
     "~'s power and toughness are each equal to the number of lands you control plus 1.",
     "~'s power and toughness are each equal to its mana value.",
-    "~'s power and toughness are each equal to the number of cards in target opponent’s hand.",
     "~'s power is equal to the number of creatures you control and its toughness is equal to the number of lands you control.",
     "Enchanted creature's power is equal to the number of lands you control.",
   ])('"%s" is not read', (text) => {
@@ -177,6 +176,7 @@ describe('static.defines-pt: a characteristic-defining ability (CR 604.3, 208.2a
 
   test.each([
     "~'s power and toughness are each equal to the number of lands your opponents control.",
+    "~'s power and toughness are each equal to the number of cards in target opponent’s hand.",
     "~'s power and toughness are each equal to the number of creatures you control with power 3 or greater.",
   ])('"%s" is read and refused', (text) => {
     expect(dropped(text, 'creature')).toMatchObject({ reason: 'notRunnable' });

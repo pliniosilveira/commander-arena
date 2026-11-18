@@ -15,6 +15,7 @@ import {
   literal,
   many,
   map,
+  optional,
   type Parser,
   pattern,
   quiet,
@@ -63,19 +64,38 @@ const QUOTED_MANA: Parser<Effects> = (ctx, pos) => {
     literal(': '),
     family<readonly IrClause[]>('effect', { only: ['effect.add-mana'] }),
     literal('.'),
+    // Prismari deck, group 2 (D-658, CR 106.6, 613.1f): "Spend this mana only to cast an instant or sorcery spell." is the second sentence of the granted mana ability, which the engine's
+    // `spendOnly` of the mana ability says (the lowering of a mana ability reads it as it does for the ability of a card).
+    optional(
+      sequence(
+        literal(' '),
+        family<readonly IrClause[]>('effect', { only: ['effect.spend-only'] }),
+        literal('.'),
+      ),
+      null,
+    ),
     pattern(/["”]/u),
   )(ctx, pos);
   if (!r.ok) return r;
   // The normalizer writes both "this land" and the card's own name as `~`, so inside the quotes `~` is the granted permanent or the card that
   // grants ("Sacrifice ~"). Stage P36 (D-178): it is read as the permanent that has the ability, and the lowering refuses a group when the
   // card names itself inside a quotation, where `~` could be the card (`LowerContext.namedInQuotes`).
-  const [, costs, , clauses] = r.value;
+  const [, costs, , clauses, , spend] = r.value;
   const span = { start: pos + 1, end: r.pos - 1 };
   const sentence = { kind: 'sentence' as const, clauses, span, rule: 'body.sentence' };
+  const spendSentence =
+    spend === null
+      ? []
+      : [{ kind: 'sentence' as const, clauses: spend[1], span, rule: 'body.sentence' }];
   const ability = {
     kind: 'activated' as const,
     costs,
-    body: { kind: 'body' as const, sentences: [sentence], span, rule: 'body' },
+    body: {
+      kind: 'body' as const,
+      sentences: [sentence, ...spendSentence],
+      span,
+      rule: 'body',
+    },
     restrictions: [],
     span,
     rule: 'ability.activated',

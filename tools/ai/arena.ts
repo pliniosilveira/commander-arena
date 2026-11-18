@@ -1,5 +1,5 @@
 // Entry point of `pnpm ai:arena`: plays two agents against each other on paired seeds with the seats
-// swapped (docs/DECISIONS.md D-162) and prints the table.
+// swapped (D-162, `docs/decisions/ai.md`) and prints the table.
 //
 //   node tools/ai/arena.ts --a casual --b greedy --games 200 --seed 1
 //

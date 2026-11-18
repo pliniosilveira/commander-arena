@@ -29,6 +29,7 @@ import type { SeatId } from '../ids';
 import type { DamageRecipient } from '../state/combat-types';
 import type { ChooseOptionDecision, DamageReplacementChoice } from '../state/decisions';
 import type { GameEvent } from '../state/events';
+import { patchObject } from '../state/ops';
 import type { GameState } from '../state/types';
 import type { DamageEvent, DamageModifier } from './damage-modifier';
 import { modifierText, nameOf } from './damage-order-text';
@@ -149,6 +150,25 @@ const laneEvents = (current: Settling): readonly GameEvent[] =>
         },
       ];
 
+/** The counter a static prevention removes as it prevents the event (issue 159), with the event of it; null when it removes none or the permanent has none. */
+function counterRemoval(
+  current: Settling,
+  prevention: StaticPrevention,
+): { readonly state: GameState; readonly event: GameEvent } | null {
+  const { removeCounter } = prevention;
+  const obj = current.state.objects[prevention.object];
+  if (removeCounter === undefined || obj === undefined || (obj.counters[removeCounter] ?? 0) < 1) {
+    return null;
+  }
+  const { [removeCounter]: had = 0, ...others } = obj.counters;
+  return {
+    state: patchObject(current.state, obj.id, {
+      counters: had > 1 ? { ...others, [removeCounter]: had - 1 } : others,
+    }),
+    event: { kind: 'counterRemoved', object: obj.id, counter: removeCounter, count: 1 },
+  };
+}
+
 /** Applies one modifier (the file comment): the result is what is left of the event and the shields after it. */
 export function applyModifier(current: Settling, modifier: DamageModifier): Settling {
   const { origin } = modifier;
@@ -180,8 +200,13 @@ export function applyModifier(current: Settling, modifier: DamageModifier): Sett
     prevented: current.lane.prevented + took,
   });
   if (origin.kind === 'static' || origin.shield.change.amount === 'all') {
+    // Issue 159 (Unbreathing Horde): "prevent that damage and remove a +1/+1 counter from it": one counter for each event the ability prevents.
+    const removal = origin.kind === 'static' ? counterRemoval(current, origin.prevention) : null;
     return {
       ...current,
+      ...(removal === null
+        ? {}
+        : { state: removal.state, events: [...current.events, removal.event] }),
       amount: 0,
       prevented: current.prevented + current.amount,
       applied: current.applied + 1,

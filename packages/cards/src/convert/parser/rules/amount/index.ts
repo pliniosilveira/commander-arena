@@ -377,6 +377,39 @@ export const AMOUNT_DISCARDED_MOST_THIS_WAY = defineRule<IrAmount>({
   },
 });
 
+/**
+ * `amount.damage-dealt-this-way`: "equal to the damage dealt this way" (issue 159, CR 120.3, 615.6, 608.2c): the damage the instruction
+ * before it in the same text dealt, after prevention. Read only where the lowering finds a `dealDamage` of the same text before it.
+ */
+export const AMOUNT_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
+  id: 'amount.damage-dealt-this-way',
+  family: 'amount',
+  leading: ['equal'],
+  cites: [
+    'CR 120.3 (Damage)',
+    'CR 615.6 (Prevention Effects)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: ['equal to the damage dealt this way'],
+  rejects: [
+    'the damage dealt this way',
+    'equal to the damage dealt',
+    'equal to damage dealt this way',
+    'equal to the damage dealt this turn',
+    'equal to the damage dealt this way plus 1',
+    'equal to the life lost this way',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(/equal to the damage dealt this way(?![\p{L}\p{N}])/iu))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: { kind: 'thisWay', what: 'damageDealt', words: [], span: r.value.span },
+      pos: r.pos,
+    };
+  },
+});
+
 export const AMOUNT_RULES = [
   AMOUNT_FOR_EACH_DIED,
   // Stage P37 (D-180): "for each color among permanents you control", which `amount.for-each` does not read.
@@ -400,6 +433,7 @@ export const AMOUNT_RULES = [
   AMOUNT_LIFE_LOST_THIS_WAY,
   AMOUNT_MILLED_VALUE_THIS_WAY,
   AMOUNT_DISCARDED_MOST_THIS_WAY,
+  AMOUNT_DAMAGE_DEALT_THIS_WAY,
   // Galadriel deck, group 2 (D-539): two counts added; before `amount.for-each`, which would stop after the first.
   ...GALADRIEL_G2_AMOUNT_RULES,
   ...COUNT_AMOUNT_RULES,

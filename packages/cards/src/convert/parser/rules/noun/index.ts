@@ -56,6 +56,7 @@ import {
   withColorList,
 } from './phrases';
 import { PLAYER_NOUN_RULES } from './players';
+import { PRISMARI_G2_NOUN_RULES } from './prismari-g2';
 import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
@@ -369,6 +370,39 @@ export const NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD = defineRule<IrNoun>({
     'all creature cards in your graveyard',
   ],
   parse: targetOf('noun.target-cards-in-your-graveyard', (plural) => graveyardPhrase(plural, 'in')),
+});
+
+/**
+ * `noun.target-card-in-a-graveyard` (issue 159, Havengul Lich): "target creature card in a graveyard": the cards of `noun.target-graveyard-card`, said with "in" and of any player's
+ * graveyard (CR 404.1, 115.1). One card only. Another noun rule so that the "in a graveyard" is read only where a rule asks for this noun by its id.
+ */
+export const NOUN_TARGET_CARD_IN_A_GRAVEYARD = defineRule<IrNoun>({
+  id: 'noun.target-card-in-a-graveyard',
+  family: 'noun',
+  leading: [],
+  cites: ['CR 404.1 (Graveyard)', 'CR 115.1 (Targets)'],
+  examples: [
+    'target creature card in a graveyard',
+    'target card in a graveyard',
+    'target Zombie creature card in a graveyard',
+  ],
+  rejects: [
+    'target creature card in your graveyard',
+    "target creature card in an opponent's graveyard",
+    'target creature card from a graveyard',
+    'two target creature cards in a graveyard',
+    'target creature in a graveyard',
+    'target card',
+    'all creature cards in a graveyard',
+  ],
+  parse: (ctx, pos) => {
+    const r = targetOf('noun.target-card-in-a-graveyard', (plural) =>
+      graveyardPhrase(plural, 'inAny'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    // One card only: "two target creature cards in a graveyard", "up to one ..." are other statements.
+    return r.value.plural || r.value.upTo || r.value.count !== undefined ? fail(ctx, pos) : r;
+  },
 });
 
 /**
@@ -733,6 +767,8 @@ export const NOUN_RULES = [
   ...HYLDA_G3_NOUN_RULES,
   // Stage P32 (D-147): "target commander" before `noun.target-permanent`, whose phrase would stop at "commander".
   ...DINOSAUR_NOUN_RULES,
+  // Prismari deck, group 2 (D-656, D-657): "creatures named ~" before `noun.plain-permanents`, and "any number of targets" after `noun.any-number-targets`.
+  ...PRISMARI_G2_NOUN_RULES,
   // Stage P34 (D-152): "each other opponent" and "each of up to two other targets".
   ...DRAGON_NOUN_RULES,
   // D-295: "each of one or two targets".
@@ -744,6 +780,7 @@ export const NOUN_RULES = [
   NOUN_UP_TO_GRAVEYARD_CARDS,
   NOUN_UP_TO_ONE_PERMANENT,
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
+  NOUN_TARGET_CARD_IN_A_GRAVEYARD,
   // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.
   ...HASHATON_G10_NOUN_RULES,
   // Lorehold Spirit deck, group 1 (issue 86): "any number of target cards from your graveyard", read by `effect.shuffle-cards-into-library` only.

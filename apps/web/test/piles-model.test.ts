@@ -127,7 +127,7 @@ describe('the question which cards form pile 1', () => {
       waitingOn: { seat: 1, purpose: 'pile', sourceName: 'Fact or Fiction' },
     } as unknown as GameView;
     expect(waitingText(choosing)).toBe(
-      'Opponent is choosing one of two piles of the revealed cards (Fact or Fiction).',
+      'Opponent is choosing one of two piles of cards (Fact or Fiction).',
     );
   });
 });

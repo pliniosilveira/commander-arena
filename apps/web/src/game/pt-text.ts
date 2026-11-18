@@ -15,7 +15,7 @@ import type {
   PtAmount,
   StaticPtAmount,
 } from '@commander-arena/engine';
-import { amountPhrase } from './amount-text';
+import { type AmountContext, amountPhrase } from './amount-text';
 import { countPhrase, thingsPhrase } from './filter-text';
 
 export { countPhrase };
@@ -23,7 +23,7 @@ export { countPhrase };
 const UNKNOWN = 'a number';
 
 /** The sentence for a count or a multiple of one: "the number of lands you control". */
-function amountWords(amount: Amount | PtAmount): string {
+function amountWords(amount: Amount | PtAmount, ctx: AmountContext = {}): string {
   if (typeof amount === 'number') return String(amount);
   switch (amount.kind) {
     case 'x':
@@ -33,19 +33,22 @@ function amountWords(amount: Amount | PtAmount): string {
     case 'powerOf':
       return 'its power';
     case 'manaValueOf':
-      return 'its mana value';
+      // D-646 (CR 202.3, 601.2i): the mana value of the spell a cast trigger names, "that spell's mana value".
+      return amount.of.kind === 'triggerSubject' && ctx.spell === true
+        ? "that spell's mana value"
+        : 'its mana value';
     case 'timesKicked':
       return 'the number of times it was kicked';
     case 'lifeLostThisWay':
       return 'the total life lost this way';
     case 'times':
-      return `${amount.factor} times ${amountWords(amount.of)}`;
+      return `${amount.factor} times ${amountWords(amount.of, ctx)}`;
     case 'affected':
       // D-145: "+X/+0 where X is its power": the creature each effect is for.
       return `its ${amount.stat}`;
     default:
       // D-131: the amounts that read the game (greatest power, devotion, half ...) say themselves.
-      return amountPhrase(amount);
+      return amountPhrase(amount, ctx);
   }
 }
 
@@ -69,7 +72,7 @@ function eachPhrase(filter: ObjectFilter): string | null {
   return things === null ? null : `for each ${things}`;
 }
 
-function partOf(amount: PtAmount | StaticPtAmount): Part {
+function partOf(amount: PtAmount | StaticPtAmount, ctx: AmountContext = {}): Part {
   if (typeof amount === 'number') return { sign: signOf(amount), mag: String(Math.abs(amount)) };
   if (amount.kind === 'x') return { sign: '+', mag: 'X' };
   if (amount.kind === 'countOf') {
@@ -89,7 +92,7 @@ function partOf(amount: PtAmount | StaticPtAmount): Part {
   }
   if (amount.kind === 'times') {
     const { factor, of } = amount;
-    if (typeof of === 'number') return partOf(factor * of);
+    if (typeof of === 'number') return partOf(factor * of, ctx);
     if (of.kind === 'x') return { sign: signOf(factor), mag: `${magnitude(factor)}X` };
     if (of.kind === 'countOf') {
       const each = eachPhrase(of.filter);
@@ -97,9 +100,9 @@ function partOf(amount: PtAmount | StaticPtAmount): Part {
         ? { sign: signOf(factor), mag: 'X', where: UNKNOWN }
         : { sign: signOf(factor), mag: String(Math.abs(factor)), each };
     }
-    return { sign: signOf(factor), mag: `${magnitude(factor)}X`, where: amountWords(of) };
+    return { sign: signOf(factor), mag: `${magnitude(factor)}X`, where: amountWords(of, ctx) };
   }
-  return { sign: '+', mag: 'X', where: amountWords(amount) };
+  return { sign: '+', mag: 'X', where: amountWords(amount, ctx) };
 }
 
 const isZero = (p: Part): boolean => p.mag === '0' && p.each === undefined;
@@ -112,9 +115,10 @@ const show = (p: Part): string => `${p.sign}${p.mag}`;
 export function ptChangeText(
   power: PtAmount | StaticPtAmount,
   toughness: PtAmount | StaticPtAmount,
+  ctx: AmountContext = {},
 ): string {
-  const p = partOf(power);
-  const t = partOf(toughness);
+  const p = partOf(power, ctx);
+  const t = partOf(toughness, ctx);
   // The same count of the same things, or a count for one number and nothing for the other.
   if (p.each !== undefined && (t.each === p.each || isZero(t))) {
     return `${show(p)}/${show(t)} ${p.each}`;
@@ -138,9 +142,12 @@ export function ptChangeText(
 }
 
 /** "-X/-X" and the like: a number alone, for places that have no room for the count. */
-export function ptEffectText(effect: Extract<Effect, { kind: 'modifyPt' | 'setPt' }>): string {
+export function ptEffectText(
+  effect: Extract<Effect, { kind: 'modifyPt' | 'setPt' }>,
+  ctx: AmountContext = {},
+): string {
   return effect.kind === 'modifyPt'
-    ? `gets ${ptChangeText(effect.power, effect.toughness)}`
+    ? `gets ${ptChangeText(effect.power, effect.toughness, ctx)}`
     : setPtText(effect.power, effect.toughness);
 }
 

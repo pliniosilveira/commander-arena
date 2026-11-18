@@ -468,6 +468,8 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
     '~ deals 3 damage divided as you choose among any number of target creatures',
     '~ deals 4 damage divided as you choose among up to three target creatures',
     '~ deals X damage divided as you choose among any number of target creatures you don’t control',
+    // Prismari deck, group 2 (D-657, CR 115.4): any target, as many as the damage can be divided among.
+    '~ deals 4 damage divided as you choose among any number of targets',
   ],
   rejects: [
     '~ deals X damage divided as you choose among any number of target creatures and draw a card',
@@ -478,6 +480,7 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
     '~ deals X damage as you choose among any number of target creatures',
     '~ deals damage divided as you choose among any number of target creatures',
     '~ deals X damage divided as you choose among any target',
+    '~ deals 4 damage divided as you choose among any number of targets you control',
   ],
   parse: single(
     'effect.damage-divided',
@@ -486,7 +489,7 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
       family<IrAmount>('amount', { only: ['amount.number', 'amount.x'] }),
       literal(' damage divided as you choose among '),
       choice(
-        family<IrNoun>('noun', { only: ['noun.any-number-targets'] }),
+        family<IrNoun>('noun', { only: ['noun.any-number-targets', 'noun.any-number-of-targets'] }),
         satisfy(
           family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
           (noun) => noun.upTo && noun.plural,

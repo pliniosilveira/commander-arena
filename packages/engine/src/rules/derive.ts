@@ -33,6 +33,7 @@ import type { Ability, Restriction } from '../ast/types';
 import type { CardType, Color, PtValue, Subtype, Supertype } from '../characteristics';
 import type { ObjectId } from '../ids';
 import type { ContinuousEffect, GameObject, GameState } from '../state/types';
+import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { alternativeAbilitiesOf } from './derive-alt';
 import { characteristicPtOf } from './derive-count';
@@ -164,6 +165,22 @@ function withStaticSets(
   return [...effects, ...own].sort((a, b) => a.timestamp - b.timestamp);
 }
 
+/**
+ * D-653 (CR 604.1, 109.5, 613.1b): a keyword an effect gives only "during your turn" (`duringYourTurn`) is given while it is its controller's turn, the controller the object has now.
+ * The effects are left as they are when none says so (the usual case).
+ */
+function turnLimited(
+  state: GameState,
+  obj: GameObject,
+  effects: readonly ContinuousEffect[],
+): readonly ContinuousEffect[] {
+  const limited = (e: ContinuousEffect) =>
+    e.change.kind === 'grantKeyword' && e.change.duringYourTurn === true;
+  if (!effects.some(limited)) return effects;
+  const mine = state.turn.activeSeat === controllerOf(state, obj);
+  return mine ? effects : effects.filter((e) => !limited(e));
+}
+
 function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
   // CR 701.54c (D-196): "Your Ring-bearer is legendary", an ability of the Ring (an emblem): a supertype added in layer 4, which no
   // creature's loss of abilities removes.
@@ -173,7 +190,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
     isRingBearerOf(state, obj, obj.ringBearer)
       ? { ...base, supertypes: [...base.supertypes, 'legendary'] }
       : base;
-  const effects = effectsOn(state, obj.id);
+  const effects = turnLimited(state, obj, effectsOn(state, obj.id));
   // Layers 4 and 5 (CR 613.1d, 613.1e). They come first because what static abilities affect is
   // matched against their result (a lord of Frogs affects a creature that became a Frog).
   // Changeling and Devoid (CR 702.73a, 702.114a) are characteristic-defining abilities that work in every

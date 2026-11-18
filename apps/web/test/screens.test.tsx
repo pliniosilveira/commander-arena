@@ -17,7 +17,13 @@ import { lossReason, outcomeFor } from '../src/ui/screens/game-over-model';
 import { HonestyBanner } from '../src/ui/screens/HonestyBanner';
 import { honestyLines } from '../src/ui/screens/honesty-model';
 import { Menu } from '../src/ui/screens/Menu';
-import { defaultDecks, parseSeed, pickRandomDeck } from '../src/ui/screens/menu-model';
+import {
+  defaultDecks,
+  matchesColorFilter,
+  parseSeed,
+  pickRandomDeck,
+  toggleColorFilter,
+} from '../src/ui/screens/menu-model';
 import { StoreProvider } from '../src/ui/store-context';
 import { playableSnapshot, preconsOf } from './precons-helpers';
 
@@ -85,7 +91,7 @@ describe('Menu', () => {
     expect(out).toContain('unofficial');
     expect(out).toContain('Play a game');
     expect(out).toContain('Start game');
-    expect(out).toContain('Your Decks');
+    expect(out).toContain('My Decks');
     expect(out).toContain('Seed');
     expect(out).toContain('Free first mulligan');
     expect(out).not.toContain('Import a deck');
@@ -109,7 +115,7 @@ describe('Menu', () => {
     ]) {
       expect(out).toContain('No precon is installed yet');
       expect(out).toMatch(/<button[^>]*disabled=""[^>]*>Start game/);
-      expect(out).toContain('Your Decks');
+      expect(out).toContain('My Decks');
     }
   });
 
@@ -248,5 +254,23 @@ describe('HonestyBanner (A28)', () => {
     expect(out).toContain('1× Synthetic Marvel (Opponent)');
     expect(out).toContain('Dismiss');
     expect(honestyLines(null, 0)).toEqual([]);
+  });
+});
+
+describe('the deck color filter', () => {
+  test('matches the exact color identity', () => {
+    expect(matchesColorFilter(['R'], [])).toBe(true);
+    expect(matchesColorFilter(['R'], ['R'])).toBe(true);
+    expect(matchesColorFilter(['U', 'R'], ['R'])).toBe(false);
+    expect(matchesColorFilter(['U', 'R'], ['R', 'U'])).toBe(true);
+    expect(matchesColorFilter([], ['C'])).toBe(true);
+    expect(matchesColorFilter(['G'], ['C'])).toBe(false);
+    expect(matchesColorFilter(undefined, ['R'])).toBe(false);
+  });
+
+  test('colorless and the colors exclude each other', () => {
+    expect(toggleColorFilter(['R'], 'C')).toEqual(['C']);
+    expect(toggleColorFilter(['C'], 'U')).toEqual(['U']);
+    expect(toggleColorFilter(['R', 'U'], 'R')).toEqual(['U']);
   });
 });

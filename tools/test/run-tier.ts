@@ -26,8 +26,22 @@ if (tier === 'pr') {
     const path = `packages/ai/test/${name}`;
     if (!existsSync(resolve(path)))
       throw new Error(`PR-excluded test file does not exist: ${path}`);
-    args.push('--exclude', path);
+    // Vitest matches --exclude against paths relative to each project's root (`packages/ai`), so
+    // the repository-relative path never matched and every listed suite still ran (D-637).
+    args.push('--exclude', `test/${name}`);
   }
+  // Guard: an exclusion that excludes nothing is silent and costs tens of minutes, so list the
+  // files the run would take and stop when one of the excluded names is still among them.
+  const listed = spawnSync(process.execPath, [vitest, 'list', '--filesOnly', ...args.slice(1)], {
+    env: { ...process.env, TEST_TIER: tier },
+    encoding: 'utf8',
+  });
+  if (listed.status !== 0) throw new Error(`Could not list the PR tier:\n${listed.stderr}`);
+  const stillThere = excluded.filter((name) => listed.stdout.includes(`packages/ai/test/${name}`));
+  if (stillThere.length > 0)
+    throw new Error(
+      `PR-excluded tests still selected (the exclude pattern matches nothing): ${stillThere.join(', ')}`,
+    );
 }
 
 if (process.env.VITEST_RESULTS_DIR !== undefined) {

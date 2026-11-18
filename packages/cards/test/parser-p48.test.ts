@@ -299,16 +299,10 @@ describe('"That token gains haste until end of turn" and "then attach ~ to it": 
     });
   });
 
-  test('"that token" after two tokens, after a copy and with no token before it is not read', () => {
+  test('"that token" after two tokens and with no token before it is not read (after a copy it is the token the copy made, D-643)', () => {
     expect(
       dropped(
         'Create two 2/2 red Dwarf creature tokens. That token gains haste until end of turn.',
-        'sorcery',
-      ),
-    ).toMatchObject({ reason: 'unboundReference' });
-    expect(
-      dropped(
-        "Create a token that's a copy of target creature. That token gains haste until end of turn.",
         'sorcery',
       ),
     ).toMatchObject({ reason: 'unboundReference' });
