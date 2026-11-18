@@ -79,7 +79,7 @@ describe('exile the card, the creatures get +X/+0 where X is its mana value (CR 
 
   test('the pump ends with the turn', () => {
     const g = castSurge(game([GAIN7]), GAIN7);
-    g.advanceTo('endStep');
+    g.advanceTo('end');
     g.advanceTo('upkeep', { turn: 'next' });
     g.expect.pt('bears', 2, 2);
   });
@@ -131,36 +131,36 @@ describe('"Whenever a creature you control deals combat damage to a player this 
     g.expect.life(0, 40);
   });
 
-  test('no combat damage to a player, no copy: a blocked attacker does not trigger it', () => {
+  test('a blocked attacker deals its damage to the blocker: no combat damage to a player, no copy', () => {
     const g = castSurge(
       game([GAIN2], (b) => b.seat(1).battlefield(SPIDER, { label: 'spider' })),
       GAIN2,
     );
     g.advanceTo('declareAttackers');
     g.act(0).attack('bears');
-    g.passAll();
-    if (g.state.turn.step === 'declareBlockers' && g.state.pending?.kind === 'declareBlockers') {
-      g.act(1).block({ spider: 'bears' });
-    }
+    g.advanceTo('declareBlockers', { block: false });
+    g.act(1).declareBlockers([{ blocker: 'spider', attacker: 'bears' }]);
+    g.advanceTo('combatDamage');
     g.passAll();
     expect(g.state.pending?.kind).not.toBe('chooseCards');
     expect(exiled(g, GAIN2)).toHaveLength(1);
+    g.expect.life(1, 40);
   });
 
-  test('a creature of the opponent that deals combat damage does not trigger it', () => {
+  test('a creature of the opponent that deals combat damage in the next turn does not trigger it: the ability has ended', () => {
     const g = castSurge(game([GAIN2], (b) => b.seat(1).battlefield(SPIDER)), GAIN2);
-    g.advanceTo('endStep');
     g.advanceTo('upkeep', { turn: 'next' });
     g.advanceTo('declareAttackers');
     g.act(1).attack({ name: SPIDER, zone: 'battlefield', seat: 1 });
+    g.advanceTo('combatDamage');
     g.passAll();
-    // It is the opponent's turn now and the ability of the turn before has ended.
     expect(g.state.pending?.kind).not.toBe('chooseCards');
+    g.expect.life(0, 38);
   });
 
   test('the ability ends with the turn: damage next turn copies nothing', () => {
     const g = castSurge(game([GAIN2]), GAIN2);
-    g.advanceTo('endStep');
+    g.advanceTo('end');
     expect(g.state.delayedTriggers.length).toBeGreaterThan(0);
     g.advanceTo('upkeep', { turn: 'next' });
     expect(g.state.delayedTriggers).toHaveLength(0);
