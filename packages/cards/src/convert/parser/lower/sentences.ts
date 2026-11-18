@@ -1301,7 +1301,8 @@ function countsWhatHappened(
   if (amount.thatMany === true) {
     return (
       earlier.verb === 'sacrifice' ||
-      (earlier.verb === 'discard' && earlier.args.anyNumber !== undefined)
+      (earlier.verb === 'discard' &&
+        (earlier.args.anyNumber !== undefined || earlier.args.allCards !== undefined))
     );
   }
   const [word] = amount.words;
@@ -1333,6 +1334,7 @@ function countsWhatHappened(
     case 'damageDealt':
       // Issue 159: "you gain life equal to the damage dealt this way": a `dealDamage` before it.
       return earlier.verb === 'dealDamage';
+    case 'milledCreature':
     case 'milledValue':
       // Stage P52 (D-210): "equal to the total mana value of those cards": the cards a mill before it milled.
       return earlier.verb === 'mill';
@@ -1364,9 +1366,15 @@ function thisWaysAreSupported(
     // "If the player doesn't, you mill three cards, then ... equal to the total mana value of those cards" (stage P52, D-210): the sentence is what a
     // "may have you" sentence does otherwise, run whole, so its own instructions count each other.
     const otherwise = sentence.condition?.test.kind === 'declined';
+    // "You may discard all the cards in your hand. If you do, draw that many cards." (CR 608.2c): the sentence of "if you do" runs only when the offer before it was done,
+    // and then counts what that offer did (a declined offer leaves the counts at 0).
+    const afterOffer = sentence.condition?.test.kind === 'didPrevious';
     for (const clause of sentence.clauses) {
       for (const amount of thisWaysOf(clause)) {
-        if ((sentence.condition !== undefined && !otherwise) || clause.condition !== undefined) {
+        if (
+          (sentence.condition !== undefined && !otherwise && !afterOffer) ||
+          clause.condition !== undefined
+        ) {
           return sentence;
         }
         // D-586 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" in an ability whose cost sacrifices one or more artifacts counts that cost. An instruction
@@ -1377,7 +1385,10 @@ function thisWaysAreSupported(
         }
         if (!before.some((earlier) => countsWhatHappened(amount, earlier))) return sentence;
       }
-      if ((sentence.condition === undefined || otherwise) && clause.condition === undefined) {
+      if (
+        (sentence.condition === undefined || otherwise || afterOffer) &&
+        clause.condition === undefined
+      ) {
         before.push(clause);
       }
     }

@@ -421,8 +421,11 @@ export const EFFECT_FOR_EACH_CREATE = defineRule<Clauses>({
     'for each creature you control, create a Treasure token',
     'for each land you control, create a 0/1 green Plant creature token',
     'for each creature your opponents control, create two 1/1 white Soldier creature tokens',
+    'for each creature card put into a graveyard this way, you create a tapped 2/2 black Zombie creature token',
   ],
   rejects: [
+    'for each creature your opponents control, you destroy it',
+    'for each creature your opponents control, you create X Treasure tokens',
     'for each creature your opponents control create a 4/4 green Phyrexian Beast creature token',
     'for each creature your opponents control, destroy it',
     'for each creature, create a 4/4 green Phyrexian Beast creature token',
@@ -434,7 +437,8 @@ export const EFFECT_FOR_EACH_CREATE = defineRule<Clauses>({
     const r = sequence(
       // Quiet: "For each 1 damage prevented this way, create ..." stops where the older rules stop (at "For each").
       quiet(family<IrAmount>('amount', { only: FOR_EACH_AMOUNTS })),
-      literal(', create '),
+      // "..., you create ..." (Dread Summons) says the same with the subject spelled out.
+      choice(literal(', create '), literal(', you create ')),
       tokenWithEach(),
     )(ctx, pos);
     if (!r.ok) return r;

@@ -1828,6 +1828,8 @@ export interface ThisWayCounts {
   readonly discarded?: number;
   /** The total mana value of the cards milled by `mill` effects, for "equal to the total mana value of those cards" (D-210). */
   readonly milledValue?: number;
+  /** The creature cards milled by `mill` effects, for "for each creature card put into a graveyard this way" (Dread Summons). */
+  readonly milledCreature?: number;
   /** The creature cards, and the other cards, discarded by `discard` effects (D-210: "if a creature card was discarded this way"). */
   readonly discardedCreature?: number;
   readonly discardedNoncreature?: number;

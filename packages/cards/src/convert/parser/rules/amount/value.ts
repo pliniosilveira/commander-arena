@@ -722,8 +722,14 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each creature destroyed this way',
     'for each opponent who drew a card this way',
     'for each player who drew a card this way',
+    'for each creature card put into a graveyard this way',
   ],
   rejects: [
+    'for each card put into a graveyard this way',
+    'for each land card put into a graveyard this way',
+    'for each creature put into a graveyard this way',
+    'for each creature cards put into a graveyard this way',
+    'for each creature card put into a graveyard',
     'for each creature sacrificed',
     'for each creature exiled this way',
     'for each opponent who drew this way',
@@ -756,6 +762,22 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
           span: { start: pos, end: discarded.pos },
         },
         pos: discarded.pos,
+      };
+    }
+    // Dread Summons (CR 701.17a, 608.2c): "for each creature card put into a graveyard this way": the creature cards the mill before it put there.
+    const milled = pattern(
+      /for each creature card put into a graveyard this way(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (milled.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'milledCreature',
+          words: ['creature'],
+          span: { start: pos, end: milled.pos },
+        },
+        pos: milled.pos,
       };
     }
     const r = spanned(
