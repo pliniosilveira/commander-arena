@@ -11,12 +11,13 @@ import type {
 } from '../src/game/protocol';
 import { createAppStore } from '../src/store';
 import { PreconsProvider } from '../src/ui/precons-context';
+import { DeckDialog } from '../src/ui/screens/DeckDialog';
 import { GameOver } from '../src/ui/screens/GameOver';
 import { lossReason, outcomeFor } from '../src/ui/screens/game-over-model';
 import { HonestyBanner } from '../src/ui/screens/HonestyBanner';
 import { honestyLines } from '../src/ui/screens/honesty-model';
 import { Menu } from '../src/ui/screens/Menu';
-import { defaultDecks, parseSeed } from '../src/ui/screens/menu-model';
+import { defaultDecks, parseSeed, pickRandomDeck } from '../src/ui/screens/menu-model';
 import { StoreProvider } from '../src/ui/store-context';
 import { playableSnapshot, preconsOf } from './precons-helpers';
 
@@ -72,7 +73,7 @@ describe('Menu', () => {
     expect(defaultDecks([])).toEqual({ humanDeck: '', aiDeck: '' });
   });
 
-  test('lists only the real precons for both seats, with the commander, and the start button', async () => {
+  test('the home has the two cards, the seed settings and no deck list', async () => {
     const snapshot = await playableSnapshot('synthetic-a');
     const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
     const out = html(
@@ -81,27 +82,21 @@ describe('Menu', () => {
         <Menu />
       </PreconsProvider>,
     );
-    expect(out.split(snapshot.name).length - 1).toBe(2);
-    expect(out).toContain('Commander: Synthetic Commander');
-    expect(out).toContain('Quick start');
-    expect(out).toContain('Your deck');
-    expect(out).toContain('Opponent&#x27;s deck');
     expect(out).toContain('unofficial');
+    expect(out).toContain('Play a game');
     expect(out).toContain('Start game');
-    expect(out).not.toMatch(/<button[^>]*disabled=""[^>]*>Start game/);
+    expect(out).toContain('Your Decks');
+    expect(out).toContain('Seed');
+    expect(out).toContain('Free first mulligan');
+    expect(out).not.toContain('Import a deck');
+    expect(out).not.toContain('role="dialog"');
+    expect(out).not.toContain(snapshot.name);
     expect(out).toContain('How to play this build');
     expect(out).not.toContain('<details open');
-    expect(out).toContain('name="human-deck"');
-    expect(out).toContain('name="ai-deck"');
-    expect(out).not.toContain('Test deck');
-    // The hidden test decks never show.
-    for (const hidden of ['Knights and Angels', 'Rats and Spiders', 'Bolts and Counterspells']) {
-      expect(out).not.toContain(hidden);
-    }
-    expect(out).not.toContain('No precon is installed yet');
+    expect(out).not.toMatch(/<button[^>]*disabled=""[^>]*>Start game/);
   });
 
-  test('with no precon installed it says so and Start is disabled, without crashing', () => {
+  test('with no precon installed the home says so and Start is disabled, without crashing', () => {
     const store = createAppStore({ client: new GameHost({ clock: () => 0 }) });
     for (const out of [
       html(store, <Menu />),
@@ -113,10 +108,71 @@ describe('Menu', () => {
       ),
     ]) {
       expect(out).toContain('No precon is installed yet');
-      expect(out).not.toContain('type="radio"');
       expect(out).toMatch(/<button[^>]*disabled=""[^>]*>Start game/);
-      expect(out).toContain('Import a deck');
+      expect(out).toContain('Your Decks');
     }
+  });
+
+  test('a deck dialog lists the precons in one tab and the saved decks in the other', () => {
+    const decks = [
+      {
+        id: 'p1',
+        kind: 'precon',
+        name: 'Precon One',
+        blurb: 'b',
+        commander: 'Cmd One',
+        edited: false,
+      },
+      { id: 's1', kind: 'saved', name: 'Saved One', blurb: 'b', commander: '', edited: false },
+    ] as const;
+    const dialog = (list: typeof decks | readonly [(typeof decks)[0]], value: string) =>
+      renderToStaticMarkup(
+        <DeckDialog
+          title="Choose your deck"
+          name="human-deck"
+          value={value}
+          prompt="Select the deck you'll play in this game."
+          decks={list}
+          error={null}
+          busy={false}
+          onChoose={() => undefined}
+          onCancel={() => undefined}
+          onImport={() => undefined}
+        />,
+      );
+    // The dialog opens on the tab of the marked deck.
+    const withSaved = dialog(decks, 's1');
+    expect(withSaved).toContain('role="dialog"');
+    expect(withSaved).toContain('Choose your deck');
+    expect(withSaved).toContain('Saved One');
+    expect(withSaved).toContain('No commander marked');
+    expect(withSaved).not.toContain('Precon One');
+    const onlyPrecons = dialog([decks[0]], 'p1');
+    expect(onlyPrecons).toContain('Precon One');
+    expect(onlyPrecons).toContain('Commander: Cmd One');
+    expect(onlyPrecons).not.toContain('Back');
+    expect(onlyPrecons).toContain('>Select<');
+    for (const label of ['Random all', 'Random precon', 'Random mine'])
+      expect(onlyPrecons).toContain(label);
+    // No deck was saved: its random button is disabled.
+    expect(onlyPrecons).toMatch(/<button[^>]*disabled=""[^>]*>Random mine/);
+    expect(onlyPrecons).not.toMatch(/<button[^>]*disabled=""[^>]*>Random precon/);
+    expect(onlyPrecons).toContain('name="human-deck"');
+  });
+
+  test('the random buttons pick from the whole list, the precons or the saved decks', () => {
+    const deck = (id: string, kind: 'precon' | 'saved') =>
+      ({ id, kind, name: id, blurb: '', commander: '', edited: false }) as const;
+    const decks = [deck('p1', 'precon'), deck('p2', 'precon'), deck('s1', 'saved')];
+    const last = (n: number) => n - 1;
+    expect(pickRandomDeck(decks, 'all', last)?.id).toBe('s1');
+    expect(pickRandomDeck(decks, 'all', () => 0)?.id).toBe('p1');
+    expect(pickRandomDeck(decks, 'precon', last)?.id).toBe('p2');
+    expect(pickRandomDeck(decks, 'saved', last)?.id).toBe('s1');
+    expect(pickRandomDeck([decks[0] as (typeof decks)[0]], 'saved', last)).toBeNull();
+    expect(pickRandomDeck([], 'all', last)).toBeNull();
+    // The browser's own source always lands inside the list.
+    expect(['p1', 'p2']).toContain(pickRandomDeck(decks, 'precon')?.id);
   });
 
   test('the seed rules', () => {
