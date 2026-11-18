@@ -307,6 +307,50 @@ export const EFFECT_REVEAL_UNTIL = defineRule<Clauses>({
 });
 
 /**
+ * `effect.reveal-until-may-put`: "reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your
+ * hand. Put the rest on the bottom of your library in a random order" (D-609, CR 701.20, 401.4, 303.4f, 608.2c: Songbirds' Blessing). Four sentences that `splitSentences` keeps
+ * together: the card found is offered for the battlefield, goes into the hand when the player does not put it there, and the rest go to the bottom in a random order. Not read:
+ * another place for the card, another place for the rest, "in any order", a quality with a mana value.
+ */
+export const EFFECT_REVEAL_UNTIL_MAY_PUT = defineRule<Clauses>({
+  id: 'effect.reveal-until-may-put',
+  family: 'effect',
+  leading: ['reveal'],
+  cites: [
+    'CR 701.20 (Reveal)',
+    'CR 401.4 (Library)',
+    'CR 303.4f (Auras)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    "reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the bottom of your library in a random order",
+    'reveal cards from the top of your library until you reveal a land card. You may put that card onto the battlefield. If you don’t, put it into your hand. Put the rest on the bottom of your library in a random order',
+  ],
+  rejects: [
+    "reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand",
+    "reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your graveyard. Put the rest on the bottom of your library in a random order",
+    "reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the bottom of your library in any order",
+    "reveal cards from the top of your library until you reveal an Aura card. You may put that card into your hand. If you don't, put it onto the battlefield. Put the rest on the bottom of your library in a random order",
+    "reveal cards from the top of your library until you reveal two Aura cards. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the bottom of your library in a random order",
+    "reveal cards from the top of your library until you reveal an Aura card with mana value 3 or less. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the bottom of your library in a random order",
+  ],
+  parse: single(
+    'effect.reveal-until-may-put',
+    sequence(
+      literal('reveal cards from the top of your library until you reveal '),
+      family<IrNoun>('noun', { only: ['noun.library-card'] }),
+      pattern(
+        /\. you may put that card onto the battlefield\. if you don['’]t, put it into your hand\. put the rest on the bottom of your library in a random order/iu,
+      ),
+    ),
+    ([, card]) => ({
+      verb: 'revealUntilMayPut',
+      args: { card: { ...card, upTo: false, plural: false } },
+    }),
+  ),
+});
+
+/**
  * `effect.cast-free`: "you may cast a spell with mana value 5 or less from your hand without paying its mana cost", "you may cast a
  * creature spell from your hand without paying its mana cost", "you may play the exiled card without paying its mana cost" (CR 608.2g,
  * 118.9, 305.1: the controller may cast the card as this resolves without paying its mana cost, or, with "play", put a land onto the
@@ -503,6 +547,7 @@ export const DINOSAUR_EFFECT_RULES = [
   EFFECT_FIGHT_EACH,
   EFFECT_EXCESS_DAMAGE,
   EFFECT_REVEAL_UNTIL,
+  EFFECT_REVEAL_UNTIL_MAY_PUT,
   EFFECT_CAST_FREE,
   EFFECT_FOR_EACH_CREATE,
   EFFECT_DAMAGE_DIVIDED,

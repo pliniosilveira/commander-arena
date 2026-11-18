@@ -538,3 +538,5 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - Cast from the graveyard for another cost (D-606): the alternative cost is charged for every cast from the graveyard of a card that has it, also one a permission of an effect gave; the choice between the two costs of CR 118.9 is not offered (the card has one way). UNVERIFIED against a card with both.
 
 - Aura that returns (D-607): only "this card" of an Aura whose trigger is the dying of its creature. Gift of Immortality is not read: "return that card to the battlefield under its owner's control" after "when enchanted creature dies" lowers to a move of the enchanted creature (`attached`), not the card it became (`triggerCard`): UNVERIFIED at runtime and to be fixed with that card; "attached to that creature" for a delayed return is not built.
+
+- Look at the top and put an Aura or Equipment (D-608), reveal until and may put (D-609), attach to the token (D-610): only the sentences of Armored Skyhunter, Songbirds' Blessing and Ajani's Chosen are read (one kind of card, the places and orders those cards name).

@@ -5173,3 +5173,21 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Engine: `rules/effects.ts` (the delayed trigger for `thisCard`), `ast/validate-later.ts`. Parser: `lowerReturnSelf` (`lower/effects.ts`), `effect.return-this-card-delayed`, `DELAYED_RETURN_THIS_CARD`.
 - Tests: engine `scenario-xx-aura-returns.test.ts` (the Aura returns and enchants a creature, stays when there is none, comes back at the end step); cards `parser-aura-returns.test.ts` (the real lines of both cards, near misses).
 - Example cards: Screams from Within, Ghoulish Impetus (issue 89).
+
+## Look at the top, put an Aura or Equipment, attach it (issue 89, D-608)
+
+- CR: 401.2, 303.4f, 701.3, 301.5, 401.4.
+- AST: a `lookAtTop` with `take: { filter: { anyOf: [{ subtypes: ['Aura'] }, { subtypes: ['Equipment'] }] }, max: 1, to: 'battlefield' }` and `rest: 'bottomRandom'`, then `conditional { objectMatches moved Equipment }` of a `chooseObjects` (one creature you control) and `attach { object: moved, to: chosen }`.
+- Parser: `effect.look-put-attach`, `splitSentences` (`segment.ts`), `lower.look-take`. Tests: engine `scenario-xx-look-put-attach.test.ts`; cards `parser-look-put-attach.test.ts`. Example card: Armored Skyhunter (issue 89).
+
+## Reveal until, may put onto the battlefield, else into the hand (issue 89, D-609)
+
+- CR: 701.20, 303.4f, 608.2c, 401.4.
+- AST: `revealUntil { filter, put: 'none' }`, `may { moveToZone moved to battlefield }`, `conditional { not didPrevious } moveToZone moved to hand`.
+- Parser: `effect.reveal-until-may-put`, `splitSentences`, `lower.reveal-until-may-put`. Tests: engine `scenario-xx-reveal-until-may-put.test.ts` (mutation-checked: `moved` after the reveal); cards `parser-reveal-until-may-put.test.ts`. Example card: Songbirds' Blessing (issue 89).
+
+## An Aura attached to the token (issue 89, D-610)
+
+- CR: 701.3, 303.4, 608.2c.
+- AST: `conditional { objectMatches triggerSubject Aura }` of `may { attach { object: triggerSubject, to: moved } }` after a `createToken`.
+- Parser: `effect.attach` ("the token"), `lower.attach` (`takesObjectTest`, `acceptsOptional`), `lower/triggers.ts`. Tests: engine `scenario-xx-attach-entering-aura.test.ts`; cards `parser-attach-entering-aura.test.ts`. Example card: Ajani's Chosen (issue 89).

@@ -29,4 +29,5 @@
 // 125: chooseObjects may require the choice (`exactly`), "put counters on a creature you control" (D-603, issue 89).
 // 126: The amount `aurasAttachedToTriggerSubject` and the last-known Auras (D-604), `castFree.filter` and `moveToZone.random` (D-605), the alternative cost of `castFromGraveyard` (D-606), issue 89.
 // 127: A delayed return of the Aura card that has the ability (`thisCard`) after "when enchanted creature dies" (D-607, issue 89).
-export const ENGINE_VERSION = 127;
+// 128: `revealUntil` may put nothing (D-609), `attach` of the permanent a trigger is about (D-610), the card a `lookAtTop` put onto the battlefield is `moved` (D-608), issue 89.
+export const ENGINE_VERSION = 128;

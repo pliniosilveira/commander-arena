@@ -1076,25 +1076,60 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
       if (!lowered.ok) return lowered;
       atMost = lowered.value;
     }
-    return {
-      ok: true,
-      value: [
-        {
-          kind: 'lookAtTop',
-          count: count.value,
-          take: {
-            filter: filter.value,
-            max: 1,
-            ...(toBattlefield ? { to: 'battlefield' as const } : {}),
-            ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
-          },
-          // "Look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand."
-          // (stage P34, D-152): the card looked at stays on top of the library unless it is taken.
-          rest: toGraveyard.value ? 'graveyard' : onTop ? 'top' : 'bottomRandom',
-        },
-      ],
-      rule: clause.rule,
+    const look: Effect = {
+      kind: 'lookAtTop',
+      count: count.value,
+      take: {
+        filter: filter.value,
+        max: 1,
+        ...(toBattlefield ? { to: 'battlefield' as const } : {}),
+        ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
+      },
+      // "Look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand."
+      // (stage P34, D-152): the card looked at stays on top of the library unless it is taken.
+      rest: toGraveyard.value ? 'graveyard' : onTop ? 'top' : 'bottomRandom',
     };
+    // D-608 (Armored Skyhunter, CR 301.5, 701.3): "If an Equipment is put onto the battlefield this way, you may attach it to a creature you control": the creature is chosen as
+    // the effect resolves (none: the Equipment stays unattached), and only for an Equipment.
+    const attach = arg(clause, 'attachEquipment');
+    if (attach?.kind === 'flag' && attach.value) {
+      if (!toBattlefield) return failure(clause);
+      const blocked = missingFeatures([
+        'effect:chooseObjects',
+        'effect:attach',
+        'effect:conditional',
+      ]);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const id = 'attach1';
+      return {
+        ok: true,
+        value: [
+          look,
+          {
+            kind: 'conditional',
+            condition: {
+              kind: 'objectMatches',
+              of: { kind: 'moved' },
+              filter: { subtypes: ['Equipment'] },
+            },
+            effect: {
+              kind: 'sequence',
+              effects: [
+                {
+                  kind: 'chooseObjects',
+                  id,
+                  filter: { zone: 'battlefield', types: ['creature'], controller: 'you' },
+                  count: 1,
+                },
+                { kind: 'attach', object: { kind: 'moved' }, to: { kind: 'chosen', id } },
+              ],
+            },
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
+    return { ok: true, value: [look], rule: clause.rule };
   },
 };
 
@@ -1248,7 +1283,22 @@ const ATTACH: Lowering<IrClause, Effects> = {
   head: 'attach',
   id: 'lower.attach',
   needs: ['effect:attach'],
+  // D-610 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the test of the clause is read when the instruction comes up.
+  takesObjectTest: true,
+  // D-610 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the offer is the engine's `may` of the attach, asked as it comes up.
+  acceptsOptional: true,
   lower(clause, ctx) {
+    if (clause.optional) {
+      const blocked = missingFeatures(['effect:may']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const attached = ATTACH.lower({ ...clause, optional: false }, ctx);
+      if (!attached.ok) return attached;
+      return {
+        ok: true,
+        value: attached.value.map((effect) => ({ kind: 'may' as const, effect })),
+        rule: clause.rule,
+      };
+    }
     const object = arg(clause, 'object');
     const to = arg(clause, 'to');
     if (object?.kind !== 'noun' || to?.kind !== 'noun') return failure(clause);
@@ -1256,9 +1306,10 @@ const ATTACH: Lowering<IrClause, Effects> = {
     if (to.plural || to.upTo || (to.count?.kind === 'number' && to.count.value !== 1)) {
       return failure(clause);
     }
-    const what = objectRefOf(object, ctx);
+    // D-610 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the Aura the trigger is about, read for a trigger of an enchantment entering.
+    const what = objectRefOf(object, ctx, { triggerSubject: true });
     if (!what.ok) return what;
-    if (what.value.kind !== 'this') return failure(clause);
+    if (what.value.kind !== 'this' && what.value.kind !== 'triggerSubject') return failure(clause);
     const onto = objectRefOf(to, ctx, { token: true, triggerSubject: true });
     if (!onto.ok) return onto;
     return {

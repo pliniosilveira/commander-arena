@@ -2741,7 +2741,11 @@ export type Effect =
   | {
       readonly kind: 'revealUntil';
       readonly filter: ObjectFilter;
-      readonly put: 'battlefield' | 'hand';
+      /**
+       * `none` (D-609, "You may put that card onto the battlefield. If you don't, put it into your hand."): the card found is not moved by this effect; it stays in the library
+       * (revealed) and is what `moved` names for the effects after it, which put it somewhere or not; the rest go to the bottom as always.
+       */
+      readonly put: 'battlefield' | 'hand' | 'none';
       readonly tapped?: true;
     }
   /**

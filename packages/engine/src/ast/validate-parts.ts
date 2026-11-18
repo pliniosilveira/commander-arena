@@ -2668,6 +2668,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'search' ||
     // D-216: the card a `lookAndSplit` exiled is "the exiled card" ("You may play the exiled card this turn").
     (e?.kind === 'lookAndSplit' && e.exile > 0) ||
+    // D-608: the card a `lookAtTop` put onto the battlefield is "it" ("If an Equipment is put onto the battlefield this way, you may attach it to a creature you control").
+    (e?.kind === 'lookAtTop' && e.take?.to === 'battlefield') ||
     // D-327: the cards a `mill` put into a graveyard are "that card" ("Mill a card. You may play that card this turn.").
     e?.kind === 'mill' ||
     // Galadriel group 3: the card a `draw` with `reveal` drew is "that card" ("Draw a card and reveal it. ... that card's mana value").
@@ -4543,11 +4545,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'the cards are in the library: no zone, controller, owner, stackKind, other, or anything read from the game',
         );
       }
-      if (!isOneOf(e.put, ['battlefield', 'hand'])) {
+      if (!isOneOf(e.put, ['battlefield', 'hand', 'none'])) {
         issue(
           out,
           `${path}.put`,
-          `a revealed card is put onto the battlefield or into the hand, not ${JSON.stringify(e.put)}`,
+          `a revealed card is put onto the battlefield, into the hand or (the card found stays, for the effects after it) nowhere, not ${JSON.stringify(e.put)}`,
         );
       }
       if (e.tapped !== undefined && (e.tapped !== true || e.put !== 'battlefield')) {
@@ -4852,7 +4854,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'attach':
       // CR 701.3: both are single objects named by reference ("this", a target, "this spell").
-      checkRef(e.object, 'object', `${path}.object`, scope, out);
+      // D-610 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the Aura or Equipment the trigger is about.
+      if (kindOf(e.object) === 'triggerSubject')
+        checkSubjectRef(e.object, 'permanent', `${path}.object`, scope, out);
+      else checkRef(e.object, 'object', `${path}.object`, scope, out);
       // D-406: "Whenever a creature enters, you may attach this Aura to that creature": the permanent the trigger is about.
       if (kindOf(e.to) === 'triggerSubject')
         checkSubjectRef(e.to, 'permanent', `${path}.to`, scope, out);

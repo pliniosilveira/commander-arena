@@ -1154,7 +1154,12 @@ export function lowerTriggered(
       c.verb === 'putMovedOntoBattlefield' ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong');
-  const permission = (s: Sentence) => s.clauses.every((c) => c.verb === 'mayPlay' || asksItself(c));
+  // D-610 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the offer is the `may` of the attach, which sits beside the condition (the ability's own
+  // `optional` could not). Without a condition the "you may" of an attach stays the ability's.
+  const conditionalAttach = (s: Sentence) =>
+    s.condition !== undefined && s.clauses.every((c) => c.verb === 'attach' && c.optional);
+  const permission = (s: Sentence) =>
+    conditionalAttach(s) || s.clauses.every((c) => c.verb === 'mayPlay' || asksItself(c));
   const ownMay = (s: Sentence, i: number) =>
     !permission(s) &&
     !unlessSentence(s) &&
@@ -1181,7 +1186,10 @@ export function lowerTriggered(
         // The sentences of an offer keep their "you may": `lowerSentences` reads it, and refuses a "you
         // may" inside what a payment buys.
         // `castCard` keeps its "you may": its lowering reads it (a cast that is not the player's choice is not run). So do the two instructions of D-394.
-        optional: ownMay(s, i) || (permission(s) && !asksItself(c)) ? false : c.optional,
+        optional:
+          ownMay(s, i) || (permission(s) && !asksItself(c) && !conditionalAttach(s))
+            ? false
+            : c.optional,
       })),
     })),
     ctx,

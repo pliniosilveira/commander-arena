@@ -1,5 +1,5 @@
 {
-  "parserVersion": 139,
+  "parserVersion": 140,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -960,19 +960,10 @@
     "2598294c-a9a7-4bef-a562-23f297a80536": {
       "name": "Songbirds' Blessing",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever enchanted creature attacks, reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the bottom of your library in a random order.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.reveal-until"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "437f154f"
+      "ast": "2cff5ac3"
     },
     "25afddd2-6e48-4742-b34e-e3b5def7c0fd": {
       "name": "Pippin, Guard of the Citadel",
@@ -4047,19 +4038,10 @@
     "9c77eb0a-543a-41db-ba1f-aa0163837ae0": {
       "name": "Ajani's Chosen",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever an enchantment you control enters, create a 2/2 white Cat creature token. If that enchantment is an Aura, you may attach it to the token.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.attach"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "9b11ed00"
+      "ast": "830e65ae"
     },
     "9cc52afb-9788-46f6-9f9b-347513f8a64f": {
       "name": "Dwarven Shortsword",
@@ -4661,19 +4643,10 @@
     "b4dbbf56-d7df-4183-bb48-cfc6b4d0468f": {
       "name": "Armored Skyhunter",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever ~ attacks, look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.look-reorder"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "7810b3ea"
+      "ast": "a40be3c9"
     },
     "b548578c-4910-402c-8e78-498924e0a9be": {
       "name": "Consumed by Greed",
@@ -6692,7 +6665,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 445,
+      "supported": 448,
       "total": 480
     }
   }

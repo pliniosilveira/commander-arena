@@ -68,7 +68,7 @@ export function runRevealUntil(
     revealed.filter((id) => id !== found),
   );
   const put =
-    found === null
+    found === null || effect.put === 'none'
       ? []
       : moveInstructions(
           [found],
@@ -79,6 +79,7 @@ export function runRevealUntil(
         );
   return {
     ...done(bottom.state, [...events, ...bottom.events], [...put, ...bottom.front]),
-    lastMoved: [],
+    // D-609: with `put: 'none'` the card found is what the effects after this one move ("You may put that card onto the battlefield").
+    lastMoved: effect.put === 'none' && found !== null ? [found] : [],
   };
 }

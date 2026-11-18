@@ -226,6 +226,15 @@ const LOOK_AT_TOP = /^look at the top [^.]* cards of your library\.$/i;
 const TAKE_FROM_AMONG =
   /^you may reveal [^.]* from among them and put (?:it|them) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
+/**
+ * "Look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you
+ * may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-608, Armored Skyhunter): four sentences that are one
+ * instruction, kept together for `effect.look-put-attach`.
+ */
+const PUT_FROM_AMONG_ONTO = /^you may put [^.]* from among them onto the battlefield\.$/i;
+const IF_EQUIPMENT_ATTACH =
+  /^if an equipment is put onto the battlefield this way, you may attach it to a creature you control\.$/i;
+const PUT_REST_OF_THOSE = /^put the rest of those cards [^.]*\.$/i;
 /** "Put any number of nonland permanent cards with total mana value 4 or less from among them onto the battlefield." (stage P68, D-230): the middle sentence of the same instruction. */
 const PUT_ANY_TOTAL =
   /^put any number of [^.]* with total mana value \d+ or less from among them onto the battlefield\.$/i;
@@ -256,6 +265,12 @@ const PUT_HAND_OTHER_BOTTOM =
 const REVEAL_UNTIL =
   /^(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
 const PUT_THAT_CARD = /^put that card [^.]*\.$/i;
+/**
+ * "Reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the
+ * bottom of your library in a random order." (D-609, Songbirds' Blessing): four sentences that are one instruction, kept together for `effect.reveal-until-may-put`.
+ */
+const MAY_PUT_THAT_CARD_ONTO = /^you may put that card onto the battlefield\.$/i;
+const IF_YOU_DONT_HAND = /^if you don['’]t, put it into your hand\.$/i;
 
 /**
  * "Exile cards from the top of your library until you exile a nonland card. You may cast it without paying its mana cost if that spell's
@@ -389,10 +404,30 @@ const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
   for (let i = 0; i < spans.length; i++) {
-    const [a, b, c] = [spans[i], spans[i + 1], spans[i + 2]];
+    const [a, b, c, d] = [spans[i], spans[i + 1], spans[i + 2], spans[i + 3]];
     const said = (span: Span | undefined, re: RegExp) =>
       span !== undefined && re.test(text.slice(span.start, span.end));
     if (
+      a !== undefined &&
+      d !== undefined &&
+      said(a, REVEAL_UNTIL) &&
+      said(b, MAY_PUT_THAT_CARD_ONTO) &&
+      said(c, IF_YOU_DONT_HAND) &&
+      said(d, PUT_THE_REST)
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
+      a !== undefined &&
+      d !== undefined &&
+      said(a, LOOK_AT_TOP) &&
+      said(b, PUT_FROM_AMONG_ONTO) &&
+      said(c, IF_EQUIPMENT_ATTACH) &&
+      said(d, PUT_REST_OF_THOSE)
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
       a !== undefined &&
       c !== undefined &&
       said(a, REVEAL_THE_TOP) &&

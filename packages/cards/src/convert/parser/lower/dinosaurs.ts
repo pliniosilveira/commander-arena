@@ -141,6 +141,45 @@ export const REVEAL_UNTIL: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the
+ * bottom of your library in a random order." (D-609, CR 701.20, 303.4f, 608.2c): the engine's `revealUntil` that moves nothing (`put: 'none'`; the rest go to the bottom), then a `may`
+ * move of the card found onto the battlefield (an Aura chooses what it enchants as it enters) and, when the player did not, a move of it into the hand.
+ */
+export const REVEAL_UNTIL_MAY_PUT: Lowering<IrClause, Effects> = {
+  head: 'revealUntilMayPut',
+  id: 'lower.reveal-until-may-put',
+  needs: [
+    'effect:revealUntil',
+    'effect:may',
+    'effect:conditional',
+    'effect:moveToZone',
+    'selector:moved',
+  ],
+  lower(clause) {
+    const card = arg(clause, 'card');
+    if (card?.kind !== 'noun') return failure(clause);
+    const filter = lowerFilter({ ...card, filter: withoutZone(card.filter) });
+    if (!filter.ok) return filter;
+    return {
+      ok: true,
+      value: [
+        { kind: 'revealUntil', filter: filter.value, put: 'none' },
+        {
+          kind: 'may',
+          effect: { kind: 'moveToZone', objects: { kind: 'moved' }, to: 'battlefield' },
+        },
+        {
+          kind: 'conditional',
+          condition: { kind: 'not', term: { kind: 'didPrevious' } },
+          effect: { kind: 'moveToZone', objects: { kind: 'moved' }, to: 'hand' },
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "You may cast a spell with mana value 5 or less from your hand without paying its mana cost", "You may play the exiled card without
  * paying its mana cost" (CR 608.2g, 118.9, 305.1): the engine's `castFree`, the controller choosing among the cards of their hand that
  * match (a `choose` selector) or taking the card a linked ability exiled; "play" lets a land be chosen too. Declining does nothing, which
@@ -214,6 +253,7 @@ export const DINOSAUR_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   FIGHT,
   FIGHT_PAIRS,
   REVEAL_UNTIL,
+  REVEAL_UNTIL_MAY_PUT,
   CAST_FREE,
   DEAL_DIVIDED_DAMAGE,
 ];
