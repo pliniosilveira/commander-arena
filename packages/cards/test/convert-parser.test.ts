@@ -825,6 +825,7 @@ describe('unmatched abilities', () => {
       'noun.target-cards-in-your-graveyard',
       'noun.target-card-in-a-graveyard',
       'noun.x-target-graveyard-cards',
+      'noun.up-to-x-target-graveyard-cards',
       'noun.any-number-target-graveyard-cards',
       'noun.target-nonmatching-graveyard-card',
       'noun.target-card-exiled-with-self',
