@@ -26,7 +26,7 @@ export interface DeckChoice {
   readonly blurb: string;
   /** The commander as the list writes it; empty when the list marks none. */
   readonly commander: string;
-  /** Art of the commander card, when known (precons; not saved decks, which keep only text). */
+  /** Art of the commander card, when known. */
   readonly commanderImage?: string;
   /** The deck's colors: the commander's color identity; absent when unknown. */
   readonly colors?: readonly string[];
@@ -43,10 +43,17 @@ export function commanderNameOf(text: string): string {
 /** The blurb without its trailing "Commander: X." sentence; the card lists the commander itself. */
 export const blurbOf = (blurb: string): string => blurb.replace(/\s*Commander: [^.]*\.$/, '');
 
+/** Art and colors of a commander card, looked up by name for the decks that keep only text. */
+export interface CommanderLook {
+  readonly image?: string | undefined;
+  readonly colors: readonly string[];
+}
+
 export function deckChoices(
   precons: readonly PreconInfo[],
   overrides: readonly SavedDeck[],
   saved: readonly SavedDeck[],
+  looks: ReadonlyMap<string, CommanderLook> = new Map(),
 ): readonly DeckChoice[] {
   const override = new Map<string, SavedDeck>();
   for (const deck of overrides) if (deck.preconId !== undefined) override.set(deck.preconId, deck);
@@ -68,15 +75,19 @@ export function deckChoices(
       edited: mine !== undefined,
     };
   });
-  const fromSaved = saved.map(
-    (deck): DeckChoice => ({
+  const fromSaved = saved.map((deck): DeckChoice => {
+    const commander = commanderNameOf(deck.text);
+    const look = looks.get(commander);
+    return {
       id: savedDeckChoiceId(deck.id),
       name: deck.name,
       blurb: 'Saved in this browser.',
-      commander: commanderNameOf(deck.text),
+      commander,
+      ...(look?.image === undefined ? {} : { commanderImage: look.image }),
+      ...(look === undefined ? {} : { colors: look.colors }),
       kind: 'saved',
       edited: false,
-    }),
-  );
+    };
+  });
   return [...fromPrecons, ...fromSaved];
 }
