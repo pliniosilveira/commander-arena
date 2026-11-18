@@ -17,11 +17,11 @@ name: Deck support triage
 # before this workflow existed or one whose last check ran under older rules. Only people with write access can start it. The issue is read through the
 # API instead of the event, and what the author wrote still only ever goes into files, never into a script or the environment file.
 
-# The precon snapshot: a precon issue (the "Precon issues" workflow writes them, label `precon-request`, marker `precon-issues:deck=...`) also gets the card-data
-# snapshot of its deck, made here by `pnpm precon:from-issue` because a runner can reach Scryfall's bulk file and the agent's cloud session cannot. The files
-# (the snapshot and the decklist) go to the branch `precon-snapshot/<id>`, and one comment of github-actions says where; the deck-support routine takes them
-# into its pull request once every card is supported (`.claude/skills/deck-support/SKILL.md`). Only an issue of github-actions or of the owner, with the label,
-# gets it: the description is data, and nothing of it reaches a shell.
+# The precon snapshot (D-608): a precon issue (the "Precon issues" workflow writes them, label `precon-request`, marker `precon-issues:deck=...`) also gets the
+# card-data snapshot of its deck, made here by `pnpm precon:from-issue` because a runner can reach Scryfall's bulk file and the agent's cloud session cannot.
+# The snapshot, compressed and encoded, goes into one comment of github-actions (marker `<!-- precon-snapshot -->`); the deck-support routine decodes it with
+# `pnpm precon:from-comment` into its pull request once every card is supported (`.claude/skills/deck-support/SKILL.md`). Only an issue of github-actions or of the
+# owner, with the label, gets it: the description is data, and nothing of it reaches a shell.
 
 on:
   issues:
@@ -192,7 +192,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      contents: write
+      contents: read
       issues: write
     concurrency:
       group: precon-snapshot-${{ github.event.issue.number || inputs.issue }}
@@ -245,51 +245,22 @@ jobs:
         if: ${{ steps.issue.outputs.go == 'true' }}
         run: |
           code=0
-          node tools/precon/from-issue-cli.ts --body "$RUNNER_TEMP/issue.md" --download > "$RUNNER_TEMP/snapshot.json" || code=$?
+          mkdir -p "$RUNNER_TEMP/out"
+          node tools/precon/from-issue-cli.ts --body "$RUNNER_TEMP/issue.md" --download --snapshots-dir "$RUNNER_TEMP/out" --decks-dir "$RUNNER_TEMP/out" --comment-out "$RUNNER_TEMP/comment-snapshot.md" > "$RUNNER_TEMP/snapshot.json" || code=$?
           cat "$RUNNER_TEMP/snapshot.json"
           # 0 written, 1 the issue or the cards could not give a snapshot; anything else is a failure of the tool itself.
           test "$code" -le 1
           echo "ok=$(jq -r .ok "$RUNNER_TEMP/snapshot.json")" >> "$GITHUB_OUTPUT"
-      - name: Put the files on their branch
-        id: publish
-        if: ${{ steps.make.outputs.ok == 'true' }}
-        run: |
-          id=$(jq -r .id "$RUNNER_TEMP/snapshot.json")
-          case "$id" in
-            ''|*[!a-z0-9-]*) echo "unusable id"; exit 1 ;;
-          esac
-          branch="precon-snapshot/$id"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$branch"
-          git add "apps/web/src/precons/snapshots/$id.json" "decks/$id.txt"
-          git commit -m "Snapshot of the precon $id, made from issue #${{ steps.issue.outputs.number }}"
-          git push --force origin "$branch"
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          echo "id=$id" >> "$GITHUB_OUTPUT"
-          echo "decklist_sha=$(sha256sum "decks/$id.txt" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
-      - name: Say where the snapshot is
+      - name: Post the snapshot in a comment
         if: ${{ steps.issue.outputs.go == 'true' && steps.make.outcome != 'skipped' }}
         env:
           GH_TOKEN: ${{ github.token }}
           NUMBER: ${{ steps.issue.outputs.number }}
           OK: ${{ steps.make.outputs.ok }}
-          BRANCH: ${{ steps.publish.outputs.branch }}
-          SHA: ${{ steps.publish.outputs.sha }}
-          PRECON_ID: ${{ steps.publish.outputs.id }}
-          DECKLIST_SHA: ${{ steps.publish.outputs.decklist_sha }}
         run: |
           marker='<!-- precon-snapshot -->'
           if [ "$OK" = "true" ]; then
-            warnings=$(jq -r '.problems[] | "- " + .' "$RUNNER_TEMP/snapshot.json")
-            {
-              printf '%s\n' "$marker"
-              printf 'The snapshot of the precon `%s` is made from the current card data of Scryfall and is on the branch `%s` (commit `%s`):\n\n' "$PRECON_ID" "$BRANCH" "$SHA"
-              printf -- '- `apps/web/src/precons/snapshots/%s.json`\n- `decks/%s.txt` (sha256 `%s`)\n\n' "$PRECON_ID" "$PRECON_ID" "$DECKLIST_SHA"
-              printf 'The deck-support routine takes both files into its pull request when every card of the deck is supported.\n'
-              if [ -n "$warnings" ]; then printf '\nWhat the snapshot tool reported (the app starts the deck only when none of it is left):\n\n%s\n' "$warnings"; fi
-            } > "$RUNNER_TEMP/comment.md"
+            cp "$RUNNER_TEMP/comment-snapshot.md" "$RUNNER_TEMP/comment.md"
           else
             {
               printf '%s\n' "$marker"

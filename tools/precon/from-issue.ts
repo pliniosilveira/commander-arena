@@ -11,12 +11,14 @@ import { parseArgs } from 'node:util';
 import { readDeck } from '../corpus/decks.ts';
 import { downloadOracleCards } from '../corpus/download.ts';
 import { type Io, REPO_ROOT, run as runSnapshot } from './main.ts';
+import { encodeComment } from './snapshot-comment.ts';
 
 export const USAGE = `Usage: pnpm precon:from-issue --body <issue file> (--file <oracle_cards file> | --download) [--snapshots-dir <dir>] [--decks-dir <dir>]
 
 Reads a precon issue (the text the "Precon issues" workflow writes), writes decks/<id>.txt and apps/web/src/precons/snapshots/<id>.json
 (the folders can be changed) and prints one line of JSON: { ok, id, name, blurb, update, snapshot, decklist, problems }.
 A precon the app already has keeps its blurb; a new one gets "A Commander precon led by <commander>.".
+--comment-out also writes the comment that carries the snapshot (compressed, in a block; pnpm precon:from-comment reads it back).
 --download fetches the bulk file into .cache/corpus/ first (a runner can reach Scryfall; the cloud session of the agent cannot).
 Exit code: 0 written, 1 the issue or the cards could not give a snapshot (nothing is written), 2 a usage error.`;
 
@@ -85,6 +87,7 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
         download: { type: 'boolean' },
         'snapshots-dir': { type: 'string' },
         'decks-dir': { type: 'string' },
+        'comment-out': { type: 'string' },
         help: { type: 'boolean', short: 'h' },
       },
     }));
@@ -167,6 +170,15 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
     await rm(work, { recursive: true, force: true });
   }
   if (code !== 0) return fail(errors.length > 0 ? errors : ['the snapshot could not be made']);
+  const snapshotFile = path.join(snapshotsDir, `${request.id}.json`);
+  if (typeof values['comment-out'] === 'string') {
+    try {
+      const comment = encodeComment(request.id, request.name, await readFile(snapshotFile, 'utf8'));
+      await writeFile(path.resolve(values['comment-out']), comment);
+    } catch (error) {
+      return fail([error instanceof Error ? error.message : String(error)]);
+    }
+  }
   const deckFile = path.join(decksDir, `${request.id}.txt`);
   await mkdir(decksDir, { recursive: true });
   await writeFile(deckFile, request.decklist);
@@ -177,7 +189,7 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
       name: request.name,
       blurb,
       update: request.update,
-      snapshot: path.join(snapshotsDir, `${request.id}.json`),
+      snapshot: snapshotFile,
       decklist: deckFile,
       problems: lines.filter((line) => line.startsWith('warning: ')),
     }),

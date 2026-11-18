@@ -36,6 +36,7 @@
     "ai:arena": "node tools/ai/arena.ts",
     "precon:snapshot": "node tools/precon/cli.ts",
     "precon:from-issue": "node tools/precon/from-issue-cli.ts",
+    "precon:from-comment": "node tools/precon/from-comment-cli.ts",
     "e2e": "pnpm --filter @commander-arena/web e2e"
   },
   "devDependencies": {
