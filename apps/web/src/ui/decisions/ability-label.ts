@@ -1295,9 +1295,6 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         ? `For each of ${object(effect.objects)}, create a token that's a copy of that creature, except it has haste`
         : UNSAID;
     }
-    case 'populate':
-      // D-631 (CR 701.36a).
-      return 'Populate';
     case 'chooseObjects':
       // D-634 (CR 608.2d): "Choose a token you control", the offer of Brudiclad.
       return effect.count === 1 &&

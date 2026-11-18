@@ -1196,9 +1196,6 @@ function runEffect(
         lastMoved: [made.copy],
       };
     }
-    case 'populate':
-      // CR 701.36a (D-631): the token to copy is chosen, and the copy made, as the instruction runs (rules/populate.ts).
-      return done(state, [], [{ kind: 'populate', chosen: null }]);
     case 'prepare': {
       let next = state;
       const events: GameEvent[] = [];
