@@ -1261,6 +1261,7 @@ function thisWaysOf(clause: IrClause): Extract<IrAmount, { kind: 'thisWay' }>[] 
       case 'minus':
         visit(amount.of);
         break;
+      case 'extreme':
       case 'sum':
         amount.of.forEach(visit);
         break;

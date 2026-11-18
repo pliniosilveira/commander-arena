@@ -97,6 +97,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:upToThatMany',
   // D-513: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
   'selector:upToTriggerAmount',
+  // CR 107.3c, 603.3d: "return up to X target Zombie cards from your graveyard to the battlefield, where X is the number of opponents you have" (`TargetSpec.upToAmount`).
+  'selector:upToAmount',
   // D-386: "X target creature cards from your graveyard" (`TargetSpec.countX`).
   'selector:countX',
   'selector:greatest',
@@ -505,10 +507,38 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
   }
   // "Return X target creature cards from your graveyard to your hand" (Hashaton group 10, D-386, CR 601.2b-c): as many targets as the X announced, of a spell's own
   // text and of objects (cards or permanents); the one place the engine's `countX` is read. Anything else about the noun that sets a count refuses it.
-  const countX = noun.det === 'target' && noun.count?.kind === 'x';
+  // "up to X target Zombie cards from your graveyard to the battlefield, where X is the number of opponents you have" (CR 107.3c, 603.3d): when the sentence defines X, the number of
+  // targets is that amount, read as the ability triggers (the engine's `upToAmount`); only in a triggered ability, where the ability is put on the stack with it.
+  const upToDefinedX =
+    noun.det === 'target' &&
+    noun.count?.kind === 'x' &&
+    noun.upTo === true &&
+    noun.rule === 'noun.up-to-x-target-graveyard-cards' &&
+    ctx.xIs !== null &&
+    ctx.owner === 'ability' &&
+    ctx.triggeredBody;
+  const countX = noun.det === 'target' && noun.count?.kind === 'x' && !upToDefinedX;
+  // "up to X" with an X nothing defines for a triggered ability (a spell's "up to X", an activated ability's) is not read: the announced X is exactly X, never up to it (D-386).
+  if (noun.det === 'target' && noun.count?.kind === 'x' && noun.upTo === true && !upToDefinedX) {
+    return failure(noun, []);
+  }
   if (countX) {
     if (
       ctx.owner !== 'spell' ||
+      noun.filter.player !== undefined ||
+      noun.filter.anyTarget === true ||
+      noun.orCard !== undefined ||
+      noun.minTargets !== undefined ||
+      anyNumberTarget ||
+      noun.perOpponent === true ||
+      noun.otherTarget === true ||
+      noun.upToThatMany === true
+    ) {
+      return failure(noun, []);
+    }
+  }
+  if (upToDefinedX) {
+    if (
       noun.filter.player !== undefined ||
       noun.filter.anyTarget === true ||
       noun.orCard !== undefined ||
@@ -661,6 +691,16 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         // Only a slot of any number of objects says "with different controllers".
         if (!anyNumberTarget) return failure(noun, []);
       }
+      let upToAmount: Amount | undefined;
+      if (upToDefinedX) {
+        const blocked = missingFeatures(['selector:upToAmount']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        const defined = ctx.xIs;
+        const lowered = defined?.lower === undefined ? failure(noun, []) : defined.lower();
+        if (!lowered.ok) return lowered;
+        if (defined !== null) defined.used = true;
+        upToAmount = lowered.value;
+      }
       if (countX) {
         const blocked = missingFeatures(['selector:countX']);
         if (blocked.length > 0) return failure(noun, blocked);
@@ -685,16 +725,18 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
             }
           : noun.perOpponent === true
             ? { id, what: { kind: 'object', filter: filter.value }, onePerOpponent: true }
-            : noun.upToTriggerAmount === true
-              ? { id, what: { kind: 'object', filter: filter.value }, upToTriggerAmount: true }
-              : noun.upToThatMany === true
-                ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }
-                : {
-                    id,
-                    what: { kind: 'object', filter: filter.value },
-                    ...boundsOf(noun),
-                    ...(apart === undefined ? {} : { differentFrom: apart }),
-                  };
+            : upToAmount !== undefined
+              ? { id, what: { kind: 'object', filter: filter.value }, upToAmount }
+              : noun.upToTriggerAmount === true
+                ? { id, what: { kind: 'object', filter: filter.value }, upToTriggerAmount: true }
+                : noun.upToThatMany === true
+                  ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }
+                  : {
+                      id,
+                      what: { kind: 'object', filter: filter.value },
+                      ...boundsOf(noun),
+                      ...(apart === undefined ? {} : { differentFrom: apart }),
+                    };
     }
     ctx.targets.push(spec);
   }

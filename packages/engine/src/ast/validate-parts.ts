@@ -615,6 +615,25 @@ export function filterSome(f: ObjectFilter, test: (f: ObjectFilter) => boolean):
 
 // ---- Target declarations (CR 115)
 
+/** Amount kinds that read an object or a target, which the number of targets of a slot (read before any is chosen) cannot. */
+const READS_NO_OBJECT: ReadonlySet<string> = new Set([
+  'x',
+  'enteredX',
+  'powerOf',
+  'manaValueOf',
+  'toughnessOf',
+  'countersOn',
+  'thisWay',
+  'triggerDamage',
+  'triggerTargetCount',
+  'dieResult',
+  'votesFor',
+  'exiledStillThere',
+  'cardsStillExiled',
+  'shortfall',
+  'lifeLostThisWay',
+]);
+
 /** Validates a list of target specs and returns the ids they declare. */
 export function declareTargets(
   specs: readonly TargetSpec[] | undefined,
@@ -630,6 +649,8 @@ export function declareTargets(
   countXAllowed = false,
   /** D-513: only the targets of a triggered ability whose event carries a number (a scry) can take up to as many targets as it (CR 603.3d). */
   triggerAmountAllowed = false,
+  /** Only the targets of a triggered ability can take up to as many targets as an amount read as it triggers (CR 603.3d). */
+  upToAmountAllowed = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
@@ -810,6 +831,32 @@ export function declareTargets(
         spec.countX !== undefined
       ) {
         issue(out, p, 'up to as many targets as the trigger says has no min, max or other count');
+      }
+    }
+    if (spec.upToAmount !== undefined) {
+      // CR 107.3c, 603.3d: "up to X target Zombie cards ..., where X is the number of opponents you have".
+      if (!upToAmountAllowed) {
+        issue(
+          out,
+          `${p}.upToAmount`,
+          'only a slot of a triggered ability takes up to as many targets as an amount read as it triggers',
+        );
+      } else if (
+        spec.min !== undefined ||
+        spec.max !== undefined ||
+        spec.divide !== undefined ||
+        spec.onePerOpponent !== undefined ||
+        spec.upToThatMany !== undefined ||
+        spec.upToTriggerAmount !== undefined ||
+        spec.anyNumber !== undefined ||
+        spec.countX !== undefined
+      ) {
+        issue(out, p, 'up to as many targets as an amount has no min, max or other count');
+      } else {
+        checkAmount(spec.upToAmount, `${p}.upToAmount`, NO_SCOPE, out);
+        if (typeof spec.upToAmount === 'object' && READS_NO_OBJECT.has(spec.upToAmount.kind)) {
+          issue(out, `${p}.upToAmount`, 'the number of targets reads the game, not an object');
+        }
       }
     }
     if (spec.countX !== undefined) {
@@ -1393,6 +1440,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'commanderCasts':
     case 'cardTypesAmong':
     case 'opponentsWithMore':
+    case 'opponentCount':
     case 'lifeGainedThisTurn':
     case 'enteredThisTurn':
     case 'diedThisTurn':
@@ -1621,6 +1669,18 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         });
       }
       break;
+    case 'extreme':
+      if (a.pick !== 'greater' && a.pick !== 'lesser') {
+        issue(out, `${path}.pick`, 'an extreme amount picks the greater or the lesser');
+      }
+      if (!Array.isArray(a.of) || a.of.length < 2) {
+        issue(out, `${path}.of`, 'an extreme amount needs at least two amounts');
+      } else {
+        a.of.forEach((part, i) => {
+          checkAmount(part, `${path}.of[${i}]`, scope, out);
+        });
+      }
+      break;
     case 'opponentsWithMore':
       if (!isOneOf(a.stat, PLAYER_STATS)) {
         issue(out, `${path}.stat`, `unknown player stat ${JSON.stringify(a.stat)}`);
@@ -1628,6 +1688,8 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (a.fewer !== undefined && a.fewer !== true) {
         issue(out, `${path}.fewer`, 'fewer is true when present');
       }
+      break;
+    case 'opponentCount':
       break;
     case 'timesKicked':
       // D-110: the card must have a kicker or multikicker (`checkCastFace`).

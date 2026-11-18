@@ -676,7 +676,11 @@ const RETURN_FROM_GRAVEYARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSp
     literal('return '),
     // D-386: "return X target creature cards from your graveyard to your hand" (as many targets as the X announced) is read here and by no other verb.
     operands(
-      [...GRAVEYARD_OPERANDS, 'noun.x-target-graveyard-cards'],
+      [
+        ...GRAVEYARD_OPERANDS,
+        'noun.x-target-graveyard-cards',
+        'noun.up-to-x-target-graveyard-cards',
+      ],
       'effect.return',
       toBattlefield ? undefined : YOUR_GRAVEYARD_ONLY,
     ),
