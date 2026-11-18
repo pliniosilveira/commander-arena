@@ -412,6 +412,7 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'ringBearer'
     | 'empowerJace'
     | 'amass'
+    | 'populate'
     | 'untapChoice'
     | 'conniveOrder'
     | 'spare'
@@ -430,6 +431,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * or, for a token, the spell or ability creating it. The sacrifice is not a cost and cannot be taken back.
    * For `'empowerJace'` (D-201, CR 701.71a: "Choose a Jace planeswalker token you control"): `seat`, the player who empowers, chooses which Jace token of
    * `legal` (all they control) gets the loyalty counters; exactly one. Asked only with two or more.
+   * For `'populate'` (D-611, CR 701.36a: "Choose a creature token you control"): `seat`, the player who populates, chooses which creature token of `legal` (all they control)
+   * is copied; exactly one. Asked only with two or more.
    * For `'amass'` (D-367, CR 701.47a: "Choose an Army creature you control"): `seat`, the player who amasses, chooses which Army creature of `legal` (all they
    * control, as `derive` types them now, a token the effect just made among them) gets the +1/+1 counters; exactly one. Asked only with two or more. `source` is the
    * spell or ability.

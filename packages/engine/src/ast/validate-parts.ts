@@ -4096,6 +4096,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'populate':
+      // CR 701.36 (D-611): no fields.
+      break;
     case 'amass':
       // CR 701.47a (D-367): N +1/+1 counters and the creature type of the token and of the change; the type is a creature type (an Army is a creature).
       checkAmount(e.count, `${path}.count`, scope, out);

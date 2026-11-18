@@ -126,6 +126,7 @@ import { SYNTHETIC_PLAY_RULE_LIST } from './synthetic-play-rules';
 import { SYNTHETIC_PLAYER_EFFECT_LIST } from './synthetic-player-effects';
 import { SYNTHETIC_PLAYER_MORE_LIST } from './synthetic-player-more';
 import { SYNTHETIC_POLYMORPH_LIST } from './synthetic-polymorph';
+import { SYNTHETIC_POPULATE_LIST } from './synthetic-populate';
 import { SYNTHETIC_PREVENTION_LIST } from './synthetic-prevention';
 import { SYNTHETIC_PREVENTION_BY_LIST } from './synthetic-prevention-by';
 import { SYNTHETIC_PRIDE_WALKER_LIST } from './synthetic-pride-walker';
@@ -437,6 +438,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_HOFRI_LIST,
   ...SYNTHETIC_TAP_ALT_LIST,
   ...SYNTHETIC_TAP_COST_LIST,
+  ...SYNTHETIC_POPULATE_LIST,
   ...SYNTHETIC_PLAYER_EFFECT_LIST,
   ...SYNTHETIC_PLAY_RULE_LIST,
   ...SYNTHETIC_UPKEEP_LIST,

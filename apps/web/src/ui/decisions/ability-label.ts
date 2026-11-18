@@ -1074,6 +1074,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'empowerJace':
       // D-201 (CR 701.71a): the keyword action, as the cards write it.
       return `Empower Jace ${effect.amount}`;
+    case 'populate':
+      // D-611 (CR 701.36): the keyword action.
+      return 'Populate';
     case 'amass':
       // D-367 (CR 701.47a): the keyword action, as the cards write it (older cards: "amass Zombies 1").
       return `Amass ${pluralSubtype(effect.subtype)} ${amountPhrase(effect.count)}`;

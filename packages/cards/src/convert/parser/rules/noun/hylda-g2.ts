@@ -85,6 +85,81 @@ export const NOUN_ALL_PERMANENTS_OF_TARGET_PLAYER = defineRule<IrNoun>({
 });
 
 /**
+ * `noun.group-of-target-player`: "creatures target player controls", "nonland permanents target opponent controls" (issue 160, D-611, CR 109.4, 115.1, 608.2c): the plural phrase
+ * without "all", the subject of "creatures target player controls get +2/+2 until end of turn". The same noun as `noun.all-permanents-of-target-player` (the player is a target noun
+ * of its own, numbered with the other targets). Not read: "all", a singular, no controller words, "you control" or "your opponents control" (the plain permanent phrase), "target
+ * players", "other", a controller said twice.
+ */
+export const NOUN_GROUP_OF_TARGET_PLAYER = defineRule<IrNoun>({
+  id: 'noun.group-of-target-player',
+  family: 'noun',
+  leading: [
+    'creatures',
+    'nonland',
+    'artifacts',
+    'enchantments',
+    'lands',
+    'permanents',
+    'noncreature',
+  ],
+  cites: [
+    'CR 109.4 (Objects)',
+    'CR 110.1 (Permanents)',
+    'CR 115.1 (Targets)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'creatures target player controls',
+    'creatures target opponent controls',
+    'nonland permanents target player controls',
+  ],
+  rejects: [
+    'all creatures target player controls',
+    'creatures',
+    'creatures you control',
+    'creatures your opponents control',
+    'creature target player controls',
+    'creatures target players control',
+    'creatures that player controls',
+    'other creatures target player controls',
+    'creatures you control target player controls',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      permanentPhrase(true, 'all'),
+      spanned(pattern(new RegExp(` target (player|opponent) controls${BOUNDARY}`, 'iu'))),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [filter, suffix] = r.value;
+    if (filter.controller !== undefined) return fail(ctx, pos);
+    const start = suffix.span.start + 1;
+    const wanted = (suffix.value[1] ?? '').toLowerCase();
+    const word = `target ${wanted}`;
+    const player: IrNoun = {
+      kind: 'noun',
+      det: 'target',
+      filter: { player: wanted === 'opponent' ? 'opponent' : 'any', raw: word },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start, end: start + word.length },
+      rule: 'noun.group-of-target-player',
+    };
+    const noun: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { ...filter, controller: { noun: player }, raw: ctx.text.slice(pos, r.pos) },
+      upTo: false,
+      plural: true,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule: 'noun.group-of-target-player',
+    };
+    return { ok: true, value: noun, pos: r.pos };
+  },
+});
+
+/**
  * `noun.target-permanent-of-that-player`: "target creature that player controls", "target nonland permanent that player controls" (CR 115.1, 109.4, 603.2): a target chosen among the
  * permanents of "that player", the player the text already named. The words say it, as `noun.each-permanent-of-player` does for "each creature that player controls": the
  * controller of the filter is the pronoun, which the binding pass points at the most recent player of the text (in a trigger about a player, the player of the event). The lowering
@@ -191,7 +266,10 @@ export const NOUN_THOSE_CREATURES = defineRule<IrNoun>({
 });
 
 /** Before `noun.all-permanents`, whose phrase ("all creatures") is the first words of the first. */
-export const HYLDA_G2_EARLY_NOUN_RULES = [NOUN_ALL_PERMANENTS_OF_TARGET_PLAYER];
+export const HYLDA_G2_EARLY_NOUN_RULES = [
+  NOUN_ALL_PERMANENTS_OF_TARGET_PLAYER,
+  NOUN_GROUP_OF_TARGET_PLAYER,
+];
 /** Before `noun.target-permanent`, whose phrase ("target creature") is the first words of the first. */
 export const HYLDA_G2_TARGET_NOUN_RULES = [NOUN_TARGET_PERMANENT_OF_THAT_PLAYER];
 export const HYLDA_G2_NOUN_RULES = [NOUN_THOSE_CREATURES];

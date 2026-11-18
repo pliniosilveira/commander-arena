@@ -102,6 +102,7 @@ import {
   EFFECT_PLAYER_LOCK,
   EFFECT_SHUFFLE,
 } from './player';
+import { POPULATE_EFFECT_RULES } from './populate';
 import { PREPARE_EFFECT_RULES } from './prepare';
 import { PREVENT_RULES } from './prevent';
 import { PUMP_RULES } from './pump';
@@ -925,6 +926,8 @@ export const EFFECT_RULES = [
   ...HASHATON_G7_EFFECT_RULES,
   // D-367: "amass Zombies 1".
   ...HASHATON_GROUP_4_EFFECT_RULES,
+  // Issue 160 (D-611): "Populate".
+  ...POPULATE_EFFECT_RULES,
   ...CONTROL_EFFECT_RULES,
   // Stage P44 (D-195): "starting with you, each player votes for profit or security".
   ...VOTE_EFFECT_RULES,

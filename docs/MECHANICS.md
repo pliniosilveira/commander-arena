@@ -5128,3 +5128,15 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Web: `game/amount-text.ts` ("opponents who control fewer creatures than you").
 - What the parser must produce: `Search your library for up to X basic land cards, where X is the number of tapped creatures you control, put those cards onto the battlefield tapped, then shuffle.` reads to `search { max: 1, maxAmount: countOf tapped creatures you control, destinations: [{ zone: battlefield, tapped, count: rest }], shuffle: true }`; `{4}, {T}, Discard your hand: Draw a card for each creature you control.` reads to an activated ability with `discard { count: 0, hand: true }`.
 - Limits: see `docs/ROADMAP.md`.
+
+## The Token Triumph deck (issue 160): Populate, groups of a targeted player's creatures, "those creatures gain ..." (D-611)
+
+- CR: 701.36 (Populate), 707.2 (a copy has the copiable values), 111.2 (the player who creates a token controls it), 608.2c and 611.2c (a group the text named, fixed as the effect resolves), 115.1 (targets), 701.26a (untap), 613.1f (keywords).
+- Gap class: K (the keyword action `populate`) and T (the phrases); no S proposal.
+- Engine: `rules/populate.ts` (`runPopulate`, the choice of a creature token and its copy through `makeSettled`), `rules/effects.ts`, `rules/stack.ts` (the answer), `state/types.ts` (the instruction), `state/decisions.ts` (`purpose: 'populate'`), `ast/features.ts`, `ast/validate-parts.ts`.
+- Parser: `rules/effect/populate.ts` and `lower/populate.ts`; `rules/noun/hylda-g2.ts` (`noun.group-of-target-player`), `rules/effect/pump.ts` (its subject), `rules/effect/artifacts.ts` ("untap them"), `rules/effect/gain.ts` (`effect.gain-keyword-those`), `ir/bind.ts` ("those creatures" after "each creature"), `lower/continuous.ts` (the group of an earlier mention).
+- Tests: engine `scenario-xx-populate.test.ts` (with the SYNTHETIC cards of `synthetic-populate.ts`); cards `convert-grammar-engine-issue160.test.ts`; web `populate-choice.test.ts`.
+- Web: `ui/decisions/permanents-populate.ts` (the words), `PermanentPanel.tsx`, `model.ts`, `permanents-angels.ts`, `ability-label.ts` ("Populate").
+- AI: `casual-agent.ts` chooses the token with the most power for `populate` as for an amass.
+- What the parser must produce: `Populate.` reads to `populate`; `When ~ enters, creatures target player controls get +2/+2 until end of turn. Untap them.` reads to a trigger with `modifyPt` over `each { controlledBy target }` and `untap` of the same group.
+- Limits: see `docs/ROADMAP.md`.

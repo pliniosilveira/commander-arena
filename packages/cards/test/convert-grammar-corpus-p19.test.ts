@@ -97,8 +97,8 @@ const REPLAY: readonly Line[] = [
   {
     kind: 'creature',
     text: 'Whenever a land you control enters, choose one —\n• Create a 2/2 white Cat Beast creature token.\n• Put a +1/+1 counter on each creature you control. Those creatures gain vigilance until end of turn.',
-    expect: no('gain vigilance until end of turn.', 'effect.doesnt-untap-next'),
-    note: 'replay: 1 card; the second mode says "Those creatures gain vigilance": "those creatures" is a noun since D-517, but no gain-keyword rule takes it as its subject',
+    expect: OK,
+    note: 'replay: 1 card; the second mode says "Those creatures gain vigilance": read since D-611 (`effect.gain-keyword-those`)',
   },
   {
     kind: 'instant',

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 143,
+  "parserVersion": 144,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -144,19 +144,10 @@
     "04046ae4-5c51-434b-930c-f3b1d348bf4b": {
       "name": "Rootborn Defenses",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Populate. Creatures you control gain indestructible until end of turn.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "7fb80a74"
+      "ast": "9542f313"
     },
     "046add85-952f-46ac-974a-463d2a7d3fd4": {
       "name": "The Book of Exalted Deeds",
@@ -671,19 +662,10 @@
     "16629f59-bae8-4c19-bf50-443eb0ed6856": {
       "name": "Felidar Retreat",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever a land you control enters, choose one —\n• Create a 2/2 white Cat Beast creature token.\n• Put a +1/+1 counter on each creature you control. Those creatures gain vigilance until end of turn.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.doesnt-untap-next"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "af15acf6"
+      "ast": "9f17fe16"
     },
     "16c39265-72d9-4c86-a961-8dd38ff9adcd": {
       "name": "Consign to Memory",
@@ -2373,19 +2355,10 @@
     "5dba7746-c087-4ec1-92ca-ab9882dea24d": {
       "name": "Great Oak Guardian",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "When ~ enters, creatures target player controls get +2/+2 until end of turn. Untap them.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.pump-all"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "4a1af57f"
+      "ast": "64200be0"
     },
     "5def9f38-0a0b-4e8d-9f9d-29dcb46520b4": {
       "name": "Esper Sentinel",
@@ -6581,7 +6554,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 449,
+      "supported": 452,
       "total": 477
     }
   }

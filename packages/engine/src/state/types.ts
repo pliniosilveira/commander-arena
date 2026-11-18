@@ -1012,6 +1012,11 @@ export type Instruction =
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
+   * "Populate" (`populate`, CR 701.36, D-611): the controller chooses a creature token they control (a `choosePermanent` decision of purpose 'populate', asked only with
+   * two or more) and creates a token that is a copy of it. `chosen` is the answer, null until then. See rules/populate.ts.
+   */
+  | { readonly kind: 'populate'; readonly chosen: readonly ObjectId[] | null }
+  /**
    * Permanents instructed to connive at the same time (`connive`, CR 701.50c, D-223): `pending` are the ones still to connive, each with the player who
    * controls it (or last controlled it, if it is no longer on the battlefield: CR 701.50b). The first player in APNAP order who controls one or more of them
    * chooses one of them (a `choosePermanent` decision of purpose 'conniveOrder', asked only when that player has more than one) and it connives: its controller

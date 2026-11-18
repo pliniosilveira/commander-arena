@@ -193,6 +193,8 @@ export const EFFECT_PUMP_ALL = defineRule<Clauses>({
     'creatures you control get +1/+1 until end of turn for each artifact you control',
     // Stage P65 (D-218): the attackers of your opponents.
     'creatures attacking your opponents and/or planeswalkers they control get +2/+0 until end of turn',
+    // Issue 160 (D-611, CR 115.1, 611.2c): the creatures of a player the text targets.
+    'creatures target player controls get +2/+2 until end of turn',
   ],
   rejects: [
     'creatures you control gets +1/+1 until end of turn',
@@ -204,7 +206,14 @@ export const EFFECT_PUMP_ALL = defineRule<Clauses>({
   parse: single(
     'effect.pump-all',
     sequence(
-      family<IrNoun>('noun', { only: ['noun.plain-permanents', 'noun.attacking-opponents'] }),
+      family<IrNoun>('noun', {
+        only: [
+          'noun.plain-permanents',
+          'noun.attacking-opponents',
+          // Issue 160 (D-611): "creatures target player controls get +2/+2 until end of turn".
+          'noun.group-of-target-player',
+        ],
+      }),
       literal(' get '),
       PUMP_TAIL,
     ),

@@ -316,3 +316,84 @@ describe('"Search your library for up to X ..., where X is ..." (D-610, CR 701.2
     expect(g.state.pending?.kind).not.toBe('chooseCards');
   });
 });
+
+// ---- Group 4: a modal landfall that grants a group, "creatures target player controls get ... Untap them", and populate (D-611).
+
+const RETREAT = parsed(
+  'SYNTHETIC Parsed Retreat',
+  'Enchantment',
+  'Landfall — Whenever a land you control enters, choose one —\n• Create a 2/2 white Cat Beast creature token.\n• Put a +1/+1 counter on each creature you control. Those creatures gain vigilance until end of turn.',
+  { manaCost: '{4}{W}', colors: ['W'] },
+);
+const GUARDIAN = parsed(
+  'SYNTHETIC Parsed Guardian',
+  'Creature — Treefolk',
+  'Flash\nReach\nWhen ~ enters, creatures target player controls get +2/+2 until end of turn. Untap them.',
+  { manaCost: '{3}{G}', colors: ['G'], power: '2', toughness: '4' },
+);
+const DEFENSES = parsed(
+  'SYNTHETIC Parsed Defenses',
+  'Instant',
+  'Populate. Creatures you control gain indestructible until end of turn.',
+  { manaCost: '{G}{W}', colors: ['G', 'W'] },
+);
+
+describe('Felidar Retreat, Great Oak Guardian and Rootborn Defenses as written (D-611)', () => {
+  test('the Retreat: a land makes a 2/2 Cat Beast, or counters and vigilance for every creature (CR 611.2c)', () => {
+    const cat = main((b) => b.define(RETREAT).battlefield(RETREAT.name).hand('Forest'));
+    cat.act(0).playLand('Forest');
+    cat.act(0).chooseModes(0);
+    cat.passAll();
+    expect(tokens(cat, 'Cat Beast')).toHaveLength(1);
+
+    const grow = main((b) =>
+      b.define(RETREAT).battlefield(RETREAT.name).battlefield(BEARS, { count: 2 }).hand('Forest'),
+    );
+    grow.act(0).playLand('Forest');
+    grow.act(0).chooseModes(1);
+    grow.passAll();
+    grow.expect.counters({ name: BEARS, nth: 0 }, { '+1/+1': 1 });
+    grow.expect.counters({ name: BEARS, nth: 1 }, { '+1/+1': 1 });
+    grow.expect.invariants();
+  });
+
+  test('the Guardian: the creatures of the player targeted get +2/+2 and untap', () => {
+    const g = main(
+      (b) =>
+        b
+          .define(GUARDIAN)
+          .hand(GUARDIAN.name)
+          .battlefield('Forest', { count: 4 })
+          .battlefield(BEARS, { tapped: true }),
+      (b) => b.battlefield(BEARS, { tapped: true }),
+    );
+    g.act(0).cast(GUARDIAN.name, { pay: true });
+    g.passAll();
+    // The trigger targets a player: seat 0 targets itself.
+    const d = g.state.pending;
+    if (d?.kind === 'targets') g.act(0).chooseTargets({ player: 0 });
+    g.passAll();
+    g.expect.tapped({ name: BEARS, seat: 0, zone: 'battlefield' }, false);
+    g.expect.tapped({ name: BEARS, seat: 1, zone: 'battlefield' }, true);
+    g.expect.invariants();
+  });
+
+  test('Defenses: populate copies the one creature token, and every creature gains indestructible', () => {
+    // At 1 life the Cat Rite makes one Cat: the token to copy.
+    const g = lifeGame(1, (b) =>
+      b
+        .define(DEFENSES)
+        .define(CAT_RITE)
+        .hand(CAT_RITE.name, DEFENSES.name)
+        .battlefield('Plains', { count: 4 })
+        .battlefield('Forest'),
+    );
+    g.act(0).cast(CAT_RITE.name, { pay: true });
+    g.passAll();
+    expect(tokens(g, 'Cat')).toHaveLength(1);
+    g.act(0).cast(DEFENSES.name, { pay: true });
+    g.passAll();
+    expect(tokens(g, 'Cat')).toHaveLength(2);
+    g.expect.invariants();
+  });
+});

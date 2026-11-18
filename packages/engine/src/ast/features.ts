@@ -280,6 +280,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'empowerJace',
     // D-367: "amass Zombies 1" (CR 701.47a).
     'amass',
+    // D-611: "Populate" (CR 701.36).
+    'populate',
     // D-201: "You get an emblem with ..." (CR 114).
     'createEmblem',
     'delayedSacrifice',
@@ -1873,6 +1875,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   pair: true,
   empowerJace: true,
   amass: true,
+  populate: true,
   createEmblem: true,
   delayedSacrifice: true,
   exileIfLeaves: true,

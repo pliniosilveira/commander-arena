@@ -2442,6 +2442,11 @@ export type Effect =
    */
   | { readonly kind: 'amass'; readonly subtype: Subtype; readonly count: Amount }
   /**
+   * "Populate." (CR 701.36, issue 160, D-611): the controller chooses a creature token they control and creates a token that is a copy of it (CR 707.2); with none, nothing
+   * is created (CR 701.36b). With two or more creature tokens the controller is asked which (a `choosePermanent` decision of purpose 'populate'); with one it is chosen.
+   */
+  | { readonly kind: 'populate' }
+  /**
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
    * triggered this one (`triggerSubject`), that sacrifices it, by its controller, as the next combat ends. Only the effect of an inherent ability
