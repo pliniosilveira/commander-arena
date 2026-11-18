@@ -525,8 +525,9 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
     ctx.owner === 'ability' &&
     ctx.triggeredBody;
   const countX = noun.det === 'target' && noun.count?.kind === 'x' && !upToDefinedX;
-  // "up to X" with an X nothing defines for a triggered ability (a spell's "up to X", an activated ability's) is not read: the announced X is exactly X, never up to it (D-386).
-  if (noun.det === 'target' && noun.count?.kind === 'x' && noun.upTo === true && !upToDefinedX) {
+  // The new graveyard noun rule reads "up to X" only where the sentence defines X for a triggered ability; elsewhere (a spell's "up to X", an activated ability's) the
+  // announced X is exactly X, never up to it (D-386), so that wording is not read. Every other noun is lowered as it always was.
+  if (noun.rule === 'noun.up-to-x-target-graveyard-cards' && !upToDefinedX) {
     return failure(noun, []);
   }
   if (countX) {

@@ -14,7 +14,7 @@ const SHAPESHIFTER: TokenDefinition = {
   toughness: 2,
   loyalty: null,
   defense: null,
-  oracleText: 'Changeling',
+  oracleText: '',
   abilities: [{ kind: 'keyword', keyword: { kind: 'changeling' } }],
 };
 
