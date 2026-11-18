@@ -207,6 +207,30 @@ export function canPlayLand(state: GameState, seat: SeatId, obj: GameObject, fac
  * (its own "you may cast this card from your graveyard", a permission to play it): a player who has both uses the one with no rider, as they may choose, so the rider
  * is not forced on them.
  */
+/** Whether an effect that names `obj` lets `seat` cast it from the graveyard of any player (`mayCast.anyGraveyard`, issue 159). */
+function grantedFromAnyGraveyard(state: GameState, seat: SeatId, obj: GameObject): boolean {
+  return state.continuousEffects.some(
+    (e) =>
+      e.change.kind === 'castPermission' &&
+      e.change.seat === seat &&
+      e.change.anyGraveyard === true &&
+      e.objects.includes(obj.id),
+  );
+}
+
+/** The cards in any graveyard that an effect lets `seat` cast now (issue 159): the ones the cast permissions name. */
+function anyGraveyardCastable(state: GameState, seat: SeatId): ObjectId[] {
+  return state.continuousEffects
+    .filter(
+      (e) =>
+        e.change.kind === 'castPermission' &&
+        e.change.seat === seat &&
+        e.change.anyGraveyard === true,
+    )
+    .flatMap((e) => e.objects)
+    .filter((id) => state.objects[id]?.zone === 'graveyard' && state.objects[id]?.owner !== seat);
+}
+
 /** Whether the continuous effect is a cast permission for `seat` that covers the card `obj` of their graveyard: a named card, or (issue 159) a filter every matching card meets. */
 function grantsCast(
   state: GameState,
@@ -249,7 +273,9 @@ export function castPermissionExiles(state: GameState, seat: SeatId, obj: GameOb
  * front face, which is what it is in the graveyard (CR 712.8a). Or (D-135) an effect gave it a permission for this turn.
  */
 export function mayCastFromGraveyard(state: GameState, seat: SeatId, obj: GameObject): boolean {
-  if (obj.zone !== 'graveyard' || obj.owner !== seat) return false;
+  if (obj.zone !== 'graveyard') return false;
+  // Issue 159, CR 601.2: "You may cast target creature card in a graveyard this turn" names a card of any player's graveyard.
+  if (obj.owner !== seat) return grantedFromAnyGraveyard(state, seat, obj);
   // D-135, CR 611.2a: "You may cast target Zombie creature card from your graveyard this turn" gave this card, as it is now
   // (a card that moved is a new object, CR 400.7), the permission until the end of the turn.
   if (state.continuousEffects.some((e) => grantsCast(state, e, seat, obj))) {
@@ -332,7 +358,9 @@ export function castZone(
   // play it).
   const theirs =
     obj.zone === 'exile' && (obj.adventureBy === seat || mayPlayFromExile(state, seat, obj));
-  if (obj.owner !== seat && !theirs) return null;
+  // Issue 159: or a card of another player's graveyard that an effect named ("You may cast target creature card in a graveyard this turn").
+  const fromTheirGraveyard = obj.zone === 'graveyard' && grantedFromAnyGraveyard(state, seat, obj);
+  if (obj.owner !== seat && !theirs && !fromTheirGraveyard) return null;
   // CR 715.3d (D-187): an Adventure its caster did not own is on an adventure for that caster only, not for its owner.
   if (obj.zone === 'exile' && obj.adventureBy !== undefined && obj.adventureBy !== seat)
     return null;
@@ -717,11 +745,15 @@ function faceOptions(
 export function castableObjects(state: GameState, seat: SeatId): FaceOption[] {
   const onAdventure = state.exile.filter((id) => getObject(state, id).onAdventure === true);
   const prepared = state.exile.filter((id) => getObject(state, id).prepareOf !== undefined);
-  const fromGraveyard = zoneList(state, 'graveyard', seat).filter(
-    (id) =>
-      mayCastFromGraveyard(state, seat, getObject(state, id)) ||
-      graveyardPlayPermission(state, seat, getObject(state, id), false) !== null,
-  );
+  const fromGraveyard = [
+    ...zoneList(state, 'graveyard', seat).filter(
+      (id) =>
+        mayCastFromGraveyard(state, seat, getObject(state, id)) ||
+        graveyardPlayPermission(state, seat, getObject(state, id), false) !== null,
+    ),
+    // Issue 159: the cards of other players' graveyards that an effect lets the seat cast this turn.
+    ...anyGraveyardCastable(state, seat),
+  ];
   const playable = state.exile.filter(
     (id) => !onAdventure.includes(id) && mayPlayFromExile(state, seat, getObject(state, id)),
   );

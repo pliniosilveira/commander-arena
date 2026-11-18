@@ -289,6 +289,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'effect.may-cast': spell((e) => `${cap(e).replace('. if that', '. If that')}.`),
   'effect.may-cast-spells': spell((e) => `${cap(e)}.`),
+  'effect.may-cast-any-graveyard': spell((e) => `${cap(e).replace('. when', '. When')}.`),
+  'noun.target-card-in-a-graveyard': spell((e) => `You may cast ${e} this turn.`),
   'noun.player-graveyard': spell((e) => `Exile ${e}.`),
   'noun.all-graveyard-cards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyards': spell((e) => `Exile ${e}.`),

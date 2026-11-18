@@ -359,6 +359,39 @@ export const NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD = defineRule<IrNoun>({
 });
 
 /**
+ * `noun.target-card-in-a-graveyard` (issue 159, Havengul Lich): "target creature card in a graveyard": the cards of `noun.target-graveyard-card`, said with "in" and of any player's
+ * graveyard (CR 404.1, 115.1). One card only. Another noun rule so that the "in a graveyard" is read only where a rule asks for this noun by its id.
+ */
+export const NOUN_TARGET_CARD_IN_A_GRAVEYARD = defineRule<IrNoun>({
+  id: 'noun.target-card-in-a-graveyard',
+  family: 'noun',
+  leading: [],
+  cites: ['CR 404.1 (Graveyard)', 'CR 115.1 (Targets)'],
+  examples: [
+    'target creature card in a graveyard',
+    'target card in a graveyard',
+    'target Zombie creature card in a graveyard',
+  ],
+  rejects: [
+    'target creature card in your graveyard',
+    "target creature card in an opponent's graveyard",
+    'target creature card from a graveyard',
+    'two target creature cards in a graveyard',
+    'target creature in a graveyard',
+    'target card',
+    'all creature cards in a graveyard',
+  ],
+  parse: (ctx, pos) => {
+    const r = targetOf('noun.target-card-in-a-graveyard', (plural) =>
+      graveyardPhrase(plural, 'inAny'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    // One card only: "two target creature cards in a graveyard", "up to one ..." are other statements.
+    return r.value.plural || r.value.upTo || r.value.count !== undefined ? fail(ctx, pos) : r;
+  },
+});
+
+/**
  * `noun.player-graveyard`: "target player's graveyard", "target opponent's graveyard" (CR 404.1: a
  * graveyard is its owner's discard pile; CR 108.3: a card belongs to its owner). Every card in it,
  * selected by its owner: the player is a target (CR 115.1) the noun carries as `of`, and the
@@ -711,6 +744,7 @@ export const NOUN_RULES = [
   NOUN_UP_TO_GRAVEYARD_CARDS,
   NOUN_UP_TO_ONE_PERMANENT,
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
+  NOUN_TARGET_CARD_IN_A_GRAVEYARD,
   // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.
   ...HASHATON_G10_NOUN_RULES,
   // D-517 (Hylda deck, group 2): "those creatures" and "X target creatures".

@@ -1632,6 +1632,28 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly duration: 'untilEndOfTurn';
       readonly exileInstead?: true;
+      /**
+       * "You may cast target creature card in a graveyard this turn" (issue 159, CR 601.2, 108.3): the card may be in the graveyard of any player, not only the controller's. The
+       * spell is cast by the controller of this effect, who controls the permanent it becomes; if it does not resolve it goes to its owner's graveyard (CR 108.3).
+       */
+      readonly anyGraveyard?: true;
+      /**
+       * "When you cast it this turn, this creature gains all activated abilities of that card until end of turn" (issue 159, CR 603.7, 603.7a): a delayed triggered ability of
+       * the controller, created with the permission, that triggers once when the card is cast this turn (the spell is its `triggerSubject`) and ends with the turn. Its source is
+       * the source of this effect. `effect` may name only the permanent with the ability (`this`) and the spell cast (`triggerSubject`).
+       */
+      readonly whenCast?: Effect;
+    }
+  /**
+   * "This creature gains all activated abilities of that card until end of turn" (issue 159, CR 613.1f, 113.6): the permanent `to` has, until end of turn, every activated and mana
+   * ability that `from` (a card or spell, read as it is as the effect resolves, or as it last was) has. They are abilities of `to`: their text says "this creature" and means it.
+   * Only in the `whenCast` effect of a `mayCast`, where `from` is the spell cast.
+   */
+  | {
+      readonly kind: 'gainActivatedAbilitiesOf';
+      readonly to: ObjectRef;
+      readonly from: ObjectRef;
+      readonly duration: 'untilEndOfTurn';
     }
   /**
    * "You may cast Zombie spells from your graveyard this turn" (issue 159, CR 601.2, 611.2a): until end of turn the controller of this effect may cast, from their own graveyard,

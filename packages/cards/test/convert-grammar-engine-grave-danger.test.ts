@@ -594,3 +594,71 @@ describe('Laboratory Drudge: "At the beginning of each end step, draw a card if 
     expect(handOf(g)).toBe(before);
   });
 });
+
+describe('Havengul Lich: "{1}: You may cast target creature card in a graveyard this turn. When you cast it this turn, this creature gains all activated abilities of that card until end of turn."', () => {
+  const lich = real('Havengul Lich');
+  const ELVES = 'Llanowar Elves'; // {G} 1/1: {T}: Add {G}
+  const start = (mine: readonly string[], theirs: readonly string[]) =>
+    scenario()
+      .define(lich)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(lich.name, 'Swamp', 'Forest', 'Forest', 'Island', 'Mountain')
+      .hand('Lightning Bolt')
+      .graveyard(...mine)
+      .seat(1)
+      .library(...LIBRARY)
+      .graveyard(...theirs)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(lich)).toEqual([]);
+  });
+
+  test("a creature card of an opponent's graveyard is cast, and the Lich gains its mana ability until end of turn (CR 601.2, 113.6, 611.2a, 613.1f)", () => {
+    const g = start([], [ELVES]);
+    g.act(0).activate(lich.name, { targets: [{ name: ELVES, seat: 1 }], pay: true });
+    g.passAll();
+    g.act(0).cast({ name: ELVES, seat: 1 }, { pay: true });
+    // The trigger "when you cast it" goes on the stack above the spell.
+    g.passAll();
+    g.passAll();
+    g.expect.zone(ELVES, 'battlefield', { seat: 0 });
+    // {T}: Add {G} is now an ability of the Lich: it can be tapped for mana.
+    expect(g.act(0).try.tapForMana(lich.name).ok).toBe(true);
+    g.expect.invariants();
+  });
+
+  test('a creature card of my own graveyard works too, and the abilities are lost at end of turn', () => {
+    const g = start([ELVES], []);
+    g.act(0).activate(lich.name, { targets: [ELVES], pay: true });
+    g.passAll();
+    g.act(0).cast(ELVES, { pay: true });
+    g.passAll();
+    g.passAll();
+    g.advanceTo('end');
+    g.passAll();
+    g.advanceTo('precombatMain', { turn: 5 });
+    // The mana ability is gone with the turn: there is nothing to tap for.
+    expect(() => g.act(0).try.tapForMana(lich.name)).toThrow('no mana ability');
+  });
+
+  test('only the cast of that card triggers it: another spell cast first gives nothing (CR 603.7)', () => {
+    const g = start([], [ELVES]);
+    g.act(0).activate(lich.name, { targets: [{ name: ELVES, seat: 1 }], pay: true });
+    g.passAll();
+    g.act(0).cast('Lightning Bolt', { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    expect(() => g.act(0).try.tapForMana(lich.name)).toThrow('no mana ability');
+    g.act(0).cast({ name: ELVES, seat: 1 }, { pay: true });
+    g.passAll();
+    g.passAll();
+    expect(g.act(0).try.tapForMana(lich.name).ok).toBe(true);
+  });
+
+  test("without the activation the opponent's card cannot be cast", () => {
+    const g = start([], [ELVES]);
+    expect(g.act(0).try.cast({ name: ELVES, seat: 1 }).ok).toBe(false);
+  });
+});

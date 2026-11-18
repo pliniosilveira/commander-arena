@@ -177,6 +177,68 @@ export const EFFECT_MAY_CAST = defineRule<Clauses>({
   ),
 });
 
+const MAY_CAST_ANY_RULE = 'effect.may-cast-any-graveyard';
+
+/** ". When you cast it this turn, ~ gains all activated abilities of that card until end of turn": the rider of the permission, the next sentence, taken with the clause (issue 159). */
+const WHEN_CAST_GAINS_ABILITIES = pattern(
+  /\. when you cast it this turn, ~ gains all activated abilities of that card until end of turn(?![\p{L}\p{N}'’])(?!,| and\b| then\b)/iu,
+);
+
+/**
+ * `effect.may-cast-any-graveyard`: "you may cast target creature card in a graveyard this turn" (issue 159, Havengul Lich; CR 601.2: casting from a graveyard when an effect
+ * permits it, CR 108.3: a card in a graveyard is its owner's, and the spell is cast by the player who has the effect; CR 611.2a, 514.2: until end of turn). One target card of
+ * any player's graveyard; the engine's `mayCast` with `anyGraveyard`. With the rider "When you cast it this turn, ~ gains all activated abilities of that card until end of turn"
+ * (CR 603.7, 613.1f), the same clause's `whenCast`. Not read: "from your graveyard" (`effect.may-cast`), several cards, another rider.
+ */
+export const EFFECT_MAY_CAST_ANY_GRAVEYARD = defineRule<Clauses>({
+  id: MAY_CAST_ANY_RULE,
+  family: 'effect',
+  leading: ['you'],
+  cites: [
+    'CR 601.2 (Casting Spells)',
+    'CR 108.3 (Cards)',
+    'CR 611.2a (Continuous Effects)',
+    'CR 603.7 (Delayed Triggered Abilities)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+  ],
+  examples: [
+    'you may cast target creature card in a graveyard this turn',
+    'you may cast target creature card in a graveyard until end of turn',
+    'you may cast target creature card in a graveyard this turn. when you cast it this turn, ~ gains all activated abilities of that card until end of turn',
+  ],
+  rejects: [
+    'you may cast target creature card from a graveyard this turn',
+    'you may cast target creature card in your graveyard this turn',
+    'you may cast target creature card in a graveyard',
+    'you may cast two target creature cards in a graveyard this turn',
+    'you may cast target creature in a graveyard this turn',
+    'you may cast target creature card in a graveyard this turn. when you cast it this turn, ~ gains flying until end of turn',
+    'you may cast target creature card in a graveyard this turn. when you cast it this turn, ~ gains all activated abilities of that card until end of turn, then draw a card',
+    'you may cast target creature card in a graveyard this turn and draw a card',
+    'you may cast target creature card in a graveyard without paying its mana cost',
+  ],
+  parse: single(
+    MAY_CAST_ANY_RULE,
+    sequence(
+      literal('you may cast '),
+      satisfy(
+        family<IrNoun>('noun', { only: ['noun.target-card-in-a-graveyard'] }),
+        (noun) => noun.count === undefined && !noun.upTo && !noun.plural,
+      ),
+      choice(literal(' this turn'), literal(' until end of turn')),
+      optional(spanned(WHEN_CAST_GAINS_ABILITIES), null),
+    ),
+    ([, objects, , whenCast]) => ({
+      verb: 'mayCast',
+      args: {
+        objects,
+        anyGraveyard: flag(MAY_CAST_ANY_RULE, true, objects.span),
+        whenCast: flag(MAY_CAST_ANY_RULE, whenCast !== null, objects.span),
+      },
+    }),
+  ),
+});
+
 const MAY_CAST_SPELLS_RULE = 'effect.may-cast-spells';
 const SPELL_CARD_TYPES: readonly string[] = [
   'creature',
@@ -458,6 +520,7 @@ export const RECURSION_EFFECT_RULES = [
   EFFECT_PUT_LIBRARY_NTH,
   EFFECT_MAY_CAST,
   EFFECT_MAY_CAST_SPELLS,
+  EFFECT_MAY_CAST_ANY_GRAVEYARD,
   // Before `effect.return-self`, whose words are a prefix of these (stage P50, D-207).
   EFFECT_RETURN_SELF_ATTACHED,
   EFFECT_RETURN_SELF,

@@ -741,6 +741,11 @@ export interface DelayedTrigger {
   readonly untilEndOfCombat?: true;
   readonly repeat?: true;
   readonly watched?: ObjectId;
+  /**
+   * "When you cast it this turn" (`mayCast.whenCast`, issue 159, CR 603.7): the ability triggers only for a spell cast from this card (`GameObject.card`: the card is a new
+   * object on the stack, CR 400.7, but it is the same card).
+   */
+  readonly watchedCard?: CardId;
 }
 
 /**
@@ -1783,6 +1788,8 @@ export type ContinuousChange =
        * graveyard that this filter describes, whenever it is asked (`objects` is empty).
        */
       readonly spells?: ObjectFilter;
+      /** "You may cast target creature card in a graveyard this turn" (`mayCast.anyGraveyard`, issue 159): the named card may be in any player's graveyard. */
+      readonly anyGraveyard?: true;
       /**
        * "If that spell would be put into your graveyard, exile it instead" (D-359, CR 614.1a): the spell cast with this permission carries `StackData.exileInstead`
        * (`rules/cast.ts`, `beginCast`). Absent when the effect has no such rider.

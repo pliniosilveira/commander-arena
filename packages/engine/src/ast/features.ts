@@ -266,6 +266,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayCast',
     // Issue 159: "You may cast Zombie spells from your graveyard this turn".
     'mayCastSpells',
+    // Issue 159: "this creature gains all activated abilities of that card until end of turn".
+    'gainActivatedAbilitiesOf',
     // D-139: "look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand".
     'lookAtTop',
     // D-139: "you may reselect which player or permanent target attacking creature is attacking" (CR 508.7).
@@ -1868,6 +1870,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   reflexive: true,
   mayCast: true,
   mayCastSpells: true,
+  gainActivatedAbilitiesOf: true,
   lookAtTop: true,
   revealUntil: true,
   dealDividedDamage: true,

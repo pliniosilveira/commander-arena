@@ -4968,6 +4968,55 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.exileInstead !== undefined && e.exileInstead !== true) {
         issue(out, `${path}.exileInstead`, 'exileInstead must be true when present');
       }
+      if (e.anyGraveyard !== undefined && e.anyGraveyard !== true) {
+        issue(out, `${path}.anyGraveyard`, 'anyGraveyard must be true when present');
+      }
+      // Issue 159: "When you cast it this turn, this creature gains all activated abilities of that card": a delayed trigger of the cast of that card, which does
+      // something to the permanent with the ability (`this`) with the spell cast (`triggerSubject`), and nothing of the ability that made it is left to name (CR 603.7c).
+      if (e.whenCast !== undefined) {
+        const inner = e.whenCast;
+        if (
+          inner?.kind !== 'gainActivatedAbilitiesOf' ||
+          kindOf(inner.from) !== 'triggerSubject' ||
+          kindOf(inner.to) !== 'this'
+        ) {
+          issue(
+            out,
+            `${path}.whenCast`,
+            'a cast rider gives the permanent with the ability the abilities of the spell cast (gainActivatedAbilitiesOf from triggerSubject to this)',
+          );
+        } else {
+          checkEffect(
+            inner,
+            `${path}.whenCast`,
+            {
+              owner: 'ability',
+              targets: new Map(),
+              xAllowed: false,
+              triggerSubject: 'stack',
+              triggerPlayer: true,
+              checkAbility: scope.checkAbility,
+              checkContinuous: scope.checkContinuous,
+              checkEffectExt: scope.checkEffectExt,
+            },
+            out,
+          );
+        }
+      }
+      break;
+    case 'gainActivatedAbilitiesOf':
+      // Issue 159: the abilities of the spell cast (`triggerSubject`, only where a cast trigger names it) or of an object a reference names, given to the permanent that has this effect.
+      if (kindOf(e.to) !== 'this') {
+        issue(out, `${path}.to`, 'the abilities go to the permanent with the ability (this)');
+      }
+      if (kindOf(e.from) !== 'triggerSubject') {
+        issue(out, `${path}.from`, 'the abilities are those of the spell cast (triggerSubject)');
+      } else {
+        checkSubjectRef(e.from as ObjectRef, 'stack', `${path}.from`, scope, out);
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'the abilities are gained until end of turn');
+      }
       break;
     case 'mayCastSpells':
       // Issue 159: "you may cast Zombie spells from your graveyard this turn": a filter of the spells, for the rest of the turn.

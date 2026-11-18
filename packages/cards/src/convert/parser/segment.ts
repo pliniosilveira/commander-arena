@@ -333,6 +333,15 @@ const EXILE_THAT_SPELL_INSTEAD_YOUR =
   /^if that spell would be put into your graveyard, exile it instead\.$/i;
 
 /**
+ * "You may cast target creature card in a graveyard this turn. When you cast it this turn, ~ gains all activated abilities of that card until end of turn." (issue 159, CR 603.7,
+ * Havengul Lich): the rider is a delayed ability of the permission (`effect.may-cast-any-graveyard`), so the two sentences are one instruction.
+ */
+const MAY_CAST_IN_A_GRAVEYARD =
+  /(?:^|, )you may cast target [^.,]* cards? in a graveyard (?:this turn|until end of turn)\.$/i;
+const WHEN_CAST_IT_GAINS_ABILITIES =
+  /^when you cast it this turn, ~ gains all activated abilities of that card until end of turn\.$/i;
+
+/**
  * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (D-303, CR 700.3):
  * three sentences that are one instruction (what is revealed, who separates it and where each pile goes), kept together so `effect.reveal-separate-piles` reads them as one. Only all
  * three in a row.
@@ -417,7 +426,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
             said(b, PUT_HAND_OTHER_BOTTOM))) ||
         (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)) ||
         (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)) ||
-        (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)))
+        (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
+        (said(a, MAY_CAST_IN_A_GRAVEYARD) && said(b, WHEN_CAST_IT_GAINS_ABILITIES)))
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
