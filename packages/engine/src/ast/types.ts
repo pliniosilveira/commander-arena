@@ -709,6 +709,12 @@ export type ObjectRef =
    */
   | { readonly kind: 'sacrificedCost' }
   /**
+   * The engine's own form of `moved` inside a delayed triggered ability (D-625, CR 603.7c, 400.7): "Exile them at the beginning of the next end step" is one delayed ability about
+   * the very objects (`ids`) the effects before it made as it was created, found now only if each is still the same object on the battlefield (a token that left has ceased to exist,
+   * and a card that left and came back is a new object with a new id). Never written in a card (`validateCard`): the engine writes it when it creates the delayed ability.
+   */
+  | { readonly kind: 'boundObjects'; readonly ids: readonly ObjectId[] }
+  /**
    * "That creature", "it" for the permanent an earlier `sacrifice` effect of the same resolution sacrificed (D-177, CR 701.21, 603.12, 608.2h): in
    * the same sequence after the `sacrifice` (or the `may` of one), and in the `reflexive` ability that follows it ("you may sacrifice another
    * creature. When you do, ~ deals damage equal to that creature's power to any target"; the permanent is carried to the reflexive ability as it
@@ -1405,6 +1411,14 @@ export type Effect =
   | { readonly kind: 'chooseCreatureType' }
   | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }
   | { readonly kind: 'prepare'; readonly objects: ObjectSelector }
+  /**
+   * "Populate." (CR 701.36a, 701.36b, D-625): "choose a creature token you control and create a token that's a copy of that creature token." The controller of the effect
+   * chooses among the creature tokens they control (a `choosePermanent` decision of purpose 'populate', asked only with two or more) and creates a token with the copiable values
+   * of the one chosen (CR 707.2, 111.10: a copy of a token that is itself a copy has the copiable values of the original token). With no creature token to choose nothing is created
+   * (CR 701.36b). The token is made as any token is (the replacement effects of its creation apply; a question it asks as it enters is asked) and is what `moved` names after
+   * this effect ("The token created this way gains haste", "Sacrifice it at the beginning of the next end step").
+   */
+  | { readonly kind: 'populate' }
   | {
       readonly kind: 'delayedCombatDamage';
       readonly objects: ObjectSelector;
@@ -2226,6 +2240,11 @@ export type Effect =
       readonly kind: 'createCopies';
       readonly objects: ObjectSelector;
       readonly abilities?: readonly Ability[];
+      /**
+       * "..., create a tapped and attacking token that's a copy of that token" (Prismari deck, group 1, D-625, CR 110.5b, 508.4): the tokens enter the battlefield tapped, as
+       * `createToken`'s `tapped` does. The attacking half is the `enterAttacking` effect after this one, which names the tokens made (`moved`).
+       */
+      readonly tapped?: true;
     }
   /**
    * "Remove all counters from it" (CR 122.1, 122.2, D-207): every counter of every kind on each permanent the selector names (a lore or a stun counter too),
@@ -2555,6 +2574,11 @@ export type Effect =
        * addition to the original's, so it is the original and also an artifact. Never empty.
        */
       readonly addTypes?: readonly CardType[];
+      /**
+       * "..., except it has myriad" (D-626, CR 707.9b, 707.9d): the abilities the copy has besides the ones it copies; they are part of the copiable values the
+       * copy effect gives (a keyword is a `keyword` ability). Never empty.
+       */
+      readonly abilities?: readonly Ability[];
     }
   /**
    * CR 701.27 (Transform): each permanent `objects` names that is represented by a double-faced
@@ -4687,6 +4711,13 @@ export type StaticEffect =
       readonly spells: { readonly kind: 'this' } | ObjectFilter;
       readonly amount: Amount;
     }
+  /**
+   * "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-627, CR 601.2f, 601.2c, 118.8; Strive is an ability word, CR 207.2c): a
+   * static ability of the spell itself, which works on the stack (CR 113.6d), that adds `cost` (mana only, no X) to the total cost once for each target the spell has beyond the first
+   * (a spell with no target, or one, costs nothing more). The targets are chosen before the total cost is determined (CR 601.2c, 601.2f), so the number of targets is the
+   * number chosen; a slot of any number of targets offers no more targets than the caster could pay for. The increase is part of the cost before the reductions (CR 601.2f).
+   */
+  | { readonly kind: 'costPerExtraTarget'; readonly cost: readonly Cost[] }
   /**
    * "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-425, CR 601.2f, 602.2b, 118.7, 702.6a): a static ability of a permanent on the
    * battlefield that takes `amount` generic mana off the generic part of the mana cost of the Equip abilities (`abilities: 'equip'`) its controller activates, when one of the

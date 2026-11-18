@@ -44,6 +44,17 @@ export function escalateCostOf(face: CardFace | null): readonly Cost[] | null {
   return keywordCost(face, 'escalate');
 }
 
+/**
+ * The cost "for each target beyond the first" of the face's spell, or null when it has none (D-627, CR 601.2f; Strive is an ability word, CR 207.2c): the static ability
+ * `costPerExtraTarget` of the spell itself, which works on the stack (CR 113.6d). Mana only (`validateCard`).
+ */
+export function costPerExtraTargetOf(face: CardFace | null): readonly Cost[] | null {
+  for (const a of face?.abilities ?? []) {
+    if (a.kind === 'static' && a.static.kind === 'costPerExtraTarget') return a.static.cost;
+  }
+  return null;
+}
+
 /** Whether a mode of the face's modal spell has a cost listed before its effect (CR 700.2h, 702.183a, D-433): Tiered. */
 export function hasModeCosts(face: CardFace | null): boolean {
   return face?.spell?.modes?.some((m) => m.cost !== undefined) === true;

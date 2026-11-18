@@ -319,6 +319,28 @@ export function checkCostReduction(
 }
 
 /**
+ * D-627, CR 601.2f: "~ costs {2}{R} more to cast for each target beyond the first": the cost is mana only, with no X (it is paid once for each such target, as the spell is cast).
+ */
+export function checkCostPerExtraTarget(
+  s: Extract<StaticEffect, { kind: 'costPerExtraTarget' }>,
+  path: string,
+  out: Out,
+): void {
+  checkCosts(s.cost, `${path}.cost`, out);
+  if (!Array.isArray(s.cost) || s.cost.length === 0) {
+    issue(out, `${path}.cost`, 'a cost per extra target needs a cost to pay');
+    return;
+  }
+  s.cost.forEach((c, i) => {
+    if (c?.kind !== 'mana') {
+      issue(out, `${path}.cost[${i}]`, 'a cost per extra target may be mana only in this engine');
+    } else if (c.symbols?.includes('X')) {
+      issue(out, `${path}.cost[${i}]`, 'X in a cost per extra target is not supported');
+    }
+  });
+}
+
+/**
  * D-425, CR 601.2f, 602.2b, 702.6a: "Equip abilities you activate that target enchanted creature cost {3} less to activate." `abilities` is `equip`; `targeting` describes the
  * object the activation targets (a permanent on the battlefield: the source of this ability is the permanent that has it, so `hostOfSource` is the permanent it is attached to);
  * `amount` is read as `costReduction`'s is.

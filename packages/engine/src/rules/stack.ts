@@ -439,6 +439,7 @@ export function answerResolutionChoice(
     head.kind !== 'pair' &&
     head.kind !== 'empowerJace' &&
     head.kind !== 'amass' &&
+    head.kind !== 'populate' &&
     head.kind !== 'conniveNext' &&
     head.kind !== 'spare'
   ) {

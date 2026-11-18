@@ -120,6 +120,7 @@ import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter } from './select';
 import { setPending } from './set-pending';
 import { sourceInfo } from './source-info';
+import { striveTargetCap } from './strive';
 import { maxTargetCountX, targetAnswerError, targetChoiceSpecs } from './target-choice';
 import { payableSpellTargets } from './target-payable';
 import { collectTriggers } from './triggers';
@@ -802,6 +803,8 @@ function toTargets(state: GameState, events: GameEvent[]): Result {
           casting.flashTargets ?? null,
           // D-424: a cost that is cheaper for some targets is payable only with them: only those are offered.
           payableSpellTargets(state, casting, specs, ctx),
+          // D-627: "costs {2}{R} more to cast for each target beyond the first": no more targets than the cost can be paid for.
+          striveTargetCap(state, casting, specs, ctx),
         ),
       },
     ),

@@ -275,7 +275,12 @@ function walkEffect(
       // CR 611.2a: only "until end of turn" has an end the engine runs (CR 514.2). The source must
       // be a permanent on the battlefield (a copy of an Aura or a land is a copy effect on an
       // object that already entered, so nothing is asked, unlike a token).
-      if (!SUPPORTED_FEATURES.durationKinds.includes(effect.duration)) {
+      // D-628 (CR 611.2a, 707.2): and no end at all (`permanent`): "each other token you control becomes a copy of that token" is a layer 1 copy effect that lasts as long as the
+      // permanent does.
+      if (
+        effect.duration !== 'permanent' &&
+        !SUPPORTED_FEATURES.durationKinds.includes(effect.duration)
+      ) {
         out.push({
           path: `${path}.duration`,
           message: `duration "${effect.duration}" is not implemented by the engine yet`,

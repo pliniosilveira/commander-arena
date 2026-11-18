@@ -105,6 +105,8 @@ export function targetChoiceSpecs(
   only: ObjectFilter | null = null,
   /** D-424, D-425: the first mandatory slot offers only these objects: the targets after which the cost can be paid (`rules/target-payable.ts`). Null leaves it alone. */
   payable: readonly ObjectId[] | null = null,
+  /** D-627: Strive: the slot of any number of targets offers at most this many (the targets after which the cost can be paid). Null leaves it alone. */
+  cap: number | null = null,
 ): TargetChoiceSpec[] {
   const restricted = only === null && payable === null ? -1 : flashSlotOf(specs);
   return specs.map((spec, index) => {
@@ -148,7 +150,9 @@ export function targetChoiceSpecs(
       max: Math.min(
         total === null ? bounds.max : Math.min(bounds.max, total),
         opponents,
-        spec.anyNumber === true ? legal.length : Number.MAX_SAFE_INTEGER,
+        spec.anyNumber === true
+          ? Math.min(legal.length, cap ?? Number.MAX_SAFE_INTEGER)
+          : Number.MAX_SAFE_INTEGER,
       ),
       ...(total === null ? {} : { divide: total }),
       ...(spec.onePerOpponent === true || spec.differentControllers === true

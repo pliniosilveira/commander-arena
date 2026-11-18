@@ -46,6 +46,7 @@ type StateAmount = Extract<
       | 'opponentsWithMore'
       | 'cardsStillExiled'
       | 'cardsDrawnThisTurn'
+      | 'spellsCastThisTurn'
       | 'sacrificedAsCost'
       | 'exiledAsCost'
       | 'cardTypesAmong';
@@ -81,6 +82,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'opponentsWithMore' ||
     amount.kind === 'cardsStillExiled' ||
     amount.kind === 'cardsDrawnThisTurn' ||
+    amount.kind === 'spellsCastThisTurn' ||
     amount.kind === 'sacrificedAsCost' ||
     amount.kind === 'exiledAsCost' ||
     amount.kind === 'cardTypesAmong'
@@ -337,6 +339,14 @@ export function stateAmountOf(
     case 'cardsDrawnThisTurn':
       // CR 121.1 (D-450): "for each card you've drawn this turn": the cards the controller of the effect has drawn so far this turn (`SeatState.cardsDrawnThisTurn`).
       return getSeat(state, ctx.controller).cardsDrawnThisTurn;
+    case 'spellsCastThisTurn': {
+      // CR 601.2i (D-624): the spells the controller has cast this turn (a copy is not cast, CR 707.10); `ofTypes` keeps those with one of the card types they were cast with.
+      const types = amount.ofTypes;
+      if (types === undefined) return getSeat(state, ctx.controller).spellsCastThisTurn;
+      return state.turnLog.castSpells.filter(
+        (s) => s.seat === ctx.controller && s.types.some((t) => types.includes(t)),
+      ).length;
+    }
     case 'sacrificedAsCost': {
       // CR 602.2b, 701.21a (D-584): "for each artifact sacrificed this way" in an activated ability whose cost sacrificed one or more permanents: the ability on the stack carries
       // them, and its resolution reads them (`ResolutionContext.costSacrificed`, which an ability without such a cost does not have).

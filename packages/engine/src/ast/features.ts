@@ -253,6 +253,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-128: an effect that creates a delayed triggered ability (CR 603.7): "at the beginning of the next turn's upkeep".
     'delayedTrigger',
     'prepare',
+    // D-625: "populate" (CR 701.36).
+    'populate',
     'delayedCombatDamage',
     'forEachPlayer',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
@@ -656,6 +658,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putFromBattlefieldThisTurn',
     // D-235: "spells you cast from anywhere other than your hand" (`ObjectFilter.notCastFromHand`).
     'notCastFromHand',
+    // D-624: "an instant or sorcery spell ... from your hand" (`ObjectFilter.castFromHand`).
+    'castFromHand',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
     // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
@@ -888,6 +892,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantAbility',
     'restriction',
     'costReduction',
+    // D-627: "Strive — ~ costs {2}{R} more to cast for each target beyond the first" (CR 601.2f).
+    'costPerExtraTarget',
     // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
     'abilityCostReduction',
     'setTypes',
@@ -992,6 +998,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
     'cardsDrawnThisTurn',
+    // D-624: "the number of instant and sorcery spells you've cast this turn" (CR 601.2i).
+    'spellsCastThisTurn',
     // D-491: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
     'sacrificedAsCost',
     // D-575: "for each card exiled this way" for a spell's additional cost.
@@ -1258,6 +1266,8 @@ export const SELECTOR_KINDS = [
   'targetCountAtLeast',
   /** "Spells you cast from anywhere other than your hand" (CR 601.2a, D-235): the engine's `ObjectFilter.notCastFromHand`. */
   'notCastFromHand',
+  /** "A spell you cast from your hand" (CR 601.2a, D-624): the engine's `ObjectFilter.castFromHand`. */
+  'castFromHand',
   'triggerSubject',
   'triggerActor',
   'bound',
@@ -1509,6 +1519,8 @@ export const STATIC_KINDS = [
   'untapInOthersUntapStep',
   /** "~ costs {1} less to cast for each ...", "Artifact spells you cast cost {1} less" (D-095): the engine's `costReduction`. */
   'costReduction',
+  /** "Strive — ~ costs {2}{R} more to cast for each target beyond the first" (CR 601.2f, D-627): the engine's `costPerExtraTarget`. */
+  'costPerExtraTarget',
   /** "Equip abilities you activate that target enchanted creature cost {3} less to activate." (CR 601.2f, 602.2b, 702.6a, D-425): the engine's `abilityCostReduction`. */
   'abilityCostReduction',
   /** "~ is the chosen type in addition to its other types." (D-100): the engine's `setTypes` static, layer 4. */
@@ -1660,6 +1672,8 @@ export const AMOUNT_KINDS = [
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
+  /** "The number of instant and sorcery spells you've cast this turn" (CR 601.2i, D-624): the engine's `spellsCastThisTurn`. */
+  'spellsCastThisTurn',
   /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491) or the cost of an activated ability (CR 602.2b, D-583): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
   /** "For each card exiled this way" for a spell's additional cost (D-575): the engine's `exiledAsCost`. */
@@ -1850,6 +1864,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   becomeMonarch: true,
   delayedTrigger: true,
   prepare: true,
+  populate: true,
   delayedCombatDamage: true,
   forEachPlayer: true,
   delayedCast: true,

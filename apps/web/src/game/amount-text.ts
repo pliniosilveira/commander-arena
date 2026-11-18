@@ -285,6 +285,11 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): "for each card you've drawn this turn".
       return "the number of cards you've drawn this turn";
+    case 'spellsCastThisTurn':
+      // D-624 (CR 601.2i): "the number of instant and sorcery spells you've cast this turn".
+      return amount.ofTypes === undefined
+        ? "the number of spells you've cast this turn"
+        : `the number of ${amount.ofTypes.join(' and ')} spells you've cast this turn`;
     case 'sacrificedAsCost':
       // D-491 (CR 118.8), D-584 (CR 602.2b): "for each creature sacrificed this way": the additional cost of the spell or the cost of the activated ability.
       return 'the number of permanents sacrificed as a cost';

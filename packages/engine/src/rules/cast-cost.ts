@@ -34,6 +34,7 @@ import type { GameObject, GameState, StackData } from '../state/types';
 import {
   alternativeOf,
   buybackCostOf,
+  costPerExtraTargetOf,
   escalateCostOf,
   flashbackCostOf,
   kickerLikeCostOf,
@@ -247,6 +248,11 @@ export interface CostRequest {
    */
   readonly modes?: number;
   /**
+   * How many targets the spell has (CR 601.2c), for the cost "for each target beyond the first" (D-627): left out, the targets the spell on the stack has chosen
+   * (`StackData.chosenTargets`); 0 for a spell that is not on the stack yet.
+   */
+  readonly targets?: number;
+  /**
    * Which modes were chosen (their indexes, CR 700.2, 700.2h, D-433), for the costs a mode lists before its effect: left out, the modes the spell on the stack has chosen. Where
    * a caller has `modes` for the escalate cost it passes the set too.
    */
@@ -343,6 +349,12 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   if (escalate !== null) {
     const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;
     for (let i = 1; i < modes; i += 1) symbols.push(...manaSymbolsOf(escalate));
+  }
+  // CR 601.2f (D-627): "costs {2}{R} more to cast for each target beyond the first": an increase of the total cost, counted from the targets chosen at CR 601.2c.
+  const perTarget = costPerExtraTargetOf(face);
+  if (perTarget !== null) {
+    const targets = request.targets ?? spell.stack?.chosenTargets.length ?? 0;
+    for (let i = 1; i < targets; i += 1) symbols.push(...manaSymbolsOf(perTarget));
   }
   // CR 700.2h, 702.183a (D-433): a mode with a cost before its effect is an additional cost if the mode is chosen; all the costs of the modes chosen are paid.
   symbols.push(

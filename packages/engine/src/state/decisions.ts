@@ -402,6 +402,7 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'ringBearer'
     | 'empowerJace'
     | 'amass'
+    | 'populate'
     | 'untapChoice'
     | 'conniveOrder'
     | 'spare'
@@ -422,6 +423,9 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * `legal` (all they control) gets the loyalty counters; exactly one. Asked only with two or more.
    * For `'amass'` (D-367, CR 701.47a: "Choose an Army creature you control"): `seat`, the player who amasses, chooses which Army creature of `legal` (all they
    * control, as `derive` types them now, a token the effect just made among them) gets the +1/+1 counters; exactly one. Asked only with two or more. `source` is the
+   * spell or ability.
+   * For `'populate'` (D-625, CR 701.36a: "choose a creature token you control and create a token that's a copy of that creature token"): `seat`, the player who populates, chooses
+   * which creature token of `legal` (all they control, as `derive` types them now) is copied; exactly one (`min` = `max` = 1). Asked only with two or more. `source` is the
    * spell or ability.
    * For `'ringBearer'` (D-196, CR 701.54a: "Each time the Ring tempts you, choose a creature you control"): `seat`, the player the Ring is tempting,
    * chooses which creature of `legal` (all the creatures they control, as `derive` types them now) becomes their Ring-bearer; exactly one

@@ -298,6 +298,7 @@ export function checkFilter(
     'powerAboveBase',
     'putFromBattlefieldThisTurn',
     'notCastFromHand',
+    'castFromHand',
     'enteredThisTurn',
     'singleTarget',
     'modified',
@@ -988,6 +989,13 @@ export function checkRef(
       if (!scope.chosenObjects?.has(ref.id))
         issue(out, path, "'chosen' needs an earlier chooseObjects instruction");
       break;
+    case 'boundObjects':
+      issue(
+        out,
+        path,
+        "'boundObjects' is the engine's own form of 'moved' in a delayed ability and is never written in a card",
+      );
+      break;
     case 'moved':
       if (scope.movedAvailable !== true) {
         issue(
@@ -1517,6 +1525,19 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
+      break;
+    case 'spellsCastThisTurn':
+      // D-624 (CR 601.2i): the controller's own count of the spells cast this turn, by card type when `ofTypes` names some (statics refuse it in `checkStateAmount`).
+      checkEnumList(out, `${path}.ofTypes`, a.ofTypes, CARD_TYPES, 'card type');
+      for (const key of Object.keys(a)) {
+        if (key !== 'kind' && key !== 'ofTypes') {
+          issue(
+            out,
+            `${path}.${key}`,
+            'spells cast this turn reads only the controller and the card types',
+          );
+        }
+      }
       break;
     case 'lifeGainedThisTurn':
       if (Object.keys(a).some((key) => key !== 'kind')) {
@@ -2613,6 +2634,9 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'destroy' ||
     e?.kind === 'moveToZone' ||
     e?.kind === 'createToken' ||
+    // D-625: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
+    e?.kind === 'createCopies' ||
+    e?.kind === 'populate' ||
     // D-145: the card found by a `revealUntil` is "it".
     e?.kind === 'revealUntil' ||
     // D-151: the cards `exileTop` exiled are "those cards", and the card Discover found is "the discovered card".
@@ -3024,8 +3048,16 @@ function checkCopySource(ref: ObjectRef, path: string, scope: Scope, out: Out): 
     case 'target':
       checkRef(ref, 'object', path, scope, out);
       break;
+    case 'chosen':
+      // D-628 (CR 608.2d): "each other token you control becomes a copy of that token": the one an earlier `chooseObjects` of the same sequence chose.
+      checkRef(ref, 'object', path, scope, out);
+      break;
     default:
-      issue(out, path, 'a copy is made from this permanent, a target or the triggering permanent');
+      issue(
+        out,
+        path,
+        'a copy is made from this permanent, a target, the permanent chosen or the triggering permanent',
+      );
   }
 }
 
@@ -3605,10 +3637,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'createCopies': {
       // D-213: a group of permanents named by an `each` selector, and the abilities the copies have besides their own.
-      if (kindOf(e.objects) !== 'each') {
-        issue(out, `${path}.objects`, 'createCopies copies each permanent a group names');
+      // D-625 (CR 601.2c, 608.2c): "Choose any number of target creatures you control. For each of them, create a token that's a copy of that creature": the permanents a target slot named.
+      if (kindOf(e.objects) !== 'each' && kindOf(e.objects) !== 'target') {
+        issue(
+          out,
+          `${path}.objects`,
+          'createCopies copies each permanent a group or a target names',
+        );
       } else {
         checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      }
+      if (e.tapped !== undefined && e.tapped !== true) {
+        issue(out, `${path}.tapped`, 'tapped must be true when present');
       }
       if (e.abilities !== undefined) {
         if (!Array.isArray(e.abilities))
@@ -3790,6 +3830,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkEnumList(out, `${path}.addTypes`, e.addTypes, CARD_TYPES, 'card type');
         }
       }
+      // D-626 (CR 707.9b): "..., except it has myriad": the abilities the copy has besides the ones it copies.
+      if (e.abilities !== undefined) {
+        if (!Array.isArray(e.abilities) || e.abilities.length === 0) {
+          issue(out, `${path}.abilities`, 'abilities is a non-empty list when present');
+        } else {
+          e.abilities.forEach((a, i) => {
+            scope.checkAbility(a, `${path}.abilities[${i}]`, out);
+          });
+        }
+      }
       break;
     case 'destroy':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
@@ -3858,6 +3908,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'prepare':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
+    case 'populate':
+      // D-625 (CR 701.36): no operand; the controller chooses a creature token they control.
       break;
     case 'forEachPlayer':
       checkPlayerSelector(e.players, `${path}.players`, scope, out);

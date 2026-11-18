@@ -49,6 +49,7 @@ import {
   checkAdditionalCosts,
   checkAlternativeCosts,
   checkAttackTax,
+  checkCostPerExtraTarget,
   checkCostReduction,
 } from './validate-cost';
 import { checkCrossZoneSlots } from './validate-cross-zone';
@@ -445,6 +446,9 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'costReduction':
       checkCostReduction(s, path, out);
+      break;
+    case 'costPerExtraTarget':
+      checkCostPerExtraTarget(s, path, out);
       break;
     case 'abilityCostReduction':
       checkAbilityCostReduction(s, path, out);
@@ -1789,6 +1793,20 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
       `${path}.abilities`,
       'a land is played, not cast: it has no castFromGraveyard to give it permission for',
     );
+  }
+  // D-627 (CR 601.2f): "costs {2}{R} more to cast for each target beyond the first" is the cost of a spell, once, of a face with targets to count.
+  const strive = face.abilities.filter(
+    (a) => a?.kind === 'static' && a.static?.kind === 'costPerExtraTarget',
+  ).length;
+  if (strive > 0 && !face.types.some((t) => t === 'instant' || t === 'sorcery')) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'costPerExtraTarget is the cost of a spell: an instant or a sorcery face (CR 601.2f)',
+    );
+  }
+  if (strive > 1) {
+    issue(out, `${path}.abilities`, 'costPerExtraTarget once is enough: a spell has one such cost');
   }
   // CR 607.2d, 614.12 (D-100): the choice a permanent makes as it enters and what reads it.
   chosenIssues(

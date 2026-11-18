@@ -79,6 +79,7 @@ import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { runGrantPlayerHexproof } from './player-hexproof';
 import { runPlayerLock } from './player-lock';
+import { runPopulate } from './populate';
 import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
@@ -225,6 +226,7 @@ export function runInstruction(
   if (instruction.kind === 'pair') return runPair(state, res, instruction);
   if (instruction.kind === 'empowerJace') return runEmpowerJace(state, res, instruction);
   if (instruction.kind === 'amass') return runAmass(state, res, instruction, flow);
+  if (instruction.kind === 'populate') return runPopulate(state, res, instruction, flow);
   if (instruction.kind === 'conniveNext') return runConniveNext(state, res, instruction);
   if (instruction.kind === 'spare') return runSpare(state, res, instruction);
   if (instruction.kind === 'splitExiled') return runSplitExiled(state, res, instruction);
@@ -1140,6 +1142,9 @@ function runEffect(
           effect: effect.effect,
         })),
       );
+    case 'populate':
+      // CR 701.36a (D-625): the token to copy is chosen, and the copy made, as the instruction runs (rules/populate.ts).
+      return done(state, [], [{ kind: 'populate', chosen: null }]);
     case 'prepare': {
       let next = state;
       const events: GameEvent[] = [];
@@ -1189,19 +1194,27 @@ function runEffect(
       // D-459 (CR 603.7c, 400.7j): "Exile it at the beginning of the next end step", about the permanents the effect before it put onto the battlefield (`moved`): one
       // delayed ability for each, named by the permanent as it is now (the ability is about that object: once it has changed zones it is a new object and nothing happens,
       // CR 603.7c, 400.7), as Unearth's is.
-      if (effect.effect.kind === 'exile' && effect.effect.objects.kind === 'moved') {
+      // D-625 (CR 603.7c, 701.21a): "Sacrifice it / those tokens at the beginning of the next end step", about the permanents the effects before it made (`moved`: the tokens
+      // `createToken`, `createCopies` or `populate` created, only those): one delayed ability for each, sacrificed by the controller of the ability that created it, so a token whose control
+      // changed since is not sacrificed (CR 701.21a: only a permanent its controller controls can be sacrificed). A token that has left is gone and nothing happens (CR 603.7c).
+      if (
+        (effect.effect.kind === 'exile' || effect.effect.kind === 'sacrifice') &&
+        effect.effect.objects.kind === 'moved'
+      ) {
+        const ids = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
+        // One delayed ability for all of them, as the text says (CR 603.7, "Exile them ..."): a player never has to order the tokens of one effect. It is the ability of the
+        // source of the ability that created it (CR 603.7e), about those objects only (CR 603.7c). With none there is nothing to wait for.
+        if (ids.length === 0) return done(state);
         const ability: TriggeredAbility = {
           kind: 'triggered',
           trigger,
-          effect: { kind: 'exile', objects: { kind: 'this' } },
+          effect: { kind: effect.effect.kind, objects: { kind: 'boundObjects', ids } },
         };
         return done({
           ...state,
           delayedTriggers: [
             ...state.delayedTriggers,
-            ...(res.lastMoved ?? [])
-              .filter((id) => state.objects[id]?.zone === 'battlefield')
-              .map((id) => ({ source: id, controller: res.controller, ability })),
+            { source: res.source, controller: res.controller, ability },
           ],
         });
       }
@@ -1755,7 +1768,8 @@ function runEffect(
           original: true,
         });
       }
-      const made = makeSettled(state, res, res.controller, wanted, false, flow);
+      // D-625 (CR 110.5b): "create a tapped and attacking token that's a copy of that token": the tokens enter tapped.
+      const made = makeSettled(state, res, res.controller, wanted, effect.tapped === true, flow);
       if (made.kind === 'asked') return asking(state, made);
       return { ...done(made.state, made.events, made.front), lastMoved: made.created };
     }
