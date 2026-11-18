@@ -135,7 +135,7 @@ Everything here is read and refused, or unread, so the card stays unsupported an
 
 ## Design-only items
 
-The designs for the alternative costs not yet built (Bestow, Plot, Rebound and others; Miracle and Encore are built) and the keyword actions were in the old decision log, entry D-117 (read it as `docs/decisions/README.md` says).
+The designs for the alternative costs not yet built (Bestow, Plot, Rebound and others; Miracle and Encore are built) and the keyword actions were in the old decision log, entry D-117 (read it as `AGENTS.md`, "Documentation duties", says).
 
 ## Hofri deck leftovers (D-229 and following)
 

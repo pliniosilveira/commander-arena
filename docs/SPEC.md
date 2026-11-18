@@ -1,6 +1,6 @@
 # Commander Arena: specification
 
-The current, authoritative statement of what Commander Arena is and how it behaves. It was collapsed on 2026-11-01 from the original specification and its 31 amendments (D-169). Section numbers and amendment numbers are cited from code, tests and documents, so they stay stable: section 17 is the index that resolves every amendment number. The decisions that still bind are in `docs/decisions/`; the state of the work is in the open issues and pull requests.
+The current, authoritative statement of what Commander Arena is and how it behaves. It was collapsed on 2026-11-01 from the original specification and its 31 amendments (D-169). Section numbers and amendment numbers are cited from code, tests and documents, so they stay stable: section 17 is the index that resolves every amendment number. The state of the work is in the open issues and pull requests.
 
 ## 1. Role and mission
 
@@ -30,7 +30,7 @@ Commander Arena is an unofficial, free, in-browser game of Magic: The Gathering 
 
 ### 4.1 Stack
 
-Defaults are listed in section 17.7; deviations need a decision bullet (`docs/decisions/README.md`).
+Defaults are listed in section 17.7; deviations need the owner's approval.
 
 - TypeScript in strict mode with pnpm workspaces, exact pinned dependencies. Biome for linting and formatting; dependency-cruiser for the package boundaries. React 19 with Vite, Zustand for UI state, Comlink for the Worker RPC. Zod schemas for serialized data (the AST, `GameState`, the card pipeline). Vitest for unit and scenario tests, fast-check for property tests, Playwright for browser tests.
 - Packages: `packages/engine` (pure rules engine: no DOM, network, timers, Node built-ins or randomness; imports only itself and `zod`), `packages/cards` (decklist parsing, Scryfall client and cache, the Oracle parser, the engine's real-card fixtures, validation, coverage tooling), `packages/ai` (agents; depends only on the engine's public API), `apps/web` (React UI; the engine and AI run in a Web Worker so the UI never freezes). A lint rule fails the build when a package imports what it must not (`AGENTS.md`, `tools/boundaries`).
@@ -60,7 +60,7 @@ Defaults are listed in section 17.7; deviations need a decision bullet (`docs/de
 
 ## 5. Rules engine requirements
 
-**Rules baseline:** the Comprehensive Rules effective September 25, 2026, plus the Mystery Booster Commander Edition Update Bulletin (October 19, 2026), applied by reference (D-035). The CR text and `RULES_VERSION.md` are in `docs/rules/`; `pnpm rule <number>` prints a rule. Rule numbers here come from the September 2026 file; the bulletin shifts meld to a new rule 713, so later 7xx numbers move: find rules by title. When this specification and the CR disagree, the CR wins; record the discrepancy as a decision bullet (`docs/decisions/`). Cite rules in code as `CR 702.19b (Trample)`, number and title (A15).
+**Rules baseline:** the Comprehensive Rules effective September 25, 2026, plus the Mystery Booster Commander Edition Update Bulletin (October 19, 2026), applied by reference (D-035). The CR text and `RULES_VERSION.md` are in `docs/rules/`; `pnpm rule <number>` prints a rule. Rule numbers here come from the September 2026 file; the bulletin shifts meld to a new rule 713, so later 7xx numbers move: find rules by title. When this specification and the CR disagree, the CR wins; record the discrepancy in `docs/RULES_COVERAGE.md`. Cite rules in code as `CR 702.19b (Trample)`, number and title (A15).
 
 ### 5.1 Game setup (CR 103, 903)
 
@@ -178,7 +178,7 @@ Rules for the loop, still binding:
 - Never mark a card supported without tests.
 - Never special-case a card by name inside engine code.
 - Never weaken an existing rule implementation to make a new card fit.
-- If the CR and a Scryfall ruling seem to disagree, follow the CR and record it as a decision bullet (`docs/decisions/`).
+- If the CR and a Scryfall ruling seem to disagree, follow the CR and record it in `docs/RULES_COVERAGE.md`.
 
 ### 8.4 What the owner types (removed)
 
@@ -271,7 +271,6 @@ Together with the code, these are the project's long-term memory: a future sessi
 | `AGENTS.md`, `CLAUDE.md` | Standing instructions for any coding agent (setup, commands, codebase rules). `CLAUDE.md` imports `AGENTS.md`. |
 | `docs/SPEC.md` | This document. Changed only with the owner's approval. |
 | `docs/ARCHITECTURE.md` | Module map, state model, data flow; real and planned kept apart. |
-| `docs/decisions/README.md` | The few decisions that are written in no other document. |
 | `docs/rules/` | The CR text, `RULES_VERSION.md` and bulletins. |
 | `docs/RULES_COVERAGE.md`, `docs/MECHANICS.md` | Rules support by CR section; the per-mechanic catalogue, read before adding anything. |
 | `docs/CARD_SUPPORT_PLAYBOOK.md` | The procedure of 8.3 and its lessons learned. |
@@ -282,7 +281,7 @@ Together with the code, these are the project's long-term memory: a future sessi
 ## 14. How to work
 
 - Work milestone by milestone. At the end of each: all checks pass, documents are updated, a short report goes in the pull request (what is done, test status, coverage numbers, known gaps, decisions), and the work is committed on its branch.
-- Stop for the owner's review at checkpoints and for S-class proposals; otherwise make the most reasonable decision consistent with the CR and this specification, record it in the pull request (and in `docs/decisions/` when it binds future work) and continue.
+- Stop for the owner's review at checkpoints and for S-class proposals; otherwise make the most reasonable decision consistent with the CR and this specification, record it in the pull request (and in the document that covers the subject when it binds future work) and continue.
 - When unsure about a rule, look it up with `pnpm rule` instead of relying on memory, then add a test that pins the behavior.
 - Prefer small, well-named modules, under about 400 lines where practical.
 
@@ -312,7 +311,7 @@ Together with the code, these are the project's long-term memory: a future sessi
 
 ## 17. Amendments index
 
-Thirty-four amendments (A1 to A34) were approved by the owner between 2026-10-20 and 2026-11-08. Their text is not kept: each line says what the amendment decided and where it now lives, or which decision removed or superseded it. Where an amendment disagreed with an earlier section, the amendment won; the sections above already include the result. The reasoning is in the removed log under the D-number shown (`docs/decisions/README.md` says how to read it).
+Thirty-four amendments (A1 to A34) were approved by the owner between 2026-10-20 and 2026-11-08. Their text is not kept: each line says what the amendment decided and where it now lives, or which decision removed or superseded it. Where an amendment disagreed with an earlier section, the amendment won; the sections above already include the result. The reasoning is in the removed log under the D-number shown (`AGENTS.md`, "Documentation duties", says how to read it).
 
 ### 17.1 Engine architecture
 
@@ -368,4 +367,4 @@ Thirty-four amendments (A1 to A34) were approved by the owner between 2026-10-20
 
 ### 17.7 Stack choices made before M0 (D-029)
 
-Recorded so later sessions do not reopen them; deviations need a decision bullet (`docs/decisions/`). Biome and dependency-cruiser; React 19 with Vite, Zustand and Comlink; Zod schemas for serialized data; one pull request per milestone, merged after the checks pass. Now in 4.1.
+Recorded so later sessions do not reopen them; deviations need the owner's approval. Biome and dependency-cruiser; React 19 with Vite, Zustand and Comlink; Zod schemas for serialized data; one pull request per milestone, merged after the checks pass. Now in 4.1.

@@ -10,7 +10,7 @@ The long-term goal is that the engine supports 100% of the existing cards; a car
 
 Priorities, in order: rules correctness for every card marked supported; honesty (a card the engine does not fully understand is flagged, never guessed); determinism and testability; a legal and competent AI; polish.
 
-Authoritative documents: `docs/SPEC.md` (the short current specification; section 17 is the index of amendments A1 to A31, whose results are in sections 1 to 16) and `docs/decisions/README.md` (the few decisions written nowhere else). When the SPEC and the CR disagree, the CR wins; record the discrepancy as a decision bullet.
+Authoritative documents: `docs/SPEC.md` (the short current specification; section 17 is the index of amendments A1 to A31, whose results are in sections 1 to 16). When the SPEC and the CR disagree, the CR wins; record the discrepancy in `docs/ROADMAP.md` or `docs/RULES_COVERAGE.md`.
 
 ## Session start checklist
 
@@ -61,7 +61,7 @@ While you work, run what your change touches (D-126): `pnpm typecheck`, `pnpm li
 
 Before a pull request: `pnpm format`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `pnpm test:pr`. The PR tier runs deterministic rules/parser checks, all golden support/AST/diagnostic assertions, fast AI tests, the fixed combat smoke and precon loading; full game soaks and the repeated golden timing loop remain exhaustive/nightly. `pnpm test` and `pnpm test:exhaustive` still run every unit test. The complete suite and browser tests run nightly on `main` in the scheduled `Full` workflow (D-250), skipped when no commit entered `main` since its last scheduled run; a failure opens an issue. `pnpm test:soak` (100 games) and the manual `Soak` workflow (500 games) stay on demand. No tool formats Markdown, so keep `.md` files clean by hand.
 
-Scripts under `tools/` are TypeScript run with `node file.ts` (Node type stripping). Use erasable syntax only, explicit `.ts` extensions on relative imports and Node built-ins only; do not add an npm dependency for tooling without a decision bullet.
+Scripts under `tools/` are TypeScript run with `node file.ts` (Node type stripping). Use erasable syntax only, explicit `.ts` extensions on relative imports and Node built-ins only; do not add an npm dependency for tooling without the owner's approval.
 
 ## Repository map
 
@@ -82,7 +82,7 @@ Scripts under `tools/` are TypeScript run with `node file.ts` (Node type strippi
 | `tools/precon` | `pnpm precon:from-issue` and `pnpm precon:from-comment` (the snapshot of a precon issue and its decoding), `pnpm precon:snapshot`: the card-data snapshot of a precon, from the bulk file and a decklist of `decks/` (D-137). |
 | `.claude/skills/deck-support` | The routine that builds a complete "deck support" issue from anyone, oldest first, when the token budget allows (D-251); `tools/corpus/check-issue.ts` and `.github/workflows/deck-support-triage.yml` decide whether the issue is complete. |
 | `decks/` | Real decklists the owner supplies, one `.txt` per deck, for `pnpm corpus:decks`; `README.md` says how. |
-| `docs/` | `SPEC.md`, `decisions/`, `ARCHITECTURE.md`, `ROADMAP.md`, `RULES_COVERAGE.md`, `MECHANICS.md`, `CARD_SUPPORT_PLAYBOOK.md`, `CORPUS.md`, `rules/` (CR version record, bulletins). Working notes (status reports, build checklists, design drafts) are not kept in the repository: they live in the issue, the pull request description and its comments, and the git history has the earlier ones. |
+| `docs/` | `SPEC.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `RULES_COVERAGE.md`, `MECHANICS.md`, `CARD_SUPPORT_PLAYBOOK.md`, `CORPUS.md`, `rules/` (CR version record, bulletins). Working notes (status reports, build checklists, design drafts) are not kept in the repository: they live in the issue, the pull request description and its comments, and the git history has the earlier ones. |
 
 All four packages are real. `docs/ARCHITECTURE.md` marks what is real and what is planned, `docs/MECHANICS.md` is the per-mechanic reference, and `docs/RULES_COVERAGE.md` lists rules by CR section.
 
@@ -102,7 +102,7 @@ References in the docs and in code comments to `docs/STATUS.md`, `docs/progress/
 - **Never invent data.** No made-up card data, CR text or bulletin names or dates. If you could not fetch it, say so in the docs and mark it unverified. Test fixtures that are not real Scryfall data must say `SYNTHETIC` in the file.
 - **Cite rules by number and title**, for example `CR 702.19b (Trample)`, in comments on non-obvious logic. Look rules up with `pnpm rule` instead of writing them from memory.
 - **No stubs in supported paths.** No TODO placeholders, fake return values or "simplified" logic in code a supported feature can reach. Deferred work goes in `docs/ROADMAP.md`.
-- **Dependencies and files.** Pin exact versions. Changing the stack needs a decision bullet. Keep modules small and well named, under about 400 lines where practical.
+- **Dependencies and files.** Pin exact versions. Changing the stack needs the owner's approval, and so does a grammar DSL or a parsing dependency: the Oracle text parser is built from the repository's own combinator kit. Keep modules small and well named, under about 400 lines where practical.
 - **Boundary rules are tested.** Adding or changing a rule in `tools/boundaries/rules.cjs` needs a failing case in `tools/boundaries/boundaries.test.ts`.
 - **Style.** Biome formats and lints: single quotes, semicolons, 100 columns, no `any`, no non-null assertions, no unused imports or variables.
 
@@ -110,7 +110,6 @@ References in the docs and in code comments to `docs/STATUS.md`, `docs/progress/
 
 | Document | Update when |
 | --- | --- |
-| `docs/decisions/README.md` | Only for a decision that binds future work and has no other home (see below). |
 | `docs/ARCHITECTURE.md` | A module, type or data flow changes. Move items from planned to real in the same change. |
 | `docs/ROADMAP.md` | Work is deferred or a known limitation is found. |
 | `docs/RULES_COVERAGE.md` | Rules support changes. |
@@ -118,7 +117,7 @@ References in the docs and in code comments to `docs/STATUS.md`, `docs/progress/
 | `README.md` | User-facing behavior changes. |
 | `docs/SPEC.md` | Only with the human's approval. |
 
-Most pull requests record no decision. A decision is an architecture or stack choice, a policy, or a deliberate deviation from the CR or the SPEC; how one card or one rule is built is not (that goes in the pull request, a comment that cites the CR rule, and `docs/MECHANICS.md`), and a convention already written in this file, the playbook or a skill needs none either. When it does bind future work, write it in the document that covers the subject (this file, the SPEC, `ARCHITECTURE.md`, `ROADMAP.md`); only a decision with no such home is one bullet of at most 60 words in `docs/decisions/README.md` (no new file, no number, no template; `tools/docs/decisions.test.ts` enforces it). An old `D-nnn` in code is history.
+There is no decision log. A choice that binds future work (an architecture or stack choice, a policy, a deliberate deviation from the CR or the SPEC) is written in the document that covers its subject: this file, the SPEC, `ARCHITECTURE.md`, `ROADMAP.md` or `RULES_COVERAGE.md`, with one sentence of why. How one card or one rule is built goes in the pull request, in a comment that cites the CR rule, and in `docs/MECHANICS.md`. An old `D-nnn` in code or docs is history: `git log --diff-filter=D -n 1 --format=%H -- docs/DECISIONS.md`, then `git show <that commit>^:docs/DECISIONS.md`.
 
 Do not write a test count into any document; it goes stale. Say how to run the checks instead.
 
@@ -126,6 +125,7 @@ Do not write a test count into any document; it goes stale. Say how to run the c
 
 - One branch and one pull request per task (a deck, a fix, a feature), named for it (`support-niv-mizzet`, `fix-auto-mana`). A branch that needs the changes of a pull request that is not merged yet is cut from that pull request's branch, and the pull request says "stacked on #N". Merge to `main` only after all checks pass. `main` is always deployable.
 - Never push to `main` directly.
+- Workflow actions are pinned to commit hashes, with the version tag as a comment: the repository is public and a moved tag would run unreviewed code with the repository's token.
 - Bump `PARSER_VERSION` and `ENGINE_VERSION` and regenerate `golden.expected.json` and `derive-digest.expected.json` once per pull request, as its last commits after merging `main` in, not after every group (per-group bumps made every merge of `main` conflict). Until then the golden and derive-digest checks of a deck pull request fail on purpose. `docs/CARD_SUPPORT_PLAYBOOK.md` step 9 has the order and the commands.
 - Commit messages: a short imperative subject, then a body that says why. Attribution trailers are added by the harness; do not hardcode a model name.
 - Do not rewrite history that others may have pulled. A conflict is resolved by merging `main` in; a conflict in a generated file (the golden snapshot, the version constants, the derive digests) by merging and regenerating it with the repository's command, never by hand.
@@ -138,4 +138,4 @@ The procedure for adding support for a card is `docs/CARD_SUPPORT_PLAYBOOK.md`. 
 
 ## Network
 
-Cloud sessions run under an organization-managed network policy: `api.scryfall.com`, `*.scryfall.io`, `magic.wizards.com` and `media.wizards.com` are blocked, npm works, and only an admin can change it. Work that needs those hosts (`pnpm rules:fetch`, later `pnpm coverage:cards`) is run by the owner on a local machine and the result is committed or pasted. The CR text is not in the repository (D-246): a cloud session gets it from the owner's private repository `pliniosilveira/commander-arena-rules` (attach it with `add_repo`, clone it, then `pnpm rule --file <clone>/comprehensive-rules.txt` or `COMMANDER_ARENA_CR_FILE=<clone>/comprehensive-rules.txt`; never copy its files into this repository), or from a copy the owner provides; without it, do not write rule text from memory: cite a rule only as far as the code, the docs and `docs/decisions/` already do, and say when a rule could not be checked. The tests that read it skip without it. One lawful way to read Scryfall from a cloud session: the workflow `Scryfall lookup` (D-294), started by hand or by the agent with a path such as `cards/named?exact=Sol+Ring` or `cards/<id>/rulings`, runs on a GitHub runner and prints the answer in its log. Otherwise do not work around a block, and do not substitute invented data for data you could not fetch.
+Cloud sessions run under an organization-managed network policy: `api.scryfall.com`, `*.scryfall.io`, `magic.wizards.com` and `media.wizards.com` are blocked, npm works, and only an admin can change it. Work that needs those hosts (`pnpm rules:fetch`, later `pnpm coverage:cards`) is run by the owner on a local machine and the result is committed or pasted. The CR text is not in the repository (D-246): a cloud session gets it from the owner's private repository `pliniosilveira/commander-arena-rules` (attach it with `add_repo`, clone it, then `pnpm rule --file <clone>/comprehensive-rules.txt` or `COMMANDER_ARENA_CR_FILE=<clone>/comprehensive-rules.txt`; never copy its files into this repository), or from a copy the owner provides; without it, do not write rule text from memory: cite a rule only as far as the code, the docs already do, and say when a rule could not be checked. The tests that read it skip without it. One lawful way to read Scryfall from a cloud session: the workflow `Scryfall lookup` (D-294), started by hand or by the agent with a path such as `cards/named?exact=Sol+Ring` or `cards/<id>/rulings`, runs on a GitHub runner and prints the answer in its log. Otherwise do not work around a block, and do not substitute invented data for data you could not fetch.
