@@ -943,6 +943,16 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (!isOneOf(t.step, TRIGGER_STEPS)) {
         issue(out, `${path}.step`, `unknown step ${String(t.step)}`);
       }
+      if (
+        t.alsoStep !== undefined &&
+        (!isOneOf(t.alsoStep, TRIGGER_STEPS) || t.alsoStep === t.step)
+      ) {
+        issue(
+          out,
+          `${path}.alsoStep`,
+          `alsoStep must be another known step, not ${String(t.alsoStep)}`,
+        );
+      }
       if (!isOneOf(t.whose, ['you', 'each', 'opponent'])) {
         issue(out, `${path}.whose`, `unknown turn owner ${String(t.whose)}`);
       }

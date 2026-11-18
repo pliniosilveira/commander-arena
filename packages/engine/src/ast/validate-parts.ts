@@ -3355,6 +3355,13 @@ function checkCopyExceptions(
       );
     }
   }
+  if (spec.addTypes !== undefined) {
+    if (!Array.isArray(spec.addTypes) || spec.addTypes.length === 0) {
+      issue(out, `${path}.addTypes`, 'addTypes is a non-empty list of card types');
+    } else {
+      checkEnumList(out, `${path}.addTypes`, spec.addTypes, CARD_TYPES, 'card type');
+    }
+  }
   if (spec.setColors !== undefined) {
     if (!Array.isArray(spec.setColors) || spec.setColors.some((c) => !isOneOf(c, COLORS))) {
       issue(out, `${path}.setColors`, 'setColors is a list of colors');
@@ -4259,6 +4266,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           issue(out, `${path}.addTypes`, 'addTypes is a non-empty list when present');
         } else {
           checkEnumList(out, `${path}.addTypes`, e.addTypes, CARD_TYPES, 'card type');
+        }
+      }
+      if (e.addSupertypes !== undefined) {
+        if (!Array.isArray(e.addSupertypes) || e.addSupertypes.length === 0) {
+          issue(out, `${path}.addSupertypes`, 'addSupertypes is a non-empty list when present');
+        } else {
+          checkEnumList(out, `${path}.addSupertypes`, e.addSupertypes, SUPERTYPES, 'supertype');
         }
       }
       // D-640 (CR 707.9b): "..., except it has myriad": the abilities the copy has besides the ones it copies.

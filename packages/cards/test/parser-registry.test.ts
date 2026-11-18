@@ -162,6 +162,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.copy': spell((e) => `Create ${e}.`),
   // Hashaton deck group 5 (D-382): a copy with exceptions of characteristics.
   'token.copy-except': permanent((e) => `Whenever you discard a creature card, create ${e}.`),
+  // Issue 103 (Will of the Temur): the same copy with exceptions that are in addition to what it copies.
+  'token.copy-except-additive': permanent(
+    (e) => `Whenever you discard a creature card, create ${e}.`,
+  ),
   'replacement.enters-with-counters-kicked': asIs,
   'replacement.as-enters-choose': asIs,
   'static.self-chosen-type': asIs,
@@ -497,6 +501,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // conditions follow "if" (an intervening "if", the trailing "if" of an activated ability) or "As long as"; the nouns are operands of damage.
   'replacement.enters-as-copy': asIs,
   'replacement.enters-as-copy-embalmed': asIs,
+  // Issue 103 (Deceptive Frostkite).
+  'replacement.enters-as-copy-except': asIs,
   'replacement.redirect-damage': asIs,
   'static.unspent-mana': asIs,
   'static.cast-from-top': asIs,

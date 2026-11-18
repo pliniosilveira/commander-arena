@@ -8,6 +8,7 @@ import type { IrAbility, IrChoiceArg, IrClause } from '../../ir/types';
 import { defineRule } from '../registry';
 import { ADAMANTOISE_REPLACEMENT_RULES } from './adamantoise';
 import { ANGEL_REPLACEMENT_RULES } from './angels';
+import { COPY_EXCEPT_REPLACEMENT_RULES } from './copy-except';
 import { DANITHA_G4_REPLACEMENT_RULES } from './danitha-g4';
 import { DIE_REPLACEMENT_RULES } from './die';
 import { DRAGON_REPLACEMENT_RULES } from './dragons';
@@ -316,6 +317,8 @@ export const REPLACEMENT_RULES = [
   ...DRAGON_REPLACEMENT_RULES,
   // Issue 104: "You may have ~ enter as a copy of any creature on the battlefield, except if ~ was embalmed, ...".
   ...EMBALM_REPLACEMENT_RULES,
+  // Issue 103: "You may have ~ enter as a copy of a creature you control with power 4 or greater, except it's a Dragon in addition to its other types ...".
+  ...COPY_EXCEPT_REPLACEMENT_RULES,
   // Stage P43 (D-193): "All damage that would be dealt to you and other permanents you control is dealt to ~ instead."
   ...ADAMANTOISE_REPLACEMENT_RULES,
   // Stage P66 (D-219): "If one or more artifact tokens would be created under your control, ... are created instead."

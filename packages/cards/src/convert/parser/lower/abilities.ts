@@ -641,12 +641,25 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       if (word === undefined || !isGrantable(word)) return failure(ability);
       gains.push(plainKeyword(word));
     }
+    // Issue 103 (CR 707.9b): "except it's a Dragon in addition to its other types": creature types only.
+    const exceptTypes = event.args.exceptTypes;
+    if (
+      exceptTypes !== undefined &&
+      (exceptTypes.kind !== 'typeList' ||
+        exceptTypes.additive !== true ||
+        exceptTypes.cardTypes !== undefined ||
+        exceptTypes.colors !== undefined ||
+        exceptTypes.subtypes.length === 0)
+    ) {
+      return failure(ability);
+    }
     return built({
       kind: 'entersAsCopy',
       what: kind,
       optional: true,
       duration: until.value ? 'untilEndOfTurn' : 'permanent',
       ...(gains.length > 0 ? { gains } : {}),
+      ...(exceptTypes?.kind === 'typeList' ? { addSubtypes: [...exceptTypes.subtypes] } : {}),
       // Issue 104 (CR 707.9b, 702.128b): "except if ~ was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types".
       ...(event.args.embalmed?.kind === 'flag' && event.args.embalmed.value
         ? {

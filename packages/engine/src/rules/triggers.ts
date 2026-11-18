@@ -263,7 +263,9 @@ function occurrences(
         : [];
     case 'step':
       // CR 500.2, 603.2: as the step begins; the active player is the one whose turn it is.
-      return event.kind === 'stepBegan' && event.step === STEP_OF[trigger.step]
+      return event.kind === 'stepBegan' &&
+        (event.step === STEP_OF[trigger.step] ||
+          (trigger.alsoStep !== undefined && event.step === STEP_OF[trigger.alsoStep]))
         ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
     case 'drawn':

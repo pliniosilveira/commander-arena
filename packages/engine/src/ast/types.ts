@@ -1379,6 +1379,11 @@ export type TokenSpec =
        */
       readonly addSubtypes?: readonly Subtype[];
       /**
+       * "..., except it's a 4/4 Dragon creature with flying in addition to its other types" (issue 103, CR 707.9b, 707.9d): the token has these card types besides the ones it
+       * copies, part of its copiable values. Never empty.
+       */
+      readonly addTypes?: readonly CardType[];
+      /**
        * "..., except it's a 4/4 black Zombie" (D-382, CR 707.9b, 707.9d): the copy is exactly these creature types, instead of the ones it copies (the other subtypes of the
        * original stay: they belong to card types the copy keeps). A characteristic-defining ability that defines creature types (changeling) is not copied. Not with `addSubtypes`.
        */
@@ -2936,6 +2941,11 @@ export type Effect =
        */
       readonly addTypes?: readonly CardType[];
       /**
+       * "..., except it's legendary in addition to its other types" (issue 103, CR 707.9b, 205.4a): the copiable values the permanent gets have these supertypes in
+       * addition to the original's. Never empty.
+       */
+      readonly addSupertypes?: readonly Supertype[];
+      /**
        * "..., except it has myriad" (D-640, CR 707.9b): the abilities the copy has besides the ones it copies; they are part of the copiable values the
        * copy effect gives (a keyword is a `keyword` ability). Never empty.
        */
@@ -3528,6 +3538,11 @@ export type Trigger =
       readonly kind: 'step';
       readonly step: TriggerStep;
       readonly whose: 'you' | 'each' | 'opponent';
+      /**
+       * "At the beginning of each of your main phases" (CR 505.1, 603.2b; issue 103): it triggers as `alsoStep` begins too, a second step of the same turn.
+       * Never the same as `step`.
+       */
+      readonly alsoStep?: TriggerStep;
     }
   /**
    * "Whenever you draw a card", "whenever an opponent draws a card" (CR 121.1, D-111): once for each card
@@ -4963,6 +4978,11 @@ export type Replacement =
       readonly optional?: true;
       readonly duration: Duration;
       readonly gains?: readonly Keyword[];
+      /**
+       * "..., except it's a Dragon in addition to its other types and it has flying" (issue 103, CR 707.9b): the creature types the permanent has besides the ones it copies,
+       * part of its copiable values. Never empty.
+       */
+      readonly addSubtypes?: readonly Subtype[];
       /**
        * "..., except if this creature was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types" (CR 707.9b, 702.128b): the
        * exceptions that apply only when the permanent that enters is an embalmed token (they are part of its copiable values). A card cast from the hand, or a token that is not

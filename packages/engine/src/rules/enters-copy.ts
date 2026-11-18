@@ -53,10 +53,15 @@ export function becomeCopyAsItEnters(
   if (original?.zone !== 'battlefield') return { state, events: [], counterEvents: [] };
   // CR 707.9b, 702.128b: "except if this creature was embalmed, the token has no mana cost, it's white, ...": exceptions only an embalmed token has.
   const copiedValues = copiableValues(state, original);
-  const values =
+  const withEmbalm =
     embalmed && rule.ifEmbalmed !== undefined
       ? withCopyExceptions(copiedValues, rule.ifEmbalmed)
       : copiedValues;
+  // CR 707.9b (issue 103): "except it's a Dragon in addition to its other types": the creature types of the exception are part of the copiable values.
+  const values =
+    rule.addSubtypes === undefined
+      ? withEmbalm
+      : withCopyExceptions(withEmbalm, { addSubtypes: rule.addSubtypes });
   const [stamp, stamped] = allocateTimestamp(state);
   let next: GameState = {
     ...stamped,
