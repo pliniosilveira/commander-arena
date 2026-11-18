@@ -58,6 +58,10 @@ export function checkDragonsEffect(
       if (e.lookAt !== undefined && e.lookAt !== true) {
         issue(out, `${path}.lookAt`, 'lookAt must be true when present');
       }
+      // Lorehold group 1: "you may cast it this turn".
+      if (e.castOnly !== undefined && e.castOnly !== true) {
+        issue(out, `${path}.castOnly`, 'castOnly must be true when present');
+      }
       return true;
     case 'exileUntilCast':
       // CR 701.57 (D-151): whole-number limits on the card found and on the card cast, and what happens to the rest.

@@ -292,6 +292,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'fight',
     // D-145: "deals X damage divided as you choose among any number of target creatures" (CR 601.2d): with `TargetSpec.divide`.
     'dealDividedDamage',
+    // Lorehold group 1: "Each creature deals damage to itself equal to its power." (CR 120.3).
+    'dealDamageToSelf',
+    // Lorehold group 1: "you may exile one of them from your graveyard" of the cards a batch discard trigger saw (CR 603.2c).
+    'exileFromTriggerCards',
     // D-145: "you may cast a spell ... from your hand without paying its mana cost", "you may play the exiled card" (CR 608.2g).
     'castFree',
     // D-350: "you may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead" (CR 608.2g, 609.4b).
@@ -658,6 +662,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notCastFromHand',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
+    // Lorehold group 2: "target card exiled with this creature" (`ObjectFilter.exiledWithSource`).
+    'exiledWithSource',
     // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
     'attachedTo',
     'enchanted',
@@ -779,6 +785,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsInGraveyard',
     // D-331: "as long as there are no cards in your library".
     'cardsInLibrary',
+    // Lorehold group 3: "if a player has one or fewer cards in hand" (CR 402.1, 603.4).
+    'aPlayerCardsInHand',
     // D-124: "if it escaped", "unless it escaped" (as `not`).
     'escaped',
     // D-127: "if this permanent came under your control since the beginning of your last upkeep" (Echo).
@@ -1234,6 +1242,8 @@ export const SELECTOR_KINDS = [
   'putFromBattlefieldThisTurn',
   /** "That entered this turn" (CR 400.7, group 4 of the Vraska deck): the engine's `ObjectFilter.enteredThisTurn`. */
   'enteredThisTurn',
+  /** "Target card exiled with this creature" (CR 607.2a, Lorehold group 2): the engine's `ObjectFilter.exiledWithSource`. */
+  'exiledWithSource',
   /** "Aura attached to it", "attached to enchanted creature", "attached to a creature" (CR 303.4, 301.5, 701.3, D-422): the engine's `ObjectFilter.attachedTo`. */
   'attachedTo',
   /** "Creatures that aren't enchanted" (CR 303.4, D-422): the engine's `ObjectFilter.enchanted`. */
@@ -1460,6 +1470,8 @@ export const CONDITION_KINDS = [
   'cardsInGraveyard',
   /** "As long as there are no cards in your library" (CR 401.1, D-331): the engine's `cardsInLibrary`. */
   'cardsInLibrary',
+  /** "If a player has one or fewer cards in hand" (CR 402.1, 603.4; Lorehold group 3): the engine's `aPlayerCardsInHand`. */
+  'aPlayerCardsInHand',
   'and',
   'or',
   'not',
@@ -1861,6 +1873,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   lookAtTop: true,
   revealUntil: true,
   dealDividedDamage: true,
+  dealDamageToSelf: true,
+  exileFromTriggerCards: true,
   fight: true,
   castFree: true,
   castCard: true,

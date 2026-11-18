@@ -343,6 +343,8 @@ export interface IrFilter {
   readonly notCastFromHand?: true;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
+  /** "target card exiled with ~" (Lorehold group 2, CR 607.2a): a card in exile that the permanent exiled with its linked ability (the engine's `exiledWithSource`). */
+  readonly exiledWithSelf?: true;
   /**
    * "attached to it", "attached to enchanted creature", "that's attached to a creature" (Danitha deck group 3, D-426, CR 303.4, 301.5, 701.3): the object is a permanent attached to
    * another one. `it` is the permanent the statement is about (the lowering of a static ability reads it as the source or, for "enchanted creature gets ...", the permanent the
@@ -528,6 +530,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'discardedThisWay'; readonly creature: boolean }
     // "If you discarded an instant or sorcery card this way" (D-358, CR 608.2c, 701.9): what a discard before it in the same text did
     | { readonly kind: 'discardedSpellThisWay' }
+    // "If you search your library this way" (Lorehold group 1, CR 608.2c, 701.23): what a search before it in the same text did
+    | { readonly kind: 'searchedThisWay' }
     | { readonly kind: 'unlessPays'; readonly who: IrNoun; readonly cost: readonly IrCost[] }
     // D-258 (the Bruna deck, CR 118.12a): "unless you return an untapped Plains you control to its owner's hand": the `return` clause of one permanent the controller chooses
     | { readonly kind: 'unlessReturn'; readonly clause: IrClause }
@@ -572,6 +576,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'cardsInGraveyard'; readonly compare: IrComparison }
     // "there are no cards in your library", "your library has no cards in it" (issue 25, D-331, CR 401.1): the cards in the library of the controller
     | { readonly kind: 'cardsInLibrary'; readonly compare: IrComparison }
+    // "a player has one or fewer cards in hand" (Lorehold group 3, CR 402.1, 603.4): some player in the game has a hand of that size
+    | { readonly kind: 'aPlayerCardsInHand'; readonly compare: IrComparison }
     // "that player controls more lands than you" (stage P68, D-229, CR 603.4): the controller of the permanent the event is about has more of the stat; with a
     // trigger about a player (a step of an opponent's turn) the lowering reads it of that player instead (`triggerPlayerHasMore`)
     | { readonly kind: 'subjectControllerHasMore'; readonly stat: 'lands' | 'creatures' }

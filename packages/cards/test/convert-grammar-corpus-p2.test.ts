@@ -343,7 +343,13 @@ const DISCARD: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Each player discards their hand, then draws seven cards.',
-    expect: no('their hand, then draws seven cards.', 'effect.player.discard'),
+    expect: OK,
+    note: 'each player discards the whole hand they have, then draws: the engine discard.hand (Lorehold group 3, D-623)',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Each player discards their hands, then draws seven cards.',
+    expect: no('their hands, then draws seven cards.', 'effect.player.discard'),
   },
 ];
 

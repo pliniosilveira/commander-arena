@@ -115,6 +115,8 @@ export interface FilterContext {
   readonly graveyarded?: readonly ObjectId[];
   /** The permanents that entered the battlefield this turn (`enteredThisTurn`, group 4 of the Vraska deck): the turn log, read by the caller; absent fails the flag closed. */
   readonly entered?: readonly ObjectId[];
+  /** The cards the source exiled with its linked ability (`exiledWithSource`, Lorehold group 2, CR 607.2a): read from the source by the caller; absent fails the flag closed. */
+  readonly linkedExile?: readonly ObjectId[];
   /**
    * The subtypes of the object the trigger is about, as it last was (`sharesCreatureTypeWith`, D-261, CR 603.10a, 113.7a): read by the caller; absent fails the flag closed.
    */
@@ -302,6 +304,8 @@ export function matchesFilterWith(
   }
   // CR 400.7: "that entered this turn" is the same object that entered the battlefield during this turn.
   if (filter.enteredThisTurn === true && !(ctx.entered ?? []).includes(obj.id)) return false;
+  // CR 607.2a (Lorehold group 2): "card exiled with this creature": one of the cards the source exiled with its linked ability.
+  if (filter.exiledWithSource === true && !(ctx.linkedExile ?? []).includes(obj.id)) return false;
   // CR 702.134a (D-120): "with power less than this creature's power".
   if (filter.powerLessThanSource === true) {
     const power = ctx.sourcePower;

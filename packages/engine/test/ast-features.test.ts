@@ -106,6 +106,8 @@ describe('the dimensions', () => {
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".
       'cardsInLibrary',
+      // Lorehold group 3: "if a player has one or fewer cards in hand".
+      'aPlayerCardsInHand',
       'escaped',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',

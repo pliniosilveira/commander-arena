@@ -1,5 +1,5 @@
 {
-  "parserVersion": 141,
+  "parserVersion": 142,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -675,6 +675,14 @@
       "reasons": [],
       "ast": "63bacb23"
     },
+    "17b4778b-82b1-4845-ad08-00f3ff66877b": {
+      "name": "Perpetual Timepiece",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bb55ad41"
+    },
     "180eda7c-fca2-403b-85cd-8ffebaf9f408": {
       "name": "Palace Jailer",
       "group": "acceptance",
@@ -706,6 +714,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "28a7effb"
+    },
+    "18f0cd0b-3e4f-4637-a62e-75dd1b2f3fce": {
+      "name": "Claim Jumper",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1b453ff1"
     },
     "19b5c94b-b4fa-41a9-b649-51c4e6f03602": {
       "name": "Might of the Meek",
@@ -923,6 +939,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "83eaa363"
+    },
+    "24f7143c-d43a-4120-baa0-0235b15d8186": {
+      "name": "Wave of Reckoning",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "343abdf9"
     },
     "25012c1f-c069-43d7-b930-a3a5a7eb1389": {
       "name": "Dismantling Wave",
@@ -2099,6 +2123,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9e8374f4"
+    },
+    "54d48e54-be4a-4a78-a778-b28e74ef7134": {
+      "name": "Containment Construct",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "823cbaec"
     },
     "5548ff43-e5f6-4a63-8562-a2b1de06d6f5": {
       "name": "Riveteers Overlook",
@@ -3902,6 +3934,14 @@
       "reasons": [],
       "ast": "658cbe5a"
     },
+    "9d2f02f7-adcd-4d23-a051-ebca70f22ba5": {
+      "name": "Fateful Tempest",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a7e1b70a"
+    },
     "9d3c7c96-056f-408e-a834-fa45a430d3d4": {
       "name": "Daxos, Blessed by the Sun",
       "group": "acceptance",
@@ -4764,6 +4804,14 @@
       "reasons": [],
       "ast": "57262890"
     },
+    "c3d38129-b955-4fb5-8486-095f918935b9": {
+      "name": "Quintorius, Loremaster",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "92408abf"
+    },
     "c43e7fa5-ff93-42d9-af79-ee417a8e41a7": {
       "name": "Emissary Green",
       "group": "acceptance",
@@ -4835,6 +4883,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b989839b"
+    },
+    "c78783e5-868d-4a8b-a4f8-95a92853cf0a": {
+      "name": "Naktamun Lorespinner // Wheel of Fortune",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "be655290"
     },
     "c7aecca5-2f67-4245-ab2d-e723d8b23a67": {
       "name": "Expressive Iteration",
@@ -6067,6 +6123,14 @@
       "reasons": [],
       "ast": "5691b2db"
     },
+    "fa81e7ff-0f2c-40df-9169-c0a22f00cd76": {
+      "name": "Conspiracy Theorist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "15e4af96"
+    },
     "fab29bc7-1f0a-4df4-b8f1-c008ce5583d2": {
       "name": "Search for Glory",
       "group": "acceptance",
@@ -6375,8 +6439,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 439,
-      "total": 460
+      "supported": 447,
+      "total": 468
     }
   }
 }

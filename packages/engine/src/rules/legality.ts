@@ -158,13 +158,53 @@ export function canPlayLandByEffect(state: GameState, seat: SeatId, obj: GameObj
  * CR 601.2, 305.1, 611.2a (D-151): whether an effect ("You may play that card this turn") lets `seat` cast or play the card `obj` in exile: a
  * `playPermission` of the seat that names this very object (a card that left exile is a new one, CR 400.7) and has not ended.
  */
-export function mayPlayFromExile(state: GameState, seat: SeatId, obj: GameObject): boolean {
+export function mayPlayFromExile(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+  asLand = false,
+  /**
+   * Lorehold group 2 (CR 118.9): `true` asks for a permission to cast the card without paying its mana cost, which is the alternative cost `free` and no other way; `false` (the
+   * default) for one that lets it be cast paying its cost. A card with both is cast either way.
+   */
+  free = false,
+): boolean {
   return (
     obj.zone === 'exile' &&
     state.continuousEffects.some(
       (e) =>
-        e.change.kind === 'playPermission' && e.change.seat === seat && e.objects.includes(obj.id),
+        e.change.kind === 'playPermission' &&
+        e.change.seat === seat &&
+        e.objects.includes(obj.id) &&
+        (e.change.free === true) === free &&
+        // "You may cast it this turn" (Lorehold group 1): a permission to cast is none to play a land.
+        !(asLand && e.change.castOnly === true),
     )
+  );
+}
+
+/**
+ * "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" (Lorehold group 2, CR 614.1a): whether the spell cast from exile with the
+ * permission of `free` kind that names `obj` carries the rider. It does when every permission of that kind that names the card carries it: a player who has another permission to
+ * cast the card without the rider uses that one, as they may choose, so the rider is not forced on them.
+ */
+export function playPermissionBottoms(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+  free: boolean,
+): boolean {
+  const grants = state.continuousEffects.filter(
+    (e) =>
+      e.change.kind === 'playPermission' &&
+      e.change.seat === seat &&
+      e.objects.includes(obj.id) &&
+      (e.change.free === true) === free,
+  );
+  return (
+    obj.zone === 'exile' &&
+    grants.length > 0 &&
+    grants.every((e) => e.change.kind === 'playPermission' && e.change.bottomInstead === true)
   );
 }
 
@@ -173,13 +213,21 @@ export function mayPlayFromExile(state: GameState, seat: SeatId, obj: GameObject
  * graveyard: a `playPermission` of the seat that names this very object (a card that left the graveyard is a new one, CR 400.7) and has not ended.
  * The effect names only cards the seat owns (`runMayPlay`).
  */
-export function mayPlayFromGraveyard(state: GameState, seat: SeatId, obj: GameObject): boolean {
+export function mayPlayFromGraveyard(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+  asLand = false,
+): boolean {
   return (
     obj.zone === 'graveyard' &&
     obj.owner === seat &&
     state.continuousEffects.some(
       (e) =>
-        e.change.kind === 'playPermission' && e.change.seat === seat && e.objects.includes(obj.id),
+        e.change.kind === 'playPermission' &&
+        e.change.seat === seat &&
+        e.objects.includes(obj.id) &&
+        !(asLand && e.change.castOnly === true),
     )
   );
 }
@@ -187,11 +235,11 @@ export function mayPlayFromGraveyard(state: GameState, seat: SeatId, obj: GameOb
 export function canPlayLand(state: GameState, seat: SeatId, obj: GameObject, face = 0): boolean {
   if (obj.card === null) return false;
   // D-151: a land card in exile an effect lets the player play ("You may play that card this turn").
-  const fromExile = obj.zone === 'exile' && mayPlayFromExile(state, seat, obj);
+  const fromExile = obj.zone === 'exile' && mayPlayFromExile(state, seat, obj, true);
   // D-232: a land card in the graveyard a permanent lets its controller play once each turn; D-327: or an effect let them play this turn.
   const fromGraveyard =
     obj.zone === 'graveyard' &&
-    (mayPlayFromGraveyard(state, seat, obj) ||
+    (mayPlayFromGraveyard(state, seat, obj, true) ||
       graveyardPlayPermission(state, seat, obj, true) !== null);
   if (!fromExile && !fromGraveyard && (obj.zone !== 'hand' || obj.owner !== seat)) return false;
   if (!castableFaces(definitionOf(state, obj.card)).includes(face)) return false;
@@ -322,7 +370,11 @@ export function castZone(
   // and an Adventure the player cast from a card they do not own is theirs to cast from exile (CR 715.3d: its controller exiles it, and that player may
   // play it).
   const theirs =
-    obj.zone === 'exile' && (obj.adventureBy === seat || mayPlayFromExile(state, seat, obj));
+    obj.zone === 'exile' &&
+    (obj.adventureBy === seat ||
+      mayPlayFromExile(state, seat, obj) ||
+      // Lorehold group 2 (CR 118.9): "You may cast that card this turn without paying its mana cost".
+      mayPlayFromExile(state, seat, obj, false, true));
   if (obj.owner !== seat && !theirs) return null;
   // CR 715.3d (D-187): an Adventure its caster did not own is on an adventure for that caster only, not for its owner.
   if (obj.zone === 'exile' && obj.adventureBy !== undefined && obj.adventureBy !== seat)
@@ -369,6 +421,9 @@ export function castZone(
   }
   // D-151: "You may play that card this turn": a card in exile with such a permission is cast as though it were in the hand.
   if (obj.zone === 'exile') {
+    // Lorehold group 2 (CR 118.9): a permission to cast without paying the mana cost is the alternative cost `free`, and only that.
+    if (alternative === 'free')
+      return mayPlayFromExile(state, seat, obj, false, true) ? 'exile' : null;
     return alternative === undefined && mayPlayFromExile(state, seat, obj) ? 'exile' : null;
   }
   if (obj.zone === 'hand') return 'hand';
@@ -486,6 +541,10 @@ export function alternativeCostAllowed(
   kind: AlternativeCost['kind'],
 ): boolean {
   if (obj.card === null) return false;
+  // Lorehold group 2 (CR 118.9): a card in exile the effect lets its controller cast without paying its mana cost: the card lists no alternative cost for it.
+  if (kind === 'free' && obj.zone === 'exile' && mayPlayFromExile(state, seat, obj, false, true)) {
+    return true;
+  }
   const alt = definitionOf(state, obj.card).faces[face]?.alternativeCosts?.find(
     (a) => a.kind === kind,
   );
@@ -734,10 +793,20 @@ export function alternativeCastObjects(
   kind: Exclude<CastAlternative, 'flashback'>,
 ): FaceOption[] {
   const onAdventure = state.exile.filter((id) => getObject(state, id).onAdventure === true);
+  // Lorehold group 2 (CR 118.9): the cards in exile an effect lets the seat cast without paying their mana cost.
+  const freeFromExile =
+    kind === 'free'
+      ? state.exile.filter(
+          (id) =>
+            !onAdventure.includes(id) &&
+            mayPlayFromExile(state, seat, getObject(state, id), false, true),
+        )
+      : [];
   const candidates = [
     ...zoneList(state, 'hand', seat),
     ...zoneList(state, 'command', seat),
     ...onAdventure,
+    ...freeFromExile,
   ];
   return faceOptions(state, candidates, (obj, face) => canCast(state, seat, obj, kind, face));
 }
