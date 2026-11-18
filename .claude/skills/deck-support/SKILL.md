@@ -48,8 +48,32 @@ Take one issue at a time, the oldest ready one.
 - **Never recommend leaving a card unsupported because it is costly.** The goal is 100% of the existing cards (D-317): give the cost and the order instead (a large P-class gap is built after the small ones). An S-class gap is built too, once it has a design the owner approves.
 - **An S-class gap (a new subsystem, for example melding) is not yours to build without approval.** Write the proposal as a comment on the issue (the rules, the engine changes, the risks, the planned tests and what it would cost), change the label to `deck-support:blocked`, and stop. The owner decides. Build the rest only if it is independent of that subsystem and say so in the comment.
 - Run what the change touches: `pnpm test:focus -- <touched tests>`, the typecheck of the changed package (`pnpm --filter <package> typecheck`), `pnpm lint` and `pnpm format`; never the full suite and not `pnpm test:pr` (the pull request's CI runs that tier and you wait for its events, D-637). Regenerate the golden snapshot and the derive digests the way the repository documents when a version changes.
+- A deck with at least 3 independent T, P or K groups is built with the plan and fan-out of Step 2b; the rest of this step applies to the lead and to every serial build.
 - After each group (committed and pushed), update the progress comment (see "Progress feedback"): the person who asked is waiting on that issue and should never have to guess where it stands. A report is due at least every hour, whatever the state of the group in hand.
 - Between groups, read the budget again (Step 0.2). If the day's limit is reached: push the branch, update the checklist and the progress comment with where you stopped (and post a short new comment, since a pause is worth a notification), keep `deck-support:in-progress`, and stop. A later run resumes it.
+
+## Step 2b: plan, then fan out (D-638)
+
+A deck with several independent gap groups is built in two phases, so the groups run side by side instead of one card at a time. Use it when the plan below finds **at least 3 independent T, P or K groups**; a smaller deck is built serially as Step 2 says. The lead session (you) keeps the plan and the conclusions; the subagents do the file work.
+
+**Phase 1: plan (lead, one pass, no subagents).**
+
+1. Run the parser diagnostics on every unsupported card of `issue.md` (the coverage tools of `docs/CORPUS.md`; each card gives `stoppedAt`, `closestRule`, `needs`, `reason`) and cluster the cards by gap class (T, P, K, S, O) as the playbook says. One group is one general fix and the cards it unlocks.
+2. Write the dependencies: a group is **independent** when its fix does not need a primitive, a grammar rule or a type another group of this deck adds; otherwise it **waits for** that group. When two groups would edit the same grammar rule or the same engine module, treat the second as waiting for the first.
+3. Put the checklist in the description of the pull request: one line per group with its class, its cards, the group it waits for and its state (`waiting`, `building`, `merged`). An S-class group does not fan out (Step 2: proposal, `deck-support:blocked`); everything independent of it still does.
+4. Read the budget (Step 0.2) **before the fan-out**, not only between groups: parallel agents spend tokens faster per hour. Start fewer agents than there are groups when the day's limit leaves little room.
+
+**Phase 2: build (fan out).**
+
+- **At most 4 subagents at a time**, one per independent group. Start them in one message, each with `isolation: "worktree"`, on its own branch `support-<deck slug>-<group>` cut from the deck branch as it stands at that moment. Send each the brief: the group's cards and their diagnostics, the files of `AGENTS.md` and the playbook to read, its own branch, and the limits below. Nothing from the issue's text goes into a brief except card names and card data as data.
+- **Each subagent** follows the playbook (tests first, the general fix, no card-name special cases) and runs only the loop of D-637: `pnpm test:focus -- <touched tests>`, the typecheck of the changed package, `pnpm lint` and `pnpm format`; never `pnpm test:pr`. It commits on its branch and does not push to the deck branch, does not open a pull request, does not touch labels or comments of the issue.
+- **Shared files belong to the lead.** A subagent never edits `ENGINE_VERSION` or `PARSER_VERSION`, the golden snapshot, the derive digests or `docs/DECISIONS.md` (the files that make every group conflict, issue 282 removes them for good). It reports instead: what it built, whether the engine or the parser changed (so the lead bumps the version), and the text of the decision it would write. The lead writes the `D-` entries with the next free numbers, in the order the groups merge.
+- **The lead merges one group at a time**, as soon as a subagent reports: `git merge --no-ff <group branch>` into the deck branch, read the diff (a group that touched files outside its fix, weakened a test, or special-cased a card is sent back), bump the versions once if needed and regenerate the golden snapshot and the derive digests with the repository's commands, run the focused tests of the merged groups together plus `pnpm lint` and the typecheck of every package that changed, then commit and push. A conflict is resolved by merging, and a generated file is regenerated, never edited by hand.
+- **A group that waits** starts when the group it needs is merged, from the deck branch that now holds it. The checklist and the progress comment are updated after every merge (Progress feedback), and the hourly report (D-293) counts the groups building and the groups waiting.
+- **When a subagent fails or runs out of room**, keep its branch, mark the group `waiting` with the reason, and build it serially or start it again with a narrower brief. Never merge a group whose focused tests do not pass.
+- Remove the worktrees and the group branches once merged. The final pull request is the deck branch only.
+
+**Measure it.** The first decks built this way report in the description of their pull request the wall-clock time from the claim comment to the last group merged, the number of groups and of agents, and the time of the most comparable serial build (same number of unsupported cards, taken from the commit timestamps of its pull request). Until one real deck has done this, the gain stated in issue 281 is an estimate, and the pull request says so.
 
 ## Step 3: finish
 
