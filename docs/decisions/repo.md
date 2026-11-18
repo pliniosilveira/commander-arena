@@ -4,7 +4,7 @@ Entries keep their old numbers (see `README.md`).
 
 ## Stack and layout
 
-- **D-029, D-030, D-032 Stack.** Biome and dependency-cruiser; React 19, Zustand, Comlink; Zod for serialized data; pnpm pinned in `packageManager` with its release-age guard; TypeScript 6.0.3 (the boundary test fails when a cruise scans no TypeScript file); exact dependency versions. Deviations need a decision file.
+- **D-029, D-030, D-032 Stack.** Biome and dependency-cruiser; React 19, Zustand, Comlink; Zod for serialized data; pnpm pinned in `packageManager` with its release-age guard; TypeScript 6.0.3 (the boundary test fails when a cruise scans no TypeScript file); exact dependency versions. Deviations need a decision bullet.
 - **D-031 Determinism is enforced by tools.** Engine and AI tsconfigs set `lib: ES2023` and `types: []`; a Biome GritQL plugin (`tools/lint/no-nondeterminism.grit`) bans `Math.random`, `Date.now`, `new Date`, `performance.now`, `localeCompare` and `toLocaleString` in `packages/engine/src` and `packages/ai/src`.
 - **D-033 Boundary rules are tested** by building throwaway monorepos for each case; a meta test fails when a rule has no case.
 - **D-012, D-037 The scenario DSL** is in the engine's public API as the test-only entry `@commander-arena/engine/testing`; it writes the initial state directly and performs every later step through `applyAction`.
@@ -13,7 +13,7 @@ Entries keep their old numbers (see `README.md`).
 
 ## Checks and CI
 
-- **D-013, D-126, D-132, D-250, D-498, D-637 Test tiers.** `pnpm test` is exhaustive; `pnpm test:pr` runs every project but defers the AI game suites, the 200-game combat run, the precon full-game soak and the repeated golden timing loop (listed in `tools/test/pr-excluded.json`; `run-tier.ts` fails if an exclusion excludes nothing); the `Full` workflow runs everything nightly at 03:17 UTC, only when `main` has a new commit, and opens an issue on failure; the `Soak` workflow plays 500 games on demand.
+- **D-013, D-126, D-132, D-250, D-498, D-637 Test tiers.** `pnpm test` is exhaustive. `pnpm test:pr` defers the long game suites listed in `tools/test/pr-excluded.json` (`run-tier.ts` fails if an exclusion excludes nothing). The `Full` workflow runs everything nightly, only when `main` has a new commit, and opens an issue on failure. `Soak` plays 500 games on demand.
 - **D-090, D-410 Coverage** is checked on every PR by its own workflow (`pnpm coverage:cards --download --check` against `reports/coverage-baseline.json`) and published weekly on GitHub Pages, not committed.
 - **D-035 Rules baseline.** The CR effective 2026-09-25 plus the Mystery Booster Commander Edition bulletin, applied by reference in the docs; rule numbers are cited with titles because the 7xx numbering shifted.
 

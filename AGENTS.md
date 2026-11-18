@@ -10,7 +10,7 @@ The long-term goal is that the engine supports 100% of the existing cards; a car
 
 Priorities, in order: rules correctness for every card marked supported; honesty (a card the engine does not fully understand is flagged, never guessed); determinism and testability; a legal and competent AI; polish.
 
-Authoritative documents: `docs/SPEC.md` (the short current specification; section 17 is the index of amendments A1 to A31, whose results are in sections 1 to 16) and `docs/decisions/` (the few decisions that still bind future work, by topic). When the SPEC and the CR disagree, the CR wins; record the discrepancy in a decision file.
+Authoritative documents: `docs/SPEC.md` (the short current specification; section 17 is the index of amendments A1 to A31, whose results are in sections 1 to 16) and `docs/decisions/` (the few decisions that still bind future work, by topic). When the SPEC and the CR disagree, the CR wins; record the discrepancy as a decision bullet.
 
 ## Session start checklist
 
@@ -61,7 +61,7 @@ While you work, run what your change touches (D-126): `pnpm typecheck`, `pnpm li
 
 Before a pull request: `pnpm format`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, and `pnpm test:pr`. The PR tier runs deterministic rules/parser checks, all golden support/AST/diagnostic assertions, fast AI tests, the fixed combat smoke and precon loading; full game soaks and the repeated golden timing loop remain exhaustive/nightly. `pnpm test` and `pnpm test:exhaustive` still run every unit test. The complete suite and browser tests run nightly on `main` in the scheduled `Full` workflow (D-250), skipped when no commit entered `main` since its last scheduled run; a failure opens an issue. `pnpm test:soak` (100 games) and the manual `Soak` workflow (500 games) stay on demand. No tool formats Markdown, so keep `.md` files clean by hand.
 
-Scripts under `tools/` are TypeScript run with `node file.ts` (Node type stripping). Use erasable syntax only, explicit `.ts` extensions on relative imports and Node built-ins only; do not add an npm dependency for tooling without a decision file.
+Scripts under `tools/` are TypeScript run with `node file.ts` (Node type stripping). Use erasable syntax only, explicit `.ts` extensions on relative imports and Node built-ins only; do not add an npm dependency for tooling without a decision bullet.
 
 ## Repository map
 
@@ -102,7 +102,7 @@ References in the docs and in code comments to `docs/STATUS.md`, `docs/progress/
 - **Never invent data.** No made-up card data, CR text or bulletin names or dates. If you could not fetch it, say so in the docs and mark it unverified. Test fixtures that are not real Scryfall data must say `SYNTHETIC` in the file.
 - **Cite rules by number and title**, for example `CR 702.19b (Trample)`, in comments on non-obvious logic. Look rules up with `pnpm rule` instead of writing them from memory.
 - **No stubs in supported paths.** No TODO placeholders, fake return values or "simplified" logic in code a supported feature can reach. Deferred work goes in `docs/ROADMAP.md`.
-- **Dependencies and files.** Pin exact versions. Changing the stack needs a decision file. Keep modules small and well named, under about 400 lines where practical.
+- **Dependencies and files.** Pin exact versions. Changing the stack needs a decision bullet. Keep modules small and well named, under about 400 lines where practical.
 - **Boundary rules are tested.** Adding or changing a rule in `tools/boundaries/rules.cjs` needs a failing case in `tools/boundaries/boundaries.test.ts`.
 - **Style.** Biome formats and lints: single quotes, semicolons, 100 columns, no `any`, no non-null assertions, no unused imports or variables.
 
@@ -118,7 +118,7 @@ References in the docs and in code comments to `docs/STATUS.md`, `docs/progress/
 | `README.md` | User-facing behavior changes. |
 | `docs/SPEC.md` | Only with the human's approval. |
 
-A decision is a choice that binds future work: an architecture or stack choice, a policy, a convention, a deliberate deviation from the CR or the SPEC. How one card or one rule is built is not: it goes in the pull request description, in a comment that cites the CR rule, and in `docs/MECHANICS.md`. A decision is one new file, `docs/decisions/<date>-<topic>.md`, never an edit of a shared file and never numbered (so two pull requests never conflict); `docs/decisions/README.md` has the template. The old numbered log (`D-001` to `D-637`) was condensed into the topic files of that folder; an old `D-nnn` in code is history, readable as `docs/decisions/README.md` says.
+Most pull requests record no decision. A decision is an architecture or stack choice, a policy, or a deliberate deviation from the CR or the SPEC; how one card or one rule is built is not (that goes in the pull request, a comment that cites the CR rule, and `docs/MECHANICS.md`), and a convention already written in this file, the playbook or a skill needs none either. A decision is one bullet of at most 60 words in the topic file of `docs/decisions/`: no new file, no number, no template (`docs/decisions/README.md`; `tools/docs/decisions.test.ts` enforces it). An old `D-nnn` in code is history.
 
 Do not write a test count into any document; it goes stale. Say how to run the checks instead.
 
