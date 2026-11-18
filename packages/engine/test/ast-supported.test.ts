@@ -338,7 +338,7 @@ describe('supported feature gate', () => {
     expect(SUPPORTED_FEATURES.abilityKinds).toContain('triggered');
     expect(SUPPORTED_FEATURES.abilityKinds).toContain('activated');
     expect(SUPPORTED_FEATURES.effectKinds).toContain('createToken');
-    expect(SUPPORTED_FEATURES.sacrificeSelectors).toEqual(['this', 'choose', 'each']);
+    expect(SUPPORTED_FEATURES.sacrificeSelectors).toEqual(['this', 'choose', 'each', 'moved']);
     expect(SUPPORTED_FEATURES.tokenPresets).toEqual(['Treasure', 'Food', 'Clue']);
     expect(SUPPORTED_FEATURES.triggerFeatures).toEqual([
       'interveningIf',

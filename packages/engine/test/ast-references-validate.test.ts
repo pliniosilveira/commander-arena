@@ -109,6 +109,8 @@ describe('amounts that read an object', () => {
       'votesFor',
       // D-450: "for each card you've drawn this turn" (CR 121.1).
       'cardsDrawnThisTurn',
+      // D-624 (CR 601.2i): the instants and sorceries cast this turn.
+      'spellsCastThisTurn',
       'sacrificedAsCost',
       // D-575: the cards selected for a spell's optional hand-exile cost.
       'exiledAsCost',

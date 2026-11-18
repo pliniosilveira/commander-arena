@@ -145,7 +145,7 @@ test('the abilities of the Ring on the stack are "The Ring", worded from the kin
 test('There and Back Again, chapter I, and the watcher are said in the words of the cards', () => {
   const chapter = faceOf(SAGA).abilities[0] as Ability & { kind: 'triggered' };
   expect(triggerGist(chapter as unknown as StackAbility, { types: ['enchantment'] } as never)).toBe(
-    "Target creature can't block for as long as you control this. The Ring tempts you",
+    "Up to one target creature can't block for as long as you control this. The Ring tempts you",
   );
   const watcher = faceOf(WATCHER).abilities[0] as Ability & { kind: 'triggered' };
   expect(

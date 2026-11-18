@@ -112,7 +112,10 @@ const COPIES: readonly Line[] = [
   {
     kind: 'sorcery',
     text: "Create a token that's a copy of ~.",
-    expect: { engine: 'a copy is made from this permanent, a target or the triggering permanent' },
+    expect: {
+      engine:
+        'a copy is made from this permanent, a target, the permanent chosen or the triggering permanent',
+    },
     note: 'SYNTHETIC; "~" in an instant is the spell',
   },
   {

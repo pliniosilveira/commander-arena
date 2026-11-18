@@ -115,11 +115,11 @@ describe('reason: unrecognised', () => {
   });
 
   test('a verb no rule starts with is an effect that was not recognised', () => {
-    const [u] = spellFace('Draw a card, then populate.').unparsed;
+    const [u] = spellFace('Draw a card, then venture into the dungeon.').unparsed;
     expect(u).toMatchObject({
       reason: 'unrecognised',
       slot: 'effect',
-      stoppedAt: 'populate.',
+      stoppedAt: 'venture into the dungeon.',
       recognised: ['effect.draw', 'amount.article'],
     });
   });

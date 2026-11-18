@@ -238,7 +238,6 @@ describe('static.self-cost-reduction: "~ costs {1} less to cast for each ..." (C
   });
 
   test.each([
-    ['This spell costs {W} less to cast.', '{W} less to cast.'],
     // Stage P28: "{X} less ..., where X is ..." is read; {X} with no definition is not.
     ['~ costs {X} less to cast.', '{X} less to cast.'],
     ['This spell costs {1} more to cast.', 'more to cast.'],
@@ -257,6 +256,14 @@ describe('static.self-cost-reduction: "~ costs {1} less to cast for each ..." (C
       reason: 'unrecognised',
       closestRule: 'static.self-cost-reduction',
       stoppedAt,
+    });
+  });
+
+  test('stays unread: This spell costs {W} less to cast. (the strive rule of D-627 reads the cost and stops at "less", one word before the others)', () => {
+    expect(dropped('This spell costs {W} less to cast.', 'creature')).toMatchObject({
+      reason: 'unrecognised',
+      closestRule: 'static.cost-per-extra-target',
+      stoppedAt: 'less to cast.',
     });
   });
 });

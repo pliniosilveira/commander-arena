@@ -107,8 +107,18 @@ describe('a token that is a copy of a target (CR 707.2)', () => {
     const refused = reasonOf("Create a token that's a copy of ~.");
     expect(refused.status).toBe('unsupported');
     expect(refused.reasons).toContain(
-      'a copy is made from this permanent, a target or the triggering permanent',
+      'a copy is made from this permanent, a target, the permanent chosen or the triggering permanent',
     );
+  });
+
+  test('"Create X tokens that are copies of ..." is read (D-624, D-629): X is the X of the spell, so a card whose cost has no {X} is not supported', () => {
+    const text = 'Create X tokens that are copies of target creature.';
+    expect(readAll(text, 'sorcery').spell?.effect).toMatchObject({
+      kind: 'createToken',
+      token: { kind: 'copyOf' },
+      count: { kind: 'x' },
+    });
+    expect(reasonOf(text).status).toBe('unsupported');
   });
 
   test('after another target, "it" is that target', () => {
@@ -257,7 +267,6 @@ describe('what a copy can still not say (CR 707.9 "except", others stay unread)'
     ["Create one token that's a copy of target creature.", "token that's a copy"],
     ["Create two tokens that's a copy of target creature.", 'tokens that'],
     ['Create a token that are copies of target creature.', 'token that are'],
-    ['Create X tokens that are copies of target creature.', 'tokens that'],
     ["Create a token that's a copy of target creature", ''],
     ["Create a token that's a copy of that creature.", 'that creature'],
     ["Create a token that's a copy of target spell.", 'spell'],
@@ -267,13 +276,24 @@ describe('what a copy can still not say (CR 707.9 "except", others stay unread)'
     expect(d.stoppedAt).toContain(part);
   });
 
-  test('"That token" after a copy is not read (stage P48, D-205): only a token the text describes is "that token", a copy has its exceptions to say first', () => {
-    const d = dropped(
-      "Create a token that's a copy of target creature. That token gains haste until end of turn.",
-      'sorcery',
-    );
-    expect(d.reason).toBe('unboundReference');
-    expect(d.stoppedAt).toContain('That token gains haste');
+  test('"That token" after a copy is the token the copy made (Prismari group 1, D-629): the engine\'s `moved`, which `createToken` of a copy names', () => {
+    expect(
+      readAll(
+        "Create a token that's a copy of target creature. That token gains haste until end of turn.",
+        'sorcery',
+      ).spell?.effect,
+    ).toEqual({
+      kind: 'sequence',
+      effects: [
+        copyOf(T1),
+        {
+          kind: 'grantKeyword',
+          objects: { kind: 'moved' },
+          keyword: { kind: 'haste' },
+          duration: END,
+        },
+      ],
+    });
   });
 
   test('"becomes a copy" has no backlog line of the plain shape: it is still not read', () => {
