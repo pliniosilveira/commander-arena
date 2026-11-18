@@ -431,6 +431,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'lookAtTopOfLibrary':
     case 'optionalUntap':
+    case 'exertOnAttack':
       break;
     case 'crewSaddleBonus':
       // Galadriel group 3 (CR 702.122a): the power a creature counts more as it is tapped for a crew cost: a positive whole number.
@@ -757,6 +758,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'cycled':
       // D-179: "when you cycle this card" has no parameters; the face is checked for Cycling or typecycling with its abilities.
+      break;
+    case 'exerted':
+      // CR 701.43d: "When you do" has no parameters; the face is checked for the exert static ability it is linked to.
       break;
     case 'becomesTarget':
       checkTriggerSubject(t.what, true, `${path}.what`, out);
@@ -2072,6 +2076,23 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
       );
     }
   });
+
+  // CR 701.43d, 607.2h: "You may exert ~ as it attacks" is a cost to attack, so it is on a creature; the "When you do" abilities linked to it are on the same face.
+  const exerts = face.abilities.some(
+    (k) => k?.kind === 'static' && k.static?.kind === 'exertOnAttack',
+  );
+  face.abilities.forEach((a, i) => {
+    if (a?.kind === 'triggered' && a.trigger?.kind === 'exerted' && !exerts) {
+      issue(
+        out,
+        `${path}.abilities[${i}].trigger`,
+        '"when you do" after exerting needs the "you may exert this creature as it attacks" ability on the same face (CR 607.2h)',
+      );
+    }
+  });
+  if (exerts && !face.types.includes('creature')) {
+    issue(out, `${path}.abilities`, 'exert is the cost of attacking: a creature has it (CR 701.43d)');
+  }
 
   // An unsupported instant or sorcery has had its text dropped (SPEC 7.1), so only a supported
   // one must carry an effect. A supported instant or sorcery with no effect would do nothing.

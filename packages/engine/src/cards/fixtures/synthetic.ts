@@ -14,6 +14,7 @@ import { SYNTHETIC_ACTIVATES_ABILITY_LIST } from './synthetic-activates-ability'
 import { SYNTHETIC_ADAMANTOISE_LIST } from './synthetic-adamantoise';
 import { SYNTHETIC_ALT_COST_LIST } from './synthetic-alt-costs';
 import { SYNTHETIC_AMOUNT_LIST } from './synthetic-amounts';
+import { SYNTHETIC_EXERT_LIST } from './synthetic-exert';
 import { SYNTHETIC_ANGELS_SHAPES_LIST } from './synthetic-angels-shapes';
 import { SYNTHETIC_ANGELS_STATICS_LIST } from './synthetic-angels-statics';
 import { SYNTHETIC_ASCEND_LIST } from './synthetic-ascend';
@@ -399,6 +400,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_REPEATABLE_LIST,
   ...SYNTHETIC_PT_LIST,
   ...SYNTHETIC_ALT_COST_LIST,
+  ...SYNTHETIC_EXERT_LIST,
   ...SYNTHETIC_AMOUNT_LIST,
   ...SYNTHETIC_ANGELS_SHAPES_LIST,
   ...SYNTHETIC_ANGELS_STATICS_LIST,

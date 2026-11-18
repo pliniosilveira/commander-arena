@@ -3407,6 +3407,11 @@ export type Trigger =
    */
   | { readonly kind: 'cycled' }
   /**
+   * "When you do" after "You may exert ~ as it attacks." (CR 701.43d, 607.2h, 603.12): this creature was exerted as it attacked. The ability is linked to the
+   * creature's `exertOnAttack` static ability, which the same face must have (`validateCard`); the event is the engine's, made as the attack is declared.
+   */
+  | { readonly kind: 'exerted' }
+  /**
    * "Whenever [a creature] attacks" (CR 508.1, 603.2). With `alone: true`: "attacks alone", only when it
    * is the only creature declared as an attacker in that declare attackers step (CR 506.5; Exalted,
    * CR 702.83a).
@@ -5201,6 +5206,13 @@ export type StaticEffect =
    * is the ability of the permanent itself; one that also keeps itself from untapping (\`doesntUntap\`) is not asked.
    */
   | { readonly kind: 'optionalUntap' }
+  /**
+   * "You may exert ~ as it attacks." (CR 701.43d, 508.1g): an optional cost to attack. As the creature is declared as an attacker its controller is asked whether
+   * to exert it; if they do, it does not untap during their next untap step (CR 701.43a: the engine makes the `restrict` of `doesntUntap` that lasts until
+   * that step has run, CR 701.43b) and the `exerted` event triggers the abilities linked to this one (`trigger` `exerted`: "When you do, ...", CR 607.2h).
+   * It is the ability of the creature itself: its own attack only.
+   */
+  | { readonly kind: 'exertOnAttack' }
   /**
    * "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a, 613.4; Galadriel group 3): when its controller taps the creature to pay a
    * crew cost (`tapCreatures`), its power counts `amount` more than the power it has (the power it has is not changed). The engine has Crew and not Saddle, so the part of the ability
