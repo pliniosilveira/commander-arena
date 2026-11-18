@@ -214,6 +214,8 @@ const RESTRICTIONS: Readonly<Record<Restriction, readonly [short: string, full: 
   mustBlock: ['Blk!', 'Must block this turn if able'],
   doesntUntap: ['NoUnt', "Doesn't untap"],
   cantBeCountered: ['NoCtr', "Can't be countered"],
+  // Prismari group 2: "This creature can block only creatures with flying" (CR 509.1b).
+  canBlockOnlyFlying: ['BlkFly', 'Can block only creatures with flying'],
   // Galadriel group 3: "Its activated abilities can't be activated this turn" (CR 602.5).
   cantActivateAbilities: ['NoAct', "Its activated abilities can't be activated"],
 };

@@ -91,9 +91,15 @@ import { groupPhrase } from '../../game/static-text';
 import { tokenWords } from '../../game/token-text';
 import { filterPhrase, grantedKeywordWords, withText } from '../../game/trigger-text';
 
-/** True for Cycling's expansion: an ability from the hand whose cost discards the card (CR 702.29a). */
+/**
+ * True for Cycling's expansion: an ability from the hand whose cost discards the card as the cycling keyword's does (CR 702.29a). The engine marks that cost
+ * `cycling`; the cost of any other "Discard this card: ..." ability (Magma Opus: "{U/R}{U/R}, Discard this card: Create a Treasure token", D-632) is not Cycling.
+ */
 export function isCycling(ability: ActivatedAbility): boolean {
-  return ability.functionsIn === 'hand' && ability.cost.some((c) => c.kind === 'discardThis');
+  return (
+    ability.functionsIn === 'hand' &&
+    ability.cost.some((c) => c.kind === 'discardThis' && c.cycling === true)
+  );
 }
 
 /** True for Equip's expansion: an ability whose effect attaches the card itself (CR 702.6a). */
@@ -213,7 +219,9 @@ export function targetText(spec: TargetSpec | undefined): string {
           anyOf === undefined &&
           commander === undefined;
         const kind = any ? 'card' : `${nounOf(spec.what.filter)} card`;
-        return `target ${kind} from ${whose} graveyard${withText(spec.what.filter)}`;
+        // D-640 (CR 115.1): "up to one target instant or sorcery card from your graveyard": none may be chosen.
+        const optional = (spec.min ?? 1) === 0 && spec.max === 1 ? 'up to one ' : '';
+        return `${optional}target ${kind} from ${whose} graveyard${withText(spec.what.filter)}`;
       }
       // "target creature an opponent controls": the controller is part of what the text promises.
       const { controller } = spec.what.filter;
@@ -391,6 +399,15 @@ function eachText(given: ObjectFilter): string {
     const group = groupPhrase(filter);
     return group === null ? UNSAID : `all ${group}`;
   }
+  // D-642 (CR 201.2): "creatures named Leitmotif Composer": a name and the card type creature, nothing else.
+  if (
+    filter.named !== undefined &&
+    Object.keys(filter).length === 2 &&
+    filter.types?.length === 1 &&
+    filter.types[0] === 'creature'
+  ) {
+    return `all creatures named ${filter.named}`;
+  }
   const things = thingsPhrase(filter, false);
   if (things !== null) return `each ${things.replace(' on the battlefield', '')}`;
   if (Object.keys(filter).some((k) => !FALLBACK_SAYS.has(k))) return UNSAID;
@@ -487,6 +504,7 @@ const RESTRICTION_EFFECT: Readonly<Record<Restriction, string>> = {
   mustBlock: 'must block this turn if able',
   doesntUntap: "doesn't untap",
   cantBeCountered: "can't be countered",
+  canBlockOnlyFlying: 'can block only creatures with flying',
   cantActivateAbilities: "can't have its activated abilities activated",
 };
 
@@ -494,7 +512,7 @@ const lower = (text: string): string => text.charAt(0).toLowerCase() + text.slic
 
 /** "a" or "an" for the first word of a phrase ("an 8/8 white Angel creature token"). */
 const withArticle = (phrase: string): string =>
-  /^(?:[aeiou]|8|11|18)/i.test(phrase) ? `an ${phrase}` : `a ${phrase}`;
+  /^(?:[aeiou]|8|11|18|X\/)/i.test(phrase) ? `an ${phrase}` : `a ${phrase}`;
 
 /** The subject and verb of a player effect: "You draw", "Each player draws", "You and target opponent each draw". */
 function playerVerb(player: PlayerSelector, ability: WithTargets, verb: string): string {
@@ -663,10 +681,26 @@ function tokenText(
   self: string,
   defs: Definitions,
 ): string {
-  const words = tokenWords(effect.token, effect.tapped === true, (ref) =>
+  const given = tokenWords(effect.token, effect.tapped === true, (ref) =>
     objectText(ref, ability, self),
   );
+  // D-632 (CR 111.4, 208.2): "an X/X token, where X is ..." (`ptAmount`): the 0/0 of the definition is the size the amount gives, said as a letter.
+  const size =
+    effect.token.kind === 'custom' && effect.token.ptAmount !== undefined
+      ? defs.say(effect.token.ptAmount, { self })
+      : null;
+  const words =
+    size === null
+      ? given
+      : {
+          one: given.one.replace('0/0 ', `${size}/${size} `),
+          many: given.many.replace('0/0 ', `${size}/${size} `),
+        };
   const what = quantity(effect.count, defs, { one: withArticle(words.one), many: words.many });
+  // D-638 (CR 508.1d): "For each opponent, create two 3/3 ... tokens that attack that opponent this turn if able".
+  if (effect.forEachOpponent !== undefined) {
+    return `For each opponent, create ${what} that attack that opponent this turn if able`;
+  }
   return effect.controller === undefined
     ? `Create ${what}`
     : `${playerVerb(effect.controller, ability, 'create')} ${what}`;
@@ -742,7 +776,8 @@ function moveText(
 
 /** The effect worded, with the definitions of its X at the end: "Draw X cards, where X is the number of Zombies you control". */
 function gistOf(effect: Effect, ability: WithTargets, self: string): string {
-  const defs = createDefinitions();
+  // D-632 (CR 601.2i): the subject of a "whenever you cast" trigger is a spell, "that spell's mana value".
+  const defs = createDefinitions(ability.trigger?.kind === 'castSpell' ? { spell: true } : {});
   const text = effectText(effect, ability, self, defs);
   return text === '' || text.includes(UNSAID) ? '' : `${text}${defs.tail()}`;
 }
@@ -937,7 +972,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       }
       // "gets +1/+1 for each artifact you control", "gets -X/-X", "has base power and toughness 4/4"; the duration
       // goes before the definition of X ("gets +X/+0 until end of turn, where X is ...").
-      const words = ptEffectText(effect);
+      const words = ptEffectText(
+        effect,
+        ability.trigger?.kind === 'castSpell' ? { spell: true } : {},
+      );
       const until = effect.duration === 'untilEndOfTurn' ? ' until end of turn' : '';
       const at = words.indexOf(', where ');
       const said = at < 0 ? `${words}${until}` : `${words.slice(0, at)}${until}${words.slice(at)}`;
@@ -1195,7 +1233,14 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'grantKeyword':
       // "Each Zombie gains menace until end of turn" (CR 613.1f, 611.2c).
       // D-187: "up to that many target creatures gain double strike": several targets, the plural verb.
-      return `${capital(object(effect.objects))} ${object(effect.objects).startsWith('up to ') ? 'gain' : 'gains'} ${grantedKeywordWords(effect.keyword)}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
+      // D-639 (CR 604.1): the keyword works on its controller's turn only, "gains first strike during your turn until end of turn".
+      return `${capital(object(effect.objects))} ${object(effect.objects).startsWith('up to ') ? 'gain' : 'gains'} ${grantedKeywordWords(effect.keyword)}${effect.duringYourTurn === true ? ' during your turn' : ''}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
+    case 'exileSpellWithTimeCounters':
+      // D-637 (CR 608.2n, 122.1, 702.62b): "Exile this spell with three time counters on it".
+      return `Exile this spell with ${effect.count} time counters on it`;
+    case 'copyCardAndCast':
+      // D-640 (CR 707.12, 608.2g): the card the instruction before exiled, copied, and the copy cast for free.
+      return 'Copy the exiled card. You may cast the copy without paying its mana cost';
     case 'grantPlayerHexproof':
       // CR 702.11b (Hylda group 3): "You gain hexproof until end of turn".
       return `${playerVerb(effect.player, ability, 'gain')} hexproof until end of turn`;
@@ -1244,7 +1289,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       if (effect.mana.kind === 'fixed') {
         // D-151 (CR 106.1): "Add {R} for each tapped land your opponents control".
         const made = fixedTimesWords(effect.mana);
-        return made === null ? UNSAID : `Add ${made}`;
+        // D-636 (CR 500.5, 106.4): "Until end of turn, you don't lose this mana as steps and phases end".
+        return made === null
+          ? UNSAID
+          : `Add ${made}${effect.mana.staysUntilEndOfTurn === true ? ". Until end of turn, you don't lose this mana as steps and phases end" : ''}`;
       }
       // D-151 (CR 106.1b): "Add two mana in any combination of colors".
       return effect.mana.kind === 'anyCombination'
@@ -1427,7 +1475,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'conditional': {
       // CR 608.2c (D-131): "If you're the monarch, ...; otherwise, ...". A condition the words do not
       // cover leaves the instruction out, never guessed at.
-      const when = gameConditionWords(effect.condition, { self });
+      const when = gameConditionWords(
+        effect.condition,
+        ability.trigger?.kind === 'castSpell' ? { self, spell: true } : { self },
+      );
       if (when === null) return '';
       const then = effectText(effect.effect, ability, self, defs);
       if (then === '') return '';

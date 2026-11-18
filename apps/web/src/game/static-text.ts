@@ -85,6 +85,11 @@ const RESTRICTION_WORDS: Readonly<Record<Restriction, { one: string; many: strin
     many: "don't untap during their controllers' untap steps",
   },
   cantBeCountered: { one: "can't be countered", many: "can't be countered" },
+  // Prismari group 2 (CR 509.1b): Brazen Borrower.
+  canBlockOnlyFlying: {
+    one: 'can block only creatures with flying',
+    many: 'can block only creatures with flying',
+  },
   // Galadriel group 3: only an effect gives it ("Its activated abilities can't be activated this turn"), so no static ability shows it; the words are for the type.
   cantActivateAbilities: {
     one: "can't have its activated abilities activated",
