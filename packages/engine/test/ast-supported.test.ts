@@ -72,6 +72,7 @@ const EXECUTABLE_KEYWORDS = [
   'cascade', // scenario-xx-cascade
   'demonstrate', // scenario-xx-prismari-g3-demonstrate (D-665)
   'retrace', // scenario-xx-prismari-g3-retrace (D-667)
+  'aftermath', // scenario-xx-aftermath
   'unearth', // scenario-xx-unearth
   'encore', // scenario-xx-encore
   'eternalize', // scenario-xx-hashaton-g5
@@ -172,6 +173,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   cascade: { kind: 'cascade' },
   demonstrate: { kind: 'demonstrate' },
   retrace: { kind: 'retrace' },
+  aftermath: { kind: 'aftermath' },
   unearth: { kind: 'unearth', cost: [{ kind: 'mana', symbols: ['R'] }] },
   encore: { kind: 'encore', cost: [{ kind: 'mana', symbols: ['3', 'R'] }] },
   eternalize: { kind: 'eternalize', cost: [{ kind: 'mana', symbols: ['5', 'U', 'U'] }] },
@@ -256,9 +258,11 @@ describe('supported feature gate', () => {
                     : kind === 'hideaway'
                       ? syntheticCard('SYNTHETIC Hidden Cache')
                       : // D-151: read ahead belongs to a Saga with chapter abilities (CR 702.155b).
-                        kind === 'readAhead'
-                        ? syntheticCard('SYNTHETIC Reading Rite')
-                        : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
+                        kind === 'aftermath'
+                        ? syntheticCard('SYNTHETIC Rite // Toll')
+                        : kind === 'readAhead'
+                          ? syntheticCard('SYNTHETIC Reading Rite')
+                          : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
       expect(validateCard(card), kind).toEqual([]);
     }
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {

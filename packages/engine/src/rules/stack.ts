@@ -358,6 +358,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       !exiled &&
       timeCounters === null &&
       obj.stack.flashback !== true &&
+      obj.stack.aftermath !== true &&
       obj.stack.exileInstead !== true;
     const moved = moveObject(next, {
       object: res.object,

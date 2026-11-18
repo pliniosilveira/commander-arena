@@ -37,7 +37,7 @@ import type { ManaColor, ManaRider } from '../mana/types';
 import type { ChosenTarget } from '../state/chosen';
 import type { NewDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
-import { getObject, getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
+import { definitionOf, getObject, getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
 import type { GameState, PendingTrigger } from '../state/types';
 import {
   afterManaPaid,
@@ -52,6 +52,7 @@ import { planForActivation } from './activate-costs';
 import {
   buybackCostOf,
   escalateCostOf,
+  hasAftermath,
   hasModeCosts,
   kickerCostOf,
   multikickerCostOf,
@@ -217,6 +218,12 @@ export function beginCast(
       castFrom: zone,
       kicked: false,
       flashback: alternative === 'flashback',
+      // CR 702.127a (Aftermath): the half was cast from a graveyard.
+      ...(zone === 'graveyard' &&
+      obj.card !== null &&
+      hasAftermath(definitionOf(state, obj.card).faces[face] ?? null)
+        ? { aftermath: true as const }
+        : {}),
       // D-667 (CR 702.81a): cast from the graveyard by its retrace ability.
       ...(alternative === 'retrace' ? { retrace: true as const } : {}),
       ...(alternative === 'free' ? { free: true as const } : {}),

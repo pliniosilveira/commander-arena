@@ -58,8 +58,12 @@ export function flashbackLabel(card: ObjectView | undefined): string {
 export function castLabel(option: CastOption, card: ObjectView | undefined, name: string): string {
   // D-133 (CR 113.6b): a plain cast of a graveyard card is its own permission ("You may cast this card from
   // your graveyard"), not flashback or escape, which carry an `alternative`.
-  if (isGraveyardPermission(option, card))
+  if (isGraveyardPermission(option, card)) {
+    // CR 702.127a (Aftermath): the option names a half of a split card, "Cast Dawn from graveyard".
+    const half = faceLabel(option, card)?.label;
+    if (half !== undefined) return `${half} from graveyard`;
     return `Cast ${name} from graveyard${castCostSuffix(card)}`;
+  }
   // D-151 (CR 601.3, 601.2): the top card of the library under a permission to cast it from there, and a card in exile that an
   // effect lets you play. An Adventure card and a foretold card keep their own words.
   if (option.alternative === undefined && card?.zone === 'library') {

@@ -374,7 +374,12 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 702.34a (Flashback): a spell cast for its flashback cost is exiled instead of going anywhere
   // else when it leaves the stack (resolving, being countered, fizzling). It applies before the
   // commander replacement below, whose zones it removes (hand and library).
-  if (old.zone === 'stack' && old.stack?.flashback === true && to !== 'exile') {
+  // CR 702.127a (Aftermath): the same for a half cast from a graveyard with Aftermath.
+  if (
+    old.zone === 'stack' &&
+    (old.stack?.flashback === true || old.stack?.aftermath === true) &&
+    to !== 'exile'
+  ) {
     to = 'exile';
     toSeat = null;
   }
