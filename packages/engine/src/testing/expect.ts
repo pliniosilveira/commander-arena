@@ -184,6 +184,7 @@ export function createExpectations(
       const d = derive(state, obj);
       const actual: Record<string, readonly string[]> = {
         types: d.types,
+        supertypes: d.supertypes,
         subtypes: d.subtypes,
         colors: d.colors,
         keywords: d.abilities.flatMap((a) => (a.kind === 'keyword' ? [a.keyword.kind] : [])),

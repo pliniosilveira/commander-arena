@@ -383,6 +383,11 @@ export interface StackData {
    */
   readonly costOption?: 0 | 1;
   /**
+   * The creature the caster tapped to reduce a harmonize cost (CR 702.180a, 702.180b), or null when they chose none: its power in generic mana is taken off the
+   * total cost. Absent until the choice is made, and for a spell not cast for its harmonize cost.
+   */
+  readonly harmonizeTap?: ObjectId | null;
+  /**
    * True when cast from the graveyard by paying its flashback cost (CR 702.34a): the spell is
    * exiled instead of going anywhere else when it leaves the stack. Always false for an ability.
    */
@@ -859,6 +864,7 @@ export interface CastingContext {
     | 'payment'
     | 'behold'
     | 'additionalExile'
+    | 'harmonize'
     | 'sacrifice'
     | 'discard'
     | 'exile'
@@ -1162,7 +1168,7 @@ export type Instruction =
       readonly kind: 'chooseMove';
       readonly filter: ObjectFilter;
       readonly count: number;
-      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile';
+      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command';
       /** The player who chooses among the cards they own (`exileOwnGraveyardCard`, D-231): the controller of the effect when left out. */
       readonly seat?: SeatId;
       /** The nonland cards that really go to exile are counted as `thisWay` `exiledNonland` (D-231). */
@@ -1665,7 +1671,7 @@ export type Instruction =
   | {
       readonly kind: 'move';
       readonly object: ObjectId;
-      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile';
+      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command';
       readonly position: 'top' | 'bottom' | number;
       readonly tapped: boolean;
       readonly commanderChoice: boolean | null;
@@ -2095,6 +2101,8 @@ export interface ContinuousEffect {
 export type EffectEnd =
   | 'endOfTurn'
   | 'permanent'
+  /** "This combat" (CR 506.1, 611.2a): the effect ends as the end of combat step ends, with the combat (`expireEndOfCombatEffects`). */
+  | 'endOfCombat'
   /**
    * "Doesn't untap during its controller's next untap step" (D-517, CR 502.3): each permanent of `objects` is let go, one by one, as the untap step of
    * its controller (as it is then) has run; the effect ends with its last permanent (`expireUntapStepEffects`).
@@ -2282,6 +2290,21 @@ export interface GameState {
   readonly monarchBecameAt?: Readonly<Record<number, number>>;
   /** What has happened this turn that abilities ask about (D-139): see `TurnLog`. */
   readonly turnLog: TurnLog;
+  /**
+   * The players each creature was declared attacking in the combat phase in progress, or the last one that was (CR 506.1, 508.1, 508.6), with the player who declared it. Rolled into
+   * `lastCombatAttacks` as the next combat phase begins. Absent before the first combat of the game.
+   */
+  readonly combatAttacks?: {
+    readonly seat: SeatId;
+    readonly attacks: readonly { readonly object: ObjectId; readonly player: SeatId }[];
+  };
+  /**
+   * What each player attacked in their last combat phase before the one in progress ("a player this creature didn't attack during your last combat"), by the seat that declared the
+   * attackers: the creature and the player it attacked. A combat phase with no attackers leaves an empty list. Absent for a seat with no earlier combat.
+   */
+  readonly lastCombatAttacks?: Readonly<
+    Record<number, readonly { readonly object: ObjectId; readonly player: SeatId }[]>
+  >;
   /** Modes chosen by a source object whose triggered ability uses `notRepeatedBySource`; zone changes create a new source id. */
   readonly modesChosenBySource?: Readonly<Record<ObjectId, readonly number[]>>;
   readonly battlefield: readonly ObjectId[];

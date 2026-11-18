@@ -339,6 +339,22 @@ describe('what the view says about the face that is up', () => {
     expect(faceRole('transform', 1)).toBe('Back face');
     expect(faceRole('modal_dfc', 0)).toBe('Front face');
   });
+
+  test('an Omen face (an adventure-layout card) is worded as an Omen, not an Adventure', () => {
+    const gust = face('Gust', { types: ['sorcery'], subtypes: ['Omen'], manaCost: ['U'] });
+    const omen = obj(9, 'Sky Drake', {
+      types: ['creature'],
+      layout: 'adventure',
+      face: 0,
+      faces: [owl, gust],
+    });
+    expect(faceRole('adventure', 1, gust)).toBe('Omen');
+    expect(faceRole('adventure', 1, peek)).toBe('Adventure');
+    expect(faceLabel({ kind: 'castSpell', object: 'o9', face: 1 }, omen)?.label).toBe(
+      'Cast Gust (Omen)',
+    );
+    expect(faceFacts({ ...omen, face: 1, zone: 'stack' })).toEqual(['Cast as an Omen']);
+  });
 });
 
 describe('drag and drop of a card with several faces', () => {

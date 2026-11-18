@@ -280,7 +280,7 @@ export function activateAction(
 
 /**
  * The `castSpell` action for a card in `seat`'s hand or command zone, or in its graveyard when cast
- * with flashback (CR 702.34a) or escape (CR 702.138a). The keys are in the order the engine lists its options in, which
+ * with flashback (CR 702.34a), escape (CR 702.138a) or harmonize (CR 702.180a). The keys are in the order the engine lists its options in, which
  * `legal` and `illegal` compare as text.
  */
 export function castAction(
@@ -293,6 +293,7 @@ export function castAction(
   const zones: readonly Zone[] =
     alternative === 'flashback' ||
     alternative === 'escape' ||
+    alternative === 'harmonize' ||
     alternative === 'retrace' ||
     alternative === 'sacrificeFromGraveyard'
       ? ['graveyard']

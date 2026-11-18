@@ -490,6 +490,15 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
       }
     }
   }
+  // Issue 103 (CR 707.9b): "except it's a Dragon in addition to its other types".
+  if (
+    r.addSubtypes !== undefined &&
+    (!Array.isArray(r.addSubtypes) ||
+      r.addSubtypes.length === 0 ||
+      r.addSubtypes.some((t) => typeof t !== 'string' || isNonCreatureSubtype(t)))
+  ) {
+    issue(out, `${path}.addSubtypes`, 'addSubtypes is a non-empty list of creature types');
+  }
   return true;
 }
 

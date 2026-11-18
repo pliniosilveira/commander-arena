@@ -120,17 +120,22 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
     if (given?.kind !== 'restrictionKind') return failure(clause);
     // "for as long as you control ~" (stage P45, D-197, CR 611.2b): the duration of an ability of a permanent.
     const whileControlling = scope === 'whileYouControlSelf';
-    if (scope !== 'thisTurn' && scope !== 'untilEndOfTurn' && !whileControlling) {
+    // "for as long as ~ remains on the battlefield" (issue 103, CR 611.2b): "it can't attack or block" with the duration of the effect that took the permanent.
+    const whileRemains = scope === 'whileSelfRemains';
+    if (scope !== 'thisTurn' && scope !== 'untilEndOfTurn' && !whileControlling && !whileRemains) {
       return failure(clause);
     }
-    if (whileControlling) {
-      const blocked = missingFeatures(['duration:forAsLongAsYouControlThis']);
+    if (whileControlling || whileRemains) {
+      const blocked = missingFeatures([
+        whileRemains ? 'duration:forAsLongAsThisRemains' : 'duration:forAsLongAsYouControlThis',
+      ]);
       if (blocked.length > 0)
         return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
     }
     const { restriction } = given;
     if (
       restriction !== 'cantBlock' &&
+      (restriction !== 'cantAttack' || !whileRemains) &&
       restriction !== 'cantBeBlocked' &&
       restriction !== 'attacksEachCombat' &&
       restriction !== 'mustBeBlocked' &&
@@ -156,7 +161,11 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
         kind: 'restrict',
         objects,
         restriction,
-        duration: whileControlling ? 'forAsLongAsYouControlThis' : END,
+        duration: whileControlling
+          ? 'forAsLongAsYouControlThis'
+          : whileRemains
+            ? 'forAsLongAsThisRemains'
+            : END,
       }),
       'objects',
       TRIGGER_SUBJECT,
@@ -171,14 +180,21 @@ export const LOSE_ALL_ABILITIES: Lowering<IrClause, Effects> = {
   needs: ['effect:loseAllAbilities', 'duration:untilEndOfTurn'],
   takesDuration: true,
   lower(clause, ctx) {
-    if (!endsWithTurn(clause)) return failure(clause);
+    // "... for as long as ~ remains on the battlefield" (issue 103, CR 611.2b): the duration of an ability of a permanent.
+    const whileRemains = clause.duration?.scope === 'whileSelfRemains';
+    if (!endsWithTurn(clause) && !whileRemains) return failure(clause);
+    if (whileRemains) {
+      const blocked = missingFeatures(['duration:forAsLongAsThisRemains']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+    }
     return eachObject(
       clause,
       ctx,
       (objects) => ({
         kind: 'loseAllAbilities',
         objects,
-        duration: END,
+        duration: whileRemains ? ('forAsLongAsThisRemains' as const) : END,
       }),
       'objects',
       TRIGGER_SUBJECT,

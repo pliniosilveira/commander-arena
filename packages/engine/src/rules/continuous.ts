@@ -220,7 +220,7 @@ export function copyEffect(
   state: GameState,
   node: Pick<
     Extract<Effect, { kind: 'becomeCopy' }>,
-    'duration' | 'keepName' | 'addTypes' | 'abilities'
+    'duration' | 'keepName' | 'addTypes' | 'addSupertypes' | 'abilities'
   >,
   source: GameObject,
   affected: readonly ObjectId[],
@@ -229,14 +229,19 @@ export function copyEffect(
   const original = copiableValues(state, source);
   // D-217 (CR 707.9b): "except it's an artifact in addition to its other types" changes the copiable values the copy effect gives.
   const added = (node.addTypes ?? []).filter((t) => !original.characteristics.types.includes(t));
+  // Issue 103 (CR 707.9b, 205.4a): "except it's legendary in addition to its other types": the supertypes the exception adds.
+  const addedSupertypes = (node.addSupertypes ?? []).filter(
+    (t) => !original.characteristics.supertypes.includes(t),
+  );
   const typed =
-    added.length === 0
+    added.length === 0 && addedSupertypes.length === 0
       ? original
       : {
           ...original,
           characteristics: {
             ...original.characteristics,
             types: [...original.characteristics.types, ...added],
+            supertypes: [...original.characteristics.supertypes, ...addedSupertypes],
           },
         };
   // D-640 (CR 707.9b): "..., except it has myriad": the abilities of the exception are part of the copiable values the effect gives, after the ones it copies.
@@ -430,6 +435,14 @@ export function expireEndOfTurnEffects(state: GameState): {
         e.until.seat === active &&
         e.until.turnsTaken <= taken),
   );
+}
+
+/** "This combat" (CR 506.1, 611.2a): the effects that last for the combat phase end as it does. */
+export function expireEndOfCombatEffects(state: GameState): {
+  state: GameState;
+  events: GameEvent[];
+} {
+  return dropEffects(state, (e) => e.until === 'endOfCombat');
 }
 
 /**

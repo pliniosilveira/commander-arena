@@ -306,6 +306,7 @@ export function checkFilter(
     'exiledWithSource',
     'singleTarget',
     'modified',
+    'goaded',
   ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
@@ -378,13 +379,15 @@ export function checkFilter(
       typeof a === 'number' ||
       (a?.kind === 'powerOf' && a.of?.kind === 'this') ||
       a?.kind === 'triggerDamage' ||
+      // CR 603.3d: "with mana value less than or equal to that spell's mana value" (a cast trigger; `validateCard` checks the trigger).
+      (a?.kind === 'manaValueOf' && a.of?.kind === 'triggerSubject') ||
       a?.kind === 'lifeGainedThisTurn' ||
       countOfTargetControllerGraveyard;
     if (!ok) {
       issue(
         out,
         `${path}.manaValueAtMost`,
-        'the limit is a number, the power of this or the damage that triggered the ability',
+        'the limit is a number, the power of this, the damage that triggered the ability or the mana value of the spell that triggered it',
       );
     }
     if (f.manaValue !== undefined) {
@@ -414,6 +417,10 @@ export function checkFilter(
   // CR 700.9 (D-416): only a permanent is modified.
   if (f.modified === true && f.zone !== undefined && f.zone !== 'battlefield') {
     issue(out, `${path}.modified`, 'only a permanent on the battlefield can be modified');
+  }
+  // CR 701.15b: only a permanent is goaded.
+  if (f.goaded === true && f.zone !== undefined && f.zone !== 'battlefield') {
+    issue(out, `${path}.goaded`, 'only a permanent on the battlefield can be goaded');
   }
   if (f.putFromBattlefieldThisTurn === true && f.zone !== 'graveyard') {
     issue(
@@ -634,6 +641,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.exiledWithSource !== undefined ||
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
+  f.goaded !== undefined ||
   f.named !== undefined ||
   f.targetsObject !== undefined;
 
@@ -674,7 +682,7 @@ export function declareTargets(
   specs: readonly TargetSpec[] | undefined,
   path: string,
   out: Out,
-  /** D-145: only the targets of a spell's own text can divide something among them (CR 601.2d). */
+  /** D-145: only the targets of a spell's own text, an activated ability or a triggered ability (not a mode, not a reflexive ability) can divide something among them (CR 601.2d). */
   divideAllowed = false,
   /** D-187: only the targets of a reflexive ability after a sacrifice can be "up to that many" (CR 603.12). */
   thatManyAllowed = false,
@@ -1027,7 +1035,7 @@ export function declareTargets(
         issue(
           out,
           `${p}.divide`,
-          "only the targets of a spell's own text (not an ability, not a mode) can have a division",
+          "only the targets of a spell's own text, an activated ability or a triggered ability (not a mode) can have a division",
         );
       }
       checkStateAmount(spec.divide.total, `${p}.divide.total`, out, 'a division');
@@ -1867,6 +1875,14 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           "'triggerTargetCount' needs a cast trigger whose filter requires one or more targets",
         );
       }
+      break;
+    case 'cardsInHandOfAffected':
+      // CR 402.1: only as the whole amount of a `dealDamage` to players (checked with the effect), where it is read for each player hurt.
+      issue(
+        out,
+        path,
+        'cardsInHandOfAffected is the whole amount of a dealDamage to players, not part of another amount',
+      );
       break;
     case 'lifeLostThisTurn':
       // D-365: only as the whole amount of a `loseLife` (checked with the effect), where it is read for each player the effect affects.
@@ -3087,7 +3103,7 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   }
   if (
     sel.filter?.zone !== undefined &&
-    !isOneOf(sel.filter.zone, ['battlefield', 'hand', 'graveyard', 'exile'])
+    !isOneOf(sel.filter.zone, ['battlefield', 'hand', 'graveyard', 'exile', 'command'])
   ) {
     issue(
       out,
@@ -3361,6 +3377,13 @@ function checkCopyExceptions(
         path,
         'a copy is given creature types instead of its own (setCreatureTypes) or in addition to them (addSubtypes), not both',
       );
+    }
+  }
+  if (spec.addTypes !== undefined) {
+    if (!Array.isArray(spec.addTypes) || spec.addTypes.length === 0) {
+      issue(out, `${path}.addTypes`, 'addTypes is a non-empty list of card types');
+    } else {
+      checkEnumList(out, `${path}.addTypes`, spec.addTypes, CARD_TYPES, 'card type');
     }
   }
   if (spec.setColors !== undefined) {
@@ -3926,7 +3949,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'dealDamage':
-      checkAmount(e.amount, `${path}.amount`, scope, out);
+      // CR 402.1: "the number of cards in that player's hand" is the whole amount of damage dealt to players, read for each of them (`rules/damage-effects.ts`).
+      if (kindOf(e.amount) === 'cardsInHandOfAffected') {
+        if (!PLAYER_ONLY.includes(kindOf(e.to))) {
+          issue(
+            out,
+            `${path}.amount`,
+            'cardsInHandOfAffected is the amount of a dealDamage to players',
+          );
+        }
+      } else {
+        checkAmount(e.amount, `${path}.amount`, scope, out);
+      }
       checkDamageRecipient(e.to, `${path}.to`, scope, out);
       if (e.from !== undefined) checkDamageSource(e.from, `${path}.from`, scope, out);
       // D-145: "if it has trample, excess damage is dealt to that creature's controller instead": a creature deals the damage to creatures.
@@ -4193,10 +4227,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'untilEndOfTurn',
           'untilEndOfYourNextTurn',
           'forAsLongAsYouControlThis',
+          'forAsLongAsThisRemains',
           'permanent',
         ])
       ) {
         issue(out, `${path}.duration`, `unknown duration ${JSON.stringify(e.duration)}`);
+      }
+      if (e.duration === 'forAsLongAsThisRemains' && scope.owner !== 'ability') {
+        issue(
+          out,
+          `${path}.duration`,
+          '"for as long as this remains on the battlefield" is the effect of an ability of a permanent',
+        );
       }
       if (e.duration === 'forAsLongAsYouControlThis' && scope.owner !== 'ability') {
         issue(
@@ -4265,6 +4307,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkEnumList(out, `${path}.addTypes`, e.addTypes, CARD_TYPES, 'card type');
         }
       }
+      if (e.addSupertypes !== undefined) {
+        if (!Array.isArray(e.addSupertypes) || e.addSupertypes.length === 0) {
+          issue(out, `${path}.addSupertypes`, 'addSupertypes is a non-empty list when present');
+        } else {
+          checkEnumList(out, `${path}.addSupertypes`, e.addSupertypes, SUPERTYPES, 'supertype');
+        }
+      }
       // D-640 (CR 707.9b): "..., except it has myriad": the abilities the copy has besides the ones it copies.
       if (e.abilities !== undefined) {
         if (!Array.isArray(e.abilities) || e.abilities.length === 0) {
@@ -4281,6 +4330,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-120: "It can't be regenerated" is a flag (CR 701.19c).
       if (e.cantBeRegenerated !== undefined && e.cantBeRegenerated !== true) {
         issue(out, `${path}.cantBeRegenerated`, 'cantBeRegenerated must be true when present');
+      }
+      break;
+    case 'attackRandomOpponent':
+      // CR 508.1d: the creature of the ability, which is a permanent: not a spell.
+      if (e.creature.kind !== 'this') {
+        issue(
+          out,
+          `${path}.creature`,
+          "'attackRandomOpponent' names the creature of the ability ('this')",
+        );
+      }
+      if (scope.owner !== 'ability') {
+        issue(out, path, "'attackRandomOpponent' needs an ability of a permanent, not a spell");
       }
       break;
     case 'goad':
@@ -4785,7 +4847,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         // graveyard (D-139) is put onto the battlefield, by the controller of the effect. A card that could be an Aura would need to
         // choose what to enchant (CR 303.4f): not run (`ast/supported.ts`).
         const zone = (e.objects as ChooseSelector).filter?.zone;
-        const fromCards = zone === 'hand' || zone === 'graveyard';
+        // Issue 103 (Hellkite Courser): "a commander you own from the command zone" is a card chosen from the command zone, only to put onto the battlefield.
+        const fromCards = zone === 'hand' || zone === 'graveyard' || zone === 'command';
+        if (zone === 'command' && e.to !== 'battlefield') {
+          issue(
+            out,
+            `${path}.to`,
+            'a commander chosen from the command zone is put onto the battlefield',
+          );
+        }
         if (zone === 'exile' && e.to === 'battlefield') {
           issue(
             out,
@@ -4835,6 +4905,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       }
       if (!isOneOf(e.to, ['hand', 'graveyard', 'library', 'battlefield', 'exile'])) {
+        // Issue 103: 'command' is the return of a delayed trigger (`checkDelayedTrigger`), never a move of its own.
         issue(out, `${path}.to`, `cannot move to zone ${JSON.stringify(e.to)}`);
       }
       // CR 406.1, 608.2d: a card chosen from the hand or the graveyard can be exiled by the choice itself; every other exile is the `exile` effect.
@@ -5153,6 +5224,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.tapped`,
           'tapped is true, and only for a card put onto the battlefield',
         );
+      }
+      // Issue 103 (CR 701.20, 701.24): "until you reveal a creature card for each wild vote", then the rest is shuffled in by the effect after it.
+      if (e.count !== undefined) {
+        if (e.put === 'none') {
+          issue(out, `${path}.count`, 'a count of cards found does not go with put none');
+        }
+        if (typeof e.count === 'number' && (!isCount(e.count) || e.count < 1)) {
+          issue(out, `${path}.count`, 'a number of cards to find is a whole number from 1');
+        } else if (typeof e.count !== 'number') {
+          checkAmount(e.count, `${path}.count`, scope, out);
+        }
+      }
+      if (e.rest !== undefined && e.rest !== 'stay') {
+        issue(out, `${path}.rest`, 'rest is stay when present');
       }
       break;
     case 'gainLevel':

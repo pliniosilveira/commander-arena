@@ -400,10 +400,84 @@ export const CONDITION_OPPONENT_CONTROLS_AT_LEAST = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.that-spells-stat`: "that spell's power is 4 or greater", "that spell's toughness is 2 or less" (CR 208.1, 202.3,
+ * 608.2c: the power, toughness or mana value of a spell as it is on the stack, which a cast trigger reads when it resolves; a spell that is not a creature spell has
+ * no power or toughness and fails the comparison). "That spell" is the spell that caused a cast trigger, which the lowering reads as the engine's `objectMatches` of
+ * the `triggerSubject`. Not read: an exact value, "more" and "fewer", another possessor, "was" and the lack of a number.
+ */
+export const CONDITION_THAT_SPELLS_STAT = defineRule<IrCondition>({
+  id: 'condition.that-spells-stat',
+  family: 'condition',
+  leading: ['that'],
+  cites: [
+    'CR 208.1 (Power/Toughness)',
+    'CR 202.3 (Mana Cost and Color)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    "that spell's power is 4 or greater",
+    'that spell’s power is 6 or greater',
+    "that spell's toughness is 2 or less",
+  ],
+  rejects: [
+    "that spell's power is 4",
+    "that spell's power is 4 or more",
+    "that spell's power is 4 or fewer",
+    "that spell's power was 4 or greater",
+    "that spell's power is four or greater",
+    "that spell's power is X or greater",
+    "that creature's power is 4 or greater",
+    'that spells power is 4 or greater',
+    "that spell's power is 4 or greater or less",
+    "that spell's mana value is 5 or greater",
+    'its power is 4 or greater',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /that spell['’]s (power|toughness) is (\d+) or (greater|less)(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const value = Number(r.value[2]);
+    if (!Number.isSafeInteger(value)) return fail(ctx, pos);
+    const stat = (r.value[1] ?? '').toLowerCase();
+    const spell: IrNoun = {
+      kind: 'noun',
+      det: 'anaphor',
+      filter: { raw: 'that spell' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: pos + 'that spell'.length },
+      rule: 'condition.that-spells-stat',
+    };
+    const comparison = {
+      cmp: (r.value[3] ?? '').toLowerCase() === 'less' ? ('atMost' as const) : ('atLeast' as const),
+      value,
+    };
+    const filter: IrFilter = {
+      ...(stat === 'power' ? { power: comparison } : {}),
+      ...(stat === 'toughness' ? { toughness: comparison } : {}),
+      raw: r.value[0],
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'objectMatches', who: spell, filter },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.that-spells-stat',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const RECURSION_CONDITION_RULES = [
   CONDITION_EXILED_THIS_WAY,
   CONDITION_IT_MATCHES,
   CONDITION_ITS_MANA_VALUE,
+  CONDITION_THAT_SPELLS_STAT,
   CONDITION_GIFT_PROMISED,
   CONDITION_OPPONENT_CONTROLS_AT_LEAST,
 ];

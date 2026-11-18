@@ -459,6 +459,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const what = subjectPhrase(trigger.what, ctx);
       return what === null ? null : `Whenever ${what} becomes untapped`;
     }
+    case 'becomesMonstrous': {
+      // CR 701.37a, 701.37b: "Whenever this creature becomes monstrous".
+      const what = subjectPhrase(trigger.what, ctx);
+      return what === null ? null : `Whenever ${what} becomes monstrous`;
+    }
     case 'discarded': {
       // D-206 (CR 701.9a): "Whenever you discard a card".
       const who =
@@ -566,6 +571,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'cycled':
       // D-179 (CR 702.29c): the card that was cycled.
       return 'When you cycle this card';
+    case 'exerted':
+      // CR 701.43d, 607.2h: "You may exert ~ as it attacks. When you do, ...": the creature was exerted.
+      return 'When you exert this creature as it attacks';
     case 'ringTempted':
       // D-196 (CR 701.54d): each time the Ring tempts you, whatever you could choose.
       return 'Whenever the Ring tempts you';

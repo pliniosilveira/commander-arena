@@ -53,7 +53,7 @@ import { matchesFilter, type SelectContext } from './select';
 import { objectOrLki } from './source-info';
 import { findStateTriggers } from './state-triggers';
 import { withDoubledTriggers } from './trigger-doubling';
-import { readsTriggerPlayer } from './trigger-subject';
+import { readsTriggerDamage, readsTriggerPlayer } from './trigger-subject';
 
 /** Trigger kinds that look back in time (CR 603.10a). */
 const LOOK_BACK: ReadonlySet<Trigger['kind']> = new Set(LOOK_BACK_TRIGGER_KINDS);
@@ -243,6 +243,11 @@ function occurrences(
       return event.kind === 'cycled'
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
+    case 'exerted':
+      // CR 701.43d, 603.12: the creature that was exerted as it attacked, with the ability linked to its exert ability.
+      return event.kind === 'exerted'
+        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+        : [];
     case 'blocks':
       // CR 509.1g, 702.45a: one occurrence for each creature declared as a blocker.
       return event.kind === 'blockersDeclared'
@@ -258,7 +263,9 @@ function occurrences(
         : [];
     case 'step':
       // CR 500.2, 603.2: as the step begins; the active player is the one whose turn it is.
-      return event.kind === 'stepBegan' && event.step === STEP_OF[trigger.step]
+      return event.kind === 'stepBegan' &&
+        (event.step === STEP_OF[trigger.step] ||
+          (trigger.alsoStep !== undefined && event.step === STEP_OF[trigger.alsoStep]))
         ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
     case 'drawn':
@@ -374,6 +381,9 @@ function occurrences(
       return event.kind === 'dieRolled' && event.result === event.sides
         ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
+    case 'becomesMonstrous':
+      // CR 701.37a, 701.37b: the permanent that became monstrous.
+      return event.kind === 'becameMonstrous' ? [{ subject: event.object, seat: null }] : [];
     case 'becomesUntapped':
       // CR 603.2e (D-206): a permanent that untaps (the untap step or an effect); a stun counter that stops it (CR 122.1d) makes no `untapped` event.
       return event.kind === 'untapped' ? [{ subject: event.object, seat: null }] : [];
@@ -707,6 +717,7 @@ function matches(
       return true;
     case 'dealtDamage':
     case 'becomesUntapped':
+    case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
       return matchesWhat(state, trigger.what, subject, candidate);
@@ -763,6 +774,9 @@ function matches(
       return subject !== null && subject.id === candidate.id;
     case 'cycled':
       // CR 702.29c: "when you cycle this card": the card with the ability is the one that was cycled.
+      return subject !== null && subject.id === candidate.id;
+    case 'exerted':
+      // CR 607.2h: the ability is linked to the exert ability of the creature itself: only that creature's exert triggers it.
       return subject !== null && subject.id === candidate.id;
     case 'ringTempted':
       // CR 701.54d: "Whenever the Ring tempts you": the player the Ring tempted controls the ability.
@@ -892,10 +906,12 @@ function isRelevant(event: GameEvent): boolean {
     case 'blockersDeclared':
     case 'spellCast':
     case 'spellCopied': // D-218: "whenever you cast or copy"
+    case 'exerted': // CR 701.43d
     case 'cycled':
     case 'discarded':
     case 'tapped':
     case 'untapped':
+    case 'becameMonstrous': // CR 701.37: "When this creature becomes monstrous"
     case 'tappedForMana':
     case 'becameTarget':
     case 'crimeCommitted':
@@ -1179,7 +1195,7 @@ function batchTriggers(
 ): PendingTrigger[] {
   const damage = events.flatMap((e) =>
     e.kind === 'damageDealt' && e.combat && e.to.kind === 'player' && e.amount > 0
-      ? [{ source: e.source, seat: e.to.seat }]
+      ? [{ source: e.source, seat: e.to.seat, amount: e.amount }]
       : [],
   );
   if (damage.length === 0) return [];
@@ -1206,6 +1222,10 @@ function batchTriggers(
           );
         });
         if (sources.length < (trigger.atLeast ?? 1)) continue;
+        // "that damage" (issue 103, CR 603.2c, 510.2): all the combat damage the sources the trigger names dealt to that player in these events.
+        const dealt = damage
+          .filter((d) => d.seat === seat && sources.includes(d.source))
+          .reduce((sum, d) => sum + d.amount, 0);
         if (
           ability.interveningIf !== undefined &&
           !evaluateCondition(state, ability.interveningIf, {
@@ -1233,6 +1253,7 @@ function batchTriggers(
           ability,
           subject: null,
           player: seat,
+          ...(readsTriggerDamage(ability) ? { damage: dealt } : {}),
         });
       }
     }

@@ -87,6 +87,7 @@ const BECOME_COPY: Lowering<IrClause, Effects> = {
     const keep = clause.args.keepName;
     // Stage P64 (D-217, CR 707.9b): "except it's an artifact in addition to its other types" (Saheeli, Sublime Artificer).
     const artifact = clause.args.addArtifact;
+    const legendary = clause.args.addLegendary;
     if (
       objects === undefined ||
       of === undefined ||
@@ -106,11 +107,14 @@ const BECOME_COPY: Lowering<IrClause, Effects> = {
         duration: 'untilEndOfTurn',
         ...(keep?.kind === 'flag' ? { keepName: true as const } : {}),
         ...(artifact?.kind === 'flag' ? { addTypes: ['artifact' as const] } : {}),
+        // Issue 103 (CR 707.9b, 205.4a): "except its name is ~ and it's legendary in addition to its other types" (Sarkhan, Soul Aflame).
+        ...(legendary?.kind === 'flag' ? { addSupertypes: ['legendary' as const] } : {}),
       }),
       'objects',
     );
     if (!copied.ok) return copied;
-    const source = objectRefOf(of, ctx);
+    // "It" may be the permanent whose event caused the trigger ("Whenever a Dragon you control enters, you may have ~ become a copy of it").
+    const source = objectRefOf(of, ctx, { triggerSubject: true });
     if (!source.ok) return source;
     return {
       ok: true,

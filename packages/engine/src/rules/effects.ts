@@ -30,6 +30,7 @@ import { runSplitExiled, startSplit } from './activation-exile';
 import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
 import { attachEntered, attachObject } from './attach';
+import { runAttackRandomOpponent } from './attack-random-opponent';
 import { runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
 import { makeCardCopy } from './card-copy';
@@ -1322,7 +1323,10 @@ function runEffect(
       // (this replaces D-459's one ability for each: the ability is now the source's, CR 603.7e, not the permanent's). Its objects are bound as they are now (`boundObjects`); one that has
       // left since is a new object and nothing happens to it (CR 603.7c, 400.7). A permanent whose control changed is not sacrificed by the controller of the ability (CR 701.21a).
       if (
-        (effect.effect.kind === 'exile' || effect.effect.kind === 'sacrifice') &&
+        (effect.effect.kind === 'exile' ||
+          effect.effect.kind === 'sacrifice' ||
+          // Issue 103 (CR 903.9, 603.7c): "Return it to the command zone at the beginning of the next end step", bound to the permanent as it is now.
+          (effect.effect.kind === 'moveToZone' && effect.effect.to === 'command')) &&
         effect.effect.objects.kind === 'moved'
       ) {
         const ids = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
@@ -1332,7 +1336,10 @@ function runEffect(
         const ability: TriggeredAbility = {
           kind: 'triggered',
           trigger,
-          effect: { kind: effect.effect.kind, objects: { kind: 'boundObjects', ids } },
+          effect:
+            effect.effect.kind === 'moveToZone'
+              ? { ...effect.effect, objects: { kind: 'boundObjects', ids } }
+              : { kind: effect.effect.kind, objects: { kind: 'boundObjects', ids } },
         };
         return done({
           ...state,
@@ -2397,7 +2404,12 @@ function runEffect(
 
     case 'revealUntil':
       // CR 701.20, 401.4 (D-145): reveal until a card matches, put it somewhere, the rest on the bottom in a random order.
-      return runRevealUntil(state, res, effect);
+      return runRevealUntil(
+        state,
+        res,
+        effect,
+        effect.count === undefined ? 1 : amountOf(state, effect.count, ctx, targets),
+      );
 
     case 'exileUntilFound':
       // CR 701.13, 101.4 (D-660): each player exiles from the top of their library until a card matches (rules/exile-until-found.ts).
@@ -2632,6 +2644,10 @@ function runEffect(
     case 'grantPlayerHexproof':
       // CR 702.11b, 611.2 (Hylda group 3): the players have hexproof until end of turn (`rules/player-hexproof.ts`).
       return runGrantPlayerHexproof(state, effect, ctx, targets);
+
+    case 'attackRandomOpponent':
+      // CR 508.1d, 701.26a: an opponent at random that was not attacked in the last combat must be attacked this combat, or the creature is tapped (`rules/attack-random-opponent.ts`).
+      return runAttackRandomOpponent(state, effect, ctx.source, res.controller);
 
     case 'goad':
       // CR 701.15a-d (D-639): the creatures are goaded until the controller's next turn (`rules/goad.ts`).

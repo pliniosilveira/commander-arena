@@ -15,6 +15,7 @@ import {
   escapeObjects,
   flashbackObjects,
   foretellCastObjects,
+  harmonizeObjects,
   playableLands,
   retraceObjects,
   sacrificeFromGraveyardObjects,
@@ -55,6 +56,10 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   // Issue 159: a card in the graveyard is cast for its "pay {B}{B} and sacrifice two creatures" cost, one option for each.
   for (const object of sacrificeFromGraveyardObjects(state, seat)) {
     options.push({ kind: 'castSpell', object, alternative: 'sacrificeFromGraveyard' });
+  }
+  // CR 702.180a (Harmonize): a card in the graveyard is cast for its harmonize cost, one option for each.
+  for (const object of harmonizeObjects(state, seat)) {
+    options.push({ kind: 'castSpell', object, alternative: 'harmonize' });
   }
   // CR 702.143a (Foretell, D-128): a foretold card in exile is cast for its foretell cost, in a later turn.
   for (const object of foretellCastObjects(state, seat)) {

@@ -55,6 +55,7 @@ import {
   answerBlockPayment,
   answerCombatReplacement,
   answerDamage,
+  answerExert,
 } from './rules/combat-flow';
 import { answerCopyTargets } from './rules/copy-spell-answer';
 import { answerDestruction } from './rules/destroy-replacement';
@@ -525,7 +526,16 @@ function answerChooseOption(
   if (state.resolution !== null) {
     return finishResolutionAnswer(answerResolutionEntersChosen(state, option, chosen));
   }
-  const played = playLand({ ...state, pending: null }, seat, d.source, null, d.face ?? 0, chosen);
+  const played = playLand(
+    { ...state, pending: null },
+    seat,
+    d.source,
+    d.entersSoFar?.paid ?? null,
+    d.face ?? 0,
+    chosen,
+    [],
+    d.entersSoFar?.revealed,
+  );
   if (!played.ok) return played;
   const answered: GameEvent = {
     kind: 'optionChosen',
@@ -998,6 +1008,13 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
         action.kind === 'cancel'
       ) {
         return cancelCast(state);
+      }
+      // CR 701.43d, 508.1g: "exert this creature as it attacks?" can be taken back, which asks for the attackers again (CR 733).
+      if (d.purpose === 'exert') {
+        if (action.kind === 'cancel') return answerExert(state, seat, d, 'cancel');
+        if (action.kind === 'acceptOptional') return answerExert(state, seat, d, true);
+        if (action.kind === 'declineOptional') return answerExert(state, seat, d, false);
+        return fail('Accept, decline or cancel');
       }
       if (action.kind === 'acceptOptional') return answerConfirm(state, seat, d, true);
       if (action.kind === 'declineOptional') return answerConfirm(state, seat, d, false);

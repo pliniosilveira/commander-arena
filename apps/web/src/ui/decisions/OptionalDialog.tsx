@@ -35,6 +35,7 @@ const DIALOG_LABELS: Readonly<
   pairReturn: 'Return the cards',
   castCard: 'Cast from a graveyard',
   exileMore: 'Exile another card',
+  exert: 'Exert',
 };
 
 /**

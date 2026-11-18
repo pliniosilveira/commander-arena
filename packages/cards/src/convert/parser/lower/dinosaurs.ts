@@ -6,6 +6,7 @@
 import type { Amount } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
 import { withoutZone } from '../rules/noun/phrases';
+import { lowerAmount } from './amounts';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
 import { declareDividedTarget, lowerFilter, objectRefOf, objectSelectorOf } from './nouns';
 import type { Lowering } from './types';
@@ -61,7 +62,8 @@ export const FIGHT: Lowering<IrClause, Effects> = {
     const fighter = operand(clause, 'fighters');
     const against = operand(clause, 'against');
     if (fighter?.kind !== 'noun' || against?.kind !== 'noun') return failure(clause);
-    const first = objectSelectorOf(fighter, ctx);
+    // "It" may be the permanent whose event caused the trigger ("Whenever a creature you control with flying enters, you may have it fight ...").
+    const first = objectSelectorOf(fighter, ctx, { triggerSubject: true });
     if (!first.ok) return first;
     const second = objectSelectorOf(against, ctx);
     if (!second.ok) return second;
@@ -134,6 +136,46 @@ export const REVEAL_UNTIL: Lowering<IrClause, Effects> = {
           put: to.zone,
           ...(to.tapped === true && to.zone === 'battlefield' ? { tapped: true as const } : {}),
         },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "Reveal cards from the top of your library until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your
+ * library." (issue 103, CR 701.20, 701.38b, 701.24): the engine's `revealUntil` with a `count` (the votes) and the rest left in the library, then a `shuffle` of the controller's
+ * library. The second sentence must name the kind of the first in the plural.
+ */
+export const REVEAL_UNTIL_VOTES: Lowering<IrClause, Effects> = {
+  head: 'revealUntilVotes',
+  id: 'lower.reveal-until-votes',
+  needs: ['effect:revealUntil', 'effect:shuffle', 'ability:revealUntilCount', 'amount:votesFor'],
+  lower(clause, ctx) {
+    const card = arg(clause, 'card');
+    const votes = arg(clause, 'count');
+    const kind = arg(clause, 'kind');
+    if (card?.kind !== 'noun' || votes?.kind !== 'votesFor' || kind?.kind !== 'name') {
+      return failure(clause);
+    }
+    // "a creature card ... those creature cards": the same single type, nothing else asked of the card.
+    const types = card.filter.types ?? [];
+    if (types.length !== 1 || types[0] !== kind.name) return failure(clause);
+    const filter = lowerFilter({ ...card, filter: withoutZone(card.filter) });
+    if (!filter.ok) return filter;
+    const count = lowerAmount(votes, ctx, clause.rule);
+    if (!count.ok) return count;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'revealUntil',
+          filter: filter.value,
+          count: count.value,
+          put: 'battlefield',
+          rest: 'stay',
+        },
+        { kind: 'shuffle', player: { kind: 'you' } },
       ],
       rule: clause.rule,
     };
@@ -226,9 +268,9 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
 
 /**
  * "~ deals X damage divided as you choose among any number of target creatures, where X is the greatest power among creatures you control as
- * you cast this spell" (CR 601.2d, 120.3): the spell's targets slot with `divide` (the total is read once, as the spell is cast) and the
- * engine's `dealDividedDamage` to it. Only a spell's own text; the total is a number or an amount that reads the game as the spell is cast,
- * never an announced X.
+ * you cast this spell" (CR 601.2d, 120.3): the targets slot with `divide` (the total is read once, as the spell is cast or the ability is put on the
+ * stack, CR 602.2b, 603.3d) and the engine's `dealDividedDamage` to it. A spell's own text or an activated or triggered ability; the total is a number
+ * or an amount that reads the game then, never an announced X.
  */
 export const DEAL_DIVIDED_DAMAGE: Lowering<IrClause, Effects> = {
   head: 'dealDividedDamage',
@@ -236,7 +278,13 @@ export const DEAL_DIVIDED_DAMAGE: Lowering<IrClause, Effects> = {
   needs: ['effect:dealDividedDamage', 'selector:target'],
   lower(clause, ctx) {
     const to = operand(clause, 'to');
-    if (to?.kind !== 'noun' || to.det !== 'target' || ctx.owner !== 'spell') return failure(clause);
+    if (to?.kind !== 'noun' || to.det !== 'target') return failure(clause);
+    // "it deals ...": the damage is dealt by the source of the ability (CR 113.7a), which is the one thing the engine's `dealDividedDamage` knows; an "it" that is
+    // another object is refused.
+    const source = arg(clause, 'source');
+    if (source !== undefined && (source.kind !== 'noun' || source.ref !== 'self')) {
+      return failure(clause);
+    }
     ctx.readAsCast = true;
     let total: Amount;
     try {
@@ -262,6 +310,7 @@ export const DINOSAUR_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   FIGHT,
   FIGHT_PAIRS,
   REVEAL_UNTIL,
+  REVEAL_UNTIL_VOTES,
   REVEAL_UNTIL_MAY_PUT,
   CAST_FREE,
   DEAL_DIVIDED_DAMAGE,

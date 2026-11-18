@@ -626,6 +626,12 @@ export type GameEvent =
    */
   | { readonly kind: 'cycled'; readonly seat: SeatId; readonly object: ObjectId }
   /**
+   * A creature was exerted as it attacked (CR 701.43a, 701.43d, 508.1g): `seat`, its controller, chose to pay the optional cost of attacking its
+   * "You may exert ~ as it attacks" ability. It does not untap during their next untap step; the abilities linked to the exert ability ("When you do", CR 607.2h)
+   * trigger. It comes with the `attackersDeclared` event of the declaration.
+   */
+  | { readonly kind: 'exerted'; readonly seat: SeatId; readonly object: ObjectId }
+  /**
    * A card with madness was discarded and exiled instead of going to the graveyard (CR 702.35a, D-128). `object` is
    * the card in exile (public: exile is a public zone); the `discarded` event before it has the id the card had in
    * the hand. Its madness ability triggers.

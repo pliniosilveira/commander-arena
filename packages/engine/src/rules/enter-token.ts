@@ -36,7 +36,7 @@ import {
   riotGivesHaste,
   riotInstances,
 } from './enters-keywords';
-import { canReveal, revealChoices, revealEvents } from './enters-reveal';
+import { canReveal, revealChoices, revealEvents, revealQuestion } from './enters-reveal';
 import { lifeTotalIsLocked } from './player-lock';
 import { matchesFilter } from './select';
 import { done, type StepOutcome } from './step-outcome';
@@ -184,7 +184,7 @@ export function runEnterToken(
   // CR 614.12, 614.1c (D-211): "As this enters, you may pay 2 life. If you don't, it enters tapped" and "you may reveal a Mountain or Plains card from your hand":
   // the question of a land a token copies, asked of the player who creates it before the token exists; the answer is `entersPaid` of the resolution.
   const payment = entersPayment(definition.abilities);
-  const reveal = entersReveal(definition.abilities);
+  const reveal = revealQuestion(state, seat, entersReveal(definition.abilities), res.object);
   const alreadyTapped =
     instruction.tapped === true ||
     entersTapped(state, definition.abilities, { controller: seat, source: res.object });

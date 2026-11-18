@@ -95,7 +95,12 @@ function noteMoved(effects: readonly Effect[], ctx: LowerContext): void {
     if (effect.kind !== 'moveToZone' && effect.kind !== 'destroy' && effect.kind !== 'exile') {
       continue;
     }
-    ctx.searched = null;
+    // Issue 103: the commander "put onto the battlefield" from the command zone is what "it" of the next sentences is (the lowering of that clause set `ctx.searched`).
+    const fromCommandZone =
+      effect.kind === 'moveToZone' &&
+      effect.objects.kind === 'choose' &&
+      effect.objects.filter.zone === 'command';
+    if (!fromCommandZone) ctx.searched = null;
     // Lorehold group 1: "that card" of "you may play that card this turn" after "exile that card from your graveyard": the card the exile moved.
     if (effect.kind === 'exile') ctx.exiled = 'cards';
     ctx.exiledRef =

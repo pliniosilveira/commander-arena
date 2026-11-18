@@ -78,3 +78,33 @@ describe('votesFor', () => {
     expect(messages(sequence(vote(), gain(''))).join()).toMatch(/names the option/);
   });
 });
+
+describe('revealUntil with a count and rest stay (issue 103, CR 701.20, 701.24)', () => {
+  const reveal = (extra: Record<string, unknown> = {}): Effect =>
+    ({
+      kind: 'revealUntil',
+      filter: { types: ['creature'] },
+      put: 'battlefield',
+      ...extra,
+    }) as never;
+
+  test('a count of the votes for an option the vote offers, and rest stay, are valid', () => {
+    const effect = sequence(
+      vote(),
+      reveal({ count: { kind: 'votesFor', option: 'gold' }, rest: 'stay' }),
+    );
+    expect(messages(effect)).toEqual([]);
+  });
+
+  test('a count that reads a vote needs the vote before it', () => {
+    expect(messages(reveal({ count: { kind: 'votesFor', option: 'gold' } })).join()).toMatch(
+      /needs a vote effect before it/,
+    );
+  });
+
+  test('a count with put none, a count of 0 and another rest are refused', () => {
+    expect(messages(reveal({ count: 2, put: 'none' })).join()).toMatch(/does not go with put none/);
+    expect(messages(reveal({ count: 0 })).join()).toMatch(/whole number from 1/);
+    expect(messages(reveal({ rest: 'bottom' })).join()).toMatch(/rest is stay/);
+  });
+});

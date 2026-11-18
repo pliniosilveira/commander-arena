@@ -4,9 +4,29 @@
  * as a card exiled with ~ is a creature card, ~ has the power, toughness, and creature types of the last creature card exiled with
  * it."). Each is one whole line.
  */
-import { fail, literal, optional, pattern, quiet, satisfy, sequence } from '../../combinators';
+import {
+  choice,
+  fail,
+  literal,
+  many,
+  map,
+  optional,
+  type Parser,
+  pattern,
+  quiet,
+  satisfy,
+  sequence,
+} from '../../combinators';
 import type { IrCondition, IrFilter, IrNoun, IrStatic, Span } from '../../ir/types';
-import { CARD_TYPES, spellPhrase, typeWords } from '../noun/phrases';
+import {
+  BOUNDARY,
+  CARD_TYPES,
+  NO_PARTS,
+  SUBTYPE_WORD,
+  spellPhrase,
+  toFilter,
+  typeWords,
+} from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family } from '../registry';
 import { unit } from './grants';
@@ -21,6 +41,39 @@ function subjectNoun(det: IrNoun['det'], raw: string, span: Span, rule: string):
     other: false,
     span,
     rule,
+  };
+}
+
+/**
+ * "sorcery spells and Dragon spells" (CR 601.3b: the spells a permission is about): two or more "<card type or subtype> spells" joined by "and", each
+ * naming a different set of spells; a spell is described by either, so the filter is the choice `anyOf` of one member per item (a card type word is
+ * lowercase in Oracle text, a subtype capitalised, CR 205.3).
+ */
+function spellEachPhrase(): Parser<IrFilter> {
+  const item: Parser<IrFilter> = choice(
+    map(
+      pattern(new RegExp(`(${CARD_TYPES}) spells${BOUNDARY}`, 'u')),
+      (m): IrFilter => ({ types: [m[1] ?? ''], raw: m[1] ?? '' }),
+    ),
+    map(
+      pattern(new RegExp(`(${SUBTYPE_WORD}) spells${BOUNDARY}`, 'u')),
+      (m): IrFilter => ({ subtypes: [m[1] ?? ''], raw: m[1] ?? '' }),
+    ),
+  );
+  return (ctx, pos) => {
+    const first = item(ctx, pos);
+    if (!first.ok) return first;
+    const rest = many(map(sequence(literal(' and '), item), ([, member]) => member))(
+      ctx,
+      first.pos,
+    );
+    if (!rest.ok || rest.value.length === 0) return fail(ctx, pos);
+    const base = toFilter('stack', NO_PARTS, ctx.text.slice(pos, rest.pos));
+    return {
+      ok: true,
+      value: { ...base, stackKind: 'spell', anyOf: [first.value, ...rest.value] },
+      pos: rest.pos,
+    };
   };
 }
 
@@ -40,6 +93,7 @@ export const STATIC_CAST_AS_THOUGH_FLASH = defineRule<IrStatic>({
     'You may cast creature spells as though they had flash.',
     'You may cast spells as though they had flash.',
     'You may cast green creature spells as though they had flash.',
+    'You may cast sorcery spells and Dragon spells as though they had flash.',
   ],
   rejects: [
     'You may cast artifact spells as though they had flash',
@@ -48,11 +102,16 @@ export const STATIC_CAST_AS_THOUGH_FLASH = defineRule<IrStatic>({
     'You may cast artifact spells from your graveyard as though they had flash.',
     'Each player may cast artifact spells as though they had flash.',
     'You may cast artifact spell as though it had flash.',
+    'You may cast sorcery spells and as though they had flash.',
   ],
   parse: (ctx, pos) => {
     // Quiet: "You may cast this card from your hand ..." stops where it always did.
     const r = quiet(
-      sequence(literal('you may cast '), spellPhrase(true), literal(' as though they had flash.')),
+      sequence(
+        literal('you may cast '),
+        choice(spellEachPhrase(), spellPhrase(true)),
+        literal(' as though they had flash.'),
+      ),
     )(ctx, pos);
     if (!r.ok) return r;
     const id = 'static.cast-as-though-flash';

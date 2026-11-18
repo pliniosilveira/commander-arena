@@ -114,6 +114,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:commander',
   'selector:enteredThisTurn',
   'selector:modified',
+  // CR 701.15b: "a goaded creature".
+  'selector:goaded',
   // D-426 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
   'selector:attachedTo',
   'selector:enchanted',
@@ -297,6 +299,11 @@ function lowerFilterAt(
     if (inner && !aimed) return bad([]);
     parts.push('selector:modified');
   }
+  // CR 701.15b: "goaded", read where the filter is matched against the game (a trigger's subject, a target slot, an `each` selector); never a member of a choice.
+  if (filter.goaded === true) {
+    if (inner) return bad([]);
+    parts.push('selector:goaded');
+  }
   // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
   if (filter.powerAboveBase === true) parts.push('selector:powerAboveBase');
   // Issue 104 (CR 201.2): "a card named X" of a library search, read where the filter is matched against the game; never a member of a choice.
@@ -461,6 +468,7 @@ function lowerFilterAt(
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
     ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
+    ...(filter.goaded === true ? { goaded: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
     ...(filter.named === undefined ? {} : { named: filter.named }),
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),
@@ -505,9 +513,9 @@ function boundsOf(noun: IrNoun): { min?: number; max?: number } {
 }
 
 /**
- * Declares the one targets slot of a spell that divides damage as it is cast (stage P32, D-147, CR 601.2d): "any number of target
- * creatures" (no fewest or most: at most as many as the total, each needing 1) or "up to three target creatures", with the total read
- * once as the spell is cast (`divide`). The kind of permanent is an object filter; any other target is not divided.
+ * Declares the one targets slot of a spell or ability that divides damage as it is cast or put on the stack (stage P32, D-147, CR 601.2d, 602.2b, 603.3d):
+ * "any number of target creatures" (no fewest or most: at most as many as the total, each needing 1), "up to three target creatures" or "one or two
+ * targets" (any target, at least one), with the total read once then (`divide`). The kind of permanent is an object filter; any other target is not divided.
  */
 export function declareDividedTarget(
   noun: IrNoun,
@@ -519,12 +527,17 @@ export function declareDividedTarget(
     return failure(noun, []);
   }
   if (ctx.targets.some((t) => t.id === id)) return failure(noun, []);
-  // D-657 (CR 115.4, 601.2d): "divided as you choose among any number of targets": any target (a creature, a player, a planeswalker, a battle), none to as many as the total.
+  // D-657 (CR 115.4, 601.2d): "divided as you choose among any number of targets": any target, none to as many as the total. "one or two targets": one to two of them.
   if (noun.filter.anyTarget === true) {
-    if (noun.anyNumber !== true) return failure(noun, []);
     const blockedAny = missingFeatures(['selector:anyTarget']);
     if (blockedAny.length > 0) return failure(noun, blockedAny);
-    ctx.targets.push({ id, what: { kind: 'anyTarget' }, divide: { total } });
+    if (noun.anyNumber === true) {
+      ctx.targets.push({ id, what: { kind: 'anyTarget' }, divide: { total } });
+    } else if (noun.minTargets !== undefined) {
+      ctx.targets.push({ id, what: { kind: 'anyTarget' }, ...boundsOf(noun), divide: { total } });
+    } else {
+      return failure(noun, []);
+    }
     return { ok: true, value: id, rule: noun.rule };
   }
   const filter = lowerFilter(noun);
@@ -672,20 +685,30 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         const missing = missingFeatures(['selector:manaValueAtMost']);
         if (missing.length > 0) return failure(noun, missing);
         const dynamic = noun.filter.manaValueAtMostAmount;
-        if (dynamic.kind !== 'countOf' || typeof dynamic.of.filter.controller !== 'object') {
-          return failure(noun, []);
+        if (dynamic.kind === 'manaValueOf') {
+          // "with mana value less than or equal to that spell's mana value" (CR 202.3, 603.3d): the spell that caused a cast trigger, read as the targets are
+          // chosen and again as the ability resolves (the engine's `manaValueOf` of the `triggerSubject`). No other object is the limit of a filter.
+          if (!ctx.castTrigger) return failure(noun, []);
+          const limit = objectRefOf(dynamic.of, ctx, { triggerSubject: true });
+          if (!limit.ok) return limit;
+          if (limit.value.kind !== 'triggerSubject') return failure(noun, []);
+          atMost = { kind: 'manaValueOf', of: limit.value };
+        } else {
+          if (dynamic.kind !== 'countOf' || typeof dynamic.of.filter.controller !== 'object') {
+            return failure(noun, []);
+          }
+          const ownerNoun = dynamic.of.filter.controller.noun;
+          if (ownerNoun.det !== 'controllerOf' || ownerNoun.of?.ref !== noun.ref) {
+            return failure(noun, []);
+          }
+          const owner = playerSelectorOf(ownerNoun, ctx);
+          if (!owner.ok) return owner;
+          const { controller: _controller, ...countFilter } = dynamic.of.filter;
+          void _controller;
+          const counted = lowerFilter({ ...dynamic.of, filter: countFilter });
+          if (!counted.ok) return counted;
+          atMost = { kind: 'countOf', filter: { ...counted.value, owner: owner.value } };
         }
-        const ownerNoun = dynamic.of.filter.controller.noun;
-        if (ownerNoun.det !== 'controllerOf' || ownerNoun.of?.ref !== noun.ref) {
-          return failure(noun, []);
-        }
-        const owner = playerSelectorOf(ownerNoun, ctx);
-        if (!owner.ok) return owner;
-        const { controller: _controller, ...countFilter } = dynamic.of.filter;
-        void _controller;
-        const counted = lowerFilter({ ...dynamic.of, filter: countFilter });
-        if (!counted.ok) return counted;
-        atMost = { kind: 'countOf', filter: { ...counted.value, owner: owner.value } };
         const { manaValueAtMostAmount: _amount, ...rest } = noun.filter;
         void _amount;
         subject = { ...noun, filter: rest };

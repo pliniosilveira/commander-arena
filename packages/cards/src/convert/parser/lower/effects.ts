@@ -135,6 +135,21 @@ function goneRefusal(clause: IrClause, ctx: LowerContext, verb: string): LowerFa
     : null;
 }
 
+/**
+ * "Choose an opponent at random that ~ didn't attack during your last combat. ~ attacks that player this combat if able. If you can't choose an opponent this way, tap ~." (CR 508.1d,
+ * 701.26a): the engine's `attackRandomOpponent` of the creature the ability belongs to.
+ */
+const ATTACK_RANDOM_OPPONENT: Lowering<IrClause, Effects> = {
+  head: 'attackRandomOpponent',
+  id: 'lower.attack-random-opponent',
+  needs: ['effect:attackRandomOpponent'],
+  lower: (clause) => ({
+    ok: true,
+    value: [{ kind: 'attackRandomOpponent', creature: { kind: 'this' } }],
+    rule: clause.rule,
+  }),
+};
+
 /** "Goad target creature", "goad it" (CR 701.15a, D-639, D-651): the engine's `goad` on the one creature the operand names. */
 const GOAD: Lowering<IrClause, Effects> = {
   head: 'goad',
@@ -626,12 +641,32 @@ const RESELECT_ATTACK: Lowering<IrClause, Effects> = {
 const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
   head: 'putFromZone',
   id: 'lower.put-from-zone',
-  needs: ['effect:moveToZone', 'selector:choose', 'ability:chooseAlsoGraveyard'],
-  lower(clause) {
-    const objects = arg(clause, 'objects');
+  needs: ['effect:moveToZone', 'selector:choose', 'ability:chooseAlsoGraveyard', 'amount:votesFor'],
+  lower(clause, ctx) {
+    const named = arg(clause, 'objects');
     const to = zoneOf(clause);
     const may = arg(clause, 'may');
-    if (objects?.kind !== 'noun' || objects.det !== 'a') return failure(clause);
+    if (named?.kind !== 'noun' || named.det !== 'a') return failure(clause);
+    // "... with mana value less than or equal to that damage" (issue 103, CR 202.3): the filter's limit is the damage of the trigger, read as the effect runs.
+    let limit: Amount | undefined;
+    let objects: IrNoun = named;
+    if (named.filter.manaValueAtMostAmount !== undefined) {
+      const blocked = missingFeatures(['selector:manaValueAtMost']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const amount = lowerAmount(named.filter.manaValueAtMostAmount, ctx, clause.rule);
+      if (!amount.ok) return amount;
+      if (
+        typeof amount.value !== 'object' ||
+        amount.value.kind !== 'triggerDamage' ||
+        to?.zone !== 'battlefield'
+      ) {
+        return failure(clause);
+      }
+      limit = amount.value;
+      const { manaValueAtMostAmount: _amount, ...rest } = named.filter;
+      void _amount;
+      objects = { ...named, filter: rest };
+    }
     // "You may return a creature card from your graveyard to your hand" (stage P35, D-176, CR 608.2d): a card chosen from the graveyard,
     // none when the player may and does not.
     if (to?.zone === 'hand') {
@@ -650,16 +685,38 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       return { ok: true, value: [move], rule: clause.rule };
     }
     if (to?.zone !== 'battlefield') return failure(clause);
-    const filter = lowerFilter(objects);
-    if (!filter.ok) return filter;
+    const lowered = lowerFilter(objects);
+    if (!lowered.ok) return lowered;
+    const filter = {
+      ok: true as const,
+      value: limit === undefined ? lowered.value : { ...lowered.value, manaValueAtMost: limit },
+    };
     const optional = may?.kind === 'flag' && may.value;
     // D-544 (CR 608.2d): "from your hand or graveyard": the cards of both places are the candidates.
     const both = arg(clause, 'alsoGraveyard');
+    // Issue 103 (CR 701.38b, 608.2c): "You may put a permanent card from your hand onto the battlefield for each free vote": up to that many cards, chosen as it resolves.
+    const votes = arg(clause, 'count');
+    let count: Amount | undefined;
+    if (votes !== undefined) {
+      if (
+        votes.kind !== 'votesFor' ||
+        !optional ||
+        to.attacking === true ||
+        filter.value.zone !== 'hand' ||
+        both?.kind === 'flag'
+      ) {
+        return failure(clause);
+      }
+      const lowered = lowerAmount(votes, ctx, clause.rule);
+      if (!lowered.ok) return lowered;
+      count = lowered.value;
+    }
     const move: Effect = {
       kind: 'moveToZone',
       objects: {
         kind: 'choose',
         filter: filter.value,
+        ...(count === undefined ? {} : { count }),
         ...(optional ? { optional: true as const } : {}),
         ...(both?.kind === 'flag' && both.value ? { alsoGraveyard: true as const } : {}),
       },
@@ -1778,6 +1835,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   simple('tap'),
   simple('untap'),
   GOAD,
+  ATTACK_RANDOM_OPPONENT,
   simple('transform'),
   REGENERATE,
   ADD_MANA,

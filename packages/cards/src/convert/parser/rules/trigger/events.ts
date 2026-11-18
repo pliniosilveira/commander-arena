@@ -20,8 +20,18 @@ function stepTrigger(
   span: { start: number; end: number },
   step: Step,
   actor: IrNoun,
+  alsoStep?: IrTrigger['alsoStep'],
 ): IrTrigger {
-  return { kind: 'trigger', event: 'step', step, actor, args: {}, span, rule };
+  return {
+    kind: 'trigger',
+    event: 'step',
+    step,
+    ...(alsoStep === undefined ? {} : { alsoStep }),
+    actor,
+    args: {},
+    span,
+    rule,
+  };
 }
 
 /** The phases that follow whose turn it is: "draw step", "precombat main phase", ... */
@@ -63,6 +73,8 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
     'the beginning of your precombat main phase',
     'the beginning of your postcombat main phase',
     'the beginning of each of your postcombat main phases',
+    // Frontier Siege (issue 103, CR 505.1): both main phases of the controller's turn.
+    'the beginning of each of your main phases',
     'the beginning of each of your draw steps',
     'the beginning of your first main phase',
     'the beginning of your second main phase',
@@ -84,7 +96,8 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
     'the beginning of combat on each player’s turn',
     'the beginning of your next draw step',
     'the beginning of your main phase',
-    'the beginning of each of your main phases',
+    'the beginning of each of their main phases',
+    'the beginning of each of your main phase',
     'the beginning of each of your postcombat main phase',
     'the beginning of each of their postcombat main phases',
     'the beginning of each of your postcombat main phases and',
@@ -114,6 +127,18 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
         ),
       ),
     )(ctx, pos);
+    // "each of your main phases" (CR 505.1): the precombat and the postcombat main phase of the turns of the controller.
+    const bothMains = pattern(
+      new RegExp(`the beginning of each of your main phases${NOT_IN_WORD}`, 'iu'),
+    )(ctx, pos);
+    if (bothMains.ok) {
+      const actor = makeNoun('trigger.step', at(bothMains.pos), 'you', { raw: 'you' });
+      return {
+        ok: true,
+        value: stepTrigger('trigger.step', at(bothMains.pos), 'main1', actor, 'main2'),
+        pos: bothMains.pos,
+      };
+    }
     const owned = plural.ok
       ? ({ ok: true, value: [null, 'you' as const, plural.value[1]], pos: plural.pos } as const)
       : phase(ctx, pos);

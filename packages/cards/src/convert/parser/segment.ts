@@ -61,6 +61,11 @@ export interface AbilitySkeleton {
 }
 
 const TRIGGER_WORD = /^(?:when|whenever|at)\s/i;
+/**
+ * "You may exert ~ as it attacks. When you do, ..." (CR 701.43d, 607.2h, 603.12; Glorybringer): the optional cost of attacking and the ability linked to it, in one
+ * paragraph. It is read as a triggered ability whose trigger is the first sentence (`trigger.exerted`) and whose body follows "When you do,".
+ */
+const EXERT_LEAD = /^you may exert (?:~|this creature) as it attacks\. when you do, /i;
 /** "When you next cast an instant or sorcery spell this turn, " (D-336): the lead of a sentence that creates a delayed triggered ability. */
 const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
@@ -250,6 +255,15 @@ const PUT_ANY_TOTAL =
   /^put any number of [^.]* with total mana value \d+ or less from among them onto the battlefield\.$/i;
 
 /**
+ * "Choose an opponent at random that ~ didn't attack during your last combat. ~ attacks that player this combat if able. If you can't choose an opponent this way, tap ~." (Territorial
+ * Hellkite, CR 508.1d): three sentences that are one instruction (the first may follow the comma of a trigger), kept together for `effect.attack-random-opponent`.
+ */
+const CHOOSE_OPPONENT_AT_RANDOM =
+  /(?:^|, )choose an opponent at random that ~ didn['’]t attack during your last combat\.$/i;
+const ATTACKS_THAT_PLAYER_THIS_COMBAT = /^~ attacks that player this combat if able\.$/i;
+const CANT_CHOOSE_TAP_IT = /^if you can['’]t choose an opponent this way, tap ~\.$/i;
+
+/**
  * "Look at the top three cards of your library. Put one of them into your hand, put one of them on the bottom of your library, and exile one of them."
  * (stage P63, D-216): two sentences that are one instruction (what is looked at, and where each of the cards goes), kept together for `effect.look-split`.
  */
@@ -289,7 +303,7 @@ const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.
  */
 const REVEAL_UNTIL =
   /^(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
-const PUT_THAT_CARD = /^put that card [^.]*\.$/i;
+const PUT_THAT_CARD = /^put (?:that card|those [\p{L}]+ cards) [^.]*\.$/iu;
 /**
  * "Reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the
  * bottom of your library in a random order." (D-659, Songbirds' Blessing): four sentences that are one instruction, kept together for `effect.reveal-until-may-put`.
@@ -554,6 +568,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       i += 2;
     } else if (
       a !== undefined &&
+      c !== undefined &&
+      said(a, CHOOSE_OPPONENT_AT_RANDOM) &&
+      said(b, ATTACKS_THAT_PLAYER_THIS_COMBAT) &&
+      said(c, CANT_CHOOSE_TAP_IT)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
       b !== undefined &&
       ((said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
         (said(a, CREATE_TOKENS) && said(b, TOKENS_HAVE_QUOTED_ABILITY)) ||
@@ -586,7 +609,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
-      ((said(a, LOOK_AT_TOP) && (said(b, TAKE_FROM_AMONG) || said(b, PUT_ANY_TOTAL))) ||
+      ((said(a, LOOK_AT_TOP) &&
+        (said(b, TAKE_FROM_AMONG) || said(b, PUT_ANY_TOTAL) || said(b, PUT_FROM_AMONG_ONTO))) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&
       said(c, PUT_THE_REST)
     ) {
@@ -831,6 +855,17 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
       trigger: { start: 0, end: numerals.length },
       chapter: true,
       sentences: splitSentences(text, chapter[0].length, text.length),
+    };
+  }
+
+  // "You may exert ~ as it attacks. When you do, ~ deals 4 damage to target creature." (CR 701.43d, 607.2h): the first sentence is the trigger, the rest the body.
+  const exert = EXERT_LEAD.exec(text);
+  if (exert !== null) {
+    return {
+      ...base,
+      head: 'triggered',
+      trigger: trimmed(text, 0, text.indexOf('.')),
+      sentences: splitSentences(text, exert[0].length, text.length),
     };
   }
 

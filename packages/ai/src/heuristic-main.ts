@@ -172,7 +172,8 @@ function casualRemainder(
         o.kind === 'castSpell' &&
         o.alternative !== 'flashback' &&
         o.alternative !== 'escape' &&
-        o.alternative !== 'retrace'
+        o.alternative !== 'retrace' &&
+        o.alternative !== 'harmonize'
       ),
   );
   return choosePriorityAction(view, { ...d, options }, think.draw, activations);

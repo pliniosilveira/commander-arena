@@ -35,8 +35,10 @@ import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { CONTROL_EFFECT_RULES } from './control';
 import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
 import { EFFECT_COPY_SPELL } from './copy-spell';
+import { COUNCIL_EFFECT_RULES } from './council';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
+import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
 import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
 import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
@@ -982,10 +984,13 @@ export const EFFECT_RULES = [
   // Galadriel deck, group 3 (issue 43): "Exchange control of ~ and target nonland permanent", "counter ... unless its controller pays mana equal to ...", "Draw a card and reveal it.
   // Remove ..." and "Its activated abilities can't be activated this turn." start like the plain counter, draw and pronoun rules, and are tried first.
   ...GALADRIEL_G3_EFFECT_RULES,
+  // CR 402.1: "it deals damage to each opponent equal to the number of cards in that player's hand", before the plain damage rules it starts like.
+  ...DAMAGE_HAND_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
   // Stage P32 (D-147): fights, doubling, the excess damage of trample, revealing until, casting for free, a token for each, divided damage.
+  ...COUNCIL_EFFECT_RULES,
   ...DINOSAUR_EFFECT_RULES,
   // Stage P34 (D-152): the top cards exiled and played, an extra combat, Discover, revealing the top card, Behold and the rider of mana.
   ...DRAGON_EFFECT_RULES,

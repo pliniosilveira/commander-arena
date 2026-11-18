@@ -2,7 +2,7 @@
  * Noun rules of stage P32 (D-145, D-147): "target commander" (CR 903.3: a card a player designated as a commander, wherever it is) and
  * "any number of target creatures" (CR 115.1, 601.2d: a number of targets from none to as many as the spell can divide among).
  */
-import { fail, map, pattern, sequence } from '../../combinators';
+import { map, pattern, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { defineRule, node } from '../registry';
 import { BOUNDARY, permanentPhrase } from './phrases';
@@ -69,8 +69,8 @@ export const NOUN_TARGET_COMMANDER = defineRule<IrNoun>({
 });
 
 /**
- * `noun.any-number-targets`: "any number of target creatures", "any number of target creatures and/or planeswalkers" is not read (CR
- * 115.1, 601.2d): no fewest and no most, which only a divided damage reads (`effect.damage-divided`), as it needs a total to share.
+ * `noun.any-number-targets`: "any number of target creatures", "any number of target creatures and/or planeswalkers your opponents control" (CR
+ * 115.1, 601.2d): no fewest and no most, which a divided damage (`effect.damage-divided`) and the `anyNumber` effects read.
  */
 export const NOUN_ANY_NUMBER_TARGETS = defineRule<IrNoun>({
   id: 'noun.any-number-targets',
@@ -83,6 +83,8 @@ export const NOUN_ANY_NUMBER_TARGETS = defineRule<IrNoun>({
     'any number of target creatures you don’t control',
     // Stage P74 (D-234): "any number of other target creatures you control".
     'any number of other target creatures you control',
+    // CR 601.2d: the targets of a divided damage may be of two kinds.
+    'any number of target creatures and/or planeswalkers your opponents control',
   ],
   rejects: [
     'any number of target creature',
@@ -99,7 +101,6 @@ export const NOUN_ANY_NUMBER_TARGETS = defineRule<IrNoun>({
     );
     if (!r.ok) return r;
     const [lead, filter] = r.value;
-    if (filter.anyOf !== undefined) return fail(ctx, pos);
     const noun: IrNoun = {
       kind: 'noun',
       det: 'target',

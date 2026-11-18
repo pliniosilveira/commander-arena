@@ -5,6 +5,7 @@
 import type { ControlDuration } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
 import { type Effects, eachObject, failure } from './clauses';
+import { missingFeatures } from './features';
 import { playerSelectorOf } from './nouns';
 import type { Lowering } from './types';
 
@@ -22,6 +23,8 @@ function durationOf(clause: IrClause): ControlDuration | null {
       return 'untilEndOfYourNextTurn';
     case 'whileYouControlSelf':
       return 'forAsLongAsYouControlThis';
+    case 'whileSelfRemains':
+      return 'forAsLongAsThisRemains';
     default:
       return null;
   }
@@ -35,6 +38,12 @@ export const GAIN_CONTROL: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const duration = durationOf(clause);
     if (duration === null) return failure(clause);
+    if (duration === 'forAsLongAsThisRemains') {
+      // CR 611.2b (issue 103): "for as long as ~ remains on the battlefield", the duration of an ability of a permanent.
+      const blocked = missingFeatures(['duration:forAsLongAsThisRemains']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+    }
     const playerArg = clause.args.player;
     const player =
       playerArg === undefined

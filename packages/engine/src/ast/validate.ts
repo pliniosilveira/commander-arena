@@ -266,6 +266,7 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
     case 'entersTappedUnlessReveals':
       // D-208 (CR 701.20, 701.4): the cards that may be revealed, as a filter of the hand (and the permanents the controller controls, for behold).
       checkFilter(r.filter, `${path}.filter`, out);
+      if (r.orIf !== undefined) checkCondition(r.orIf, `${path}.orIf`, out);
       if (typeof r.words !== 'string' || r.words.trim() === '') {
         issue(out, `${path}.words`, 'the dialog needs the words of what is revealed');
       }
@@ -433,6 +434,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'lookAtTopOfLibrary':
     case 'optionalUntap':
+    case 'exertOnAttack':
       break;
     case 'crewSaddleBonus':
       // Galadriel group 3 (CR 702.122a): the power a creature counts more as it is tapped for a crew cost: a positive whole number.
@@ -689,6 +691,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'attacks':
     case 'becomesTapped':
     case 'becomesUntapped':
+    case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
       checkTriggerSubject(t.what, t.kind !== 'entersBattlefield', `${path}.what`, out);
@@ -778,6 +781,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'cycled':
       // D-179: "when you cycle this card" has no parameters; the face is checked for Cycling or typecycling with its abilities.
+      break;
+    case 'exerted':
+      // CR 701.43d: "When you do" has no parameters; the face is checked for the exert static ability it is linked to.
       break;
     case 'becomesTarget':
       checkTriggerSubject(t.what, true, `${path}.what`, out);
@@ -960,6 +966,16 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (!isOneOf(t.step, TRIGGER_STEPS)) {
         issue(out, `${path}.step`, `unknown step ${String(t.step)}`);
       }
+      if (
+        t.alsoStep !== undefined &&
+        (!isOneOf(t.alsoStep, TRIGGER_STEPS) || t.alsoStep === t.step)
+      ) {
+        issue(
+          out,
+          `${path}.alsoStep`,
+          `alsoStep must be another known step, not ${String(t.alsoStep)}`,
+        );
+      }
       if (!isOneOf(t.whose, ['you', 'each', 'opponent'])) {
         issue(out, `${path}.whose`, `unknown turn owner ${String(t.whose)}`);
       }
@@ -1054,6 +1070,8 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'dealtDamage' ||
     t?.kind === 'dealsCombatDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
+    // Issue 103: all the combat damage the sources dealt to the player, "that damage".
+    t?.kind === 'combatDamageBatch' ||
     t?.kind === 'lifeGained' ||
     // D-513: the cards looked at while scrying are "that many".
     t?.kind === 'scries' ||
@@ -1108,6 +1126,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'attacks':
     case 'becomesTapped':
     case 'becomesUntapped':
+    case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
     case 'landfall':
@@ -1120,6 +1139,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'leavesBattlefield':
     case 'countersAdded':
     case 'tapsForMana':
+    case 'exerted':
       return 'permanent';
     case 'castSpell':
     case 'becomesTarget':
@@ -1387,7 +1407,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         a.targets,
         `${path}.targets`,
         out,
-        false,
+        // CR 601.2d, 603.3d: a triggered ability announces its division as it is put on the stack.
+        true,
         false,
         true,
         false,
@@ -1403,6 +1424,14 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         out,
       );
       const subject = subjectOf(a.trigger);
+      // CR 603.3d: a target filter reads the triggering object only where it is a spell (`manaValueAtMost` of its mana value).
+      if (JSON.stringify(a.targets ?? []).includes('"triggerSubject"') && subject !== 'stack') {
+        issue(
+          out,
+          `${path}.targets`,
+          'a target filter that reads the triggering spell needs a cast trigger',
+        );
+      }
       const selfCast = a.trigger?.kind === 'castSpell' && a.trigger.self === true;
       const scopeOf = (declared: Scope['targets']): Scope => ({
         owner: 'ability',
@@ -1722,7 +1751,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           issue(out, `${path}.costReducedBy`, 'only a mana cost can be reduced');
         }
       }
-      const targets = declareTargets(a.targets, `${path}.targets`, out);
+      // CR 601.2d, 602.2b: an activated ability announces its division as it is activated.
+      const targets = declareTargets(a.targets, `${path}.targets`, out, true);
       const scopeOf = (declared: Scope['targets']): Scope => ({
         owner: 'ability',
         targets: declared,
@@ -2087,6 +2117,27 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
     }
   });
 
+  // CR 701.43d, 607.2h: "You may exert ~ as it attacks" is a cost to attack, so it is on a creature; the "When you do" abilities linked to it are on the same face.
+  const exerts = face.abilities.some(
+    (k) => k?.kind === 'static' && k.static?.kind === 'exertOnAttack',
+  );
+  face.abilities.forEach((a, i) => {
+    if (a?.kind === 'triggered' && a.trigger?.kind === 'exerted' && !exerts) {
+      issue(
+        out,
+        `${path}.abilities[${i}].trigger`,
+        '"when you do" after exerting needs the "you may exert this creature as it attacks" ability on the same face (CR 607.2h)',
+      );
+    }
+  });
+  if (exerts && !face.types.includes('creature')) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'exert is the cost of attacking: a creature has it (CR 701.43d)',
+    );
+  }
+
   // An unsupported instant or sorcery has had its text dropped (SPEC 7.1), so only a supported
   // one must carry an effect. A supported instant or sorcery with no effect would do nothing.
   // D-667 (CR 702.85a, 608.2): "Cascade. Retrace." is a sorcery with no spell text whose cast trigger does the work: cascade alone makes a spell with no effect to resolve valid.
@@ -2142,6 +2193,13 @@ export function validateCardStructure(def: CardDefinition): AstIssue[] {
     checkFace(face, `faces[${i}]`, def.support === 'supported', out);
     // CR 702.94a (D-274): the reveal is read from the card's front face only (`rules/miracle.ts`, `miracleCostOf`), so a miracle
     // cost on any other face would never be offered: refused here instead of accepted and dropped without a word.
+    if (i > 0 && face.alternativeCosts?.some((a) => a?.kind === 'harmonize')) {
+      issue(
+        out,
+        `faces[${i}].alternativeCosts`,
+        'harmonize on a face other than the front face is not supported (CR 702.180a)',
+      );
+    }
     if (i > 0 && face.alternativeCosts?.some((a) => a?.kind === 'miracle')) {
       issue(
         out,

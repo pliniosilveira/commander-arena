@@ -106,6 +106,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-tapped-unless': asIs,
   'replacement.enters-tapped-unless-pays': asIs,
   'replacement.enters-tapped-unless-reveals': asIs,
+  'replacement.enters-tapped-unless-reveals-or': asIs,
   'replacement.enters-prepared': asIs,
   // Danitha deck, group 4 (D-417): the keyword line of an Aura.
   'replacement.umbra-armor': asIs,
@@ -145,6 +146,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.suspend': asIs,
   'keyword.madness': asIs,
   'keyword.miracle': asIs,
+  'keyword.harmonize': asIs,
   'keyword.foretell': asIs,
   // Stage P27: Storm and Replicate are lines of their own.
   'keyword.storm': asIs,
@@ -161,6 +163,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.copy': spell((e) => `Create ${e}.`),
   // Hashaton deck group 5 (D-382): a copy with exceptions of characteristics.
   'token.copy-except': permanent((e) => `Whenever you discard a creature card, create ${e}.`),
+  // Issue 103 (Will of the Temur): the same copy with exceptions that are in addition to what it copies.
+  'token.copy-except-additive': permanent(
+    (e) => `Whenever you discard a creature card, create ${e}.`,
+  ),
   'replacement.enters-with-counters-kicked': asIs,
   'replacement.as-enters-choose': asIs,
   'static.self-chosen-type': asIs,
@@ -333,6 +339,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.x': spell((e) => `Draw ${e} cards.`),
   'amount.article': spell((e) => `Draw ${e} card.`),
   'amount.power-of': spell((e) => `Exile target creature. You gain life ${e}.`),
+  'amount.that-spells-mana-value': permanent(
+    (e) =>
+      `Whenever you cast a spell, return up to one target nonland permanent an opponent controls with mana value less than or equal to ${e} to its owner's hand.`,
+  ),
   'amount.mana-value-of': spell((e) => `Exile target creature. You lose life ${e}.`),
   'amount.times-kicked': spell((e) => `Draw a card ${e}.`),
   // Feather deck group 1 (D-450): the count of a pump, or of a draw, after "for each".
@@ -367,6 +377,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.control-your-commander': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.life-total': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.this-tapped': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
+  // CR 602.5b: "Activate only if ~ has a +1/+1 counter on it." is read after "if", like every condition.
+  'condition.this-has-counter': permanent((e) => `{2}, {T}: Draw a card. Activate only if ${e}.`),
   'static.each': asIs,
   'static.conditional-prefix': asIs,
   'static.conditional-suffix': asIs,
@@ -496,6 +508,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // conditions follow "if" (an intervening "if", the trailing "if" of an activated ability) or "As long as"; the nouns are operands of damage.
   'replacement.enters-as-copy': asIs,
   'replacement.enters-as-copy-embalmed': asIs,
+  // Issue 103 (Deceptive Frostkite).
+  'replacement.enters-as-copy-except': asIs,
   'replacement.redirect-damage': asIs,
   'static.unspent-mana': asIs,
   'static.cast-from-top': asIs,
@@ -559,6 +573,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // D-295 to D-298 (the Niv-Mizzet deck, group B): the header of a modal spell, the damage to one or two targets and the sentence about what a target was.
   'modal.choose-widen': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.\n• Scry 1.`),
   'noun.one-or-two-targets': spell((e) => `~ deals 1 damage to ${e}.`),
+  'noun.one-or-two-targets-bare': spell(
+    (e) => `~ deals 2 damage divided as you choose among ${e}.`,
+  ),
+  'condition.that-spells-stat': permanent(
+    (e) => `Whenever you cast a creature spell, if ${e}, you gain 1 life.`,
+  ),
   'condition.its-mana-value': spell(
     (e) => `Return target creature to its owner's hand. If ${e}, scry 1.`,
   ),
@@ -575,6 +595,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P37 (D-180): the Korvold deck's triggers and small statics. The statics are lines of their own; the trigger follows "When"; the
   // conditions follow "As long as" or "If"; the nouns are operands of damage; the amount follows "gets +1/+1".
   'trigger.cycled': permanent((e) => `When ${e}, you gain 1 life.`),
+  // Exert (CR 701.43d): the trigger is the first sentence of a paragraph, the body follows "When you do,".
+  'trigger.exerted': permanent((e) => `${cap(e)}. When you do, you gain 1 life.`),
   'condition.attached-to': permanent(
     (e) => `As long as ${e}, your opponents can't cast spells during your turn.`,
   ),
@@ -631,6 +653,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // "Then if" in a spell; the static is a line of its own.
   'keyword.job-select': asIs,
   'trigger.becomes-untapped': whenever,
+  // Issue 103: "becomes monstrous" follows "Whenever"; the amount follows the damage to each opponent.
+  'trigger.becomes-monstrous': whenever,
+  'amount.cards-in-hand-of-that-player': permanent(
+    (e) => `At the beginning of each end step, ~ deals damage to each opponent ${e}.`,
+  ),
   'trigger.dies-batch': whenever,
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token", "Skeletons and Zombies you control".
   'trigger.commit-crime': whenever,

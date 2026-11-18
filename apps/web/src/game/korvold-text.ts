@@ -21,6 +21,8 @@ export function controlDurationText(
       return ' until the end of your next turn';
     case 'forAsLongAsYouControlThis':
       return ` for as long as you control this ${self}`;
+    case 'forAsLongAsThisRemains':
+      return ` for as long as this ${self} remains on the battlefield`;
     case 'permanent':
       return '';
   }

@@ -29,7 +29,7 @@ export interface ResolvedLayout {
 
 /**
  * The reasons the second face of an Adventure card is not an Adventure (CR 715.2): it must be an
- * instant or sorcery with the Adventure subtype. The engine checks the card type only, and says
+ * instant or sorcery with the Adventure subtype; an Omen (Tarkir: Dragonstorm, Scryfall's `adventure` layout too) is a sorcery with the Omen subtype. The engine checks the card type only, and says
  * `faces[1].types`; the subtype is the printed fact the face is told apart by.
  */
 function adventureReasons(faces: ResolvedLayout['faces']): string[] {
@@ -37,9 +37,9 @@ function adventureReasons(faces: ResolvedLayout['faces']): string[] {
   if (second === undefined) return [];
   const line = parseTypeLine(second.face.typeLine);
   const spell = line.types.includes('instant') || line.types.includes('sorcery');
-  if (spell && line.subtypes.includes('Adventure')) return [];
+  if (spell && (line.subtypes.includes('Adventure') || line.subtypes.includes('Omen'))) return [];
   return [
-    `layout "adventure": face ${second.index} (${second.face.name}) must be an instant or sorcery with the Adventure subtype`,
+    `layout "adventure": face ${second.index} (${second.face.name}) must be an instant or sorcery with the Adventure or Omen subtype`,
   ];
 }
 

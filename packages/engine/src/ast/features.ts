@@ -121,6 +121,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseAmongMoved',
     // D-544: "You may put a land card from your hand or graveyard onto the battlefield." (`ChooseSelector.alsoGraveyard`: the cards of both places are the candidates).
     'chooseAlsoGraveyard',
+    // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
+    'chooseFromCommandZone',
+    // Issue 103: "Reveal cards from the top of your library until you reveal a creature card for each wild vote ... then shuffle the rest into your library" (`revealUntil` with `count` and `rest`).
+    'revealUntilCount',
+    // Issue 103: "Return it to the command zone at the beginning of the next end step." (`delayedTrigger` of a `moveToZone` to the command zone).
+    'delayedReturnToCommandZone',
     // D-433: "Tiered", a mode with a cost listed before its effect (`SpellMode.cost`, CR 700.2h, 702.183a).
     'modeCost',
     // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
@@ -209,6 +215,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'preventPlayerLifeTotalChange',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".
     'requireAttack',
+    // CR 508.1d, 701.26a: "choose an opponent at random that this creature didn't attack during your last combat ... attacks that player this combat if able".
+    'attackRandomOpponent',
     // "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (CR 508.1d).
     'requireAttackSource',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
@@ -369,6 +377,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'permanentSacrificed',
     'becomesTapped',
     'becomesUntapped',
+    // CR 701.37: "When this creature becomes monstrous".
+    'becomesMonstrous',
     'discarded',
     'diesBatch',
     'entersBatch',
@@ -406,6 +416,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerAttacksOpponent',
     // D-179: "When you cycle this card" (CR 702.29c).
     'cycled',
+    // CR 701.43d: "When you do" after "You may exert ~ as it attacks".
+    'exerted',
     // D-196: "Whenever the Ring tempts you" (CR 701.54d).
     'ringTempted',
     // D-598: "When this Class becomes level N" (CR 716.2).
@@ -838,6 +850,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'commander',
     // D-416 (CR 700.9): "modified creature" (`ObjectFilter.modified`).
     'modified',
+    // CR 701.15b: "a goaded creature" (`ObjectFilter.goaded`).
+    'goaded',
   ],
   // Conditions of `entersTapped.unless` (CR 614.12), of the `conditional` effect (CR 608.2c) and of
   // the intervening "if" (CR 603.4): counts of permanents and opponents, "was kicked" (CR 702.33d),
@@ -985,6 +999,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cantAttackYou',
     // D-125: "You may choose not to untap ~ during your untap step."
     'optionalUntap',
+    // CR 701.43d: "You may exert ~ as it attacks."
+    'exertOnAttack',
     // Galadriel group 3: "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a).
     'crewSaddleBonus',
     // D-229: "Untap all creatures you control during each other player's untap step."
@@ -1078,6 +1094,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeLostThisWay',
     // D-365: "the life that player lost this turn" (CR 119.3), read for each player a `loseLife` affects.
     'lifeLostThisTurn',
+    // CR 402.1: "the number of cards in that player's hand", read for each player a `dealDamage` hurts.
+    'cardsInHandOfAffected',
     'lifeGainedThisTurn',
     'enteredThisTurn',
     'diedThisTurn',
@@ -1141,6 +1159,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dash',
     'spectacle',
     'escape',
+    // CR 702.180: Harmonize.
+    'harmonize',
     // D-128: Madness (CR 702.35) and Foretell (CR 702.143).
     'madness',
     // D-274: Miracle (CR 702.94).
@@ -1297,6 +1317,12 @@ export const ABILITY_FEATURES = [
   'chooseAmongMoved',
   /** "You may put a land card from your hand or graveyard onto the battlefield" (D-544, CR 608.2d, 110.2a): the engine's `ChooseSelector.alsoGraveyard` of a `moveToZone` onto the battlefield. */
   'chooseAlsoGraveyard',
+  /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
+  'chooseFromCommandZone',
+  /** "Reveal cards until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your library" (issue 103, CR 701.20, 701.24): the engine's `revealUntil` with `count` and `rest`. */
+  'revealUntilCount',
+  /** "Return it to the command zone at the beginning of the next end step" (issue 103, CR 603.7c, 903.9): a `delayedTrigger` of a `moveToZone` to the command zone of the `moved` commander. */
+  'delayedReturnToCommandZone',
   /** "Tiered" (D-433, CR 700.2h, 702.183a): a mode of a modal spell with a cost listed before its effect, paid as an additional cost when the mode is chosen (`SpellMode.cost`). */
   'modeCost',
   /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
@@ -1515,6 +1541,8 @@ export const SELECTOR_KINDS = [
   'commander',
   /** "Modified creature" (CR 700.9, D-416): the engine's `ObjectFilter.modified`. */
   'modified',
+  /** "A goaded creature" (CR 701.15b): the engine's `ObjectFilter.goaded`. */
+  'goaded',
 ] as const;
 export type SelectorKind = (typeof SELECTOR_KINDS)[number];
 
@@ -1692,6 +1720,8 @@ export const STATIC_KINDS = [
   'cantAttackYou',
   /** "You may choose not to untap ~ during your untap step." (CR 502.3, D-125). */
   'optionalUntap',
+  /** "You may exert ~ as it attacks." (CR 701.43d, 508.1g). */
+  'exertOnAttack',
   /** "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a, Galadriel group 3). */
   'crewSaddleBonus',
   /** "Untap all creatures you control during each other player's untap step." (CR 502.3, D-229). */
@@ -1805,6 +1835,8 @@ export const AMOUNT_KINDS = [
   'lifeLostThisWay',
   /** "The life that player lost this turn" (CR 119.3, D-365): the engine's `lifeLostThisTurn`, the whole amount of a `loseLife`. */
   'lifeLostThisTurn',
+  /** "The number of cards in that player's hand" (CR 402.1): the engine's `cardsInHandOfAffected`, the whole amount of a `dealDamage` to players. */
+  'cardsInHandOfAffected',
   'lifeGainedThisTurn',
   'lifeGainedAndLostThisTurn',
   'enteredThisTurn',
@@ -1896,6 +1928,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'dash',
   'spectacle',
   'escape',
+  'harmonize',
   'madness',
   'miracle',
   'foretell',
@@ -1959,6 +1992,9 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   mayPlayFromGraveyard: true,
   chooseAmongMoved: true,
   chooseAlsoGraveyard: true,
+  chooseFromCommandZone: true,
+  revealUntilCount: true,
+  delayedReturnToCommandZone: true,
   modeCost: true,
   sacrificeX: true,
   optionalSacrifice: true,
@@ -2028,6 +2064,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   restrict: true,
   goad: true,
   requireAttack: true,
+  attackRandomOpponent: true,
   requireAttackSource: true,
   permanentsEnterTapped: true,
   gainControl: true,
@@ -2126,6 +2163,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   permanentSacrificed: true,
   becomesTapped: true,
   becomesUntapped: true,
+  becomesMonstrous: true,
   discarded: true,
   diesBatch: true,
   entersBatch: true,
@@ -2150,6 +2188,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   attackBatch: true,
   playerAttacksOpponent: true,
   cycled: true,
+  exerted: true,
   ringTempted: true,
   classLevel: true,
   crimeCommitted: true,

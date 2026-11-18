@@ -252,6 +252,13 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'lifeLostThisTurn' }, rule };
     }
+    case 'cardsInHandOfAffected': {
+      // CR 402.1: the engine reads each player's own hand as the damage is dealt to them; the damage lowering refuses it where the recipients are not players, and
+      // `validateCard` refuses it in any other amount.
+      const blocked = needs('cardsInHandOfAffected');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'cardsInHandOfAffected' }, rule };
+    }
     case 'lifeGainedThisTurn': {
       const blocked = needs(amount.kind);
       return blocked ?? { ok: true, value: { kind: amount.kind }, rule };
@@ -368,7 +375,8 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       // "... as you cast this spell" (stage P32, D-147, CR 601.2d): read once as the spell is cast, which only the total of a divided
       // damage is; anywhere else the same words would be read as the spell resolves.
-      if (amount.asCast === true && !ctx.readAsCast) {
+      // "as you cast ~" names a spell: an ability has no cast (CR 601.2d, 602.2b), so its total is a number or an amount that reads no "cast".
+      if (amount.asCast === true && (!ctx.readAsCast || ctx.owner !== 'spell')) {
         return { ok: false, needs: [], at: amount.span, rule };
       }
       const filter = countFilter(amount.of);
@@ -596,6 +604,7 @@ function staticCannotRead(f: IrNoun['filter'], keywords = false): boolean {
     f.manaValueX === true ||
     f.controllerDamagedBySource === true ||
     f.modified === true ||
+    f.goaded === true ||
     // D-149 (CR 613.4c, 613.8): a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (7a) may not.
     (!keywords && (f.keywords !== undefined || f.notKeywords !== undefined)) ||
     opponentsObjects ||

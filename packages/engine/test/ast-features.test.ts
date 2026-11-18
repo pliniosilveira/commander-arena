@@ -193,6 +193,7 @@ describe('the dimensions', () => {
       // D-647: "Inklings can't attack you or planeswalkers you control."
       'cantAttackYou',
       'optionalUntap',
+      'exertOnAttack',
       'crewSaddleBonus',
       'untapInOthersUntapStep',
       'modifyPt',

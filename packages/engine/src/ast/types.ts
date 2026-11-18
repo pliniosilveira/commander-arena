@@ -139,6 +139,12 @@ export type Amount =
    * number: two opponents who lost 3 and 5 lose 3 and 5), so it is not valid inside another amount or in any other effect.
    */
   | { readonly kind: 'lifeLostThisTurn' }
+  /**
+   * "The number of cards in that player's hand" (CR 402.1, 120.3; Stormbreath Dragon: "deals damage to each opponent equal to the number of cards in that player's hand"):
+   * the hand size of the player the effect applies to, read for each of them as the damage is dealt to them. It is the whole `amount` of a `dealDamage` whose recipient
+   * is a player selector and nothing else (as `lifeLostThisTurn` is for a `loseLife`), so it is not valid inside another amount or in any other effect.
+   */
+  | { readonly kind: 'cardsInHandOfAffected' }
   /** Life actually gained by this instruction's controller this turn, before this instruction runs. */
   | { readonly kind: 'lifeGainedThisTurn' }
   /** Entries or deaths recorded at the event, including objects that have since left their destination. */
@@ -577,6 +583,12 @@ export interface ObjectFilter {
    */
   readonly modified?: true;
   /**
+   * "A goaded creature" (CR 701.15a, 701.15b): the permanent is goaded by some player now (the designation an effect of `goad` gave it that has not ended). Read where the
+   * filter is matched against the game (a target slot, an `each` selector, a trigger's subject); refused in a static ability's subject and in a count a static ability reads, as
+   * `modified` is, because `derive` matches those before the designation is known.
+   */
+  readonly goaded?: true;
+  /**
    * "Target commander", "your commanders" (D-145, CR 903.3): the object is a card a player designated as their commander (a token or a
    * permanent that copies one is not). Whose commander it is does not matter; `controller` says whose it must be to control. `'yours'`
    * (D-149, "your commander", "whenever your commander enters or attacks") is a commander its owner designated and that owner is the
@@ -623,7 +635,9 @@ export interface ObjectFilter {
    * "Return target nonland permanent card with mana value X or less from your graveyard, where X is this creature's power" and "... where X is the amount of damage this
    * creature dealt to that player" (CR 202.3, 601.2c, D-230): the mana value of the object is at most the amount, read when the filter is read (as the targets are chosen
    * and again as the ability resolves; CR 608.2b). The amount is one that needs no target and no earlier instruction: the power of this ability's source (`powerOf` `this`), a
-   * `triggerDamage`, a number the game reads (`countOf`, `commanderCasts`...). Not in a static ability or a trigger's subject.
+   * `triggerDamage`, a number the game reads (`countOf`, `commanderCasts`...). Not in a static ability or a trigger's subject. "with mana value less than or equal to
+   * that spell's mana value" is the amount `manaValueOf` the `triggerSubject` of a `castSpell` trigger, read as the targets are chosen and again as the ability resolves
+   * (CR 603.3d, 608.2b); the spell stays on the stack with the ability (`rules/trigger-subject.ts`).
    */
   readonly manaValueAtMost?: Amount;
   /**
@@ -976,7 +990,8 @@ export interface TargetSpec {
    * targets of this slot as the spell is cast, each target getting at least 1. `total` is read once, as the spell is cast ("where X is the
    * greatest power among creatures you control as you cast this spell"): any amount that reads the game then (no X, no target). `max`
    * left out means any number (at most `total`, as each target needs 1); `min` defaults to 0 here. With a total of 0 no target can be chosen.
-   * Only a slot of a spell's own text (not an ability, not a mode), and a `dealDividedDamage` effect must name it.
+   * Only a slot of a spell's own text or of an activated or triggered ability (CR 601.2d, 602.2b, 603.3d: the division is announced as the ability is put on
+   * the stack), not of a mode or a reflexive ability; a `dealDividedDamage` effect of the same spell or ability must name it.
    */
   readonly divide?: { readonly total: Amount };
   /**
@@ -1222,6 +1237,7 @@ export type NamedAlternativeKind =
   | 'dash'
   | 'spectacle'
   | 'escape'
+  | 'harmonize'
   | 'madness'
   | 'miracle'
   | 'foretell'
@@ -1266,6 +1282,9 @@ export type PermanentAlternativeKind =
  *   'exile'). The spell is an ordinary spell otherwise: it goes to the graveyard when it leaves the stack, and
  *   the permanent remembers that it escaped (`GameObject.alt`), which the `escaped` condition and the
  *   `ifEscaped` flag of `entersWithCounters` read ("escapes with a +1/+1 counter", CR 702.138c).
+ * - `harmonize`: CR 702.180a, the card is cast from its owner's graveyard by paying `cost` (mana, an {X} allowed, CR 107.3a) instead of its mana cost,
+ *   and the caster may tap one untapped creature they control to reduce the total cost by that creature's power in generic mana (chosen as the cost is
+ *   announced, `StackData.harmonizeTap`); the spell is exiled instead of going anywhere else as it leaves the stack. Only on an instant or a sorcery.
  * - `madness` (D-128, CR 702.35): the `cost` (mana only, no X) is paid instead of the mana cost, but only when the
  *   card is cast as its madness trigger resolves: a card with it that would be discarded is exiled instead (a
  *   replacement the engine applies to every discard), and its owner may then cast it from exile for this cost
@@ -1373,6 +1392,11 @@ export type TokenSpec =
        */
       readonly addSubtypes?: readonly Subtype[];
       /**
+       * "..., except it's a 4/4 Dragon creature with flying in addition to its other types" (issue 103, CR 707.9b, 707.9d): the token has these card types besides the ones it
+       * copies, part of its copiable values. Never empty.
+       */
+      readonly addTypes?: readonly CardType[];
+      /**
        * "..., except it's a 4/4 black Zombie" (D-382, CR 707.9b, 707.9d): the copy is exactly these creature types, instead of the ones it copies (the other subtypes of the
        * original stay: they belong to card types the copy keeps). A characteristic-defining ability that defines creature types (changeling) is not copied. Not with `addSubtypes`.
        */
@@ -1414,6 +1438,8 @@ export type ControlDuration =
   | 'untilEndOfTurn'
   | 'untilEndOfYourNextTurn'
   | 'forAsLongAsYouControlThis'
+  /** "For as long as this creature remains on the battlefield" (CR 611.2b, issue 103): ends, for good, as the permanent with the ability leaves, whoever controls it. */
+  | 'forAsLongAsThisRemains'
   | 'permanent';
 
 /**
@@ -2375,8 +2401,10 @@ export type Effect =
       /**
        * `exile` (CR 406.1, 608.2d): only for a `choose` of cards in the hand or the graveyard ("you may exile a creature card from your graveyard"): the player chooses
        * and the cards are exiled; what was exiled is what `moved` names afterwards ("If you do, create a token that's a copy of that card"). Any other exile is the `exile` effect.
+       * `command` (issue 103, CR 903.9, Hellkite Courser): "Return it to the command zone at the beginning of the next end step", only in the effect of a `delayedTrigger` about the
+       * commander an earlier effect put onto the battlefield (`moved`); the card goes to the command zone of its owner.
        */
-      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile';
+      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command';
       /**
        * For library: `top`, `bottom`, or a number N of 2 or more, "Nth from the top" ("third from the top" is 3): the card
        * goes below the first N - 1 cards, or on the bottom when the library has fewer than N cards (CR 401.7, D-135).
@@ -2630,7 +2658,8 @@ export type Effect =
   | {
       readonly kind: 'loseAllAbilities';
       readonly objects: ObjectSelector;
-      readonly duration: Duration;
+      /** `forAsLongAsThisRemains` (issue 103, CR 611.2b): "for as long as this creature remains on the battlefield", in the ability of a permanent. */
+      readonly duration: Duration | 'forAsLongAsThisRemains';
     }
   /**
    * "Until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud." (CR 702.11b, 702.18a, 613.1f, 611.2c, D-649):
@@ -2730,7 +2759,11 @@ export type Effect =
       readonly kind: 'restrict';
       readonly objects: ObjectSelector;
       readonly restriction: Restriction;
-      readonly duration: Duration | 'forAsLongAsYouControlThis' | 'untilNextUntapStep';
+      readonly duration:
+        | Duration
+        | 'forAsLongAsYouControlThis'
+        | 'forAsLongAsThisRemains'
+        | 'untilNextUntapStep';
     }
   /**
    * "You gain hexproof until end of turn" (CR 702.11b, 611.2, 514.2; Hylda group 3): each player the selector names has hexproof until end of turn: spells and abilities their
@@ -2847,6 +2880,14 @@ export type Effect =
       readonly awayFromYou?: true;
     }
   /**
+   * "Choose an opponent at random that this creature didn't attack during your last combat. This creature attacks that player this combat if able. If you can't choose an opponent this
+   * way, tap this creature." (CR 508.1d, 508.6, 506.1, 701.26a): the controller of the effect "chooses" among their opponents still in the game that `creature` was not declared
+   * attacking in the last combat phase of that controller before this one (`GameState.lastCombatAttacks`; the combat of a creature that was not there is a combat it did not attack in),
+   * by the game's seeded generator: nobody decides. The creature, when it is on the battlefield, is required to attack that player this combat if able (`mustAttackPlayer`, until the
+   * combat ends). When no opponent can be chosen the creature is tapped. Only `this`: the creature of the ability.
+   */
+  | { readonly kind: 'attackRandomOpponent'; readonly creature: { readonly kind: 'this' } }
+  /**
    * "During target opponent's next turn, creatures that player controls attack this planeswalker if able." (CR 508.1d, 508.1a, 611.2a, 611.2c): a requirement on the
    * creatures the player `player` controls, read whenever that player declares attackers, for the creatures they control then (a creature that arrives later is required too,
    * CR 611.2c is about characteristics). Each such creature that is able to attack the permanent with the ability attacks it. It lasts through the end of that player's next turn
@@ -2945,6 +2986,11 @@ export type Effect =
        * addition to the original's, so it is the original and also an artifact. Never empty.
        */
       readonly addTypes?: readonly CardType[];
+      /**
+       * "..., except it's legendary in addition to its other types" (issue 103, CR 707.9b, 205.4a): the copiable values the permanent gets have these supertypes in
+       * addition to the original's. Never empty.
+       */
+      readonly addSupertypes?: readonly Supertype[];
       /**
        * "..., except it has myriad" (D-640, CR 707.9b): the abilities the copy has besides the ones it copies; they are part of the copiable values the
        * copy effect gives (a keyword is a `keyword` ability). Never empty.
@@ -3145,6 +3191,17 @@ export type Effect =
        */
       readonly put: 'battlefield' | 'hand' | 'exile' | 'none';
       readonly tapped?: true;
+      /**
+       * "Reveal cards from the top of your library until you reveal a creature card for each wild vote" (CR 701.20, 701.38b, issue 103, Selvala's Stampede): the cards are
+       * revealed until this many match (read as the effect runs; default one; none are revealed when it is 0 or less), the library to its end when it holds fewer. Every
+       * card found goes where `put` says ("Put those creature cards onto the battlefield", together). Not with `put: 'none'`.
+       */
+      readonly count?: Amount;
+      /**
+       * `stay` ("then shuffle the rest into your library", CR 701.24): the cards revealed that were not put anywhere are not moved by this effect; they stay in the library, for the
+       * `shuffle` effect after it to place. Without it they go to the bottom in a random order (CR 401.5).
+       */
+      readonly rest?: 'stay';
     }
   /**
    * "Look at the top N cards of your library, then put them back in any order": the controller
@@ -3423,6 +3480,11 @@ export type Trigger =
    */
   | { readonly kind: 'cycled' }
   /**
+   * "When you do" after "You may exert ~ as it attacks." (CR 701.43d, 607.2h, 603.12): this creature was exerted as it attacked. The ability is linked to the
+   * creature's `exertOnAttack` static ability, which the same face must have (`validateCard`); the event is the engine's, made as the attack is declared.
+   */
+  | { readonly kind: 'exerted' }
+  /**
    * "Whenever [a creature] attacks" (CR 508.1, 603.2). With `alone: true`: "attacks alone", only when it
    * is the only creature declared as an attacker in that declare attackers step (CR 506.5; Exalted,
    * CR 702.83a).
@@ -3539,6 +3601,11 @@ export type Trigger =
       readonly kind: 'step';
       readonly step: TriggerStep;
       readonly whose: 'you' | 'each' | 'opponent';
+      /**
+       * "At the beginning of each of your main phases" (CR 505.1, 603.2b; issue 103): it triggers as `alsoStep` begins too, a second step of the same turn.
+       * Never the same as `step`.
+       */
+      readonly alsoStep?: TriggerStep;
     }
   /**
    * "Whenever you draw a card", "whenever an opponent draws a card" (CR 121.1, D-111): once for each card
@@ -3661,6 +3728,11 @@ export type Trigger =
    */
   | { readonly kind: 'becomesUntapped'; readonly what: TriggerSubject }
   /**
+   * "When this creature becomes monstrous" (CR 701.37a, 701.37b, 603.2): a permanent that becomes monstrous by the monstrosity action (the event `becameMonstrous`); it triggers
+   * once each time, and a permanent that is monstrous already does nothing when told to become monstrous, so it triggers nothing.
+   */
+  | { readonly kind: 'becomesMonstrous'; readonly what: TriggerSubject }
+  /**
    * "Whenever you discard a card" (CR 701.9a, 603.2, D-206): once for each card the player `who` names (relative to the controller of the ability)
    * discards, however it came to be (an effect, a cost, the cleanup step). `triggerSubject` is the card in the graveyard it became (or in exile,
    * for madness), so "you may exile that card from your graveyard" can name it; `triggerPlayer` is the player who discarded it. A card that is
@@ -3706,7 +3778,8 @@ export type Trigger =
    * combat damage in a step is dealt at once, and the ability triggers once for each player damaged in it, however many of the sources
    * `what` names damaged that player (`atLeast` is the fewest sources: "two or more creatures ..."; one when left out). The sources are
    * read as they are as the damage is dealt, the controller of this ability being "you" in the filter; damage that is entirely
-   * prevented does not count (CR 603.2g). `to` is `player` (any player) or `opponent`; `triggerPlayer` is the player damaged. The
+   * prevented does not count (CR 603.2g). `to` is `player` (any player) or `opponent`; `triggerPlayer` is the player damaged and `triggerDamage` (issue 103, "that damage")
+   * all the combat damage those sources dealt to that player in the event. The
    * damage of a first strike step and of the regular step are different events: each can trigger it.
    */
   | {
@@ -4859,6 +4932,11 @@ export type Replacement =
       readonly filter: ObjectFilter;
       readonly words: string;
       readonly fromBattlefield?: true;
+      /**
+       * "... enters tapped unless you revealed a Dragon card this way or you control a Dragon" (CR 614.1c, 614.12): a second way to enter untapped. Checked as it
+       * enters, without the permanent on the battlefield; when it holds nothing is asked (the reveal could change only what the opponent learns).
+       */
+      readonly orIf?: Condition;
     }
   /**
    * "This permanent enters with N <counter> counters on it." `count` is `{ kind: 'x' }` for "enters
@@ -4969,6 +5047,11 @@ export type Replacement =
       readonly optional?: true;
       readonly duration: Duration;
       readonly gains?: readonly Keyword[];
+      /**
+       * "..., except it's a Dragon in addition to its other types and it has flying" (issue 103, CR 707.9b): the creature types the permanent has besides the ones it copies,
+       * part of its copiable values. Never empty.
+       */
+      readonly addSubtypes?: readonly Subtype[];
       /**
        * "..., except if this creature was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types" (CR 707.9b, 702.128b): the
        * exceptions that apply only when the permanent that enters is an embalmed token (they are part of its copiable values). A card cast from the hand, or a token that is not
@@ -5212,6 +5295,13 @@ export type StaticEffect =
    * is the ability of the permanent itself; one that also keeps itself from untapping (\`doesntUntap\`) is not asked.
    */
   | { readonly kind: 'optionalUntap' }
+  /**
+   * "You may exert ~ as it attacks." (CR 701.43d, 508.1g): an optional cost to attack. As the creature is declared as an attacker its controller is asked whether
+   * to exert it; if they do, it does not untap during their next untap step (CR 701.43a: the engine makes the `restrict` of `doesntUntap` that lasts until
+   * that step has run, CR 701.43b) and the `exerted` event triggers the abilities linked to this one (`trigger` `exerted`: "When you do, ...", CR 607.2h).
+   * It is the ability of the creature itself: its own attack only.
+   */
+  | { readonly kind: 'exertOnAttack' }
   /**
    * "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a, 613.4; Galadriel group 3): when its controller taps the creature to pay a
    * crew cost (`tapCreatures`), its power counts `amount` more than the power it has (the power it has is not changed). The engine has Crew and not Saddle, so the part of the ability

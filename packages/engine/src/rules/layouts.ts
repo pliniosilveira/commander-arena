@@ -5,7 +5,7 @@
  *   split (CR 709)          either half is cast (CR 709.3); on the stack only that half exists
  *                           (CR 709.3b); in every other zone the card has both halves combined
  *                           (CR 709.4): both names, the combined mana cost, every type and ability.
- *   adventure (CR 715)      faces[0] is the card, faces[1] its Adventure. The Adventure exists only
+ *   adventure (CR 715)      faces[0] is the card, faces[1] its Adventure (or its Omen, `isOmenFace`: shuffled into the library as it resolves instead of exiled). The Adventure exists only
  *                           on the stack (CR 715.3b, 715.4); everywhere else, and for a card cast
  *                           normally, the card has faces[0] only.
  *   modal_dfc (CR 712.3)    either face is cast or played as a land (CR 712.11b, 712.12); only the
@@ -130,8 +130,24 @@ export function backFaceManaCost(
   return front === undefined ? null : { manaCost: front.manaCost };
 }
 
-/** Whether the object is a spell on the stack that was cast as an Adventure (CR 715.3b). */
+/** Whether the second face of an Adventure-layout card is an Omen (a spell face that shuffles into the library as it resolves) rather than an Adventure. */
+export function isOmenFace(def: CardDefinition): boolean {
+  return def.layout === 'adventure' && def.faces[1]?.subtypes.includes('Omen') === true;
+}
+
+/** Whether the object is a spell on the stack that was cast as an Adventure (CR 715.3b): the second face of an Adventure-layout card that is not an Omen. */
 export function isAdventureSpell(state: GameState, obj: GameObject): boolean {
   if (obj.card === null || obj.zone !== 'stack' || obj.stack?.kind !== 'spell') return false;
-  return definitionOf(state, obj.card).layout === 'adventure' && obj.face === 1;
+  const def = definitionOf(state, obj.card);
+  return def.layout === 'adventure' && obj.face === 1 && !isOmenFace(def);
+}
+
+/**
+ * Whether the object is a spell on the stack that was cast as an Omen (Tarkir: Dragonstorm): the Omen half of its card, on the same two-face machinery as an Adventure
+ * (cast from the hand, only that half exists on the stack) but its reminder text, "Then shuffle this card into its owner's library", replaces the exile of an Adventure.
+ */
+export function isOmenSpell(state: GameState, obj: GameObject): boolean {
+  if (obj.card === null || obj.zone !== 'stack' || obj.stack?.kind !== 'spell') return false;
+  const def = definitionOf(state, obj.card);
+  return obj.face === 1 && isOmenFace(def);
 }

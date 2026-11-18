@@ -44,8 +44,11 @@ export function runDealDamage(
   targets: readonly ChosenTarget[],
   flow: OrderFlow,
 ): StepOutcome {
-  const amount = amountOf(state, effect.amount, ctx, targets);
-  if (amount <= 0) return done(state);
+  // CR 402.1: "equal to the number of cards in that player's hand" is each recipient's own hand size (`validateCard` allows it only for damage to players).
+  const perHand =
+    typeof effect.amount === 'object' && effect.amount.kind === 'cardsInHandOfAffected';
+  const amount = perHand ? 0 : amountOf(state, effect.amount, ctx, targets);
+  if (!perHand && amount <= 0) return done(state);
   // CR 120.3, 701.14 (D-131): the damage is dealt by the spell or ability, or by the creature `from` names ("Target
   // creature you control deals damage equal to its power ..."). A creature that is no longer a legal target, or no
   // longer known, deals none (CR 608.2b); one that left since is read from last-known information (CR 113.7a).
@@ -81,7 +84,9 @@ export function runDealDamage(
   let next = state;
   const events: GameEvent[] = [];
   for (const seat of seats) {
-    const r = dealDamageAsking(next, damageSource, { kind: 'player', seat }, amount, false, flow);
+    const dealt = perHand ? (next.seats[seat]?.hand.length ?? 0) : amount;
+    if (dealt <= 0) continue;
+    const r = dealDamageAsking(next, damageSource, { kind: 'player', seat }, dealt, false, flow);
     if (r.kind === 'asked') return asking(state, r);
     next = r.state;
     events.push(...r.events);

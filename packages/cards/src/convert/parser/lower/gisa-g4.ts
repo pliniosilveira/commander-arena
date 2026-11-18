@@ -77,6 +77,63 @@ const EXILE_AT_END_STEP: Lowering<IrClause, Effects> = {
   },
 };
 
+/** "Return it to the command zone at the beginning of the next end step" (issue 103, CR 603.7c, 903.9): the delayed move of the `moved` commander. */
+const RETURN_TO_COMMAND_AT_END_STEP: Lowering<IrClause, Effects> = {
+  head: 'returnToCommandAtEndStep',
+  id: 'lower.return-to-command-at-end-step',
+  needs: [
+    'effect:delayedTrigger',
+    'effect:moveToZone',
+    'selector:moved',
+    'ability:delayedReturnToCommandZone',
+  ],
+  lower(clause, ctx) {
+    const lowered = eachObject(
+      clause,
+      ctx,
+      (objects) => ({
+        kind: 'delayedTrigger',
+        at: { step: 'endStep', whose: 'each' },
+        effect: { kind: 'moveToZone', objects, to: 'command' },
+      }),
+      'objects',
+      { moved: true },
+    );
+    if (!lowered.ok) return lowered;
+    const inner = lowered.value.map((e) => (e.kind === 'delayedTrigger' ? e.effect : e));
+    return allMoved(inner) ? lowered : failure(clause);
+  },
+};
+
+/**
+ * "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d, 110.2a): the engine's `moveToZone` of a `choose` among the commanders
+ * the controller owns in their command zone, onto the battlefield under their control (`optional` for "you may").
+ */
+const PUT_COMMANDER_FROM_COMMAND_ZONE: Lowering<IrClause, Effects> = {
+  head: 'putCommanderFromCommandZone',
+  id: 'lower.put-commander-from-command-zone',
+  needs: ['effect:moveToZone', 'selector:choose', 'ability:chooseFromCommandZone'],
+  acceptsOptional: true,
+  lower(clause, ctx) {
+    const may = arg(clause, 'may');
+    const named = arg(clause, 'objects');
+    // "It" of the next sentences is this commander, once put onto the battlefield (the engine's `moved`).
+    ctx.searched = named?.kind === 'noun' ? (named.ref ?? null) : null;
+    const move: Effect = {
+      kind: 'moveToZone',
+      objects: {
+        kind: 'choose',
+        filter: { zone: 'command', controller: 'you', commander: 'yours' },
+        ...(clause.optional || (may?.kind === 'flag' && may.value)
+          ? { optional: true as const }
+          : {}),
+      },
+      to: 'battlefield',
+    };
+    return { ok: true, value: [move], rule: clause.rule };
+  },
+};
+
 const EXILE_IF_LEAVES: Lowering<IrClause, Effects> = {
   head: 'exileIfLeaves',
   id: 'lower.exile-if-leaves',
@@ -123,6 +180,8 @@ const PUT_LINKED_EXILE: Lowering<IrClause, Effects> = {
 export const GISA_G4_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   GRANT_FOR_GOOD,
   EXILE_AT_END_STEP,
+  RETURN_TO_COMMAND_AT_END_STEP,
+  PUT_COMMANDER_FROM_COMMAND_ZONE,
   EXILE_IF_LEAVES,
   PUT_LINKED_EXILE,
 ];

@@ -58,6 +58,7 @@ const TRIGGER_KIND = {
   attacks: 'attacks',
   becomesTapped: 'becomesTapped',
   becomesUntapped: 'becomesUntapped',
+  becomesMonstrous: 'becomesMonstrous',
   blocks: 'blocks',
   becomesBlocked: 'becomesBlocked',
   landfall: 'landfall',
@@ -269,7 +270,8 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'dies':
     case 'blocks':
     case 'becomesBlocked':
-    case 'becomesUntapped': {
+    case 'becomesUntapped':
+    case 'becomesMonstrous': {
       const what = whatOf(t, ctx);
       if (!what.ok) return what;
       return ok({
@@ -356,6 +358,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:cycled']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'cycled' });
     }
+    case 'exerted': {
+      // "You may exert ~ as it attacks. When you do, ..." (CR 701.43d, 607.2h): the creature with the ability, exerted as it attacked.
+      if (t.subject?.det !== 'self') return failure(t);
+      const blocked = missingFeatures(['trigger:exerted']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'exerted' });
+    }
     case 'crimeCommitted':
     case 'activatesAbility':
     case 'tokenCreated': {
@@ -424,7 +432,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'step': {
       const whose = whoseOf(t.actor);
       if (whose === null || t.step === undefined) return failure(t);
-      return ok({ kind: 'step', step: t.step satisfies TriggerStep, whose });
+      return ok({
+        kind: 'step',
+        step: t.step satisfies TriggerStep,
+        whose,
+        ...(t.alsoStep === undefined ? {} : { alsoStep: t.alsoStep satisfies TriggerStep }),
+      });
     }
     case 'diesBatch': {
       // "Whenever one or more other creatures and/or artifacts you control die" (stage P49, D-206, CR 603.10a, 603.2c).
@@ -913,12 +926,30 @@ function foldHadCounters(trigger: Trigger, counter: string | undefined): Trigger
 }
 
 /**
+ * A triggered ability, and for "You may exert ~ as it attacks. When you do, ..." (CR 701.43d, 607.2h) the two abilities the paragraph is: the static ability that
+ * offers the optional cost of attacking (`exertOnAttack`) and the triggered ability linked to it, which the engine triggers when the creature is exerted.
+ */
+export function lowerTriggered(
+  written: Triggered,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const lowered = lowerTriggeredAbility(written, ctx);
+  if (!lowered.ok || written.trigger.event !== 'exerted') return lowered;
+  const blocked = missingFeatures(['static:exertOnAttack']);
+  if (blocked.length > 0) return failure(written, blocked);
+  return {
+    ...lowered,
+    value: [{ kind: 'static', static: { kind: 'exertOnAttack' } }, ...lowered.value],
+  };
+}
+
+/**
  * A triggered ability. "A or B" is one engine ability per event (CR 603.2c: it triggers once each
  * time an event occurs; the two events cannot be the same event for one object), sharing the body.
  * "You may" covers the whole effect in the engine (D-060), so it is lowered only when the body is
  * that one instruction.
  */
-export function lowerTriggered(
+function lowerTriggeredAbility(
   written: Triggered,
   ctx: LowerContext,
 ): LowerResult<readonly Ability[]> {
@@ -1185,6 +1216,8 @@ export function lowerTriggered(
       // Prismari group 3 (D-660): "you may cast up to two spells from among ...": the engine's `castFree` asks which spells, and may stop.
       c.verb === 'castFromAmong' ||
       c.verb === 'putMovedOntoBattlefield' ||
+      // Issue 103: "you may put a commander you own from the command zone onto the battlefield": the engine's choice of none or one card is the question.
+      c.verb === 'putCommanderFromCommandZone' ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong');
   // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the offer is the `may` of the attach, which sits beside the condition (the ability's own
@@ -1354,6 +1387,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:dealtDamage',
   'trigger:becomesTapped',
   'trigger:becomesUntapped',
+  'trigger:becomesMonstrous',
   'trigger:blocks',
   'trigger:becomesBlocked',
   'trigger:landfall',
@@ -1372,6 +1406,8 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:combatDamageBatch',
   'trigger:diesBatch',
   'trigger:discarded',
+  'trigger:exerted',
+  'static:exertOnAttack',
   'trigger:tappedForMana',
   'trigger:tapsForMana',
   'trigger:state',

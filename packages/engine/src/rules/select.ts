@@ -148,6 +148,15 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
     get modified() {
       return isModified(state, obj);
     },
+    // CR 701.15b: only a filter that says "goaded" reads it.
+    get goaded() {
+      // The effects of a `goad` (`rules/goad.ts` reads the same ones; select.ts cannot import it, it imports this file) and the static "is goaded" of an Aura (D-639, issue 201).
+      return (
+        state.continuousEffects.some(
+          (e) => e.change.kind === 'goaded' && e.objects.includes(obj.id),
+        ) || d.goadedBy.length > 0
+      );
+    },
     // Only a filter that compares mana value reads it.
     get manaValue() {
       return manaValueOfCost(d.manaCost, obj);
@@ -354,6 +363,14 @@ function manaValueLimitOf(
   }
   if (amount.kind === 'powerOf' && ctx.source !== null) {
     return Math.max(0, powerOfObject(state, ctx.source) ?? 0);
+  }
+  // CR 603.3d, 202.3: the mana value of the spell that caused the trigger, as it is on the stack (or as it last was).
+  if (amount.kind === 'manaValueOf' && ctx.triggerSubject !== undefined) {
+    const live = state.objects[ctx.triggerSubject];
+    const cost = live
+      ? derive(state, live).manaCost
+      : (state.lki[ctx.triggerSubject]?.characteristics.manaCost ?? null);
+    return manaValueOfCost(cost, live ?? state.lki[ctx.triggerSubject]?.object);
   }
   return 0;
 }

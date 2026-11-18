@@ -256,7 +256,12 @@ export interface PayManaDecision extends DecisionBase {
    * declares exactly these attackers; `cancel` takes the declaration back and asks the `declareAttackers`
    * question again. Absent for every other payment.
    */
-  readonly attacks?: readonly { readonly attacker: ObjectId; readonly target: AttackTarget }[];
+  readonly attacks?: readonly {
+    readonly attacker: ObjectId;
+    readonly target: AttackTarget;
+    /** The attacker was exerted as it attacks (CR 701.43a, 508.1g): kept for the declaration that follows the payment. */
+    readonly exert?: true;
+  }[];
   /**
    * For `'blockTax'` (CR 509.1d, D-149): the cost of blocking with the creatures in `blocks` ("Creatures can't block unless their controller
    * pays {1} for each of those creatures"). `seat` is the defending player, `source` the first permanent that taxes blocking, `totalCost` the whole
@@ -535,7 +540,7 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'pair'
     | 'separate'
     | 'opponentChoice';
-  readonly zone: 'library' | 'hand' | 'graveyard' | 'exile';
+  readonly zone: 'library' | 'hand' | 'graveyard' | 'exile' | 'command';
   /** "From your hand or graveyard" (D-544): with `zone` `hand`, the cards of `legal` may also be in the graveyard of `seat`. Absent for every other question. */
   readonly alsoGraveyard?: true;
   readonly legal: readonly ObjectId[];
@@ -717,12 +722,25 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'pairReturn'
     | 'castCard'
     | 'buyback'
-    | 'exileMore';
+    | 'exileMore'
+    | 'exert';
   /**
    * For purpose `'exileMore'` (D-661, "As many times as you choose, you may exile the top card of your library"): the cards exiled so far by this effect, which are public (face up in
    * exile), so the player can see the total mana value before choosing again. Accepting exiles the top card of the library of `seat` and asks again; declining ends the effect.
    */
   readonly exiled?: readonly ObjectId[];
+  /**
+   * For purpose `'exert'` (CR 701.43d, 508.1g; the optional cost of attacking "You may exert ~ as it attacks"): `seat` is the attacking player, `source` the attacker
+   * being asked about, and `attacks` the whole declaration: each attacker with the answer so far (`exert` true or false once asked, absent while not). Accepting
+   * exerts the creature: it does not untap during its next untap step (CR 701.43a) and the abilities linked to the exert ability trigger when the attackers
+   * are declared. After the last question the cost of attacking is paid, if there is one (CR 508.1h), and the attackers are declared. `cancel` takes the
+   * declaration back and asks the `declareAttackers` question again (CR 733).
+   */
+  readonly exertAttacks?: readonly {
+    readonly attacker: ObjectId;
+    readonly target: AttackTarget;
+    readonly exert?: boolean;
+  }[];
   /**
    * For purpose `'pairReturn'` (D-272, "You may return those cards to the battlefield under their owners' control", Dawnbreak Reclaimer): the cards that would return, which are in
    * graveyards and public: `theirs` the card chosen in an opponent's graveyard (it returns under its owner's control, the opponent's), `mine` the card chosen in the graveyard of
@@ -824,6 +842,12 @@ export interface ChooseOptionDecision extends DecisionBase {
    * `riotSoFar` holds the answers already given, so the question for the second instance carries the answer to the first. Absent for the other purposes.
    */
   readonly riotSoFar?: readonly string[];
+  /**
+   * For the choice a land asks as it enters from the hand after another question (CR 614.12a; "you may reveal a Dragon card from your hand", then "choose a
+   * color"): the answers already given, so playing the land again with the choice does not ask the first question twice. `paid` is the answer to the reveal and
+   * `revealed` the card the player chose to reveal among several. Absent when nothing was asked before.
+   */
+  readonly entersSoFar?: { readonly paid: boolean; readonly revealed?: ObjectId };
   /**
    * For purpose `'effect'` (D-175, CR 608.2d, "create a Food token or a Treasure token"): `options` are the words of the instructions the
    * effect offers, in the order the text gives them, and `source` is the spell or ability that resolves. Nothing is entering.

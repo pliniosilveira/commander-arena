@@ -86,7 +86,7 @@ import {
   riotGivesHaste,
   riotInstances,
 } from './enters-keywords';
-import { canReveal, revealChoices, revealEvents } from './enters-reveal';
+import { canReveal, revealChoices, revealEvents, revealQuestion } from './enters-reveal';
 import { withoutRun } from './enters-run';
 import { faceDownEntry } from './face-down';
 import { applyGraveyardRider } from './graveyard-play';
@@ -382,10 +382,12 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 702.34a (Flashback): a spell cast for its flashback cost is exiled instead of going anywhere
   // else when it leaves the stack (resolving, being countered, fizzling). It applies before the
   // commander replacement below, whose zones it removes (hand and library).
-  // CR 702.127a (Aftermath): the same for a half cast from a graveyard with Aftermath.
+  // CR 702.127a (Aftermath), 702.180a (Harmonize): the same for a half cast from a graveyard with Aftermath and a spell cast for its harmonize cost.
   if (
     old.zone === 'stack' &&
-    (old.stack?.flashback === true || old.stack?.aftermath === true) &&
+    (old.stack?.flashback === true ||
+      old.stack?.aftermath === true ||
+      old.stack?.alt === 'harmonize') &&
     to !== 'exile'
   ) {
     to = 'exile';
@@ -504,7 +506,12 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         getSeat(state, enterController).life >= lifeOf(payment)));
   // D-208 (CR 614.12, 701.20, 701.4): "you may reveal a Mountain or Plains card from your hand. If you don't, it enters tapped": the same question as a shock
   // land's, with nothing to pay. Nothing is asked when it enters tapped anyway or when no card (or permanent) qualifies.
-  const revealRule = entering === null ? null : entersReveal(entering.abilities);
+  const revealRule = revealQuestion(
+    before,
+    enterController,
+    entering === null ? null : entersReveal(entering.abilities),
+    old.id,
+  );
   const mayReveal =
     revealRule !== null &&
     entering !== null &&
@@ -585,6 +592,16 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         source: old.id,
         sourceName: info?.name ?? '',
         sourceOracleText: info?.oracleText ?? '',
+        ...(request.entersPaid === undefined || request.entersPaid === null
+          ? {}
+          : {
+              entersSoFar: {
+                paid: request.entersPaid,
+                ...(request.entersRevealed === undefined
+                  ? {}
+                  : { revealed: request.entersRevealed }),
+              },
+            }),
       },
     };
   }

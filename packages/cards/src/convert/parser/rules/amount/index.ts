@@ -6,6 +6,7 @@ import { COUNT_AMOUNT_RULES } from './count';
 import { AMOUNT_FOR_EACH_AURA_ATTACHED, AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
 import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
+import { HAND_OF_THAT_PLAYER_AMOUNT_RULES } from './hand-of-that-player';
 import { HASHATON_G2_AMOUNT_RULES } from './hashaton-group-2';
 import { AMOUNT_FOR_EACH_DIED } from './history';
 import { HOFRI_AMOUNT_RULES } from './hofri';
@@ -261,6 +262,40 @@ export const AMOUNT_MANA_VALUE_OF = defineRule<IrAmount>({
 });
 
 /**
+ * `amount.that-spells-mana-value`: "that spell's mana value", the limit of "target nonland permanent an opponent controls with mana value less than or equal to
+ * that spell's mana value" (CR 202.3: the total of the mana cost; CR 601.2i: the spell was cast). "That spell" is the spell that caused a cast trigger, which the
+ * lowering reads as the engine's `triggerSubject`, as for `amount.mana-value-of`. Not read: another possessor ("that card's"), a missing apostrophe and the
+ * "equal to" form, which is `amount.mana-value-of`.
+ */
+export const AMOUNT_THAT_SPELLS_MANA_VALUE = defineRule<IrAmount>({
+  id: 'amount.that-spells-mana-value',
+  family: 'amount',
+  leading: ['that'],
+  cites: ['CR 202.3 (Mana Value)', 'CR 601.2i (Casting Spells)'],
+  examples: ["that spell's mana value", 'that spell’s mana value'],
+  rejects: [
+    "that card's mana value",
+    'that spells mana value',
+    "equal to that spell's mana value",
+    "that spell's power",
+    "that spell's mana values",
+    "that spell's mana",
+    "~'s mana value",
+    'that spell',
+  ],
+  parse: (ctx, pos) => {
+    const m = pattern(/(that spell['’]s) mana value(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!m.ok) return fail(ctx, pos);
+    const of = possessedNoun('amount.that-spells-mana-value', m.value[1] ?? '', pos);
+    return {
+      ok: true,
+      value: { kind: 'manaValueOf', of, span: { start: pos, end: m.pos } },
+      pos: m.pos,
+    };
+  },
+});
+
+/**
  * `amount.life-lost-this-way`: "equal to the life lost this way", "equal to the total life lost this way"
  * (stage P21, CR 702.101a, 119.3: the life lost by the instruction before it in the same text, which is how
  * "Each opponent loses X life. You gain life equal to the life lost this way." counts what was actually
@@ -418,6 +453,8 @@ export const AMOUNT_RULES = [
   ...HOFRI_AMOUNT_RULES,
   // Hashaton deck, group 2 (D-365): "equal to the life that player lost this turn".
   ...HASHATON_G2_AMOUNT_RULES,
+  // CR 402.1: "equal to the number of cards in that player's hand", the amount of damage to each opponent.
+  ...HAND_OF_THAT_PLAYER_AMOUNT_RULES,
   // Feather deck, group 1 (D-450): "for each card you've drawn this turn".
   ...FEATHER_G1_AMOUNT_RULES,
   AMOUNT_NUMBER,
@@ -430,6 +467,7 @@ export const AMOUNT_RULES = [
   ...VALUE_AMOUNT_RULES,
   AMOUNT_POWER_OF,
   AMOUNT_MANA_VALUE_OF,
+  AMOUNT_THAT_SPELLS_MANA_VALUE,
   AMOUNT_LIFE_LOST_THIS_WAY,
   AMOUNT_MILLED_VALUE_THIS_WAY,
   AMOUNT_DISCARDED_MOST_THIS_WAY,

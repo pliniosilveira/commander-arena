@@ -54,6 +54,7 @@ import { SYNTHETIC_DEVOTION_MANA_LIST } from './synthetic-devotion-mana';
 import { SYNTHETIC_DICE_LIST } from './synthetic-dice';
 import { SYNTHETIC_DIES_RETURN_LIST } from './synthetic-dies-return';
 import { SYNTHETIC_DIVIDE_LIST } from './synthetic-divide';
+import { SYNTHETIC_DIVIDE_ABILITIES_LIST } from './synthetic-divide-abilities';
 import { SYNTHETIC_DOUBLING_LIST } from './synthetic-doubling';
 import { SYNTHETIC_DRAGONS_LIST } from './synthetic-dragons';
 import { SYNTHETIC_EDHREC_LIST } from './synthetic-edhrec';
@@ -61,6 +62,7 @@ import { SYNTHETIC_EMBALM_LIST } from './synthetic-embalm';
 import { SYNTHETIC_ENTERS_GROUP_LIST } from './synthetic-enters-group';
 import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
 import { SYNTHETIC_ETERNAL_MIGHT_LIST } from './synthetic-eternal-might';
+import { SYNTHETIC_EXERT_LIST } from './synthetic-exert';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
 import { SYNTHETIC_FEATHER_G2_LIST } from './synthetic-feather-g2';
 import { SYNTHETIC_FEATHER_G3_LIST } from './synthetic-feather-g3';
@@ -400,6 +402,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_REPEATABLE_LIST,
   ...SYNTHETIC_PT_LIST,
   ...SYNTHETIC_ALT_COST_LIST,
+  ...SYNTHETIC_EXERT_LIST,
   ...SYNTHETIC_AMOUNT_LIST,
   ...SYNTHETIC_ANGELS_SHAPES_LIST,
   ...SYNTHETIC_ANGELS_STATICS_LIST,
@@ -515,6 +518,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_STUN_LIST,
   ...SYNTHETIC_FREE_CAST_LIST,
   ...SYNTHETIC_DIVIDE_LIST,
+  ...SYNTHETIC_DIVIDE_ABILITIES_LIST,
   ...SYNTHETIC_FIGHT_LIST,
   ...SYNTHETIC_PARSER_SHAPES_LIST,
   ...SYNTHETIC_REVEAL_LIST,

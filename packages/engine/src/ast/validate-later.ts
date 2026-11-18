@@ -74,6 +74,18 @@ export function checkDelayedTrigger(
   }
   if (kind === 'moveToZone') {
     const move = inner as Extract<Effect, { kind: 'moveToZone' }>;
+    // Issue 103 (CR 903.9, 603.7c, 400.7j): "Return it to the command zone at the beginning of the next end step", about the commander an earlier effect of the same
+    // sequence put onto the battlefield (`moved`), as it is when the ability is created.
+    if (move.to === 'command') {
+      if (!exiledAvailable || kindOf(move.objects) !== 'moved') {
+        issue(
+          out,
+          `${path}.effect.objects`,
+          "a delayed return to the command zone names the objects an effect before it put onto the battlefield: 'moved'",
+        );
+      }
+      return;
+    }
     const movedObject = exiledAvailable && kindOf(move.objects) === 'moved';
     // D-657 (Ghoulish Impetus, CR 603.7c, 400.7): "When enchanted creature dies, return this card to the battlefield at the beginning of the next end step": the card the Aura
     // that has the ability became in the graveyard (`thisCard`).

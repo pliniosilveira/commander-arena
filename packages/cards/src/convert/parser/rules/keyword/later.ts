@@ -171,9 +171,53 @@ export const KEYWORD_MIRACLE = defineRule<readonly IrKeyword[]>({
   parse: altCostKeyword('keyword.miracle', 'miracle', true),
 });
 
+/**
+ * `keyword.harmonize`: "Harmonize {X}{R}{R}" (CR 702.180a: "You may cast this card from your graveyard by paying [cost] and tapping up to one untapped
+ * creature you control rather than paying this spell's mana cost"; Zenith Festival of the golden corpus, acceptance card of issue 103). The line is the cost
+ * and nothing else: the cast from the graveyard, the optional tap that reduces the cost by the creature's power and the exile as the spell leaves the stack are
+ * the engine's (`rules/harmonize.ts`). The cost is a plain mana cost, with an {X} when the card has one (X is announced as the spell is cast, CR 107.3a); a
+ * hybrid symbol, a non-mana cost or any other word with it is not read. The reminder text in parentheses is dropped before the line is read.
+ */
+export const KEYWORD_HARMONIZE = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.harmonize',
+  family: 'keyword',
+  leading: ['harmonize'],
+  cites: [
+    'CR 702.180a (Harmonize)',
+    'CR 702.180b (Harmonize)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 107.3a (Numbers and Symbols)',
+    'CR 601.2b (Casting Spells)',
+  ],
+  examples: [
+    'Harmonize {X}{R}{R}',
+    'Harmonize {4}{G}{G}',
+    'Harmonize {2}{U}',
+    'Harmonize {X}{G}',
+    'harmonize {3}{B}',
+  ],
+  rejects: [
+    'Harmonize',
+    'Harmonize {W/U}',
+    'Harmonize {X}{W/U}',
+    'Harmonize {G/P}',
+    'Harmonize {S}',
+    'Harmonize—Pay 2 life.',
+    'Harmonize {1}{G}.',
+    'Harmonize {1}{G}, harmonize {G}',
+    'Harmonize {1}{G}, flying',
+    'Harmonize {1}{G} {1}',
+    'Harmonizes {1}{G}',
+    'Harmonized {1}{G}',
+    'Flashback {1}{G}',
+  ],
+  parse: altCostKeyword('keyword.harmonize', 'harmonize', true),
+});
+
 export const LATER_KEYWORD_RULES = [
   KEYWORD_SUSPEND,
   KEYWORD_MADNESS,
   KEYWORD_FORETELL,
   KEYWORD_MIRACLE,
+  KEYWORD_HARMONIZE,
 ];

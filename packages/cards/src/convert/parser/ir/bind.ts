@@ -515,6 +515,15 @@ class Binder {
       // D-406: "Whenever a creature enters, you may attach ~ to that creature": the Aura or Equipment an attach moves is no antecedent of the pronoun after
       // it, which names the other permanent (the trigger's).
       if (clause.verb === 'attach' && name === 'object') this.antecedents.length = seen;
+      // Issue 103: "Whenever a Dragon you control enters, you may have ~ become a copy of it": the permanent that becomes the copy is no antecedent of "it", which is the trigger's.
+      if (
+        clause.verb === 'becomeCopy' &&
+        name === 'objects' &&
+        value.kind === 'noun' &&
+        value.det === 'self'
+      ) {
+        this.antecedents.length = seen;
+      }
     }
     // "unless that player pays {1}" (stage P18): the player who pays follows the clause's own nouns.
     const test = clause.condition?.test;
@@ -630,6 +639,8 @@ const SELF_EVENTS: ReadonlySet<string> = new Set([
   'attacks',
   'becomesTapped',
   'becomesUntapped',
+  // CR 701.37: the permanent has just become monstrous, and is on the battlefield.
+  'becomesMonstrous',
   // The creature has just been declared a blocker, or has just become blocked (stage P21, CR 509.3).
   'blocks',
   'becomesBlocked',

@@ -112,7 +112,7 @@ const isOne = (noun: IrNoun): boolean => !noun.plural && !noun.upTo && noun.coun
 export const EFFECT_FIGHT = defineRule<Clauses>({
   id: 'effect.fight',
   family: 'effect',
-  leading: ['target', 'another', '~', 'it'],
+  leading: ['target', 'another', '~', 'it', 'have'],
   cites: ['CR 701.14 (Fight)', 'CR 701.14b (Fight)', 'CR 120.3 (Damage)', 'CR 115.1 (Targets)'],
   examples: [
     "target creature you control fights target creature you don't control",
@@ -120,8 +120,15 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
     '~ fights target creature',
     'it fights target creature',
     'another target creature you control fights target creature an opponent controls',
+    // Frontier Siege (issue 103, "you may" is read apart): the permanent is made to fight.
+    "have it fight target creature you don't control",
+    'have target creature you control fight target creature an opponent controls',
   ],
   rejects: [
+    "have it fights target creature you don't control",
+    "it fight target creature you don't control",
+    'have it fight',
+    'have it fight each creature',
     'target creature fights',
     'target creatures fight each other',
     'target creature you control fights up to one target creature',
@@ -134,10 +141,22 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
   ],
   parse: single(
     'effect.fight',
-    sequence(
-      satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOne),
-      literal(' fights '),
-      satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOne),
+    choice(
+      sequence(
+        satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOne),
+        literal(' fights '),
+        satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOne),
+      ),
+      // "have it fight target creature": the causative form, with the bare verb.
+      map(
+        sequence(
+          literal('have '),
+          satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOne),
+          literal(' fight '),
+          satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOne),
+        ),
+        ([, fighter, , against]): [IrNoun, string, IrNoun] => [fighter, ' fights ', against],
+      ),
     ),
     ([fighter, , against]) => ({ verb: 'fight', args: { fighters: fighter, against } }),
   ),
@@ -503,14 +522,22 @@ export const EFFECT_FOR_EACH_CREATE = defineRule<Clauses>({
  * `effect.damage-divided`: "~ deals X damage divided as you choose among any number of target creatures" (CR 601.2d: the caster divides
  * the damage among the targets as the spell is cast, each target getting at least 1; CR 120.3). The amount is a number or X (defined by
  * "..., where X is the greatest power among creatures you control as you cast this spell"); the targets are "any number of target
- * creatures" or "up to three target creatures" (the fewest is none). The lowering reads it only in a spell, with a total that is a
- * number or an amount read as the spell is cast.
+ * creatures" (also "creatures and/or planeswalkers your opponents control"), "up to three target creatures" (the fewest is none) or "one or two
+ * targets" (any target, at least one). The damage is dealt by "~" or by "it" (the source of the ability, CR 113.7a: the lowering reads only the
+ * "it" that is `~` itself). Spells, activated abilities and triggered abilities announce the division as they are put on the stack (CR 601.2d,
+ * 602.2b, 603.3d); the lowering reads it with a total that is a number or an amount read then.
  */
 export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
   id: 'effect.damage-divided',
   family: 'effect',
-  leading: ['~'],
-  cites: ['CR 601.2d (Casting Spells)', 'CR 120.3 (Damage)', 'CR 115.1 (Targets)'],
+  leading: ['~', 'it'],
+  cites: [
+    'CR 601.2d (Casting Spells)',
+    'CR 602.2b (Activating Activated Abilities)',
+    'CR 603.3d (Handling Triggered Abilities)',
+    'CR 120.3 (Damage)',
+    'CR 115.1 (Targets)',
+  ],
   examples: [
     '~ deals X damage divided as you choose among any number of target creatures',
     '~ deals 3 damage divided as you choose among any number of target creatures',
@@ -518,6 +545,8 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
     '~ deals X damage divided as you choose among any number of target creatures you don’t control',
     // Prismari deck, group 2 (D-657, CR 115.4): any target, as many as the damage can be divided among.
     '~ deals 4 damage divided as you choose among any number of targets',
+    '~ deals 2 damage divided as you choose among one or two targets',
+    'it deals 5 damage divided as you choose among any number of target creatures and/or planeswalkers your opponents control',
   ],
   rejects: [
     '~ deals X damage divided as you choose among any number of target creatures and draw a card',
@@ -529,22 +558,40 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
     '~ deals damage divided as you choose among any number of target creatures',
     '~ deals X damage divided as you choose among any target',
     '~ deals 4 damage divided as you choose among any number of targets you control',
+    '~ deals 2 damage divided as you choose among one or two target',
+    'it deals 2 damage divided as you choose among one or two creatures',
+    'its deals 2 damage divided as you choose among one or two targets',
   ],
   parse: single(
     'effect.damage-divided',
     sequence(
-      literal('~ deals '),
+      choice(
+        map(literal('~ deals '), () => null),
+        map(
+          sequence(family<IrNoun>('noun', { only: ['noun.it'] }), literal(' deals ')),
+          ([it]) => it,
+        ),
+      ),
       family<IrAmount>('amount', { only: ['amount.number', 'amount.x'] }),
       literal(' damage divided as you choose among '),
       choice(
-        family<IrNoun>('noun', { only: ['noun.any-number-targets', 'noun.any-number-of-targets'] }),
+        family<IrNoun>('noun', {
+          only: [
+            'noun.any-number-targets',
+            'noun.any-number-of-targets',
+            'noun.one-or-two-targets-bare',
+          ],
+        }),
         satisfy(
           family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
           (noun) => noun.upTo && noun.plural,
         ),
       ),
     ),
-    ([, amount, , to]) => ({ verb: 'dealDividedDamage', args: { amount, to } }),
+    ([source, amount, , to]) => ({
+      verb: 'dealDividedDamage',
+      args: source === null ? { amount, to } : { source, amount, to },
+    }),
   ),
 });
 

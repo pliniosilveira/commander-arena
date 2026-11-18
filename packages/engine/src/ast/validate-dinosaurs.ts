@@ -154,40 +154,58 @@ function nodesOfKind(
 }
 
 /**
- * CR 601.2d (D-145): a slot with `divide` and the `dealDividedDamage` that deals its damage go together, in the spell's own text: the
- * damage divided as the spell is cast, to the targets of that slot.
+ * CR 601.2d (D-145): a slot with `divide` and the `dealDividedDamage` that deals its damage go together, in the same spell or ability: the
+ * damage divided as the spell is cast or the ability is put on the stack (CR 602.2b, 603.3d), to the targets of that slot. A mode, a
+ * static ability and a reflexive ability have no division.
  */
 function checkDividedDamage(face: CardFace, path: string, out: AstIssue[]): void {
   const spell = face.spell;
-  const divided = (spell?.targets ?? []).filter((t) => t?.divide !== undefined).map((t) => t.id);
-  const effects = nodesOfKind(spell?.effect ?? null, 'dealDividedDamage');
-  const named = effects.map((e) => (e.to as { id?: string } | undefined)?.id);
-  const elsewhere =
-    nodesOfKind(face.abilities, 'dealDividedDamage').length +
-    nodesOfKind(spell?.modes ?? null, 'dealDividedDamage').length;
-  if (elsewhere > 0) {
+  const checkOne = (
+    targets: readonly { id: string; divide?: unknown }[] | undefined,
+    effect: unknown,
+    at: string,
+  ): void => {
+    const divided = (targets ?? []).filter((t) => t?.divide !== undefined).map((t) => t.id);
+    const named = nodesOfKind(effect, 'dealDividedDamage').map(
+      (e) => (e.to as { id?: string } | undefined)?.id,
+    );
+    for (const id of named) {
+      if (typeof id === 'string' && !divided.includes(id)) {
+        issue(out, at, `dealDividedDamage names the target "${id}", whose slot has no divide`);
+      }
+    }
+    for (const id of divided) {
+      if (!named.includes(id)) {
+        issue(out, at, `the slot "${id}" divides something but no dealDividedDamage deals it`);
+      }
+    }
+  };
+  checkOne(spell?.targets, spell?.effect ?? null, `${path}.spell`);
+  face.abilities.forEach((a, i) => {
+    if (a?.kind === 'triggered' || a?.kind === 'activated') {
+      checkOne(a.targets, a.effect ?? null, `${path}.abilities[${i}]`);
+    } else if (nodesOfKind(a, 'dealDividedDamage').length > 0) {
+      issue(
+        out,
+        `${path}.abilities[${i}]`,
+        'dealDividedDamage belongs to the effect of a spell or of an activated or triggered ability: the division is announced as it goes on the stack',
+      );
+    }
+  });
+  const inModes =
+    nodesOfKind(spell?.modes ?? null, 'dealDividedDamage').length +
+    face.abilities.reduce(
+      (n, a) =>
+        a?.kind === 'triggered' || a?.kind === 'activated'
+          ? n + nodesOfKind((a as { modes?: unknown }).modes ?? null, 'dealDividedDamage').length
+          : n,
+      0,
+    );
+  if (inModes > 0) {
     issue(
       out,
       path,
-      'dealDividedDamage belongs to the effect of a spell (not an ability, not a mode): the division is announced as it is cast',
+      'dealDividedDamage does not belong to a mode: the division is announced with the targets',
     );
-  }
-  for (const id of named) {
-    if (typeof id === 'string' && !divided.includes(id)) {
-      issue(
-        out,
-        `${path}.spell.effect`,
-        `dealDividedDamage names the target "${id}", whose slot has no divide`,
-      );
-    }
-  }
-  for (const id of divided) {
-    if (!named.includes(id)) {
-      issue(
-        out,
-        `${path}.spell.targets`,
-        `the slot "${id}" divides something but no dealDividedDamage deals it`,
-      );
-    }
   }
 }
