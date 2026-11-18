@@ -1447,6 +1447,17 @@ export type IrStaticEffect =
       readonly cardTypes: readonly string[];
       readonly subtypes: readonly string[];
     }
+  /**
+   * "Creatures you control are every creature type. The same is true for creature spells you control and creature cards you own that aren't on the battlefield." (issue 104, CR 205.3m,
+   * 613.1d, 604.3): the group the scope names has every creature type. One effect for each scope the statement names: `youControl` (the creatures you control, on the battlefield or as spells)
+   * and `youOwn` (the creature cards you own outside the battlefield).
+   */
+  | { readonly kind: 'allCreatureTypes'; readonly scope: 'youControl' | 'youOwn' }
+  /**
+   * "Each creature card in your hand has cycling {1}{U}." (issue 104, CR 702.29a, 613.1f): the cards of the card types in the hand of the controller have a cycling ability with
+   * `cost` (a mana cost). The subject of the statement is `you`.
+   */
+  | { readonly kind: 'handCycling'; readonly cardTypes: readonly string[]; readonly cost: IrCost }
   /** "~ isn't a creature" (stage P68, D-229, CR 613.1d, 205.1a): the card types the subject loses. */
   | { readonly kind: 'loseTypes'; readonly cardTypes: readonly string[] }
   /** "If a triggered ability of ... triggers, that ability triggers an additional time." (stage P67, D-220, CR 603.2d). The subject is the permanents named. `cause` (stage P71, D-339): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, ..." names the spell whose cast or copy must cause the trigger. */

@@ -26,6 +26,7 @@ import { withoutZone } from './attachments';
 import { lowerCondition } from './conditions';
 import { bindAttachedIt, lowerAbilityCostReduction } from './danitha-g3';
 import { isDragonStatic, lowerDragonStatic } from './dragons';
+import { isHandCyclingStatic, lowerHandCyclingStatic } from './eternal-might';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerGraveyardAbilityCostReduction } from './gisa-g4';
 import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
@@ -392,6 +393,18 @@ function effectOf(
         ...(effect.subtypes.length > 0 ? { subtypes: [...effect.subtypes] } : {}),
       });
     }
+    case 'allCreatureTypes': {
+      // CR 613.1d, 205.3m, 604.3 (issue 104): the creatures you control, with the creature spells and cards of the scope, which the engine's effect names itself (no other subject).
+      const only =
+        subject.kind === 'filter' &&
+        subject.other !== true &&
+        subject.filter.controller === 'you' &&
+        subject.filter.types?.length === 1 &&
+        subject.filter.types[0] === 'creature' &&
+        Object.keys(subject.filter).length === 2;
+      if (!only) return failure(at);
+      return ok({ kind: 'allCreatureTypes', scope: effect.scope });
+    }
     case 'loseTypes': {
       // CR 613.1d, 205.1a (stage P68, D-229): "~ isn't a creature": the permanent itself loses card types, in layer 4.
       if (subject.kind !== 'this') return failure(at);
@@ -482,6 +495,10 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:setTypes'];
     case 'loseTypes':
       return ['static:loseTypes'];
+    case 'allCreatureTypes':
+      return ['static:allCreatureTypes'];
+    case 'handCycling':
+      return ['static:grantKeywordToHandCards'];
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':
     case 'attackTax':
@@ -756,6 +773,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isKorvoldStatic(first)) return lowerKorvoldStatic(ability, ctx);
   // Stage P43 (D-193): damage that stays through cleanup steps.
   if (isKeepsDamage(first)) return lowerKeepsDamage(ability);
+  // Issue 104 (CR 702.29a, 613.1f): "Each creature card in your hand has cycling {1}{U}."
+  if (isHandCyclingStatic(first)) return lowerHandCyclingStatic(ability);
   const parts: IrStaticPart[] = [
     { subject: statement.subject, effects: statement.effects },
     ...(statement.also ?? []),
@@ -1023,6 +1042,8 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:abilityCostReduction',
   'static:setTypes',
   'static:loseTypes',
+  'static:allCreatureTypes',
+  'static:grantKeywordToHandCards',
   'static:castFromGraveyard',
   'static:cantBeBlockedBy',
   'static:setPt',

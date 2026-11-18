@@ -176,6 +176,8 @@ describe('the dimensions', () => {
     ]);
     expect(SUPPORTED_FEATURES.staticKinds).toEqual([
       'allCreatureTypes',
+      // Issue 104: "Each creature card in your hand has cycling {1}{U}."
+      'grantKeywordToHandCards',
       'noMaximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',

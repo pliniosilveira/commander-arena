@@ -517,14 +517,14 @@ describe('tokens, sacrifice and counters as effects', () => {
 
   test('a token with an ability that has no keyword here is not created without it', () => {
     const parsed = parseFaceText(
-      'Create a 1/1 white Soldier creature token with changeling.',
+      'Create a 1/1 white Soldier creature token with flash.',
       OPTS,
       0,
       undefined,
       [{ id: 'spell.effect' }],
     );
     expect(parsed.spell).toBeNull();
-    expect(parsed.unparsed[0]).toMatchObject({ stoppedAt: 'with changeling.', slot: 'token' });
+    expect(parsed.unparsed[0]).toMatchObject({ stoppedAt: 'with flash.', slot: 'token' });
   });
 
   test('sacrifice: ~ is `this`, a kind is a choice among your permanents, a count is two or more', () => {

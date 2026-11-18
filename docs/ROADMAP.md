@@ -7,7 +7,7 @@ Every limit under "Deferred engine features" and "Deferred grammar" is refused o
 ## Lord of the Nazgûl deck work and parser limits (issue 57, D-563 to D-579)
 
 - `Lazotep Plating` was already supported on current `main`; groups through `Sauron's Ransom` now run through the app's default import path. All 21 issue cards are supported by the app's default import path.
-- The cards with hand-written fixtures remain unsupported by grammar-only import: Fandaniel's full may-sacrifice clause (D-576), Lord of the Nazgûl's Ring-bearer protection and group base-power clause (D-577), Maskwood Nexus's all-creature-types scopes (D-578), and Sauron's Ransom's hidden-pile clause (D-579). Their engine scenarios and default-import acceptance tests pass. `March of Swirling Mist` parses and runs (D-575); the Phasing keyword is still not built or needed. `Into the Flood Maw` uses the generic tapped Fish Gift path (D-569).
+- The cards with hand-written fixtures remain unsupported by grammar-only import: Fandaniel's full may-sacrifice clause (D-576), Lord of the Nazgûl's Ring-bearer protection and group base-power clause (D-577), and Sauron's Ransom's hidden-pile clause (D-579). Their engine scenarios and default-import acceptance tests pass. `March of Swirling Mist` parses and runs (D-575); the Phasing keyword is still not built or needed. `Into the Flood Maw` uses the generic tapped Fish Gift path (D-569).
 - The whole deck was not measured by `pnpm corpus:decks`: the Scryfall bulk file is not in this workspace. The card data is from the issue author's description; no rulings were independently checked.
 
 ## Owner-run work and tooling
@@ -590,3 +590,5 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 - "..., whichever is greater" and "..., whichever is less" join two amounts; three or more, and "whichever is higher/lower", are not read. The amounts `extreme` and `opponentCount` are not readable by a static ability's power or toughness.
 - "In target player's graveyard" counts cards in a graveyard; a count of permanents "target player controls" was already read (D-499).
 - The Scryfall rulings of Corpse Augur, Rot Hulk and Prophet of the Scarab were not fetched (the host is blocked in a cloud session) and are unverified.
+
+- A static ability that gives the cards of a hand a keyword gives Cycling only (`grantKeywordToHandCards`, issue 104): not typecycling or another keyword, not the hand of another player, not the cards of a graveyard or a library.

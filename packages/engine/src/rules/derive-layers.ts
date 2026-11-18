@@ -169,6 +169,11 @@ function hasAbility(list: readonly Ability[], grant: Ability): boolean {
           a.kind === 'keyword' && a.keyword.kind === 'landwalk' && a.keyword.landType === landType,
       );
     }
+    // CR 702.29a (issue 104): a cycling ability is an activated ability of its own, so cycling with another cost is another ability; the same cost twice is redundant.
+    if (grant.keyword.kind === 'cycling') {
+      const written = JSON.stringify(grant.keyword);
+      return list.some((a) => a.kind === 'keyword' && JSON.stringify(a.keyword) === written);
+    }
     return list.some((a) => a.kind === 'keyword' && a.keyword.kind === grant.keyword.kind);
   }
   // D-151: an activated or a triggered ability is given by each source that grants it (two sources, two instances).
@@ -181,7 +186,7 @@ function hasAbility(list: readonly Ability[], grant: Ability): boolean {
 const INSTANCE_KEYWORDS: readonly (string | null)[] = ['exalted', 'prowess', 'afflict'];
 
 /** The keywords a grant gives together with the abilities they stand for, once (D-478: Decayed, a static and a triggered ability). */
-const EXPANDED_WHEN_GRANTED: readonly (string | null)[] = ['decayed'];
+const EXPANDED_WHEN_GRANTED: readonly (string | null)[] = ['decayed', 'cycling'];
 
 function keywordKindOf(ability: Ability): string | null {
   return ability.kind === 'keyword' ? ability.keyword.kind : null;

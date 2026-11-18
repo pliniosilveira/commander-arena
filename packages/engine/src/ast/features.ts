@@ -944,6 +944,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-099: `grantAbility` gives a mana ability ("Lands you control have "{T}: Add one mana of any color."").
   staticKinds: [
     'allCreatureTypes',
+    // Issue 104: "Each creature card in your hand has cycling {1}{U}." (CR 702.29a).
+    'grantKeywordToHandCards',
     'noMaximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
@@ -1614,6 +1616,8 @@ export const STATIC_KINDS = [
   'noMaximumHandSize',
   /** A permanent gives creature objects every creature subtype in its stated scope (D-578). */
   'allCreatureTypes',
+  /** "Each creature card in your hand has cycling {1}{U}." (CR 702.29a, issue 104). */
+  'grantKeywordToHandCards',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
   'goaded',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */

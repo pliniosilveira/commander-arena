@@ -4952,6 +4952,18 @@ export type StaticSubject =
 export type StaticEffect =
   /** CR 205.3a (D-578): a permanent gives every creature card in specified ownership/control scopes every creature subtype. */
   | { readonly kind: 'allCreatureTypes'; readonly scope: 'youControl' | 'youOwn' }
+  /**
+   * "Each creature card in your hand has cycling {1}{U}." (issue 104, CR 702.29a, 613.1f, 604.3, 611.3a): a static ability of a permanent on the battlefield that gives the cards in
+   * its controller's hand that `what` matches the keyword `keyword`, in layer 6 with the permanent's timestamp. The cards are the controller's own ("your hand"), read as the cards
+   * are looked at (a card that enters the hand has it at once, a card that leaves does not). Only Cycling (a cycling ability, `{cost}, Discard this card: Draw a card`, which works only
+   * from the hand and is expanded as printed Cycling is); a card that already has the keyword with the same cost has it once. `what` is a filter of the card as it is in hand (its types
+   * and the like after layers 4 and 5), with no zone, controller, owner, stack kind or combat. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | {
+      readonly kind: 'grantKeywordToHandCards';
+      readonly what: ObjectFilter;
+      readonly keyword: Extract<Keyword, { readonly kind: 'cycling' }>;
+    }
   | {
       /** CR 402.2: "You have no maximum hand size." */
       readonly kind: 'noMaximumHandSize';

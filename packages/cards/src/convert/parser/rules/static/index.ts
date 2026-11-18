@@ -20,6 +20,7 @@ import { DANITHA_G3_STATIC_RULES } from './danitha-g3';
 import { DINOSAUR_STATIC_RULES } from './dinosaurs';
 import { DRAGON_STATIC_RULES } from './dragons';
 import { EDHREC_STATIC_RULES } from './edhrec';
+import { ETERNAL_MIGHT_STATIC_RULES } from './eternal-might';
 import { GALADRIEL_G3_STATIC_RULES } from './galadriel-g3';
 import { GISA_G4_STATIC_RULES } from './gisa-g4';
 import { GRANT_STATIC_RULES } from './grants';
@@ -83,6 +84,8 @@ export const STATIC_NO_MAXIMUM_HAND_SIZE = defineRule<IrStatic>({
 
 export const STATIC_RULES = [
   STATIC_NO_MAXIMUM_HAND_SIZE,
+  // Issue 104 (Eternal Might deck): "Creatures you control are every creature type. ...", whose first words are those of `static.permanents`.
+  ...ETERNAL_MIGHT_STATIC_RULES,
   ...GRANT_STATIC_RULES,
   ...PT_COUNT_STATIC_RULES,
   ...RESTRICTION_STATIC_RULES,

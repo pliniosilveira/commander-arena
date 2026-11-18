@@ -617,6 +617,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Counter ${e} unless its controller pays mana equal to the greatest power among creatures you control.`,
   ),
   'static.crew-saddle-bonus': asIs,
+  'static.every-creature-type': asIs,
+  'static.hand-cards-have-cycling': asIs,
   'condition.resolved-times': permanent(
     (e) => `Whenever a creature you control enters, scry 1. If ${e}, you gain 1 life.`,
   ),
@@ -625,6 +627,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
+  'noun.creatures-subtype-and-or-tokens': permanent((e) => `${cap(e)} get +1/+1.`),
   // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers".
   'noun.any-number-targets-controllers': spell((e) => `Destroy ${e}.`),
   'trigger.discarded': whenever,

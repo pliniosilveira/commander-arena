@@ -278,8 +278,8 @@ describe('"Its controller creates ..." (CR 111.2): a token for the controller of
       'token.predefined',
     ],
     [
-      'Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with changeling.',
-      'with changeling.',
+      'Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flash.',
+      'with flash.',
       'token.custom',
     ],
     [
