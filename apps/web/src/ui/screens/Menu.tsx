@@ -93,7 +93,11 @@ export function Menu() {
         <h2 id="scr-decks-h">Your decks</h2>
         <p className="scr-help">Manage your saved decks and import a new decklist.</p>
         <div className="scr-modal-group">
-          <button type="button" className="scr-btn" onClick={() => actions.openImport('import')}>
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            onClick={() => actions.openImport('import')}
+          >
             Import deck
           </button>
           <button

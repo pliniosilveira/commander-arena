@@ -114,7 +114,7 @@ export function DeckDialog({
           {shown.length === 0 && tab === 'saved' && (
             <p className="scr-note" role="note">
               No deck saved in this browser yet.{' '}
-              <button type="button" className="scr-btn scr-btn-primary" onClick={onImport}>
+              <button type="button" className="scr-link" onClick={onImport}>
                 Import a deck
               </button>
             </p>
