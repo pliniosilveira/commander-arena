@@ -1,5 +1,5 @@
 {
-  "parserVersion": 157,
+  "parserVersion": 158,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1010,6 +1010,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "16010b8f"
+    },
+    "1fbb2a7c-8093-4729-b8fe-cf032d99470f": {
+      "name": "Fell the Mighty",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "456e19ff"
     },
     "1ff25f67-36a7-4cfa-a2b1-2135b5b6fb67": {
       "name": "Scavenging Ooze",
@@ -6348,6 +6356,23 @@
       "reasons": [],
       "ast": "073e63aa"
     },
+    "cf14d4e5-5965-45ad-97f7-26facf2884b5": {
+      "name": "Fertile Ground",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever enchanted land is tapped for mana, its controller adds an additional one mana of any color.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "trigger.becomes-target"
+        }
+      ],
+      "reasons": [],
+      "ast": "7c961f07"
+    },
     "cf5bd3a4-3899-4c25-ad1f-f1778c1d9c60": {
       "name": "Rona, Herald of Invasion // Rona, Tolarian Obliterator",
       "group": "acceptance",
@@ -7832,8 +7857,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 619,
-      "total": 651
+      "supported": 620,
+      "total": 653
     }
   }
 }
