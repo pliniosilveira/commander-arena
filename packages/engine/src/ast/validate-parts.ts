@@ -1285,6 +1285,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   tapped: 'a tap effect',
   discarded: 'a discard effect',
   milledValue: 'a mill effect',
+  milledCreature: 'a mill effect',
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedInstantOrSorcery: 'a discard effect',
@@ -1306,12 +1307,14 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'tap') return ['tapped'];
   if (e?.kind === 'discard')
     return ['discarded', 'discardedCreature', 'discardedNoncreature', 'discardedInstantOrSorcery'];
-  if (e?.kind === 'mill') return ['milledValue'];
+  if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
   if (e?.kind === 'dealDamage') return ['damageDealt'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
   if (e?.kind === 'playersMay') return thisWayProduced(e.effect);
+  // "You may discard all the cards in your hand. If you do, draw that many cards": a declined offer counts 0.
+  if (e?.kind === 'may') return thisWayProduced(e.effect);
   return [];
 }
 

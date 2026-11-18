@@ -317,6 +317,8 @@ export type ThisWayKind =
   | 'discarded'
   // D-210: "the total mana value of those cards" milled this way, and "if a creature card (a noncreature card) was discarded this way".
   | 'milledValue'
+  // Dread Summons (CR 701.17a): "for each creature card put into a graveyard this way": the creature cards the `mill` effects of this resolution milled, whoever's they are.
+  | 'milledCreature'
   | 'discardedCreature'
   | 'discardedNoncreature'
   // D-358: "If you discarded an instant or sorcery card this way" (Vohar, Vodalian Desecrator): the instant and sorcery cards `discard` effects discarded.

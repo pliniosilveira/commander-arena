@@ -1666,11 +1666,23 @@ function runEffect(
       );
       // D-327 (CR 400.7j): the cards milled are what `moved` names afterwards ("Mill a card. You may play that card this turn."): new objects in the graveyard.
       const cardsMilled = events.flatMap((e) => (e.kind === 'milled' ? e.objects : []));
+      // Dread Summons (CR 701.17a, 608.2c): "for each creature card put into a graveyard this way": the creature cards of the cards milled, as they are in the graveyard.
+      const milledCreatures = cardsMilled.filter((id) => {
+        const card = next.objects[id];
+        return card !== undefined && derive(next, card).types.includes('creature');
+      }).length;
       return {
         ...done(next, events),
         performed: milled,
         lastMoved: cardsMilled,
-        ...(value > 0 ? { thisWay: { milledValue: value } } : {}),
+        ...(value > 0 || milledCreatures > 0
+          ? {
+              thisWay: {
+                ...(value > 0 ? { milledValue: value } : {}),
+                ...(milledCreatures > 0 ? { milledCreature: milledCreatures } : {}),
+              },
+            }
+          : {}),
       };
     }
 

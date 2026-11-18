@@ -583,3 +583,10 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 
 - A dies trigger that returns the card to the battlefield at the beginning of the next end step (as opposed to your next upkeep) is not read.
 - The Scryfall rulings were not fetched (the host is blocked in a cloud session).
+
+## Dread Summons, Forgotten Creation, Liliana, Death's Majesty (issue #104)
+
+- `milledCreature` counts only creature cards the `mill` effects of the resolution put into graveyards ("for each creature card put into a graveyard this way"); the same words after another instruction (a destroy, a discard) and other card types ("for each land card ...") are not read.
+- "Discard all the cards in your hand" is the whole-hand discard; "all the cards" with a filter ("all the creature cards in your hand") and "that many" after other verbs than sacrifice and discard are not read.
+- "That creature is a ..." reads only the permanent the instruction before it put onto the battlefield, with one color word and one creature type; another subject ("That permanent", "Those creatures") is not read.
+- The Scryfall rulings of the three cards were not fetched (the host is blocked in a cloud session): unverified.

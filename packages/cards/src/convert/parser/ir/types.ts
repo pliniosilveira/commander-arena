@@ -492,6 +492,7 @@ export type IrAmount =
         | 'tapped'
         | 'discarded'
         | 'milledValue'
+        | 'milledCreature'
         | 'damageDealt';
       readonly words: readonly string[];
       readonly who?: 'opponent' | 'player';
