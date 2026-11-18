@@ -1,4 +1,4 @@
-// The Lorehold Spirit deck (issue 86), group 1 (D-588 to D-594, provisional): the REAL Oracle text of Claim Jumper, Containment Construct, Conspiracy Theorist, Perpetual Timepiece and
+// The Lorehold Spirit deck (issue 86), group 1 (D-608 to D-614, provisional): the REAL Oracle text of Claim Jumper, Containment Construct, Conspiracy Theorist, Perpetual Timepiece and
 // Wave of Reckoning (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is defined in an engine scenario and is played through
 // applyAction, so the nodes the parser writes for the real text are what the engine runs. The abilities of each real card are also the ones of its SYNTHETIC sibling of the engine fixtures
 // (`synthetic-lorehold-g1.ts`), which the engine tests and the AI soak play. Pins: CR 701.23 (search), 701.24c-d (shuffle), 701.9a (discard), 603.2c (a batch trigger), 603.12 and 608.2c

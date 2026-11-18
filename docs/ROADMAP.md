@@ -473,7 +473,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The cost reduction "during your turn" takes a plain number of generic mana off the first mana cost, never below zero; other turns ("during an opponent's turn") and a reduction of a mana ability are not read.
 - The rulings of the eleven cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
 
-## The Lorehold Spirit deck, group 1 (issue 86, D-588 to D-595)
+## The Lorehold Spirit deck, group 1 (issue 86, D-608 to D-615)
 
 - "Repeat this process once" repeats the one instruction before it, which may not choose targets; a text that repeats several sentences ("this process" is more than one instruction), "twice", "for each" and a repeat with no instruction before it are not read. The process is done again as it was lowered, so a "you may" search is asked again.
 - `exileFromTriggerCards` is only for a batch `discarded` trigger and exiles one card from the graveyard of the controller (the cards a batch names are the controller's own discards); a batch trigger of another event ("whenever one or more creatures you control die, you may exile one of them") is not built, nor "exile two of them" or a choice among cards of several graveyards.
@@ -484,7 +484,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - Perpetual Timepiece: "any number of target cards" is read only for your own graveyard and into your library (the cards go to their owners' libraries, CR 701.24c, so a card of another graveyard needs another phrase); a commander shuffled in asks its owner where it goes as it moves, as any commander (CR 903.9a, 903.9b).
 - Wave of Reckoning: the damage is dealt by each creature one after the other from powers read first (CR 608.2h); a replacement or prevention effect that asks the player which applies asks once for each creature.
 - The Scryfall rulings of Claim Jumper, Containment Construct, Conspiracy Theorist, Perpetual Timepiece and Wave of Reckoning were not fetched (blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
-## The Lorehold Spirit deck, group 2 (issue 86, D-596 to D-599)
+## The Lorehold Spirit deck, group 2 (issue 86, D-616 to D-619)
 
 - Voting keeps the limits of D-194 and D-195: one vote for each player (CR 701.38d, extra votes, is not built); the vote starts with the controller; a vote for objects or players is not built. Fateful Tempest is read for "past" and "present" as words; a text that counts the votes of a player ("votes for ... more than ...", ties between the options said in words) is not read.
 - "For each <option> vote" reads the votes of the vote before it in the same text (`votesFor`, kept for the resolution); a later spell or ability cannot ask what was voted.

@@ -1,4 +1,4 @@
-// The Lorehold Spirit deck (issue 86), group 2 (D-596 and later, provisional): the lines of Fateful Tempest and Quintorius, Loremaster. The real lines are the Oracle text of the
+// The Lorehold Spirit deck (issue 86), group 2 (D-616 and later, provisional): the lines of Fateful Tempest and Quintorius, Loremaster. The real lines are the Oracle text of the
 // acceptance cards of the golden corpus read through the whole pipeline; the other lines are SYNTHETIC siblings and the near misses the grammar must not read. The engine runs what is
 // lowered in convert-grammar-engine-lorehold-g2.test.ts.
 import { describe, expect, test, vi } from 'vitest';
