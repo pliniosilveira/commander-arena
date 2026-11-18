@@ -189,7 +189,10 @@ export function beginCast(
   // CR 601.2a: move the card to the stack, with the chosen face up (CR 709.3, 712.11b, 715.3);
   // the caster becomes its controller.
   const graveyardUse =
-    zone === 'graveyard' && !resolving && !mayCastFromGraveyard(state, seat, obj)
+    zone === 'graveyard' &&
+    !resolving &&
+    alternative !== 'retrace' &&
+    !mayCastFromGraveyard(state, seat, obj)
       ? graveyardPlayPermission(state, seat, obj, false)
       : null;
   const moved = moveObject(state, { object: objectId, to: 'stack', face });
@@ -212,6 +215,8 @@ export function beginCast(
       castFrom: zone,
       kicked: false,
       flashback: alternative === 'flashback',
+      // D-653 (CR 702.81a): cast from the graveyard by its retrace ability.
+      ...(alternative === 'retrace' ? { retrace: true as const } : {}),
       ...(alternative === 'free' ? { free: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       ...(resolving && alternative !== 'madness' && alternative !== 'miracle'
@@ -906,6 +911,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
         ...(cost.sacrificeCount === undefined ? {} : { sacrificeCount: cost.sacrificeCount }),
         ...(cost.sacrificeAny === undefined ? {} : { sacrificeAny: cost.sacrificeAny }),
         discard: cost.discard,
+        ...(cost.discardFilter === undefined ? {} : { discardFilter: cost.discardFilter }),
         behold: cost.behold,
         exile: cost.exile,
         ...(cost.exileFromHand === null ? {} : { exileFromHand: [...(stack?.exiledAsCost ?? [])] }),

@@ -16,6 +16,7 @@ import {
   flashbackObjects,
   foretellCastObjects,
   playableLands,
+  retraceObjects,
 } from './legality';
 import { activationChoices, manaSacrificeCandidates } from './mana-abilities';
 import { canActivateManaAbility, manaAbilitiesOf } from './mana-engine';
@@ -41,6 +42,10 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   // CR 702.34a (Flashback): a card in the graveyard is cast by its alternative cost.
   for (const object of flashbackObjects(state, seat)) {
     options.push({ kind: 'castSpell', object, alternative: 'flashback' });
+  }
+  // CR 702.81a (Retrace, D-653): a card with retrace in the graveyard is cast by discarding a land card, one option for each.
+  for (const object of retraceObjects(state, seat)) {
+    options.push({ kind: 'castSpell', object, alternative: 'retrace' });
   }
   // CR 702.138a (Escape, D-124): a card in the graveyard is cast for its escape cost, one option for each.
   for (const object of escapeObjects(state, seat)) {

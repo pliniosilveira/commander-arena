@@ -327,6 +327,14 @@ export function castZone(
   // CR 715.3d (D-187): an Adventure its caster did not own is on an adventure for that caster only, not for its owner.
   if (obj.zone === 'exile' && obj.adventureBy !== undefined && obj.adventureBy !== seat)
     return null;
+  // CR 702.81a (Retrace, D-653): a card with retrace in its owner's graveyard is cast from there, paying its mana cost and discarding a land card.
+  if (alternative === 'retrace') {
+    if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
+    const retrace = faceOf(state, obj)?.abilities.some(
+      (a) => a.kind === 'keyword' && a.keyword.kind === 'retrace',
+    );
+    return retrace === true ? 'graveyard' : null;
+  }
   if (alternative === 'flashback') {
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
     const face = faceOf(state, obj);
@@ -755,6 +763,13 @@ export function foretellCastObjects(state: GameState, seat: SeatId): ObjectId[] 
 export function escapeObjects(state: GameState, seat: SeatId): ObjectId[] {
   return zoneList(state, 'graveyard', seat).filter((id) =>
     canCast(state, seat, getObject(state, id), 'escape'),
+  );
+}
+
+/** The cards in the seat's graveyard it could cast now with retrace (CR 702.81a, D-653): the card is castable and a land card can be discarded for it. */
+export function retraceObjects(state: GameState, seat: SeatId): ObjectId[] {
+  return zoneList(state, 'graveyard', seat).filter((id) =>
+    canCast(state, seat, getObject(state, id), 'retrace'),
   );
 }
 

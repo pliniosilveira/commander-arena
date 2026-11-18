@@ -87,6 +87,8 @@ export interface SpellCost {
   readonly sacrificeAny?: ObjectFilter | null;
   /** How many cards to discard. */
   readonly discard: number;
+  /** D-653 (CR 702.81a): the cards that may be discarded are those this filter matches ("a land card"); absent when any card may be. */
+  readonly discardFilter?: ObjectFilter;
   /** The filter of the single Behold cost, or null. */
   readonly behold: ObjectFilter | null;
   /** How many other cards of the caster's graveyard are exiled (Escape, CR 702.138a, D-124). */
@@ -127,6 +129,7 @@ export function alternativeOfStack(
   stack: StackData | null | undefined,
 ): CastAlternative | undefined {
   if (stack?.flashback === true) return 'flashback';
+  if (stack?.retrace === true) return 'retrace';
   if (stack?.free === true) return 'free';
   return stack?.alt;
 }
@@ -394,6 +397,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;
+  // CR 702.81a, 601.2b, 601.2f-h (D-653): "You may cast this card from your graveyard by discarding a land card as an additional cost to cast it": one land card of the hand.
+  if (alternative === 'retrace') discard += 1;
   const reduced = reduceGeneric(
     symbols,
     reductionFor(
@@ -421,6 +426,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     ...(sacrificeCount === 1 ? {} : { sacrificeCount }),
     ...(sacrificeAny === null ? {} : { sacrificeAny }),
     discard,
+    ...(alternative === 'retrace' ? { discardFilter: RETRACE_DISCARD } : {}),
     behold,
     exile,
     exileFromHand,
@@ -462,6 +468,30 @@ export function exilable(state: GameState, seat: SeatId, spell: ObjectId): Objec
 /** The cards in `seat`'s hand that can be discarded for the cost of `spell` (never the spell). */
 export function discardable(state: GameState, seat: SeatId, spell: ObjectId): ObjectId[] {
   return getSeat(state, seat).hand.filter((id) => id !== spell);
+}
+
+/** D-653 (CR 702.81a): the card discarded for retrace is a land card. */
+export const RETRACE_DISCARD: ObjectFilter = { types: ['land'] };
+
+/**
+ * The cards of the hand that can be discarded for the cost of `spell` when the cost names a kind of card (`filter`: "a land card", CR 702.81a, D-653); any card but the spell
+ * without one.
+ */
+export function discardableFor(
+  state: GameState,
+  seat: SeatId,
+  spell: ObjectId,
+  filter: ObjectFilter | undefined,
+): ObjectId[] {
+  const hand = discardable(state, seat, spell);
+  if (filter === undefined) return hand;
+  return hand.filter((id) => {
+    const card = state.objects[id];
+    return (
+      card !== undefined &&
+      matchesFilter(state, card, { ...filter, zone: 'hand' }, { controller: seat, source: spell })
+    );
+  });
 }
 
 /**
@@ -552,7 +582,7 @@ export function canPaySpellCost(
   // CR 119.4: life can be paid only if the life total is at least the payment; paying all of it is allowed (the player then has 0 life and
   // loses when state-based actions are next checked, CR 704.5a).
   if (cost.life > 0 && (lifeTotalIsLocked(state, seat) || life < cost.life)) return false;
-  if (cost.discard > discardable(state, seat, spell.id).length) return false;
+  if (cost.discard > discardableFor(state, seat, spell.id, cost.discardFilter).length) return false;
   if (cost.exile > exilable(state, seat, spell.id).length) return false;
   // An optional exile cost can always be paid by choosing zero cards.
   if (cost.behold !== null && beholdCandidates(state, seat, spell.id, cost.behold).length === 0) {

@@ -46,7 +46,6 @@ function game(
   return g;
 }
 
-const zoneOf = (g: ScenarioGame, label: string) => g.state.objects[g.id(label)]?.zone;
 /** The names of the cards of a zone of seat 0, in zone order (the graveyard: oldest first). */
 const names = (g: ScenarioGame, zone: 'graveyard' | 'hand' | 'exile') =>
   (zone === 'exile' ? g.state.exile : (g.state.seats[0]?.[zone] ?? [])).map((id) => {
