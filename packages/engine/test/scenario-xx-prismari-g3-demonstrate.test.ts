@@ -1,4 +1,4 @@
-// The Prismari deck (issue 87), group 3: Demonstrate (CR 702.144a, D-657), the keyword of Creative Technique and Replication Technique: "When you cast this spell, you may copy it and you may
+// The Prismari deck (issue 87), group 3: Demonstrate (CR 702.144a, D-665), the keyword of Creative Technique and Replication Technique: "When you cast this spell, you may copy it and you may
 // choose new targets for the copy. If you copy the spell, choose an opponent. That player copies the spell and may choose new targets for that copy." (SYNTHETIC Demo Bolt, "Demonstrate.
 // ~ deals 2 damage to any target", src/cards/fixtures/synthetic-prismari-g3.ts.) Pins: CR 702.144a (the whole ability: the controller's copy, then the opponent's, only if the controller
 // copied, each with new targets), CR 603.3b (the trigger goes on the stack above the spell), CR 707.10 and 707.10c (a copy is a spell that is not cast; new targets are chosen by the player the

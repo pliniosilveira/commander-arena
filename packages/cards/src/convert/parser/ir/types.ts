@@ -341,7 +341,7 @@ export interface IrFilter {
   readonly putFromBattlefieldThisTurn?: true;
   /** "from anywhere other than your hand" (stage P75, D-235, CR 601.2a): a spell that was cast from a zone other than the hand (the engine's `notCastFromHand`). */
   readonly notCastFromHand?: true;
-  /** "from your hand" (Prismari deck group 1, D-630, CR 601.2a): a spell that was cast from the hand (the engine's `castFromHand`). */
+  /** "from your hand" (Prismari deck group 1, D-638, CR 601.2a): a spell that was cast from the hand (the engine's `castFromHand`). */
   readonly castFromHand?: true;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
@@ -369,7 +369,7 @@ export interface IrFilter {
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
   readonly anyTarget?: boolean;
   /**
-   * "creatures named ~" (Prismari deck group 2, D-648, CR 201.2): the objects have the name of the card the text is on (the tilde). Only the group noun of an effect (`selector:named`)
+   * "creatures named ~" (Prismari deck group 2, D-656, CR 201.2): the objects have the name of the card the text is on (the tilde). Only the group noun of an effect (`selector:named`)
    * reads it, with the card's own name; any other noun that carries it is refused, so it is never dropped.
    */
   readonly namedSelf?: true;
@@ -412,13 +412,13 @@ export type IrAmount =
     }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
   | { readonly kind: 'cardsDrawnThisTurn'; readonly span: Span }
-  // "the number of instant and sorcery spells you've cast this turn" (Prismari deck group 1, D-630, CR 601.2i): the spells the controller has cast so far this turn, of the card types named.
+  // "the number of instant and sorcery spells you've cast this turn" (Prismari deck group 1, D-638, CR 601.2i): the spells the controller has cast so far this turn, of the card types named.
   | {
       readonly kind: 'spellsCastThisTurn';
       readonly ofTypes?: readonly string[];
       readonly span: Span;
     }
-  // "the greatest mana value among instant and sorcery spells you've cast this turn" (Prismari deck group 2, D-638, CR 202.3, 601.2i): the largest mana value of the spells the controller
+  // "the greatest mana value among instant and sorcery spells you've cast this turn" (Prismari deck group 2, D-646, CR 202.3, 601.2i): the largest mana value of the spells the controller
   // has cast so far this turn, of the card types named.
   | {
       readonly kind: 'greatestManaValueCast';
@@ -680,9 +680,9 @@ export interface IrCondition extends IrNode {
     // Stage P49 (D-206): "at least four mana was spent to cast it" (CR 601.2h), "a card left your graveyard this turn" (CR 400.7), "~ was cast from a graveyard" (CR 601.2a)
     // `ofTriggerSpell` (issue 25): said as "that spell" ("five or more mana was spent to cast that spell"); lowered in a trigger about a spell that was cast only.
     | { readonly kind: 'manaSpentAtLeast'; readonly count: number; readonly ofTriggerSpell?: true }
-    // Prismari deck, group 2 (D-638, CR 202.3, 608.2h): "that spell's mana value is 5 or greater": the mana value of the spell that caused a cast trigger; lowered in such a trigger only.
+    // Prismari deck, group 2 (D-646, CR 202.3, 608.2h): "that spell's mana value is 5 or greater": the mana value of the spell that caused a cast trigger; lowered in such a trigger only.
     | { readonly kind: 'triggerSpellManaValue'; readonly atLeast: number }
-    // Prismari deck, group 3 (D-653, CR 202.3, 608.2c): "the total mana value of the cards exiled this way is 13 or less": the cards the instructions before it exiled, added up; lowered
+    // Prismari deck, group 3 (D-661, CR 202.3, 608.2c): "the total mana value of the cards exiled this way is 13 or less": the cards the instructions before it exiled, added up; lowered
     // only after an instruction that exiled cards.
     | { readonly kind: 'movedTotalManaValue'; readonly atMost: number }
     | { readonly kind: 'cardLeftYourGraveyard' }
@@ -1235,7 +1235,7 @@ export type IrRestrictionKind =
   | 'cantBeBlockedByMoreThanOne'
   | 'mustBeBlocked'
   | 'mustBlock'
-  // "~ can block only creatures with flying" (Prismari deck group 2, D-640, CR 509.1b): only of `~` itself.
+  // "~ can block only creatures with flying" (Prismari deck group 2, D-648, CR 509.1b): only of `~` itself.
   | 'canBlockOnlyFlying';
 
 export type IrStaticEffect =
@@ -1303,7 +1303,7 @@ export type IrStaticEffect =
   | { readonly kind: 'costReduction'; readonly amount: IrAmount }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off
   | { readonly kind: 'abilityCostReduction'; readonly amount: number }
-  // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-633, CR 601.2f): the mana symbols added once for each target beyond the first.
+  // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-641, CR 601.2f): the mana symbols added once for each target beyond the first.
   | { readonly kind: 'costPerExtraTarget'; readonly cost: readonly string[] }
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa deck, group 4, D-461, CR 601.2f, 118.7, 113.6b): the generic mana taken off
   // the abilities of the cards of these card types in the graveyard of the controller

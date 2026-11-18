@@ -109,9 +109,9 @@ const DIE_CONDITIONS = ['condition.die-result'] as const;
  */
 const MANA_SPENT_CONDITIONS = [
   'condition.mana-spent-or-more',
-  // Prismari deck, group 3 (issue 87, D-653): "If the total mana value of the cards exiled this way is 13 or less, you may cast any number of spells ..." (CR 202.3, 608.2c).
+  // Prismari deck, group 3 (issue 87, D-661): "If the total mana value of the cards exiled this way is 13 or less, you may cast any number of spells ..." (CR 202.3, 608.2c).
   'condition.total-mana-value-exiled-this-way',
-  // Prismari deck, group 2 (issue 87, D-638): "If that spell's mana value is 5 or greater, create three of those tokens instead." (CR 202.3).
+  // Prismari deck, group 2 (issue 87, D-646): "If that spell's mana value is 5 or greater, create three of those tokens instead." (CR 202.3).
   'condition.spell-mana-value-or-more',
 ] as const;
 

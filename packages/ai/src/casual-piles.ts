@@ -55,7 +55,7 @@ export function chooseSeparation(view: GameView, d: ChooseCardsDecision): Action
 }
 
 /**
- * "An opponent chooses a nonland card exiled this way" (`opponentChoosesCard`, D-653): the cards not chosen may be cast for free by the other player, so the agent sets aside the card
+ * "An opponent chooses a nonland card exiled this way" (`opponentChoosesCard`, D-661): the cards not chosen may be cast for free by the other player, so the agent sets aside the card
  * worth most to them (ties by the engine's order).
  */
 export function chooseCardToSetAside(view: GameView, d: ChooseCardsDecision): Action {

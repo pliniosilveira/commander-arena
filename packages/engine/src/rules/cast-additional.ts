@@ -307,7 +307,7 @@ function payDiscard(state: GameState, events: GameEvent[], finish: Finish): Resu
   if (!casting) return fail('No cast in progress');
   const count = casting.extra?.discard ?? 0;
   if (count === 0) return payExile(state, events, finish);
-  // D-659 (CR 702.81a): retrace discards a land card, not any card.
+  // D-667 (CR 702.81a): retrace discards a land card, not any card.
   const hand = discardableFor(state, casting.seat, casting.object, casting.extra?.discardFilter);
   if (hand.length < count) return fail('You do not have enough cards to discard');
   // Exactly as many cards as asked: there is nothing to choose.

@@ -366,7 +366,7 @@ const STORM_ABILITY: Extract<Ability, { kind: 'triggered' }> = {
  * CR 702.144a: "Demonstrate" means "When you cast this spell, you may copy it and you may choose new targets for the copy. If you copy the spell, choose an opponent. That player
  * copies the spell and may choose new targets for that copy." A triggered ability of the spell that functions on the stack, found as the spell is cast (CR 603.3b). The copies are
  * copies of a spell, not cast (CR 707.10): the copy of the controller goes on the stack first and the opponent's above it, so the opponent's copy resolves first. Each instance triggers
- * separately. "If you copy the spell" is "if you do" of the `may` (CR 603.12, D-135): the opponent copies only when the controller did (D-657).
+ * separately. "If you copy the spell" is "if you do" of the `may` (CR 603.12, D-135): the opponent copies only when the controller did (D-665).
  */
 const DEMONSTRATE_ABILITY: Ability = {
   kind: 'triggered',

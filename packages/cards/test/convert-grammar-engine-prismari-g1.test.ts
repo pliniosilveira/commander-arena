@@ -1,4 +1,4 @@
-// The Prismari deck (issue 87), group 1 (D-630 to D-637): the REAL Oracle text of Brudiclad, Telchor Engineer, Determined Iteration, Redoubled Stormsinger, Rionya, Fire Dancer, Rite of
+// The Prismari deck (issue 87), group 1 (D-638 to D-645): the REAL Oracle text of Brudiclad, Telchor Engineer, Determined Iteration, Redoubled Stormsinger, Rionya, Fire Dancer, Rite of
 // Replication, Twinflame, Muddle, the Ever-Changing, Inspired Skypainter // Maestro's Gift and Dirgur Focusmage // Braingeyser (the corpus's golden.jsonl, taken from the issue) goes through
 // the grammar as a card with no override, is defined in an engine scenario and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs.
 // The abilities of each real card are also the ones of its SYNTHETIC sibling of the engine fixtures (`synthetic-prismari-g1.ts`), which the engine tests and the AI soak play. Pins: CR 701.36

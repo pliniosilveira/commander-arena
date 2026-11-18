@@ -1,5 +1,5 @@
 /**
- * Static statements of group 1 of the Prismari deck (issue 87, D-633): "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (CR 601.2f, 601.2c, 207.2c: Strive is an
+ * Static statements of group 1 of the Prismari deck (issue 87, D-641): "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (CR 601.2f, 601.2c, 207.2c: Strive is an
  * ability word; the cost is an increase of the total cost, worked out after the targets are chosen).
  */
 import { literal, pattern, sequence } from '../../combinators';

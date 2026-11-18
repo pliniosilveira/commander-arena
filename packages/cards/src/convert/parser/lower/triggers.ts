@@ -1159,7 +1159,7 @@ export function lowerTriggered(
       c.verb === 'exileOneOfThem' ||
       c.verb === 'castCard' ||
       c.verb === 'castMovedFree' ||
-      // Prismari group 3 (D-652): "you may cast up to two spells from among ...": the engine's `castFree` asks which spells, and may stop.
+      // Prismari group 3 (D-660): "you may cast up to two spells from among ...": the engine's `castFree` asks which spells, and may stop.
       c.verb === 'castFromAmong' ||
       c.verb === 'putMovedOntoBattlefield' ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.

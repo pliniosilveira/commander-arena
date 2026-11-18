@@ -241,7 +241,7 @@ export function checkInvariants(state: GameState): string[] {
       if (
         obj.card !== null ||
         obj.token !== null ||
-        // CR 722.3c (D-214): the copy of a prepare spell waits in exile, made for a prepared permanent. D-646 (CR 707.12): the copy of a card waits in exile, made by the effect that is
+        // CR 722.3c (D-214): the copy of a prepare spell waits in exile, made for a prepared permanent. D-654 (CR 707.12): the copy of a card waits in exile, made by the effect that is
         // resolving, for as long as that resolution lasts.
         (obj.prepareOf === undefined && obj.cardCopy !== true
           ? obj.zone !== 'stack' || obj.stack?.kind !== 'spell'

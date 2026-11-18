@@ -94,7 +94,7 @@ import { filterPhrase, grantedKeywordWords, withText } from '../../game/trigger-
 
 /**
  * True for Cycling's expansion: an ability from the hand whose cost discards the card as the cycling keyword's does (CR 702.29a). The engine marks that cost
- * `cycling`; the cost of any other "Discard this card: ..." ability (Magma Opus: "{U/R}{U/R}, Discard this card: Create a Treasure token", D-638) is not Cycling.
+ * `cycling`; the cost of any other "Discard this card: ..." ability (Magma Opus: "{U/R}{U/R}, Discard this card: Create a Treasure token", D-646) is not Cycling.
  */
 export function isCycling(ability: ActivatedAbility): boolean {
   return (
@@ -176,7 +176,7 @@ function nounOf(filter: ObjectFilter): string {
         : types.join(' or ');
   const named = subtypes === '' ? noun : `${subtypes} ${noun}`;
   // D-513 (CR 205.2): "target nonland permanent": the card types the object is not.
-  // D-636 (CR 205.4): "target nonlegendary creature": the supertypes the object is not.
+  // D-644 (CR 205.4): "target nonlegendary creature": the supertypes the object is not.
   const without = [...(filter.notTypes ?? []), ...(filter.notSupertypes ?? [])]
     .map((t) => `non${t}`)
     .join(' ');
@@ -232,7 +232,7 @@ export function targetText(spec: TargetSpec | undefined): string {
         if (spec.anyNumber === true) {
           return `any number of target ${kind}s from ${whose} graveyard${withText(spec.what.filter)}`;
         }
-        // D-647 (CR 115.1): "up to one target instant or sorcery card from your graveyard": none may be chosen.
+        // D-655 (CR 115.1): "up to one target instant or sorcery card from your graveyard": none may be chosen.
         const optional = (spec.min ?? 1) === 0 && spec.max === 1 ? 'up to one ' : '';
         return `${optional}target ${kind} from ${whose} graveyard${withText(spec.what.filter)}`;
       }
@@ -257,11 +257,11 @@ export function targetText(spec: TargetSpec | undefined): string {
         (spec.what.filter.commander === 'yours' ? ' you own' : '') +
         // Group 4 of the Vraska deck (CR 400.7): "target commander that entered this turn".
         (spec.what.filter.enteredThisTurn === true ? ' that entered this turn' : '');
-      // D-631 (CR 115.1, 601.2d): "any number of target creatures you control".
+      // D-639 (CR 115.1, 601.2d): "any number of target creatures you control".
       if (spec.anyNumber === true) {
         return `any number of ${spec.what.filter.other === true ? 'other ' : ''}target ${pluralNounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
       }
-      // D-636 (CR 115.1): "up to one target nonlegendary creature you control": none may be chosen.
+      // D-644 (CR 115.1): "up to one target nonlegendary creature you control": none may be chosen.
       if ((spec.min ?? 1) === 0 && spec.max === 1) {
         return `up to one target ${nounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
       }
@@ -278,7 +278,7 @@ export function targetText(spec: TargetSpec | undefined): string {
             : numberWord(spec.max ?? 1);
         return `up to ${count} target ${pluralNounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
       }
-      // D-631: "another target creature you control": the source of the ability is left out.
+      // D-639: "another target creature you control": the source of the ability is left out.
       return `${spec.what.filter.other === true ? 'another ' : ''}target ${nounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
     }
     case 'player':
@@ -337,7 +337,7 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     }
     case 'moved':
     case 'boundObjects':
-      // D-631: the engine's own form of `moved` inside a delayed ability.
+      // D-639: the engine's own form of `moved` inside a delayed ability.
       return 'it';
     case 'triggerSubject':
       // The spell of a "whenever you cast" trigger (Storm-like copies) or what targeted the permanent; else the
@@ -416,7 +416,7 @@ function eachText(given: ObjectFilter): string {
     const group = groupPhrase(filter);
     return group === null ? UNSAID : `all ${group}`;
   }
-  // D-648 (CR 201.2): "creatures named Leitmotif Composer": a name and the card type creature, nothing else.
+  // D-656 (CR 201.2): "creatures named Leitmotif Composer": a name and the card type creature, nothing else.
   if (
     filter.named !== undefined &&
     Object.keys(filter).length === 2 &&
@@ -706,7 +706,7 @@ function tokenText(
   const given = tokenWords(effect.token, effect.tapped === true, (ref) =>
     objectText(ref, ability, self),
   );
-  // D-638 (CR 111.4, 208.2): "an X/X token, where X is ..." (`ptAmount`): the 0/0 of the definition is the size the amount gives, said as a letter.
+  // D-646 (CR 111.4, 208.2): "an X/X token, where X is ..." (`ptAmount`): the 0/0 of the definition is the size the amount gives, said as a letter.
   const size =
     effect.token.kind === 'custom' && effect.token.ptAmount !== undefined
       ? defs.say(effect.token.ptAmount, { self })
@@ -719,7 +719,7 @@ function tokenText(
           many: given.many.replace('0/0 ', `${size}/${size} `),
         };
   const what = quantity(effect.count, defs, { one: withArticle(words.one), many: words.many });
-  // D-644 (CR 508.1d): "For each opponent, create two 3/3 ... tokens that attack that opponent this turn if able".
+  // D-652 (CR 508.1d): "For each opponent, create two 3/3 ... tokens that attack that opponent this turn if able".
   if (effect.forEachOpponent !== undefined) {
     return `For each opponent, create ${what} that attack that opponent this turn if able`;
   }
@@ -798,7 +798,7 @@ function moveText(
 
 /** The effect worded, with the definitions of its X at the end: "Draw X cards, where X is the number of Zombies you control". */
 function gistOf(effect: Effect, ability: WithTargets, self: string): string {
-  // D-638 (CR 601.2i): the subject of a "whenever you cast" trigger is a spell, "that spell's mana value".
+  // D-646 (CR 601.2i): the subject of a "whenever you cast" trigger is a spell, "that spell's mana value".
   const defs = createDefinitions(ability.trigger?.kind === 'castSpell' ? { spell: true } : {});
   const text = effectText(effect, ability, self, defs);
   return text === '' || text.includes(UNSAID) ? '' : `${text}${defs.tail()}`;
@@ -843,7 +843,7 @@ function sequenceText(
           : effectText(effect, ability, self, defs);
     if (effect.kind === 'enterAttacking') {
       const last = out.length - 1;
-      // D-631 (CR 508.4): "create a tapped token that's a copy of that token" is "create a tapped and attacking token ...".
+      // D-639 (CR 508.4): "create a tapped token that's a copy of that token" is "create a tapped and attacking token ...".
       if (last >= 0) {
         out[last] = out[last]?.includes('create a tapped token')
           ? (out[last] ?? '').replace(
@@ -884,7 +884,7 @@ function shuffleIntoThenReveal(
   return `${capital(owner)} shuffles it into their library, then reveals the top card of their library. ${tail}`;
 }
 
-/** The exception "except it has haste" of a copy: the keyword haste as the one ability the copy has besides its own (D-631, CR 707.9b). */
+/** The exception "except it has haste" of a copy: the keyword haste as the one ability the copy has besides its own (D-639, CR 707.9b). */
 function onlyHaste(abilities: readonly Ability[] | undefined): boolean {
   const [only, ...more] = abilities ?? [];
   return more.length === 0 && only?.kind === 'keyword' && only.keyword.kind === 'haste';
@@ -892,7 +892,7 @@ function onlyHaste(abilities: readonly Ability[] | undefined): boolean {
 
 /**
  * "Each other token you control becomes a copy of that token" and "This creature becomes a copy of up to one target nonlegendary creature you control until end of turn, except it has
- * myriad" (D-634, D-632, CR 707.2, 707.9b): a `becomeCopy` for good of the other tokens of the controller, and a copy of a target with a keyword. UNSAID for any other shape.
+ * myriad" (D-642, D-640, CR 707.2, 707.9b): a `becomeCopy` for good of the other tokens of the controller, and a copy of a target with a keyword. UNSAID for any other shape.
  */
 function becomeCopyText(
   effect: Extract<Effect, { kind: 'becomeCopy' }>,
@@ -1287,16 +1287,16 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return `${playerVerb(effect.player, ability, 'lose')} all counters`;
     case 'createCopies': {
       // D-385: "For each token you control of the chosen type that entered this turn, create a token that's a copy of it".
-      // D-631: "For each creature token you control that entered this turn, create a tapped token that's a copy of that token".
+      // D-639: "For each creature token you control that entered this turn, create a tapped token that's a copy of that token".
       const group = copiesOfTokensText(effect);
       if (group !== null) return group;
-      // D-631 (CR 707.2, 707.9b): "For each of any number of target creatures you control, create a token that's a copy of that creature, except it has haste".
+      // D-639 (CR 707.2, 707.9b): "For each of any number of target creatures you control, create a token that's a copy of that creature, except it has haste".
       return effect.objects.kind === 'target' && onlyHaste(effect.abilities)
         ? `For each of ${object(effect.objects)}, create a token that's a copy of that creature, except it has haste`
         : UNSAID;
     }
     case 'chooseObjects':
-      // D-634 (CR 608.2d): "Choose a token you control", the offer of Brudiclad.
+      // D-642 (CR 608.2d): "Choose a token you control", the offer of Brudiclad.
       return effect.count === 1 &&
         effect.filter.token === true &&
         effect.filter.controller === 'you' &&
@@ -1312,28 +1312,28 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'grantKeyword':
       // "Each Zombie gains menace until end of turn" (CR 613.1f, 611.2c).
       // D-187: "up to that many target creatures gain double strike": several targets, the plural verb.
-      // D-645 (CR 604.1): the keyword works on its controller's turn only, "gains first strike during your turn until end of turn".
+      // D-653 (CR 604.1): the keyword works on its controller's turn only, "gains first strike during your turn until end of turn".
       return `${capital(object(effect.objects))} ${object(effect.objects).startsWith('up to ') ? 'gain' : 'gains'} ${grantedKeywordWords(effect.keyword)}${effect.duringYourTurn === true ? ' during your turn' : ''}${effect.duration === 'untilEndOfTurn' ? ' until end of turn' : ''}`;
     case 'exileSpellWithTimeCounters':
-      // D-643 (CR 608.2n, 122.1, 702.62b): "Exile this spell with three time counters on it".
+      // D-651 (CR 608.2n, 122.1, 702.62b): "Exile this spell with three time counters on it".
       return `Exile this spell with ${effect.count} time counters on it`;
     case 'exileUntilFound':
-      // CR 701.13, 101.4 (D-653): each player exiles from their own library until a nonland card.
+      // CR 701.13, 101.4 (D-661): each player exiles from their own library until a nonland card.
       return 'Each player exiles cards from the top of their library until they exile a nonland card';
     case 'opponentChoosesCard':
-      // CR 608.2d (D-653): the others are the cards exiled this way that were not chosen.
+      // CR 608.2d (D-661): the others are the cards exiled this way that were not chosen.
       return 'An opponent chooses a nonland card exiled this way';
     case 'exilePiles':
-      // CR 700.3, 406.3 (D-656).
+      // CR 700.3, 406.3 (D-664).
       return `Exile the top ${effect.count} cards of your library in a face-down pile, then exile the top ${effect.count} cards of your library in a face-up pile. An opponent chooses one of those piles. Put that pile into your graveyard. Look at the cards in the other pile`;
     case 'exileTopAnyNumber':
-      // CR 701.13, 608.2d (D-654).
+      // CR 701.13, 608.2d (D-662).
       return 'As many times as you choose, you may exile the top card of your library';
     case 'delayedCombatDamageTurn':
-      // CR 603.7, 510.3a (D-655): a delayed ability for the turn.
+      // CR 603.7, 510.3a (D-663): a delayed ability for the turn.
       return 'Whenever a creature you control deals combat damage to a player this turn, copy the exiled card. You may cast the copy without paying its mana cost';
     case 'copyCardAndCast':
-      // D-646 (CR 707.12, 608.2g): the card the instruction before exiled, copied, and the copy cast for free.
+      // D-654 (CR 707.12, 608.2g): the card the instruction before exiled, copied, and the copy cast for free.
       return 'Copy the exiled card. You may cast the copy without paying its mana cost';
     case 'grantPlayerHexproof':
       // CR 702.11b (Hylda group 3): "You gain hexproof until end of turn".
@@ -1386,7 +1386,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       if (effect.mana.kind === 'fixed') {
         // D-151 (CR 106.1): "Add {R} for each tapped land your opponents control".
         const made = fixedTimesWords(effect.mana);
-        // D-642 (CR 500.5, 106.4): "Until end of turn, you don't lose this mana as steps and phases end".
+        // D-650 (CR 500.5, 106.4): "Until end of turn, you don't lose this mana as steps and phases end".
         return made === null
           ? UNSAID
           : `Add ${made}${effect.mana.staysUntilEndOfTurn === true ? ". Until end of turn, you don't lose this mana as steps and phases end" : ''}`;

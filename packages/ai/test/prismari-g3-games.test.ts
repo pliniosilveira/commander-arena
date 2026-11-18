@@ -1,4 +1,4 @@
-// Slice soak (issue 87, D-652 and later): whole games with the 'prismariG3' deck style (SYNTHETIC cards of the engine fixtures `synthetic-prismari-g3.ts`: the sorceries that cast cards from
+// Slice soak (issue 87, D-660 and later): whole games with the 'prismariG3' deck style (SYNTHETIC cards of the engine fixtures `synthetic-prismari-g3.ts`: the sorceries that cast cards from
 // exile without paying their mana costs, the two piles with an opponent's choice, the cards exiled until a nonland card, Demonstrate and Retrace) between random agents, with CasualAgent and
 // HeuristicAgent in some seats. Every game finishes with a result, no fallback, no rejected action and consistent state after every action; the action log replays to the same final
 // state; and, with the rules read again here from 707.12 (copies of spells) and 704.5e, at every step:

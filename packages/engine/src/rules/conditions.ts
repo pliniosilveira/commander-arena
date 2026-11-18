@@ -230,7 +230,7 @@ export function evaluateCondition(
       // CR 603.12, 608.2c (D-135; Learn, CR 701.48a, reads the same way): "if you do": the nearest `may` effect before this was accepted and did something.
       return (ctx.performed ?? 0) > 0;
     case 'movedTotalManaValue': {
-      // CR 202.3, 608.2c (D-653): the mana values of the cards the earlier effects of this resolution moved, added up (a card gone from where it was counts 0).
+      // CR 202.3, 608.2c (D-661): the mana values of the cards the earlier effects of this resolution moved, added up (a card gone from where it was counts 0).
       const total = (ctx.moved ?? []).reduce((sum, id) => {
         return sum + (statOf(state, id, 'manaValue') ?? 0);
       }, 0);

@@ -35,5 +35,5 @@
 // 133: Populate, the choice of a creature token to copy (D-627, issue 160).
 // 134: Give every creature back to its owner as layer 2 effects (D-628, issue 160).
 // 135: An Aura that enchants a player: its spell targets a player, it enters attached to them and goes to the graveyard when they can no longer be enchanted (D-629, issue 160).
-// 136: Prismari Artistry deck (issue 87): token copies and the token a populate made, strive, copy-and-cast, free casts from exile and from piles, retrace and demonstrate, spells' mana values, mana that stays, flashback with life (D-630 to D-661).
+// 136: Prismari Artistry deck (issue 87): token copies and the token a populate made, strive, copy-and-cast, free casts from exile and from piles, retrace and demonstrate, spells' mana values, mana that stays, flashback with life (D-638 to D-669).
 export const ENGINE_VERSION = 136;

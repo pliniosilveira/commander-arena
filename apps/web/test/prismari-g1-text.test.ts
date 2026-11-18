@@ -1,5 +1,5 @@
 /**
- * The words of group 1 of the Prismari deck (D-630 to D-637) as pure models: the abilities that populate, copy tokens, give the copies haste and remove them at the end step (the
+ * The words of group 1 of the Prismari deck (D-638 to D-645) as pure models: the abilities that populate, copy tokens, give the copies haste and remove them at the end step (the
  * delayed group sentence about the tokens made), the amount "1 plus the instants and sorceries you cast this turn", the cast trigger with "from your hand", the batch trigger of
  * "one or more creature tokens you control deal combat damage to a player", the permanent that becomes a copy except it has myriad, and the strive line. Read from the engine's
  * SYNTHETIC cards, so a wording that drifts from the AST fails here. No DOM.
@@ -100,7 +100,7 @@ test('Strive: the cost of each target beyond the first (CR 601.2f, 207.2c)', () 
   ]);
 });
 
-// The question of populate (CR 701.36a, D-631): a `choosePermanent` of purpose 'populate', worded and badged as its own question, and not as another choice of permanents.
+// The question of populate (CR 701.36a, D-639): a `choosePermanent` of purpose 'populate', worded and badged as its own question, and not as another choice of permanents.
 const POPULATE_QUESTION = {
   id: 'd1',
   kind: 'choosePermanent',

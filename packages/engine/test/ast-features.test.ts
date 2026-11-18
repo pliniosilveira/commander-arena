@@ -183,7 +183,7 @@ describe('the dimensions', () => {
       'grantAbility',
       'restriction',
       'costReduction',
-      // D-633 (CR 601.2f): strive, "costs {2}{R} more to cast for each target beyond the first".
+      // D-641 (CR 601.2f): strive, "costs {2}{R} more to cast for each target beyond the first".
       'costPerExtraTarget',
       // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
       'abilityCostReduction',

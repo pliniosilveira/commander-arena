@@ -1,5 +1,5 @@
 /**
- * Lowerings of group 3 of the Prismari deck (issue 87, D-652 and later): the instructions that exile cards (two piles, as many times as the player chooses, each player until a nonland
+ * Lowerings of group 3 of the Prismari deck (issue 87, D-660 and later): the instructions that exile cards (two piles, as many times as the player chooses, each player until a nonland
  * card, a card revealed until a nonland card) and the ones that follow them (the opponent's choice, the spells cast without paying their mana costs, the rest put into the hand, the
  * delayed copy of the exiled card). Each refers to "them", "those cards" or "the other cards" of the instruction before it, which the engine names `moved`; `ctx.lastEffectKind` says
  * which instruction that was, so a sentence is read only after the instruction that makes it true.

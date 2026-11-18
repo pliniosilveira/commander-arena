@@ -1,4 +1,4 @@
-// The Prismari deck (issue 87), group 3 (D-652 and later): the REAL Oracle text of Abstract Performance, Creative Technique, Replication Technique, Dance with Calamity, Plargg and
+// The Prismari deck (issue 87), group 3 (D-660 and later): the REAL Oracle text of Abstract Performance, Creative Technique, Replication Technique, Dance with Calamity, Plargg and
 // Nassari, Surge to Victory and Throes of Chaos (the corpus's golden.jsonl) goes through the grammar as a card with no override and reads as supported, and what the grammar writes is what
 // the SYNTHETIC siblings of the engine fixtures (`synthetic-prismari-g3.ts`) hold, which the engine scenario tests and the AI soak play. Pins: CR 608.2g (spells cast during resolution),
 // CR 700.3 (piles), CR 702.144a (Demonstrate), CR 702.81a (Retrace), CR 603.7 (the delayed ability of Surge to Victory), CR 303.4f (the Aura token of Replication Technique).

@@ -1,5 +1,5 @@
 /**
- * `token.copies-x`: "X tokens that are copies of another target creature you control" (Prismari deck, group 1, D-630, CR 707.2, 111.4, 107.3c): X tokens, each with the copiable values of
+ * `token.copies-x`: "X tokens that are copies of another target creature you control" (Prismari deck, group 1, D-638, CR 707.2, 111.4, 107.3c): X tokens, each with the copiable values of
  * one permanent, the X of the spell or ability or what the sentence defines it as ("..., where X is one plus the number of instant and sorcery spells you've cast this turn"). The source
  * is one permanent: `~`, "target <permanent>" ("another target creature you control") or "it". The engine's `createToken` of a `copyOf` with that count. Not read: a number (that is
  * `token.copy`'s), "a token", "that's a copy", a copy of several permanents, an exception.

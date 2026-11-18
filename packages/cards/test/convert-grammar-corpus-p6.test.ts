@@ -95,7 +95,7 @@ const COPIES: readonly Line[] = [
     kind: 'sorcery',
     text: "Create a token that's a copy of target nonland permanent.",
     expect: OK,
-    note: 'SYNTHETIC; a token copy that is an Aura chooses what it enchants as it enters (CR 303.4f, D-660)',
+    note: 'SYNTHETIC; a token copy that is an Aura chooses what it enchants as it enters (CR 303.4f, D-668)',
   },
   {
     kind: 'sorcery',

@@ -28,7 +28,7 @@ export function copyInstructions(
   spell: ObjectId,
   count: number,
   newTargets: 'may' | 'no',
-  /** D-657: the player the copies belong to, when it is not the controller of the effect ("That player copies the spell", Demonstrate). */
+  /** D-665: the player the copies belong to, when it is not the controller of the effect ("That player copies the spell", Demonstrate). */
   controller?: SeatId,
 ): CopySpellInstruction[] {
   return count > 0

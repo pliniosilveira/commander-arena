@@ -460,7 +460,7 @@ export function lowerCondition(
         : ok({ kind: 'manaSpentAtLeast', count: test.count });
     }
     case 'movedTotalManaValue': {
-      // CR 202.3, 608.2c (D-653): the cards an instruction before this one exiled (`moved`), added up; no other cards are named.
+      // CR 202.3, 608.2c (D-661): the cards an instruction before this one exiled (`moved`), added up; no other cards are named.
       if (ctx?.lastEffectKind !== 'exileTopAnyNumber' && ctx?.lastEffectKind !== 'exileTop') {
         return failure(c, []);
       }
@@ -472,7 +472,7 @@ export function lowerCondition(
       });
     }
     case 'triggerSpellManaValue': {
-      // CR 202.3, 608.2h (D-638): "that spell" is the spell that caused the trigger, read as it is on the stack or as it last was; in any other text no spell is named, so it is not lowered.
+      // CR 202.3, 608.2h (D-646): "that spell" is the spell that caused the trigger, read as it is on the stack or as it last was; in any other text no spell is named, so it is not lowered.
       if (ctx?.castTrigger !== true) return failure(c, []);
       const blocked = missingFeatures(['condition:objectMatches', 'selector:triggerSubject']);
       if (blocked.length > 0) return failure(c, blocked);

@@ -47,5 +47,5 @@
 // 145: Read "creatures target player controls get ...", "untap them", "those creatures gain ..." after an each group and "Populate" (D-627, issue 160).
 // 146: Read "creatures with power less than ~'s power can't block creatures you control", an enchanted creature with a granted activated ability and "each player gains control of all creatures they own" (D-628, issue 160).
 // 147: Read "Enchant player", "whenever enchanted player is attacked" and "each opponent attacking that player untaps all nonland permanents they control" (D-629, issue 160).
-// 148: Read the 29 cards of the Prismari Artistry deck (issue 87): token copies, populate with haste and sacrifice, strive, casts of instants and sorceries, piles and free casts, demonstrate and retrace (D-630 to D-661).
+// 148: Read the 29 cards of the Prismari Artistry deck (issue 87): token copies, populate with haste and sacrifice, strive, casts of instants and sorceries, piles and free casts, demonstrate and retrace (D-638 to D-669).
 export const PARSER_VERSION = 148;

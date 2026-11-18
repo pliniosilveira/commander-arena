@@ -55,7 +55,7 @@ export function acceptCastFree(state: GameState, card: ObjectId): Result {
     source: res.source,
     accepted: true,
   };
-  // D-652 (CR 608.2g): "up to two spells", "any number of spells": once this spell is cast the question comes again, for what is left to cast.
+  // D-660 (CR 608.2g): "up to two spells", "any number of spells": once this spell is cast the question comes again, for what is left to cast.
   const left =
     a.head.remaining === undefined ? 0 : a.head.remaining === 'any' ? 'any' : a.head.remaining - 1;
   const again: readonly Instruction[] =

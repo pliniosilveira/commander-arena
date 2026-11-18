@@ -1,5 +1,5 @@
 /**
- * Noun rules of group 2 of the Prismari deck (issue 87, D-648, D-649): "creatures named ~" (CR 201.2: the objects that have the name of the card the text is on, whoever controls
+ * Noun rules of group 2 of the Prismari deck (issue 87, D-656, D-657): "creatures named ~" (CR 201.2: the objects that have the name of the card the text is on, whoever controls
  * them) and "any number of targets" (CR 115.1, 601.2d: any target, from none to as many as the damage can be divided among).
  */
 import { map, pattern } from '../../combinators';

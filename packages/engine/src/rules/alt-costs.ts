@@ -45,7 +45,7 @@ export function escalateCostOf(face: CardFace | null): readonly Cost[] | null {
 }
 
 /**
- * The cost "for each target beyond the first" of the face's spell, or null when it has none (D-633, CR 601.2f; Strive is an ability word, CR 207.2c): the static ability
+ * The cost "for each target beyond the first" of the face's spell, or null when it has none (D-641, CR 601.2f; Strive is an ability word, CR 207.2c): the static ability
  * `costPerExtraTarget` of the spell itself, which works on the stack (CR 113.6d). Mana only (`validateCard`).
  */
 export function costPerExtraTargetOf(face: CardFace | null): readonly Cost[] | null {

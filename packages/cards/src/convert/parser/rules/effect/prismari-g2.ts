@@ -1,5 +1,5 @@
 /**
- * Effect rules of group 2 of the Prismari deck (issue 87, D-639 and later): the tokens made for each opponent that attack it, the mana that stays through steps and phases, the spell
+ * Effect rules of group 2 of the Prismari deck (issue 87, D-647 and later): the tokens made for each opponent that attack it, the mana that stays through steps and phases, the spell
  * that exiles itself with time counters, and the exile of a card and the copy of it that may be cast.
  *
  * - `effect.create-tokens-per-opponent-attacking`: "For each opponent, create two 3/3 blue and red Elemental creature tokens with flying that attack that opponent this turn if able."

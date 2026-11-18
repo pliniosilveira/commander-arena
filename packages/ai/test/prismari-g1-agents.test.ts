@@ -1,4 +1,4 @@
-// The agents and group 1 of the Prismari deck (issue 87, D-631, SYNTHETIC cards of the engine fixtures `synthetic-prismari-g1.ts`): populate asks one new question, which creature
+// The agents and group 1 of the Prismari deck (issue 87, D-639, SYNTHETIC cards of the engine fixtures `synthetic-prismari-g1.ts`): populate asks one new question, which creature
 // token it copies (a `choosePermanent`, purpose `populate`, CR 701.36a). Each agent is checked on a real engine state: the answer is one the engine lists and accepts, and the
 // casual agent (and the heuristic agent, which delegates) copies the creature token that makes the best copy, whichever is listed first.
 import { type ScenarioGame, scenario } from '@commander-arena/engine/testing';

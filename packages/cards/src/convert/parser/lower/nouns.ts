@@ -153,7 +153,7 @@ function lowerFilterAt(
     rule,
   });
   if (typeof filter.controller === 'object') return bad(['selector:controllerRef']);
-  // D-648: "named ~" is read by the group of an effect (`selectorOf`) with the card's own name; anywhere else there is no name to give it.
+  // D-656: "named ~" is read by the group of an effect (`selectorOf`) with the card's own name; anywhere else there is no name to give it.
   if (filter.namedSelf === true) return bad([]);
   const types = filter.types ?? [];
   const notTypes = filter.notTypes ?? [];
@@ -260,7 +260,7 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:notCastFromHand');
   }
-  // D-630: "an instant or sorcery spell ... from your hand" (CR 601.2a), a spell on the stack.
+  // D-638: "an instant or sorcery spell ... from your hand" (CR 601.2a), a spell on the stack.
   if (filter.castFromHand === true) {
     if (inner) return bad([]);
     parts.push('selector:castFromHand');
@@ -472,7 +472,7 @@ export function declareDividedTarget(
     return failure(noun, []);
   }
   if (ctx.targets.some((t) => t.id === id)) return failure(noun, []);
-  // D-649 (CR 115.4, 601.2d): "divided as you choose among any number of targets": any target (a creature, a player, a planeswalker, a battle), none to as many as the total.
+  // D-657 (CR 115.4, 601.2d): "divided as you choose among any number of targets": any target (a creature, a player, a planeswalker, a battle), none to as many as the total.
   if (noun.filter.anyTarget === true) {
     if (noun.anyNumber !== true) return failure(noun, []);
     const blockedAny = missingFeatures(['selector:anyTarget']);
@@ -948,7 +948,7 @@ function selectorOf(
         rule: noun.rule,
       };
     }
-    // "Creatures named ~" (Prismari deck group 2, D-648, CR 201.2): every creature with the card's own name, whoever controls it, as the effect begins.
+    // "Creatures named ~" (Prismari deck group 2, D-656, CR 201.2): every creature with the card's own name, whoever controls it, as the effect begins.
     if (noun.filter.namedSelf === true) {
       const blockedName = gate(noun, ['selector:named']);
       if (blockedName !== null) return blockedName;

@@ -130,7 +130,7 @@ function matchesWords(
   ctx: AmountContext = {},
 ): string | null {
   const { filter } = condition;
-  // D-638 (CR 202.3, 601.2i): "that spell's mana value is 5 or greater": the spell a cast trigger names, only its mana value compared.
+  // D-646 (CR 202.3, 601.2i): "that spell's mana value is 5 or greater": the spell a cast trigger names, only its mana value compared.
   if (
     condition.of.kind === 'triggerSubject' &&
     ctx.spell === true &&
@@ -286,7 +286,7 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'objectMatches':
       return matchesWords(condition, negate, ctx);
     case 'movedTotalManaValue':
-      // CR 202.3, 608.2c (D-654): "the total mana value of the cards exiled this way is 13 or less".
+      // CR 202.3, 608.2c (D-662): "the total mana value of the cards exiled this way is 13 or less".
       return `the total mana value of the cards exiled this way is ${condition.compare.value} or ${condition.compare.cmp === 'atMost' ? 'less' : 'more'}`;
     case 'didPrevious':
       // CR 608.2c (D-135): "you may discard a card. If you do, draw a card."

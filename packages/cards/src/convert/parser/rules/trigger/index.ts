@@ -1096,7 +1096,7 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
  */
 export const TRIGGER_RULES = [
   TRIGGER_ENTERS_AND_CAST,
-  // Prismari deck, group 1 (D-630, D-636): "~ enters and whenever one or more creature tokens you control deal combat damage to a player" and "you cast ... from your hand" start like
+  // Prismari deck, group 1 (D-638, D-644): "~ enters and whenever one or more creature tokens you control deal combat damage to a player" and "you cast ... from your hand" start like
   // `trigger.enters` and `trigger.cast`, which stop before the rest, so they come before them.
   ...PRISMARI_G1_TRIGGER_RULES,
   ...CLASS_TRIGGER_RULES,

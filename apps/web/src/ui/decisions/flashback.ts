@@ -113,7 +113,7 @@ export function graveyardLabels(
     if (o.kind === 'castSpell' && o.object === card.id) {
       if (o.alternative === 'flashback') labels.push(flashbackLabel(card));
       else if (o.alternative === 'escape') labels.push(alternativeLabel(o.alternative, card));
-      // D-659 (CR 702.81a): the cost is the mana cost and a land card of the hand.
+      // D-667 (CR 702.81a): the cost is the mana cost and a land card of the hand.
       else if (o.alternative === 'retrace') labels.push('Retrace: discard a land card');
       else if (isGraveyardPermission(o, card)) labels.push(GRAVEYARD_CAST);
     } else if (o.kind === 'activate' && o.object === card.id) {

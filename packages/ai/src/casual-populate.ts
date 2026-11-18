@@ -1,5 +1,5 @@
 /**
- * The creature token of a populate (a `choosePermanent` with `purpose: 'populate'`, CR 701.36a, D-631): "Choose a creature token you control and create a token that's a copy of
+ * The creature token of a populate (a `choosePermanent` with `purpose: 'populate'`, CR 701.36a, D-639): "Choose a creature token you control and create a token that's a copy of
  * it", asked when the agent controls two or more creature tokens; `legal` is every creature token it controls. The copy is as good as the token copied, so the casual rule is the
  * simple one: the token with the most power plus toughness, then the most power, the first of the list when they tie, so the answer is deterministic. The heuristic agent
  * delegates to it. The answer is always a member of `legal`, or empty when `legal` is.

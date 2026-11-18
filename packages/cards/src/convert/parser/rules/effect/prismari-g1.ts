@@ -1,5 +1,5 @@
 /**
- * Effect rules of group 1 of the Prismari deck (issue 87, D-630 to D-637): the tokens that are copies and the sentences about the tokens an instruction just made.
+ * Effect rules of group 1 of the Prismari deck (issue 87, D-638 to D-645): the tokens that are copies and the sentences about the tokens an instruction just made.
  *
  * - `effect.made-tokens-gain-keywords`, `effect.end-step-made-tokens`, `effect.leave-made-tokens`: "The token created this way gains haste.", "They gain haste.", "Sacrifice it at the
  *   beginning of the next end step.", "Exile them at the beginning of the next end step.", "sacrifice those tokens" (CR 603.7c, 400.7j): about the tokens the instruction before
@@ -47,7 +47,7 @@ export const EFFECT_MADE_TOKENS_GAIN_KEYWORDS = defineRule<Clauses>({
     'They gain haste',
     'those tokens gain haste',
     'they gain flying and haste',
-    // Prismari deck, group 2 (D-639, CR 611.2a, 514.2): the keyword until end of turn, for the tokens that were just made.
+    // Prismari deck, group 2 (D-647, CR 611.2a, 514.2): the keyword until end of turn, for the tokens that were just made.
     'they gain haste until end of turn',
     'They gain haste until end of turn',
     'those tokens gain flying and haste until end of turn',
@@ -76,7 +76,7 @@ export const EFFECT_MADE_TOKENS_GAIN_KEYWORDS = defineRule<Clauses>({
     if (!head.ok) return head;
     const gains = spanned(KEYWORD_WORDS)(ctx, head.pos);
     if (!gains.ok) return gains;
-    // D-639 (CR 611.2a): "... until end of turn": the keyword ends with the turn (the lowering gives the engine's `untilEndOfTurn`), where it was for good without it.
+    // D-647 (CR 611.2a): "... until end of turn": the keyword ends with the turn (the lowering gives the engine's `untilEndOfTurn`), where it was for good without it.
     const until = optional(
       sequence(
         literal(' '),

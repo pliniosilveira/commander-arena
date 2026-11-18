@@ -436,7 +436,7 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * For `'amass'` (D-367, CR 701.47a: "Choose an Army creature you control"): `seat`, the player who amasses, chooses which Army creature of `legal` (all they
    * control, as `derive` types them now, a token the effect just made among them) gets the +1/+1 counters; exactly one. Asked only with two or more. `source` is the
    * spell or ability.
-   * For `'populate'` (D-631, CR 701.36a: "choose a creature token you control and create a token that's a copy of that creature token"): `seat`, the player who populates, chooses
+   * For `'populate'` (D-639, CR 701.36a: "choose a creature token you control and create a token that's a copy of that creature token"): `seat`, the player who populates, chooses
    * which creature token of `legal` (all they control, as `derive` types them now) is copied; exactly one (`min` = `max` = 1). Asked only with two or more. `source` is the
    * spell or ability.
    * For `'ringBearer'` (D-196, CR 701.54a: "Each time the Ring tempts you, choose a creature you control"): `seat`, the player the Ring is tempting,
@@ -507,8 +507,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
  * `min` = `max` other cards from `seat`'s graveyard (`zone: 'graveyard'`) are exiled as the spell is cast; the
  * cards are public, `forCost` is always set, and `cancel` rewinds the cast. `'cast'` (D-145, CR 608.2g) is "You may cast a spell ... from
  * your hand without paying its mana cost" and "You may play the exiled card": none or one of the `legal` cards (`min` 0, `max` 1, in `zone`
- * 'hand' or 'exile'), which the controller then casts or plays without paying; a card exiled face down is shown to the player who may look at it. With the effect's `max` above one (D-652)
- * the question is asked again after each spell cast. `'opponentChoice'` (D-652, CR 608.2d, "An opponent chooses a nonland card exiled this way"): `seat` is the opponent, `legal` the cards
+ * 'hand' or 'exile'), which the controller then casts or plays without paying; a card exiled face down is shown to the player who may look at it. With the effect's `max` above one (D-660)
+ * the question is asked again after each spell cast. `'opponentChoice'` (D-660, CR 608.2d, "An opponent chooses a nonland card exiled this way"): `seat` is the opponent, `legal` the cards
  * in exile (`zone`) that qualify, all public, and exactly one is chosen (`min` = `max` = 1).
  */
 export interface ChooseCardsDecision extends DecisionBase {
@@ -716,7 +716,7 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'buyback'
     | 'exileMore';
   /**
-   * For purpose `'exileMore'` (D-653, "As many times as you choose, you may exile the top card of your library"): the cards exiled so far by this effect, which are public (face up in
+   * For purpose `'exileMore'` (D-661, "As many times as you choose, you may exile the top card of your library"): the cards exiled so far by this effect, which are public (face up in
    * exile), so the player can see the total mana value before choosing again. Accepting exiles the top card of the library of `seat` and asks again; declining ends the effect.
    */
   readonly exiled?: readonly ObjectId[];
@@ -858,7 +858,7 @@ export interface ChooseOptionDecision extends DecisionBase {
     /** Which pile is face down and its size; the chooser's view must omit its object IDs (D-579). */
     readonly faceDownPile?: 1 | 2;
     readonly faceDownCount?: number;
-    /** D-655 (CR 700.3c): the zone the piles are in while they are chosen between; absent for the library. The words of the question say it. */
+    /** D-663 (CR 700.3c): the zone the piles are in while they are chosen between; absent for the library. The words of the question say it. */
     readonly zone?: 'exile';
   };
   readonly source: ObjectId;

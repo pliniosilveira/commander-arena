@@ -1,4 +1,4 @@
-// The Prismari deck (issue 87), group 2 (D-638 and later): the lines of Prismari Pianist, Rootha, Renegade Bull, Manaform Hellkite, Magma Opus, Furygale Flocking, Leitmotif Composer,
+// The Prismari deck (issue 87), group 2 (D-646 and later): the lines of Prismari Pianist, Rootha, Renegade Bull, Manaform Hellkite, Magma Opus, Furygale Flocking, Leitmotif Composer,
 // Restless Spire, Galazeth Prismari, Brazen Borrower, Deep Analysis and Rousing Refrain. The first line of each block is the real Oracle text of the acceptance card read through the whole
 // pipeline (with `~` for the card's own name); the other lines are near misses the grammar must not read (another comparison, another quantity of the spell, another duration, another
 // zone, a name that is not the card's own). The engine runs what is lowered in convert-grammar-engine-prismari-g2.test.ts.

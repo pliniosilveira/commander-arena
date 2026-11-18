@@ -1,5 +1,5 @@
 /**
- * Lowerings of group 2 of the Prismari deck (issue 87, D-639 and later): the spell that exiles itself with time counters (CR 608.2n, 122.1), and the copy of the card an effect just
+ * Lowerings of group 2 of the Prismari deck (issue 87, D-647 and later): the spell that exiles itself with time counters (CR 608.2n, 122.1), and the copy of the card an effect just
  * exiled that may be cast (CR 707.12, 608.2g). The other pieces of the group are the lowerings they extend (`createToken`, `addMana`) and the engine nodes the grammar already knew.
  */
 import type { Effect } from '@commander-arena/engine';

@@ -206,7 +206,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'restriction.during-your-turn': permanent((e) => `{1}: Draw a card. ${e}`),
   'cost.reveal-this': permanent((e) => `{B}, ${e}: Draw a card.`),
   'static.graveyard-ability-cost-reduction': asIs,
-  // Prismari deck, group 1 (D-630, D-633, D-636): strive is the line of a sorcery, "X tokens that are copies of ..." follows "create", and the triggers are read after "Whenever".
+  // Prismari deck, group 1 (D-638, D-641, D-644): strive is the line of a sorcery, "X tokens that are copies of ..." follows "create", and the triggers are read after "Whenever".
   'static.cost-per-extra-target': spell((e) => e),
   'token.copies-x': permanent(
     (e) =>
@@ -405,7 +405,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-commander': spell((e) => `Destroy ${e}.`),
   'noun.any-number-targets': spell((e) => `~ deals X damage divided as you choose among ${e}.`),
-  // Prismari deck, group 2 (D-648, D-649): "creatures named ~" is the group of a restriction, "any number of targets" the targets of a divided damage.
+  // Prismari deck, group 2 (D-656, D-657): "creatures named ~" is the group of a restriction, "any number of targets" the targets of a divided damage.
   'noun.creatures-named-self': permanent((e) => `{2}{U}: ${cap(e)} can't be blocked this turn.`),
   'noun.any-number-of-targets': spell((e) => `~ deals 4 damage divided as you choose among ${e}.`),
   // Stage P33 (D-149, D-150): the Angels slice. The statements and the replacement are lines of their own; the triggers follow "Whenever";
@@ -614,17 +614,17 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,
   ),
-  // Prismari deck, group 2 (D-638): the condition leads the "instead" sentence of a trigger about a spell that was cast.
+  // Prismari deck, group 2 (D-646): the condition leads the "instead" sentence of a trigger about a spell that was cast.
   'condition.spell-mana-value-or-more': permanent(
     (e) =>
       `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,
   ),
-  // Prismari deck, group 3 (D-653): the condition leads the sentence that casts the spells, after the exile.
+  // Prismari deck, group 3 (D-661): the condition leads the sentence that casts the spells, after the exile.
   'condition.total-mana-value-exiled-this-way': spell(
     (e) =>
       `As many times as you choose, you may exile the top card of your library. If ${e}, you may cast any number of spells from among those cards without paying their mana costs.`,
   ),
-  // Prismari deck, group 3 (D-654): a delayed ability for the turn, after the exile of a card.
+  // Prismari deck, group 3 (D-662): a delayed ability for the turn, after the exile of a card.
   'effect.delayed-combat-damage-copy-exiled': permanent(
     (e) => `Whenever you attack, target creature gains deathtouch until end of turn. ${cap(e)}.`,
   ),

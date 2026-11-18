@@ -353,7 +353,7 @@ function colorsThatStay(state: GameState, seat: SeatId): ReadonlySet<ManaColor> 
 
 /**
  * Empties every mana pool (CR 500.5, 106.4), but for the colors a static ability keeps (D-151) and the mana an effect said you don't lose as steps and phases end
- * (D-642: kept until the cleanup step ends, where the "until end of turn" effect that kept it is over).
+ * (D-650: kept until the cleanup step ends, where the "until end of turn" effect that kept it is over).
  */
 export function emptyManaPools(
   state: GameState,

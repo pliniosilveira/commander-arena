@@ -1,4 +1,4 @@
-// The Prismari deck (issue 87), group 3 (D-652 and later): the real lines of the seven cards read through the whole pipeline, and near misses the grammar must not read (another number,
+// The Prismari deck (issue 87), group 3 (D-660 and later): the real lines of the seven cards read through the whole pipeline, and near misses the grammar must not read (another number,
 // another destination, a cast that is not the player's choice, a sentence read after an instruction that does not make it true). The engine plays what is lowered in
 // convert-grammar-engine-prismari-g3.test.ts and in the engine scenario tests.
 import { describe, expect, test, vi } from 'vitest';

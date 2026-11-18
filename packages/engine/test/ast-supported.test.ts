@@ -70,8 +70,8 @@ const EXECUTABLE_KEYWORDS = [
   'improvise', // scenario-xx-pay-options
   'delve', // scenario-xx-pay-options
   'cascade', // scenario-xx-cascade
-  'demonstrate', // scenario-xx-prismari-g3-demonstrate (D-657)
-  'retrace', // scenario-xx-prismari-g3-retrace (D-659)
+  'demonstrate', // scenario-xx-prismari-g3-demonstrate (D-665)
+  'retrace', // scenario-xx-prismari-g3-retrace (D-667)
   'unearth', // scenario-xx-unearth
   'encore', // scenario-xx-encore
   'eternalize', // scenario-xx-hashaton-g5

@@ -303,7 +303,7 @@ function chooseAdditionalCost(d: ConfirmOptionalDecision, view: GameView): Actio
 export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Action {
   // "You may cast that card without paying its mana cost" (Cascade, CR 702.85a): a free spell, always.
   if (d.purpose === 'cascade') return { kind: 'acceptOptional' };
-  // "As many times as you choose, you may exile the top card of your library" (D-654): each card exiled is a free spell if the total mana value stays at 13 or less. The agent
+  // "As many times as you choose, you may exile the top card of your library" (D-662): each card exiled is a free spell if the total mana value stays at 13 or less. The agent
   // goes on while the total so far is 8 or less (an average card adds about 3), and stops above it.
   if (d.purpose === 'exileMore') {
     const exiled = (d.exiled ?? []).map((id) => findObject(view, id));

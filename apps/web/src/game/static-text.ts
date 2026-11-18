@@ -357,7 +357,7 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
       // D-192 (CR 514.2): "Damage isn't removed from this creature during cleanup steps".
       return keepsDamageWording(ctx.noun);
     case 'costPerExtraTarget': {
-      // D-633 (CR 601.2f, 207.2c): "Strive — This spell costs {2}{R} more to cast for each target beyond the first", mana only.
+      // D-641 (CR 601.2f, 207.2c): "Strive — This spell costs {2}{R} more to cast for each target beyond the first", mana only.
       const symbols = effect.cost.flatMap((c) => (c.kind === 'mana' ? c.symbols : []));
       return symbols.length === 0
         ? null

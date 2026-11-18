@@ -493,7 +493,7 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
     };
   }
   if (d.purpose === 'exileMore') {
-    // D-654 (CR 701.13, 608.2d): "As many times as you choose, you may exile the top card of your library": asked again after each card, with what was exiled so far.
+    // D-662 (CR 701.13, 608.2d): "As many times as you choose, you may exile the top card of your library": asked again after each card, with what was exiled so far.
     const exiled = (d.exiled ?? []).flatMap((id) => {
       const card = index.get(id);
       return card === undefined ? [] : [card];

@@ -33,7 +33,7 @@ function amountWords(amount: Amount | PtAmount, ctx: AmountContext = {}): string
     case 'powerOf':
       return 'its power';
     case 'manaValueOf':
-      // D-638 (CR 202.3, 601.2i): the mana value of the spell a cast trigger names, "that spell's mana value".
+      // D-646 (CR 202.3, 601.2i): the mana value of the spell a cast trigger names, "that spell's mana value".
       return amount.of.kind === 'triggerSubject' && ctx.spell === true
         ? "that spell's mana value"
         : 'its mana value';
