@@ -118,6 +118,8 @@ test('a deck with unsupported cards has one button that opens GitHub with the is
   const button = page.getByTestId('report-issue');
   await expect(button).toBeVisible();
   const [popup] = await Promise.all([page.waitForEvent('popup'), button.click()]);
+  // The pop-up opens before it has navigated: its URL is empty until the (stubbed) GitHub page loads.
+  await popup.waitForURL(/^https:\/\/github\.com\//);
   const url = new URL(popup.url());
   expect(url.origin + url.pathname).toBe(
     'https://github.com/pliniosilveira/commander-arena/issues/new',
