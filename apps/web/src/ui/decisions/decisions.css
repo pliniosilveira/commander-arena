@@ -419,6 +419,11 @@
   max-height: 100%;
   overflow-y: auto;
 }
+.dec-opponent .mana-cost {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 2px;
+}
 .dec-title {
   margin: 0;
   font-size: calc(18px * var(--text-scale));
